@@ -97,12 +97,9 @@ public class XMLUtils {
          This cannot be done by defining a bean since the XMLInputFactory
          is not thread safe.
          */
-        XMLInputFactory xif = XMLInputFactory.newFactory();
-        xif.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
-        xif.setProperty(XMLInputFactory.SUPPORT_DTD, false);
         XMLStreamReader xsr;
         try {
-            xsr = xif.createXMLStreamReader(source);
+            xsr = getSecureXMLInputFactory().createXMLStreamReader(source);
         } catch (XMLStreamException e) {
             throw new IllegalStateException(e);
         }
@@ -412,7 +409,7 @@ public class XMLUtils {
     public static XMLInputFactory getSecureXMLInputFactory() {
         XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
         xmlInputFactory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
-        xmlInputFactory.setProperty("javax.xml.stream.isSupportingExternalEntities", false);
+        xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
         return xmlInputFactory;
     }
 

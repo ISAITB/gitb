@@ -1,10 +1,10 @@
-import { SystemConfigurationParameter } from "src/app/types/system-configuration-parameter";
+import { EndpointParameter } from "src/app/types/endpoint-parameter";
 
 export interface ConformanceEndpoint {
 
     id: number
     name: string
     description?: string
-    parameters: SystemConfigurationParameter[]
+    parameters: EndpointParameter[]
 
 }

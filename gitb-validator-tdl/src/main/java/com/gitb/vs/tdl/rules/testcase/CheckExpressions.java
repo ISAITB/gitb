@@ -10,8 +10,10 @@ import com.gitb.vs.tdl.rules.TestCaseSection;
 import com.gitb.vs.tdl.rules.testcase.expression.VariableResolver;
 import com.gitb.vs.tdl.rules.testcase.expression.VariableResolverProvider;
 import com.gitb.vs.tdl.util.Utils;
+import net.sf.saxon.expr.ArithmeticExpression;
 import net.sf.saxon.expr.instruct.DummyNamespaceResolver;
 import net.sf.saxon.pull.NamespaceContextImpl;
+import net.sf.saxon.xpath.XPathExpressionImpl;
 import net.sf.saxon.xpath.XPathFactoryImpl;
 import org.apache.commons.lang3.StringUtils;
 
@@ -115,6 +117,11 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
     @Override
     public void handleActor(TestRole testRole) {
         recordVariable(testRole.getId(), true);
+    }
+
+    @Override
+    public void handleInputParameter(InputParameter param) {
+        handleVariable(param);
     }
 
     @Override
@@ -367,11 +374,17 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
                     } else {
                         try {
                             XPathExpression expression = createXPathExpression(token);
+                            if (expression instanceof XPathExpressionImpl saxonExpression && saxonExpression.getInternalExpression() instanceof ArithmeticExpression) {
+                                // This is an arithmetic expression. We need to ensure variables are evaluated as numbers.
+                                variableResolver.setResolveVariablesAsNumber(true);
+                            }
                             expression.evaluate(Utils.getSecureDocumentBuilderFactory().newDocumentBuilder().newDocument());
                         } catch (XPathExpressionException e) {
                             addReportItem(ErrorCode.INVALID_EXPRESSION, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentStep, currentScriptlet), token);
                         } catch (ParserConfigurationException e) {
                             throw new IllegalStateException(e);
+                        } finally {
+                            variableResolver.setResolveVariablesAsNumber(false);
                         }
                     }
                 }

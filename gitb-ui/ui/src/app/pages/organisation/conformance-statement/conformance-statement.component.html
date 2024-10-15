@@ -212,30 +212,55 @@
 		</tab>
 		@if (!isReadonly) {
 			<tab (selectTab)="loadConfigurations()" customClass="tabClass">
-				<ng-template tabHeading><app-tab-title icon="fa-solid fa-sliders" text="Configuration parameters"></app-tab-title></ng-template>
+				<ng-template tabHeading><app-tab-title icon="fa-solid fa-sliders" text="Configuration properties"></app-tab-title></ng-template>
 				<div class="tabPanel">
 					@if (loadingConfiguration.status != Constants.STATUS.FINISHED) {
 						<app-pending-block></app-pending-block>
-					} @else if (endpointRepresentations.length == 0) {
-						<div class="card card-body noConfigurationDiv">
-							<span>No configuration parameters are foreseen for this conformance statement.</span>
-						</div>
-					} @else {
-						<div class="endpointPanelContainer" [ngClass]="{'list-group': hasMultipleEndpoints}">
-						@for (endpoint of endpointRepresentations; track endpoint.id) {
-							<div class="card endpoint endpointPanel" [ngClass]="{'list-group-item': hasMultipleEndpoints}">
-								<app-endpoint-display
-									[endpoint]="endpoint"
-									[hideEndpointInfo]="!hasMultipleEndpoints"
-									[editable]="!dataService.isVendorUser"
-									[canEdit]="canEditParameter"
-									[showValues]="true"
-									(edit)="onParameterSelect($event)"
-									(download)="onParameterDownload($event)"
-								></app-endpoint-display>
+					} @else if (organisationPropertyVisibility && systemPropertyVisibility && statementPropertyVisibility) {
+						@if (!organisationPropertyVisibility.hasVisibleProperties && !systemPropertyVisibility.hasVisibleProperties && !statementPropertyVisibility.hasVisibleProperties) {
+							<div class="card card-body noConfigurationDiv">
+								<span>No configuration properties are foreseen for this conformance statement.</span>
 							</div>
+						} @else {
+							@if (canEditOrganisationConfiguration || canEditSystemConfiguration || canEditStatementConfiguration) {
+								<div class="tabControls">
+									<button type="button" class="btn btn-secondary" (click)="updateConfiguration()" [disable]="updateConfigurationPending || updateConfigurationDisabled()" [pending]="updateConfigurationPending">Update configuration</button>
+								</div>
+							}
+							@if (organisationPropertyVisibility.hasVisibleProperties) {
+								<app-custom-property-panel
+									[properties]="organisationProperties"
+									[propertyType]="'organisation'"
+									[owner]="organisationId"
+									[header]="'Organisation properties'"
+									[collapsed]="organisationPropertiesCollapsed"
+									[validation]="propertyValidation"
+									[topMargin]="canEditOrganisationConfiguration || canEditSystemConfiguration || canEditStatementConfiguration"
+									[readonly]="!dataService.isCommunityAdmin && !dataService.isSystemAdmin && !canEditOrganisationConfiguration"></app-custom-property-panel>
+							}
+							@if (systemPropertyVisibility.hasVisibleProperties) {
+								<app-custom-property-panel
+									[properties]="systemProperties"
+									[propertyType]="'system'"
+									[owner]="systemId"
+									[header]="'System properties'"
+									[collapsed]="systemPropertiesCollapsed"
+									[validation]="propertyValidation"
+									[topMargin]="canEditOrganisationConfiguration || canEditSystemConfiguration || canEditStatementConfiguration || (organisationPropertyVisibility.hasVisibleProperties)"
+									[readonly]="!dataService.isCommunityAdmin && !dataService.isSystemAdmin && !canEditSystemConfiguration"></app-custom-property-panel>
+							}
+							@if (statementPropertyVisibility.hasVisibleProperties) {
+								<app-custom-property-panel
+									[properties]="statementProperties"
+									[propertyType]="'statement'"
+									[owner]="systemId"
+									[header]="'Conformance statement properties'"
+									[collapsed]="statementPropertiesCollapsed"
+									[validation]="propertyValidation"
+									[topMargin]="canEditOrganisationConfiguration || canEditSystemConfiguration || canEditStatementConfiguration || organisationPropertyVisibility.hasVisibleProperties || systemPropertyVisibility.hasVisibleProperties"
+									[readonly]="!dataService.isCommunityAdmin && !dataService.isSystemAdmin && !canEditStatementConfiguration"></app-custom-property-panel>
+							}
 						}
-						</div>
 					}
 				</div>
 			</tab>

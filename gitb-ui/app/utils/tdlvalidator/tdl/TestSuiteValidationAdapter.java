@@ -9,20 +9,21 @@ import com.gitb.vs.ValidationService;
 import com.gitb.vs.ValidationService_Service;
 import com.gitb.vs.tdl.*;
 import config.Configurations;
+import jakarta.xml.bind.JAXBElement;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import jakarta.xml.bind.JAXBElement;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.*;
 
 public class TestSuiteValidationAdapter {
@@ -123,8 +124,8 @@ public class TestSuiteValidationAdapter {
     private ValidationService getRemoteValidationServiceClient() {
         if (remoteServiceClient == null) {
             try {
-                remoteServiceClient = new ValidationService_Service(new URL(Configurations.VALIDATION_TDL_EXTERNAL_URL())).getValidationServicePort();
-            } catch (MalformedURLException e) {
+                remoteServiceClient = new ValidationService_Service(new URI(Configurations.VALIDATION_TDL_EXTERNAL_URL()).toURL()).getValidationServicePort();
+            } catch (URISyntaxException | MalformedURLException e) {
                 throw new IllegalStateException("The GITB TDL validation service URL configured ["+Configurations.VALIDATION_TDL_EXTERNAL_URL()+"] was invalid", e);
             }
         }

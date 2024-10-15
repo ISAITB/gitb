@@ -63,4 +63,46 @@
         <packageUrl regex="true">^pkg:maven/org\.playframework\.twirl/twirl\-api_2\.13@.*$</packageUrl>
         <cve>CVE-2015-2156</cve>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: org.webjars.bootstrap-5.3.3.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.webjars/bootstrap@.*$</packageUrl>
+        <vulnerabilityName>CVE-2024-6484</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: org.webjars.bootstrap-5.3.3.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.webjars/bootstrap@.*$</packageUrl>
+        <vulnerabilityName>CVE-2024-6531</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: jaxb-core-4.0.5.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.sun\.xml\.bind/jaxb-core@.*$</packageUrl>
+        <cve>CVE-2024-9329</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: jaxb-core-4.0.5.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.glassfish\.jaxb/jaxb-core@.*$</packageUrl>
+        <cve>CVE-2024-9329</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: jaxb-impl-4.0.4.jar (shaded: org.glassfish.jaxb:jaxb-runtime:4.0.4)
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.glassfish\.jaxb/jaxb-runtime@.*$</packageUrl>
+        <cve>CVE-2024-9329</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: txw2-4.0.5.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.glassfish\.jaxb/txw2@.*$</packageUrl>
+        <cve>CVE-2024-9329</cve>
+    </suppress>
 </suppressions>

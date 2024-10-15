@@ -2,9 +2,11 @@ package managers.export
 
 import com.gitb.xml
 import com.gitb.xml.export._
+import com.gitb.xml.export.TriggerEventType
+import com.gitb.xml.export.TriggerDataType
+import com.gitb.xml.export.TriggerServiceType
 import managers._
-import models.Enums.XmlReportType.XmlReportType
-import models.Enums.{LabelType, OverviewLevelType, SelfRegistrationRestriction, SelfRegistrationType, TestResultStatus, UserRole, XmlReportType}
+import models.Enums.{SelfRegistrationRestriction, _}
 import models.{TestCases, Actors => _, Endpoints => _, Systems => _, _}
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.io.{FileUtils, IOUtils}
@@ -20,7 +22,20 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 @Singleton
-class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigurationManager: SystemConfigurationManager, domainManager: DomainManager, domainParameterManager: DomainParameterManager, communityResourceManager: CommunityResourceManager, triggerManager: TriggerManager, communityManager: CommunityManager, testSuiteManager: TestSuiteManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, specificationManager: SpecificationManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
+                               systemConfigurationManager: SystemConfigurationManager,
+                               domainManager: DomainManager,
+                               domainParameterManager: DomainParameterManager,
+                               communityResourceManager: CommunityResourceManager,
+                               triggerManager: TriggerManager,
+                               communityManager: CommunityManager,
+                               testSuiteManager: TestSuiteManager,
+                               landingPageManager: LandingPageManager,
+                               legalNoticeManager: LegalNoticeManager,
+                               errorTemplateManager: ErrorTemplateManager,
+                               specificationManager: SpecificationManager,
+                               reportManager: ReportManager,
+                               dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[ExportManager])
   private final val DEFAULT_CONTENT_TYPE = "application/octet-stream"
@@ -386,6 +401,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
     exportedDomain.setShortName(domain.shortname)
     exportedDomain.setFullName(domain.fullname)
     exportedDomain.setDescription(domain.description.orNull)
+    exportedDomain.setReportMetadata(domain.reportMetadata.orNull)
     exportedDomain.setApiKey(domain.apiKey)
     // Shared test suites.
     if (exportSettings.testSuites) {
@@ -412,7 +428,9 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
           exportedGroup.setShortName(group.shortname)
           exportedGroup.setFullName(group.fullname)
           exportedGroup.setDescription(group.description.orNull)
+          exportedGroup.setReportMetadata(group.reportMetadata.orNull)
           exportedGroup.setDisplayOrder(group.displayOrder)
+          exportedGroup.setApiKey(group.apiKey)
           exportedDomain.getSpecificationGroups.getGroup.add(exportedGroup)
           exportedSpecificationGroupMap += (group.id -> exportedGroup)
         }
@@ -427,6 +445,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
           exportedSpecification.setShortName(specification.shortname)
           exportedSpecification.setFullName(specification.fullname)
           exportedSpecification.setDescription(specification.description.orNull)
+          exportedSpecification.setReportMetadata(specification.reportMetadata.orNull)
           exportedSpecification.setApiKey(specification.apiKey)
           exportedSpecification.setHidden(specification.hidden)
           exportedSpecification.setDisplayOrder(specification.displayOrder)
@@ -457,6 +476,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
               exportedActor.setName(actor.name)
               exportedActor.setApiKey(actor.apiKey)
               exportedActor.setDescription(actor.description.orNull)
+              exportedActor.setReportMetadata(actor.reportMetadata.orNull)
               if (actor.default.isDefined) {
                 exportedActor.setDefault(actor.default.get)
               } else {
@@ -805,6 +825,16 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
     exportedContent
   }
 
+  private def toExportedReportSetting(setting: models.CommunityReportSettings): com.gitb.xml.export.CommunityReportSetting = {
+    val exportedSetting = new com.gitb.xml.export.CommunityReportSetting
+    exportedSetting.setReportType(toExportedReportType(models.Enums.ReportType.apply(setting.reportType)))
+    exportedSetting.setSignPdfs(setting.signPdfs)
+    exportedSetting.setCustomPdfs(setting.customPdfs)
+    exportedSetting.setCustomPdfsWithCustomXml(setting.customPdfsWithCustomXml)
+    exportedSetting.setCustomPdfService(setting.customPdfService.orNull)
+    exportedSetting
+  }
+
   private def populateExportedUser(idToUse: Int, user: models.Users, exportedUser: com.gitb.xml.export.User, encryptionKey: Option[String]): Unit = {
     exportedUser.setId(toId(idToUse))
     exportedUser.setName(user.name)
@@ -987,14 +1017,24 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
           case _ => communityData.getSignatureSettings.setKeystoreType(KeystoreType.JKS)
         }
       }
-    }
-    // Report stylesheets.
-    if (repositoryUtils.hasCommunityReportStylesheets(communityId)) {
-      communityData.setReportStylesheets(new CommunityReportStylesheets)
-      addCommunityStylesheetToExport(communityId, XmlReportType.ConformanceOverviewReport, communityData.getReportStylesheets)
-      addCommunityStylesheetToExport(communityId, XmlReportType.ConformanceStatementReport, communityData.getReportStylesheets)
-      addCommunityStylesheetToExport(communityId, XmlReportType.TestCaseReport, communityData.getReportStylesheets)
-      addCommunityStylesheetToExport(communityId, XmlReportType.TestStepReport, communityData.getReportStylesheets)
+      // Report stylesheets.
+      if (repositoryUtils.hasCommunityReportStylesheets(communityId)) {
+        communityData.setReportStylesheets(new CommunityReportStylesheets)
+        addCommunityStylesheetToExport(communityId, models.Enums.ReportType.ConformanceOverviewCertificate, communityData.getReportStylesheets)
+        addCommunityStylesheetToExport(communityId, models.Enums.ReportType.ConformanceStatementCertificate, communityData.getReportStylesheets)
+        addCommunityStylesheetToExport(communityId, models.Enums.ReportType.ConformanceOverviewReport, communityData.getReportStylesheets)
+        addCommunityStylesheetToExport(communityId, models.Enums.ReportType.ConformanceStatementReport, communityData.getReportStylesheets)
+        addCommunityStylesheetToExport(communityId, models.Enums.ReportType.TestCaseReport, communityData.getReportStylesheets)
+        addCommunityStylesheetToExport(communityId, models.Enums.ReportType.TestStepReport, communityData.getReportStylesheets)
+      }
+      // Report settings.
+      val reportSettings = reportManager.getAllReportSettings(communityId)
+      if (reportSettings.nonEmpty) {
+        communityData.setReportSettings(new com.gitb.xml.export.CommunityReportSettings)
+        reportSettings.foreach { setting =>
+          communityData.getReportSettings.getReportSetting.add(toExportedReportSetting(setting))
+        }
+      }
     }
     // Custom member properties.
     val exportedOrganisationPropertyMap: scala.collection.mutable.Map[Long, OrganisationProperty] = scala.collection.mutable.Map()
@@ -1390,16 +1430,23 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
     exportData
   }
 
-  private def addCommunityStylesheetToExport(communityId: Long, reportType: XmlReportType, exportData: CommunityReportStylesheets): Unit = {
+  private def toExportedReportType(reportType: models.Enums.ReportType.ReportType): com.gitb.xml.export.ReportType = {
+    reportType match {
+      case models.Enums.ReportType.ConformanceOverviewReport => com.gitb.xml.export.ReportType.CONFORMANCE_OVERVIEW
+      case models.Enums.ReportType.ConformanceStatementReport => com.gitb.xml.export.ReportType.CONFORMANCE_STATEMENT
+      case models.Enums.ReportType.TestCaseReport => com.gitb.xml.export.ReportType.TEST_CASE
+      case models.Enums.ReportType.TestStepReport => com.gitb.xml.export.ReportType.TEST_STEP
+      case models.Enums.ReportType.ConformanceOverviewCertificate => com.gitb.xml.export.ReportType.CONFORMANCE_OVERVIEW_CERTIFICATE
+      case models.Enums.ReportType.ConformanceStatementCertificate => com.gitb.xml.export.ReportType.CONFORMANCE_STATEMENT_CERTIFICATE
+      case _ => throw new IllegalArgumentException("Unknown report type %s".formatted(reportType.id))
+    }
+  }
+
+  private def addCommunityStylesheetToExport(communityId: Long, reportType: models.Enums.ReportType.ReportType, exportData: CommunityReportStylesheets): Unit = {
     val stylesheet = repositoryUtils.getCommunityReportStylesheet(communityId, reportType)
     if (stylesheet.isDefined) {
       val exportStylesheet = new CommunityReportStylesheet
-      reportType match {
-        case XmlReportType.ConformanceOverviewReport => exportStylesheet.setReportType(ReportType.CONFORMANCE_OVERVIEW)
-        case XmlReportType.ConformanceStatementReport => exportStylesheet.setReportType(ReportType.CONFORMANCE_STATEMENT)
-        case XmlReportType.TestCaseReport => exportStylesheet.setReportType(ReportType.TEST_CASE)
-        case _ => exportStylesheet.setReportType(ReportType.TEST_STEP)
-      }
+      exportStylesheet.setReportType(toExportedReportType(reportType))
       exportStylesheet.setContent(Files.readString(stylesheet.get))
       exportData.getStylesheet.add(exportStylesheet)
     }
@@ -1430,6 +1477,18 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
       result = Some(badges)
     }
     result
+  }
+
+  def exportDeletions(communityKeys: List[String], domainKeys: List[String]): com.gitb.xml.export.Export = {
+    val exportData = new Export
+    exportData.setDeletions(new Deletions)
+    communityKeys.foreach { key =>
+      exportData.getDeletions.getCommunity.add(key)
+    }
+    domainKeys.foreach { key =>
+      exportData.getDeletions.getDomain.add(key)
+    }
+    exportData
   }
 
 }

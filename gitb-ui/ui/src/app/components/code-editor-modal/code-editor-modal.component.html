@@ -9,7 +9,11 @@
 <div class="modal-footer">
 	<div class="btn-toolbar">
 		<button type="button" class="btn btn-secondary" (click)="close()">Close</button>
-		<button type="button" class="btn btn-secondary" (click)="copyToClipboard()" *ngIf="isCopyVisible">Copy to clipboard</button>
-		<button type="button" class="btn btn-secondary" (click)="download()" *ngIf="isDownloadVisible">Download</button>
+		@if (isCopyVisible) {
+			<button type="button" class="btn btn-secondary" (click)="copyToClipboard()">Copy to clipboard</button>
+		}
+		@if (isDownloadVisible) {
+			<button type="button" class="btn btn-secondary" (click)="download()">Download</button>
+		}
 	</div>
 </div>

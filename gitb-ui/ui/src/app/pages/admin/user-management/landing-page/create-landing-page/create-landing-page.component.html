@@ -5,14 +5,12 @@
         </div>
         <form>
             <div class="card-body">
-                <!-- Error messages -->
-                <app-alert-display [alerts]="alerts" innerClass="col-10 offset-1"></app-alert-display>
                 <!-- landing page form -->
                 <div class="row">
                     <div class="col-10 offset-1">
                         <div class="row mb-3">
                             <label class="col-3 col-form-label text-end" for="name">* Name:</label>
-                            <div class="col-7"><input id="name" name="name" [(ngModel)]="page.name" class="form-control" type="text"></div>
+                            <div class="col-7"><input id="name" name="name" [(ngModel)]="page.name" class="form-control" type="text" [invalid]="validation.get('name')"></div>
                             <div app-tooltip class="col-auto" tbTooltip="The name of the landing page that will identify it and be displayed in selection lists."></div>
                         </div>
                         <div class="row mb-3">
@@ -34,9 +32,11 @@
                 <app-form-section sectionTitle="Content">
 					<div class="row mt-3">
 						<div class="col-12">
-							<div class="mb-3" *ngIf="dataService.isCommunityAdmin">
-								<app-placeholder-selector [resources]="true" [community]="communityId"></app-placeholder-selector>
-							</div>
+                            @if (dataService.isCommunityAdmin) {
+                                <div class="mb-3">
+                                    <app-placeholder-selector [resources]="true" [community]="communityId"></app-placeholder-selector>
+                                </div>
+                            }
                             <app-editor id="content" name="content" [(ngModel)]="page.content"></app-editor>
 						</div>
                     </div>

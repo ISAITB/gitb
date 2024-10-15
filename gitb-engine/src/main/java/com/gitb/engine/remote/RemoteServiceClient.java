@@ -5,6 +5,8 @@ import com.gitb.engine.PropertyConstants;
 import com.gitb.engine.SessionManager;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.utils.ErrorUtils;
+import org.apache.cxf.endpoint.Client;
+import org.apache.cxf.transport.http.HTTPConduit;
 
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -76,6 +78,14 @@ public abstract class RemoteServiceClient {
             return Map.of(PropertyConstants.TEST_STEP_ID, stepId);
         }
         return null;
+    }
+
+    protected void prepareClient(Client client) {
+        /*
+         * The receiveTimeout applies when the service is reached but is taking long to respond.
+         * In this case we deactivate the timeout.
+         */
+        ((HTTPConduit)client.getConduit()).getClient().setReceiveTimeout(0L);
     }
 
 }

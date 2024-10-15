@@ -1,11 +1,10 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { BsModalRef } from 'ngx-bootstrap/modal';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { Constants } from 'src/app/common/constants';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
-import { ErrorService } from 'src/app/services/error.service';
 import { PopupService } from 'src/app/services/popup.service';
 import { FileData } from 'src/app/types/file-data.type';
 import { Specification } from 'src/app/types/specification';
@@ -19,13 +18,16 @@ import { find } from 'lodash';
 import { PendingTestSuiteUploadChoiceTestCase } from './pending-test-suite-upload-choice-test-case';
 import { ValidationReportItem } from './validation-report-item';
 import { AssertionReport } from 'src/app/components/diagram/assertion-report';
+import { BaseComponent } from 'src/app/pages/base-component.component';
+import { MultiSelectConfig } from 'src/app/components/multi-select-filter/multi-select-config';
+import { FilterUpdate } from 'src/app/components/test-filter/filter-update';
 
 @Component({
   selector: 'app-test-suite-upload-modal',
   templateUrl: './test-suite-upload-modal.component.html',
   styleUrls: ['./test-suite-upload-modal.component.less']
 })
-export class TestSuiteUploadModalComponent implements OnInit {
+export class TestSuiteUploadModalComponent extends BaseComponent implements OnInit {
 
   @Input() testSuitesVisible = false
   @Input() sharedTestSuite = false
@@ -58,15 +60,15 @@ export class TestSuiteUploadModalComponent implements OnInit {
   testCasesInArchiveAndDB: TestSuiteUploadTestCaseChoice[] = []
   testCasesInArchive: TestSuiteUploadTestCaseChoice[] = []
   testCasesInDB: TestSuiteUploadTestCaseChoice[] = []
+  selectConfig!: MultiSelectConfig<Specification>
 
   constructor(
     public dataService: DataService,
     private modalInstance: BsModalRef,
     private confirmationDialogService: ConfirmationDialogService,
     private conformanceService: ConformanceService,
-    private popupService: PopupService,
-    private errorService: ErrorService
-  ) { }
+    private popupService: PopupService
+  ) { super() }
 
   ngOnInit(): void {
     if (!this.sharedTestSuite) {
@@ -74,6 +76,19 @@ export class TestSuiteUploadModalComponent implements OnInit {
         this.specifications.push(this.availableSpecifications[0])
       }
     }
+    this.selectConfig = {
+      name: "specification",
+      textField: "fname",
+      clearItems: new EventEmitter<void>(),
+      replaceItems: new EventEmitter<Specification[]>(),
+      replaceSelectedItems: new EventEmitter<Specification[]>(),
+      filterLabel: `Select ${this.dataService.labelSpecificationsLower()}...`,
+      loader: () => of(this.availableSpecifications)
+    }
+  }
+
+  specificationsChanged(update: FilterUpdate<Specification>) {
+    this.specifications = update.values.active
   }
 
   proceedDisabled() {
@@ -237,6 +252,7 @@ export class TestSuiteUploadModalComponent implements OnInit {
   uploadTestSuite() {
     this.actionPending = true
     this.actionProceedPending = true
+    this.clearAlerts()
     this.conformanceService.deployTestSuite(this.domainId, this.specificationIds(), this.sharedTestSuite, this.file!.file!)
     .subscribe((result) => {
       this.uploadResult = result
@@ -273,7 +289,7 @@ export class TestSuiteUploadModalComponent implements OnInit {
     } else {
       msg = 'An error occurred while processing the test suite: Response was empty'
     }
-    this.errorService.showSimpleErrorMessage("Upload error", msg)
+    this.addAlertError(msg)
   }
 
   applyPendingUpload() {

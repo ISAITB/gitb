@@ -27,7 +27,6 @@ import { StatementParameterMinimal } from '../types/statement-parameter-minimal'
 import { ConformanceStatementItemInfo } from '../types/conformance-statement-item-info';
 import { ConformanceSnapshot } from '../types/conformance-snapshot';
 import { BadgesInfo } from '../components/manage-badges/badges-info';
-import { HtmlService } from './html.service';
 import { HttpResponse } from '@angular/common/http';
 import { ConformanceStatementItem } from '../types/conformance-statement-item';
 import { ConformanceStatementWithResults } from '../types/conformance-statement-with-results';
@@ -36,6 +35,9 @@ import { CommunityKeystore } from '../types/community-keystore';
 import { ConformanceOverviewCertificateSettings } from '../types/conformance-overview-certificate-settings';
 import { BadgePlaceholderInfo } from '../modals/conformance-certificate-modal/badge-placeholder-info';
 import { Constants } from '../common/constants';
+import { SystemParameter } from '../types/system-parameter';
+import { OrganisationParameter } from '../types/organisation-parameter';
+import { ErrorDescription } from '../types/error-description';
 
 @Injectable({
   providedIn: 'root'
@@ -44,14 +46,23 @@ export class ConformanceService {
 
   constructor(
     private restService: RestService,
-    private dataService: DataService,
-    private htmlService: HtmlService
+    private dataService: DataService
   ) { }
 
-  getDomains(ids?: number[]) {
+  getDomain(domainId: number) {
+    return this.restService.get<Domain>({
+      path: ROUTES.controllers.ConformanceService.getDomain(domainId).url,
+      authenticate: true
+    })
+  }
+
+  getDomains(ids?: number[], withApiKeys?: boolean) {
     let params:any = {}
     if (ids !== undefined && ids.length > 0) {
       params['ids'] = ids.join(',')
+    }
+    if (withApiKeys != undefined) {
+      params['keys'] = withApiKeys == true
     }
     return this.restService.get<Domain[]>({
       path: ROUTES.controllers.ConformanceService.getDomains().url,
@@ -94,7 +105,7 @@ export class ConformanceService {
     })
   }
 
-  getSpecifications(domainId: number, withGroups?: boolean) {
+  getDomainSpecifications(domainId: number, withGroups?: boolean) {
     let params: any = {}
     if (withGroups != undefined) {
       params['groups'] = withGroups
@@ -387,26 +398,6 @@ export class ConformanceService {
 		})
   }
 
-  updateConformanceCertificateSettings(communityId: number, settings: ConformanceCertificateSettings) {
-    return this.restService.post<void>({
-      path: ROUTES.controllers.ConformanceService.updateConformanceCertificateSettings(communityId).url,
-      authenticate: true,
-      data: {
-        settings: JSON.stringify(settings)
-      }
-    })
-  }
-
-  updateConformanceOverviewCertificateSettings(communityId: number, settings: ConformanceOverviewCertificateSettings) {
-    return this.restService.post<void>({
-      path: ROUTES.controllers.ConformanceService.updateConformanceOverviewCertificateSettings(communityId).url,
-      authenticate: true,
-      data: {
-        settings: JSON.stringify(settings)
-      }
-    })
-  }
-
   conformanceOverviewCertificateEnabled(communityId: number, reportLevel: 'all'|'domain'|'specification'|'group') {
     return this.restService.get<{exists: boolean}>({
       path: ROUTES.controllers.ConformanceService.conformanceOverviewCertificateEnabled(communityId).url,
@@ -465,26 +456,28 @@ export class ConformanceService {
     })
   }
 
-  updateDomain(domainId: number, shortName: string, fullName: string, description?: string) {
+  updateDomain(domainId: number, shortName: string, fullName: string, description?: string, reportMetadata?: string) {
     return this.restService.post<void>({
       path: ROUTES.controllers.ConformanceService.updateDomain(domainId).url,
       data: {
         sname: shortName,
         fname: fullName,
-        description: description
+        description: description,
+        metadata: reportMetadata
       },
       authenticate: true
     })
   }
 
-  createDomain(shortName: string, fullName: string, description?: string) {
+  createDomain(shortName: string, fullName: string, description?: string, reportMetadata?: string) {
     return this.restService.post<void>({
       path: ROUTES.controllers.ConformanceService.createDomain().url,
       authenticate: true,
       data: {
         sname: shortName,
         fname: fullName,
-        description: description
+        description: description,
+        metadata: reportMetadata
       }
     })
   }
@@ -549,7 +542,7 @@ export class ConformanceService {
     } else {
       params.value = domainParameterValue
     }
-    return this.restService.post<void>({
+    return this.restService.post<ErrorDescription|void>({
       path: ROUTES.controllers.ConformanceService.updateDomainParameter(domainId, domainParameterId).url,
       authenticate: true,
       data: {
@@ -579,7 +572,7 @@ export class ConformanceService {
     } else {
       params.value = domainParameterValue as string
     }
-    return this.restService.post<void>({
+    return this.restService.post<ErrorDescription|void>({
       path: ROUTES.controllers.ConformanceService.createDomainParameter(domainId).url,
       authenticate: true,
       data: {
@@ -626,7 +619,7 @@ export class ConformanceService {
     })
   }
 
-  createSpecification(shortName: string, fullName: string, description: string|undefined, hidden: boolean|undefined, domainId: number, groupId: number|undefined, badges: BadgesInfo) {
+  createSpecification(shortName: string, fullName: string, description: string|undefined, reportMetadata: string|undefined, hidden: boolean|undefined, domainId: number, groupId: number|undefined, badges: BadgesInfo) {
     const params:any = {
       sname: shortName,
       fname: fullName,
@@ -639,6 +632,9 @@ export class ConformanceService {
     if (description != undefined) {
       params.description = description
     }
+    if (reportMetadata != undefined) {
+      params.metadata = reportMetadata
+    }    
     if (groupId != undefined) {
       params.group_id = groupId
     }
@@ -683,7 +679,7 @@ export class ConformanceService {
     })
   }
 
-  createActor(shortName: string, fullName: string, description: string|undefined, defaultActor: boolean|undefined, hiddenActor: boolean|undefined, displayOrder: number|undefined, domainId: number, specificationId: number, badges: BadgesInfo) {
+  createActor(shortName: string, fullName: string, description: string|undefined, reportMetadata: string|undefined,defaultActor: boolean|undefined, hiddenActor: boolean|undefined, displayOrder: number|undefined, domainId: number, specificationId: number, badges: BadgesInfo) {
     if (hiddenActor == undefined) {
       hiddenActor = false
     }
@@ -694,6 +690,7 @@ export class ConformanceService {
         actor_id: shortName,
         name: fullName,
         description: description,
+        metadata: reportMetadata,
         default: defaultActor,
         hidden: hiddenActor,
         domain_id: domainId,
@@ -740,25 +737,29 @@ export class ConformanceService {
     })
   }
 
-  createParameter(name: string, testKey: string, description: string|undefined, use: string, kind: string, adminOnly: boolean, notForTests: boolean, hidden: boolean, allowedValues: string|undefined, dependsOn: string|undefined, dependsOnValue: string|undefined, defaultValue: string|undefined, endpointId: number) {
-    return this.restService.post<EndpointParameter>({
+  createParameter(name: string, testKey: string, description: string|undefined, use: string, kind: string, adminOnly: boolean, notForTests: boolean, hidden: boolean, allowedValues: string|undefined, dependsOn: string|undefined, dependsOnValue: string|undefined, defaultValue: string|undefined, endpointId: number|undefined, actorId: number) {
+    const data:any = {
+      name: name,
+      test_key: testKey,
+      description: description,
+      use: use,
+      kind: kind,
+      admin_only: adminOnly,
+      not_for_tests: notForTests,
+      hidden: hidden,
+      allowedValues: allowedValues,
+      dependsOn: dependsOn,
+      dependsOnValue: dependsOnValue,
+      defaultValue: defaultValue,
+      actor_id: actorId
+    }
+    if (endpointId) {
+      data.endpoint_id = endpointId
+    }
+    return this.restService.post<{endpoint: number}>({
       path: ROUTES.controllers.ConformanceService.createParameter().url,
       authenticate: true,
-      data: {
-        name: name,
-        test_key: testKey,
-        description: description,
-        use: use,
-        kind: kind,
-        admin_only: adminOnly,
-        not_for_tests: notForTests,
-        hidden: hidden,
-        allowedValues: allowedValues,
-        dependsOn: dependsOn,
-        dependsOnValue: dependsOnValue,
-        defaultValue: defaultValue,
-        endpoint_id: endpointId
-      }
+      data: data
     })
   }
 
@@ -779,6 +780,17 @@ export class ConformanceService {
     })
   }
 
+  exportDeletions(settings: ExportSettings) {
+    return this.restService.post<ArrayBuffer>({
+      path: ROUTES.controllers.RepositoryService.exportDeletions().url,
+      data: {
+        values: JSON.stringify(settings)
+      },
+      authenticate: true,
+      arrayBuffer: true
+    })
+  }
+
   uploadDomainExport(domainId: number, settings: ImportSettings, archiveData: FileData) {
     let pathToUse
     if (this.dataService.isSystemAdmin) {
@@ -786,8 +798,19 @@ export class ConformanceService {
     } else {
       pathToUse = ROUTES.controllers.RepositoryService.uploadDomainExportCommunityAdmin(domainId).url
     }
-    return this.restService.post<ImportPreview>({
+    return this.restService.post<ImportPreview|ErrorDescription>({
       path: pathToUse,
+      files: [{param: 'file', data: archiveData.file!}],
+      data: {
+        settings: JSON.stringify(settings)
+      },
+      authenticate: true
+    })
+  }
+
+  uploadDeletionsExport(settings: ImportSettings, archiveData: FileData) {
+    return this.restService.post<ImportPreview|ErrorDescription>({
+      path: ROUTES.controllers.RepositoryService.uploadDeletionsExport().url,
       files: [{param: 'file', data: archiveData.file!}],
       data: {
         settings: JSON.stringify(settings)
@@ -824,9 +847,21 @@ export class ConformanceService {
     })
   }
 
-  getSystemConfigurations(actorId: number, systemId: number) {
-    return this.restService.get<SystemConfigurationEndpoint[]>({
-      path: ROUTES.controllers.ConformanceService.getSystemConfigurations().url,
+  confirmDeletionsImport(pendingImportId: string, settings: ImportSettings, items: ImportItem[]) {
+    return this.restService.post<void>({
+      path: ROUTES.controllers.RepositoryService.confirmDeletionsImport().url,
+      data: {
+        settings: JSON.stringify(settings),
+        pending_id: pendingImportId,
+        items: JSON.stringify(items)
+      },
+      authenticate: true
+    })
+  }  
+
+  getStatementParameterValues(actorId: number, systemId: number) {
+    return this.restService.get<EndpointParameter[]>({
+      path: ROUTES.controllers.ConformanceService.getStatementParameterValues().url,
       authenticate: true,
       params: {
         actor_id: actorId,
@@ -1119,6 +1154,29 @@ export class ConformanceService {
       path: ROUTES.controllers.ConformanceService.getConformanceStatement(system, actor).url,
       authenticate: true,
       params: params
+    })
+  }
+
+  updateStatementConfiguration(systemId: number, actorId: number, organisationProperties: OrganisationParameter[], systemProperties: SystemParameter[], statementProperties: EndpointParameter[]) {
+    const data: any = {
+      system_id: systemId,
+      actor_id: actorId
+    }
+    let files: FileParam[] = []
+    const orgProps = this.dataService.customPropertiesForPost(organisationProperties, "org")
+    data.org_params = orgProps.parameterJson
+    files.push(...orgProps.files)
+    const sysProps = this.dataService.customPropertiesForPost(systemProperties, "sys")
+    data.sys_params = sysProps.parameterJson
+    files.push(...sysProps.files)
+    const stmProps = this.dataService.customPropertiesForPost(statementProperties, "stm")
+    data.stm_params = stmProps.parameterJson
+    files.push(...stmProps.files)
+    return this.restService.post<void>({
+      path: ROUTES.controllers.ConformanceService.updateStatementConfiguration().url,
+      data: data,
+      files: files,
+      authenticate: true
     })
   }
 

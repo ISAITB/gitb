@@ -5,8 +5,8 @@ import com.gitb.core._
 import com.gitb.utils.XMLUtils
 import config.Configurations
 import managers.{BaseManager, TestSuiteManager}
-import models.Enums.{TestResultStatus, XmlReportType}
-import models.Enums.XmlReportType.XmlReportType
+import models.Enums.ReportType.ReportType
+import models.Enums.{ReportType, TestResultStatus}
 import models._
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.io.{FileUtils, FilenameUtils, IOUtils}
@@ -73,35 +73,38 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 	}
 
 	def hasCommunityReportStylesheets(communityId: Long): Boolean = {
-		var report = getCommunityReportStylesheet(communityId, XmlReportType.ConformanceOverviewReport)
+		var report = getCommunityReportStylesheet(communityId, ReportType.ConformanceOverviewReport)
 		if (report.isEmpty) {
-			report = getCommunityReportStylesheet(communityId, XmlReportType.ConformanceStatementReport)
+			report = getCommunityReportStylesheet(communityId, ReportType.ConformanceStatementReport)
 			if (report.isEmpty) {
-				report = getCommunityReportStylesheet(communityId, XmlReportType.TestCaseReport)
+				report = getCommunityReportStylesheet(communityId, ReportType.TestCaseReport)
 				if (report.isEmpty) {
-					report = getCommunityReportStylesheet(communityId, XmlReportType.TestStepReport)
+					report = getCommunityReportStylesheet(communityId, ReportType.TestStepReport)
 				}
 			}
 		}
 		report.isDefined
 	}
 
-	def getCommunityReportStylesheet(communityId: Long, reportType: XmlReportType): Option[Path] = {
+	def getCommunityReportStylesheet(communityId: Long, reportType: ReportType): Option[Path] = {
 		val stylesheetFolder = getCommunityReportStylesheetFolder(communityId)
 		val filePath = stylesheetFolder.resolve(stylesheetName(reportType))
 		Some(filePath).filter(Files.exists(_))
 	}
 
-	private def stylesheetName(reportType: XmlReportType): String = {
+	private def stylesheetName(reportType: ReportType): String = {
 		reportType match {
-			case XmlReportType.ConformanceStatementReport => "conformance_statement.xslt"
-			case XmlReportType.ConformanceOverviewReport => "conformance_overview.xslt"
-			case XmlReportType.TestCaseReport => "test_case.xslt"
-			case _ => "test_step.xslt" // XmlReportType.TestStepReport
+			case ReportType.ConformanceStatementReport => "conformance_statement.xslt"
+			case ReportType.ConformanceOverviewReport => "conformance_overview.xslt"
+			case ReportType.TestCaseReport => "test_case.xslt"
+			case ReportType.TestStepReport => "test_step.xslt"
+			case ReportType.ConformanceStatementCertificate => "conformance_statement_certificate.xslt"
+			case ReportType.ConformanceOverviewCertificate => "conformance_overview_certificate.xslt"
+			case _ => throw new IllegalArgumentException("Unsupported report type %s".formatted(reportType.id))
 		}
 	}
 
-	def saveCommunityReportStylesheet(communityId: Long, reportType: XmlReportType, fileToSave: Path): Path = {
+	def saveCommunityReportStylesheet(communityId: Long, reportType: ReportType, fileToSave: Path): Path = {
 		val stylesheetFolder = getCommunityReportStylesheetFolder(communityId)
 		if (Files.notExists(stylesheetFolder)) {
 			Files.createDirectories(stylesheetFolder)
@@ -110,7 +113,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 		Files.copy(fileToSave, targetPath, StandardCopyOption.REPLACE_EXISTING)
 	}
 
-	def deleteCommunityReportStylesheet(communityId: Long, reportType: XmlReportType): Unit = {
+	def deleteCommunityReportStylesheet(communityId: Long, reportType: ReportType): Unit = {
 		val path = getCommunityReportStylesheet(communityId, reportType)
 		if (path.isDefined) {
 			FileUtils.deleteQuietly(path.get.toFile)
@@ -610,7 +613,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 	}
 
 	def generateTestSuiteFileName(): String = {
-		val fileName = "ts_"+RandomStringUtils.random(10, false, true)
+		val fileName = "ts_"+RandomStringUtils.secure().next(10, false, true)
 		fileName
 	}
 
@@ -712,7 +715,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 			if (tdlActor.getDisplayOrder != null) {
 				displayOrder = Some(tdlActor.getDisplayOrder)
 			}
-			new models.Actor(0L, tdlActor.getId, tdlActor.getName, Option(tdlActor.getDesc), Option(tdlActor.isDefault), tdlActor.isHidden, displayOrder, None, Some(endpoints), None, None)
+			new models.Actor(0L, tdlActor.getId, tdlActor.getName, Option(tdlActor.getDesc), Option(tdlActor.getReportMetadata), Option(tdlActor.isDefault), tdlActor.isHidden, displayOrder, None, Some(endpoints), None, None)
 		}
 		actors
 	}
@@ -1068,6 +1071,13 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 		val dataFile = Path.of(dataFolder.toString, fileUuid)
 		writeFn.apply(dataFile)
 		item.setValue(s"___[[$fileUuid]]___")
+	}
+
+	def getReportTempFile(suffix: String): Path = {
+		Paths.get(
+			getTempReportFolder().getAbsolutePath,
+			UUID.randomUUID().toString+suffix
+		)
 	}
 
 }

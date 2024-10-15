@@ -59,6 +59,7 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
   deletePending = false
   saveOrderPending = false
   dragOngoing = false
+  loaded = false
 
   constructor(
     public dataService: DataService,
@@ -83,16 +84,17 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
   }
 
   ngAfterViewInit(): void {
-		this.dataService.focus('shortName')
     this.showTab()
   }
 
   ngOnInit(): void {
     this.domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
-    this.conformanceService.getDomains([this.domainId])
+    this.conformanceService.getDomain(this.domainId)
     .subscribe((data) => {
-      this.domain = data[0]
+      this.domain = data
       this.routingService.domainBreadcrumbs(this.domainId, this.domain.sname!)
+    }).add(() => {
+      this.loaded = true
     })
     this.loadSpecifications()
   }
@@ -109,8 +111,8 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
     if (this.specificationStatus.status == Constants.STATUS.NONE || force) {
       this.specificationStatus.status = Constants.STATUS.PENDING
       this.domainSpecifications = []
-      const specsObservable = this.conformanceService.getSpecifications(this.domainId, false)
-      const specGroupsObservable = this.specificationService.getSpecificationGroups(this.domainId)
+      const specsObservable = this.conformanceService.getDomainSpecifications(this.domainId, false)
+      const specGroupsObservable = this.specificationService.getDomainSpecificationGroups(this.domainId)
       forkJoin([specsObservable, specGroupsObservable]).subscribe((results) => {
         this.specificationGroups = results[1]
         this.hasGroups = this.specificationGroups.length > 0
@@ -187,7 +189,7 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
 
 	saveDomainChanges() {
     this.savePending = true
-		this.conformanceService.updateDomain(this.domainId, this.domain.sname!, this.domain.fname!, this.domain.description)
+		this.conformanceService.updateDomain(this.domainId, this.domain.sname!, this.domain.fname!, this.domain.description, this.domain.reportMetadata)
     .subscribe(() => {
       this.popupService.success(this.dataService.labelDomain()+' updated.')
       this.dataService.breadcrumbUpdate({id: this.domainId, type: BreadcrumbType.domain, label: this.domain.sname!})

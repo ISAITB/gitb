@@ -6,6 +6,8 @@ import { Community } from 'src/app/types/community';
 import { Domain } from 'src/app/types/domain';
 import { IdLabel } from 'src/app/types/id-label';
 import { find } from 'lodash';
+import { RoutingService } from 'src/app/services/routing.service';
+import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
   selector: 'app-community-form',
@@ -18,6 +20,7 @@ export class CommunityFormComponent extends BaseComponent implements OnInit {
   @Input() community!: Partial<Community>
   @Input() domains: Partial<Domain>[] = []
   @Input() admin = false
+  @Input() validation!: ValidationState
   selfRegEnabled = false
   ssoEnabled = false
   emailEnabled = false
@@ -32,7 +35,8 @@ export class CommunityFormComponent extends BaseComponent implements OnInit {
   userPermissionsCollapsed = false
 
   constructor(
-    public dataService: DataService
+    public dataService: DataService,
+    private routingService: RoutingService
   ) { super() }
 
   ngOnInit(): void {
@@ -115,6 +119,12 @@ export class CommunityFormComponent extends BaseComponent implements OnInit {
     this.community.sameDescriptionAsDomain = this.community.domainId != undefined && !(this.textProvided(this.community.activeDescription))
     if (this.community.sameDescriptionAsDomain) {
       this.community.activeDescription = this.domainDescription(this.community.domainId!)
+    }
+  }
+
+  viewDomain() {
+    if (this.community.domainId) {
+      this.routingService.toDomain(this.community.domainId)
     }
   }
 

@@ -406,7 +406,7 @@ export class CommunityService {
   }
 
   uploadSystemSettingsExport(settings: ImportSettings, archiveData: FileData) {
-    return this.restService.post<ImportPreview>({
+    return this.restService.post<ImportPreview|ErrorDescription>({
       path: ROUTES.controllers.RepositoryService.uploadSystemSettingsExport().url,
       files: [{param: 'file', data: archiveData.file!}],
       data: {
@@ -423,7 +423,7 @@ export class CommunityService {
     } else {
       pathToUse = ROUTES.controllers.RepositoryService.uploadCommunityExportCommunityAdmin(communityId).url
     }
-    return this.restService.post<ImportPreview>({
+    return this.restService.post<ImportPreview|ErrorDescription>({
       path: pathToUse,
       files: [{param: 'file', data: archiveData.file!}],
       data: {

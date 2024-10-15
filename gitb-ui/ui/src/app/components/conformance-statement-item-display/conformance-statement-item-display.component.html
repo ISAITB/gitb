@@ -32,8 +32,10 @@
                         <div class="item-icon"><app-collapsing-icon [isCollapsed]="!testCasesOpen" [asDiv]="true"></app-collapsing-icon></div>
                     }
                     @if (showCheck) {
-                        <div class="item-check"><input type="checkbox" name="itemCheck" [(ngModel)]="item.checked" (ngModelChange)="updateChecked()"></div>
-                    }
+                        <div class="item-check">
+                            <input type="checkbox" class="form-check-input" name="itemCheck" [(ngModel)]="item.checked" (ngModelChange)="updateChecked()">
+                        </div>
+                    } 
                     <div class="item-name">{{item.name}}</div>
                 </div>
                 @if (item.description) {

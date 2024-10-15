@@ -12,6 +12,7 @@ import { Constants } from 'src/app/common/constants';
 import { SystemAdministrationTab } from '../../../system-administration/system-administration-tab.enum';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { PreviewLandingPageComponent } from '../preview-landing-page/preview-landing-page.component';
+import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
   selector: 'app-create-landing-page',
@@ -27,6 +28,7 @@ export class CreateLandingPageComponent extends BaseComponent implements OnInit,
   }
   savePending = false
   tooltipForDefaultCheck!: string
+  validation = new ValidationState()
 
   constructor(
     private routingService: RoutingService,
@@ -63,7 +65,6 @@ export class CreateLandingPageComponent extends BaseComponent implements OnInit,
   }
 
   createLandingPage() {
-    this.clearAlerts()
     if (this.page.default) {
       this.confirmationDialogService.confirmed("Confirm default", "You are about to change the default landing page. Are you sure?", "Change", "Cancel")
       .subscribe(() => {
@@ -83,11 +84,12 @@ export class CreateLandingPageComponent extends BaseComponent implements OnInit,
   }
 
   doCreate() {
+    this.validation.clearErrors()
     this.savePending = true
     this.landingPageService.createLandingPage(this.page.name!, this.page.description, this.page.content, this.page.default!, this.communityId)
     .subscribe((data) => {
       if (this.isErrorDescription(data)) {
-        this.addAlertError(data.error_description)
+        this.validation.applyError(data)
       } else {
         this.clearCachedLandingPageIfNeeded()
         this.cancelCreateLandingPage()

@@ -4,252 +4,379 @@
 			<div class="card-title">Data export</div>
 		</div>
         <form>
-            <div class="card-body">
-				<div class="row pt-2" *ngIf="showDomainOption" [class.mb-3]="exportType != undefined">
-					<legend class="col-3 col-form-label text-end pt-0">* Data to export:</legend>
-					<div class="col-8">
-						<div class="form-check form-check-inline">
-							<input class="form-check-input" type="radio" [(ngModel)]="exportType" name="choice" id="choice_domain" [value]="'domain'" (change)="resetSettings()">
-							<label class="form-check-label" for="choice_domain">{{dataService.labelDomain()}} configuration
-								<div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" [tbTooltip]="'Export the data linked to the conformance testing scenarios, including '+dataService.labelSpecificationsLower()+' and configured test suites. Select this if you want to fully skip the configuration linked to the community\'s members.'"></div>
-							</label>
-						</div>
-						<div class="form-check form-check-inline">
-							<input class="form-check-input" type="radio" [(ngModel)]="exportType" name="choice" id="choice_community" [value]="'community'" (change)="resetSettings()">
-							<label class="form-check-label" for="choice_community">Community configuration
-								<div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Export the data linked to the community. As part of a community's data you may also select to export the data linked to its conformance testing scenarios. Select this to obtain a complete export of all information linked to a community's testing setup."></div>
-							</label>
-						</div>
-						<div class="form-check form-check-inline" *ngIf="dataService.isSystemAdmin">
-							<input class="form-check-input" type="radio" [(ngModel)]="exportType" name="choice" id="choice_system" [value]="'settings'" (change)="resetSettings()">
-							<label class="form-check-label" for="choice_system">System settings
-								<div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Export the settings linked to the entire Test Bed instance."></div>
-							</label>
+            <div class="card-body" [pending]="!loaded">
+				@if (showDomainOption) {
+					<div class="row pt-2">
+						<legend class="col-3 col-form-label text-end pt-0">* Data to export:</legend>
+						<div class="col-8">
+							<div class="form-check form-check-inline">
+								<input class="form-check-input" type="radio" [(ngModel)]="exportType" name="choice" id="choice_domain" [value]="'domain'" (change)="resetSettings()">
+								<label class="form-check-label" for="choice_domain">{{dataService.labelDomain()}} configuration
+									<div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" [tbTooltip]="'Export the data linked to the conformance testing scenarios, including '+dataService.labelSpecificationsLower()+' and configured test suites. Select this if you want to fully skip the configuration linked to the community\'s members.'"></div>
+								</label>
+							</div>
+							<div class="form-check form-check-inline">
+								<input class="form-check-input" type="radio" [(ngModel)]="exportType" name="choice" id="choice_community" [value]="'community'" (change)="resetSettings()">
+								<label class="form-check-label" for="choice_community">Community configuration
+									<div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Export the data linked to the community. As part of a community's data you may also select to export the data linked to its conformance testing scenarios. Select this to obtain a complete export of all information linked to a community's testing setup."></div>
+								</label>
+							</div>
+							@if (dataService.isSystemAdmin) {
+								<div class="form-check form-check-inline">
+									<input class="form-check-input" type="radio" [(ngModel)]="exportType" name="choice" id="choice_system" [value]="'settings'" (change)="resetSettings()">
+									<label class="form-check-label" for="choice_system">System settings
+										<div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Export the settings linked to the entire Test Bed instance."></div>
+									</label>
+								</div>
+								<div class="form-check form-check-inline">
+									<input class="form-check-input" type="radio" [(ngModel)]="exportType" name="choice" id="choice_deletions" [value]="'deletions'" (change)="resetSettings()">
+									<label class="form-check-label" for="choice_deletions">Deletions
+										<div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Export data references that are to be deleted on a target Test Bed instance."></div>
+									</label>
+								</div>
+							}
 						</div>
 					</div>
-				</div>
-				<div [collapse]="exportType == undefined" [isAnimated]="true">
-					<div class="row mb-3" *ngIf="exportType == 'domain'">
-						<label class="col-3 col-form-label text-end" for="domain">* {{dataService.labelDomain()}}:</label>
-						<div class="col-7">
-							<select *ngIf="dataService.isSystemAdmin" class="form-control form-select" id="domain" name="domainSelect" [(ngModel)]="domain">
-                                <option *ngFor="let domain of domains" [ngValue]="domain">{{domain.fname}}</option>
-                            </select>
-							<input *ngIf="dataService.isCommunityAdmin && domain != undefined" class="form-control" id="domain" name="domain" [(ngModel)]="domain.fname" readonly="true"/>
+				}
+				<div [collapse]="formCollapsed" [isAnimated]="true">
+					@if (exportType == 'domain') {
+						<div class="row" [class.mt-3]="showDomainOption">
+							<label class="col-3 col-form-label text-end" for="domain">* {{dataService.labelDomain()}}:</label>
+							<div class="col-6">
+								@if (dataService.isSystemAdmin || (dataService.isCommunityAdmin && dataService.community?.domainId == undefined)) {
+									<select [disabled]="domains.length == 0" class="form-select" id="domain" name="domainSelect" [(ngModel)]="domain">
+										@for (domain of domains; track domain.id) {
+											<option [ngValue]="domain">{{domain.fname}}</option>
+										}
+									</select>
+								} @else if (dataService.isCommunityAdmin && domain != undefined) {
+									<input class="form-control" id="domain" name="domain" [(ngModel)]="domain.fname" readonly="true"/>
+								}
+							</div>
+							<div app-tooltip class="col-auto" [tbTooltip]="'The '+dataService.labelDomainLower()+' to export.'"></div>
 						</div>
-						<div app-tooltip class="col-auto" [tbTooltip]="'The '+dataService.labelDomainLower()+' to export.'"></div>
-					</div>
-					<div class="row mb-3" *ngIf="exportType == 'community'">
-						<label class="col-3 col-form-label text-end" for="community">* Community:</label>
-						<div class="col-7">
-							<select *ngIf="dataService.isSystemAdmin" class="form-control form-select" id="community" [(ngModel)]="community" name="communitySelect">
-                                <option *ngFor="let c of communities" [ngValue]="c">{{c.fname}}</option>
-                            </select>
-							<input *ngIf="dataService.isCommunityAdmin" class="form-control" id="community" name="community" [(ngModel)]="community!.fname" readonly="true"/>
+					} @else if (exportType == 'community') {
+						<div class="row" [class.mt-3]="showDomainOption">
+							<label class="col-3 col-form-label text-end" for="community">* Community:</label>
+							<div class="col-6">
+								@if (dataService.isSystemAdmin) {
+									<select [disabled]="communities.length == 0" class="form-select" id="community" [(ngModel)]="community" name="communitySelect">
+										@for (c of communities; track c.id) {
+											<option [ngValue]="c">{{c.fname}}</option>
+										}
+									</select>
+								}
+								@if (dataService.isCommunityAdmin) {
+									<input class="form-control" id="community" name="community" [(ngModel)]="community!.fname" readonly="true"/>
+								}
+							</div>
+							<div app-tooltip class="col-auto" tbTooltip="The community to export."></div>
 						</div>
-						<div app-tooltip class="col-auto" tbTooltip="The community to export."></div>
-					</div>
-					<div class="row mb-3">
+					}
+					<div class="row mt-3">
 						<label class="col-3 col-form-label text-end" for="encryptionPassword">* Export password:</label>
 						<div class="col-4">
 							<app-secret-input id="encryptionPassword" name="encryptionPassword" [(ngModel)]="settings.encryptionKey"></app-secret-input>
 						</div>
 						<div app-tooltip class="col-auto" tbTooltip="Used to encrypt the exported ZIP archive and also any sensitive values it may include. This password will need to be provided when importing or opening the archive."></div>
 					</div>
-					<div class="row">
-						<div class="offset-1 col-10">
-							<div class="card table-container rounded mb-0">
-								<table class="table table-directive">
-									<thead>
-										<tr>
-											<th class="first-column">
-												<div>
-													<div>Include</div>
-													<div app-tooltip class="col-auto d-inline-flex" container="body" [inline]="true" tbTooltip="The types of data to include in the export."></div>
-												</div>
-											</th>
-											<th class="td-centered second-column"><span>All</span></th>
-											<th>Specific</th>
-											<th class="last-column">
-												<div class="btn-toolbar d-flex justify-content-end">
-													<button class="btn btn-secondary btn-sm" type="button" (click)="allIncludes()" [disabled]="disableAllIncludes()">All</button>
-													<button class="btn btn-secondary btn-sm" type="button" (click)="clearIncludes()" [disabled]="disableClearIncludes()">None</button>
-												</div>
-											</th>
-										</tr>
-									</thead>
-									<tbody>
-										<tr *ngIf="exportType == 'community'">
-											<td class="row-header">
-												<div>
-													<div class="fw-bold pt-0">Community data</div>
-													<div app-tooltip class="col-auto d-inline-flex" [inline]="true" tbTooltip="Data linked to the community and its members."></div>
-												</div>
-											</td>
-											<td class="td-centered second-column">
-												<input class="form-check-input position-static" type="checkbox" name="allCommunityData" [(ngModel)]="allCommunityData" (change)="allCommunityDataChanged()"/>
-											</td>
-											<td colspan="2">
-												<div class="form-check form-check-inline" *ngIf="!dataService.configuration.ssoEnabled">
-													<input class="form-check-input" type="checkbox" id="settingsCommunityAdministrators" name="settingsCommunityAdministrators" [(ngModel)]="settings.communityAdministrators" [disabled]="allCommunityData">
-													<label class="form-check-label" for="settingsCommunityAdministrators">Administrators</label>
-												</div>
-												<div class="form-check form-check-inline">
-													<input class="form-check-input" type="checkbox" id="settingsLandingPages" name="settingsLandingPages" [(ngModel)]="settings.landingPages" [disabled]="allCommunityData">
-													<label class="form-check-label" for="settingsLandingPages">Landing pages</label>
-												</div>
-												<div class="form-check form-check-inline">
-													<input class="form-check-input" type="checkbox" id="settingsLegalNotices" name="settingsLegalNotices" [(ngModel)]="settings.legalNotices" [disabled]="allCommunityData">
-													<label class="form-check-label" for="settingsLegalNotices">Legal notices</label>
-												</div>
-												<div class="form-check form-check-inline">
-													<input class="form-check-input" type="checkbox" id="settingsErrorTemplates" name="settingsErrorTemplates" [(ngModel)]="settings.errorTemplates" [disabled]="allCommunityData">
-													<label class="form-check-label" for="settingsErrorTemplates">Error templates</label>
-												</div>
-												<div class="form-check form-check-inline">
-													<input class="form-check-input" type="checkbox" id="settingsTriggers" name="settingsTriggers" [(ngModel)]="settings.triggers" [disabled]="allCommunityData">
-													<label class="form-check-label" for="settingsTriggers">Triggers</label>
-												</div>
-												<div class="form-check form-check-inline">
-													<input class="form-check-input" type="checkbox" id="settingsResources" name="settingsResources" [(ngModel)]="settings.resources" [disabled]="allCommunityData">
-													<label class="form-check-label" for="settingsResources">Resources</label>
-												</div>
-												<div class="form-check form-check-inline">
-													<input class="form-check-input" type="checkbox" id="settingsCertificateSettings" name="settingsCertificateSettings" [(ngModel)]="settings.certificateSettings" [disabled]="allCommunityData">
-													<label class="form-check-label" for="settingsCertificateSettings">Certificate settings</label>
-												</div>
-												<div class="form-check form-check-inline">
-													<input class="form-check-input" type="checkbox" id="settingsCustomLabels" name="settingsCustomLabels" [(ngModel)]="settings.customLabels" [disabled]="allCommunityData">
-													<label class="form-check-label" for="settingsCustomLabels">Custom labels</label>
-												</div>
-												<div class="form-check form-check-inline">
-													<input class="form-check-input" type="checkbox" id="settingsCustomProperties" name="settingsCustomProperties" [(ngModel)]="settings.customProperties" [disabled]="allCommunityData || isPrerequisiteCustomProperties()">
-													<label class="form-check-label" for="settingsCustomProperties">Custom property definitions</label>
-												</div>
-											</td>
-										</tr>
-										<tr *ngIf="showDomainOption && (exportType == 'community' || exportType == 'domain')">
-											<td class="row-header">
-												<div>
-													<div class="fw-bold pt-0">{{dataService.labelDomain()}} data</div>
-													<div app-tooltip class="col-auto d-inline-flex" [inline]="true" [tbTooltip]="'Data linked to '+dataService.labelSpecificationsLower()+' and the test suites available for testing.'"></div>
-												</div>
-											</td>
-											<td class="td-centered second-column">
-												<input class="form-check-input position-static" type="checkbox" name="allDomainData" [(ngModel)]="allDomainData" (change)="allDomainDataChanged()"/>
-											</td>
-											<td colspan="2">
-												<div class="form-check form-check-inline" *ngIf="exportType == 'community'">
-													<input class="form-check-input" type="checkbox" id="settingsDomain" name="settingsDomain" [(ngModel)]="settings.domain" [disabled]="allDomainData || isPrerequisiteDomain()">
-													<label class="form-check-label" for="settingsDomain">{{dataService.labelDomain()}} configuration</label>
-												</div>
-												<div class="form-check form-check-inline">
-													<input class="form-check-input" type="checkbox" id="settingsDomainParameters" name="settingsDomainParameters" [(ngModel)]="settings.domainParameters" (change)="domainParametersChanged()" [disabled]="allDomainData">
-													<label class="form-check-label" for="settingsDomainParameters">{{dataService.labelDomain()}} parameters</label>
-												</div>
-												<div class="form-check form-check-inline">
-													<input class="form-check-input" type="checkbox" id="settingsSpecifications" name="settingsSpecifications" [(ngModel)]="settings.specifications" (change)="specificationsChanged()" [disabled]="allDomainData || isPrerequisiteSpecifications()">
-													<label class="form-check-label" for="settingsSpecifications">{{dataService.labelSpecifications()}}</label>
-												</div>
-												<div class="form-check form-check-inline">
-													<input class="form-check-input" type="checkbox" id="settingsActors" name="settingsActors" [(ngModel)]="settings.actors" (change)="actorsChanged()" [disabled]="allDomainData || isPrerequisiteActors()">
-													<label class="form-check-label" for="settingsActors">{{dataService.labelActors()}}</label>
-												</div>
-												<div class="form-check form-check-inline">
-													<input class="form-check-input" type="checkbox" id="settingsTestSuites" name="settingsTestSuites" [(ngModel)]="settings.testSuites" (change)="testSuitesChanged()" [disabled]="allDomainData">
-													<label class="form-check-label" for="settingsTestSuites">Test suites</label>
-												</div>
-												<div class="form-check form-check-inline">
-													<input class="form-check-input" type="checkbox" id="settingsEndpoints" name="settingsEndpoints" [(ngModel)]="settings.endpoints" (change)="endpointsChanged()" [disabled]="allDomainData || isPrerequisiteEndpoints()">
-													<label class="form-check-label" for="settingsEndpoints">{{dataService.labelEndpoints()}}</label>
-												</div>
-											</td>
-										</tr>
-										<tr *ngIf="exportType == 'community'">
-											<td class="row-header">
-												<div>
-													<div class="fw-bold pt-0">{{dataService.labelOrganisation()}} data</div>
-													<div app-tooltip class="col-auto d-inline-flex" [inline]="true" [tbTooltip]="'Data linked to the community\'s '+dataService.labelOrganisationsLower()+' and their test configuration.'"></div>
-												</div>
-											</td>
-											<td class="td-centered second-column">
-												<input class="form-check-input position-static" type="checkbox" name="allOrganisationData" [(ngModel)]="allOrganisationData" (change)="allOrganisationDataChanged()"/>
-											</td>
-											<td colspan="2">
-												<div class="form-check form-check-inline">
-													<input class="form-check-input" type="checkbox" id="settingsOrganisations" name="settingsOrganisations" [(ngModel)]="settings.organisations" [disabled]="allOrganisationData || isPrerequisiteOrganisations()">
-													<label class="form-check-label" for="settingsOrganisations">{{dataService.labelOrganisations()}}</label>
-												</div>
-												<div class="form-check form-check-inline" *ngIf="!dataService.configuration.ssoEnabled">
-													<input class="form-check-input" type="checkbox" id="settingsOrganisationUsers" name="settingsOrganisationUsers" [(ngModel)]="settings.organisationUsers" (change)="organisationUsersChanged()" [disabled]="allOrganisationData">
-													<label class="form-check-label" for="settingsOrganisationUsers">Users</label>
-												</div>
-												<div class="form-check form-check-inline">
-													<input class="form-check-input" type="checkbox" id="settingsOrganisationPropertyValues" name="settingsOrganisationPropertyValues" [(ngModel)]="settings.organisationPropertyValues" (change)="organisationPropertyValuesChanged()" [disabled]="allOrganisationData">
-													<label class="form-check-label" for="settingsOrganisationPropertyValues">Custom {{dataService.labelOrganisationLower()}} property values</label>
-												</div>
-												<div class="form-check form-check-inline">
-													<input class="form-check-input" type="checkbox" id="settingsSystems" name="settingsSystems" [(ngModel)]="settings.systems" (change)="systemsChanged()" [disabled]="allOrganisationData || isPrerequisiteSystems()">
-													<label class="form-check-label" for="settingsSystems">{{dataService.labelSystems()}}</label>
-												</div>
-												<div class="form-check form-check-inline">
-													<input class="form-check-input" type="checkbox" id="settingsSystemPropertyValues" name="settingsSystemPropertyValues" [(ngModel)]="settings.systemPropertyValues" (change)="systemPropertyValuesChanged()" [disabled]="allOrganisationData">
-													<label class="form-check-label" for="settingsSystemPropertyValues">Custom {{dataService.labelSystemLower()}} property values</label>
-												</div>
-												<ng-container *ngIf="showDomainOption">
-													<div class="form-check form-check-inline">
-														<input class="form-check-input" type="checkbox" id="settingsStatements" name="settingsStatements" [(ngModel)]="settings.statements" (change)="statementsChanged()" [disabled]="allOrganisationData || isPrerequisiteStatements()">
-														<label class="form-check-label" for="settingsStatements">Conformance statements</label>
+					@if (exportType != 'deletions') {
+						<div class="row mt-3">
+							<div class="offset-1 col-10">
+								<div class="card table-container rounded mb-0">
+									<table class="table table-directive">
+										<thead>
+											<tr>
+												<th class="first-column">
+													<div>
+														<div>Include</div>
+														<div app-tooltip class="col-auto d-inline-flex" container="body" [inline]="true" tbTooltip="The types of data to include in the export."></div>
 													</div>
-													<div class="form-check form-check-inline">
-														<input class="form-check-input" type="checkbox" id="settingsStatementConfigurations" name="settingsStatementConfigurations" [(ngModel)]="settings.statementConfigurations" (change)="statementConfigurationsChanged()" [disabled]="allOrganisationData">
-														<label class="form-check-label" for="settingsStatementConfigurations">Conformance statement property configurations</label>
+												</th>
+												<th class="td-centered second-column"><span>All</span></th>
+												<th>Specific</th>
+												<th class="last-column">
+													<div class="btn-toolbar d-flex justify-content-end">
+														<button class="btn btn-secondary btn-sm" type="button" (click)="allIncludes()" [disabled]="disableAllIncludes()">All</button>
+														<button class="btn btn-secondary btn-sm" type="button" (click)="clearIncludes()" [disabled]="disableClearIncludes()">None</button>
 													</div>
-												</ng-container>
-											</td>
-										</tr>
-										<tr *ngIf="showSystemSettingsOption && (exportType == 'community' || exportType == 'settings')">
-											<td class="row-header">
-												<div>
-													<div class="fw-bold pt-0">System settings</div>
-													<div app-tooltip class="col-auto d-inline-flex" [inline]="true" [tbTooltip]="'System settings for the overall Test Bed instance.'"></div>
-												</div>
-											</td>
-											<td class="td-centered second-column">
-												<input class="form-check-input position-static" type="checkbox" name="allSystemSettingData" [(ngModel)]="allSystemSettingData" (change)="allSystemSettingDataChanged()"/>
-											</td>
-											<td colspan="2">
-												<div class="form-check form-check-inline">
-													<input class="form-check-input" type="checkbox" id="settingsSystemConfigurations" name="settingsSystemConfigurations" [(ngModel)]="settings.systemConfigurations" [disabled]="allSystemSettingData">
-													<label class="form-check-label" for="settingsSystemConfigurations">Configuration settings</label>
-												</div>
-												<div class="form-check form-check-inline" *ngIf="!dataService.configuration.ssoEnabled">
-													<input class="form-check-input" type="checkbox" id="settingsSystemAdministrators" name="settingsSystemAdministrators" [(ngModel)]="settings.systemAdministrators" [disabled]="allSystemSettingData">
-													<label class="form-check-label" for="settingsSystemAdministrators">Administrators</label>
-												</div>
-												<div class="form-check form-check-inline">
-													<input class="form-check-input" type="checkbox" id="settingsDefaultLandingPages" name="settingsDefaultLandingPages" [(ngModel)]="settings.defaultLandingPages" [disabled]="allSystemSettingData">
-													<label class="form-check-label" for="settingsDefaultLandingPages">Default landing pages</label>
-												</div>
-												<div class="form-check form-check-inline">
-													<input class="form-check-input" type="checkbox" id="settingsDefaultLegalNotices" name="settingsDefaultLegalNotices" [(ngModel)]="settings.defaultLegalNotices" [disabled]="allSystemSettingData">
-													<label class="form-check-label" for="settingsDefaultLegalNotices">Default legal notices</label>
-												</div>
-												<div class="form-check form-check-inline">
-													<input class="form-check-input" type="checkbox" id="settingsDefaultErrorTemplates" name="settingsDefaultErrorTemplates" [(ngModel)]="settings.defaultErrorTemplates" [disabled]="allSystemSettingData">
-													<label class="form-check-label" for="settingsDefaultErrorTemplates">Default error templates</label>
-												</div>
-												<div class="form-check form-check-inline">
-													<input class="form-check-input" type="checkbox" id="settingsThemes" name="settingsThemes" [(ngModel)]="settings.themes" [disabled]="allSystemSettingData">
-													<label class="form-check-label" for="settingsThemes">Themes</label>
-												</div>
-											</td>
-										</tr>
-									</tbody>
-								</table>
+												</th>
+											</tr>
+										</thead>
+										<tbody>
+											@if (exportType == 'community') {
+												<tr>
+													<td class="row-header">
+														<div>
+															<div class="fw-bold pt-0">Community data</div>
+															<div app-tooltip class="col-auto d-inline-flex" [inline]="true" tbTooltip="Data linked to the community and its members."></div>
+														</div>
+													</td>
+													<td class="td-centered second-column">
+														<input class="form-check-input position-static" type="checkbox" name="allCommunityData" [(ngModel)]="allCommunityData" (change)="allCommunityDataChanged()"/>
+													</td>
+													<td colspan="2">
+														@if (!dataService.configuration.ssoEnabled) {
+															<div class="form-check form-check-inline">
+																<input class="form-check-input" type="checkbox" id="settingsCommunityAdministrators" name="settingsCommunityAdministrators" [(ngModel)]="settings.communityAdministrators" [disabled]="allCommunityData">
+																<label class="form-check-label" for="settingsCommunityAdministrators">Administrators</label>
+															</div>
+														}
+														<div class="form-check form-check-inline">
+															<input class="form-check-input" type="checkbox" id="settingsLandingPages" name="settingsLandingPages" [(ngModel)]="settings.landingPages" [disabled]="allCommunityData">
+															<label class="form-check-label" for="settingsLandingPages">Landing pages</label>
+														</div>
+														<div class="form-check form-check-inline">
+															<input class="form-check-input" type="checkbox" id="settingsLegalNotices" name="settingsLegalNotices" [(ngModel)]="settings.legalNotices" [disabled]="allCommunityData">
+															<label class="form-check-label" for="settingsLegalNotices">Legal notices</label>
+														</div>
+														<div class="form-check form-check-inline">
+															<input class="form-check-input" type="checkbox" id="settingsErrorTemplates" name="settingsErrorTemplates" [(ngModel)]="settings.errorTemplates" [disabled]="allCommunityData">
+															<label class="form-check-label" for="settingsErrorTemplates">Error templates</label>
+														</div>
+														<div class="form-check form-check-inline">
+															<input class="form-check-input" type="checkbox" id="settingsTriggers" name="settingsTriggers" [(ngModel)]="settings.triggers" [disabled]="allCommunityData">
+															<label class="form-check-label" for="settingsTriggers">Triggers</label>
+														</div>
+														<div class="form-check form-check-inline">
+															<input class="form-check-input" type="checkbox" id="settingsResources" name="settingsResources" [(ngModel)]="settings.resources" [disabled]="allCommunityData">
+															<label class="form-check-label" for="settingsResources">Resources</label>
+														</div>
+														<div class="form-check form-check-inline">
+															<input class="form-check-input" type="checkbox" id="settingsCertificateSettings" name="settingsCertificateSettings" [(ngModel)]="settings.certificateSettings" [disabled]="allCommunityData">
+															<label class="form-check-label" for="settingsCertificateSettings">Report settings</label>
+														</div>
+														<div class="form-check form-check-inline">
+															<input class="form-check-input" type="checkbox" id="settingsCustomLabels" name="settingsCustomLabels" [(ngModel)]="settings.customLabels" [disabled]="allCommunityData">
+															<label class="form-check-label" for="settingsCustomLabels">Custom labels</label>
+														</div>
+														<div class="form-check form-check-inline">
+															<input class="form-check-input" type="checkbox" id="settingsCustomProperties" name="settingsCustomProperties" [(ngModel)]="settings.customProperties" [disabled]="allCommunityData || isPrerequisiteCustomProperties()">
+															<label class="form-check-label" for="settingsCustomProperties">Custom property definitions</label>
+														</div>
+													</td>
+												</tr>
+											}
+											@if ((exportType == 'community' && includeDomainInCommunityExport) || exportType == 'domain') {
+												<tr>
+													<td class="row-header">
+														<div>
+															<div class="fw-bold pt-0">{{dataService.labelDomain()}} data</div>
+															<div app-tooltip class="col-auto d-inline-flex" [inline]="true" [tbTooltip]="'Data linked to '+dataService.labelSpecificationsLower()+' and the test suites available for testing.'"></div>
+														</div>
+													</td>
+													<td class="td-centered second-column">
+														<input class="form-check-input position-static" type="checkbox" name="allDomainData" [(ngModel)]="allDomainData" (change)="allDomainDataChanged()"/>
+													</td>
+													<td colspan="2">
+														@if (exportType == 'community') {
+															<div class="form-check form-check-inline">
+																<input class="form-check-input" type="checkbox" id="settingsDomain" name="settingsDomain" [(ngModel)]="settings.domain" [disabled]="allDomainData || isPrerequisiteDomain()">
+																<label class="form-check-label" for="settingsDomain">{{dataService.labelDomain()}} configuration</label>
+															</div>
+														}
+														<div class="form-check form-check-inline">
+															<input class="form-check-input" type="checkbox" id="settingsDomainParameters" name="settingsDomainParameters" [(ngModel)]="settings.domainParameters" (change)="domainParametersChanged()" [disabled]="allDomainData">
+															<label class="form-check-label" for="settingsDomainParameters">{{dataService.labelDomain()}} parameters</label>
+														</div>
+														<div class="form-check form-check-inline">
+															<input class="form-check-input" type="checkbox" id="settingsSpecifications" name="settingsSpecifications" [(ngModel)]="settings.specifications" (change)="specificationsChanged()" [disabled]="allDomainData || isPrerequisiteSpecifications()">
+															<label class="form-check-label" for="settingsSpecifications">{{dataService.labelSpecifications()}}</label>
+														</div>
+														<div class="form-check form-check-inline">
+															<input class="form-check-input" type="checkbox" id="settingsActors" name="settingsActors" [(ngModel)]="settings.actors" (change)="actorsChanged()" [disabled]="allDomainData || isPrerequisiteActors()">
+															<label class="form-check-label" for="settingsActors">{{dataService.labelActors()}}</label>
+														</div>
+														<div class="form-check form-check-inline">
+															<input class="form-check-input" type="checkbox" id="settingsTestSuites" name="settingsTestSuites" [(ngModel)]="settings.testSuites" (change)="testSuitesChanged()" [disabled]="allDomainData">
+															<label class="form-check-label" for="settingsTestSuites">Test suites</label>
+														</div>
+														<div class="form-check form-check-inline">
+															<input class="form-check-input" type="checkbox" id="settingsEndpoints" name="settingsEndpoints" [(ngModel)]="settings.endpoints" (change)="endpointsChanged()" [disabled]="allDomainData || isPrerequisiteEndpoints()">
+															<label class="form-check-label" for="settingsEndpoints">{{dataService.labelEndpoints()}}</label>
+														</div>
+													</td>
+												</tr>
+											}
+											@if (exportType == 'community') {
+												<tr>
+													<td class="row-header">
+														<div>
+															<div class="fw-bold pt-0">{{dataService.labelOrganisation()}} data</div>
+															<div app-tooltip class="col-auto d-inline-flex" [inline]="true" [tbTooltip]="'Data linked to the community\'s '+dataService.labelOrganisationsLower()+' and their test configuration.'"></div>
+														</div>
+													</td>
+													<td class="td-centered second-column">
+														<input class="form-check-input position-static" type="checkbox" name="allOrganisationData" [(ngModel)]="allOrganisationData" (change)="allOrganisationDataChanged()"/>
+													</td>
+													<td colspan="2">
+														<div class="form-check form-check-inline">
+															<input class="form-check-input" type="checkbox" id="settingsOrganisations" name="settingsOrganisations" [(ngModel)]="settings.organisations" [disabled]="allOrganisationData || isPrerequisiteOrganisations()">
+															<label class="form-check-label" for="settingsOrganisations">{{dataService.labelOrganisations()}}</label>
+														</div>
+														@if (!dataService.configuration.ssoEnabled) {
+															<div class="form-check form-check-inline">
+																<input class="form-check-input" type="checkbox" id="settingsOrganisationUsers" name="settingsOrganisationUsers" [(ngModel)]="settings.organisationUsers" (change)="organisationUsersChanged()" [disabled]="allOrganisationData">
+																<label class="form-check-label" for="settingsOrganisationUsers">Users</label>
+															</div>
+														}
+														<div class="form-check form-check-inline">
+															<input class="form-check-input" type="checkbox" id="settingsOrganisationPropertyValues" name="settingsOrganisationPropertyValues" [(ngModel)]="settings.organisationPropertyValues" (change)="organisationPropertyValuesChanged()" [disabled]="allOrganisationData">
+															<label class="form-check-label" for="settingsOrganisationPropertyValues">Custom {{dataService.labelOrganisationLower()}} property values</label>
+														</div>
+														<div class="form-check form-check-inline">
+															<input class="form-check-input" type="checkbox" id="settingsSystems" name="settingsSystems" [(ngModel)]="settings.systems" (change)="systemsChanged()" [disabled]="allOrganisationData || isPrerequisiteSystems()">
+															<label class="form-check-label" for="settingsSystems">{{dataService.labelSystems()}}</label>
+														</div>
+														<div class="form-check form-check-inline">
+															<input class="form-check-input" type="checkbox" id="settingsSystemPropertyValues" name="settingsSystemPropertyValues" [(ngModel)]="settings.systemPropertyValues" (change)="systemPropertyValuesChanged()" [disabled]="allOrganisationData">
+															<label class="form-check-label" for="settingsSystemPropertyValues">Custom {{dataService.labelSystemLower()}} property values</label>
+														</div>
+														@if (showDomainOption) {
+															<div class="form-check form-check-inline">
+																<input class="form-check-input" type="checkbox" id="settingsStatements" name="settingsStatements" [(ngModel)]="settings.statements" (change)="statementsChanged()" [disabled]="allOrganisationData || isPrerequisiteStatements()">
+																<label class="form-check-label" for="settingsStatements">Conformance statements</label>
+															</div>
+															<div class="form-check form-check-inline">
+																<input class="form-check-input" type="checkbox" id="settingsStatementConfigurations" name="settingsStatementConfigurations" [(ngModel)]="settings.statementConfigurations" (change)="statementConfigurationsChanged()" [disabled]="allOrganisationData">
+																<label class="form-check-label" for="settingsStatementConfigurations">Conformance statement property configurations</label>
+															</div>
+														}
+													</td>
+												</tr>
+											}
+											@if (showSystemSettingsOption && (exportType == 'community' || exportType == 'settings')) {
+												<tr>
+													<td class="row-header">
+														<div>
+															<div class="fw-bold pt-0">System settings</div>
+															<div app-tooltip class="col-auto d-inline-flex" [inline]="true" [tbTooltip]="'System settings for the overall Test Bed instance.'"></div>
+														</div>
+													</td>
+													<td class="td-centered second-column">
+														<input class="form-check-input position-static" type="checkbox" name="allSystemSettingData" [(ngModel)]="allSystemSettingData" (change)="allSystemSettingDataChanged()"/>
+													</td>
+													<td colspan="2">
+														<div class="form-check form-check-inline">
+															<input class="form-check-input" type="checkbox" id="settingsSystemConfigurations" name="settingsSystemConfigurations" [(ngModel)]="settings.systemConfigurations" [disabled]="allSystemSettingData">
+															<label class="form-check-label" for="settingsSystemConfigurations">Configuration settings</label>
+														</div>
+														@if (!dataService.configuration.ssoEnabled) {
+															<div class="form-check form-check-inline">
+																<input class="form-check-input" type="checkbox" id="settingsSystemAdministrators" name="settingsSystemAdministrators" [(ngModel)]="settings.systemAdministrators" [disabled]="allSystemSettingData">
+																<label class="form-check-label" for="settingsSystemAdministrators">Administrators</label>
+															</div>
+														}
+														<div class="form-check form-check-inline">
+															<input class="form-check-input" type="checkbox" id="settingsDefaultLandingPages" name="settingsDefaultLandingPages" [(ngModel)]="settings.defaultLandingPages" [disabled]="allSystemSettingData">
+															<label class="form-check-label" for="settingsDefaultLandingPages">Default landing pages</label>
+														</div>
+														<div class="form-check form-check-inline">
+															<input class="form-check-input" type="checkbox" id="settingsDefaultLegalNotices" name="settingsDefaultLegalNotices" [(ngModel)]="settings.defaultLegalNotices" [disabled]="allSystemSettingData">
+															<label class="form-check-label" for="settingsDefaultLegalNotices">Default legal notices</label>
+														</div>
+														<div class="form-check form-check-inline">
+															<input class="form-check-input" type="checkbox" id="settingsDefaultErrorTemplates" name="settingsDefaultErrorTemplates" [(ngModel)]="settings.defaultErrorTemplates" [disabled]="allSystemSettingData">
+															<label class="form-check-label" for="settingsDefaultErrorTemplates">Default error templates</label>
+														</div>
+														<div class="form-check form-check-inline">
+															<input class="form-check-input" type="checkbox" id="settingsThemes" name="settingsThemes" [(ngModel)]="settings.themes" [disabled]="allSystemSettingData">
+															<label class="form-check-label" for="settingsThemes">Themes</label>
+														</div>
+													</td>
+												</tr>
+											}
+										</tbody>
+									</table>
+								</div>
 							</div>
 						</div>
-					</div>
+					} @else {
+						<div class="row mt-3">
+							<label class="col-3 col-form-label text-end" for="community">{{dataService.labelDomains()}} to delete:</label>
+							<div class="col-5">
+								<app-multi-select-filter [config]="domainsToDeleteConfig!" (apply)="domainsToDeleteChanged($event)"></app-multi-select-filter>
+							</div>
+							<div app-tooltip class="col-auto" [tbTooltip]="'The '+dataService.labelDomainsLower()+' to mark for deletion when the archive will be imported. The matching of existing '+dataService.labelDomainsLower()+' is based on the '+dataService.labelDomainLower()+' API keys.'"></div>
+						</div>
+						<div class="row mt-3 pt-0">
+							<div class="col-7 offset-3">
+								<div class="form-check">
+									<input class="form-check-input" type="checkbox" id="addExtraDomainsForDeletion" name="addExtraDomainsForDeletion" [(ngModel)]="addExtraDomainsForDeletion">
+									<label class="form-check-label" for="addExtraDomainsForDeletion">Add more API keys for deletion
+										<div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Directly add API keys for deletion upon import."></div>
+									</label>
+								</div>
+							</div>
+						</div>
+						<div [collapse]="!addExtraDomainsForDeletion" [isAnimated]="true">
+							@if (extraDomainsForDeletion.length > 0) {
+								@for (key of extraDomainsForDeletion; track key) {
+									<div class="row mt-3 pt-0">
+										<div class="col-5 offset-3">
+											<app-api-key-text [idName]="'domain_key_'+$index" [name]="'domain_key_'+$index"
+												[key]="key" 
+												[supportDelete]="true"
+												[supportCopy]="false"
+												(delete)="deleteExtraDomainKey($index)"></app-api-key-text>
+										</div>
+									</div>
+								}
+							}
+							<div class="row mt-3 pt-0">
+								<div class="col-5 offset-3">
+									<div class="input-group">
+										<input type="text" name="extraDomainKey" class="form-control" placeholder="API key" [(ngModel)]="extraDomainKey">
+										<button class="btn btn-secondary" [disabled]="!textProvided(extraDomainKey)" type="button" (click)="addExtraDomainKey()" containerClass="shortTooltip" container="body" tooltip="Add" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
+											<i class="fa-solid fa-plus"></i>
+										</button>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="row mt-3">
+							<label class="col-3 col-form-label text-end" for="community">Communities to delete:</label>
+							<div class="col-5">
+								<app-multi-select-filter [config]="communitiesToDeleteConfig!" (apply)="communitiesToDeleteChanged($event)"></app-multi-select-filter>
+							</div>
+							<div app-tooltip class="col-auto" [tbTooltip]="'The communities to mark for deletion when the archive will be imported. The matching of existing communities is based on the community API keys.'"></div>
+						</div>
+						<div class="row mt-3 pt-0">
+							<div class="col-7 offset-3">
+								<div class="form-check">
+									<input class="form-check-input" type="checkbox" id="addExtraCommunitiesForDeletion" name="addExtraCommunitiesForDeletion" [(ngModel)]="addExtraCommunitiesForDeletion">
+									<label class="form-check-label" for="addExtraCommunitiesForDeletion">Add more API keys for deletion
+										<div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Directly add API keys for deletion upon import."></div>
+									</label>
+								</div>
+							</div>
+						</div>
+						<div [collapse]="!addExtraCommunitiesForDeletion" [isAnimated]="true">
+							@if (extraCommunitiesForDeletion.length > 0) {
+								@for (key of extraCommunitiesForDeletion; track key) {
+									<div class="row mt-3 pt-0">
+										<div class="col-5 offset-3">
+											<app-api-key-text [idName]="'community_key_'+$index" [name]="'community_key_'+$index"
+												[key]="key" 
+												[supportDelete]="true"
+												[supportCopy]="false"
+												(delete)="deleteExtraCommunityKey($index)"></app-api-key-text>
+										</div>
+									</div>
+								}
+							}
+							<div class="row mt-3 pt-0">
+								<div class="col-5 offset-3">
+									<div class="input-group">
+										<input type="text" name="extraCommunityKey" class="form-control" placeholder="API key" [(ngModel)]="extraCommunityKey">
+										<button class="btn btn-secondary" [disabled]="!textProvided(extraCommunityKey)" type="button" (click)="addExtraCommunityKey()" containerClass="shortTooltip" container="body" tooltip="Add" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
+											<i class="fa-solid fa-plus"></i>
+										</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					}
 				</div>
 			</div>
             <div class="card-footer">

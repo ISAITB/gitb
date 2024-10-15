@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { BaseComponent } from 'src/app/pages/base-component.component';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
@@ -14,14 +14,13 @@ import { Constants } from 'src/app/common/constants';
 import { KeyValue } from 'src/app/types/key-value';
 import { SystemAdministrationTab } from '../../../system-administration/system-administration-tab.enum';
 import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
+import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
   selector: 'app-error-template-details',
-  templateUrl: './error-template-details.component.html',
-  styles: [
-  ]
+  templateUrl: './error-template-details.component.html'
 })
-export class ErrorTemplateDetailsComponent extends BaseComponent implements OnInit, AfterViewInit {
+export class ErrorTemplateDetailsComponent extends BaseComponent implements OnInit {
 
   communityId!: number
   templateId!: number
@@ -32,6 +31,8 @@ export class ErrorTemplateDetailsComponent extends BaseComponent implements OnIn
   deletePending = false
   placeholders: KeyValue[] = []
   tooltipForDefaultCheck!: string
+  validation = new ValidationState()
+  loaded = false
 
   constructor(
     public dataService: DataService,
@@ -42,10 +43,6 @@ export class ErrorTemplateDetailsComponent extends BaseComponent implements OnIn
     private popupService: PopupService,
     private errorService: ErrorService
   ) { super() }
-
-  ngAfterViewInit(): void {
-    this.dataService.focus('name')
-  }
 
   ngOnInit(): void {
     if (this.route.snapshot.paramMap.has(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID)) {
@@ -69,11 +66,13 @@ export class ErrorTemplateDetailsComponent extends BaseComponent implements OnIn
       } else {
         this.routingService.errorTemplateBreadcrumbs(this.communityId, this.templateId, this.template.name!)
       }
+    }).add(() => {
+      this.loaded = true
     })
   }
 
   saveDisabled() {
-    return !this.textProvided(this.template.name) || !this.textProvided(this.template.content)
+    return !this.loaded || !this.textProvided(this.template.name) || !this.textProvided(this.template.content)
   }
 
   updateErrorTemplate(copy: boolean) {
@@ -88,11 +87,12 @@ export class ErrorTemplateDetailsComponent extends BaseComponent implements OnIn
   }
 
   doUpdate(copy: boolean) {
+    this.validation.clearErrors()
     this.savePending = true
     this.errorTemplateService.updateErrorTemplate(this.templateId, this.template.name!, this.template.description, this.template.content, this.template.default!, this.communityId)
     .subscribe((data) => {
       if (this.isErrorDescription(data)) {
-        this.addAlertError(data.error_description)
+        this.validation.applyError(data)
       } else {
         if (copy) {
           this.copyErrorTemplate()
@@ -123,6 +123,7 @@ export class ErrorTemplateDetailsComponent extends BaseComponent implements OnIn
     this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this error template?", "Delete", "Cancel")
     .subscribe(() => {
       this.deletePending = true
+      this.validation.clearErrors()
       this.errorTemplateService.deleteErrorTemplate(this.templateId)
       .subscribe(() => {
         this.cancelDetailErrorTemplate()

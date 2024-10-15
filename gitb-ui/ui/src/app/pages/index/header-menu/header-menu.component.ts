@@ -1,5 +1,4 @@
 import { Component, Input, OnInit } from '@angular/core';
-import { CookieService } from 'ngx-cookie-service';
 import { Constants } from 'src/app/common/constants';
 import { AuthProviderService } from 'src/app/services/auth-provider.service';
 import { DataService } from 'src/app/services/data.service';
@@ -20,8 +19,7 @@ export class HeaderMenuComponent implements OnInit {
   constructor(
     public dataService: DataService,
     private authProviderService: AuthProviderService,
-    public routingService: RoutingService,
-    private cookieService: CookieService
+    public routingService: RoutingService
   ) { }
 
   ngOnInit(): void {
@@ -44,7 +42,7 @@ export class HeaderMenuComponent implements OnInit {
   }
 
 	switchAccount() {
-    this.cookieService.set(Constants.LOGIN_OPTION_COOKIE_KEY, Constants.LOGIN_OPTION.FORCE_CHOICE)
+    this.dataService.recordLoginOption(Constants.LOGIN_OPTION.FORCE_CHOICE)
     this.authProviderService.signalLogout({full: false, keepLoginOption: true})
   }
 

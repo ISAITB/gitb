@@ -1,6 +1,7 @@
 package com.gitb.engine.processing.handlers;
 
 import com.gitb.core.*;
+import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.processing.IProcessingHandler;
 import com.gitb.processing.ProcessingData;
 import com.gitb.processing.ProcessingReport;
@@ -16,6 +17,12 @@ import java.util.GregorianCalendar;
 import java.util.List;
 
 public abstract class AbstractProcessingHandler implements IProcessingHandler {
+
+    protected TestCaseScope scope;
+
+    public void setScope(TestCaseScope scope) {
+        this.scope = scope;
+    }
 
     @Override
     public String beginTransaction(String stepId, List<Configuration> config) {
@@ -94,6 +101,14 @@ public abstract class AbstractProcessingHandler implements IProcessingHandler {
             return getDataForType(data.getData().get(inputName), type);
         }
         return null;
+    }
+
+    <T extends DataType> T getRequiredInputForName(ProcessingData data, String inputName, Class<T> type) {
+        var value = getInputForName(data, inputName, type);
+        if (value == null) {
+            throw new IllegalArgumentException("Required input [%s] not provided".formatted(inputName));
+        }
+        return value;
     }
 
     public abstract ProcessingReport process(String session, String operation, ProcessingData input);

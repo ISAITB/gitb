@@ -6,7 +6,9 @@
 </div>
 <div class="modal-footer">
     <div class="btn-toolbar">
-        <button [ngClass]="cancelClass()" type="button" (click)="cancel()" *ngIf="!oneButton">{{closeButtonText}}</button>
+        @if (!oneButton) {
+            <button [ngClass]="cancelClass()" type="button" (click)="cancel()">{{closeButtonText}}</button>
+        }
         <button [ngClass]="actionClass" type="button" (click)="ok()">{{actionButtonText}}</button>
     </div>
 </div>

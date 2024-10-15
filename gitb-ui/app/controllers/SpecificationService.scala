@@ -37,9 +37,10 @@ class SpecificationService @Inject() (implicit ec: ExecutionContext, authorizedA
             val sname: String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SHORT_NAME)
             val fname: String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.FULL_NAME)
             val descr: Option[String] = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.DESC)
+            val reportMetadata: Option[String] = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.METADATA)
             val hidden = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.HIDDEN).toBoolean
             val groupId = ParameterExtractor.optionalLongBodyParameter(paramMap, Parameters.GROUP_ID)
-            specificationManager.updateSpecification(specId, sname, fname, descr, hidden, groupId, BadgeInfo(badgeInfo._1.get, badgeInfoForReport._1.get))
+            specificationManager.updateSpecification(specId, sname, fname, descr, reportMetadata, hidden, groupId, BadgeInfo(badgeInfo._1.get, badgeInfoForReport._1.get))
             ResponseConstructor.constructEmptyResponse
           }
         }
@@ -63,7 +64,8 @@ class SpecificationService @Inject() (implicit ec: ExecutionContext, authorizedA
     val shortname: String = ParameterExtractor.requiredBodyParameter(request, Parameters.SHORT_NAME)
     val fullname: String = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL_NAME)
     val description: Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
-    specificationManager.updateSpecificationGroup(groupId, shortname, fullname, description)
+    val reportMetadata: Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.METADATA)
+    specificationManager.updateSpecificationGroup(groupId, shortname, fullname, description, reportMetadata)
     ResponseConstructor.constructEmptyResponse
   }
 
@@ -115,6 +117,12 @@ class SpecificationService @Inject() (implicit ec: ExecutionContext, authorizedA
     ResponseConstructor.constructJsonResponse(JsonUtil.jsSpecificationGroups(groups).toString())
   }
 
+  def getDomainSpecificationGroups(domainId: Long) = authorizedAction { request =>
+    authorizationManager.canManageDomain(request, domainId)
+    val groups = specificationManager.getSpecificationGroupsByDomainIds(Some(List(domainId)))
+    ResponseConstructor.constructJsonResponse(JsonUtil.jsSpecificationGroups(groups).toString())
+  }
+
   def getSpecificationGroupsOfDomains() = authorizedAction { request =>
     val domainIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.DOMAIN_IDS)
     authorizationManager.canViewDomains(request, domainIds)
@@ -125,7 +133,7 @@ class SpecificationService @Inject() (implicit ec: ExecutionContext, authorizedA
   def getSpecificationGroup(groupId: Long) = authorizedAction { request =>
     authorizationManager.canManageSpecificationGroup(request, groupId)
     val group = specificationManager.getSpecificationGroupById(groupId)
-    ResponseConstructor.constructJsonResponse(JsonUtil.jsSpecificationGroup(group).toString())
+    ResponseConstructor.constructJsonResponse(JsonUtil.jsSpecificationGroup(group, withApiKeys = true).toString())
   }
 
   def saveSpecificationOrder() = authorizedAction { request =>

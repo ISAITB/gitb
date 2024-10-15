@@ -1,44 +1,46 @@
 import { AfterViewInit, Component, EventEmitter, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { saveAs } from 'file-saver';
+import { find, map } from 'lodash';
 import { BsModalService } from 'ngx-bootstrap/modal';
+import { TabsetComponent } from 'ngx-bootstrap/tabs';
+import { Observable, forkJoin, mergeMap, of } from 'rxjs';
 import { Constants } from 'src/app/common/constants';
+import { CheckboxOption } from 'src/app/components/checkbox-option-panel/checkbox-option';
+import { CheckboxOptionState } from 'src/app/components/checkbox-option-panel/checkbox-option-state';
+import { Counters } from 'src/app/components/test-status-icons/counters';
+import { MissingConfigurationAction } from 'src/app/modals/missing-configuration-modal/missing-configuration-action';
+import { MissingConfigurationModalComponent } from 'src/app/modals/missing-configuration-modal/missing-configuration-modal.component';
+import { CommunityService } from 'src/app/services/community.service';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
 import { OrganisationService } from 'src/app/services/organisation.service';
 import { PopupService } from 'src/app/services/popup.service';
+import { ReportSupportService } from 'src/app/services/report-support.service';
 import { ReportService } from 'src/app/services/report.service';
+import { RoutingService } from 'src/app/services/routing.service';
 import { SystemService } from 'src/app/services/system.service';
 import { TestService } from 'src/app/services/test.service';
-import { ConformanceConfiguration } from './conformance-configuration';
-import { ConformanceEndpoint } from './conformance-endpoint';
+import { ConformanceStatementItem } from 'src/app/types/conformance-statement-item';
+import { EndpointParameter } from 'src/app/types/endpoint-parameter';
+import { LoadingStatus } from 'src/app/types/loading-status.type';
+import { OrganisationParameter } from 'src/app/types/organisation-parameter';
+import { SystemParameter } from 'src/app/types/system-parameter';
+import { ConformanceStatementTab } from './conformance-statement-tab';
 import { ConformanceTestCase } from './conformance-test-case';
 import { ConformanceTestSuite } from './conformance-test-suite';
-import { EndpointRepresentation } from './endpoint-representation';
-import { cloneDeep, find, map, remove } from 'lodash'
-import { ParameterPresetValue } from 'src/app/types/parameter-preset-value';
-import { SystemConfigurationParameter } from 'src/app/types/system-configuration-parameter';
-import { Observable, forkJoin, mergeMap, of } from 'rxjs'
-import { MissingConfigurationModalComponent } from 'src/app/modals/missing-configuration-modal/missing-configuration-modal.component';
-import { EditEndpointConfigurationModalComponent } from 'src/app/modals/edit-endpoint-configuration-modal/edit-endpoint-configuration-modal.component';
-import { RoutingService } from 'src/app/services/routing.service';
-import { TabsetComponent } from 'ngx-bootstrap/tabs';
-import { ConformanceStatementTab } from './conformance-statement-tab';
-import { LoadingStatus } from 'src/app/types/loading-status.type';
-import { MissingConfigurationAction } from 'src/app/components/missing-configuration-display/missing-configuration-action';
-import { Counters } from 'src/app/components/test-status-icons/counters';
-import { saveAs } from 'file-saver'
-import { CheckboxOption } from 'src/app/components/checkbox-option-panel/checkbox-option';
-import { CheckboxOptionState } from 'src/app/components/checkbox-option-panel/checkbox-option-state';
-import { ConformanceStatementItem } from 'src/app/types/conformance-statement-item';
-import { ReportSupportService } from 'src/app/services/report-support.service';
+import { ConfigurationPropertyVisibility } from 'src/app/types/configuration-property-visibility';
+import { CustomProperty } from 'src/app/types/custom-property.type';
+import { BaseComponent } from '../../base-component.component';
+import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
   selector: 'app-conformance-statement',
   templateUrl: './conformance-statement.component.html',
   styleUrls: ['./conformance-statement.component.less']
 })
-export class ConformanceStatementComponent implements OnInit, AfterViewInit {
+export class ConformanceStatementComponent extends BaseComponent implements OnInit, AfterViewInit {
 
   communityId?: number
   communityIdOfStatement!: number
@@ -58,22 +60,20 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
   lastUpdate?: string
   conformanceStatus = ''
   allTestsSuccessful = false
-  endpoints: ConformanceEndpoint[] = []
-  configurations: ConformanceConfiguration[] = []
-  endpointRepresentations: EndpointRepresentation[] = []
-  hasEndpoints = false
-  hasMultipleEndpoints = false
   runTestClicked = false
   deletePending = false
   exportPending = false
+  updateConfigurationPending = false
   tabToShow = ConformanceStatementTab.tests
   @ViewChild('tabs', { static: false }) tabs?: TabsetComponent;
   collapsedDetails = false
   collapsedDetailsFinished = false
   hasBadge = false
-  
   hasDisabledTests = false
   hasOptionalTests = false
+  canEditOrganisationConfiguration = false
+  canEditSystemConfiguration = false
+  canEditStatementConfiguration = false
 
   showResults = new Set<string>([Constants.TEST_CASE_RESULT.SUCCESS, Constants.TEST_CASE_RESULT.FAILURE, Constants.TEST_CASE_RESULT.UNDEFINED]);
   showOptional = true
@@ -103,6 +103,17 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
   snapshotLabel?: string
   isReadonly!: boolean
 
+  organisationProperties: OrganisationParameter[] = []
+  systemProperties: SystemParameter[] = []
+  statementProperties: EndpointParameter[] = []
+  organisationPropertiesCollapsed = false
+  systemPropertiesCollapsed = false
+  statementPropertiesCollapsed = false
+  organisationPropertyVisibility?: ConfigurationPropertyVisibility
+  systemPropertyVisibility?: ConfigurationPropertyVisibility
+  statementPropertyVisibility?: ConfigurationPropertyVisibility
+  propertyValidation = new ValidationState()
+
   constructor(
     public dataService: DataService,
     private route: ActivatedRoute,
@@ -116,8 +127,10 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
     private popupService: PopupService,
     private organisationService: OrganisationService,
     private routingService: RoutingService,
-    private reportSupportService: ReportSupportService
+    private reportSupportService: ReportSupportService,
+    private communityService: CommunityService
   ) { 
+    super()
     // Access the tab to show via router state to have it cleared upon refresh.
     const navigation = router.getCurrentNavigation()
     if (navigation?.extras?.state) {
@@ -193,6 +206,9 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
       this.conformanceStatus = statementData.results.summary.result
       this.allTestsSuccessful = this.conformanceStatus == Constants.TEST_CASE_RESULT.SUCCESS
       this.hasBadge = statementData.results.summary.hasBadge
+      this.canEditOrganisationConfiguration = this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || (this.dataService.isVendorAdmin && (this.dataService.community!.allowPostTestOrganisationUpdates || !this.hasTests))
+      this.canEditSystemConfiguration = this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || (this.dataService.isVendorAdmin && (this.dataService.community!.allowPostTestSystemUpdates || !this.hasTests))
+      this.canEditStatementConfiguration = this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || (this.dataService.isVendorAdmin && (this.dataService.community!.allowPostTestStatementUpdates || !this.hasTests))
       this.prepareTestFilter()
       this.applySearchFilters()
     }).add(() => {
@@ -284,117 +300,31 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
   loadConfigurations() {
     if (this.loadingConfiguration.status == Constants.STATUS.NONE) {
       this.loadingConfiguration.status = Constants.STATUS.PENDING
-      this.conformanceService.getSystemConfigurations(this.actorId, this.systemId)
+      const systemConfiguration = this.systemService.getSystemParameterValues(this.systemId)
+      const organisationConfiguration = this.communityService.getOrganisationParameterValues(this.organisationId)
+      const statementConfiguration = this.conformanceService.getStatementParameterValues(this.actorId, this.systemId)
+      forkJoin([organisationConfiguration, systemConfiguration, statementConfiguration])
       .subscribe((data) => {
-        const endpointsTemp: ConformanceEndpoint[] = []
-        const configurations: ConformanceConfiguration[] = []
-        for (let endpointConfig of data) {
-          let endpoint: ConformanceEndpoint = {
-            id: endpointConfig.id,
-            name: endpointConfig.name,
-            description: endpointConfig.description,
-            parameters: []
-          }
-          for (let parameterConfig of endpointConfig.parameters) {
-            endpoint.parameters.push(parameterConfig)
-            if (parameterConfig.configured) {
-              configurations.push({
-                system: this.systemId,
-                value: parameterConfig.value,
-                endpoint: endpointConfig.id,
-                parameter: parameterConfig.id,
-                mimeType: parameterConfig.mimeType,
-                configured: parameterConfig.configured
-              })
-            }
-          }
-          if (endpoint.parameters.length > 0) {
-            endpointsTemp.push(endpoint)
-          }
-        }
-        this.endpoints = endpointsTemp
-        this.configurations = configurations
-        this.constructEndpointRepresentations()
+        // Organisation properties
+        this.organisationProperties = data[0]
+        // System properties
+        this.systemProperties = data[1]
+        // Statement properties
+        this.statementProperties = data[2]
+        // Determine visibility of properties
+        this.organisationPropertyVisibility = this.dataService.checkPropertyVisibility(this.organisationProperties)
+        this.systemPropertyVisibility = this.dataService.checkPropertyVisibility(this.systemProperties)
+        this.statementPropertyVisibility = this.dataService.checkPropertyVisibility(this.statementProperties)
+        // Initialise validation status
+        this.organisationProperties.forEach((p) => this.propertyValidation.set('organisation'+p.id))
+        this.systemProperties.forEach((p) => this.propertyValidation.set('system'+p.id))
+        this.statementProperties.forEach((p) => this.propertyValidation.set('statement'+p.id))
+        // Highlight validation issues
+        this.applyPropertyValidation()
       }).add(() => {
         this.loadingConfiguration.status = Constants.STATUS.FINISHED
       })
     }
-  }
-
-  checkPrerequisite(parameterMap: {[key: string]: SystemConfigurationParameter}, repr: SystemConfigurationParameter): boolean {
-    if (repr.checkedPrerequisites == undefined) {
-      if (repr.dependsOn != undefined) {
-        let otherPrerequisites = this.checkPrerequisite(parameterMap, parameterMap[repr.dependsOn])
-        let valueCheck = parameterMap[repr.dependsOn].value == repr.dependsOnValue
-        repr.prerequisiteOk = otherPrerequisites && valueCheck
-      } else {
-        repr.prerequisiteOk = true
-      }
-      repr.checkedPrerequisites = true
-    }
-    return repr.prerequisiteOk!
-  }
-
-  constructEndpointRepresentations() {
-    this.endpointRepresentations = []
-    for (let endpoint of this.endpoints) {
-      const endpointRepr: EndpointRepresentation = {
-        id: endpoint.id,
-        name: endpoint.name,
-        description: endpoint.description,
-        parameters: []
-      }
-      const parameterMap: {[key: string]: SystemConfigurationParameter} = {}
-      for (let parameter of endpoint.parameters) {
-        const repr = cloneDeep(parameter)
-        const relevantConfig = find(this.configurations, (config) => {
-          return Number(parameter.id) == Number(config.parameter) && Number(parameter.endpoint) == Number(config.endpoint)
-        })!
-        if (relevantConfig != undefined) {
-          repr.value = relevantConfig.value
-          repr.configured = relevantConfig.configured
-        } else {
-          repr.configured = false
-          repr.value = undefined
-        }
-        if (repr.configured) {
-          if (parameter.kind == 'BINARY') {
-            repr.fileName = parameter.testKey
-            if (relevantConfig.mimeType != undefined) {
-              repr.fileName += this.dataService.extensionFromMimeType(relevantConfig.mimeType)
-            }
-            repr.mimeType = relevantConfig.mimeType
-          } else if (parameter.kind == 'SECRET') {
-            repr.value = '*****'
-          } else if (parameter.kind == 'SIMPLE') {
-            if (parameter.allowedValues != undefined) {
-              const presetValues: ParameterPresetValue[] = JSON.parse(parameter.allowedValues)
-              if (presetValues != undefined && presetValues.length > 0) {
-                const foundPresetValue = find(presetValues, (v) => { return v.value == repr.value } )
-                if (foundPresetValue != undefined) {
-                  repr.valueToShow = foundPresetValue.label
-                }
-              }
-            }
-          }
-        }
-        parameterMap[parameter.name] = repr
-        if (!parameter.hidden || this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin) {
-          endpointRepr.parameters.push(repr)
-        }
-      }
-      let hasVisibleParameters = false
-      for (let p of endpointRepr.parameters) {
-        if (this.checkPrerequisite(parameterMap, p)) {
-          hasVisibleParameters = true
-        }
-      }
-      if (hasVisibleParameters) {
-        this.endpointRepresentations.push(endpointRepr)
-      }
-    }
-    this.hasEndpoints = this.endpointRepresentations.length > 0
-    this.hasMultipleEndpoints = this.endpointRepresentations.length > 1
   }
   
   onExpand(testSuite: ConformanceTestSuite) {
@@ -468,170 +398,173 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
     this.displayedTestSuites = filteredTestSuites
   }
 
-  private executeHeadless(testCases: ConformanceTestCase[]) {
+  private validateConfiguration(testSuite: ConformanceTestSuite|undefined, testCase: ConformanceTestCase|undefined): Observable<boolean> {
+    if (testSuite) {
+      testSuite.executionPending = true
+    } else if (testCase) {
+      testCase.executionPending = true
+    }
     // Check configurations
     const organisationParameterCheck = this.organisationService.checkOrganisationParameterValues(this.organisationId)
     const systemParameterCheck = this.systemService.checkSystemParameterValues(this.systemId)
     const statementParameterCheck = this.conformanceService.checkConfigurations(this.actorId, this.systemId)
     // Check status once everything is loaded.
-    forkJoin([organisationParameterCheck, systemParameterCheck, statementParameterCheck])
-    .subscribe((data) => {
-      const organisationProperties = data[0]
-      const systemProperties = data[1]
-      const endpoints = data[2]
-      const statementProperties = this.dataService.getEndpointParametersToDisplay(endpoints)
-      let organisationConfigurationValid = this.dataService.isMemberConfigurationValid(organisationProperties)
-      let systemConfigurationValid = this.dataService.isMemberConfigurationValid(systemProperties)
-      let configurationValid = this.dataService.isConfigurationValid(endpoints)
-      if (!configurationValid || !systemConfigurationValid || !organisationConfigurationValid) {
-        // Missing configuration.
-        const modalRef = this.modalService.show(MissingConfigurationModalComponent, {
-          class: 'modal-lg',
-          initialState: {
-            organisationProperties: organisationProperties,
-            organisationConfigurationValid: organisationConfigurationValid,
-            systemProperties: systemProperties,
-            systemConfigurationValid: systemConfigurationValid,
-            statementProperties: statementProperties,
-            configurationValid: configurationValid
-          }
-        })
-        modalRef.content?.action.subscribe((actionType: MissingConfigurationAction) => {
-          if (actionType == MissingConfigurationAction.viewStatement) {
+    return forkJoin([organisationParameterCheck, systemParameterCheck, statementParameterCheck]).pipe(
+      mergeMap((data) => {
+        const organisationProperties = data[0]
+        const systemProperties = data[1]
+        const endpoints = data[2]
+        const statementProperties = this.dataService.getEndpointParametersToDisplay(endpoints)
+        let organisationConfigurationValid = this.dataService.isMemberConfigurationValid(organisationProperties)
+        let systemConfigurationValid = this.dataService.isMemberConfigurationValid(systemProperties)
+        let configurationValid = this.dataService.isConfigurationValid(endpoints)
+        if (testSuite) {
+          testSuite.executionPending = false
+        } else if (testCase) {
+          testCase.executionPending = false
+        }
+        if (!configurationValid || !systemConfigurationValid || !organisationConfigurationValid) {
+          // Missing configuration.
+          const modalRef = this.modalService.show(MissingConfigurationModalComponent, {
+            class: 'modal-lg',
+            initialState: {
+              organisationProperties: organisationProperties,
+              organisationConfigurationValid: organisationConfigurationValid,
+              systemProperties: systemProperties,
+              systemConfigurationValid: systemConfigurationValid,
+              statementProperties: statementProperties,
+              configurationValid: configurationValid
+            }
+          })
+          modalRef.content!.action.subscribe((action: MissingConfigurationAction) => {
+            this.organisationPropertiesCollapsed = !action.viewOrganisationProperties
+            this.systemPropertiesCollapsed = !action.viewSystemProperties
+            this.statementPropertiesCollapsed = !action.viewStatementProperties
             this.showConfigurationTab()
-          } else if (actionType == MissingConfigurationAction.viewOrganisation) {
-            if (this.dataService.isVendorUser || this.dataService.isVendorAdmin) {
-              this.routingService.toOwnOrganisationDetails(undefined, true)
-            } else {
-              if (this.dataService.vendor!.id == this.organisationId) {
-                this.routingService.toOwnOrganisationDetails(undefined, true)
-              } else {
-                this.organisationService.getOrganisationBySystemId(this.systemId)
-                .subscribe((data) => {
-                  this.routingService.toOrganisationDetails(data.community, data.id, undefined, true)
-                })
-              }
-            }
-          } else if (actionType == MissingConfigurationAction.viewSystem) {
-            if (this.dataService.isVendorUser || this.dataService.isVendorAdmin) {
-              this.routingService.toOwnSystemDetails(this.systemId, true)
-            } else {
-              if (this.dataService.vendor!.id == this.organisationId) {
-                this.routingService.toOwnSystemDetails(this.systemId, true)
-              } else {
-                this.routingService.toSystemDetails(this.communityId!, this.organisationId, this.systemId, true)
-              }
-            }
-          }
-        })
+          })
+          return modalRef.onHidden!.pipe(
+            mergeMap(() => {
+              return of(false)
+            })
+          )
+        } else {
+          return of(true)
+        }
+      })
+    )
+  }
+
+  private isPropertyValid(property: CustomProperty) {
+    if (property.use == "R") {
+      return property.configured
+    } else {
+      return true
+    }
+  }
+
+  private setPropertyValidation(property: CustomProperty, propertyType: 'organisation'|'system'|'statement') {
+    const invalid = !this.isPropertyValid(property)
+    property.showAsInvalid = invalid
+    this.propertyValidation.update(propertyType+property.id, {
+      invalid: invalid,
+      feedback: (property.kind == "BINARY")?"Required file missing.":"Required value missing."
+    })    
+  }
+
+  private applyPropertyValidation() {
+    this.organisationProperties.forEach(p => this.setPropertyValidation(p, 'organisation'))
+    this.systemProperties.forEach(p => this.setPropertyValidation(p, 'system'))
+    this.statementProperties.forEach(p => this.setPropertyValidation(p, 'statement'))
+  }
+
+  private executeHeadless(testCases: ConformanceTestCase[]) {
+    const testCaseIds = map(testCases, (test) => { return test.id } )
+    this.testService.startHeadlessTestSessions(testCaseIds, this.specId!, this.systemId, this.actorId, this.executionMode == this.executionModeSequential)
+    .subscribe(() => {
+      if (testCaseIds.length == 1) {
+        this.popupService.success('Started test session.<br/>Check <b>Test Sessions</b> for progress.')
       } else {
-        // Proceed with execution.
-        const testCaseIds = map(testCases, (test) => { return test.id } )
-        this.testService.startHeadlessTestSessions(testCaseIds, this.specId!, this.systemId, this.actorId, this.executionMode == this.executionModeSequential)
-        .subscribe(() => {
-          if (testCaseIds.length == 1) {
-            this.popupService.success('Started test session.<br/>Check <b>Test Sessions</b> for progress.')
-          } else {
-            this.popupService.success('Started '+testCaseIds.length+' test sessions.<br/>Check <b>Test Sessions</b> for progress.')
-          }
-        })
+        this.popupService.success('Started '+testCaseIds.length+' test sessions.<br/>Check <b>Test Sessions</b> for progress.')
       }
     })
   }
 
   onTestSelect(test: ConformanceTestCase) {
-    if (this.executionMode == this.executionModeInteractive) {
-      this.dataService.setTestsToExecute([test])
-      if (this.communityId == undefined) {
-        this.routingService.toOwnTestCaseExecution(this.organisationId, this.systemId, this.actorId, test.id)
-      } else {
-        this.routingService.toTestCaseExecution(this.communityId, this.organisationId, this.systemId, this.actorId, test.id)
+    // Check status once everything is loaded.
+    this.validateConfiguration(undefined, test).subscribe((proceed) => {
+      if (proceed) {
+        // Proceed with execution.
+        if (this.executionMode == this.executionModeInteractive) {
+            this.dataService.setTestsToExecute([test])
+            if (this.communityId == undefined) {
+              this.routingService.toOwnTestCaseExecution(this.organisationId, this.systemId, this.actorId, test.id)
+            } else {
+              this.routingService.toTestCaseExecution(this.communityId, this.organisationId, this.systemId, this.actorId, test.id)
+            }
+        } else {
+          this.executeHeadless([test])
+        }
       }
-    } else {
-      this.executeHeadless([test])
-    }
+    })
   }
 
   onTestSuiteSelect(testSuite: ConformanceTestSuite) {
-    const testsToExecute: ConformanceTestCase[] = []
-    for (let testCase of testSuite.testCases) {
-      if (!testCase.disabled) {
-        testsToExecute.push(testCase)
+    // Check status once everything is loaded.
+    this.validateConfiguration(testSuite, undefined).subscribe((proceed) => {
+      if (proceed) {
+        // Proceed with execution.
+        const testsToExecute: ConformanceTestCase[] = []
+        for (let testCase of testSuite.testCases) {
+          if (!testCase.disabled) {
+            testsToExecute.push(testCase)
+          }
+        }
+        if (this.executionMode == this.executionModeInteractive) {
+          this.dataService.setTestsToExecute(testsToExecute)
+          if (this.communityId == undefined) {
+            this.routingService.toOwnTestSuiteExecution(this.organisationId, this.systemId, this.actorId, testSuite.id)
+          } else {
+            this.routingService.toTestSuiteExecution(this.communityId, this.organisationId, this.systemId, this.actorId, testSuite.id)
+          }
+        } else {
+          this.executeHeadless(testsToExecute)
+        }
       }
-    }
-    if (this.executionMode == this.executionModeInteractive) {
-      this.dataService.setTestsToExecute(testsToExecute)
-      if (this.communityId == undefined) {
-        this.routingService.toOwnTestSuiteExecution(this.organisationId, this.systemId, this.actorId, testSuite.id)
-      } else {
-        this.routingService.toTestSuiteExecution(this.communityId, this.organisationId, this.systemId, this.actorId, testSuite.id)
-      }
+    })
+  }
+
+  updateConfigurationDisabled() {
+    return (!this.dataService.customPropertiesValid(this.organisationProperties)) || 
+      (!this.dataService.customPropertiesValid(this.systemProperties)) ||
+      (!this.dataService.customPropertiesValid(this.statementProperties))
+  }
+
+  private updatePropertyConfiguredStatus(property: CustomProperty) {
+    if (property.kind == "SIMPLE") {
+      property.configured = this.textProvided(property.value)
+    } else if (property.kind == "SECRET") {
+      property.configured = (property.changeValue == true && this.textProvided(property.value)) || (!property.changeValue && property.configured == true)
     } else {
-      this.executeHeadless(testsToExecute)
+      property.configured = property.configured || property.file != undefined
     }
   }
 
-  onParameterSelect(parameter: SystemConfigurationParameter) {
-    const oldConfiguration = find(this.configurations, (configuration) => {
-      return parameter.id == configuration.parameter 
-        && configuration.configured 
-        && Number(configuration.endpoint) == Number(parameter.endpoint)
-    })
-    const endpoint = find(this.endpoints, (endpoint) => { return Number(parameter.endpoint) == Number(endpoint.id) })
-    const modalRef = this.modalService.show(EditEndpointConfigurationModalComponent, {
-      class: 'modal-m',
-      initialState: {
-        endpoint: endpoint,
-        parameter: parameter,
-        systemId: this.systemId,
-        oldConfiguration: oldConfiguration
-      }
-    })
-    modalRef.content?.action.subscribe((result: {operation: number, configuration: ConformanceConfiguration}) => {
-      switch (result.operation) {
-        case Constants.OPERATION.ADD:
-          if (result.configuration.configured) {
-            this.configurations.push(result.configuration)
-          }
-          break
-        case Constants.OPERATION.UPDATE:
-          if (oldConfiguration != undefined && result.configuration.configured) {
-            oldConfiguration.value = result.configuration.value
-            oldConfiguration.configured = result.configuration.configured
-            oldConfiguration.mimeType = result.configuration.mimeType
-          }
-          break
-        case Constants.OPERATION.DELETE:
-          if (oldConfiguration != undefined) {
-            remove(this.configurations, (configuration) => {
-              return configuration.parameter == oldConfiguration.parameter &&
-                Number(configuration.endpoint) == Number(oldConfiguration.endpoint)
-            })
-          }
-          break
-        default:
-          break;
-      }
-      this.constructEndpointRepresentations()
-    })
-  }
-
-  onParameterDownload(parameter: SystemConfigurationParameter) {
-    this.systemService.downloadEndpointConfigurationFile(this.systemId, parameter.id, parameter.endpoint)
-    .subscribe((data) => {
-      const extension = this.dataService.extensionFromMimeType(parameter.mimeType)
-      let fileName = parameter.testKey + extension      
-      const blobData = new Blob([data], {type: parameter.mimeType})
-      saveAs(blobData, fileName)
+  updateConfiguration() {
+    this.updateConfigurationPending = true
+    this.conformanceService.updateStatementConfiguration(this.systemId, this.actorId, this.organisationProperties, this.systemProperties, this.statementProperties)
+    .subscribe(() => {
+      this.popupService.success('Configuration updated.')
+    }).add(() => {
+      this.organisationProperties.forEach(p => this.updatePropertyConfiguredStatus(p))
+      this.systemProperties.forEach(p => this.updatePropertyConfiguredStatus(p))
+      this.statementProperties.forEach(p => this.updatePropertyConfiguredStatus(p))
+      this.applyPropertyValidation()
+      this.updateConfigurationPending = false
     })
   }
 
   canDelete() {
     return !this.isReadonly && (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || (this.dataService.isVendorAdmin && this.dataService.community!.allowStatementManagement && (this.dataService.community!.allowPostTestStatementUpdates || !this.hasTests)))
-  }
-
-  canEditParameter(parameter: SystemConfigurationParameter) {
-    return this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || (this.dataService.isVendorAdmin && !parameter.adminOnly && (this.dataService.community!.allowPostTestStatementUpdates || !this.hasTests))
   }
 
   deleteConformanceStatement() {

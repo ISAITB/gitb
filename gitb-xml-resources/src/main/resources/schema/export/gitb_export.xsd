@@ -7,6 +7,7 @@
             <xsd:element name="domains" type="Domains" minOccurs="0"/>
             <xsd:element name="communities" type="Communities" minOccurs="0"/>
             <xsd:element name="settings" type="Settings" minOccurs="0"/>
+            <xsd:element name="deletions" type="Deletions" minOccurs="0"/>
         </xsd:sequence>
         <xsd:attribute name="version" type="xsd:string" use="required"/>
         <xsd:attribute name="timestamp" type="xsd:dateTime" use="required"/>
@@ -38,6 +39,7 @@
                     <xsd:element name="organisations" type="Organisations" minOccurs="0"/>
                     <xsd:element name="administrators" type="CommunityAdministrators" minOccurs="0"/>
                     <xsd:element name="reportStylesheets" type="CommunityReportStylesheets" minOccurs="0"/>
+                    <xsd:element name="reportSettings" type="CommunityReportSettings" minOccurs="0"/>
                 </xsd:sequence>
                 <xsd:attribute name="domain" type="xsd:IDREF"/>
                 <xsd:attribute name="allowCertificateDownload" type="xsd:boolean" default="false"/>
@@ -62,12 +64,23 @@
         </xsd:sequence>
         <xsd:attribute name="reportType" type="ReportType" use="required"/>
     </xsd:complexType>
+    <xsd:complexType name="CommunityReportSetting">
+        <xsd:sequence>
+            <xsd:element name="customPdfService" type="xsd:string" minOccurs="0"/>
+        </xsd:sequence>
+        <xsd:attribute name="reportType" type="ReportType" use="required"/>
+        <xsd:attribute name="signPdfs" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="customPdfs" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="customPdfsWithCustomXml" type="xsd:boolean" default="false"/>
+    </xsd:complexType>
     <xsd:simpleType name="ReportType">
         <xsd:restriction base="xsd:string">
             <xsd:enumeration value="CONFORMANCE_OVERVIEW"/>
             <xsd:enumeration value="CONFORMANCE_STATEMENT"/>
             <xsd:enumeration value="TEST_CASE"/>
             <xsd:enumeration value="TEST_STEP"/>
+            <xsd:enumeration value="CONFORMANCE_OVERVIEW_CERTIFICATE"/>
+            <xsd:enumeration value="CONFORMANCE_STATEMENT_CERTIFICATE"/>
         </xsd:restriction>
     </xsd:simpleType>
     <xsd:complexType name="ConformanceCertificateSettings">
@@ -336,6 +349,11 @@
             <xsd:element name="content" type="xsd:string"/>
         </xsd:sequence>
     </xsd:complexType>
+    <xsd:complexType name="CommunityReportSettings">
+        <xsd:sequence>
+            <xsd:element name="reportSetting" type="CommunityReportSetting" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
     <xsd:complexType name="CommunityResource">
         <xsd:complexContent>
             <xsd:extension base="ExportType">
@@ -452,6 +470,7 @@
                     <xsd:element name="shortName" type="xsd:string"/>
                     <xsd:element name="fullName" type="xsd:string"/>
                     <xsd:element name="description" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="reportMetadata" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="apiKey" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="specifications" type="Specifications" minOccurs="0"/>
                     <xsd:element name="parameters" type="DomainParameters" minOccurs="0"/>
@@ -491,6 +510,7 @@
                     <xsd:element name="shortName" type="xsd:string"/>
                     <xsd:element name="fullName" type="xsd:string"/>
                     <xsd:element name="description" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="reportMetadata" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="apiKey" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="actors" type="Actors" minOccurs="0"/>
                     <xsd:element name="testSuites" type="TestSuites" minOccurs="0"/>
@@ -516,6 +536,8 @@
                     <xsd:element name="shortName" type="xsd:string"/>
                     <xsd:element name="fullName" type="xsd:string"/>
                     <xsd:element name="description" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="reportMetadata" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="apiKey" type="xsd:string" minOccurs="0"/>
                 </xsd:sequence>
                 <xsd:attribute name="displayOrder" type="xsd:short" default="0"/>
             </xsd:extension>
@@ -533,6 +555,7 @@
                     <xsd:element name="actorId" type="xsd:string"/>
                     <xsd:element name="name" type="xsd:string"/>
                     <xsd:element name="description" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="reportMetadata" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="apiKey" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="endpoints" type="Endpoints" minOccurs="0"/>
                     <xsd:element name="badges" type="ConformanceBadges" minOccurs="0"/>
@@ -832,5 +855,11 @@
                 <xsd:attribute name="name" type="xsd:string" use="required"/>
             </xsd:extension>
         </xsd:complexContent>
+    </xsd:complexType>
+    <xsd:complexType name="Deletions">
+        <xsd:sequence>
+            <xsd:element name="community" type="xsd:string" minOccurs="0" maxOccurs="unbounded"/>
+            <xsd:element name="domain" type="xsd:string" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
     </xsd:complexType>
 </xsd:schema>

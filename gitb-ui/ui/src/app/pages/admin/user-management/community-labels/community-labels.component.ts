@@ -17,6 +17,7 @@ export class CommunityLabelsComponent extends BaseComponent implements OnInit {
 
   communityId!: number
   busy = false
+  loaded = false
   Constants = Constants
   labelTypeDescription: {[key:number]: string} = {}
   labels: TypedLabelConfig[] = []
@@ -50,6 +51,8 @@ export class CommunityLabelsComponent extends BaseComponent implements OnInit {
       this.labels.push(labelMap[Constants.LABEL_TYPE.ENDPOINT])
       this.labels.push(labelMap[Constants.LABEL_TYPE.ORGANISATION])
       this.labels.push(labelMap[Constants.LABEL_TYPE.SYSTEM])
+    }).add(() => {
+      this.loaded = true
     })
     this.routingService.communityLabelsBreadcrumbs(this.communityId)
   }

@@ -155,9 +155,13 @@ class UserService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
     if (!Configurations.AUTHENTICATION_SSO_ENABLED) {
       name = Some(ParameterExtractor.requiredBodyParameter(request, Parameters.USER_NAME))
     }
-    val password = ParameterExtractor.optionalBodyParameter(request, Parameters.PASSWORD)
-    userManager.updateUserProfile(userId, name, roleId, password)
-    ResponseConstructor.constructEmptyResponse
+    if (Configurations.DEMOS_ENABLED && Configurations.DEMOS_ACCOUNT == userId && roleId != UserRole.VendorUser.id) {
+      ResponseConstructor.constructErrorResponse(ErrorCodes.CANNOT_UPDATE, "Cannot update the role of the configured demo account.")
+    } else {
+      val password = ParameterExtractor.optionalBodyParameter(request, Parameters.PASSWORD)
+      userManager.updateUserProfile(userId, name, roleId, password)
+      ResponseConstructor.constructEmptyResponse
+    }
   }
 
   /**

@@ -42,6 +42,8 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
                                      parameterManager: ParameterManager,
                                      testResultManager: TestResultManager,
                                      actorManager: ActorManager,
+                                     systemConfigurationManager: SystemConfigurationManager,
+                                     domainManager: DomainManager,
                                      repositoryUtils: RepositoryUtils,
                                      playSessionStore: SessionStore
                                     ) extends BaseManager(dbConfigProvider) {
@@ -123,32 +125,129 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
   }
 
   def canManageConfigurationThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
-    var ok = false
-    if (Configurations.AUTOMATION_API_ENABLED) {
-      val apiKey = request.headers.get(Constants.AutomationHeader)
-      if (apiKey.isDefined) {
-        // Check to see that the API key identifies a community that allows API usage.
-        val community = communityManager.getByApiKey(apiKey.get)
-        if (community.isDefined) {
-          ok = true
-        }
-      }
-    }
+    val ok = restApiEnabledAndValidCommunityKeyDefined(request)
     setAuthResult(request, ok, "You are not allowed to manage configuration properties through the automation API")
   }
 
-  def canManageTestSuitesThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
+  private def restApiEnabledAndValidCommunityKeyDefined(request: RequestWithAttributes[_]): Boolean = {
     var ok = false
     if (Configurations.AUTOMATION_API_ENABLED) {
       val apiKey = request.headers.get(Constants.AutomationHeader)
       if (apiKey.isDefined) {
-        // Check to see that the API key identifies a community that allows API usage.
+        // Validate the community API key.
         val community = communityManager.getByApiKey(apiKey.get)
         if (community.isDefined) {
           ok = true
         }
       }
     }
+    ok
+  }
+
+  private def restApiEnabledAndValidMasterKeyDefined(request: RequestWithAttributes[_]): Boolean = {
+    var ok = false
+    if (Configurations.AUTOMATION_API_ENABLED) {
+      val apiKey = request.headers.get(Constants.AutomationHeader)
+      if (apiKey.isDefined) {
+        // Check to see that the API key is the master API key.
+        val masterApiKey = systemConfigurationManager.getSystemConfiguration(Constants.RestApiAdminKey)
+        if (masterApiKey.flatMap(_.parameter).isDefined && masterApiKey.get.parameter.get == apiKey.get) {
+          ok = true
+        }
+      }
+    }
+    ok
+  }
+
+  def canManageActorThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
+    val ok = restApiEnabledAndValidCommunityKeyDefined(request)
+    setAuthResult(request, ok, "You are not allowed to manage actors through the automation API")
+  }
+
+  def canManageSpecificationThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
+    val ok = restApiEnabledAndValidCommunityKeyDefined(request)
+    setAuthResult(request, ok, "You are not allowed to manage specifications through the automation API")
+  }
+
+  def canManageSpecificationGroupThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
+    val ok = restApiEnabledAndValidCommunityKeyDefined(request)
+    setAuthResult(request, ok, "You are not allowed to manage specification groups through the automation API")
+  }
+
+  def canManageOrganisationThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
+    val ok = restApiEnabledAndValidCommunityKeyDefined(request)
+    setAuthResult(request, ok, "You are not allowed to manage organisations through the automation API")
+  }
+
+  def canManageSystemThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
+    val ok = restApiEnabledAndValidCommunityKeyDefined(request)
+    setAuthResult(request, ok, "You are not allowed to manage systems through the automation API")
+  }
+
+  def canManageAnyCommunityThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
+    val ok = restApiEnabledAndValidMasterKeyDefined(request)
+    setAuthResult(request, ok, "You are not allowed to perform system-level operations through the automation API")
+  }
+
+  def canManageCommunityThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
+    val ok = restApiEnabledAndValidCommunityKeyDefined(request)
+    setAuthResult(request, ok, "You are not allowed to manage communities through the automation API")
+  }
+
+  def canCreateDomainThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
+    val ok = restApiEnabledAndValidMasterKeyDefined(request)
+    setAuthResult(request, ok, "You are not allowed to perform system-level operations through the automation API")
+  }
+
+  def canCreateCommunityThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
+    val ok = restApiEnabledAndValidMasterKeyDefined(request)
+    setAuthResult(request, ok, "You are not allowed to perform system-level operations through the automation API")
+  }
+
+  def canDeleteDomainThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
+    canCreateDomainThroughAutomationApi(request)
+  }
+
+  def canDeleteCommunityThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
+    canCreateCommunityThroughAutomationApi(request)
+  }
+
+  def canUpdateDomainThroughAutomationApi(request: RequestWithAttributes[_], domainKey: Option[String]): Boolean = {
+    var ok = false
+    if (Configurations.AUTOMATION_API_ENABLED) {
+      val apiKey = request.headers.get(Constants.AutomationHeader)
+      if (apiKey.isDefined) {
+        val masterApiKey = systemConfigurationManager.getSystemConfiguration(Constants.RestApiAdminKey)
+        if (masterApiKey.flatMap(_.parameter).isDefined && masterApiKey.get.parameter.get == apiKey.get) {
+          // The API key matches the master API key.
+          ok = true
+        } else {
+          // The API key must match a community.
+          val community = communityManager.getByApiKey(apiKey.get)
+          if (community.isDefined) {
+            if (community.get.domain.isDefined) {
+              // We can only update the domain linked to the community.
+              if (domainKey.isDefined) {
+                // The provided domain key must match the key of the community's domain.
+                val domain = domainManager.getDomainById(community.get.domain.get)
+                ok = domainKey.get == domain.apiKey
+              } else {
+                // We implicitly match the community's domain.
+                ok = true
+              }
+            } else {
+              // We can update any domain.
+              ok = true
+            }
+          }
+        }
+      }
+    }
+    setAuthResult(request, ok, "You are not allowed to update this domain through the automation API")
+  }
+
+  def canManageTestSuitesThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
+    val ok = restApiEnabledAndValidCommunityKeyDefined(request)
     setAuthResult(request, ok, "You are not allowed to manage test suites through the automation API")
   }
 
@@ -1566,7 +1665,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     } else {
       if (isCommunityAdmin(userInfo) && userInfo.organization.isDefined) {
         val communityDomain = getCommunityDomain(userInfo.organization.get.community)
-        if (communityDomain.isDefined && communityDomain.get == domainId) {
+        if (communityDomain.isEmpty || communityDomain.get == domainId) {
           ok = true
         }
       }
@@ -1611,17 +1710,13 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     checkTestBedAdmin(request)
   }
 
+  def canDeleteAnyDomain(request: RequestWithAttributes[_]):Boolean = {
+    checkTestBedAdmin(request)
+  }
+
   def canViewActor(request: RequestWithAttributes[_], actor_id: Long): Boolean = {
     val specId = specificationManager.getSpecificationIdOfActor(actor_id)
     canViewSpecifications(request, Some(List(specId)))
-  }
-
-  def canViewTestCasesByActorId(request: RequestWithAttributes[_], actor_id: Long):Boolean = {
-    canViewActor(request, actor_id)
-  }
-
-  def canViewTestSuitesBySpecificationId(request: RequestWithAttributes[_], spec_id: Long):Boolean = {
-    canViewSpecifications(request, Some(List(spec_id)))
   }
 
   def canViewActorsBySpecificationId(request: RequestWithAttributes[_], spec_id: Long):Boolean = {
@@ -1630,10 +1725,6 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   def canViewSpecificationsByDomainId(request: RequestWithAttributes[_], domain_id: Long):Boolean = {
     canViewDomains(request, Some(List(domain_id)))
-  }
-
-  def canViewActorsBySpecificationIds(request: RequestWithAttributes[_], ids: Option[List[Long]]):Boolean = {
-    canViewSpecifications(request, ids)
   }
 
   private def specificationsMatchDomain(specs: Iterable[Specifications], domainId: Long): Boolean = {
@@ -1833,9 +1924,9 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
       var firstName: String = null
       var lastName: String = null
       if (userAttributes != null) {
-        email = userAttributes.get("email").asInstanceOf[String]
-        firstName = userAttributes.get("firstName").asInstanceOf[String]
-        lastName = userAttributes.get("lastName").asInstanceOf[String]
+        email = userAttributes.get(Constants.UserAttributeEmail).asInstanceOf[String]
+        firstName = userAttributes.get(Constants.UserAttributeFirstName).asInstanceOf[String]
+        lastName = userAttributes.get(Constants.UserAttributeLastName).asInstanceOf[String]
       }
       if (uid == null || email == null || firstName == null || lastName == null) {
         logger.error("User profile did not contain expected information [" + uid + "][" + email + "][" + firstName + "][" + lastName + "]")

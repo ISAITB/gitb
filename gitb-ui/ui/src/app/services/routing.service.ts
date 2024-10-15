@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { NavigationEnd, NavigationExtras, Router } from '@angular/router';
+import { NavigationEnd, NavigationExtras, NavigationStart, Router } from '@angular/router';
 import { CommunityTab } from '../pages/admin/user-management/community/community-details/community-tab.enum';
 import { ConformanceStatementTab } from '../pages/organisation/conformance-statement/conformance-statement-tab';
 import { OrganisationTab } from '../pages/admin/user-management/organisation/organisation-details/OrganisationTab';
@@ -15,8 +15,6 @@ import { BreadcrumbType } from '../types/breadcrumb-type';
 })
 export class RoutingService {
 
-  private navigationMethodExecuted = false
-
   constructor(
     private router: Router,
     private dataService: DataService
@@ -26,55 +24,81 @@ export class RoutingService {
 
   private initialise() {
     this.router.events.subscribe((event) => {
-      if (!this.navigationMethodExecuted && event instanceof NavigationEnd) {
+      if (event instanceof NavigationStart) {
+        // For all navigation except to the login page record it as the last location.
+        if (!event.url.startsWith('/login')) {
+          this.dataService.recordLocationData(event.url)
+        }
+      } else if (event instanceof NavigationEnd) {
         /*
          * We only need to do this matching if we are coming to a page without going through
          * one of the navigation methods (e.g. after a refresh). In other cases we skip this as
          * we always know what menu item applies through the navigate() method.
          */
         setTimeout(() => {
-          if (event.url.startsWith('/home')) {
-            this.dataService.changePage({ menuItem: MenuItem.home })
-          } else if (event.url.startsWith('/login')) {
-            this.dataService.changePage({ menuItem: MenuItem.login })
-          } else if (event.url.startsWith('/settings/profile')) {
-            this.dataService.changePage({ menuItem: MenuItem.myProfile })
-          } else if (event.url.startsWith('/settings/organisation')) {
-            this.dataService.changePage({ menuItem: MenuItem.myOrganisation })
-          } else if (event.url.startsWith('/settings/password')) {
-            this.dataService.changePage({ menuItem: MenuItem.changePassword })
-          } else if (event.url.startsWith('/admin/sessions')) {
-            this.dataService.changePage({ menuItem: MenuItem.sessionDashboard })
-          } else if (event.url.startsWith('/admin/conformance')) {
-            this.dataService.changePage({ menuItem: MenuItem.conformanceDashboard })
-          } else if (event.url.startsWith('/admin/conformance')) {
-            this.dataService.changePage({ menuItem: MenuItem.conformanceDashboard })
-          } else if (event.url.startsWith('/admin/domains')) {
-            this.dataService.changePage({ menuItem: MenuItem.domainManagement })
-          } else if (event.url.startsWith('/admin/users')) {
-            this.dataService.changePage({ menuItem: MenuItem.communityManagement })
-          } else if (event.url.startsWith('/admin/export')) {
-            this.dataService.changePage({ menuItem: MenuItem.dataExport })
-          } else if (event.url.startsWith('/admin/import')) {
-            this.dataService.changePage({ menuItem: MenuItem.dataImport })
-          } else if (event.url.startsWith('/admin/system')) {
-            this.dataService.changePage({ menuItem: MenuItem.systemAdministration })
-          } else if (event.url.startsWith('/organisation/conformance')) {
-            this.dataService.changePage({ menuItem: MenuItem.myConformanceStatements })
-          } else if (event.url.startsWith('/organisation/tests')) {
-            this.dataService.changePage({ menuItem: MenuItem.myTestSessions })
-          } else if (event.url.startsWith('/organisation/test')) {
-            this.dataService.changePage({ menuItem: MenuItem.myConformanceStatements })
-          } else if (event.url.startsWith('/organisation')) {
-            this.dataService.changePage({ menuItem: MenuItem.myOrganisation })
-          }
+          this.changePageForURL(event.url)
         }, 1)
       }
     })
   }
 
+  private changePageForURL(url: string) {
+    if (url.startsWith('/home')) {
+      this.dataService.changePage({ menuItem: MenuItem.home })
+    } else if (url.startsWith('/login')) {
+      this.dataService.changePage({ menuItem: MenuItem.login })
+    } else if (url.startsWith('/settings/profile')) {
+      this.dataService.changePage({ menuItem: MenuItem.myProfile })
+    } else if (url.startsWith('/settings/organisation')) {
+      this.dataService.changePage({ menuItem: MenuItem.myOrganisation })
+    } else if (url.startsWith('/settings/password')) {
+      this.dataService.changePage({ menuItem: MenuItem.changePassword })
+    } else if (url.startsWith('/admin/sessions')) {
+      this.dataService.changePage({ menuItem: MenuItem.sessionDashboard })
+    } else if (url.startsWith('/admin/conformance')) {
+      this.dataService.changePage({ menuItem: MenuItem.conformanceDashboard })
+    } else if (url.startsWith('/admin/conformance')) {
+      this.dataService.changePage({ menuItem: MenuItem.conformanceDashboard })
+    } else if (url.startsWith('/admin/domains')) {
+      this.dataService.changePage({ menuItem: MenuItem.domainManagement })
+    } else if (url.startsWith('/admin/users')) {
+      this.dataService.changePage({ menuItem: MenuItem.communityManagement })
+    } else if (url.startsWith('/admin/export')) {
+      this.dataService.changePage({ menuItem: MenuItem.dataExport })
+    } else if (url.startsWith('/admin/import')) {
+      this.dataService.changePage({ menuItem: MenuItem.dataImport })
+    } else if (url.startsWith('/admin/system')) {
+      this.dataService.changePage({ menuItem: MenuItem.systemAdministration })
+    } else if (url.startsWith('/organisation/conformance')) {
+      this.dataService.changePage({ menuItem: MenuItem.myConformanceStatements })
+    } else if (url.startsWith('/organisation/tests')) {
+      this.dataService.changePage({ menuItem: MenuItem.myTestSessions })
+    } else if (url.startsWith('/organisation/test')) {
+      this.dataService.changePage({ menuItem: MenuItem.myConformanceStatements })
+    } else if (url.startsWith('/organisation')) {
+      this.dataService.changePage({ menuItem: MenuItem.myOrganisation })
+    }
+  }
+
+  toURL(url: string) {
+    this.changePageForURL(url)
+    return this.router.navigateByUrl(url).catch((error) => {
+      console.error("Unable to restore view at: "+url, error.stack)
+      return this.toHome()
+    })
+  }
+
   toHome() {
     return this.navigate(MenuItem.home, ['home'])
+  }
+
+  toStartPage(userId: number) {
+    const previousLocation = this.dataService.retrieveLocationData(userId)
+    if (previousLocation) {
+      return this.toURL(previousLocation)
+    } else {
+      return this.toHome()
+    }
   }
 
   toLogin() {
@@ -117,7 +141,7 @@ export class RoutingService {
     const pathParts = ['admin', 'users', 'community', communityId, 'organisation', organisationId, 'conformance', 'system', systemId, 'actor', actorId]
     if (snapshotId != undefined) {
       pathParts.push('snapshot', snapshotId)
-    }    
+    }
     return this.navigate(MenuItem.communityManagement, pathParts, this.addConformanceStatementExtras(tab, snapshotLabel))
   }
 
@@ -140,14 +164,14 @@ export class RoutingService {
     // The replaceUrl flag causes the route path to be loaded but reusing the current controller (i.e. only the path gets updated), to retain state after refresh.
     if (systemId != undefined) {
       return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'organisation', organisationId, 'conformance'], {
-        queryParams: this.createMultipleQueryParams([ 
+        queryParams: this.createMultipleQueryParams([
           {name: Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID, value: systemId},
           {name: Constants.NAVIGATION_QUERY_PARAM.SNAPSHOT_ID, value: snapshotId}
         ]),
         replaceUrl: replaceUrl
       })
     } else {
-      return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'organisation', organisationId, 'conformance'], { 
+      return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'organisation', organisationId, 'conformance'], {
         queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.SNAPSHOT_ID, snapshotId),
         replaceUrl: replaceUrl
       })
@@ -157,8 +181,8 @@ export class RoutingService {
   toOwnConformanceStatements(organisationId: number, systemId?: number, snapshotId?: number, replaceUrl?: boolean) {
     // The replaceUrl flag causes the route path to be loaded but reusing the current controller (i.e. only the path gets updated), to retain state after refresh.
     if (systemId != undefined) {
-      return this.navigate(MenuItem.myConformanceStatements, ['organisation', 'conformance', organisationId], { 
-        queryParams: this.createMultipleQueryParams([ 
+      return this.navigate(MenuItem.myConformanceStatements, ['organisation', 'conformance', organisationId], {
+        queryParams: this.createMultipleQueryParams([
           {name: Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID, value: systemId},
           {name: Constants.NAVIGATION_QUERY_PARAM.SNAPSHOT_ID, value: snapshotId}
         ]),
@@ -166,7 +190,7 @@ export class RoutingService {
       }
     )
     } else {
-      return this.navigate(MenuItem.myConformanceStatements, ['organisation', 'conformance', organisationId], { 
+      return this.navigate(MenuItem.myConformanceStatements, ['organisation', 'conformance', organisationId], {
         queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.SNAPSHOT_ID, snapshotId),
         replaceUrl: replaceUrl
       })
@@ -505,8 +529,6 @@ export class RoutingService {
   }
 
   private navigate(menuItem: MenuItem, commands: any[], extras?: NavigationExtras|undefined) {
-    this.dataService.changePage({ menuItem: menuItem })
-    this.navigationMethodExecuted = true
     return this.router.navigate(commands, extras)
   }
 

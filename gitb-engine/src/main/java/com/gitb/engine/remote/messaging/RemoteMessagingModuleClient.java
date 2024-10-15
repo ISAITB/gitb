@@ -18,6 +18,7 @@ import com.gitb.tdl.MessagingStep;
 import com.gitb.types.DataType;
 import com.gitb.utils.DataTypeUtils;
 import jakarta.xml.ws.soap.AddressingFeature;
+import org.apache.cxf.endpoint.Client;
 
 import java.net.URL;
 import java.util.List;
@@ -50,7 +51,9 @@ public class RemoteMessagingModuleClient extends RemoteServiceClient implements 
 
 	private MessagingService getServiceClient() {
 		TestCaseUtils.prepareRemoteServiceLookup(getCallProperties());
-		return new MessagingServiceClient(getServiceURL()).getMessagingServicePort(new AddressingFeature(true));
+		var client = new MessagingServiceClient(getServiceURL()).getMessagingServicePort(new AddressingFeature(true));
+		prepareClient((Client)client);
+		return client;
 	}
 
 	@Override

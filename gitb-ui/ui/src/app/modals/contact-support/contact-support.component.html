@@ -3,19 +3,20 @@
 </div>
 <form>
     <div class="modal-body" appFileDropTarget>
-        <app-alert-display [alerts]="alerts" innerClass="col-10 offset-1"></app-alert-display>
         <div class="row mb-3">
             <label class="col-3 col-form-label text-end">* Contact email:</label>
             <div class="col-7">
-                <input id="contact" name="contact" [(ngModel)]="contactAddress" class="form-control" type="text">
+                <input id="contact" name="contact" [(ngModel)]="contactAddress" class="form-control" type="text" [invalid]="validation.get('email')">
             </div>
             <div app-tooltip class="col-auto" tbTooltip="Specify the email at which you would like to receive feedback regarding your request."></div>
         </div>
         <div class="row mb-3">
             <label class="col-3 col-form-label text-end">* Feedback type:</label>
             <div class="col-7">
-                <select class="form-control form-select" name="feedback" [(ngModel)]="feedback">
-                    <option *ngFor="let feedbackType of feedbackTypes" [ngValue]="feedbackType">{{feedbackType.description}}</option>
+                <select class="form-select" name="feedback" [(ngModel)]="feedback">
+                    @for (feedbackType of feedbackTypes; track $index) {
+                        <option [ngValue]="feedbackType">{{feedbackType.description}}</option>
+                    }
                 </select>
             </div>
             <div app-tooltip class="col-auto" tbTooltip="Select the nature of your request to facilitate its processing by support staff."></div>
@@ -26,30 +27,40 @@
                 <app-editor name="contentMessage" [(ngModel)]="contentMessage" [type]="'minimal'" [height]="300"></app-editor>
             </div>
         </div>
-        <div class="row mb-3" *ngIf="showUpload() && attachments.length == 0">
-            <label class="col-3 col-form-label text-end">Attachment(s):</label>
-            <div class="col-7">
-                <app-file-select (onUpload)="attachFile($event)"></app-file-select>
+        @if (showUpload() && attachments.length == 0) {
+            <div class="row mb-3">
+                <label class="col-3 col-form-label text-end">Attachment(s):</label>
+                <div class="col-7">
+                    <app-file-select (onUpload)="attachFile($event)"></app-file-select>
+                </div>
             </div>
-        </div>
-        <div class="row mb-3" *ngFor="let attachment of attachments; let first = first; let index = index"> 
-            <label class="col-3 col-form-label text-end" *ngIf="first">Attachment(s):</label>
-            <div class="col-7" [ngClass]="{'offset-3': !first}">
-                <app-file-select [fileName]="attachment.name" [extraActions]="true" [disableUpload]="true">
-                    <button type="button" class="btn btn-secondary" (click)="removeAttachment(index)" container="body" containerClass="shortTooltip" tooltip="Remove" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-trash"></i></button>
-                </app-file-select>
+        }
+        @for (attachment of attachments; track $index; let first = $first, index = $index) {
+            <div class="row mb-3">
+                @if (first) {
+                    <label class="col-3 col-form-label text-end">Attachment(s):</label>
+                }
+                <div class="col-7" [ngClass]="{'offset-3': !first}">
+                    <app-file-select [fileName]="attachment.name" [extraActions]="true" [disableUpload]="true" [validation]="validation.get('file'+index)">
+                        <button type="button" class="btn btn-secondary" (click)="removeAttachment(index)" container="body" containerClass="shortTooltip" tooltip="Remove" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-trash"></i></button>
+                    </app-file-select>
+                </div>
             </div>
-        </div>
-        <div class="row mb-3" *ngIf="attachments.length > 0 && maximumAttachments > attachments.length">
-            <div class="col-7 offset-3">
-                <app-file-select (onUpload)="attachFile($event)"></app-file-select>
+        }
+        @if (attachments.length > 0 && maximumAttachments > attachments.length) {
+            <div class="row mb-3">
+                <div class="col-7 offset-3">
+                    <app-file-select (onUpload)="attachFile($event)"></app-file-select>
+                </div>
             </div>
-        </div>
-        <div class="row mb-3" *ngIf="showSurveyLink()">
-            <div class="col-12">
-                <div class="alert alert-info rounded mb-0">If you have 10 minutes to spare we would much appreciate if you would complete our feedback survey. Click <a [href]="surveyAddress" target="blank">here</a> to open the survey in a separate window and start.</div>
+        }
+        @if (showSurveyLink()) {
+            <div class="row mb-3">
+                <div class="col-12">
+                    <div class="alert alert-info rounded mb-0">If you have 10 minutes to spare we would much appreciate if you would complete our feedback survey. Click <a [href]="surveyAddress" target="blank">here</a> to open the survey in a separate window and start.</div>
+                </div>
             </div>
-        </div>
+        }
         <div class="row">
             <div class="col-12">
                 <div class="alert alert-info rounded mb-0"><b>Privacy note:</b> The information you provide is treated by the test bed support team and is never shared to other parties. The 'Contact email' you provide is used only to receive a response from the support team. Please refer to the legal notice (link available in the screen's footer) for more information.</div>

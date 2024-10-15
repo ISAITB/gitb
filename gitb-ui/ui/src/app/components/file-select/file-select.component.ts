@@ -1,16 +1,18 @@
-import { Component, ElementRef, EventEmitter, HostListener, Input, OnInit, Output, ViewChild } from '@angular/core';
+import { Component, ElementRef, EventEmitter, HostListener, Input, OnDestroy, OnInit, Output, ViewChild } from '@angular/core';
+import { ReplaySubject, Subscription } from 'rxjs';
 import { Constants } from 'src/app/common/constants';
 import { DataService } from 'src/app/services/data.service';
 import { DragSupportService } from 'src/app/services/drag-support.service';
 import { PopupService } from 'src/app/services/popup.service';
 import { FileData } from 'src/app/types/file-data.type';
+import { InvalidFormControlConfig } from 'src/app/types/invalid-form-control-config';
 
 @Component({
   selector: 'app-file-select',
   templateUrl: './file-select.component.html',
   styleUrls: [ './file-select.component.less' ]
 })
-export class FileSelectComponent implements OnInit {
+export class FileSelectComponent implements OnInit, OnDestroy {
 
   @Input() icon?: string
   @Input() fileName?: string
@@ -19,6 +21,8 @@ export class FileSelectComponent implements OnInit {
   @Input() maxSize!: number
   @Input() extraActions = false
   @Input() disableUpload = false
+  @Input() reset?: EventEmitter<void>
+  @Input() validation?: ReplaySubject<InvalidFormControlConfig>
   @Output() onUpload: EventEmitter<FileData> = new EventEmitter()
   @ViewChild('fileInput') fileInput?: ElementRef
 
@@ -28,6 +32,8 @@ export class FileSelectComponent implements OnInit {
   acceptString?: string
   dragActive = false
   dropActive = false
+  validationStateSubscription?: Subscription
+  hasValidation = false
 
   constructor(
     private dataService: DataService,
@@ -43,6 +49,18 @@ export class FileSelectComponent implements OnInit {
       this.maxSizeKbs = this.dataService.configuration.savedFileMaxSize
       this.maxSize = Number(this.dataService.configuration.savedFileMaxSize) * 1024
     }
+    if (this.reset) {
+      this.reset.subscribe(() => {
+        if (this.fileInput) {
+          this.fileInput.nativeElement.value = null
+        }
+      })
+    }
+    if (this.validation) {
+      this.validationStateSubscription = this.validation.subscribe((status) => {
+        this.hasValidation = status.invalid == true && status.feedback != undefined
+      })
+    }
     this.dragSupport.onDragStartChange$.subscribe(() => {
       if (!this.disableUpload) {
         this.dragActive = true
@@ -57,7 +75,13 @@ export class FileSelectComponent implements OnInit {
       if (!this.disableUpload) {
         this.dragActive = false
       }
-    })    
+    })
+  }
+
+  ngOnDestroy(): void {
+    if (this.validationStateSubscription) {
+      this.validationStateSubscription.unsubscribe()
+    }
   }
 
   onFileChange() {
@@ -69,6 +93,9 @@ export class FileSelectComponent implements OnInit {
     if (file != undefined) {
       if (this.maxSize > 0 && file.size >= this.maxSize) {
         this.popupService.warning('The maximum allowed size for files is '+this.maxSizeKbs+' KBs.')
+        if (this.fileInput) {
+          this.fileInput.nativeElement.value = null
+        }
       } else {
         this.onUpload.emit({
           name: file.name,

@@ -1,5 +1,5 @@
-import { Component, OnInit } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Component, EventEmitter, OnInit } from '@angular/core';
+import { forkJoin, mergeMap, Observable, of } from 'rxjs';
 import { CommunityService } from 'src/app/services/community.service';
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
@@ -10,6 +10,9 @@ import { ExportSettings } from '../../../types/export-settings';
 import { PopupService } from 'src/app/services/popup.service';
 import { saveAs } from 'file-saver'
 import { RoutingService } from 'src/app/services/routing.service';
+import { MultiSelectConfig } from 'src/app/components/multi-select-filter/multi-select-config';
+import { FilterUpdate } from 'src/app/components/test-filter/filter-update';
+import { Constants } from 'src/app/common/constants';
 
 @Component({
   selector: 'app-export',
@@ -19,6 +22,7 @@ import { RoutingService } from 'src/app/services/routing.service';
 export class ExportComponent extends BaseComponent implements OnInit {
 
   showDomainOption = true
+  includeDomainInCommunityExport = true
   showSystemSettingsOption = true
   pending = false
   community?: Community
@@ -30,6 +34,16 @@ export class ExportComponent extends BaseComponent implements OnInit {
   allDomainData = false
   allOrganisationData = false
   allSystemSettingData = false
+  formCollapsed = true
+  loaded = false
+  domainsForDeletion: string[] = []
+  addExtraDomainsForDeletion = false
+  extraDomainsForDeletion: string[] = []
+  extraDomainKey?: string
+  communitiesForDeletion: string[] = []
+  addExtraCommunitiesForDeletion = false
+  extraCommunitiesForDeletion: string[] = []
+  extraCommunityKey?: string
   settings: ExportSettings = {
     landingPages: false,
     errorTemplates: false,
@@ -60,6 +74,9 @@ export class ExportComponent extends BaseComponent implements OnInit {
     systemAdministrators: false,
     systemConfigurations: false
   }
+  domainsToDeleteConfig?: MultiSelectConfig<Domain>
+  communitiesToDeleteConfig?: MultiSelectConfig<Community>
+  Constants = Constants
 
   constructor(
     public dataService: DataService,
@@ -71,18 +88,47 @@ export class ExportComponent extends BaseComponent implements OnInit {
 
   ngOnInit(): void {
     this.resetSettings(true)
+    // Get communities and domains
+    let communities$: Observable<Community[]>
     if (this.dataService.isSystemAdmin) {
-      // Get communities
-      this.communityService.getCommunities([], true)
-      .subscribe((data) => {
-        this.communities = data
-      })
-      // Get domains
-      this.conformanceService.getDomains()
-      .subscribe((data) => {
-        this.domains = data
-      })
+      communities$ = this.communityService.getCommunities([], true)
+    } else {
+      communities$ = of([this.dataService.community!])
     }
+    let domains$: Observable<Domain[]>
+    if (this.dataService.isSystemAdmin) {
+      domains$ = this.conformanceService.getDomains([], true)
+    } else {
+      domains$ = this.conformanceService.getCommunityDomains(this.dataService.community!.id)
+        .pipe(
+          mergeMap((data) => {
+            return of(data.domains)
+          })
+        )
+    }
+    forkJoin([communities$, domains$]).subscribe((data) => {
+      this.communities = data[0]
+      this.domains = data[1]
+      this.domainsToDeleteConfig = {
+        name: "domainsToDelete",
+        textField: "fname",
+        clearItems: new EventEmitter<void>(),
+        replaceItems: new EventEmitter<Domain[]>(),
+        replaceSelectedItems: new EventEmitter<Domain[]>(),
+        filterLabel: `Select ${this.dataService.labelDomainsLower()}...`,
+        loader: () => of(this.domains)
+      }
+      this.communitiesToDeleteConfig = {
+        name: "communitiesToDelete",
+        textField: "fname",
+        clearItems: new EventEmitter<void>(),
+        replaceItems: new EventEmitter<Community[]>(),
+        replaceSelectedItems: new EventEmitter<Community[]>(),
+        filterLabel: `Select communities...`,
+        loader: () => of(this.communities)
+      }
+      this.loaded = true
+    })
     this.routingService.exportBreadcrumbs()
   }
 
@@ -120,7 +166,9 @@ export class ExportComponent extends BaseComponent implements OnInit {
       defaultLegalNotices: false,
       defaultErrorTemplates: false,
       systemAdministrators: false,
-      systemConfigurations: false
+      systemConfigurations: false,
+      domainsToDelete: undefined,
+      communitiesToDelete: undefined
     }
   }
 
@@ -131,24 +179,32 @@ export class ExportComponent extends BaseComponent implements OnInit {
       this.domain = undefined
       this.community = undefined
       this.showSystemSettingsOption = true
-    } else {
+      this.includeDomainInCommunityExport = true
+    } else if (this.dataService.isCommunityAdmin) {
       this.showSystemSettingsOption = false
+      this.community = this.dataService.community
+      if (this.dataService.community!.domain == undefined) {
+        this.domain = undefined
+        this.includeDomainInCommunityExport = false
+      } else {
+        this.domain = this.dataService.community!.domain
+        this.includeDomainInCommunityExport = true
+      }
     }
     if (full) {
-      if (this.dataService.isCommunityAdmin) {
-        this.community = this.dataService.community
-        if (this.dataService.community!.domain != undefined) {
-            this.domain = this.dataService.community!.domain
-            this.exportType = undefined
-        } else {
-            this.exportType = 'community'
-            this.showDomainOption = false
-        }
-        this.domain = this.dataService.community!.domain
-      } else if (this.dataService.isSystemAdmin) { 
-        this.exportType = undefined
-      }    
+      this.exportType = undefined
+      this.domainsForDeletion = []
+      this.communitiesForDeletion = []
+      this.addExtraCommunitiesForDeletion = false
+      this.addExtraDomainsForDeletion = false
+      this.extraDomainKey = undefined
+      this.extraCommunityKey = undefined
+      this.extraDomainsForDeletion = []
+      this.extraCommunitiesForDeletion = []
     }
+    setTimeout(() => {
+      this.formCollapsed = this.exportType == undefined
+    })
   }
 
   allCommunityDataChanged() {
@@ -376,7 +432,15 @@ export class ExportComponent extends BaseComponent implements OnInit {
   }
 
   exportDisabled() {
-    return !((this.exportType == 'domain' && this.domain != undefined || this.exportType == 'community' && this.community != undefined || this.exportType == 'settings') && this.textProvided(this.settings.encryptionKey))
+    return !(
+      this.textProvided(this.settings.encryptionKey) && 
+        (
+          (this.exportType == 'domain' && this.domain != undefined) || 
+          (this.exportType == 'community' && this.community != undefined) || 
+          this.exportType == 'settings' ||
+          (this.exportType == 'deletions' && (this.domainsForDeletion.length > 0 || this.communitiesForDeletion.length > 0 || (this.addExtraDomainsForDeletion && this.extraDomainsForDeletion.length > 0) || (this.addExtraCommunitiesForDeletion && this.extraCommunitiesForDeletion.length > 0)))
+        )
+      )
   }
 
   export() {
@@ -386,8 +450,20 @@ export class ExportComponent extends BaseComponent implements OnInit {
       exportResult = this.conformanceService.exportDomain(this.domain!.id, this.settings)
     } else if (this.exportType == 'community') {
       exportResult = this.communityService.exportCommunity(this.community!.id, this.settings)
-    } else {
+    } else if (this.exportType == 'settings') {
       exportResult = this.communityService.exportSystemSettings(this.settings)
+    } else {
+      this.settings.domainsToDelete = []
+      this.settings.domainsToDelete.push(...this.domainsForDeletion)
+      if (this.addExtraDomainsForDeletion) {
+        this.settings.domainsToDelete.push(...this.extraDomainsForDeletion)
+      }
+      this.settings.communitiesToDelete = []
+      this.settings.communitiesToDelete.push(...this.communitiesForDeletion)
+      if (this.addExtraCommunitiesForDeletion) {
+        this.settings.communitiesToDelete.push(...this.extraCommunitiesForDeletion)
+      }
+      exportResult = this.conformanceService.exportDeletions(this.settings)
     }
     exportResult.subscribe((data) => {
       this.popupService.success('Export successful.')
@@ -397,6 +473,42 @@ export class ExportComponent extends BaseComponent implements OnInit {
     }).add(() => {
       this.pending = false
     })
+  }
+
+  domainsToDeleteChanged(update: FilterUpdate<Domain>) {
+    this.domainsForDeletion = []
+    update.values.active.forEach(domain => {
+      this.domainsForDeletion.push(domain.apiKey!)
+    })
+  }
+
+  communitiesToDeleteChanged(update: FilterUpdate<Community>) {
+    this.communitiesForDeletion = []
+    update.values.active.forEach(community => {
+      this.communitiesForDeletion.push(community.apiKey!)
+    })
+  }
+
+  addExtraDomainKey() {
+    if (this.textProvided(this.extraDomainKey)) {
+      this.extraDomainsForDeletion.push(this.extraDomainKey!.trim())
+      this.extraDomainKey = undefined
+    }
+  }
+
+  addExtraCommunityKey() {
+    if (this.textProvided(this.extraCommunityKey)) {
+      this.extraCommunitiesForDeletion.push(this.extraCommunityKey!.trim())
+      this.extraCommunityKey = undefined
+    }
+  }
+
+  deleteExtraDomainKey(index: number) {
+    this.extraDomainsForDeletion.splice(index, 1)    
+  }
+
+  deleteExtraCommunityKey(index: number) {
+    this.extraCommunitiesForDeletion.splice(index, 1)    
   }
 
 }

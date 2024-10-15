@@ -10,6 +10,10 @@ import { RoutingService } from 'src/app/services/routing.service';
 import { SystemService } from 'src/app/services/system.service';
 import { map } from 'rxjs';
 import { AccountService } from 'src/app/services/account.service';
+import { CommunityService } from 'src/app/services/community.service';
+import { LandingPageService } from 'src/app/services/landing-page.service';
+import { LegalNoticeService } from 'src/app/services/legal-notice.service';
+import { ErrorTemplateService } from 'src/app/services/error-template.service';
 
 @Component({
   selector: 'app-organisation',
@@ -26,10 +30,14 @@ export class OrganisationComponent extends OrganisationDetailsComponent implemen
     popupService: PopupService,
     routingService: RoutingService,
     systemService: SystemService,
+    communityService: CommunityService,
+    landingPageService: LandingPageService,
+    legalNoticeService: LegalNoticeService,
+    errorTemplateService: ErrorTemplateService,
     router: Router,
     private accountService: AccountService
   ) {
-    super(route, confirmationDialogService, organisationService, userService, dataService, popupService, routingService, systemService, router)
+    super(route, confirmationDialogService, organisationService, userService, dataService, popupService, routingService, systemService, communityService, landingPageService, legalNoticeService, errorTemplateService, router)
   }
 
   override getOrganisationId() {
@@ -95,7 +103,6 @@ export class OrganisationComponent extends OrganisationDetailsComponent implemen
   }
 
   override doUpdate() {
-    this.clearAlerts()
     this.savePending = true
     let landingPageIdToUse: number|undefined = undefined
     if (this.showAdminInfo || this.showLandingPage) {

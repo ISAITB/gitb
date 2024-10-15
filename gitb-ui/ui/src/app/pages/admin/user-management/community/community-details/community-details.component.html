@@ -4,28 +4,30 @@
             <div class="card-title">Community details</div>
         </div>
         <form>
-            <div class="card-body">
-                <!-- Error messages -->
-                <app-alert-display [alerts]="alerts" innerClass="col-10 offset-1"></app-alert-display>
-                <app-community-form [community]="community" [admin]="dataService.isSystemAdmin" [domains]="domains"></app-community-form>
+            <div class="card-body" [pending]="!loaded" focus="sname">
+                <app-community-form [community]="community" [admin]="dataService.isSystemAdmin" [domains]="domains" [validation]="validation"></app-community-form>
             </div>
             <div class="card-footer button-container">
                 <div class="btn-toolbar">
-                    <button class="btn btn-secondary" type="submit" (click)="updateCommunity()" [disable]="deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
-                    <button class="btn btn-secondary" type="button" (click)="updateReportSettings()" [disabled]="savePending || deletePending">Edit report settings</button>
-                    <button class="btn btn-secondary" type="button" (click)="updateParameters()" [disabled]="savePending || deletePending">Edit custom member properties</button>
-                    <button class="btn btn-secondary" type="button" (click)="editLabels()" [disabled]="savePending || deletePending">Edit labels</button>
-                    <button class="btn btn-secondary" type="button" *ngIf="dataService.isSystemAdmin" (click)="cancelCommunityDetail()">Back</button>
+                    <button class="btn btn-secondary" type="submit" (click)="updateCommunity()" [disable]="!loaded || deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
+                    <button class="btn btn-secondary" type="button" (click)="updateReportSettings()" [disabled]="!loaded || savePending || deletePending">Edit report settings</button>
+                    <button class="btn btn-secondary" type="button" (click)="updateParameters()" [disabled]="!loaded || savePending || deletePending">Edit custom member properties</button>
+                    <button class="btn btn-secondary" type="button" (click)="editLabels()" [disabled]="!loaded || savePending || deletePending">Edit labels</button>
+                    @if (dataService.isSystemAdmin) {
+                        <button class="btn btn-secondary" type="button" (click)="cancelCommunityDetail()">Back</button>
+                    }
                 </div>
-                <div class="btn-toolbar btn-toolbar-delete" *ngIf="dataService.isSystemAdmin">
-                    <button class="btn btn-outline-danger" type="button" (click)="deleteCommunity()" [disable]="savePending" [pending]="deletePending">Delete</button>
-                </div>
+                @if (dataService.isSystemAdmin) {
+                    <div class="btn-toolbar btn-toolbar-delete">
+                        <button class="btn btn-outline-danger" type="button" (click)="deleteCommunity()" [disable]="!loaded || savePending" [pending]="deletePending">Delete</button>
+                    </div>
+                }
             </div>
         </form>
     </div>
     <div>
         <tabset #tabs>
-            <tab *ngIf="true" (selectTab)="showOrganisations()" customClass="tabClass">
+            <tab (selectTab)="showOrganisations()" customClass="tabClass">
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-building" [text]="dataService.labelOrganisations()"></app-tab-title></ng-template>
                 <!-- Organisations -->
                 <div class="tabPanel">
@@ -64,7 +66,7 @@
                     </div>
                 </div>
             </tab>
-            <tab *ngIf="communityId != Constants.DEFAULT_COMMUNITY_ID" (selectTab)="showAdministrators()" customClass="tabClass">
+            <tab (selectTab)="showAdministrators()" customClass="tabClass">
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-user" text="Administrators"></app-tab-title></ng-template>
                 <!-- Administrators -->
                 <div class="tabPanel">
@@ -83,13 +85,15 @@
                     </div>
                 </div>
             </tab>
-            <tab *ngIf="true" (selectTab)="showLandingPages()" customClass="tabClass">
+            <tab (selectTab)="showLandingPages()" customClass="tabClass">
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-house" text="Landing pages"></app-tab-title></ng-template>
                 <!-- Landing pages -->
                 <div class="tabPanel">
                     <div class="tabControls">
                         <div class="btn-toolbar">
-                            <button [disabled]="testBedLandingPage == undefined" *ngIf="communityId != Constants.DEFAULT_COMMUNITY_ID" type="button" class="btn btn-secondary" (click)="createLandingPage(true)">Copy Test Bed landing page</button>
+                            @if (communityId != Constants.DEFAULT_COMMUNITY_ID) {
+                                <button [disabled]="testBedLandingPage == undefined" type="button" class="btn btn-secondary" (click)="createLandingPage(true)">Copy Test Bed landing page</button>
+                            }
                             <button type="button" class="btn btn-secondary" (click)="createLandingPage(false)">Create landing page</button>
                         </div>
                     </div>
@@ -105,13 +109,15 @@
                     </div>
                 </div>
             </tab>
-            <tab *ngIf="true" (selectTab)="showLegalNotices()" customClass="tabClass">
+            <tab (selectTab)="showLegalNotices()" customClass="tabClass">
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-scale-balanced" text="Legal notices"></app-tab-title></ng-template>
                 <!-- Legal notices -->
                 <div class="tabPanel">
                     <div class="tabControls">
                         <div class="btn-toolbar">
-                            <button [disabled]="testBedLegalNotice == undefined" *ngIf="communityId != Constants.DEFAULT_COMMUNITY_ID" type="button" class="btn btn-secondary" (click)="createLegalNotice(true)">Copy Test Bed legal notice</button>
+                            @if (communityId != Constants.DEFAULT_COMMUNITY_ID) {
+                                <button [disabled]="testBedLegalNotice == undefined" type="button" class="btn btn-secondary" (click)="createLegalNotice(true)">Copy Test Bed legal notice</button>
+                            }
                             <button type="button" class="btn btn-secondary" (click)="createLegalNotice(false)">Create legal notice</button>
                         </div>
                     </div>
@@ -127,13 +133,15 @@
                     </div>
                 </div>
             </tab>
-            <tab *ngIf="true" (selectTab)="showErrorTemplates()" customClass="tabClass">
+            <tab (selectTab)="showErrorTemplates()" customClass="tabClass">
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-bug" text="Error templates"></app-tab-title></ng-template>
                 <!-- error templates -->
                 <div class="tabPanel">
                     <div class="tabControls">
                         <div class="btn-toolbar">
-                            <button [disabled]="testBedErrorTemplate == undefined" *ngIf="communityId != Constants.DEFAULT_COMMUNITY_ID" type="button" class="btn btn-secondary" (click)="createErrorTemplate(true)">Copy Test Bed error template</button>
+                            @if (communityId != Constants.DEFAULT_COMMUNITY_ID) {
+                                <button [disabled]="testBedErrorTemplate == undefined" type="button" class="btn btn-secondary" (click)="createErrorTemplate(true)">Copy Test Bed error template</button>
+                            }
                             <button type="button" class="btn btn-secondary" (click)="createErrorTemplate(false)">Create error template</button>
                         </div>
                     </div>
@@ -149,7 +157,7 @@
                     </div>
                 </div>
             </tab>
-            <tab *ngIf="true" (selectTab)="showTriggers()" customClass="tabClass">
+            <tab (selectTab)="showTriggers()" customClass="tabClass">
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-bolt" text="Triggers"></app-tab-title></ng-template>
                 <!-- Triggers -->
                 <div class="tabPanel">
@@ -168,7 +176,7 @@
                     </div>
                 </div>
             </tab>
-            <tab *ngIf="true" (selectTab)="showResources()" customClass="tabClass">
+            <tab (selectTab)="showResources()" customClass="tabClass">
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-image" text="Resources"></app-tab-title></ng-template>
                 <!-- Community resources -->
                 <div class="tabPanel">
@@ -186,9 +194,12 @@
                                 </ul>
                             </div>
                             <button type="button" class="btn btn-secondary" (click)="downloadAllResources()" [disable]="resources.length == 0 || selectingForDeleteResources" [pending]="downloadAllResourcesPending">Download all</button>
-                            <button type="button" class="btn btn-secondary" (click)="selectDeleteResources()" *ngIf="!selectingForDeleteResources" [disabled]="resources.length == 0 || downloadAllResourcesPending">Delete resources...</button>
-                            <button type="button" class="btn btn-secondary" (click)="cancelDeleteResources()" *ngIf="selectingForDeleteResources" [disabled]="deleteResourcesPending">Cancel</button>
-                            <button type="button" class="btn btn-outline-danger" (click)="confirmDeleteResources()" *ngIf="selectingForDeleteResources" [disable]="!resourcesChecked()" [pending]="deleteResourcesPending">Confirm</button>
+                            @if (!selectingForDeleteResources) {
+                                <button type="button" class="btn btn-secondary" (click)="selectDeleteResources()" [disabled]="resources.length == 0 || downloadAllResourcesPending">Delete resources...</button>
+                            } @else {
+                                <button type="button" class="btn btn-secondary" (click)="cancelDeleteResources()" [disabled]="deleteResourcesPending">Cancel</button>
+                                <button type="button" class="btn btn-outline-danger" (click)="confirmDeleteResources()" [disable]="!resourcesChecked()" [pending]="deleteResourcesPending">Confirm</button>
+                            }
                         </div>
                     </div>
                     <div class="card">

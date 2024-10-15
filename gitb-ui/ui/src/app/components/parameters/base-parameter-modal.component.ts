@@ -3,11 +3,11 @@ import { DataService } from 'src/app/services/data.service';
 import { ParameterReference } from 'src/app/types/parameter-reference';
 import { ParameterModalOptions } from './parameter-modal-options';
 import { find } from 'lodash'
-import { ErrorService } from 'src/app/services/error.service';
 import { Parameter } from 'src/app/types/parameter';
 import { Constants } from 'src/app/common/constants';
 import { BsModalRef } from 'ngx-bootstrap/modal';
 import { Component, Input } from '@angular/core';
+import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({ template: '' })
 export abstract class BaseParameterModalComponent extends BaseComponent {
@@ -22,10 +22,10 @@ export abstract class BaseParameterModalComponent extends BaseComponent {
   reservedKeys?: string[]
   hideInExport = false
   hideInRegistration!: boolean
+  validation = new ValidationState()
 
   constructor(
     private dataService: DataService, 
-    private errorService: ErrorService,
     protected modalInstance: BsModalRef
   ) { super() }
 
@@ -74,8 +74,7 @@ export abstract class BaseParameterModalComponent extends BaseComponent {
       })
     }
 		if (this.existingValues != undefined && finder.bind(this)(nameValue)) {
-			const nameToShow = this.nameLabel.toLowerCase()
-			this.errorService.showSimpleErrorMessage('Invalid '+nameToShow, 'The provided '+nameToShow+' is already defined.')
+      this.validation.invalid('name', 'The provided name is already defined.')
 			return false
     } else {
 			return true
@@ -96,11 +95,11 @@ export abstract class BaseParameterModalComponent extends BaseComponent {
     }
 		if (this.hasKey) {
 			if (this.existingValues != undefined && finder.bind(this)(keyValue)) {
-				this.errorService.showSimpleErrorMessage('Invalid key', 'The provided key is already defined.')
+        this.validation.invalid('key', 'The provided key is already defined.')
       } else if (this.reservedKeys != undefined && finderReserved.bind(this)(keyValue)) {
-				this.errorService.showSimpleErrorMessage('Invalid key', 'The provided key is reserved.')
+        this.validation.invalid('key', 'The provided key is reserved.')
       } else if (!Constants.VARIABLE_NAME_REGEX.test(keyValue)) {
-				this.errorService.showSimpleErrorMessage('Invalid key', 'The provided key is invalid. A key must begin with a character followed by zero or more characters, digits, or one of [\'.\', \'_\', \'-\'].')
+        this.validation.invalid('key', 'The provided key is invalid. A key must begin with a character followed by zero or more characters, digits, or one of [\'.\', \'_\', \'-\'].')
       } else {
 				result = true
       }
@@ -112,6 +111,16 @@ export abstract class BaseParameterModalComponent extends BaseComponent {
 
   cancel() {
     this.modalInstance.hide()
+  }
+
+  validate() {
+    this.validation.clearErrors()
+    if (!this.saveDisabled()) {
+      const validName = this.validName(this.parameter.name!)
+      const validKey = this.validKey(this.parameter.testKey!)
+      return validName && validKey
+    }
+    return false
   }
 
 }

@@ -24,5 +24,6 @@ export interface AppConfigurationProperties {
     mode: string
     automationApiEnabled: boolean
     versionNumber: string
+    hasDefaultLegalNotice: boolean
     
 }

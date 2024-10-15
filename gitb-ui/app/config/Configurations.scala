@@ -2,6 +2,7 @@ package config
 
 import com.gitb.utils.HmacUtils
 import com.typesafe.config.{Config, ConfigFactory}
+import ecas.AuthenticationLevel
 import models.Constants
 import org.apache.commons.lang3.StringUtils
 
@@ -35,6 +36,7 @@ object Configurations {
   var TOKEN_LENGTH = 0
   var TESTBED_SERVICE_URL = ""
   var TESTBED_CLIENT_URL = ""
+  var TESTBED_CLIENT_URL_INTERNAL = ""
 	var TEST_CASE_REPOSITORY_PATH = ""
 
   var EMAIL_ENABLED = false
@@ -96,12 +98,16 @@ object Configurations {
   var AUTHENTICATION_SSO_ENABLED = false
   var AUTHENTICATION_SSO_IN_MIGRATION_PERIOD = false
   var AUTHENTICATION_SSO_LOGIN_URL = ""
+  var AUTHENTICATION_SSO_PREFIX_URL: Option[String] = None
+  var AUTHENTICATION_SSO_AUTHENTICATION_LEVEL: Option[AuthenticationLevel] = None
+  var AUTHENTICATION_SSO_AUTHENTICATION_LEVEL_PARAMETER = "authenticationLevel"
   var AUTHENTICATION_SSO_CALLBACK_URL = ""
   var AUTHENTICATION_SSO_CAS_VERSION: Short = 2
   var AUTHENTICATION_SSO_CUSTOM_PARAMETERS__USER_DETAILS: String = "userDetails"
   var AUTHENTICATION_SSO_USER_ATTRIBUTES__EMAIL: String = "email"
   var AUTHENTICATION_SSO_USER_ATTRIBUTES__FIRST_NAME: String = "firstName"
   var AUTHENTICATION_SSO_USER_ATTRIBUTES__LAST_NAME: String = "lastName"
+  var AUTHENTICATION_SSO_USER_ATTRIBUTES__AUTHENTICATION_LEVEL: String = "authenticationLevel"
   var AUTHENTICATION_SSO_TICKET_VALIDATION_URL_SUFFIX: String = "laxValidate"
 
   var DEMOS_ENABLED = false
@@ -132,10 +138,12 @@ object Configurations {
 
   var API_ROOT = ""
   var AUTOMATION_API_ENABLED = false
+  var AUTOMATION_API_MASTER_KEY: Option[String] = None
   var BUILD_TIMESTAMP = ""
 
   val WELCOME_MESSAGE_DEFAULT = "<h4>The Interoperability Test Bed is a platform for self-service conformance testing against semantic and technical specifications.</h4>"
   var WELCOME_MESSAGE: String = WELCOME_MESSAGE_DEFAULT
+  var SESSION_COOKIE_SECURE: Boolean = false
 
   def versionInfo(): String = {
     if (Constants.VersionNumber.toLowerCase.endsWith("snapshot")) {
@@ -151,9 +159,8 @@ object Configurations {
 
   def loadConfigurations(): Unit = {
     if (!_IS_LOADED) {
-      //Load configuration file
+      // Load configuration file
       val conf:Config = ConfigFactory.load()
-
       //Parse DB Parameters
       DB_DRIVER_CLASS = conf.getString("db.default.driver")
       DB_JDBC_URL     = conf.getString("db.default.url")
@@ -175,6 +182,7 @@ object Configurations {
       SERVER_REQUEST_TIMEOUT_IN_SECONDS = fromEnv("SERVER_REQUEST_TIMEOUT_IN_SECONDS", conf.getString("server.request.timeout.seconds")).toInt
       TESTBED_SERVICE_URL = conf.getString("testbed.service.url")
       TESTBED_CLIENT_URL  = conf.getString("testbed.client.url")
+      TESTBED_CLIENT_URL_INTERNAL = fromEnv("TESTBED_CLIENT_URL_INTERNAL", TESTBED_CLIENT_URL)
 
       TEST_CASE_REPOSITORY_PATH = conf.getString("testcase.repository.path")
 
@@ -185,7 +193,7 @@ object Configurations {
       EMAIL_SMTP_PORT = Option(fromEnv("EMAIL_SMTP_PORT", null)).map(_.toInt)
       EMAIL_SMTP_AUTH_ENABLED = Option(fromEnv("EMAIL_SMTP_AUTH_ENABLED", conf.getString("email.smtp.auth.enabled")).toBoolean)
       EMAIL_SMTP_AUTH_USERNAME = Option(fromEnv("EMAIL_SMTP_AUTH_USERNAME", null))
-      EMAIL_SMTP_AUTH_PASSWORD = Option(fromEnv("EMAIL_SMTP_AUTH_PASSWORD", null))
+      EMAIL_SMTP_AUTH_PASSWORD = Option(fromEnv("EMAIL_SMTP_AUTH_PASSWORD", conf.getString("email.smtp.auth.password")))
       // Collect as Properties object
       EMAIL_SMTP_SSL_ENABLED = Option(fromEnv("EMAIL_SMTP_SSL_ENABLED", conf.getString("email.smtp.ssl.enabled")).toBoolean)
       val sslProtocolsValue = fromEnv("EMAIL_SMTP_SSL_PROTOCOLS", conf.getString("email.smtp.ssl.protocols")).split(",")
@@ -253,14 +261,17 @@ object Configurations {
       }
 
       // Configure HMAC processing
-      val hmacKey = fromEnv("HMAC_KEY", "devKey")
-      val hmacKeyWindow = fromEnv("HMAC_WINDOW", "10000")
+      val hmacKey = fromEnv("HMAC_KEY", conf.getString("hmac.key"))
+      val hmacKeyWindow = fromEnv("HMAC_WINDOW", conf.getString("hmac.window"))
       HmacUtils.configure(hmacKey, hmacKeyWindow.toLong)
 
       AUTHENTICATION_COOKIE_PATH = fromEnv("AUTHENTICATION_COOKIE_PATH", conf.getString("authentication.cookie.path"))
       AUTHENTICATION_SSO_ENABLED = fromEnv("AUTHENTICATION_SSO_ENABLED", conf.getString("authentication.sso.enabled")).toBoolean
       AUTHENTICATION_SSO_IN_MIGRATION_PERIOD = fromEnv("AUTHENTICATION_SSO_IN_MIGRATION_PERIOD", conf.getString("authentication.sso.inMigrationPeriod")).toBoolean
       AUTHENTICATION_SSO_LOGIN_URL = fromEnv("AUTHENTICATION_SSO_LOGIN_URL", conf.getString("authentication.sso.url.login"))
+      AUTHENTICATION_SSO_PREFIX_URL = Option(fromEnv("AUTHENTICATION_SSO_PREFIX_URL", "")).filter(StringUtils.isNotBlank)
+      AUTHENTICATION_SSO_AUTHENTICATION_LEVEL = Option(fromEnv("AUTHENTICATION_SSO_AUTHENTICATION_LEVEL", conf.getString("authentication.sso.authenticationLevel"))).filter(StringUtils.isNotBlank).map(AuthenticationLevel.fromName)
+      AUTHENTICATION_SSO_AUTHENTICATION_LEVEL_PARAMETER = fromEnv("AUTHENTICATION_SSO_AUTHENTICATION_LEVEL_PARAMETER", conf.getString("authentication.sso.authenticationLevelParameter"))
       AUTHENTICATION_SSO_CALLBACK_URL = fromEnv("AUTHENTICATION_SSO_CALLBACK_URL", conf.getString("authentication.sso.url.callback"))
       AUTHENTICATION_SSO_CAS_VERSION = fromEnv("AUTHENTICATION_SSO_CAS_VERSION", conf.getString("authentication.sso.casVersion")).toShort
 
@@ -268,6 +279,7 @@ object Configurations {
       AUTHENTICATION_SSO_USER_ATTRIBUTES__EMAIL = fromEnv("AUTHENTICATION_SSO_USER_ATTRIBUTES__EMAIL", conf.getString("authentication.sso.userAttributes.email"))
       AUTHENTICATION_SSO_USER_ATTRIBUTES__FIRST_NAME = fromEnv("AUTHENTICATION_SSO_USER_ATTRIBUTES__FIRST_NAME", conf.getString("authentication.sso.userAttributes.firstName"))
       AUTHENTICATION_SSO_USER_ATTRIBUTES__LAST_NAME = fromEnv("AUTHENTICATION_SSO_USER_ATTRIBUTES__LAST_NAME", conf.getString("authentication.sso.userAttributes.lastName"))
+      AUTHENTICATION_SSO_USER_ATTRIBUTES__AUTHENTICATION_LEVEL = fromEnv("AUTHENTICATION_SSO_USER_ATTRIBUTES__AUTHENTICATION_LEVEL", conf.getString("authentication.sso.userAttributes.authenticationLevel"))
       AUTHENTICATION_SSO_TICKET_VALIDATION_URL_SUFFIX = fromEnv("AUTHENTICATION_SSO_TICKET_VALIDATION_URL_SUFFIX", conf.getString("authentication.sso.ticketValidationUrlSuffix"))
 
       DEMOS_ENABLED = fromEnv("DEMOS_ENABLED", conf.getString("demos.enabled")).toBoolean
@@ -316,13 +328,20 @@ object Configurations {
       }
       // Input sanitiser - END
 
-      DATA_ARCHIVE_KEY = fromEnv("DATA_ARCHIVE_KEY", "")
+      DATA_ARCHIVE_KEY = fromEnv("DATA_ARCHIVE_KEY", conf.getString("dataArchive.key"))
       DATA_WEB_INIT_ENABLED = fromEnv("DATA_WEB_INIT_ENABLED", "false").toBoolean
       TEST_SESSION_ARCHIVE_THRESHOLD = fromEnv("TEST_SESSION_ARCHIVE_THRESHOLD", conf.getString("testsession.archive.threshold")).toInt
       TEST_SESSION_EMBEDDED_REPORT_DATA_THRESHOLD = fromEnv("TEST_SESSION_EMBEDDED_REPORT_DATA_THRESHOLD", conf.getString("testsession.embeddedReportData.threshold")).toLong
       API_ROOT = conf.getString("apiPrefix")
       PASSWORD_COMPLEXITY_RULE_REGEX = new Regex(conf.getString("passwordComplexityRule"))
       AUTOMATION_API_ENABLED = fromEnv("AUTOMATION_API_ENABLED", "false").toBoolean
+      // Master API key
+      val masterApiKey = fromEnv("AUTOMATION_API_MASTER_KEY", conf.getString("masterApiKey"))
+      if (StringUtils.isNotBlank(masterApiKey)) {
+        AUTOMATION_API_MASTER_KEY = Some(masterApiKey.trim)
+      }
+      // Session cookie
+      SESSION_COOKIE_SECURE = fromEnv("SESSION_SECURE", conf.getString("play.http.session.secure")).toBoolean
       _IS_LOADED = true
     }
   }

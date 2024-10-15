@@ -12,6 +12,7 @@ import { ImportItemState } from '../import-item-state';
 export class ImportItemPreviewComponent implements OnInit {
 
   @Input() tbImportItem!: ImportItemState
+  @Input() importType!: string
   @Output() processStatusChange = new EventEmitter<void>()
   Constants = Constants
   iconTooltip!: string
@@ -27,7 +28,11 @@ export class ImportItemPreviewComponent implements OnInit {
     } else if (this.tbImportItem.match == Constants.IMPORT_ITEM_MATCH.BOTH) {
       this.iconTooltip = "Existing data that was matched by relevant data from the provided archive."
     } else {
-      this.iconTooltip = "Existing data for which no match could be found in the provided archive."
+      if (this.importType == "deletions") {
+        this.iconTooltip = "Existing data matched based on the archive's API keys that will be deleted."
+      } else {
+        this.iconTooltip = "Existing data for which no match could be found in the provided archive."
+      }
     }
     if (this.tbImportItem.type == Constants.IMPORT_ITEM_TYPE.SYSTEM_SETTINGS) {
       this.skipGroupDisplay = true

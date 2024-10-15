@@ -28,7 +28,7 @@ class ErrorHandler @Inject() (legalNoticeManager: LegalNoticeManager) extends Ht
     val requestedWithHeader = request.headers.get("X-Requested-With")
     val acceptHeader = request.headers.get("Accept")
     val errorAsJson = requestedWithHeader.isDefined || (acceptHeader.isDefined && StringUtils.contains(acceptHeader.get.toLowerCase, "application/json"))
-    val errorIdentifier = RandomStringUtils.randomAlphabetic(10).toUpperCase()
+    val errorIdentifier = RandomStringUtils.secure().nextAlphabetic(10).toUpperCase()
     logger.error("Error ["+errorIdentifier+"]", ex)
     if (errorAsJson) {
       val result = ResponseConstructor.constructServerError("Unexpected error", "An unexpected error occurred.", Some(errorIdentifier))

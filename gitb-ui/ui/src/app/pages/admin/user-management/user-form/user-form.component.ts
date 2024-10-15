@@ -1,7 +1,8 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { DataService } from 'src/app/services/data.service';
 import { IdLabel } from 'src/app/types/id-label';
 import { User } from 'src/app/types/user.type';
+import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
   selector: 'app-user-form',
@@ -9,7 +10,7 @@ import { User } from 'src/app/types/user.type';
   styles: [
   ]
 })
-export class UserFormComponent implements OnInit {
+export class UserFormComponent {
 
   @Input() user: Partial<User> = {}
   @Input() new = false
@@ -19,16 +20,16 @@ export class UserFormComponent implements OnInit {
   @Input() showOrganisation = true
   @Input() showChangePassword = true
   @Input() roleReadonly = false
+  @Input() validation?: ValidationState
+
   @Output() passwordChanged = new EventEmitter<boolean>()
+  
   changePassword = false
   passwordFocus = new EventEmitter<boolean>()
 
   constructor(
     public dataService: DataService
   ) { }
-
-  ngOnInit(): void {
-  }
 
   passwordExpanded() {
     this.passwordFocus.emit(true)

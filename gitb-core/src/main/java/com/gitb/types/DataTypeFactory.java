@@ -260,7 +260,7 @@ public class DataTypeFactory {
         try {
             //Primitive Types
             if (data instanceof PrimitiveType) {
-                if (variable.getValue().size() > 0) {
+                if (!variable.getValue().isEmpty()) {
                     data.deserialize(variable.getValue().get(0).getValue().getBytes());
                 }
             }
@@ -287,7 +287,7 @@ public class DataTypeFactory {
             }
             //Complex Types
             else {
-                if(variable.getValue().size() > 0) {
+                if(!variable.getValue().isEmpty()) {
                     data.deserialize(variable.getValue().get(0).getValue().getBytes());
                 }
             }

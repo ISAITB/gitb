@@ -7,17 +7,20 @@ import { CustomProperty } from 'src/app/types/custom-property.type';
 import { SelfRegistrationModel } from 'src/app/types/self-registration-model.type';
 import { SelfRegistrationOption } from 'src/app/types/self-registration-option.type';
 import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
+import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
   selector: 'app-self-registration',
   templateUrl: './self-registration.component.html',
   styles: [
+    '.self-reg-option-table.is-invalid { border-color: var(--bs-form-invalid-color); }'
   ]
 })
 export class SelfRegistrationComponent extends BaseComponent implements OnInit {
 
   @Input() model: SelfRegistrationModel = {}
   @Input() selfRegOptions?: SelfRegistrationOption[]
+  @Input() validation?: ValidationState
   sso: boolean = false
   templateReadonly = false
   communityColumns: TableColumnDefinition[] = [
@@ -81,6 +84,7 @@ export class SelfRegistrationComponent extends BaseComponent implements OnInit {
 
   communityChanged() {
     if (this.model?.selfRegOption) {
+      this.validation?.clear('community')
       this.dataService.setupLabels(this.model.selfRegOption.labels)
       this.adaptTemplateStatus()
       this.setFormFocus()

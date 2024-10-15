@@ -4,21 +4,27 @@
             <div class="card-title">{{dataService.labelDomain()}} details</div>
         </div>
         <form>
-            <div class="card-body">
+            <div class="card-body" [pending]="!loaded" focus="shortName">
                 <div class="row">
                     <div class="col-10 offset-1">
-                        <app-domain-form *ngIf="domain" [domain]="domain"></app-domain-form>
+                        @if (domain) {
+                            <app-domain-form [domain]="domain"></app-domain-form>
+                        }
                     </div>
                 </div>
             </div>
             <div class="card-footer button-container">
                 <div class="btn-toolbar">
-                    <button type="submit" (click)="saveDomainChanges()" class="btn btn-secondary" [disable]="deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
-                    <button type="button" *ngIf="dataService.isSystemAdmin || (dataService.isCommunityAdmin && !dataService.community!.domainId)" (click)="back()" class="btn btn-secondary">Back</button>
+                    <button type="submit" (click)="saveDomainChanges()" class="btn btn-secondary" [disable]="!loaded || deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
+                    @if (dataService.isSystemAdmin || (dataService.isCommunityAdmin && !dataService.community!.domainId)) {
+                        <button type="button" (click)="back()" class="btn btn-secondary">Back</button>
+                    }
                 </div>
-                <div class="btn-toolbar btn-toolbar-delete" *ngIf="dataService.isSystemAdmin">
-                    <button type="button" (click)="deleteDomain()" class="btn btn-outline-danger" [disable]="savePending" [pending]="deletePending">Delete</button>
-                </div>
+                @if (dataService.isSystemAdmin) {
+                    <div class="btn-toolbar btn-toolbar-delete">
+                        <button type="button" (click)="deleteDomain()" class="btn btn-outline-danger" [disable]="!loaded || savePending" [pending]="deletePending">Delete</button>
+                    </div>
+                }
             </div>
         </form>
     </div>
@@ -29,7 +35,9 @@
                 <div class="tabPanel">
                     <div class="tabControls">
                         <div class="btn-toolbar">
-                            <button *ngIf="specifications.length > 0" type="button" class="btn btn-secondary" (click)="uploadTestSuite()">Upload test suite</button>
+                            @if (specifications.length > 0) {
+                                <button type="button" class="btn btn-secondary" (click)="uploadTestSuite()">Upload test suite</button>
+                            }
                             <div class="btn-group" dropdown>
                                 <button type="button" class="btn btn-secondary" (click)="createSpecification()">Create {{dataService.labelSpecificationLower()}}</button>
                                 <button id="button-create-spec" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
@@ -40,42 +48,43 @@
                                     <li role="menuitem"><a class="dropdown-item" href (click)="createSpecificationGroup();$event.preventDefault();">Create {{dataService.labelSpecificationGroupLower()}}</a></li>
                                 </ul>
                             </div>
-                            <div class="btn-group" dropdown *ngIf="specificationGroups.length > 0">
-                                <button id="button-option-visibility" (click)="$event.stopPropagation()" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-option-visibility">View {{dataService.labelSpecificationInGroupsLower()}}<span class="caret withMargin"></span></button>
-                                <ul id="dropdown-option-visibility" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-option-visibility">
-                                    <li role="menuitem"><a class="dropdown-item" href (click)="toggleSpecificationGroupCollapse(false);$event.preventDefault();">Show {{dataService.labelSpecificationInGroupsLower()}}</a></li>
-                                    <li role="menuitem"><a class="dropdown-item" href (click)="toggleSpecificationGroupCollapse(true);$event.preventDefault();">Hide {{dataService.labelSpecificationInGroupsLower()}}</a></li>
-                                </ul>
-                            </div>
-                            <div class="btn-group" dropdown *ngIf="specifications.length > 1">
-                                <button [pending]="saveOrderPending" type="button" class="btn btn-secondary" (click)="saveOrdering()">Save {{dataService.labelSpecificationLower()}} order</button>
-                                <button id="button-order" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
-                                    <span class="caret"></span>
-                                    <span class="sr-only visually-hidden">Reset {{dataService.labelSpecificationLower()}} order</span>
-                                </button>
-                                <ul id="dropdown-order" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-order">
-                                    <li role="menuitem"><a class="dropdown-item" href (click)="resetOrdering();$event.preventDefault();">Reset {{dataService.labelSpecificationLower()}} order</a></li>
-                                </ul>
-                            </div>
+                            @if (specificationGroups.length > 0) {
+                                <div class="btn-group" dropdown>
+                                    <button id="button-option-visibility" (click)="$event.stopPropagation()" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-option-visibility">View {{dataService.labelSpecificationInGroupsLower()}}<span class="caret withMargin"></span></button>
+                                    <ul id="dropdown-option-visibility" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-option-visibility">
+                                        <li role="menuitem"><a class="dropdown-item" href (click)="toggleSpecificationGroupCollapse(false);$event.preventDefault();">Show {{dataService.labelSpecificationInGroupsLower()}}</a></li>
+                                        <li role="menuitem"><a class="dropdown-item" href (click)="toggleSpecificationGroupCollapse(true);$event.preventDefault();">Hide {{dataService.labelSpecificationInGroupsLower()}}</a></li>
+                                    </ul>
+                                </div>
+                            }
+                            @if (specifications.length > 1) {
+                                <div class="btn-group" dropdown>
+                                    <button [pending]="saveOrderPending" type="button" class="btn btn-secondary" (click)="saveOrdering()">Save {{dataService.labelSpecificationLower()}} order</button>
+                                    <button id="button-order" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+                                        <span class="caret"></span>
+                                        <span class="sr-only visually-hidden">Reset {{dataService.labelSpecificationLower()}} order</span>
+                                    </button>
+                                    <ul id="dropdown-order" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-order">
+                                        <li role="menuitem"><a class="dropdown-item" href (click)="resetOrdering();$event.preventDefault();">Reset {{dataService.labelSpecificationLower()}} order</a></li>
+                                    </ul>
+                                </div>
+                            }
                         </div>
                     </div>
                     <div class="option-container" cdkDropList cdkDropListLockAxis="y" (cdkDropListDropped)="dropSpecification($event)" >
-                        <ng-container [ngSwitch]="specificationStatus && specificationStatus.status != Constants.STATUS.FINISHED">
-                            <ng-container *ngSwitchCase="true">
+                        @if (specificationStatus && specificationStatus.status != Constants.STATUS.FINISHED) {
+                            <div class="spec-message-div">
+                                <div class="pending-icon"><app-pending-block [pending]="true"></app-pending-block></div>
+                                <div class="pending-message">Loading {{dataService.labelSpecificationsLower()}}...</div>
+                            </div>
+                        } @else {
+                            @if (domainSpecifications.length == 0) {
                                 <div class="spec-message-div">
-                                    <div class="pending-icon"><app-pending-block [pending]="true"></app-pending-block></div>
-                                    <div class="pending-message">Loading {{dataService.labelSpecificationsLower()}}...</div>
+                                    <span>No {{dataService.labelSpecificationsLower()}} found.</span>
                                 </div>
-                            </ng-container>
-                            <ng-container *ngSwitchDefault [ngSwitch]="domainSpecifications.length == 0">
-                                <ng-container *ngSwitchCase="true">
-                                    <div class="spec-message-div" *ngSwitchCase="true">
-                                        <span>No {{dataService.labelSpecificationsLower()}} found.</span>
-                                    </div>
-                                </ng-container>
-                                <ng-container *ngSwitchDefault>
+                            } @else {
+                                @for (spec of domainSpecifications; track spec.id; let firstGroup = $first, lastGroup = $last) {
                                     <app-domain-specification-display
-                                        *ngFor="let spec of domainSpecifications; let firstGroup = first; let lastGroup = last"
                                         [spec]="spec"
                                         [first]="firstGroup"
                                         [last]="lastGroup"
@@ -88,9 +97,9 @@
                                         (dragging)="dragOngoing = $event"
                                         (click)="onSpecificationGroupSelect(spec)"
                                     ></app-domain-specification-display>
-                                </ng-container>
-                            </ng-container>
-                        </ng-container>
+                                }
+                            }
+                        }
                     </div>
                 </div>
             </tab>
@@ -133,27 +142,30 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <ng-container [ngSwitch]="parameterStatus.status">
-                                    <ng-container *ngSwitchCase="Constants.STATUS.FINISHED" [ngSwitch]="domainParameters.length">
-                                        <tr *ngSwitchCase="0">
+                                @if (parameterStatus.status == Constants.STATUS.FINISHED) {
+                                    @if (domainParameters.length == 0) {
+                                        <tr>
                                             <td colspan="4" class="td-no-data"><span>No parameters found</span></td>
                                         </tr>
-                                        <ng-container *ngSwitchDefault>
-                                            <tr class="selectable" (click)="onDomainParameterSelect(parameter)" *ngFor="let parameter of domainParameters">
+                                    } @else {
+                                        @for (parameter of domainParameters; track parameter.id) {
+                                            <tr class="selectable" (click)="onDomainParameterSelect(parameter)">
                                                 <td>{{parameter.name}}</td>
-                                                <td *ngIf="parameter.kind == 'BINARY'"><a href (click)="downloadParameter(parameter);$event.preventDefault();$event.stopPropagation()">{{parameter.valueToShow}}</a></td>
-                                                <td *ngIf="parameter.kind != 'BINARY'">{{parameter.valueToShow}}</td>
+                                                @if (parameter.kind == 'BINARY') {
+                                                    <td><a href (click)="downloadParameter(parameter);$event.preventDefault();$event.stopPropagation()">{{parameter.valueToShow}}</a></td>
+                                                } @else {
+                                                    <td>{{parameter.valueToShow}}</td>
+                                                }
                                                 <td>{{parameter.description}}</td>
                                                 <td><div><span><i class="fa" [ngClass]="{'fa-check': parameter.inTests, 'fa-times': !parameter.inTests}"></i></span></div></td>
                                             </tr>
-                                        </ng-container>
-                                    </ng-container>
-                                    <ng-container *ngSwitchDefault>
-                                        <tr>
-                                            <td colspan="4" class="td-data-loading"><span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></td>
-                                        </tr>
-                                    </ng-container>
-                                </ng-container>
+                                        }
+                                    }
+                                } @else {
+                                    <tr>
+                                        <td colspan="4" class="td-data-loading"><span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></td>
+                                    </tr>
+                                }
                             </tbody>
                         </table>
                     </div>

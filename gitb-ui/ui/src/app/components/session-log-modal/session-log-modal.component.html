@@ -3,19 +3,23 @@
 </div>
 <div class="modal-body">
 	<div class="editor editor-normal">
-		<ngx-codemirror #codeEditor *ngIf="editorOptions" [(ngModel)]="content" [options]="editorOptions"></ngx-codemirror>
+		@if (editorOptions) {
+			<ngx-codemirror #codeEditor [(ngModel)]="content" [options]="editorOptions"></ngx-codemirror>
+		}
 	</div>
 </div>
 <div class="modal-footer">
 	<div class="btn-toolbar">
 		<button type="button" class="btn btn-secondary" (click)="close()">Close</button>
-		<div class="btn-group" dropdown *ngIf="messageEmitter != undefined">
-			<button id="button-tail" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-tail">{{tailLabel}}<span class="caret withMargin"></span></button>
-			<ul id="dropdown-tail" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-tail">
-				<li role="menuitem"><a class="dropdown-item" href (click)="tail = false; tailLabel = tailLabelNo; $event.preventDefault()">{{tailLabelNo}}</a></li>
-				<li role="menuitem"><a class="dropdown-item" href (click)="tail = true; tailLabel = tailLabelYes; scrollToLast(); $event.preventDefault()">{{tailLabelYes}}</a></li>
-			</ul>
-		</div>
+		@if (messageEmitter != undefined) {
+			<div class="btn-group" dropdown>
+				<button id="button-tail" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-tail">{{tailLabel}}<span class="caret withMargin"></span></button>
+				<ul id="dropdown-tail" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-tail">
+					<li role="menuitem"><a class="dropdown-item" href (click)="tail = false; tailLabel = tailLabelNo; $event.preventDefault()">{{tailLabelNo}}</a></li>
+					<li role="menuitem"><a class="dropdown-item" href (click)="tail = true; tailLabel = tailLabelYes; scrollToLast(); $event.preventDefault()">{{tailLabelYes}}</a></li>
+				</ul>
+			</div>
+		}
 		<div class="btn-group" dropdown>
 			<button id="button-level" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-level">{{levelFilterLabel}}<span class="caret withMargin"></span></button>
 			<ul id="dropdown-level" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-level">

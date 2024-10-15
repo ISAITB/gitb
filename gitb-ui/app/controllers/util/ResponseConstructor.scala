@@ -37,12 +37,12 @@ object ResponseConstructor extends Results{
       Configurations.SERVER_REQUEST_TIMEOUT_IN_SECONDS + " seconds", None))
   }
 
-  def constructErrorMessage(errorCode: Any, errorDesc:String, errorIdentifier: Option[String]): String = {
-    JsonUtil.constructErrorMessage(errorCode, errorDesc, errorIdentifier).toString()
+  private def constructErrorMessage(errorCode: Any, errorDesc:String, errorIdentifier: Option[String], errorHint: Option[String] = None): String = {
+    JsonUtil.constructErrorMessage(errorCode, errorDesc, errorIdentifier, errorHint).toString()
   }
 
-  def constructErrorResponse(errorCode: Int, errorDesc: String):Result = {
-    Ok(constructErrorMessage(errorCode, errorDesc, None)).as(JSON)
+  def constructErrorResponse(errorCode: Int, errorDesc: String, errorHint: Option[String] = None):Result = {
+    Ok(constructErrorMessage(errorCode, errorDesc, None, errorHint)).as(JSON)
   }
 
   def constructEmptyResponse:Result = {
@@ -65,8 +65,9 @@ object ResponseConstructor extends Results{
     Ok("{"+"\"available\":"+isAvailable+"}").as(JSON)
   }
 
-  def constructOauthResponse(tokens:Token):Result = {
+  def constructOauthResponse(tokens: Token, userId: Long):Result = {
     Ok("{" +
+      "\"user_id\":"+userId+"," +
       "\"path\":\"" + Configurations.AUTHENTICATION_COOKIE_PATH + "\"," +
       "\"access_token\":\"" + tokens.access_token + "\"," +
       "\"token_type\":\"Bearer\"," +
@@ -74,6 +75,19 @@ object ResponseConstructor extends Results{
       "\"registered\":true" +
       "}"
     ).as(JSON)
+  }
+
+  def createRequestedUrlCookie(requestedUrl: String): Option[Cookie] = {
+    var urlToUse = requestedUrl
+    val appIndex = urlToUse.indexOf("/app")
+    if (appIndex != -1) {
+      urlToUse = urlToUse.substring(appIndex+4)
+    }
+    if (urlToUse.isBlank) {
+      None
+    } else {
+      Some(Cookie("ITB_REQUESTED_URL", urlToUse, None, "/", None, Configurations.SESSION_COOKIE_SECURE, httpOnly = false, Some(Cookie.SameSite.Strict)))
+    }
   }
 
 }

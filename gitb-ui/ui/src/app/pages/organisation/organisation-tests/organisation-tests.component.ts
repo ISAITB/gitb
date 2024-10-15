@@ -33,7 +33,6 @@ export class OrganisationTestsComponent implements OnInit {
   completedExpandedCounter = {count: 0}
   activeStatus = {status: Constants.STATUS.PENDING} 
   completedStatus = {status: Constants.STATUS.PENDING}
-  // organisation!: Organisation
   organisationId!: number
   domainId?: number
   activeTestsColumns!: TableColumnDefinition[]
@@ -67,7 +66,7 @@ export class OrganisationTestsComponent implements OnInit {
     private route: ActivatedRoute,
     private reportService: ReportService,
     private conformanceService: ConformanceService,
-    private dataService: DataService,
+    public dataService: DataService,
     private confirmationDialogService: ConfirmationDialogService,
     private testService: TestService,
     private popupService: PopupService,
@@ -110,6 +109,11 @@ export class OrganisationTestsComponent implements OnInit {
   queryDatabase() {
     this.getActiveTests()
     this.getCompletedTests()
+  }
+
+  applyFilters() {
+    this.sessionIdToShow = undefined
+    this.goFirstPage()
   }
 
   goFirstPage() {
@@ -173,7 +177,7 @@ export class OrganisationTestsComponent implements OnInit {
     if (!testResult.obsolete) {
       testResult.actionPending = true
       this.onReportExport(testResult, 'application/xml', 'report.xml')
-      .subscribe(() => {
+      .subscribe(() => {}).add(() => {
         testResult.actionPending = false
       })
     }
@@ -183,7 +187,7 @@ export class OrganisationTestsComponent implements OnInit {
     if (!testResult.obsolete) {
       testResult.exportPending = true
       this.onReportExport(testResult, 'application/pdf', 'report.pdf')
-      .subscribe(() => {
+      .subscribe(() => {}).add(() => {
         testResult.exportPending = false
       })
     }

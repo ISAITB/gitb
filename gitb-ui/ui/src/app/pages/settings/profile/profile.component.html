@@ -5,25 +5,29 @@
         </div>
         <form #profileForm="ngForm">
             <div class="card-body">
-                <app-alert-display [alerts]="alerts" innerClass="col-10 offset-1"></app-alert-display>
                 <div class="row">
                     <div class="col-10 offset-1">
                         <div class="row mb-3">
-                            <label class="col-2 col-form-label text-end" for="shortName"><span *ngIf="!dataService.configuration.ssoEnabled">* </span>Name:</label>
+                            <label class="col-2 col-form-label text-end" for="name">@if (!dataService.configuration.ssoEnabled) {<span>* </span>}Name:</label>
                             <div class="col-7">
-                                <p *ngIf="dataService.configuration.ssoEnabled" class="form-control-plaintext">{{data.name}}</p>
-                                <input *ngIf="!dataService.configuration.ssoEnabled" id="name" name="name" type="text" class="form-control" [(ngModel)]="data.name">
+                                @if (dataService.configuration.ssoEnabled) {
+                                    <p class="form-control-plaintext">{{data.name}}</p>
+                                } @else {
+                                    <input id="name" name="name" type="text" class="form-control" [(ngModel)]="data.name" [invalid]="validation.get('name')">
+                                }
                             </div>
-                            <div app-tooltip class="col-auto" *ngIf="!dataService.configuration.ssoEnabled" tbTooltip="Your full name. This is used only when listing the members of your {{dataService.labelOrganisationLower()}}."></div>
+                            @if (!dataService.configuration.ssoEnabled) {
+                                <div app-tooltip class="col-auto" tbTooltip="Your full name. This is used only when listing the members of your {{dataService.labelOrganisationLower()}}."></div>
+                            }
                         </div>
                         <div class="row mb-3">
-                            <label class="col-2 col-form-label text-end" for="fullName">{{dataService.configuration.ssoEnabled?'Email:':'Username:'}}</label>
+                            <legend class="col-2 col-form-label text-end">{{dataService.configuration.ssoEnabled?'Email:':'Username:'}}</legend>
                             <div class="col-7">
                                 <p class="form-control-plaintext">{{data.email}}</p>
                             </div>
                         </div>
                         <div class="row mb-3">
-                            <label class="col-2 col-form-label text-end" for="fullName">Role:</label>
+                            <legend class="col-2 col-form-label text-end">Role:</legend>
                             <div class="col-7">
                                 <p class="form-control-plaintext">{{data.role}}</p>
                             </div>
@@ -32,18 +36,25 @@
                 </div>
                 <div class="row">
                     <div class="col-10 offset-1">
-                        <div class="alert alert-info rounded mb-0" *ngIf="!dataService.configuration.ssoEnabled">
-                            <span><b>Privacy note:</b> By clicking 'Save changes' you grant consent to record the provided information. This is used only for internal identification purposes and is never shared with other parties. Please refer to the legal notice (link available in the screen's footer) for more information.</span>
-                        </div>
+                        @if (!dataService.configuration.ssoEnabled) {
+                            <div class="alert alert-info rounded mb-0">
+                                <span><b>Privacy note:</b> By clicking 'Save changes' you grant consent to record the provided information. This is used only for internal identification purposes and is never shared with other parties. Please refer to the legal notice (link available in the screen's footer) for more information.</span>
+                            </div>
+                        }
                     </div>
                 </div>
             </div>
             <div class="card-footer">
                 <div class="btn-toolbar">
-                    <button type="submit" class="btn btn-secondary" *ngIf="!dataService.configuration.ssoEnabled" [disable]="saveDisabled()" (click)="updateProfile()" [pending]="spinner">Save changes</button>
-                    <button type="button" class="btn btn-secondary" *ngIf="dataService.configuration.ssoEnabled"  (click)="disconnect()">Remove role from your account</button>
-                    <button type="button" class="btn btn-secondary" *ngIf="dataService.configuration.ssoEnabled"  (click)="linkOtherRole()">Link another role to your account</button>
-                    <button type="button" class="btn btn-secondary" *ngIf="dataService.configuration.registrationEnabled" (click)="register()">Register another {{dataService.labelOrganisationLower()}}</button>
+                    @if (!dataService.configuration.ssoEnabled) {
+                        <button type="submit" class="btn btn-secondary" [disable]="saveDisabled()" (click)="updateProfile()" [pending]="spinner">Save changes</button>
+                    } @else {
+                        <button type="button" class="btn btn-secondary" (click)="disconnect()">Remove role from your account</button>
+                        <button type="button" class="btn btn-secondary" (click)="linkOtherRole()">Link another role to your account</button>
+                    }
+                    @if (dataService.configuration.registrationEnabled) {
+                        <button type="button" class="btn btn-secondary" (click)="register()">Register another {{dataService.labelOrganisationLower()}}</button>
+                    }
                 </div>
             </div>
         </form>

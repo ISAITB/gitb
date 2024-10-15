@@ -98,6 +98,8 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
   // REST API
   restApiStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
   restApiEnabled = false
+  restApiAdminKey!: string
+  updateRestApiAdminKeyPending = false
 
   // Demo account
   demoAccountStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
@@ -203,6 +205,7 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
         this.restApiStatus.enabled = this.restApiEnabled
         this.restApiStatus.fromEnv = restApiConfig != undefined && restApiConfig.environment
         this.restApiStatus.fromDefault = restApiConfig != undefined && restApiConfig.default
+        this.restApiAdminKey = find(data, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.REST_API_ADMIN_KEY)!.parameter!
         // Self registration.
         const selfRegistrationConfig = find(data, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.SELF_REGISTRATION_ENABLED)
         this.selfRegistrationEnabled = selfRegistrationConfig != undefined && selfRegistrationConfig.parameter != undefined && selfRegistrationConfig.parameter.toLowerCase() == 'true'
@@ -570,6 +573,22 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
         this.restApiStatus.pending = false
       })
     }
+  }
+
+  updateRestApiAdminKey() {
+    this.confirmationDialogService.confirmed("Confirm update", "Are you sure you want to update the value for the administration API key?", "Update", "Cancel")
+    .subscribe(() => {
+      this.updateRestApiAdminKeyPending = true
+      this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.REST_API_ADMIN_KEY)
+      .subscribe((data) => {
+        if (data?.parameter) {
+          this.restApiAdminKey = data.parameter
+          this.popupService.success("API key updated.")
+        }
+      }).add(() => {
+        this.updateRestApiAdminKeyPending = false
+      })
+    })
   }
 
   saveDemoAccount() {

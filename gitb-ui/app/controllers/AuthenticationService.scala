@@ -48,11 +48,11 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction, cc: C
     if (result.isDefined) {
       if (result.get.ssoUid.isDefined || result.get.ssoEmail.isDefined) {
         // User already migrated.
-        ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_CREDENTIALS, "The provided credentials match an already migrated account")
+        ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_CREDENTIALS, "The provided credentials match an already migrated account.", Some("username"))
       } else if (Configurations.DEMOS_ENABLED && Configurations.DEMOS_ACCOUNT == result.get.id) {
         // Attempt to migrate the demo account. Return message as if the user doesn't exist.
         logger.warn("Attempt made by ["+authorizationManager.getPrincipal(request).uid+"] to migrate the demo account ["+Configurations.DEMOS_ACCOUNT+"]")
-        ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_CREDENTIALS, "The provided credentials did not match a previously existing account")
+        ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_CREDENTIALS, "The provided credentials did not match a previously existing account.", Some("username"))
       } else {
         // Link the account.
         accountManager.migrateAccount(result.get.id, authorizationManager.getPrincipal(request))
@@ -61,7 +61,7 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction, cc: C
       }
     } else {
       // User not found
-      ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_CREDENTIALS, "The provided credentials did not match a previously existing account")
+      ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_CREDENTIALS, "The provided credentials did not match a previously existing account.", Some("username"))
     }
   }
 
@@ -92,7 +92,7 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction, cc: C
   private def completeAccessTokenLogin(userId: Long): Result = {
     val tokens = authManager.generateTokens(userId)
     disableDataBootstrap()
-    ResponseConstructor.constructOauthResponse(tokens)
+    ResponseConstructor.constructOauthResponse(tokens, userId)
   }
 
   def replaceOnetimePassword = authorizedAction { request =>
@@ -103,12 +103,12 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction, cc: C
       val oldPassword = ParameterExtractor.requiredBodyParameter(request, Parameters.OLD_PASSWORD)
       val result = authManager.replaceOnetimePassword(email, newPassword, oldPassword)
       if (result.isEmpty) {
-        throw InvalidAuthorizationException(ErrorCodes.INVALID_CREDENTIALS, "Invalid credentials")
+        ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_CREDENTIALS, "Incorrect password.", Some("current"))
       } else {
         completeAccessTokenLogin(result.get)
       }
     } else {
-      ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_CREDENTIALS, "The new password does not match required complexity rules. It must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one digit and one symbol.")
+      ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_CREDENTIALS, "Password does not match required complexity rules. It must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one digit and one symbol.", Some("new"))
     }
   }
 

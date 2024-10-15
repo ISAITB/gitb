@@ -1,0 +1,33 @@
+@import '../../../styles/less/_common.less';
+
+.panelContainer {
+    background: @white;
+    border: 1px solid @gray-dark-1;
+    border-radius: @border-radius;
+    &.hovering {
+        .panelHeader{
+            background-color: @white-shaded;
+            &.isCollapsed {
+                border-bottom-left-radius: @border-radius;
+                border-bottom-right-radius: @border-radius;
+            }
+        }        
+    }
+    .panelHeader {
+        display: flex;
+        cursor: pointer;
+        align-items: center;
+        padding: 5px 20px;
+        border-top-left-radius: @border-radius;
+        border-top-right-radius: @border-radius;
+        border-bottom-left-radius: 0px;
+        border-bottom-right-radius: 0px;
+        .panelTitle {
+            font-weight: bold;
+            padding: 10px 0px;
+        }
+    }
+    .panelContent {
+        border-top: 1px solid @gray-dark-1;
+    }
+}

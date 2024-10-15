@@ -32,7 +32,7 @@
 									@case ("UPLOAD") {
 										 <!-- Upload -->
 										<div>
-											<app-file-select [fileName]="interaction.file?.name" (onUpload)="onFileSelect(interaction, $event)"></app-file-select>
+											<app-file-select [fileName]="interaction.file?.name" [reset]="interaction.reset" (onUpload)="onFileSelect(interaction, $event)"></app-file-select>
 										</div>
 									}
 									@case ("CODE") {

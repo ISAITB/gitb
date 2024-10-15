@@ -1,68 +1,93 @@
 <div class="table-container rounded">
     <table class="table table-directive">
-        <caption *ngIf="tableCaptionVisible">{{tableCaption}}</caption>
+        @if (tableCaptionVisible) {
+            <caption>{{tableCaption}}</caption>
+        }
         <thead>
             <tr>
-                <th *ngIf="expandableRowProperty != undefined" class="th-min-centered"></th>
-                <th *ngIf="checkboxEnabled" class="th-min-centered">
-                    <input type="checkbox" [(ngModel)]="allChecked" (change)="checkAll()">
-                </th>
-                <th [ngClass]="classForColumn(column)" *ngFor="let column of columnsLeft" [class.sortable]="column.sortable" (click)="headerColumnClicked(column)">
-                    {{column.title}} 
-                    <i *ngIf="column.order != undefined" [ngClass]="{'fa-caret-down': column.order == 'desc', 'fa-caret-up': column.order == 'asc'}" class="fa"></i>
-                </th>
-                <th *ngIf="actionVisible || operationsVisible || exportVisible" class="th-min-centered"></th>
-                <th [ngClass]="classForColumn(column)" *ngFor="let column of columnsRight" [class.sortable]="column.sortable" (click)="headerColumnClicked(column)">
-                    {{column.title}} 
-                    <i *ngIf="column.order != undefined" [ngClass]="{'fa-caret-down': column.order == 'desc', 'fa-caret-up': column.order == 'asc'}" class="fa"></i>
-                </th>
+                @if (expandableRowProperty != undefined) {
+                    <th class="th-min-centered"></th>
+                }
+                @if (checkboxEnabled) {
+                    <th class="th-min-centered">
+                        <input type="checkbox" [(ngModel)]="allChecked" (change)="checkAll()">
+                    </th>
+                }
+                @for (column of columnsLeft; track $index) {
+                    <th [ngClass]="classForColumn(column)" [class.sortable]="column.sortable" (click)="headerColumnClicked(column)">
+                        {{column.title}} 
+                        @if (column.order != undefined) {
+                            <i [ngClass]="{'fa-caret-down': column.order == 'desc', 'fa-caret-up': column.order == 'asc'}" class="fa"></i>
+                        }
+                    </th>
+                }
+                @if (actionVisible || operationsVisible || exportVisible) {
+                    <th class="th-min-centered"></th>
+                }
+                @for (column of columnsRight; track $index) {
+                    <th [ngClass]="classForColumn(column)" [class.sortable]="column.sortable" (click)="headerColumnClicked(column)">
+                        {{column.title}} 
+                        @if (column.order != undefined) {
+                            <i [ngClass]="{'fa-caret-down': column.order == 'desc', 'fa-caret-up': column.order == 'asc'}" class="fa"></i>
+                        }
+                    </th>
+                }
             </tr>
         </thead>
         <tbody [class.disable-events]="contentRefreshing">
-            <tr *ngIf="loadingStatus && loadingStatus.status != Constants.STATUS.FINISHED">
-                <td [attr.colspan]="columnCount" class="td-data-loading"><app-pending-block></app-pending-block></td>
-            </tr>
-            <tr *ngIf="loadingStatus && loadingStatus.status == Constants.STATUS.FINISHED && (!data || data.length == 0)">
-                <td [attr.colspan]="columnCount" class="td-no-data"><span>{{noDataMessage}}</span></td>
-            </tr>
-            <tr *ngFor="let row of data; let i = index" table-row-directive
-                class="table-row-directive" 
-                [ngClass]="rowClass(i)" 
-                [class.selected]="row._selected"
-                (click)="select(i)"
-                [data]="row"
-                [columns]="columns"
-                [classes]="classes"
-                [actionVisible]="actionVisible"
-                [actionIcon]="actionIcon"
-                [exportIcon]="exportIcon"
-                [deleteIcon]="deleteIcon"
-                [operationsVisible]="operationsVisible"
-                [exportVisible]="exportVisible"
-                [exportVisibleForRow]="exportVisibleForRow"
-                [checkboxEnabled]="checkboxEnabled"
-                (onAction)="handleAction($event)"
-                (onDelete)="handleDelete($event)"
-                (onExport)="handleExport($event)"
-                (onCheck)="handleCheck($event)"
-                [deleteVisibleForRow]="deleteVisibleForRow"
-                [actionVisibleForRow]="actionVisibleForRow"
-                [actionPendingProperty]="actionPendingProperty"
-                [deletePendingProperty]="deletePendingProperty"
-                [exportPendingProperty]="exportPendingProperty"
-                [actionTooltip]="actionTooltip"
-                [deleteTooltip]="deleteTooltip"
-                [exportTooltip]="exportTooltip"
-                [expandableRowProperty]="expandableRowProperty"
-                [refresh]="refreshRows"></tr>
+            @if (loadingStatus) {
+                @if (loadingStatus.status != Constants.STATUS.FINISHED) {
+                    <tr>
+                        <td [attr.colspan]="columnCount" class="td-data-loading"><app-pending-block></app-pending-block></td>
+                    </tr>
+                } @else if (!data || data.length == 0) {
+                    <tr>
+                        <td [attr.colspan]="columnCount" class="td-no-data"><span>{{noDataMessage}}</span></td>
+                    </tr>
+                }
+            }
+            @for (row of data; track row; let i = $index) {
+                <tr table-row-directive
+                    class="table-row-directive" 
+                    [ngClass]="rowClass(i)" 
+                    [class.selected]="row._selected"
+                    (click)="select(i)"
+                    [data]="row"
+                    [columns]="columns"
+                    [classes]="classes"
+                    [actionVisible]="actionVisible"
+                    [actionIcon]="actionIcon"
+                    [exportIcon]="exportIcon"
+                    [deleteIcon]="deleteIcon"
+                    [operationsVisible]="operationsVisible"
+                    [exportVisible]="exportVisible"
+                    [exportVisibleForRow]="exportVisibleForRow"
+                    [checkboxEnabled]="checkboxEnabled"
+                    (onAction)="handleAction($event)"
+                    (onDelete)="handleDelete($event)"
+                    (onExport)="handleExport($event)"
+                    (onCheck)="handleCheck($event)"
+                    [deleteVisibleForRow]="deleteVisibleForRow"
+                    [actionVisibleForRow]="actionVisibleForRow"
+                    [actionPendingProperty]="actionPendingProperty"
+                    [deletePendingProperty]="deletePendingProperty"
+                    [exportPendingProperty]="exportPendingProperty"
+                    [actionTooltip]="actionTooltip"
+                    [deleteTooltip]="deleteTooltip"
+                    [exportTooltip]="exportTooltip"
+                    [expandableRowProperty]="expandableRowProperty"
+                    [refresh]="refreshRows"></tr>
+            }
         </tbody>
     </table>
-    <div *ngIf="(!prevDisabled || !nextDisabled) && data && data.length > 0" class="text-center table-paging-controls">
-        <div class="btn-group" role="group" [class.disable-events]="contentRefreshing">
-            <button type="button" class="btn btn-sm btn-secondary" [disabled]="prevDisabled" (click)="doFirstPage()">First</button>
-            <button type="button" class="btn btn-sm btn-secondary" [disabled]="prevDisabled" (click)="doPrevPage()">Previous</button>
-            <button type="button" class="btn btn-sm btn-secondary" [disabled]="nextDisabled" (click)="doNextPage()">Next</button>
-            <button type="button" class="btn btn-sm btn-secondary" [disabled]="nextDisabled" (click)="doLastPage()">Last</button>
+    @if ((!prevDisabled || !nextDisabled) && data && data.length > 0) {
+        <div class="text-center table-paging-controls">
+            <div class="btn-group" role="group" [class.disable-events]="contentRefreshing">
+                <button type="button" class="btn btn-sm btn-secondary" [disabled]="prevDisabled" (click)="doFirstPage()">First</button>
+                <button type="button" class="btn btn-sm btn-secondary" [disabled]="prevDisabled" (click)="doPrevPage()">Previous</button>
+                <button type="button" class="btn btn-sm btn-secondary" [disabled]="nextDisabled" (click)="doNextPage()">Next</button>
+                <button type="button" class="btn btn-sm btn-secondary" [disabled]="nextDisabled" (click)="doLastPage()">Last</button>
+            </div>
         </div>
-    </div>
+    }
 </div>

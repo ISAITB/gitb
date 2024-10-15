@@ -26,6 +26,8 @@ public interface TestCaseObserver {
 
     void handleDocumentation(Documentation documentation);
 
+    void handleInputParameter(InputParameter param);
+
     void handleVariable(Variable var);
 
     void handleOutput(Binding binding);

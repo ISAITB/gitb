@@ -3,23 +3,20 @@ package controllers
 import config.Configurations
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
 import exceptions.ErrorCodes
-
-import javax.inject.Inject
 import managers.{AuthorizationManager, OrganizationManager, TestResultManager, UserManager}
 import models.prerequisites.PrerequisiteUtil
 import org.apache.commons.io.FileUtils
-import org.slf4j.{Logger, LoggerFactory}
 import play.api.libs.json.Json
-import play.api.mvc.{AbstractController, ControllerComponents, Result}
+import play.api.mvc.{AbstractController, ControllerComponents}
 import utils.{JsonUtil, RepositoryUtils}
 
+import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 
 /**
  * Created by VWYNGAET on 26/10/2016.
  */
 class OrganizationService @Inject() (implicit ec: ExecutionContext, repositoryUtils: RepositoryUtils, authorizedAction: AuthorizedAction, cc: ControllerComponents, organizationManager: OrganizationManager, userManager: UserManager, authorizationManager: AuthorizationManager, testResultManager: TestResultManager) extends AbstractController(cc) {
-  private final val logger: Logger = LoggerFactory.getLogger(classOf[OrganizationService])
 
   /**
    * Gets all organizations except the default organization for system administrators
@@ -118,7 +115,7 @@ class OrganizationService @Inject() (implicit ec: ExecutionContext, repositoryUt
         ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")
       } else {
         if (organization.template && !organizationManager.isTemplateNameUnique(organization.templateName.get, organization.community, None)) {
-          ResponseConstructor.constructErrorResponse(ErrorCodes.DUPLICATE_ORGANISATION_TEMPLATE, "The provided template name is already in use.")
+          ResponseConstructor.constructErrorResponse(ErrorCodes.DUPLICATE_ORGANISATION_TEMPLATE, "The provided template name is already in use.", Some("template"))
         } else {
           organizationManager.createOrganization(organization, otherOrganisation, values, Some(files), copyOrganisationParameters, copySystemParameters, copyStatementParameters)
           ResponseConstructor.constructEmptyResponse
@@ -159,7 +156,7 @@ class OrganizationService @Inject() (implicit ec: ExecutionContext, repositoryUt
           templateName = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.TEMPLATE_NAME)
         }
         if (template && !organizationManager.isTemplateNameUnique(templateName.get, organizationManager.getById(orgId).get.community, Some(orgId))) {
-          ResponseConstructor.constructErrorResponse(ErrorCodes.DUPLICATE_ORGANISATION_TEMPLATE, "The provided template name is already in use.")
+          ResponseConstructor.constructErrorResponse(ErrorCodes.DUPLICATE_ORGANISATION_TEMPLATE, "The provided template name is already in use.", Some("template"))
         } else {
           organizationManager.updateOrganization(orgId, shortName, fullName, landingPageId, legalNoticeId, errorTemplateId, otherOrganisation, template, templateName, values, Some(files), copyOrganisationParameters, copySystemParameters, copyStatementParameters)
           ResponseConstructor.constructEmptyResponse

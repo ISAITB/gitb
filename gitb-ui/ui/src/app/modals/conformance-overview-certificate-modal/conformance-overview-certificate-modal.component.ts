@@ -38,7 +38,7 @@ export class ConformanceOverviewCertificateModalComponent extends BaseComponent 
   ) { super() }
 
   choiceChanged() {
-    if (this.choice == Constants.REPORT_OPTION_CHOICE.CERTIFICATE && (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin)) {
+    if (this.choice == Constants.REPORT_OPTION_CHOICE.CERTIFICATE && (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin) && this.settings) {
       if (!this.messageLoaded) {
         if (this.settings && this.settings.messages && this.settings.messages.length == 1) {
           const messageId = this.settings.messages[0].id!
@@ -94,17 +94,19 @@ export class ConformanceOverviewCertificateModalComponent extends BaseComponent 
       fileName = "conformance_overview_certificate.pdf"
       contentType = "application/pdf"
       if (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin) {
-        if (this.textProvided(this.message)) {
-          const messageDefinition: ConformanceOverviewMessage = {
-            level: this.reportLevel,
-            message: this.message
+        if (this.settings) {
+          if (this.textProvided(this.message)) {
+            const messageDefinition: ConformanceOverviewMessage = {
+              level: this.reportLevel,
+              message: this.message
+            }
+            if (this.reportLevel != 'all') messageDefinition.identifier = this.identifier
+            this.settings.messages = [messageDefinition]
+          } else {
+            this.settings.messages = undefined
           }
-          if (this.reportLevel != 'all') messageDefinition.identifier = this.identifier
-          this.settings!.messages = [messageDefinition]
-        } else {
-          this.settings!.messages = undefined
         }
-        exportObservable = this.reportService.exportConformanceOverviewCertificate(this.communityId, this.systemId, domainId, groupId, specId, this.settings!, this.snapshotId)
+        exportObservable = this.reportService.exportConformanceOverviewCertificate(this.communityId, this.systemId, domainId, groupId, specId, this.settings, this.snapshotId)
       } else {
         exportObservable = this.reportService.exportOwnConformanceOverviewCertificateReport(this.systemId, domainId, groupId, specId, this.snapshotId)
       }

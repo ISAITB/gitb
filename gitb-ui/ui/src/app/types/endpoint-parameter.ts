@@ -1,7 +1,4 @@
-import { Parameter } from "./parameter";
+import { CustomProperty } from "./custom-property.type";
 
-export interface EndpointParameter extends Parameter {
-
-    endpoint: number
-    
+export interface EndpointParameter extends CustomProperty {
 }

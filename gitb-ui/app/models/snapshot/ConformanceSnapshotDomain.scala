@@ -5,5 +5,6 @@ case class ConformanceSnapshotDomain(
   shortname: String,
   fullname: String,
   description: Option[String],
+  reportMetadata: Option[String],
   snapshotId: Long
 )

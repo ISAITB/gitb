@@ -1,22 +1,19 @@
 package managers
 
 import actors.SessionManagerActor
-import actors.events.sessions.PrepareTestSessionsEvent
+import actors.events.sessions.{PrepareTestSessionsEvent, TerminateSessionsEvent}
 import com.gitb.core.{ActorConfiguration, AnyContent, Configuration, ValueEmbeddingEnumeration}
 import exceptions.{AutomationApiException, ErrorCodes, MissingRequiredParameterException}
 import models.Enums.InputMappingMatchType
 import models._
-import models.automation.{InputMappingContent, TestSessionLaunchInfo, TestSessionLaunchRequest, TestSessionStatus}
+import models.automation.{InputMappingContent, TestSessionLaunchInfo, TestSessionLaunchRequest}
 import models.prerequisites.PrerequisiteUtil
-import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.StringUtils
 import org.apache.pekko.actor.{ActorRef, ActorSystem}
-import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import utils.{MimeUtil, RepositoryUtils}
 
-import java.nio.file.{Files, Path}
 import java.time.Duration
 import java.time.temporal.ChronoUnit
 import java.util.UUID
@@ -26,10 +23,18 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClient, testCaseReportProducer: TestCaseReportProducer, domainParameterManager: DomainParameterManager, reportManager: ReportManager, repositoryUtils: RepositoryUtils, actorManager: ActorManager, actorSystem: ActorSystem, organisationManager: OrganizationManager, systemManager: SystemManager, testResultManager: TestResultManager, apiHelper: AutomationApiHelper, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClient,
+                                      domainParameterManager: DomainParameterManager,
+                                      reportManager: ReportManager,
+                                      repositoryUtils: RepositoryUtils,
+                                      actorManager: ActorManager,
+                                      actorSystem: ActorSystem,
+                                      organisationManager: OrganizationManager,
+                                      systemManager: SystemManager,
+                                      apiHelper: AutomationApiHelper,
+                                      dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
-  private val logger = LoggerFactory.getLogger(classOf[TestExecutionManager])
   private var sessionManagerActor: Option[ActorRef] = None
   private final val reservedInputNames = Set(
     Constants.systemTestVariable, Constants.organisationTestVariable, Constants.domainTestVariable,
@@ -224,7 +229,7 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
 
   def processAutomationLaunchRequest(request: TestSessionLaunchRequest): Seq[TestSessionLaunchInfo] = {
     val q = for {
-      statementIds <- apiHelper.getStatementIdsForApiKeys(request.organisation, request.system, request.actor, None)
+      statementIds <- apiHelper.getStatementIdsForApiKeys(request.organisation, request.system, request.actor, None, Some(request.testSuite), Some(request.testCase))
       testCaseData <- {
         var query = PersistenceSchema.conformanceResults
           .join(PersistenceSchema.testSuites).on(_.testsuite === _.id)
@@ -392,7 +397,7 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
   }
 
   def processAutomationStopRequest(organisationKey: String, sessionIds: List[String]): Unit = {
-    val verifiedSessionIds = exec(
+    val sessionData = exec(
       for {
         organisationData <- apiHelper.loadOrganisationDataForAutomationProcessing(organisationKey)
         _ <- apiHelper.checkOrganisationForAutomationApiUse(organisationData)
@@ -401,77 +406,13 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
             .filter(_.testSessionId inSet sessionIds)
             .map(x => x.testSessionId)
             .result
-      } yield verifiedSessionIds
+      } yield (organisationData.get.organisationId, verifiedSessionIds)
     )
-    verifiedSessionIds.foreach { sessionId =>
+    // Signal stop to session manager (for tests that haven't started yet)
+    getSessionManagerActor().tell(TerminateSessionsEvent(sessionData._1, sessionIds.toSet), ActorRef.noSender)
+    // Signal stop to test engine (for already tests that are already running).
+    sessionData._2.foreach { sessionId =>
       testbedClient.stop(sessionId)
-    }
-  }
-
-  def processAutomationReportRequest(organisationKey: String, sessionId: String): Option[(Path, SessionFolderInfo)] = {
-    val result = exec(
-      for {
-        organisationData <- apiHelper.loadOrganisationDataForAutomationProcessing(organisationKey)
-        _ <- apiHelper.checkOrganisationForAutomationApiUse(organisationData)
-        sessionData <- PersistenceSchema.testResults
-          .filter(_.organizationId === organisationData.get.organisationId)
-          .filter(_.testSessionId === sessionId)
-          .map(x => x.testSessionId)
-          .result
-          .headOption
-      } yield sessionData
-    )
-    if (result.isDefined) {
-      val reportData = testCaseReportProducer.generateDetailedTestCaseReport(result.get, Some(Constants.MimeTypeXML), None)
-      if (reportData._1.isDefined) {
-        Some((reportData._1.get, reportData._2))
-      } else {
-        logger.warn("No test case overview report could be produced for session [" + result.get + "]")
-        None
-      }
-    } else {
-      None
-    }
-  }
-
-  def processAutomationStatusRequest(organisationKey: String, sessionIds: List[String], withLogs: Boolean, withReports: Boolean): Seq[TestSessionStatus] = {
-    exec(
-      for {
-        organisationData <- apiHelper.loadOrganisationDataForAutomationProcessing(organisationKey)
-        _ <- apiHelper.checkOrganisationForAutomationApiUse(organisationData)
-        sessionData <- PersistenceSchema.testResults
-          .filter(_.organizationId === organisationData.get.organisationId)
-          .filter(_.testSessionId inSet sessionIds)
-          .map(x => (x.testSessionId, x.startTime, x.endTime, x.result, x.outputMessage))
-          .result
-      } yield sessionData
-    ).map { result =>
-      val logs = if (withLogs) {
-        testResultManager.getTestSessionLog(result._1, Some(result._2), isExpected = true)
-      } else {
-        None
-      }
-      val report = if (withReports) {
-        var reportData: (Option[Path], SessionFolderInfo) = null
-        try {
-          reportData = testCaseReportProducer.generateDetailedTestCaseReport(result._1, Some(Constants.MimeTypeXML), None)
-          if (reportData._1.isDefined) {
-            Some(Files.readString(reportData._1.get))
-          } else {
-            logger.warn("No test case overview report could be produced for session ["+result._1+"]")
-            None
-          }
-        } catch {
-          case e: Exception =>
-            if (reportData != null && reportData._2 != null && reportData._2.archived) {
-              FileUtils.deleteQuietly(reportData._2.path.toFile)
-            }
-            throw e
-        }
-      } else {
-        None
-      }
-      TestSessionStatus(result._1, result._2, result._3, result._4, result._5, logs, report)
     }
   }
 

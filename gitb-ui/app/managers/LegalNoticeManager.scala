@@ -176,6 +176,14 @@ class LegalNoticeManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ex
     }
   }
 
+  def communityHasDefaultLegalNotice(communityId: Long): DBIO[Boolean] = {
+    if (communityId == Constants.DefaultCommunityId && globalDefaultLegalNotice.flatten.isDefined) {
+      DBIO.successful(true)
+    } else {
+      PersistenceSchema.legalNotices.filter(_.community === communityId).filter(_.default === true).exists.result
+    }
+  }
+
   def deleteLegalNoticeByCommunity(communityId: Long) = {
     for {
       _ <- PersistenceSchema.legalNotices.filter(_.community === communityId).delete

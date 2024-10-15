@@ -4,7 +4,7 @@
 			<div class="card-title">{{dataService.labelSpecificationGroup()}} details</div>
 		</div>
 		<form>
-			<div class="card-body">
+			<div class="card-body" [pending]="!loaded" focus="shortName">
 				<div class="row">
 					<div class="col-10 offset-1">
                         <app-specification-group-form [group]="group"></app-specification-group-form>
@@ -13,12 +13,12 @@
 			</div>
 			<div class="card-footer button-container">
 				<div class="btn-toolbar">
-					<button (click)="saveGroupChanges()" type="submit" class="btn btn-secondary" [disable]="deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
+					<button (click)="saveGroupChanges()" type="submit" class="btn btn-secondary" [disable]="!loaded || deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
 					<button (click)="back()" type="button" class="btn btn-secondary">Back</button>
 				</div>
 				<div class="btn-toolbar btn-toolbar-delete">
-                    <div class="btn-group" dropdown [isDisabled]="savePending">
-                        <button id="button-delete" [disable]="savePending" [pending]="deletePending" dropdownToggle type="button" class="btn btn-outline-danger dropdown-toggle" aria-controls="dropdown-delete">Delete<span class="caret withMargin"></span></button>
+                    <div class="btn-group" dropdown [isDisabled]="!loaded || savePending">
+                        <button id="button-delete" [disable]="!loaded || savePending" [pending]="deletePending" dropdownToggle type="button" class="btn btn-outline-danger dropdown-toggle" aria-controls="dropdown-delete">Delete<span class="caret withMargin"></span></button>
                         <ul id="dropdown-delete" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-result">
                             <li role="menuitem"><a class="dropdown-item" href (click)="deleteGroup(false);$event.preventDefault()">Delete this {{dataService.labelSpecificationGroupLower()}} but keep its {{dataService.labelSpecificationInGroupsLower()}}</a></li>
                             <li role="menuitem"><a class="dropdown-item" href (click)="deleteGroup(true);$event.preventDefault()">Delete this {{dataService.labelSpecificationGroupLower()}} and all its {{dataService.labelSpecificationInGroupsLower()}}</a></li>

@@ -11,7 +11,6 @@ import { BaseTabbedComponent } from 'src/app/pages/base-tabbed-component';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
-import { ErrorService } from 'src/app/services/error.service';
 import { PopupService } from 'src/app/services/popup.service';
 import { RoutingService } from 'src/app/services/routing.service';
 import { SpecificationService } from 'src/app/services/specification.service';
@@ -56,6 +55,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
   deletePending = false
   linkPending = false
   unlinkPending = false
+  loaded = false
 
   constructor(
     public dataService: DataService,
@@ -66,8 +66,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
     private route: ActivatedRoute,
     router: Router,
     private popupService: PopupService,
-    private modalService: BsModalService,
-    private errorService: ErrorService
+    private modalService: BsModalService
   ) { super(router) }
 
   loadTab(tabIndex: number): void {
@@ -79,14 +78,13 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
   }
 
   ngAfterViewInit(): void {
-		this.dataService.focus('shortName')
     this.showTab()
   }
 
   ngOnInit(): void {
     this.domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
     this.specificationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID))
-    const groupObservable = this.specificationService.getSpecificationGroups(this.domainId)
+    const groupObservable = this.specificationService.getDomainSpecificationGroups(this.domainId)
     .pipe(
       mergeMap((data) => {
         return of(data)
@@ -116,6 +114,8 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
     forkJoin([groupObservable, specObservable]).subscribe((data) => {
       this.specification.groups = data[0]
       this.routingService.specificationBreadcrumbs(this.domainId, this.specificationId, this.breadcrumbLabel())
+    }).add(() => {
+      this.loaded = true
     })
   }
 
@@ -198,6 +198,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
 
   linkTestSuite(testSuite: TestSuite) {
     this.linkPending = true
+    this.clearAlerts()
     this.conformanceService.linkSharedTestSuite(testSuite.id, [this.specificationId]).pipe(
       mergeMap((result) => {
         if (result.needsConfirmation) {
@@ -246,7 +247,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
     } else {
       msg = 'An error occurred while processing the test suite: Response was empty'
     }
-    this.errorService.showSimpleErrorMessage("Link error", msg)
+    this.addAlertError(msg)
   }
 
   unlinkTestSuite(testSuite: TestSuite) {
@@ -283,7 +284,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
 
 	saveSpecificationChanges() {
     this.savePending = true
-		this.specificationService.updateSpecification(this.specificationId, this.specification.sname!, this.specification.fname!, this.specification.description, this.specification.hidden, this.specification.group, this.specification.badges!)
+		this.specificationService.updateSpecification(this.specificationId, this.specification.sname!, this.specification.fname!, this.specification.description, this.specification.reportMetadata, this.specification.hidden, this.specification.group, this.specification.badges!)
 		.subscribe(() => {
 			this.popupService.success(this.dataService.labelSpecification()+' updated.')
       this.dataService.breadcrumbUpdate({id: this.specificationId, type: BreadcrumbType.specification, label: this.breadcrumbLabel()})

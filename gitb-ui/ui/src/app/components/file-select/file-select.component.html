@@ -4,12 +4,14 @@
     <span>Drop file here</span>
   </div>
 } @else {
-  <div class="input-group">
+  <div class="input-group" [class.has-validation]="hasValidation">
     @if (icon) {
       <span class="input-group-text"><i [ngClass]="icon"></i></span>
     }
-    <input type="text" autocomplete="off" class="form-control" [class.clickable]="!disableUpload" [value]="(fileName != undefined)?fileName:''" [attr.placeholder]="placeholder" (click)="onButtonClick()" readonly="readonly"/>
-    <button *ngIf="!disableUpload" class="btn btn-secondary" type="button" (click)="onButtonClick()" containerClass="shortTooltip" container="body" tooltip="Open" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-regular fa-folder-open"></i></button>
+    <input type="text" autocomplete="off" class="form-control" [invalid]="validation" [class.clickable]="!disableUpload" [value]="(fileName != undefined)?fileName:''" [attr.placeholder]="placeholder" (click)="onButtonClick()" readonly="readonly"/>
+    @if (!disableUpload) {
+      <button class="btn btn-secondary" type="button" (click)="onButtonClick()" containerClass="shortTooltip" container="body" tooltip="Open" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-regular fa-folder-open"></i></button>
+    }
     @if (extraActions) {
       <ng-content></ng-content>
     }

@@ -153,6 +153,7 @@ class AuthenticationFilter @Inject() (implicit ec: ExecutionContext, implicit va
     request.method.equals("OPTIONS") ||
       request.path.equals("/") ||
       request.path.equals("/app") ||
+      request.path.startsWith("/app/") ||
       request.path.equals("/"+API_ROOT+"/app/configuration") ||
       request.path.equals("/"+API_ROOT+"/notices/tbdefault") ||
       request.path.equals("/"+API_ROOT+"/user/selfreg") ||

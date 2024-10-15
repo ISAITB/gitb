@@ -1,8 +1,9 @@
 package actors
 
-import actors.events.sessions.{PrepareTestSessionsEvent, TestSessionConfiguredEvent}
+import actors.events.sessions.{PrepareTestSessionsEvent, TerminateSessionsEvent, TestSessionConfiguredEvent}
 import org.apache.pekko.actor.{Actor, ActorContext, ActorRef}
 import com.gitb.tbs.{ConfigurationCompleteRequest, InteractWithUsersRequest, TestStepStatus}
+import org.apache.commons.lang3.StringUtils
 import org.slf4j.LoggerFactory
 import play.api.libs.concurrent.InjectedActorSupport
 import utils.JacksonUtil
@@ -19,6 +20,7 @@ object SessionManagerActor {
 class SessionManagerActor @Inject() (sessionUpdateActorFactory: SessionUpdateActor.Factory, sessionLaunchActorFactory: SessionLaunchActor.Factory, webSocketActor: WebSocketActor) extends Actor with InjectedActorSupport {
 
   private val LOGGER = LoggerFactory.getLogger(classOf[SessionManagerActor])
+  private val LAUNCH_ACTOR_PREFIX = "launch"
 
   override def preStart():Unit = {
     LOGGER.debug(s"Starting session manager actor [${self.path.name}]")
@@ -39,6 +41,8 @@ class SessionManagerActor @Inject() (sessionUpdateActorFactory: SessionUpdateAct
       notifyConfigurationCompleteEvent(msg)
     case msg: PrepareTestSessionsEvent =>
       prepareTestSessions(msg)
+    case msg: TerminateSessionsEvent =>
+      terminateSessions(msg)
     case msg: Object =>
       LOGGER.warn(s"Session manager received unexpected message [${msg.getClass.getName}]")
   }
@@ -68,8 +72,14 @@ class SessionManagerActor @Inject() (sessionUpdateActorFactory: SessionUpdateAct
   private def prepareTestSessions(event: PrepareTestSessionsEvent): Unit = {
     LOGGER.info("Starting batch of "+event.launchData.testCases.size+" test session(s)")
     implicit val context: ActorContext = this.context
-    val actor = injectedChild(sessionLaunchActorFactory(), "launch-"+UUID.randomUUID().toString, props => props.withDispatcher("session-actor-dispatcher"))
+    val actor = injectedChild(sessionLaunchActorFactory(), "%s-%s".formatted(LAUNCH_ACTOR_PREFIX, UUID.randomUUID().toString), props => props.withDispatcher("session-actor-dispatcher"))
     actor ! event
+  }
+
+  private def terminateSessions(event: TerminateSessionsEvent): Unit = {
+    this.context.children.filter(x => StringUtils.startsWith(x.path.name, LAUNCH_ACTOR_PREFIX)).foreach { actor =>
+      actor.tell(event, this.self)
+    }
   }
 
 }

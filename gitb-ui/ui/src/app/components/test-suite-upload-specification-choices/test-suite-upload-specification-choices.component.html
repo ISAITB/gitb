@@ -1,81 +1,100 @@
-<div *ngIf="hasChoices" class="container-fluid ts-upload-result-container">
-    <div *ngFor="let choice of choices; let first = first; let last = last" class="row" [ngClass]="{'ts-upload-result-first': first, 'ts-upload-result-last': last}">
-        <div class="ts-upload-result-spec" [class.ts-upload-skipped]="(!sharedTestSuite && choice.sharedTestSuite) || (sharedTestSuite && !choice.sharedTestSuite)">
-            <div class="ts-upload-result-spec-name" [ngClass]="{'ts-upload-skipped': choice.skipUpdate}">{{choice.name}}</div>
-            <div class="ts-upload-result-spec-controls" *ngIf="hasMultipleChoicesWithOptions && !((!sharedTestSuite && choice.sharedTestSuite) || (sharedTestSuite && !choice.sharedTestSuite))">
-                <div class="btn-toolbar">
-                    <button *ngIf="!choice.skipUpdate" class="btn btn-secondary btn-sm" type="button" (click)="applyChoiceToAll(choice)">Apply to all</button>
-                    <button *ngIf="!choice.skipUpdate && !sharedTestSuite" class="btn btn-secondary btn-sm" type="button" (click)="skipUpdate(choice)">Skip</button>
-                    <button *ngIf="choice.skipUpdate && !sharedTestSuite" class="btn btn-secondary btn-sm" type="button" (click)="processUpdate(choice)">Process</button>
+@if (hasChoices) {
+    <div class="container-fluid ts-upload-result-container">
+        @for (choice of choices; track $index; let first = $first; let last = $last) {
+            <div class="row" [ngClass]="{'ts-upload-result-first': first, 'ts-upload-result-last': last}">
+                <div class="ts-upload-result-spec" [class.ts-upload-skipped]="(!sharedTestSuite && choice.sharedTestSuite) || (sharedTestSuite && !choice.sharedTestSuite)">
+                    <div class="ts-upload-result-spec-name" [ngClass]="{'ts-upload-skipped': choice.skipUpdate}">{{choice.name}}</div>
+                    @if (hasMultipleChoicesWithOptions && !((!sharedTestSuite && choice.sharedTestSuite) || (sharedTestSuite && !choice.sharedTestSuite))) {
+                        <div class="ts-upload-result-spec-controls">
+                            <div class="btn-toolbar">
+                                @if (!choice.skipUpdate) {
+                                    <button class="btn btn-secondary btn-sm" type="button" (click)="applyChoiceToAll(choice)">Apply to all</button>
+                                }
+                                @if (!choice.skipUpdate && !sharedTestSuite) {
+                                    <button class="btn btn-secondary btn-sm" type="button" (click)="skipUpdate(choice)">Skip</button>
+                                }
+                                @if (choice.skipUpdate && !sharedTestSuite) {
+                                    <button class="btn btn-secondary btn-sm" type="button" (click)="processUpdate(choice)">Process</button>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div [collapse]="choice.skipUpdate" [isAnimated]="true" class="ts-upload-result-actions col-12">
+                    @if ((!sharedTestSuite && choice.sharedTestSuite) || (sharedTestSuite && !choice.sharedTestSuite)) {
+                        @if (!sharedTestSuite && choice.sharedTestSuite) {
+                            <div class="alert alert-info rounded internal-warning">The {{dataService.labelSpecificationLower()}} contains a shared test suite with the same identifier. Upload will be skipped.</div>
+                        } @else if (sharedTestSuite && !choice.sharedTestSuite) {
+                            <div class="alert alert-info rounded internal-warning">The {{dataService.labelSpecificationLower()}} contains a different test suite with the same identifier. Linking will be skipped.</div>
+                        }
+                    } @else {
+                        <div class="row py-3">
+                            <legend class="col-3 col-form-label text-end py-0">* {{dataService.labelSpecification()}} data:</legend>
+                            <div class="col-9">
+                                @if (sharedTestSuite) {
+                                    <div class="form-check form-check-inline my-0">
+                                        <input class="form-check-input" type="radio" [attr.id]="'choice_metadata_skip_'+choice.specification" [name]="'choice_metadata_skip_'+choice.specification" [(ngModel)]="choice.updateActors" [attr.id]="'choice_metadata_skip_'+choice.specification" [value]="false">
+                                        <label class="form-check-label" [attr.for]="'choice_metadata_skip_'+choice.specification">Keep existing values
+                                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" [tbTooltip]="'Keep the current '+dataService.labelActorLower()+' definitions (including configuration parameters) when the test suite contains matching definitions.'"></div>
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" [attr.id]="'choice_metadata_update_'+choice.specification" [name]="'choice_metadata_update_'+choice.specification" [(ngModel)]="choice.updateActors" [attr.id]="'choice_metadata_update_'+choice.specification" [value]="true">
+                                        <label class="form-check-label" [attr.for]="'choice_metadata_update_'+choice.specification">Update using test suite definitions
+                                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" [tbTooltip]="'Update any existing '+dataService.labelActorLower()+' definitions (including configuration parameters) to match the information contained in the test suite definition. Only '+dataService.labelActorsLower()+' matching those contained in the test suite will be updated.'"></div>
+                                        </label>
+                                    </div>
+                                } @else {
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" [attr.id]="'choice_metadata_actors_'+choice.specification" [name]="'choice_metadata_actors_'+choice.specification" [(ngModel)]="choice.updateActors">
+                                        <label class="form-check-label" [attr.for]="'choice_metadata_actors_'+choice.specification">Update {{dataService.labelActorLower()}} definitions?
+                                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" [tbTooltip]="'Update any existing '+dataService.labelActorLower()+' definitions (including configuration parameters) to match the information contained in the provided archive. Only '+dataService.labelActorsLower()+' matching those contained in the archive will be updated.'"></div>
+                                        </label>
+                                    </div>
+                                    @if (choice.testSuiteExists) {
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="checkbox" [attr.id]="'choice_metadata_test_suite_'+choice.specification" [name]="'choice_metadata_test_suite_'+choice.specification" [(ngModel)]="choice.updateTestSuite">
+                                            <label class="form-check-label" [attr.for]="'choice_metadata_test_suite_'+choice.specification">Update test suite metadata?
+                                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="Update the metadata of the existing test suite (its name, description and documentation) to match the information contained in the provided archive. Note that test cases are always processed regardless of this option."></div>
+                                            </label>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    }
+                    @if (!sharedTestSuite && (choice.testCasesInArchiveAndDB.length > 0 || choice.testCasesInArchive.length > 0 || choice.testCasesInDB.length > 0)) {
+                        <div class="test-case-container">
+                            @if (choice.testCasesInArchiveAndDB.length > 0) {
+                                <!-- Test cases to update -->
+                                <app-test-case-update-list
+                                    [title]="'Existing test cases to update ('+choice.testCasesInArchiveAndDB.length+')'"
+                                    [titleTooltip]="'These are the test cases defined in the provided archive that match existing ones from the '+dataService.labelSpecificationLower()+'. The test steps of each of these will be updated, whereas the metadata (name, description, documentation) and test history will be updated according to your below choices.'"
+                                    [testCases]="choice.testCasesInArchiveAndDB"
+                                    [showUpdateDefinition]="!sharedTestSuite"
+                                    [showResetTestHistory]="true"
+                                ></app-test-case-update-list>						
+                            }
+                            @if (choice.testCasesInArchive.length > 0) {
+                                <!-- Test cases to add -->
+                                <app-test-case-update-list
+                                    [title]="'New test cases to add ('+choice.testCasesInArchive.length+')'"
+                                    [titleTooltip]="'These are the test cases defined in the provided archive for which no match was found in the '+dataService.labelSpecificationLower()+'. They will be included as new test cases in the test suite.'"
+                                    [testCases]="choice.testCasesInArchive"
+                                ></app-test-case-update-list>
+                            }
+                            @if (choice.testCasesInDB.length > 0) {
+                                <!-- Test cases to delete -->
+                                <app-test-case-update-list
+                                    [title]="'Missing test cases to delete ('+choice.testCasesInDB.length+')'"
+                                    [titleTooltip]="'These are the test cases that exist in the '+dataService.labelSpecificationLower()+' for which no match was found in the provided archive. They will be deleted from the test suite, with any relevant test sessions considered obsolete.'"
+                                    [testCases]="choice.testCasesInDB"
+                                ></app-test-case-update-list>
+                            }
+                        </div>
+                    }
                 </div>
             </div>
-        </div>
-        <div [collapse]="choice.skipUpdate" [isAnimated]="true" class="ts-upload-result-actions col-12">
-            <ng-container [ngSwitch]="(!sharedTestSuite && choice.sharedTestSuite) || (sharedTestSuite && !choice.sharedTestSuite)">
-                <ng-container *ngSwitchCase="true">
-                    <div *ngIf="!sharedTestSuite && choice.sharedTestSuite" class="alert alert-info rounded internal-warning">The {{dataService.labelSpecificationLower()}} contains a shared test suite with the same identifier. Upload will be skipped.</div>
-                    <div *ngIf="sharedTestSuite && !choice.sharedTestSuite" class="alert alert-info rounded internal-warning">The {{dataService.labelSpecificationLower()}} contains a different test suite with the same identifier. Linking will be skipped.</div>
-                </ng-container>
-                <ng-container *ngSwitchDefault>
-                    <div class="row py-3">
-                        <legend class="col-3 col-form-label text-end py-0">* {{dataService.labelSpecification()}} data:</legend>
-                        <div class="col-9" [ngSwitch]="sharedTestSuite">
-                            <ng-container *ngSwitchCase="true">
-                                <div class="form-check form-check-inline my-0">
-                                    <input class="form-check-input" type="radio" [attr.id]="'choice_metadata_skip_'+choice.specification" [name]="'choice_metadata_skip_'+choice.specification" [(ngModel)]="choice.updateActors" [attr.id]="'choice_metadata_skip_'+choice.specification" [value]="false">
-                                    <label class="form-check-label" [attr.for]="'choice_metadata_skip_'+choice.specification">Keep existing values
-                                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" [tbTooltip]="'Keep the current '+dataService.labelActorLower()+' definitions (including configuration parameters) when the test suite contains matching definitions.'"></div>
-                                    </label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" [attr.id]="'choice_metadata_update_'+choice.specification" [name]="'choice_metadata_update_'+choice.specification" [(ngModel)]="choice.updateActors" [attr.id]="'choice_metadata_update_'+choice.specification" [value]="true">
-                                    <label class="form-check-label" [attr.for]="'choice_metadata_update_'+choice.specification">Update using test suite definitions
-                                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" [tbTooltip]="'Update any existing '+dataService.labelActorLower()+' definitions (including configuration parameters) to match the information contained in the test suite definition. Only '+dataService.labelActorsLower()+' matching those contained in the test suite will be updated.'"></div>
-                                    </label>
-                                </div>
-                            </ng-container>
-                            <ng-container *ngSwitchDefault>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="checkbox" [attr.id]="'choice_metadata_actors_'+choice.specification" [name]="'choice_metadata_actors_'+choice.specification" [(ngModel)]="choice.updateActors">
-                                    <label class="form-check-label" [attr.for]="'choice_metadata_actors_'+choice.specification">Update {{dataService.labelActorLower()}} definitions?
-                                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" [tbTooltip]="'Update any existing '+dataService.labelActorLower()+' definitions (including configuration parameters) to match the information contained in the provided archive. Only '+dataService.labelActorsLower()+' matching those contained in the archive will be updated.'"></div>
-                                    </label>
-                                </div>
-                                <div class="form-check form-check-inline" *ngIf="choice.testSuiteExists">
-                                    <input class="form-check-input" type="checkbox" [attr.id]="'choice_metadata_test_suite_'+choice.specification" [name]="'choice_metadata_test_suite_'+choice.specification" [(ngModel)]="choice.updateTestSuite">
-                                    <label class="form-check-label" [attr.for]="'choice_metadata_test_suite_'+choice.specification">Update test suite metadata?
-                                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="Update the metadata of the existing test suite (its name, description and documentation) to match the information contained in the provided archive. Note that test cases are always processed regardless of this option."></div>
-                                    </label>
-                                </div>
-                            </ng-container>
-                        </div>
-                    </div>
-                </ng-container>
-            </ng-container>
-            <ng-container *ngIf="!sharedTestSuite && (choice.testCasesInArchiveAndDB.length > 0 || choice.testCasesInArchive.length > 0 || choice.testCasesInDB.length > 0)">
-                <div class="test-case-container">
-                    <!-- Test cases to update -->
-                    <app-test-case-update-list *ngIf="choice.testCasesInArchiveAndDB.length > 0"
-                        [title]="'Existing test cases to update ('+choice.testCasesInArchiveAndDB.length+')'"
-                        [titleTooltip]="'These are the test cases defined in the provided archive that match existing ones from the '+dataService.labelSpecificationLower()+'. The test steps of each of these will be updated, whereas the metadata (name, description, documentation) and test history will be updated according to your below choices.'"
-                        [testCases]="choice.testCasesInArchiveAndDB"
-                        [showUpdateDefinition]="!sharedTestSuite"
-                        [showResetTestHistory]="true"
-                    ></app-test-case-update-list>						
-                    <!-- Test cases to add -->
-                    <app-test-case-update-list *ngIf="choice.testCasesInArchive.length > 0"
-                        [title]="'New test cases to add ('+choice.testCasesInArchive.length+')'"
-                        [titleTooltip]="'These are the test cases defined in the provided archive for which no match was found in the '+dataService.labelSpecificationLower()+'. They will be included as new test cases in the test suite.'"
-                        [testCases]="choice.testCasesInArchive"
-                    ></app-test-case-update-list>
-                    <!-- Test cases to delete -->
-                    <app-test-case-update-list *ngIf="choice.testCasesInDB.length > 0"
-                        [title]="'Missing test cases to delete ('+choice.testCasesInDB.length+')'"
-                        [titleTooltip]="'These are the test cases that exist in the '+dataService.labelSpecificationLower()+' for which no match was found in the provided archive. They will be deleted from the test suite, with any relevant test sessions considered obsolete.'"
-                        [testCases]="choice.testCasesInDB"
-                    ></app-test-case-update-list>
-                </div>
-            </ng-container>
-        </div>
+        }
     </div>
-</div>
+}

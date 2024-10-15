@@ -10,61 +10,76 @@
 					<input class="form-check-input" type="radio" [(ngModel)]="choice" name="choice" id="choice_link" [value]="Constants.CREATE_ACCOUNT_OPTION.LINK" (change)="choiceChanged()">
 					<label class="form-check-label" for="choice_link">Confirm a role assigned to me by an administrator</label>
 				</div>
-				<div class="form-check pb-2" *ngIf="dataService.configuration.registrationEnabled">
-					<input class="form-check-input" type="radio" [(ngModel)]="choice" name="choice" id="choice_register" [value]="Constants.CREATE_ACCOUNT_OPTION.SELF_REGISTER" (change)="choiceChanged()">
-					<label class="form-check-label" for="choice_register">Register in a public community</label>
-				</div>
-				<div class="form-check pb-2" *ngIf="dataService.configuration.ssoInMigration">
-					<input class="form-check-input" type="radio" [(ngModel)]="choice" name="choice" id="choice_migrate" [value]="Constants.CREATE_ACCOUNT_OPTION.MIGRATE" (change)="choiceChanged()">
-					<label class="form-check-label" for="choice_migrate">Migrate an existing account to my EU Login account</label>
-				</div>
+				@if (dataService.configuration.registrationEnabled) {
+					<div class="form-check pb-2">
+						<input class="form-check-input" type="radio" [(ngModel)]="choice" name="choice" id="choice_register" [value]="Constants.CREATE_ACCOUNT_OPTION.SELF_REGISTER" (change)="choiceChanged()">
+						<label class="form-check-label" for="choice_register">Register in a public community</label>
+					</div>
+				}
+				@if (dataService.configuration.ssoInMigration) {
+					<div class="form-check pb-2">
+						<input class="form-check-input" type="radio" [(ngModel)]="choice" name="choice" id="choice_migrate" [value]="Constants.CREATE_ACCOUNT_OPTION.MIGRATE" (change)="choiceChanged()">
+						<label class="form-check-label" for="choice_migrate">Migrate an existing account to my EU Login account</label>
+					</div>
+				}
 			</div>
 		</div>
-		<div *ngIf="choice == Constants.CREATE_ACCOUNT_OPTION.LINK">
-			<div class="link-account-separator">
-				<div class="alert alert-info rounded">
-					<div *ngIf="linkedAccounts.length > 0">
-						<p>The following roles have been assigned to you. Select the one you want to confirm and link to your account.</p>
-						<span><b>Privacy note:</b> By confirming you grant your consent to record your name, email and EU Login user ID.</span>
-					</div>
-					<span *ngIf="linkedAccounts.length == 0">There are no unconfirmed roles currently assigned to you.</span>
-				</div>
-			</div>
-			<div class="row">
-				<div class="col-12">
-					<div [ngClass]="{'div-spaced-small': !first, 'account-card-ou': account.role == Constants.USER_ROLE.VENDOR_USER, 'account-card-oa': account.role == Constants.USER_ROLE.VENDOR_ADMIN, 'account-card-ca': account.role == Constants.USER_ROLE.COMMUNITY_ADMIN, 'account-card-ta': account.role == Constants.USER_ROLE.SYSTEM_ADMIN}" *ngFor="let account of linkedAccounts; let first = first">
-						<div class="account-card-internal" [ngClass]="{'account-card-selected': selectedAccountId == account.id}" (click)="selectAccount(account.id)">
-							<div class="account-card-text">
-								{{dataService.getRoleDescription(true, account)}}
+		@if (choice == Constants.CREATE_ACCOUNT_OPTION.LINK) {
+			<div>
+				<div class="link-account-separator">
+					<div class="alert alert-info rounded">
+						@if (linkedAccounts.length > 0) {
+							<div>
+								<p>The following roles have been assigned to you. Select the one you want to confirm and link to your account.</p>
+								<span><b>Privacy note:</b> By confirming you grant your consent to record your name, email and EU Login user ID.</span>
 							</div>
-						</div>
+						} @else {
+							<span>There are no unconfirmed roles currently assigned to you.</span>
+						}
+					</div>
+				</div>
+				<div class="row">
+					<div class="col-12">
+						@for (account of linkedAccounts; track account.id; let first = $first) {
+							<div [ngClass]="{'div-spaced-small': !first, 'account-card-ou': account.role == Constants.USER_ROLE.VENDOR_USER, 'account-card-oa': account.role == Constants.USER_ROLE.VENDOR_ADMIN, 'account-card-ca': account.role == Constants.USER_ROLE.COMMUNITY_ADMIN, 'account-card-ta': account.role == Constants.USER_ROLE.SYSTEM_ADMIN}">
+								<div class="account-card-internal" [ngClass]="{'account-card-selected': selectedAccountId == account.id}" (click)="selectAccount(account.id)">
+									<div class="account-card-text">
+										{{dataService.getRoleDescription(true, account)}}
+									</div>
+								</div>
+							</div>
+						}
 					</div>
 				</div>
 			</div>
-		</div>
-		<div *ngIf="dataService.configuration.ssoInMigration && choice == Constants.CREATE_ACCOUNT_OPTION.MIGRATE">
-			<div class="link-account-separator">
-				<div class="alert alert-info rounded">
-					<p>Provide the credentials you have been using to authenticate prior to EU Login.</p>
-					<span><b>Privacy note:</b> By completing this you grant your consent to record your name, email and EU Login user ID.</span>
+		}
+		@if (dataService.configuration.ssoInMigration && choice == Constants.CREATE_ACCOUNT_OPTION.MIGRATE) {
+			<div>
+				<div class="link-account-separator">
+					<div class="alert alert-info rounded">
+						<p>Provide the credentials you have been using to authenticate prior to EU Login.</p>
+						<span><b>Privacy note:</b> By completing this you grant your consent to record your name, email and EU Login user ID.</span>
+					</div>
+				</div>
+				<div class="row mt-3">
+					<label class="col-3 col-form-label text-end" for="username">* Username:</label>
+					<div class="col-7"><input id="username" name="username" [(ngModel)]="email" class="form-control" type="text" [invalid]="validation.get('username')"></div>
+					<div app-tooltip class="col-auto" tbTooltip="The username you have been using up to now to log in."></div>
+				</div>
+				<div class="row mt-3">
+					<label class="col-3 col-form-label text-end" for="password">* Password:</label>
+					<div class="col-7">
+						<app-secret-input id="password" name="password" [(ngModel)]="password"></app-secret-input>
+					</div>
+					<div app-tooltip class="col-auto" tbTooltip="The password you have been using up to now."></div>
 				</div>
 			</div>
-			<div class="row mt-3">
-				<label class="col-3 col-form-label text-end" for="username">* Username:</label>
-				<div class="col-7"><input id="username" name="username" [(ngModel)]="email" class="form-control" type="text"></div>
-				<div app-tooltip class="col-auto" tbTooltip="The username you have been using up to now to log in."></div>
+		}
+		@if (choice == Constants.CREATE_ACCOUNT_OPTION.SELF_REGISTER) {
+			<div class="mt-3">
+				<app-self-registration [model]="selfRegData" [selfRegOptions]="selfRegOptions" [validation]="validation"></app-self-registration>
 			</div>
-			<div class="row mt-3">
-				<label class="col-3 col-form-label text-end" for="password">* Password:</label>
-				<div class="col-7">
-					<app-secret-input id="password" name="password" [(ngModel)]="password"></app-secret-input>
-				</div>
-				<div app-tooltip class="col-auto" tbTooltip="The password you have been using up to now."></div>
-			</div>
-		</div>
-		<div *ngIf="choice == Constants.CREATE_ACCOUNT_OPTION.SELF_REGISTER" class="mt-3">
-            <app-self-registration [model]="selfRegData" [selfRegOptions]="selfRegOptions"></app-self-registration>
-		</div>
+		}
 	</div>
 	<div class="modal-footer">
 		<div class="btn-toolbar">

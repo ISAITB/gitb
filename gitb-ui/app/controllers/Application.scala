@@ -2,6 +2,7 @@ package controllers
 
 import config.Configurations
 import config.Configurations.versionInfo
+import controllers.util.ResponseConstructor
 import filters.CorsFilter
 import managers.{LegalNoticeManager, SystemConfigurationManager}
 import models.{Constants, PublicConfig}
@@ -17,7 +18,7 @@ import scala.concurrent.ExecutionContext
 
 class Application @Inject() (implicit ec: ExecutionContext, cc: ControllerComponents, defaultAction: DefaultActionBuilder, systemConfigurationManager: SystemConfigurationManager, legalNoticeManager: LegalNoticeManager, environment: Environment, repositoryUtils: RepositoryUtils) extends AbstractController(cc) {
 
-  def index() = defaultAction {
+  def index(): Action[AnyContent] = defaultAction {
     val legalNotice = legalNoticeManager.getCommunityDefaultLegalNotice(Constants.DefaultCommunityId)
     var hasDefaultLegalNotice = false
     var legalNoticeContent = ""
@@ -55,7 +56,24 @@ class Application @Inject() (implicit ec: ExecutionContext, cc: ControllerCompon
     Configurations.versionInfo().replace(' ', '_')+Constants.VersionNumberPostfixForResources
   }
 
-  def app() = defaultAction {
+  def app(): Action[AnyContent] = defaultAction {
+    handleAppLoad()
+  }
+
+  def appWithRequestedPath(path: String): Action[AnyContent] = defaultAction { request =>
+    if (StringUtils.isNoneBlank(path)) {
+      val cookie = ResponseConstructor.createRequestedUrlCookie(request.uri)
+      if (cookie.isDefined) {
+        handleAppLoad().withCookies(cookie.get)
+      } else {
+        handleAppLoad()
+      }
+    } else {
+      handleAppLoad()
+    }
+  }
+
+  private def handleAppLoad(): Result = {
     Ok(views.html.ngApp(new PublicConfig(resourceVersionToUse(), Configurations.AUTHENTICATION_COOKIE_PATH, contextPath()), environment.mode))
   }
 

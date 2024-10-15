@@ -19,5 +19,6 @@ export interface Organisation extends EntityWithId {
     landingPages?: LandingPage
     legalNotices?: LegalNotice
     errorTemplates?: ErrorTemplate
+    communityLegalNoticeAppliesAndExists?: boolean
 
 }

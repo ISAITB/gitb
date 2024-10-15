@@ -28,40 +28,51 @@
                                 <th class="min-width">In&nbsp;tests</th>
                                 <th class="min-width">In&nbsp;exports</th>
                                 <th class="min-width">Hidden</th>
-                                <th class="min-width" *ngIf="dataService.configuration.registrationEnabled">In&nbsp;registration</th>
+                                @if (dataService.configuration.registrationEnabled) {
+                                    <th class="min-width">In&nbsp;registration</th>
+                                }
                                 <th class="min-width"></th>
                             </tr>
                         </thead>
                         <tbody class="organisationParametersTable" cdkDropList cdkDropListLockAxis="y" (cdkDropListDropped)="dropOrganisationParameter($event)">
-                            <tr *ngIf="organisationParameterStatus.status != Constants.STATUS.FINISHED">
-                                <td colspan="10" class="td-data-loading"><span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></td>
-                            </tr>
-                            <tr *ngIf="organisationParameterStatus.status == Constants.STATUS.FINISHED && organisationParameters.length == 0">
-                                <td colspan="10" class="td-no-data"><span>No properties found</span></td>
-                            </tr>
-                            <tr class="table-row-directive drag-table-row" 
-                                *ngFor="let parameter of organisationParameters"
-                                cdkDrag
-                                (cdkDragStarted)="draggingOrganisationParameter = true"
-                                (cdkDragEnded)="draggingOrganisationParameter = false"
-                                cdkDragPreviewContainer="parent"
-                                [cdkDragDisabled]="organisationParameters.length == 1"
-                                (click)="onOrganisationParameterSelect(parameter)"
-                                [class.selectable]="!draggingOrganisationParameter && !draggingSystemParameter"
-                            >                            
-                                <td class="drag-preview"><div><span>{{parameter.name}}</span></div></td>
-                                <td><div><span>{{parameter.testKey}}</span></div></td>
-                                <td><div><span>{{kindLabel(parameter)}}</span></div></td>
-                                <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.use == 'R', 'fa-times': parameter.use != 'R'}"></i></span></div></td>
-                                <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': !parameter.adminOnly, 'fa-times': parameter.adminOnly}"></i></span></div></td>
-                                <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': !parameter.notForTests, 'fa-times': parameter.notForTests}"></i></span></div></td>
-                                <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.inExports, 'fa-times': !parameter.inExports}"></i></span></div></td>
-                                <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.hidden, 'fa-times': !parameter.hidden}"></i></span></div></td>
-                                <td class="centered" *ngIf="dataService.configuration.registrationEnabled"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.inSelfRegistration, 'fa-times': !parameter.inSelfRegistration}"></i></span></div></td>
-                                <td class="drag-handle" (click)="$event.stopPropagation();">
-                                    <button cdkDragHandle *ngIf="organisationParameters.length > 1" #pop="bs-tooltip" (mousedown)="pop.hide()" class="btn btn-secondary" type="button" containerClass="shortTooltip" container="body" tooltip="Reorder" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrows-up-down"></i></span></button>
-                                </td>
-                            </tr>
+                            @if (organisationParameterStatus.status != Constants.STATUS.FINISHED) {
+                                <tr>
+                                    <td colspan="10" class="td-data-loading"><span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></td>
+                                </tr>
+                            } @else if (organisationParameters.length == 0) {
+                                <tr>
+                                    <td colspan="10" class="td-no-data"><span>No properties found</span></td>
+                                </tr>
+                            } @else {
+                                @for (parameter of organisationParameters; track parameter.id) {
+                                    <tr class="table-row-directive drag-table-row" 
+                                        cdkDrag
+                                        (cdkDragStarted)="draggingOrganisationParameter = true"
+                                        (cdkDragEnded)="draggingOrganisationParameter = false"
+                                        cdkDragPreviewContainer="parent"
+                                        [cdkDragDisabled]="organisationParameters.length == 1"
+                                        (click)="onOrganisationParameterSelect(parameter)"
+                                        [class.selectable]="!draggingOrganisationParameter && !draggingSystemParameter"
+                                    >                            
+                                        <td class="drag-preview"><div><span>{{parameter.name}}</span></div></td>
+                                        <td><div><span>{{parameter.testKey}}</span></div></td>
+                                        <td><div><span>{{kindLabel(parameter)}}</span></div></td>
+                                        <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.use == 'R', 'fa-times': parameter.use != 'R'}"></i></span></div></td>
+                                        <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': !parameter.adminOnly, 'fa-times': parameter.adminOnly}"></i></span></div></td>
+                                        <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': !parameter.notForTests, 'fa-times': parameter.notForTests}"></i></span></div></td>
+                                        <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.inExports, 'fa-times': !parameter.inExports}"></i></span></div></td>
+                                        <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.hidden, 'fa-times': !parameter.hidden}"></i></span></div></td>
+                                        @if (dataService.configuration.registrationEnabled) {
+                                            <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.inSelfRegistration, 'fa-times': !parameter.inSelfRegistration}"></i></span></div></td>
+                                        }
+                                        <td class="drag-handle" (click)="$event.stopPropagation();">
+                                            @if (organisationParameters.length > 1) {
+                                                <button cdkDragHandle #pop="bs-tooltip" (mousedown)="pop.hide()" class="btn btn-secondary" type="button" containerClass="shortTooltip" container="body" tooltip="Reorder" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrows-up-down"></i></span></button>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            }
                         </tbody>
                     </table>
                 </div>
@@ -91,34 +102,41 @@
                             </tr>
                         </thead>
                         <tbody class="systemParametersTable" cdkDropList cdkDropListLockAxis="y" (cdkDropListDropped)="dropSystemParameter($event)">
-                            <tr *ngIf="systemParameterStatus.status != Constants.STATUS.FINISHED">
-                                <td colspan="10" class="td-data-loading"><span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></td>
-                            </tr>
-                            <tr *ngIf="systemParameterStatus.status == Constants.STATUS.FINISHED && systemParameters.length == 0">
-                                <td colspan="10" class="td-no-data"><span>No properties found</span></td>
-                            </tr>
-                            <tr class="table-row-directive drag-table-row" 
-                                *ngFor="let parameter of systemParameters"
-                                cdkDrag
-                                (cdkDragStarted)="draggingSystemParameter = true"
-                                (cdkDragEnded)="draggingSystemParameter = false"
-                                cdkDragPreviewContainer="parent"
-                                [cdkDragDisabled]="systemParameters.length == 1"
-                                (click)="onSystemParameterSelect(parameter)"
-                                [class.selectable]="!draggingSystemParameter && !draggingOrganisationParameter"
-                            >
-                                <td class="drag-preview"><div><span>{{parameter.name}}</span></div></td>
-                                <td><div><span>{{parameter.testKey}}</span></div></td>
-                                <td><div><span>{{kindLabel(parameter)}}</span></div></td>
-                                <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.use == 'R', 'fa-times': parameter.use != 'R'}"></i></span></div></td>
-                                <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': !parameter.adminOnly, 'fa-times': parameter.adminOnly}"></i></span></div></td>
-                                <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': !parameter.notForTests, 'fa-times': parameter.notForTests}"></i></span></div></td>
-                                <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.inExports, 'fa-times': !parameter.inExports}"></i></span></div></td>
-                                <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.hidden, 'fa-times': !parameter.hidden}"></i></span></div></td>
-                                <td class="drag-handle" (click)="$event.stopPropagation();">
-                                    <button cdkDragHandle *ngIf="systemParameters.length > 1" #pop="bs-tooltip" (mousedown)="pop.hide()" class="btn btn-secondary" type="button" containerClass="shortTooltip" container="body" tooltip="Reorder" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrows-up-down"></i></span></button>
-                                </td>
-                            </tr>
+                            @if (systemParameterStatus.status != Constants.STATUS.FINISHED) {
+                                <tr>
+                                    <td colspan="10" class="td-data-loading"><span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></td>
+                                </tr>
+                            } @else if (systemParameters.length == 0) {
+                                <tr>
+                                    <td colspan="10" class="td-no-data"><span>No properties found</span></td>
+                                </tr>
+                            } @else {
+                                @for (parameter of systemParameters; track parameter.id) {
+                                    <tr class="table-row-directive drag-table-row" 
+                                        cdkDrag
+                                        (cdkDragStarted)="draggingSystemParameter = true"
+                                        (cdkDragEnded)="draggingSystemParameter = false"
+                                        cdkDragPreviewContainer="parent"
+                                        [cdkDragDisabled]="systemParameters.length == 1"
+                                        (click)="onSystemParameterSelect(parameter)"
+                                        [class.selectable]="!draggingSystemParameter && !draggingOrganisationParameter"
+                                    >
+                                        <td class="drag-preview"><div><span>{{parameter.name}}</span></div></td>
+                                        <td><div><span>{{parameter.testKey}}</span></div></td>
+                                        <td><div><span>{{kindLabel(parameter)}}</span></div></td>
+                                        <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.use == 'R', 'fa-times': parameter.use != 'R'}"></i></span></div></td>
+                                        <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': !parameter.adminOnly, 'fa-times': parameter.adminOnly}"></i></span></div></td>
+                                        <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': !parameter.notForTests, 'fa-times': parameter.notForTests}"></i></span></div></td>
+                                        <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.inExports, 'fa-times': !parameter.inExports}"></i></span></div></td>
+                                        <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.hidden, 'fa-times': !parameter.hidden}"></i></span></div></td>
+                                        <td class="drag-handle" (click)="$event.stopPropagation();">
+                                            @if (systemParameters.length > 1) {
+                                                <button cdkDragHandle #pop="bs-tooltip" (mousedown)="pop.hide()" class="btn btn-secondary" type="button" containerClass="shortTooltip" container="body" tooltip="Reorder" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrows-up-down"></i></span></button>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            }
                         </tbody>
                     </table>
                 </div>

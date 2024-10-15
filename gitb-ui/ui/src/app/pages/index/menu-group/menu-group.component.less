@@ -4,8 +4,11 @@
     position: relative;
     .menu-separator {
         margin-top: 30px;
-        padding-top: 30px;
+        padding-top: 20px;
         border-top: 1px solid @gray-light;
+    }
+    .menu-separator.without-label {
+        margin-top: 25px;
     }
     .menu-group-label {
         display: flex;
@@ -15,7 +18,7 @@
         font-weight: bold;
         white-space: nowrap;
         position: absolute;
-        top: -12px;
+        top: -0.75em;
         background: @gray-light-1;
         left: 35px;
         padding: 0px 10px;

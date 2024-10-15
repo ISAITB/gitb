@@ -4,18 +4,18 @@
             <div class="card-title">Create {{dataService.labelSystemLower()}}</div>
         </div>
         <form>
-            <div class="card-body">
-                <app-alert-display [alerts]="alerts" innerClass="col-10 offset-1"></app-alert-display>
+            <div class="card-body" [pending]="!loaded" focus="sname">
                 <app-system-form
                     [system]="system"
                     [communityId]="communityId"
                     [organisationId]="organisationId"
                     [propertyData]="propertyData"
+                    [otherSystems]="otherSystems"
                 ></app-system-form>
             </div>
             <div class="card-footer">
                 <div class="btn-toolbar">
-                    <button class="btn btn-secondary" type="submit" (click)="create()" [pending]="savePending" [disable]="!saveEnabled()">Save</button>
+                    <button class="btn btn-secondary" type="submit" (click)="create()" [pending]="savePending" [disable]="!loaded || !saveEnabled()">Save</button>
                     <button class="btn btn-secondary" type="button" (click)="cancel()" [disabled]="savePending">Cancel</button>
                 </div>
             </div>

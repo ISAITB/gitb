@@ -21,11 +21,19 @@ import java.nio.file.{Files, Paths, StandardCopyOption}
 import java.security.cert.{Certificate, CertificateExpiredException, CertificateNotYetValidException, X509Certificate}
 import java.security.{KeyStore, NoSuchAlgorithmException}
 import javax.inject.Inject
+import scala.collection.mutable
 import scala.concurrent.ExecutionContext
 import scala.util.Using
 
 class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAction: AuthorizedAction, cc: ControllerComponents, reportManager: ReportManager, systemManager: SystemManager, endpointManager: EndPointManager, specificationManager: SpecificationManager, domainParameterManager: DomainParameterManager, domainManager: DomainManager, communityManager: CommunityManager, conformanceManager: ConformanceManager, accountManager: AccountManager, actorManager: ActorManager, testSuiteManager: TestSuiteManager, testResultManager: TestResultManager, testCaseManager: TestCaseManager, parameterManager: ParameterManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager, repositoryUtils: RepositoryUtils) extends AbstractController(cc) {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[ConformanceService])
+
+  def getDomain(domainId: Long): Action[AnyContent] = authorizedAction { request =>
+    authorizationManager.canManageDomain(request, domainId)
+    val result = domainManager.getDomains(Some(List(domainId))).head
+    val json = JsonUtil.jsDomain(result, withApiKeys = true).toString()
+    ResponseConstructor.constructJsonResponse(json)
+  }
 
   /**
    * Gets the list of domains
@@ -34,7 +42,8 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
     val ids = ParameterExtractor.extractLongIdsQueryParameter(request)
     authorizationManager.canViewDomains(request, ids)
     val result = domainManager.getDomains(ids)
-    val withApiKeys = ids.exists(_.nonEmpty)
+    val withApiKeys = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.KEYS)
+      .getOrElse(ids.exists(_.nonEmpty))
     val json = JsonUtil.jsDomains(result, withApiKeys).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -216,14 +225,14 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
    * Gets actors defined  for the spec
    */
   def getSpecActors(spec_id: Long): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.canViewActorsBySpecificationId(request, spec_id)
+    authorizationManager.canManageSpecification(request, spec_id)
     val actors = actorManager.getActorsWithSpecificationId(None, Some(List(spec_id)))
     val json = JsonUtil.jsActorsNonCase(actors).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
 
   def getSpecTestSuites(spec_id: Long): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.canViewTestSuitesBySpecificationId(request, spec_id)
+    authorizationManager.canManageSpecification(request, spec_id)
     val testSuites = testSuiteManager.getTestSuitesWithSpecificationId(spec_id)
     val json = JsonUtil.jsTestSuitesList(testSuites).toString()
     ResponseConstructor.constructJsonResponse(json)
@@ -250,8 +259,9 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
       val shortName:String = ParameterExtractor.requiredBodyParameter(request, Parameters.SHORT_NAME)
       val fullName:String = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL_NAME)
       val description:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
+      val reportMetadata:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.METADATA)
 
-      domainManager.updateDomain(domainId, shortName, fullName, description)
+      domainManager.updateDomain(domainId, shortName, fullName, description, reportMetadata)
       ResponseConstructor.constructEmptyResponse
     } else{
       throw NotFoundException(ErrorCodes.SYSTEM_NOT_FOUND, communityLabelManager.getLabel(request, LabelType.Domain) + " with ID '" + domainId + "' not found.")
@@ -296,13 +306,21 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
   }
 
   def createParameter(): Action[AnyContent] = authorizedAction { request =>
+    val actorId = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID).toLong
+    authorizationManager.canManageActor(request, actorId)
     val parameter = ParameterExtractor.extractParameter(request)
-    authorizationManager.canCreateParameter(request, parameter.endpoint)
-    if (parameterManager.checkParameterExistsForEndpoint(parameter.name, parameter.endpoint, None)) {
-      ResponseConstructor.constructBadRequestResponse(500, "A parameter with this name already exists for the "+communityLabelManager.getLabel(request, LabelType.Endpoint, single = true, lowercase = true)+".")
+    if (parameter.endpoint == 0L) {
+      // New endpoint.
+      val createdIds = parameterManager.createParameterAndEndpoint(parameter, actorId)
+      ResponseConstructor.constructJsonResponse(JsonUtil.jsEndpointId(createdIds._1).toString)
     } else {
-      parameterManager.createParameterWrapper(parameter)
-      ResponseConstructor.constructEmptyResponse
+      // Existing endpoint.
+      if (parameterManager.checkParameterExistsForEndpoint(parameter.name, parameter.endpoint, None)) {
+        ResponseConstructor.constructBadRequestResponse(500, "A parameter with this name already exists for the " + communityLabelManager.getLabel(request, LabelType.Endpoint, single = true, lowercase = true) + ".")
+      } else {
+        parameterManager.createParameterWrapper(parameter)
+        ResponseConstructor.constructJsonResponse(JsonUtil.jsEndpointId(parameter.endpoint).toString)
+      }
     }
   }
 
@@ -417,7 +435,7 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
         authorizationManager.canManageDomain(request, domainId)
       }
       var response:Result = null
-      val testSuiteFileName = "ts_"+RandomStringUtils.random(10, false, true)+".zip"
+      val testSuiteFileName = "ts_"+RandomStringUtils.secure().next(10, false, true)+".zip"
       ParameterExtractor.extractFiles(request).get(Parameters.FILE) match {
         case Some(testSuite) =>
           if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
@@ -430,7 +448,7 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
           if (response == null) {
             val file = Paths.get(
               repositoryUtils.getTempFolder().getAbsolutePath,
-              RandomStringUtils.random(10, false, true),
+              RandomStringUtils.secure().next(10, false, true),
               testSuiteFileName
             ).toFile
             file.getParentFile.mkdirs()
@@ -525,15 +543,15 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
       var response: Result = null
       val domainParameter = JsonUtil.parseJsDomainParameter(jsDomainParameter, None, domainId)
       if (domainParameterManager.getDomainParameterByDomainAndName(domainId, domainParameter.name).isDefined) {
-        response = ResponseConstructor.constructBadRequestResponse(500, s"A parameter with this name already exists for the ${communityLabelManager.getLabel(request, models.Enums.LabelType.Domain, single = true, lowercase = true)}.")
+        response = ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "A parameter with this name already exists.", Some("name"))
       } else {
         if (domainParameter.kind == "BINARY") {
           if (fileToStore.isDefined) {
             if (Configurations.ANTIVIRUS_SERVER_ENABLED && ParameterExtractor.virusPresentInFiles(List(fileToStore.get))) {
-              response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")
+              response = ResponseConstructor.constructErrorResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.", Some("file"))
             }
           } else {
-            response = ResponseConstructor.constructBadRequestResponse(500, "No file provided for binary parameter.")
+            response = ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_REQUEST, "No file provided for binary parameter.", Some("file"))
           }
         }
       }
@@ -567,7 +585,7 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
       val domainParameter = JsonUtil.parseJsDomainParameter(jsDomainParameter, Some(domainParameterId), domainId)
       val existingDomainParameter = domainParameterManager.getDomainParameterByDomainAndName(domainId, domainParameter.name)
       if (existingDomainParameter.isDefined && (existingDomainParameter.get.id != domainParameterId)) {
-        result = ResponseConstructor.constructBadRequestResponse(500, s"A parameter with this name already exists for the ${communityLabelManager.getLabel(request, models.Enums.LabelType.Domain, single = true, lowercase = true)}.")
+        result = ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "A parameter with this name already exists.", Some("name"))
       } else if (domainParameter.kind == "BINARY") {
         if (fileToStore.isDefined) {
           if (Configurations.ANTIVIRUS_SERVER_ENABLED && ParameterExtractor.virusPresentInFiles(List(fileToStore.get))) {
@@ -797,22 +815,6 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
     }
   }
 
-  def updateConformanceCertificateSettings(communityId: Long): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.canUpdateConformanceCertificateSettings(request, communityId)
-    val jsSettings = ParameterExtractor.requiredBodyParameter(request, Parameters.SETTINGS)
-    val settings = JsonUtil.parseJsConformanceCertificateSettings(jsSettings, communityId)
-    communityManager.updateConformanceCertificateSettings(settings)
-    ResponseConstructor.constructEmptyResponse
-  }
-
-  def updateConformanceOverviewCertificateSettings(communityId: Long): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.canUpdateConformanceCertificateSettings(request, communityId)
-    val jsSettings = ParameterExtractor.requiredBodyParameter(request, Parameters.SETTINGS)
-    val settings = JsonUtil.parseJsConformanceOverviewCertificateWithMessages(jsSettings, communityId)
-    communityManager.updateConformanceOverviewCertificateSettings(settings)
-    ResponseConstructor.constructEmptyResponse
-  }
-
   def saveCommunityKeystore(communityId: Long): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canUpdateConformanceCertificateSettings(request, communityId)
     try {
@@ -958,14 +960,53 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
     }
   }
 
-  def getSystemConfigurations(): Action[AnyContent] = authorizedAction { request =>
+  def updateStatementConfiguration(): Action[AnyContent] = authorizedAction { request =>
+    try {
+      val paramMap = ParameterExtractor.paramMap(request)
+      val system = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SYSTEM_ID).toLong
+      val actor = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.ACTOR_ID).toLong
+      authorizationManager.canUpdateSystem(request, system)
+
+      val organisationFiles = new mutable.HashMap[Long, FileInfo]()
+      val systemFiles = new mutable.HashMap[Long, FileInfo]()
+      val statementFiles = new mutable.HashMap[Long, FileInfo]()
+
+      val files = ParameterExtractor.extractFiles(request)
+      files.foreach { entry =>
+        val parts = entry._1.split('_')
+        val ownerId = parts(1).toLong
+        if (parts(0) == "org") {
+          organisationFiles += (ownerId -> entry._2)
+        } else if (parts(0) == "sys") {
+          systemFiles += (ownerId -> entry._2)
+        } else if (parts(0) == "stm") {
+          statementFiles += (ownerId -> entry._2)
+        } else {
+          throw new IllegalArgumentException("Invalid name for uploaded file [%s]".formatted(entry._1))
+        }
+      }
+      if (Configurations.ANTIVIRUS_SERVER_ENABLED && ParameterExtractor.virusPresentInFiles(files.map(entry => entry._2.file))) {
+        ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")
+      } else {
+        val userId = ParameterExtractor.extractUserId(request)
+        val organisationParameters = ParameterExtractor.extractOrganisationParameterValues(paramMap, Parameters.ORGANISATION_PARAMETERS, optional = true)
+        val systemParameters = ParameterExtractor.extractSystemParameterValues(paramMap, Parameters.SYSTEM_PARAMETERS, optional = true)
+        val statementParameters = ParameterExtractor.extractStatementParameterValues(paramMap, Parameters.STATEMENT_PARAMETERS, optional = true, system)
+        conformanceManager.updateStatementConfiguration(userId, system, actor, organisationParameters, systemParameters, statementParameters, organisationFiles.toMap, systemFiles.toMap, statementFiles.toMap)
+        ResponseConstructor.constructEmptyResponse
+      }
+    } finally {
+      if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
+    }
+  }
+
+  def getStatementParameterValues(): Action[AnyContent] = authorizedAction { request =>
     val system = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
     authorizationManager.canViewEndpointConfigurationsForSystem(request, system)
     val actor = ParameterExtractor.requiredQueryParameter(request, Parameters.ACTOR_ID).toLong
-    val configs = conformanceManager.getSystemConfigurationStatus(system, actor)
-    val isAdmin = accountManager.checkUserRole(ParameterExtractor.extractUserId(request), UserRole.SystemAdmin, UserRole.CommunityAdmin)
-    val json = JsonUtil.jsSystemConfigurationEndpoints(configs, addValues = true, isAdmin)
-    ResponseConstructor.constructJsonResponse(json.toString)
+    val values = conformanceManager.getStatementParameterValues(system, actor)
+    val json: String = JsonUtil.jsParametersWithValues(values, includeValues = true).toString
+    ResponseConstructor.constructJsonResponse(json)
   }
 
   def checkConfigurations(): Action[AnyContent] = authorizedAction { request =>

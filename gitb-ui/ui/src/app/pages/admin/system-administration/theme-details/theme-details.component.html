@@ -5,14 +5,12 @@
         </div>
         <form>
             <div class="card-body">
-                <!-- Error messages -->
                 @if (!theme.custom) {
                     <div class="alert alert-info rounded mb-3">
                         This is a readonly built-in theme. If you want to adapt this theme you would first need to create a copy.
                     </div>
                 }
-                <app-alert-display [alerts]="alerts" innerClass="col-10 offset-1"></app-alert-display>
-                <app-theme-form [theme]="theme" [readonly]="!theme.custom"/>
+                <app-theme-form [theme]="theme" [readonly]="!theme.custom" [validation]="validation"/>
             </div>
             <div class="card-footer button-container">
                 <div class="btn-toolbar">

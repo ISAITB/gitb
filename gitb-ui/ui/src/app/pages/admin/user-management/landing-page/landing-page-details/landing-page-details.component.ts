@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { BaseComponent } from 'src/app/pages/base-component.component';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
@@ -13,12 +13,13 @@ import { SystemAdministrationTab } from '../../../system-administration/system-a
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { PreviewLandingPageComponent } from '../preview-landing-page/preview-landing-page.component';
 import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
+import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
   selector: 'app-landing-page-details',
   templateUrl: './landing-page-details.component.html'
 })
-export class LandingPageDetailsComponent extends BaseComponent implements OnInit, AfterViewInit {
+export class LandingPageDetailsComponent extends BaseComponent implements OnInit {
 
   communityId!: number
   pageId!: number
@@ -28,6 +29,8 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
   copyPending = false
   page: Partial<LandingPage> = {}
   tooltipForDefaultCheck!: string
+  validation = new ValidationState()
+  loaded = false
 
   constructor(
     private routingService: RoutingService,
@@ -38,10 +41,6 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
     private popupService: PopupService,
     private modalService: BsModalService
   ) { super() }
-
-  ngAfterViewInit(): void {
-    this.dataService.focus('name')
-  }
 
   ngOnInit(): void {
     if (this.route.snapshot.paramMap.has(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID)) {
@@ -61,15 +60,16 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
       } else {
         this.routingService.landingPageBreadcrumbs(this.communityId, this.pageId, this.page.name!)
       }
+    }).add(() => {
+      this.loaded = true
     })
   }
 
   saveDisabled() {
-    return !this.textProvided(this.page.name) || !this.textProvided(this.page.content)
+    return !this.loaded || !this.textProvided(this.page.name) || !this.textProvided(this.page.content)
   }
 
   updateLandingPage(copy: boolean) {
-    this.clearAlerts()
     if (!this.isDefault && this.page.default) {
       this.confirmationDialogService.confirmed("Confirm default", "You are about to change the default landing page. Are you sure?", "Change", "Cancel")
       .subscribe(() => {
@@ -97,11 +97,12 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
   }
 
   doUpdate(copy: boolean) {
+    this.validation.clearErrors()
     this.savePending = true
     this.landingPageService.updateLandingPage(this.pageId, this.page.name!, this.page.description, this.page.content, this.page.default!, this.communityId)
     .subscribe((data) => {
       if (this.isErrorDescription(data)) {
-        this.addAlertError(data.error_description)
+        this.validation.applyError(data)
       } else {
         if (copy) {
           this.copyLandingPage()
@@ -132,6 +133,7 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
   deleteLandingPage() {
     this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this landing page?", "Delete", "Cancel")
     .subscribe(() => {
+      this.validation.clearErrors()
       this.deletePending = true
       this.landingPageService.deleteLandingPage(this.pageId)
       .subscribe(() => {

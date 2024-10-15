@@ -11,6 +11,7 @@ import { FileData } from 'src/app/types/file-data.type';
 import { ParameterFormData } from './parameter-form-data';
 import { saveAs } from 'file-saver'
 import { Constants } from 'src/app/common/constants';
+import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
   selector: 'app-create-edit-domain-parameter-modal',
@@ -34,6 +35,7 @@ export class CreateEditDomainParameterModalComponent extends BaseComponent imple
   }
   title!: string
   fileName?: string
+  validation = new ValidationState()
 
   constructor(
     private dataService: DataService,
@@ -78,10 +80,10 @@ export class CreateEditDomainParameterModalComponent extends BaseComponent imple
   }
 
   save() {
-    this.clearAlerts()
+    this.validation.clearErrors()
     if (this.saveAllowed()) {
       if (!Constants.VARIABLE_NAME_REGEX.test(this.domainParameter.name!)) {
-        this.addAlertError('The provided name is invalid. A parameter name must begin with a character followed by zero or more characters, digits, or one of [\'.\', \'_\', \'-\'].')
+        this.validation.invalid('name', 'A parameter name must begin with a character followed by zero or more characters, digits, or one of [\'.\', \'_\', \'-\'].')
       } else {
         this.pending = true
         this.savePending = true
@@ -96,13 +98,17 @@ export class CreateEditDomainParameterModalComponent extends BaseComponent imple
             valueToSave = this.domainParameter.value!
           }
           this.conformanceService.updateDomainParameter(this.domainParameter.id, this.domainParameter.name!, this.domainParameter.description, valueToSave, this.domainParameter.kind!, this.domainParameter.inTests, this.domainId)
-          .subscribe(() => {
+          .subscribe((data) => {
+            if (this.isErrorDescription(data)) {
+              this.validation.applyError(data)
+            } else {
+              this.parametersUpdated.emit(true)
+              this.modalInstance.hide()
+              this.popupService.success('Parameter updated.')
+            }
           }).add(() => {
             this.pending = false
             this.savePending = false
-            this.parametersUpdated.emit(true)
-            this.modalInstance.hide()
-            this.popupService.success('Parameter updated.')
           })
         } else {
           // Create
@@ -115,10 +121,14 @@ export class CreateEditDomainParameterModalComponent extends BaseComponent imple
             valueToSave = this.domainParameter.value!
           }
           this.conformanceService.createDomainParameter(this.domainParameter.name!, this.domainParameter.description, valueToSave, this.domainParameter.kind!, this.domainParameter.inTests, this.domainId)
-          .subscribe(() => {
-            this.parametersUpdated.emit(true)
-            this.modalInstance.hide()
-            this.popupService.success('Parameter created.')
+          .subscribe((data) => {
+            if (this.isErrorDescription(data)) {
+              this.validation.applyError(data)
+            } else {
+              this.parametersUpdated.emit(true)
+              this.modalInstance.hide()
+              this.popupService.success('Parameter created.')
+            }
           }).add(() => {
             this.pending = false
             this.savePending = false

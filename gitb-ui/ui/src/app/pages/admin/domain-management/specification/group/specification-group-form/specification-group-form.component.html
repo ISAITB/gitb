@@ -1,17 +1,33 @@
-<div class="row mb-3">
+<div class="row">
     <label class="col-3 col-form-label text-end" for="shortName">* Short name:</label>
     <div class="col-7"><input id="shortName" name="shortName" [(ngModel)]="group.sname" class="form-control" type="text"></div>
     <div app-tooltip class="col-auto" [tbTooltip]="'This is used to display the '+dataService.labelSpecificationGroupLower()+' in selection lists (e.g. search filters) and tables where space is limited. Ensure this is short but still understandable by users.'"></div>
 </div>
-<div class="row mb-3">
+<div class="row mt-3">
     <label class="col-3 col-form-label text-end" for="fullName">* Full name:</label>
     <div class="col-7"><input id="fullName" name="fullName" [(ngModel)]="group.fname" class="form-control" type="text"></div>
     <div app-tooltip class="col-auto" [tbTooltip]="'This is used to display the '+dataService.labelSpecificationGroupLower()+' in detail forms and reports.'"></div>
 </div>
-<div class="row mb-3">
+<div class="row mt-3">
     <label class="col-3 col-form-label text-end" for="description">Description:</label>
     <div class="col-7">
         <textarea id="description" name="description" [(ngModel)]="group.description" class="form-control"></textarea>
     </div>
     <div app-tooltip class="col-auto" [tbTooltip]="'This is used to describe the '+dataService.labelSpecificationGroupLower()+'. It is visible to users in relevant search filters.'"></div>
 </div>
+<div class="row mt-3">
+    <label class="col-3 col-form-label text-end" for="metadata">Report metadata:</label>
+    <div class="col-7">
+        <textarea id="metadata" name="metadata" [(ngModel)]="group.reportMetadata" class="form-control"></textarea>
+    </div>
+    <div app-tooltip class="col-auto" [tbTooltip]="'This is optional, free-text metadata for the '+dataService.labelSpecificationGroupLower()+' that if specified will be included in XML reports. This is not included in PDF reports nor presented on the user interface.'"></div>
+</div>
+@if (dataService.configuration.automationApiEnabled && group.id != undefined) {
+    <div class="row mt-3">
+        <label class="col-3 col-form-label text-end" for="apiKey">API key:</label>
+        <div class="col-7">
+            <app-api-key-text idName="apiKey" name="apiKey" [key]="group.apiKey!"></app-api-key-text>
+        </div>
+        <div app-tooltip class="col-auto" [tbTooltip]="'The key to use when calling the Test Bed\'s REST API to identify the '+dataService.labelSpecificationGroupLower()+'.'"></div>
+    </div>
+}

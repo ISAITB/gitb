@@ -18,6 +18,16 @@ import { TabsetComponent } from 'ngx-bootstrap/tabs';
 import { SystemService } from 'src/app/services/system.service';
 import { System } from 'src/app/types/system';
 import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
+import { ValidationState } from 'src/app/types/validation-state';
+import { CommunityService } from 'src/app/services/community.service';
+import { forkJoin, Observable, of } from 'rxjs';
+import { LandingPage } from 'src/app/types/landing-page';
+import { LegalNotice } from 'src/app/types/legal-notice';
+import { ErrorTemplate } from 'src/app/types/error-template';
+import { Organisation } from 'src/app/types/organisation.type';
+import { LandingPageService } from 'src/app/services/landing-page.service';
+import { LegalNoticeService } from 'src/app/services/legal-notice.service';
+import { ErrorTemplateService } from 'src/app/services/error-template.service';
 
 @Component({
   selector: 'app-organisation-details',
@@ -35,6 +45,10 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
   }
   users: User[] = []
   systems: System[] = []
+  landingPages: LandingPage[] = []
+  legalNotices: LegalNotice[] = []
+  errorTemplates: ErrorTemplate[] = []
+  otherOrganisations: Organisation[] = []
   usersStatus = {status: Constants.STATUS.NONE}
   systemsStatus = {status: Constants.STATUS.NONE}
   userColumns: TableColumnDefinition[] = []
@@ -43,7 +57,8 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
     { field: 'fname', title: 'Full name' },
     { field: 'description', title: 'Description' },
     { field: 'version', title: 'Version' }
-  ]  
+  ]
+  loaded = false
   savePending = false
   deletePending = false
   tabToShow = OrganisationTab.systems
@@ -57,6 +72,7 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
   readonly!: boolean
   apiInfoVisible?: boolean
   fromCommunityManagement?: boolean
+  validation = new ValidationState()
 
   loadApiInfo = new EventEmitter<void>()
 
@@ -69,6 +85,10 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
     protected popupService: PopupService,
     protected routingService: RoutingService,
     private systemService: SystemService,
+    private communityService: CommunityService,
+    private landingPageService: LandingPageService,
+    private legalNoticeService: LegalNoticeService,
+    private errorTemplateService: ErrorTemplateService,
     router: Router
   ) {
     super()
@@ -155,17 +175,43 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
     if (this.showUserStatus()) {
       this.userColumns.push({ field: 'ssoStatusText', title: 'Status', cellClass: 'td-nowrap' })
     }
-    this.organisationService.getOrganisationById(this.orgId)
-    .subscribe((data) => {
-      this.organisation = data
-      if (data.landingPage == null) this.organisation.landingPage = undefined
-      if (data.errorTemplate == null) this.organisation.errorTemplate = undefined
-      if (data.legalNotice == null) this.organisation.legalNotice = undefined
-      this.breadcrumbInit()
-    })
+    this.propertyData.owner = this.organisation.id    
     this.apiInfoVisible = this.isApiInfoVisible()
     // Setup tab triggers
-    this.setupTabs()    
+    this.setupTabs()
+    // Load form data
+    const organisation$ = this.organisationService.getOrganisationById(this.orgId)
+    const properties$ = this.communityService.getOrganisationParameterValues(this.organisation.id)
+    let otherOrganisations$: Observable<Organisation[]> = of([])
+    let landingPages$: Observable<LandingPage[]> = of([])
+    let legalNotices$: Observable<LegalNotice[]> = of([])
+    let errorTemplates$: Observable<ErrorTemplate[]> = of([])
+    if (this.showAdminInfo || this.showLandingPage) {
+      landingPages$ = this.landingPageService.getLandingPagesByCommunity(this.communityId)
+    }
+    if (this.showAdminInfo) {
+      legalNotices$ = this.legalNoticeService.getLegalNoticesByCommunity(this.communityId)
+      errorTemplates$ = this.errorTemplateService.getErrorTemplatesByCommunity(this.communityId)
+      otherOrganisations$ = this.organisationService.getOrganisationsByCommunity(this.communityId)
+    }
+    forkJoin([organisation$, properties$, otherOrganisations$, landingPages$, legalNotices$, errorTemplates$]).subscribe((data) => {
+      this.organisation = data[0]
+      if (this.organisation.landingPage == null) this.organisation.landingPage = undefined
+      if (this.organisation.errorTemplate == null) this.organisation.errorTemplate = undefined
+      if (this.organisation.legalNotice == null) this.organisation.legalNotice = undefined
+      this.breadcrumbInit()
+      this.propertyData.properties = data[1]
+      for (let organisation of data[2]) {
+        if (this.organisation.id == undefined || Number(organisation.id) != Number(this.organisation.id)) {
+          this.otherOrganisations.push(organisation)
+        }
+      }
+      this.landingPages = data[3]
+      this.legalNotices = data[4]
+      this.errorTemplates = data[5]
+    }).add(() => {
+      this.loaded = true
+    })
   }
 
   private setupTabs() {
@@ -234,12 +280,12 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
   }
 
   doUpdate() {
-    this.clearAlerts()
+    this.validation.clearErrors()
     this.savePending = true
     this.organisationService.updateOrganisation(this.orgId, this.organisation.sname!, this.organisation.fname!, this.organisation.landingPage, this.organisation.legalNotice, this.organisation.errorTemplate, this.organisation.otherOrganisations, this.organisation.template!, this.organisation.templateName, this.propertyData.edit, this.propertyData.properties, this.organisation.copyOrganisationParameters!, this.organisation.copySystemParameters!, this.organisation.copyStatementParameters!)
     .subscribe((result) => {
-      if (result?.error_code != undefined) {
-        this.addAlertError(result.error_description)
+      if (this.isErrorDescription(result)) {
+        this.validation.applyError(result)
       } else {
         this.popupService.success(this.dataService.labelOrganisation()+" updated.")
         this.dataService.breadcrumbUpdate({ id: this.orgId, type: BreadcrumbType.organisation, label: this.organisation.sname })

@@ -1,5 +1,5 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Component, EventEmitter, OnDestroy, OnInit } from '@angular/core';
+import { forkJoin, mergeMap, Observable, of } from 'rxjs';
 import { Constants } from 'src/app/common/constants';
 import { CommunityService } from 'src/app/services/community.service';
 import { ConformanceService } from 'src/app/services/conformance.service';
@@ -15,6 +15,8 @@ import { BaseComponent } from '../../base-component.component';
 import { ImportItemState } from './import-item-state';
 import { ImportItemStateGroup } from './import-item-state-group';
 import { RoutingService } from 'src/app/services/routing.service';
+import { ValidationState } from 'src/app/types/validation-state';
+import { ErrorDescription } from 'src/app/types/error-description';
 
 @Component({
   selector: 'app-import',
@@ -41,6 +43,13 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
   archiveData?: FileData
   importItemActionLabels: {[key: number]: string} = {}
   importItemTypeLabels: {[key: number]: string} = {}
+  newTarget = false
+  replaceName = false
+  formCollapsed = true
+  newTargetAnimated = false
+  formAnimated = false
+  validation = new ValidationState()
+  resetEmitter = new EventEmitter<void>()
 
   constructor(
     private communityService: CommunityService,
@@ -52,18 +61,28 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
 
   ngOnInit(): void {
     this.resetSettings(true)
+    // Get communities and domains
+    let communities$: Observable<Community[]>
     if (this.dataService.isSystemAdmin) {
-      // Get communities
-      this.communityService.getCommunities([], true)
-      .subscribe((data) => {
-        this.communities = data
-      })
-      // Get domains
-      this.conformanceService.getDomains()
-      .subscribe((data) => {
-        this.domains = data
-      })
+      communities$ = this.communityService.getCommunities([], true)
+    } else {
+      communities$ = of([this.dataService.community!])
     }
+    let domains$: Observable<Domain[]>
+    if (this.dataService.isSystemAdmin) {
+      domains$ = this.conformanceService.getDomains([], true)
+    } else {
+      domains$ = this.conformanceService.getCommunityDomains(this.dataService.community!.id)
+        .pipe(
+          mergeMap((data) => {
+            return of(data.domains)
+          })
+        )
+    }
+    forkJoin([communities$, domains$]).subscribe((data) => {
+      this.communities = data[0]
+      this.domains = data[1]
+    })
     this.routingService.importBreadcrumbs()
   }
 
@@ -74,6 +93,8 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
   }
 
   resetSettings(full?: boolean) {
+    this.validation.clearErrors()
+    this.formAnimated = false
     this.itemId = 0
     this.importStep1 = true
     this.importStep2 = false
@@ -86,24 +107,32 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
     this.settings.createNewData = true
     this.settings.deleteUnmatchedData = true
     this.settings.updateMatchingData = true
+    this.settings.shortNameReplacement = undefined
+    this.settings.fullNameReplacement = undefined
+    this.resetEmitter.emit()
     if (this.dataService.isSystemAdmin) {
       this.domain = undefined
       this.community = undefined
-    }
-    if (full) {
-      if (this.dataService.isCommunityAdmin) {
-        this.community = this.dataService.community
-        if (this.dataService.community?.domain != undefined) {
-            this.domain = this.dataService.community.domain
-            this.exportType = undefined
-        } else {
-            this.exportType = 'community'
-            this.showDomainOption = false
-        }
-      } else if (this.dataService.isSystemAdmin) {
-        this.exportType = undefined
+    } else {
+      this.community = this.dataService.community
+      if (this.dataService.community?.domain == undefined) {
+        this.domain = undefined
+      } else {
+        this.domain = this.dataService.community.domain
       }
     }
+    this.newTarget = false
+    this.replaceName = false
+    if (full) {
+      this.exportType = undefined
+    }
+    if (this.exportType == 'domain' && this.domains.length == 0 || this.exportType == 'community' && this.communities.length == 0) {
+      this.newTarget = true
+    }
+    this.formAnimated = true
+    setTimeout(() => {
+      this.formCollapsed = this.exportType == undefined
+    })
   }
 
   uploadArchive(file: FileData) {
@@ -176,46 +205,88 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
   }
 
   importDisabled() {
-    return this.importStep1 && !(this.archiveData?.file != undefined && this.textProvided(this.settings.encryptionKey) && (this.exportType == 'domain' && this.domain != undefined || this.exportType == 'community' && this.community != undefined || this.exportType == 'settings'))
+    return this.importStep1 && !(
+      this.archiveData?.file != undefined 
+        && this.textProvided(this.settings.encryptionKey) 
+        && (
+          this.exportType == 'domain' && (
+              (this.newTarget && (!this.replaceName || (this.textProvided(this.settings.shortNameReplacement) && this.textProvided(this.settings.fullNameReplacement)))) 
+              || (!this.newTarget && this.domain != undefined)
+          ) || 
+          this.exportType == 'community' && (
+              (this.newTarget && (!this.replaceName || (this.textProvided(this.settings.shortNameReplacement) && this.textProvided(this.settings.fullNameReplacement)))) 
+              || (!this.newTarget && this.community != undefined)
+          ) || 
+          this.exportType == 'settings' || 
+          this.exportType == 'deletions'
+        )
+    )
+  }
+
+  private getTargetDomainId() {
+    let domainId = -1
+    if (this.domain && (this.dataService.isCommunityAdmin || !this.newTarget)) {
+      domainId = this.domain.id
+    }
+    return domainId
+  }
+
+  private getTargetCommunityId() {
+    let communityId = -1
+    if (this.community && (this.dataService.isCommunityAdmin || !this.newTarget)) {
+      communityId = this.community.id
+    }
+    return communityId
   }
 
   import() {
+    this.validation.clearErrors()
     this.pending = true
-    let result: Observable<ImportPreview>
+    let result: Observable<ImportPreview|ErrorDescription>
+    if (!this.replaceName) {
+      this.settings.shortNameReplacement = undefined
+      this.settings.fullNameReplacement = undefined
+    }
     if (this.exportType == 'domain') {
-      result = this.conformanceService.uploadDomainExport(this.domain!.id, this.settings, this.archiveData!)
+      result = this.conformanceService.uploadDomainExport(this.getTargetDomainId(), this.settings, this.archiveData!)
     } else if (this.exportType == 'community') {
-      result = this.communityService.uploadCommunityExport(this.community!.id, this.settings, this.archiveData!)
-    } else {
+      result = this.communityService.uploadCommunityExport(this.getTargetCommunityId(), this.settings, this.archiveData!)
+    } else if (this.exportType == 'settings') {
       result = this.communityService.uploadSystemSettingsExport(this.settings, this.archiveData!)
+    } else {
+      result = this.conformanceService.uploadDeletionsExport(this.settings, this.archiveData!)
     }
     result.subscribe((data) => {
-      this.importStep1 = false
-      this.importStep2 = true
-      this.setupImportItemLabels()
-      this.pendingImportId = data.pendingImportId
-      let importItemStates: ImportItemStateGroup[]|undefined
-      if (data.importItems != undefined) {
-        importItemStates = []
-        const groupMap:{[key: number]: ImportItemStateGroup} = {}
-        for (let item of data.importItems) {
-          const state = this.toImportItemState(item)
-          if (groupMap[item.type] == undefined) {
-            groupMap[item.type] = {
-              type: item.type,
-              typeLabel: this.typeDescription(item.type),
-              open: false,
-              items: []
+      if (this.isErrorDescription(data)) {
+        this.validation.applyError(data)
+      } else {
+        this.setupImportItemLabels()
+        this.pendingImportId = data.pendingImportId
+        let importItemStates: ImportItemStateGroup[]|undefined
+        if (data.importItems != undefined) {
+          importItemStates = []
+          const groupMap:{[key: number]: ImportItemStateGroup} = {}
+          for (let item of data.importItems) {
+            const state = this.toImportItemState(item)
+            if (groupMap[item.type] == undefined) {
+              groupMap[item.type] = {
+                type: item.type,
+                typeLabel: this.typeDescription(item.type),
+                open: false,
+                items: []
+              }
+              importItemStates.push(groupMap[item.type])
             }
-            importItemStates.push(groupMap[item.type])
+            groupMap[item.type].items.push(state)
+      
+            importItemStates.push()
           }
-          groupMap[item.type].items.push(state)
-    
-          importItemStates.push()
         }
+        this.importItemGroups = importItemStates
+        this.archiveData = undefined
+        this.importStep1 = false
+        this.importStep2 = true
       }
-      this.importItemGroups = importItemStates
-      this.archiveData = undefined
     }).add(() => {
       this.pending = false
     })
@@ -304,9 +375,9 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
   cancel() {
     let result: Observable<void>
     if (this.exportType == 'domain') {
-      result = this.conformanceService.cancelDomainImport(this.domain!.id, this.pendingImportId!)
+      result = this.conformanceService.cancelDomainImport(this.getTargetDomainId(), this.pendingImportId!)
     } else if (this.exportType == 'community') {
-      result = this.communityService.cancelCommunityImport(this.community!.id, this.pendingImportId!)
+      result = this.communityService.cancelCommunityImport(this.getTargetCommunityId(), this.pendingImportId!)
     } else {
       result = this.communityService.cancelSystemSettingsImport(this.pendingImportId!)
     }
@@ -335,11 +406,13 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
     this.pending = true
     let result: Observable<void>
     if (this.exportType == 'domain') {
-      result = this.conformanceService.confirmDomainImport(this.domain!.id, this.pendingImportId!, this.settings!, this.cleanImportItems())
+      result = this.conformanceService.confirmDomainImport(this.getTargetDomainId(), this.pendingImportId!, this.settings!, this.cleanImportItems())
     } else if (this.exportType == 'community') {
-      result = this.communityService.confirmCommunityImport(this.community!.id, this.pendingImportId!, this.settings!, this.cleanImportItems())
-    } else {
+      result = this.communityService.confirmCommunityImport(this.getTargetCommunityId(), this.pendingImportId!, this.settings!, this.cleanImportItems())
+    } else if (this.exportType == 'settings') {
       result = this.communityService.confirmSystemSettingsImport(this.pendingImportId!, this.settings!, this.cleanImportItems())
+    } else {
+      result = this.conformanceService.confirmDeletionsImport(this.pendingImportId!, this.settings!, this.cleanImportItems())
     }
     result.subscribe(() => {
       this.resetSettings(true)

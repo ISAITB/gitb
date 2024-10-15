@@ -91,7 +91,7 @@ export class UserService {
     if (password != undefined) {
       data.password = password
     }
-    return this.restService.post<void>({
+    return this.restService.post<ErrorDescription|void>({
       path: ROUTES.controllers.UserService.updateUserProfile(userId).url,
       data: data,
       authenticate: true

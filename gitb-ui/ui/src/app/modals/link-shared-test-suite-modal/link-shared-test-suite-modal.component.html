@@ -2,40 +2,54 @@
     <div class="modal-title">Link shared test suite</div>
 </div>
 <div class="modal-body">
-	<form [ngSwitch]="step">
-		<div *ngSwitchCase="'select'">
-            <div class="row" *ngIf="availableSpecifications">
-                <label class="col-3 col-form-label text-end" for="specification">* Target {{dataService.labelSpecificationLower()}}:</label>
-                <div class="col-8">
-                    <input *ngIf="availableSpecifications.length == 1" class="form-control" id="specification" name="specification" [(ngModel)]="specifications[0].fname" readonly="readonly"/>
-                    <select *ngIf="availableSpecifications.length > 1" [attr.size]="(availableSpecifications.length > 30)?30:availableSpecifications.length" multiple="multiple" class="form-control form-select" id="specification" name="specification" [(ngModel)]="specifications">
-                        <option *ngFor="let specification of availableSpecifications" [ngValue]="specification">{{specification.fname}}</option>
-                    </select>
-                </div>
-                <div app-tooltip class="col-auto" [tbTooltip]="'The '+dataService.labelSpecificationLower()+' with which this shared test suite will be linked.'"></div>
-            </div>
-        </div>
-		<div *ngSwitchCase="'confirm'">
-			<div class="row">
-				<div class="col-12">
-					<div class="alert alert-info rounded mb-0">
-						<span *ngIf="!hasMultipleChoices">A selected {{dataService.labelSpecificationLower()}} defines matching data. Select how the update should take place.</span>
-						<span *ngIf="hasMultipleChoices">Selected {{dataService.labelSpecificationsLower()}} define matching data. Select how the updates should take place.</span>
+	<form>
+		<app-alert-display [alerts]="alerts"></app-alert-display>
+		@if (step == 'select') {
+			<div>
+				@if (availableSpecifications) {
+					<div class="row">
+						<label class="col-3 col-form-label text-end" for="specification">* Target {{dataService.labelSpecificationLower()}}:</label>
+						<div class="col-8">
+							@if (availableSpecifications.length == 1) {
+								<input class="form-control" id="specification" name="specification" [(ngModel)]="specifications[0].fname" readonly="readonly"/>
+							} @else if (availableSpecifications.length > 1) {
+								<app-multi-select-filter [config]="selectConfig" (apply)="specificationsChanged($event)"></app-multi-select-filter>
+							}
+						</div>
+						<div app-tooltip class="col-auto" [tbTooltip]="'The '+dataService.labelSpecificationLower()+' with which this shared test suite will be linked.'"></div>
+					</div>
+				}
+			</div>
+		} @else if (step == 'confirm') {
+			<div>
+				<div class="row">
+					<div class="col-12">
+						<div class="alert alert-info rounded mb-0">
+							@if (!hasMultipleChoices) {
+								<span>A selected {{dataService.labelSpecificationLower()}} defines matching data. Select how the update should take place.</span>
+							} @else {
+								<span>Selected {{dataService.labelSpecificationsLower()}} define matching data. Select how the updates should take place.</span>
+							}
+						</div>
 					</div>
 				</div>
+				<div class="section-choice-actions">
+					@if (specificationChoices) {
+						<app-test-suite-upload-specification-choices
+							[choices]="specificationChoices"
+							[sharedTestSuite]="true"
+						></app-test-suite-upload-specification-choices>
+					}
+				</div>
 			</div>
-			<div class="section-choice-actions">
-				<app-test-suite-upload-specification-choices *ngIf="specificationChoices"
-					[choices]="specificationChoices"
-					[sharedTestSuite]="true"
-				></app-test-suite-upload-specification-choices>
-			</div>
-        </div>
+		}
     </form>
 </div>
 <div class="modal-footer">
 	<div class="btn-toolbar">
 		<button type="button" class="btn btn-secondary" (click)="close()" [disabled]="actionPending">{{step == 'results'?'Close':'Cancel'}}</button>
-		<button *ngIf="step != 'results'" type="button" class="btn btn-secondary" (click)="proceed()" [disable]="proceedDisabled()" [pending]="actionPending">Proceed</button>
+		@if (step != 'results') {
+			<button type="button" class="btn btn-secondary" (click)="proceed()" [disable]="proceedDisabled()" [pending]="actionPending">Proceed</button>
+		}
 	</div>
 </div>

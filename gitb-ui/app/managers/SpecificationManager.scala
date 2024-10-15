@@ -1,7 +1,9 @@
 package managers
 
+import exceptions.{AutomationApiException, ErrorCodes}
 import models.Enums.TestResultStatus
 import models._
+import models.automation.{CreateSpecificationGroupRequest, CreateSpecificationRequest, UpdateSpecificationGroupRequest, UpdateSpecificationRequest}
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import utils.{CryptoUtil, RepositoryUtils}
@@ -12,11 +14,16 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils, testSuiteManager: TestSuiteManager, actorManager: ActorManager, testResultManager: TestResultManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
+                                      testSuiteManager: TestSuiteManager,
+                                      actorManager: ActorManager,
+                                      testResultManager: TestResultManager,
+                                      automationApiHelper: AutomationApiHelper,
+                                      dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
-  def deleteSpecificationByDomain(domainId: Long, onSuccessCalls: mutable.ListBuffer[() => _]) = {
+  def deleteSpecificationByDomain(domainId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
     val action = (for {
       ids <- PersistenceSchema.specifications.filter(_.domain === domainId).map(_.id).result
       _ <- DBIO.seq(ids.map(id => deleteSpecificationInternal(id, onSuccessCalls)): _*)
@@ -24,9 +31,30 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils, testSuit
     action
   }
 
-  def deleteSpecification(specId: Long) = {
+  def deleteSpecification(specId: Long): Unit = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val action = deleteSpecificationInternal(specId, onSuccessCalls)
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
+  }
+
+  def deleteSpecificationThroughAutomationApi(specificationApiKey: String, communityApiKey: String): Unit = {
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val action = for {
+      domainId <- automationApiHelper.getDomainIdByCommunity(communityApiKey)
+      specificationId <- PersistenceSchema.specifications
+        .filterOpt(domainId)((q, id) => q.domain === id)
+        .filter(_.apiKey === specificationApiKey)
+        .map(_.id)
+        .result
+        .headOption
+      _ <- {
+        if (specificationId.isEmpty) {
+          throw AutomationApiException(ErrorCodes.API_SPECIFICATION_NOT_FOUND, "No specification found for the provided API keys")
+        } else {
+          deleteSpecificationInternal(specificationId.get, onSuccessCalls)
+        }
+      }
+    } yield ()
     exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
   }
 
@@ -78,26 +106,124 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils, testSuit
   }
 
   def createSpecificationGroup(group: SpecificationGroups): Long = {
-    exec(createSpecificationGroupInternal(group).transactionally)
+    exec(createSpecificationGroupInternal(group, checkApiKeyUniqueness = false).transactionally)
   }
 
-  def createSpecificationGroupInternal(group: SpecificationGroups):DBIO[Long] = {
-    PersistenceSchema.specificationGroups.returning(PersistenceSchema.specificationGroups.map(_.id)) += group
+  def createSpecificationGroupThroughAutomationApi(input: CreateSpecificationGroupRequest): String = {
+    val action = for {
+      domainId <- automationApiHelper.getDomainIdByCommunityOrDomainApiKey(input.communityApiKey, input.domainApiKey)
+      apiKeyToUse <- {
+        for {
+          generateApiKey <- if (input.apiKey.isEmpty) {
+            DBIO.successful(true)
+          } else {
+            PersistenceSchema.specificationGroups.filter(_.apiKey === input.apiKey.get).exists.result
+          }
+          apiKeyToUse <- if (generateApiKey) {
+            DBIO.successful(CryptoUtil.generateApiKey())
+          } else {
+            DBIO.successful(input.apiKey.get)
+          }
+        } yield apiKeyToUse
+      }
+      _ <- {
+        createSpecificationGroupInternal(SpecificationGroups(0L, input.shortName, input.fullName, input.description, input.reportMetadata, input.displayOrder.getOrElse(0), apiKeyToUse, domainId), checkApiKeyUniqueness = false)
+      }
+    } yield apiKeyToUse
+    exec(action.transactionally)
   }
 
-  def updateSpecificationGroup(groupId: Long, shortname: String, fullname: String, description: Option[String]): Unit = {
-    exec(updateSpecificationGroupInternal(groupId, shortname, fullname, description, None).transactionally)
+  def deleteSpecificationGroupThroughAutomationApi(groupApiKey: String, communityApiKey: String): Unit = {
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val action = for {
+      domainId <- automationApiHelper.getDomainIdByCommunity(communityApiKey)
+      groupId <- PersistenceSchema.specificationGroups
+        .filterOpt(domainId)((q, id) => q.domain === id)
+        .filter(_.apiKey === groupApiKey)
+        .map(_.id)
+        .result
+        .headOption
+      _ <- {
+        if (groupId.isEmpty) {
+          throw AutomationApiException(ErrorCodes.API_SPECIFICATION_GROUP_NOT_FOUND, "No specification group found for the provided API keys")
+        } else {
+          deleteSpecificationGroupInternal(groupId.get, deleteSpecifications = false, onSuccessCalls)
+        }
+      }
+    } yield ()
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
   }
 
-  def updateSpecificationGroupInternal(groupId: Long, shortname: String, fullname: String, description: Option[String], displayOrder: Option[Short]): DBIO[_] = {
+  def createSpecificationGroupInternal(group: SpecificationGroups, checkApiKeyUniqueness: Boolean):DBIO[Long] = {
+    for {
+      replaceApiKey <- if (checkApiKeyUniqueness) {
+        PersistenceSchema.specificationGroups.filter(_.apiKey === group.apiKey).exists.result
+      } else {
+        DBIO.successful(false)
+      }
+      newGroupId <- {
+        val groupToUse = if (replaceApiKey) group.withApiKey(CryptoUtil.generateApiKey()) else group
+        PersistenceSchema.specificationGroups.returning(PersistenceSchema.specificationGroups.map(_.id)) += groupToUse
+      }
+    } yield newGroupId
+  }
+
+  def updateSpecificationGroupThroughAutomationApi(updateRequest: UpdateSpecificationGroupRequest): Unit = {
+    val action = for {
+      domainId <- automationApiHelper.getDomainIdByCommunity(updateRequest.communityApiKey)
+      group <- PersistenceSchema.specificationGroups
+        .filterOpt(domainId)((q, id) => q.domain === id)
+        .filter(_.apiKey === updateRequest.groupApiKey)
+        .result
+        .headOption
+      _ <- {
+        if (group.isEmpty) {
+          throw AutomationApiException(ErrorCodes.API_SPECIFICATION_GROUP_NOT_FOUND, "No specification group found for the provided API keys")
+        } else {
+          updateSpecificationGroupInternal(
+            group.get.id,
+            updateRequest.shortName.getOrElse(group.get.shortname),
+            updateRequest.fullName.getOrElse(group.get.fullname),
+            updateRequest.description.getOrElse(group.get.description),
+            updateRequest.reportMetadata.getOrElse(group.get.reportMetadata),
+            updateRequest.displayOrder,
+            None,
+            checkApiKeyUniqueness = false
+          )
+        }
+      }
+    } yield ()
+    exec(action.transactionally)
+  }
+
+  def updateSpecificationGroup(groupId: Long, shortname: String, fullname: String, description: Option[String], reportMetadata: Option[String]): Unit = {
+    exec(updateSpecificationGroupInternal(groupId, shortname, fullname, description, reportMetadata, None, None, checkApiKeyUniqueness = false).transactionally)
+  }
+
+  def updateSpecificationGroupInternal(groupId: Long, shortname: String, fullname: String, description: Option[String], reportMetadata: Option[String], displayOrder: Option[Short], apiKey: Option[String], checkApiKeyUniqueness: Boolean): DBIO[_] = {
     for {
       _ <- PersistenceSchema.specificationGroups
         .filter(_.id === groupId)
-        .map(x => (x.shortname, x.fullname, x.description))
-        .update(shortname, fullname, description)
+        .map(x => (x.shortname, x.fullname, x.description, x.reportMetadata))
+        .update(shortname, fullname, description, reportMetadata)
       _ <- {
         if (displayOrder.isDefined) {
           PersistenceSchema.specificationGroups.filter(_.id === groupId).map(_.displayOrder).update(displayOrder.get)
+        } else {
+          DBIO.successful(())
+        }
+      }
+      replaceApiKey <- {
+        if (apiKey.isDefined && checkApiKeyUniqueness) {
+          PersistenceSchema.specificationGroups.filter(_.apiKey === apiKey.get).filter(_.id =!= groupId).exists.result
+        } else {
+          DBIO.successful(false)
+        }
+      }
+      _ <- {
+        if (apiKey.isDefined) {
+          val apiKeyToUse = if (replaceApiKey) CryptoUtil.generateApiKey() else apiKey.get
+          PersistenceSchema.specificationGroups.filter(_.id === groupId).map(_.apiKey).update(apiKeyToUse)
         } else {
           DBIO.successful(())
         }
@@ -120,7 +246,7 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils, testSuit
         spec <- PersistenceSchema.specifications.filter(_.id === specificationId).result.head
         // Create copy.
         newSpecId <- PersistenceSchema.insertSpecification += Specifications(
-          0L, spec.shortname, spec.fullname, spec.description,
+          0L, spec.shortname, spec.fullname, spec.description, spec.reportMetadata,
           spec.hidden, CryptoUtil.generateApiKey(), spec.domain, 0, Some(groupId)
         )
         // Copy actors, endpoints and parameters.
@@ -145,7 +271,7 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils, testSuit
     for {
       // Actor.
       newActorId <- PersistenceSchema.insertActor += Actors(
-        0L, actor.actorId, actor.name, actor.description,
+        0L, actor.actorId, actor.name, actor.description, actor.reportMetadata,
         actor.default, actor.hidden, actor.displayOrder, CryptoUtil.generateApiKey(), actor.domain
       )
       // Specification link.
@@ -282,11 +408,11 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils, testSuit
     } yield idsToReturn)
   }
 
-  def updateSpecificationInternal(specId: Long, sname: String, fname: String, descr: Option[String], hidden:Boolean, apiKey: Option[String], checkApiKeyUniqueness: Boolean, groupId: Option[Long], displayOrder: Option[Short], badges: BadgeInfo, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
+  def updateSpecificationInternal(specId: Long, sname: String, fname: String, descr: Option[String], reportMetadata: Option[String], hidden:Boolean, apiKey: Option[String], checkApiKeyUniqueness: Boolean, groupId: Option[Long], displayOrder: Option[Short], badges: Option[BadgeInfo], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
     for {
       _ <- {
-        val q = for {s <- PersistenceSchema.specifications if s.id === specId} yield (s.shortname, s.fullname, s.description, s.hidden, s.group)
-        q.update(sname, fname, descr, hidden, groupId) andThen
+        val q = for {s <- PersistenceSchema.specifications if s.id === specId} yield (s.shortname, s.fullname, s.description, s.reportMetadata, s.hidden, s.group)
+        q.update(sname, fname, descr, reportMetadata, hidden, groupId) andThen
           testResultManager.updateForUpdatedSpecification(specId, sname)
       }
       _ <- {
@@ -312,7 +438,9 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils, testSuit
         }
       }
       _ <- {
-        onSuccessCalls += (() => updateSpecificationBadges(specId, badges.forWeb, badges.forReport))
+        if (badges.isDefined) {
+          onSuccessCalls += (() => updateSpecificationBadges(specId, badges.get.forWeb, badges.get.forReport))
+        }
         DBIO.successful(())
       }
     } yield ()
@@ -343,17 +471,65 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils, testSuit
     if (badges.failure.isDefined) repositoryUtils.setSpecificationBadge(specId, badges.failure.get, TestResultStatus.FAILURE.toString, forReport)
   }
 
-  def updateSpecification(specId: Long, sname: String, fname: String, descr: Option[String], hidden:Boolean, groupId: Option[Long], badges: BadgeInfo) = {
+  def updateSpecification(specId: Long, sname: String, fname: String, descr: Option[String], reportMetadata: Option[String], hidden:Boolean, groupId: Option[Long], badges: BadgeInfo): Unit = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
-    val dbAction = updateSpecificationInternal(specId, sname, fname, descr, hidden, None, checkApiKeyUniqueness = false, groupId, None, badges, onSuccessCalls)
+    val dbAction = updateSpecificationInternal(specId, sname, fname, descr, reportMetadata, hidden, None, checkApiKeyUniqueness = false, groupId, None, Some(badges), onSuccessCalls)
     exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
   }
 
-  def getSpecificationIdOfActor(actorId: Long) = {
+  def updateSpecificationThroughAutomationApi(updateRequest: UpdateSpecificationRequest): Unit = {
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val action = for {
+      domainId <- automationApiHelper.getDomainIdByCommunity(updateRequest.communityApiKey)
+      groupId <- {
+        if (updateRequest.groupApiKey.isEmpty) {
+          // No change.
+          DBIO.successful(None)
+        } else if (updateRequest.groupApiKey.get.isEmpty) {
+          // Remove specification from current group (if set).
+          DBIO.successful(Some(None))
+        } else {
+          // Update group to match the one of the provided API key.
+          for {
+            groupId <- getGroupIdToUseForApiKey(domainId, updateRequest.groupApiKey.get)
+          } yield Some(groupId)
+        }
+      }
+      specification <- PersistenceSchema.specifications
+        .filterOpt(domainId)((q, id) => q.domain === id)
+        .filter(_.apiKey === updateRequest.specificationApiKey)
+        .result
+        .headOption
+      _ <- {
+        if (specification.isEmpty) {
+          throw AutomationApiException(ErrorCodes.API_SPECIFICATION_NOT_FOUND, "No specification found for the provided API keys")
+        } else {
+          updateSpecificationInternal(
+            specification.get.id,
+            updateRequest.shortName.getOrElse(specification.get.shortname),
+            updateRequest.fullName.getOrElse(specification.get.fullname),
+            updateRequest.description.getOrElse(specification.get.description),
+            updateRequest.reportMetadata.getOrElse(specification.get.reportMetadata),
+            updateRequest.hidden.getOrElse(specification.get.hidden),
+            None,
+            checkApiKeyUniqueness = false,
+            groupId.getOrElse(specification.get.group),
+            updateRequest.displayOrder,
+            None,
+            onSuccessCalls
+          )
+        }
+      }
+    } yield ()
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
+  }
+
+
+  def getSpecificationIdOfActor(actorId: Long): Long = {
     exec(PersistenceSchema.specificationHasActors.filter(_.actorId === actorId).result.head)._1
   }
 
-  def getSpecificationOfActor(actorId: Long) = {
+  def getSpecificationOfActor(actorId: Long): Specifications = {
     exec(getSpecificationOfActorInternal(actorId))
   }
 
@@ -385,13 +561,47 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils, testSuit
   }
 
   private def mergeSpecsWithGroups(data: Seq[(Specifications, Option[SpecificationGroups])]): Seq[Specifications] = {
-    data.map { specData =>
-      if (specData._2.isEmpty) {
-        specData._1
-      } else {
-        specData._1.withGroupNames(specData._2.get.shortname, specData._2.get.fullname)
+    // First map specification options to groups
+    val groupSpecs = mutable.HashMap[Long, ListBuffer[Specifications]]()
+    data.foreach { specData =>
+      if (specData._2.nonEmpty) {
+        var specList = groupSpecs.get(specData._2.get.id)
+        if (specList.isEmpty) {
+          specList = Some(ListBuffer[Specifications]())
+          groupSpecs += (specData._2.get.id -> specList.get)
+        }
+        specList.get += specData._1
       }
-    }.sortBy(_.shortname)
+    }
+    // Now sort top-level specifications and groups together.
+    var specsOrGroups = ListBuffer[Specifications]()
+    val addedGroups = mutable.HashSet[Long]()
+    data.foreach { specData =>
+      if (specData._2.nonEmpty) {
+        if (!addedGroups.contains(specData._2.get.id) && groupSpecs.contains(specData._2.get.id)) {
+          // Create a placeholder specification with the group's data for the sort
+          specsOrGroups += Specifications(0L, specData._2.get.shortname, specData._2.get.fullname, None, None, hidden = false, specData._2.get.apiKey, specData._2.get.domain, specData._2.get.displayOrder, Some(specData._2.get.id))
+          // Remember we added this group as we want to add it only once
+          addedGroups += specData._2.get.id
+        }
+      } else {
+        specsOrGroups += specData._1
+      }
+    }
+    specsOrGroups = specsOrGroups.sortBy(x => (x.displayOrder, x.shortname))
+    // Replace the group placeholders with the options that we sort in the context of each group
+    val specsToReturn = ListBuffer[Specifications]()
+    specsOrGroups.foreach { specData =>
+      if (specData.group.isEmpty) {
+        specsToReturn += specData
+      } else {
+        val sortedOptions = groupSpecs(specData.group.get).sortBy(x => (x.displayOrder, x.shortname))
+        sortedOptions.foreach { option =>
+          specsToReturn += option.withGroupNames(specData.shortname, specData.fullname)
+        }
+      }
+    }
+    specsToReturn.toList
   }
 
   def getSpecifications(ids: Option[Iterable[Long]] = None, domainIds: Option[List[Long]] = None, groupIds: Option[List[Long]] = None, withGroups: Boolean = false): Seq[Specifications] = {
@@ -412,7 +622,7 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils, testSuit
           .filterOpt(ids)((q, ids) => q.id inSet ids)
           .filterOpt(domainIds)((q, domainIds) => q.domain inSet domainIds)
           .filterOpt(groupIds)((q, groupIds) => q.group inSet groupIds)
-          .sortBy(_.shortname.asc)
+          .sortBy(x => (x.displayOrder.asc, x.shortname.asc))
           .result
           .map(_.toList)
       )
@@ -434,7 +644,7 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils, testSuit
       exec(
         PersistenceSchema.specifications
           .filter(_.domain === domain)
-          .sortBy(_.shortname.asc)
+          .sortBy(x => (x.displayOrder.asc, x.shortname.asc))
           .result
       )
     }
@@ -472,5 +682,54 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils, testSuit
     exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
   }
 
+  private def getGroupIdToUseForApiKey(domainId: Option[Long], groupApiKey: Option[String]): DBIO[Option[Long]] = {
+    if (groupApiKey.isDefined) {
+      for {
+        groupIdToUse <- PersistenceSchema.specificationGroups
+          .filterOpt(domainId)((q, id) => q.domain === id)
+          .filter(_.apiKey === groupApiKey.get)
+          .map(_.id)
+          .result
+          .headOption
+        _ <- {
+          if (groupIdToUse.isEmpty) {
+            throw AutomationApiException(ErrorCodes.API_SPECIFICATION_GROUP_NOT_FOUND, "No specification group found for the provided API keys")
+          } else {
+            DBIO.successful(())
+          }
+        }
+      } yield groupIdToUse
+    } else {
+      DBIO.successful(None)
+    }
+  }
+
+  def createSpecificationThroughAutomationApi(input: CreateSpecificationRequest): String = {
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val action = for {
+      domainId <- automationApiHelper.getDomainIdByCommunityOrDomainApiKey(input.communityApiKey, input.domainApiKey)
+      apiKeyToUse <- {
+        for {
+          generateApiKey <- if (input.apiKey.isEmpty) {
+            DBIO.successful(true)
+          } else {
+            PersistenceSchema.specifications.filter(_.apiKey === input.apiKey.get).exists.result
+          }
+          apiKeyToUse <- if (generateApiKey) {
+            DBIO.successful(CryptoUtil.generateApiKey())
+          } else {
+            DBIO.successful(input.apiKey.get)
+          }
+        } yield apiKeyToUse
+      }
+      groupIdToUse <- getGroupIdToUseForApiKey(Some(domainId), input.groupApiKey)
+      _ <- {
+        createSpecificationsInternal(Specifications(0L, input.shortName, input.fullName, input.description, input.reportMetadata,
+          input.hidden.getOrElse(false), apiKeyToUse, domainId, input.displayOrder.getOrElse(0), groupIdToUse
+        ), checkApiKeyUniqueness = false, BadgeInfo.noBadges(), onSuccessCalls)
+      }
+    } yield apiKeyToUse
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
+  }
 
 }

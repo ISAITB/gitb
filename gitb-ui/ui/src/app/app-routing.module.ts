@@ -65,6 +65,8 @@ import { ThemeDetailsComponent } from './pages/admin/system-administration/theme
 import { Theme } from './types/theme';
 import { SystemConfigurationService } from './services/system-configuration.service';
 import { CommunityReportsComponent } from './pages/admin/user-management/community-reports/community-reports.component';
+import { AdminViewGuard } from './resolvers/admin-view-guard';
+import { SystemAdminViewGuard } from './resolvers/system-admin-view-guard';
 
 const themeResolver: ResolveFn<Theme> = (route: ActivatedRouteSnapshot, state: RouterStateSnapshot) => {
   return inject(SystemConfigurationService).getTheme(Number(route.paramMap.get(Constants.NAVIGATION_PATH_PARAM.THEME_ID)!))
@@ -73,89 +75,107 @@ const themeResolver: ResolveFn<Theme> = (route: ActivatedRouteSnapshot, state: R
 const routes: Routes = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },
   {
-    path: '',
-    component: IndexComponent,
-    resolve: {
-      profile: ProfileResolver
-    },
-    canActivate: [RouteAuthenticationGuard],
-    children: [
+    path: '', component: IndexComponent, resolve: { profile: ProfileResolver }, canActivate: [RouteAuthenticationGuard], children: [
+      // Home
       { path: 'home', component: HomeComponent, resolve: { profile: ProfileResolver } },
-      { path: 'login',  component: LoginComponent , resolve: { profile: ProfileResolver } },
-      // My tests
-      { path: 'settings/profile', component: ProfileComponent },
-      { path: 'settings/organisation', component: OrganisationComponent, resolve: { canEditOwnOrganisation: EditOwnOrganisationResolver } },
-      { path: 'settings/organisation/user/create', component: CreateUserComponent },
-      { path: 'settings/organisation/user/:'+Constants.NAVIGATION_PATH_PARAM.USER_ID, component: UserDetailsComponent },
-      { path: 'settings/organisation/system/create', component: CreateSystemComponent },
-      { path: 'settings/organisation/system/:'+Constants.NAVIGATION_PATH_PARAM.SYSTEM_ID, component: SystemDetailsComponent, resolve: { canEditOwnSystem: EditOwnSystemResolver } },
-      { path: 'settings/password', component: PasswordComponent },
+      // Login
+      { path: 'login',  component: LoginComponent, resolve: { profile: ProfileResolver } },
+      // My settings
+      { path: 'settings', resolve: { profile: ProfileResolver }, children: [
+          // Profile
+          { path: 'profile', component: ProfileComponent },
+          // Organisation management
+          { path: 'organisation', component: OrganisationComponent, resolve: { canEditOwnOrganisation: EditOwnOrganisationResolver } },
+          { path: 'organisation/user/create', component: CreateUserComponent },
+          { path: 'organisation/user/:'+Constants.NAVIGATION_PATH_PARAM.USER_ID, component: UserDetailsComponent },
+          { path: 'organisation/system/create', component: CreateSystemComponent },
+          { path: 'organisation/system/:'+Constants.NAVIGATION_PATH_PARAM.SYSTEM_ID, component: SystemDetailsComponent, resolve: { canEditOwnSystem: EditOwnSystemResolver } },
+          // Change password
+          { path: 'password', component: PasswordComponent },
+        ]
+      },
       // Administration
-      { path: 'admin/sessions', component: SessionDashboardComponent },
-      { path: 'admin/conformance', component: ConformanceDashboardComponent },
-      { path: 'admin/domains', component: DomainManagementComponent },
-      { path: 'admin/domains/create', component: CreateDomainComponent },
-      { path: 'admin/domains/:'+Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID, component: DomainDetailsComponent },
-      { path: 'admin/domains/:'+Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID+'/testsuites/:'+Constants.NAVIGATION_PATH_PARAM.TEST_SUITE_ID, component: TestSuiteDetailsComponent },
-      { path: 'admin/domains/:'+Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID+'/testsuites/:'+Constants.NAVIGATION_PATH_PARAM.TEST_SUITE_ID+'/testcases/:'+Constants.NAVIGATION_PATH_PARAM.TEST_CASE_ID, component: TestCaseDetailsComponent },
-      { path: 'admin/domains/:'+Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID+'/specifications/groups/create', component: CreateSpecificationGroupComponent },
-      { path: 'admin/domains/:'+Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID+'/specifications/groups/:'+Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_GROUP_ID, component: SpecificationGroupDetailsComponent },
-      { path: 'admin/domains/:'+Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID+'/specifications/create', component: CreateSpecificationComponent },
-      { path: 'admin/domains/:'+Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID+'/specifications/:'+Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID, component: SpecificationDetailsComponent },
-      { path: 'admin/domains/:'+Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID+'/specifications/:'+Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID+'/actors/create', component: CreateActorComponent },
-      { path: 'admin/domains/:'+Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID+'/specifications/:'+Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID+'/actors/:'+Constants.NAVIGATION_PATH_PARAM.ACTOR_ID, component: ActorDetailsComponent },
-      { path: 'admin/domains/:'+Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID+'/specifications/:'+Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID+'/testsuites/:'+Constants.NAVIGATION_PATH_PARAM.TEST_SUITE_ID, component: TestSuiteDetailsComponent },
-      { path: 'admin/domains/:'+Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID+'/specifications/:'+Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID+'/testsuites/:'+Constants.NAVIGATION_PATH_PARAM.TEST_SUITE_ID+'/testcases/:'+Constants.NAVIGATION_PATH_PARAM.TEST_CASE_ID, component: TestCaseDetailsComponent },
-      { path: 'admin/domains/:'+Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID+'/specifications/:'+Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID+'/actors/:'+Constants.NAVIGATION_PATH_PARAM.ACTOR_ID+'/endpoints/create', component: CreateEndpointComponent },
-      { path: 'admin/domains/:'+Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID+'/specifications/:'+Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID+'/actors/:'+Constants.NAVIGATION_PATH_PARAM.ACTOR_ID+'/endpoints/:'+Constants.NAVIGATION_PATH_PARAM.ENDPOINT_ID, component: EndpointDetailsComponent },
-      { path: 'admin/users' , component: UserManagementComponent },
-      { path: 'admin/users/community/create' , component: CreateCommunityComponent },
-      { path: 'admin/users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID, component: CommunityDetailsComponent, resolve: { community: CommunityResolver} },
-      { path: 'admin/users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/admin/create', component: CreateCommunityAdminComponent },
-      { path: 'admin/users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/admin/:'+Constants.NAVIGATION_PATH_PARAM.USER_ID, component: CommunityAdminDetailsComponent },
-      { path: 'admin/users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/pages/create', component: CreateLandingPageComponent, resolve: { base: LandingPageResolver } },
-      { path: 'admin/users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/pages/:'+Constants.NAVIGATION_PATH_PARAM.LANDING_PAGE_ID, component: LandingPageDetailsComponent },
-      { path: 'admin/users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/notices/create', component: CreateLegalNoticeComponent, resolve: { base: LegalNoticeResolver } },
-      { path: 'admin/users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/notices/:'+Constants.NAVIGATION_PATH_PARAM.LEGAL_NOTICE_ID, component: LegalNoticeDetailsComponent },
-      { path: 'admin/users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/errortemplates/create', component: CreateErrorTemplateComponent, resolve: { base: ErrorTemplateResolver } },
-      { path: 'admin/users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/errortemplates/:'+Constants.NAVIGATION_PATH_PARAM.ERROR_TEMPLATE_ID, component: ErrorTemplateDetailsComponent },
-      { path: 'admin/users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/triggers/create', component: TriggerComponent },
-      { path: 'admin/users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/triggers/:'+Constants.NAVIGATION_PATH_PARAM.TRIGGER_ID, component: TriggerComponent },
-      { path: 'admin/users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/reports', component: CommunityReportsComponent },
-      { path: 'admin/users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/parameters', component: CommunityPropertiesComponent },
-      { path: 'admin/users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/labels', component: CommunityLabelsComponent },
-      { path: 'admin/users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/organisation/create', component: CreateOrganisationComponent },
-      { path: 'admin/users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/organisation/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID, component: OrganisationDetailsComponent },
-      { path: 'admin/users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/organisation/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID+'/conformance', component: ConformanceStatementsComponent },
-      { path: 'admin/users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/organisation/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID+'/conformance/system/:'+Constants.NAVIGATION_PATH_PARAM.SYSTEM_ID+'/create', component: CreateConformanceStatementComponent },
-      { path: 'admin/users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/organisation/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID+'/conformance/system/:'+Constants.NAVIGATION_PATH_PARAM.SYSTEM_ID+'/actor/:'+Constants.NAVIGATION_PATH_PARAM.ACTOR_ID, component: ConformanceStatementComponent },
-      { path: 'admin/users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/organisation/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID+'/conformance/system/:'+Constants.NAVIGATION_PATH_PARAM.SYSTEM_ID+'/actor/:'+Constants.NAVIGATION_PATH_PARAM.ACTOR_ID+'/snapshot/:'+Constants.NAVIGATION_PATH_PARAM.SNAPSHOT_ID, component: ConformanceStatementComponent },
-      { path: 'admin/users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/organisation/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID+'/user/create', component: CreateUserComponent },
-      { path: 'admin/users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/organisation/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID+'/user/:'+Constants.NAVIGATION_PATH_PARAM.USER_ID, component: UserDetailsComponent },
-      { path: 'admin/users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/organisation/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID+'/system/create', component: CreateSystemComponent },
-      { path: 'admin/users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/organisation/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID+'/system/:'+Constants.NAVIGATION_PATH_PARAM.SYSTEM_ID, component: SystemDetailsComponent },
-      { path: 'admin/users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/organisation/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID+'/test/:'+Constants.NAVIGATION_PATH_PARAM.SYSTEM_ID+'/:actor_id/execute', component: TestExecutionComponent },
-      { path: 'admin/export', component: ExportComponent },
-      { path: 'admin/import', component: ImportComponent },
-      // System administration
-      { path: 'admin/system', component: SystemAdministrationComponent },
-      { path: 'admin/system/admin/create' , component: CreateAdminComponent },
-      { path: 'admin/system/admin/:'+Constants.NAVIGATION_PATH_PARAM.USER_ID, component: AdminDetailsComponent },
-      { path: 'admin/system/pages/create', component: CreateLandingPageComponent, resolve: { base: LandingPageResolver } },
-      { path: 'admin/system/pages/:'+Constants.NAVIGATION_PATH_PARAM.LANDING_PAGE_ID, component: LandingPageDetailsComponent },
-      { path: 'admin/system/notices/create', component: CreateLegalNoticeComponent, resolve: { base: LegalNoticeResolver } },
-      { path: 'admin/system/notices/:'+Constants.NAVIGATION_PATH_PARAM.LEGAL_NOTICE_ID, component: LegalNoticeDetailsComponent },
-      { path: 'admin/system/errortemplates/create', component: CreateErrorTemplateComponent, resolve: { base: ErrorTemplateResolver } },
-      { path: 'admin/system/errortemplates/:'+Constants.NAVIGATION_PATH_PARAM.ERROR_TEMPLATE_ID, component: ErrorTemplateDetailsComponent },
-      { path: 'admin/system/themes/create/:'+Constants.NAVIGATION_PATH_PARAM.THEME_ID, component: CreateThemeComponent, resolve: { theme: themeResolver } },
-      { path: 'admin/system/themes/:'+Constants.NAVIGATION_PATH_PARAM.THEME_ID, component: ThemeDetailsComponent, resolve: { theme: themeResolver } },
-      // My organisation
-      { path: 'organisation/conformance/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID, component: ConformanceStatementsComponent },
-      { path: 'organisation/conformance/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID+'/system/:'+Constants.NAVIGATION_PATH_PARAM.SYSTEM_ID+'/create', component: CreateConformanceStatementComponent },
-      { path: 'organisation/conformance/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID+'/system/:'+Constants.NAVIGATION_PATH_PARAM.SYSTEM_ID+'/actor/:'+Constants.NAVIGATION_PATH_PARAM.ACTOR_ID, component: ConformanceStatementComponent },
-      { path: 'organisation/conformance/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID+'/system/:'+Constants.NAVIGATION_PATH_PARAM.SYSTEM_ID+'/actor/:'+Constants.NAVIGATION_PATH_PARAM.ACTOR_ID+'/snapshot/:'+Constants.NAVIGATION_PATH_PARAM.SNAPSHOT_ID, component: ConformanceStatementComponent },
-      { path: 'organisation/tests/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID, component: OrganisationTestsComponent },
-      { path: 'organisation/test/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID+'/:'+Constants.NAVIGATION_PATH_PARAM.SYSTEM_ID+'/:'+Constants.NAVIGATION_PATH_PARAM.ACTOR_ID+'/execute', component: TestExecutionComponent }
+      { path: 'admin', resolve: { profile: ProfileResolver }, canActivate: [AdminViewGuard], children: [
+          // Session dashboard
+          { path: 'sessions', component: SessionDashboardComponent },
+          // Conformance dashboard
+          { path: 'conformance', component: ConformanceDashboardComponent },
+          // Domain management
+          { path: 'domains', component: DomainManagementComponent, canActivate: [SystemAdminViewGuard] },
+          { path: 'domains/create', component: CreateDomainComponent, canActivate: [SystemAdminViewGuard] },
+          { path: 'domains/:'+Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID, component: DomainDetailsComponent },
+          { path: 'domains/:'+Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID+'/testsuites/:'+Constants.NAVIGATION_PATH_PARAM.TEST_SUITE_ID, component: TestSuiteDetailsComponent },
+          { path: 'domains/:'+Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID+'/testsuites/:'+Constants.NAVIGATION_PATH_PARAM.TEST_SUITE_ID+'/testcases/:'+Constants.NAVIGATION_PATH_PARAM.TEST_CASE_ID, component: TestCaseDetailsComponent },
+          { path: 'domains/:'+Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID+'/specifications/groups/create', component: CreateSpecificationGroupComponent },
+          { path: 'domains/:'+Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID+'/specifications/groups/:'+Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_GROUP_ID, component: SpecificationGroupDetailsComponent },
+          { path: 'domains/:'+Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID+'/specifications/create', component: CreateSpecificationComponent },
+          { path: 'domains/:'+Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID+'/specifications/:'+Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID, component: SpecificationDetailsComponent },
+          { path: 'domains/:'+Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID+'/specifications/:'+Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID+'/actors/create', component: CreateActorComponent },
+          { path: 'domains/:'+Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID+'/specifications/:'+Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID+'/actors/:'+Constants.NAVIGATION_PATH_PARAM.ACTOR_ID, component: ActorDetailsComponent },
+          { path: 'domains/:'+Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID+'/specifications/:'+Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID+'/testsuites/:'+Constants.NAVIGATION_PATH_PARAM.TEST_SUITE_ID, component: TestSuiteDetailsComponent },
+          { path: 'domains/:'+Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID+'/specifications/:'+Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID+'/testsuites/:'+Constants.NAVIGATION_PATH_PARAM.TEST_SUITE_ID+'/testcases/:'+Constants.NAVIGATION_PATH_PARAM.TEST_CASE_ID, component: TestCaseDetailsComponent },
+          { path: 'domains/:'+Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID+'/specifications/:'+Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID+'/actors/:'+Constants.NAVIGATION_PATH_PARAM.ACTOR_ID+'/endpoints/create', component: CreateEndpointComponent },
+          { path: 'domains/:'+Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID+'/specifications/:'+Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID+'/actors/:'+Constants.NAVIGATION_PATH_PARAM.ACTOR_ID+'/endpoints/:'+Constants.NAVIGATION_PATH_PARAM.ENDPOINT_ID, component: EndpointDetailsComponent },
+          // Community management
+          { path: 'users' , component: UserManagementComponent, canActivate: [SystemAdminViewGuard] },
+          { path: 'users/community/create' , component: CreateCommunityComponent, canActivate: [SystemAdminViewGuard] },
+          { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID, component: CommunityDetailsComponent, resolve: { community: CommunityResolver} },
+          { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/admin/create', component: CreateCommunityAdminComponent },
+          { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/admin/:'+Constants.NAVIGATION_PATH_PARAM.USER_ID, component: CommunityAdminDetailsComponent },
+          { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/pages/create', component: CreateLandingPageComponent, resolve: { base: LandingPageResolver } },
+          { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/pages/:'+Constants.NAVIGATION_PATH_PARAM.LANDING_PAGE_ID, component: LandingPageDetailsComponent },
+          { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/notices/create', component: CreateLegalNoticeComponent, resolve: { base: LegalNoticeResolver } },
+          { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/notices/:'+Constants.NAVIGATION_PATH_PARAM.LEGAL_NOTICE_ID, component: LegalNoticeDetailsComponent },
+          { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/errortemplates/create', component: CreateErrorTemplateComponent, resolve: { base: ErrorTemplateResolver } },
+          { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/errortemplates/:'+Constants.NAVIGATION_PATH_PARAM.ERROR_TEMPLATE_ID, component: ErrorTemplateDetailsComponent },
+          { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/triggers/create', component: TriggerComponent },
+          { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/triggers/:'+Constants.NAVIGATION_PATH_PARAM.TRIGGER_ID, component: TriggerComponent },
+          { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/reports', component: CommunityReportsComponent },
+          { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/parameters', component: CommunityPropertiesComponent },
+          { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/labels', component: CommunityLabelsComponent },
+          { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/organisation/create', component: CreateOrganisationComponent },
+          { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/organisation/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID, component: OrganisationDetailsComponent },
+          { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/organisation/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID+'/conformance', component: ConformanceStatementsComponent },
+          { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/organisation/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID+'/conformance/system/:'+Constants.NAVIGATION_PATH_PARAM.SYSTEM_ID+'/create', component: CreateConformanceStatementComponent },
+          { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/organisation/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID+'/conformance/system/:'+Constants.NAVIGATION_PATH_PARAM.SYSTEM_ID+'/actor/:'+Constants.NAVIGATION_PATH_PARAM.ACTOR_ID, component: ConformanceStatementComponent },
+          { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/organisation/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID+'/conformance/system/:'+Constants.NAVIGATION_PATH_PARAM.SYSTEM_ID+'/actor/:'+Constants.NAVIGATION_PATH_PARAM.ACTOR_ID+'/snapshot/:'+Constants.NAVIGATION_PATH_PARAM.SNAPSHOT_ID, component: ConformanceStatementComponent },
+          { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/organisation/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID+'/user/create', component: CreateUserComponent },
+          { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/organisation/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID+'/user/:'+Constants.NAVIGATION_PATH_PARAM.USER_ID, component: UserDetailsComponent },
+          { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/organisation/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID+'/system/create', component: CreateSystemComponent },
+          { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/organisation/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID+'/system/:'+Constants.NAVIGATION_PATH_PARAM.SYSTEM_ID, component: SystemDetailsComponent },
+          { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/organisation/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID+'/test/:'+Constants.NAVIGATION_PATH_PARAM.SYSTEM_ID+'/:actor_id/execute', component: TestExecutionComponent },
+          // Data import/export
+          { path: 'export', component: ExportComponent },
+          { path: 'import', component: ImportComponent },
+          // System administration
+          { path: 'system', canActivate: [SystemAdminViewGuard], children: [
+            { path: '' , component: SystemAdministrationComponent },
+            { path: 'admin/create' , component: CreateAdminComponent },
+            { path: 'admin/:'+Constants.NAVIGATION_PATH_PARAM.USER_ID, component: AdminDetailsComponent },
+            { path: 'pages/create', component: CreateLandingPageComponent, resolve: { base: LandingPageResolver } },
+            { path: 'pages/:'+Constants.NAVIGATION_PATH_PARAM.LANDING_PAGE_ID, component: LandingPageDetailsComponent },
+            { path: 'notices/create', component: CreateLegalNoticeComponent, resolve: { base: LegalNoticeResolver } },
+            { path: 'notices/:'+Constants.NAVIGATION_PATH_PARAM.LEGAL_NOTICE_ID, component: LegalNoticeDetailsComponent },
+            { path: 'errortemplates/create', component: CreateErrorTemplateComponent, resolve: { base: ErrorTemplateResolver } },
+            { path: 'errortemplates/:'+Constants.NAVIGATION_PATH_PARAM.ERROR_TEMPLATE_ID, component: ErrorTemplateDetailsComponent },
+            { path: 'themes/create/:'+Constants.NAVIGATION_PATH_PARAM.THEME_ID, component: CreateThemeComponent, resolve: { theme: themeResolver } },
+            { path: 'themes/:'+Constants.NAVIGATION_PATH_PARAM.THEME_ID, component: ThemeDetailsComponent, resolve: { theme: themeResolver } },
+          ]}
+        ]
+      },
+      // My tests
+      { path: 'organisation', resolve: { profile: ProfileResolver }, children: [
+          // Conformance statements
+          { path: 'conformance/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID, component: ConformanceStatementsComponent },
+          { path: 'conformance/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID+'/system/:'+Constants.NAVIGATION_PATH_PARAM.SYSTEM_ID+'/create', component: CreateConformanceStatementComponent },
+          { path: 'conformance/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID+'/system/:'+Constants.NAVIGATION_PATH_PARAM.SYSTEM_ID+'/actor/:'+Constants.NAVIGATION_PATH_PARAM.ACTOR_ID, component: ConformanceStatementComponent },
+          { path: 'conformance/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID+'/system/:'+Constants.NAVIGATION_PATH_PARAM.SYSTEM_ID+'/actor/:'+Constants.NAVIGATION_PATH_PARAM.ACTOR_ID+'/snapshot/:'+Constants.NAVIGATION_PATH_PARAM.SNAPSHOT_ID, component: ConformanceStatementComponent },
+          // Session history
+          { path: 'tests/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID, component: OrganisationTestsComponent },
+          // Test execution
+          { path: 'test/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID+'/:'+Constants.NAVIGATION_PATH_PARAM.SYSTEM_ID+'/:'+Constants.NAVIGATION_PATH_PARAM.ACTOR_ID+'/execute', component: TestExecutionComponent }
+        ]
+      }
     ]
   }
 ]

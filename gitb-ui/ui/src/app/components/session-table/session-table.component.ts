@@ -16,6 +16,7 @@ import { TestResultReport } from 'src/app/types/test-result-report';
 import { LogLevel } from 'src/app/types/log-level';
 import { TestInteractionData } from 'src/app/types/test-interaction-data';
 import { filter, find } from 'lodash';
+import { PopupService } from 'src/app/services/popup.service';
 
 @Component({
   selector: '[app-session-table]',
@@ -28,6 +29,7 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
   @Input() expandedCounter?: { count: number }
   @Input() supportRefresh = false
   @Input() refreshComplete?: EventEmitter<TestResultReport|undefined>
+  @Input() copyForOtherRoleOption = false
   @Input() showCheckbox?: EventEmitter<boolean>
   @Output() onRefresh = new EventEmitter<TestResultForDisplay>()
 
@@ -45,7 +47,8 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
     private modalService: BsModalService,
     private routingService: RoutingService,
     private testService: TestService,
-    public dataService: DataService
+    public dataService: DataService,
+    private popupService: PopupService
   ) { super() }
 
   ngOnInit(): void {
@@ -349,5 +352,23 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
     setTimeout(() => {
       this.diagramCollapsedFinished[session] = value
     }, 1)
+  }
+
+  copyLink(row: TestResultForDisplay, forOtherRole?: boolean) {
+    const params: Record<string, string> = {}
+    params[Constants.NAVIGATION_QUERY_PARAM.TEST_SESSION_ID] = row.session
+    let routePath: string|undefined
+    if (forOtherRole) {
+      if (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin) {
+        routePath = `/organisation/tests/${row.organizationId}`
+      } else {
+        routePath = '/admin/sessions'
+      }
+    }
+    this.dataService.copyExternalLink(params, routePath).subscribe((value) => {
+      if (value) {
+        this.popupService.success("Link copied to clipboard.")
+      }
+    })
   }
 }

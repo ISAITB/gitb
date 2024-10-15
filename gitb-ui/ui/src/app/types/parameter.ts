@@ -28,5 +28,6 @@ export interface Parameter {
     prerequisiteOk?: boolean
     mimeType?: string
     fileName?: string
+    endpoint?: number
 
 }

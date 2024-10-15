@@ -12,6 +12,7 @@ object Constants {
   // System configuration constants
   val SessionAliveTime = "session_alive_time"
   val RestApiEnabled = "rest_api_enabled"
+  val RestApiAdminKey = "rest_api_admin_key"
   val SelfRegistrationEnabled = "self_registration_enabled"
   val MasterPassword = "master_password"
   val DemoAccount = "demo_account"
@@ -53,15 +54,23 @@ object Constants {
 
   val FilterDateFormat = "dd-MM-yyyy HH:mm:ss"
   val AutomationHeader = "ITB_API_KEY"
+  val AcceptHeader = "Accept"
 
   val defaultPage = 1L
   val defaultLimit = 10L
 
+  val MimeTypeAny = "*/*"
   val MimeTypePDF = "application/pdf"
   val MimeTypeXML = "application/xml"
+  val MimeTypeTextXML = "text/xml"
+
+  val UserAttributeEmail = "email"
+  val UserAttributeFirstName = "firstName"
+  val UserAttributeLastName = "lastName"
+  val UserAttributeAuthenticationLevel = "authLevel"
 
   // When ending in "-snapshot", this is considered a non-published release.
-  val VersionNumber = "1.23.1"
-  val VersionNumberPostfixForResources = "_1"
+  val VersionNumber = "1.24.0"
+  val VersionNumberPostfixForResources = ""
 
 }

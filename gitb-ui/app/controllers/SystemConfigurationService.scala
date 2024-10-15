@@ -129,7 +129,7 @@ class SystemConfigurationService @Inject()(implicit ec: ExecutionContext, author
         themeData._3.get
       } else if (themeData._1.isDefined && themeData._2.isDefined) {
         if (systemConfigurationManager.themeExists(themeData._1.get.key, None)) {
-          ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "A theme with this key already exists.")
+          ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "A theme with this key already exists.", Some("key"))
         } else {
           val referenceThemeId = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.REFERENCE).toLong
           systemConfigurationManager.createTheme(referenceThemeId, themeData._1.get, themeData._2.get)
@@ -158,7 +158,7 @@ class SystemConfigurationService @Inject()(implicit ec: ExecutionContext, author
         themeData._3.get
       } else if (themeData._1.isDefined && themeData._2.isDefined) {
         if (systemConfigurationManager.themeExists(themeData._1.get.key, Some(themeId))) {
-          ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "A theme with this key already exists.")
+          ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "A theme with this key already exists.", Some("key"))
         } else {
           systemConfigurationManager.updateTheme(themeData._1.get, themeData._2.get)
           ResponseConstructor.constructEmptyResponse
@@ -177,7 +177,7 @@ class SystemConfigurationService @Inject()(implicit ec: ExecutionContext, author
     if (deleted) {
       ResponseConstructor.constructEmptyResponse
     } else {
-      ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_PARAM, "The selected theme cannot be deleted.")
+      ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "The selected theme cannot be deleted.")
     }
   }
 

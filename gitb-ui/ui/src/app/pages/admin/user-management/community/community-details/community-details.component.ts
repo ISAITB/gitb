@@ -31,6 +31,8 @@ import { CreateEditCommunityResourceModalComponent } from 'src/app/modals/create
 import { saveAs } from 'file-saver';
 import { CommunityResourceBulkUploadModalComponent } from 'src/app/modals/community-resource-bulk-upload-modal/community-resource-bulk-upload-modal.component';
 import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
+import { ValidationState } from 'src/app/types/validation-state';
+import { Observable, of } from 'rxjs';
 
 @Component({
   selector: 'app-community-details',
@@ -47,6 +49,7 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   legalNoticeStatus = {status: Constants.STATUS.NONE}
   triggerStatus = {status: Constants.STATUS.NONE}
   resourcesStatus = {status: Constants.STATUS.NONE}
+  loaded = false
   savePending = false
   deletePending = false
   communityId!: number
@@ -127,6 +130,7 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   selectingForDeleteResources = false
 
   clearResourceSelections = new EventEmitter<void>()
+  validation = new ValidationState()
 
   constructor(
     public dataService: DataService,
@@ -154,7 +158,6 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   }
 
   ngAfterViewInit(): void {
-    this.dataService.focus('sname')
     setTimeout(() => {
       this.triggerTab(this.tabToShow)
     })
@@ -178,15 +181,18 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
     if (this.dataService.configuration.registrationEnabled) {
       this.organizationColumns.push({ field: 'templateName', title: 'Set as template', sortable: true })
     }
-    if (this.dataService.isSystemAdmin) {
-      this.conformanceService.getDomains()
-      .subscribe((data) => {
-        this.domains = data
-      })
-    }
     this.routingService.communityBreadcrumbs(this.communityId, this.community.sname)
     // Setup tab triggers
     this.setupTabs()
+    let domains$: Observable<Domain[]> = of([])
+    if (this.dataService.isSystemAdmin) {
+      domains$ = this.conformanceService.getDomains()
+    }
+    domains$.subscribe((data) => {
+      this.domains = data
+    }).add(() => {
+      this.loaded = true
+    })
   }
 
   private setupTabs() {
@@ -510,9 +516,15 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   }
 
   updateCommunity() {
-    this.clearAlerts()
-    const emailValid = !this.textProvided(this.community.email) || this.requireValidEmail(this.community.email, "Please enter a valid support email.")
-    const notificationValid = !this.community.selfRegNotification || this.requireText(this.community.email, "A support email needs to be defined to support notifications.")
+    this.validation.clearErrors()
+    const emailValid = !this.textProvided(this.community.email) || this.isValidEmail(this.community.email)
+    if (!emailValid) {
+      this.validation.invalid("supportEmail", "Please enter a valid support email.")
+    }
+    const notificationValid = !this.community.selfRegNotification || this.textProvided(this.community.email)
+    if (!notificationValid) {
+      this.validation.invalid("supportEmail", "A support email needs to be defined to support notifications.")
+    }
     if (emailValid && notificationValid) {
       let descriptionToUse: string|undefined
       if (!this.community.sameDescriptionAsDomain) {

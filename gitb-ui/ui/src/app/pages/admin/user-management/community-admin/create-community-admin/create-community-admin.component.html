@@ -5,18 +5,18 @@
         </div>
         <form>
             <div class="card-body">
-                <!-- Error messages -->
-                <app-alert-display [alerts]="alerts" innerClass="col-10 offset-1"></app-alert-display>
                 <div class="row">
                     <div class="col-11">
-                        <app-user-form [user]="user" [new]="true" [admin]="true" [sso]="dataService.configuration.ssoEnabled"></app-user-form>
+                        <app-user-form [user]="user" [new]="true" [admin]="true" [sso]="dataService.configuration.ssoEnabled" [validation]="validation"></app-user-form>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-10 col-centered">
                         <div class="alert alert-info rounded mb-0">
-                            <p *ngIf="dataService.configuration.ssoEnabled">The user's new role assignment will need to be confirmed by the user upon login.</p>
-                            <p class="mb-0"><b>Privacy note:</b> By clicking 'Save' you grant the user's consent on his/her behalf to record the provided information. This is used only for internal identification purposes and is never shared with other parties. <span *ngIf="!dataService.configuration.ssoEnabled">Alternatively you may also complete this form with information that is not personally identifiable. </span>Please refer to the legal notice (link available in the screen's footer) for more information.</p>
+                            @if (dataService.configuration.ssoEnabled) {
+                                <p>The user's new role assignment will need to be confirmed by the user upon login.</p>
+                            }
+                            <p class="mb-0"><b>Privacy note:</b> By clicking 'Save' you grant the user's consent on his/her behalf to record the provided information. This is used only for internal identification purposes and is never shared with other parties.{{!dataService.configuration.ssoEnabled?" Alternatively you may also complete this form with information that is not personally identifiable.":""}} Please refer to the legal notice (link available in the screen's footer) for more information.</p>
                         </div>
                     </div>
                 </div>

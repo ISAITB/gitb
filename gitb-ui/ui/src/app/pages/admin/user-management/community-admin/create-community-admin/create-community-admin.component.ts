@@ -11,6 +11,7 @@ import { UserService } from 'src/app/services/user.service';
 import { User } from 'src/app/types/user.type';
 import { CommunityTab } from '../../community/community-details/community-tab.enum';
 import { Constants } from 'src/app/common/constants';
+import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
   selector: 'app-create-community-admin',
@@ -24,6 +25,7 @@ export class CreateCommunityAdminComponent extends BaseComponent implements OnIn
   user: Partial<User> = {}
   isSSO: boolean = false
   savePending = false
+  validation = new ValidationState()
 
   constructor(
     private routingService: RoutingService,
@@ -66,10 +68,18 @@ export class CreateCommunityAdminComponent extends BaseComponent implements OnIn
   }
 
   createAdmin() {
-    this.clearAlerts()
+    this.validation.clearErrors()
     let ok = true
     if (this.isSSO) {
-      ok = this.requireValidEmail(this.user.email, "Please enter a valid email address.")
+      ok = this.isValidEmail(this.user.email)
+      if (!ok) {
+        this.validation.invalid('email', 'Please enter a valid email address.')
+      }
+    } else {
+      ok = this.isValidUsername(this.user.email)
+      if (!ok) {
+        this.validation.invalid('email', 'The username cannot contain spaces.')
+      }
     }
     if (ok) {
       this.savePending = true
@@ -83,11 +93,7 @@ export class CreateCommunityAdminComponent extends BaseComponent implements OnIn
               })
             )
           } else {
-            if (this.dataService.configuration.ssoEnabled) {
-              this.addAlertError('An administrator with this email address has already been registered.')
-            } else {
-              this.addAlertError('An administrator with this username has already been registered.')
-            }
+            this.reportThatUserExists()
             return EMPTY
           }
         }),
@@ -96,6 +102,16 @@ export class CreateCommunityAdminComponent extends BaseComponent implements OnIn
         this.savePending = false
       })
     }
+  }
+
+  private reportThatUserExists() {
+    let feedback: string
+    if (this.isSSO) {
+      feedback = 'An administrator with this email address has already been registered.'
+    } else {
+      feedback = 'An administrator with this username has already been registered.'
+    }
+    this.validation.invalid('email', feedback)
   }
 
   cancelCreateAdmin() {

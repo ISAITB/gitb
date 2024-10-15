@@ -4,11 +4,11 @@ import { ApiKeyInfo } from '../types/api-key-info';
 import { CustomProperty } from '../types/custom-property.type';
 import { ErrorDescription } from '../types/error-description';
 import { FileParam } from '../types/file-param.type';
-import { OrganisationParameterWithValue } from '../types/organisation-parameter-with-value';
 import { OrganisationSearchResult } from '../types/organisation-search-result.type';
 import { Organisation } from '../types/organisation.type';
 import { DataService } from './data.service';
 import { RestService } from './rest.service';
+import { OrganisationParameter } from '../types/organisation-parameter';
 
 @Injectable({
   providedIn: 'root'
@@ -172,14 +172,14 @@ export class OrganisationService {
   }
   
   getOwnOrganisationParameterValues() {
-    return this.restService.get<OrganisationParameterWithValue[]>({
+    return this.restService.get<OrganisationParameter[]>({
       path: ROUTES.controllers.OrganizationService.getOwnOrganisationParameterValues().url,
       authenticate: true
     })
   }
 
   checkOrganisationParameterValues(orgId: number) {
-    return this.restService.get<OrganisationParameterWithValue[]>({
+    return this.restService.get<OrganisationParameter[]>({
       path: ROUTES.controllers.OrganizationService.checkOrganisationParameterValues(orgId).url,
       authenticate: true
     })
@@ -192,7 +192,7 @@ export class OrganisationService {
         simple: onlySimple
       }
     }
-    return this.restService.get<OrganisationParameterWithValue[]>({
+    return this.restService.get<OrganisationParameter[]>({
       path: ROUTES.controllers.OrganizationService.getOrganisationParameterValues(orgId).url,
       authenticate: true,
       params: params

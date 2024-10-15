@@ -2,19 +2,22 @@ import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { BsModalRef } from 'ngx-bootstrap/modal';
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
-import { ErrorService } from 'src/app/services/error.service';
 import { PopupService } from 'src/app/services/popup.service';
 import { Specification } from 'src/app/types/specification';
 import { PendingTestSuiteUploadChoice } from '../test-suite-upload-modal/pending-test-suite-upload-choice';
 import { SpecificationChoice } from '../test-suite-upload-modal/specification-choice';
 import { TestSuiteUploadResult } from '../test-suite-upload-modal/test-suite-upload-result';
+import { BaseComponent } from 'src/app/pages/base-component.component';
+import { of } from 'rxjs';
+import { MultiSelectConfig } from 'src/app/components/multi-select-filter/multi-select-config';
+import { FilterUpdate } from 'src/app/components/test-filter/filter-update';
 
 @Component({
   selector: 'app-link-shared-test-suite-modal',
   templateUrl: './link-shared-test-suite-modal.component.html',
   styleUrls: [ './link-shared-test-suite-modal.component.less' ]
 })
-export class LinkSharedTestSuiteModalComponent implements OnInit {
+export class LinkSharedTestSuiteModalComponent extends BaseComponent implements OnInit {
 
   @Input() domainId!: number
   @Input() testSuiteId!: number
@@ -30,23 +33,36 @@ export class LinkSharedTestSuiteModalComponent implements OnInit {
   hasMultipleChoices = false
   skipCount = 0
   hasChoicesToComplete = false
+  selectConfig!: MultiSelectConfig<Specification>
   
   constructor(
     public dataService: DataService,
     private modalInstance: BsModalRef,
     private conformanceService: ConformanceService,
-    private popupService: PopupService,
-    private errorService: ErrorService
-  ) { }
+    private popupService: PopupService
+  ) { super() }
 
   ngOnInit(): void {
     if (this.availableSpecifications.length == 1) {
       this.specifications.push(this.availableSpecifications[0])
     }
+    this.selectConfig = {
+      name: "specification",
+      textField: "fname",
+      clearItems: new EventEmitter<void>(),
+      replaceItems: new EventEmitter<Specification[]>(),
+      replaceSelectedItems: new EventEmitter<Specification[]>(),
+      filterLabel: `Select ${this.dataService.labelSpecificationsLower()}...`,
+      loader: () => of(this.availableSpecifications)
+    }
     if (this.step == 'confirm') {
       // We are requested only to show the result of a link action.
       this.showSpecificationChoices()
     }
+  }
+
+  specificationsChanged(update: FilterUpdate<Specification>) {
+    this.specifications = update.values.active
   }
 
   proceedDisabled() {
@@ -117,11 +133,12 @@ export class LinkSharedTestSuiteModalComponent implements OnInit {
     } else {
       msg = 'An error occurred while processing the test suite: Response was empty'
     }
-    this.errorService.showSimpleErrorMessage("Upload error", msg)
+    this.addAlertError(msg)
   }
 
   linkSpecifications() {
     this.actionPending = true
+    this.clearAlerts()
     this.conformanceService.linkSharedTestSuite(this.testSuiteId, this.specifications.map((x => x.id)))
     .subscribe((result) => {
       this.uploadResult = result

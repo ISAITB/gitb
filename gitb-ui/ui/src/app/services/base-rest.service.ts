@@ -28,18 +28,18 @@ export class BaseRestService {
   get<T>(config: HttpRequestConfig): Observable<T> {
     return this.call<T>(config, () => {
       return this.http.get<T>(
-        this.dataService.completePath(config.path), 
+        this.dataService.completePath(config.path),
         this.prepareRequestOptions(config)
-      )      
+      )
     })
   }
 
   delete<T>(config: HttpRequestConfig): Observable<T> {
     return this.call<T>(config, () => {
       return this.http.delete<T>(
-        this.dataService.completePath(config.path), 
+        this.dataService.completePath(config.path),
         this.prepareRequestOptions(config)
-      )      
+      )
     })
   }
 
@@ -67,7 +67,7 @@ export class BaseRestService {
         }
       }
       return this.http.post<T>(
-        this.dataService.completePath(config.path), 
+        this.dataService.completePath(config.path),
         body,
         this.prepareRequestOptions(config)
       )

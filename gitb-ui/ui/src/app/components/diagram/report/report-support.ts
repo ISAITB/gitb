@@ -48,6 +48,15 @@ export abstract class ReportSupport extends BaseComponent{
             } else {
               valueType = ValueType.base64
             }
+          } else if (content.embeddingMethod == 'STRING') {
+            if (this.dataService.isImageType(content.mimeType)) {
+                mimeType = content.mimeType
+                if (this.dataService.isDataURL(valueToShow)) {
+                    valueType = ValueType.dataURL
+                } else {
+                    valueType = ValueType.base64
+                }
+            }
           }
           valueObservable = of({value: valueToShow, valueType: valueType, mimeType: mimeType})
         }
@@ -141,7 +150,7 @@ export abstract class ReportSupport extends BaseComponent{
         const dataId = this.getFileReference(anyContent)
         if (asDataURL) {
             if (this.loadedDataUrlReferences[dataId] == undefined) {
-                return this.reportService.getTestStepReportDataAsDataUrl(sessionId, dataId).pipe(
+                return this.reportService.getTestStepReportDataAsDataUrl(sessionId, dataId, anyContent.mimeType).pipe(
                     mergeMap((response) => {
                         this.loadedDataUrlReferences[dataId] = response
                         return of(response)

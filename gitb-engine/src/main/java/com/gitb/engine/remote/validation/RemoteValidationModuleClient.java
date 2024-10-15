@@ -12,8 +12,9 @@ import com.gitb.vs.ValidateRequest;
 import com.gitb.vs.ValidationResponse;
 import com.gitb.vs.ValidationService;
 import com.gitb.vs.Void;
-
 import jakarta.xml.ws.soap.AddressingFeature;
+import org.apache.cxf.endpoint.Client;
+
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
@@ -65,7 +66,9 @@ public class RemoteValidationModuleClient extends RemoteServiceClient implements
 
 	private ValidationService getServiceClient() {
 		TestCaseUtils.prepareRemoteServiceLookup(getCallProperties());
-		return new ValidationServiceClient(getServiceURL()).getValidationServicePort(new AddressingFeature(true));
+		var client = new ValidationServiceClient(getServiceURL()).getValidationServicePort(new AddressingFeature(true));
+		prepareClient((Client)client);
+		return client;
 	}
 
 }

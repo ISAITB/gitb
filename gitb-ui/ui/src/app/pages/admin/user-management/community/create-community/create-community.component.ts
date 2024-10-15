@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Constants } from 'src/app/common/constants';
 import { BaseComponent } from 'src/app/pages/base-component.component';
 import { CommunityService } from 'src/app/services/community.service';
@@ -8,6 +8,7 @@ import { PopupService } from 'src/app/services/popup.service';
 import { RoutingService } from 'src/app/services/routing.service';
 import { Community } from 'src/app/types/community';
 import { Domain } from 'src/app/types/domain';
+import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
   selector: 'app-create-community',
@@ -15,7 +16,7 @@ import { Domain } from 'src/app/types/domain';
   styles: [
   ]
 })
-export class CreateCommunityComponent extends BaseComponent implements OnInit, AfterViewInit {
+export class CreateCommunityComponent extends BaseComponent implements OnInit {
 
   community: Partial<Community> = {
     selfRegType: Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED,
@@ -31,6 +32,8 @@ export class CreateCommunityComponent extends BaseComponent implements OnInit, A
   }
   domains: Domain[] = []
   savePending = false
+  loaded = false
+  validation = new ValidationState()
 
   constructor(
     private routingService: RoutingService,
@@ -40,14 +43,12 @@ export class CreateCommunityComponent extends BaseComponent implements OnInit, A
     private popupService: PopupService
   ) { super() }
 
-  ngAfterViewInit(): void {
-    this.dataService.focus('sname')
-  }
-
   ngOnInit(): void {
     this.conformanceService.getDomains()
     .subscribe((data) => {
       this.domains = data
+    }).add(() => {
+      this.loaded = true
     })
   }
 
@@ -66,9 +67,15 @@ export class CreateCommunityComponent extends BaseComponent implements OnInit, A
   }
 
   createCommunity() {
-    this.clearAlerts()
-    const emailValid = !this.textProvided(this.community.email) || this.requireValidEmail(this.community.email, "Please enter a valid support email.")
-    const notificationValid = !this.community.selfRegNotification || this.requireText(this.community.email, "A support email needs to be defined to support notifications.")
+    this.validation.clearErrors()
+    const emailValid = !this.textProvided(this.community.email) || this.isValidEmail(this.community.email)
+    if (!emailValid) {
+      this.validation.invalid("supportEmail", "Please enter a valid support email.")
+    }
+    const notificationValid = !this.community.selfRegNotification || this.textProvided(this.community.email)
+    if (!notificationValid) {
+      this.validation.invalid("supportEmail", "A support email needs to be defined to support notifications.")
+    }
     if (emailValid && notificationValid) {
       let descriptionToUse: string|undefined
       if (!this.community.sameDescriptionAsDomain) {

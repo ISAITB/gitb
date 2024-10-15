@@ -7,6 +7,7 @@ import { OrganisationService } from 'src/app/services/organisation.service';
 import { SystemService } from 'src/app/services/system.service';
 import { Observable } from 'rxjs';
 import { Constants } from 'src/app/common/constants';
+import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
   selector: 'app-custom-property-form',
@@ -25,12 +26,13 @@ export class CustomPropertyFormComponent implements OnInit {
   @Input() tbShowFormHeader = true
   @Input() tbShowRequiredAsterisks = true
   @Input() tbAdmin?: boolean
-  @Input() tbPropertyType!: 'organisation'|'system'
+  @Input() tbPropertyType!: 'organisation'|'system'|'statement'
   @Input() tbOwner?: number
   @Input() tbExpandable = false
   @Input() tbCollapsed: boolean|undefined
   @Input() tbSetDefaults = false
   @Input() refresh?: EventEmitter<{props?: CustomProperty[], asterisks: boolean}>
+  @Input() validation?: ValidationState
   @Output() collapseChange = new EventEmitter<boolean>()
 
   Constants = Constants
@@ -39,6 +41,7 @@ export class CustomPropertyFormComponent implements OnInit {
   innerDivStyle = ''
   private hasPrerequisites = false
   private propertyMap: Record<string, CustomProperty> = {}
+  resetMap: Record<number, EventEmitter<void>> = {}
   private propertiesInvolvedInPrerequisites: string[] = []
   private propertiesInvolvedInPrerequisitesMap: Record<string, boolean> = {}
 
@@ -73,10 +76,15 @@ export class CustomPropertyFormComponent implements OnInit {
     if (this.tbFormPadded) {
       this.innerDivStyle = 'col-'+(11-this.tbColOffset)+' offset-'+this.tbColOffset
     }
-    if (this.tbSetDefaults && this.tbProperties != undefined) {
+    if (this.tbProperties) {
       for (let prop of this.tbProperties) {
-        if (prop.defaultValue != undefined) {
-          prop.value = prop.defaultValue
+        if (this.tbSetDefaults && this.tbProperties != undefined) {
+          if (prop.defaultValue != undefined) {
+            prop.value = prop.defaultValue
+          }
+        }
+        if (prop.kind == "BINARY") {
+          this.resetMap[prop.id] = new EventEmitter<void>()
         }
       }
     }
@@ -152,6 +160,9 @@ export class CustomPropertyFormComponent implements OnInit {
     delete property.file
     property.configured = false
     this.checkPrerequisites(property)
+    if (this.resetMap[property.id]) {
+      this.resetMap[property.id].emit()
+    }
   }
 
   onFileSelect(property: CustomProperty, file: FileData): void {
@@ -180,8 +191,10 @@ export class CustomPropertyFormComponent implements OnInit {
       let fn: Observable<ArrayBuffer>
       if (this.tbPropertyType == 'organisation') {
         fn = this.organisationService.downloadOrganisationParameterFile(this.tbOwner!, property.id)
-      } else {
+      } else if (this.tbPropertyType == 'system') {
         fn = this.systemService.downloadSystemParameterFile(this.tbOwner!, property.id)
+      } else {
+        fn = this.systemService.downloadEndpointConfigurationFile(this.tbOwner!, property.id)
       }
       fn.subscribe((data) => {
         const blobData = new Blob([data], {type: property.mimeType})

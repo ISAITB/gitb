@@ -23,7 +23,7 @@ export class ProfileResolver  {
         private authService: AuthService,
     ) {}
 
-    resolve(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<void> {
+    resolveData(): Observable<void> {
         let result: Observable<any>
         const authenticated = this.authProviderService.isAuthenticated()
         let configObservable: Observable<any>
@@ -120,6 +120,10 @@ export class ProfileResolver  {
             })
         )
         return result
+    }
+
+    resolve(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<void> {
+        return this.resolveData()
     }
 
 }

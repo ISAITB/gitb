@@ -1,11 +1,8 @@
 import { Injectable } from '@angular/core';
 import { ROUTES } from '../common/global';
-import { ConformanceConfiguration } from '../pages/organisation/conformance-statement/conformance-configuration';
-import { BinaryMetadata } from '../types/binary-metadata';
 import { FileParam } from '../types/file-param.type';
 import { System } from '../types/system';
 import { SystemParameter } from '../types/system-parameter';
-import { SystemParameterWithValue } from '../types/system-parameter-with-value';
 import { DataService } from './data.service';
 import { RestService } from './rest.service';
 
@@ -98,7 +95,7 @@ export class SystemService {
         simple: onlySimple
       }
     }
-    return this.restService.get<SystemParameterWithValue[]>({
+    return this.restService.get<SystemParameter[]>({
       path: ROUTES.controllers.SystemService.getSystemParameterValues(systemId).url,
       authenticate: true,
       params: params
@@ -196,7 +193,7 @@ export class SystemService {
   }
 
   checkSystemParameterValues(systemId: number) {
-    return this.restService.get<SystemParameterWithValue[]>({
+    return this.restService.get<SystemParameter[]>({
       path: ROUTES.controllers.SystemService.checkSystemParameterValues(systemId).url,
       authenticate: true
     })
@@ -212,20 +209,9 @@ export class SystemService {
     })
   }
 
-  deleteEndpointConfiguration(systemId: number, parameterId: number, endpointId: number) {
-    return this.restService.delete<void>({
-      path: ROUTES.controllers.SystemService.deleteEndpointConfiguration(endpointId).url,
-      authenticate: true,
-      params: {
-        system_id: systemId,
-        parameter_id: parameterId
-      }
-    })
-  }
-
-  downloadEndpointConfigurationFile(systemId: number, parameterId: number, endpointId: number) {
+  downloadEndpointConfigurationFile(systemId: number, parameterId: number) {
 		return this.restService.get<ArrayBuffer>({
-			path: ROUTES.controllers.SystemService.downloadEndpointConfigurationFile(endpointId).url,
+			path: ROUTES.controllers.SystemService.downloadEndpointConfigurationFile().url,
 			authenticate: true,
       params: {
         system_id: systemId,
@@ -233,27 +219,6 @@ export class SystemService {
       },      
 			arrayBuffer: true
 		})
-  }
-
-  saveEndpointConfiguration(endpoint: number, config: ConformanceConfiguration, file?: File) {
-    const configToSend: any = {
-      system: config.system,
-      parameter: config.parameter,
-      endpoint: config.endpoint,
-      value: config.value
-    }
-    let files: FileParam[]|undefined
-    if (file != undefined) {
-      files = [{param: 'file', data: file}]
-    }
-    return this.restService.post<BinaryMetadata|undefined>({
-      path: ROUTES.controllers.SystemService.saveEndpointConfiguration(endpoint).url,
-      authenticate: true,
-      files: files,
-      data: {
-        config: JSON.stringify(configToSend)
-      }
-    })
   }
 
   updateSystemApiKey(systemId: number) {

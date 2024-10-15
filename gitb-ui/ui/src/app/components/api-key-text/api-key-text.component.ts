@@ -12,13 +12,16 @@ export class ApiKeyTextComponent implements OnInit {
   @Input() key!: string
   @Input() idName!: string
   @Input() name!: string
+  @Input() label?: string
+  @Input() inputWidth?: string
   @Input() supportUpdate = false
   @Input() supportDelete = false
+  @Input() supportCopy = true
   @Input() updatePending = false
   @Input() deletePending = false
 
-  @Output() update = new EventEmitter<void>()
-  @Output() delete = new EventEmitter<void>()
+  @Output() update = new EventEmitter<string>()
+  @Output() delete = new EventEmitter<string>()
 
   Constants = Constants
 
@@ -36,11 +39,11 @@ export class ApiKeyTextComponent implements OnInit {
   }
 
   doDelete() {
-    this.delete.emit()
+    this.delete.emit(this.key)
   }
 
   doUpdate() {
-    this.update.emit()
+    this.update.emit(this.key)
   }
 
 }

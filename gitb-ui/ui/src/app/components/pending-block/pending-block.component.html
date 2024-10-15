@@ -1,1 +1,6 @@
-<span [ngClass]="{'mini-tab': !icon}" *ngIf="pending"><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span><ng-content *ngIf="!pending || !icon"></ng-content>
+@if (pending) {
+    <span [ngClass]="{'mini-tab': !icon}"><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span>
+    @if (!pending || !icon) {
+        <ng-content></ng-content>
+    }
+}

@@ -1,17 +1,22 @@
 package managers
 
-import javax.inject.{Inject, Singleton}
+import exceptions.{AutomationApiException, ErrorCodes}
+import models.Endpoints
 import models.Enums.TriggerDataType
+import models.automation.CustomPropertyInfo
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
-import utils.RepositoryUtils
+import utils.{JsonUtil, RepositoryUtils}
 
+import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class ParameterManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class ParameterManager @Inject() (repositoryUtils: RepositoryUtils,
+                                  automationApiHelper: AutomationApiHelper,
+                                  dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -25,15 +30,168 @@ class ParameterManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigProv
     exec(parameterQuery.result.headOption).isDefined
   }
 
+  def createParameterAndEndpoint(parameter: models.Parameters, actorId: Long): (Long, Long) = {
+    val dbAction = for {
+      endpointId <- PersistenceSchema.endpoints.returning(PersistenceSchema.endpoints.map(_.id)) += Endpoints(0L, "config", None, actorId)
+      parameterId <- createParameter(parameter.withEndpoint(endpointId, None))
+    } yield (endpointId, parameterId)
+    exec(dbAction.transactionally)
+  }
+
   def createParameterWrapper(parameter: models.Parameters): Long = {
     exec(createParameter(parameter).transactionally)
+  }
+
+  private def checkParameterExistence(endpointId: Option[Long], parameterKey: String, expectedToExist: Boolean, parameterIdToIgnore: Option[Long]): DBIO[Option[models.Parameters]] = {
+    if (endpointId.isEmpty) {
+      if (expectedToExist) {
+        throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "No property with name [%s] exists in the target actor".formatted(parameterKey))
+      } else {
+        DBIO.successful(None)
+      }
+    } else {
+      for {
+        parameter <- PersistenceSchema.parameters
+          .filter(_.endpoint === endpointId.get)
+          .filter(_.testKey === parameterKey)
+          .filterOpt(parameterIdToIgnore)((q, id) => q.id =!= id)
+          .result
+          .headOption
+        _ <- {
+          if (parameter.isDefined && !expectedToExist) {
+            throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "A property with name [%s] already exists in the target actor".formatted(parameterKey))
+          } else if (parameter.isEmpty && expectedToExist) {
+            throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "No property with name [%s] exists in the target actor".formatted(parameterKey))
+          } else {
+            DBIO.successful(())
+          }
+        }
+      } yield parameter
+    }
+  }
+
+  private def checkDependedParameterExistence(endpointId: Option[Long], dependsOn: Option[String], parameterIdToIgnore: Option[Long]): DBIO[Option[models.Parameters]] = {
+    if (dependsOn.isEmpty) {
+      DBIO.successful(None)
+    } else {
+      for {
+        parameter <- checkParameterExistence(endpointId, dependsOn.get, expectedToExist = true, parameterIdToIgnore)
+        _ <- {
+          if (parameter.get.kind != "SIMPLE") {
+            throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "Property [%s] upon which this property depends on must be of simple type".formatted(dependsOn.get))
+          } else {
+            DBIO.successful(())
+          }
+        }
+      } yield parameter
+    }
+  }
+
+  def createParameterDefinitionThroughAutomationApi(communityApiKey: String, actorApiKey: String, input: CustomPropertyInfo): Unit = {
+    val dbAction = for {
+      // Load community IDs.
+      communityIds <- automationApiHelper.getCommunityIdsByCommunityApiKey(communityApiKey)
+      // Load actor and endpoint IDs.
+      actorIds <- automationApiHelper.getActorIdsByDomainId(communityIds._2, actorApiKey, endpointRequired = false)
+      // Check for existing property with provided name.
+      _ <- checkParameterExistence(actorIds._2, input.key, expectedToExist = false, None)
+      // If this depends on another property check that it exists.
+      dependency <- checkDependedParameterExistence(actorIds._2, input.dependsOn.flatten, None)
+      // Determine endpoint ID.
+      endpointIdToUse <- {
+        if (actorIds._2.isEmpty) {
+          // Create an endpoint on the fly.
+          PersistenceSchema.endpoints.returning(PersistenceSchema.endpoints.map(_.id)) += Endpoints(0L, "config", None, actorIds._1)
+        } else {
+          // Use the existing one.
+          DBIO.successful(actorIds._2.get)
+        }
+      }
+      // Create property.
+      _ <- {
+        val dependsOnStatus = automationApiHelper.propertyDependsOnStatus(input, dependency.flatMap(_.allowedValues))
+        createParameter(models.Parameters(0L,
+          input.name.getOrElse(input.key),
+          input.key,
+          input.description.flatten,
+          automationApiHelper.propertyUseText(input.required),
+          "SIMPLE",
+          !input.editableByUsers.getOrElse(true),
+          !input.inTests.getOrElse(false),
+          input.hidden.getOrElse(false),
+          automationApiHelper.propertyAllowedValuesText(input.allowedValues.flatten),
+          input.displayOrder.getOrElse(0),
+          dependsOnStatus._1.flatten,
+          dependsOnStatus._2.flatten,
+          automationApiHelper.propertyDefaultValue(input.defaultValue.flatten, input.allowedValues.flatten),
+          endpointIdToUse
+        ))
+      }
+    } yield ()
+    exec(dbAction.transactionally)
+  }
+
+  def updateParameterDefinitionThroughAutomationApi(communityApiKey: String, actorApiKey: String, input: CustomPropertyInfo): Unit = {
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val dbAction = for {
+      // Load community IDs.
+      communityIds <- automationApiHelper.getCommunityIdsByCommunityApiKey(communityApiKey)
+      // Load actor and endpoint IDs.
+      actorIds <- automationApiHelper.getActorIdsByDomainId(communityIds._2, actorApiKey, endpointRequired = true)
+      // Check for existing property with provided name.
+      parameter <- checkParameterExistence(actorIds._2, input.key, expectedToExist = true, None)
+      // If this depends on another property check that it exists.
+      dependency <- checkDependedParameterExistence(actorIds._2, input.dependsOn.flatten, parameter.map(_.id))
+      // Proceed with update.
+      _ <- {
+        val dependsOnStatus = automationApiHelper.propertyDependsOnStatus(input, dependency.flatMap(_.allowedValues))
+        updateParameter(
+          parameter.get.id,
+          input.name.getOrElse(parameter.get.name),
+          input.key,
+          input.description.getOrElse(parameter.get.desc),
+          automationApiHelper.propertyUseText(input.required, parameter.get.use),
+          "SIMPLE",
+          !input.editableByUsers.getOrElse(!parameter.get.adminOnly),
+          !input.inTests.getOrElse(!parameter.get.notForTests),
+          input.hidden.getOrElse(parameter.get.hidden),
+          input.allowedValues.map(x => automationApiHelper.propertyAllowedValuesText(x)).getOrElse(parameter.get.allowedValues),
+          dependsOnStatus._1.getOrElse(parameter.get.dependsOn),
+          dependsOnStatus._2.getOrElse(parameter.get.dependsOnValue),
+          automationApiHelper.propertyDefaultValue(
+            input.defaultValue.getOrElse(parameter.get.defaultValue),
+            input.allowedValues.getOrElse(parameter.get.allowedValues.map(x => JsonUtil.parseJsAllowedPropertyValues(x)))
+          ),
+          input.displayOrder.orElse(Some(parameter.get.displayOrder)),
+          onSuccessCalls
+        )
+      }
+    } yield ()
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction.transactionally))
+  }
+
+  def deleteParameterDefinitionThroughAutomationApi(communityApiKey: String, actorApiKey: String, parameterApiKey: String): Unit = {
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val dbAction = for {
+      // Load community IDs.
+      communityIds <- automationApiHelper.getCommunityIdsByCommunityApiKey(communityApiKey)
+      // Load actor and endpoint IDs.
+      actorIds <- automationApiHelper.getActorIdsByDomainId(communityIds._2, actorApiKey, endpointRequired = true)
+      // Check for existing property with provided name.
+      parameter <- checkParameterExistence(actorIds._2, parameterApiKey, expectedToExist = true, None)
+      // Delete property.
+      _ <- {
+        delete(parameter.get.id, onSuccessCalls)
+      }
+    } yield ()
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
   }
 
   def createParameter(parameter: models.Parameters): DBIO[Long] = {
     PersistenceSchema.parameters.returning(PersistenceSchema.parameters.map(_.id)) += parameter
   }
 
-  def deleteParameterByEndPoint(endPointId: Long, onSuccessCalls: mutable.ListBuffer[() => _]) = {
+  def deleteParameterByEndPoint(endPointId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
     val action = for {
       ids <- PersistenceSchema.parameters.filter(_.endpoint === endPointId).map(_.id).result
       _ <- DBIO.seq(ids.map(id => delete(id, onSuccessCalls)): _*)
@@ -41,7 +199,7 @@ class ParameterManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigProv
     action
   }
 
-  def deleteParameter(parameterId: Long) = {
+  def deleteParameter(parameterId: Long): Unit = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = delete(parameterId, onSuccessCalls)
     exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
@@ -110,11 +268,11 @@ class ParameterManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigProv
 
   def updateParameterWrapper(parameterId: Long, name: String, testKey: String, description: Option[String], use: String, kind: String, adminOnly: Boolean, notForTests: Boolean, hidden: Boolean, allowedValues: Option[String], dependsOn: Option[String], dependsOnValue: Option[String], defaultValue: Option[String]): Unit = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
-    val dbAction = updateParameter(parameterId, name, testKey, description, use, kind, adminOnly, notForTests, hidden, allowedValues, dependsOn, dependsOnValue, defaultValue, onSuccessCalls)
+    val dbAction = updateParameter(parameterId, name, testKey, description, use, kind, adminOnly, notForTests, hidden, allowedValues, dependsOn, dependsOnValue, defaultValue, None, onSuccessCalls)
     exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
   }
 
-  def getParameterById(parameterId: Long) = {
+  def getParameterById(parameterId: Long): Option[models.Parameters] = {
     exec(PersistenceSchema.parameters.filter(_.id === parameterId).result.headOption)
   }
 
@@ -128,7 +286,7 @@ class ParameterManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigProv
     }
   }
 
-  def updateParameter(parameterId: Long, name: String, testKey: String, description: Option[String], use: String, kind: String, adminOnly: Boolean, notForTests: Boolean, hidden: Boolean, allowedValues: Option[String], dependsOn: Option[String], dependsOnValue: Option[String], defaultValue: Option[String], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
+  def updateParameter(parameterId: Long, name: String, testKey: String, description: Option[String], use: String, kind: String, adminOnly: Boolean, notForTests: Boolean, hidden: Boolean, allowedValues: Option[String], dependsOn: Option[String], dependsOnValue: Option[String], defaultValue: Option[String], displayOrder: Option[Short], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
     for {
       existingParameter <- PersistenceSchema.parameters.filter(_.id === parameterId).map(x => (x.endpoint, x.testKey, x.kind)).result.head
       _ <- {
@@ -155,6 +313,13 @@ class ParameterManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigProv
         // Don't update display order here.
         val q = for {p <- PersistenceSchema.parameters if p.id === parameterId} yield (p.desc, p.use, p.kind, p.name, p.testKey, p.adminOnly, p.notForTests, p.hidden, p.allowedValues, p.dependsOn, p.dependsOnValue, p.defaultValue)
         q.update(description, use, kind, name, testKey, adminOnly, notForTests, hidden, allowedValues, dependsOn, dependsOnValue, defaultValue)
+      }
+      _ <- {
+        if (displayOrder.isDefined) {
+          PersistenceSchema.parameters.filter(_.id === parameterId).map(_.displayOrder).update(displayOrder.get)
+        } else {
+          DBIO.successful(())
+        }
       }
     } yield ()
   }

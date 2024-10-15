@@ -1,46 +1,38 @@
 import { Component, EventEmitter, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { saveAs } from 'file-saver';
+import { cloneDeep, filter, find, map as lmap, remove } from 'lodash';
 import { BsModalRef, BsModalService } from 'ngx-bootstrap/modal';
-import { forkJoin, Observable, timer, of, Subscription, throwError } from 'rxjs';
+import { Observable, of, Subscription, throwError, timer } from 'rxjs';
 import { catchError, map, mergeMap, share } from 'rxjs/operators';
 import { WebSocketSubject } from 'rxjs/webSocket';
 import { Constants } from 'src/app/common/constants';
+import { CheckboxOption } from 'src/app/components/checkbox-option-panel/checkbox-option';
+import { CheckboxOptionState } from 'src/app/components/checkbox-option-panel/checkbox-option-state';
 import { ActorInfo } from 'src/app/components/diagram/actor-info';
+import { DiagramEvents } from 'src/app/components/diagram/diagram-events';
 import { StepReport } from 'src/app/components/diagram/report/step-report';
 import { StepData } from 'src/app/components/diagram/step-data';
+import { SessionLogModalComponent } from 'src/app/components/session-log-modal/session-log-modal.component';
+import { SimulatedConfigurationDisplayModalComponent } from 'src/app/components/simulated-configuration-display-modal/simulated-configuration-display-modal.component';
 import { ProvideInputModalComponent } from 'src/app/modals/provide-input-modal/provide-input-modal.component';
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
 import { ErrorService } from 'src/app/services/error.service';
 import { HtmlService } from 'src/app/services/html.service';
-import { OrganisationService } from 'src/app/services/organisation.service';
 import { PopupService } from 'src/app/services/popup.service';
 import { ReportService } from 'src/app/services/report.service';
-import { SystemService } from 'src/app/services/system.service';
+import { RoutingService } from 'src/app/services/routing.service';
+import { SpecificationService } from 'src/app/services/specification.service';
 import { TestService } from 'src/app/services/test.service';
 import { WebSocketService } from 'src/app/services/web-socket.service';
-import { OrganisationParameterWithValue } from 'src/app/types/organisation-parameter-with-value';
+import { LoadingStatus } from 'src/app/types/loading-status.type';
+import { LogLevel } from 'src/app/types/log-level';
 import { SUTConfiguration } from 'src/app/types/sutconfiguration';
-import { SystemConfigurationEndpoint } from 'src/app/types/system-configuration-endpoint';
-import { SystemConfigurationParameter } from 'src/app/types/system-configuration-parameter';
-import { SystemParameterWithValue } from 'src/app/types/system-parameter-with-value';
+import { TestInteractionData } from 'src/app/types/test-interaction-data';
+import { UserInteraction } from 'src/app/types/user-interaction';
 import { WebSocketMessage } from 'src/app/types/web-socket-message';
 import { ConformanceTestCase } from '../organisation/conformance-statement/conformance-test-case';
-import { cloneDeep, filter, find, map as lmap, remove } from 'lodash'
-import { DiagramEvents } from 'src/app/components/diagram/diagram-events';
-import { UserInteraction } from 'src/app/types/user-interaction';
-import { RoutingService } from 'src/app/services/routing.service';
-import { ConformanceStatementTab } from '../organisation/conformance-statement/conformance-statement-tab';
-import { MissingConfigurationAction } from 'src/app/components/missing-configuration-display/missing-configuration-action';
-import { LoadingStatus } from 'src/app/types/loading-status.type';
-import { SimulatedConfigurationDisplayModalComponent } from 'src/app/components/simulated-configuration-display-modal/simulated-configuration-display-modal.component';
-import { SessionLogModalComponent } from 'src/app/components/session-log-modal/session-log-modal.component';
-import { LogLevel } from 'src/app/types/log-level';
-import { CheckboxOption } from 'src/app/components/checkbox-option-panel/checkbox-option';
-import { CheckboxOptionState } from 'src/app/components/checkbox-option-panel/checkbox-option-state';
-import { SpecificationService } from 'src/app/services/specification.service';
-import { saveAs } from 'file-saver'
-import { TestInteractionData } from 'src/app/types/test-interaction-data';
 
 @Component({
   selector: 'app-test-execution',
@@ -90,18 +82,10 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   exportXmlPending: {[key: number]: boolean} = {}
   exportPdfPending: {[key: number]: boolean} = {}
 
-  organisationProperties: OrganisationParameterWithValue[] = []
-  systemProperties: SystemParameterWithValue[] = []
-  endpointRepresentations: SystemConfigurationEndpoint[] = []
-  statementProperties: SystemConfigurationParameter[] = []
   actor?: string
   session?: string
-  configCheckStatus: LoadingStatus = {status: Constants.STATUS.NONE}
   testCaseLoadStatus: LoadingStatus = {status: Constants.STATUS.NONE}
   testPreparationStatus: LoadingStatus = {status: Constants.STATUS.NONE}
-  statementConfigurationValid = false
-  systemConfigurationValid = false
-  organisationConfigurationValid = false
   simulatedConfigs?: SUTConfiguration[]
   currentSimulatedConfigs?: SUTConfiguration[]
   messagesToProcess?: WebSocketMessage[]
@@ -132,11 +116,9 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private modalService: BsModalService,
     private testService: TestService,
-    private systemService: SystemService,
     private conformanceService: ConformanceService,
     private reportService: ReportService,
     public dataService: DataService,
-    private organisationService: OrganisationService,
     private popupService: PopupService,
     private htmlService: HtmlService,
     private webSocketService: WebSocketService,
@@ -189,7 +171,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     .subscribe((data) => {
       this.specificationId = data.id
       this.initialiseState()
-      this.checkConfigurations()
+      this.initialiseTestCases()
     })
   }
 
@@ -234,28 +216,6 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     this.currentTestIndex = -1
     this.testCaseLoadStatus.status = Constants.STATUS.NONE
     this.testPreparationStatus.status = Constants.STATUS.NONE
-  }
-
-  checkConfigurations() {
-    this.configCheckStatus.status = Constants.STATUS.PENDING
-    const organisationParameterCheck = this.organisationService.checkOrganisationParameterValues(this.organisationId)
-    const systemParameterCheck = this.systemService.checkSystemParameterValues(this.systemId)
-    const statementParameterCheck = this.conformanceService.checkConfigurations(this.actorId, this.systemId)
-    forkJoin([organisationParameterCheck, systemParameterCheck, statementParameterCheck])
-    .subscribe((data) => {
-      this.organisationProperties = data[0]
-      this.systemProperties = data[1]
-      this.endpointRepresentations = data[2]
-      this.statementProperties = this.dataService.getEndpointParametersToDisplay(this.endpointRepresentations)
-      this.statementConfigurationValid = this.dataService.isConfigurationValid(this.endpointRepresentations!)
-      this.systemConfigurationValid = this.dataService.isMemberConfigurationValid(this.systemProperties!)
-      this.organisationConfigurationValid = this.dataService.isMemberConfigurationValid(this.organisationProperties!)
-      if (this.statementConfigurationValid && this.systemConfigurationValid && this.organisationConfigurationValid) {
-        this.initialiseTestCases()
-      }
-    }).add(() => {
-      this.configCheckStatus.status = Constants.STATUS.FINISHED
-    })
   }
 
   private initialiseTestCases() {
@@ -1136,38 +1096,38 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     })
   }
 
-  handleMissingConfigurationAction(action: MissingConfigurationAction) {
-    if (action == MissingConfigurationAction.viewOrganisation) {
-      if (this.dataService.isVendorUser || this.dataService.isVendorAdmin) {
-        this.routingService.toOwnOrganisationDetails(undefined, true)
-      } else {
-        if (this.dataService.vendor!.id == this.organisationId) {
-          this.routingService.toOwnOrganisationDetails(undefined, true)
-        } else {
-          this.organisationService.getOrganisationBySystemId(this.systemId)
-          .subscribe((data) => {
-            this.routingService.toOrganisationDetails(data.community, data.id, undefined, true)
-          })
-        }
-      }
-    } else if (action == MissingConfigurationAction.viewSystem) {
-      if (this.dataService.isVendorUser || this.dataService.isVendorAdmin) {
-        this.routingService.toOwnSystemDetails(this.systemId, true)
-      } else {
-        if (this.dataService.vendor!.id == this.organisationId) {
-          this.routingService.toOwnSystemDetails(this.systemId, true)
-        } else {
-          this.routingService.toSystemDetails(this.communityId!, this.organisationId, this.systemId, true)
-        }
-      }
-    } else { // viewStatement
-      if (this.communityId == undefined) {
-        this.routingService.toOwnConformanceStatement(this.organisationId, this.systemId, this.actorId, undefined, undefined, ConformanceStatementTab.configuration)
-      } else {
-        this.routingService.toConformanceStatement(this.organisationId, this.systemId, this.actorId, this.communityId, undefined, undefined, ConformanceStatementTab.configuration)
-      }
-    }
-  }
+  // handleMissingConfigurationAction(action: MissingConfigurationAction) {
+  //   if (action == MissingConfigurationAction.viewOrganisation) {
+  //     if (this.dataService.isVendorUser || this.dataService.isVendorAdmin) {
+  //       this.routingService.toOwnOrganisationDetails(undefined, true)
+  //     } else {
+  //       if (this.dataService.vendor!.id == this.organisationId) {
+  //         this.routingService.toOwnOrganisationDetails(undefined, true)
+  //       } else {
+  //         this.organisationService.getOrganisationBySystemId(this.systemId)
+  //         .subscribe((data) => {
+  //           this.routingService.toOrganisationDetails(data.community, data.id, undefined, true)
+  //         })
+  //       }
+  //     }
+  //   } else if (action == MissingConfigurationAction.viewSystem) {
+  //     if (this.dataService.isVendorUser || this.dataService.isVendorAdmin) {
+  //       this.routingService.toOwnSystemDetails(this.systemId, true)
+  //     } else {
+  //       if (this.dataService.vendor!.id == this.organisationId) {
+  //         this.routingService.toOwnSystemDetails(this.systemId, true)
+  //       } else {
+  //         this.routingService.toSystemDetails(this.communityId!, this.organisationId, this.systemId, true)
+  //       }
+  //     }
+  //   } else { // viewStatement
+  //     if (this.communityId == undefined) {
+  //       this.routingService.toOwnConformanceStatement(this.organisationId, this.systemId, this.actorId, undefined, undefined, ConformanceStatementTab.configuration)
+  //     } else {
+  //       this.routingService.toConformanceStatement(this.organisationId, this.systemId, this.actorId, this.communityId, undefined, undefined, ConformanceStatementTab.configuration)
+  //     }
+  //   }
+  // }
 
   viewLog(test: ConformanceTestCase) {
     this.testCaseWithOpenLogView = test.id
@@ -1268,7 +1228,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   exportPdf(testCase: ConformanceTestCase) {
     this.exportPdfPending[testCase.id] = true
     this.onExportTestCase(testCase, 'application/pdf', 'test_case_report.pdf')
-    .subscribe(() => {
+    .subscribe(() => {}).add(() => {
       this.exportPdfPending[testCase.id] = false
     })
   }
@@ -1276,7 +1236,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   exportXml(testCase: ConformanceTestCase) {
     this.exportXmlPending[testCase.id] = true
     this.onExportTestCase(testCase, 'application/xml', 'test_case_report.xml')
-    .subscribe(() => {
+    .subscribe(() => {}).add(() => {
       this.exportXmlPending[testCase.id] = false
     })
   }

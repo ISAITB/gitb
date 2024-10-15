@@ -7,6 +7,7 @@ import { SystemConfigurationService } from 'src/app/services/system-configuratio
 import { FileData } from 'src/app/types/file-data.type';
 import { Theme } from 'src/app/types/theme';
 import { saveAs } from 'file-saver';
+import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
   selector: 'app-theme-form',
@@ -17,6 +18,7 @@ export class ThemeFormComponent implements OnInit, AfterViewInit {
   @Input() theme!: Theme
   @Input() readonly = false
   @Input() referenceThemeId?: number
+  @Input() validation!: ValidationState
   @ViewChild("themeKey") themeKeyField?: ElementRef;
 
   acceptedFileTypes = ['image/png', 'image/jpeg', 'image/gif', 'image/svg+xml' ]

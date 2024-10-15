@@ -1,1 +1,3 @@
-<span class="tabIcon" *ngIf="icon"><i [ngClass]="icon"></i></span><span>{{text}}</span>
+@if (icon) {
+    <span class="tabIcon"><i [ngClass]="icon"></i></span><span>{{text}}</span>
+}

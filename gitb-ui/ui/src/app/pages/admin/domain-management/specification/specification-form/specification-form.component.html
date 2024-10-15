@@ -1,10 +1,10 @@
 <div class="row">
     <div class="col-10 offset-1">
         @if (specification.groups && specification.groups.length > 0) {
-            <div class="row mb-3">
+            <div class="row">
                 <label class="col-3 col-form-label text-end" for="groupChoice">{{dataService.labelSpecificationGroup()}}:</label>
                 <div class="col-7">
-                    <select id="groupChoice" class="form-control form-select" name="group" [(ngModel)]="specification.group">
+                    <select id="groupChoice" class="form-select" name="group" [(ngModel)]="specification.group">
                         <option [ngValue]="undefined">--Optional--</option>
                         @for (group of specification.groups; track group.id) {
                             <option [ngValue]="group.id">{{group.sname}}</option>
@@ -14,24 +14,31 @@
                 <div app-tooltip class="col-auto" [tbTooltip]="'If selected, this is the '+dataService.labelSpecificationGroupLower()+' that will contain this '+dataService.labelSpecificationLower()+'.'"></div>
             </div>
         }
-        <div class="row mb-3">
+        <div class="row mt-3">
             <label class="col-3 col-form-label text-end" for="shortName">* Short name:</label>
             <div class="col-7"><input id="shortName" name="shortName" [(ngModel)]="specification.sname" class="form-control" type="text"></div>
             <div app-tooltip class="col-auto" [tbTooltip]="'This is used to display the '+dataService.labelSpecificationLower()+' in selection lists (e.g. search filters) and tables (e.g. conformance statement creation wizard) where space is limited. Ensure this is short but still understandable by users.'"></div>
         </div>
-        <div class="row mb-3">
+        <div class="row mt-3">
             <label class="col-3 col-form-label text-end" for="fullName">* Full name:</label>
             <div class="col-7"><input id="fullName" name="fullName" [(ngModel)]="specification.fname" class="form-control" type="text"></div>
             <div app-tooltip class="col-auto" [tbTooltip]="'This is used to display the '+dataService.labelSpecificationLower()+' in detail forms and reports.'"></div>
         </div>
-        <div class="row mb-3">
+        <div class="row mt-3">
             <label class="col-3 col-form-label text-end" for="description">Description:</label>
             <div class="col-7">
                 <textarea id="description" name="description" [(ngModel)]="specification.description" class="form-control"></textarea>
             </div>
             <div app-tooltip class="col-auto" [tbTooltip]="'This is used to describe the '+dataService.labelSpecificationLower()+'. It is visible to users when managing conformance statements.'"></div>
         </div>
-        <div class="row mb-3 pt-1">
+        <div class="row mt-3">
+            <label class="col-3 col-form-label text-end" for="metadata">Report metadata:</label>
+            <div class="col-7">
+                <textarea id="metadata" name="metadata" [(ngModel)]="specification.reportMetadata" class="form-control"></textarea>
+            </div>
+            <div app-tooltip class="col-auto" [tbTooltip]="'This is optional, free-text metadata for the '+dataService.labelSpecificationLower()+' that if specified will be included in XML reports. This is not included in PDF reports nor presented on the user interface.'"></div>
+        </div>
+        <div class="row mt-3 pt-1">
             <label class="col-3 col-form-label text-end pt-0" for="hidden">Hidden:</label>
             <div class="col-7">
                 <div class="form-check">
@@ -41,7 +48,7 @@
             </div>
         </div>
         @if (dataService.configuration.automationApiEnabled && specification.id != undefined) {
-            <div class="row mb-3">
+            <div class="row mt-3">
                 <label class="col-3 col-form-label text-end" for="apiKey">API key:</label>
                 <div class="col-7">
                     <app-api-key-text idName="apiKey" name="apiKey" [key]="specification.apiKey!"></app-api-key-text>

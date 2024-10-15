@@ -1,7 +1,8 @@
 package hooks
 
+import com.gitb.utils.HmacUtils
 import config.Configurations
-import config.Configurations.{BUILD_TIMESTAMP, MASTER_PASSWORD}
+import config.Configurations.{BUILD_TIMESTAMP, DB_PASSWORD, MASTER_PASSWORD}
 import jakarta.xml.ws.Endpoint
 import jaxws.TestbedService
 import managers._
@@ -11,11 +12,12 @@ import models.Enums.UserRole
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.comparator.NameFileComparator
 import org.apache.commons.lang3.StringUtils
+import org.apache.cxf.jaxws.EndpointImpl
 import org.apache.pekko.actor.ActorSystem
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
-import play.api.Environment
-import utils.{JsonUtil, RepositoryUtils, TimeUtil, ZipArchiver}
+import play.api.{Configuration, Environment}
+import utils.{CryptoUtil, JsonUtil, RepositoryUtils, TimeUtil, ZipArchiver}
 
 import java.io.{File, FileFilter}
 import java.nio.charset.StandardCharsets
@@ -29,7 +31,7 @@ import scala.concurrent.duration.DurationInt
 import scala.util.Using
 
 @Singleton
-class PostStartHook @Inject() (implicit ec: ExecutionContext, authenticationManager: AuthenticationManager, actorSystem: ActorSystem, systemConfigurationManager: SystemConfigurationManager, testResultManager: TestResultManager, testExecutionManager: TestExecutionManager, importCompleteManager: ImportCompleteManager, repositoryUtils: RepositoryUtils, environment: Environment, userManager: UserManager) {
+class PostStartHook @Inject() (implicit ec: ExecutionContext, authenticationManager: AuthenticationManager, actorSystem: ActorSystem, systemConfigurationManager: SystemConfigurationManager, testResultManager: TestResultManager, testExecutionManager: TestExecutionManager, importCompleteManager: ImportCompleteManager, repositoryUtils: RepositoryUtils, environment: Environment, userManager: UserManager, config: Configuration) {
 
   private def logger = LoggerFactory.getLogger(this.getClass)
 
@@ -53,6 +55,7 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, authenticationMana
     prepareTheme()
     setupAdministratorOneTimePassword()
     setupInteractionNotifications()
+    removeOverrideConfiguration()
     logger.info("Application has started in "+Configurations.TESTBED_MODE+" mode - release "+Constants.VersionNumber + " built at "+Configurations.BUILD_TIMESTAMP)
   }
 
@@ -83,9 +86,9 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, authenticationMana
   }
 
   private def secretsSetForDevelopment(): Boolean = {
-    val appSecret = sys.env.getOrElse("APPLICATION_SECRET", "value_used_during_development_to_be_replaced_in_production")
-    val dbPassword = sys.env.getOrElse("DB_DEFAULT_PASSWORD", "gitb")
-    val hmacKey = sys.env.getOrElse("HMAC_KEY", "devKey")
+    val appSecret = config.get[String]("play.http.secret.key")
+    val dbPassword = DB_PASSWORD
+    val hmacKey = HmacUtils.getKey
     val masterPassword = String.valueOf(MASTER_PASSWORD)
     appSecret == "value_used_during_development_to_be_replaced_in_production" || appSecret == "CHANGE_ME" ||
       masterPassword == "value_used_during_development_to_be_replaced_in_production" || masterPassword == "CHANGE_ME" ||
@@ -103,6 +106,11 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, authenticationMana
     // REST API.
     if (restApiEnabledConfig.nonEmpty && restApiEnabledConfig.get.parameter.nonEmpty) {
       Configurations.AUTOMATION_API_ENABLED = restApiEnabledConfig.get.parameter.get.toBoolean
+    }
+    val restApiAdminKey = persistedConfigs.find(config => config.config.name == Constants.RestApiAdminKey).map(_.config)
+    if (restApiAdminKey.flatMap(_.parameter).isEmpty) {
+      val initialApiKeyValue = Configurations.AUTOMATION_API_MASTER_KEY.getOrElse(CryptoUtil.generateApiKey())
+      systemConfigurationManager.updateSystemParameter(Constants.RestApiAdminKey, Some(initialApiKeyValue))
     }
     // Self-registration.
     val selfRegistrationConfig = persistedConfigs.find(config => config.config.name == Constants.SelfRegistrationEnabled).map(_.config)
@@ -237,7 +245,12 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, authenticationMana
   }
 
   private def initialiseTestbedClient(): Unit = {
-    TestbedService.endpoint = Endpoint.publish(Configurations.TESTBED_CLIENT_URL, new TestbedService(actorSystem))
+    val endpoint = Endpoint.create(new TestbedService(actorSystem)).asInstanceOf[EndpointImpl]
+    if (Configurations.TESTBED_CLIENT_URL_INTERNAL != Configurations.TESTBED_CLIENT_URL) {
+      endpoint.setPublishedEndpointUrl(Configurations.TESTBED_CLIENT_URL)
+    }
+    endpoint.publish(Configurations.TESTBED_CLIENT_URL_INTERNAL)
+    TestbedService.endpoint = endpoint
   }
 
   /**
@@ -430,6 +443,18 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, authenticationMana
   private def prepareTheme(): Unit = {
     // Calling this method will parse and cache the active theme.
     systemConfigurationManager.getCssForActiveTheme()
+  }
+
+  private def removeOverrideConfiguration(): Unit = {
+    if (Configurations.TESTBED_MODE == Constants.ProductionMode) {
+      /*
+       * If we are running in production we may have secrets defined in a separate configuration file
+       * that is generated by the Docker entrypoint script. At this point we have fully loaded our
+       * configuration so we can safely delete this  file (upon restart it will again be re-created for
+       * the duration of the bootstrap process).
+       */
+      Files.deleteIfExists(Path.of(sys.env.getOrElse("OVERRIDE_CONFIG_PATH", "/usr/local/gitb-ui/conf/overrides.conf")))
+    }
   }
 
 }

@@ -6,5 +6,6 @@ export interface CustomProperty extends Parameter {
     changeValue?: boolean
     showValue?: boolean
     file?: FileData
+    showAsInvalid?: boolean
 
 }

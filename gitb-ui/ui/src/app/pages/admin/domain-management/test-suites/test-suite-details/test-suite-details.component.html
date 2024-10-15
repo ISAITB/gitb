@@ -4,10 +4,12 @@
 			<div class="card-title">Test suite details</div>
 		</div>
 		<form>
-			<div class="card-body">
-                <div class="alert alert-info rounded" *ngIf="testSuite.shared">
-                    <span>This test suite is designed to be shared across multiple {{dataService.labelSpecificationsLower()}}. Any changes made will apply to all its linked {{dataService.labelSpecificationsLower()}}.</span>
-                </div>
+			<div class="card-body" [pending]="!loaded" focus="name">
+				@if (testSuite.shared) {
+					<div class="alert alert-info rounded">
+						<span>This test suite is designed to be shared across multiple {{dataService.labelSpecificationsLower()}}. Any changes made will apply to all its linked {{dataService.labelSpecificationsLower()}}.</span>
+					</div>
+				}
 				<div class="row">
                     <div class="col-10 offset-1">
 						<div class="row mb-3">
@@ -40,9 +42,11 @@
 				<app-form-section sectionTitle="Documentation" [collapsed]="true" [marginBefore]="true">
 					<div class="row mb-3 mt-3">
 						<div class="offset-1 col-10">
-							<div class="mb-3" *ngIf="dataService.isCommunityAdmin">
-								<app-placeholder-selector [resources]="true" [community]="dataService.vendor?.community"></app-placeholder-selector>
-							</div>
+							@if (dataService.isCommunityAdmin) {
+								<div class="mb-3">
+									<app-placeholder-selector [resources]="true" [community]="dataService.vendor?.community"></app-placeholder-selector>
+								</div>
+							}
 							<div class="editorContainer">
 								<app-editor id="documentation" name="documentation" [(ngModel)]="testSuite.documentation"></app-editor>
 								<div app-tooltip class="col-auto" tbTooltip="Extended documentation on the test suite that users can click to view before test execution. Use this to provide detailed information, prerequisites and references to external resources." [withMargin]="true"></div>
@@ -61,12 +65,12 @@
 			</div>
 			<div class="card-footer button-container">
 				<div class="btn-toolbar">
-					<button (click)="saveChanges()" type="submit" class="btn btn-secondary" [disable]="downloadPending || deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
-					<button (click)="download()" type="button" class="btn btn-secondary" [disable]="savePending || deletePending" [pending]="downloadPending">Download</button>
+					<button (click)="saveChanges()" type="submit" class="btn btn-secondary" [disable]="!loaded || downloadPending || deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
+					<button (click)="download()" type="button" class="btn btn-secondary" [disable]="!loaded || savePending || deletePending" [pending]="downloadPending">Download</button>
 					<button (click)="back()" type="button" class="btn btn-secondary">Back</button>
 				</div>
 				<div class="btn-toolbar btn-toolbar-delete">
-					<button (click)="delete()" type="button" class="btn btn-outline-danger" [disable]="savePending || downloadPending" [pending]="deletePending">Delete</button>
+					<button (click)="delete()" type="button" class="btn btn-outline-danger" [disable]="!loaded || savePending || downloadPending" [pending]="deletePending">Delete</button>
 				</div>
 			</div>
 		</form>
@@ -88,31 +92,36 @@
 					</div>
 				</div>
 			</tab>
-			<tab *ngIf="testSuite.shared" (selectTab)="loadLinkedSpecifications()" customClass="tabClass">
-                <ng-template tabHeading><app-tab-title icon="fa-solid fa-list-check" text="Linked specifications"></app-tab-title></ng-template>
-				<div class="tabPanel">
-                    <div class="tabControls">
-						<div class="btn-toolbar">
-							<button type="button" class="btn btn-secondary" (click)="linkSpecifications()" [disable]="unlinkedSpecifications.length == 0 || selectingForUnlink" [pending]="linkPending">Link to specifications</button>
-							<button type="button" class="btn btn-secondary" (click)="selectUnlinkSpecifications()" *ngIf="!selectingForUnlink" [disable]="linkedSpecifications.length == 0" [pending]="unlinkPending">Unlink from specifications...</button>
-							<button type="button" class="btn btn-secondary" (click)="confirmUnlinkSpecifications()" *ngIf="selectingForUnlink" [disable]="!specificationsChecked()" [pending]="unlinkPending">Confirm</button>
-							<button type="button" class="btn btn-secondary" (click)="cancelUnlinkSpecifications()" *ngIf="selectingForUnlink" [disabled]="unlinkPending">Cancel</button>
+			@if (testSuite.shared) {
+				<tab (selectTab)="loadLinkedSpecifications()" customClass="tabClass">
+					<ng-template tabHeading><app-tab-title icon="fa-solid fa-list-check" text="Linked specifications"></app-tab-title></ng-template>
+					<div class="tabPanel">
+						<div class="tabControls">
+							<div class="btn-toolbar">
+								<button type="button" class="btn btn-secondary" (click)="linkSpecifications()" [disable]="unlinkedSpecifications.length == 0 || selectingForUnlink" [pending]="linkPending">Link to specifications</button>
+								@if (!selectingForUnlink) {
+									<button type="button" class="btn btn-secondary" (click)="selectUnlinkSpecifications()" [disable]="linkedSpecifications.length == 0" [pending]="unlinkPending">Unlink from specifications...</button>
+								} @else {
+									<button type="button" class="btn btn-secondary" (click)="confirmUnlinkSpecifications()" [disable]="!specificationsChecked()" [pending]="unlinkPending">Confirm</button>
+									<button type="button" class="btn btn-secondary" (click)="cancelUnlinkSpecifications()" [disabled]="unlinkPending">Cancel</button>
+								}
+							</div>
+						</div>
+						<div class="card">
+							<div table-directive
+								[columns]="specificationTableColumns"
+								[data]="linkedSpecifications"
+								[noDataMessage]="'No '+dataService.labelSpecificationsLower()+' found being linked to this test suite'"
+								[loadingStatus]="specificationStatus"
+								[allowSelect]="!selectingForUnlink"
+								(onSelect)="onSpecificationSelect($event)"
+								[checkboxEnabled]="selectingForUnlink"
+								[clearSelection]="clearLinkedSpecificationsSelection">
+							</div>
 						</div>
 					</div>
-					<div class="card">
-						<div table-directive
-							[columns]="specificationTableColumns"
-							[data]="linkedSpecifications"
-							[noDataMessage]="'No '+dataService.labelSpecificationsLower()+' found being linked to this test suite'"
-							[loadingStatus]="specificationStatus"
-							[allowSelect]="!selectingForUnlink"
-							(onSelect)="onSpecificationSelect($event)"
-							[checkboxEnabled]="selectingForUnlink"
-							[clearSelection]="clearLinkedSpecificationsSelection">
-						</div>
-					</div>
-				</div>
-			</tab>
+				</tab>
+			}
 		</tabset>
 	</div>
 </div>

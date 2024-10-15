@@ -1,4 +1,4 @@
-import { Injectable, Renderer2, RendererFactory2 } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { Observable, Subject, mergeMap, of } from 'rxjs';
 import { Constants } from '../common/constants'
 import { ObjectWithId } from '../components/test-filter/object-with-id';
@@ -15,7 +15,6 @@ import { NumberSet } from '../types/number-set';
 import { Organisation } from '../types/organisation.type';
 import { Parameter } from '../types/parameter';
 import { SystemConfigurationEndpoint } from '../types/system-configuration-endpoint';
-import { SystemConfigurationParameter } from '../types/system-configuration-parameter';
 import { TypedLabelConfig } from '../types/typed-label-config.type'
 import { UserAccount } from '../types/user-account';
 import { User } from '../types/user.type';
@@ -33,6 +32,9 @@ import { HttpResponse } from '@angular/common/http';
 import { EntityWithId } from '../types/entity-with-id';
 import { ConformanceTestSuite } from '../pages/organisation/conformance-statement/conformance-test-suite';
 import { ConformanceStatementItem } from '../types/conformance-statement-item';
+import { EndpointParameter } from '../types/endpoint-parameter';
+import { CookieOptions, CookieService } from 'ngx-cookie-service';
+import { LocationData } from '../types/location-data';
 
 @Injectable({
   providedIn: 'root'
@@ -55,6 +57,9 @@ export class DataService {
   private tests?: ConformanceTestCase[]
   public currentLandingPageContent?: string
   private apiRoot?: string
+  public cookiePath?: string
+  private locationData?: LocationData
+  private loginOption?: string
 
   public latestPageChange?: PageChange
   private onBannerChangeSource = new Subject<string>()
@@ -64,16 +69,22 @@ export class DataService {
   private onBreadcrumbChangeSource = new Subject<BreadcrumbChange>()
   public onBreadcrumbChange$ = this.onBreadcrumbChangeSource.asObservable()
 
-  private renderer: Renderer2
   triggerEventToDataTypeMap?: {[key: number]: { [key: number]: boolean } }
 
-  constructor(rendererFactory: RendererFactory2) {
-    this.renderer = rendererFactory.createRenderer(null, null)
+  private static STORAGE_TESTS = "com.itb.tests"
+  private static STORAGE_LOCATION = "com.itb.location"
+  private static STORAGE_USER = "com.itb.user"
+  private static STORAGE_USER_OPTIONAL = "com.itb.userOptional"
+  private static STORAGE_LOGIN_OPTION = "com.itb.loginOption"
+
+  constructor(
+    private cookieService: CookieService
+  ) {
     this.configuration = this.emptyAppConfiguration()
     this.destroy()
   }
 
-  destroy() {
+  destroy(full?: boolean) {
     this.actualUser = undefined
     this.user = undefined
     this.vendor = undefined
@@ -88,6 +99,13 @@ export class DataService {
     this.tests = undefined
     this.latestPageChange = undefined
     this.currentLandingPageContent = undefined
+    this.cookiePath = undefined
+    if (sessionStorage) {
+      sessionStorage.removeItem(DataService.STORAGE_TESTS)
+      if (full) {
+        this.removeLocationData()
+      }
+    }
   }
 
   private emptyAppConfiguration(): AppConfigurationProperties {
@@ -116,7 +134,8 @@ export class DataService {
       savedFileMaxSize: (this.configuration?.savedFileMaxSize != undefined)?this.configuration!.savedFileMaxSize:5,
       mode: (this.configuration?.mode != undefined)?this.configuration!.mode:'development',
       automationApiEnabled: (this.configuration?.automationApiEnabled != undefined)?this.configuration!.automationApiEnabled:false,
-      versionNumber: (this.configuration?.versionNumber != undefined)?this.configuration!.versionNumber:''
+      versionNumber: (this.configuration?.versionNumber != undefined)?this.configuration!.versionNumber:'',
+      hasDefaultLegalNotice: (this.configuration?.hasDefaultLegalNotice != undefined)?this.configuration!.hasDefaultLegalNotice:false
     }
   }
 
@@ -131,6 +150,9 @@ export class DataService {
 
   setUser(user: User) {
     this.user = user
+    if (user.id != undefined) {
+      this.setLocationUser(user.id)
+    }
     if (this.actualUser) {
       this.setActualUser(this.actualUser)
     }
@@ -416,16 +438,15 @@ export class DataService {
 
   focus(inputId: string|undefined, delay?: number) {
     if (inputId) {
-      if (!inputId.startsWith('#')) {
-        inputId = '#' + inputId
-      }
       let timeToWait = 1
       if (delay) {
         timeToWait = Number(delay)
       }
       setTimeout(() => {
-        const element = this.renderer.selectRootElement(inputId)
-        element.focus()
+        const element = document.getElementById(inputId)
+        if (element) {
+          element.focus()
+        }
       }, timeToWait)
     }
   }
@@ -466,13 +487,17 @@ export class DataService {
     return valid
   }
 
-  customPropertiesForPost(properties: CustomProperty[]|undefined): CustomPropertySubmissionInfo {
+  customPropertiesForPost(properties: CustomProperty[]|undefined, fileKeyPrefix?: string): CustomPropertySubmissionInfo {
+    let filePrefixToUse = (fileKeyPrefix == undefined)?'file_':fileKeyPrefix+'_'
     let propValues = []
     let files: FileParam[] = []
     if (properties) {
       for (let property of properties) {
         let propValue:any = {}
         propValue.parameter = Number(property.id)
+        if (property.endpoint) {
+          propValue.endpoint = Number(property.endpoint)
+        }
         if (property.kind == 'SECRET') {
           if (property.changeValue && property.value && property.value.trim().length > 0) {
             propValue.value = property.value.trim()
@@ -483,7 +508,7 @@ export class DataService {
           if (property.file?.file != undefined) {
             propValue.value = ''
             files.push({
-              param: 'file_'+propValue.parameter,
+              param: filePrefixToUse+propValue.parameter,
               data: property.file.file
             })
           } else if (property.configured) {
@@ -912,6 +937,7 @@ export class DataService {
 	checkPropertyVisibility(properties: Parameter[]) {
 		const results: ConfigurationPropertyVisibility = {
 			hasProperties: false,
+      hasVisibleProperties: false,
 			hasMissingProperties: false,
 			hasVisibleMissingRequiredProperties: false,
 			hasVisibleMissingOptionalProperties: false,
@@ -921,6 +947,9 @@ export class DataService {
 		if (properties != undefined && properties.length > 0) {
 			results.hasProperties = true
 			for (let prop of properties) {
+        if (!prop.hidden) {
+          results.hasVisibleProperties = true
+        }
 				if (!prop.configured) {
 					results.hasMissingProperties = true
 					if (prop.hidden) {
@@ -945,6 +974,9 @@ export class DataService {
             }
           }
         }
+      }
+      if (results.hasProperties && (this.isCommunityAdmin || this.isSystemAdmin)) {
+        results.hasVisibleProperties = true
       }
     }
 		return results
@@ -974,7 +1006,7 @@ export class DataService {
 		return true
   }
 
-  getEndpointParametersToDisplay(endpoints: SystemConfigurationEndpoint[]): SystemConfigurationParameter[] {
+  getEndpointParametersToDisplay(endpoints: SystemConfigurationEndpoint[]): EndpointParameter[] {
     if (endpoints.length > 0) {
 			for (let endpoint of endpoints) {
         let endpointValid = this.isConfigurationOfEndpointValid(endpoint)
@@ -997,8 +1029,8 @@ export class DataService {
   }
 
   getTestsToExecute(): ConformanceTestCase[]|undefined {
-    if (localStorage) {
-      const cachedTests = localStorage.getItem('tests')
+    if (sessionStorage) {
+      const cachedTests = sessionStorage.getItem(DataService.STORAGE_TESTS)
       if (cachedTests) {
         return JSON.parse(cachedTests)
       } else {
@@ -1010,16 +1042,16 @@ export class DataService {
   }
 
 	setTestsToExecute(tests: ConformanceTestCase[]) {
-    if (localStorage) {
-      localStorage.setItem('tests', JSON.stringify(tests))
+    if (sessionStorage) {
+      sessionStorage.setItem(DataService.STORAGE_TESTS, JSON.stringify(tests))
     } else {
       this.tests = tests
     }
   }
 
   clearTestsToExecute() {
-    if (localStorage) {
-      localStorage.removeItem('tests')
+    if (sessionStorage) {
+      sessionStorage.removeItem('tests')
     }
     this.tests = undefined
   }
@@ -1118,7 +1150,7 @@ export class DataService {
             }
             document.addEventListener("copy", listener, false)
             document.execCommand("copy");
-            document.removeEventListener("copy", listener, false);            
+            document.removeEventListener("copy", listener, false);
           }
         }
       } else {
@@ -1389,7 +1421,7 @@ export class DataService {
   badgesValid(badges: BadgesInfo|undefined) {
     let valid = false
     if (badges?.enabled) {
-      if (badges.success.enabled && badges.other.enabled 
+      if (badges.success.enabled && badges.other.enabled
           && (!badges.successBadgeForReportActive || badges.successForReport.enabled)
           && (!badges.otherBadgeForReportActive || badges.otherForReport.enabled)
           && (!badges.failureBadgeActive || (badges.failure.enabled && (!badges.failureBadgeForReportActive || badges.failureForReport.enabled)))) {
@@ -1474,6 +1506,241 @@ export class DataService {
         visitor(item)
         this.visitConformanceItems(item.items, visitor)
       }
+    }
+  }
+
+  setCookie(name:  string, value: string, expires?: Date) {
+    const cookieOptions: CookieOptions = {
+      path: this.cookiePath,
+      sameSite: 'Strict',
+      expires: expires
+    }
+    let protocol = window.location.protocol
+    if (protocol && (protocol.toLowerCase().startsWith('https'))) {
+      cookieOptions.secure = true
+    }
+    this.cookieService.set(name, value, cookieOptions.expires, cookieOptions.path, cookieOptions.domain, cookieOptions.secure, cookieOptions.sameSite)
+  }
+
+  recordLocationDataOrRequestedRoute(location: string) {
+    const applied = this.applyRequestedRoute()
+    if (!applied && location != '/home') {
+      this.recordLocationData(location)
+    }
+  }
+
+  private setLocationUser(userId: number) {
+    if (this.locationData == undefined) {
+      this.locationData = {}
+    }
+    this.locationData.user = userId
+    if (sessionStorage) {
+      sessionStorage.setItem(DataService.STORAGE_USER, userId.toString())
+    }
+  }
+
+  private setLocationData(location: string, user: number|undefined, userIsOptional: boolean): void {
+    /*
+     * We record location data both as direct properties of this class as well as in the sessionStorage.
+     * This is because the sessionStorage, even if synchronous does not always flush its state in time for
+     * a read that follows immediately after. This means that if we write to the session storage and then
+     * immediately read from it, we may not see the change. This happens on rare occasions but to avoid it
+     * altogether we also keep a copy as direct properties (i.e. the sessionStorage is only used if e.g. we
+     * are coming from a page refresh).
+     */
+    if (this.locationData == undefined) {
+      this.locationData = {}
+    }
+    this.locationData.user = user
+    this.locationData.userOptional = userIsOptional
+    this.locationData.location = location
+    if (sessionStorage) {
+      sessionStorage.setItem(DataService.STORAGE_LOCATION, location)
+      if (user) {
+        sessionStorage.setItem(DataService.STORAGE_USER, user.toString())
+      }
+      if (userIsOptional) {
+        sessionStorage.setItem(DataService.STORAGE_USER_OPTIONAL, "true")
+      }
+    }
+  }
+
+  private getLocationData(): LocationData {
+    if (this.locationData == undefined) {
+      if (sessionStorage) {
+        const location = sessionStorage.getItem(DataService.STORAGE_LOCATION)
+        const user = sessionStorage.getItem(DataService.STORAGE_USER)
+        const userIsOptional = sessionStorage.getItem(DataService.STORAGE_USER_OPTIONAL)
+        this.locationData = {
+          location: (location == null)?undefined:location,
+          user: (user == null)?undefined:Number(user),
+          userOptional: (userIsOptional == undefined)?undefined:(userIsOptional == "true")
+        }
+      } else {
+        this.locationData = {}
+      }
+    }
+    return this.locationData
+  }
+
+  private removeLocationData(): void {
+    this.locationData = {}
+    if (sessionStorage) {
+      sessionStorage.removeItem(DataService.STORAGE_LOCATION)
+      sessionStorage.removeItem(DataService.STORAGE_USER)
+      sessionStorage.removeItem(DataService.STORAGE_USER_OPTIONAL)
+    }
+  }
+
+  recordLocationData(location: string) {
+    this.setLocationData(location, this.user?.id, false)
+  }
+
+  checkLocationUser(): number|undefined {
+    return this.getLocationData().user
+  }
+
+  retrieveLocationData(currentUserId: number): string|undefined {
+    const locationData = this.getLocationData()
+    if (locationData.location && (locationData.userOptional == true || (locationData.user && currentUserId != undefined && locationData.user == currentUserId))) {
+      this.removeLocationData()
+      return locationData.location
+    } else {
+      this.removeLocationData()
+      return undefined
+    }
+  }
+
+  recordLoginOption(option: string) {
+    this.loginOption = option
+    if (sessionStorage) {
+      sessionStorage.setItem(DataService.STORAGE_LOGIN_OPTION, option)
+    }
+  }
+
+  retrieveLoginOption(): string|undefined {
+    let optionToReturn: string|undefined
+    if (this.loginOption) {
+      optionToReturn = this.loginOption
+      this.loginOption = undefined
+      if (sessionStorage) {
+        sessionStorage.removeItem(DataService.STORAGE_LOGIN_OPTION)
+      }
+    } else if (sessionStorage) {
+      const option = sessionStorage.getItem(DataService.STORAGE_LOGIN_OPTION)
+      if (option) {
+        optionToReturn = option
+        sessionStorage.removeItem(DataService.STORAGE_LOGIN_OPTION)
+      }
+    }
+    return optionToReturn
+  }
+
+  clearLoginOption() {
+    this.loginOption = undefined
+    if (sessionStorage) {
+      sessionStorage.removeItem(DataService.STORAGE_LOGIN_OPTION)
+    }
+  }
+
+  applyRequestedRoute(): boolean {
+    let hasRequestedRoute = false
+    const requestedUrl = this.cookieService.get("ITB_REQUESTED_URL")
+    if (requestedUrl && requestedUrl.length > 0) {
+      this.cookieService.delete("ITB_REQUESTED_URL", "/")
+      let requestedPath: string|undefined
+      if (requestedUrl.indexOf("://") != -1) {
+        // This is a complete URL.
+        const currentUrl = window.location.href
+        const hashIndex = currentUrl.indexOf("#")
+        let baseUrl: string
+        if (hashIndex != -1) {
+          baseUrl = currentUrl.substring(0, hashIndex)
+        } else {
+          baseUrl = currentUrl
+        }
+        if (requestedUrl.startsWith(baseUrl)) {
+          requestedPath = requestedUrl.substring(baseUrl.length)
+        }
+      } else if (requestedUrl.startsWith("/app")) {
+        requestedPath = requestedUrl.substring(requestedUrl.indexOf("/app")+4)
+      } else {
+        requestedPath = requestedUrl
+      }
+      if (requestedPath && requestedPath.length > 1) {
+        if (requestedPath.charAt(0) == "/") {
+          requestedPath = requestedPath.substring(1)
+        }
+        const firstSlashIndex = requestedPath.indexOf("/")
+        if (firstSlashIndex != -1) {
+          // The first part of the URL is the user ID.
+          const userIdPart = requestedPath.substring(0, firstSlashIndex)
+          const pathPart = requestedPath.substring(firstSlashIndex)
+          this.setLocationData(pathPart, Number(userIdPart), true)
+          hasRequestedRoute = true
+        }
+      }
+    }
+    return hasRequestedRoute
+  }
+
+  private replaceLinkSection(link: string, basePart: string, userIdPart: string, routePath?: string) {
+    const index = link.indexOf(basePart)
+    if (index != -1) {
+      const before = link.substring(0, index)
+      const after = link.substring(index + basePart.length)
+      link = before + userIdPart
+      if (routePath) {
+        if (routePath.startsWith("/")) {
+          link += routePath.substring(1)
+        } else {
+          link += routePath
+        }
+      } else {
+        if (after.startsWith("/")) {
+          link += after.substring(1)
+        } else {
+          link += after
+        }
+      }
+    }
+    return link
+  }
+
+  copyExternalLink(parameters?: Record<string, string>, routePath?: string): Observable<string|undefined> {
+    if (this.user?.id) {
+      let externalLocation = window.location.href
+      externalLocation = this.replaceLinkSection(externalLocation, "/#/", `/${this.user.id}/`, routePath)
+      externalLocation = this.replaceLinkSection(externalLocation, "#/", `/${this.user.id}/`, routePath)
+      if (parameters) {
+        let queryString = ""
+        let first = true
+        Object.entries(parameters).forEach((param) => {
+          // Check to see if the parameter is already present, and if so replace it.
+          const regExp = new RegExp(`(.+[&?]?${param[0]}=)([a-zA-z0-9\-\_]+)(&?.*)`, 'g')
+          if (externalLocation.match(regExp)) {
+            externalLocation = externalLocation.replace(regExp, `$1${param[1]}$3`)
+          } else {
+            // Append to new querystring.
+            if (first) {
+              first = false
+            } else {
+              queryString += "&"
+            }
+            queryString += `${param[0]}=${encodeURIComponent(param[1])}`
+          }
+        })
+        if (queryString.length > 0) {
+          if (externalLocation.indexOf("?") == -1) {
+            externalLocation += `?${queryString}`
+          } else {
+            externalLocation += `&${queryString}`
+          }
+        }
+      }
+      return this.copyToClipboard(externalLocation)
+    } else {
+      return of(undefined)
     }
   }
 

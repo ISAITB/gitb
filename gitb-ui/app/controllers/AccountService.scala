@@ -2,8 +2,9 @@ package controllers
 
 import config.Configurations
 import controllers.util._
-import exceptions.ErrorCodes
+import exceptions.{ErrorCodes, InvalidRequestException}
 import managers._
+import models.Constants
 import models.Enums.UserRole
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.StringUtils
@@ -14,10 +15,11 @@ import utils.{ClamAVClient, CryptoUtil, HtmlUtil, JsonUtil}
 
 import java.nio.file.Files
 import javax.inject.Inject
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 
-class AccountService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, accountManager: AccountManager, userManager: UserManager, organisationManager: OrganizationManager, authorizationManager: AuthorizationManager) extends AbstractController(cc) {
+class AccountService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, accountManager: AccountManager, legalNoticeManager: LegalNoticeManager, organisationManager: OrganizationManager, authorizationManager: AuthorizationManager) extends AbstractController(cc) {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[AccountService])
   private final val tika = new Tika()
 
@@ -29,7 +31,7 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction, cc: Controll
     val userId = ParameterExtractor.extractUserId(request)
 
     val organization = accountManager.getVendorProfile(userId)
-    val json:String = JsonUtil.serializeOrganization(organization, includeAdminInfo = false)
+    val json:String = JsonUtil.serializeOrganization(organization)
     ResponseConstructor.constructJsonResponse(json)
   }
 
@@ -125,10 +127,14 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction, cc: Controll
     val oldPasswd:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.OLD_PASSWORD)
 
     if (passwd.isDefined && !CryptoUtil.isAcceptedPassword(passwd.get)) {
-      ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_CREDENTIALS, "The provided password does not match minimum complexity requirements.")
+      ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_CREDENTIALS, "The provided password does not match minimum complexity requirements.", Some("new"))
     } else {
-      accountManager.updateUserProfile(userId, name, passwd, oldPasswd)
-      ResponseConstructor.constructEmptyResponse
+      try {
+        accountManager.updateUserProfile(userId, name, passwd, oldPasswd)
+        ResponseConstructor.constructEmptyResponse
+      } catch {
+        case _: InvalidRequestException => ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_CREDENTIALS, "Incorrect password.", Some("current"))
+      }
     }
   }
 
@@ -159,6 +165,7 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction, cc: Controll
     configProperties.put("mode", String.valueOf(Configurations.TESTBED_MODE))
     configProperties.put("automationApi.enabled", String.valueOf(Configurations.AUTOMATION_API_ENABLED))
     configProperties.put("versionNumber", Configurations.versionInfo())
+    configProperties.put("hasDefaultLegalNotice", legalNoticeManager.getCommunityDefaultLegalNotice(Constants.DefaultCommunityId).exists(notice => StringUtils.isNotBlank(notice.content)).toString)
     val json = JsonUtil.serializeConfigurationProperties(configProperties)
     ResponseConstructor.constructJsonResponse(json.toString())
   }
@@ -176,48 +183,58 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction, cc: Controll
         val messageTypeDescription: String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.MESSAGE_TYPE_DESCRIPTION)
         val messageContent: String = HtmlUtil.sanitizeMinimalEditorContent(ParameterExtractor.requiredBodyParameter(paramMap, Parameters.MESSAGE_CONTENT))
         // Extract attachments
-        val attachments = ListBuffer[AttachmentType]()
+        val attachments = new mutable.LinkedHashMap[String, AttachmentType]()
         val files = ParameterExtractor.extractFiles(request)
         if (files.nonEmpty) {
           var totalAttachmentSize = 0L
           for (file <- files) {
-            attachments += new AttachmentType(file._2.name, file._2.file)
+            attachments += (file._2.key -> new AttachmentType(file._2.name, file._2.file))
             totalAttachmentSize += Files.size(file._2.file.toPath)
           }
           // Validate attachments
           if (attachments.size > Configurations.EMAIL_ATTACHMENTS_MAX_COUNT) {
             // Count.
-            response = ResponseConstructor.constructErrorResponse(ErrorCodes.EMAIL_ATTACHMENT_COUNT_EXCEEDED, s"A maximum of ${Configurations.EMAIL_ATTACHMENTS_MAX_COUNT} attachments can be provided")
+            response = ResponseConstructor.constructErrorResponse(ErrorCodes.EMAIL_ATTACHMENT_COUNT_EXCEEDED, s"A maximum of ${Configurations.EMAIL_ATTACHMENTS_MAX_COUNT} attachments can be provided", Some("files"))
           } else if (totalAttachmentSize > (Configurations.EMAIL_ATTACHMENTS_MAX_SIZE * 1024 * 1024)) {
             // Size.
-            response = ResponseConstructor.constructErrorResponse(ErrorCodes.EMAIL_ATTACHMENT_COUNT_EXCEEDED, s"The total size of attachments cannot exceed ${Configurations.EMAIL_ATTACHMENTS_MAX_SIZE} MBs.")
+            response = ResponseConstructor.constructErrorResponse(ErrorCodes.EMAIL_ATTACHMENT_COUNT_EXCEEDED, s"The total size of attachments cannot exceed ${Configurations.EMAIL_ATTACHMENTS_MAX_SIZE} MBs.", Some("files"))
           } else {
             var virusScanner: Option[ClamAVClient] = None
             if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
               virusScanner = Some(new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT))
             }
-            attachments.foreach { attachment =>
-              if (response == null) {
-                val detectedMimeType = tika.detect(attachment.getContent)
-                if (!Configurations.EMAIL_ATTACHMENTS_ALLOWED_TYPES.contains(detectedMimeType)) {
-                  logger.warn(s"Attachment type [$detectedMimeType] of file [${attachment.getName}] not allowed.")
-                  response = ResponseConstructor.constructErrorResponse(ErrorCodes.EMAIL_ATTACHMENT_TYPE_NOT_ALLOWED, s"Attachment [${attachment.getName}] not allowed. Allowed types are images, text files and PDFs.")
-                } else {
-                  attachment.setType(detectedMimeType);
-                  if (virusScanner.isDefined) {
-                    val scanResult = virusScanner.get.scan(attachment.getContent)
-                    if (!ClamAVClient.isCleanReply(scanResult)) {
-                      logger.warn("Attachment [" + attachment.getName + "] found to contain virus.")
-                      response = ResponseConstructor.constructErrorResponse(ErrorCodes.VIRUS_FOUND, "Attachments failed virus scan.")
-                    }
+            if (response == null) {
+              // Check for viruses.
+              attachments.foreach { attachment =>
+                if (virusScanner.isDefined && response != null) {
+                  val scanResult = virusScanner.get.scan(attachment._2.getContent)
+                  if (!ClamAVClient.isCleanReply(scanResult)) {
+                    logger.warn("Attachment [" + attachment._2.getName + "] found to contain virus.")
+                    response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Attachments failed virus scan.")
                   }
+                }
+              }
+              // Check (and set) mime types.
+              if (response == null) {
+                val invalidAttachmentKeys = ListBuffer[String]()
+                attachments.foreach { attachment =>
+                  val detectedMimeType = tika.detect(attachment._2.getContent)
+                  if (!Configurations.EMAIL_ATTACHMENTS_ALLOWED_TYPES.contains(detectedMimeType)) {
+                    logger.warn(s"Attachment type [$detectedMimeType] of file [${attachment._2.getName}] not allowed.")
+                    invalidAttachmentKeys += attachment._1
+                  } else {
+                    attachment._2.setType(detectedMimeType);
+                  }
+                }
+                if (invalidAttachmentKeys.nonEmpty) {
+                  response = ResponseConstructor.constructErrorResponse(ErrorCodes.EMAIL_ATTACHMENT_TYPE_NOT_ALLOWED, "Allowed attachment types are images, text files and PDFs.", Some(invalidAttachmentKeys.mkString(",")))
                 }
               }
             }
           }
         }
         if (response == null) {
-          accountManager.submitFeedback(userId, userEmail, messageTypeId, messageTypeDescription, messageContent, attachments.toArray)
+          accountManager.submitFeedback(userId, userEmail, messageTypeId, messageTypeDescription, messageContent, attachments.values.toArray)
         }
       }
       if (response == null) {

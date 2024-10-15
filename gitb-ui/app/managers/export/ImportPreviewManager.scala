@@ -26,6 +26,7 @@ import javax.xml.transform.stream.{StreamResult, StreamSource}
 import javax.xml.xpath.XPathFactory
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
 class ImportPreviewManager @Inject()(exportManager: ExportManager, systemConfigurationManager: SystemConfigurationManager, communityManager: CommunityManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
@@ -253,6 +254,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, systemConfigu
     setting match {
       case Constants.SessionAliveTime => "Test session timeout"
       case Constants.RestApiEnabled => "REST API"
+      case Constants.RestApiAdminKey => "REST API administration API key"
       case Constants.SelfRegistrationEnabled => "Self-registration"
       case Constants.DemoAccount => "Demo account"
       case Constants.WelcomeMessage => "Custom welcome page message"
@@ -262,7 +264,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, systemConfigu
     }
   }
 
-  private def previewDomainImportInternal(exportedDomain: com.gitb.xml.export.Domain, targetDomainId: Option[Long], canDoAdminOperations: Boolean): (DomainImportInfo, ImportItem) = {
+  private def previewDomainImportInternal(exportedDomain: com.gitb.xml.export.Domain, targetDomainId: Option[Long], canDoAdminOperations: Boolean, settings: ImportSettings, linkedToCommunity: Boolean): (DomainImportInfo, ImportItem) = {
     var targetDomain: Option[models.Domain] = None
     if (targetDomainId.isDefined) {
       targetDomain = exec(PersistenceSchema.domains
@@ -305,7 +307,12 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, systemConfigu
     } else if (targetDomain.isDefined && !importTargets.hasDomain) {
       importItemDomain = new ImportItem(Some(targetDomain.get.fullname), ImportItemType.Domain, ImportItemMatch.DBOnly, Some(targetDomain.get.id.toString), None)
     } else if (targetDomain.isEmpty && importTargets.hasDomain) {
-      importItemDomain = new ImportItem(Some(exportedDomain.getFullName), ImportItemType.Domain, ImportItemMatch.ArchiveOnly, None, Some(exportedDomain.getId))
+      val nameToUse = if (!linkedToCommunity && settings.fullNameReplacement.isDefined) {
+        settings.fullNameReplacement.get
+      } else {
+        exportedDomain.getFullName
+      }
+      importItemDomain = new ImportItem(Some(nameToUse), ImportItemType.Domain, ImportItemMatch.ArchiveOnly, None, Some(exportedDomain.getId))
     }
     if (canDoAdminOperations || (importItemDomain != null && importItemDomain.itemMatch == ImportItemMatch.Both)) {
       // If the user isn't a Test Bed admin don't show the deletion or creation of a domain as this will anyway be skip when completing the import.
@@ -560,11 +567,48 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, systemConfigu
     previewSystemSettingsImportInternal(exportedSettings, new mutable.HashSet[String]())
   }
 
-  def previewDomainImport(exportedDomain: com.gitb.xml.export.Domain, targetDomainId: Option[Long], canDoAdminOperations: Boolean): ImportItem = {
-    previewDomainImportInternal(exportedDomain, targetDomainId, canDoAdminOperations)._2
+  def previewDomainImport(exportedDomain: com.gitb.xml.export.Domain, targetDomainId: Option[Long], canDoAdminOperations: Boolean, settings: ImportSettings): ImportItem = {
+    previewDomainImportInternal(exportedDomain, targetDomainId, canDoAdminOperations, settings, linkedToCommunity = false)._2
   }
 
-  def previewCommunityImport(exportedData: com.gitb.xml.export.Export, targetCommunityId: Option[Long], canDoAdminOperations: Boolean): (ImportItem, Option[ImportItem], Option[ImportItem]) = {
+  def previewDeletionsImport(exportedDeletions: com.gitb.xml.export.Deletions): List[ImportItem] = {
+    val importItems = new ListBuffer[ImportItem]
+    val results = exec(for {
+      communities <- {
+        if (exportedDeletions.getCommunity.isEmpty) {
+          DBIO.successful(Seq.empty)
+        } else {
+          PersistenceSchema.communities
+            .filter(_.apiKey inSet exportedDeletions.getCommunity.asScala)
+            .map(x => (x.id, x.fullname))
+            .sortBy(_._2.asc)
+            .result
+        }
+      }
+      domains <- {
+        if (exportedDeletions.getDomain.isEmpty) {
+          DBIO.successful(Seq.empty)
+        } else {
+          PersistenceSchema.domains
+            .filter(_.apiKey inSet exportedDeletions.getDomain.asScala)
+            .map(x => (x.id, x.fullname))
+            .sortBy(_._2.asc)
+            .result
+        }
+      }
+    } yield (communities, domains))
+    // Communities
+    results._1.foreach { communityInfo =>
+      importItems += new ImportItem(Some(communityInfo._2), ImportItemType.Community, ImportItemMatch.DBOnly, Some(communityInfo._1.toString), None)
+    }
+    // Domains
+    results._2.foreach { domainInfo =>
+      importItems += new ImportItem(Some(domainInfo._2), ImportItemType.Domain, ImportItemMatch.DBOnly, Some(domainInfo._1.toString), None)
+    }
+    importItems.toList
+  }
+
+  def previewCommunityImport(exportedData: com.gitb.xml.export.Export, targetCommunityId: Option[Long], canDoAdminOperations: Boolean, settings: ImportSettings): (ImportItem, Option[ImportItem], Option[ImportItem]) = {
     var importItemCommunity: ImportItem = null
     var targetCommunity: Option[models.Communities] = None
     if (targetCommunityId.isDefined) {
@@ -581,7 +625,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, systemConfigu
     if (targetCommunity.isDefined) {
       targetDomainId = targetCommunity.get.domain
     }
-    val domainImportResult = previewDomainImportInternal(exportedCommunity.getDomain, targetDomainId, canDoAdminOperations)
+    val domainImportResult = previewDomainImportInternal(exportedCommunity.getDomain, targetDomainId, canDoAdminOperations, settings, linkedToCommunity = true)
     val domainImportInfo = domainImportResult._1
     var importItemDomain: Option[ImportItem] = None
     if (domainImportResult._2 != null) {
@@ -618,7 +662,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, systemConfigu
     // Process system settings. Do this here to use the loaded reference user emails.
     var importItemSettings: Option[ImportItem] = None
     if (canDoAdminOperations && exportedData.getSettings != null) {
-      // Only a Test Bed administrator can process system settings. We will not show these as options tot he user.
+      // Only a Test Bed administrator can process system settings. We will not show these as options to the user.
       importItemSettings = Some(previewSystemSettingsImportInternal(exportedData.getSettings, referenceUserEmails))
     }
     if (targetCommunity.isDefined) {
@@ -733,7 +777,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, systemConfigu
         }
       }
     } else {
-      importItemCommunity = new ImportItem(Some(exportedCommunity.getFullName), ImportItemType.Community, ImportItemMatch.ArchiveOnly, None, Some(exportedCommunity.getId))
+      importItemCommunity = new ImportItem(Some(settings.fullNameReplacement.getOrElse(exportedCommunity.getFullName)), ImportItemType.Community, ImportItemMatch.ArchiveOnly, None, Some(exportedCommunity.getId))
     }
     // Administrators.
     if (importTargets.hasAdministrators && !Configurations.AUTHENTICATION_SSO_ENABLED) {
@@ -1205,7 +1249,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, systemConfigu
     Thread.currentThread().getContextClassLoader.getResourceAsStream(xsdPath)
   }
 
-  def prepareImportPreview(tempArchiveFile: File, importSettings: ImportSettings, requireDomain: Boolean, requireCommunity: Boolean, requireSettings: Boolean): (Option[(Int, String)], Option[Export], Option[String], Option[Path]) = {
+  def prepareImportPreview(tempArchiveFile: File, importSettings: ImportSettings, requireDomain: Boolean, requireCommunity: Boolean, requireSettings: Boolean, requireDeletions: Boolean): (Option[(Int, String)], Option[Export], Option[String], Option[Path]) = {
     var errorInformation: Option[(Int, String)] = None
     var exportData: Option[Export] = None
     var pendingImportId: Option[String] = None
@@ -1223,8 +1267,8 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, systemConfigu
         }
       }
       if (errorInformation.isEmpty) {
-        val importFileName = s"export_${RandomStringUtils.random(10, false, true)}.zip"
-        pendingImportId = Some(RandomStringUtils.random(10, false, true))
+        val importFileName = s"export_${RandomStringUtils.secure().next(10, false, true)}.zip"
+        pendingImportId = Some(RandomStringUtils.secure().next(10, false, true))
         val zipFile = Paths.get(
           getPendingFolder().getAbsolutePath,
           pendingImportId.get,
@@ -1305,6 +1349,12 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, systemConfigu
                     if (exportData.get.getSettings == null) {
                       deleteUploadFolder = true
                       errorInformation = Some(ErrorCodes.INVALID_REQUEST, "The provided archive does not include system settings to process.")
+                    }
+                  }
+                  if (requireDeletions && errorInformation.isEmpty) {
+                    if (exportData.get.getDeletions == null || (exportData.get.getDeletions.getDomain.isEmpty && exportData.get.getDeletions.getCommunity.isEmpty)) {
+                      deleteUploadFolder = true
+                      errorInformation = Some(ErrorCodes.INVALID_REQUEST, "The provided archive does not include any deletions to process.")
                     }
                   }
                 }

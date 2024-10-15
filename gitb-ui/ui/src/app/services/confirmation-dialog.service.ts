@@ -8,25 +8,8 @@ import { ConfirmationComponent } from '../modals/confirmation/confirmation.compo
 })
 export class ConfirmationDialogService {
 
-  public sessionNotificationOpen = false
 
   constructor(private modalService: BsModalService) { }
-
-  invalidSessionNotification(): Observable<boolean> {
-    return new Observable<boolean>((observer) => {
-      if (!this.sessionNotificationOpen) {
-        this.sessionNotificationOpen = true
-        this.notify("Invalid session", "Your current session is invalid. You will now return to the login screen to reconnect.", "Close").subscribe(() => {
-          this.sessionNotificationOpen = false
-          observer.next(true)
-          observer.complete()
-        })
-      } else {
-        observer.next(false)
-        observer.complete()
-      }
-    })
-  }
 
   notify(headerText: string, bodyText: string, buttonText: string) {
     const modal = this.modalService.show(ConfirmationComponent, {
@@ -40,6 +23,15 @@ export class ConfirmationDialogService {
       keyboard: false
     })
     return modal.content!.result
+  }
+
+  notified(headerText: string, bodyText: string, buttonText: string): Observable<void> {
+    const result = new ReplaySubject<void>(1)
+    this.notify(headerText, bodyText, buttonText).subscribe(() => {
+      result.next()
+      result.complete()
+    })
+    return result
   }
 
   confirmDangerous(headerText: string, bodyText: string, actionButtonText: string, closeButtonText: string): EventEmitter<boolean> {

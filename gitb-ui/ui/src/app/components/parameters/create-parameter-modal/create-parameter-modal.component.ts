@@ -2,7 +2,6 @@ import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { BsModalRef } from 'ngx-bootstrap/modal';
 import { DataService } from 'src/app/services/data.service';
 import { Parameter } from 'src/app/types/parameter';
-import { ErrorService } from 'src/app/services/error.service';
 import { BaseParameterModalComponent } from '../base-parameter-modal.component';
 
 @Component({
@@ -19,9 +18,8 @@ export class CreateParameterModalComponent extends BaseParameterModalComponent i
 
   constructor(
     dataService: DataService,
-    errorService: ErrorService,
     modalInstance: BsModalRef
-  ) { super(dataService, errorService, modalInstance) }
+  ) { super(dataService, modalInstance) }
 
   ngOnInit(): void {
     this.parameter = {
@@ -39,7 +37,7 @@ export class CreateParameterModalComponent extends BaseParameterModalComponent i
   }
 
   createParameter() {
-    if (!this.saveDisabled() && this.validName(this.parameter.name!) && this.validKey(this.parameter.testKey!)) {
+    if (this.validate()) {
       this.created.emit(this.parameter as Parameter)
       this.modalInstance.hide()
     }

@@ -4,12 +4,16 @@
             <div class="card-title">Create {{dataService.labelOrganisationLower()}}</div>
         </div>
         <form>
-            <div class="card-body">
-                <app-alert-display [alerts]="alerts" innerClass="col-10 offset-1"></app-alert-display>
+            <div class="card-body" [pending]="!loaded" focus="sname">
                 <app-organisation-form
                     [organisation]="organisation"
                     [communityId]="communityId"
                     [propertyData]="propertyData"
+                    [validation]="validation"
+                    [landingPages]="landingPages"
+                    [legalNotices]="legalNotices"
+                    [errorTemplates]="errorTemplates"
+                    [otherOrganisations]="otherOrganisations"
                 ></app-organisation-form>
             </div>
             <div class="card-footer">

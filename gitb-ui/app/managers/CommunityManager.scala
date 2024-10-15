@@ -1,14 +1,15 @@
 package managers
 
 import config.Configurations
+import exceptions.{AutomationApiException, ErrorCodes}
 import models.Enums.OverviewLevelType.OverviewLevelType
 import models.Enums._
 import models._
-import models.automation.{ConfigurationRequest, DomainParameterInfo, PartyConfiguration, StatementConfiguration}
+import models.automation._
 import org.apache.commons.lang3.StringUtils
 import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
-import utils.{CryptoUtil, MimeUtil, RepositoryUtils}
+import utils.{CryptoUtil, JsonUtil, MimeUtil, RepositoryUtils}
 
 import java.util
 import javax.inject.{Inject, Singleton}
@@ -18,7 +19,19 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.postfixOps
 
 @Singleton
-class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityResourceManager: CommunityResourceManager, triggerHelper: TriggerHelper, testResultManager: TestResultManager, organizationManager: OrganizationManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, conformanceManager: ConformanceManager, accountManager: AccountManager, triggerManager: TriggerManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
+                                  communityResourceManager: CommunityResourceManager,
+                                  triggerHelper: TriggerHelper,
+                                  testResultManager: TestResultManager,
+                                  organizationManager: OrganizationManager,
+                                  landingPageManager: LandingPageManager,
+                                  legalNoticeManager: LegalNoticeManager,
+                                  errorTemplateManager: ErrorTemplateManager,
+                                  conformanceManager: ConformanceManager,
+                                  accountManager: AccountManager,
+                                  domainParameterManager: DomainParameterManager,
+                                  automationApiHelper: AutomationApiHelper,
+                                  dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -52,15 +65,6 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
       }
     }
     false
-  }
-
-  def isSelfRegTokenUnique(token: String, communityIdToIgnore: Option[Long]): Boolean = {
-    var q = PersistenceSchema.communities.filter(_.selfRegToken === token)
-    if (communityIdToIgnore.isDefined) {
-      q = q.filter(_.id =!= communityIdToIgnore.get)
-    }
-    val result = exec(q.result.headOption)
-    result.isEmpty
   }
 
   def selfRegister(organisation: Organizations, organisationAdmin: Users, templateId: Option[Long], actualUserInfo: Option[ActualUserInfo], customPropertyValues: Option[List[OrganisationParameterValues]], customPropertyFiles: Option[Map[Long, FileInfo]], requireMandatoryPropertyValues: Boolean): Long = {
@@ -98,13 +102,10 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
     */
   def getCommunities(ids: Option[List[Long]], skipDefault: Boolean): List[Communities] = {
     var q = ids match {
-      case Some(idList) => {
+      case Some(idList) =>
+        PersistenceSchema.communities.filter(_.id inSet idList)
+      case None =>
         PersistenceSchema.communities
-          .filter(_.id inSet idList)
-      }
-      case None => {
-        PersistenceSchema.communities
-      }
     }
     if (skipDefault) {
       q = q.filter(_.id =!= Constants.DefaultCommunityId)
@@ -174,8 +175,47 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
   /**
     * Creates new community
     */
-  def createCommunity(community: Communities) = {
+  def createCommunity(community: Communities): (Long, Long) = {
     exec(createCommunityInternal(community).transactionally)
+  }
+
+  def createCommunityThroughAutomationApi(input: CreateCommunityRequest): String = {
+    val action = for {
+      apiKeyToUse <- {
+        for {
+          generateApiKey <- if (input.apiKey.isEmpty) {
+            DBIO.successful(true)
+          } else {
+            PersistenceSchema.communities.filter(_.apiKey === input.apiKey.get).exists.result
+          }
+          apiKeyToUse <- if (generateApiKey) {
+            DBIO.successful(CryptoUtil.generateApiKey())
+          } else {
+            DBIO.successful(input.apiKey.get)
+          }
+        } yield apiKeyToUse
+      }
+      domainId <- {
+        if (input.domainApiKey.isEmpty) {
+          DBIO.successful(None)
+        } else {
+          for {
+            domainId <- automationApiHelper.getDomainIdByDomainApiKey(input.domainApiKey.get)
+          } yield Some(domainId)
+        }
+      }
+      _ <- {
+        createCommunityInternal(Communities(0L, input.shortName, input.fullName, input.supportEmail,
+          SelfRegistrationType.NotSupported.id.toShort, None, None, selfRegNotification = false,
+          interactionNotification = input.interactionNotifications.getOrElse(false), input.description, SelfRegistrationRestriction.NoRestriction.id.toShort,
+          selfRegForceTemplateSelection = false, selfRegForceRequiredProperties = false, allowCertificateDownload = false,
+          allowStatementManagement = true, allowSystemManagement = true, allowPostTestOrganisationUpdates = true,
+          allowPostTestSystemUpdates = true, allowPostTestStatementUpdates = true,
+          allowAutomationApi = true, apiKeyToUse, None, domainId
+        ))
+      }
+    } yield apiKeyToUse
+    exec(action.transactionally)
   }
 
   def createCommunityInternal(community: Communities): DBIO[(Long, Long)] = {
@@ -219,7 +259,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
       // New domain doesn't match previous domain. Remove conformance statements for previous domain.
       actions += conformanceManager.deleteConformanceStatementsForDomainAndCommunity(community.domain.get, community.id, onSuccess)
       // Remove also any trigger data that referred to domain parameters.
-      actions += triggerManager.deleteTriggerDataOfCommunityAndDomain(community.id, community.domain.get)
+      actions += triggerHelper.deleteTriggerDataOfCommunityAndDomain(community.id, community.domain.get)
     } else if (community.domain.isEmpty && domainId.isDefined) {
       // Domain set for community that was not previously linked to a domain. Remove statements for other domains.
       val action = for {
@@ -345,6 +385,84 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
     } yield ()
   }
 
+  def updateCommunityThroughAutomationApi(updateRequest: UpdateCommunityRequest, allowDomainChange: Boolean): Unit = {
+    val onSuccess = ListBuffer[() => _]()
+    val action = for {
+      community <- {
+        for {
+          community <- PersistenceSchema.communities
+            .filter(_.apiKey === updateRequest.communityApiKey)
+            .result
+            .headOption
+          _ <- {
+            if (community.isEmpty) {
+              throw AutomationApiException(ErrorCodes.API_COMMUNITY_NOT_FOUND, "No community found for the provided API key")
+            } else {
+              DBIO.successful(())
+            }
+          }
+        } yield community.get
+      }
+      domainIdToUse <- {
+        if (updateRequest.domainApiKey.isDefined) {
+          // We have a domain API key specified.
+          if (updateRequest.domainApiKey.get.isEmpty && community.domain.isEmpty) {
+            // No change for the domain (no domain is defined).
+            DBIO.successful(None)
+          } else if (updateRequest.domainApiKey.get.isEmpty && community.domain.isDefined ||
+                     updateRequest.domainApiKey.get.isDefined && community.domain.isEmpty) {
+            // We are setting or removing the community's domain. We can only do this when authenticating with the master API key.
+            if (allowDomainChange) {
+              if (updateRequest.domainApiKey.get.isDefined) {
+                for {
+                  domainId <- automationApiHelper.getDomainIdByDomainApiKey(updateRequest.domainApiKey.get.get)
+                } yield Some(domainId)
+              } else {
+                DBIO.successful(None)
+              }
+            } else {
+              throw AutomationApiException(ErrorCodes.API_COMMUNITY_DOMAIN_CHANGE_NOT_ALLOWED, "You are not allowed to change the community's domain when using a community API key for the authorisation header")
+            }
+          } else {
+            // Both API keys are defined.
+            for {
+              newDomainId <- automationApiHelper.getDomainIdByDomainApiKey(updateRequest.domainApiKey.get.get)
+              _ <- {
+                if (newDomainId != community.domain.get) {
+                  if (allowDomainChange) {
+                    DBIO.successful(())
+                  } else {
+                    throw AutomationApiException(ErrorCodes.API_COMMUNITY_DOMAIN_CHANGE_NOT_ALLOWED, "You are not allowed to change the community's domain when using a community API key for the authorisation header")
+                  }
+                } else {
+                  DBIO.successful(())
+                }
+              }
+            } yield Some(newDomainId)
+          }
+        } else {
+          // No change requested for the community's domain.
+          DBIO.successful(community.domain)
+        }
+      }
+      _ <- {
+        updateCommunityInternal(community,
+          updateRequest.shortName.getOrElse(community.shortname),
+          updateRequest.fullName.getOrElse(community.fullname),
+          updateRequest.supportEmail.getOrElse(community.supportEmail),
+          community.selfRegType, community.selfRegToken, community.selfRegTokenHelpText, community.selfRegNotification,
+          updateRequest.interactionNotifications.getOrElse(community.interactionNotification),
+          updateRequest.description.getOrElse(community.description),
+          community.selfRegRestriction, community.selfRegForceTemplateSelection, community.selfRegForceRequiredProperties,
+          community.allowCertificateDownload, community.allowStatementManagement, community.allowSystemManagement,
+          community.allowPostTestOrganisationUpdates, community.allowPostTestSystemUpdates, community.allowPostTestStatementUpdates,
+          Some(community.allowAutomationApi), None, domainIdToUse, checkApiKeyUniqueness = false, onSuccess
+        )
+      }
+    } yield ()
+    exec(dbActionFinalisation(Some(onSuccess), None, action).transactionally)
+  }
+
   /**
     * Update community
     */
@@ -355,7 +473,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
                       allowCertificateDownload: Boolean, allowStatementManagement: Boolean, allowSystemManagement: Boolean,
                       allowPostTestOrganisationUpdates: Boolean, allowPostTestSystemUpdates: Boolean,
                       allowPostTestStatementUpdates: Boolean, allowAutomationApi: Option[Boolean],
-                      domainId: Option[Long]) = {
+                      domainId: Option[Long]): Unit = {
 
     val onSuccess = ListBuffer[() => _]()
     val dbAction = for {
@@ -382,13 +500,26 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
     */
   def deleteCommunity(communityId: Long): Unit = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
-    val dbAction = {
-      conformanceManager.deleteConformanceSnapshotsOfCommunity(communityId, onSuccessCalls) andThen
+    val dbAction = deleteCommunityInternal(communityId, onSuccessCalls)
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+  }
+
+  def deleteCommunityThroughAutomationApi(communityApiKey: String): Unit = {
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val action = for {
+      communityId <- automationApiHelper.getCommunityByCommunityApiKey(communityApiKey)
+      _ <- deleteCommunityInternal(communityId, onSuccessCalls)
+    } yield ()
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
+  }
+
+  def deleteCommunityInternal(communityId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
+    conformanceManager.deleteConformanceSnapshotsOfCommunity(communityId, onSuccessCalls) andThen
       organizationManager.deleteOrganizationByCommunity(communityId, onSuccessCalls) andThen
       landingPageManager.deleteLandingPageByCommunity(communityId) andThen
       legalNoticeManager.deleteLegalNoticeByCommunity(communityId) andThen
       errorTemplateManager.deleteErrorTemplateByCommunity(communityId) andThen
-      triggerManager.deleteTriggersByCommunity(communityId) andThen
+      triggerHelper.deleteTriggersByCommunity(communityId) andThen
       testResultManager.updateForDeletedCommunity(communityId) andThen
       deleteConformanceCertificateSettings(communityId) andThen
       deleteConformanceOverviewCertificateSettings(communityId) andThen
@@ -399,8 +530,6 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
       deleteCommunityReportStylesheets(communityId, onSuccessCalls) andThen
       PersistenceSchema.communityLabels.filter(_.community === communityId).delete andThen
       PersistenceSchema.communities.filter(_.id === communityId).delete
-    }
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
   }
 
   private def deleteCommunityReportStylesheets(communityId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
@@ -408,11 +537,11 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
     DBIO.successful(())
   }
 
-  def createOrganisationParameterInternal(parameter: OrganisationParameters) = {
+  def createOrganisationParameterInternal(parameter: OrganisationParameters): DBIO[Long] = {
     PersistenceSchema.organisationParameters.returning(PersistenceSchema.organisationParameters.map(_.id)) += parameter
   }
 
-  def createOrganisationParameter(parameter: OrganisationParameters) = {
+  def createOrganisationParameter(parameter: OrganisationParameters): Long = {
     exec(createOrganisationParameterInternal(parameter).transactionally)
   }
 
@@ -436,7 +565,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
     }
   }
 
-  def updateOrganisationParameterInternal(parameter: OrganisationParameters, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
+  def updateOrganisationParameterInternal(parameter: OrganisationParameters, updateDisplayOrder: Boolean, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
     for {
       existingParameter <- PersistenceSchema.organisationParameters.filter(_.id === parameter.id).map(x => (x.community, x.testKey, x.kind)).result.head
       _ <- {
@@ -464,23 +593,171 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
         val q = for {p <- PersistenceSchema.organisationParameters if p.id === parameter.id} yield (p.description, p.use, p.kind, p.name, p.testKey, p.adminOnly, p.notForTests, p.inExports, p.inSelfRegistration, p.hidden, p.allowedValues, p.dependsOn, p.dependsOnValue, p.defaultValue)
         q.update(parameter.description, parameter.use, parameter.kind, parameter.name, parameter.testKey, parameter.adminOnly, parameter.notForTests, parameter.inExports, parameter.inSelfRegistration, parameter.hidden, parameter.allowedValues, parameter.dependsOn, parameter.dependsOnValue, parameter.defaultValue)
       }
+      _ <- {
+        if (updateDisplayOrder) {
+          PersistenceSchema.organisationParameters.filter(_.id === parameter.id).map(_.displayOrder).update(parameter.displayOrder)
+        } else {
+          DBIO.successful(())
+        }
+      }
     } yield ()
   }
 
-  def updateOrganisationParameter(parameter: OrganisationParameters) = {
+  def updateOrganisationParameter(parameter: OrganisationParameters): Unit = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, updateOrganisationParameterInternal(parameter, onSuccessCalls)).transactionally)
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, updateOrganisationParameterInternal(parameter, updateDisplayOrder = false, onSuccessCalls)).transactionally)
   }
 
-  def deleteOrganisationParameterWrapper(parameterId: Long) = {
+  def updateOrganisationParameterDefinitionThroughAutomationApi(communityKey: String, input: CustomPropertyInfo): Unit = {
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val dbAction = for {
+      // Load communityID.
+      communityId <- automationApiHelper.getCommunityByCommunityApiKey(communityKey)
+      // Ensure property exists.
+      property <- checkOrganisationParameterExistence(communityId, input.key, expectedToExist = true, None)
+      // If this depends on another property check that it exists.
+      dependency <- checkDependedOrganisationParameterExistence(communityId, input.dependsOn.flatten, property.map(_.id))
+      // Proceed with update.
+      _ <- {
+        val dependsOnStatus = automationApiHelper.propertyDependsOnStatus(input, dependency.flatMap(_.allowedValues))
+        updateOrganisationParameterInternal(OrganisationParameters(
+          property.get.id,
+          input.name.getOrElse(property.get.name),
+          input.key,
+          input.description.getOrElse(property.get.description),
+          automationApiHelper.propertyUseText(input.required, property.get.use),
+          "SIMPLE",
+          !input.editableByUsers.getOrElse(!property.get.adminOnly),
+          !input.inTests.getOrElse(!property.get.notForTests),
+          input.inExports.getOrElse(property.get.inExports),
+          input.inSelfRegistration.getOrElse(property.get.inSelfRegistration),
+          input.hidden.getOrElse(property.get.hidden),
+          input.allowedValues.map(x => automationApiHelper.propertyAllowedValuesText(x)).getOrElse(property.get.allowedValues),
+          input.displayOrder.getOrElse(property.get.displayOrder),
+          dependsOnStatus._1.getOrElse(property.get.dependsOn),
+          dependsOnStatus._2.getOrElse(property.get.dependsOnValue),
+          automationApiHelper.propertyDefaultValue(
+            input.defaultValue.getOrElse(property.get.defaultValue),
+            input.allowedValues.getOrElse(property.get.allowedValues.map(x => JsonUtil.parseJsAllowedPropertyValues(x)))
+          ),
+          communityId
+        ), updateDisplayOrder = true, onSuccessCalls)
+      }
+    } yield ()
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction.transactionally))
+  }
+
+  def updateSystemParameterDefinitionThroughAutomationApi(communityKey: String, input: CustomPropertyInfo): Unit = {
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val dbAction = for {
+      // Load communityID.
+      communityId <- automationApiHelper.getCommunityByCommunityApiKey(communityKey)
+      // Ensure property exists.
+      property <- checkSystemParameterExistence(communityId, input.key, expectedToExist = true, None)
+      // If this depends on another property check that it exists.
+      dependency <- checkDependedSystemParameterExistence(communityId, input.dependsOn.flatten, property.map(_.id))
+      // Proceed with update.
+      _ <- {
+        val dependsOnStatus = automationApiHelper.propertyDependsOnStatus(input, dependency.flatMap(_.allowedValues))
+        updateSystemParameterInternal(SystemParameters(
+          property.get.id,
+          input.name.getOrElse(property.get.name),
+          input.key,
+          input.description.getOrElse(property.get.description),
+          automationApiHelper.propertyUseText(input.required, property.get.use),
+          "SIMPLE",
+          !input.editableByUsers.getOrElse(!property.get.adminOnly),
+          !input.inTests.getOrElse(!property.get.notForTests),
+          input.inExports.getOrElse(property.get.inExports),
+          input.hidden.getOrElse(property.get.hidden),
+          input.allowedValues.map(x => automationApiHelper.propertyAllowedValuesText(x)).getOrElse(property.get.allowedValues),
+          input.displayOrder.getOrElse(property.get.displayOrder),
+          dependsOnStatus._1.getOrElse(property.get.dependsOn),
+          dependsOnStatus._2.getOrElse(property.get.dependsOnValue),
+          automationApiHelper.propertyDefaultValue(
+            input.defaultValue.getOrElse(property.get.defaultValue),
+            input.allowedValues.getOrElse(property.get.allowedValues.map(x => JsonUtil.parseJsAllowedPropertyValues(x)))
+          ),
+          communityId
+        ), updateDisplayOrder = true, onSuccessCalls)
+      }
+    } yield ()
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction.transactionally))
+  }
+
+  private def checkDependedOrganisationParameterExistence(communityId: Long, dependsOn: Option[String], propertyIdToIgnore: Option[Long]): DBIO[Option[OrganisationParameters]] = {
+    if (dependsOn.isEmpty) {
+      DBIO.successful(None)
+    } else {
+      for {
+        property <- checkOrganisationParameterExistence(communityId, dependsOn.get, expectedToExist = true, propertyIdToIgnore)
+        _ <- {
+          if (property.get.kind != "SIMPLE") {
+            throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "Property [%s] upon which this property depends on must be of simple type".formatted(dependsOn.get))
+          } else {
+            DBIO.successful(())
+          }
+        }
+      } yield property
+    }
+  }
+
+  private def checkDependedSystemParameterExistence(communityId: Long, dependsOn: Option[String], propertyIdToIgnore: Option[Long]): DBIO[Option[SystemParameters]] = {
+    if (dependsOn.isEmpty) {
+      DBIO.successful(None)
+    } else {
+      for {
+        property <- checkSystemParameterExistence(communityId, dependsOn.get, expectedToExist = true, propertyIdToIgnore)
+        _ <- {
+          if (property.get.kind != "SIMPLE") {
+            throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "Property [%s] upon which this property depends on must be of simple type".formatted(dependsOn.get))
+          } else {
+            DBIO.successful(())
+          }
+        }
+      } yield property
+    }
+  }
+
+  def deleteOrganisationParameterWrapper(parameterId: Long): Unit = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = deleteOrganisationParameter(parameterId, onSuccessCalls)
     exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
   }
 
+  def deleteOrganisationParameterDefinitionThroughAutomationApi(communityKey: String, propertyKey: String): Unit = {
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val dbAction = for {
+      // Load community ID.
+      communityId <- automationApiHelper.getCommunityByCommunityApiKey(communityKey)
+      // Ensure the property exists.
+      property <- checkOrganisationParameterExistence(communityId, propertyKey, expectedToExist = true, None)
+      // Delete property
+      _ <- {
+        deleteOrganisationParameter(property.get.id, onSuccessCalls)
+      }
+    } yield ()
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+  }
+
+  def deleteSystemParameterDefinitionThroughAutomationApi(communityKey: String, propertyApiKey: String): Unit = {
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val dbAction = for {
+      // Load community ID.
+      communityId <- automationApiHelper.getCommunityByCommunityApiKey(communityKey)
+      // Ensure the property exists.
+      property <- checkSystemParameterExistence(communityId, propertyApiKey, expectedToExist = true, None)
+      // Delete property
+      _ <- {
+        deleteSystemParameter(property.get.id, onSuccessCalls)
+      }
+    } yield ()
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+  }
+
   def deleteOrganisationParameter(parameterId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
     onSuccessCalls += (() => repositoryUtils.deleteOrganisationPropertiesFolder(parameterId))
-    triggerManager.deleteTriggerDataByDataType(parameterId, TriggerDataType.OrganisationParameter) andThen
+    triggerHelper.deleteTriggerDataByDataType(parameterId, TriggerDataType.OrganisationParameter) andThen
       PersistenceSchema.organisationParameterValues.filter(_.parameter === parameterId).delete andThen
       (for {
         existingParameter <- PersistenceSchema.organisationParameters.filter(_.id === parameterId).map(x => (x.community, x.testKey, x.kind)).result.head
@@ -522,15 +799,15 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
     exec(toDBIO(dbActions).transactionally)
   }
 
-  def createSystemParameterInternal(parameter: SystemParameters) = {
+  def createSystemParameterInternal(parameter: SystemParameters): DBIO[Long] = {
     PersistenceSchema.systemParameters.returning(PersistenceSchema.systemParameters.map(_.id)) += parameter
   }
 
-  def createSystemParameter(parameter: SystemParameters) = {
+  def createSystemParameter(parameter: SystemParameters): Long = {
     exec(createSystemParameterInternal(parameter).transactionally)
   }
 
-  def updateSystemParameterInternal(parameter: SystemParameters, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
+  def updateSystemParameterInternal(parameter: SystemParameters, updateDisplayOrder: Boolean, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
     for {
       existingParameter <- PersistenceSchema.systemParameters.filter(_.id === parameter.id).map(x => (x.community, x.testKey, x.kind)).result.head
       _ <- {
@@ -558,15 +835,22 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
         val q = for {p <- PersistenceSchema.systemParameters if p.id === parameter.id} yield (p.description, p.use, p.kind, p.name, p.testKey, p.adminOnly, p.notForTests, p.inExports, p.hidden, p.allowedValues, p.dependsOn, p.dependsOnValue, p.defaultValue)
         q.update(parameter.description, parameter.use, parameter.kind, parameter.name, parameter.testKey, parameter.adminOnly, parameter.notForTests, parameter.inExports, parameter.hidden, parameter.allowedValues, parameter.dependsOn, parameter.dependsOnValue, parameter.defaultValue)
       }
+      _ <- {
+        if (updateDisplayOrder) {
+          PersistenceSchema.systemParameters.filter(_.id === parameter.id).map(_.displayOrder).update(parameter.displayOrder)
+        } else {
+          DBIO.successful(())
+        }
+      }
     } yield ()
   }
 
-  def updateSystemParameter(parameter: SystemParameters) = {
+  def updateSystemParameter(parameter: SystemParameters): Unit = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, updateSystemParameterInternal(parameter, onSuccessCalls)).transactionally)
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, updateSystemParameterInternal(parameter, updateDisplayOrder = false, onSuccessCalls)).transactionally)
   }
 
-  def deleteSystemParameterWrapper(parameterId: Long) = {
+  def deleteSystemParameterWrapper(parameterId: Long): Unit = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = deleteSystemParameter(parameterId, onSuccessCalls)
     exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
@@ -574,7 +858,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
 
   def deleteSystemParameter(parameterId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
     onSuccessCalls += (() => repositoryUtils.deleteSystemPropertiesFolder(parameterId))
-    triggerManager.deleteTriggerDataByDataType(parameterId, TriggerDataType.SystemParameter) andThen
+    triggerHelper.deleteTriggerDataByDataType(parameterId, TriggerDataType.SystemParameter) andThen
     PersistenceSchema.systemParameterValues.filter(_.parameter === parameterId).delete andThen
       (for {
         existingParameter <- PersistenceSchema.systemParameters.filter(_.id === parameterId).map(x => (x.community, x.testKey, x.kind)).result.head
@@ -589,7 +873,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
       PersistenceSchema.systemParameters.filter(_.id === parameterId).delete
   }
 
-  def deleteSystemParametersByCommunity(communityId: Long) = {
+  private def deleteSystemParametersByCommunity(communityId: Long): DBIO[_] = {
     // The values and files are already deleted as part of the system deletes
     PersistenceSchema.systemParameters.filter(_.community === communityId).delete
   }
@@ -651,7 +935,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
       .result).toList
   }
 
-  def getOrganisationParametersForSelfRegistration(communityId: Long): List[OrganisationParameters] = {
+  private def getOrganisationParametersForSelfRegistration(communityId: Long): List[OrganisationParameters] = {
     exec(PersistenceSchema.organisationParameters
       .filter(_.community === communityId)
       .filter(_.inSelfRegistration === true)
@@ -744,7 +1028,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
     PersistenceSchema.communityLabels += label
   }
 
-  def setCommunityLabelsInternal(communityId: Long, labels: List[CommunityLabels]) = {
+  private def setCommunityLabelsInternal(communityId: Long, labels: List[CommunityLabels]): DBIO[_] = {
     val actions = new ListBuffer[DBIO[_]]()
     // Delete existing labels
     actions += PersistenceSchema.communityLabels.filter(_.community === communityId).delete
@@ -1012,75 +1296,6 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
     } yield result
   }
 
-  def updateConformanceCertificateSettingsInternal(data: ConformanceCertificate): DBIO[_] = {
-    for {
-      existingId <- PersistenceSchema.conformanceCertificates.filter(_.community === data.community).map(_.id).result.headOption
-      _ <- {
-        if (existingId.isEmpty) {
-          // Create settings
-          PersistenceSchema.insertConformanceCertificate += data
-        } else {
-          // Update settings
-          PersistenceSchema.conformanceCertificates.filter(_.id === existingId)
-            .map(x => (x.title, x.message, x.includePageNumbers, x.includeTitle, x.includeDetails, x.includeMessage, x.includeSignature, x.includeTestCases, x.includeTestStatus))
-            .update((data.title, data.message, data.includePageNumbers, data.includeTitle, data.includeDetails, data.includeMessage, data.includeSignature, data.includeTestCases, data.includeTestStatus))
-        }
-      }
-    } yield ()
-  }
-
-  def updateConformanceOverviewCertificateSettingsInternal(data: ConformanceOverviewCertificateWithMessages): DBIO[_] = {
-    for {
-      existingId <- PersistenceSchema.conformanceOverviewCertificates.filter(_.community === data.settings.community).map(_.id).result.headOption
-      _ <- {
-        if (existingId.isEmpty) {
-          // Create settings
-          PersistenceSchema.insertConformanceOverviewCertificate += data.settings
-        } else {
-          // Update settings
-          PersistenceSchema.conformanceOverviewCertificates.filter(_.id === existingId)
-            .map(x => (x.title, x.includePageNumbers, x.includeTitle, x.includeDetails, x.includeMessage, x.includeSignature, x.includeStatements, x.includeStatementDetails, x.includeStatementStatus, x.enableAllLevel, x.enableDomainLevel, x.enableGroupLevel, x.enableSpecificationLevel))
-            .update((data.settings.title, data.settings.includePageNumbers, data.settings.includeTitle, data.settings.includeDetails, data.settings.includeMessage, data.settings.includeSignature, data.settings.includeStatements, data.settings.includeStatementDetails, data.settings.includeStatementStatus, data.settings.enableAllLevel, data.settings.enableDomainLevel, data.settings.enableGroupLevel, data.settings.enableSpecificationLevel))
-        }
-      }
-      _ <- {
-        val actions = new ListBuffer[DBIO[_]]()
-        val updatedIds = new mutable.HashSet[Long]()
-        // Update matching messages
-        if (data.settings.includeMessage) {
-          data.messages.foreach { message =>
-            if (message.id != 0L) {
-              updatedIds += message.id
-              actions += PersistenceSchema.conformanceOverviewCertificateMessages.filter(_.id === message.id).map(_.message).update(message.message)
-            }
-          }
-        }
-        // Delete other existing messages
-        actions += PersistenceSchema.conformanceOverviewCertificateMessages
-          .filter(_.community === data.settings.community)
-          .filterNot(_.id inSet updatedIds)
-          .delete
-        // Insert new messages
-        if (data.settings.includeMessage) {
-          data.messages.foreach { message =>
-            if (message.id == 0L) {
-              actions += (PersistenceSchema.conformanceOverviewCertificateMessages += message)
-            }
-          }
-        }
-        toDBIO(actions)
-      }
-    } yield ()
-  }
-
-  def updateConformanceCertificateSettings(conformanceCertificate: ConformanceCertificate): Unit = {
-    exec(updateConformanceCertificateSettingsInternal(conformanceCertificate).transactionally)
-  }
-
-  def updateConformanceOverviewCertificateSettings(settings: ConformanceOverviewCertificateWithMessages): Unit = {
-    exec(updateConformanceOverviewCertificateSettingsInternal(settings).transactionally)
-  }
-
   def deleteConformanceCertificateSettings(communityId: Long): DBIO[_] = {
     PersistenceSchema.conformanceCertificates.filter(_.community === communityId).delete
   }
@@ -1092,54 +1307,52 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
 
   def applyConfigurationViaAutomationApi(communityKey: String, request: ConfigurationRequest): List[String] = {
     val warnings = new ListBuffer[String]()
-    exec(
-      for {
-        communityIds <- PersistenceSchema.communities.filter(_.apiKey === communityKey).map(x => (x.id, x.domain)).result.headOption
-        // Process domain properties
-        _ <- {
-          if (communityIds.isDefined) {
-            if (request.domainProperties.nonEmpty) {
-              updateDomainParametersViaApi(communityIds.get._2, request.domainProperties, warnings)
-            } else {
-              DBIO.successful(())
-            }
+    val dbAction = for {
+      communityIds <- PersistenceSchema.communities.filter(_.apiKey === communityKey).map(x => (x.id, x.domain)).result.headOption
+      // Process domain properties
+      _ <- {
+        if (communityIds.isDefined) {
+          if (request.domainProperties.nonEmpty) {
+            domainParameterManager.updateDomainParametersViaApiInternal(communityIds.get._2, request.domainProperties, warnings)
           } else {
-            warnings += "Community not found for API key [%s].".formatted(communityKey)
             DBIO.successful(())
           }
+        } else {
+          throw AutomationApiException(ErrorCodes.API_COMMUNITY_NOT_FOUND, "No community found for the provided API key")
         }
-        // Process organisation properties
-        _ <- {
-          val actions = new ListBuffer[DBIO[_]]
-          if (communityIds.isDefined && request.organisationProperties.nonEmpty) {
-            request.organisationProperties.foreach { updates =>
-              actions += updateOrganisationPropertiesViaApi(updates, communityIds.get._1, warnings)
-            }
+      }
+      // Process organisation properties
+      _ <- {
+        val actions = new ListBuffer[DBIO[_]]
+        if (communityIds.isDefined && request.organisationProperties.nonEmpty) {
+          request.organisationProperties.foreach { updates =>
+            actions += updateOrganisationParametersViaApi(updates, communityIds.get._1, warnings)
           }
-          toDBIO(actions)
         }
-        // Process system properties
-        _ <- {
-          val actions = new ListBuffer[DBIO[_]]
-          if (communityIds.isDefined && request.systemProperties.nonEmpty) {
-            request.systemProperties.foreach { updates =>
-              actions += updateSystemPropertiesViaApi(updates, communityIds.get._1, warnings)
-            }
+        toDBIO(actions)
+      }
+      // Process system properties
+      _ <- {
+        val actions = new ListBuffer[DBIO[_]]
+        if (communityIds.isDefined && request.systemProperties.nonEmpty) {
+          request.systemProperties.foreach { updates =>
+            actions += updateSystemParametersViaApi(updates, communityIds.get._1, warnings)
           }
-          toDBIO(actions)
         }
-        // Process statement properties
-        _ <- {
-          val actions = new ListBuffer[DBIO[_]]
-          if (communityIds.isDefined && request.statementProperties.nonEmpty) {
-            request.statementProperties.foreach { updates =>
-              actions += updateStatementPropertiesViaApi(updates, communityIds.get._1, communityIds.get._2, warnings)
-            }
+        toDBIO(actions)
+      }
+      // Process statement properties
+      _ <- {
+        val actions = new ListBuffer[DBIO[_]]
+        if (communityIds.isDefined && request.statementProperties.nonEmpty) {
+          request.statementProperties.foreach { updates =>
+            actions += updateStatementPropertiesViaApi(updates, communityIds.get._1, communityIds.get._2, warnings)
           }
-          toDBIO(actions)
         }
-      } yield warnings.toList
-    )
+        toDBIO(actions)
+      }
+    } yield warnings.toList
+    exec(dbAction.transactionally)
   }
 
   private def updateStatementPropertiesViaApi(updateData: StatementConfiguration, communityId: Long, domainId: Option[Long], warnings: ListBuffer[String]): DBIO[_] = {
@@ -1236,68 +1449,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
     } yield ()
   }
 
-  private def updateDomainParametersViaApi(domainId: Option[Long], updates: List[DomainParameterInfo], warnings: ListBuffer[String]): DBIO[_] = {
-    for {
-      existingDomainProperties <- {
-        if (updates.nonEmpty) {
-          PersistenceSchema.domainParameters
-            .join(PersistenceSchema.domains).on(_.domain === _.id)
-            .filterOpt(domainId)((q, id) => q._2.id === id)
-            .map(x => (x._1.name, x._1.id, x._1.kind, x._2.apiKey))
-            .result
-            .map { properties =>
-              val keyMap = new mutable.HashMap[String, ListBuffer[(Long, String, String)]]() // Key to (ID, type, domainApiKey)
-              properties.foreach { property =>
-                var propertyList = keyMap.get(property._1)
-                if (propertyList.isEmpty) {
-                  propertyList = Some(new ListBuffer[(Long, String, String)])
-                  keyMap.put(property._1, propertyList.get)
-                }
-                propertyList.get.append((property._2, property._3, property._4))
-              }
-              keyMap.map(x => (x._1, x._2.toList)).toMap
-            }
-        } else {
-          DBIO.successful(Map.empty[String, List[(Long, String, String)]])
-        }
-      }
-      // Update domain properties
-      _ <- {
-        val actions = new ListBuffer[DBIO[_]]()
-        updates.foreach { propertyData =>
-          if (existingDomainProperties.contains(propertyData.parameterInfo.key)) {
-            val matchingProperties = existingDomainProperties(propertyData.parameterInfo.key)
-              .filter(prop => propertyData.domainApiKey.isEmpty || propertyData.domainApiKey.get.equals(prop._3))
-            if (matchingProperties.size == 1) {
-              if (matchingProperties.head._2 == "SIMPLE") {
-                if (propertyData.parameterInfo.value.isDefined) {
-                  // Update
-                  actions += PersistenceSchema.domainParameters
-                    .filter(_.id === matchingProperties.head._1)
-                    .map(_.value)
-                    .update(propertyData.parameterInfo.value)
-                } else {
-                  // Delete
-                  warnings += "Ignoring deletion for domain property [%s]. Domain properties cannot be deleted via automation API.".formatted(propertyData.parameterInfo.key)
-                }
-              } else {
-                warnings += "Ignoring update for domain property [%s]. Only simple properties can be updated via the automation API.".formatted(propertyData.parameterInfo.key)
-              }
-            } else if (matchingProperties.size > 1) {
-              warnings += "Ignoring update for domain property [%s]. Multiple properties were found matching the provided key from different domains. Please specify the domain API key to identify the specific property to update.".formatted(propertyData.parameterInfo.key)
-            } else {
-              warnings += "Ignoring update for domain property [%s]. Property was not found.".formatted(propertyData.parameterInfo.key)
-            }
-          } else {
-            warnings += "Ignoring update for domain property [%s]. Property was not found.".formatted(propertyData.parameterInfo.key)
-          }
-        }
-        toDBIO(actions)
-      }
-    } yield ()
-  }
-
-  private def updateOrganisationPropertiesViaApi(updateData: PartyConfiguration, communityId: Long, warnings: ListBuffer[String]): DBIO[_] = {
+  private def updateOrganisationParametersViaApi(updateData: PartyConfiguration, communityId: Long, warnings: ListBuffer[String]): DBIO[_] = {
     for {
       // Load organisation ID
       organisationId <- PersistenceSchema.organizations
@@ -1383,7 +1535,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
     } yield ()
   }
 
-  private def updateSystemPropertiesViaApi(updateData: PartyConfiguration, communityId: Long, warnings: ListBuffer[String]): DBIO[_] = {
+  private def updateSystemParametersViaApi(updateData: PartyConfiguration, communityId: Long, warnings: ListBuffer[String]): DBIO[_] = {
     for {
       // Load system ID
       systemId <- PersistenceSchema.systems
@@ -1468,6 +1620,113 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
         toDBIO(actions)
       }
     } yield ()
+  }
+
+  private def checkOrganisationParameterExistence(communityId: Long, propertyKey: String, expectedToExist: Boolean, propertyIdToIgnore: Option[Long]): DBIO[Option[OrganisationParameters]] = {
+    for {
+      property <- PersistenceSchema.organisationParameters
+        .filter(_.community === communityId)
+        .filter(_.testKey === propertyKey)
+        .filterOpt(propertyIdToIgnore)((q, id) => q.id =!= id)
+        .result
+        .headOption
+      _ <- {
+        if (property.isDefined && !expectedToExist) {
+          throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "A property with name [%s] already exists in the target community".formatted(propertyKey))
+        } else if (property.isEmpty && expectedToExist) {
+          throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "No property with name [%s] exists in the target community".formatted(propertyKey))
+        } else {
+          DBIO.successful(())
+        }
+      }
+    } yield property
+  }
+
+  private def checkSystemParameterExistence(communityId: Long, propertyKey: String, expectedToExist: Boolean, propertyIdToIgnore: Option[Long]): DBIO[Option[SystemParameters]] = {
+    for {
+      property <- PersistenceSchema.systemParameters
+        .filter(_.community === communityId)
+        .filter(_.testKey === propertyKey)
+        .filterOpt(propertyIdToIgnore)((q, id) => q.id =!= id)
+        .result
+        .headOption
+      _ <- {
+        if (property.isDefined && !expectedToExist) {
+          throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "A property with name [%s] already exists in the target community".formatted(propertyKey))
+        } else if (property.isEmpty && expectedToExist) {
+          throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "No property with name [%s] exists in the target community".formatted(propertyKey))
+        } else {
+          DBIO.successful(())
+        }
+      }
+    } yield property
+  }
+
+  def createOrganisationParameterDefinitionThroughAutomationApi(communityApiKey: String, input: CustomPropertyInfo): Unit = {
+    val dbAction = for {
+      // Load community ID.
+      communityId <- automationApiHelper.getCommunityByCommunityApiKey(communityApiKey)
+      // Check for existing property with provided name.
+      _ <- checkOrganisationParameterExistence(communityId, input.key, expectedToExist = false, None)
+      // If this depends on another property check that it exists.
+      dependency <- checkDependedOrganisationParameterExistence(communityId, input.dependsOn.flatten, None)
+      // Create property.
+      _ <- {
+        val dependsOnStatus = automationApiHelper.propertyDependsOnStatus(input, dependency.flatMap(_.allowedValues))
+        createOrganisationParameterInternal(OrganisationParameters(0L,
+          input.name.getOrElse(input.key),
+          input.key,
+          input.description.flatten,
+          automationApiHelper.propertyUseText(input.required),
+          "SIMPLE",
+          !input.editableByUsers.getOrElse(true),
+          !input.inTests.getOrElse(false),
+          input.inExports.getOrElse(false),
+          input.inSelfRegistration.getOrElse(false),
+          input.hidden.getOrElse(false),
+          automationApiHelper.propertyAllowedValuesText(input.allowedValues.flatten),
+          input.displayOrder.getOrElse(0),
+          dependsOnStatus._1.flatten,
+          dependsOnStatus._2.flatten,
+          automationApiHelper.propertyDefaultValue(input.defaultValue.flatten, input.allowedValues.flatten),
+          communityId
+        ))
+      }
+    } yield ()
+    exec(dbAction.transactionally)
+  }
+
+  def createSystemParameterDefinitionThroughAutomationApi(communityApiKey: String, input: CustomPropertyInfo): Unit = {
+    val dbAction = for {
+      // Load community ID.
+      communityId <- automationApiHelper.getCommunityByCommunityApiKey(communityApiKey)
+      // Check for existing property with provided name.
+      _ <- checkSystemParameterExistence(communityId, input.key, expectedToExist = false, None)
+      // If this depends on another property check that it exists.
+      dependency <- checkDependedSystemParameterExistence(communityId, input.dependsOn.flatten, None)
+      // Create property.
+      _ <- {
+        val dependsOnStatus = automationApiHelper.propertyDependsOnStatus(input, dependency.flatMap(_.allowedValues))
+        createSystemParameterInternal(SystemParameters(0L,
+          input.name.getOrElse(input.key),
+          input.key,
+          input.description.flatten,
+          automationApiHelper.propertyUseText(input.required),
+          "SIMPLE",
+          !input.editableByUsers.getOrElse(true),
+          !input.inTests.getOrElse(false),
+          input.inExports.getOrElse(false),
+          input.hidden.getOrElse(false),
+          automationApiHelper.propertyAllowedValuesText(input.allowedValues.flatten),
+          input.displayOrder.getOrElse(0),
+          dependsOnStatus._1.flatten,
+          dependsOnStatus._2.flatten,
+          automationApiHelper.propertyDefaultValue(input.defaultValue.flatten, input.allowedValues.flatten),
+          communityId
+        ))
+      }
+    } yield ()
+    exec(dbAction.transactionally)
   }
 
 }

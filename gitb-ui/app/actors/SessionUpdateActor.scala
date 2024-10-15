@@ -99,7 +99,7 @@ class SessionUpdateActor @Inject() (repositoryUtils: RepositoryUtils, reportMana
         val sessionFolder = repositoryUtils.getPathForTestSession(interactWithUsersRequest.getTcInstanceid, isExpected = false).path
         Files.createDirectories(sessionFolder)
         interactWithUsersRequest.getInteraction.getInstructionOrRequest.asScala.foreach {
-          case instruction: Instruction if !StringUtils.isBlank(instruction.getValue) && instruction.getEmbeddingMethod == ValueEmbeddingEnumeration.BASE_64 && StringUtils.isBlank(instruction.getName) => // Determine the file name from the BASE64 content.
+          case instruction: Instruction if !StringUtils.isBlank(instruction.getValue) && StringUtils.isBlank(instruction.getName) => // Determine the file name from the BASE64 content.
             val mimeType = MimeUtil.getMimeType(instruction.getValue, false)
             val extension = MimeUtil.getExtensionFromMimeType(mimeType)
             // Determine name.

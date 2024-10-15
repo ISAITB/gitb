@@ -1,24 +1,61 @@
 <div class="table-container rounded">
-    <table class="table table-directive" [ngClass]="{'expandable-table': styleAsNestedTable}" *ngIf="parameters && parameters.length > 0">
-        <thead>
-            <tr>
-                <th width="1%" style="padding-right:30px;" *ngIf="!onlyMissing">Set?</th>
-                <th width="20%">{{parameterLabel}}</th>
-                <th *ngIf="showValues">Configured value</th>
-                <th>Description</th>
-                <th class="th-min-centered" *ngIf="showActions"></th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr *ngFor="let parameter of parameters">
-                <td style="text-align: center;padding-right:30px;" *ngIf="!onlyMissing"><i class="fa" [ngClass]="{'fa-check': parameter.configured, 'fa-times': !parameter.configured}"></i></td>
-                <td style="font-weight: bold;" *ngIf="isRequired(parameter)">*&nbsp;{{parameter.name}}</td>
-                <td *ngIf="!isRequired(parameter)">{{parameter.name}}</td>
-                <td *ngIf="showValues && parameter.kind == 'BINARY'"><a *ngIf="parameter.value != undefined" href (click)="downloadBinaryParameter(parameter);$event.preventDefault()">{{parameter.fileName}}</a></td>
-                <td *ngIf="showValues && parameter.kind != 'BINARY'"><span *ngIf="parameter.valueToShow != undefined">{{parameter.valueToShow}}</span><span *ngIf="parameter.valueToShow == undefined">{{parameter.value}}</span></td>
-                <td>{{parameter.desc}}</td>
-                <td class="td-min-centered" *ngIf="showActions"><button type="button" class="btn btn-secondary" *ngIf="canEdit!(parameter)" (click)="onEdit(parameter)" containerClass="shortTooltip" tooltip="Edit" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-pencil"></i></button></td>
-            </tr>
-        </tbody>
-    </table>
+    @if (parameters && parameters.length > 0) {
+        <table class="table table-directive" [ngClass]="{'expandable-table': styleAsNestedTable}">
+            <thead>
+                <tr>
+                    @if (!onlyMissing) {
+                        <th width="1%" style="padding-right:30px;">Set?</th>
+                    }
+                    <th width="20%">{{parameterLabel}}</th>
+                    @if (showValues) {
+                        <th>Configured value</th>
+                    }
+                    <th>Description</th>
+                    @if (showActions) {
+                        <th class="th-min-centered"></th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @for (parameter of parameters; track parameter.id) {
+                    <tr>
+                        @if (!onlyMissing) {
+                            <td style="text-align: center;padding-right:30px;"><i class="fa" [ngClass]="{'fa-check': parameter.configured, 'fa-times': !parameter.configured}"></i></td>
+                        }
+                        @if (isRequired(parameter)) {
+                            <td style="font-weight: bold;">*&nbsp;{{parameter.name}}</td>
+                        }
+                        @if (!isRequired(parameter)) {
+                            <td>{{parameter.name}}</td>
+                        }
+                        @if (showValues) {
+                            @if (parameter.kind == 'BINARY') {
+                                <td>
+                                    @if (parameter.value != undefined) {
+                                        <a href (click)="downloadBinaryParameter(parameter);$event.preventDefault()">{{parameter.fileName}}</a>
+                                    }
+                                </td>
+                            } @else {
+                                <td>
+                                    @if (parameter.valueToShow != undefined) {
+                                        <span>{{parameter.valueToShow}}</span>
+                                    } @else {
+                                        <span>{{parameter.value}}</span>
+                                    }
+                                </td>
+                            }
+                        }
+                        <td>{{parameter.desc}}</td>
+                        @if (showActions) {
+                            <td class="td-min-centered">
+                                @if (canEdit!(parameter)) {
+                                    <button type="button" class="btn btn-secondary" (click)="onEdit(parameter)" containerClass="shortTooltip" tooltip="Edit" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-pencil"></i></button>
+                                }
+                            </td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
 </div>

@@ -6,6 +6,7 @@ import com.gitb.engine.processors.VerifyProcessor;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.tdl.Verify;
 import org.apache.pekko.actor.ActorRef;
+import scala.concurrent.ExecutionContext;
 
 /**
  * Created by serbay on 9/10/14.
@@ -34,5 +35,10 @@ public class VerifyStepProcessorActor extends AbstractProcessorActor<Verify> {
 
 	public static ActorRef create(ActorContext context, Verify step, TestCaseScope scope, String stepId) throws Exception {
 		return context.actorOf(props(VerifyStepProcessorActor.class, step, scope, stepId).withDispatcher(ActorSystem.BLOCKING_DISPATCHER), getName(NAME));
+	}
+
+	@Override
+	protected ExecutionContext stepDispatcher() {
+		return getContext().getSystem().dispatchers().lookup(ActorSystem.BLOCKING_IO_DISPATCHER);
 	}
 }

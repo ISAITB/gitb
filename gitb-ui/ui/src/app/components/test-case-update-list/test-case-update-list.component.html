@@ -1,36 +1,45 @@
 <div class="form-table table-container rounded testcase-table">
     <div class="testcase-table-title expandable" (click)="show = !show">
-        <div class="testcase-table-title-label"><app-collapsing-icon [isCollapsed]="!show"></app-collapsing-icon>{{title}}<span *ngIf="titleTooltip" class="inline-tooltip" boundariesElement="window" [tooltip]="titleTooltip"><i class="fa-solid fa-question-circle"></i></span></div>
-        <div class="testcase-table-title-controls" *ngIf="showUpdateDefinition || showResetTestHistory">
-            <div class="btn-toolbar" (click)="$event.stopPropagation()" *ngIf="show">
-                <ng-container [ngSwitch]="showUpdateDefinition && showResetTestHistory">
-                    <ng-container *ngSwitchCase="true">
-                        <div class="btn-group" dropdown [isDisabled]="hasAllTestCaseDataChoice(true) && hasAllTestCaseHistoryChoice(true)">
-                            <button type="button" class="btn btn-secondary btn-sm" (click)="toggleTestCaseChoices(true)" [disabled]="hasAllTestCaseDataChoice(true) && hasAllTestCaseHistoryChoice(true)">Select all options</button>
-                            <button id="button-all" dropdownToggle type="button" class="btn btn-secondary btn-sm dropdown-toggle dropdown-toggle-split" aria-controls="dropdown-all"><span class="caret"></span></button>
-                            <ul id="dropdownType-all" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-all">
-                                <li role="menuitem" [class.disabled]="hasAllTestCaseDataChoice(true)"><a class="dropdown-item" href (click)="toggleTestCaseDataChoice(true); $event.preventDefault()">Select all metadata update options</a></li>
-                                <li role="menuitem" [class.disabled]="hasAllTestCaseHistoryChoice(true)"><a class="dropdown-item" href (click)="toggleTestCaseHistoryChoice(true); $event.preventDefault()">Select all history reset options</a></li>
-                            </ul>
-                        </div>
-                        <div class="btn-group" dropdown [isDisabled]="hasAllTestCaseDataChoice(false) && hasAllTestCaseHistoryChoice(false)">
-                            <button type="button" class="btn btn-secondary btn-sm" (click)="toggleTestCaseChoices(false)" [disabled]="hasAllTestCaseDataChoice(false) && hasAllTestCaseHistoryChoice(false)">Clear all options</button>
-                            <button id="button-none" dropdownToggle type="button" class="btn btn-secondary btn-sm dropdown-toggle dropdown-toggle-split" aria-controls="dropdown-all"><span class="caret"></span></button>
-                            <ul id="dropdownType-none" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-none">
-                                <li role="menuitem" [class.disabled]="hasAllTestCaseDataChoice(false)"><a class="dropdown-item" href (click)="toggleTestCaseDataChoice(false); $event.preventDefault()">Clear all metadata update options</a></li>
-                                <li role="menuitem" [class.disabled]="hasAllTestCaseHistoryChoice(false)"><a class="dropdown-item" href (click)="toggleTestCaseHistoryChoice(false); $event.preventDefault()">Clear all history reset options</a></li>
-                            </ul>
-                        </div>
-                    </ng-container>
-                    <ng-container *ngSwitchDefault>
-                        <button *ngIf="showUpdateDefinition" type="button" class="btn btn-secondary btn-sm" (click)="toggleTestCaseDataChoice(true)" [disabled]="hasAllTestCaseDataChoice(true)">Select all</button>
-                        <button *ngIf="showUpdateDefinition" type="button" class="btn btn-secondary btn-sm" (click)="toggleTestCaseDataChoice(false)" [disabled]="hasAllTestCaseDataChoice(false)">Clear all</button>
-                        <button *ngIf="showResetTestHistory" type="button" class="btn btn-secondary btn-sm" (click)="toggleTestCaseHistoryChoice(true)" [disabled]="hasAllTestCaseHistoryChoice(true)">Select all</button>
-                        <button *ngIf="showResetTestHistory" type="button" class="btn btn-secondary btn-sm" (click)="toggleTestCaseHistoryChoice(false)" [disabled]="hasAllTestCaseHistoryChoice(false)">Clear all</button>
-                    </ng-container>
-                </ng-container>
-            </div>
+        <div class="testcase-table-title-label"><app-collapsing-icon [isCollapsed]="!show"></app-collapsing-icon>{{title}}
+            @if (titleTooltip) {
+                <span class="inline-tooltip" boundariesElement="window" [tooltip]="titleTooltip"><i class="fa-solid fa-question-circle"></i></span>
+            }
         </div>
+        @if (showUpdateDefinition || showResetTestHistory) {
+            <div class="testcase-table-title-controls">
+                @if (show) {
+                    <div class="btn-toolbar" (click)="$event.stopPropagation()">
+                        @if (showUpdateDefinition && showResetTestHistory) {
+                            <div class="btn-group" dropdown [isDisabled]="hasAllTestCaseDataChoice(true) && hasAllTestCaseHistoryChoice(true)">
+                                <button type="button" class="btn btn-secondary btn-sm" (click)="toggleTestCaseChoices(true)" [disabled]="hasAllTestCaseDataChoice(true) && hasAllTestCaseHistoryChoice(true)">Select all options</button>
+                                <button id="button-all" dropdownToggle type="button" class="btn btn-secondary btn-sm dropdown-toggle dropdown-toggle-split" aria-controls="dropdown-all"><span class="caret"></span></button>
+                                <ul id="dropdownType-all" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-all">
+                                    <li role="menuitem" [class.disabled]="hasAllTestCaseDataChoice(true)"><a class="dropdown-item" href (click)="toggleTestCaseDataChoice(true); $event.preventDefault()">Select all metadata update options</a></li>
+                                    <li role="menuitem" [class.disabled]="hasAllTestCaseHistoryChoice(true)"><a class="dropdown-item" href (click)="toggleTestCaseHistoryChoice(true); $event.preventDefault()">Select all history reset options</a></li>
+                                </ul>
+                            </div>
+                            <div class="btn-group" dropdown [isDisabled]="hasAllTestCaseDataChoice(false) && hasAllTestCaseHistoryChoice(false)">
+                                <button type="button" class="btn btn-secondary btn-sm" (click)="toggleTestCaseChoices(false)" [disabled]="hasAllTestCaseDataChoice(false) && hasAllTestCaseHistoryChoice(false)">Clear all options</button>
+                                <button id="button-none" dropdownToggle type="button" class="btn btn-secondary btn-sm dropdown-toggle dropdown-toggle-split" aria-controls="dropdown-all"><span class="caret"></span></button>
+                                <ul id="dropdownType-none" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-none">
+                                    <li role="menuitem" [class.disabled]="hasAllTestCaseDataChoice(false)"><a class="dropdown-item" href (click)="toggleTestCaseDataChoice(false); $event.preventDefault()">Clear all metadata update options</a></li>
+                                    <li role="menuitem" [class.disabled]="hasAllTestCaseHistoryChoice(false)"><a class="dropdown-item" href (click)="toggleTestCaseHistoryChoice(false); $event.preventDefault()">Clear all history reset options</a></li>
+                                </ul>
+                            </div>
+                        } @else {
+                            @if (showUpdateDefinition) {
+                                <button type="button" class="btn btn-secondary btn-sm" (click)="toggleTestCaseDataChoice(true)" [disabled]="hasAllTestCaseDataChoice(true)">Select all</button>
+                                <button type="button" class="btn btn-secondary btn-sm" (click)="toggleTestCaseDataChoice(false)" [disabled]="hasAllTestCaseDataChoice(false)">Clear all</button>
+                            }
+                            @if (showResetTestHistory) {
+                                <button type="button" class="btn btn-secondary btn-sm" (click)="toggleTestCaseHistoryChoice(true)" [disabled]="hasAllTestCaseHistoryChoice(true)">Select all</button>
+                                <button type="button" class="btn btn-secondary btn-sm" (click)="toggleTestCaseHistoryChoice(false)" [disabled]="hasAllTestCaseHistoryChoice(false)">Clear all</button>
+                            }
+                        }
+                    </div>
+                }
+            </div>
+        }
     </div>
     <div [collapse]="!show" [isAnimated]="true" class="testcase-table-contents">
         <table class="table">
@@ -38,17 +47,27 @@
                 <tr>
                     <th class="th-min-centered"><div class="d-flex align-items-center">ID</div></th>
                     <th class="th-min-centered"><div class="d-flex align-items-center">Name</div></th>
-                    <th *ngIf="showUpdateDefinition" class="th-min-centered"><div class="d-flex align-items-center justify-content-center"><div>Update metadata?</div><div app-tooltip class="d-flex-inline" [inline]="true" boundariesElement="window" tbTooltip="The test cases for which metadata (names, descriptions and documentation) shall be updated based on the information within the provided archive."></div></div></th>
-                    <th *ngIf="showResetTestHistory" class="th-min-centered"><div class="d-flex align-items-center justify-content-center"><div>Reset test history?</div><div app-tooltip class="d-flex-inline" [inline]="true" boundariesElement="window" tbTooltip="The test cases for which the conformance testing status shall be reset and existing results considered obsolete."></div></div></th>
+                    @if (showUpdateDefinition) {
+                        <th class="th-min-centered"><div class="d-flex align-items-center justify-content-center"><div>Update metadata?</div><div app-tooltip class="d-flex-inline" [inline]="true" boundariesElement="window" tbTooltip="The test cases for which metadata (names, descriptions and documentation) shall be updated based on the information within the provided archive."></div></div></th>
+                    }
+                    @if (showResetTestHistory) {
+                        <th class="th-min-centered"><div class="d-flex align-items-center justify-content-center"><div>Reset test history?</div><div app-tooltip class="d-flex-inline" [inline]="true" boundariesElement="window" tbTooltip="The test cases for which the conformance testing status shall be reset and existing results considered obsolete."></div></div></th>
+                    }
                 </tr>
             </thead>
             <tbody>
-                <tr *ngFor="let testCase of testCases">
-                    <td>{{testCase.identifier}}</td>
-                    <td>{{testCase.name}}</td>
-                    <td *ngIf="showUpdateDefinition" class="centered"><input class="form-check-input" type="checkbox" [(ngModel)]="testCase.updateDefinition" [name]="'choice_data_'+testCase.identifier"></td>
-                    <td *ngIf="showResetTestHistory" class="centered"><input class="form-check-input" type="checkbox" [(ngModel)]="testCase.resetTestHistory" [name]="'choice_history_'+testCase.identifier"></td>
-                </tr>
+                @for (testCase of testCases; track $index) {
+                    <tr>
+                        <td>{{testCase.identifier}}</td>
+                        <td>{{testCase.name}}</td>
+                        @if (showUpdateDefinition) {
+                            <td class="centered"><input class="form-check-input" type="checkbox" [(ngModel)]="testCase.updateDefinition" [name]="'choice_data_'+testCase.identifier"></td>
+                        }
+                        @if (showResetTestHistory) {
+                            <td class="centered"><input class="form-check-input" type="checkbox" [(ngModel)]="testCase.resetTestHistory" [name]="'choice_history_'+testCase.identifier"></td>
+                        }
+                    </tr>
+                }
             </tbody>
         </table>
     </div>

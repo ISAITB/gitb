@@ -6,6 +6,7 @@ import { DataService } from 'src/app/services/data.service';
 import { PopupService } from 'src/app/services/popup.service';
 import { FileData } from 'src/app/types/file-data.type';
 import { FeedbackType } from './feedback-type.type';
+import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
   selector: 'app-contact-support',
@@ -28,6 +29,7 @@ export class ContactSupportComponent extends BaseComponent implements OnInit, Af
   contactAddress?: string
   contentMessage: string = ''
   maximumAttachments = 0
+  validation = new ValidationState()
 
   constructor(
     private dataService: DataService,
@@ -60,12 +62,10 @@ export class ContactSupportComponent extends BaseComponent implements OnInit, Af
     return this.dataService.configuration !== undefined && this.dataService.configuration.surveyEnabled == true
   }
 
-  validateAttachments() {
-    let valid = true
+  private validateAttachments(): string|undefined {
     if (this.attachments.length > 0) {
         if (this.attachments.length > this.maximumAttachments) {
-          this.addAlertError('A maximum of '+this.maximumAttachments+' attachments can be provided')
-          valid = false
+          return 'A maximum of '+this.maximumAttachments+' attachments can be provided'
         }
         let totalSize = 0
         for (let attachment of this.attachments) {
@@ -75,27 +75,36 @@ export class ContactSupportComponent extends BaseComponent implements OnInit, Af
         if (this.dataService.configuration !== undefined && this.dataService.configuration.emailAttachmentsMaxSize != undefined) {
           maxSizeMBs = this.dataService.configuration.emailAttachmentsMaxSize
         }
-        let maxSize = maxSizeMBs * 1024 * 1024
+        const maxSize = maxSizeMBs * 1024 * 1024
         if (totalSize > maxSize) {
-          this.addAlertError('The total size of attachments cannot exceed '+maxSizeMBs+' MBs.')
-          valid = false
+          return 'The total size of attachments cannot exceed '+maxSizeMBs+' MBs.'
         }
     }
-    return valid
+    return undefined
   }
 
   send() {
     if (!this.sendDisabled()) {
-      this.clearAlerts()
-      const emailValid = this.requireValidEmail(this.contactAddress, 'Please enter a valid email address.')
-      const feedbackSelected = this.requireDefined(this.feedback, 'Please select the feedback type.')
-      const attachmentsValid = this.validateAttachments()
-      if (emailValid && feedbackSelected && attachmentsValid) {
+      this.validation.clearErrors()
+      const emailInvalid = !this.isValidEmail(this.contactAddress)
+      if (emailInvalid) {
+        this.validation.invalid('email', 'Please enter a valid email address.')
+      }
+      const attachmentsError = this.validateAttachments()
+      const attachmentsInvalid = attachmentsError != undefined
+      if (attachmentsInvalid) {
+        this.allAttachmentsInvalid(attachmentsError)
+      }
+      if (!emailInvalid && !attachmentsInvalid) {
         this.sendPending = true
         this.accountService.submitFeedback(this.contactAddress!, this.feedback!.id, this.feedback!.description, this.contentMessage!, this.attachments)
         .subscribe((data) => {
           if (data && data.error_code) {
-            this.addAlertError(data.error_description)
+            if (data.error_hint && data.error_hint.includes("files")) {
+              // Error that relates to all attachments.
+              this.allAttachmentsInvalid(data.error_description)
+            }
+            this.validation.applyError(data)
             this.sendPending = false
           } else {
             this.cancel()                
@@ -113,11 +122,26 @@ export class ContactSupportComponent extends BaseComponent implements OnInit, Af
   }
 
   attachFile(file: FileData) {
+    this.clearAttachmentWarnings()
+    this.validation.set("file"+this.attachments.length)
     this.attachments.push(file)
   }
 
   removeAttachment(index: number) {
+    this.clearAttachmentWarnings()
     this.attachments.splice(index, 1)
+  }
+
+  private allAttachmentsInvalid(feedback?: string) {
+    for (let index = 0; index < this.attachments.length; index++) {
+      this.validation.invalid('file'+index, feedback)
+    }
+  }
+
+  private clearAttachmentWarnings() {
+    for (let index = 0; index < this.attachments.length; index++) {
+      this.validation.clear('file'+index)
+    }
   }
 
   showUpload() {

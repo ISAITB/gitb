@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, EventEmitter, OnInit } from '@angular/core';
+import { Component, EventEmitter, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Constants } from 'src/app/common/constants';
 import { BaseComponent } from 'src/app/pages/base-component.component';
@@ -24,7 +24,7 @@ import { forkJoin } from 'rxjs';
   templateUrl: './test-suite-details.component.html',
   styleUrls: [ './test-suite-details.component.less' ]
 })
-export class TestSuiteDetailsComponent extends BaseComponent implements OnInit, AfterViewInit {
+export class TestSuiteDetailsComponent extends BaseComponent implements OnInit {
 
   testSuite: Partial<TestSuiteWithTestCases> = {}
   domainId!: number
@@ -42,7 +42,8 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit, 
   specificationTableColumns: TableColumnDefinition[] = [
     { field: 'sname', title: 'Specification' },
     { field: 'description', title: 'Description' }
-  ]  
+  ]
+  loaded = false
   savePending = false
   deletePending = false
   downloadPending = false
@@ -64,10 +65,6 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit, 
     private confirmationDialogService: ConfirmationDialogService,
     private modalService: BsModalService
   ) { super() }
-
-  ngAfterViewInit(): void {
-    this.dataService.focus('name')
-  }
 
   ngOnInit(): void {
     this.domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
@@ -91,6 +88,7 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit, 
         }
       }).add(() => {
         this.dataStatus.status = Constants.STATUS.FINISHED
+        this.loaded = true
       })
     }
   }
@@ -100,7 +98,7 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit, 
       this.linkedSpecifications = []
       this.unlinkedSpecifications = []
       const loadLinked = this.testSuiteService.getLinkedSpecifications(this.testSuiteId)
-      const loadUnlinked = this.conformanceService.getSpecifications(this.domainId)
+      const loadUnlinked = this.conformanceService.getDomainSpecifications(this.domainId)
       forkJoin([loadLinked, loadUnlinked]).subscribe((results) => {
         this.linkedSpecifications = results[0]
         const currentIds = this.dataService.asSet(this.linkedSpecifications.map((x) => x.id))

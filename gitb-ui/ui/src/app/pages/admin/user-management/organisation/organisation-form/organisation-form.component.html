@@ -1,70 +1,81 @@
-<ng-container>
-    <div class="row" [ngSwitch]="readonly">
-        <div class="col-10 offset-1" *ngSwitchCase="true">
-            <div class="row mb-3">
+<div class="row">
+    @if (readonly) {
+        <div class="col-10 offset-1">
+            <div class="row">
                 <label class="col-3 col-form-label text-end">Short name:</label>
                 <div class="col-7"><p class="form-control-plaintext">{{organisation.sname}}</p></div>
             </div>
-            <div class="row mb-3">
+            <div class="row mt-3">
                 <label class="col-3 col-form-label text-end">Full name:</label>
                 <div class="col-7"><p class="form-control-plaintext">{{organisation.fname}}</p></div>
             </div>
         </div>
-        <div class="col-10 offset-1" *ngSwitchDefault>
-            <div class="row mb-3">
+    } @else {
+        <div class="col-10 offset-1">
+            <div class="row">
                 <label class="col-3 col-form-label text-end" for="sname">* Short name:</label>
                 <div class="col-7"><input id="sname" name="sname" [(ngModel)]="organisation.sname" class="form-control" type="text"></div>
                 <div app-tooltip class="col-auto" [tbTooltip]="'A short name to refer to the '+dataService.labelOrganisationLower()+' used in selection lists and tabular displays where space is limited.'"></div>
             </div>
-            <div class="row mb-3">
+            <div class="row mt-3">
                 <label class="col-3 col-form-label text-end" for="fname">* Full name:</label>
                 <div class="col-7"><input id="fname" name="fname" [(ngModel)]="organisation.fname" class="form-control" type="text"></div>
                 <div app-tooltip class="col-auto" [tbTooltip]="'The full name of the '+dataService.labelOrganisationLower()+' used in reports and detail screens.'"></div>
             </div>
-            <ng-container *ngIf="showAdminInfo || showLandingPage">
-                <div *ngIf="showAdminInfo || showLandingPage" class="row mb-3">
+            @if (showAdminInfo || showLandingPage) {
+                <div class="row mt-3">
                     <label class="col-3 col-form-label text-end" for="landingPage">Landing page:</label>
                     <div class="col-7">
-                        <select id="landingPage" class="form-control form-select" name="landingPage" [(ngModel)]="organisation.landingPage">
+                        <select id="landingPage" class="form-select" name="landingPage" [(ngModel)]="organisation.landingPage">
                             <option [ngValue]="undefined">--Default Page--</option>
-                            <option *ngFor="let page of landingPages" [ngValue]="page.id">{{page.name}}</option>
+                            @for (page of landingPages; track page.id) {
+                                <option [ngValue]="page.id">{{page.name}}</option>
+                            }
                         </select>
                     </div>
                     <div app-tooltip class="col-auto" [tbTooltip]="'You can provide a specific landing page for the '+dataService.labelOrganisationLower()+' with custom information. If unspecified the community default applies.'"></div>
                 </div>
-                <ng-container *ngIf="showAdminInfo">
-                    <div class="row mb-3">
+                @if (showAdminInfo) {
+                    <div class="row mt-3">
                         <label class="col-3 col-form-label text-end" for="legalNotice">Legal notice:</label>
                         <div class="col-7">
-                            <select id="legalNotice" class="form-control form-select" name="legalNotice" [(ngModel)]="organisation.legalNotice">
+                            <select id="legalNotice" class="form-select" name="legalNotice" [(ngModel)]="organisation.legalNotice">
                                 <option [ngValue]="undefined">--Default Legal Notice--</option>
-                                <option *ngFor="let notice of legalNotices" [ngValue]="notice.id">{{notice.name}}</option>
+                                @for (notice of legalNotices; track notice.id) {
+                                    <option [ngValue]="notice.id">{{notice.name}}</option>
+                                }
                             </select>
                         </div>
                         <div app-tooltip class="col-auto" [tbTooltip]="'You can provide a specific legal notice for the '+dataService.labelOrganisationLower()+' with custom information. If unspecified the community default applies.'"></div>
                     </div>
-                    <div class="row mb-3">
+                    <div class="row mt-3">
                         <label class="col-3 col-form-label text-end" for="template">Error template:</label>
                         <div class="col-7">
-                            <select class="form-control form-select" name="errorTemplate" [(ngModel)]="organisation.errorTemplate">
+                            <select class="form-select" name="errorTemplate" [(ngModel)]="organisation.errorTemplate">
                                 <option [ngValue]="undefined">--Default Error Template--</option>
-                                <option *ngFor="let template of errorTemplates" [ngValue]="template.id">{{template.name}}</option>
+                                @for (template of errorTemplates; track template.id) {
+                                    <option [ngValue]="template.id">{{template.name}}</option>
+                                }
                             </select>
                         </div>
                         <div app-tooltip class="col-auto" [tbTooltip]="'You can provide a specific error template for the '+dataService.labelOrganisationLower()+' with custom information. If unspecified the community default applies.'"></div>
                     </div>
-                    <div class="row mb-3" *ngIf="otherOrganisations.length">
-                        <label class="col-3 col-form-label text-end" for="otherOrganisation">Copy test setup from:</label>
-                        <div class="col-7">
-                            <select id="otherOrganisation" (change)="copyChanged()" class="form-control form-select" name="otherOrganisation" [(ngModel)]="organisation.otherOrganisations">
-                                <option [ngValue]="undefined"></option>
-                                <option *ngFor="let organisation of otherOrganisations" [ngValue]="organisation.id">{{organisation.sname}}</option>
-                            </select>
+                    @if (otherOrganisations.length) {
+                        <div class="row mt-3">
+                            <label class="col-3 col-form-label text-end" for="otherOrganisation">Copy test setup from:</label>
+                            <div class="col-7">
+                                <select id="otherOrganisation" (change)="copyChanged()" class="form-select" name="otherOrganisation" [(ngModel)]="organisation.otherOrganisations">
+                                    <option [ngValue]="undefined"></option>
+                                    @for (organisation of otherOrganisations; track organisation.id) {
+                                        <option [ngValue]="organisation.id">{{organisation.sname}}</option>
+                                    }
+                                </select>
+                            </div>
+                            <div app-tooltip class="col-auto" [tbTooltip]="'Select another '+dataService.labelOrganisationLower()+' to serve as a template for this one. The configuration from the selected '+dataService.labelOrganisationLower()+' will be copied to the current one.'"></div>
                         </div>
-                        <div app-tooltip class="col-auto" [tbTooltip]="'Select another '+dataService.labelOrganisationLower()+' to serve as a template for this one. The configuration from the selected '+dataService.labelOrganisationLower()+' will be copied to the current one.'"></div>
-                    </div>
+                    }
                     <div [collapse]="!organisation.otherOrganisations" [isAnimated]="true">
-                        <div class="row mb-3 pt-1">
+                        <div class="row mt-3 pt-1">
                             <legend class="col-3 col-form-label text-end pt-0">Copy also:</legend>
                             <div class="col-7">
                                 <div class="form-check form-check-inline">
@@ -82,33 +93,38 @@
                             </div>
                         </div>
                     </div>
-                    <div *ngIf="selfRegEnabled">
-                        <div class="row mb-3 pt-1">
-                            <label class="col-3 col-form-label text-end pt-0" for="asTemplate">Publish as template:</label>
-                            <div class="col-7">
-                                <div class="form-check">
-                                    <input class="form-check-input" id="template" id="asTemplate" name="asTemplate" [(ngModel)]="organisation.template" type="checkbox">
-                                    <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [tbTooltip]="'You can define the configuration of this '+dataService.labelOrganisationLower()+' as a template that will be presented to users self-registering for the community (if self-registration is enabled). Do this to offer new users preconfigured '+dataService.labelSystemsLower()+' and conformance statements.'"></div>
-                                </div>                            
+                    @if (selfRegEnabled) {
+                        <div>
+                            <div class="row mt-3 pt-1">
+                                <label class="col-3 col-form-label text-end pt-0" for="asTemplate">Publish as template:</label>
+                                <div class="col-7">
+                                    <div class="form-check">
+                                        <input class="form-check-input" id="template" id="asTemplate" name="asTemplate" [(ngModel)]="organisation.template" type="checkbox">
+                                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [tbTooltip]="'You can define the configuration of this '+dataService.labelOrganisationLower()+' as a template that will be presented to users self-registering for the community (if self-registration is enabled). Do this to offer new users preconfigured '+dataService.labelSystemsLower()+' and conformance statements.'"></div>
+                                    </div>                            
+                                </div>
+                            </div>
+                            <div [collapse]="!organisation.template" [isAnimated]="true" (expanded)="templateChoiceChanged()">
+                                <div class="row mt-3">
+                                    <label class="col-3 col-form-label text-end" for="templateName">* Template name:</label>
+                                    <div class="col-7"><input id="templateName" name="templateName" [(ngModel)]="organisation.templateName" class="form-control" type="text" [invalid]="validation.get('template')"></div>
+                                    <div app-tooltip class="col-auto" tbTooltip="The name to display in the self-registration screen for this template configuration."></div>
+                                </div>
                             </div>
                         </div>
-                        <div [collapse]="!organisation.template" [isAnimated]="true" (expanded)="templateChoiceChanged()">
-                            <div class="row mb-3">
-                                <label class="col-3 col-form-label text-end" for="templateName">* Template name:</label>
-                                <div class="col-7"><input id="templateName" name="templateName" [(ngModel)]="organisation.templateName" class="form-control" type="text"></div>
-                                <div app-tooltip class="col-auto" tbTooltip="The name to display in the self-registration screen for this template configuration."></div>
-                            </div>
-                        </div>
-                    </div>
-                </ng-container>
-            </ng-container>
+                    }
+                }
+            }
         </div>
-    </div>
-    <app-optional-custom-property-form *ngIf="!organisation.copyOrganisationParameters"
+    }
+</div>
+@if (!organisation.copyOrganisationParameters) {
+    <app-optional-custom-property-form
         [tbPropertyData]="propertyData"
         [tbPropertyType]="'organisation'"
         [tbOwner]="organisation.id"
         [tbSetDefaults]="organisation.id == undefined"
         [tbReadonly]="readonly"
-        [tbColInputLess]="1"></app-optional-custom-property-form>
-</ng-container>
+        [tbColInputLess]="1"
+        [tbTopMargin]="true"></app-optional-custom-property-form>
+}

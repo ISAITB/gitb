@@ -27,65 +27,22 @@ export abstract class BaseComponent {
         return valid
     }
 
-    requireText(value: string|undefined, message?: string): boolean {
-        let valid = true
-        if (!this.textProvided(value)) {
-            valid = false
-            if (message !== undefined) {
-              this.addAlertError(message)
-            }
-        }
-        return valid
-    }
-
-    requireDefined(input: any, message?: string): boolean {
-      let valid = true
-      if (input === undefined || input === null) {
-          valid = false
-          if (message !== undefined) {
-            this.addAlertError(message)
-          }
-      }
-      return valid
-    }
-
-    requireSame(value1: any, value2: any, message?: string): boolean {
-        let valid = true
-        if (value1 !== value2) {
-            valid = false
-            if (message !== undefined) {
-                this.addAlertError(message)
-             }
-         }
-        return valid
-    }
-
-    requireDifferent(value1: any, value2: any, message?: string): boolean {
+    isDifferent(value1: any, value2: any): boolean {
         let valid = true
         if (value1 === value2) {
             valid = false
-            if (message !== undefined) {
-                this.addAlertError(message)
-             }
          }
         return valid
     }
 
-    requireValidEmail(email: string|undefined, message?: string): boolean {
-        let valid = this.isValidEmail(email)
-        if (!valid && message !== undefined) {
-            this.addAlertError(message)
-        }
-        return valid
+    isValidUsername(username: string|undefined): boolean {
+        return this.textProvided(username) && !/\s/g.test(username!.trim())
     }
 
-    requireComplexPassword(password: string|undefined, message?: string): boolean {
+    isComplexPassword(password: string|undefined): boolean {
         let valid = true
         if (password != undefined) {
-            valid = Constants.PASSWORD_REGEX.test(password)
-            if (!valid && message != undefined) {
-                this.addAlertError(message)
-            }
+            return Constants.PASSWORD_REGEX.test(password)
         }
         return valid
     }
@@ -102,7 +59,7 @@ export abstract class BaseComponent {
         this.addAlert({type:'success', msg: message})
     }
 
-    addAlert(alert: Alert):void {
+    private addAlert(alert: Alert):void {
         this.alerts.push(alert)
     }
 

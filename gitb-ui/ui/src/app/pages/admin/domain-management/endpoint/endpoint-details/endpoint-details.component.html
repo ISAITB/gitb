@@ -4,7 +4,7 @@
 			<div class="card-title">{{dataService.labelEndpoint()}} details</div>
 		</div>
 		<form>
-			<div class="card-body">
+			<div class="card-body" [pending]="!loaded" focus="name">
 				<div class="row">
 					<div class="col-10 offset-1">
                         <app-endpoint-form [endpoint]="endpoint"></app-endpoint-form>
@@ -13,11 +13,11 @@
 			</div>
 			<div class="card-footer button-container">
 				<div class="btn-toolbar">
-					<button (click)="saveChanges()" type="submit" class="btn btn-secondary" [disable]="deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
+					<button (click)="saveChanges()" type="submit" class="btn btn-secondary" [disable]="!loaded || deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
 					<button (click)="back()" type="button" class="btn btn-secondary">Back</button>
 				</div>
 				<div class="btn-toolbar btn-toolbar-delete">
-					<button (click)="delete()" type="button" class="btn btn-outline-danger" [pending]="deletePending" [disable]="savePending">Delete</button>
+					<button (click)="delete()" type="button" class="btn btn-outline-danger" [pending]="deletePending" [disable]="!loaded || savePending">Delete</button>
 				</div>
 			</div>
 		</form>
@@ -27,57 +27,10 @@
 			<tab customClass="tabClass">
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-sliders" text="Parameters"></app-tab-title></ng-template>
 				<div class="tabPanel">
-					<div class="tabControls">
-						<div class="btn-toolbar">
-							<button type="button" class="btn btn-secondary" [disable]="orderParametersDisabled" [pending]="orderPending" (click)="orderParameters()">Save parameter order</button>
-							<button type="button" class="btn btn-secondary" (click)="addParameter()">Create parameter</button>
-						</div>
-					</div>
-					<div class="card table-container rounded">
-						<table class="table table-directive thick">
-							<thead>
-								<tr>
-									<th>Label</th>
-									<th>Key</th>
-									<th>Type</th>
-									<th class="min-width">Required</th>
-									<th class="min-width">Editable</th>
-									<th class="min-width">In&nbsp;tests</th>
-									<th class="min-width">Hidden</th>
-									<th class="min-width"></th>
-								</tr>
-							</thead>
-							<tbody class="parametersTable" cdkDropList cdkDropListLockAxis="y" (cdkDropListDropped)="dropParameter($event)">
-								<tr *ngIf="dataStatus.status != Constants.STATUS.FINISHED">
-									<td colspan="8" class="td-data-loading"><span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></td>
-								</tr>
-								<tr *ngIf="dataStatus.status == Constants.STATUS.FINISHED && parameters.length == 0">
-									<td colspan="8" class="td-no-data"><span>No parameters found</span></td>
-								</tr>
-								<tr class="table-row-directive selectable drag-table-row" 
-									*ngFor="let parameter of parameters"
-									cdkDrag
-									(cdkDragStarted)="draggingParameter = true"
-									(cdkDragEnded)="draggingParameter = false"
-									cdkDragPreviewContainer="parent"
-									[cdkDragDisabled]="parameters.length == 1"
-									(click)="onParameterSelect(parameter)"
-									[class.selectable]="!draggingParameter"
-								>
-									<td class="drag-preview"><div><span>{{parameter.name}}</span></div></td>
-									<td><div><span>{{parameter.testKey}}</span></div></td>
-									<td><div><span>{{parameter.kindLabel}}</span></div></td>
-									<td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.useLabel, 'fa-times': !parameter.useLabel}"></i></span></div></td>
-									<td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.adminOnlyLabel, 'fa-times': !parameter.adminOnlyLabel}"></i></span></div></td>
-									<td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.notForTestsLabel, 'fa-times': !parameter.notForTestsLabel}"></i></span></div></td>
-									<td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.hidden, 'fa-times': !parameter.hidden}"></i></span></div></td>
-									<td class="drag-handle" (click)="$event.stopPropagation();">
-										<button cdkDragHandle *ngIf="parameters.length > 1" #pop="bs-tooltip" (mousedown)="pop.hide()" class="btn btn-secondary" type="button" containerClass="shortTooltip" container="body" tooltip="Reorder" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrows-up-down"></i></span></button>
-									</td>
-								</tr>
-							</tbody>
-						</table>
-					</div>
+					<app-endpoint-parameter-tab-content 
+						[actorId]="actorId"
+						[endpointId]="endpointId" 
+						[parametersLoaded]="parametersLoaded"></app-endpoint-parameter-tab-content>
 				</div>
 			</tab>
 		</tabset>

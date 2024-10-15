@@ -82,8 +82,8 @@ public class CheckTestCaseStructures extends AbstractCheck {
                 sectionChanged(TestCaseSection.SCRIPTLET_PARAMETERS);
                 var scriptlet = ((ScriptletAsTestCase) testCase).getWrappedScriptlet();
                 if (scriptlet.getParams() != null && scriptlet.getParams().getVar() != null) {
-                    for (Variable var: scriptlet.getParams().getVar()) {
-                        handleVariable(var);
+                    for (InputParameter param: scriptlet.getParams().getVar()) {
+                        handleInputParameter(param);
                     }
                 }
             }
@@ -234,6 +234,12 @@ public class CheckTestCaseStructures extends AbstractCheck {
         private void handleDocumentation(Documentation documentation) {
             for (TestCaseObserver observer: observers) {
                 observer.handleDocumentation(documentation);
+            }
+        }
+
+        private void handleInputParameter(InputParameter param) {
+            for (TestCaseObserver observer: observers) {
+                observer.handleInputParameter(param);
             }
         }
 

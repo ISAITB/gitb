@@ -1,56 +1,90 @@
-<form>
-    <div class="row">
-        <legend class="col-3 col-form-label text-end pt-0">Use custom format for XML reports:</legend>
-        <div class="col-7">
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" [attr.id]="idValue" [name]="idValue" [(ngModel)]="useStylesheet">
-                <label class="form-check-label" [attr.for]="idValue">Apply stylesheet to XML reports
-                    <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Enable a custom XML report format by applying an XSLT stylesheet to the default report."></div>
-                </label>
-            </div>
-        </div>
-    </div>
-    <div [collapse]="!useStylesheet" [isAnimated]="animated">
-        <div class="row mt-3">
-            <legend class="col-3 col-form-label text-end">* Stylesheet:</legend>
+@if (reportSettings) {
+    <form>
+        <div class="row">
+            <legend class="col-3 col-form-label text-end pt-0">Custom XML reports:</legend>
             <div class="col-7">
-                <app-file-select [fileName]="fileNameToShow" (onUpload)="selectFile($event)" placeholder="Drop or browse for stylesheet file ..." [accepts]="acceptedFileTypes" [extraActions]="stylesheetExists">
-                    @if (stylesheetExists) {
-                        <button type="button" class="btn btn-secondary" (click)="viewStylesheet()" containerClass="shortTooltip" tooltip="View" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" container="body"><i class="fa-solid fa-magnifying-glass"></i></button>
-                    }
-                </app-file-select>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" [attr.id]="idValueStylesheet" [name]="idValueStylesheet" [(ngModel)]="useStylesheet">
+                    <label class="form-check-label" [attr.for]="idValueStylesheet">Apply stylesheet to XML reports
+                        <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Enable a custom XML report format by applying an XSLT stylesheet to the default report."></div>
+                    </label>
+                </div>
             </div>
-            <div app-tooltip class="col-auto" tbTooltip="The XSLT stylesheet to apply to the default report."></div>
         </div>
-    </div>
-    <div class="btn-toolbar mt-3">
-        <button class="btn btn-secondary" type="submit" (click)="update()" [disable]="previewPending || !updateEnabled()" [pending]="updatePending">Update</button>
-        @if (previewOptions.length == 0) {
-            <button type="button" [disable]="updatePending || !updateEnabled()" [pending]="previewPending" class="btn btn-secondary" (click)="preview()">Generate preview</button>
-        } @else {
-            @if (previewDefaultOption) {
-                <div class="btn-group" dropdown [isDisabled]="updatePending || !updateEnabled()">
-                    <button type="button" [disable]="updatePending || !updateEnabled()" [pending]="previewPending" class="btn btn-secondary" (click)="preview()">Generate preview</button>
-                    <button id="button-export" [disabled]="updatePending || !updateEnabled() || previewPending" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
-                        <span class="caret"></span>
-                        <span class="sr-only visually-hidden">Generate preview</span>
-                    </button>
-                    <ul id="dropdown-export" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-export">
-                        @for (option of previewOptions; track $index) {
-                            <li role="menuitem"><a class="dropdown-item" href (click)="preview($index);$event.preventDefault();">{{option.label}}</a></li>
+        <div [collapse]="!useStylesheet" [isAnimated]="animated">
+            <div class="row mt-3">
+                <legend class="col-3 col-form-label text-end">* Stylesheet:</legend>
+                <div class="col-7">
+                    <app-file-select [fileName]="stylesheetNameToShow" [reset]="resetStylesheet" (onUpload)="selectStylesheet($event)" placeholder="Drop or browse for stylesheet file ..." [accepts]="acceptedStylesheetTypes" [extraActions]="reportSettings!.stylesheetExists">
+                        @if (reportSettings!.stylesheetExists) {
+                            <button type="button" class="btn btn-secondary" (click)="viewStylesheet(config.reportType)" containerClass="shortTooltip" tooltip="View" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" container="body"><i class="fa-solid fa-magnifying-glass"></i></button>
                         }
-                    </ul>
-                </div>                                                                                
-            } @else {
+                    </app-file-select>
+                </div>
+                <div app-tooltip class="col-auto" tbTooltip="The XSLT stylesheet to apply to the default XML report."></div>
+            </div>
+        </div>
+        <div class="row mt-3 pt-1">
+            <legend class="col-3 col-form-label text-end pt-0">Custom PDF reports:</legend>
+            <div class="col-7">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" [attr.id]="idValueCustomPdf" [name]="idValueCustomPdf" [(ngModel)]="reportSettings!.customPdfs">
+                    <label class="form-check-label" [attr.for]="idValueCustomPdf">Delegate PDF generation to external service
+                        <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Configure a service to handle PDF report generation. When generating a report, this service will receive a POST call with the XML report as its payload, and is expected to respond with the produced PDF report."></div>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div [collapse]="!reportSettings!.customPdfs" [isAnimated]="animated" (expanded)="serviceBlockExpanded()">
+            <div class="row mt-3">
+                <label class="col-3 col-form-label text-end" for="customPdfService">* Service address:</label>
+                <div class="col-7">
+                    <input #serviceField type="text" id="customPdfService" name="customPdfService" [(ngModel)]="reportSettings!.customPdfService" class="form-control"/>
+                </div>
+                <div app-tooltip class="col-auto" tbTooltip="The full address of the service that will be called to generate PDF reports."></div>
+            </div>
+            <div [collapse]="!useStylesheet" [isAnimated]="true">
+                <div class="row mt-3 pt-0">
+                    <div class="col-7 offset-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" [attr.id]="idValueCustomPdfWithCustomXml" [name]="idValueCustomPdfWithCustomXml" [(ngModel)]="reportSettings!.customPdfsWithCustomXml">
+                            <label class="form-check-label" [attr.for]="idValueCustomPdfWithCustomXml">Apply stylesheet before calling service
+                                <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Use the configured XSLT stylesheet to produce the XML report, before this is sent to the PDF report generation service."></div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3 pt-1">
+            <legend class="col-3 col-form-label text-end pt-0">PDF signatures:</legend>
+            <div class="col-7">
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" [attr.id]="idValueSign" [name]="idValueSign" [(ngModel)]="reportSettings!.signPdfs">
+                    <label class="form-check-label" [attr.for]="idValueSign">Add signature to PDF reports
+                        <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Add a digital signature and timestamp to PDF reports as proof of authenticity."></div>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="btn-toolbar mt-3">
+            <button class="btn btn-secondary" type="submit" (click)="update()" [disable]="previewPending || !updateEnabled()" [pending]="updatePending">Update</button>
+            @if (config.previewOptions.length > 0) {
                 <div class="btn-group" dropdown [isDisabled]="updatePending || !updateEnabled()">
                     <button id="button-preview" dropdownToggle type="button" [disable]="updatePending || !updateEnabled()" [pending]="previewPending" aria-controls="dropdown-preview" class="btn btn-secondary dropdown-toggle">Generate preview<span class="caret withMargin"></span></button>
                     <ul id="dropdown-preview" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-preview">
-                        @for (option of previewOptions; track $index) {
-                            <li role="menuitem"><a class="dropdown-item" href (click)="preview($index);$event.preventDefault();">{{option.label}}</a></li>
+                        @for (optionGroup of config.previewOptions; track $index) {
+                            @for (option of optionGroup; track $index) {
+                                <li role="menuitem"><a class="dropdown-item" href (click)="preview(option);$event.preventDefault();">{{option.label}}</a></li>
+                            }
+                            @if (!$last) {
+                                <li class="divider dropdown-divider"></li>
+                            }
                         }
                     </ul>
                 </div>
             }
-        }
-    </div>
-</form>
+            <button class="btn btn-secondary" (click)="manageKeystore()" [pending]="manageKeystorePending">Manage signature settings</button>
+        </div>
+    </form>
+}

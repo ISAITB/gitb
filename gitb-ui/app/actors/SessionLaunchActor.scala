@@ -1,7 +1,7 @@
 package actors
 
 import actors.events.TestSessionStartedEvent
-import actors.events.sessions.{PrepareTestSessionsEvent, SessionLaunchState, StartNextTestSessionEvent, TerminateAllSessionsEvent, TestSessionCompletedEvent, TestSessionConfiguredEvent}
+import actors.events.sessions.{PrepareTestSessionsEvent, SessionLaunchState, StartNextTestSessionEvent, TerminateAllSessionsEvent, TerminateSessionsEvent, TestSessionCompletedEvent, TestSessionConfiguredEvent}
 import org.apache.pekko.actor.{Actor, PoisonPill}
 import com.gitb.core.AnyContent
 import com.gitb.tpl.TestCase
@@ -25,13 +25,13 @@ class SessionLaunchActor @Inject() (reportManager: ReportManager, testbedBackend
     context.system.eventStream.subscribe(context.self, classOf[TestSessionConfiguredEvent])
     context.system.eventStream.subscribe(context.self, classOf[TestSessionCompletedEvent])
     context.system.eventStream.subscribe(context.self, classOf[TerminateAllSessionsEvent])
-    LOGGER.debug("Session launch actor started ["+self.path+"]")
+    LOGGER.debug("Session launch actor started [{}]", self.path)
   }
 
   override def postStop(): Unit = {
     super.postStop()
     context.system.eventStream.unsubscribe(context.self)
-    LOGGER.debug("Session launch actor stopped ["+self.path+"]")
+    LOGGER.debug("Session launch actor stopped [{}]", self.path)
   }
 
   override def receive: Receive = active(SessionLaunchState(None, Map.empty, Set.empty, Map.empty))
@@ -44,23 +44,34 @@ class SessionLaunchActor @Inject() (reportManager: ReportManager, testbedBackend
       if (state.startedTestSessions.contains(msg.event.getTcInstanceId)) {
         sessionConfigured(msg, state)
       } else {
-        LOGGER.warn("Session launch actor ["+self.path+"] received a configuration complete notification for an unknown test session ["+msg.event.getTcInstanceId+"]")
+        LOGGER.warn("Session launch actor [{}] received a configuration complete notification for an unknown test session [{}]", self.path, msg.event.getTcInstanceId)
       }
     case msg: TestSessionCompletedEvent =>
       if (state.startedTestSessions.contains(msg.testSession)) {
         context.become(active(state.newWithCompletedTestSession(msg.testSession)), discardOld = true)
-        LOGGER.debug("Session launch actor ["+self.path+"] recorded completion of test session ["+msg.testSession+"]")
+        LOGGER.debug("Session launch actor [{}] recorded completion of test session [{}]", self.path, msg.testSession)
         self ! StartNextTestSessionEvent()
+      }
+    case msg: TerminateSessionsEvent =>
+      if (state.data.exists(_.organisationId == msg.organisationId)) {
+        val testCasesCountBefore = state.testSessionCount()
+        val newState = state.newWithoutTestSessions(msg.testSessions)
+        val diff = testCasesCountBefore - newState.testSessionCount()
+        if (diff > 0) {
+          LOGGER.debug("Session launch actor [{}] cancelled {} test sessions that were pending execution", self.path, diff)
+          LOGGER.info("Cancelled {} test session(s) that were pending execution", diff)
+        }
+        context.become(active(newState))
       }
     case _: StartNextTestSessionEvent =>
       startNextTestSession(state)
     case msg: TerminateAllSessionsEvent =>
       if (terminationApplies(msg, state)) {
-        LOGGER.debug("Session launch actor ["+self.path+"] skipping remaining test sessions")
+        LOGGER.debug("Session launch actor [{}] skipping remaining test sessions", self.path)
         self ! PoisonPill.getInstance
       }
     case msg: Object =>
-      LOGGER.warn(s"Session launch actor received unexpected message [${msg.getClass.getName}]")
+      LOGGER.warn("Session launch actor received unexpected message [{}]", msg.getClass.getName)
   }
 
   private def terminationApplies(event: TerminateAllSessionsEvent, state: SessionLaunchState): Boolean = {
@@ -100,14 +111,14 @@ class SessionLaunchActor @Inject() (reportManager: ReportManager, testbedBackend
         // Other sessions are ongoing
         if (state.data.get.forceSequentialExecution) {
           // We want to execute sequentially so we won't launch the next test session (we'll re-check when the next session ends).
-          LOGGER.debug("Session launch actor ["+self.path+"] waiting for other sessions to complete before configuring test case ["+testCaseId+"] because launch is forced sequential")
+          LOGGER.debug("Session launch actor [{}] waiting for other sessions to complete before configuring test case [{}] because launch is forced sequential", self.path, testCaseId)
           scheduleNextSessionLaunch = false
         } else {
           if (testCaseDefinition.isSupportsParallelExecution) {
             proceedToLaunch = true
           } else {
             // Test case is sequential so we won't launch it (we'll re-check when the next session ends).
-            LOGGER.debug("Session launch actor ["+self.path+"] waiting for other sessions to complete before configuring test case ["+testCaseId+"] because the test case is sequential")
+            LOGGER.debug("Session launch actor [{}] waiting for other sessions to complete before configuring test case [{}] because the test case is sequential", self.path, testCaseId)
             scheduleNextSessionLaunch = false
           }
         }
@@ -155,10 +166,10 @@ class SessionLaunchActor @Inject() (reportManager: ReportManager, testbedBackend
         reportManager.createTestReport(testSessionId, state.data.get.systemId, testCaseId.toString, state.data.get.actorId, testCaseDefinition)
         triggerHelper.publishTriggerEvent(new TestSessionStartedEvent(state.data.get.communityId, testSessionId))
         testbedBackendClient.start(testSessionId)
-        LOGGER.debug("Session launch actor ["+self.path+"] started test session ["+testSessionId+"] for test case ["+testCaseId+"]")
+        LOGGER.debug("Session launch actor [{}] started test session [{}] for test case [{}]", self.path, testSessionId, testCaseId)
       } else {
         context.become(active(initialState.newWithCompletedTestSession(testSessionId)), discardOld = true)
-        LOGGER.info("Session launch actor ["+self.path+"] notified for configuration failure of test session ["+testSessionId+"]")
+        LOGGER.info("Session launch actor [{}] notified for configuration failure of test session [{}]", self.path, testSessionId)
       }
     } catch {
       case e: Exception =>

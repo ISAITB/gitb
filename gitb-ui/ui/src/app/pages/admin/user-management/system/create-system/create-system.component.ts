@@ -9,6 +9,8 @@ import { SystemService } from 'src/app/services/system.service';
 import { System } from 'src/app/types/system';
 import { OrganisationTab } from '../../organisation/organisation-details/OrganisationTab';
 import { Constants } from 'src/app/common/constants';
+import { CommunityService } from 'src/app/services/community.service';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-create-system',
@@ -27,14 +29,17 @@ export class CreateSystemComponent extends BaseComponent implements OnInit {
     edit: false,
     propertyType: 'system'
   }
+  otherSystems: System[] = []
   savePending = false
+  loaded = false
 
   constructor(
     public dataService: DataService,
     private systemService: SystemService,
     private route: ActivatedRoute,
     private popupService: PopupService,
-    private routingService: RoutingService
+    private routingService: RoutingService,
+    private communityService: CommunityService
   ) { super() }
 
   ngOnInit(): void {
@@ -46,6 +51,14 @@ export class CreateSystemComponent extends BaseComponent implements OnInit {
       this.organisationId = this.dataService.vendor!.id
       this.communityId = this.dataService.community!.id
     }
+    const loadProperties$ = this.communityService.getSystemParameters(this.communityId)
+    const otherSystems$ = this.systemService.getSystemsByOrganisation(this.organisationId)
+    forkJoin([loadProperties$, otherSystems$]).subscribe((data) => {
+      this.propertyData.properties = data[0]
+      this.otherSystems = data[1]
+    }).add(() => {
+      this.loaded = true
+    })
   }
 
   saveEnabled() {

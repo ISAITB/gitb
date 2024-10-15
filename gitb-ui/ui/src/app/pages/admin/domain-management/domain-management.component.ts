@@ -44,10 +44,10 @@ export class DomainManagementComponent implements OnInit {
 				this.dataStatus.status = Constants.STATUS.FINISHED
       })
     } else if (this.dataService.isCommunityAdmin) {
-			this.conformanceService.getCommunityDomain(this.dataService.community!.id)
+			this.conformanceService.getCommunityDomains(this.dataService.community!.id)
 			.subscribe((data) => {
         if (data) {
-          this.domains.push(data)
+          this.domains = data.domains
         }
       }).add(() => {
         this.dataStatus.status = Constants.STATUS.FINISHED

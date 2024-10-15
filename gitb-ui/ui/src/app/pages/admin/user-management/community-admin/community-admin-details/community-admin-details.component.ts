@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { BaseComponent } from 'src/app/pages/base-component.component';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
@@ -17,7 +17,7 @@ import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
   styles: [
   ]
 })
-export class CommunityAdminDetailsComponent extends BaseComponent implements OnInit, AfterViewInit {
+export class CommunityAdminDetailsComponent extends BaseComponent implements OnInit {
 
   communityId!: number
   userId!: number
@@ -25,7 +25,9 @@ export class CommunityAdminDetailsComponent extends BaseComponent implements OnI
   disableDeleteButton = false
   changePassword = false
   savePending = false
-  deletePending = false  
+  deletePending = false
+  loaded = false
+  focusField?: string
 
   constructor(
     private routingService: RoutingService,
@@ -35,23 +37,22 @@ export class CommunityAdminDetailsComponent extends BaseComponent implements OnI
     private confirmationDialogService: ConfirmationDialogService,
     private popupService: PopupService
   ) { super() }
-  
-  ngAfterViewInit(): void {
-    if (!this.dataService.configuration.ssoEnabled) {
-      this.dataService.focus('name')
-    }
-  }
 
   ngOnInit(): void {
     this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
     this.userId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.USER_ID))
     this.disableDeleteButton = Number(this.dataService.user!.id) == Number(this.userId)
+    if (!this.dataService.configuration.ssoEnabled) {
+      this.focusField = 'name'
+    }
     this.userService.getUserById(this.userId)
     .subscribe((data) => {
       this.user = data!
       this.user.ssoStatusText = this.dataService.userStatus(this.user.ssoStatus)
       this.user.roleText = this.Constants.USER_ROLE_LABEL[this.user.role!]
       this.routingService.communityAdminBreadcrumbs(this.communityId, this.userId, this.dataService.userDisplayName(this.user))
+    }).add(() => {
+      this.loaded = true
     })
   }
 
@@ -60,7 +61,6 @@ export class CommunityAdminDetailsComponent extends BaseComponent implements OnI
   }
 
   updateAdmin() {
-    this.clearAlerts()
     let newPassword: string|undefined
     if (this.changePassword) {
       newPassword = this.user.password
@@ -79,11 +79,16 @@ export class CommunityAdminDetailsComponent extends BaseComponent implements OnI
   deleteAdmin() {
     this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this administrator?", "Delete", "Cancel")
     .subscribe(() => {
+      this.clearAlerts()
       this.deletePending = true
       this.userService.deleteAdmin(this.userId)
-      .subscribe(() => {
-        this.cancelDetailAdmin()
-        this.popupService.success('Administrator deleted.')
+      .subscribe((result) => {
+        if (this.isErrorDescription(result)) {
+          this.addAlertError(result.error_description)
+        } else {
+          this.cancelDetailAdmin()
+          this.popupService.success('Administrator deleted.')
+        }
       }).add(() => {
         this.deletePending = false
       })

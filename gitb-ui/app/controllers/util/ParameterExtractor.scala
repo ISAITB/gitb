@@ -5,7 +5,7 @@ import exceptions.{ErrorCodes, InvalidRequestException}
 import models.Enums._
 import controllers.util.Parameters
 import models.theme.{Theme, ThemeFiles}
-import models.{Actor, Badges, Communities, CommunityResources, Constants, Domain, Endpoints, ErrorTemplates, FileInfo, LandingPages, LegalNotices, NamedFile, OrganisationParameterValues, Organizations, SpecificationGroups, Specifications, SystemParameterValues, Systems, Trigger, TriggerData, Triggers, Users}
+import models.{Actor, Badges, Communities, CommunityReportSettings, CommunityResources, Configs, Constants, Domain, Endpoints, ErrorTemplates, FileInfo, LandingPages, LegalNotices, NamedFile, OrganisationParameterValues, Organizations, SpecificationGroups, Specifications, SystemParameterValues, Systems, Trigger, TriggerData, Triggers, Users}
 import org.apache.commons.lang3.StringUtils
 import org.mindrot.jbcrypt.BCrypt
 import play.api.mvc._
@@ -97,6 +97,34 @@ object ParameterExtractor {
       values = Some(JsonUtil.parseJsSystemParameterValues(valuesJson))
     }
     values
+  }
+
+  def extractStatementParameterValues(paramMap:Option[Map[String, Seq[String]]], parameterName: String, optional: Boolean, systemId: Long): Option[List[Configs]] = {
+    var values: Option[List[Configs]] = None
+    if (optional) {
+      val valuesJson = optionalBodyParameter(paramMap, parameterName)
+      if (valuesJson.isDefined) {
+        values = Some(JsonUtil.parseJsConfigs(valuesJson.get, systemId))
+      }
+    } else {
+      val valuesJson = requiredBodyParameter(paramMap, parameterName)
+      values = Some(JsonUtil.parseJsConfigs(valuesJson, systemId))
+    }
+    values
+  }
+
+  def virusPresentInNamedFiles(values: Iterable[NamedFile]): Option[NamedFile] = {
+    if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
+      val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
+      values.foreach { value =>
+        // Check for virus. Do this regardless of the type of parameter as this can be changed later on.
+        val scanResult = virusScanner.scan(value.file)
+        if (!ClamAVClient.isCleanReply(scanResult)) {
+          return Some(value)
+        }
+      }
+    }
+    None // No virus
   }
 
   def virusPresentInFiles(values: Iterable[File]): Boolean = {
@@ -292,6 +320,15 @@ object ParameterExtractor {
     selfRegType == SelfRegistrationType.NotSupported.id.toShort || selfRegType == SelfRegistrationType.PublicListing.id.toShort || selfRegType == SelfRegistrationType.PublicListingWithToken.id.toShort || selfRegType == SelfRegistrationType.Token.id.toShort
   }
 
+  def extractCommunityReportSettings(paramMap:  Option[Map[String, Seq[String]]], communityId: Long): CommunityReportSettings = {
+    val reportType = ReportType.apply(ParameterExtractor.requiredBodyParameter(paramMap, Parameters.TYPE).toShort)
+    val signPdfReports = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SIGN_PDF_REPORTS).toBoolean
+    val useCustomPdfReports = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.USE_CUSTOM_PDF_REPORTS).toBoolean
+    val useCustomPdfReportsWithCustomXml = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.USE_CUSTOM_PDFS_WITH_CUSTOM_XML).toBoolean
+    val customPdfService = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.CUSTOM_PDF_SERVICE)
+    CommunityReportSettings(reportType.id.toShort, signPdfReports, useCustomPdfReports, useCustomPdfReportsWithCustomXml, customPdfService.filter(StringUtils.isNotBlank), communityId)
+  }
+
   def extractCommunityInfo(request:Request[AnyContent]):Communities = {
     val sname = requiredBodyParameter(request, Parameters.COMMUNITY_SNAME)
     val fname = requiredBodyParameter(request, Parameters.COMMUNITY_FNAME)
@@ -432,30 +469,33 @@ object ParameterExtractor {
   }
 
 	def extractDomain(request:Request[AnyContent]):Domain = {
-		val sname:String = ParameterExtractor.requiredBodyParameter(request, Parameters.SHORT_NAME)
-		val fname:String = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL_NAME)
-		val descr:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
-		Domain(0L, sname, fname, descr, CryptoUtil.generateApiKey())
+		val sname = ParameterExtractor.requiredBodyParameter(request, Parameters.SHORT_NAME)
+		val fname = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL_NAME)
+		val descr = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
+    val reportMetadata = ParameterExtractor.optionalBodyParameter(request, Parameters.METADATA)
+		Domain(0L, sname, fname, descr, reportMetadata, CryptoUtil.generateApiKey())
 	}
 
 	def extractSpecification(paramMap:Option[Map[String, Seq[String]]]): Specifications = {
-		val sname:String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SHORT_NAME)
-		val fname:String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.FULL_NAME)
-		val descr:Option[String] = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.DESC)
+		val sname = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SHORT_NAME)
+		val fname = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.FULL_NAME)
+		val descr = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.DESC)
+    val reportMetadata = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.METADATA)
     val hidden = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.HIDDEN).toBoolean
 		val domain = ParameterExtractor.optionalLongBodyParameter(paramMap, Parameters.DOMAIN_ID)
     val group = ParameterExtractor.optionalLongBodyParameter(paramMap, Parameters.GROUP_ID)
 
-    Specifications(0L, sname, fname, descr, hidden, CryptoUtil.generateApiKey(), domain.getOrElse(0L), 0, group)
+    Specifications(0L, sname, fname, descr, reportMetadata, hidden, CryptoUtil.generateApiKey(), domain.getOrElse(0L), 0, group)
 	}
 
   def extractSpecificationGroup(request: Request[AnyContent]): SpecificationGroups = {
-    val sname: String = ParameterExtractor.requiredBodyParameter(request, Parameters.SHORT_NAME)
-    val fname: String = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL_NAME)
-    val descr: Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
+    val sname = ParameterExtractor.requiredBodyParameter(request, Parameters.SHORT_NAME)
+    val fname = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL_NAME)
+    val descr = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
+    val reportMetadata = ParameterExtractor.optionalBodyParameter(request, Parameters.METADATA)
     val domain = ParameterExtractor.requiredBodyParameter(request, Parameters.DOMAIN_ID).toLong
 
-    SpecificationGroups(0L, sname, fname, descr, 0, domain)
+    SpecificationGroups(0L, sname, fname, descr, reportMetadata, 0, CryptoUtil.generateApiKey(), domain)
   }
 
   def extractActor(paramMap:Option[Map[String, Seq[String]]]):Actor = {
@@ -466,6 +506,7 @@ object ParameterExtractor {
 		val actorId:String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.ACTOR_ID)
 		val name:String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.NAME)
 		val description:Option[String] = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.DESCRIPTION)
+    val reportMetadata:Option[String] = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.METADATA)
     var default:Option[Boolean] = None
     val defaultStr = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.ACTOR_DEFAULT)
     if (defaultStr.isDefined) {
@@ -479,7 +520,7 @@ object ParameterExtractor {
     if (displayOrderStr.isDefined) {
       displayOrder = Some(displayOrderStr.get.toShort)
     }
-    new Actor(id, actorId, name, description, default, hidden, displayOrder, None, None, None, None)
+    new Actor(id, actorId, name, description, reportMetadata, default, hidden, displayOrder, None, None, None, None)
 	}
 
   def extractEndpoint(request:Request[AnyContent]):Endpoints = {
@@ -503,7 +544,7 @@ object ParameterExtractor {
     val desc:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
     val use:String = ParameterExtractor.requiredBodyParameter(request, Parameters.USE)
     val kind:String = ParameterExtractor.requiredBodyParameter(request, Parameters.KIND)
-    val endpointId:Long = ParameterExtractor.requiredBodyParameter(request, Parameters.ENDPOINT_ID).toLong
+    val endpointId:Long = ParameterExtractor.optionalBodyParameter(request, Parameters.ENDPOINT_ID).map(_.toLong).getOrElse(0L)
     val adminOnly = ParameterExtractor.requiredBodyParameter(request, Parameters.ADMIN_ONLY).toBoolean
     val notForTests = ParameterExtractor.requiredBodyParameter(request, Parameters.NOT_FOR_TESTS).toBoolean
     var hidden = ParameterExtractor.requiredBodyParameter(request, Parameters.HIDDEN).toBoolean
@@ -767,23 +808,26 @@ object ParameterExtractor {
     var faviconFile: Option[NamedFile] = None
     val filesToScan = new ListBuffer[NamedFile]
     if (files.contains(Parameters.HEADER_LOGO_FILE)) {
-      headerLogoFile = Some(NamedFile(files(Parameters.HEADER_LOGO_FILE).file, files(Parameters.HEADER_LOGO_FILE).name))
+      headerLogoFile = Some(NamedFile(files(Parameters.HEADER_LOGO_FILE).file, files(Parameters.HEADER_LOGO_FILE).name, Some(Parameters.HEADER_LOGO_FILE)))
       filesToScan += headerLogoFile.get
     }
     if (files.contains(Parameters.FOOTER_LOGO_FILE)) {
-      footerLogoFile = Some(NamedFile(files(Parameters.FOOTER_LOGO_FILE).file, files(Parameters.FOOTER_LOGO_FILE).name))
+      footerLogoFile = Some(NamedFile(files(Parameters.FOOTER_LOGO_FILE).file, files(Parameters.FOOTER_LOGO_FILE).name, Some(Parameters.FOOTER_LOGO_FILE)))
       filesToScan += footerLogoFile.get
     }
     if (files.contains(Parameters.FAVICON_FILE)) {
-      faviconFile = Some(NamedFile(files(Parameters.FAVICON_FILE).file, files(Parameters.FAVICON_FILE).name))
+      faviconFile = Some(NamedFile(files(Parameters.FAVICON_FILE).file, files(Parameters.FAVICON_FILE).name, Some(Parameters.FAVICON_FILE)))
       filesToScan += faviconFile.get
     }
     if (filesToScan.nonEmpty) {
-      if (Configurations.ANTIVIRUS_SERVER_ENABLED && ParameterExtractor.virusPresentInFiles(filesToScan.toList.map(_.file))) {
-        resultToReturn = Some(ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Files failed virus scan."))
+      resultToReturn = ParameterExtractor.virusPresentInNamedFiles(filesToScan.toList).map { _ =>
+        ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Files failed virus scan.")
       }
-      if (resultToReturn.isEmpty && filesToScan.exists(p => !imageMimeTypes.contains(MimeUtil.getMimeType(p.file.toPath)))) {
-        resultToReturn = Some(ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "Only image files are allowed."))
+      if (resultToReturn.isEmpty) {
+        val filesWithWrongType = filesToScan.filter(p => !imageMimeTypes.contains(MimeUtil.getMimeType(p.file.toPath)))
+        if (filesWithWrongType.nonEmpty) {
+          resultToReturn = Some(ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_REQUEST, "Only image files are allowed.", Some(filesWithWrongType.flatMap(_.identifier).mkString(","))))
+        }
       }
     }
     if (resultToReturn.isEmpty) {

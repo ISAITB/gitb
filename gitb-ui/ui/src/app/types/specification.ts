@@ -7,6 +7,7 @@ export interface Specification extends EntityWithId {
     sname: string
     fname: string
     description?: string
+    reportMetadata?: string
     hidden: boolean
     domain: number
     apiKey?: string

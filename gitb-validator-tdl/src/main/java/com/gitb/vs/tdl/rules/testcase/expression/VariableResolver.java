@@ -20,6 +20,7 @@ public class VariableResolver implements XPathVariableResolver {
 
     private final VariableResolverProvider provider;
     private final Set<String> scriptletMissingVariables = new TreeSet<>();
+    private boolean resolveVariablesAsNumber = false;
 
     public VariableResolver(VariableResolverProvider provider) {
         this.provider = provider;
@@ -29,7 +30,15 @@ public class VariableResolver implements XPathVariableResolver {
     public Object resolveVariable(QName variableName) {
         String variableExpression = "$"+toTDLExpression(variableName.getLocalPart());
         checkVariablesInToken(variableExpression);
-        return "";
+        if (resolveVariablesAsNumber) {
+            return 1;
+        } else {
+            return "";
+        }
+    }
+
+    public void setResolveVariablesAsNumber(boolean resolveVariablesAsNumber) {
+        this.resolveVariablesAsNumber = resolveVariablesAsNumber;
     }
 
     public void checkVariablesInToken(String token) {

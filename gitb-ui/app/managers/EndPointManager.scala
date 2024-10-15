@@ -10,7 +10,8 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class EndPointManager @Inject() (parameterManager: ParameterManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class EndPointManager @Inject() (parameterManager: ParameterManager,
+                                 dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -77,13 +78,28 @@ class EndPointManager @Inject() (parameterManager: ParameterManager, dbConfigPro
   }
 
   def getEndpointsForActor(actorId: Long): List[Endpoint] = {
-    val endpoints = new ListBuffer[Endpoint]()
-    exec(PersistenceSchema.endpoints.filter(_.actor === actorId).sortBy(_.name.asc).result).map { caseObject =>
-      val actor = exec(PersistenceSchema.actors.filter(_.id === caseObject.actor).result.head)
-      val parameters = exec(PersistenceSchema.parameters.filter(_.endpoint === caseObject.id).result.map(_.toList))
-      endpoints += new Endpoint(caseObject, actor, parameters)
-    }
-    endpoints.toList
+    val result = exec(
+      for {
+        endpoints <- PersistenceSchema.endpoints
+          .join(PersistenceSchema.actors).on(_.actor === _.id)
+          .filter(_._1.actor === actorId)
+          .sortBy(_._1.name.asc)
+          .map(x => (x._1, x._2)) // (Endpoint, Actor)
+          .result
+        parameters <- PersistenceSchema.parameters
+          .join(PersistenceSchema.endpoints).on(_.endpoint === _.id)
+          .filter(_._1.endpoint inSet endpoints.map(_._1.id).toSet)
+          .sortBy(x => (x._1.endpoint.asc, x._1.displayOrder.asc))
+          .map(_._1)
+          .result
+      } yield (endpoints, parameters)
+    )
+    result._1.map(endpointInfo => {
+      new Endpoint(endpointInfo._1.id, endpointInfo._1.name, endpointInfo._1.desc,
+        Some(endpointInfo._2), // Actor
+        Some(result._2.filter(_.endpoint == endpointInfo._1.id).toList) // Parameters
+      )
+    }).toList
   }
 
   def getEndpoints(ids: Option[List[Long]]): List[Endpoint] = {

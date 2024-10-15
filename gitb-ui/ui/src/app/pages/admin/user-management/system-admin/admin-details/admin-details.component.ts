@@ -13,9 +13,7 @@ import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 
 @Component({
   selector: 'app-admin-details',
-  templateUrl: './admin-details.component.html',
-  styles: [
-  ]
+  templateUrl: './admin-details.component.html'
 })
 export class AdminDetailsComponent extends BaseComponent implements OnInit, AfterViewInit {
 
@@ -25,6 +23,8 @@ export class AdminDetailsComponent extends BaseComponent implements OnInit, Afte
   changePassword = false
   savePending = false
   deletePending = false
+  loaded = false
+  focusField?: string
 
   constructor(
     public dataService: DataService,
@@ -36,20 +36,22 @@ export class AdminDetailsComponent extends BaseComponent implements OnInit, Afte
   ) { super() }
 
   ngAfterViewInit(): void {
-    if (!this.dataService.configuration.ssoEnabled) {
-      this.dataService.focus('name')
-    }
   }
 
   ngOnInit(): void {
     this.userId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.USER_ID))
     this.disableDeleteButton = Number(this.dataService.user!.id) == Number(this.userId)
+    if (!this.dataService.configuration.ssoEnabled) {
+      this.focusField = 'name'
+    }
     this.userService.getUserById(this.userId)
     .subscribe((data) => {
       this.user = data!
       this.user.ssoStatusText = this.dataService.userStatus(this.user.ssoStatus)
       this.user.roleText = this.Constants.USER_ROLE_LABEL[this.user.role!]
       this.routingService.testBedAdminBreadcrumbs(this.userId, this.dataService.userDisplayName(this.user))
+    }).add(() => {
+      this.loaded = true
     })
     this.routingService.testBedAdminBreadcrumbs(this.userId)
   }
@@ -59,7 +61,6 @@ export class AdminDetailsComponent extends BaseComponent implements OnInit, Afte
   }
 
   updateAdmin() {
-    this.clearAlerts()
     let newPassword: string|undefined
     if (this.changePassword) {
       newPassword = this.user.password
@@ -78,11 +79,16 @@ export class AdminDetailsComponent extends BaseComponent implements OnInit, Afte
   deleteAdmin() {
     this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this administrator?", "Delete", "Cancel")
     .subscribe(() => {
+      this.clearAlerts()
       this.deletePending = true
       this.userService.deleteAdmin(this.userId)
-      .subscribe(() => {
-        this.cancelDetailAdmin()
-        this.popupService.success('Administrator deleted.')
+      .subscribe((result) => {
+        if (this.isErrorDescription(result)) {
+          this.addAlertError(result.error_description)
+        } else {
+          this.cancelDetailAdmin()
+          this.popupService.success('Administrator deleted.')
+        }
       }).add(() => {
         this.deletePending = false
       })

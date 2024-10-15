@@ -1,38 +1,47 @@
-<ng-container [ngSwitch]="skipGroupDisplay">
-  <ng-container *ngSwitchCase="true">
-    <ng-container *ngTemplateOutlet="itemGroupTemplate"></ng-container>
-  </ng-container>
-  <ng-container *ngSwitchDefault>
-    <div class="import-item" [ngClass]="{'with-groups': tbImportItem.hasGroups, 'without-groups': !tbImportItem.hasGroups, 'add': tbImportItem.match == Constants.IMPORT_ITEM_MATCH.ARCHIVE_ONLY, 'update': tbImportItem.match == Constants.IMPORT_ITEM_MATCH.BOTH, 'delete': tbImportItem.match == Constants.IMPORT_ITEM_MATCH.DB_ONLY}">
-      <div class="import-item-icon"><span [tooltip]="iconTooltip" [containerClass]="'tooltipContainer'"><i class="fa" [ngClass]="{'fa-check-square': tbImportItem.match == Constants.IMPORT_ITEM_MATCH.BOTH, 'fa-plus-square': tbImportItem.match == Constants.IMPORT_ITEM_MATCH.ARCHIVE_ONLY, 'fa-minus-square': tbImportItem.match == Constants.IMPORT_ITEM_MATCH.DB_ONLY}"></i></span></div>
-      <div class="import-item-container">
-        <div (click)="toggleItem(); $event.stopPropagation();" class="import-item-title title-holder" [ngClass]="{'open': !collapsed, 'with-groups': tbImportItem.hasGroups, 'without-groups': !tbImportItem.hasGroups}">
-          <div class="title-text" [ngClass]="{'skip': isSkipped()}">{{itemName()}}</div>
-          <div class="title-action">
-            <div>
-              <button *ngIf="showExpandAll()" type="button" (click)="expandItem(tbImportItem); $event.stopPropagation();" class="btn btn-secondary btn-sm">Expand all</button>
-            </div>
-            <div>
-              <select *ngIf="!tbImportItem.disableProcessChoice && tbImportItem.process != Constants.IMPORT_ITEM_CHOICE.SKIP_DUE_TO_PARENT" [name]="'choice_'+tbImportItem.id" class="form-control form-select form-select-sm" (click)="$event.stopPropagation();" [(ngModel)]="tbImportItem.selectedProcessOption" (change)="processOptionChanged()">
-                  <option *ngFor="let option of processOptions" [ngValue]="option.id">{{option.label}}</option>
-              </select>
-            </div>
-            <input type="text" value="Skip" *ngIf="tbImportItem.disableProcessChoice || tbImportItem.process == Constants.IMPORT_ITEM_CHOICE.SKIP_DUE_TO_PARENT" class="control" (click)="$event.stopPropagation();" disabled="true"/>
+@if (skipGroupDisplay) {
+  <ng-container *ngTemplateOutlet="itemGroupTemplate"></ng-container>
+} @else {
+  <div class="import-item" [ngClass]="{'with-groups': tbImportItem.hasGroups, 'without-groups': !tbImportItem.hasGroups, 'add': tbImportItem.match == Constants.IMPORT_ITEM_MATCH.ARCHIVE_ONLY, 'update': tbImportItem.match == Constants.IMPORT_ITEM_MATCH.BOTH, 'delete': tbImportItem.match == Constants.IMPORT_ITEM_MATCH.DB_ONLY}">
+    <div class="import-item-icon"><span [tooltip]="iconTooltip" [containerClass]="'tooltipContainer'"><i class="fa" [ngClass]="{'fa-check-square': tbImportItem.match == Constants.IMPORT_ITEM_MATCH.BOTH, 'fa-plus-square': tbImportItem.match == Constants.IMPORT_ITEM_MATCH.ARCHIVE_ONLY, 'fa-minus-square': tbImportItem.match == Constants.IMPORT_ITEM_MATCH.DB_ONLY}"></i></span></div>
+    <div class="import-item-container">
+      <div (click)="toggleItem(); $event.stopPropagation();" class="import-item-title title-holder" [ngClass]="{'open': !collapsed, 'with-groups': tbImportItem.hasGroups, 'without-groups': !tbImportItem.hasGroups}">
+        <div class="title-text" [ngClass]="{'skip': isSkipped()}">{{itemName()}}</div>
+        <div class="title-action">
+          <div>
+            @if (showExpandAll()) {
+              <button type="button" (click)="expandItem(tbImportItem); $event.stopPropagation();" class="btn btn-secondary btn-sm">Expand all</button>
+            }
           </div>
-          <div class="title-icon" *ngIf="tbImportItem.hasGroups"><i class="fa" [ngClass]="{'fa-chevron-circle-down': tbImportItem.open, 'fa-chevron-circle-right': !tbImportItem.open}"></i></div>
+          <div>
+            @if (!tbImportItem.disableProcessChoice && tbImportItem.process != Constants.IMPORT_ITEM_CHOICE.SKIP_DUE_TO_PARENT) {
+              <select [name]="'choice_'+tbImportItem.id" class="form-select form-select-sm" (click)="$event.stopPropagation();" [(ngModel)]="tbImportItem.selectedProcessOption" (change)="processOptionChanged()">
+                @for (option of processOptions; track $index) {
+                  <option [ngValue]="option.id">{{option.label}}</option>
+                }
+              </select>
+            }
+          </div>
+          @if (tbImportItem.disableProcessChoice || tbImportItem.process == Constants.IMPORT_ITEM_CHOICE.SKIP_DUE_TO_PARENT) {
+            <input type="text" value="Skip" class="control" (click)="$event.stopPropagation();" disabled="true"/>
+          }
         </div>
-        <div [collapse]="!tbImportItem.open" [isAnimated]="true" (collapsed)="childrenCollapsed()" (expands)="childrenExpanding()" *ngIf="tbImportItem.groups != undefined && tbImportItem.groups.length > 0">
+        @if (tbImportItem.hasGroups) {
+          <div class="title-icon"><i class="fa" [ngClass]="{'fa-chevron-circle-down': tbImportItem.open, 'fa-chevron-circle-right': !tbImportItem.open}"></i></div>
+        }
+      </div>
+      @if (tbImportItem.groups != undefined && tbImportItem.groups.length > 0) {
+        <div [collapse]="!tbImportItem.open" [isAnimated]="true" (collapsed)="childrenCollapsed()" (expands)="childrenExpanding()">
           <ng-container *ngTemplateOutlet="itemGroupTemplate"></ng-container>
         </div>
-      </div>
+      }
     </div>
-  </ng-container>
-</ng-container>
+  </div>
+}
 <ng-template #itemGroupTemplate>
   <div class="import-item-group-container" [class.no-bottom-margin]="skipGroupDisplay">
-    <div app-import-item-group-preview *ngFor="let group of tbImportItem.groups" 
-        [tbImportItemGroup]="group" 
-        (processStatusChange)="childProcessStatusUpdated()"></div>
+    @for (group of tbImportItem.groups; track $index) {
+      <div app-import-item-group-preview [tbImportItemGroup]="group" [importType]="importType" (processStatusChange)="childProcessStatusUpdated()"></div>
+    }
   </div>
 </ng-template>
 

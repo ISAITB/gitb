@@ -13,7 +13,6 @@ export class Constants {
 
 	public static TOKEN_COOKIE_EXPIRE = 2592000000 // 1 month in millis
 	public static ACCESS_TOKEN_COOKIE_KEY = 'tat'
-	public static LOGIN_OPTION_COOKIE_KEY = 'LOGIN_OPTION'
 
 	public static TEST_ENGINE_ACTOR_ID = 'com.gitb.TestEngine'
 	public static TESTER_ACTOR_ID = 'com.gitb.Operator'
@@ -356,6 +355,7 @@ export class Constants {
 	public static SYSTEM_CONFIG = {
 		SESSION_ALIVE_TIME: 'session_alive_time',
 		REST_API_ENABLED: 'rest_api_enabled',
+		REST_API_ADMIN_KEY: 'rest_api_admin_key',
 		SELF_REGISTRATION_ENABLED: 'self_registration_enabled',
 		DEMO_ACCOUNT: 'demo_account',
 		WELCOME_MESSAGE: 'welcome',
@@ -369,11 +369,13 @@ export class Constants {
 		LINKED: 3
 	}
 
-	public static XML_REPORT_TYPE = {
+	public static REPORT_TYPE = {
 		CONFORMANCE_STATEMENT_REPORT: 1,
 		CONFORMANCE_OVERVIEW_REPORT: 2,
 		TEST_CASE_REPORT: 3,
-		TEST_STEP_REPORT: 4
+		TEST_STEP_REPORT: 4,
+		CONFORMANCE_STATEMENT_CERTIFICATE: 5,
+		CONFORMANCE_OVERVIEW_CERTIFICATE: 6
 	}
 
 	public static FILTER_COMMAND = {
@@ -382,7 +384,7 @@ export class Constants {
 		REFRESH: 3
 	}
 
-	public static PASSWORD_REGEX = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#&()_–\[{}\]:;'",?/\\*~$^+=<>]).{8,}$/
+	public static PASSWORD_REGEX = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[\!\@\#\&\(\)\[\{\}\]\:\;\'\"\,\?\/\\\*\~\$\^\+\=\<\>\_\-]).{8,}$/
 	public static END_OF_TEST_STEP = "-1"
 	public static END_OF_TEST_STEP_EXTERNAL = "-2"
 	public static LOG_EVENT_TEST_STEP = "-999"

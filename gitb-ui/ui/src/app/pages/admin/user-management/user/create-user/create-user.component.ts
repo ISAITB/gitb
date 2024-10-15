@@ -13,6 +13,7 @@ import { UserService } from 'src/app/services/user.service';
 import { IdLabel } from 'src/app/types/id-label';
 import { User } from 'src/app/types/user.type';
 import { OrganisationTab } from '../../organisation/organisation-details/OrganisationTab';
+import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
   selector: 'app-create-user',
@@ -28,6 +29,7 @@ export class CreateUserComponent extends BaseComponent implements OnInit, AfterV
   roleCreateChoices!: IdLabel[]
   savePending = false
   fromCommunityManagement?: boolean
+  validation = new ValidationState()
 
   constructor(
     private routingService: RoutingService,
@@ -65,17 +67,25 @@ export class CreateUserComponent extends BaseComponent implements OnInit, AfterV
   }
 
   createUser() {
-    this.clearAlerts()
+    this.validation.clearErrors()
     const isSSO = this.dataService.configuration.ssoEnabled
     let ok = true
     let emailCheckResult: Observable<{available: boolean}>
     if (isSSO) {
+      ok = this.isValidEmail(this.user.email)
+      if (!ok) {
+        this.validation.invalid('email', 'Please enter a valid email address.')
+      }
       if (this.fromCommunityManagement) {
         emailCheckResult = this.authService.checkEmailOfOrganisationUser(this.user.email!, this.orgId!, this.user.role!)
       } else {
         emailCheckResult = this.authService.checkEmailOfOrganisationMember(this.user.email!, this.user.role!)
       }
     } else {
+      ok = this.isValidUsername(this.user.email)
+      if (!ok) {
+        this.validation.invalid('email', 'The username cannot contain spaces.')
+      }      
       emailCheckResult = this.authService.checkEmail(this.user.email!)
     }
     if (ok) {
@@ -96,11 +106,13 @@ export class CreateUserComponent extends BaseComponent implements OnInit, AfterV
               })
             )
           } else {
+            let feedback: string
             if (isSSO) {
-              this.addAlertError("A user with this email address has already been registered with the specified role for this organisation.")
+              feedback = "A user with this email address has already been registered with the specified role for this organisation."
             } else {
-              this.addAlertError("A user with this username has already been registered.")
+              feedback = "A user with this username has already been registered."
             }
+            this.validation.invalid('email', feedback)
             return EMPTY
           }
         }),

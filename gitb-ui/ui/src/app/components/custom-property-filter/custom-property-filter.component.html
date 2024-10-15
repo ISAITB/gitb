@@ -1,28 +1,38 @@
 <div class="custom-property-filter">
-    <div *ngIf="applied" class="custom-property-filter-container applied">
-      <div class="property-id">{{appliedName}}</div>
-      <div class="property-value">{{appliedValueLabel}}</div>
-      <div class="property-controls">
-        <button class="btn btn-secondary" (click)="clear()" containerClass="shortTooltip" tooltip="Remove" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-times"></i></button>
+    @if (applied) {
+      <div class="custom-property-filter-container applied">
+        <div class="property-id">{{appliedName}}</div>
+        <div class="property-value">{{appliedValueLabel}}</div>
+        <div class="property-controls">
+          <button class="btn btn-secondary" (click)="clear()" containerClass="shortTooltip" tooltip="Remove" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-times"></i></button>
+        </div>
       </div>
-    </div>
-    <div *ngIf="!applied" class="custom-property-filter-container non-applied">
-      <div class="property-id">
-        <select name="propInput" (change)="propertyChanged()" [(ngModel)]="propertyInfo.property" class="form-control form-select">
-            <option *ngFor="let prop of properties" [ngValue]="prop">{{prop.name}}</option>
-        </select>
+    } @else {
+      <div class="custom-property-filter-container non-applied">
+        <div class="property-id">
+          <select name="propInput" (change)="propertyChanged()" [(ngModel)]="propertyInfo.property" class="form-select">
+              @for (prop of properties; track prop.id) {
+                <option [ngValue]="prop">{{prop.name}}</option>
+              }
+          </select>
+        </div>
+        @if (!propertyInfo || !propertyInfo.property || !propertyInfo.property.allowedValues) {
+          <div class="property-value">
+            <input name="valInput" [(ngModel)]="propertyInfo.value" type="text" class="form-control"/>
+          </div>
+        } @else if (propertyInfo.property.presetValues) {
+          <div class="property-value">
+            <select name="valInputChoice" [(ngModel)]="propertyInfo.valueObj" class="form-select">
+                @for (v of propertyInfo.property!.presetValues; track $index) {
+                  <option [ngValue]="v">{{v.label}}</option>
+                }
+            </select>
+          </div>
+        }
+        <div class="property-controls">
+          <button class="btn btn-secondary" (click)="apply()" containerClass="shortTooltip" tooltip="Apply" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" container="body"><i class="fa-solid fa-check"></i></button>
+          <button class="btn btn-secondary" (click)="cancel()" containerClass="shortTooltip" tooltip="Cancel" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" container="body"><i class="fa-solid fa-times"></i></button>
+        </div>
       </div>
-      <div class="property-value" *ngIf="!propertyInfo || !propertyInfo.property || !propertyInfo.property.allowedValues">
-        <input name="valInput" [(ngModel)]="propertyInfo.value" type="text" class="form-control"/>
-      </div>
-      <div class="property-value" *ngIf="propertyInfo?.property?.presetValues">
-        <select name="valInputChoice" [(ngModel)]="propertyInfo.valueObj" class="form-control form-select">
-            <option *ngFor="let v of propertyInfo.property!.presetValues" [ngValue]="v">{{v.label}}</option>
-        </select>
-      </div>
-      <div class="property-controls">
-        <button class="btn btn-secondary" (click)="apply()" containerClass="shortTooltip" tooltip="Apply" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" container="body"><i class="fa-solid fa-check"></i></button>
-        <button class="btn btn-secondary" (click)="cancel()" containerClass="shortTooltip" tooltip="Cancel" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" container="body"><i class="fa-solid fa-times"></i></button>
-      </div>
-    </div>
+    }
   </div>

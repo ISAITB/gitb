@@ -1,5 +1,7 @@
 package com.gitb.engine.actors.processors;
 
+import com.gitb.engine.actors.ActorSystem;
+import com.gitb.engine.processing.handlers.AbstractProcessingHandler;
 import org.apache.pekko.actor.ActorRef;
 import org.apache.pekko.dispatch.Futures;
 import org.apache.pekko.dispatch.OnFailure;
@@ -99,6 +101,9 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
             } else if (step.getOperationAttribute() != null) {
                 operation = step.getOperationAttribute();
             }
+            if (handler instanceof AbstractProcessingHandler builtInHandler) {
+                builtInHandler.setScope(scope);
+            }
             ProcessingReport report = handler.process(context.getSession(), step.getId(), operation, getData(handler, operation));
             Promise<TestStepReportType> taskPromise = Futures.promise();
             if (report instanceof DeferredProcessingReport deferredReport) {
@@ -111,7 +116,7 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
                 taskPromise.success(produceReport(report, handler));
             }
             return taskPromise.future();
-        }, getContext().dispatcher());
+        }, getContext().getSystem().dispatchers().lookup(ActorSystem.BLOCKING_IO_DISPATCHER));
 
         future.foreach(new OnSuccess<>() {
             @Override

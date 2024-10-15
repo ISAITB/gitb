@@ -21,13 +21,14 @@ export class ActorService {
     })
   }
 
-  updateActor(id: number, actorId: string, name: string, description: string|undefined, defaultActor: boolean|undefined, hiddenActor: boolean|undefined, displayOrder: number|undefined, domainId: number, specificationId: number, badges: BadgesInfo) {
+  updateActor(id: number, actorId: string, name: string, description: string|undefined, reportMetadata: string|undefined, defaultActor: boolean|undefined, hiddenActor: boolean|undefined, displayOrder: number|undefined, domainId: number, specificationId: number, badges: BadgesInfo) {
     if (hiddenActor == undefined) hiddenActor = false
     if (defaultActor == undefined) defaultActor = false
     const data: any = {
       actor_id: actorId,
       name: name,
       description: description,
+      metadata: reportMetadata,
       default: defaultActor,
       hidden: hiddenActor,
       domain_id: domainId,

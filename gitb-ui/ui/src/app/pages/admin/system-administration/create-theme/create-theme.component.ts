@@ -9,6 +9,7 @@ import { SystemConfigurationService } from 'src/app/services/system-configuratio
 import { PopupService } from 'src/app/services/popup.service';
 import { DataService } from 'src/app/services/data.service';
 import { BaseThemeFormComponent } from '../base-theme-form.component';
+import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
   selector: 'app-create-theme',
@@ -21,6 +22,7 @@ export class CreateThemeComponent extends BaseThemeFormComponent implements OnIn
   theme!: Theme
   referenceThemeId!: number
   savePending = false
+  validation = new ValidationState()
 
   constructor(
     private routingService: RoutingService,
@@ -84,12 +86,12 @@ export class CreateThemeComponent extends BaseThemeFormComponent implements OnIn
     proceed.subscribe((confirmed) => {
       this.savePending = true
       if (confirmed) {
-        this.clearAlerts()
         this.processButtonColors(this.theme)
+        this.validation.clearErrors()
         this.systemConfigurationService.createTheme(this.theme, this.referenceThemeId)
         .subscribe((error) => {
           if (this.isErrorDescription(error)) {
-            this.addAlertError(error.error_description)
+            this.validation.applyError(error)
           } else {
             this.popupService.success("Theme created.")
             if (this.theme.active) {

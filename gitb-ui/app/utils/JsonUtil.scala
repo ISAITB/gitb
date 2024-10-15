@@ -16,6 +16,7 @@ import models.automation._
 import models.snapshot.ConformanceSnapshot
 import models.theme.Theme
 import org.apache.commons.codec.binary.Base64
+import org.apache.commons.lang3.StringUtils
 import play.api.libs.json.{JsObject, Json, _}
 
 import java.util
@@ -68,6 +69,13 @@ object JsonUtil {
     )
   }
 
+  def jsErrorMessages(texts: List[String], contentType: String): JsObject = {
+    var json = jsTextArray(texts)
+    json += ("success", JsBoolean(false))
+    json += ("contentType", JsString(contentType))
+    json
+  }
+
   def jsTextArray(texts: List[String]): JsObject = {
     var textArray = Json.arr()
     texts.foreach { text =>
@@ -76,6 +84,14 @@ object JsonUtil {
     val json = Json.obj(
       "texts" -> textArray
     )
+    json
+  }
+
+  def jsMessages(texts: Iterable[String]): JsValue = {
+    var json = Json.obj()
+    if (texts.nonEmpty) {
+      json = json + ("messages" -> JsonUtil.jsStringArray(texts))
+    }
     json
   }
 
@@ -800,7 +816,8 @@ object JsonUtil {
       "id" -> domain.id,
       "sname" -> domain.shortname,
       "fname" -> domain.fullname,
-      "description" -> domain.description
+      "description" -> domain.description,
+      "reportMetadata" -> domain.reportMetadata
     )
     if (withApiKeys && Configurations.AUTOMATION_API_ENABLED) {
       json = json.+("apiKey" -> JsString(domain.apiKey))
@@ -874,6 +891,7 @@ object JsonUtil {
       "sname"   -> spec.shortname,
       "fname"   -> spec.fullname,
       "description" -> (if(spec.description.isDefined) spec.description.get else JsNull),
+      "reportMetadata" -> (if(spec.reportMetadata.isDefined) spec.reportMetadata.get else JsNull),
       "hidden" -> spec.hidden,
       "domain"  -> spec.domain,
       "group" -> spec.group,
@@ -917,15 +935,20 @@ object JsonUtil {
     )
   }
 
-  def jsSpecificationGroup(group: SpecificationGroups): JsObject = {
-    Json.obj(
+  def jsSpecificationGroup(group: SpecificationGroups, withApiKeys: Boolean): JsObject = {
+    var json = Json.obj(
       "id" -> group.id,
       "sname" -> group.shortname,
       "fname" -> group.fullname,
       "description" -> (if (group.description.isDefined) group.description.get else JsNull),
+      "reportMetadata" -> (if (group.reportMetadata.isDefined) group.reportMetadata.get else JsNull),
       "domain" -> group.domain,
       "order" -> group.displayOrder
     )
+    if (withApiKeys && Configurations.AUTOMATION_API_ENABLED) {
+      json = json.+("apiKey" -> JsString(group.apiKey))
+    }
+    json
   }
 
   /**
@@ -943,7 +966,7 @@ object JsonUtil {
   def jsSpecificationGroups(list: List[SpecificationGroups]): JsArray = {
     var json = Json.arr()
     list.foreach { group =>
-      json = json.append(jsSpecificationGroup(group))
+      json = json.append(jsSpecificationGroup(group, withApiKeys = false))
     }
     json
   }
@@ -959,6 +982,7 @@ object JsonUtil {
       "actorId" -> actor.actorId,
       "name"   -> actor.name,
       "description" -> (if(actor.description.isDefined) actor.description.get else JsNull),
+      "reportMetadata" -> (if(actor.reportMetadata.isDefined) actor.reportMetadata.get else JsNull),
       "default" -> (if(actor.default.isDefined) actor.default.get else JsNull),
       "hidden" -> actor.hidden,
       "displayOrder" -> (if(actor.displayOrder.isDefined) actor.displayOrder.get else JsNull),
@@ -973,6 +997,7 @@ object JsonUtil {
       "actorId" -> actor.actorId,
       "name"   -> actor.name,
       "description" -> (if(actor.description.isDefined) actor.description.get else JsNull),
+      "reportMetadata" -> (if(actor.reportMetadata.isDefined) actor.reportMetadata.get else JsNull),
       "default" -> (if(actor.default.isDefined) actor.default.get else JsNull),
       "hidden" -> actor.hidden,
       "displayOrder" -> (if(actor.displayOrder.isDefined) actor.displayOrder.get else JsNull),
@@ -1083,8 +1108,8 @@ object JsonUtil {
   }
 
   def parseJsTestSessionLaunchRequest(jsonConfig: JsValue, organisationKey: String): TestSessionLaunchRequest = {
-    val system = (jsonConfig \ "system").as[String]
-    val actor = (jsonConfig \ "actor").as[String]
+    val system = (jsonConfig \ "system").asOpt[String]
+    val actor = (jsonConfig \ "actor").asOpt[String]
     val testSuites: List[String] = (jsonConfig \ "testSuite").asOpt[JsArray].getOrElse(JsArray.empty).value.map { jsValue =>
       jsValue.as[JsString].value
     }.toList
@@ -1135,6 +1160,179 @@ object JsonUtil {
     TestSuiteUndeployRequest(specification, testSuite, sharedTestSuite)
   }
 
+  def parseJsCreateSpecificationGroupRequest(json: JsValue, communityApiKey: String): CreateSpecificationGroupRequest = {
+    CreateSpecificationGroupRequest(
+      (json \ "shortName").as[String],
+      (json \ "fullName").as[String],
+      (json \ "description").asOpt[String],
+      (json \ "reportMetadata").asOpt[String],
+      (json \ "displayOrder").asOpt[Short],
+      (json \ "apiKey").asOpt[String],
+      (json \ "domain").asOpt[String],
+      communityApiKey
+    )
+  }
+
+  def parseJsCreateOrganisationRequest(json: JsValue, communityApiKey: String): CreateOrganisationRequest = {
+    CreateOrganisationRequest(
+      (json \ "shortName").as[String],
+      (json \ "fullName").as[String],
+      (json \ "apiKey").asOpt[String],
+      communityApiKey
+    )
+  }
+
+  def parseJsCreateSystemRequest(json: JsValue, communityApiKey: String): CreateSystemRequest = {
+    CreateSystemRequest(
+      (json \ "shortName").as[String],
+      (json \ "fullName").as[String],
+      (json \ "description").asOpt[String],
+      (json \ "version").asOpt[String],
+      (json \ "apiKey").asOpt[String],
+      (json \ "organisation").as[String],
+      communityApiKey
+    )
+  }
+
+  def parseJsCreateSpecificationRequest(json: JsValue, communityApiKey: String): CreateSpecificationRequest = {
+    CreateSpecificationRequest(
+      (json \ "shortName").as[String],
+      (json \ "fullName").as[String],
+      (json \ "description").asOpt[String],
+      (json \ "reportMetadata").asOpt[String],
+      (json \ "hidden").asOpt[Boolean],
+      (json \ "displayOrder").asOpt[Short],
+      (json \ "apiKey").asOpt[String],
+      (json \ "domain").asOpt[String],
+      (json \ "group").asOpt[String],
+      communityApiKey
+    )
+  }
+
+  def parseJsCreateActorRequest(json: JsValue, communityApiKey: String): CreateActorRequest = {
+    CreateActorRequest(
+      (json \ "identifier").as[String],
+      (json \ "name").as[String],
+      (json \ "description").asOpt[String],
+      (json \ "reportMetadata").asOpt[String],
+      (json \ "default").asOpt[Boolean],
+      (json \ "hidden").asOpt[Boolean],
+      (json \ "displayOrder").asOpt[Short].flatMap(x => if (x < 0) None else Some(x)),
+      (json \ "apiKey").asOpt[String],
+      (json \ "specification").as[String],
+      communityApiKey
+    )
+  }
+
+  def parseJsCreateDomainRequest(json: JsValue): CreateDomainRequest = {
+    CreateDomainRequest(
+      (json \ "shortName").as[String],
+      (json \ "fullName").as[String],
+      (json \ "description").asOpt[String],
+      (json \ "reportMetadata").asOpt[String],
+      (json \ "apiKey").asOpt[String]
+    )
+  }
+
+  def parseJsCreateCommunityRequest(json: JsValue): CreateCommunityRequest = {
+    CreateCommunityRequest(
+      (json \ "shortName").as[String],
+      (json \ "fullName").as[String],
+      (json \ "description").asOpt[String],
+      (json \ "supportEmail").asOpt[String],
+      (json \ "interactionNotifications").asOpt[Boolean],
+      (json \ "apiKey").asOpt[String],
+      (json \ "domain").asOpt[String]
+    )
+  }
+
+  def parseJsUpdateDomainRequest(json: JsValue, domainApiKey: Option[String], communityApiKey: Option[String]): UpdateDomainRequest = {
+    UpdateDomainRequest(
+      domainApiKey,
+      (json \ "shortName").asOpt[String],
+      (json \ "fullName").asOpt[String],
+      (json \ "description").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      (json \ "reportMetadata").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      communityApiKey
+    )
+  }
+
+  def parseJsUpdateCommunityRequest(json: JsValue, communityApiKey: String): UpdateCommunityRequest = {
+    UpdateCommunityRequest(
+      communityApiKey,
+      (json \ "shortName").asOpt[String],
+      (json \ "fullName").asOpt[String],
+      (json \ "description").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      (json \ "supportEmail").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      (json \ "interactionNotifications").asOpt[Boolean],
+      (json \ "domain").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+    )
+  }
+
+  def parseJsUpdateSpecificationGroupRequest(json: JsValue, groupApiKey: String, communityApiKey: String): UpdateSpecificationGroupRequest = {
+    UpdateSpecificationGroupRequest(
+      groupApiKey,
+      (json \ "shortName").asOpt[String],
+      (json \ "fullName").asOpt[String],
+      (json \ "description").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      (json \ "reportMetadata").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      (json \ "displayOrder").asOpt[Short],
+      communityApiKey
+    )
+  }
+
+  def parseJsUpdateOrganisationRequest(json: JsValue, organisationApiKey: String, communityApiKey: String): UpdateOrganisationRequest = {
+    UpdateOrganisationRequest(
+      organisationApiKey,
+      (json \ "shortName").asOpt[String],
+      (json \ "fullName").asOpt[String],
+      communityApiKey
+    )
+  }
+
+  def parseJsUpdateSystemRequest(json: JsValue, systemApiKey: String, communityApiKey: String): UpdateSystemRequest = {
+    UpdateSystemRequest(
+      systemApiKey,
+      (json \ "shortName").asOpt[String],
+      (json \ "fullName").asOpt[String],
+      (json \ "description").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      (json \ "version").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      communityApiKey
+    )
+  }
+
+  def parseJsUpdateSpecificationRequest(json: JsValue, specificationApiKey: String, communityApiKey: String): UpdateSpecificationRequest = {
+    UpdateSpecificationRequest(
+      specificationApiKey,
+      (json \ "shortName").asOpt[String],
+      (json \ "fullName").asOpt[String],
+      (json \ "description").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      (json \ "reportMetadata").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      (json \ "hidden").asOpt[Boolean],
+      (json \ "displayOrder").asOpt[Short],
+      (json \ "group").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      communityApiKey
+    )
+  }
+
+  def parseJsUpdateActorRequest(json: JsValue, actorApiKey: String, communityApiKey: String): UpdateActorRequest = {
+    UpdateActorRequest(
+      actorApiKey,
+      (json \ "identifier").asOpt[String],
+      (json \ "name").asOpt[String],
+      (json \ "description").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      (json \ "reportMetadata").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      (json \ "default").asOpt[Boolean].map(Some(_)),
+      (json \ "hidden").asOpt[Boolean],
+      (json \ "displayOrder").asOpt[Short].map(x => if (x < 0) None else Some(x)),
+      communityApiKey
+    )
+  }
+
+  def parseJsStringValue(json: JsValue, propertyName: String): String = {
+    (json \ propertyName).as[String]
+  }
+
   def parseJsConfigurationRequest(json: JsValue): ConfigurationRequest = {
     ConfigurationRequest(
       domainProperties = parseJsDomainParameterConfigurationArray((json \ "domainProperties").asOpt[JsArray].getOrElse(JsArray.empty)),
@@ -1163,16 +1361,67 @@ object JsonUtil {
     }.toList
   }
 
-  private def parseJsDomainParameterConfigurationArray(jsonArray: JsArray): List[DomainParameterInfo] = {
+  private def jsAllowedPropertyValue(keyValue: KeyValueRequired): JsObject = {
+    Json.obj(
+      "value" -> keyValue.key,
+      "label" -> keyValue.value,
+    )
+  }
+
+  def jsAllowedPropertyValues(keyValues: List[KeyValueRequired]): JsArray = {
+    var json = Json.arr()
+    keyValues.foreach{ keyValue =>
+      json = json.append(jsAllowedPropertyValue(keyValue))
+    }
+    json
+  }
+
+  def parseJsCustomPropertyInfo(json: JsValue): CustomPropertyInfo = {
+    CustomPropertyInfo(
+      (json \ "key").as[String],
+      (json \ "name").asOpt[String],
+      (json \ "description").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      (json \ "required").asOpt[Boolean],
+      (json \ "editableByUsers").asOpt[Boolean],
+      (json \ "inTests").asOpt[Boolean],
+      (json \ "inExports").asOpt[Boolean],
+      (json \ "inSelfRegistration").asOpt[Boolean],
+      (json \ "hidden").asOpt[Boolean],
+      (json \ "allowedValues").asOpt[JsArray].map(x => parseJsAllowedPropertyValues(x)).map(x => if (x.isEmpty) None else Some(x)),
+      (json \ "displayOrder").asOpt[Short],
+      (json \ "dependsOn").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      (json \ "dependsOnValue").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      (json \ "defaultValue").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x))
+    )
+  }
+
+  def parseJsAllowedPropertyValues(jsonContent: String): List[KeyValueRequired] = {
+    parseJsAllowedPropertyValues(Json.parse(jsonContent).as[JsArray])
+  }
+
+  private def parseJsAllowedPropertyValues(jsonArray: JsArray): List[KeyValueRequired] = {
     jsonArray.value.map { json =>
-      DomainParameterInfo(
-        KeyValue(
-          (json \ "key").as[String],
-          (json \ "value").asOpt[String]
-        ),
-        (json \ "domain").asOpt[String]
+      KeyValueRequired(
+        (json \ "value").as[String],
+        (json \ "label").as[String]
       )
     }.toList
+  }
+
+  private def parseJsDomainParameterConfigurationArray(jsonArray: JsArray): List[DomainParameterInfo] = {
+    jsonArray.value.map(x => parseJsDomainParameterConfiguration(x, None, None)).toList
+  }
+
+  def parseJsDomainParameterConfiguration(json: JsValue, domainApiKey: Option[String] = None, parameterKey: Option[String] = None): DomainParameterInfo = {
+    DomainParameterInfo(
+      KeyValue(
+        parameterKey.getOrElse((json \ "key").as[String]),
+        (json \ "value").asOpt[String]
+      ),
+      (json \ "description").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      (json \ "inTests").asOpt[Boolean],
+      domainApiKey.orElse((json \ "domain").asOpt[String])
+    )
   }
 
   private def parseJsKeyValueArray(jsonArray: JsArray): List[KeyValue] = {
@@ -1331,6 +1580,22 @@ object JsonUtil {
     list
   }
 
+  def parseJsConfigs(json:String, systemId: Long): List[Configs] = {
+    val jsArray = Json.parse(json).as[JsArray].value
+    var list:List[Configs] = List()
+    jsArray.foreach { jsonConfig =>
+      val value = (jsonConfig \ "value").asOpt[String]
+      list ::= Configs(
+        systemId,
+        (jsonConfig \ "parameter").as[Long],
+        (jsonConfig \ "endpoint").as[Long],
+        value.get,
+        None
+      )
+    }
+    list
+  }
+
   private def parseJsImportItem(jsonConfig: JsValue, parentItem: Option[ImportItem]): ImportItem = {
     val item = new ImportItem(
       (jsonConfig \ "name").asOpt[String],
@@ -1385,6 +1650,14 @@ object JsonUtil {
     list.toList
   }
 
+  def parseStringArray(json: Option[JsValue]): Option[List[String]] = {
+    json.map(x => {
+      x.as[JsArray].value.iterator.map { value =>
+        value.as[JsString].value
+      }.toList
+    })
+  }
+
   def parseStringArray(json: JsValue): List[String] = {
     json.as[JsArray].value.iterator.map { value =>
       value.as[JsString].value
@@ -1399,6 +1672,8 @@ object JsonUtil {
     val jsonConfig = Json.parse(json).as[JsObject]
     val settings = new ImportSettings()
     settings.encryptionKey = (jsonConfig \ "encryptionKey").asOpt[String]
+    settings.shortNameReplacement = (jsonConfig \ "shortNameReplacement").asOpt[String].filter(StringUtils.isNotBlank(_))
+    settings.fullNameReplacement = (jsonConfig \ "fullNameReplacement").asOpt[String].filter(StringUtils.isNotBlank(_))
     settings
   }
 
@@ -1458,6 +1733,9 @@ object JsonUtil {
       settings.defaultErrorTemplates = false
       settings.systemConfigurations = false
     }
+    // Deletions
+    settings.communitiesToDelete = parseStringArray((jsonConfig \ "communitiesToDelete").asOpt[JsArray])
+    settings.domainsToDelete = parseStringArray((jsonConfig \ "domainsToDelete").asOpt[JsArray])
     settings.encryptionKey = (jsonConfig \ "encryptionKey").asOpt[String]
     settings
   }
@@ -2052,7 +2330,8 @@ object JsonUtil {
       "savedFileMaxSize" -> config.get("savedFile.maxSize").toLong,
       "mode" -> config.get("mode"),
       "automationApiEnabled" -> config.get("automationApi.enabled").toBoolean,
-      "versionNumber" -> config.get("versionNumber")
+      "versionNumber" -> config.get("versionNumber"),
+      "hasDefaultLegalNotice" -> config.get("hasDefaultLegalNotice").toBoolean
     )
     json
   }
@@ -2062,12 +2341,13 @@ object JsonUtil {
    * @param org Organization object to be converted
    * @return String
    */
-  def serializeOrganization(org:Organization, includeAdminInfo: Boolean):String = {
+  def serializeOrganization(org:Organization):String = {
     // Serialize Organization
     var jOrganization:JsObject = jsOrganization(org.toCaseObject)
     org.landingPageObj.foreach(x => jOrganization = jOrganization ++ Json.obj("landingPages" -> jsLandingPage(x.toLandingPage())))
     org.legalNoticeObj.foreach(x => jOrganization = jOrganization ++ Json.obj("legalNotices" -> jsLegalNotice(x.toLegalNotice())))
     org.errorTemplateObj.foreach(x => jOrganization = jOrganization ++ Json.obj("errorTemplates" -> jsErrorTemplate(x.toErrorTemplate())))
+    jOrganization = jOrganization ++ Json.obj("communityLegalNoticeAppliesAndExists" -> org.communityLegalNoticeAppliesAndExists)
     // Return JSON String
     jOrganization.toString
   }
@@ -2274,6 +2554,19 @@ object JsonUtil {
     jErrorTemplate.toString
   }
 
+  def jsReportSettings(settings: CommunityReportSettings, stylesheetExists: Boolean): JsObject = {
+    var json = Json.obj(
+    "stylesheetExists" -> stylesheetExists,
+    "signPdfs" -> settings.signPdfs,
+    "customPdfs" -> settings.customPdfs,
+    "customPdfsWithCustomXml" -> settings.customPdfsWithCustomXml
+    )
+    if (settings.customPdfService.isDefined) {
+      json += ("customPdfService" -> JsString(settings.customPdfService.get))
+    }
+    json
+  }
+
   def jsExists(bool:Boolean):JsObject = {
     val json = Json.obj(
       "exists" -> bool
@@ -2345,6 +2638,14 @@ object JsonUtil {
       json += ("hidden" -> JsBoolean(!snapshot.isPublic))
     }
     json
+  }
+
+  def jsEndpointId(endpointId: Long): JsObject = {
+    Json.obj("endpoint" -> endpointId)
+  }
+
+  def jsApiKey(apiKey: String): JsObject = {
+    Json.obj("apiKey" -> apiKey)
   }
 
   def jsTestSuiteUploadResult(result: TestSuiteUploadResult):JsObject = {
@@ -2800,6 +3101,28 @@ object JsonUtil {
     json
   }
 
+  def jsParametersWithValues(list: List[ParametersWithValue], includeValues: Boolean):JsArray = {
+    var json = Json.arr()
+    list.foreach { parameter =>
+      json = json.append(jsParametersWithValue(parameter, includeValues))
+    }
+    json
+  }
+
+  def jsParametersWithValue(param: ParametersWithValue, includeValues: Boolean): JsObject = {
+    var json = jsParameter(param.parameter)
+    json = json.+("configured" -> JsBoolean(param.value.isDefined))
+    if (includeValues) {
+      if (param.value.isDefined && param.parameter.kind != "SECRET") {
+        json = json.+("value" -> JsString(param.value.get.value))
+        if (param.value.get.contentType.isDefined && param.parameter.kind == "BINARY") {
+          json = json.+("mimeType" -> JsString(param.value.get.contentType.get))
+        }
+      }
+    }
+    json
+  }
+
   def jsSystemParametersWithValues(list: List[SystemParametersWithValue], includeValues: Boolean):JsArray = {
     var json = Json.arr()
     list.foreach { parameter =>
@@ -2898,10 +3221,10 @@ object JsonUtil {
     if (settings.to.isDefined && settings.to.get.nonEmpty) json = json + ("to" -> jsStringArray(settings.to.get))
     if (settings.smtpHost.isDefined) json = json + ("host" -> JsString(settings.smtpHost.get))
     if (settings.smtpPort.isDefined) json = json + ("port" -> JsNumber(settings.smtpPort.get))
-    if (settings.authEnabled.isDefined) {
+    if (settings.authEnabled.exists(x => x)) {
       json = json + ("authenticate" -> JsBoolean(settings.authEnabled.get))
-      if (settings.authUsername.isDefined) json = json + ("username" -> JsString(settings.authUsername.get))
-      if (settings.authPassword.isDefined) json = json + ("password" -> JsString(if (maskPassword) "*****" else settings.authPassword.get))
+      if (settings.authUsername.exists(StringUtils.isNoneBlank(_))) json = json + ("username" -> JsString(settings.authUsername.get))
+      if (settings.authPassword.exists(StringUtils.isNoneBlank(_))) json = json + ("password" -> JsString(if (maskPassword) "*****" else settings.authPassword.get))
     }
     if (settings.sslEnabled.isDefined) json = json + ("sslEnabled" -> JsBoolean(settings.sslEnabled.get))
     if (settings.sslProtocols.isDefined && settings.sslProtocols.get.nonEmpty) json = json + ("sslProtocols" -> jsStringArray(settings.sslProtocols.get))
@@ -3014,7 +3337,7 @@ object JsonUtil {
     }
   }
 
-  def constructErrorMessage(errorCode: Any, errorDesc: String, errorIdentifier: Option[String]): JsObject = {
+  def constructErrorMessage(errorCode: Any, errorDesc: String, errorIdentifier: Option[String], errorHint: Option[String] = None): JsObject = {
     val code = errorCode match {
       case _: Int => "" + errorCode
       case _: String => errorCode.asInstanceOf[String]
@@ -3026,6 +3349,9 @@ object JsonUtil {
     )
     if (errorIdentifier.isDefined) {
       obj = obj.+("error_id" -> JsString(errorIdentifier.get))
+    }
+    if (errorHint.isDefined) {
+      obj = obj.+("error_hint" -> JsString(errorHint.get))
     }
     obj
   }

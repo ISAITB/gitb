@@ -12,16 +12,23 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Locale;
+import java.util.Set;
 
 public class MimeUtil {
 
     private final static Tika tika = new Tika();
+    private final static Set<String> imageMimeTypes = Set.of("image/png", "image/x-png", "image/jpeg", "image/gif", "image/svg+xml");
 
     public static String base64AsDataURL(String base64Content) {
+        return base64AsDataURL(base64Content, null);
+    }
+
+    public static String base64AsDataURL(String base64Content, String mimeType) {
         if (base64Content.startsWith("data:")) {
             return base64Content;
         } else {
-            return createDataURLString(base64Content, null);
+            return createDataURLString(base64Content, mimeType);
         }
     }
 
@@ -50,6 +57,10 @@ public class MimeUtil {
             result = dataURL.substring(dataURL.indexOf(",")+1);
         }
         return result;
+    }
+
+    public static boolean isImageType(String mimeType) {
+        return imageMimeTypes.contains(mimeType.toLowerCase(Locale.getDefault()));
     }
 
     public static String getMimeTypeFromBase64(String base64) {

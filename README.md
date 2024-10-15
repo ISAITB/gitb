@@ -71,11 +71,11 @@ Follow these steps to build and run the application components for development p
 ## Prerequisites
 
 To build and run the Test Bed's components you need to have the following tools:
-- JDK 17+, used as the base platform for both ``gitb-srv`` and ``gitb-ui``.
+- JDK 21+, used as the base platform for both ``gitb-srv`` and ``gitb-ui``.
 - Maven 3.9+, used to build ``gitb-srv``.
-- SBT 1.9+, used to build ``gitb-ui``.
+- SBT 1.10+, used to build ``gitb-ui``.
 - Scala 2.13+, used to build the backend app of ``gitb-ui``.
-- Node version 20+, used to build the frontend app of ``gitb-ui``.
+- Node version 22+, used to build the frontend app of ``gitb-ui``.
 
 Although not mandatory, the proposed IDE to use is IntelliJ, and VS Code for ``gitb-ui``'s Angular app.
 
@@ -83,8 +83,8 @@ Although not mandatory, the proposed IDE to use is IntelliJ, and VS Code for ``g
 
 The focus of this README file is the ``gitb-srv`` and ``gitb-ui`` components. To run a complete Test Bed instance
 you will also require at least:
-- A MySQL database (version 8.*) for its persistence.
-- A REDIS instance for the caching of user sessions.
+- A MySQL database (version 8+) for its persistence.
+- A REDIS instance (version 7+) for the caching of user sessions.
 
 Both these instances are set up separately (e.g. via Docker) environment. These can be set up from Docker
 as follows:

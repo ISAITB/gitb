@@ -4,10 +4,8 @@
             <div class="card-title">Create community</div>
         </div>
         <form>
-            <div class="card-body">
-                <!-- Error messages -->
-                <app-alert-display [alerts]="alerts" innerClass="col-10 offset-1"></app-alert-display>
-                <app-community-form [community]="community" [admin]="true" [domains]="domains"></app-community-form>
+            <div class="card-body" [pending]="!loaded" focus="sname">
+                <app-community-form [community]="community" [admin]="true" [domains]="domains" [validation]="validation"></app-community-form>
             </div>
             <div class="card-footer">
                 <div class="btn-toolbar">

@@ -98,7 +98,7 @@ public enum ErrorCode {
     INVALID_SCRIPTLET_SYNTAX(                           "TDL-082", "%s", ERROR),
     SCRIPTLET_REFERENCE_DID_NOT_MATCH_SCRIPTLET(        "TDL-083", "%s [%s] defines a call step referring to a scriptlet file within the test suite, but the referred file [%s] is not a scriptlet.", ERROR, true),
     UNEXPECTED_SCRIPTLET_INPUT(                         "TDL-084", "%s [%s] defines a call step for scriptlet [%s] that is providing an unexpected input [%s].", ERROR, true),
-    MISSING_SCRIPTLET_INPUT(                            "TDL-085", "%s [%s] defines a call step for scriptlet [%s] that does not provide an expected input [%s]. Either define the input in the call step or specify a default value.", ERROR, true),
+    MISSING_SCRIPTLET_INPUT(                            "TDL-085", "%s [%s] defines a call step for scriptlet [%s] that does not provide an expected input [%s]. Either define the input in the call step, mark the input as optional, or specify a default value.", ERROR, true),
     DUPLICATE_OUTPUT(                                   "TDL-086", "%s [%s] defines a %s step that requests the same output [%s] multiple times.", WARNING, true),
     UNEXPECTED_SCRIPTLET_OUTPUT(                        "TDL-087", "%s [%s] defines a call step for scriptlet [%s] that requests an unsupported output [%s].", WARNING, true),
     EXTERNAL_SCRIPTLET_USED(                            "TDL-088", "Calls are made to scriptlet [%s] from test suite [%s]. Ensure this will be available at runtime.", INFO),
@@ -139,7 +139,8 @@ public enum ErrorCode {
     MISSING_PROCESSING_OPERATION(                       "TDL-118", "%s [%s] in step %s does not specify which operation to perform. Handler %s defines multiple operations (%s), so the step may fail or at least may not be deterministic.", WARNING, true),
     DUPLICATE_TEST_CASE_REFERENCE(                      "TDL-119", "The test suite references the same test case multiple times [%s].", ERROR),
     DEPRECATED_HANDLER(                                 "TDL-120", "%s [%s] in step %s refers to deprecated handler %s.", WARNING, true),
-    DEPRECATED_HANDLER_WITH_REPLACEMENT(                "TDL-121", "%s [%s] in step %s refers to deprecated handler %s. Consider using the %s handler instead.", WARNING, true)
+    DEPRECATED_HANDLER_WITH_REPLACEMENT(                "TDL-121", "%s [%s] in step %s refers to deprecated handler %s. Consider using the %s handler instead.", WARNING, true),
+    SCRIPTLET_EMPTY_AND_DEFAULT_INPUTS(                 "TDL-122", "Scriptlet [%s] defines an input parameter [%s] that is set as empty by default but is also provided with default values. The provided default values will be ignored.", WARNING, false)
     ;
 
     private final String code;

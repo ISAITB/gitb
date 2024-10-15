@@ -1,0 +1,1 @@
+ALTER TABLE `specificationgroups` ADD COLUMN `api_key` varchar(255);

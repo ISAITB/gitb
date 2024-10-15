@@ -1,21 +1,29 @@
 <div class="row">
     <label class="col-3 col-form-label text-end" for="parameterName">* {{nameLabel}}:</label>
-    <div class="col-7"><input id="parameterName" name="parameterName" [(ngModel)]="parameter.name" class="form-control" type="text"></div>
-    <div app-tooltip class="col-auto" *ngIf="hasKey" tbTooltip="This will be displayed as a label for the property in data collection forms."></div>
-    <div app-tooltip class="col-auto" *ngIf="!hasKey" [tbTooltip]="'An identifier for the parameter within the current '+dataService.labelEndpointLower()+'. This is displayed to users in the conformance statement detail screen and used within test cases to refer to the parameter.'"></div>
+    <div class="col-7"><input id="parameterName" name="parameterName" [(ngModel)]="parameter.name" class="form-control" type="text" [invalid]="validation.get('name')"></div>
+    @if (hasKey) {
+        <div app-tooltip class="col-auto" tbTooltip="This will be displayed as a label for the property in data collection forms."></div>
+    } @else {
+        <div app-tooltip class="col-auto" [tbTooltip]="'An identifier for the parameter within the current '+dataService.labelEndpointLower()+'. This is displayed to users in the conformance statement detail screen and used within test cases to refer to the parameter.'"></div>
+    }
 </div>
-<div class="row mt-3" *ngIf="hasKey">
-    <label class="col-3 col-form-label text-end" for="parameterKey">* Key:</label>
-    <div class="col-7"><input id="parameterKey" name="parameterKey" [(ngModel)]="parameter.testKey" class="form-control" type="text"></div>
-    <div app-tooltip class="col-auto" tbTooltip="An identifier used to distinguish this property and refer to it from within test cases (if included in tests)."></div>
-</div>
+@if (hasKey) {
+    <div class="row mt-3">
+        <label class="col-3 col-form-label text-end" for="parameterKey">* Key:</label>
+        <div class="col-7"><input id="parameterKey" name="parameterKey" [(ngModel)]="parameter.testKey" class="form-control" type="text" [invalid]="validation.get('key')"></div>
+        <div app-tooltip class="col-auto" tbTooltip="An identifier used to distinguish this property and refer to it from within test cases (if included in tests)."></div>
+    </div>
+}
 <div class="row mt-3">
     <label class="col-3 col-form-label text-end" for="parameterDescription">Description:</label>
     <div class="col-7">
         <textarea id="parameterDescription" name="parameterDescription" [(ngModel)]="parameter.desc" class="form-control"></textarea>
     </div>
-    <div app-tooltip class="col-auto" *ngIf="hasKey" tbTooltip="This text will be included in a tooltip displayed for this property in data collection forms to explain its purpose."></div>
-    <div app-tooltip class="col-auto" *ngIf="!hasKey" tbTooltip="This is presented to users when requesting a value for this parameter to explain its purpose."></div>
+    @if (hasKey) {
+        <div app-tooltip class="col-auto" tbTooltip="This text will be included in a tooltip displayed for this property in data collection forms to explain its purpose."></div>
+    } @else {
+        <div app-tooltip class="col-auto" tbTooltip="This is presented to users when requesting a value for this parameter to explain its purpose."></div>
+    }
 </div>
 <div class="row mt-3 pt-1">
     <legend class="col-3 col-form-label text-end pt-0">* Value type:</legend>
@@ -55,45 +63,63 @@
             <input class="form-check-input" type="checkbox" id="notForTests" name="notForTests" [(ngModel)]="parameter.notForTests" appTrueFalseValue [trueValue]="false" [falseValue]="true">
             <label class="form-check-label" for="notForTests">Included in tests</label>
         </div>
-        <div class="form-check form-check-inline" *ngIf="!hideInExport && parameter.kind == 'SIMPLE'">
-            <input class="form-check-input" type="checkbox" id="inExports" name="inExports" [(ngModel)]="parameter.inExports">
-            <label class="form-check-label" for="inExports">Included in exports</label>
-        </div>
-        <div class="form-check form-check-inline" *ngIf="parameter.adminOnly">
-            <input class="form-check-input" type="checkbox" id="hidden" name="hidden" [(ngModel)]="parameter.hidden">
-            <label class="form-check-label" for="hidden">Hidden</label>
-        </div>
-        <div class="form-check form-check-inline" *ngIf="!parameter.adminOnly && !hideInRegistration">
-            <input class="form-check-input" type="checkbox" id="inSelfRegistration" name="inSelfRegistration" [(ngModel)]="parameter.inSelfRegistration">
-            <label class="form-check-label" for="inSelfRegistration">Requested in self-registration</label>
-        </div>
+        @if (!hideInExport && parameter.kind == 'SIMPLE') {
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="inExports" name="inExports" [(ngModel)]="parameter.inExports">
+                <label class="form-check-label" for="inExports">Included in exports</label>
+            </div>
+        }
+        @if (parameter.adminOnly) {
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="hidden" name="hidden" [(ngModel)]="parameter.hidden">
+                <label class="form-check-label" for="hidden">Hidden</label>
+            </div>
+        } @else if (!hideInRegistration) {
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="inSelfRegistration" name="inSelfRegistration" [(ngModel)]="parameter.inSelfRegistration">
+                <label class="form-check-label" for="inSelfRegistration">Requested in self-registration</label>
+            </div>
+        }
     </div>
 </div>
-<div class="row mt-3" *ngIf="dependsOnTargets.length > 0">
-    <label class="col-3 col-form-label text-end" for="depends">Depends on:</label>
-    <div class="col-3">
-        <select id="depends" name="depends" class="form-control form-select" [(ngModel)]="parameter.dependsOn" (change)="dependsOnChanged()">
-            <option value=""></option>
-            <option *ngFor="let v of dependsOnTargets" [value]="v.key">{{v.name}}</option>
-        </select>
-    </div>
-    <div class="col-4 ps-0">
-        <div *ngIf="parameter.dependsOn && parameter.dependsOn != ''">
-            <div *ngIf="!dependsOnTargetsMap[parameter.dependsOn].hasPresetValues">
-                <input type="text" class="form-control" name="dependsOnValue" [(ngModel)]="parameter.dependsOnValue" placeholder="Property value"/>
-            </div>
-            <div *ngIf="dependsOnTargetsMap[parameter.dependsOn].hasPresetValues">
-                <select name="dependsOnValue" [(ngModel)]="parameter.dependsOnValue" class="form-control form-select">
-                    <option *ngFor="let v of dependsOnTargetsMap[parameter.dependsOn].presetValues" [value]="v.value">{{v.label}}</option>
-                </select>
-            </div>
+@if (dependsOnTargets.length > 0) {
+    <div class="row mt-3">
+        <label class="col-3 col-form-label text-end" for="depends">Depends on:</label>
+        <div class="col-3">
+            <select id="depends" name="depends" class="form-select" [(ngModel)]="parameter.dependsOn" (change)="dependsOnChanged()">
+                <option value=""></option>
+                @for (v of dependsOnTargets; track $index) {
+                    <option [value]="v.key">{{v.name}}</option>
+                }
+            </select>
         </div>
-        <div *ngIf="!(parameter.dependsOn && parameter.dependsOn != '')">
-            <input type="text" readonly="readonly" class="form-control" placeholder="Property value"/>
+        <div class="col-4 ps-0">
+            @if (parameter.dependsOn && parameter.dependsOn != '') {
+                <div>
+                    @if (!dependsOnTargetsMap[parameter.dependsOn].hasPresetValues) {
+                        <div>
+                            <input type="text" class="form-control" name="dependsOnValue" [(ngModel)]="parameter.dependsOnValue" placeholder="Property value"/>
+                        </div>
+                    } @else {
+                        <div>
+                            <select name="dependsOnValue" [(ngModel)]="parameter.dependsOnValue" class="form-select">
+                                @for (v of dependsOnTargetsMap[parameter.dependsOn].presetValues; track $index) {
+                                    <option [value]="v.value">{{v.label}}</option>
+                                }
+                            </select>
+                        </div>
+                    }
+                </div>
+            }
+            @if (!(parameter.dependsOn && parameter.dependsOn != '')) {
+                <div>
+                    <input type="text" readonly="readonly" class="form-control" placeholder="Property value"/>
+                </div>
+            }
         </div>
+        <div app-tooltip class="col-auto" tbTooltip="Define another simple property as a prerequisite. To do so select another property and define the value that is must have. If the prerequisite property's value does not match the provided value, then the current property is hidden and never considered as required."></div>
     </div>
-    <div app-tooltip class="col-auto" tbTooltip="Define another simple property as a prerequisite. To do so select another property and define the value that is must have. If the prerequisite property's value does not match the provided value, then the current property is hidden and never considered as required."></div>
-</div>
+}
 <div [collapse]="parameter.kind != 'SIMPLE'" [isAnimated]="true">
     <div class="row mt-3 pt-1">
         <label class="col-3 col-form-label text-end pt-0" for="hasPresetValues">Preset values:</label>
@@ -107,35 +133,43 @@
     <div [collapse]="!parameter.hasPresetValues" [isAnimated]="true">
         <div class="row mt-3">
             <div class="col-8 offset-3">
-                <div class="form-table table-container rounded" *ngIf="parameter.presetValues!.length > 0">
-                    <table class="table table-directive thick">
-                        <thead>
-                            <tr>
-                                <th>* Value</th>
-                                <th>* Label</th>
-                                <th class="min-width"></th>
-                                <th class="min-width" *ngIf="parameter.presetValues!.length > 1"></th>
-                            </tr>
-                        </thead>
-                        <tbody class="presetTable" cdkDropList cdkDropListLockAxis="y" (cdkDropListDropped)="dropPreset($event)">
-                            <tr *ngFor="let presetValue of parameter.presetValues; let index = index"
-                                class="drag-table-row"
-                                cdkDrag
-                                (cdkDragStarted)="draggingPreset = true"
-                                (cdkDragEnded)="draggingPreset = false"
-                                cdkDragPreviewContainer="parent"
-                                [cdkDragDisabled]="parameter.presetValues!.length == 1"
-                            >
-                                <td class="drag-preview"><input [attr.id]="'presetValue-'+index" [name]="'presetValue-'+index" class="form-control" type="text" [(ngModel)]="presetValue.value"/></td>
-                                <td><input class="form-control" type="text" [name]="'presetValueLabel-'+index" [(ngModel)]="presetValue.label"/></td>
-                                <td><button class="btn btn-secondary" type="button" (click)="removePresetValue(index)" containerClass="shortTooltip" tooltip="Delete" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-trash"></i></button></td>
-                                <td class="drag-handle" *ngIf="parameter.presetValues!.length > 1">
-                                    <button cdkDragHandle #pop="bs-tooltip" (mousedown)="pop.hide()" class="btn btn-secondary" type="button" containerClass="shortTooltip" container="body" tooltip="Reorder" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrows-up-down"></i></span></button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                @if (parameter.presetValues!.length > 0) {
+                    <div class="form-table table-container rounded">
+                        <table class="table table-directive thick">
+                            <thead>
+                                <tr>
+                                    <th>* Value</th>
+                                    <th>* Label</th>
+                                    <th class="min-width"></th>
+                                    @if (parameter.presetValues!.length > 1) {
+                                        <th class="min-width"></th>
+                                    }
+                                </tr>
+                            </thead>
+                            <tbody class="presetTable" cdkDropList cdkDropListLockAxis="y" (cdkDropListDropped)="dropPreset($event)">
+                                @for (presetValue of parameter.presetValues; track index; let index = $index) {
+                                    <tr
+                                        class="drag-table-row"
+                                        cdkDrag
+                                        (cdkDragStarted)="draggingPreset = true"
+                                        (cdkDragEnded)="draggingPreset = false"
+                                        cdkDragPreviewContainer="parent"
+                                        [cdkDragDisabled]="parameter.presetValues!.length == 1"
+                                    >
+                                        <td class="drag-preview"><input [attr.id]="'presetValue-'+index" [name]="'presetValue-'+index" class="form-control" type="text" [(ngModel)]="presetValue.value"/></td>
+                                        <td><input class="form-control" type="text" [name]="'presetValueLabel-'+index" [(ngModel)]="presetValue.label"/></td>
+                                        <td><button class="btn btn-secondary" type="button" (click)="removePresetValue(index)" containerClass="shortTooltip" tooltip="Delete" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-trash"></i></button></td>
+                                        @if (parameter.presetValues!.length > 1) {
+                                            <td class="drag-handle">
+                                                <button cdkDragHandle #pop="bs-tooltip" (mousedown)="pop.hide()" class="btn btn-secondary" type="button" containerClass="shortTooltip" container="body" tooltip="Reorder" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrows-up-down"></i></span></button>
+                                            </td>
+                                        }
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
             </div>
             <div class="col-8 offset-3">
                 <button class="btn btn-secondary" type="button" (click)="addPresetValue()" containerClass="shortTooltip" tooltip="Add" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-plus"></i></button>
@@ -145,11 +179,16 @@
     <div class="row mt-3">
         <label class="col-3 col-form-label text-end" for="defaultValue">Default value:</label>
         <div class="col-7">
-            <input *ngIf="!parameter.hasPresetValues" id="defaultValue" name="defaultValue" [(ngModel)]="parameter.defaultValue" class="form-control" type="text">
-            <select *ngIf="parameter.hasPresetValues" name="defaultValue" [(ngModel)]="parameter.defaultValue" class="form-control form-select">
-                <option></option>
-                <option *ngFor="let v of parameter.presetValues" [value]="v.value">{{v.label}}</option>
-            </select>
+            @if (!parameter.hasPresetValues) {
+                <input id="defaultValue" name="defaultValue" [(ngModel)]="parameter.defaultValue" class="form-control" type="text">
+            } @else {
+                <select name="defaultValue" [(ngModel)]="parameter.defaultValue" class="form-select">
+                    <option></option>
+                    @for (v of parameter.presetValues; track v) {
+                        <option [value]="v.value">{{v.label}}</option>
+                    }
+                </select>
+            }
         </div>
         <div app-tooltip class="col-auto" tbTooltip="The default value to assign for this property for new instances if no value is provided."></div>
     </div>

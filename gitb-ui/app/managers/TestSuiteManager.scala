@@ -800,6 +800,7 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 	private def theSameActor(one: Actors, two: Actors): Boolean = {
 		(Objects.equals(one.name, two.name)
 				&& Objects.equals(one.description, two.description)
+				&& Objects.equals(one.reportMetadata, two.reportMetadata)
 				&& Objects.equals(one.default, two.default)
         && Objects.equals(one.hidden, two.hidden)
 				&& Objects.equals(one.displayOrder, two.displayOrder))
@@ -894,7 +895,7 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 						if (!updateActions.updateActors.get || isActorReference(actorToSave) || theSameActor(existingActor.get, actorToSave)) {
 							result += new TestSuiteUploadItemResult(existingActor.get.name, TestSuiteUploadItemResult.ITEM_TYPE_ACTOR, TestSuiteUploadItemResult.ACTION_TYPE_UNCHANGED, specificationId)
 						} else {
-							updateAction = Some(actorManager.updateActor(existingActor.get.id, actorToSave.actorId, actorToSave.name, actorToSave.description, actorToSave.default, actorToSave.hidden, actorToSave.displayOrder, specificationId, None, checkApiKeyUniqueness = false, None, onSuccessCalls))
+							updateAction = Some(actorManager.updateActor(existingActor.get.id, actorToSave.actorId, actorToSave.name, actorToSave.description, actorToSave.reportMetadata, actorToSave.default, actorToSave.hidden, actorToSave.displayOrder, specificationId, None, checkApiKeyUniqueness = false, None, onSuccessCalls))
 							result += new TestSuiteUploadItemResult(existingActor.get.name, TestSuiteUploadItemResult.ITEM_TYPE_ACTOR, TestSuiteUploadItemResult.ACTION_TYPE_UPDATE, specificationId)
 						}
 						savedActorId = DBIO.successful(existingActor.get.id)
@@ -1000,7 +1001,7 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 					if (!updateActions.updateActors.get || theSameParameter(parameter, existingParameter)) {
 						result += new TestSuiteUploadItemResult(actorToSave.actorId+"["+endpoint.name+"]."+parameter.testKey, TestSuiteUploadItemResult.ITEM_TYPE_PARAMETER, TestSuiteUploadItemResult.ACTION_TYPE_UNCHANGED, specificationId)
 					} else {
-						action = Some(parameterManager.updateParameter(parameterId, parameter.name, parameter.testKey, parameter.desc, parameter.use, parameter.kind, parameter.adminOnly, parameter.notForTests, parameter.hidden, parameter.allowedValues, parameter.dependsOn, parameter.dependsOnValue, parameter.defaultValue, onSuccessCalls))
+						action = Some(parameterManager.updateParameter(parameterId, parameter.name, parameter.testKey, parameter.desc, parameter.use, parameter.kind, parameter.adminOnly, parameter.notForTests, parameter.hidden, parameter.allowedValues, parameter.dependsOn, parameter.dependsOnValue, parameter.defaultValue, None, onSuccessCalls))
 						result += new TestSuiteUploadItemResult(actorToSave.actorId+"["+endpoint.name+"]."+parameter.testKey, TestSuiteUploadItemResult.ITEM_TYPE_PARAMETER, TestSuiteUploadItemResult.ACTION_TYPE_UPDATE, specificationId)
 					}
 				} else {

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable, Subscriber, throwError } from 'rxjs';
+import { mergeMap, Observable, of, Subscriber, throwError } from 'rxjs';
 import { ErrorDataArrayBuffer } from '../types/error-data-array-buffer.type';
 import { ErrorData } from '../types/error-data.type';
 import { ConfirmationDialogService } from './confirmation-dialog.service';
@@ -12,6 +12,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Organisation } from '../types/organisation.type';
 import { ErrorTemplate } from '../types/error-template';
 import { ErrorDescription } from '../types/error-description';
+import { DataService } from './data.service';
+import { CodeEditorModalComponent } from '../components/code-editor-modal/code-editor-modal.component';
 
 @Injectable({
   providedIn: 'root'
@@ -23,7 +25,8 @@ export class ErrorService {
   constructor(
     private confirmationDialogService: ConfirmationDialogService,
     private modalService: BsModalService,
-    private baseRestService: BaseRestService
+    private baseRestService: BaseRestService,
+    private dataService: DataService
   ) { }
 
   customErrorHandler(title: string|undefined, message: string, error: string|ErrorData|ErrorDataArrayBuffer): Observable<any> {
@@ -57,7 +60,7 @@ export class ErrorService {
 
   showErrorMessageWithRetry(error: undefined|string|ErrorData|ErrorDataArrayBuffer|HttpErrorResponse, withRetry: boolean): Observable<boolean> {
     return new Observable<boolean>((observer) => {
-      if (this.confirmationDialogService.sessionNotificationOpen) {
+      if (this.errorCurrentlyDisplayed) {
         observer.next()
         observer.complete()
       } else {
@@ -197,4 +200,62 @@ export class ErrorService {
       })
     }
   }
+
+  popupErrorsArray(errorArray: string[]|undefined, title?: string, contentType?: string) {
+    let content = this.dataService.errorArrayToString(errorArray)
+    if (contentType == undefined) {
+      contentType = 'text/plain'
+    } else if (contentType == 'application/json') {
+      content = this.dataService.prettifyJSON(content)
+    }
+    let titleToUse = title
+    if (titleToUse == undefined) {
+      titleToUse = 'Error message(s)'
+    }
+    this.modalService.show(CodeEditorModalComponent, {
+      class: 'modal-lg',
+      initialState: {
+        documentName: titleToUse,
+        editorOptions: {
+          value: content,
+          readOnly: true,
+          copy: true,
+          lineNumbers: false,
+          smartIndent: false,
+          electricChars: false,
+          styleClass: 'editor-short',
+          mode: contentType
+        }
+      }
+    })
+  }
+
+  showInvalidSessionNotification(): Observable<boolean> {
+    if (!this.errorCurrentlyDisplayed) {
+      this.errorCurrentlyDisplayed = true
+      return this.confirmationDialogService.notified("Invalid session", "Your current session is invalid. You will now return to the login screen to reconnect.", "Close").pipe(
+        mergeMap(() => {
+          this.errorCurrentlyDisplayed = false
+          return of(true)
+        })
+      )
+    } else {
+      return of(false)      
+    }
+  }
+
+  showUnauthorisedAccessError(): Observable<boolean> {
+    if (!this.errorCurrentlyDisplayed) {
+      this.errorCurrentlyDisplayed = true
+      return this.confirmationDialogService.notified("Access forbidden", "You don't have access to view this information. Close this popup to return to the home page.", "Close").pipe(
+        mergeMap(() => {
+          this.errorCurrentlyDisplayed = false
+          return of(true)
+        })
+      )
+    } else {
+      return of(false)
+    }
+  }
+
 }
