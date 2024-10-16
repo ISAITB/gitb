@@ -105,4 +105,11 @@
         <packageUrl regex="true">^pkg:maven/org\.glassfish\.jaxb/txw2@.*$</packageUrl>
         <cve>CVE-2024-9329</cve>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        file name: org.eclipse.jetty.jetty-http-11.0.22.jar
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty/jetty-http@.*$</packageUrl>
+        <vulnerabilityName>CVE-2024-6763</vulnerabilityName>
+     </suppress>  
 </suppressions>
