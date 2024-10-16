@@ -21,9 +21,9 @@ export class SystemAdminViewGuard  {
   canActivate(
     route: ActivatedRouteSnapshot,
     state: RouterStateSnapshot): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
-      return this.userLoaded().pipe(
+      return this.userLoaded(state).pipe(
         mergeMap(() => {
-          if (this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin) {
+          if (this.dataService.isSystemAdmin) {
             return of(true)
           } else {
             return this.errorService.showUnauthorisedAccessError().pipe(
@@ -36,11 +36,12 @@ export class SystemAdminViewGuard  {
       )
   }
 
-  private userLoaded(): Observable<any> {
-    if (this.dataService.user) {
+  private userLoaded(state: RouterStateSnapshot): Observable<any> {
+    // The ID property of the user is set only after all information on the user had been loaded.
+    if (this.dataService.user?.id) {
       return of(true)
     } else {
-      return this.profileResolver.resolveData()
+      return this.profileResolver.resolveData(state)
     }
   }
 

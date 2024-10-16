@@ -21,7 +21,7 @@ export class AdminViewGuard  {
   canActivate(
     route: ActivatedRouteSnapshot,
     state: RouterStateSnapshot): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
-      return this.userLoaded().pipe(
+      return this.userLoaded(state).pipe(
         mergeMap(() => {
           if (this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin) {
             return of(true)
@@ -36,11 +36,12 @@ export class AdminViewGuard  {
       )
   }
 
-  private userLoaded(): Observable<any> {
-    if (this.dataService.user) {
+  private userLoaded(state: RouterStateSnapshot): Observable<any> {
+    if (this.dataService.user?.id) {
+      // The ID property of the user is set only after all information on the user had been loaded.
       return of(true)
     } else {
-      return this.profileResolver.resolveData()
+      return this.profileResolver.resolveData(state)
     }
   }
 
