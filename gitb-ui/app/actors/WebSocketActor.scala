@@ -51,7 +51,7 @@ class WebSocketActor @Inject() (actorSystem: ActorSystem, testbedClient: manager
     }
   }
 
-  def testSessionStarted(sessionId:String): Unit = {
+  def registerActiveTestSession(sessionId:String): Unit = {
     WebSocketActor.activeSessions.synchronized {
       if (!WebSocketActor.activeSessions.contains(sessionId)) {
         WebSocketActor.activeSessions += sessionId
@@ -59,7 +59,7 @@ class WebSocketActor @Inject() (actorSystem: ActorSystem, testbedClient: manager
     }
   }
 
-  def testSessionEnded(sessionId:String):Unit = {
+  def removeActiveTestSession(sessionId:String):Unit = {
     testSessionEnded(sessionId, null)
   }
 
@@ -137,7 +137,7 @@ class WebSocketActorHandler (out: ActorRef, webSocketActor: WebSocketActor) exte
             if (!jsSessionId.isInstanceOf[JsUndefined]){
               sessionId = jsSessionId.as[String]
               WebSocketActor.webSockets += (sessionId -> out)
-              webSocketActor.testSessionStarted(sessionId)
+              webSocketActor.registerActiveTestSession(sessionId)
             }
           case NOTIFY =>
             val message = msg.as[JsObject] - "command" //remove command field from msg
