@@ -111,5 +111,12 @@
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty/jetty-http@.*$</packageUrl>
         <vulnerabilityName>CVE-2024-6763</vulnerabilityName>
+     </suppress>
+     <suppress>
+        <notes><![CDATA[
+        file name: org.eclipse.jetty.jetty-server-11.0.22.jar
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty/jetty-server@.*$</packageUrl>
+        <vulnerabilityName>CVE-2024-8184</vulnerabilityName>
      </suppress>  
 </suppressions>
