@@ -74,7 +74,7 @@
                 }
             </div>
             @if (showTestCases) {
-                <div class="item-content-container" [collapse]="!testCasesOpen" [isAnimated]="true" (expanded)="expanded()" (collapsed)="collapsed()">
+                <div class="item-content-container" [collapse]="!testCasesOpen" [isAnimated]="true">
                     <div class="item-content">
                         @if (statementSummary) {
                             <div class="statement-controls">
@@ -112,7 +112,7 @@
                     </div>
                 </div>
             } @else if (item.items && item.items.length > 0) {
-                <div class="item-content-container item-content" [collapse]="item.collapsed!" [isAnimated]="expandable && animated" (expanded)="expanded()" (collapsed)="collapsed()">
+                <div class="item-content-container item-content" [collapse]="item.collapsed!" [isAnimated]="expandable && animated" (expanded)="expanded()" (collapses)="collapses()">
                     <app-conformance-statement-items-display
                         [items]="item.items"
                         [wrapDescriptions]="wrapDescriptions"
