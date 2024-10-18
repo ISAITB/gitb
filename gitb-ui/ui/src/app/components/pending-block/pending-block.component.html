@@ -1,5 +1,5 @@
 @if (pending) {
-    <span [ngClass]="{'mini-tab': !icon}"><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span>
+    <span [class.mini-tab]="!icon" [class.large]="large"><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span>
     @if (!pending || !icon) {
         <ng-content></ng-content>
     }

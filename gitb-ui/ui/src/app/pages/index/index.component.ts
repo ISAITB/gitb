@@ -52,28 +52,11 @@ export class IndexComponent implements OnInit, OnDestroy {
     this.version = this.dataService.configuration.versionNumber
     this.logoutSubscription = this.authProviderService.onLogout$.subscribe(() => {
       this.logoutInProgress = true
-      this.showLogoutNotification()
     })
     this.logoutCompleteSubscription = this.authProviderService.onLogoutComplete$.subscribe(() => {
       this.logoutInProgress = false
     })
   }
-
-  showLogoutNotification() {
-    if (this.logoutTemplate) {
-      this.modalService.show(this.logoutTemplate, {
-        backdrop: 'static',
-        keyboard: false
-      })
-    }
-  }
-
-  closeLogoutNotification() {
-    if (this.logoutModal) {
-      this.logoutModal.hide()
-    }
-  }
-
 
   ngOnDestroy(): void {
     if (this.logoutSubscription) this.logoutSubscription.unsubscribe()

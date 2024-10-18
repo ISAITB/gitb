@@ -34,8 +34,24 @@
 }
 
 .logout-notification {
+    border: 1px solid @gray-dark-1;
+    border-radius: @border-radius;
+    box-shadow: 5px 6px 5px -3px @gray;
+    opacity: 1;
+    background-color: @gray-light-1;
     display: flex;
     justify-content: center;
     align-items: center;
     padding: 10px 0px;
+    position: absolute;
+    left: 50%;
+    top: 128px;
+    transform: translate(-50%);
+    z-index: 1;
+    min-width: 300px;
+    max-width: 800%;
+}
+
+.initial-load-indicator {
+    margin: 30px 0px;
 }
