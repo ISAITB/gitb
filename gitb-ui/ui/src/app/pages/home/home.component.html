@@ -3,7 +3,7 @@
         <div class="row">
             <div class="col-12">
                 @if (pageContent == undefined) {
-                    <div class="container"><span class="tab" style="font-size: xx-large;"><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></div>
+                    <div class="container"><app-pending-block [icon]="true" [large]="true"></app-pending-block></div>
                 } @else {
                     <div id="content" [innerHtml]="pageContent | sanitizeHtml"></div>
                 }

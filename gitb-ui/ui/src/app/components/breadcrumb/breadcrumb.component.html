@@ -1,5 +1,5 @@
 @if (dataService.showNavigationControls) {
-    <div class="breacrumbContainer">
+    <div class="breacrumbContainer" [class.disable-events]="logoutInProgress">
         @if (breadcrumbs != undefined) {
             @for (crumb of breadcrumbsToShow; track $index) {
                 @if (crumb.label != undefined) {

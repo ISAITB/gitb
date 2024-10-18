@@ -23,9 +23,15 @@
           </div>
       </section>
       @if (dataService.showNavigationControls) {
-        <app-breadcrumb></app-breadcrumb>
+        <app-breadcrumb [logoutInProgress]="logoutInProgress"></app-breadcrumb>
       }
-      <div class="page-root">
+      @if (logoutInProgress) {
+        <div class="logout-notification">
+          <app-pending-block [pending]="true"></app-pending-block>
+          <div class="logout-message">Logout in progress</div>
+        </div>
+      }
+      <div class="page-root" [class.disable-events]="logoutInProgress">
         @if (dataService.showNavigationControls) {
           <div class="page-menu">
             <app-menu-item (click)="routingService.toHome()" [type]="MenuItem.home" label="Home" icon="fa-solid fa-house" [expanded]="menuExpanded"></app-menu-item>
@@ -51,7 +57,14 @@
           </div>
         }
         <div class="page-content" appFileDropTarget>
-            <router-outlet></router-outlet>
+          @if (!dataService.showNavigationControls && isAuthenticated() && !logoutInProgress) {
+            <div class="container">
+              <div class="initial-load-indicator">
+                <app-pending-block [icon]="true" [large]="true"></app-pending-block>
+              </div>
+            </div>
+          }          
+          <router-outlet></router-outlet>
         </div>
       </div>
     </div>
@@ -93,13 +106,3 @@
     </div>
   </div>
 </div>
-<ng-template #logoutTemplate>
-  <div class="modal-body">
-    <div class="logout-notification">
-      <app-pending-block [pending]="true"></app-pending-block>
-      <div class="logout-message">
-        Please wait while you are being logged out
-      </div>
-    </div>
-  </div>
-</ng-template>

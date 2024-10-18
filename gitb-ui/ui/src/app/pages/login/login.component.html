@@ -1,11 +1,5 @@
 <div class="page-with-margins">
-    @if (loginInProgress) {
-        <div>
-            <div class="container">
-                <span class="tab" style="font-size: xx-large;"><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span>
-            </div>
-        </div>
-    } @else if (dataService.configuration) {
+    @if (!loginInProgress && dataService.configuration) {
         <div>
             @if (dataService.configuration.ssoEnabled && dataService.actualUser != undefined) {
                 <div>
