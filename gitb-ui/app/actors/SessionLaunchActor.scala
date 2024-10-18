@@ -1,11 +1,10 @@
 package actors
 
 import actors.events.TestSessionStartedEvent
-import actors.events.sessions.{PrepareTestSessionsEvent, SessionLaunchState, StartNextTestSessionEvent, TerminateAllSessionsEvent, TerminateSessionsEvent, TestSessionCompletedEvent, TestSessionConfiguredEvent}
-import org.apache.pekko.actor.{Actor, PoisonPill}
-import com.gitb.core.AnyContent
+import actors.events.sessions._
 import com.gitb.tpl.TestCase
 import managers.{ReportManager, TestbedBackendClient, TriggerHelper}
+import org.apache.pekko.actor.{Actor, PoisonPill}
 import org.slf4j.LoggerFactory
 
 import javax.inject.Inject
@@ -25,49 +24,58 @@ class SessionLaunchActor @Inject() (reportManager: ReportManager, testbedBackend
     context.system.eventStream.subscribe(context.self, classOf[TestSessionConfiguredEvent])
     context.system.eventStream.subscribe(context.self, classOf[TestSessionCompletedEvent])
     context.system.eventStream.subscribe(context.self, classOf[TerminateAllSessionsEvent])
-    LOGGER.debug("Session launch actor started [{}]", self.path)
+    if (LOGGER.isDebugEnabled()) LOGGER.debug("Session launch actor started [{}]", self.path)
   }
 
   override def postStop(): Unit = {
     super.postStop()
     context.system.eventStream.unsubscribe(context.self)
-    LOGGER.debug("Session launch actor stopped [{}]", self.path)
+    if (LOGGER.isDebugEnabled()) LOGGER.debug("Session launch actor stopped [{}]", self.path)
   }
 
-  override def receive: Receive = active(SessionLaunchState(None, Map.empty, Set.empty, Map.empty))
+  override def receive: Receive = active(SessionLaunchState.newState())
 
   def active(state: SessionLaunchState): Receive = {
     case msg: PrepareTestSessionsEvent =>
-      context.become(active(SessionLaunchState(Some(msg.launchData), Map.empty, Set.empty, Map.empty)))
-      self ! StartNextTestSessionEvent()
+      val newState = replace(state.newForLaunchData(msg.launchData))
+      if (LOGGER.isDebugEnabled()) LOGGER.debug("Preparing launch batch. {}", newState.statusText())
+      self ! ProcessNextTestSessionEvent()
     case msg: TestSessionConfiguredEvent =>
-      if (state.startedTestSessions.contains(msg.event.getTcInstanceId)) {
+      if (state.isConfiguredSession(msg.event.getTcInstanceId)) {
         sessionConfigured(msg, state)
       } else {
-        LOGGER.warn("Session launch actor [{}] received a configuration complete notification for an unknown test session [{}]", self.path, msg.event.getTcInstanceId)
+        if (LOGGER.isDebugEnabled()) LOGGER.debug("Session launch actor [{}] received a configuration complete notification for an unknown test session [{}]", self.path, msg.event.getTcInstanceId)
       }
     case msg: TestSessionCompletedEvent =>
-      if (state.startedTestSessions.contains(msg.testSession)) {
-        context.become(active(state.newWithCompletedTestSession(msg.testSession)), discardOld = true)
-        LOGGER.debug("Session launch actor [{}] recorded completion of test session [{}]", self.path, msg.testSession)
-        self ! StartNextTestSessionEvent()
+      if (state.isStartedSession(msg.testSession)) {
+        val newState = replace(state.newForCompletedTestSession(msg.testSession))
+        if (LOGGER.isDebugEnabled()) LOGGER.debug("Completed session [{}]. {}", msg.testSession, newState.statusText())
+        self ! ProcessNextTestSessionEvent()
+      } else {
+        if (LOGGER.isDebugEnabled()) LOGGER.debug("Session launch actor [{}] received a test session complete notification for an unknown test session [{}]", self.path, msg.testSession)
       }
     case msg: TerminateSessionsEvent =>
-      if (state.data.exists(_.organisationId == msg.organisationId)) {
+      if (state.matchesOrganisation(msg.organisationId)) {
         val testCasesCountBefore = state.testSessionCount()
-        val newState = state.newWithoutTestSessions(msg.testSessions)
+        val newState = replace(state.newWithoutTestSessions(msg.testSessions))
         val diff = testCasesCountBefore - newState.testSessionCount()
+        var startNextSession = false
         if (diff > 0) {
-          LOGGER.debug("Session launch actor [{}] cancelled {} test sessions that were pending execution", self.path, diff)
           LOGGER.info("Cancelled {} test session(s) that were pending execution", diff)
+          startNextSession = true
         }
-        context.become(active(newState))
+        if (startNextSession) {
+          // Checking to start another session would normally take place after we received a configuration complete event.
+          self ! ProcessNextTestSessionEvent()
+        }
+      } else {
+        if (LOGGER.isDebugEnabled()) LOGGER.debug("Session launch actor [{}] received a termination request related to another organisation [{}] (expected [{}])", self.path, msg.organisationId, state.organisation())
       }
-    case _: StartNextTestSessionEvent =>
-      startNextTestSession(state)
+    case _: ProcessNextTestSessionEvent =>
+      processNextTestSession(state)
     case msg: TerminateAllSessionsEvent =>
       if (terminationApplies(msg, state)) {
-        LOGGER.debug("Session launch actor [{}] skipping remaining test sessions", self.path)
+        if (LOGGER.isDebugEnabled()) LOGGER.debug("Session launch actor [{}] skipping remaining test sessions", self.path)
         self ! PoisonPill.getInstance
       }
     case msg: Object =>
@@ -76,110 +84,113 @@ class SessionLaunchActor @Inject() (reportManager: ReportManager, testbedBackend
 
   private def terminationApplies(event: TerminateAllSessionsEvent, state: SessionLaunchState): Boolean = {
     (event.communityId.isEmpty && event.organisationId.isEmpty && event.systemId.isEmpty) ||
-      (event.communityId.nonEmpty && state.data.nonEmpty && event.communityId.get == state.data.get.communityId) ||
-      (event.organisationId.nonEmpty && state.data.nonEmpty && event.organisationId.get == state.data.get.organisationId) ||
-      (event.systemId.nonEmpty && state.data.nonEmpty && event.systemId.get == state.data.get.systemId)
+      (
+        state.hasData() && (
+            (event.communityId.nonEmpty && event.communityId.get == state.community()) ||
+            (event.organisationId.nonEmpty && event.organisationId.get == state.organisation()) ||
+            (event.systemId.nonEmpty && event.systemId.get == state.system())
+        )
+      )
   }
 
   private def loadTestCaseDefinition(testCaseId: Long, state: SessionLaunchState): (TestCase, SessionLaunchState) = {
-    var testCaseDefinition = state.testCaseDefinitionCache.get(testCaseId)
+    var testCaseDefinition = state.testCaseDefinition(testCaseId)
     var stateToReturn = state
     if (testCaseDefinition.isEmpty) {
       testCaseDefinition = Some(testbedBackendClient.getTestCaseDefinition(testCaseId.toString, None).getTestcase)
-      stateToReturn = state.newWithLoadedTestCaseDefinition(testCaseId, testCaseDefinition.get)
-      context.become(active(stateToReturn), discardOld = true)
+      stateToReturn = replace(state.newForLoadedTestCaseDefinition(testCaseId, testCaseDefinition.get))
     }
     (testCaseDefinition.get, stateToReturn)
   }
 
-  private def startNextTestSession(initialState: SessionLaunchState): Unit = {
-    if (initialState.data.get.testCases.isEmpty) {
-      // Nothing to do - stop the actor
-      self ! PoisonPill.getInstance
-    } else {
-      val testCaseId = initialState.data.get.testCases.head
-      val testCaseDefinitionLoad = loadTestCaseDefinition(testCaseId, initialState)
-      val testCaseDefinition = testCaseDefinitionLoad._1
-      val state = testCaseDefinitionLoad._2
-      var sessionIdToAssign: Option[String] = None
-      if (state.data.get.sessionIdsToAssign.isDefined) {
-        sessionIdToAssign = state.data.get.sessionIdsToAssign.get.get(testCaseId)
-      }
-      var proceedToLaunch = false
+  private def replace(newState: SessionLaunchState): SessionLaunchState = {
+    context.become(active(newState), discardOld = true)
+    newState
+  }
+
+  private def processNextTestSession(initialState: SessionLaunchState): Unit = {
+    var latestState = initialState
+    if (latestState.hasSessionsToProcess()) {
       var scheduleNextSessionLaunch = true
-      if (state.hasActiveTestSessions()) {
-        // Other sessions are ongoing
-        if (state.data.get.forceSequentialExecution) {
-          // We want to execute sequentially so we won't launch the next test session (we'll re-check when the next session ends).
-          LOGGER.debug("Session launch actor [{}] waiting for other sessions to complete before configuring test case [{}] because launch is forced sequential", self.path, testCaseId)
-          scheduleNextSessionLaunch = false
-        } else {
-          if (testCaseDefinition.isSupportsParallelExecution) {
-            proceedToLaunch = true
-          } else {
-            // Test case is sequential so we won't launch it (we'll re-check when the next session ends).
-            LOGGER.debug("Session launch actor [{}] waiting for other sessions to complete before configuring test case [{}] because the test case is sequential", self.path, testCaseId)
-            scheduleNextSessionLaunch = false
+      try {
+        val testCaseId = latestState.nextTestCaseId()
+        val testCaseDefinitionLoad = loadTestCaseDefinition(testCaseId, latestState)
+        latestState = testCaseDefinitionLoad._2
+        if (latestState.testCaseAllowedToExecute(testCaseId)) {
+          var testSessionId: Option[String] = None
+          try {
+            val sessionIdToAssign = latestState.assignPredefinedSessionId(testCaseId)
+            testSessionId = Some(testbedBackendClient.initiate(testCaseId, sessionIdToAssign))
+            latestState = replace(latestState.newForConfiguredTestSession(testCaseId, testSessionId.get))
+            if (LOGGER.isDebugEnabled()) LOGGER.debug("Configuring test session [{}] for test case [{}]. {}", testSessionId.get, testCaseDefinitionLoad._1.getId, latestState.statusText())
+            webSocketActor.registerActiveTestSession(testSessionId.get)
+            // Send the configure request. The response will be returned asynchronously.
+            testbedBackendClient.configure(testSessionId.get, latestState.data.get.statementParameters, latestState.data.get.domainParameters, latestState.data.get.organisationParameters, latestState.data.get.systemParameters, latestState.testCaseInputs(testCaseId))
+          } catch {
+            case e: Exception =>
+              if (testSessionId.isEmpty) {
+                // Error in the initiate call.
+                LOGGER.error("A headless session for test case [{}] raised an uncaught error while being configured", testCaseDefinitionLoad._1.getId, e)
+                replace(latestState.newForFailedTestCase(testCaseId))
+              } else {
+                // Error in the configure call.
+                LOGGER.error("A headless session [{}] for test case [{}] raised an uncaught error while being configured", testSessionId, testCaseDefinitionLoad._1.getId, e)
+                replace(latestState.newForCompletedTestSession(testSessionId.get))
+                webSocketActor.removeActiveTestSession(testSessionId.get)
+              }
           }
-        }
-      } else {
-        // No other session is running - proceed
-        proceedToLaunch = true
-        if (!testCaseDefinition.isSupportsParallelExecution) {
+        } else {
+          if (LOGGER.isDebugEnabled()) LOGGER.debug("Waiting for other sessions to complete before launching test case [{}]", testCaseDefinitionLoad._1.getId)
           scheduleNextSessionLaunch = false
         }
-      }
-      if (proceedToLaunch) {
-        val testSessionId = testbedBackendClient.initiate(testCaseId, sessionIdToAssign)
-        webSocketActor.testSessionStarted(testSessionId)
-        var testCaseInputs: Option[List[AnyContent]] = None
-        if (state.data.get.testCaseToInputMap.isDefined) {
-          testCaseInputs = state.data.get.testCaseToInputMap.get.get(testCaseId)
-        }
-        try {
-          // Register the session ID so that we pick up its configuration ready event.
-          context.become(active(state.newForStartedTestSession(testCaseId, testSessionId)), discardOld = true)
-          // Send the configure request. The response will be returned asynchronously.
-          testbedBackendClient.configure(testSessionId, state.data.get.statementParameters, state.data.get.domainParameters, state.data.get.organisationParameters, state.data.get.systemParameters, testCaseInputs)
-        } catch {
-          case e: Exception =>
-            LOGGER.error("A headless session raised an uncaught error while being configured", e)
-            scheduleNextSessionLaunch = false
-            webSocketActor.testSessionEnded(testSessionId)
+      } finally {
+        if (scheduleNextSessionLaunch) {
+          self ! ProcessNextTestSessionEvent()
         }
       }
+    } else if (!latestState.allSessionsStarted()) {
+      // No test sessions to configure, but we haven't yet started all pending sessions
+      if (LOGGER.isDebugEnabled()) LOGGER.debug("Waiting for all sessions to start. {}", latestState.statusText())
+    } else {
+      // Nothing to do - stop the actor
+      if (LOGGER.isDebugEnabled()) LOGGER.debug("Session launch finished. {}", latestState.statusText())
+      self ! PoisonPill.getInstance
     }
   }
 
   private def sessionConfigured(msg: TestSessionConfiguredEvent, initialState: SessionLaunchState): Unit = {
-    var scheduleNextSessionLaunch = true
     val testSessionId = msg.event.getTcInstanceId
+    var scheduleNextSessionLaunch = false
+    var latestState = initialState
     try {
       if (msg.event.getErrorCode == null) {
         // No error - configuration was successful.
-        val testCaseId = initialState.startedTestSessions(testSessionId)
+        val testCaseId = initialState.sessionIdMap(testSessionId)
         val testCaseDefinitionData = loadTestCaseDefinition(testCaseId, initialState)
         val testCaseDefinition = testCaseDefinitionData._1
-        val state = testCaseDefinitionData._2
+        latestState = replace(testCaseDefinitionData._2.newForStartedTestSession(testSessionId))
         // No need to signal any simulated configurations (the result of the configure step) as there is no one to present these to.
         // Preliminary step is skipped as this is a headless session. If input was expected during this step the test session may fail.
-        reportManager.createTestReport(testSessionId, state.data.get.systemId, testCaseId.toString, state.data.get.actorId, testCaseDefinition)
-        triggerHelper.publishTriggerEvent(new TestSessionStartedEvent(state.data.get.communityId, testSessionId))
+        reportManager.createTestReport(testSessionId, latestState.system(), testCaseId.toString, latestState.actor(), testCaseDefinition)
+        triggerHelper.publishTriggerEvent(new TestSessionStartedEvent(latestState.community(), testSessionId))
         testbedBackendClient.start(testSessionId)
-        LOGGER.debug("Session launch actor [{}] started test session [{}] for test case [{}]", self.path, testSessionId, testCaseId)
+        if (LOGGER.isDebugEnabled()) LOGGER.debug("Launching test session [{}] for test case [{}]. {}", testSessionId, testCaseDefinition.getId, latestState.statusText())
       } else {
-        context.become(active(initialState.newWithCompletedTestSession(testSessionId)), discardOld = true)
-        LOGGER.info("Session launch actor [{}] notified for configuration failure of test session [{}]", self.path, testSessionId)
+        LOGGER.info("Configuration failure of test session [{}]", testSessionId)
+        latestState = replace(latestState.newForCompletedTestSession(testSessionId))
+        scheduleNextSessionLaunch = true
+        webSocketActor.removeActiveTestSession(testSessionId)
       }
     } catch {
       case e: Exception =>
-        LOGGER.error("A headless session raised an uncaught error while being started", e)
-        scheduleNextSessionLaunch = false
-        webSocketActor.testSessionEnded(testSessionId)
+        LOGGER.error("Headless session [{}] raised an uncaught error while being started", msg.event.getTcInstanceId, e)
+        replace(latestState.newForCompletedTestSession(testSessionId))
+        scheduleNextSessionLaunch = true
+        webSocketActor.removeActiveTestSession(testSessionId)
     } finally {
       if (scheduleNextSessionLaunch) {
-        // Having started the current session we will also signal to start the next one (if available).
-        self ! StartNextTestSessionEvent()
+        // In case of a problem make sure we signal the next test case to be processed so that we're not stuck.
+        self ! ProcessNextTestSessionEvent()
       }
     }
   }

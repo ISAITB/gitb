@@ -43,9 +43,11 @@ export class RoutingService {
   }
 
   private changePageForURL(url: string) {
+    this.dataService.showNavigationControls = true
     if (url.startsWith('/home')) {
       this.dataService.changePage({ menuItem: MenuItem.home })
     } else if (url.startsWith('/login')) {
+      this.dataService.showNavigationControls = false
       this.dataService.changePage({ menuItem: MenuItem.login })
     } else if (url.startsWith('/settings/profile')) {
       this.dataService.changePage({ menuItem: MenuItem.myProfile })

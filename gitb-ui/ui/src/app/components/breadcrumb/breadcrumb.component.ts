@@ -7,7 +7,6 @@ import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 import { BreadcrumbService } from 'src/app/services/breadcrumb.service';
 import { BreadcrumbLabelRequest } from 'src/app/types/breadcrumb-label-request';
 import { Subscription } from 'rxjs';
-import { AuthProviderService } from 'src/app/services/auth-provider.service';
 import { Constants } from 'src/app/common/constants';
 
 @Component({
@@ -29,9 +28,8 @@ export class BreadcrumbComponent implements OnInit, OnDestroy {
 
   constructor(
     private routingService: RoutingService,
-    private dataService: DataService,
-    private breadcrumbService: BreadcrumbService,
-    private authProviderService: AuthProviderService
+    public dataService: DataService,
+    private breadcrumbService: BreadcrumbService
   ) { }
 
   ngOnInit(): void {
@@ -41,12 +39,14 @@ export class BreadcrumbComponent implements OnInit, OnDestroy {
       action: () => this.routingService.toHome()
     }
     this.breadcrumbSubscription = this.dataService.onBreadcrumbChange$.subscribe((info) => {
-      if (info.breadcrumbs) {
-        this.updateBreadcrumbs(info.breadcrumbs)
-      }
-      if (info.id != undefined && info.type != undefined && info.label != undefined && this.breadcrumbs) {
-        this.updateBreadcrumbLabel(this.breadcrumbs, info.id, info.type, info.label)
-      }
+      setTimeout(() => {
+        if (info.breadcrumbs) {
+          this.updateBreadcrumbs(info.breadcrumbs)
+        }
+        if (info.id != undefined && info.type != undefined && info.label != undefined && this.breadcrumbs) {
+          this.updateBreadcrumbLabel(this.breadcrumbs, info.id, info.type, info.label)
+        }
+      })
     })
   }
 
@@ -159,18 +159,14 @@ export class BreadcrumbComponent implements OnInit, OnDestroy {
     }
   }
 
-  isAuthenticated(): boolean {
-    return this.authProviderService.isAuthenticated()
-  }
-
   mouseOver(element: MouseEvent) {
-    if ((element.target as HTMLElement).offsetWidth && 
+    if ((element.target as HTMLElement).offsetWidth &&
         (element.target as HTMLElement).scrollWidth &&
         (element.target as HTMLElement).offsetWidth < (element.target as HTMLElement).scrollWidth) {
       this.hasOverflow = true
     } else {
       this.hasOverflow = false
     }
-  }  
+  }
 
 }

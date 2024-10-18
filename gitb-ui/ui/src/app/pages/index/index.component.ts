@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { DataService } from '../../services/data.service'
 import { UserGuideService } from '../../services/user-guide.service'
 import { HtmlService } from '../../services/html.service';
@@ -6,7 +6,7 @@ import { LegalNoticeService } from '../../services/legal-notice.service';
 import { Observable, Subscription } from 'rxjs';
 import { Constants } from 'src/app/common/constants';
 import { AuthProviderService } from '../../services/auth-provider.service'
-import { BsModalService } from 'ngx-bootstrap/modal';
+import { BsModalRef, BsModalService } from 'ngx-bootstrap/modal';
 import { ContactSupportComponent } from 'src/app/modals/contact-support/contact-support.component';
 import { RoutingService } from 'src/app/services/routing.service';
 import { MenuItem } from 'src/app/types/menu-item.enum';
@@ -18,6 +18,9 @@ import { PopupService } from 'src/app/services/popup.service';
   styleUrls: ['./index.component.less']
 })
 export class IndexComponent implements OnInit, OnDestroy {
+
+  @ViewChild('logoutTemplate', { read: TemplateRef }) logoutTemplate?: TemplateRef<any>
+  logoutModal?: BsModalRef<any>
 
   version?: string
   pageTitle = ''
@@ -49,11 +52,28 @@ export class IndexComponent implements OnInit, OnDestroy {
     this.version = this.dataService.configuration.versionNumber
     this.logoutSubscription = this.authProviderService.onLogout$.subscribe(() => {
       this.logoutInProgress = true
+      this.showLogoutNotification()
     })
     this.logoutCompleteSubscription = this.authProviderService.onLogoutComplete$.subscribe(() => {
       this.logoutInProgress = false
     })
   }
+
+  showLogoutNotification() {
+    if (this.logoutTemplate) {
+      this.modalService.show(this.logoutTemplate, {
+        backdrop: 'static',
+        keyboard: false
+      })
+    }
+  }
+
+  closeLogoutNotification() {
+    if (this.logoutModal) {
+      this.logoutModal.hide()
+    }
+  }
+
 
   ngOnDestroy(): void {
     if (this.logoutSubscription) this.logoutSubscription.unsubscribe()

@@ -8,13 +8,14 @@
     .header-profile-user {
         display: flex;
         align-items: center;
-        height: 35px;
-        padding: 20px;
+        z-index: 200;
         border-top-left-radius: 5px;
         border-top-right-radius: 5px;
-        z-index: 200;
+        height: 35px;
+        padding: 20px;
         &.expanded {
             background: @gray-light;
+            box-shadow: 5px 14px 5px -3px @gray;
         }
         &:hover {
             background: @gray-light;
@@ -45,10 +46,10 @@
         right: 0px;
         min-width: 500px;
         display: flex;
-        z-index: 100;
+        z-index: 200;
         background: @white;
         border: 1px solid @gray-light;
-        box-shadow: 5px 10px 15px 1px @gray;       
+        box-shadow: 5px 6px 5px -3px @gray;
         .header-popup-spacing, .header-popup-spacing-inner {
             display: flex;
             width: 100%;
@@ -60,6 +61,8 @@
         }
         .header-popup-spacing {
             background: @gray-light;
+            border-bottom-left-radius: 5px;
+            border-bottom-right-radius: 5px;
             border-top-left-radius: 5px;
             padding-top: 8px;
         }

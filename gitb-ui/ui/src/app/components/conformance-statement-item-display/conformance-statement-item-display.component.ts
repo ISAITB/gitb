@@ -164,17 +164,21 @@ export class ConformanceStatementItemDisplayComponent implements OnInit {
   }
 
   expanded() {
-    if (this.item.items && this.item.items.length == 1) {
-      this.item.items[0].collapsed = false
-    }
+    setTimeout(() => {
+      if (this.item.items && this.item.items.length == 1) {
+        this.item.items[0].collapsed = false
+      }
+    })
   }
 
-  collapsed() {
-    if (this.item.items) {
-      for (let child of this.item.items) {
-        child.collapsed = true
+  collapses() {
+    setTimeout(() => {
+      if (this.item.items) {
+        for (let child of this.item.items) {
+          child.collapsed = true
+        }
       }
-    }
+    })
   }
 
   childSelectionChanged(item: ConformanceStatementItem) {
