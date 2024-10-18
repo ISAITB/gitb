@@ -1,5 +1,5 @@
-@if (isAuthenticated()) {
-    <div class="breacrumbContainer" [class.hidden]="logoutInProgress">
+@if (dataService.showNavigationControls) {
+    <div class="breacrumbContainer">
         @if (breadcrumbs != undefined) {
             @for (crumb of breadcrumbsToShow; track $index) {
                 @if (crumb.label != undefined) {
@@ -8,7 +8,7 @@
                     }
                     <div class="breacrumbItem"
                         [class.actionable]="crumb.action != undefined"
-                        #popup="bs-tooltip"                
+                        #popup="bs-tooltip"
                         (mouseover)="mouseOver($event)"
                         containerClass="shortTooltip"
                         placement="bottom"

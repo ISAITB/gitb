@@ -22,12 +22,14 @@
               </div>
           </div>
       </section>
-      <app-breadcrumb [logoutInProgress]="logoutInProgress"></app-breadcrumb>
+      @if (dataService.showNavigationControls) {
+        <app-breadcrumb></app-breadcrumb>
+      }
       <div class="page-root">
-        @if (isAuthenticated() && (dataService.isSystemAdmin || dataService.isCommunityAdmin || dataService.isVendorAdmin || dataService.isVendorUser)) {
-          <div class="page-menu" [class.hidden]="logoutInProgress">
+        @if (dataService.showNavigationControls) {
+          <div class="page-menu">
             <app-menu-item (click)="routingService.toHome()" [type]="MenuItem.home" label="Home" icon="fa-solid fa-house" [expanded]="menuExpanded"></app-menu-item>
-            @if (dataService.isSystemAdmin || dataService.isCommunityAdmin) {
+            @if (dataService.showSystemAdminMenu || dataService.showCommunityAdminMenu) {
               <app-menu-group label="Administration" [expanded]="menuExpanded"></app-menu-group>
               <app-menu-item (click)="routingService.toConformanceDashboard()" [type]="MenuItem.conformanceDashboard" label="Conformance dashboard" icon="fa-solid fa-gauge-simple-high" [expanded]="menuExpanded"></app-menu-item>
               <app-menu-item (click)="routingService.toSessionDashboard()" [type]="MenuItem.sessionDashboard" label="Session dashboard" icon="fa-solid fa-rectangle-list" [expanded]="menuExpanded"></app-menu-item>
@@ -35,7 +37,7 @@
               <app-menu-item (click)="dataService.isSystemAdmin?routingService.toUserManagement():routingService.toCommunity(dataService.community!.id)" [type]="MenuItem.communityManagement" label="Community management" icon="fa-solid fa-people-group" [expanded]="menuExpanded"></app-menu-item>
               <app-menu-item (click)="routingService.toDataExport()" [type]="MenuItem.dataExport" label="Data export" icon="fa-solid fa-file-export" [expanded]="menuExpanded"></app-menu-item>
               <app-menu-item (click)="routingService.toDataImport()" [type]="MenuItem.dataImport" label="Data import" icon="fa-solid fa-file-import" [expanded]="menuExpanded"></app-menu-item>
-              @if (dataService.isSystemAdmin) {
+              @if (dataService.showSystemAdminMenu) {
                 <app-menu-item (click)="routingService.toSystemAdministration()" [type]="MenuItem.systemAdministration" label="System administration" icon="fa-solid fa-gear" [expanded]="menuExpanded"></app-menu-item>
               }
             }
@@ -49,13 +51,7 @@
           </div>
         }
         <div class="page-content" appFileDropTarget>
-          @if (logoutInProgress) {
-            <div class="page-with-margins">
-              <div class="container"><span class="tab" style="font-size: xx-large;"><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></div>
-            </div>
-          } @else {
             <router-outlet></router-outlet>
-          }
         </div>
       </div>
     </div>
@@ -97,3 +93,13 @@
     </div>
   </div>
 </div>
+<ng-template #logoutTemplate>
+  <div class="modal-body">
+    <div class="logout-notification">
+      <app-pending-block [pending]="true"></app-pending-block>
+      <div class="logout-message">
+        Please wait while you are being logged out
+      </div>
+    </div>
+  </div>
+</ng-template>

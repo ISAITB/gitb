@@ -54,6 +54,9 @@ export class DataService {
   public isVendorAdmin = false
   public isCommunityAdmin = false
   public isDomainUser = false
+  public showNavigationControls = false
+  public showCommunityAdminMenu = false
+  public showSystemAdminMenu = false
   private tests?: ConformanceTestCase[]
   public currentLandingPageContent?: string
   private apiRoot?: string
@@ -161,6 +164,11 @@ export class DataService {
     this.isDomainUser = (user.role == Constants.USER_ROLE.DOMAIN_USER)
     this.isSystemAdmin = (user.role == Constants.USER_ROLE.SYSTEM_ADMIN)
     this.isCommunityAdmin = (user.role == Constants.USER_ROLE.COMMUNITY_ADMIN)
+    setTimeout(() => {
+      this.showCommunityAdminMenu = this.isCommunityAdmin
+      this.showSystemAdminMenu = this.isSystemAdmin
+      this.showNavigationControls = true
+    })
   }
 
   isDevelopmentMode(): boolean {
