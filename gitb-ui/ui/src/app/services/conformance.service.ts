@@ -1157,22 +1157,28 @@ export class ConformanceService {
     })
   }
 
-  updateStatementConfiguration(systemId: number, actorId: number, organisationProperties: OrganisationParameter[], systemProperties: SystemParameter[], statementProperties: EndpointParameter[]) {
+  updateStatementConfiguration(systemId: number, actorId: number, organisationProperties: OrganisationParameter[]|undefined, systemProperties: SystemParameter[]|undefined, statementProperties: EndpointParameter[]|undefined) {
     const data: any = {
       system_id: systemId,
       actor_id: actorId
     }
     let files: FileParam[] = []
-    const orgProps = this.dataService.customPropertiesForPost(organisationProperties, "org")
-    data.org_params = orgProps.parameterJson
-    files.push(...orgProps.files)
-    const sysProps = this.dataService.customPropertiesForPost(systemProperties, "sys")
-    data.sys_params = sysProps.parameterJson
-    files.push(...sysProps.files)
-    const stmProps = this.dataService.customPropertiesForPost(statementProperties, "stm")
-    data.stm_params = stmProps.parameterJson
-    files.push(...stmProps.files)
-    return this.restService.post<void>({
+    if (organisationProperties != undefined) {
+      const orgProps = this.dataService.customPropertiesForPost(organisationProperties, "org")
+      data.org_params = orgProps.parameterJson
+      files.push(...orgProps.files)
+    }
+    if (systemProperties != undefined) {
+      const sysProps = this.dataService.customPropertiesForPost(systemProperties, "sys")
+      data.sys_params = sysProps.parameterJson
+      files.push(...sysProps.files)
+    }
+    if (statementProperties != undefined) {
+      const stmProps = this.dataService.customPropertiesForPost(statementProperties, "stm")
+      data.stm_params = stmProps.parameterJson
+      files.push(...stmProps.files)
+    }
+    return this.restService.post<ErrorDescription|void>({
       path: ROUTES.controllers.ConformanceService.updateStatementConfiguration().url,
       data: data,
       files: files,

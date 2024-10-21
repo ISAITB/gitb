@@ -551,9 +551,14 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
 
   updateConfiguration() {
     this.updateConfigurationPending = true
-    this.conformanceService.updateStatementConfiguration(this.systemId, this.actorId, this.organisationProperties, this.systemProperties, this.statementProperties)
-    .subscribe(() => {
-      this.popupService.success('Configuration updated.')
+    const orgParams = this.canEditOrganisationConfiguration?this.organisationProperties:undefined
+    const sysParams = this.canEditSystemConfiguration?this.systemProperties:undefined
+    const stmParams = this.canEditStatementConfiguration?this.statementProperties:undefined
+    this.conformanceService.updateStatementConfiguration(this.systemId, this.actorId, orgParams, sysParams, stmParams)
+    .subscribe((error) => {
+      if (!error) {
+        this.popupService.success('Configuration updated.')
+      }
     }).add(() => {
       this.organisationProperties.forEach(p => this.updatePropertyConfiguredStatus(p))
       this.systemProperties.forEach(p => this.updatePropertyConfiguredStatus(p))

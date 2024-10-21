@@ -608,7 +608,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     setAuthResult(request, ok, "User cannot edit this parameter")
   }
 
-  private def canManageEndpointConfiguration(request: RequestWithAttributes[_], systemId: Long, endpointId: Long, parameterId: Long): Boolean = {
+  def canManageStatementConfiguration(request: RequestWithAttributes[_], systemId: Long, actorId: Long, organisationUpdates: Boolean, systemUpdates: Boolean, statementUpdates: Boolean): Boolean = {
     var ok = false
     val userInfo = getUser(getRequestUserId(request))
     if (isTestBedAdmin(userInfo)) {
@@ -620,15 +620,26 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
           ok = isOwnSystem(userInfo, system) || canManageOrganisationFull(request, userInfo, system.get.owner)
         } else if (isOrganisationAdmin(userInfo)) {
           if (isOwnSystem(userInfo, system)) {
-            val parameter = parameterManager.getParameterById(parameterId)
-            if (parameter.isDefined && !parameter.get.adminOnly) {
+            if (!organisationUpdates && !systemUpdates && !statementUpdates) {
+              // No changes to properties.
+              ok = true
+            } else {
               val community = communityManager.getById(userInfo.organization.get.community)
               if (community.isDefined) {
-                if (community.get.allowPostTestStatementUpdates) {
+                if (community.get.allowPostTestOrganisationUpdates && community.get.allowPostTestSystemUpdates && community.get.allowPostTestStatementUpdates) {
+                  // The community allows changes post-testing.
                   ok = true
                 } else {
-                  val endpoint = endpointManager.getById(endpointId)
-                  ok = !testResultManager.testSessionsExistForSystemAndActors(systemId, List(endpoint.actor))
+                  val testsExist = testResultManager.testSessionsExistForSystemAndActors(systemId, List(actorId))
+                  if (!testsExist) {
+                    // No tests exist.
+                    ok = true
+                  } else {
+                    // Check permissions and incoming updates.
+                    ok = (community.get.allowPostTestOrganisationUpdates || !organisationUpdates) &&
+                      (community.get.allowPostTestSystemUpdates || !systemUpdates) &&
+                      (community.get.allowPostTestStatementUpdates || !statementUpdates)
+                  }
                 }
               }
             }
@@ -636,19 +647,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
         }
       }
     }
-    setAuthResult(request, ok, "User cannot manage provided parameters")
-  }
-
-  def canEditEndpointConfiguration(request: RequestWithAttributes[_], config: Configs):Boolean = {
-    canManageEndpointConfiguration(request, config.system, config.endpoint, config.parameter)
-  }
-
-  def canDeleteEndpointConfiguration(request: RequestWithAttributes[_], systemId: Long, endpointId: Long, parameterId: Long):Boolean = {
-    canManageEndpointConfiguration(request, systemId, endpointId, parameterId)
-  }
-
-  def canViewEndpointConfigurations(request: RequestWithAttributes[_], systemId: Long, endpointId: Long):Boolean = {
-    canViewSystem(request, systemId)
+    setAuthResult(request, ok, "User cannot manage statement configuration")
   }
 
   def canDeleteConformanceStatement(request: RequestWithAttributes[_], systemId: Long, actorIds: Option[List[Long]]):Boolean = {

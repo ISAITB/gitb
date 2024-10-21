@@ -965,12 +965,14 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
       val paramMap = ParameterExtractor.paramMap(request)
       val system = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SYSTEM_ID).toLong
       val actor = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.ACTOR_ID).toLong
-      authorizationManager.canUpdateSystem(request, system)
+      val organisationParameters = ParameterExtractor.extractOrganisationParameterValues(paramMap, Parameters.ORGANISATION_PARAMETERS, optional = true)
+      val systemParameters = ParameterExtractor.extractSystemParameterValues(paramMap, Parameters.SYSTEM_PARAMETERS, optional = true)
+      val statementParameters = ParameterExtractor.extractStatementParameterValues(paramMap, Parameters.STATEMENT_PARAMETERS, optional = true, system)
+      authorizationManager.canManageStatementConfiguration(request, system, actor, organisationParameters.exists(_.nonEmpty), systemParameters.exists(_.nonEmpty), statementParameters.exists(_.nonEmpty))
 
       val organisationFiles = new mutable.HashMap[Long, FileInfo]()
       val systemFiles = new mutable.HashMap[Long, FileInfo]()
       val statementFiles = new mutable.HashMap[Long, FileInfo]()
-
       val files = ParameterExtractor.extractFiles(request)
       files.foreach { entry =>
         val parts = entry._1.split('_')
@@ -989,9 +991,6 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
         ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")
       } else {
         val userId = ParameterExtractor.extractUserId(request)
-        val organisationParameters = ParameterExtractor.extractOrganisationParameterValues(paramMap, Parameters.ORGANISATION_PARAMETERS, optional = true)
-        val systemParameters = ParameterExtractor.extractSystemParameterValues(paramMap, Parameters.SYSTEM_PARAMETERS, optional = true)
-        val statementParameters = ParameterExtractor.extractStatementParameterValues(paramMap, Parameters.STATEMENT_PARAMETERS, optional = true, system)
         conformanceManager.updateStatementConfiguration(userId, system, actor, organisationParameters, systemParameters, statementParameters, organisationFiles.toMap, systemFiles.toMap, statementFiles.toMap)
         ResponseConstructor.constructEmptyResponse
       }
