@@ -63,4 +63,11 @@
         <packageUrl regex="true">^pkg:maven/org\.glassfish\.jaxb/txw2@.*$</packageUrl>
         <cve>CVE-2024-9329</cve>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: spring-webmvc-6.1.13.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework/spring-webmvc@.*$</packageUrl>
+        <vulnerabilityName>CVE-2024-38819</vulnerabilityName>
+    </suppress>
 </suppressions>
