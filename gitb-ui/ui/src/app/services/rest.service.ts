@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
-import { Observable, throwError } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 
 import { HttpRequestConfig } from '../types/http-request-config.type'
-import { catchError, map, share } from 'rxjs/operators';
+import { catchError, map, mergeMap, share } from 'rxjs/operators';
 import { AuthProviderService } from './auth-provider.service'
 import { ErrorService } from './error.service';
 import { BaseRestService } from './base-rest.service';
@@ -95,10 +95,11 @@ export class RestService {
     } else if (error && error.status && error.status == 403) {
       console.warn(`Access forbidden: ${error.error?.error_description}`)
       result = this.errorService.showUnauthorisedAccessError().pipe(
-        map((shown) => {
+        mergeMap((shown) => {
           if (shown) {
             this.routingService.toHome()
           }
+          return of(error.error)
         }
       ), share())
     } else {
