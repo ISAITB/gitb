@@ -70,4 +70,11 @@
         <packageUrl regex="true">^pkg:maven/org\.springframework/spring-webmvc@.*$</packageUrl>
         <vulnerabilityName>CVE-2024-38819</vulnerabilityName>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: spring-context-6.1.13.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework/spring-context@.*$</packageUrl>
+        <vulnerabilityName>CVE-2024-38820</vulnerabilityName>
+    </suppress>
 </suppressions>
