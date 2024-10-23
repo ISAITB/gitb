@@ -77,4 +77,18 @@
         <packageUrl regex="true">^pkg:maven/org\.springframework/spring-context@.*$</packageUrl>
         <vulnerabilityName>CVE-2024-38820</vulnerabilityName>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: spring-core-6.1.13.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework/spring-core@.*$</packageUrl>
+        <cve>CVE-2024-38820</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: spring-web-6.1.13.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework/spring-web@.*$</packageUrl>
+        <cve>CVE-2024-38820</cve>
+    </suppress>
 </suppressions>
