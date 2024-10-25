@@ -1,10 +1,8 @@
 package com.gitb.engine;
 
-import org.apache.pekko.actor.ActorRef;
 import com.gitb.core.ActorConfiguration;
 import com.gitb.core.AnyContent;
 import com.gitb.core.ErrorCode;
-import com.gitb.engine.actors.SessionActor;
 import com.gitb.engine.commands.interaction.*;
 import com.gitb.engine.commands.session.CreateCommand;
 import com.gitb.engine.events.TestStepInputEventBus;
@@ -12,6 +10,7 @@ import com.gitb.engine.events.model.InputEvent;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tbs.*;
 import com.gitb.utils.ErrorUtils;
+import org.apache.pekko.actor.ActorRef;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
@@ -54,7 +53,7 @@ public class TestbedService {
 	 * @param allConfigurations
 	 */
 	public static void configure(String sessionId, List<ActorConfiguration> allConfigurations, List<AnyContent> inputs) {
-		logger.debug(MarkerFactory.getDetachedMarker(sessionId), String.format("Configuring session [%s]", sessionId));
+		logger.debug(MarkerFactory.getDetachedMarker(sessionId), String.format("Starting to configure session [%s]", sessionId));
 		SessionManager sessionManager = SessionManager.getInstance();
 		if (sessionManager.notExists(sessionId)) {
 			throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_SESSION, "Could not find session [" + sessionId + "]..."));
@@ -79,8 +78,7 @@ public class TestbedService {
 		TestEngine
 				.getInstance()
 				.getEngineActorSystem()
-				.getActorSystem()
-				.actorSelection(SessionActor.getPath(sessionId))
+				.getSessionSupervisor()
 				.tell(new ConfigureCommand(sessionId, actorConfigurations, domainConfiguration, organisationConfiguration, systemConfiguration, inputs), ActorRef.noSender());
 	}
 
@@ -116,8 +114,7 @@ public class TestbedService {
 		TestEngine
 			.getInstance()
 			.getEngineActorSystem()
-			.getActorSystem()
-			.actorSelection(SessionActor.getPath(sessionId))
+			.getSessionSupervisor()
 			.tell(new InitiatePreliminaryCommand(sessionId), ActorRef.noSender());
 	}
 
@@ -132,8 +129,7 @@ public class TestbedService {
 		TestEngine
 			.getInstance()
 			.getEngineActorSystem()
-			.getActorSystem()
-			.actorSelection(SessionActor.getPath(sessionId))
+			.getSessionSupervisor()
 			.tell(new StartCommand(sessionId), ActorRef.noSender());
 	}
 
@@ -161,8 +157,7 @@ public class TestbedService {
 			TestEngine
 					.getInstance()
 					.getEngineActorSystem()
-					.getActorSystem()
-					.actorSelection(SessionActor.getPath(sessionId))
+					.getSessionSupervisor()
 					.tell(msg, ActorRef.noSender());
 		}
 	}
@@ -176,21 +171,15 @@ public class TestbedService {
 	public static String restart(String sessionId) {
 		logger.debug("Restarting session {}", sessionId);
 		sessionLogger.info(MarkerFactory.getDetachedMarker(sessionId), "Restarting session");
-		TestEngine
-			.getInstance()
-			.getEngineActorSystem()
-			.getActorSystem()
-			.actorSelection(SessionActor.getPath(sessionId))
-			.tell(new RestartCommand(sessionId), ActorRef.noSender());
 		String newSessionId = SessionManager
-			.getInstance()
-			.duplicateSession(sessionId);
-		logger.debug(MarkerFactory.getDetachedMarker(newSessionId), String.format("Restarted session [" + sessionId + "] as new session", sessionId));
+				.getInstance()
+				.duplicateSession(sessionId);
 		TestEngine
 			.getInstance()
 			.getEngineActorSystem()
 			.getSessionSupervisor()
-			.tell(new CreateCommand(newSessionId), ActorRef.noSender());
+			.tell(new RestartCommand(sessionId, newSessionId), ActorRef.noSender());
+		logger.debug(MarkerFactory.getDetachedMarker(newSessionId), "Restarted session [{}] as new session [{}]", sessionId, newSessionId);
 		return newSessionId;
 	}
 
@@ -222,11 +211,14 @@ public class TestbedService {
 		sendToClient(sessionId, (client) -> client.configurationComplete(request));
 	}
 
-	public static void sendConfigurationResult(String sessionId, List<SUTConfiguration> configurations) {
+	public static void sendConfigurationSuccessResult(String sessionId, List<SUTConfiguration> configurations) {
 		var request = new ConfigurationCompleteRequest();
 		request.setTcInstanceId(sessionId);
 		request.getConfigs().addAll(configurations);
-		sendToClient(sessionId, (client) -> client.configurationComplete(request));
+		sendToClient(sessionId, (client) -> {
+			logger.debug("Signalling configuration completion or session [{}]", sessionId);
+			client.configurationComplete(request);
+		});
 	}
 
 	public static void sendStatusUpdate(String sessionId, TestStepStatus testStepStatus) {
