@@ -15,7 +15,6 @@ object Configurations {
   private var _IS_LOADED = false
 
   // Database parameters
-  var DB_DRIVER_CLASS:String = ""
   var DB_JDBC_URL:String = ""
   var DB_USER:String = ""
   var DB_PASSWORD = ""
@@ -120,7 +119,6 @@ object Configurations {
   var SAVED_FILE_MAX_SIZE: Long = 5120
 
   var INPUT_SANITIZER__ENABLED = true
-  var INPUT_SANITIZER__METHODS_TO_CHECK_STR:String = _
   var INPUT_SANITIZER__METHODS_TO_CHECK:Set[String] = _
   var INPUT_SANITIZER__DEFAULT_BLACKLIST_EXPRESSION:Regex = _
   var INPUT_SANITIZER__PARAMETER_WHITELIST_EXPRESSIONS:Map[String, Regex] = _
@@ -162,7 +160,6 @@ object Configurations {
       // Load configuration file
       val conf:Config = ConfigFactory.load()
       //Parse DB Parameters
-      DB_DRIVER_CLASS = conf.getString("db.default.driver")
       DB_JDBC_URL     = conf.getString("db.default.url")
       DB_USER         = conf.getString("db.default.user")
       DB_PASSWORD     = conf.getString("db.default.password")
@@ -295,9 +292,9 @@ object Configurations {
 
       // Input sanitiser - START
       INPUT_SANITIZER__ENABLED = fromEnv("INPUT_SANITIZER__ENABLED", conf.getString("inputSanitizer.enabled")).toBoolean
-      INPUT_SANITIZER__METHODS_TO_CHECK_STR = fromEnv("INPUT_SANITIZER__METHODS_TO_CHECK", conf.getString("inputSanitizer.methodsToCheck"))
+      val sanitizerMethodsToCheck = fromEnv("INPUT_SANITIZER__METHODS_TO_CHECK", conf.getString("inputSanitizer.methodsToCheck"))
       tempSet = new scala.collection.mutable.HashSet[String]()
-      INPUT_SANITIZER__METHODS_TO_CHECK_STR.split(",").map(_.trim).foreach{ method =>
+      sanitizerMethodsToCheck.split(",").map(_.trim).foreach{ method =>
         tempSet += method
       }
       INPUT_SANITIZER__METHODS_TO_CHECK = tempSet.toSet

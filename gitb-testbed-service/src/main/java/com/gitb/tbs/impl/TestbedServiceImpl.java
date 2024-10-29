@@ -95,6 +95,7 @@ public class TestbedServiceImpl implements TestbedService {
         try {
             sessionId = parameters.getTcInstanceId();
             // Call the real TestbedService
+            logger.debug("Received configure request for session [{}]", sessionId);
             com.gitb.engine.TestbedService.configure(sessionId, parameters.getConfigs(), parameters.getInputs());
             return new Void();
         } catch (GITBEngineInternalError e) {

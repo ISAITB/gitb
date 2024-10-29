@@ -70,7 +70,7 @@ object Constants {
   val UserAttributeAuthenticationLevel = "authLevel"
 
   // When ending in "-snapshot", this is considered a non-published release.
-  val VersionNumber = "1.24.1"
-  val VersionNumberPostfixForResources = "-b2"
+  val VersionNumber = "1.24.2"
+  val VersionNumberPostfixForResources = ""
 
 }

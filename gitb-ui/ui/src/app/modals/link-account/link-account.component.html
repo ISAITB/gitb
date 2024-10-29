@@ -26,8 +26,8 @@
 		</div>
 		@if (choice == Constants.CREATE_ACCOUNT_OPTION.LINK) {
 			<div>
-				<div class="link-account-separator">
-					<div class="alert alert-info rounded">
+				<div class="link-account-separator" [class.mb-0]="linkedAccounts.length == 0">
+					<div class="alert alert-info rounded" [class.mb-0]="linkedAccounts.length == 0">
 						@if (linkedAccounts.length > 0) {
 							<div>
 								<p>The following roles have been assigned to you. Select the one you want to confirm and link to your account.</p>
