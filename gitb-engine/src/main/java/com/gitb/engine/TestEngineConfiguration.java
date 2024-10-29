@@ -139,7 +139,12 @@ public class TestEngineConfiguration {
 		if (System.getenv().containsKey(filePathName)) {
 			// Load from file.
             try {
-                return Files.readString(Path.of(System.getenv(filePathName)));
+				/*
+				 * In the case of gitb-ui and file-based secrets, values are always trimmed of
+				 * leading and trailing whitespace. Failing to do so in gitb-srv may lead to
+				 * inconsistencies and failures (e.g. a HMAC key that doesn't match).
+				 */
+                return Files.readString(Path.of(System.getenv(filePathName))).trim();
             } catch (IOException e) {
                 throw new IllegalStateException("Error reading file", e);
             }
