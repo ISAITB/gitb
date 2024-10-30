@@ -12,6 +12,7 @@ import org.apache.commons.io.FileUtils
 import play.api.mvc._
 import utils._
 
+import java.nio.file.Path
 import javax.inject.{Inject, Singleton}
 
 @Singleton
@@ -93,6 +94,7 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
         if (userInput.getValue == null && files.contains(s"file_${userInput.getId}")) {
           val fileInfo = files(s"file_${userInput.getId}")
           userInput.setValue(MimeUtil.getFileAsDataURL(fileInfo.file, fileInfo.contentType.orNull))
+          userInput.setFileName(Path.of(fileInfo.name).getFileName.toString)
         }
       }
       testbedClient.provideInput(sessionId, step, Some(userInputs), isAdmin)
