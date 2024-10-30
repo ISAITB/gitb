@@ -17,6 +17,7 @@ import com.gitb.messaging.IMessagingHandler;
 import com.gitb.ms.InitiateResponse;
 import com.gitb.tbs.SUTConfiguration;
 import com.gitb.tdl.*;
+import com.gitb.tr.TestResultType;
 import com.gitb.types.DataType;
 import com.gitb.types.DataTypeFactory;
 import com.gitb.types.MapType;
@@ -151,6 +152,7 @@ public class TestCaseContext {
 	private com.gitb.core.LogLevel logLevelToSignal = LogLevel.INFO;
 	private boolean logLevelIsExpression = false;
 	private boolean reportedInvalidLogLevel = false;
+	private TestResultType forcedFinalResult = null;
 	private Path dataFolder;
 
     public TestCaseContext(TestCase testCase, String testCaseIdentifier, String sessionId) {
@@ -582,7 +584,15 @@ public class TestCaseContext {
 		this.currentState = currentState;
 	}
 
-    public void destroy() {
+	public TestResultType getForcedFinalResult() {
+		return forcedFinalResult;
+	}
+
+	public void setForcedFinalResult(TestResultType forcedFinalResult) {
+		this.forcedFinalResult = forcedFinalResult;
+	}
+
+	public void destroy() {
 		if (dataFolder != null && Files.exists(dataFolder)) {
 			try {
 				FileUtils.deleteDirectory(dataFolder.toFile());

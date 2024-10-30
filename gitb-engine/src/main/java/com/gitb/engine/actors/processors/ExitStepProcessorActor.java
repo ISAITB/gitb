@@ -1,6 +1,5 @@
 package com.gitb.engine.actors.processors;
 
-import org.apache.pekko.actor.ActorRef;
 import com.gitb.core.StepStatus;
 import com.gitb.engine.actors.SessionActor;
 import com.gitb.engine.commands.interaction.PrepareForStopCommand;
@@ -13,6 +12,7 @@ import com.gitb.tr.SR;
 import com.gitb.tr.TestResultType;
 import com.gitb.tr.TestStepReportType;
 import com.gitb.utils.XMLDateTimeUtils;
+import org.apache.pekko.actor.ActorRef;
 
 /**
  * Created by serbay on 9/15/14.
@@ -29,7 +29,6 @@ public class ExitStepProcessorActor extends AbstractTestStepActor<ExitStep> {
 
 	protected void start() throws Exception {
 		processing();
-		String sessionId = scope.getContext().getSessionId();
 
 		VariableResolver resolver = new VariableResolver(scope);
 		boolean isSuccess;
@@ -38,15 +37,27 @@ public class ExitStepProcessorActor extends AbstractTestStepActor<ExitStep> {
 		} else {
 			isSuccess = Boolean.parseBoolean(step.getSuccess());
 		}
+		boolean isUndefined;
+		if (VariableResolver.isVariableReference(step.getUndefined())) {
+			isUndefined = (Boolean)resolver.resolveVariableAsBoolean(step.getUndefined()).getValue();
+		} else {
+			isUndefined = Boolean.parseBoolean(step.getUndefined());
+		}
 		TestStepReportType report = new SR();
 		report.setDate(XMLDateTimeUtils.getXMLGregorianCalendarDateTime());
 		StatusEvent status;
 		if (isSuccess) {
 			report.setResult(TestResultType.SUCCESS);
 			status = new StatusEvent(StepStatus.COMPLETED, scope, self());
+			scope.getContext().setForcedFinalResult(TestResultType.SUCCESS);
+		} else if (isUndefined) {
+			report.setResult(TestResultType.SUCCESS);
+			status = new StatusEvent(StepStatus.COMPLETED, scope, self());
+			scope.getContext().setForcedFinalResult(TestResultType.UNDEFINED);
 		} else {
 			report.setResult(TestResultType.FAILURE);
 			status = new StatusEvent(StepStatus.ERROR, scope, self());
+			scope.getContext().setForcedFinalResult(TestResultType.FAILURE);
 		}
 		// Prepare the rest of the test case for the stop.
 		if (scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPING && scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPED) {

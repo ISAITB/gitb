@@ -125,7 +125,7 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
             else if (message instanceof StatusEvent) {
 	            if(getSender().equals(sequenceProcessorActor)) {
 		            StepStatus status = ((StatusEvent) message).getStatus();
-		            if (status == StepStatus.COMPLETED || status == StepStatus.ERROR || status == StepStatus.WARNING) {
+		            if (status == StepStatus.COMPLETED || status == StepStatus.ERROR || status == StepStatus.WARNING || status == StepStatus.SKIPPED) {
 		                // Construct the final report.
                         TestStepReportType resultReport = constructResultReport(status, context);
                         // Notify for the completion of the test session after a grace period.
@@ -157,11 +157,13 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
         // We treat a final result of "WARNING" as a "SUCCESS". This is the overall test session result.
         if (status == StepStatus.COMPLETED || status == StepStatus.WARNING) {
             report.setResult(TestResultType.SUCCESS);
+        } else if (status == StepStatus.SKIPPED) {
+            report.setResult(TestResultType.UNDEFINED);
         } else {
             report.setResult(TestResultType.FAILURE);
         }
         // Set output message (if defined).
-        if (testCase.getOutput() != null) {
+        if (testCase.getOutput() != null && status != StepStatus.SKIPPED) {
             var previousState = context.getCurrentState();
             context.setCurrentState(TestCaseContext.TestCaseStateEnum.OUTPUT);
             try {
