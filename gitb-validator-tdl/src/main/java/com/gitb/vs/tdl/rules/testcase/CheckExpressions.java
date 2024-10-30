@@ -234,6 +234,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
             }
         } else if (step instanceof ExitStep exitStep) {
             checkToken(exitStep.getSuccess(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+            checkToken(exitStep.getUndefined(), TokenType.STRING_OR_VARIABLE_REFERENCE);
         } else if (step instanceof Assign assignStep) {
             String toToken = assignStep.getTo();
             checkToken(toToken, TokenType.STRING_OR_VARIABLE_REFERENCE);
