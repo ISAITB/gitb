@@ -35,6 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStepActor<T> {
     public static final String NAME = "seq-p";
     private static final Logger LOG = LoggerFactory.getLogger(SequenceProcessorActor.class);
+    private final boolean isRoot;
 
     private Map<Integer, Integer> childActorUidIndexMap;
     private Map<Integer, StepStatus> childStepStatuses;
@@ -42,7 +43,12 @@ public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStep
     private List<Pair<Integer, Object>> childStepSpecs;
 
     public SequenceProcessorActor(T sequence, TestCaseScope scope, String stepId) {
+        this(sequence, scope, stepId, false);
+    }
+
+    public SequenceProcessorActor(T sequence, TestCaseScope scope, String stepId, boolean isRoot) {
         super(sequence, scope, stepId);
+        this.isRoot = isRoot;
     }
 
     @Override
@@ -182,22 +188,32 @@ public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStep
     }
 
     void completeStep() {
-        boolean childrenHasError = false;
-        boolean childrenHasWarning = false;
-        for (Map.Entry<Integer, StepStatus> childStepStatus : childStepStatuses.entrySet()) {
-            if (childStepStatus.getValue() == StepStatus.ERROR) {
-                childrenHasError = true;
-                break;
-            } else if (childStepStatus.getValue() == StepStatus.WARNING) {
-                childrenHasWarning = true;
+        if (isRoot && scope.getContext().getForcedFinalResult() != null) {
+            var finalStatus = StepStatus.COMPLETED;
+            if (scope.getContext().getForcedFinalResult() == TestResultType.FAILURE) {
+                finalStatus = StepStatus.ERROR;
+            } else if (scope.getContext().getForcedFinalResult() == TestResultType.UNDEFINED) {
+                finalStatus = StepStatus.SKIPPED;
             }
-        }
-        if (childrenHasError) {
-            childrenHasError();
-        } else if (childrenHasWarning) {
-            childrenHasWarning();
+            updateTestStepStatus(finalStatus, null);
         } else {
-            completed();
+            boolean childrenHasError = false;
+            boolean childrenHasWarning = false;
+            for (Map.Entry<Integer, StepStatus> childStepStatus : childStepStatuses.entrySet()) {
+                if (childStepStatus.getValue() == StepStatus.ERROR) {
+                    childrenHasError = true;
+                    break;
+                } else if (childStepStatus.getValue() == StepStatus.WARNING) {
+                    childrenHasWarning = true;
+                }
+            }
+            if (childrenHasError) {
+                childrenHasError();
+            } else if (childrenHasWarning) {
+                childrenHasWarning();
+            } else {
+                completed();
+            }
         }
     }
 
