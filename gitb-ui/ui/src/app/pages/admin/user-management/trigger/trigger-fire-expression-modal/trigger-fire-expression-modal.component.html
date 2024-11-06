@@ -1,0 +1,67 @@
+<div class="modal-header">
+    <div class="modal-title">Fire condition clause</div>
+</div>
+<form>
+    <div class="modal-body">
+        <div class="row">
+            <label class="col-3 col-form-label text-end" for="expressionType">* Value to check:</label>
+            <div class="col-7">
+                <select id="expressionType" name="expressionType" [(ngModel)]="fireExpressionToEdit.expressionType" class="form-select">
+                    @for (expressionType of expressionTypes; track expressionType) {
+                        <option [ngValue]="expressionType">{{dataService.triggerExpressionTypeLabel(expressionType)}}</option>
+                    }
+                </select>
+            </div>
+            <div app-tooltip class="col-auto" tbTooltip="The value upon which the configured expression will be applied to see if the trigger should fire."></div>
+        </div>
+        <div class="row mt-3">
+            <div class="offset-3 col-8">
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" [(ngModel)]="fireExpressionToEdit.notMatch" name="matchType" id="matches" [value]="false">
+                    <label class="form-check-label" for="matches">Matches</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" [(ngModel)]="fireExpressionToEdit.notMatch" name="matchType" id="not_matches" [value]="true">
+                    <label class="form-check-label" for="not_matches">Does not match</label>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <label class="col-3 col-form-label text-end" for="expressionContent">* Expression:</label>
+            <div class="col-7">
+                <input #expressionContent type="text" id="expressionContent" name="expressionContent" [(ngModel)]="fireExpressionToEdit.expression" class="form-control" [invalid]="validation.get('expressionContent')"/>
+            </div>
+            <div app-tooltip class="col-auto" tbTooltip="A regular expression to apply on the selected value. Note that partial matches are also considered successful."></div>
+        </div>
+        <div class="row mt-3 pt-0">
+            <div class="col-7 offset-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="testExpression" name="testExpression" [(ngModel)]="testExpression" [disabled]="!testExpression && !textProvided(fireExpressionToEdit.expression)">
+                    <label class="form-check-label" for="testExpression">Test expression?</label>
+                    <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Verify the defined expression based on a test value."></div>
+                </div>
+            </div>
+        </div>
+        <div [collapse]="!testExpression" [isAnimated]="true">
+            <div class="row mt-3 gx-3">
+                <div class="offset-3 col-7">
+                    <div class="input-group" [class.has-validation]="testedExpression">
+                        <input id="testValue" placeholder="Value to test" name="testValue" [(ngModel)]="testValue" class="form-control" [class.is-invalid]="testedExpression && !testedExpressionMatches" [class.is-valid]="testedExpression && testedExpressionMatches">
+                        <button type="button" class="btn btn-secondary" [disabled]="!textProvided(testValue)" (click)="testSampleValue()">Test</button>
+                        @if (testedExpression) {
+                            <div [class.valid-feedback]="testedExpressionMatches" [class.invalid-feedback]="!testedExpressionMatches">
+                                {{ testedExpressionMatches?'The provided value matches the condition.':'The provided value does not match the condition.' }}
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <div class="btn-toolbar">
+            <button class="btn btn-secondary" type="button" (click)="cancel()">Cancel</button>
+            <button class="btn btn-secondary" type="submit" (click)="save()" [disabled]="saveDisabled()">Save</button>
+        </div>
+    </div>
+</form>

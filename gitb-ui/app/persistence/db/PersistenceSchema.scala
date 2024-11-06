@@ -653,6 +653,16 @@ object PersistenceSchema {
   }
   val triggerData = TableQuery[TriggerDataTable]
 
+  class TriggerFireExpressionsTable(tag: Tag) extends Table[TriggerFireExpression](tag, "TriggerFireExpressions") {
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def expression = column[String]("expression")
+    def expressionType = column[Short]("expression_type")
+    def notMatch = column[Boolean]("not_match")
+    def trigger = column[Long] ("trigger")
+    def * = (id, expression, expressionType, notMatch, trigger) <> (TriggerFireExpression.tupled, TriggerFireExpression.unapply)
+  }
+  val triggerFireExpressions = TableQuery[TriggerFireExpressionsTable]
+
   class CommunityResourcesTable(tag: Tag) extends Table[CommunityResources](tag, "CommunityResources") {
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
     def name = column[String]("name")
