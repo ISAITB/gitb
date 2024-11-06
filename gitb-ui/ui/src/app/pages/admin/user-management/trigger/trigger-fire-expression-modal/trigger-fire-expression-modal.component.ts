@@ -74,7 +74,7 @@ export class TriggerFireExpressionModalComponent extends BaseComponent implement
   testSampleValue() {
     if (this.validateExpression()) {
       const expressionMatches = new RegExp(this.fireExpressionToEdit.expression).test(this.testValue);
-      this.testedExpressionMatches = expressionMatches && !this.fireExpressionToEdit.notMatch
+      this.testedExpressionMatches = expressionMatches && !this.fireExpressionToEdit.notMatch || !expressionMatches && this.fireExpressionToEdit.notMatch
       this.testedExpression = true
     }
   }
