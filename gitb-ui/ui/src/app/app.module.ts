@@ -198,6 +198,8 @@ import { EndpointParameterTabContentComponent } from './pages/admin/domain-manag
 import { CustomPropertyPanelComponent } from './components/custom-property-panel/custom-property-panel.component';
 import { InvalidFormControlDirective } from './directives/invalid-form-control.directive';
 import { PendingDivComponent } from './components/pending-div/pending-div.component';
+import { TriggerFireExpressionControlComponent } from './pages/admin/user-management/trigger/trigger-fire-expression-control/trigger-fire-expression-control.component';
+import { TriggerFireExpressionModalComponent } from './pages/admin/user-management/trigger/trigger-fire-expression-modal/trigger-fire-expression-modal.component';
 
 @NgModule({ declarations: [
         AppComponent,
@@ -379,7 +381,9 @@ import { PendingDivComponent } from './components/pending-div/pending-div.compon
         ConformanceOverviewCertificateModalComponent,
         EndpointParameterTabContentComponent,
         CustomPropertyPanelComponent,
-        PendingDivComponent
+        PendingDivComponent,
+        TriggerFireExpressionControlComponent,
+        TriggerFireExpressionModalComponent
     ],
     bootstrap: [AppComponent], imports: [ColorPickerModule,
         BrowserModule,

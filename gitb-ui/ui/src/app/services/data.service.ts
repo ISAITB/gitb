@@ -1775,4 +1775,14 @@ export class DataService {
     }
   }
 
+  triggerExpressionTypeLabel(expressionType: number): string {
+    if (expressionType == Constants.TRIGGER_FIRE_EXPRESSION_TYPE.TEST_CASE_IDENTIFIER) {
+      return 'Test case identifier'
+    } else if (expressionType == Constants.TRIGGER_FIRE_EXPRESSION_TYPE.TEST_SUITE_IDENTIFIER) {
+      return 'Test suite identifier'
+    } else {
+      return ''
+    }
+  }
+
 }

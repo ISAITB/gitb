@@ -67,6 +67,7 @@ class TriggerHelper @Inject() (actorSystem: ActorSystem,
 
   private[managers] def deleteTriggerInternal(triggerId: Long): DBIO[_] = {
     deleteTriggerDataInternal(triggerId) andThen
+      deleteTriggerFireExpressionsInternal(triggerId) andThen
       PersistenceSchema.triggers.filter(_.id === triggerId).delete
   }
 
@@ -76,6 +77,10 @@ class TriggerHelper @Inject() (actorSystem: ActorSystem,
 
   private[managers] def deleteTriggerDataInternal(triggerId: Long): DBIO[_] = {
     PersistenceSchema.triggerData.filter(_.trigger === triggerId).delete
+  }
+
+  private[managers] def deleteTriggerFireExpressionsInternal(triggerId: Long): DBIO[_] = {
+    PersistenceSchema.triggerFireExpressions.filter(_.trigger === triggerId).delete
   }
 
   def deleteTriggerDataOfCommunityAndDomain(communityId: Long, domainId: Long): DBIO[_] = {

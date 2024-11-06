@@ -378,6 +378,11 @@ export class Constants {
 		CONFORMANCE_OVERVIEW_CERTIFICATE: 6
 	}
 
+  public static TRIGGER_FIRE_EXPRESSION_TYPE = {
+    TEST_CASE_IDENTIFIER: 1,
+    TEST_SUITE_IDENTIFIER: 2
+  }
+
 	public static FILTER_COMMAND = {
 		TOGGLE: 1,
 		CLEAR: 2,

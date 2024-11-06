@@ -6,6 +6,7 @@ import { Trigger } from '../types/trigger';
 import { TriggerDataItem } from '../types/trigger-data-item';
 import { TriggerInfo } from '../types/trigger-info';
 import { RestService } from './rest.service';
+import {TriggerFireExpression} from '../types/trigger-fire-expression';
 
 @Injectable({
   providedIn: 'root'
@@ -23,7 +24,7 @@ export class TriggerService {
     })
   }
 
-  createTrigger(name: string, description: string|undefined, operation: string|undefined, active: boolean|undefined, url: string, event: number, serviceType: number, communityId: number, dataItems?: TriggerDataItem[]) {
+  createTrigger(name: string, description: string|undefined, operation: string|undefined, active: boolean|undefined, url: string, event: number, serviceType: number, communityId: number, dataItems?: TriggerDataItem[], fireExpressions?: TriggerFireExpression[]) {
     const data: any = {
         name: name,
         description: description,
@@ -36,6 +37,9 @@ export class TriggerService {
     }
     if (dataItems != undefined) {
       data.data = JSON.stringify(dataItems)
+    }
+    if (fireExpressions != undefined && fireExpressions.length > 0) {
+      data.expressions = JSON.stringify(fireExpressions)
     }
     return this.restService.post<ErrorDescription|undefined>({
       path: ROUTES.controllers.TriggerService.createTrigger().url,
@@ -82,7 +86,7 @@ export class TriggerService {
     })
   }
 
-  updateTrigger(triggerId: number, name: string, description: string|undefined, operation: string|undefined, active: boolean|undefined, url: string, event: number, serviceType: number, communityId: number, dataItems?: TriggerDataItem[]) {
+  updateTrigger(triggerId: number, name: string, description: string|undefined, operation: string|undefined, active: boolean|undefined, url: string, event: number, serviceType: number, communityId: number, dataItems?: TriggerDataItem[], fireExpressions?: TriggerFireExpression[]) {
     const data: any = {
         name: name,
         description: description,
@@ -95,6 +99,9 @@ export class TriggerService {
     }
     if (dataItems != undefined) {
       data.data = JSON.stringify(dataItems)
+    }
+    if (fireExpressions != undefined && fireExpressions.length > 0) {
+      data.expressions = JSON.stringify(fireExpressions)
     }
     return this.restService.post<ErrorDescription|undefined>({
       path: ROUTES.controllers.TriggerService.updateTrigger(triggerId).url,
@@ -125,7 +132,7 @@ export class TriggerService {
         url: url,
         type: serviceType,
         community_id: communityId
-      }  
+      }
     })
   }
 }

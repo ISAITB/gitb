@@ -673,6 +673,15 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     }
   }
 
+  private def toModelTriggerFireExpressionType(expressionType: com.gitb.xml.export.TriggerFireExpressionType): Short = {
+    require(expressionType != null, "Enum value cannot be null")
+    expressionType match {
+      case com.gitb.xml.export.TriggerFireExpressionType.TEST_CASE_IDENTIFIER => Enums.TriggerFireExpressionType.TestCaseIdentifier.id.toShort
+      case com.gitb.xml.export.TriggerFireExpressionType.TEST_SUITE_IDENTIFIER => Enums.TriggerFireExpressionType.TestSuiteIdentifier.id.toShort
+      case _ => throw new IllegalArgumentException("Unknown enum value ["+expressionType+"]")
+    }
+  }
+
   private def toModelTriggerDataType(dataType: com.gitb.xml.export.TriggerDataType): Short = {
     require(dataType != null, "Enum value cannot be null")
     dataType match {
@@ -718,7 +727,17 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
       }
       modelDataItems = Some(modelDataItemsToProcess.toList)
     }
-    new models.Trigger(modelTrigger, modelDataItems)
+    var modelFireExpressions: Option[List[models.TriggerFireExpression]] = None
+    if (data.getFireExpressions != null) {
+      val expressions = ListBuffer[models.TriggerFireExpression]()
+      data.getFireExpressions.getTriggerFireExpression.asScala.foreach { expression =>
+        expressions += models.TriggerFireExpression(0L, expression.getExpression, toModelTriggerFireExpressionType(expression.getExpressionType), expression.isNotMatch, modelTriggerId.getOrElse(0L))
+      }
+      if (expressions.nonEmpty) {
+        modelFireExpressions = Some(expressions.toList)
+      }
+    }
+    new models.Trigger(modelTrigger, modelDataItems, modelFireExpressions)
   }
 
   private def toModelCommunityResource(data: com.gitb.xml.export.CommunityResource, communityId: Long): models.CommunityResources = {

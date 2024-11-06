@@ -1624,6 +1624,15 @@ object JsonUtil {
     list.toList
   }
 
+  def parseJsTriggerFireExpressions(json:String, triggerId: Option[Long]): List[TriggerFireExpression] = {
+    val jsArray = Json.parse(json).as[JsArray].value
+    val list = ListBuffer[TriggerFireExpression]()
+    jsArray.foreach { jsonConfig =>
+      list += parseJsTriggerFireExpression(jsonConfig, triggerId)
+    }
+    list.toList
+  }
+
   private def parseJsTriggerDataItem(jsonConfig: JsValue, triggerId: Option[Long]): TriggerData = {
     val dataType = (jsonConfig \ "dataType").as[Short]
     val dataTypeEnum = TriggerDataType.apply(dataType)
@@ -1639,6 +1648,16 @@ object JsonUtil {
     // Check that this is a valid value (otherwise throw exception)
     TriggerDataType.apply(data.dataType)
     data
+  }
+
+  private def parseJsTriggerFireExpression(jsonConfig: JsValue, triggerId: Option[Long]): TriggerFireExpression = {
+    TriggerFireExpression(
+      (jsonConfig \ "id").asOpt[Long].getOrElse(0L),
+      (jsonConfig \ "expression").as[String],
+      TriggerFireExpressionType.apply((jsonConfig \ "expressionType").as[Short]).id.toShort,
+      (jsonConfig \ "notMatch").asOpt[Boolean].getOrElse(false),
+      triggerId.getOrElse(0L)
+    )
   }
 
   def parseJsImportItems(json:String): List[ImportItem] = {
@@ -2485,10 +2504,29 @@ object JsonUtil {
     json
   }
 
+  def jsTriggerFireExpression(item:TriggerFireExpression):JsObject = {
+    val json = Json.obj(
+      "id"  -> item.id,
+      "expression"  -> item.expression,
+      "expressionType"  -> item.expressionType,
+      "notMatch" -> item.notMatch
+    )
+    json
+  }
+
+  def jsTriggerFireExpressions(items:List[TriggerFireExpression]):JsArray = {
+    var json = Json.arr()
+    items.foreach { item =>
+      json = json.append(jsTriggerFireExpression(item))
+    }
+    json
+  }
+
   def jsTriggerInfo(trigger: Trigger): JsObject = {
     val json = Json.obj(
       "trigger"    -> jsTrigger(trigger.trigger),
-      "data"  -> (if (trigger.data.isDefined) jsTriggerDataItems(trigger.data.get) else JsNull)
+      "data"  -> (if (trigger.data.isDefined) jsTriggerDataItems(trigger.data.get) else JsNull),
+      "fireExpressions"  -> (if (trigger.fireExpressions.isDefined) jsTriggerFireExpressions(trigger.fireExpressions.get) else JsNull)
     )
     json
   }
