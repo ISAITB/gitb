@@ -104,6 +104,7 @@ object Parameters {
   val OTHER_SYSTEM = "other_system"
 
   val DATA = "data"
+  val EXPRESSIONS = "expressions"
   val IS_BASE64 = "is_base64"
 
   //Conformance Service parameters

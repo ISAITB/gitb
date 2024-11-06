@@ -1242,6 +1242,20 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
               exportedTrigger.setDataItems(null)
             }
           }
+          if (trigger.fireExpressions.isDefined && trigger.fireExpressions.get.nonEmpty) {
+            exportedTrigger.setFireExpressions(new TriggerFireExpressions)
+            trigger.fireExpressions.get.foreach { expression =>
+              val exportedFireExpression = new com.gitb.xml.export.TriggerFireExpression
+              exportedFireExpression.setId(toId(idSequence.next()))
+              exportedFireExpression.setExpression(expression.expression)
+              models.Enums.TriggerFireExpressionType.apply(expression.expressionType) match {
+                case models.Enums.TriggerFireExpressionType.TestCaseIdentifier => exportedFireExpression.setExpressionType(com.gitb.xml.export.TriggerFireExpressionType.TEST_CASE_IDENTIFIER)
+                case models.Enums.TriggerFireExpressionType.TestSuiteIdentifier => exportedFireExpression.setExpressionType(com.gitb.xml.export.TriggerFireExpressionType.TEST_SUITE_IDENTIFIER)
+              }
+              exportedFireExpression.setNotMatch(expression.notMatch)
+              exportedTrigger.getFireExpressions.getTriggerFireExpression.add(exportedFireExpression)
+            }
+          }
           communityData.getTriggers.getTrigger.add(exportedTrigger)
         }
       }

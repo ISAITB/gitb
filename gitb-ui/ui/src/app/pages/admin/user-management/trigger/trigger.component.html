@@ -44,6 +44,72 @@
                             </div>
                             <div app-tooltip class="col-auto" tbTooltip="The event that will cause this trigger to fire."></div>
                         </div>
+                        @if (trigger.eventType == Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_STARTED || trigger.eventType == Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_FAILED || trigger.eventType == Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_SUCCEEDED) {
+                            <div class="row mt-3">
+                                <legend class="col-3 col-form-label text-end">Fire condition:</legend>
+                                <div class="col-7">
+                                    @for (expression of fireExpressions; track expression) {
+                                        <div [class.mt-1]="!$first">
+                                            <app-trigger-fire-expression-control
+                                                [fireExpression]="expression"
+                                                [updateEmitter]="fireExpressionEmitters[$index]"
+                                                [expressionTypes]="fireExpressionTypes"
+                                                [first]="$first"
+                                                (edit)="editFireExpression($index)"
+                                                (delete)="deleteFireExpression($index)"
+                                            ></app-trigger-fire-expression-control>
+                                        </div>
+                                    }
+                                    <div [class.mt-3]="fireExpressions.length > 0">
+                                        <div class="row align-items-center">
+                                            <div class="col-auto">
+                                                <button type="button" class="btn btn-secondary" (click)="addFireCondition()">Add condition clause</button>
+                                            </div>
+                                            @if (fireExpressions.length == 0) {
+                                                <div app-tooltip class="col-auto d-inline-flex" inlineType="button" [tbTooltip]="fireConditionsTooltip"></div>
+                                            } @else {
+                                                <div class="col">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" id="testFireCondition" name="testFireCondition" [(ngModel)]="testFireCondition">
+                                                        <label class="form-check-label" for="testFireCondition">Test condition?
+                                                            <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Verify the defined condition based on a test value."></div>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                                @if (fireExpressions.length > 0) {
+                                    <div app-tooltip class="col-auto" [tbTooltip]="fireConditionsTooltip"></div>
+                                }
+                            </div>
+                            @if (fireExpressions.length > 0) {
+                                <div [collapse]="!testFireCondition" [isAnimated]="true">
+                                    <div class="row mt-3">
+                                        <div class="offset-3 col-7 test-fire-condition-container">
+                                            <div class="input-group" [class.has-validation]="testedFireCondition">
+                                                <div class="btn-group" dropdown>
+                                                    <button id="button-testConditionType" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-testConditionType">{{dataService.triggerExpressionTypeLabel(this.testValueTypeForFireCondition!)}}<span class="caret withMargin"></span></button>
+                                                    <ul id="dropdown-testConditionType" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-testConditionType">
+                                                        @for (expressionType of fireExpressionTypes; track expressionType) {
+                                                            <li role="menuitem"><a class="dropdown-item" href (click)="selectTestExpressionType($index);$event.preventDefault()">{{dataService.triggerExpressionTypeLabel(expressionType)}}</a></li>
+                                                        }
+                                                    </ul>
+                                                </div>
+                                                <input id="testConditionValue" placeholder="Value to test" name="testConditionValue" [(ngModel)]="testValueForFireCondition" class="form-control" [class.is-invalid]="testedFireCondition && !testedFireConditionMatches" [class.is-valid]="testedFireCondition && testedFireConditionMatches">
+                                                <button type="button" class="btn btn-secondary" [disabled]="!textProvided(testValueForFireCondition)" (click)="testFireConditionWithSampleValue()">Test</button>
+                                                @if (testedFireCondition) {
+                                                    <div [class.valid-feedback]="testedFireConditionMatches" [class.invalid-feedback]="!testedFireConditionMatches">
+                                                        {{ testedFireConditionMatches?'The condition is satisfied and the trigger will fire.':'The condition is not satisfied and the trigger will not fire.' }}
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
                         <div class="row mt-3 pt-2">
                             <label class="col-3 col-form-label text-end pt-0" for="active">Active:</label>
                             <div class="col-7">
@@ -166,7 +232,7 @@
                                                     @for (parameter of domainParameters; track parameter.id; let index = $index) {
                                                         <tr (click)="parameter.selected = !parameter.selected">
                                                             <td><input class="form-check-input" type="checkbox" [name]="'parameterData'+index" [(ngModel)]="parameter.selected" (click)="$event.stopPropagation()"></td>
-                                                            <td>{{parameter.name}}</td> 
+                                                            <td>{{parameter.name}}</td>
                                                             <td>{{parameterType(parameter)}}</td>
                                                         </tr>
                                                     }
@@ -197,9 +263,9 @@
                                                     @for (parameter of organisationParameters; track parameter.id; let index = $index) {
                                                         <tr (click)="parameter.selected = !parameter.selected">
                                                            <td><input class="form-check-input" type="checkbox" [name]="'orgParameter'+index" [(ngModel)]="parameter.selected" (click)="$event.stopPropagation()"></td>
-                                                           <td>{{parameter.name}}</td> 
+                                                           <td>{{parameter.name}}</td>
                                                            <td>{{parameterType(parameter)}}</td>
-                                                           <td>{{parameter.testKey}}</td> 
+                                                           <td>{{parameter.testKey}}</td>
                                                         </tr>
                                                     }
                                                 </tbody>
@@ -229,9 +295,9 @@
                                                     @for (parameter of systemParameters; track parameter.id; let index = $index) {
                                                         <tr (click)="parameter.selected = !parameter.selected">
                                                            <td><input class="form-check-input" type="checkbox" [name]="'sysParam'+index" [(ngModel)]="parameter.selected" (click)="$event.stopPropagation()"></td>
-                                                           <td>{{parameter.name}}</td> 
+                                                           <td>{{parameter.name}}</td>
                                                            <td>{{parameterType(parameter)}}</td>
-                                                           <td>{{parameter.testKey}}</td> 
+                                                           <td>{{parameter.testKey}}</td>
                                                         </tr>
                                                     }
                                                 </tbody>
@@ -261,9 +327,9 @@
                                                     @for (parameter of statementParameters; track parameter.id; let index = $index) {
                                                         <tr (click)="parameter.selected = !parameter.selected">
                                                            <td><input class="form-check-input" type="checkbox" [name]="'stmtParam'+index" [(ngModel)]="parameter.selected" (click)="$event.stopPropagation()"></td>
-                                                           <td>{{parameter.name}}</td> 
+                                                           <td>{{parameter.name}}</td>
                                                            <td>{{parameterType(parameter)}}</td>
-                                                           <td>{{parameter.testKey}}</td> 
+                                                           <td>{{parameter.testKey}}</td>
                                                         </tr>
                                                     }
                                                 </tbody>

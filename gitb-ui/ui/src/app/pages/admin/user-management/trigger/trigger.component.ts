@@ -1,34 +1,36 @@
-import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { BsModalService } from 'ngx-bootstrap/modal';
-import { Constants } from 'src/app/common/constants';
-import { BaseComponent } from 'src/app/pages/base-component.component';
-import { CommunityService } from 'src/app/services/community.service';
-import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
-import { ConformanceService } from 'src/app/services/conformance.service';
-import { DataService } from 'src/app/services/data.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { TriggerService } from 'src/app/services/trigger.service';
-import { IdLabel } from 'src/app/types/id-label';
-import { OrganisationParameter } from 'src/app/types/organisation-parameter';
-import { SystemParameter } from 'src/app/types/system-parameter';
-import { Trigger } from 'src/app/types/trigger';
-import { remove } from 'lodash'
-import { forkJoin, Observable, of } from 'rxjs';
-import { DomainParameter } from 'src/app/types/domain-parameter';
-import { map, share } from 'rxjs/operators';
-import { TriggerDataItem } from 'src/app/types/trigger-data-item';
-import { ErrorDescription } from 'src/app/types/error-description';
-import { CodeEditorModalComponent } from 'src/app/components/code-editor-modal/code-editor-modal.component';
-import { CustomProperty } from 'src/app/types/custom-property.type';
-import { RoutingService } from 'src/app/services/routing.service';
-import { CommunityTab } from '../community/community-details/community-tab.enum';
-import { StatementParameterMinimal } from 'src/app/types/statement-parameter-minimal';
-import { TestTriggerModalComponent } from './test-trigger-modal/test-trigger-modal.component';
-import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
-import { ErrorService } from 'src/app/services/error.service';
-import { ValidationState } from 'src/app/types/validation-state';
-import { TriggerInfo } from 'src/app/types/trigger-info';
+import {Component, EventEmitter, OnInit} from '@angular/core';
+import {ActivatedRoute} from '@angular/router';
+import {BsModalService} from 'ngx-bootstrap/modal';
+import {Constants} from 'src/app/common/constants';
+import {BaseComponent} from 'src/app/pages/base-component.component';
+import {CommunityService} from 'src/app/services/community.service';
+import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
+import {ConformanceService} from 'src/app/services/conformance.service';
+import {DataService} from 'src/app/services/data.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {TriggerService} from 'src/app/services/trigger.service';
+import {IdLabel} from 'src/app/types/id-label';
+import {OrganisationParameter} from 'src/app/types/organisation-parameter';
+import {SystemParameter} from 'src/app/types/system-parameter';
+import {Trigger} from 'src/app/types/trigger';
+import {remove} from 'lodash';
+import {forkJoin, Observable, of} from 'rxjs';
+import {DomainParameter} from 'src/app/types/domain-parameter';
+import {map, share} from 'rxjs/operators';
+import {TriggerDataItem} from 'src/app/types/trigger-data-item';
+import {ErrorDescription} from 'src/app/types/error-description';
+import {CodeEditorModalComponent} from 'src/app/components/code-editor-modal/code-editor-modal.component';
+import {CustomProperty} from 'src/app/types/custom-property.type';
+import {RoutingService} from 'src/app/services/routing.service';
+import {CommunityTab} from '../community/community-details/community-tab.enum';
+import {StatementParameterMinimal} from 'src/app/types/statement-parameter-minimal';
+import {TestTriggerModalComponent} from './test-trigger-modal/test-trigger-modal.component';
+import {BreadcrumbType} from 'src/app/types/breadcrumb-type';
+import {ErrorService} from 'src/app/services/error.service';
+import {ValidationState} from 'src/app/types/validation-state';
+import {TriggerInfo} from 'src/app/types/trigger-info';
+import {TriggerFireExpression} from '../../../../types/trigger-fire-expression';
+import {TriggerFireExpressionModalComponent} from './trigger-fire-expression-modal/trigger-fire-expression-modal.component';
 
 @Component({
   selector: 'app-trigger',
@@ -50,6 +52,15 @@ export class TriggerComponent extends BaseComponent implements OnInit {
   statusTextUnknown = {id: 0, msg: 'None'}
 
   trigger: Partial<Trigger> = {}
+  fireExpressions: TriggerFireExpression[] = []
+  fireExpressionEmitters: EventEmitter<void>[] = []
+  fireExpressionTypes: number[] = []
+  fireConditionsTooltip = 'A condition containing one or more clauses based on regular expressions. The trigger will only fire if the condition is satisfied.'
+  testValueForFireCondition = ''
+  testValueTypeForFireCondition?: number
+  testFireCondition = false
+  testedFireCondition = false
+  testedFireConditionMatches = false
   organisationParameters: OrganisationParameter[] = []
   systemParameters: SystemParameter[] = []
   statementParameters: StatementParameterMinimal[] = []
@@ -145,7 +156,7 @@ export class TriggerComponent extends BaseComponent implements OnInit {
         }
       }),
       share()
-    ))    
+    ))
 
     let domainParameterFnResult: Observable<DomainParameter[]>|undefined
     if (this.dataService.isCommunityAdmin && this.dataService.community!.domainId != undefined) {
@@ -177,6 +188,12 @@ export class TriggerComponent extends BaseComponent implements OnInit {
       if (this.update) {
         if (data[0]) {
           this.trigger = data[0].trigger
+          if (data[0].fireExpressions) {
+            this.fireExpressions = data[0].fireExpressions
+            this.fireExpressions.forEach(() => {
+              this.fireExpressionEmitters.push(new EventEmitter<void>())
+            })
+          }
         }
         this.routingService.triggerBreadcrumbs(this.communityId, this.triggerId!, this.trigger.name!)
         if (this.trigger.latestResultOk != undefined) {
@@ -254,6 +271,14 @@ export class TriggerComponent extends BaseComponent implements OnInit {
     return this.saveDisabled() || this.clearStatusPending
   }
 
+  fireExpressionsToSave(): TriggerFireExpression[]|undefined {
+    if (this.trigger.eventType == Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_STARTED || this.trigger.eventType == Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_FAILED || this.trigger.eventType == Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_SUCCEEDED) {
+      return this.fireExpressions
+    } else {
+      return undefined
+    }
+  }
+
   dataItemsToSave() {
     const dataItems: TriggerDataItem[] = []
     if (this.triggerData.community.visible && this.triggerData.community.selected) {
@@ -313,9 +338,9 @@ export class TriggerComponent extends BaseComponent implements OnInit {
     this.savePending = true
     let callResult: Observable<ErrorDescription|undefined>
     if (this.update) {
-      callResult = this.triggerService.updateTrigger(this.triggerId!, this.trigger.name!, this.trigger.description, this.trigger.operation, this.trigger.active, this.trigger.url!, this.trigger.eventType!, this.trigger.serviceType!, this.communityId, this.dataItemsToSave())
+      callResult = this.triggerService.updateTrigger(this.triggerId!, this.trigger.name!, this.trigger.description, this.trigger.operation, this.trigger.active, this.trigger.url!, this.trigger.eventType!, this.trigger.serviceType!, this.communityId, this.dataItemsToSave(), this.fireExpressionsToSave())
     } else {
-      callResult = this.triggerService.createTrigger(this.trigger.name!, this.trigger.description, this.trigger.operation, this.trigger.active, this.trigger.url!, this.trigger.eventType!, this.trigger.serviceType!, this.communityId, this.dataItemsToSave())
+      callResult = this.triggerService.createTrigger(this.trigger.name!, this.trigger.description, this.trigger.operation, this.trigger.active, this.trigger.url!, this.trigger.eventType!, this.trigger.serviceType!, this.communityId, this.dataItemsToSave(), this.fireExpressionsToSave())
     }
     callResult.subscribe((data) => {
       if (this.isErrorDescription(data)) {
@@ -444,17 +469,97 @@ export class TriggerComponent extends BaseComponent implements OnInit {
     this.triggerData.systemParameter.visible = this.systemParameters.length > 0 && (eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.systemParameter.dataType))
     this.triggerData.domainParameter.visible = this.domainParameters.length > 0 && (eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.domainParameter.dataType))
     this.triggerData.statementParameter.visible = this.statementParameters.length > 0 && (eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.statementParameter.dataType))
+    if (eventType == Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_SUCCEEDED || eventType == Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_FAILED || eventType == Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_STARTED) {
+      this.fireExpressionTypes = [Constants.TRIGGER_FIRE_EXPRESSION_TYPE.TEST_CASE_IDENTIFIER, Constants.TRIGGER_FIRE_EXPRESSION_TYPE.TEST_SUITE_IDENTIFIER]
+      this.testValueTypeForFireCondition = this.fireExpressionTypes[0]
+    } else {
+      this.fireExpressionTypes = []
+      this.testValueTypeForFireCondition = undefined
+    }
   }
 
   parameterType(parameter: CustomProperty|DomainParameter|StatementParameterMinimal) {
     if (parameter.kind == 'SIMPLE') {
       parameter.kindLabel = 'Simple'
     } else if (parameter.kind == 'BINARY') {
-      parameter.kindLabel = 'Binary' 
+      parameter.kindLabel = 'Binary'
     } else {
       parameter.kindLabel = 'Secret'
     }
     return parameter.kindLabel
+  }
+
+  private showFireExpressionForm(fireExpression: TriggerFireExpression, existingIndex?: number) {
+    const modal = this.modalService.show(TriggerFireExpressionModalComponent, {
+      class: 'modal-lg',
+      initialState: {
+        fireExpression: fireExpression,
+        expressionTypes: this.fireExpressionTypes
+      }
+    })
+    modal.content?.savedFireExpression.subscribe((expression) => {
+      if (existingIndex != undefined) {
+        // Update
+        this.fireExpressions[existingIndex] = expression
+        setTimeout(() => {
+          this.fireExpressionEmitters[existingIndex].emit()
+        }, 1)
+      } else {
+        this.fireExpressions.push(expression)
+        this.fireExpressionEmitters.push(new EventEmitter<void>())
+      }
+      // Clear the test status (if any)
+      this.testFireConditionWithSampleValue()
+    })
+  }
+
+  addFireCondition() {
+    const defaultFireExpression = {
+      expression: '',
+      expressionType: this.fireExpressionTypes[0],
+      notMatch: false
+    }
+    this.showFireExpressionForm(defaultFireExpression)
+  }
+
+  editFireExpression(expressionIndex: number) {
+    this.showFireExpressionForm(this.fireExpressions[expressionIndex], expressionIndex)
+  }
+
+  deleteFireExpression(expressionIndex: number) {
+    this.fireExpressions.splice(expressionIndex, 1)
+    this.fireExpressionEmitters.splice(expressionIndex, 1)
+    if (this.fireExpressions.length == 0) {
+      this.testFireCondition = false
+      this.testedFireCondition = false
+      this.testedFireConditionMatches = false
+      this.testValueForFireCondition = ''
+    }
+    // Update the test status (if any)
+    this.testFireConditionWithSampleValue()
+  }
+
+  testFireConditionWithSampleValue() {
+    this.testedFireCondition = false
+    this.testedFireConditionMatches = false
+    if (this.testFireCondition && this.textProvided(this.testValueForFireCondition)) {
+      let matches = true
+      const applicableExpressions = this.fireExpressions.filter((v) => v.expressionType == this.testValueTypeForFireCondition)
+      for (const expression of applicableExpressions) {
+        const expressionMatches = new RegExp(expression.expression).test(this.testValueForFireCondition)
+        if ((!expressionMatches && !expression.notMatch) || (expressionMatches && expression.notMatch)) {
+          matches = false
+          break
+        }
+      }
+      this.testedFireCondition = true
+      this.testedFireConditionMatches = matches
+    }
+  }
+
+  selectTestExpressionType(index: number) {
+    this.testValueTypeForFireCondition = this.fireExpressionTypes[index]
+    this.testFireConditionWithSampleValue()
   }
 
 }

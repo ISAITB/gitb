@@ -7,7 +7,7 @@ import jakarta.xml.bind.JAXBElement
 import models.Enums.TriggerDataType.TriggerDataType
 import models.Enums.TriggerEventType._
 import models.Enums.TriggerServiceType.TriggerServiceType
-import models.Enums.{TriggerDataType, TriggerServiceType}
+import models.Enums.{TriggerDataType, TriggerFireExpressionType, TriggerServiceType}
 import models._
 import org.apache.commons.io.{FileUtils, IOUtils}
 import org.slf4j.LoggerFactory
@@ -23,6 +23,7 @@ import java.net.URI
 import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.{Files, Path}
 import java.util.Base64
+import java.util.regex.Pattern
 import javax.inject.{Inject, Singleton}
 import javax.xml.namespace.QName
 import javax.xml.transform.stream.StreamSource
@@ -77,6 +78,7 @@ class TriggerManager @Inject()(env: Environment,
     for {
       triggerId <- PersistenceSchema.insertTriggers += trigger.trigger
       _ <- setTriggerDataInternal(triggerId, trigger.data, isNewTrigger = true)
+      _ <- setTriggerFireExpressions(triggerId, trigger.fireExpressions, isNewTrigger = true)
     } yield triggerId
   }
 
@@ -85,7 +87,8 @@ class TriggerManager @Inject()(env: Environment,
       for {
         trigger <- PersistenceSchema.triggers.filter(_.id === triggerId).result.head
         triggerData <- PersistenceSchema.triggerData.filter(_.trigger === triggerId).result
-      } yield new Trigger(trigger, Some(triggerData.toList))
+        triggerFireExpressions <- PersistenceSchema.triggerFireExpressions.filter(_.trigger === triggerId).result
+      } yield new Trigger(trigger, Some(triggerData.toList), Some(triggerFireExpressions.toList))
     )
   }
 
@@ -93,31 +96,44 @@ class TriggerManager @Inject()(env: Environment,
     val result = exec(
       for {
         triggerList <- PersistenceSchema.triggers.filter(_.community === communityId).result
+        triggerIds <- DBIO.successful(triggerList.map(_.id))
         triggerDataList <- PersistenceSchema.triggerData
-          .join(PersistenceSchema.triggers).on(_.trigger === _.id)
-          .filter(_._2.community === communityId)
-          .map(x => x._1)
+          .filter(_.trigger inSet triggerIds)
           .result
-      } yield (triggerList.toList, triggerDataList.toList)
+        triggerFireExpressionList <- PersistenceSchema.triggerFireExpressions
+          .filter(_.trigger inSet triggerIds)
+          .result
+      } yield (triggerList.toList, triggerDataList.toList, triggerFireExpressionList.toList)
     )
-    val triggerList = result._1
-    val triggerDataList = result._2
-    val triggerDataMap = mutable.Map[Long, ListBuffer[TriggerData]]()
-    triggerDataList.foreach { dataItem =>
-      var items = triggerDataMap.get(dataItem.trigger)
-      if (items.isEmpty) {
-        items = Some(ListBuffer[TriggerData]())
-        triggerDataMap += (dataItem.trigger -> items.get)
+    toTriggerList(result._1, result._2, result._3)
+  }
+
+  private def toTriggerList(triggerList: List[Triggers], triggerDataList: List[TriggerData], triggerFireExpressionList: List[TriggerFireExpression]): List[Trigger] = {
+    val itemMap = mutable.Map[Long, (ListBuffer[TriggerData], ListBuffer[TriggerFireExpression])]()
+    triggerDataList.foreach { triggerItem =>
+      var data = itemMap.get(triggerItem.trigger)
+      if (data.isEmpty) {
+        data = Some(new ListBuffer[TriggerData](), new ListBuffer[TriggerFireExpression]())
+        itemMap += (triggerItem.trigger -> data.get)
       }
-      items.get += dataItem
+      data.get._1 += TriggerData(triggerItem.dataType, triggerItem.dataId, triggerItem.trigger)
+    }
+    triggerFireExpressionList.foreach { expression =>
+      var data = itemMap.get(expression.trigger)
+      if (data.isEmpty) {
+        data = Some(new ListBuffer[TriggerData](), new ListBuffer[TriggerFireExpression]())
+        itemMap += (expression.trigger -> data.get)
+      }
+      data.get._2 += expression
     }
     triggerList.map { trigger =>
-      val items = triggerDataMap.get(trigger.id)
-      if (items.isDefined) {
-        new Trigger(trigger, Some(items.get.toList))
+      val triggerData = if (itemMap.contains(trigger.id)) {
+        val mapData = itemMap(trigger.id)
+        Some((mapData._1.toList, mapData._2.toList))
       } else {
-        new Trigger(trigger, None)
+        None
       }
+      new Trigger(trigger, triggerData.map(_._1), triggerData.map(_._2))
     }
   }
 
@@ -130,35 +146,54 @@ class TriggerManager @Inject()(env: Environment,
           .filter(_.active === true)
           .map(x => (x.id, x.url, x.operation, x.latestResultOk, x.serviceType))
           .result
+        triggerIds <- DBIO.successful(triggers.map(t => t._1))
         triggerData <- {
           if (triggers.nonEmpty) {
-            PersistenceSchema.triggerData.filter(_.trigger inSet triggers.map(t => t._1)).result
+            PersistenceSchema.triggerData.filter(_.trigger inSet triggerIds).result
           } else {
             DBIO.successful(List())
           }
         }
-      } yield (triggers, triggerData)
+        fireExpressions <- {
+          if (triggers.nonEmpty) {
+            PersistenceSchema.triggerFireExpressions.filter(_.trigger inSet triggerIds).result
+          } else {
+            DBIO.successful(List())
+          }
+        }
+      } yield (triggers, triggerData, fireExpressions)
     )
     val triggers = result._1
     val triggerData = result._2
+    val fireExpressions = result._3
     if (triggers.nonEmpty) {
-      val itemMap = mutable.Map[Long, ListBuffer[TriggerData]]()
+      val itemMap = mutable.Map[Long, (ListBuffer[TriggerData], ListBuffer[TriggerFireExpression])]()
       triggerData.foreach { triggerItem =>
         var data = itemMap.get(triggerItem.trigger)
         if (data.isEmpty) {
-          data = Some(new ListBuffer[TriggerData]())
+          data = Some(new ListBuffer[TriggerData](), new ListBuffer[TriggerFireExpression]())
           itemMap += (triggerItem.trigger -> data.get)
         }
-        data.get += TriggerData(triggerItem.dataType, triggerItem.dataId, triggerItem.trigger)
+        data.get._1 += TriggerData(triggerItem.dataType, triggerItem.dataId, triggerItem.trigger)
+      }
+      fireExpressions.foreach { expression =>
+        var data = itemMap.get(expression.trigger)
+        if (data.isEmpty) {
+          data = Some(new ListBuffer[TriggerData](), new ListBuffer[TriggerFireExpression]())
+          itemMap += (expression.trigger -> data.get)
+        }
+        data.get._2 += expression
       }
       Some(triggers.map { trigger =>
-        var triggerData: Option[List[TriggerData]] = None
-        if (itemMap.contains(trigger._1)) {
-          triggerData = Some(itemMap(trigger._1).toList)
+        val triggerData = if (itemMap.contains(trigger._1)) {
+          val mapData = itemMap(trigger._1)
+          Some((mapData._1.toList, mapData._2.toList))
+        } else {
+          None
         }
         new Trigger(
           Triggers(trigger._1, "", None, trigger._2, eventType.id.toShort, trigger._5, trigger._3, active = true, trigger._4, None, communityId),
-          triggerData
+          triggerData.map(_._1), triggerData.map(_._2)
         )
       }.toList)
     } else {
@@ -177,7 +212,8 @@ class TriggerManager @Inject()(env: Environment,
   private[managers] def updateTriggerInternal(trigger: Trigger): DBIO[_] = {
     val q = for { t <- PersistenceSchema.triggers if t.id === trigger.trigger.id } yield (t.name, t.description, t.url, t.eventType, t.serviceType, t.operation, t.active)
     q.update(trigger.trigger.name, trigger.trigger.description, trigger.trigger.url, trigger.trigger.eventType, trigger.trigger.serviceType, trigger.trigger.operation, trigger.trigger.active) andThen
-      setTriggerDataInternal(trigger.trigger.id, trigger.data, isNewTrigger = false)
+      setTriggerDataInternal(trigger.trigger.id, trigger.data, isNewTrigger = false) andThen
+      setTriggerFireExpressions(trigger.trigger.id, trigger.fireExpressions, isNewTrigger = false)
   }
 
   private def hasTriggerDataType(data: List[TriggerData], dataType: TriggerDataType): Boolean = {
@@ -439,36 +475,16 @@ class TriggerManager @Inject()(env: Environment,
               testSessionData.get.getItem.add(toAnyContent("testCaseIdentifier", "string", "TestCaseID", None))
               testSessionData.get.getItem.add(toAnyContent("testSessionIdentifier", "string", "TestSessionID", None))
             } else {
-              val testSession: (Option[String], Option[String], String) = fromCache(dataCache, "testSessionData",
-                () => {
-                  exec(
-                    for {
-                      sessionIds <- PersistenceSchema.testResults.filter(_.testSessionId === testSessionId.get).map(x => (x.testSuiteId, x.testCaseId)).result.headOption
-                      testSuiteIdentifier <- {
-                        if (sessionIds.isDefined && sessionIds.get._1.isDefined) {
-                          PersistenceSchema.testSuites.filter(_.id === sessionIds.get._1.get).map(_.identifier).result.headOption
-                        } else {
-                          DBIO.successful(None)
-                        }
-                      }
-                      testCaseIdentifier <- {
-                        if (sessionIds.isDefined && sessionIds.get._2.isDefined) {
-                          PersistenceSchema.testCases.filter(_.id === sessionIds.get._2.get).map(_.identifier).result.headOption
-                        } else {
-                          DBIO.successful(None)
-                        }
-                      }
-                    } yield (testSuiteIdentifier, testCaseIdentifier, testSessionId.get)
-                  )
-                }
-              )
-              if (testSession._1.isDefined) {
-                testSessionData.get.getItem.add(toAnyContent("testSuiteIdentifier", "string", testSession._1.get, None))
+              val identifiers = getTestSessionData(dataCache, callbacks)
+              if (identifiers.testSuiteIdentifier.isDefined) {
+                testSessionData.get.getItem.add(toAnyContent("testSuiteIdentifier", "string", identifiers.testSuiteIdentifier.get, None))
               }
-              if (testSession._2.isDefined) {
-                testSessionData.get.getItem.add(toAnyContent("testCaseIdentifier", "string", testSession._2.get, None))
+              if (identifiers.testCaseIdentifier.isDefined) {
+                testSessionData.get.getItem.add(toAnyContent("testCaseIdentifier", "string", identifiers.testCaseIdentifier.get, None))
               }
-              testSessionData.get.getItem.add(toAnyContent("testSessionIdentifier", "string", testSession._3, None))
+              if (identifiers.testSessionIdentifier.isDefined) {
+                testSessionData.get.getItem.add(toAnyContent("testSessionIdentifier", "string", identifiers.testSessionIdentifier.get, None))
+              }
             }
           case TriggerDataType.TestReport =>
             testReportData = getOrInitializeContentMap("testReport", testReportData)
@@ -591,8 +607,39 @@ class TriggerManager @Inject()(env: Environment,
     request
   }
 
+  private def getTestSessionData(dataCache: mutable.Map[String, Any], callbacks: Option[TriggerCallbacks]): TestSessionData = {
+    val testSessionId = fromCache(dataCache, "testSessionId", () => TriggerCallbacks.testSessionId(callbacks))
+    if (testSessionId.isDefined) {
+      fromCache(dataCache, "testSessionData",
+        () => {
+          exec(
+            for {
+              sessionIds <- PersistenceSchema.testResults.filter(_.testSessionId === testSessionId.get).map(x => (x.testSuiteId, x.testCaseId)).result.headOption
+              testSuiteIdentifier <- {
+                if (sessionIds.isDefined && sessionIds.get._1.isDefined) {
+                  PersistenceSchema.testSuites.filter(_.id === sessionIds.get._1.get).map(_.identifier).result.headOption
+                } else {
+                  DBIO.successful(None)
+                }
+              }
+              testCaseIdentifier <- {
+                if (sessionIds.isDefined && sessionIds.get._2.isDefined) {
+                  PersistenceSchema.testCases.filter(_.id === sessionIds.get._2.get).map(_.identifier).result.headOption
+                } else {
+                  DBIO.successful(None)
+                }
+              }
+            } yield TestSessionData(testSuiteIdentifier, testCaseIdentifier, testSessionId)
+          )
+        }
+      )
+    } else {
+      TestSessionData(None, None, None)
+    }
+  }
+
   def previewTriggerCall(communityId: Long, operation: Option[String], serviceType: TriggerServiceType, data: Option[List[TriggerData]]): String = {
-    val request = prepareTriggerInput(new Trigger(Triggers(-1, "", None, "", -1, serviceType.id.toShort, operation, active = false, None, None, communityId), data), mutable.Map[String, Any](), None)
+    val request = prepareTriggerInput(new Trigger(Triggers(-1, "", None, "", -1, serviceType.id.toShort, operation, active = false, None, None, communityId), data, None), mutable.Map[String, Any](), None)
     if (serviceType == TriggerServiceType.GITB) {
       val requestWrapper = new JAXBElement[ProcessRequest](new QName("http://www.gitb.com/ps/v1/", "ProcessRequest"), classOf[ProcessRequest], request)
       val bos = new ByteArrayOutputStream()
@@ -688,10 +735,40 @@ class TriggerManager @Inject()(env: Environment,
           // Test session events: Data is a String (test session ID)
           callbacks.fnTestSession = Some(() => triggerData.asInstanceOf[String])
       }
-      triggers.get.foreach { trigger =>
+      triggers.get.filter(checkTriggerFireCondition(_, dataCache, Some(callbacks))).foreach { trigger =>
         val triggerInput = prepareTriggerInput(trigger, dataCache, Some(callbacks))
         fireTrigger(trigger.trigger, callbacks, triggerInput)
       }
+    }
+  }
+
+  private def checkTriggerFireCondition(trigger: Trigger, dataCache: mutable.Map[String, Any], callbacks: Option[TriggerCallbacks]): Boolean = {
+    if (trigger.fireExpressions.exists(_.nonEmpty)) {
+      trigger.fireExpressions.get.foreach { expression =>
+        TriggerFireExpressionType.apply(expression.expressionType) match {
+          case TriggerFireExpressionType.TestSuiteIdentifier =>
+            if (!checkFireExpression(expression, getTestSessionData(dataCache, callbacks).testSuiteIdentifier)) {
+              return false
+            }
+          case TriggerFireExpressionType.TestCaseIdentifier =>
+            if (!checkFireExpression(expression, getTestSessionData(dataCache, callbacks).testCaseIdentifier)) {
+              return false
+            }
+          case _ => // No action
+        }
+      }
+    }
+    true
+  }
+
+  private def checkFireExpression(expression: TriggerFireExpression, valueToCheck: Option[String]): Boolean = {
+    if (valueToCheck.isDefined) {
+      // We use "matcher.find()" as we want to accept also partial matches.
+      val matched = Pattern.compile(expression.expression).matcher(valueToCheck.get).find()
+      matched && !expression.notMatch || !matched && expression.notMatch
+    } else {
+      // If the value cannot be determined we don't block the trigger's firing.
+      true
     }
   }
 
@@ -877,10 +954,26 @@ class TriggerManager @Inject()(env: Environment,
     }
     if (data.isDefined) {
       data.get.foreach { dataItem =>
-        dbActions += (PersistenceSchema.triggerData += TriggerData(dataItem.dataType, dataItem.dataId, triggerId))
+        dbActions += (PersistenceSchema.triggerData += dataItem.withTrigger(triggerId))
       }
     }
     toDBIO(dbActions)
   }
+
+  private def setTriggerFireExpressions(triggerId: Long, expressions: Option[List[TriggerFireExpression]], isNewTrigger: Boolean): DBIO[_] = {
+    val dbActions = ListBuffer[DBIO[_]]()
+    if (!isNewTrigger) {
+      // Delete previous expressions (only if needed - new)
+      dbActions += triggerHelper.deleteTriggerFireExpressionsInternal(triggerId)
+    }
+    if (expressions.isDefined) {
+      expressions.get.foreach { expression =>
+        dbActions += (PersistenceSchema.triggerFireExpressions += expression.withTrigger(triggerId))
+      }
+    }
+    toDBIO(dbActions)
+  }
+
+  private case class TestSessionData(testSuiteIdentifier: Option[String], testCaseIdentifier: Option[String], testSessionIdentifier: Option[String])
 
 }
