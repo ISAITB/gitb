@@ -678,6 +678,10 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     expressionType match {
       case com.gitb.xml.export.TriggerFireExpressionType.TEST_CASE_IDENTIFIER => Enums.TriggerFireExpressionType.TestCaseIdentifier.id.toShort
       case com.gitb.xml.export.TriggerFireExpressionType.TEST_SUITE_IDENTIFIER => Enums.TriggerFireExpressionType.TestSuiteIdentifier.id.toShort
+      case com.gitb.xml.export.TriggerFireExpressionType.ACTOR_IDENTIFIER => Enums.TriggerFireExpressionType.ActorIdentifier.id.toShort
+      case com.gitb.xml.export.TriggerFireExpressionType.SPECIFICATION_NAME => Enums.TriggerFireExpressionType.SpecificationName.id.toShort
+      case com.gitb.xml.export.TriggerFireExpressionType.SYSTEM_NAME => Enums.TriggerFireExpressionType.SystemName.id.toShort
+      case com.gitb.xml.export.TriggerFireExpressionType.ORGANISATION_NAME => Enums.TriggerFireExpressionType.OrganisationName.id.toShort
       case _ => throw new IllegalArgumentException("Unknown enum value ["+expressionType+"]")
     }
   }
