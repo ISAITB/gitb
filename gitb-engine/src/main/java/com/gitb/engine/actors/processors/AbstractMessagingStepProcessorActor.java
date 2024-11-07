@@ -232,7 +232,14 @@ public abstract class AbstractMessagingStepProcessorActor<T extends MessagingSte
         return new OnSuccess<>() {
             @Override
             public void onSuccess(TestStepReportType result) {
-                promise.trySuccess(result);
+                if (result != null) {
+                    /*
+                     * If the report is null this means that we should not mark the step's promise as successfully completed.
+                     * The report in this case is expected to be produced asynchronously. It is important to keep the step's
+                     * promise as not completed as like this we can react to stop notifications.
+                     */
+                    promise.trySuccess(result);
+                }
             }
         };
     }
