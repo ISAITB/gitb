@@ -494,7 +494,13 @@ export class TriggerComponent extends BaseComponent implements OnInit {
       if (this.supportsFireCondition()) {
         this.fireExpressionTypes = this.validFireExpressionTypes.get(eventType)!
         this.testValueTypeForFireCondition = this.fireExpressionTypes[0]
+        // Keep only the expressions that are valid for the new event type
+        this.fireExpressions = this.fireExpressions.filter((expression) => this.fireExpressionTypes.find((type) => type == expression.expressionType) != undefined)
+      } else {
+        this.fireExpressions = []
       }
+    } else {
+      this.fireExpressions = []
     }
     this.triggerData.community.visible = eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.community.dataType)
     this.triggerData.organisation.visible = eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.organisation.dataType)
