@@ -1753,12 +1753,14 @@ export class DataService {
   }
 
   triggerExpressionTypeLabel(expressionType: number): string {
-    if (expressionType == Constants.TRIGGER_FIRE_EXPRESSION_TYPE.TEST_CASE_IDENTIFIER) {
-      return 'Test case identifier'
-    } else if (expressionType == Constants.TRIGGER_FIRE_EXPRESSION_TYPE.TEST_SUITE_IDENTIFIER) {
-      return 'Test suite identifier'
-    } else {
-      return ''
+    switch (expressionType) {
+      case Constants.TRIGGER_FIRE_EXPRESSION_TYPE.TEST_CASE_IDENTIFIER: return 'Test case'
+      case Constants.TRIGGER_FIRE_EXPRESSION_TYPE.TEST_SUITE_IDENTIFIER: return 'Test suite'
+      case Constants.TRIGGER_FIRE_EXPRESSION_TYPE.ACTOR_IDENTIFIER: return this.labelActor()
+      case Constants.TRIGGER_FIRE_EXPRESSION_TYPE.SPECIFICATION_NAME: return this.labelSpecification()
+      case Constants.TRIGGER_FIRE_EXPRESSION_TYPE.SYSTEM_NAME: return this.labelSystem()
+      case Constants.TRIGGER_FIRE_EXPRESSION_TYPE.ORGANISATION_NAME: return this.labelOrganisation()
+      default: return ''
     }
   }
 

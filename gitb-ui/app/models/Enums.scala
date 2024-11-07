@@ -142,7 +142,7 @@ object Enums {
 
   object TriggerFireExpressionType extends Enumeration(1) {
     type TriggerFireExpressionType = Value
-    val TestCaseIdentifier, TestSuiteIdentifier = Value
+    val TestCaseIdentifier, TestSuiteIdentifier, ActorIdentifier, SpecificationName, SystemName, OrganisationName = Value
   }
 
 }
