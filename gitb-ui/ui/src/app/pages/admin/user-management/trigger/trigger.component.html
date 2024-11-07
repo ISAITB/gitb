@@ -44,7 +44,7 @@
                             </div>
                             <div app-tooltip class="col-auto" tbTooltip="The event that will cause this trigger to fire."></div>
                         </div>
-                        @if (trigger.eventType == Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_STARTED || trigger.eventType == Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_FAILED || trigger.eventType == Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_SUCCEEDED) {
+                        @if (supportsFireCondition()) {
                             <div class="row mt-3">
                                 <legend class="col-3 col-form-label text-end">Fire condition:</legend>
                                 <div class="col-7">

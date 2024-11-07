@@ -405,85 +405,77 @@ class TriggerManager @Inject()(env: Environment,
             communityData.get.getItem.add(toAnyContent("fullName", "string", data._2, None))
           case TriggerDataType.Organisation =>
             organisationData = getOrInitializeContentMap("organisation", organisationData)
-            val organisationId:Option[Long] = fromCache(dataCache, "organisationId", () => TriggerCallbacks.organisationId(callbacks))
+            val organisationId = getOrganisationId(dataCache, callbacks)
             if (organisationId.isEmpty) {
               organisationData.get.getItem.add(toAnyContent("id", "number", "123", None))
               organisationData.get.getItem.add(toAnyContent("shortName", "string", "Organisation short name", None))
               organisationData.get.getItem.add(toAnyContent("fullName", "string", "Organisation full name", None))
             } else {
-              val organisation = fromCache(dataCache, "organisationData", () => exec(PersistenceSchema.organizations.filter(_.id === organisationId.get).map(x => (x.shortname, x.fullname)).result.headOption))
+              val organisation = getOrganisationData(dataCache, callbacks)
               if (organisation.isDefined) {
-                organisationData.get.getItem.add(toAnyContent("id", "number", organisationId.get.toString, None))
-                organisationData.get.getItem.add(toAnyContent("shortName", "string", organisation.get._1, None))
-                organisationData.get.getItem.add(toAnyContent("fullName", "string", organisation.get._2, None))
+                organisationData.get.getItem.add(toAnyContent("id", "number", organisation.get.id.toString, None))
+                organisationData.get.getItem.add(toAnyContent("shortName", "string", organisation.get.shortName, None))
+                organisationData.get.getItem.add(toAnyContent("fullName", "string", organisation.get.fullName, None))
               }
             }
           case TriggerDataType.System =>
             systemData = getOrInitializeContentMap("system", systemData)
-            val systemId:Option[Long] = fromCache(dataCache, "systemId", () => TriggerCallbacks.systemId(callbacks))
+            val systemId = getSystemId(dataCache, callbacks)
             if (systemId.isEmpty) {
               systemData.get.getItem.add(toAnyContent("id", "number", "123", None))
               systemData.get.getItem.add(toAnyContent("shortName", "string", "System short name", None))
               systemData.get.getItem.add(toAnyContent("fullName", "string", "System full name", None))
             } else {
-              val system = fromCache(dataCache, "systemData", () => exec(PersistenceSchema.systems.filter(_.id === systemId.get).map(x => (x.shortname, x.fullname)).result.headOption))
+              val system = getSystemData(dataCache, callbacks)
               if (system.isDefined) {
-                systemData.get.getItem.add(toAnyContent("id", "number", systemId.get.toString, None))
-                systemData.get.getItem.add(toAnyContent("shortName", "string", system.get._1, None))
-                systemData.get.getItem.add(toAnyContent("fullName", "string", system.get._2, None))
+                systemData.get.getItem.add(toAnyContent("id", "number", system.get.id.toString, None))
+                systemData.get.getItem.add(toAnyContent("shortName", "string", system.get.shortName, None))
+                systemData.get.getItem.add(toAnyContent("fullName", "string", system.get.fullName, None))
               }
             }
           case TriggerDataType.Specification =>
             specificationData = getOrInitializeContentMap("specification", specificationData)
-            val actorId:Option[Long] = fromCache(dataCache, "actorId", () => TriggerCallbacks.actorId(callbacks))
-            var specificationId:Option[Long] = None
-            if (actorId.isDefined) {
-              specificationId = fromCache(dataCache, "specificationId", () => exec(PersistenceSchema.specificationHasActors.filter(_.actorId === actorId.get).map(x => x.specId).result.headOption))
-            }
-            if (actorId.isEmpty || specificationId.isEmpty) {
+            val specificationId = getSpecificationId(dataCache, callbacks)
+            if (specificationId.isEmpty) {
               specificationData.get.getItem.add(toAnyContent("id", "number", "123", None))
               specificationData.get.getItem.add(toAnyContent("shortName", "string", "Specification short name", None))
               specificationData.get.getItem.add(toAnyContent("fullName", "string", "Specification full name", None))
             } else {
-              val specification = fromCache(dataCache, "specificationData", () => exec(PersistenceSchema.specifications.filter(_.id === specificationId.get).map(x => (x.shortname, x.fullname)).result.headOption))
+              val specification = getSpecificationData(dataCache, callbacks)
               if (specification.isDefined) {
-                specificationData.get.getItem.add(toAnyContent("id", "number", specificationId.get.toString, None))
-                specificationData.get.getItem.add(toAnyContent("shortName", "string", specification.get._1, None))
-                specificationData.get.getItem.add(toAnyContent("fullName", "string", specification.get._2, None))
+                specificationData.get.getItem.add(toAnyContent("id", "number", specification.get.id.toString, None))
+                specificationData.get.getItem.add(toAnyContent("shortName", "string", specification.get.shortName, None))
+                specificationData.get.getItem.add(toAnyContent("fullName", "string", specification.get.fullName, None))
               }
             }
           case TriggerDataType.Actor =>
             actorData = getOrInitializeContentMap("actor", actorData)
-            val actorId:Option[Long] = fromCache(dataCache, "actorId", () => TriggerCallbacks.actorId(callbacks))
+            val actorId = getActorId(dataCache, callbacks)
             if (actorId.isEmpty) {
               actorData.get.getItem.add(toAnyContent("id", "number", "123", None))
               actorData.get.getItem.add(toAnyContent("actorIdentifier", "string", "Actor identifier", None))
               actorData.get.getItem.add(toAnyContent("name", "string", "Actor name", None))
             } else {
-              val actor = fromCache(dataCache, "actorData", () => exec(PersistenceSchema.actors.filter(_.id === actorId.get).map(x => (x.actorId, x.name)).result.headOption))
+              val actor = getActorData(dataCache, callbacks)
               if (actor.isDefined) {
-                actorData.get.getItem.add(toAnyContent("id", "number", actorId.get.toString, None))
-                actorData.get.getItem.add(toAnyContent("actorIdentifier", "string", actor.get._1, None))
-                actorData.get.getItem.add(toAnyContent("name", "string", actor.get._2, None))
+                actorData.get.getItem.add(toAnyContent("id", "number", actor.get.id.toString, None))
+                actorData.get.getItem.add(toAnyContent("actorIdentifier", "string", actor.get.identifier, None))
+                actorData.get.getItem.add(toAnyContent("name", "string", actor.get.name, None))
               }
             }
           case TriggerDataType.TestSession =>
             testSessionData = getOrInitializeContentMap("testSession", testSessionData)
-            val testSessionId:Option[String] = fromCache(dataCache, "testSessionId", () => TriggerCallbacks.testSessionId(callbacks))
+            val testSessionId = getTestSessionId(dataCache, callbacks)
             if (testSessionId.isEmpty) {
               testSessionData.get.getItem.add(toAnyContent("testSuiteIdentifier", "string", "TestSuiteID", None))
               testSessionData.get.getItem.add(toAnyContent("testCaseIdentifier", "string", "TestCaseID", None))
               testSessionData.get.getItem.add(toAnyContent("testSessionIdentifier", "string", "TestSessionID", None))
             } else {
               val identifiers = getTestSessionData(dataCache, callbacks)
-              if (identifiers.testSuiteIdentifier.isDefined) {
-                testSessionData.get.getItem.add(toAnyContent("testSuiteIdentifier", "string", identifiers.testSuiteIdentifier.get, None))
-              }
-              if (identifiers.testCaseIdentifier.isDefined) {
-                testSessionData.get.getItem.add(toAnyContent("testCaseIdentifier", "string", identifiers.testCaseIdentifier.get, None))
-              }
-              if (identifiers.testSessionIdentifier.isDefined) {
-                testSessionData.get.getItem.add(toAnyContent("testSessionIdentifier", "string", identifiers.testSessionIdentifier.get, None))
+              if (identifiers.isDefined) {
+                testSessionData.get.getItem.add(toAnyContent("testSuiteIdentifier", "string", identifiers.get.testSuiteIdentifier, None))
+                testSessionData.get.getItem.add(toAnyContent("testCaseIdentifier", "string", identifiers.get.testCaseIdentifier, None))
+                testSessionData.get.getItem.add(toAnyContent("testSessionIdentifier", "string", identifiers.get.testSessionIdentifier, None))
               }
             }
           case TriggerDataType.TestReport =>
@@ -607,8 +599,89 @@ class TriggerManager @Inject()(env: Environment,
     request
   }
 
-  private def getTestSessionData(dataCache: mutable.Map[String, Any], callbacks: Option[TriggerCallbacks]): TestSessionData = {
-    val testSessionId = fromCache(dataCache, "testSessionId", () => TriggerCallbacks.testSessionId(callbacks))
+  private def getOrganisationId(dataCache: mutable.Map[String, Any], callbacks: Option[TriggerCallbacks]): Option[Long] = {
+    fromCache(dataCache, "organisationId", () => TriggerCallbacks.organisationId(callbacks))
+  }
+
+  private def getSystemId(dataCache: mutable.Map[String, Any], callbacks: Option[TriggerCallbacks]): Option[Long] = {
+    fromCache(dataCache, "systemId", () => TriggerCallbacks.systemId(callbacks))
+  }
+
+  private def getActorId(dataCache: mutable.Map[String, Any], callbacks: Option[TriggerCallbacks]): Option[Long] = {
+    fromCache(dataCache, "actorId", () => TriggerCallbacks.actorId(callbacks))
+  }
+
+  private def getTestSessionId(dataCache: mutable.Map[String, Any], callbacks: Option[TriggerCallbacks]): Option[String] = {
+    fromCache(dataCache, "testSessionId", () => TriggerCallbacks.testSessionId(callbacks))
+  }
+
+  private def getSpecificationId(dataCache: mutable.Map[String, Any], callbacks: Option[TriggerCallbacks]): Option[Long] = {
+    val actorId = getActorId(dataCache, callbacks)
+    var specificationId:Option[Long] = None
+    if (actorId.isDefined) {
+      specificationId = fromCache(dataCache, "specificationId", () => exec(PersistenceSchema.specificationHasActors.filter(_.actorId === actorId.get).map(x => x.specId).result.headOption))
+    }
+    specificationId
+  }
+
+  private def getOrganisationData(dataCache: mutable.Map[String, Any], callbacks: Option[TriggerCallbacks]): Option[OrganisationData] = {
+    val organisationId = getOrganisationId(dataCache, callbacks)
+    if (organisationId.isDefined) {
+      fromCache(dataCache, "organisationData", () => exec(
+        PersistenceSchema.organizations
+          .filter(_.id === organisationId.get)
+          .map(x => (x.shortname, x.fullname))
+          .result.headOption
+      ).map(x => OrganisationData(organisationId.get, x._1, x._2)))
+    } else {
+      None
+    }
+  }
+
+  private def getSystemData(dataCache: mutable.Map[String, Any], callbacks: Option[TriggerCallbacks]): Option[SystemData] = {
+    val systemId = getSystemId(dataCache, callbacks)
+    if (systemId.isDefined) {
+      fromCache(dataCache, "systemData", () => exec(
+        PersistenceSchema.systems
+          .filter(_.id === systemId.get)
+          .map(x => (x.shortname, x.fullname))
+          .result.headOption
+      ).map(x => SystemData(systemId.get, x._1, x._2)))
+    } else {
+      None
+    }
+  }
+
+  private def getSpecificationData(dataCache: mutable.Map[String, Any], callbacks: Option[TriggerCallbacks]): Option[SpecificationData] = {
+    val specificationId = getSpecificationId(dataCache, callbacks)
+    if (specificationId.isDefined) {
+      fromCache(dataCache, "specificationData", () => exec(
+        PersistenceSchema.specifications
+          .filter(_.id === specificationId.get)
+          .map(x => (x.shortname, x.fullname))
+          .result.headOption
+      ).map(x => SpecificationData(specificationId.get, x._1, x._2)))
+    } else {
+      None
+    }
+  }
+
+  private def getActorData(dataCache: mutable.Map[String, Any], callbacks: Option[TriggerCallbacks]): Option[ActorData] = {
+    val actorId = getActorId(dataCache, callbacks)
+    if (actorId.isDefined) {
+      fromCache(dataCache, "actorData", () => exec(
+        PersistenceSchema.actors
+          .filter(_.id === actorId.get)
+          .map(x => (x.actorId, x.name))
+          .result.headOption
+      ).map(x => ActorData(actorId.get, x._1, x._2)))
+    } else {
+      None
+    }
+  }
+
+  private def getTestSessionData(dataCache: mutable.Map[String, Any], callbacks: Option[TriggerCallbacks]): Option[TestSessionData] = {
+    val testSessionId = getTestSessionId(dataCache, callbacks)
     if (testSessionId.isDefined) {
       fromCache(dataCache, "testSessionData",
         () => {
@@ -629,12 +702,12 @@ class TriggerManager @Inject()(env: Environment,
                   DBIO.successful(None)
                 }
               }
-            } yield TestSessionData(testSuiteIdentifier, testCaseIdentifier, testSessionId)
+            } yield testCaseIdentifier.map(TestSessionData(testSuiteIdentifier.get, _, testSessionId.get))
           )
         }
       )
     } else {
-      TestSessionData(None, None, None)
+      None
     }
   }
 
@@ -747,11 +820,27 @@ class TriggerManager @Inject()(env: Environment,
       trigger.fireExpressions.get.foreach { expression =>
         TriggerFireExpressionType.apply(expression.expressionType) match {
           case TriggerFireExpressionType.TestSuiteIdentifier =>
-            if (!checkFireExpression(expression, getTestSessionData(dataCache, callbacks).testSuiteIdentifier)) {
+            if (!checkFireExpression(expression, getTestSessionData(dataCache, callbacks).map(_.testSuiteIdentifier))) {
               return false
             }
           case TriggerFireExpressionType.TestCaseIdentifier =>
-            if (!checkFireExpression(expression, getTestSessionData(dataCache, callbacks).testCaseIdentifier)) {
+            if (!checkFireExpression(expression, getTestSessionData(dataCache, callbacks).map(_.testCaseIdentifier))) {
+              return false
+            }
+          case TriggerFireExpressionType.ActorIdentifier =>
+            if (!checkFireExpression(expression, getActorData(dataCache, callbacks).map(_.identifier))) {
+              return false
+            }
+          case TriggerFireExpressionType.SpecificationName =>
+            if (!checkFireExpression(expression, getSpecificationData(dataCache, callbacks).map(_.fullName))) {
+              return false
+            }
+          case TriggerFireExpressionType.SystemName =>
+            if (!checkFireExpression(expression, getSystemData(dataCache, callbacks).map(_.fullName))) {
+              return false
+            }
+          case TriggerFireExpressionType.OrganisationName =>
+            if (!checkFireExpression(expression, getOrganisationData(dataCache, callbacks).map(_.fullName))) {
               return false
             }
           case _ => // No action
@@ -974,6 +1063,10 @@ class TriggerManager @Inject()(env: Environment,
     toDBIO(dbActions)
   }
 
-  private case class TestSessionData(testSuiteIdentifier: Option[String], testCaseIdentifier: Option[String], testSessionIdentifier: Option[String])
+  private case class TestSessionData(testSuiteIdentifier: String, testCaseIdentifier: String, testSessionIdentifier: String)
+  private case class ActorData(id: Long, identifier: String, name: String)
+  private case class SpecificationData(id: Long, shortName: String, fullName: String)
+  private case class SystemData(id: Long, shortName: String, fullName: String)
+  private case class OrganisationData(id: Long, shortName: String, fullName: String)
 
 }

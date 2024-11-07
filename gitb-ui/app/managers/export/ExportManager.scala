@@ -1251,6 +1251,10 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
               models.Enums.TriggerFireExpressionType.apply(expression.expressionType) match {
                 case models.Enums.TriggerFireExpressionType.TestCaseIdentifier => exportedFireExpression.setExpressionType(com.gitb.xml.export.TriggerFireExpressionType.TEST_CASE_IDENTIFIER)
                 case models.Enums.TriggerFireExpressionType.TestSuiteIdentifier => exportedFireExpression.setExpressionType(com.gitb.xml.export.TriggerFireExpressionType.TEST_SUITE_IDENTIFIER)
+                case models.Enums.TriggerFireExpressionType.ActorIdentifier => exportedFireExpression.setExpressionType(com.gitb.xml.export.TriggerFireExpressionType.ACTOR_IDENTIFIER)
+                case models.Enums.TriggerFireExpressionType.SpecificationName => exportedFireExpression.setExpressionType(com.gitb.xml.export.TriggerFireExpressionType.SPECIFICATION_NAME)
+                case models.Enums.TriggerFireExpressionType.SystemName => exportedFireExpression.setExpressionType(com.gitb.xml.export.TriggerFireExpressionType.SYSTEM_NAME)
+                case models.Enums.TriggerFireExpressionType.OrganisationName => exportedFireExpression.setExpressionType(com.gitb.xml.export.TriggerFireExpressionType.ORGANISATION_NAME)
               }
               exportedFireExpression.setNotMatch(expression.notMatch)
               exportedTrigger.getFireExpressions.getTriggerFireExpression.add(exportedFireExpression)

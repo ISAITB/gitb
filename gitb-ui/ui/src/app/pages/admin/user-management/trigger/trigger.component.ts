@@ -85,6 +85,7 @@ export class TriggerComponent extends BaseComponent implements OnInit {
     testSession: {dataType: Constants.TRIGGER_DATA_TYPE.TEST_SESSION, visible: true, selected: false},
     testReport: {dataType: Constants.TRIGGER_DATA_TYPE.TEST_REPORT, visible: true, selected: false}
   }
+  validFireExpressionTypes = new Map<number, number[]>()
   Constants = Constants
   validation = new ValidationState()
   loaded = false
@@ -115,9 +116,30 @@ export class TriggerComponent extends BaseComponent implements OnInit {
     }
     this.dataTypes = this.dataService.triggerDataTypes()
     this.dataTypeMap = this.dataService.idToLabelMap(this.dataTypes)
-
+    // Set up the valid fire expression types
+    this.addValidFireExpressionTypes([Constants.TRIGGER_EVENT_TYPE.ORGANISATION_CREATED, Constants.TRIGGER_EVENT_TYPE.ORGANISATION_UPDATED], [
+      Constants.TRIGGER_FIRE_EXPRESSION_TYPE.ORGANISATION_NAME
+    ])
+    this.addValidFireExpressionTypes([Constants.TRIGGER_EVENT_TYPE.SYSTEM_CREATED, Constants.TRIGGER_EVENT_TYPE.SYSTEM_UPDATED], [
+      Constants.TRIGGER_FIRE_EXPRESSION_TYPE.ORGANISATION_NAME,
+      Constants.TRIGGER_FIRE_EXPRESSION_TYPE.SYSTEM_NAME
+    ])
+    this.addValidFireExpressionTypes([Constants.TRIGGER_EVENT_TYPE.CONFORMANCE_STATEMENT_CREATED, Constants.TRIGGER_EVENT_TYPE.CONFORMANCE_STATEMENT_UPDATED, Constants.TRIGGER_EVENT_TYPE.CONFORMANCE_STATEMENT_SUCCEEDED], [
+      Constants.TRIGGER_FIRE_EXPRESSION_TYPE.SPECIFICATION_NAME,
+      Constants.TRIGGER_FIRE_EXPRESSION_TYPE.ACTOR_IDENTIFIER,
+      Constants.TRIGGER_FIRE_EXPRESSION_TYPE.ORGANISATION_NAME,
+      Constants.TRIGGER_FIRE_EXPRESSION_TYPE.SYSTEM_NAME
+    ])
+    this.addValidFireExpressionTypes([Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_FAILED, Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_SUCCEEDED, Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_STARTED], [
+      Constants.TRIGGER_FIRE_EXPRESSION_TYPE.TEST_CASE_IDENTIFIER,
+      Constants.TRIGGER_FIRE_EXPRESSION_TYPE.TEST_SUITE_IDENTIFIER,
+      Constants.TRIGGER_FIRE_EXPRESSION_TYPE.SPECIFICATION_NAME,
+      Constants.TRIGGER_FIRE_EXPRESSION_TYPE.ACTOR_IDENTIFIER,
+      Constants.TRIGGER_FIRE_EXPRESSION_TYPE.ORGANISATION_NAME,
+      Constants.TRIGGER_FIRE_EXPRESSION_TYPE.SYSTEM_NAME
+    ])
+    // Load data
     const loadPromises: Observable<any>[] = []
-
     loadPromises.push(this.communityService.getOrganisationParameters(this.communityId).pipe(
       map((data) => {
         this.organisationParameters = data
@@ -251,6 +273,12 @@ export class TriggerComponent extends BaseComponent implements OnInit {
     })
   }
 
+  private addValidFireExpressionTypes(eventTypes: number[], expressionTypes: number[]): void {
+    eventTypes.forEach((eventType) => {
+      this.validFireExpressionTypes.set(eventType, expressionTypes)
+    })
+  }
+
   saveDisabled() {
     return !(
       this.loaded && !this.savePending && !this.deletePending && this.textProvided(this.trigger.name) && this.textProvided(this.trigger.url) && this.trigger.eventType != undefined && this.trigger.serviceType != undefined
@@ -271,8 +299,12 @@ export class TriggerComponent extends BaseComponent implements OnInit {
     return this.saveDisabled() || this.clearStatusPending
   }
 
+  supportsFireCondition(): boolean {
+    return this.trigger.eventType != undefined && this.validFireExpressionTypes.has(this.trigger.eventType)
+  }
+
   fireExpressionsToSave(): TriggerFireExpression[]|undefined {
-    if (this.trigger.eventType == Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_STARTED || this.trigger.eventType == Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_FAILED || this.trigger.eventType == Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_SUCCEEDED) {
+    if (this.supportsFireCondition()) {
       return this.fireExpressions
     } else {
       return undefined
@@ -455,8 +487,14 @@ export class TriggerComponent extends BaseComponent implements OnInit {
 
   eventTypeChanged() {
     let eventType: number|undefined
+    this.fireExpressionTypes = []
+    this.testValueTypeForFireCondition = undefined
     if (this.trigger.eventType != undefined) {
       eventType = this.trigger.eventType
+      if (this.supportsFireCondition()) {
+        this.fireExpressionTypes = this.validFireExpressionTypes.get(eventType)!
+        this.testValueTypeForFireCondition = this.fireExpressionTypes[0]
+      }
     }
     this.triggerData.community.visible = eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.community.dataType)
     this.triggerData.organisation.visible = eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.organisation.dataType)
@@ -469,13 +507,6 @@ export class TriggerComponent extends BaseComponent implements OnInit {
     this.triggerData.systemParameter.visible = this.systemParameters.length > 0 && (eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.systemParameter.dataType))
     this.triggerData.domainParameter.visible = this.domainParameters.length > 0 && (eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.domainParameter.dataType))
     this.triggerData.statementParameter.visible = this.statementParameters.length > 0 && (eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.statementParameter.dataType))
-    if (eventType == Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_SUCCEEDED || eventType == Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_FAILED || eventType == Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_STARTED) {
-      this.fireExpressionTypes = [Constants.TRIGGER_FIRE_EXPRESSION_TYPE.TEST_CASE_IDENTIFIER, Constants.TRIGGER_FIRE_EXPRESSION_TYPE.TEST_SUITE_IDENTIFIER]
-      this.testValueTypeForFireCondition = this.fireExpressionTypes[0]
-    } else {
-      this.fireExpressionTypes = []
-      this.testValueTypeForFireCondition = undefined
-    }
   }
 
   parameterType(parameter: CustomProperty|DomainParameter|StatementParameterMinimal) {

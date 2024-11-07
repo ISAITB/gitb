@@ -717,6 +717,10 @@
         <xsd:restriction base="xsd:string">
             <xsd:enumeration value="TEST_CASE_IDENTIFIER"/>
             <xsd:enumeration value="TEST_SUITE_IDENTIFIER"/>
+            <xsd:enumeration value="ACTOR_IDENTIFIER"/>
+            <xsd:enumeration value="SPECIFICATION_NAME"/>
+            <xsd:enumeration value="SYSTEM_NAME"/>
+            <xsd:enumeration value="ORGANISATION_NAME"/>
         </xsd:restriction>
     </xsd:simpleType>
     <xsd:simpleType name="TriggerDataType">
