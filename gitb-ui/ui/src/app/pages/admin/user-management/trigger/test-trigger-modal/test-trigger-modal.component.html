@@ -4,7 +4,7 @@
 <div class="modal-body">
     @if (editStep) {
         <div class="alert alert-info rounded">
-            <span>This is a sample payload based on the configured input data which you may edit and use to call the service to test its operation. If this call results in the service returning output data, it will be displayed but not used for actual updates.</span>
+            <span>This is a sample payload based on the configured input data which you may edit and use to call the service to test its operation. If this call returns output data, it will be displayed but not used for actual updates.</span>
         </div>
         <div class="editor editor-normal" [class.disable-events]="actionPending">
             <ngx-codemirror [(ngModel)]="request" [options]="editorOptionsRequest"></ngx-codemirror>
@@ -30,14 +30,14 @@
 <div class="modal-footer">
     <div class="btn-toolbar">
         <button type="button" class="btn btn-secondary" (click)="close()">{{actionPending?'Cancel':'Close'}}</button>
+        <button type="button" class="btn btn-secondary" (click)="copyToClipboard()" [disabled]="actionPending">Copy to clipboard</button>
         @if (editStep) {
-            <button type="button" class="btn btn-secondary" (click)="callService()" [pending]="actionPending">Call service</button>
+            <button type="button" class="btn btn-secondary" (click)="callService()" [disable]="!textProvided(url)" [pending]="actionPending">Call service</button>
             @if (request != initialRequest) {
                 <button type="button" class="btn btn-secondary" (click)="reset()" [disabled]="actionPending">Reset sample payload</button>
             }
         } @else {
             <button type="button" class="btn btn-secondary" (click)="back()">Back</button>
         }
-        <button type="button" class="btn btn-secondary" (click)="copyToClipboard()" [disabled]="actionPending">Copy to clipboard</button>
     </div>
 </div>
