@@ -48,7 +48,6 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 
 	private MessagingContext messagingContext;
 	private TransactionContext transactionContext;
-	private boolean receivedResponse = false;
 
 	private Promise<TestStepReportType> promise;
 
@@ -165,14 +164,16 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 	public void onReceive(Object message) {
 		try {
 			if (message instanceof NotificationReceived notificationMessage) {
-				if (notificationMessage.getError() != null) {
-					throw notificationMessage.getError();
+				if (promise != null && !promise.isCompleted()) {
+					if (notificationMessage.getError() != null) {
+						promise.tryFailure(notificationMessage.getError());
+					} else {
+						logger.debug(addMarker(), "Received notification");
+						promise.trySuccess(handleMessagingResult(notificationMessage.getReport()));
+					}
 				}
-				logger.debug(addMarker(), "Received notification");
-				receivedResponse = true;
-				signalStepStatus(handleMessagingResult(notificationMessage.getReport()));
 			} else if (message instanceof TimeoutExpired) {
-				if (!receivedResponse) {
+				if (promise != null && !promise.isCompleted()) {
 					VariableResolver resolver = new VariableResolver(scope);
 					String flagName = null;
 					if (!StringUtils.isBlank(step.getTimeoutFlag())) {
@@ -195,7 +196,7 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 					} else {
 						logger.debug(addMarker(), "Timeout expired while waiting to receive message");
 					}
-					signalStepStatus(handleMessagingResult(MessagingHandlerUtils.getMessagingReportForTimeout(flagName, errorIfTimeout)));
+					promise.trySuccess(handleMessagingResult(MessagingHandlerUtils.getMessagingReportForTimeout(flagName, errorIfTimeout)));
 				}
 			} else {
 				super.onReceive(message);
@@ -250,7 +251,7 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 
 	@Override
 	protected void stop() {
-		if(promise != null && !promise.isCompleted()) {
+		if (promise != null && !promise.isCompleted()) {
 			promise.tryFailure(new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.CANCELLATION, "Test step ["+stepId+"] is cancelled.")));
 		}
 	}
