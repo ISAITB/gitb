@@ -292,7 +292,7 @@ export class TriggerComponent extends BaseComponent implements OnInit {
   }
 
   previewDisabled() {
-    return this.saveDisabled() || this.previewPending
+    return this.trigger.eventType == undefined || this.previewPending
   }
 
   clearStatusDisabled() {
