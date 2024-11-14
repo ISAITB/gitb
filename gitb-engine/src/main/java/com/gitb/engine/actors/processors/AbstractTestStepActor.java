@@ -147,7 +147,6 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 		try {
 			super.onReceive(message);
 			if (message instanceof ErrorStatusEvent) {
-//				inform((StatusEvent) message);
 				handleStatusEvent((StatusEvent) message);
 			} else if (message instanceof StatusEvent) {
 				handleStatusEvent((StatusEvent) message);

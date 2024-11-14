@@ -157,7 +157,7 @@ public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStep
                     try {
                         getContext().system().actorSelection(SessionActor.getPath(scope.getContext().getSessionId())).tell(new PrepareForStopCommand(scope.getContext().getSessionId(), self()), self());
                     } catch (Exception e) {
-                        LOG.error(addMarker(), "Error sending the signal to stop the test session from test step actor [" + stepId + "].");
+                        LOG.error(addMarker(), "Error sending the signal to stop the test session from test step actor [{}].", stepId);
                     }
                 } else {
                     // Proceed.

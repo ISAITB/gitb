@@ -7,7 +7,6 @@ import com.gitb.core.ValueEmbeddingEnumeration;
 import com.gitb.engine.TestbedService;
 import com.gitb.engine.commands.messaging.TimeoutExpired;
 import com.gitb.engine.events.TestStepInputEventBus;
-import com.gitb.engine.events.model.ErrorStatusEvent;
 import com.gitb.engine.events.model.InputEvent;
 import com.gitb.engine.expr.ExpressionHandler;
 import com.gitb.engine.expr.resolvers.VariableResolver;
@@ -57,7 +56,6 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
     public static final String NAME = "interaction-p";
 
     private static final Logger logger = LoggerFactory.getLogger(InteractionStepProcessorActor.class);
-    private boolean receivedInput = false;
     private Promise<TestStepReportType> promise;
 
     public InteractionStepProcessorActor(UserInteraction step, TestCaseScope scope, String stepId) {
@@ -67,7 +65,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
     @Override
     public void onReceive(Object message) {
         if (message instanceof TimeoutExpired) {
-            if (!receivedInput) {
+            if (!promise.isCompleted()) {
                 logger.debug(addMarker(), "Timeout expired while waiting to receive input");
                 var inputEvent = new InputEvent(scope.getContext().getSessionId(), step.getId(), Collections.emptyList(), step.isAdmin());
                 this.handleInputEvent(inputEvent);
@@ -84,14 +82,19 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                 .getInstance()
                 .subscribe(self(), classifier);
 
-        final ActorContext context = getContext();
-
         promise = Futures.promise();
+
+        promise.future().foreach(new OnSuccess<>() {
+            @Override
+            public void onSuccess(TestStepReportType result) {
+                completed(result);
+            }
+        }, getContext().dispatcher());
 
         promise.future().failed().foreach(new OnFailure() {
             @Override
             public void onFailure(Throwable failure) {
-                updateTestStepStatus(context, new ErrorStatusEvent(failure, scope, self()), null, true);
+                handleFutureFailure(failure);
             }
         }, getContext().dispatcher());
     }
@@ -213,17 +216,10 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
             }
         }, context.dispatcher());
 
-        future.foreach(new OnSuccess<>() {
-
-            @Override
-            public void onSuccess(TestStepReportType result) {
-                promise.trySuccess(result);
-            }
-        }, context.dispatcher());
-
         future.failed().foreach(new OnFailure() {
             @Override
-            public void onFailure(Throwable failure) { promise.tryFailure(failure);
+            public void onFailure(Throwable failure) {
+                promise.tryFailure(failure);
             }
         }, context.dispatcher());
         waiting();
@@ -253,7 +249,6 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
 
         return instruction;
     }
-
 
     /**
      * Process TDL InputRequest command and convert it to TBS InputRequest object
@@ -349,12 +344,11 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
 
     @Override
     protected void handleInputEvent(InputEvent event) {
-        receivedInput = true;
         processing();
         if (step.isAdmin() && !event.isAdmin()) {
             // This was an administrator-level interaction for which we received input from a non-administrator.
             // This is not normal and should be logged and recorded as an error.
-            throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_SESSION, String.format("User-provided inputs were expected to be received by an administrator - step [%s] - ID [%s]", TestCaseUtils.extractStepDescription(step, scope), stepId)));
+            promise.tryFailure(new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_SESSION, String.format("User-provided inputs were expected to be received by an administrator - step [%s] - ID [%s]", TestCaseUtils.extractStepDescription(step, scope), stepId))));
         } else {
             logger.debug(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), String.format("Handling user-provided inputs - step [%s] - ID [%s]", TestCaseUtils.extractStepDescription(step, scope), stepId));
             List<UserInput> userInputs = event.getUserInputs();
@@ -429,10 +423,16 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                 TestCaseScope.ScopedVariable scopedVariable = scope.createVariable(step.getId());
                 scopedVariable.setValue(interactionResult);
             }
-            completed(report);
+            promise.trySuccess(report);
         }
     }
 
+    @Override
+    protected void stop() {
+        if (promise != null && !promise.isCompleted()) {
+            promise.tryFailure(new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.CANCELLATION, "Test step ["+stepId+"] is cancelled.")));
+        }
+    }
 
     public static ActorRef create(ActorContext context, UserInteraction step, TestCaseScope scope, String stepId) throws Exception {
         return context.actorOf(props(InteractionStepProcessorActor.class, step, scope, stepId), getName(NAME));

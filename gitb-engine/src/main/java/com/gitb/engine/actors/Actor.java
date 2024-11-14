@@ -20,13 +20,13 @@ public abstract class Actor extends UntypedAbstractActor {
 	@Override
 	public void preStart()  throws Exception{
 		super.preStart();
-		logger.debug(self().path() + " - starting");
+		logger.debug("{} - starting", self().path());
 	}
 
 	@Override
 	public void postStop()  throws Exception{
 		super.postStop();
-		logger.debug(self().path() + " - stopping");
+		logger.debug("{} - stopping", self().path());
 	}
 
 	@Override
