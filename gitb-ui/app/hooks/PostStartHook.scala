@@ -31,32 +31,55 @@ import scala.concurrent.duration.DurationInt
 import scala.util.Using
 
 @Singleton
-class PostStartHook @Inject() (implicit ec: ExecutionContext, authenticationManager: AuthenticationManager, actorSystem: ActorSystem, systemConfigurationManager: SystemConfigurationManager, testResultManager: TestResultManager, testExecutionManager: TestExecutionManager, importCompleteManager: ImportCompleteManager, repositoryUtils: RepositoryUtils, environment: Environment, userManager: UserManager, config: Configuration) {
+class PostStartHook @Inject() (implicit ec: ExecutionContext,
+                               authenticationManager: AuthenticationManager,
+                               actorSystem: ActorSystem,
+                               systemConfigurationManager: SystemConfigurationManager,
+                               testResultManager: TestResultManager,
+                               testExecutionManager: TestExecutionManager,
+                               importCompleteManager: ImportCompleteManager,
+                               repositoryUtils: RepositoryUtils,
+                               environment: Environment,
+                               userManager: UserManager,
+                               config: Configuration) {
 
   private def logger = LoggerFactory.getLogger(this.getClass)
 
   onStart()
 
   def onStart(): Unit = {
-    logger.info("Starting Application")
-    System.setProperty("java.io.tmpdir", System.getProperty("user.dir"))
-    BUILD_TIMESTAMP = getBuildTimestamp()
-    checkOperationMode()
-    initialiseTestbedClient()
-    checkMasterPassword()
-    loadDataExports()
-    adaptSystemConfiguration()
-    destroyIdleSessions()
-    deleteInactiveUserAccounts()
-    cleanupPendingTestSuiteUploads()
-    cleanupTempFiles()
-    archiveOldTestSessions()
-    prepareRestApiDocumentation()
-    prepareTheme()
-    setupAdministratorOneTimePassword()
-    setupInteractionNotifications()
-    removeOverrideConfiguration()
-    logger.info("Application has started in "+Configurations.TESTBED_MODE+" mode - release "+Constants.VersionNumber + " built at "+Configurations.BUILD_TIMESTAMP)
+    try {
+      if (!Configurations.STARTUP_FAILURE) {
+        logger.info("Starting Application")
+        System.setProperty("java.io.tmpdir", System.getProperty("user.dir"))
+        BUILD_TIMESTAMP = getBuildTimestamp()
+        checkOperationMode()
+        initialiseTestbedClient()
+        checkMasterPassword()
+        loadDataExports()
+        adaptSystemConfiguration()
+        destroyIdleSessions()
+        deleteInactiveUserAccounts()
+        cleanupPendingTestSuiteUploads()
+        cleanupTempFiles()
+        archiveOldTestSessions()
+        prepareRestApiDocumentation()
+        prepareTheme()
+        setupAdministratorOneTimePassword()
+        setupInteractionNotifications()
+        removeOverrideConfiguration()
+      }
+    } catch {
+      case e: Exception =>
+        Configurations.STARTUP_FAILURE = true
+        throw e
+    } finally {
+      if (Configurations.STARTUP_FAILURE) {
+        logger.error("Application failed to start")
+      } else {
+        logger.info("Application started in {} mode - release {} built on {}", Configurations.TESTBED_MODE, Constants.VersionNumber, Configurations.BUILD_TIMESTAMP)
+      }
+    }
   }
 
   private def checkOperationMode(): Unit = {

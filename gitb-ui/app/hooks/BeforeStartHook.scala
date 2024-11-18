@@ -1,9 +1,9 @@
 package hooks
 
 import config.Configurations
-import javax.inject.Singleton
 import org.slf4j.LoggerFactory
-import persistence.db.PersistenceLayer
+
+import javax.inject.Singleton
 
 @Singleton
 class BeforeStartHook {
@@ -12,8 +12,6 @@ class BeforeStartHook {
 
   // Load application configurations before the applications starts
   Configurations.loadConfigurations()
-  // Create database if not exists.
-  PersistenceLayer.preInitialize()
   logger.info("Application has been configured")
 
 }
