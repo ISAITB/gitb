@@ -13,6 +13,7 @@ import scala.util.matching.Regex
 object Configurations {
 
   private var _IS_LOADED = false
+  var STARTUP_FAILURE = false
 
   // Database parameters
   var DB_JDBC_URL:String = ""
