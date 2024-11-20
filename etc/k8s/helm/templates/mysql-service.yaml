@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "mysql.serviceName" . | quote }}
+spec:
+  type: {{ .Values.mysql.serviceType | default "ClusterIP" | quote }}
+  ports:
+    - name: {{ include "mysql.servicePort" . | quote }}
+      port: {{ include "mysql.servicePort" . }}
+      targetPort: {{ include "mysql.port" . }}
+  selector:
+    app.kubernetes.io/name: {{ include "mysql.name" . }}

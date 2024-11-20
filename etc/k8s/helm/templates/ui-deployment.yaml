@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ui.name" . | quote }}
+spec:
+  replicas: {{ .Values.ui.replicaCount | default 1 }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "ui.name" . }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "ui.name" . }}
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - image: {{ .Values.ui.image | quote }}
+          imagePullPolicy: {{ .Values.ui.imagePullPolicy | default "IfNotPresent" | quote }}
+          name: {{ include "ui.name" . }}
+          env:
+            - name: TESTBED_SERVICE_URL
+              value: "http://{{ include "srv.serviceName" . }}:{{ include "srv.servicePort" . }}/itbsrv/TestbedService"
+            - name: TESTBED_CLIENT_URL_INTERNAL
+              value: "http://0.0.0.0:{{ include "ui.callbackPort" . }}/TestbedClient"
+            - name: TESTBED_CLIENT_URL
+              value: "http://{{ include "ui.serviceName" . }}:{{ include "ui.serviceCallbackPort" . }}/TestbedClient"
+            - name: DB_DEFAULT_URL
+              value: "jdbc:mysql://{{ include "mysql.serviceName" . }}:{{ include "mysql.servicePort" . }}/gitb?characterEncoding=UTF-8&useUnicode=true&autoReconnect=true&useSSL=false&verifyServerCertificate=false&allowPublicKeyRetrieval=true"
+            - name: DB_DEFAULT_ROOTURL
+              value: "jdbc:mysql://{{ include "mysql.serviceName" . }}:{{ include "mysql.servicePort" . }}/"
+            - name: REDIS_HOST
+              value: {{ include "redis.serviceName" . | quote }}
+          {{- if .Values.ui.env }}
+          {{- range $key, $value := .Values.ui.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+          {{- end }}
+          {{- end }}
+          ports:
+            - containerPort: {{ include "ui.port" . }}
+              protocol: TCP
+            - containerPort: {{ include "ui.callbackPort" . }}
+              protocol: TCP
+          volumeMounts:
+            - mountPath: {{ .Values.ui.repositoryPath | default "/gitb-repository" | quote }}
+              name: {{ include "repoVolumeName" . }}
+      restartPolicy: {{ .Values.ui.restartPolicy | default "Always" | quote }}
+      volumes:
+        - name: {{ include "repoVolumeName" . }}
+          persistentVolumeClaim:
+            claimName: {{ include "repoVolumeName" . }}

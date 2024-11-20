@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "itb-redis"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: itb-redis
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: itb-redis
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - image: "redis:7.2.5"
+          imagePullPolicy: "IfNotPresent"
+          name: itb-redis
+          ports:
+            - containerPort: 6379
+              protocol: TCP
+      restartPolicy: "Always"
