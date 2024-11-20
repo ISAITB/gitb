@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ui.serviceName" . | quote }}
+spec:
+  type: {{ .Values.ui.serviceType | default "ClusterIP" | quote }}
+  ports:
+    - name: {{ include "ui.servicePort" . | quote }}
+      port: {{ include "ui.servicePort" . }}
+      targetPort: {{ include "ui.port" . }}
+    - name: {{ include "ui.serviceCallbackPort" . | quote }}
+      port: {{ include "ui.serviceCallbackPort" . }}
+      targetPort: {{ include "ui.callbackPort" . }}
+  selector:
+    app.kubernetes.io/name: {{ include "ui.name" . }}

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "srv.serviceName" . | quote }}
+spec:
+  type: {{ .Values.srv.serviceType | default "ClusterIP" | quote }}
+  ports:
+    - name: {{ include "srv.servicePort" . | quote }}
+      port: {{ include "srv.servicePort" . }}
+      targetPort: {{ include "srv.port" . }}
+  selector:
+    app.kubernetes.io/name: {{ include "srv.name" . }}

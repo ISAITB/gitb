@@ -1,0 +1,30 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: itb-ingress
+  annotations:
+    acme.cert-manager.io/http01-edit-in-place: "true"
+    cert-manager.io/cluster-issuer: "dev-prod"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - localhost
+      secretName: itb-tls-secret
+  rules:
+    - http:
+        paths:
+          - path: /itbsrv
+            pathType: Prefix
+            backend:
+              service:
+                name: itb-srv
+                port:
+                  number: 8080
+          - path: /itb
+            pathType: Prefix
+            backend:
+              service:
+                name: itb-ui
+                port:
+                  number: 9000

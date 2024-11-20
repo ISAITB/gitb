@@ -1,0 +1,36 @@
+----------------------------------------------------------------------------
+  ___  _____  ____                   _     ___       
+ |_ _||_   _|| __ )    ___   _ __   | | __( _ )  ___ 
+  | |   | |  |  _ \   / _ \ | '_ \  | |/ // _ \ / __|
+  | |   | |  | |_) | | (_) || | | | |   <| (_) |\__ \
+ |___|  |_|  |____/   \___/ |_| |_| |_|\_\\___/ |___/
+                                                
+
+The Interoperability Test Bed (ITB) is now deployed on your cluster (release {{ .Chart.AppVersion | quote }}).
+
+To access the ITB's user interface from outside your cluster you must ensure an ingress controller is available
+(e.g. https://kubernetes.github.io/ingress-nginx/). With an ingress in place the ITB is available at:
+
+  {{ .Values.ui.env.TESTBED_HOME_LINK }}
+
+In case this is a new ITB installation, you will find the credentials of
+the default administrator account (admin@itb) logged in the output of the
+{{ include "ui.name" . }} pod. The listed password is auto-generated and renewed upon restart.
+
+To find out more and see how to use your new ITB instance please refer to:
+- The ITB's user guide: https://www.itb.ec.europa.eu/docs/itb-ta/latest/
+- The ITB's guides: https://www.itb.ec.europa.eu/docs/guides/latest/
+- The GITB TDL documentation: https://www.itb.ec.europa.eu/docs/tdl/latest/
+- The GITB test services documentation: https://www.itb.ec.europa.eu/docs/services/latest/
+
+For questions and support please open a ticket on GitHub ({{ with index .Chart.Sources 0 }}{{ . }}{{ end }}), 
+or send an email to DIGIT-ITB@ec.europa.eu.
+{{ if ne .Values.ui.env.TESTBED_MODE "PRODUCTION" }}
+IMPORTANT: Your ITB instance is configured as a development instance. 
+To define an instance suitable for production please refer to the ITB's
+production installation guide:
+
+  https://www.itb.ec.europa.eu/docs/guides/latest/installingTheTestBedProduction/
+{{- end }}
+
+----------------------------------------------------------------------------
