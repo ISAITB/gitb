@@ -118,9 +118,9 @@ class Application @Inject() (implicit ec: ExecutionContext, cc: ControllerCompon
     val host = if (Configurations.TESTBED_HOME_LINK != "/") {
       val linkLength = Configurations.TESTBED_HOME_LINK.length
       if (StringUtils.startsWithIgnoreCase(Configurations.TESTBED_HOME_LINK, "http://") && linkLength > 7) {
-        Configurations.TESTBED_HOME_LINK.substring(7)
+        removePublicRootPath(Configurations.TESTBED_HOME_LINK.substring(7))
       } else if (StringUtils.startsWithIgnoreCase(Configurations.TESTBED_HOME_LINK, "https://") && linkLength > 8) {
-        Configurations.TESTBED_HOME_LINK.substring(8)
+        removePublicRootPath(Configurations.TESTBED_HOME_LINK.substring(8))
       } else {
         "/"
       }
@@ -128,6 +128,15 @@ class Application @Inject() (implicit ec: ExecutionContext, cc: ControllerCompon
       request.host
     }
     Ok(JavaScriptReverseRouter("jsRoutes", Some("jQuery.ajax"), host, routeActions.toList:_*)).as("text/javascript")
+  }
+
+  private def removePublicRootPath(pathWithoutProtocol: String): String = {
+    if (Configurations.PUBLIC_CONTEXT_ROOT == "/") {
+      pathWithoutProtocol
+    } else {
+      StringUtils.removeEnd(pathWithoutProtocol, Configurations.PUBLIC_CONTEXT_ROOT)
+    }
+
   }
 
 }
