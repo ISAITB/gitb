@@ -13,8 +13,13 @@ export class WebSocketService {
   constructor(private dataService: DataService) { }
 
   connect(openObserver: NextObserver<Event>, closeObserver: NextObserver<CloseEvent>) {
+    const webSocketRoute = ROUTES.controllers.WebSocketService.socket("session")
+    const internalAddressWithServerPart = webSocketRoute.webSocketURL()
+    const pathPart = webSocketRoute.url
+    const serverPart = internalAddressWithServerPart.substring(0, internalAddressWithServerPart.length - pathPart.length)
+    const urlToUse = Utils.webSocketURL(serverPart + this.dataService.completePath(pathPart))
     return webSocket({
-      url: Utils.webSocketURL(this.dataService.completePath(ROUTES.controllers.WebSocketService.socket("session").webSocketURL())),
+      url: urlToUse,
       openObserver: openObserver,
       closeObserver: closeObserver
     })
