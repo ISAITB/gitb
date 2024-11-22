@@ -8,13 +8,14 @@
 		<meta name="application-name" content="Interoperability Test Bed"/>
 		<meta name="description" content="Conformance testing platform"/>
 		<meta name="viewport" content="width=device-width"/>
-		<link rel="stylesheet" href='assets/build/styles.css?v=@config.resourceVersionNumber'>
-		<link id="themeFaviconLink" rel="icon" href="favicon.ico">
-		<link id="themeCssLink" rel="stylesheet" href="api/theme/css">
-		<script type='text/javascript' src='assets/lib/jquery/jquery.min.js'></script>
-		<script type='text/javascript' src='assets/components/gitb-cookie-cleanup.js?v=@config.resourceVersionNumber'></script>
+		<link rel="stylesheet" href='@(config.contextPath)assets/build/styles.css?v=@config.resourceVersionNumber'>
+		<link id="themeFaviconLink" rel="icon" href="@(config.contextPath)favicon.ico">
+		<link id="themeCssLink" rel="stylesheet" href="@(config.contextPath)api/theme/css">
+		<script type='text/javascript' src='@(config.contextPath)assets/lib/jquery/jquery.min.js'></script>
+		<script type='text/javascript' src='@(config.contextPath)assets/components/gitb-cookie-cleanup.js?v=@config.resourceVersionNumber'></script>
 	</head>
 	<body>
+		<div id="ctx-div" style="display:none">@config.contextPath</div>
 		<div id="cp-div" style="display:none">@config.cookiePath</div>
 		<div class="page index">
 			<div class="header-bar">
@@ -190,9 +191,9 @@
 				</div>
 			</div>
 		}
-		<script type='text/javascript' src='assets/lib/bootstrap/js/bootstrap.bundle.min.js'></script>
+		<script type='text/javascript' src='@(config.contextPath)assets/lib/bootstrap/js/bootstrap.bundle.min.js'></script>
 		@if(config.initialSandboxRun) {
-		<script type='text/javascript' src='assets/components/gitb-init-sandbox.js?v=@config.resourceVersionNumber'></script>
+		<script type='text/javascript' src='@(config.contextPath)assets/components/gitb-init-sandbox.js?v=@config.resourceVersionNumber'></script>
 		}
 	</body>
 </html>

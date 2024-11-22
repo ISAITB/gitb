@@ -49,12 +49,12 @@ export class EditorComponent implements OnInit, ControlValueAccessor {
       min_height: 100,
       menubar: false,
       branding: false,
-      base_url: this.dataService.completePath('/assets/build/tinymce'),
+      base_url: this.dataService.completePath('/assets/build/tinymce', true),
       cache_suffix: this.dataService.configuration.versionNumber,
       content_css: 'assets/build/styles.css,api/theme/css',
       body_class: 'editor-body',
       suffix: '.min',
-      convert_unsafe_embeds: true      
+      convert_unsafe_embeds: true
     }
     if (this.type == 'normal') {
       config.plugins = 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table code'

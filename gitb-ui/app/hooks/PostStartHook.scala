@@ -77,6 +77,7 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext,
       if (Configurations.STARTUP_FAILURE) {
         logger.error("Application failed to start")
       } else {
+        logger.info("Web context root is {} with a public mapping of {}", Configurations.WEB_CONTEXT_ROOT, Configurations.PUBLIC_CONTEXT_ROOT)
         logger.info("Application started in {} mode - release {} built on {}", Configurations.TESTBED_MODE, Constants.VersionNumber, Configurations.BUILD_TIMESTAMP)
       }
     }
@@ -428,19 +429,19 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext,
     }
     var apiUrl = Configurations.TESTBED_HOME_LINK
     if (apiUrl == "/") {
-      apiUrl = s"http://localhost:${sys.env.getOrElse("http.port", 9000)}/${Configurations.API_ROOT}/rest"
+      apiUrl = s"http://localhost:${sys.env.getOrElse("http.port", 9000)}${Configurations.API_ROOT}/rest"
     } else {
       if (!apiUrl.endsWith("/")) {
         apiUrl += "/"
       }
-      apiUrl += Configurations.API_ROOT+"/rest"
+      apiUrl += Configurations.API_PREFIX+"/rest"
     }
     try {
       Using.resource(Thread.currentThread().getContextClassLoader.getResourceAsStream("api/openapi.json")) { stream =>
         var template = new String(stream.readAllBytes(), StandardCharsets.UTF_8)
         template = StringUtils.replaceEach(template,
           Array("${version}", "${contactEmail}", "${userGuideAddress}", "${apiUrl}"),
-          Array(Constants.VersionNumber, Configurations.EMAIL_TO.getOrElse(Array.empty).headOption.getOrElse("-"), Configurations.USERGUIDE_OU, apiUrl)
+          Array(Constants.VersionNumber, Configurations.EMAIL_TO.getOrElse(Array.empty).headOption.getOrElse(Configurations.EMAIL_DEFAULT.getOrElse("-")), Configurations.USERGUIDE_OU, apiUrl)
         )
         Files.createDirectories(apiDocsFile.getParentFile.toPath)
         Files.writeString(apiDocsFile.toPath, template, StandardCharsets.UTF_8)

@@ -1210,19 +1210,42 @@ export class DataService {
     return logLevel
   }
 
-  completePath(path: string): string {
-    if (this.apiRoot == undefined) {
-      const apiRootElement = document.getElementById('cp-div')
-      if (apiRootElement) {
-        this.apiRoot = apiRootElement.innerText
+  private elementValueOrDefault(elementId: string, defaultValue: string): string {
+    const element = document.getElementById(elementId)
+    if (element) {
+      return element.innerText
+    } else {
+      return defaultValue
+    }
+  }
+
+  completePath(path: string, resourceLookup?: boolean): string {
+    const publicContextPath = this.elementValueOrDefault('ctx-pub-div', '/')
+    if (resourceLookup) {
+      /*
+       * Append the public context root to the resource lookup URL.
+       */
+      if (path.startsWith('/')) {
+        if (publicContextPath == '/') {
+          return path
+        } else {
+          return publicContextPath + path.substring(1)
+        }
       } else {
-        this.apiRoot = '/'
+        return publicContextPath + path
+      }
+    } else {
+      /*
+       * This is an API call path. These routes contain by default the application's internal context path.
+       * We will need to replace this with the public context path to have valid calls.
+       */
+      const internalContextPath = this.elementValueOrDefault('ctx-int-div', '/')
+      if (publicContextPath != internalContextPath) {
+        return publicContextPath + path.substring(internalContextPath.length)
+      } else {
+        return path
       }
     }
-    if (this.apiRoot != '/') {
-      return this.apiRoot + path
-    }
-    return path
   }
 
   private specToDomainSpecification(specification: Specification): DomainSpecification {

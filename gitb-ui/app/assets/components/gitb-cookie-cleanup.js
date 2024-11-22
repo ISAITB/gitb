@@ -14,7 +14,8 @@ function option(value) {
             sessionStorage.setItem('com.itb.loginOption', 'none');
         }
     }
-    window.location.href = 'app';
+    let contextPath = document.getElementById('ctx-div').textContent;
+    window.location.href = contextPath+'app';
 }
 function eraseCookies() {
     if (sessionStorage) {

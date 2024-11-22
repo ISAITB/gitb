@@ -68,7 +68,7 @@ object ResponseConstructor extends Results{
   def constructOauthResponse(tokens: Token, userId: Long):Result = {
     Ok("{" +
       "\"user_id\":"+userId+"," +
-      "\"path\":\"" + Configurations.AUTHENTICATION_COOKIE_PATH + "\"," +
+      "\"path\":\"" + Configurations.PUBLIC_CONTEXT_ROOT + "\"," +
       "\"access_token\":\"" + tokens.access_token + "\"," +
       "\"token_type\":\"Bearer\"," +
       "\"expires_in\":" + Configurations.AUTHENTICATION_SESSION_MAX_IDLE_TIME + "," + //in seconds ~ 30 days

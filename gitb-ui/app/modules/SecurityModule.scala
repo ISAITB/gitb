@@ -2,7 +2,7 @@ package modules
 
 import com.google.inject.{AbstractModule, Provides}
 import config.Configurations
-import config.Configurations.API_ROOT
+import config.Configurations.{API_ROOT, WEB_CONTEXT_ROOT, WEB_CONTEXT_ROOT_WITH_SLASH}
 import ecas.ExtendedCasConfiguration
 import org.apache.commons.lang3.StringUtils
 import org.pac4j.cas.client.{CasClient, CasProxyReceptor}
@@ -129,19 +129,20 @@ class SecurityModule extends AbstractModule {
     config.setSessionStoreFactory((_: FrameworkParameters) => sessionStore);
     config.setHttpActionAdapter(new PlayHttpActionAdapter())
     config.addMatcher("excludedPath", new PathMatcher()
-      .excludePath("/")
-      .excludePath("/"+API_ROOT+"/notices/tbdefault")
-      .excludeBranch("/"+API_ROOT+"/theme")
-      .excludeBranch("/assets")
-      .excludeBranch("/webjars")
-      .excludeBranch("/template")
-      .excludePath("/favicon.ico")
-      .excludeBranch("/callback")
-      .excludeBranch("/"+API_ROOT+"/repository/tests")
-      .excludeBranch("/"+API_ROOT+"/repository/resource")
-      .excludeBranch("/"+API_ROOT+"/rest")
-      .excludePath("/"+API_ROOT+"/healthcheck")
-      .excludeBranch("/badge")
+      .excludePath("%s".formatted(WEB_CONTEXT_ROOT))
+      .excludePath("%s".formatted(WEB_CONTEXT_ROOT_WITH_SLASH))
+      .excludePath("%s/notices/tbdefault".formatted(API_ROOT))
+      .excludeBranch("%s/theme".formatted(API_ROOT))
+      .excludeBranch("%sassets".formatted(WEB_CONTEXT_ROOT_WITH_SLASH))
+      .excludeBranch("%swebjars".formatted(WEB_CONTEXT_ROOT_WITH_SLASH))
+      .excludeBranch("%stemplate".formatted(WEB_CONTEXT_ROOT_WITH_SLASH))
+      .excludePath("%sfavicon.ico".formatted(WEB_CONTEXT_ROOT_WITH_SLASH))
+      .excludeBranch("%scallback".formatted(WEB_CONTEXT_ROOT_WITH_SLASH))
+      .excludeBranch("%s/repository/tests".formatted(API_ROOT))
+      .excludeBranch("%s/repository/resource".formatted(API_ROOT))
+      .excludeBranch("%s/rest".formatted(API_ROOT))
+      .excludePath("%s/healthcheck".formatted(API_ROOT))
+      .excludeBranch("%sbadge".formatted(WEB_CONTEXT_ROOT_WITH_SLASH))
     )
     config
   }
