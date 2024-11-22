@@ -42,6 +42,7 @@ object Configurations {
   var EMAIL_ENABLED = false
   var EMAIL_FROM: Option[String] = None
   var EMAIL_TO: Option[Array[String]] = None
+  var EMAIL_DEFAULT: Option[String] = None
   var EMAIL_SMTP_HOST: Option[String] = None
   var EMAIL_SMTP_PORT: Option[Int] = None
   var EMAIL_SMTP_SSL_ENABLED: Option[Boolean] = None
@@ -94,7 +95,6 @@ object Configurations {
   var MASTER_PASSWORD_TO_REPLACE: Option[Array[Char]] = None
   var MASTER_PASSWORD_FORCE = false
 
-  var AUTHENTICATION_COOKIE_PATH = ""
   var AUTHENTICATION_SSO_ENABLED = false
   var AUTHENTICATION_SSO_IN_MIGRATION_PERIOD = false
   var AUTHENTICATION_SSO_LOGIN_URL = ""
@@ -135,6 +135,11 @@ object Configurations {
 
   var TESTBED_MODE:String = ""
 
+  var WEB_CONTEXT_ROOT = ""
+  var WEB_CONTEXT_ROOT_WITH_SLASH = ""
+  var PUBLIC_CONTEXT_ROOT = ""
+  var PUBLIC_CONTEXT_ROOT_WITH_SLASH = ""
+  var API_PREFIX = ""
   var API_ROOT = ""
   var AUTOMATION_API_ENABLED = false
   var AUTOMATION_API_MASTER_KEY: Option[String] = None
@@ -160,6 +165,14 @@ object Configurations {
     if (!_IS_LOADED) {
       // Load configuration file
       val conf:Config = ConfigFactory.load()
+      // Context paths - start
+      WEB_CONTEXT_ROOT = fromEnv("WEB_CONTEXT_ROOT", conf.getString("play.http.context"))
+      WEB_CONTEXT_ROOT_WITH_SLASH = StringUtils.appendIfMissing(WEB_CONTEXT_ROOT, "/")
+      API_PREFIX = conf.getString("apiPrefix")
+      API_ROOT = WEB_CONTEXT_ROOT_WITH_SLASH + API_PREFIX
+      PUBLIC_CONTEXT_ROOT = fromEnv("AUTHENTICATION_COOKIE_PATH", WEB_CONTEXT_ROOT)
+      PUBLIC_CONTEXT_ROOT_WITH_SLASH = StringUtils.appendIfMissing(PUBLIC_CONTEXT_ROOT, "/")
+      // Context paths - end
       //Parse DB Parameters
       DB_JDBC_URL     = conf.getString("db.default.url")
       DB_USER         = conf.getString("db.default.user")
@@ -187,6 +200,7 @@ object Configurations {
       EMAIL_ENABLED = fromEnv("EMAIL_ENABLED", conf.getString("email.enabled")).toBoolean
       EMAIL_FROM = Option(fromEnv("EMAIL_FROM", null))
       EMAIL_TO = Option(fromEnv("EMAIL_TO", null)).map(_.split(","))
+      EMAIL_DEFAULT = Option(fromEnv("EMAIL_DEFAULT", "DIGIT-ITB@ec.europa.eu"))
       EMAIL_SMTP_HOST = Option(fromEnv("EMAIL_SMTP_HOST", null))
       EMAIL_SMTP_PORT = Option(fromEnv("EMAIL_SMTP_PORT", null)).map(_.toInt)
       EMAIL_SMTP_AUTH_ENABLED = Option(fromEnv("EMAIL_SMTP_AUTH_ENABLED", conf.getString("email.smtp.auth.enabled")).toBoolean)
@@ -263,7 +277,6 @@ object Configurations {
       val hmacKeyWindow = fromEnv("HMAC_WINDOW", conf.getString("hmac.window"))
       HmacUtils.configure(hmacKey, hmacKeyWindow.toLong)
 
-      AUTHENTICATION_COOKIE_PATH = fromEnv("AUTHENTICATION_COOKIE_PATH", conf.getString("authentication.cookie.path"))
       AUTHENTICATION_SSO_ENABLED = fromEnv("AUTHENTICATION_SSO_ENABLED", conf.getString("authentication.sso.enabled")).toBoolean
       AUTHENTICATION_SSO_IN_MIGRATION_PERIOD = fromEnv("AUTHENTICATION_SSO_IN_MIGRATION_PERIOD", conf.getString("authentication.sso.inMigrationPeriod")).toBoolean
       AUTHENTICATION_SSO_LOGIN_URL = fromEnv("AUTHENTICATION_SSO_LOGIN_URL", conf.getString("authentication.sso.url.login"))
@@ -330,7 +343,6 @@ object Configurations {
       DATA_WEB_INIT_ENABLED = fromEnv("DATA_WEB_INIT_ENABLED", "false").toBoolean
       TEST_SESSION_ARCHIVE_THRESHOLD = fromEnv("TEST_SESSION_ARCHIVE_THRESHOLD", conf.getString("testsession.archive.threshold")).toInt
       TEST_SESSION_EMBEDDED_REPORT_DATA_THRESHOLD = fromEnv("TEST_SESSION_EMBEDDED_REPORT_DATA_THRESHOLD", conf.getString("testsession.embeddedReportData.threshold")).toLong
-      API_ROOT = conf.getString("apiPrefix")
       PASSWORD_COMPLEXITY_RULE_REGEX = new Regex(conf.getString("passwordComplexityRule"))
       AUTOMATION_API_ENABLED = fromEnv("AUTOMATION_API_ENABLED", "false").toBoolean
       // Master API key

@@ -7,9 +7,9 @@
     <title>Interoperability Test Bed</title>
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width">
-    <link rel="stylesheet" href='assets/build/styles.css?v=@config.resourceVersionNumber'>
-    <link id="themeCssLink" rel="stylesheet" href="api/theme/css">
-    <link id="themeFaviconLink" rel="icon" href="favicon.ico">
+    <link rel="stylesheet" href='@(config.contextPath)assets/build/styles.css?v=@config.resourceVersionNumber'>
+    <link id="themeCssLink" rel="stylesheet" href="@(config.contextPath)api/theme/css">
+    <link id="themeFaviconLink" rel="icon" href="@(config.contextPath)favicon.ico">
 </head>
 <body>
 <div class="page index">
@@ -88,6 +88,6 @@
 
     </div>
 </div>
-<script type='text/javascript' src='assets/lib/bootstrap/js/bootstrap.bundle.min.js'></script>
+<script type='text/javascript' src='@(config.contextPath)assets/lib/bootstrap/js/bootstrap.bundle.min.js'></script>
 </body>
 </html>

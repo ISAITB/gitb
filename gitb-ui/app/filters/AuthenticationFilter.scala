@@ -3,7 +3,7 @@ package filters
 import org.apache.pekko.stream.Materializer
 import com.gitb.utils.HmacUtils
 import config.Configurations
-import config.Configurations.API_ROOT
+import config.Configurations.{API_ROOT, WEB_CONTEXT_ROOT, WEB_CONTEXT_ROOT_WITH_SLASH}
 import controllers.util.ResponseConstructor.NotFound
 import controllers.util.{Parameters, ResponseConstructor}
 import exceptions._
@@ -36,10 +36,14 @@ class AuthenticationFilter @Inject() (implicit ec: ExecutionContext, implicit va
   def apply(next: (RequestHeader) => Future[Result])
            (requestHeader: RequestHeader): Future[Result] = {
     if (router.handlerFor(requestHeader).isEmpty) {
-      // If this is an unknown route stop any further processing and return a 404.
-      Future {
-        logger.debug("Received request for non-existent path [{}]", requestHeader.path)
-        NotFound("")
+      if (requestHeader.path == Configurations.WEB_CONTEXT_ROOT_WITH_SLASH) {
+        next(requestHeader)
+      } else {
+        // If this is an unknown route stop any further processing and return a 404.
+        Future {
+          logger.debug("Received request for non-existent path [{}]", requestHeader.path)
+          NotFound("")
+        }
       }
     } else {
       //if public service called, execute it immediately
@@ -132,48 +136,50 @@ class AuthenticationFilter @Inject() (implicit ec: ExecutionContext, implicit va
   }
 
   def isProtectedAutomationAccessAllowed(request:RequestHeader): Boolean = {
-      request.path.startsWith("/"+API_ROOT+ "/rest/")
+      request.path.startsWith("%s/rest/".formatted(API_ROOT))
   }
 
   def isPublicAutomationAccessAllowed(request:RequestHeader): Boolean = {
-    request.path.equals("/"+API_ROOT+ "/rest") ||
-    request.path.equals("/"+API_ROOT+ "/rest/")
+    request.path.equals("%s/rest".formatted(API_ROOT)) ||
+    request.path.equals("%s/rest/".formatted(API_ROOT))
   }
 
   def isHmacAuthenticationAllowed(request:RequestHeader):Boolean = {
-    request.path.startsWith("/"+API_ROOT+"/repository/")
+    request.path.startsWith("%s/repository/".formatted(API_ROOT))
   }
 
   def isAuthenticatedHttpAccessAllowed(request:RequestHeader): Boolean = {
-    request.path.startsWith("/resources/") || request.path.startsWith("/badgereportpreview/")
+    request.path.startsWith("%s/resources/".formatted(API_ROOT)) ||
+      request.path.startsWith("%s/badgereportpreview/".formatted(API_ROOT))
   }
 
   def isPublic(request:RequestHeader):Boolean = {
     //public services
     request.method.equals("OPTIONS") ||
-      request.path.equals("/") ||
-      request.path.equals("/app") ||
-      request.path.startsWith("/app/") ||
-      request.path.equals("/"+API_ROOT+"/app/configuration") ||
-      request.path.equals("/"+API_ROOT+"/notices/tbdefault") ||
-      request.path.equals("/"+API_ROOT+"/user/selfreg") ||
-      request.path.startsWith("/"+API_ROOT+"/sso/") ||
-      request.path.startsWith("/"+API_ROOT+"/oauth/") ||
-      request.path.startsWith("/"+API_ROOT+"/theme/") ||
-      request.path.equals("/"+API_ROOT+"/initdata") ||
-      request.path.equals("/"+API_ROOT+"/healthcheck") ||
-      request.path.startsWith("/badge/") ||
+      request.path.equals(WEB_CONTEXT_ROOT) ||
+      request.path.equals(WEB_CONTEXT_ROOT_WITH_SLASH) ||
+      request.path.equals("%sapp".formatted(WEB_CONTEXT_ROOT_WITH_SLASH)) ||
+      request.path.startsWith("%sapp/".formatted(WEB_CONTEXT_ROOT_WITH_SLASH)) ||
+      request.path.equals("%s/app/configuration".formatted(API_ROOT)) ||
+      request.path.equals("%s/notices/tbdefault".formatted(API_ROOT)) ||
+      request.path.equals("%s/user/selfreg".formatted(API_ROOT)) ||
+      request.path.startsWith("%s/sso/".formatted(API_ROOT)) ||
+      request.path.startsWith("%s/oauth/".formatted(API_ROOT)) ||
+      request.path.startsWith("%s/theme/".formatted(API_ROOT)) ||
+      request.path.equals("%s/initdata".formatted(API_ROOT)) ||
+      request.path.equals("%s/healthcheck".formatted(API_ROOT)) ||
+      request.path.startsWith("%sbadge/".formatted(WEB_CONTEXT_ROOT_WITH_SLASH)) ||
       //public assets
-      request.path.startsWith("/assets/") ||
-      request.path.startsWith("/webjars/") ||
-      request.path.startsWith("/template/") ||
-      request.path.equals("/favicon.ico") ||
+      request.path.startsWith("%sassets/".formatted(WEB_CONTEXT_ROOT_WITH_SLASH)) ||
+      request.path.startsWith("%swebjars/".formatted(WEB_CONTEXT_ROOT_WITH_SLASH)) ||
+      request.path.startsWith("%stemplate/".formatted(WEB_CONTEXT_ROOT_WITH_SLASH)) ||
+      request.path.equals("%sfavicon.ico".formatted(WEB_CONTEXT_ROOT_WITH_SLASH)) ||
       // CAS callback
-      request.path.equals("/callback")
+      request.path.equals("%scallback".formatted(WEB_CONTEXT_ROOT_WITH_SLASH))
   }
 
   def isPublicWithOptionalAuthentication(request:RequestHeader):Boolean = {
-    request.path.equals("/"+API_ROOT+"/user/feedback")
+    request.path.equals("%s/user/feedback".formatted(API_ROOT))
   }
 
 }

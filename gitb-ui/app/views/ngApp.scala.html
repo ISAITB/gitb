@@ -4,23 +4,24 @@
 <head>
 	<meta charset="utf-8">
 	<title>Interoperability Test Bed</title>
-	<base href="@config.contextPath">
+	<base href="@(config.contextPath)app">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<link rel="stylesheet" href='assets/build/styles.css?v=@config.resourceVersionNumber'>
-	<link id="themeCssLink" rel="stylesheet" href="api/theme/css">
-	<link id="themeFaviconLink" rel="icon" href="favicon.ico">
-	<script type="text/javascript" src="assets/javascripts/routes"></script>
-	<script type="text/javascript" src='assets/build/runtime.js?v=@config.resourceVersionNumber' defer></script>
-	<script src='assets/build/polyfills.js?v=@config.resourceVersionNumber' defer></script>
+	<link rel="stylesheet" href='@(config.contextPath)assets/build/styles.css?v=@config.resourceVersionNumber'>
+	<link id="themeCssLink" rel="stylesheet" href="@(config.contextPath)api/theme/css">
+	<link id="themeFaviconLink" rel="icon" href="@(config.contextPath)favicon.ico">
+	<script type="text/javascript" src="@(config.contextPath)assets/javascripts/routes"></script>
+	<script type="text/javascript" src='@(config.contextPath)assets/build/runtime.js?v=@config.resourceVersionNumber' defer></script>
+	<script src='@(config.contextPath)assets/build/polyfills.js?v=@config.resourceVersionNumber' defer></script>
 	@if(mode != play.api.Mode.Prod) {
-	<script type="text/javascript" src='assets/build/scripts.js?v=@config.resourceVersionNumber' defer></script>
-	<script type="text/javascript" src='assets/build/vendor.js?v=@config.resourceVersionNumber' defer></script>
+	<script type="text/javascript" src='@(config.contextPath)assets/build/scripts.js?v=@config.resourceVersionNumber' defer></script>
+	<script type="text/javascript" src='@(config.contextPath)assets/build/vendor.js?v=@config.resourceVersionNumber' defer></script>
 	}
-	<script type="text/javascript" src='assets/build/main.js?v=@config.resourceVersionNumber' defer></script>
-	<script type="text/javascript" src='assets/build/tinymce/tinymce.min.js?v=@config.resourceVersionNumber' defer></script>
+	<script type="text/javascript" src='@(config.contextPath)assets/build/main.js?v=@config.resourceVersionNumber' defer></script>
+	<script type="text/javascript" src='@(config.contextPath)assets/build/tinymce/tinymce.min.js?v=@config.resourceVersionNumber' defer></script>
 </head>
 <body>
-	<div id="cp-div" style="display:none">@config.cookiePath</div>
+	<div id="ctx-int-div" style="display:none">@config.internalContextPath</div>
+	<div id="ctx-pub-div" style="display:none">@config.contextPath</div>
 	<app-root></app-root>
 </body>
 </html>

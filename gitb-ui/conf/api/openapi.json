@@ -9,7 +9,7 @@
     "version": "${version}"
   },
   "externalDocs": {
-    "description": "Test Bed user guide.",
+    "description": "Test Bed user guide",
     "url": "${userGuideAddress}"
   },
   "servers": [
