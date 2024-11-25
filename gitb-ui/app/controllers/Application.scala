@@ -122,7 +122,7 @@ class Application @Inject() (implicit ec: ExecutionContext, cc: ControllerCompon
       } else if (StringUtils.startsWithIgnoreCase(Configurations.TESTBED_HOME_LINK, "https://") && linkLength > 8) {
         removePublicRootPath(Configurations.TESTBED_HOME_LINK.substring(8))
       } else {
-        "/"
+        request.host
       }
     } else {
       request.host
@@ -132,11 +132,10 @@ class Application @Inject() (implicit ec: ExecutionContext, cc: ControllerCompon
 
   private def removePublicRootPath(pathWithoutProtocol: String): String = {
     if (Configurations.PUBLIC_CONTEXT_ROOT == "/") {
-      pathWithoutProtocol
+      StringUtils.removeEnd(pathWithoutProtocol, "/")
     } else {
-      StringUtils.removeEnd(pathWithoutProtocol, Configurations.PUBLIC_CONTEXT_ROOT)
+      StringUtils.removeEnd(StringUtils.removeEnd(pathWithoutProtocol, Configurations.PUBLIC_CONTEXT_ROOT), "/")
     }
-
   }
 
 }
