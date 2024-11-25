@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "srv.name" . | quote }}
+spec:
+  replicas: {{ .Values.srv.replicaCount | default 1 }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "srv.name" . }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "srv.name" . }}
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - image: {{ .Values.srv.image | quote }}
+          imagePullPolicy: {{ .Values.srv.imagePullPolicy | default "IfNotPresent" | quote }}
+          name: {{ include "srv.name" . }}
+          {{- if .Values.srv.env }}
+          env:
+            - name: remote.testcase.repository.url
+              value: "http://{{ include "ui.serviceName" . }}:{{ include "ui.servicePort" . }}{{ include "ui.contextRoot" . }}api/repository/tests/:test_id/definition"
+            - name: remote.testresource.repository.url
+              value: "http://{{ include "ui.serviceName" . }}:{{ include "ui.servicePort" . }}{{ include "ui.contextRoot" . }}api/repository/resource/:test_id/:resource_id"
+          {{- range $key, $value := .Values.srv.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+          {{- end }}
+          {{- end }}
+          ports:
+            - containerPort: {{ include "srv.port" . }}
+              protocol: TCP
+      restartPolicy: {{ .Values.srv.restartPolicy | default "Always" | quote }}

@@ -45,6 +45,9 @@ public class TestEngineConfiguration {
 	private static final String ENV_CALLBACK_MESSAGING_URL = "CALLBACK_MESSAGING_URL";
 	private static final String ENV_CALLBACK_VALIDATION_URL = "CALLBACK_VALIDATION_URL";
 	private static final String ENV_CALLBACK_PROCESSING_URL = "CALLBACK_PROCESSING_URL";
+	private static final String ENV_REPOSITORY_ROOT_URL = "REPOSITORY_ROOT_URL";
+	private static final String ENV_REPOSITORY_TEST_CASE_URL = "remote.testcase.repository.url";
+	private static final String ENV_REPOSITORY_TEST_RESOURCE_URL = "remote.testresource.repository.url";
 
     /**
      * Load the configurations from the configuration files
@@ -116,16 +119,28 @@ public class TestEngineConfiguration {
 			TEMP_STORAGE_STRING_THRESHOLD_CHARS = config.getLong("gitb.engine.storage.string.threshold", 50 * 512L); // 50 KB (considering 2-byte encoding)
 			TEMP_STORAGE_XML_THRESHOLD_BYTES = config.getLong("gitb.engine.storage.xml.threshold", 50 * 1024L); // 50 KB
 			// Temp storage properties - end.
-			// Remote test case repository - start.
-			TEST_CASE_REPOSITORY_URL = System.getenv().getOrDefault("remote.testcase.repository.url", config.getString("remote.testcase.repository.url"));
-			TEST_RESOURCE_REPOSITORY_URL = System.getenv().getOrDefault("remote.testresource.repository.url", config.getString("remote.testresource.repository.url"));
+			// Remote repository - start.
+			if (System.getenv().containsKey(ENV_REPOSITORY_TEST_CASE_URL)) {
+				TEST_CASE_REPOSITORY_URL = System.getenv().get(ENV_REPOSITORY_TEST_CASE_URL);
+			} else if (System.getenv().containsKey(ENV_REPOSITORY_ROOT_URL)) {
+				TEST_CASE_REPOSITORY_URL = StringUtils.removeEnd(System.getenv(ENV_REPOSITORY_ROOT_URL), "/") + "/api/repository/tests/:test_id/definition";
+			} else {
+				TEST_CASE_REPOSITORY_URL = config.getString(ENV_REPOSITORY_TEST_CASE_URL);
+			}
+			if (System.getenv().containsKey(ENV_REPOSITORY_TEST_RESOURCE_URL)) {
+				TEST_RESOURCE_REPOSITORY_URL = System.getenv().get(ENV_REPOSITORY_TEST_RESOURCE_URL);
+			} else if (System.getenv().containsKey(ENV_REPOSITORY_ROOT_URL)) {
+				TEST_RESOURCE_REPOSITORY_URL = StringUtils.removeEnd(System.getenv(ENV_REPOSITORY_ROOT_URL), "/") + "/api/repository/resource/:test_id/:resource_id";
+			} else {
+				TEST_RESOURCE_REPOSITORY_URL = config.getString(ENV_REPOSITORY_TEST_RESOURCE_URL);
+			}
 			TEST_ID_PARAMETER = System.getenv().getOrDefault("remote.testcase.test-id.parameter", config.getString("remote.testcase.test-id.parameter"));
 			RESOURCE_ID_PARAMETER = System.getenv().getOrDefault("remote.testcase.resource-id.parameter", config.getString("remote.testcase.resource-id.parameter"));
 			// Configure also the HMAC information used to authorize remote calls.
 			String hmacKey = getFromFileConfigOrEnvironment("HMAC_KEY", "devKey");
 			String hmacKeyWindow = System.getenv().getOrDefault("HMAC_WINDOW", "10000");
 			HmacUtils.configure(hmacKey, Long.valueOf(hmacKeyWindow));
-			// Remote test case repository - end.
+			// Remote repository - end.
 			// Embedded messaging handler configuration - start.
 			DEFAULT_MESSAGING_CONFIGURATION = loadDefaultMessagingHandlerConfiguration(config);
 			// Embedded messaging handler configuration - end.

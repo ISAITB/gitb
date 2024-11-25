@@ -4,7 +4,7 @@ import config.Configurations
 import config.Configurations.versionInfo
 import controllers.util.ResponseConstructor
 import filters.CorsFilter
-import managers.{LegalNoticeManager, SystemConfigurationManager}
+import managers.LegalNoticeManager
 import models.{Constants, PublicConfig}
 import org.apache.commons.lang3.StringUtils
 import play.api.Environment
@@ -16,7 +16,7 @@ import javax.inject.Inject
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext
 
-class Application @Inject() (implicit ec: ExecutionContext, cc: ControllerComponents, defaultAction: DefaultActionBuilder, systemConfigurationManager: SystemConfigurationManager, legalNoticeManager: LegalNoticeManager, environment: Environment, repositoryUtils: RepositoryUtils) extends AbstractController(cc) {
+class Application @Inject() (implicit ec: ExecutionContext, cc: ControllerComponents, defaultAction: DefaultActionBuilder, legalNoticeManager: LegalNoticeManager, environment: Environment, repositoryUtils: RepositoryUtils) extends AbstractController(cc) {
 
   def index(): Action[AnyContent] = defaultAction {
     val legalNotice = legalNoticeManager.getCommunityDefaultLegalNotice(Constants.DefaultCommunityId)
@@ -40,15 +40,16 @@ class Application @Inject() (implicit ec: ExecutionContext, cc: ControllerCompon
       Configurations.REGISTRATION_ENABLED,
       Configurations.GUIDES_EULOGIN_USE,
       Configurations.GUIDES_EULOGIN_MIGRATION,
-      Configurations.AUTHENTICATION_COOKIE_PATH,
+      Configurations.PUBLIC_CONTEXT_ROOT,
       enableWebInit,
       Configurations.TESTBED_MODE == Constants.DevelopmentMode,
-      contextPath(),
+      Configurations.PUBLIC_CONTEXT_ROOT_WITH_SLASH,
       Configurations.MORE_INFO_ENABLED,
       Configurations.MORE_INFO_ADDRESS,
       Configurations.RELEASE_INFO_ENABLED,
       Configurations.RELEASE_INFO_ADDRESS,
-      Configurations.WELCOME_MESSAGE
+      Configurations.WELCOME_MESSAGE,
+      Configurations.WEB_CONTEXT_ROOT_WITH_SLASH
     )))
   }
 
@@ -74,19 +75,10 @@ class Application @Inject() (implicit ec: ExecutionContext, cc: ControllerCompon
   }
 
   private def handleAppLoad(): Result = {
-    Ok(views.html.ngApp(new PublicConfig(resourceVersionToUse(), Configurations.AUTHENTICATION_COOKIE_PATH, contextPath()), environment.mode))
+    Ok(views.html.ngApp(new PublicConfig(resourceVersionToUse(), Configurations.PUBLIC_CONTEXT_ROOT, Configurations.PUBLIC_CONTEXT_ROOT_WITH_SLASH, Configurations.WEB_CONTEXT_ROOT_WITH_SLASH), environment.mode))
   }
 
-  private def contextPath(): String = {
-    var contextPath = Configurations.AUTHENTICATION_COOKIE_PATH
-    if (!contextPath.endsWith("/")) {
-      contextPath += "/"
-    }
-    contextPath += "app"
-    contextPath
-  }
-
-  def preFlight(all: String) = defaultAction {
+  def preFlight(all: String): Action[AnyContent] = defaultAction {
     Ok("").withHeaders(
       ALLOW -> CorsFilter.origin,
       ACCESS_CONTROL_ALLOW_ORIGIN -> CorsFilter.origin,
@@ -95,11 +87,11 @@ class Application @Inject() (implicit ec: ExecutionContext, cc: ControllerCompon
     )
   }
 
-  def healthcheck = defaultAction {
+  def healthCheck: Action[AnyContent] = defaultAction {
     Ok
   }
 
-  def restApiInfo = defaultAction {
+  def restApiInfo: Action[AnyContent] = defaultAction {
     if (Configurations.AUTOMATION_API_ENABLED) {
       Ok.sendFile(
         content = repositoryUtils.getRestApiDocsDocumentation(),
@@ -110,7 +102,7 @@ class Application @Inject() (implicit ec: ExecutionContext, cc: ControllerCompon
     }
   }
 
-  def javascriptRoutes = defaultAction { implicit request =>
+  def javascriptRoutes: Action[AnyContent] = defaultAction { implicit request =>
     //cache for all the methods defined in the controllers in app.controllers package
     val jsRoutesClass = classOf[routes.javascript]
     val controllers = jsRoutesClass.getFields.map(_.get(null))
@@ -126,16 +118,24 @@ class Application @Inject() (implicit ec: ExecutionContext, cc: ControllerCompon
     val host = if (Configurations.TESTBED_HOME_LINK != "/") {
       val linkLength = Configurations.TESTBED_HOME_LINK.length
       if (StringUtils.startsWithIgnoreCase(Configurations.TESTBED_HOME_LINK, "http://") && linkLength > 7) {
-        Configurations.TESTBED_HOME_LINK.substring(7)
+        removePublicRootPath(Configurations.TESTBED_HOME_LINK.substring(7))
       } else if (StringUtils.startsWithIgnoreCase(Configurations.TESTBED_HOME_LINK, "https://") && linkLength > 8) {
-        Configurations.TESTBED_HOME_LINK.substring(8)
+        removePublicRootPath(Configurations.TESTBED_HOME_LINK.substring(8))
       } else {
-        "/"
+        request.host
       }
     } else {
       request.host
     }
     Ok(JavaScriptReverseRouter("jsRoutes", Some("jQuery.ajax"), host, routeActions.toList:_*)).as("text/javascript")
+  }
+
+  private def removePublicRootPath(pathWithoutProtocol: String): String = {
+    if (Configurations.PUBLIC_CONTEXT_ROOT == "/") {
+      StringUtils.removeEnd(pathWithoutProtocol, "/")
+    } else {
+      StringUtils.removeEnd(StringUtils.removeEnd(pathWithoutProtocol, Configurations.PUBLIC_CONTEXT_ROOT), "/")
+    }
   }
 
 }

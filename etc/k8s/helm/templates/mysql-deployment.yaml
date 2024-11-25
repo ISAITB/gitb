@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "mysql.name" . | quote }}
+spec:
+  replicas: {{ .Values.mysql.replicaCount | default 1 }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "mysql.name" . }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "mysql.name" . }}
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - image: {{ .Values.mysql.image | quote }}
+          imagePullPolicy: {{ .Values.mysql.imagePullPolicy | default "IfNotPresent" | quote }}
+          name: {{ include "mysql.name" . }}
+          {{- if .Values.mysql.env }}
+          env:
+          {{- range $key, $value := .Values.mysql.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+          {{- end }}
+          {{- end }}        
+          livenessProbe:
+            exec:
+              command:
+                - bash
+                - "-c"
+                - |
+                  {{ .Values.mysql.livenessProbeCommand | default "/usr/bin/mysqladmin -uroot -p$MYSQL_ROOT_PASSWORD ping &> /dev/null" }}
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+          readinessProbe:
+            exec:
+              command:
+                - bash
+                - "-c"
+                - |
+                  {{ .Values.mysql.readinessProbeCommand | default "/usr/bin/mysql --user=root --password=$MYSQL_ROOT_PASSWORD --execute \"SHOW DATABASES;\"" }}
+            initialDelaySeconds: 5
+            periodSeconds: 2
+            timeoutSeconds: 1            
+          ports:
+            - containerPort: {{ include "mysql.port" . }}
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /var/lib/mysql
+              name: {{ include "dbVolumeName" . }}
+      restartPolicy: {{ .Values.mysql.restartPolicy | default "Always" | quote }}
+      volumes:
+        - name: {{ include "dbVolumeName" . }}
+          persistentVolumeClaim:
+            claimName: {{ include "dbVolumeName" . }}

@@ -4,6 +4,7 @@ $(document).ready(function() {
     var fileUploadHandler = function () {
         $("#fileInputControl").trigger("click")
     }
+    let contextPath = document.getElementById('ctx-div').textContent;
     var submitHandler = function (event) {
         event.preventDefault()
         if (!$("#buttonImport").prop("disabled")) {
@@ -15,7 +16,7 @@ $(document).ready(function() {
             $("#buttonImport").prop("disabled", true)
             $("#buttonNoImport").prop("disabled", true)
             $.ajax({
-                url: "/api/initdata",
+                url: contextPath+"api/initdata",
                 type: "POST",
                 data: dataToSend,
                 enctype: 'multipart/form-data',

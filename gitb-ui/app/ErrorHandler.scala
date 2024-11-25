@@ -57,7 +57,8 @@ class ErrorHandler @Inject() (legalNoticeManager: LegalNoticeManager) extends Ht
           errorIdentifier,
           Configurations.TESTBED_HOME_LINK,
           Configurations.RELEASE_INFO_ENABLED,
-          Configurations.RELEASE_INFO_ADDRESS
+          Configurations.RELEASE_INFO_ADDRESS,
+          Configurations.PUBLIC_CONTEXT_ROOT_WITH_SLASH
         )))
       )
     }

@@ -1,0 +1,301 @@
+# Default configuration values for the Interoperability Test Bed on Kubernetes.
+# 
+# To override values define your own value file to use when installing/upgrading
+# or provide select values via command line. Available properties include settings
+# used directly in manifests (e.g. ports and labels) but also environment variables
+# that are used to adapt the behavior of the ITB instance.
+#
+# Note: This is a YAML-formatted file.
+
+#
+# Redis instance used to record user sessions.
+#
+redis:
+  # redis.image is the (full) image to use to create redis container(s).
+  image: redis:7.2.5
+  #
+  # redis.name is the name to use for the redis deployment and (by default) service.
+  name: itb-redis
+  #
+  # Optional properties (listed with their defaults).
+  #
+  ## redis.replicaCount is the number of pods to use for redis. Currently only a single replica is supported.
+  # replicaCount: 1
+  # 
+  ## redis.imagePullPolicy is the policy to follow for pulling the image. It could be meaningful to set as "Always" if "redis.image" is set to "latest".
+  # imagePullPolicy: IfNotPresent
+  #
+  ## redis.restartPolicy is the policy to follow for pod restarts.
+  # restartPolicy: Always
+  #
+  ## redis.port is the container port to use in the deployment.
+  # port: 6379
+  #
+  # redis.serviceName is the name of the redis service. This defaults to the value of "redis.name" if not specified.
+  # serviceName: itb-redis
+  #
+  ## redis.serviceType is the type of the defined service.
+  # serviceType: ClusterIP
+  #
+  ## redis.servicePort is the port of the redis service. This defaults to the value of "redis.port" if not specified.
+  # servicePort: 6379
+
+#
+# MySQL instance used to manage database persistence.
+#
+mysql:
+  # mysql.image is the (full) image to use to create mysql container(s).
+  image: isaitb/gitb-mysql:1.24.4
+  #
+  # mysql.name is the name to use for the mysql deployment and (by default) service.
+  name: itb-mysql
+  #
+  # Optional properties (listed with their defaults).
+  #
+  ## mysql.replicaCount is the number of pods to use for mysql. Currently only a single replica is supported.
+  # replicaCount: 1
+  # 
+  ## mysql.imagePullPolicy is the policy to follow for pulling the image. It could be meaningful to set as "Always" if "mysql.image" is set to "latest" or "nightly".
+  # imagePullPolicy: IfNotPresent
+  #
+  ## mysql.restartPolicy is the policy to follow for pod restarts.
+  # restartPolicy: Always
+  #
+  ## mysql.port is the container port to use in the deployment.
+  # port: 3306
+  #
+  # mysql.serviceName is the name of the mysql service. This defaults to the value of "mysql.name" if not specified.
+  # serviceName: itb-mysql
+  #
+  ## mysql.serviceType is the type of the defined service.
+  # serviceType: ClusterIP
+  #
+  ## mysql.servicePort is the port of the mysql service. This defaults to the value of "mysql.port" if not specified.
+  # servicePort: 3306
+  #
+  ## mysql.livenessProbeCommand is a custom command for the liveness probe. This may need to be set depending on your secrets' configuration.
+  # livenessProbeCommand: "/usr/bin/mysqladmin -uroot -p$MYSQL_ROOT_PASSWORD ping &> /dev/null"
+  #
+  ## mysql.readinessProbeCommand is a custom command for the readiness probe. This may need to be set depending on your secrets' configuration.
+  # readinessProbeCommand: "/usr/bin/mysql --user=root --password=$MYSQL_ROOT_PASSWORD --execute \"SHOW DATABASES;\""
+  env:
+    #
+    # Environment variables (listed with their defaults).
+    #
+    ## mysql.env.MYSQL_ROOT_PASSWORD is the root password for MySQL's root user.
+    # MYSQL_ROOT_PASSWORD: CHANGE_ME
+    #
+    ## mysql.env.MYSQL_PASSWORD is the password of the DB user that the ITB uses to connect to its database.
+    ## The value defined for this must match the value set for ui.env.DB_DEFAULT_PASSWORD.
+    # MYSQL_PASSWORD: CHANGE_ME
+
+#
+# The test engine service used to execute tests.
+#
+srv:
+  # srv.image is the (full) image to use to create srv container(s).
+  image: isaitb/gitb-srv:1.24.4
+  #
+  # srv.name is the name to use for the srv deployment and (by default) service.
+  name: itb-srv
+  #
+  # Optional properties (listed with their defaults).
+  #
+  ## srv.replicaCount is the number of pods to use for srv. Currently only a single replica is supported.
+  # replicaCount: 1
+  # 
+  ## srv.imagePullPolicy is the policy to follow for pulling the image. It could be meaningful to set as "Always" if "srv.image" is set to "latest" or "nightly".
+  # imagePullPolicy: IfNotPresent
+  #
+  ## srv.restartPolicy is the policy to follow for pod restarts.
+  # restartPolicy: Always
+  #
+  ## srv.port is the container port to use in the deployment.
+  # port: 8080
+  #
+  # srv.serviceName is the name of the srv service. This defaults to the value of "srv.name" if not specified.
+  # serviceName: itb-srv
+  #
+  ## srv.serviceType is the type of the defined service.
+  # serviceType: ClusterIP
+  #
+  ## srv.servicePort is the port of the srv service. This defaults to the value of "srv.port" if not specified.
+  # servicePort: 8080
+  env:
+    #
+    # Environment variables (listed with their defaults).
+    #
+    # srv.env.CALLBACK_ROOT_URL is the root URL for callbacks originating from external test services or built-in messaging handlers.
+    CALLBACK_ROOT_URL: https://localhost/itbsrv
+    #
+    ## srv.env.HMAC_KEY is the key to use to secure exchanges between itb-ui and itb-srv.
+    ## The value set here must match the value set for "ui.env.HMAC_KEY".
+    # HMAC_KEY: CHANGE_ME
+
+#
+# The user interface component providing the UI and REST API, as well as realising all management and reporting features.
+#
+ui:
+  # ui.image is the (full) image to use to create ui container(s).
+  image: isaitb/gitb-ui:1.24.4
+  #
+  # ui.name is the name to use for the ui deployment and (by default) service.
+  name: itb-ui
+  #
+  # Optional properties (listed with their defaults).
+  #
+  ## ui.replicaCount is the number of pods to use for ui. Currently only a single replica is supported.
+  # replicaCount: 1
+  # 
+  ## ui.imagePullPolicy is the policy to follow for pulling the image. It could be meaningful to set as "Always" if "ui.image" is set to "latest" or "nightly".
+  # imagePullPolicy: IfNotPresent
+  #
+  ## ui.restartPolicy is the policy to follow for pod restarts.
+  # restartPolicy: Always
+  #
+  ## ui.port is the container port to use in the deployment through which the UI and REST APIs are served.
+  # port: 9000
+  #
+  # ui.serviceName is the name of the ui service. This defaults to the value of "ui.name" if not specified.
+  # serviceName: itb-ui
+  #
+  ## ui.serviceType is the type of the defined service.
+  # serviceType: ClusterIP
+  #
+  ## ui.servicePort is the port of the ui service through which the UI and REST APIs are served. This defaults to the value of "ui.port" if not specified.
+  # servicePort: 9000
+  #
+  ## ui.callbackPort is the container port to use in the deployment at which callbacks from itb-srv are received.
+  # callbackPort: 9090
+  #
+  ## ui.serviceCallbackPort is the port of the ui service at which callbacks from itb-srv are received. This defaults to the value of "ui.callbackPort" if not specified.
+  # serviceCallbackPort: 9090
+  #
+  ## ui.repositoryPath is the mount path within ui pod(s) for the repository persistent volume that stores all files.
+  # repositoryPath: /gitb-repository
+  env:
+    #
+    # Environment variables (listed with their defaults).
+    #
+    # ui.env.TESTBED_HOME_LINK is the external root URL at which the user interface can be accessed by external users.
+    TESTBED_HOME_LINK: https://localhost/itb
+    #
+    # ui.env.AUTHENTICATION_COOKIE_PATH is the path to which user cookies should be bound, matching the public access path following the host name and port.
+    # In case via ingress or another proxy, the interface is accessible at e.g. https://localhost/itb, you must set ui.env.AUTHENTICATION_COOKIE_PATH to the defined path (e.g. "/itb").
+    AUTHENTICATION_COOKIE_PATH: /itb
+    #
+    # ui.env.WEB_CONTEXT_ROOT is the web application context root at which the itb-ui application will be bound to. This could
+    # differ from ui.env.AUTHENTICATION_COOKIE_PATH (the public path), but in practice k8s ingress configuration is simplified
+    # if they match.
+    WEB_CONTEXT_ROOT: /itb
+    #
+    ## ui.env.TESTBED_MODE is the mode ("production" or "development") in which the ITB is running. 
+    ## When switching to "production" you will need to set sensitive values as described in https://www.itb.ec.europa.eu/docs/guides/latest/installingTheTestBedProduction/index.html#step-3-prepare-basic-configuration
+    ## The values to replace in this case are also listed below.
+    # TESTBED_MODE: development
+    #
+    ## ui.env.DB_DEFAULT_PASSWORD is the password of the DB user that the ITB uses to connect to its database.
+    ## The value defined for this must match the value set for mysql.env.MYSQL_PASSWORD.
+    # DB_DEFAULT_PASSWORD: CHANGE_ME
+    #
+    ## ui.env.HMAC_KEY is the key to use to secure exchanges between itb-ui and itb-srv.
+    ## The value set here must match the value set for "srv.env.HMAC_KEY".
+    # HMAC_KEY: CHANGE_ME
+    #
+    ## ui.env.APPLICATION_SECRET is the key used to encrypt and verify user session tokens. Set this to a random string of at least 32 characters' length.
+    # APPLICATION_SECRET: CHANGE_ME
+    #
+    ## ui.env.MASTER_PASSWORD is the key used to encrypt any sensitive values recorded in the database (e.g. custom organisation properties marked as "secrets").
+    # MASTER_PASSWORD: CHANGE_ME      
+    #
+    ## ui.THEME is the key of a theme (built-in or custom) to apply for the user interface. The built-in themes are "ec" (European Commission) and "gitb" (default).
+    # THEME: ec
+
+#
+# Ingress definition to provide access to ITB components from outside the cluster.
+#
+# Defining an ingress is not mandatory but is the simplest way to expose ITB services outside the cluster.
+# To complement this definition you will need to install an ingress controller in your cluster (please
+# refer to k8s documentation and ingress implementations' documentation for this).
+#
+# Note that if your ingress controller forces TLS you should foresee a valid certificate provided as
+# a secret, or disable TLS altogether. Serving services using TLS and a self-signed dummy certificate will
+# raise warnings, and likely result in trust-related errors from external client software.
+ingress:
+  # ingress.name is the name of the ITB ingress resource defined in the cluster.
+  name: itb-ingress
+  #
+  ## ingress.class is the name of the ingress controller class. You can view your cluster's available ingress
+  ## classes (and the names used to refer to them) by issuing "kubectl get ingressclass". You may also omit
+  ## this if you have a default ingress class configured.
+  ## The default class considered is "nginx" (see https://kubernetes.github.io/ingress-nginx/) but this
+  ## can be replaced for different ingress implementations.
+  class: nginx
+  #
+  # Configuration specific to TLS settings.
+  #
+  tls:
+    #
+    ## ingress.tls.host is the complete host name to use by the ingress when generating a server certificate for TLS.
+    host: localhost
+    #
+    ## ingress.tls.secretName is the name of the secret corresponding to the server certificate to use for TLS.
+    secretName: itb-tls-secret
+  #
+  # Ingress annotations.
+  #
+  annotations:
+    #
+    # These annotations depend on the ingress controller that is used and typically refer to managing TLS.
+    #
+    # For a development instance where you likely want access to the ITB without TLS you can set (considering the
+    # default nginx ingress class):
+    #   nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    # In doing so you will be able to access the ITB over HTTP without a forced redirect to HTTPS.
+    # Note that doing this you will also need to set "ui.env.TESTBED_HOME_LINK" and "srv.env.CALLBACK_ROOT_URL"
+    # accordingly.
+    acme.cert-manager.io/http01-edit-in-place: "true"
+    cert-manager.io/cluster-issuer: "dev-prod"
+
+#
+# Configuration of volumes used to persist data.
+#
+volume:
+  database:
+    # volume.database.name is the name of the persistent volume claim to be created to persist database data.
+    name: itb-dbdata
+    # volume.database.storage is the capacity to foresee for storing database data.
+    # The default setting below is sufficient for a development or experimentation instance, but when deploying
+    # for production use ensure this is adapted accordingly and that you can extend if/when needed.
+    storage: 100Mi
+  repository:
+    # volume.repository.name is the name of the persistent volume claim to be created to persist files.
+    name: itb-repo
+    # volume.repository.storage is the capacity to foresee for storing files.
+    # The default setting below is sufficient for a development or experimentation instance, but when deploying
+    # for production use ensure this is adapted accordingly and that you can extend if/when needed.
+    storage: 100Mi
+
+# We usually recommend not to specify default resources and to leave this as a conscious
+# choice for the user. This also increases chances charts run on environments with little
+# resources, such as Minikube. If you do want to specify resources, uncomment the following
+# lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+# limits:
+#   cpu: 100m
+#   memory: 128Mi
+# requests:
+#   cpu: 100m
+#   memory: 128Mi
+
+#
+# Resource limit configuration for the ITB.
+#
+resources: {}
+# If you want to specify resource limits, uncomment the following lines, adjust them as necessary, 
+# and remove the curly braces after "resources:".
+# limits:
+#   cpu: 100m
+#   memory: 128Mi
+# requests:
+#   cpu: 100m
+#   memory: 128Mi

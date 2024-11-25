@@ -31,32 +31,56 @@ import scala.concurrent.duration.DurationInt
 import scala.util.Using
 
 @Singleton
-class PostStartHook @Inject() (implicit ec: ExecutionContext, authenticationManager: AuthenticationManager, actorSystem: ActorSystem, systemConfigurationManager: SystemConfigurationManager, testResultManager: TestResultManager, testExecutionManager: TestExecutionManager, importCompleteManager: ImportCompleteManager, repositoryUtils: RepositoryUtils, environment: Environment, userManager: UserManager, config: Configuration) {
+class PostStartHook @Inject() (implicit ec: ExecutionContext,
+                               authenticationManager: AuthenticationManager,
+                               actorSystem: ActorSystem,
+                               systemConfigurationManager: SystemConfigurationManager,
+                               testResultManager: TestResultManager,
+                               testExecutionManager: TestExecutionManager,
+                               importCompleteManager: ImportCompleteManager,
+                               repositoryUtils: RepositoryUtils,
+                               environment: Environment,
+                               userManager: UserManager,
+                               config: Configuration) {
 
   private def logger = LoggerFactory.getLogger(this.getClass)
 
   onStart()
 
   def onStart(): Unit = {
-    logger.info("Starting Application")
-    System.setProperty("java.io.tmpdir", System.getProperty("user.dir"))
-    BUILD_TIMESTAMP = getBuildTimestamp()
-    checkOperationMode()
-    initialiseTestbedClient()
-    checkMasterPassword()
-    loadDataExports()
-    adaptSystemConfiguration()
-    destroyIdleSessions()
-    deleteInactiveUserAccounts()
-    cleanupPendingTestSuiteUploads()
-    cleanupTempFiles()
-    archiveOldTestSessions()
-    prepareRestApiDocumentation()
-    prepareTheme()
-    setupAdministratorOneTimePassword()
-    setupInteractionNotifications()
-    removeOverrideConfiguration()
-    logger.info("Application has started in "+Configurations.TESTBED_MODE+" mode - release "+Constants.VersionNumber + " built at "+Configurations.BUILD_TIMESTAMP)
+    try {
+      if (!Configurations.STARTUP_FAILURE) {
+        logger.info("Starting Application")
+        System.setProperty("java.io.tmpdir", System.getProperty("user.dir"))
+        BUILD_TIMESTAMP = getBuildTimestamp()
+        checkOperationMode()
+        initialiseTestbedClient()
+        checkMasterPassword()
+        loadDataExports()
+        adaptSystemConfiguration()
+        destroyIdleSessions()
+        deleteInactiveUserAccounts()
+        cleanupPendingTestSuiteUploads()
+        cleanupTempFiles()
+        archiveOldTestSessions()
+        prepareRestApiDocumentation()
+        prepareTheme()
+        setupAdministratorOneTimePassword()
+        setupInteractionNotifications()
+        removeOverrideConfiguration()
+      }
+    } catch {
+      case e: Exception =>
+        Configurations.STARTUP_FAILURE = true
+        throw e
+    } finally {
+      if (Configurations.STARTUP_FAILURE) {
+        logger.error("Application failed to start")
+      } else {
+        logger.info("Web context root is [{}], public context root is [{}] and public home link is [{}]", Configurations.WEB_CONTEXT_ROOT, Configurations.PUBLIC_CONTEXT_ROOT, Configurations.TESTBED_HOME_LINK)
+        logger.info("Application started in {} mode - release {} built on {}", Configurations.TESTBED_MODE, Constants.VersionNumber, Configurations.BUILD_TIMESTAMP)
+      }
+    }
   }
 
   private def checkOperationMode(): Unit = {
@@ -405,19 +429,19 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, authenticationMana
     }
     var apiUrl = Configurations.TESTBED_HOME_LINK
     if (apiUrl == "/") {
-      apiUrl = s"http://localhost:${sys.env.getOrElse("http.port", 9000)}/${Configurations.API_ROOT}/rest"
+      apiUrl = s"http://localhost:${sys.env.getOrElse("http.port", 9000)}${Configurations.API_ROOT}/rest"
     } else {
       if (!apiUrl.endsWith("/")) {
         apiUrl += "/"
       }
-      apiUrl += Configurations.API_ROOT+"/rest"
+      apiUrl += Configurations.API_PREFIX+"/rest"
     }
     try {
       Using.resource(Thread.currentThread().getContextClassLoader.getResourceAsStream("api/openapi.json")) { stream =>
         var template = new String(stream.readAllBytes(), StandardCharsets.UTF_8)
         template = StringUtils.replaceEach(template,
           Array("${version}", "${contactEmail}", "${userGuideAddress}", "${apiUrl}"),
-          Array(Constants.VersionNumber, Configurations.EMAIL_TO.getOrElse(Array.empty).headOption.getOrElse("-"), Configurations.USERGUIDE_OU, apiUrl)
+          Array(Constants.VersionNumber, Configurations.EMAIL_TO.getOrElse(Array.empty).headOption.getOrElse(Configurations.EMAIL_DEFAULT.getOrElse("-")), Configurations.USERGUIDE_OU, apiUrl)
         )
         Files.createDirectories(apiDocsFile.getParentFile.toPath)
         Files.writeString(apiDocsFile.toPath, template, StandardCharsets.UTF_8)

@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "redis.name" . | quote }}
+spec:
+  replicas: {{ .Values.redis.replicaCount | default 1 }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "redis.name" . }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "redis.name" . }}
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - image: {{ .Values.redis.image | quote }}
+          imagePullPolicy: {{ .Values.redis.imagePullPolicy | default "IfNotPresent" | quote }}
+          name: {{ include "redis.name" . }}
+          ports:
+            - containerPort: {{ include "redis.port" . }}
+              protocol: TCP
+      restartPolicy: {{ .Values.redis.restartPolicy | default "Always" | quote }}

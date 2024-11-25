@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "itb-ui"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: itb-ui
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: itb-ui
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - image: "isaitb/gitb-ui:1.24.4"
+          imagePullPolicy: "IfNotPresent"
+          name: itb-ui
+          env:
+            - name: TESTBED_SERVICE_URL
+              value: "http://itb-srv:8080/itbsrv/TestbedService"
+            - name: TESTBED_CLIENT_URL_INTERNAL
+              value: "http://0.0.0.0:9090/TestbedClient"
+            - name: TESTBED_CLIENT_URL
+              value: "http://itb-ui:9090/TestbedClient"
+            - name: DB_DEFAULT_URL
+              value: "jdbc:mysql://itb-mysql:3306/gitb?characterEncoding=UTF-8&useUnicode=true&autoReconnect=true&useSSL=false&verifyServerCertificate=false&allowPublicKeyRetrieval=true"
+            - name: DB_DEFAULT_ROOTURL
+              value: "jdbc:mysql://itb-mysql:3306/"
+            - name: REDIS_HOST
+              value: "itb-redis"
+            - name: AUTHENTICATION_COOKIE_PATH
+              value: "/itb"
+            - name: TESTBED_HOME_LINK
+              value: "https://localhost/itb"
+            - name: WEB_CONTEXT_ROOT
+              value: "/itb"
+          ports:
+            - containerPort: 9000
+              protocol: TCP
+            - containerPort: 9090
+              protocol: TCP
+          volumeMounts:
+            - mountPath: "/gitb-repository"
+              name: itb-repo
+      restartPolicy: "Always"
+      volumes:
+        - name: itb-repo
+          persistentVolumeClaim:
+            claimName: itb-repo
