@@ -77,7 +77,7 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext,
       if (Configurations.STARTUP_FAILURE) {
         logger.error("Application failed to start")
       } else {
-        logger.info("Web context root is {} with a public mapping of {}", Configurations.WEB_CONTEXT_ROOT, Configurations.PUBLIC_CONTEXT_ROOT)
+        logger.info("Web context root is [{}], public context root is [{}] and public home link is [{}]", Configurations.WEB_CONTEXT_ROOT, Configurations.PUBLIC_CONTEXT_ROOT, Configurations.TESTBED_HOME_LINK)
         logger.info("Application started in {} mode - release {} built on {}", Configurations.TESTBED_MODE, Constants.VersionNumber, Configurations.BUILD_TIMESTAMP)
       }
     }
