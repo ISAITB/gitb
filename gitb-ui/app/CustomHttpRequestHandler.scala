@@ -3,6 +3,7 @@ import play.api.http._
 import play.api.mvc.{Handler, RequestHeader}
 import play.api.routing.Router
 import play.core.WebCommands
+import play.core.j.JavaHandlerComponents
 
 import javax.inject.{Inject, Provider}
 
@@ -17,14 +18,16 @@ class CustomHttpRequestHandler @Inject()(webCommands: WebCommands,
                                          router: Provider[Router],
                                          errorHandler: HttpErrorHandler,
                                          configuration: HttpConfiguration,
-                                         enabledFilters: Filters
-                                         ) extends DefaultHttpRequestHandler(
+                                         enabledFilters: Filters,
+                                         handlerComponents: JavaHandlerComponents
+                                         ) extends JavaCompatibleHttpRequestHandler(
   webCommands,
   None,
   router,
   errorHandler,
   configuration,
-  enabledFilters.filters
+  enabledFilters.filters,
+  handlerComponents
 ) {
 
   override def routeRequest(request: RequestHeader): Option[Handler] = {
