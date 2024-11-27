@@ -149,8 +149,8 @@ class AuthenticationFilter @Inject() (implicit ec: ExecutionContext, implicit va
   }
 
   def isAuthenticatedHttpAccessAllowed(request:RequestHeader): Boolean = {
-    request.path.startsWith("%s/resources/".formatted(API_ROOT)) ||
-      request.path.startsWith("%s/badgereportpreview/".formatted(API_ROOT))
+    request.path.startsWith("%sresources/".formatted(WEB_CONTEXT_ROOT_WITH_SLASH)) ||
+      request.path.startsWith("%sbadgereportpreview/".formatted(WEB_CONTEXT_ROOT_WITH_SLASH))
   }
 
   def isPublic(request:RequestHeader):Boolean = {
