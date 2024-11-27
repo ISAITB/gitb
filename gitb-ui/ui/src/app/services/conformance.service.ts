@@ -634,7 +634,7 @@ export class ConformanceService {
     }
     if (reportMetadata != undefined) {
       params.metadata = reportMetadata
-    }    
+    }
     if (groupId != undefined) {
       params.group_id = groupId
     }
@@ -857,7 +857,7 @@ export class ConformanceService {
       },
       authenticate: true
     })
-  }  
+  }
 
   getStatementParameterValues(actorId: number, systemId: number) {
     return this.restService.get<EndpointParameter[]>({
@@ -1108,7 +1108,7 @@ export class ConformanceService {
       } else {
         imageUrl = ROUTES.controllers.ConformanceService.conformanceBadgeReportPreviewForSnapshot(placeholder.status, placeholder.systemId, placeholder.specificationId, placeholder.actorId, placeholder.snapshotId).url
       }
-      message = message.split(placeholder.placeholder).join(imageUrl)
+      message = message.split(placeholder.placeholder).join(this.dataService.completePath(imageUrl))
     }
     return message
   }

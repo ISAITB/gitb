@@ -18,10 +18,8 @@ spec:
           imagePullPolicy: "IfNotPresent"
           name: itb-srv
           env:
-            - name: remote.testcase.repository.url
-              value: "http://itb-ui:9000/itb/api/repository/tests/:test_id/definition"
-            - name: remote.testresource.repository.url
-              value: "http://itb-ui:9000/itb/api/repository/resource/:test_id/:resource_id"
+            - name: REPOSITORY_ROOT_URL
+              value: "http://itb-ui:9000/itb"
             - name: CALLBACK_ROOT_URL
               value: "https://localhost/itbsrv"
           ports:
