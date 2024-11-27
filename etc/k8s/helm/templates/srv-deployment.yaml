@@ -19,10 +19,8 @@ spec:
           name: {{ include "srv.name" . }}
           {{- if .Values.srv.env }}
           env:
-            - name: remote.testcase.repository.url
-              value: "http://{{ include "ui.serviceName" . }}:{{ include "ui.servicePort" . }}{{ include "ui.contextRoot" . }}api/repository/tests/:test_id/definition"
-            - name: remote.testresource.repository.url
-              value: "http://{{ include "ui.serviceName" . }}:{{ include "ui.servicePort" . }}{{ include "ui.contextRoot" . }}api/repository/resource/:test_id/:resource_id"
+            - name: REPOSITORY_ROOT_URL
+              value: "http://{{ include "ui.serviceName" . }}:{{ include "ui.servicePort" . }}{{ include "ui.contextRoot" . }}"
           {{- range $key, $value := .Values.srv.env }}
             - name: {{ $key }}
               value: {{ $value | quote }}
