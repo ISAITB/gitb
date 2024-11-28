@@ -2,6 +2,12 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: {{ include "repoVolumeName" . | quote }}
+  {{- if .Values.volume.repository.annotations }}
+  annotations:
+  {{- range $key, $value := .Values.volume.repository.annotations }}
+    {{ $key }}: {{ $value | quote }}
+  {{- end }}
+  {{- end }}
 spec:
   accessModes:
     - ReadWriteOnce
