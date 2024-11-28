@@ -261,6 +261,9 @@ ingress:
 # Configuration of volumes used to persist data.
 #
 volume:
+  #
+  # Volume for database data storage.
+  #
   database:
     # volume.database.name is the name of the persistent volume claim to be created to persist database data.
     name: itb-dbdata
@@ -268,6 +271,17 @@ volume:
     # The default setting below is sufficient for a development or experimentation instance, but when deploying
     # for production use ensure this is adapted accordingly and that you can extend if/when needed.
     storage: 100Mi
+    #
+    # Annotations for the database persistent volume claim.
+    #
+    annotations:
+      # Ensure helm never removes PVCs when running a command such as "uninstall".
+      # To have helm remove this, override this annotation's value with "delete".
+      # helm.sh/resource-policy: delete
+      helm.sh/resource-policy: keep
+  #
+  # Volume for file storage.
+  #
   repository:
     # volume.repository.name is the name of the persistent volume claim to be created to persist files.
     name: itb-repo
@@ -275,6 +289,14 @@ volume:
     # The default setting below is sufficient for a development or experimentation instance, but when deploying
     # for production use ensure this is adapted accordingly and that you can extend if/when needed.
     storage: 100Mi
+    #
+    # Annotations for the repository persistent volume claim.
+    #
+    annotations:
+      # Ensure helm never removes PVCs when running a command such as "uninstall".
+      # To have helm remove this, override this annotation's value with "delete".
+      # helm.sh/resource-policy: delete
+      helm.sh/resource-policy: keep
 
 #
 # Resource limit configuration for the ITB.

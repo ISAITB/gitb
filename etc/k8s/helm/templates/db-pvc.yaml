@@ -2,6 +2,12 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: {{ include "dbVolumeName" . | quote }}
+  {{- if .Values.volume.database.annotations }}
+  annotations:
+  {{- range $key, $value := .Values.volume.database.annotations }}
+    {{ $key }}: {{ $value | quote }}
+  {{- end }}
+  {{- end }}
 spec:
   accessModes:
     - ReadWriteOnce
