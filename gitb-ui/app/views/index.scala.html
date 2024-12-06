@@ -61,7 +61,9 @@
 											<p class="mb-0"><b class="me-2">New to the Test Bed?</b><a id="demoOption" href="#">Try out our demos</a>.</p>
 											} else {@if(!config.demosEnabled && config.registrationEnabled) {
 											<p class="mb-0"><b class="me-2">New to the Test Bed?</b><a id="registerOption" href="#">Register in a public community</a>.</p>
-											}}}
+											} else {@if(!config.ssoEnabled) {
+											<p class="mb-0"><b class="me-2">New to the Test Bed?</b>Contact your administrator to create your account.</p>
+											}}}}
 										</div>
 									</div>
 								</div>
