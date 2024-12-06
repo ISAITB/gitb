@@ -1,5 +1,5 @@
 <div class="rootDiv">
-    <button id="button-options" type="button" [class.open]="open" class="btn btn-secondary" (click)="buttonClicked()">{{label}}<span class="caret withMargin"></span></button>
+    <button id="button-options" type="button" [class.open]="open" class="btn btn-secondary text-nowrap" (click)="buttonClicked()">{{label}}<span class="caret withMargin"></span></button>
     @if (optionFormVisible) {
         <div class="optionForm">
             <div class="container-fluid">

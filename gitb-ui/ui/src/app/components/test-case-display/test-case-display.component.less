@@ -4,7 +4,7 @@
     padding: 0px 15px 10px 15px;
     .mainLine {
         display: flex;
-        align-items: center;        
+        align-items: center;
         width: 100%;
     }
     .testCase {
@@ -56,10 +56,14 @@
         margin-left: auto;
         display: flex;
         align-items: center;
-        &> .btn-toolbar {
+        & > .btn-toolbar {
             margin-left: 20px;
             display: flex;
             flex-wrap: nowrap;
+            & > * {
+                margin-top: 0;
+                margin-bottom: 0;
+            }
         }
         .testCaseStatus {
             margin-left: 38px;

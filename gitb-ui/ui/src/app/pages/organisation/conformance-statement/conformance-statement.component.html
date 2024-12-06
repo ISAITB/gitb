@@ -1,4 +1,4 @@
-<div id="conformanceDetailPage" class="page conformance">
+<div #conformanceDetailPage id="conformanceDetailPage" class="page conformance">
 	<div class="card">
 		<div class="card-header clickable" (click)="collapsedDetails = !collapsedDetails" [class.collapsed]="collapsedDetailsFinished">
 			<div class="card-title"><app-collapsing-icon [isCollapsed]="collapsedDetails"></app-collapsing-icon>Conformance statement details</div>
@@ -28,24 +28,26 @@
 						</div>
 						<app-conformance-statement-items-display [items]="[statement]" [wrapDescriptions]="true" [expandable]="false" [filtering]="false" [withCheck]="false" [withResults]="false"></app-conformance-statement-items-display>
 						@if (statusCounters && conformanceStatus) {
-							<div class="statementStatus">
-								<div class="statusLabel">
-									Status
-								</div>
-								<div class="statementResult">
-									<app-result-label [status]="conformanceStatus"></app-result-label>
-								</div>
-								@if (lastUpdate) {
-									<div class="lastUpdateContainer">
-										<div class="lastUpdateLabel">
-											Last update
-										</div>
-										<div>
-											<app-tag label="fa-solid fa-clock" [icon]="true" tooltipText="The last time a test session was executed for the statement." [value]="lastUpdate"></app-tag>
-										</div>
-									</div>
-								}
-								<div class="resultsContainer">
+							<div class="statementStatus" [class.wrapped]="resultsWrapped">
+                                <div #statusInfoContainer class="statusInfoContainer">
+                                    <div class="statusLabel">
+                                        Status
+                                    </div>
+                                    <div class="statementResult">
+                                        <app-result-label [status]="conformanceStatus"></app-result-label>
+                                    </div>
+                                    @if (lastUpdate) {
+                                        <div class="lastUpdateContainer">
+                                            <div class="lastUpdateLabel">
+                                                Last update
+                                            </div>
+                                            <div>
+                                                <app-tag label="fa-solid fa-clock" [icon]="true" tooltipText="The last time a test session was executed for the statement." [value]="lastUpdate"></app-tag>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+								<div #resultsContainer class="resultsContainer">
 									<div class="resultsLabel">
 										Test results
 									</div>
@@ -82,7 +84,7 @@
 						</ul>
 					</div>
 					@if (hasBadge) {
-						<app-view-badge-button [systemId]="systemId" [actorId]="actorId" [snapshotId]="snapshotId" [leftMargin]="true"></app-view-badge-button>
+						<app-view-badge-button [systemId]="systemId" [actorId]="actorId" [snapshotId]="snapshotId"></app-view-badge-button>
 					}
 					<!-- View party -->
 					@if (systemId >= 0 && organisationId >= 0) {
@@ -119,7 +121,7 @@
 							</div>
 						} @else {
 							<button type="button" class="btn btn-secondary" (click)="toOrganisation()">View {{dataService.labelOrganisationLower()}}</button>
-						}						
+						}
 					} @else if (showToCommunity()) {
 						<button type="button" class="btn btn-secondary" (click)="toCommunity()">View community</button>
 					}

@@ -21,11 +21,11 @@
             <div class="btn-toolbar">
                 @if (groups.length > 0) {
                     @if (spec.group) {
-                        <button id="button-edit" class="btn btn-secondary drag-hide" (click)="editGroup();$event.stopPropagation();" containerClass="shortTooltip" [tooltip]="'Edit '+dataService.labelSpecificationGroupLower()" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-pencil"></i></span></button>
-                        <button id="button-add-option" class="btn btn-secondary drag-hide" (click)="createOption();$event.stopPropagation();" containerClass="shortTooltip" [tooltip]="'Add '+dataService.labelSpecificationInGroupLower()" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-plus"></i></span></button>
+                        <button id="button-edit" class="btn btn-secondary drag-hide" (click)="editGroup();$event.stopPropagation();" containerClass="shortTooltip" container="body" [tooltip]="'Edit '+dataService.labelSpecificationGroupLower()" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-pencil"></i></span></button>
+                        <button id="button-add-option" class="btn btn-secondary drag-hide" (click)="createOption();$event.stopPropagation();" containerClass="shortTooltip" container="body" [tooltip]="'Add '+dataService.labelSpecificationInGroupLower()" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-plus"></i></span></button>
                     } @else {
                         @if (spec.groupId != undefined) {
-                            <button id="button-remove-option" [disable]="isPending()" [pending]="spec.removePending" [icon]="true" class="btn btn-secondary drag-hide" (click)="removeFromGroup();$event.stopPropagation();" containerClass="shortTooltip" tooltip="Ungroup" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrow-up-right-from-square"></i></span></button>
+                            <button id="button-remove-option" [disable]="isPending()" [pending]="spec.removePending" [icon]="true" class="btn btn-secondary drag-hide" (click)="removeFromGroup();$event.stopPropagation();" containerClass="shortTooltip" container="body" tooltip="Ungroup" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrow-up-right-from-square"></i></span></button>
                         }
                         @if ((spec.groupId && groups.length > 1) || (!spec.groupId && groups.length > 0)) {
                             <div class="btn-group drag-hide" dropdown [isDisabled]="isPending()">

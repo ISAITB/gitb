@@ -41,7 +41,7 @@ export abstract class BaseConformanceItemDisplayComponent implements AfterViewIn
   ) {}
 
   ngAfterViewInit(): void {
-    this.resizeObserver = new ResizeObserver(entries => {
+    this.resizeObserver = new ResizeObserver(() => {
       this.zone.run(() => {
         this.calculateWrapping()
       })

@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, EventEmitter, OnInit, ViewChild } from '@angular/core';
+import {AfterViewInit, Component, ElementRef, EventEmitter, NgZone, OnInit, ViewChild} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { saveAs } from 'file-saver';
 import { find, map } from 'lodash';
@@ -56,7 +56,7 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
   hasTests = false
   displayedTestSuites: ConformanceTestSuite[] = []
   testSuites: ConformanceTestSuite[] = []
-  statusCounters?: Counters  
+  statusCounters?: Counters
   lastUpdate?: string
   conformanceStatus = ''
   allTestsSuccessful = false
@@ -85,7 +85,7 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
   executionModeLabelSequential = "Sequential background execution"
   executionModeLabelParallel = "Parallel background execution"
   executionModeLabelInteractive = "Interactive execution"
-  
+
   executionMode = this.executionModeInteractive
   executionModeButton = this.executionModeLabelInteractive
   testCaseFilter?: string
@@ -114,6 +114,12 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
   statementPropertyVisibility?: ConfigurationPropertyVisibility
   propertyValidation = new ValidationState()
 
+  @ViewChild('conformanceDetailPage') conformanceDetailPage?: ElementRef
+  @ViewChild('statusInfoContainer') statusInfoContainer?: ElementRef
+  @ViewChild('resultsContainer') resultsContainer?: ElementRef
+  resizeObserver!: ResizeObserver
+  resultsWrapped = false
+
   constructor(
     public dataService: DataService,
     private route: ActivatedRoute,
@@ -128,8 +134,9 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
     private organisationService: OrganisationService,
     private routingService: RoutingService,
     private reportSupportService: ReportSupportService,
-    private communityService: CommunityService
-  ) { 
+    private communityService: CommunityService,
+    private zone: NgZone
+  ) {
     super()
     // Access the tab to show via router state to have it cleared upon refresh.
     const navigation = router.getCurrentNavigation()
@@ -143,6 +150,14 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
   }
 
   ngAfterViewInit(): void {
+    this.resizeObserver = new ResizeObserver(() => {
+      this.zone.run(() => {
+        this.calculateWrapping()
+      })
+    })
+    if (this.conformanceDetailPage) {
+      this.resizeObserver.observe(this.conformanceDetailPage.nativeElement)
+    }
     setTimeout(() => {
       if (this.tabToShow == ConformanceStatementTab.configuration) {
         this.showConfigurationTab()
@@ -195,7 +210,7 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
       }
       this.testSuites = statementData.results.testSuites
       this.displayedTestSuites = this.testSuites
-      this.statusCounters = { 
+      this.statusCounters = {
         completed: statementData.results.summary.completed, failed: statementData.results.summary.failed, other: statementData.results.summary.undefined,
         completedOptional: statementData.results.summary.completedOptional, failedOptional: statementData.results.summary.failedOptional, otherOptional: statementData.results.summary.undefinedOptional
       }
@@ -326,7 +341,7 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
       })
     }
   }
-  
+
   onExpand(testSuite: ConformanceTestSuite) {
     if (!this.runTestClicked) {
       testSuite.expanded = !testSuite.expanded
@@ -369,11 +384,11 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
     for (let testSuite of this.testSuites) {
       let testCases: ConformanceTestCase[] = []
       for (let testCase of testSuite.testCases) {
-        if (this.showResults.has(testCase.result) 
+        if (this.showResults.has(testCase.result)
           && (!testCase.optional || this.showOptional)
           && (!testCase.disabled || this.showDisabled)
-          && (testCaseFilter == undefined || 
-              (testCase.sname.toLocaleLowerCase().indexOf(testCaseFilter) >= 0) || 
+          && (testCaseFilter == undefined ||
+              (testCase.sname.toLocaleLowerCase().indexOf(testCaseFilter) >= 0) ||
               (testCase.description != undefined && testCase.description.toLocaleLowerCase().indexOf(testCaseFilter) >= 0))) {
           testCases.push(testCase)
         }
@@ -468,7 +483,7 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
     this.propertyValidation.update(propertyType+property.id, {
       invalid: invalid,
       feedback: (property.kind == "BINARY")?"Required file missing.":"Required value missing."
-    })    
+    })
   }
 
   private applyPropertyValidation() {
@@ -534,7 +549,7 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
   }
 
   updateConfigurationDisabled() {
-    return (!this.dataService.customPropertiesValid(this.organisationProperties)) || 
+    return (!this.dataService.customPropertiesValid(this.organisationProperties)) ||
       (!this.dataService.customPropertiesValid(this.systemProperties)) ||
       (!this.dataService.customPropertiesValid(this.statementProperties))
   }
@@ -587,7 +602,7 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
   }
 
   onExportConformanceStatement(format: 'xml'|'pdf') {
-    this.exportPending = true    
+    this.exportPending = true
     this.reportSupportService.handleConformanceStatementReport(this.communityIdOfStatement, this.actorId, this.systemId, this.snapshotId, format, false)
     .subscribe(() => {
       this.exportPending = false
@@ -623,7 +638,7 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
     } else {
       this.routingService.toOrganisationDetails(this.communityId!, this.organisationId)
     }
-  }  
+  }
 
   toSystem() {
     if (this.communityId == undefined || this.organisationId == this.dataService.vendor!.id) {
@@ -682,4 +697,12 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
       this.routingService.toConformanceStatements(this.communityId, this.organisationId, this.systemId, this.snapshotId)
     }
   }
+
+  protected calculateWrapping() {
+    if (this.statusInfoContainer && this.resultsContainer) {
+      this.resultsWrapped = this.statusInfoContainer.nativeElement.getBoundingClientRect().top != this.resultsContainer.nativeElement.getBoundingClientRect().top
+      console.log(`[${this.resultsWrapped}] = [${this.statusInfoContainer.nativeElement.getBoundingClientRect().top}] != [${this.resultsContainer.nativeElement.getBoundingClientRect().top}]`)
+    }
+  }
+
 }
