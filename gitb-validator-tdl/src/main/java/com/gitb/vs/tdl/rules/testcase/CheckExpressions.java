@@ -195,13 +195,11 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
             checkConstantReferenceInScriptlet(messagingStep.getReply(), ATTRIBUTE_REPLY);
             checkConfigurations(messagingStep.getConfig());
             checkBindings(messagingStep.getInput());
+            checkToken(messagingStep.getLevel(), TokenType.ERROR_LEVEL_OR_VARIABLE_REFERENCE);
             if (step instanceof Receive receiveStep) {
                 checkToken(receiveStep.getTimeout(), TokenType.STRING_OR_VARIABLE_REFERENCE);
                 checkToken(receiveStep.getTimeoutFlag(), TokenType.STRING_OR_VARIABLE_REFERENCE);
                 checkToken(receiveStep.getTimeoutIsError(), TokenType.STRING_OR_VARIABLE_REFERENCE);
-                checkToken(receiveStep.getLevel(), TokenType.ERROR_LEVEL_OR_VARIABLE_REFERENCE);
-            } else if (step instanceof Send sendStep) {
-                checkToken(sendStep.getLevel(), TokenType.ERROR_LEVEL_OR_VARIABLE_REFERENCE);
             }
         } else if (step instanceof BeginProcessingTransaction beginProcessingTransactionStep) {
             checkToken(beginProcessingTransactionStep.getHandler(), TokenType.STRING_OR_VARIABLE_REFERENCE);
