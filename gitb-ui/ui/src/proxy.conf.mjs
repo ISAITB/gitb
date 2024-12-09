@@ -2,7 +2,8 @@ export default [
   {
     context: [
         '/api',
-        '/assets'
+        '/assets',
+        '/resources'
     ],
     target: 'http://localhost:9000',
     secure: false
