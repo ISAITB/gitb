@@ -14,15 +14,17 @@ import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.repository.ITestCaseRepository;
 import com.gitb.tdl.Process;
 import com.gitb.tdl.*;
-import com.gitb.tr.TAR;
-import com.gitb.tr.TestAssertionGroupReportsType;
-import com.gitb.tr.TestResultType;
-import com.gitb.tr.ValidationCounters;
+import com.gitb.tr.*;
+import com.gitb.tr.ObjectFactory;
 import com.gitb.types.*;
 import com.gitb.utils.ErrorUtils;
 import com.gitb.utils.XMLDateTimeUtils;
+import jakarta.xml.bind.JAXBElement;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MarkerFactory;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 import java.io.IOException;
@@ -38,6 +40,8 @@ import java.util.function.Supplier;
 public class TestCaseUtils {
 
     public static final String TEST_ENGINE_VERSION;
+    private static final ObjectFactory OBJECT_FACTORY_TR = new ObjectFactory();
+    private static final Logger LOG = LoggerFactory.getLogger(TestCaseUtils.class);
 
     static {
         TEST_ENGINE_VERSION = getTestEngineVersion();
@@ -420,6 +424,113 @@ public class TestCaseUtils {
             throw new IllegalStateException("Exception while creating XMLGregorianCalendar", e);
         }
         return report;
+    }
+
+    public static ErrorLevel resolveReportErrorLevel(String stepLevel, String sessionId, VariableResolver resolver) {
+        var errorLevel = ErrorLevel.ERROR;
+        if (VariableResolver.isVariableReference(stepLevel)) {
+            var resolvedErrorLevel = resolver.resolveVariableAsString(stepLevel);
+            try {
+                errorLevel = ErrorLevel.valueOf((String) resolvedErrorLevel.getValue());
+            } catch (NullPointerException e) {
+                LOG.warn(MarkerFactory.getDetachedMarker(sessionId), String.format("Severity level for step could not be determined using expression [%s]. Using %s level instead.", stepLevel, ErrorLevel.ERROR));
+            } catch (IllegalArgumentException e) {
+                LOG.warn(MarkerFactory.getDetachedMarker(sessionId), String.format("Invalid severity level [%s] for step determined using expression [%s]. Using %s level instead.", errorLevel, stepLevel, ErrorLevel.ERROR));
+            }
+        } else {
+            errorLevel = ErrorLevel.valueOf(stepLevel);
+        }
+        return errorLevel;
+    }
+
+    public static void postProcessReport(boolean invert, ErrorLevel errorLevel, TestStepReportType report) {
+        if (report != null) {
+            // Invert the result if required to do so.
+            if (invert) {
+                if (report.getResult().equals(TestResultType.FAILURE)) {
+                    report.setResult(TestResultType.SUCCESS);
+                } else if (report.getResult().equals(TestResultType.SUCCESS)) {
+                    report.setResult(TestResultType.FAILURE);
+                }
+            }
+            // Transform errors to warnings if the step is at warning level.
+            if (errorLevel == ErrorLevel.WARNING && report.getResult().equals(TestResultType.FAILURE)) {
+                // Failed report but with step at warning level - mark as success and convert reported error items to warnings
+                convertErrorItemsToWarnings(report);
+            }
+            // Complete the report's counters.
+            if (report instanceof TAR) {
+                completeReportCounters((TAR)report);
+            }
+        }
+    }
+
+    public static void convertErrorItemsToWarnings(TestStepReportType report) {
+        report.setResult(TestResultType.WARNING);
+        if (report instanceof TAR) {
+            // Set errors to warnings in counters.
+            ValidationCounters counters = ((TAR)report).getCounters();
+            if (counters != null) {
+                int errorCount = 0;
+                if (counters.getNrOfErrors() != null) {
+                    errorCount = counters.getNrOfErrors().intValue();
+                }
+                int warningCount = 0;
+                if (counters.getNrOfWarnings() != null) {
+                    warningCount = counters.getNrOfWarnings().intValue();
+                }
+                counters.setNrOfErrors(BigInteger.ZERO);
+                counters.setNrOfWarnings(BigInteger.valueOf(errorCount + warningCount));
+            }
+            // Set errors to warnings in report items.
+            TestAssertionGroupReportsType reportsType = ((TAR)report).getReports();
+            if (reportsType != null) {
+                List<JAXBElement<TestAssertionReportType>> newReports = new ArrayList<>(reportsType.getInfoOrWarningOrError().size());
+                for (JAXBElement<TestAssertionReportType> item: reportsType.getInfoOrWarningOrError()) {
+                    if (item.getValue() instanceof BAR) {
+                        if (item.getName().getLocalPart().equals("error")) {
+                            newReports.add(OBJECT_FACTORY_TR.createTestAssertionGroupReportsTypeWarning(item.getValue()));
+                        } else {
+                            newReports.add(item);
+                        }
+                    }
+                }
+                reportsType.getInfoOrWarningOrError().clear();
+                reportsType.getInfoOrWarningOrError().addAll(newReports);
+            }
+        }
+    }
+
+    public static void completeReportCounters(TAR report) {
+        int errorCount = 0;
+        int warningCount = 0;
+        int infoCount = 0;
+        TestAssertionGroupReportsType reportsType = report.getReports();
+        if (reportsType != null) {
+            for (JAXBElement<TestAssertionReportType> item : reportsType.getInfoOrWarningOrError()) {
+                if (item.getValue() instanceof BAR) {
+                    if (item.getName().getLocalPart().equals("error")) {
+                        errorCount += 1;
+                    } else if (item.getName().getLocalPart().equals("warning")) {
+                        warningCount += 1;
+                    } else {
+                        infoCount += 1;
+                    }
+                }
+            }
+        }
+        if (report.getCounters() == null) {
+            report.setCounters(new ValidationCounters());
+        }
+        if (report.getCounters().getNrOfErrors() == null) {
+            report.getCounters().setNrOfErrors(BigInteger.valueOf(errorCount));
+        }
+        if (report.getCounters().getNrOfWarnings() == null) {
+            report.getCounters().setNrOfWarnings(BigInteger.valueOf(warningCount));
+        }
+        if (report.getCounters().getNrOfAssertions() == null) {
+            report.getCounters().setNrOfAssertions(BigInteger.valueOf(infoCount));
+        }
     }
 
     public static void applyContentTypes(DataType contentType, AnyContent reportItem) {
