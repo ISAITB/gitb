@@ -48,7 +48,7 @@
                     <button class="btn btn-secondary" type="button" (click)="cancelDetailErrorTemplate()">Back</button>
                 </div>
                 <div class="btn-toolbar btn-toolbar-delete">
-                    <button class="btn btn-outline-danger" type="button" (click)="deleteErrorTemplate()" [pending]="deletePending" [disable]="!loaded || !savePending || !copyPending">Delete</button>
+                    <button class="btn btn-outline-danger" type="button" (click)="deleteErrorTemplate()" [pending]="deletePending" [disable]="!loaded || savePending || copyPending">Delete</button>
                 </div>
             </div>
         </form>
