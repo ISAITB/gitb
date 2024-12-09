@@ -123,7 +123,7 @@ public class ListenStepProcessorActor extends AbstractMessagingStepProcessorActo
                     if (step.getId() != null) {
                         MapType map;
 
-                        if (step.getOutput().size() == 0) {
+                        if (step.getOutput().isEmpty()) {
                             map = generateOutputWithMessageFields(message);
                         } else {
                             boolean isNameBinding = BindingUtils.isNameBinding(step.getOutput());

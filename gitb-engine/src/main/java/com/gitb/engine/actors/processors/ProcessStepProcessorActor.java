@@ -2,6 +2,7 @@ package com.gitb.engine.actors.processors;
 
 import com.gitb.engine.actors.ActorSystem;
 import com.gitb.engine.processing.handlers.AbstractProcessingHandler;
+import com.gitb.tdl.ErrorLevel;
 import org.apache.pekko.actor.ActorRef;
 import org.apache.pekko.dispatch.Futures;
 import org.apache.pekko.dispatch.OnFailure;
@@ -28,6 +29,7 @@ import scala.concurrent.Future;
 import scala.concurrent.Promise;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorActor<Process> {
@@ -145,6 +147,7 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
     }
 
     private TAR produceReport(ProcessingReport report, IProcessingHandler handler) {
+        Optional<VariableResolver> resolver = Optional.empty();
         if (report.getData() != null && (step.getId() != null || step.getOutput() != null)) {
             if (step.getOutput() != null) {
                 if (report.getData().getData() != null && report.getData().getData().size() == 1) {
@@ -163,7 +166,8 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
         if (step.getHidden() != null && !handler.isRemote()) {
             var isHidden = true;
             if (VariableResolver.isVariableReference(step.getHidden())) {
-                var hiddenVariable = new VariableResolver(scope).resolveVariable(step.getHidden());
+                resolver = Optional.of(new VariableResolver(scope));
+                var hiddenVariable = resolver.get().resolveVariable(step.getHidden());
                 isHidden = hiddenVariable != null && Boolean.TRUE.equals(hiddenVariable.convertTo(DataType.BOOLEAN_DATA_TYPE).getValue());
             } else {
                 isHidden = Boolean.parseBoolean(step.getHidden());
@@ -175,6 +179,8 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
                 completeProcessingReportContext(report);
             }
         }
+        ErrorLevel errorLevel = TestCaseUtils.resolveReportErrorLevel(step.getLevel(), scope.getContext().getSessionId(), resolver.orElse(new VariableResolver(scope)));
+        TestCaseUtils.postProcessReport(step.isInvert(), errorLevel, report.getReport());
         return report.getReport();
     }
 
