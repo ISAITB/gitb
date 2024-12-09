@@ -139,6 +139,16 @@ public class VerifyProcessor implements IProcessor {
 			errorLevel = ErrorLevel.valueOf(verify.getLevel());
 		}
 
+		// Invert result if needed.
+		boolean invert = verify.isInvert();
+		if (invert) {
+			if (report.getResult().equals(TestResultType.FAILURE)) {
+				report.setResult(TestResultType.SUCCESS);
+			} else if (report.getResult().equals(TestResultType.SUCCESS)) {
+				report.setResult(TestResultType.FAILURE);
+			}
+		}
+
 		// Processing if step is at warning level
 		if (errorLevel == ErrorLevel.WARNING && report.getResult().equals(TestResultType.FAILURE)) {
 			// Failed report but with step at warning level - mark as success and convert reported error items to warnings
@@ -148,7 +158,7 @@ public class VerifyProcessor implements IProcessor {
 			completeReportCounters((TAR)report);
 		}
 		// Record the step's result as a Boolean flag bound to its ID
-        if(verify.getId() != null && verify.getId().length() > 0) {
+        if(verify.getId() != null && !verify.getId().isEmpty()) {
             boolean result = report.getResult().equals(TestResultType.SUCCESS) || report.getResult().equals(TestResultType.WARNING);
 
             if(scope.getVariable(verify.getId()).isDefined()) {
