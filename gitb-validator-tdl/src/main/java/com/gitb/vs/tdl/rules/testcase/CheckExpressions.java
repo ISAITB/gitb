@@ -199,6 +199,9 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
                 checkToken(receiveStep.getTimeout(), TokenType.STRING_OR_VARIABLE_REFERENCE);
                 checkToken(receiveStep.getTimeoutFlag(), TokenType.STRING_OR_VARIABLE_REFERENCE);
                 checkToken(receiveStep.getTimeoutIsError(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+                checkToken(receiveStep.getLevel(), TokenType.ERROR_LEVEL_OR_VARIABLE_REFERENCE);
+            } else if (step instanceof Send sendStep) {
+                checkToken(sendStep.getLevel(), TokenType.ERROR_LEVEL_OR_VARIABLE_REFERENCE);
             }
         } else if (step instanceof BeginProcessingTransaction beginProcessingTransactionStep) {
             checkToken(beginProcessingTransactionStep.getHandler(), TokenType.STRING_OR_VARIABLE_REFERENCE);
@@ -207,6 +210,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
         } else if (step instanceof Process processStep) {
             checkBindings(processStep.getInput());
             checkToken(processStep.getInputAttribute(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+            checkToken(processStep.getLevel(), TokenType.ERROR_LEVEL_OR_VARIABLE_REFERENCE);
             if (processStep.getOutput() != null) {
                 recordVariable(processStep.getOutput(), true);
             }
