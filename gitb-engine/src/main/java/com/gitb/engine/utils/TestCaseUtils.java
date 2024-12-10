@@ -14,8 +14,8 @@ import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.repository.ITestCaseRepository;
 import com.gitb.tdl.Process;
 import com.gitb.tdl.*;
-import com.gitb.tr.*;
 import com.gitb.tr.ObjectFactory;
+import com.gitb.tr.*;
 import com.gitb.types.*;
 import com.gitb.utils.ErrorUtils;
 import com.gitb.utils.XMLDateTimeUtils;
@@ -47,7 +47,6 @@ public class TestCaseUtils {
         TEST_ENGINE_VERSION = getTestEngineVersion();
     }
 
-	// TODO add the test case construct classes to report their statuses (COMPLETED, ERROR, etc.)
 	private static final Class<?>[] TEST_CONSTRUCTS_TO_REPORT = {
         com.gitb.tdl.MessagingStep.class, Verify.class, IfStep.class, RepeatUntilStep.class,
 		ForEachStep.class, WhileStep.class, com.gitb.tdl.FlowStep.class, Process.class,
@@ -92,7 +91,7 @@ public class TestCaseUtils {
 	public static boolean shouldBeReported(Class<?> stepClass) {
 		for(Class<?> c : TEST_CONSTRUCTS_TO_REPORT) {
             Class<?> current = stepClass;
-            while(current != null) {
+            while (current != null) {
                 if(current.equals(c)) {
                     return true;
                 }
@@ -135,46 +134,88 @@ public class TestCaseUtils {
         if (foundScriptlet == null) {
             if (required) {
                 if (from == null) {
-                    throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Scriptlet definition ["+ scriptletPath+"] not found."));
+                    throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Scriptlet definition [%s] not found.".formatted(scriptletPath)));
                 } else {
-                    throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Scriptlet definition from ["+StringUtils.defaultString(from, "")+"] path ["+ scriptletPath+"] not found."));
+                    throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Scriptlet definition from [%s] path [%s] not found.".formatted(Objects.toString(from, ""), scriptletPath)));
                 }
             }
         }
         return foundScriptlet;
     }
 
-    public static void applyStopOnErrorSemantics(TestConstruct step, Boolean parentStopOnErrorSetting) {
-        if (step != null) {
-            boolean parentStopOnErrorSettingToUse = parentStopOnErrorSetting != null && parentStopOnErrorSetting;
-            if (step.isStopOnError() == null) {
-                // Inherit parent setting.
-                step.setStopOnError(parentStopOnErrorSettingToUse);
+    public static void applyStopOnErrorSemantics(TestCaseSteps steps) {
+        applyStopOnErrorSemantics(steps, steps.isStopOnError(), steps.isStopOnChildError());
+    }
+
+    public static void applyStopOnErrorSemantics(CallStep callStep, Sequence steps) {
+        applyStopOnErrorSemantics(steps, callStep.isStopOnError(), callStep.isStopOnChildError());
+    }
+
+    private static Pair<Boolean, Boolean> stopOnErrorChildFlags(Pair<Boolean, Boolean> parentFlags, Pair<Boolean, Boolean> ownFlags) {
+        Boolean stopOnError;
+        Boolean stopOnChildError;
+        // Stop on error
+        if (ownFlags.getLeft() != null) {
+            stopOnError = ownFlags.getLeft();
+        } else {
+            stopOnError = Boolean.TRUE.equals(parentFlags.getLeft());
+        }
+        // Stop on child error
+        if (ownFlags.getRight() != null) {
+            stopOnChildError = ownFlags.getRight();
+        } else if (parentFlags.getRight() != null) {
+            stopOnChildError = parentFlags.getRight();
+        } else {
+            stopOnChildError = null;
+        }
+        return Pair.of(stopOnError, stopOnChildError);
+    }
+
+    private static void applyStopOnErrorSemantics(TestConstruct step, Boolean parentStopOnErrorSetting, Boolean parentStopChildOnErrorSetting) {
+        if (step instanceof Sequence containerStep) {
+            var flags = stopOnErrorChildFlags(Pair.of(parentStopOnErrorSetting, parentStopChildOnErrorSetting), Pair.of(containerStep.isStopOnError(), containerStep.isStopOnChildError()));
+            containerStep.setStopOnError(flags.getLeft());
+            containerStep.setStopOnChildError(flags.getRight());
+            for (Object childStep: containerStep.getSteps()) {
+                if (childStep instanceof TestConstruct construct) {
+                    applyStopOnErrorSemantics(construct, containerStep.isStopOnError(), containerStep.isStopOnChildError());
+                }
             }
-            if (step instanceof Sequence) {
-                for (Object childStep: ((Sequence)step).getSteps()) {
-                    if (childStep instanceof TestConstruct) {
-                        applyStopOnErrorSemantics((TestConstruct)childStep, step.isStopOnError());
-                    }
+        } else if (step instanceof IfStep containerStep) {
+            var flags = stopOnErrorChildFlags(Pair.of(parentStopOnErrorSetting, parentStopChildOnErrorSetting), Pair.of(containerStep.isStopOnError(), containerStep.isStopOnChildError()));
+            containerStep.setStopOnError(flags.getLeft());
+            containerStep.setStopOnChildError(flags.getRight());
+            applyStopOnErrorSemantics(containerStep.getThen(), containerStep.isStopOnError(), containerStep.isStopOnChildError());
+            applyStopOnErrorSemantics(containerStep.getElse(), containerStep.isStopOnError(), containerStep.isStopOnChildError());
+        } else if (step instanceof WhileStep containerStep) {
+            var flags = stopOnErrorChildFlags(Pair.of(parentStopOnErrorSetting, parentStopChildOnErrorSetting), Pair.of(containerStep.isStopOnError(), containerStep.isStopOnChildError()));
+            containerStep.setStopOnError(flags.getLeft());
+            containerStep.setStopOnChildError(flags.getRight());
+            applyStopOnErrorSemantics(containerStep.getDo(), containerStep.isStopOnError(), containerStep.isStopOnChildError());
+        } else if (step instanceof ForEachStep containerStep) {
+            var flags = stopOnErrorChildFlags(Pair.of(parentStopOnErrorSetting, parentStopChildOnErrorSetting), Pair.of(containerStep.isStopOnError(), containerStep.isStopOnChildError()));
+            containerStep.setStopOnError(flags.getLeft());
+            containerStep.setStopOnChildError(flags.getRight());
+            applyStopOnErrorSemantics(containerStep.getDo(), containerStep.isStopOnError(), containerStep.isStopOnChildError());
+        } else if (step instanceof RepeatUntilStep containerStep) {
+            var flags = stopOnErrorChildFlags(Pair.of(parentStopOnErrorSetting, parentStopChildOnErrorSetting), Pair.of(containerStep.isStopOnError(), containerStep.isStopOnChildError()));
+            containerStep.setStopOnError(flags.getLeft());
+            containerStep.setStopOnChildError(flags.getRight());
+            applyStopOnErrorSemantics(containerStep.getDo(), containerStep.isStopOnError(), containerStep.isStopOnChildError());
+        } else if (step instanceof FlowStep containerStep) {
+            var flags = stopOnErrorChildFlags(Pair.of(parentStopOnErrorSetting, parentStopChildOnErrorSetting), Pair.of(containerStep.isStopOnError(), containerStep.isStopOnChildError()));
+            containerStep.setStopOnError(flags.getLeft());
+            containerStep.setStopOnChildError(flags.getRight());
+            if (containerStep.getThread() != null) {
+                for (Sequence thread: containerStep.getThread()) {
+                    applyStopOnErrorSemantics(thread, containerStep.isStopOnError(), containerStep.isStopOnChildError());
                 }
-            } else {
-                // Cover also the steps that have internal sequences.
-                if (step instanceof IfStep) {
-                    applyStopOnErrorSemantics(((IfStep) step).getThen(), step.isStopOnError());
-                    applyStopOnErrorSemantics(((IfStep) step).getElse(), step.isStopOnError());
-                } else if (step instanceof WhileStep) {
-                    applyStopOnErrorSemantics(((WhileStep) step).getDo(), step.isStopOnError());
-                } else if (step instanceof ForEachStep) {
-                    applyStopOnErrorSemantics(((ForEachStep) step).getDo(), step.isStopOnError());
-                } else if (step instanceof RepeatUntilStep) {
-                    applyStopOnErrorSemantics(((RepeatUntilStep) step).getDo(), step.isStopOnError());
-                } else if (step instanceof FlowStep) {
-                    if (((FlowStep) step).getThread() != null) {
-                        for (Sequence thread: ((FlowStep) step).getThread()) {
-                            applyStopOnErrorSemantics(thread, step.isStopOnError());
-                        }
-                    }
-                }
+            }
+        } else if (step != null) {
+            // Basic step
+            if (step.isStopOnError() == null) {
+                // Inherit parent configuration
+                step.setStopOnError(Boolean.TRUE.equals(parentStopChildOnErrorSetting) || (parentStopChildOnErrorSetting == null && Boolean.TRUE.equals(parentStopOnErrorSetting)));
             }
         }
     }
@@ -279,7 +320,7 @@ public class TestCaseUtils {
                 dataType = DataType.BOOLEAN_DATA_TYPE;
                 nonVariableValueFn = () -> variableClass.cast(Boolean.valueOf(originalValue));
             } else {
-                throw new IllegalArgumentException("Unsupported variable class ["+variableClass+"]");
+                throw new IllegalArgumentException("Unsupported variable class [%s]".formatted(variableClass));
             }
             if (!scriptletStepStack.isEmpty() && VariableResolver.isVariableReference(originalValue)) {
                 // The description may be set dynamically from the call inputs.
@@ -433,9 +474,9 @@ public class TestCaseUtils {
             try {
                 errorLevel = ErrorLevel.valueOf((String) resolvedErrorLevel.getValue());
             } catch (NullPointerException e) {
-                LOG.warn(MarkerFactory.getDetachedMarker(sessionId), String.format("Severity level for step could not be determined using expression [%s]. Using %s level instead.", stepLevel, ErrorLevel.ERROR));
+                LOG.warn(MarkerFactory.getDetachedMarker(sessionId), "Severity level for step could not be determined using expression [%s]. Using %s level instead.".formatted(stepLevel, ErrorLevel.ERROR));
             } catch (IllegalArgumentException e) {
-                LOG.warn(MarkerFactory.getDetachedMarker(sessionId), String.format("Invalid severity level [%s] for step determined using expression [%s]. Using %s level instead.", errorLevel, stepLevel, ErrorLevel.ERROR));
+                LOG.warn(MarkerFactory.getDetachedMarker(sessionId), "Invalid severity level [%s] for step determined using expression [%s]. Using %s level instead.".formatted(errorLevel, stepLevel, ErrorLevel.ERROR));
             }
         } else {
             errorLevel = ErrorLevel.valueOf(stepLevel);

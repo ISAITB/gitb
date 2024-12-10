@@ -33,20 +33,16 @@ public abstract class AbstractIterationStepActor<T> extends AbstractTestStepActo
 	}
 
 	private void initialize() {
-		boolean iterableStep = false;
-		if(step instanceof WhileStep
-			|| step instanceof ForEachStep
-			|| step instanceof RepeatUntilStep) {
-			iterableStep = true;
-		}
-
-		if(!iterableStep) {
+		boolean iterableStep = step instanceof WhileStep
+                || step instanceof ForEachStep
+                || step instanceof RepeatUntilStep;
+        if (!iterableStep) {
 			throw new GITBEngineInternalError("Wrong step supplied for Iteration Processor!");
 		}
 	}
 
 	protected void checkIteration(int iteration) {
-		if(iteration > TestEngineConfiguration.ITERATION_LIMIT) {
+		if (iteration > TestEngineConfiguration.ITERATION_LIMIT) {
 			throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Maximum iteration limit is "+TestEngineConfiguration.ITERATION_LIMIT+", iteration exceeds this limit!"));
 		}
 	}
@@ -60,22 +56,19 @@ public abstract class AbstractIterationStepActor<T> extends AbstractTestStepActo
 			childrenHasWarning = true;
 		}
 		if (status == StepStatus.ERROR || status == StepStatus.WARNING || status == StepStatus.COMPLETED) {
-			boolean shouldContinue = true;
-			if (scope.getContext().getCurrentState() == TestCaseContext.TestCaseStateEnum.STOPPING
-					|| (status == StepStatus.ERROR && ((step instanceof TestConstruct && (((TestConstruct) step).isStopOnError() != null && ((TestConstruct) step).isStopOnError()))))
-			) {
-				shouldContinue = false;
-			}
-			if (shouldContinue) {
-				shouldContinue = handleStatusEventInternal(event);
-			}
-			if (!shouldContinue) {
-				if (childrenHasError) {
-					childrenHasError();
-				} else if (childrenHasWarning) {
-					childrenHasWarning();
-				} else {
-					completed();
+			if (scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPING && scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPED) {
+				boolean shouldContinue = status != StepStatus.ERROR || !(step instanceof TestConstruct construct) || !Boolean.TRUE.equals(construct.isStopOnError());
+				if (shouldContinue) {
+					shouldContinue = handleStatusEventInternal(event);
+				}
+				if (!shouldContinue) {
+					if (childrenHasError) {
+						childrenHasError();
+					} else if (childrenHasWarning) {
+						childrenHasWarning();
+					} else {
+						completed();
+					}
 				}
 			}
 		}
