@@ -254,8 +254,11 @@ ingress:
     # In doing so you will be able to access the ITB over HTTP without a forced redirect to HTTPS.
     # Note that doing this you will also need to set "ui.env.TESTBED_HOME_LINK" and "srv.env.CALLBACK_ROOT_URL"
     # accordingly.
-    acme.cert-manager.io/http01-edit-in-place: "true"
-    cert-manager.io/cluster-issuer: "dev-prod"
+    #
+    # Depending on how you manage certificates in your cluster you may need to define additional annotations for
+    # this purpose. For example, using cert-manager in your cluster you define its use as follows:
+    #   acme.cert-manager.io/http01-edit-in-place: "true"
+    #   cert-manager.io/cluster-issuer: "my-cluster-issuer"
 
 #
 # Configuration of volumes used to persist data.
