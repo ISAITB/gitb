@@ -30,6 +30,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
     private static final Pattern MAP_APPEND_EXPRESSION_PATTERN = Pattern.compile("(\\$?[a-zA-Z][a-zA-Z\\-_0-9]*(?:\\{(?:[\\$\\{\\}a-zA-Z\\-\\._0-9]*)\\})*)\\{(\\$?[a-zA-Z][a-zA-Z\\-\\._0-9]*)\\}");
     private static final String ATTRIBUTE_DESC = "desc";
     private static final String ATTRIBUTE_HIDDEN = "hidden";
+    private static final String ATTRIBUTE_HIDDEN_CONTAINER = "hiddenContainer";
     private static final String ATTRIBUTE_TITLE = "title";
     private static final String ATTRIBUTE_WITH = "with";
     private static final String ATTRIBUTE_FROM = "from";
@@ -309,6 +310,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
         } else if (step instanceof Group groupStep) {
             checkConstantReferenceInScriptlet(groupStep.getDesc(), ATTRIBUTE_DESC);
             checkConstantReferenceInScriptlet(groupStep.getTitle(), ATTRIBUTE_TITLE);
+            checkConstantReferenceInScriptlet(groupStep.getHiddenContainer(), ATTRIBUTE_HIDDEN_CONTAINER);
         } else if (step instanceof FlowStep flowStep) {
             checkConstantReferenceInScriptlet(flowStep.getDesc(), ATTRIBUTE_DESC);
             checkConstantReferenceInScriptlet(flowStep.getTitle(), ATTRIBUTE_TITLE);

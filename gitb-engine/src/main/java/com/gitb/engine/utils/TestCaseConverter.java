@@ -73,62 +73,84 @@ public class TestCaseConverter {
         sequence.setId(id);
         int index = 1;
 
-        String childIdPrefix = id.equals("") ? "" : (id + ".");
+        String childIdPrefix = id.isEmpty() ? "" : (id + ".");
 
-        for(int i=0; i<sequenceStep.getSteps().size(); i++) {
+        for (int i=0; i<sequenceStep.getSteps().size(); i++) {
             Object step = sequenceStep.getSteps().get(i);
-            if(step instanceof Verify) {
-                String childId = childIdPrefix + index++;
-                addToSequence(sequence, convertVerifyStep(testCaseId, childId, (Verify) step));
-            } else if (step instanceof Process) {
-                String childId = childIdPrefix + index++;
-                addToSequence(sequence, convertProcessStep(testCaseId, childId, (Process) step));
-            } else if (step instanceof com.gitb.tdl.MessagingStep) {
-                String childId = childIdPrefix + index++;
-                addToSequence(sequence, convertMessagingStep(testCaseId, childId, (com.gitb.tdl.MessagingStep) step));
-            } else if (step instanceof IfStep) {
-                String childId = childIdPrefix + index++;
-                var ifStep = convertDecisionStep(testCaseId, childId, (IfStep) step);
-                if (ifStep.isHidden()) {
-                    /*
-                    Hidden if step with explicitly visible then or else block. Convert the visible block of steps to top level steps so that
-                    they are visible without the if boundaries.
-                     */
-                    if (ifStep.getThen() != null && !ifStep.getThen().isHidden()) {
-                        ifStep.getThen().getSteps().forEach(childStep -> addToSequence(sequence, childStep));
-                    }
-                    if (ifStep.getElse() != null && !ifStep.getElse().isHidden()) {
-                        ifStep.getElse().getSteps().forEach(childStep -> addToSequence(sequence, childStep));
-                    }
-                } else {
-                    addToSequence(sequence, ifStep);
+            switch (step) {
+                case Verify verify -> {
+                    String childId = childIdPrefix + index++;
+                    addToSequence(sequence, convertVerifyStep(testCaseId, childId, verify));
                 }
-            } else if (step instanceof RepeatUntilStep) {
-                String childId = childIdPrefix + index++;
-                addToSequence(sequence, convertRepUntilStep(testCaseId, childId, (RepeatUntilStep) step));
-            } else if (step instanceof ForEachStep) {
-                String childId = childIdPrefix + index++;
-                addToSequence(sequence, convertForEachStep(testCaseId, childId, (ForEachStep) step));
-            } else if (step instanceof WhileStep) {
-                String childId = childIdPrefix + index++;
-                addToSequence(sequence, convertWhileStep(testCaseId, childId, (WhileStep) step));
-            } else if (step instanceof com.gitb.tdl.FlowStep) {
-                String childId = childIdPrefix + index++;
-                addToSequence(sequence, convertFlowStep(testCaseId, childId, (com.gitb.tdl.FlowStep) step));
-            } else if (step instanceof CallStep) {
-                String childId = childIdPrefix + index++;
-                for (TestStep childStep: convertCallStep(testCaseId, childId, (CallStep)step).getSteps()) {
-                    addToSequence(sequence, childStep);
+                case Process process -> {
+                    String childId = childIdPrefix + index++;
+                    addToSequence(sequence, convertProcessStep(testCaseId, childId, process));
                 }
-            } else if (step instanceof UserInteraction) {
-                String childId = childIdPrefix + index++;
-                addToSequence(sequence, convertUserInteraction(testCaseId, childId, (UserInteraction) step));
-            } else if (step instanceof com.gitb.tdl.ExitStep) {
-                String childId = childIdPrefix + index++;
-                addToSequence(sequence, convertExitStep(testCaseId, childId, (com.gitb.tdl.ExitStep) step));
-            } else if (step instanceof Group) {
-                String childId = childIdPrefix + index++;
-                addToSequence(sequence, convertGroupStep(testCaseId, childId, (com.gitb.tdl.Group) step));
+                case com.gitb.tdl.MessagingStep messagingStep -> {
+                    String childId = childIdPrefix + index++;
+                    addToSequence(sequence, convertMessagingStep(testCaseId, childId, messagingStep));
+                }
+                case IfStep ifStep1 -> {
+                    String childId = childIdPrefix + index++;
+                    var ifStep = convertDecisionStep(testCaseId, childId, ifStep1);
+                    if (ifStep.isHidden()) {
+                        /*
+                         * Hidden if step with explicitly visible then or else block. Convert the visible block of steps to top level steps so that
+                         * they are visible without the "if" boundaries.
+                         */
+                        if (ifStep.getThen() != null && !ifStep.getThen().isHidden()) {
+                            ifStep.getThen().getSteps().forEach(childStep -> addToSequence(sequence, childStep));
+                        }
+                        if (ifStep.getElse() != null && !ifStep.getElse().isHidden()) {
+                            ifStep.getElse().getSteps().forEach(childStep -> addToSequence(sequence, childStep));
+                        }
+                    } else {
+                        addToSequence(sequence, ifStep);
+                    }
+                }
+                case RepeatUntilStep repeatUntilStep -> {
+                    String childId = childIdPrefix + index++;
+                    addToSequence(sequence, convertRepUntilStep(testCaseId, childId, repeatUntilStep));
+                }
+                case ForEachStep forEachStep -> {
+                    String childId = childIdPrefix + index++;
+                    addToSequence(sequence, convertForEachStep(testCaseId, childId, forEachStep));
+                }
+                case WhileStep whileStep -> {
+                    String childId = childIdPrefix + index++;
+                    addToSequence(sequence, convertWhileStep(testCaseId, childId, whileStep));
+                }
+                case com.gitb.tdl.FlowStep flowStep -> {
+                    String childId = childIdPrefix + index++;
+                    addToSequence(sequence, convertFlowStep(testCaseId, childId, flowStep));
+                }
+                case CallStep callStep -> {
+                    String childId = childIdPrefix + index++;
+                    for (TestStep childStep : convertCallStep(testCaseId, childId, callStep).getSteps()) {
+                        addToSequence(sequence, childStep);
+                    }
+                }
+                case UserInteraction userInteraction -> {
+                    String childId = childIdPrefix + index++;
+                    addToSequence(sequence, convertUserInteraction(testCaseId, childId, userInteraction));
+                }
+                case com.gitb.tdl.ExitStep exitStep -> {
+                    String childId = childIdPrefix + index++;
+                    addToSequence(sequence, convertExitStep(testCaseId, childId, exitStep));
+                }
+                case Group group -> {
+                    String childId = childIdPrefix + index++;
+                    var groupStep = convertGroupStep(testCaseId, childId, group);
+                    if (groupStep.isHiddenContainer() && !groupStep.isHidden()) {
+                        // Skip the group step itself and add its children directly.
+                        groupStep.getSteps().forEach(childStep -> addToSequence(sequence, childStep));
+                    } else {
+                        addToSequence(sequence, groupStep);
+                    }
+                }
+                default -> {
+                    // Ignore other steps
+                }
             }
         }
         return sequence;
@@ -307,6 +329,7 @@ public class TestCaseConverter {
         group.setDesc(fixedOrVariableValueAsString(description.getDesc()));
         group.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
         group.setHidden(hiddenValueToUse(description.getHidden(), false));
+        group.setHiddenContainer(fixedOrVariableValueAsBoolean(description.getHiddenContainer(), false));
         group.setCollapsed(description.isCollapsed());
         group.getSteps().addAll(convertSequence(testCaseId, id, description).getSteps());
         return group;
@@ -418,13 +441,13 @@ public class TestCaseConverter {
                 }
                 try (InputStream in = repository.getTestArtifact(testSuiteContext, testCaseId, documentation.getImport())) {
                     if (in == null) {
-                        logger.warn("Unable to find documentation artifact from ["+ StringUtils.defaultString(testSuiteContext)+"] path ["+documentation.getImport()+"]");
+                        logger.warn("Unable to find documentation artifact from [{}] path [{}]", StringUtils.defaultString(testSuiteContext), documentation.getImport());
                     } else {
                         byte[] bytes = IOUtils.toByteArray(in);
                         result = new String(bytes, (documentation.getEncoding() == null)? Charset.defaultCharset(): Charset.forName(documentation.getEncoding()));
                     }
                 } catch (Exception e) {
-                    logger.warn("Error reading documentation artifact from ["+ StringUtils.defaultString(testSuiteContext)+"] path ["+documentation.getImport()+"]", e);
+                    logger.warn("Error reading documentation artifact from [{}] path [{}]", StringUtils.defaultString(testSuiteContext), documentation.getImport(), e);
                 }
             }
         }
