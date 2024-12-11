@@ -158,9 +158,9 @@ public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStep
             if (scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPING && scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPED) {
                 if (status == StepStatus.ERROR && childStep instanceof TestConstruct construct) {
                     boolean childStopOnError = Boolean.TRUE.equals(construct.isStopOnError());
+                    boolean currentStopOnError = Boolean.TRUE.equals(step.isStopOnError());
                     if (childStopOnError) {
-                        boolean parentStopOnError = Boolean.TRUE.equals(step.isStopOnError());
-                        if (parentStopOnError) {
+                        if (currentStopOnError && !Boolean.FALSE.equals(step.isStopOnChildError()) || !currentStopOnError && step.isStopOnChildError() == null) {
                             // The child step was set to stopOnError. Stop processing and signal stop.
                             // We only signal a stop if the parent is also set to stop on error. This can come up if stopOnChildError was set to false on the parent.
                             scope.getContext().setCurrentState(TestCaseContext.TestCaseStateEnum.STOPPING);
@@ -169,10 +169,17 @@ public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStep
                             } catch (Exception e) {
                                 LOG.error(addMarker(), "Error sending the signal to stop the test session from test step actor [{}].", stepId);
                             }
+                        } else {
+                            if (!Boolean.TRUE.equals(step.isStopOnChildError())) {
+                                // We ignore child errors - proceed.
+                                nextStep = startTestStepAtIndex(completedStepIndex + 1);
+                            }
                         }
                     } else {
-                        // We ignore child errors - proceed.
-                        nextStep = startTestStepAtIndex(completedStepIndex + 1);
+                        if (!Boolean.TRUE.equals(step.isStopOnChildError())) {
+                            // We ignore child errors - proceed.
+                            nextStep = startTestStepAtIndex(completedStepIndex + 1);
+                        }
                     }
                 } else {
                     // Proceed.
