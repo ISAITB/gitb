@@ -1,5 +1,6 @@
 package com.gitb.engine.actors.processors;
 
+import com.gitb.engine.utils.StepContext;
 import org.apache.pekko.actor.ActorRef;
 import com.gitb.engine.messaging.MessagingContext;
 import com.gitb.engine.testcase.TestCaseContext;
@@ -14,8 +15,8 @@ import com.gitb.tdl.EndTransaction;
 public class EndTransactionStepProcessorActor extends AbstractTestStepActor<EndTransaction> {
 	public static final String NAME = "end-txn-p";
 
-	public EndTransactionStepProcessorActor(EndTransaction step, TestCaseScope scope, String stepId) {
-		super(step, scope, stepId);
+	public EndTransactionStepProcessorActor(EndTransaction step, TestCaseScope scope, String stepId, StepContext stepContext) {
+		super(step, scope, stepId,stepContext);
 	}
 
 	@Override
@@ -49,7 +50,7 @@ public class EndTransactionStepProcessorActor extends AbstractTestStepActor<EndT
 
 	}
 
-	public static ActorRef create(ActorContext context, EndTransaction step, TestCaseScope scope, String stepId) throws Exception {
-		return create(EndTransactionStepProcessorActor.class, context, step, scope, stepId);
+	public static ActorRef create(ActorContext context, EndTransaction step, TestCaseScope scope, String stepId, StepContext stepContext) throws Exception {
+		return create(EndTransactionStepProcessorActor.class, context, step, scope, stepId, stepContext);
 	}
 }

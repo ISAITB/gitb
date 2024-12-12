@@ -1,8 +1,5 @@
 package com.gitb.engine.actors.processors;
 
-import com.gitb.tr.TestResultType;
-import org.apache.pekko.dispatch.OnFailure;
-import org.apache.pekko.dispatch.OnSuccess;
 import com.gitb.core.*;
 import com.gitb.engine.expr.ExpressionHandler;
 import com.gitb.engine.expr.resolvers.VariableResolver;
@@ -10,11 +7,13 @@ import com.gitb.engine.messaging.MessagingContext;
 import com.gitb.engine.messaging.TransactionContext;
 import com.gitb.engine.messaging.handlers.layer.AbstractMessagingHandler;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.engine.utils.StepContext;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.IMessagingHandler;
 import com.gitb.messaging.Message;
 import com.gitb.tdl.Binding;
 import com.gitb.tdl.MessagingStep;
+import com.gitb.tr.TestResultType;
 import com.gitb.tr.TestStepReportType;
 import com.gitb.types.DataType;
 import com.gitb.types.DataTypeFactory;
@@ -24,6 +23,8 @@ import com.gitb.utils.ConfigurationUtils;
 import com.gitb.utils.ErrorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.pekko.dispatch.OnFailure;
+import org.apache.pekko.dispatch.OnSuccess;
 import scala.concurrent.Promise;
 
 import java.util.*;
@@ -38,8 +39,8 @@ public abstract class AbstractMessagingStepProcessorActor<T extends MessagingSte
 
     private final ExpressionHandler expressionHandler;
 
-    public AbstractMessagingStepProcessorActor(T step, TestCaseScope scope, String stepId) {
-        super(step, scope, stepId);
+    public AbstractMessagingStepProcessorActor(T step, TestCaseScope scope, String stepId, StepContext stepContext) {
+        super(step, scope, stepId, stepContext);
 
         expressionHandler = new ExpressionHandler(scope);
     }

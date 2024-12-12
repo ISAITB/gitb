@@ -1,5 +1,6 @@
 package com.gitb.engine.actors.processors;
 
+import com.gitb.engine.utils.StepContext;
 import org.apache.pekko.actor.ActorRef;
 import com.gitb.engine.actors.ActorSystem;
 import com.gitb.engine.processors.AssignProcessor;
@@ -18,8 +19,8 @@ public class AssignStepProcessorActor extends AbstractProcessorActor<Assign> {
 
 	private AssignProcessor processor;
 
-	public AssignStepProcessorActor(Assign step, TestCaseScope scope, String stepId) {
-		super(step, scope, stepId);
+	public AssignStepProcessorActor(Assign step, TestCaseScope scope, String stepId, StepContext stepContext) {
+		super(step, scope, stepId, stepContext);
 		initialize();
 	}
 
@@ -32,7 +33,7 @@ public class AssignStepProcessorActor extends AbstractProcessorActor<Assign> {
 		return processor;
 	}
 
-	public static ActorRef create(ActorContext context, Assign step, TestCaseScope scope, String stepId) throws Exception{
-		return context.actorOf(props(AssignStepProcessorActor.class, step, scope, stepId).withDispatcher(ActorSystem.BLOCKING_DISPATCHER), getName(NAME));
+	public static ActorRef create(ActorContext context, Assign step, TestCaseScope scope, String stepId, StepContext stepContext) throws Exception{
+		return context.actorOf(props(AssignStepProcessorActor.class, step, scope, stepId, stepContext).withDispatcher(ActorSystem.BLOCKING_DISPATCHER), getName(NAME));
 	}
 }

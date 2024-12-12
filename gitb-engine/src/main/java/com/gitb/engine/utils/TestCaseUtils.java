@@ -211,6 +211,10 @@ public class TestCaseUtils {
                     applyStopOnErrorSemantics(thread, containerStep.isStopOnError(), containerStep.isStopOnChildError());
                 }
             }
+        } else if (step instanceof CallStep containerStep) {
+            var flags = stopOnErrorChildFlags(Pair.of(parentStopOnErrorSetting, parentStopChildOnErrorSetting), Pair.of(containerStep.isStopOnError(), containerStep.isStopOnChildError()));
+            containerStep.setStopOnError(flags.getLeft());
+            containerStep.setStopOnChildError(flags.getRight());
         } else if (step != null) {
             // Basic step
             if (step.isStopOnError() == null) {

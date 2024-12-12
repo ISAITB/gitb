@@ -4,6 +4,7 @@ import com.gitb.engine.commands.interaction.StartCommand;
 import com.gitb.engine.events.model.StatusEvent;
 import com.gitb.engine.expr.ExpressionHandler;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.engine.utils.StepContext;
 import com.gitb.tdl.WhileStep;
 import com.gitb.types.DataType;
 import org.apache.pekko.actor.ActorRef;
@@ -24,8 +25,8 @@ public class WhileStepProcessorActor extends AbstractIterationStepActor<WhileSte
 	private Map<Integer, Integer> childActorUidIndexMap;
 	private Map<Integer, ActorRef> iterationIndexActorMap;
 
-	public WhileStepProcessorActor(WhileStep step, TestCaseScope scope, String stepId){
-		super(step, scope, stepId);
+	public WhileStepProcessorActor(WhileStep step, TestCaseScope scope, String stepId, StepContext stepContext){
+		super(step, scope, stepId, stepContext);
 	}
 
 	@Override
@@ -57,7 +58,7 @@ public class WhileStepProcessorActor extends AbstractIterationStepActor<WhileSte
 		boolean condition = (boolean) expressionHandler.processExpression(step.getCond(), DataType.BOOLEAN_DATA_TYPE).getValue();
 
 		if(condition) {
-			ActorRef iterationActor = SequenceProcessorActor.create(getContext(), step.getDo(), scope, stepId + ITERATION_OPENING_TAG + (iteration + 1) + ITERATION_CLOSING_TAG);
+			ActorRef iterationActor = SequenceProcessorActor.create(getContext(), step.getDo(), scope, stepId + ITERATION_OPENING_TAG + (iteration + 1) + ITERATION_CLOSING_TAG, stepContext);
 
 			childActorUidIndexMap.put(iterationActor.path().uid(), iteration);
 			iterationIndexActorMap.put(iteration, iterationActor);
@@ -69,7 +70,7 @@ public class WhileStepProcessorActor extends AbstractIterationStepActor<WhileSte
 		return condition;
 	}
 
-	public static ActorRef create(ActorContext context, WhileStep step, TestCaseScope scope, String stepId) throws Exception {
-		return create(WhileStepProcessorActor.class, context, step, scope, stepId);
+	public static ActorRef create(ActorContext context, WhileStep step, TestCaseScope scope, String stepId, StepContext stepContext) throws Exception {
+		return create(WhileStepProcessorActor.class, context, step, scope, stepId, stepContext);
 	}
 }

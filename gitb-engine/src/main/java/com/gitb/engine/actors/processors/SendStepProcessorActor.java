@@ -8,6 +8,7 @@ import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.messaging.MessagingContext;
 import com.gitb.engine.messaging.TransactionContext;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.engine.utils.StepContext;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.DeferredMessagingReport;
@@ -42,8 +43,8 @@ public class SendStepProcessorActor extends AbstractMessagingStepProcessorActor<
 
 	private Promise<TestStepReportType> promise;
 
-	public SendStepProcessorActor(Send step, TestCaseScope scope, String stepId) {
-		super(step, scope, stepId);
+	public SendStepProcessorActor(Send step, TestCaseScope scope, String stepId, StepContext stepContext) {
+		super(step, scope, stepId, stepContext);
 	}
 
     @Override
@@ -173,7 +174,7 @@ public class SendStepProcessorActor extends AbstractMessagingStepProcessorActor<
         return messagingContext;
     }
 
-	public static ActorRef create(ActorContext context, Send step, TestCaseScope scope, String stepId) throws Exception {
-		return context.actorOf(props(SendStepProcessorActor.class, step, scope, stepId).withDispatcher(ActorSystem.BLOCKING_DISPATCHER), getName(NAME));
+	public static ActorRef create(ActorContext context, Send step, TestCaseScope scope, String stepId, StepContext stepContext) throws Exception {
+		return context.actorOf(props(SendStepProcessorActor.class, step, scope, stepId, stepContext).withDispatcher(ActorSystem.BLOCKING_DISPATCHER), getName(NAME));
 	}
 }

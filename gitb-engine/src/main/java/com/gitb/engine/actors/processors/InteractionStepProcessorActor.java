@@ -11,6 +11,7 @@ import com.gitb.engine.events.model.InputEvent;
 import com.gitb.engine.expr.ExpressionHandler;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.engine.utils.StepContext;
 import com.gitb.engine.utils.TemplateUtils;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
@@ -59,8 +60,8 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
     private static final Logger logger = LoggerFactory.getLogger(InteractionStepProcessorActor.class);
     private Promise<TestStepReportType> promise;
 
-    public InteractionStepProcessorActor(UserInteraction step, TestCaseScope scope, String stepId) {
-        super(step, scope, stepId);
+    public InteractionStepProcessorActor(UserInteraction step, TestCaseScope scope, String stepId, StepContext stepContext) {
+        super(step, scope, stepId, stepContext);
     }
 
     @Override
@@ -445,7 +446,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         }
     }
 
-    public static ActorRef create(ActorContext context, UserInteraction step, TestCaseScope scope, String stepId) throws Exception {
-        return context.actorOf(props(InteractionStepProcessorActor.class, step, scope, stepId), getName(NAME));
+    public static ActorRef create(ActorContext context, UserInteraction step, TestCaseScope scope, String stepId, StepContext stepContext) throws Exception {
+        return context.actorOf(props(InteractionStepProcessorActor.class, step, scope, stepId, stepContext), getName(NAME));
     }
 }

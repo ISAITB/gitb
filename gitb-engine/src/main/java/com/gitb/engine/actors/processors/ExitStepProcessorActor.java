@@ -7,6 +7,7 @@ import com.gitb.engine.events.model.StatusEvent;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.engine.utils.StepContext;
 import com.gitb.tdl.ExitStep;
 import com.gitb.tr.SR;
 import com.gitb.tr.TestResultType;
@@ -23,8 +24,8 @@ public class ExitStepProcessorActor extends AbstractTestStepActor<ExitStep> {
 
 	public static final String NAME = "exit-s-p";
 
-	public ExitStepProcessorActor(ExitStep step, TestCaseScope scope, String stepId) {
-		super(step, scope, stepId);
+	public ExitStepProcessorActor(ExitStep step, TestCaseScope scope, String stepId, StepContext stepContext) {
+		super(step, scope, stepId, stepContext);
 	}
 
 	protected void start() throws Exception {
@@ -72,8 +73,8 @@ public class ExitStepProcessorActor extends AbstractTestStepActor<ExitStep> {
 	protected void init() {
 	}
 
-	public static ActorRef create(ActorContext context, ExitStep step, TestCaseScope scope, String stepId) throws Exception{
-		return create(ExitStepProcessorActor.class, context, step, scope, stepId);
+	public static ActorRef create(ActorContext context, ExitStep step, TestCaseScope scope, String stepId, StepContext stepContext) throws Exception{
+		return create(ExitStepProcessorActor.class, context, step, scope, stepId, stepContext);
 	}
 
 }

@@ -4,6 +4,7 @@ import com.gitb.core.ErrorCode;
 import com.gitb.core.StepStatus;
 import com.gitb.engine.processors.IProcessor;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.engine.utils.StepContext;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tr.TestResultType;
 import com.gitb.tr.TestStepReportType;
@@ -25,8 +26,8 @@ public abstract class AbstractProcessorActor<T> extends AbstractTestStepActor<T>
 
 	private Promise<TestStepReportType> promise;
 
-	public AbstractProcessorActor(T step, TestCaseScope scope, String stepId) {
-		super(step, scope, stepId);
+	public AbstractProcessorActor(T step, TestCaseScope scope, String stepId, StepContext stepContext) {
+		super(step, scope, stepId, stepContext);
 	}
 
 	protected abstract IProcessor getProcessor();

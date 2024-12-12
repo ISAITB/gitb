@@ -4,6 +4,7 @@ import com.gitb.engine.actors.ActorSystem;
 import com.gitb.engine.processors.IProcessor;
 import com.gitb.engine.processors.VerifyProcessor;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.engine.utils.StepContext;
 import com.gitb.tdl.Verify;
 import org.apache.pekko.actor.ActorRef;
 import scala.concurrent.ExecutionContext;
@@ -19,8 +20,8 @@ public class VerifyStepProcessorActor extends AbstractProcessorActor<Verify> {
 
 	private VerifyProcessor processor;
 
-	public VerifyStepProcessorActor(Verify step, TestCaseScope scope, String stepId) {
-		super(step, scope, stepId);
+	public VerifyStepProcessorActor(Verify step, TestCaseScope scope, String stepId, StepContext stepContext) {
+		super(step, scope, stepId, stepContext);
 		initialize();
 	}
 
@@ -33,8 +34,8 @@ public class VerifyStepProcessorActor extends AbstractProcessorActor<Verify> {
 		return processor;
 	}
 
-	public static ActorRef create(ActorContext context, Verify step, TestCaseScope scope, String stepId) throws Exception {
-		return context.actorOf(props(VerifyStepProcessorActor.class, step, scope, stepId).withDispatcher(ActorSystem.BLOCKING_DISPATCHER), getName(NAME));
+	public static ActorRef create(ActorContext context, Verify step, TestCaseScope scope, String stepId, StepContext stepContext) throws Exception {
+		return context.actorOf(props(VerifyStepProcessorActor.class, step, scope, stepId, stepContext).withDispatcher(ActorSystem.BLOCKING_DISPATCHER), getName(NAME));
 	}
 
 	@Override

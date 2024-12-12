@@ -1,6 +1,5 @@
 package com.gitb.engine.actors.processors;
 
-import org.apache.pekko.actor.ActorRef;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.StepStatus;
 import com.gitb.engine.actors.SessionActor;
@@ -11,6 +10,7 @@ import com.gitb.engine.events.model.StatusEvent;
 import com.gitb.engine.events.model.TestStepStatusEvent;
 import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.engine.utils.StepContext;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tdl.Process;
@@ -18,6 +18,7 @@ import com.gitb.tdl.*;
 import com.gitb.tr.TestResultType;
 import com.gitb.utils.ErrorUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.pekko.actor.ActorRef;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,13 +43,9 @@ public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStep
     private Map<Integer, Object> childSteps;
     private List<Pair<Integer, Object>> childStepSpecs;
 
-    public SequenceProcessorActor(T sequence, TestCaseScope scope, String stepId) {
-        this(sequence, scope, stepId, false);
-    }
-
-    public SequenceProcessorActor(T sequence, TestCaseScope scope, String stepId, boolean isRoot) {
-        super(sequence, scope, stepId);
-        this.isRoot = isRoot;
+    public SequenceProcessorActor(T sequence, TestCaseScope scope, String stepId, StepContext stepContext) {
+        super(sequence, scope, stepId, stepContext);
+        this.isRoot = stepContext == null;
     }
 
     @Override
@@ -83,50 +80,31 @@ public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStep
         } else {
             childStepId = "";
         }
-
-        if (childStep instanceof Send) {
-            child = SendStepProcessorActor.create(context, (Send) childStep, scope, childStepId);
-        } else if (childStep instanceof com.gitb.tdl.Receive) {
-            child = ReceiveStepProcessorActor.create(context, (com.gitb.tdl.Receive) childStep, scope, childStepId);
-        } else if (childStep instanceof Listen) {
-            child = ListenStepProcessorActor.create(context, (Listen) childStep, scope, childStepId);
-        } else if (childStep instanceof BeginTransaction) {
-            child = BeginTransactionStepProcessorActor.create(context, (BeginTransaction) childStep, scope, childStepId);
-        } else if (childStep instanceof EndTransaction) {
-            child = EndTransactionStepProcessorActor.create(context, (EndTransaction) childStep, scope, childStepId);
-        } else if (childStep instanceof IfStep) {
-            child = IfStepProcessorActor.create(context, (IfStep) childStep, scope, childStepId);
-        } else if (childStep instanceof WhileStep) {
-            child = WhileStepProcessorActor.create(context, (WhileStep) childStep, scope, childStepId);
-        } else if (childStep instanceof RepeatUntilStep) {
-            child = RepeatUntilStepProcessorActor.create(context, (RepeatUntilStep) childStep, scope, childStepId);
-        } else if (childStep instanceof ForEachStep) {
-            child = ForEachStepProcessorActor.create(context, (ForEachStep) childStep, scope, childStepId);
-        } else if (childStep instanceof FlowStep) {
-            child = FlowStepProcessorActor.create(context, (FlowStep) childStep, scope, childStepId);
-        } else if (childStep instanceof ExitStep) {
-            child = ExitStepProcessorActor.create(context, (ExitStep) childStep, scope, childStepId);
-        } else if (childStep instanceof Assign) {
-            child = AssignStepProcessorActor.create(context, (Assign) childStep, scope, childStepId);
-        } else if (childStep instanceof Log) {
-            child = LogStepProcessorActor.create(context, (Log) childStep, scope, childStepId);
-        } else if (childStep instanceof Group) {
-            child = GroupStepProcessorActor.create(context, (Group) childStep, scope, childStepId);
-        } else if (childStep instanceof Verify) {
-            child = VerifyStepProcessorActor.create(context, (Verify) childStep, scope, childStepId);
-        } else if (childStep instanceof CallStep) {
-            child = CallStepProcessorActor.create(context, (CallStep) childStep, scope, childStepId);
-        } else if (childStep instanceof UserInteraction) {
-            child = InteractionStepProcessorActor.create(context, (UserInteraction) childStep, scope, childStepId);
-        } else if (childStep instanceof BeginProcessingTransaction) {
-            child = BeginProcessingTransactionStepProcessorActor.create(context, (BeginProcessingTransaction) childStep, scope, childStepId);
-        } else if (childStep instanceof Process) {
-            child = ProcessStepProcessorActor.create(context, (Process) childStep, scope, childStepId);
-        } else if (childStep instanceof EndProcessingTransaction) {
-            child = EndProcessingTransactionStepProcessorActor.create(context, (EndProcessingTransaction) childStep, scope, childStepId);
-        } else {
-            throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Unknown test step type [" + childStep.getClass().getName() + "]!"));
-        }
+        var stepContext = StepContext.from(step);
+        child = switch (childStep) {
+            case Send send -> SendStepProcessorActor.create(context, send, scope, childStepId, stepContext);
+            case com.gitb.tdl.Receive receive -> ReceiveStepProcessorActor.create(context, receive, scope, childStepId, stepContext);
+            case Listen listen -> ListenStepProcessorActor.create(context, listen, scope, childStepId, stepContext);
+            case BeginTransaction beginTransaction -> BeginTransactionStepProcessorActor.create(context, beginTransaction, scope, childStepId, stepContext);
+            case EndTransaction endTransaction -> EndTransactionStepProcessorActor.create(context, endTransaction, scope, childStepId, stepContext);
+            case IfStep ifStep ->  IfStepProcessorActor.create(context, ifStep, scope, childStepId, stepContext);
+            case WhileStep whileStep -> WhileStepProcessorActor.create(context, whileStep, scope, childStepId, stepContext);
+            case RepeatUntilStep repeatUntilStep -> RepeatUntilStepProcessorActor.create(context, repeatUntilStep, scope, childStepId, stepContext);
+            case ForEachStep forEachStep -> ForEachStepProcessorActor.create(context, forEachStep, scope, childStepId, stepContext);
+            case FlowStep flowStep -> FlowStepProcessorActor.create(context, flowStep, scope, childStepId, stepContext);
+            case ExitStep exitStep -> ExitStepProcessorActor.create(context, exitStep, scope, childStepId, stepContext);
+            case Assign assign -> AssignStepProcessorActor.create(context, assign, scope, childStepId, stepContext);
+            case Log log -> LogStepProcessorActor.create(context, log, scope, childStepId, stepContext);
+            case Group group -> GroupStepProcessorActor.create(context, group, scope, childStepId, stepContext);
+            case Verify verify -> VerifyStepProcessorActor.create(context, verify, scope, childStepId, stepContext);
+            case CallStep callStep -> CallStepProcessorActor.create(context, callStep, scope, childStepId, stepContext);
+            case UserInteraction userInteraction -> InteractionStepProcessorActor.create(context, userInteraction, scope, childStepId, stepContext);
+            case BeginProcessingTransaction beginProcessingTransaction -> BeginProcessingTransactionStepProcessorActor.create(context, beginProcessingTransaction, scope, childStepId, stepContext);
+            case Process process -> ProcessStepProcessorActor.create(context, process, scope, childStepId, stepContext);
+            case EndProcessingTransaction endProcessingTransaction -> EndProcessingTransactionStepProcessorActor.create(context, endProcessingTransaction, scope, childStepId, stepContext);
+            case null -> throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Unknown test step type!"));
+            default -> throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Unknown test step type [" + childStep.getClass().getName() + "]!"));
+        };
         return child;
     }
 
@@ -157,29 +135,59 @@ public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStep
             ActorRef nextStep = null;
             if (scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPING && scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPED) {
                 if (status == StepStatus.ERROR && childStep instanceof TestConstruct construct) {
-                    boolean childStopOnError = Boolean.TRUE.equals(construct.isStopOnError());
-                    boolean currentStopOnError = Boolean.TRUE.equals(step.isStopOnError());
-                    if (childStopOnError) {
-                        if (currentStopOnError && !Boolean.FALSE.equals(step.isStopOnChildError()) || !currentStopOnError && step.isStopOnChildError() == null) {
-                            // The child step was set to stopOnError. Stop processing and signal stop.
-                            // We only signal a stop if the parent is also set to stop on error. This can come up if stopOnChildError was set to false on the parent.
-                            scope.getContext().setCurrentState(TestCaseContext.TestCaseStateEnum.STOPPING);
-                            try {
-                                getContext().system().actorSelection(SessionActor.getPath(scope.getContext().getSessionId())).tell(new PrepareForStopCommand(scope.getContext().getSessionId(), self()), self());
-                            } catch (Exception e) {
-                                LOG.error(addMarker(), "Error sending the signal to stop the test session from test step actor [{}].", stepId);
+                    boolean stopExecution;
+                    boolean skipNextStep;
+                    if (Boolean.TRUE.equals(construct.isStopOnError())) {
+                        if (Boolean.FALSE.equals(step.isStopOnChildError())) {
+                            stopExecution = false;
+                            skipNextStep = false;
+                        } else if (Boolean.TRUE.equals(step.isStopOnChildError())) {
+                            skipNextStep = true;
+                            if (Boolean.FALSE.equals(stepContext.parentStopOnChildError())) {
+                                stopExecution = false;
+                            } else if (Boolean.TRUE.equals(stepContext.parentStopOnChildError())) {
+                                stopExecution = Boolean.TRUE.equals(stepContext.parentStopOnError());
+                            } else {
+                                stopExecution = false;
                             }
                         } else {
-                            if (!Boolean.TRUE.equals(step.isStopOnChildError())) {
-                                // We ignore child errors - proceed.
-                                nextStep = startTestStepAtIndex(completedStepIndex + 1);
-                            }
+                            stopExecution = true;
+                            skipNextStep = true;
                         }
                     } else {
-                        if (!Boolean.TRUE.equals(step.isStopOnChildError())) {
-                            // We ignore child errors - proceed.
-                            nextStep = startTestStepAtIndex(completedStepIndex + 1);
+                        if (Boolean.TRUE.equals(step.isStopOnError())) {
+                            if (Boolean.FALSE.equals(step.isStopOnChildError())) {
+                                stopExecution = false;
+                                skipNextStep = false;
+                            } else if (Boolean.TRUE.equals(step.isStopOnChildError())) {
+                                stopExecution = true;
+                                skipNextStep = true;
+                            } else {
+                                stopExecution = true;
+                                skipNextStep = true;
+                            }
+                        } else {
+                            if (Boolean.TRUE.equals(step.isStopOnChildError())) {
+                                stopExecution = false;
+                                skipNextStep = true;
+                            } else if (Boolean.FALSE.equals(step.isStopOnChildError())) {
+                                stopExecution = false;
+                                skipNextStep = false;
+                            } else {
+                                stopExecution = false;
+                                skipNextStep = false;
+                            }
                         }
+                    }
+                    if (stopExecution) {
+                        scope.getContext().setCurrentState(TestCaseContext.TestCaseStateEnum.STOPPING);
+                        try {
+                            getContext().system().actorSelection(SessionActor.getPath(scope.getContext().getSessionId())).tell(new PrepareForStopCommand(scope.getContext().getSessionId(), self()), self());
+                        } catch (Exception e) {
+                            LOG.error(addMarker(), "Error sending the signal to stop the test session from test step actor [{}].", stepId);
+                        }
+                    } else if (!skipNextStep) {
+                        nextStep = startTestStepAtIndex(completedStepIndex + 1);
                     }
                 } else {
                     // Proceed.
@@ -267,7 +275,7 @@ public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStep
      * @param stepId  step id
      * @return sequence step actor reference
      */
-    public static ActorRef create(ActorContext context, Sequence step, TestCaseScope scope, String stepId) throws Exception {
-        return create(SequenceProcessorActor.class, context, step, scope, stepId);
+    public static ActorRef create(ActorContext context, Sequence step, TestCaseScope scope, String stepId, StepContext stepContext) throws Exception {
+        return create(SequenceProcessorActor.class, context, step, scope, stepId, stepContext);
     }
 }

@@ -5,6 +5,7 @@ import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.messaging.MessagingContext;
 import com.gitb.engine.messaging.TransactionContext;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.engine.utils.StepContext;
 import com.gitb.tdl.BeginTransaction;
 import org.apache.pekko.actor.ActorRef;
 
@@ -16,8 +17,8 @@ import org.apache.pekko.actor.ActorRef;
 public class BeginTransactionStepProcessorActor extends AbstractTestStepActor<BeginTransaction> {
 	public static final String NAME = "begin-txn-p";
 
-	public BeginTransactionStepProcessorActor(BeginTransaction step, TestCaseScope scope, String stepId) {
-		super(step, scope, stepId);
+	public BeginTransactionStepProcessorActor(BeginTransaction step, TestCaseScope scope, String stepId, StepContext stepContext) {
+		super(step, scope, stepId, stepContext);
 	}
 
 	@Override
@@ -55,7 +56,7 @@ public class BeginTransactionStepProcessorActor extends AbstractTestStepActor<Be
 		completed();
 	}
 
-	public static ActorRef create(ActorContext context, BeginTransaction step, TestCaseScope scope, String stepId) throws Exception {
-		return create(BeginTransactionStepProcessorActor.class, context, step, scope, stepId);
+	public static ActorRef create(ActorContext context, BeginTransaction step, TestCaseScope scope, String stepId, StepContext stepContext) throws Exception {
+		return create(BeginTransactionStepProcessorActor.class, context, step, scope, stepId, stepContext);
 	}
 }

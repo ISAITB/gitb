@@ -1,5 +1,6 @@
 package com.gitb.engine.actors.processors;
 
+import com.gitb.engine.utils.StepContext;
 import org.apache.pekko.actor.ActorRef;
 import com.gitb.engine.processing.ProcessingContext;
 import com.gitb.engine.testcase.TestCaseScope;
@@ -9,12 +10,12 @@ public class EndProcessingTransactionStepProcessorActor extends AbstractTestStep
 
     public static final String NAME = "eptxn-p";
 
-    public EndProcessingTransactionStepProcessorActor(EndProcessingTransaction step, TestCaseScope scope, String stepId) {
-        super(step, scope, stepId);
+    public EndProcessingTransactionStepProcessorActor(EndProcessingTransaction step, TestCaseScope scope, String stepId, StepContext stepContext) {
+        super(step, scope, stepId, stepContext);
     }
 
-    public static ActorRef create(ActorContext context, EndProcessingTransaction step, TestCaseScope scope, String stepId) throws Exception {
-        return create(EndProcessingTransactionStepProcessorActor.class, context, step, scope, stepId);
+    public static ActorRef create(ActorContext context, EndProcessingTransaction step, TestCaseScope scope, String stepId, StepContext stepContext) throws Exception {
+        return create(EndProcessingTransactionStepProcessorActor.class, context, step, scope, stepId, stepContext);
     }
 
     @Override

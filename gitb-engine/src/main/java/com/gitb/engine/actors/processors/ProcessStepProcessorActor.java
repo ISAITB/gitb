@@ -2,6 +2,7 @@ package com.gitb.engine.actors.processors;
 
 import com.gitb.engine.actors.ActorSystem;
 import com.gitb.engine.processing.handlers.AbstractProcessingHandler;
+import com.gitb.engine.utils.StepContext;
 import com.gitb.tdl.ErrorLevel;
 import org.apache.pekko.actor.ActorRef;
 import org.apache.pekko.dispatch.Futures;
@@ -38,12 +39,12 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
 
     private Promise<TestStepReportType> promise;
 
-    public ProcessStepProcessorActor(Process step, TestCaseScope scope, String stepId) {
-        super(step, scope, stepId);
+    public ProcessStepProcessorActor(Process step, TestCaseScope scope, String stepId, StepContext stepContext) {
+        super(step, scope, stepId, stepContext);
     }
 
-    public static ActorRef create(ActorContext context, Process step, TestCaseScope scope, String stepId) throws Exception {
-        return create(ProcessStepProcessorActor.class, context, step, scope, stepId);
+    public static ActorRef create(ActorContext context, Process step, TestCaseScope scope, String stepId, StepContext stepContext) throws Exception {
+        return create(ProcessStepProcessorActor.class, context, step, scope, stepId, stepContext);
     }
 
     @Override

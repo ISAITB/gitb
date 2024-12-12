@@ -1,5 +1,6 @@
 package com.gitb.engine.actors.processors;
 
+import com.gitb.engine.utils.StepContext;
 import org.apache.pekko.actor.ActorRef;
 import com.gitb.core.LogLevel;
 import com.gitb.engine.expr.ExpressionHandler;
@@ -17,8 +18,8 @@ public class LogStepProcessorActor extends AbstractTestStepActor<Log> {
     private static final Logger LOG = LoggerFactory.getLogger("TEST_SESSION");
     public static final String NAME = "log-p";
 
-    public LogStepProcessorActor(Log step, TestCaseScope scope, String stepId) {
-        super(step, scope, stepId);
+    public LogStepProcessorActor(Log step, TestCaseScope scope, String stepId, StepContext stepContext) {
+        super(step, scope, stepId, stepContext);
     }
 
     @Override
@@ -55,8 +56,8 @@ public class LogStepProcessorActor extends AbstractTestStepActor<Log> {
         completed();
     }
 
-    public static ActorRef create(ActorContext context, Log step, TestCaseScope scope, String stepId) throws Exception{
-        return create(LogStepProcessorActor.class, context, step, scope, stepId);
+    public static ActorRef create(ActorContext context, Log step, TestCaseScope scope, String stepId, StepContext stepContext) throws Exception{
+        return create(LogStepProcessorActor.class, context, step, scope, stepId, stepContext);
     }
 
 }

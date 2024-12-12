@@ -6,6 +6,7 @@ import com.gitb.engine.TestEngineConfiguration;
 import com.gitb.engine.events.model.StatusEvent;
 import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.engine.utils.StepContext;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tdl.ForEachStep;
 import com.gitb.tdl.RepeatUntilStep;
@@ -27,8 +28,8 @@ public abstract class AbstractIterationStepActor<T> extends AbstractTestStepActo
 	private boolean childrenHasError = false;
 	private boolean childrenHasWarning = false;
 
-	public AbstractIterationStepActor(T step, TestCaseScope scope, String stepId) {
-		super(step, scope, stepId);
+	public AbstractIterationStepActor(T step, TestCaseScope scope, String stepId, StepContext stepContext) {
+		super(step, scope, stepId, stepContext);
 		initialize();
 	}
 

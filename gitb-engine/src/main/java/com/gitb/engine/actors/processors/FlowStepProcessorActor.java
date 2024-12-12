@@ -1,12 +1,13 @@
 package com.gitb.engine.actors.processors;
 
-import org.apache.pekko.actor.ActorRef;
 import com.gitb.core.StepStatus;
 import com.gitb.engine.commands.interaction.StartCommand;
 import com.gitb.engine.events.model.StatusEvent;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.engine.utils.StepContext;
 import com.gitb.tdl.FlowStep;
 import com.gitb.tdl.Sequence;
+import org.apache.pekko.actor.ActorRef;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -28,8 +29,8 @@ public class FlowStepProcessorActor extends AbstractTestStepActor<FlowStep> {
 	private boolean childrenHasError;
 	private boolean childrenHasWarning;
 
-	public FlowStepProcessorActor(FlowStep step, TestCaseScope scope, String stepId) {
-		super(step, scope, stepId);
+	public FlowStepProcessorActor(FlowStep step, TestCaseScope scope, String stepId, StepContext stepContext) {
+		super(step, scope, stepId, stepContext);
 	}
 
 	@Override
@@ -39,7 +40,7 @@ public class FlowStepProcessorActor extends AbstractTestStepActor<FlowStep> {
 		if (!step.getThread().isEmpty()) {
 			for (int i=0; i< step.getThread().size(); i++) {
 				Sequence sequence = step.getThread().get(i);
-                ActorRef child = SequenceProcessorActor.create(getContext(), sequence, scope, stepId + THREAD_OPENING_TAG + (i + 1) + THREAD_CLOSING_TAG);
+                ActorRef child = SequenceProcessorActor.create(getContext(), sequence, scope, stepId + THREAD_OPENING_TAG + (i + 1) + THREAD_CLOSING_TAG, stepContext);
 				childMap.put(child.path().uid(), child);
 			}
 		}
@@ -77,7 +78,7 @@ public class FlowStepProcessorActor extends AbstractTestStepActor<FlowStep> {
 		}
 	}
 
-	public static ActorRef create(ActorContext context, FlowStep step, TestCaseScope scope, String stepId) throws Exception {
-		return create(FlowStepProcessorActor.class, context, step, scope, stepId);
+	public static ActorRef create(ActorContext context, FlowStep step, TestCaseScope scope, String stepId, StepContext stepContext) throws Exception {
+		return create(FlowStepProcessorActor.class, context, step, scope, stepId, stepContext);
 	}
 }

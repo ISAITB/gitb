@@ -1,9 +1,5 @@
 package com.gitb.engine.actors.processors;
 
-import org.apache.pekko.actor.ActorRef;
-import org.apache.pekko.dispatch.Futures;
-import org.apache.pekko.dispatch.OnFailure;
-import org.apache.pekko.dispatch.OnSuccess;
 import com.gitb.core.Configuration;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.MessagingModule;
@@ -13,6 +9,7 @@ import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.messaging.MessagingContext;
 import com.gitb.engine.messaging.TransactionContext;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.engine.utils.StepContext;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.IMessagingHandler;
 import com.gitb.messaging.Message;
@@ -23,6 +20,10 @@ import com.gitb.tr.TestStepReportType;
 import com.gitb.types.MapType;
 import com.gitb.utils.BindingUtils;
 import com.gitb.utils.ErrorUtils;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.dispatch.Futures;
+import org.apache.pekko.dispatch.OnFailure;
+import org.apache.pekko.dispatch.OnSuccess;
 import scala.concurrent.Future;
 import scala.concurrent.Promise;
 
@@ -40,8 +41,8 @@ public class ListenStepProcessorActor extends AbstractMessagingStepProcessorActo
 
     private Promise<TestStepReportType> promise;
 
-    public ListenStepProcessorActor(Listen step, TestCaseScope scope, String stepId) {
-        super(step, scope, stepId);
+    public ListenStepProcessorActor(Listen step, TestCaseScope scope, String stepId, StepContext stepContext) {
+        super(step, scope, stepId, stepContext);
     }
 
     @Override
@@ -166,7 +167,7 @@ public class ListenStepProcessorActor extends AbstractMessagingStepProcessorActo
         return messagingContext;
     }
 
-    public static ActorRef create(ActorContext context, Listen step, TestCaseScope scope, String stepId) throws Exception {
-        return context.actorOf(props(ListenStepProcessorActor.class, step, scope, stepId).withDispatcher(ActorSystem.BLOCKING_DISPATCHER), getName(NAME));
+    public static ActorRef create(ActorContext context, Listen step, TestCaseScope scope, String stepId, StepContext stepContext) throws Exception {
+        return context.actorOf(props(ListenStepProcessorActor.class, step, scope, stepId, stepContext).withDispatcher(ActorSystem.BLOCKING_DISPATCHER), getName(NAME));
     }
 }
