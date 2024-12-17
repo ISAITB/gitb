@@ -1,59 +1,73 @@
 <div class="testCaseContainer" (click)="$event.stopPropagation()">
     @for (testCase of testCases; track testCase.id; let first = $first, last = $last) {
-        <div class="testCase" (click)="descriptionVisible[testCase.id] = !descriptionVisible[testCase.id]" [class.shaded]="shaded" [class.disabled]="testCase.disabled" [class.hasDescription]="testCase.description != undefined && testCase.description != ''" [class.padded]="!first" [class.last]="last">
-            <div class="mainLine">
-                @if (hasDescriptions) {
-                    <div class="collapseIconContainer">
-                        @if (hasDescription[testCase.id]) {
-                            <app-collapsing-icon [isCollapsed]="!descriptionVisible[testCase.id]" [asDiv]="true"></app-collapsing-icon>
+        <div class="testCaseHolder"
+             [ngClass]="{'status-success': testCase.resultToShow == 'SUCCESS', 'status-failure': testCase.resultToShow == 'FAILURE', 'status-warning': testCase.resultToShow == 'WARNING'}"
+             [class.groupFirst]="testCase.groupFirst"
+             [class.groupLast]="testCase.groupLast"
+             [class.inGroup]="testCase.group != undefined"
+             [class.padded]="!first"
+             [class.last]="last"
+             [class.shaded]="shaded">
+            <div class="testCase" (click)="descriptionVisible[testCase.id] = !descriptionVisible[testCase.id]" [class.inGroup]="testCase.group != undefined" [class.groupFirst]="testCase.groupFirst" [class.groupLast]="testCase.groupLast" [class.disabled]="testCase.disabled" [class.shaded]="shaded" [class.hasDescription]="testCase.description != undefined && testCase.description != ''">
+                <div class="mainLine">
+                    @if (hasDescriptions) {
+                        <div class="collapseIconContainer">
+                            @if (hasDescription[testCase.id]) {
+                                <app-collapsing-icon [isCollapsed]="!descriptionVisible[testCase.id]" [asDiv]="true"></app-collapsing-icon>
+                            }
+                        </div>
+                    }
+                    @if (hasOptional || hasDisabled) {
+                        <div class="testCasePrescription">
+                            <app-prescription-level [optional]="testCase.optional" [disabled]="testCase.disabled"></app-prescription-level>
+                        </div>
+                    }
+                    <div class="testCaseName">{{testCase.sname}}</div>
+                    <div class="testCaseExecution">
+                        @if (testCase.parsedTags) {
+                            <div class="testCaseTagsContainer">
+                                <app-tags-display [tags]="testCase.parsedTags"></app-tags-display>
+                            </div>
                         }
-                    </div>
-                }
-                @if (hasOptional || hasDisabled) {
-                    <div class="testCasePrescription">
-                        <app-prescription-level [optional]="testCase.optional" [disabled]="testCase.disabled"></app-prescription-level>
-                    </div>
-                }
-                <div class="testCaseName">{{testCase.sname}}</div>
-                <div class="testCaseExecution">
-                    @if (testCase.parsedTags) {
-                        <div class="testCaseTagsContainer">
-                            <app-tags-display [tags]="testCase.parsedTags"></app-tags-display>
+                        @if (testCase.updateTime) {
+                            <div class="testCaseUpdateTimeContainer">
+                                <app-tag label="fa-solid fa-clock" [icon]="true" tooltipText="Last execution time" [value]="testCase.updateTime"></app-tag>
+                            </div>
+                        }
+                        @if (testCase.sessionId != undefined || (testCase.hasDocumentation && showViewDocumentation) || showExportTestCase(testCase) || showExecute) {
+                            <div class="btn-toolbar" (click)="$event.stopPropagation()">
+                                @if (testCase.sessionId != undefined) {
+                                    <button class="btn btn-secondary" (click)="viewTestCase(testCase)" containerClass="shortTooltip" container="body" tooltip="View session" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-search"></i></button>
+                                }
+                                @if (testCase.hasDocumentation && showViewDocumentation) {
+                                    <button type="button" class="btn btn-secondary" (click)="showTestCaseDocumentation(testCase)" [icon]="true" [pending]="viewDocumentationPending[testCase.id]" containerClass="shortTooltip" container="body"  tooltip="Documentation" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-info-circle"></i></button>
+                                }
+                                @if (showExportTestCase(testCase)) {
+                                    <button type="button" class="btn btn-secondary" [icon]="true" (click)="onExportTestCaseXml(testCase)" [pending]="exportXmlPending[testCase.id]" containerClass="shortTooltip" container="body"  tooltip="Export (XML)" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-regular fa-file-lines"></i></button>
+                                    <button type="button" class="btn btn-secondary" [icon]="true" (click)="onExportTestCasePdf(testCase)" [pending]="exportPdfPending[testCase.id]" containerClass="shortTooltip" container="body"  tooltip="Export (PDF)" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-regular fa-file-pdf"></i></button>
+                                }
+                                @if (showExecute) {
+                                    <button class="btn btn-primary" (click)="onTestSelect(testCase)" [pending]="testCase.executionPending" [icon]="true" containerClass="shortTooltip" container="body" tooltip="Run" [disabled]="testCase.disabled" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-play"></i></button>
+                                }
+                            </div>
+                        }
+                        <div class="testCaseStatus">
+                            <app-test-result-status-display [message]="testCase.outputMessage" [result]="testCase.result"></app-test-result-status-display>
                         </div>
-                    }
-                    @if (testCase.updateTime) {
-                        <div class="testCaseUpdateTimeContainer">
-                            <app-tag label="fa-solid fa-clock" [icon]="true" tooltipText="Last execution time" [value]="testCase.updateTime"></app-tag>
-                        </div>
-                    }
-                    @if (testCase.sessionId != undefined || (testCase.hasDocumentation && showViewDocumentation) || showExportTestCase(testCase) || showExecute) {
-                        <div class="btn-toolbar" (click)="$event.stopPropagation()">
-                            @if (testCase.sessionId != undefined) {
-                                <button class="btn btn-secondary" (click)="viewTestCase(testCase)" containerClass="shortTooltip" container="body" tooltip="View session" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-search"></i></button>
-                            }
-                            @if (testCase.hasDocumentation && showViewDocumentation) {
-                                <button type="button" class="btn btn-secondary" (click)="showTestCaseDocumentation(testCase)" [icon]="true" [pending]="viewDocumentationPending[testCase.id]" containerClass="shortTooltip" container="body"  tooltip="Documentation" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-info-circle"></i></button>
-                            }
-                            @if (showExportTestCase(testCase)) {
-                                <button type="button" class="btn btn-secondary" [icon]="true" (click)="onExportTestCaseXml(testCase)" [pending]="exportXmlPending[testCase.id]" containerClass="shortTooltip" container="body"  tooltip="Export (XML)" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-regular fa-file-lines"></i></button>
-                                <button type="button" class="btn btn-secondary" [icon]="true" (click)="onExportTestCasePdf(testCase)" [pending]="exportPdfPending[testCase.id]" containerClass="shortTooltip" container="body"  tooltip="Export (PDF)" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-regular fa-file-pdf"></i></button>
-                            }
-                            @if (showExecute) {
-                                <button class="btn btn-primary" (click)="onTestSelect(testCase)" [pending]="testCase.executionPending" [icon]="true" containerClass="shortTooltip" container="body" tooltip="Run" [disabled]="testCase.disabled" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-play"></i></button>
-                            }
-                        </div>
-                    }
-                    <div class="testCaseStatus">
-                        <app-test-result-status-display [message]="testCase.outputMessage" [result]="testCase.result"></app-test-result-status-display>
                     </div>
                 </div>
+                @if (hasDescription[testCase.id]) {
+                    <div [collapse]="!descriptionVisible[testCase.id]" [isAnimated]="true" class="testCaseDescriptionContainer">
+                        <div class="testCaseDescription">{{testCase.description}}</div>
+                        <app-specification-reference-display [reference]="testCase"></app-specification-reference-display>
+                    </div>
+                }
             </div>
-            @if (hasDescription[testCase.id]) {
-                <div [collapse]="!descriptionVisible[testCase.id]" [isAnimated]="true" class="testCaseDescriptionContainer">
-                    <div class="testCaseDescription">{{testCase.description}}</div>
-                    <app-specification-reference-display [reference]="testCase"></app-specification-reference-display>
-                </div>
-            }
+<!--            @if (testCase.groupFirst) {-->
+<!--                <div class="testCaseGroupStatus">-->
+<!--                    <app-test-result-status-display [result]="testCase.resultToShow"></app-test-result-status-display>-->
+<!--                </div>-->
+<!--            }-->
         </div>
     }
     @if (testSuiteSpecificationReference) {

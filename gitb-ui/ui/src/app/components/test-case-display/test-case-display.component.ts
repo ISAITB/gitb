@@ -47,6 +47,7 @@ export class TestCaseDisplayComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
+    let testCasesInGroup: ConformanceTestCase[] = []
     for (let testCase of this.testCases) {
       if (testCase.tags != undefined && testCase.parsedTags == undefined) {
         testCase.parsedTags = sortBy(JSON.parse(testCase.tags), ['name'])
@@ -56,6 +57,56 @@ export class TestCaseDisplayComponent implements OnInit {
         this.hasDescriptions = true
       }
       this.descriptionVisible[testCase.id] = false
+      this.manageGroup(testCasesInGroup, testCase)
+    }
+    this.closeGroup(testCasesInGroup)
+    if (this.testCases[this.testCases.length-1].group != undefined) {
+      this.testCases[this.testCases.length-1].groupLast = true
+    }
+  }
+
+  private manageGroup(currentGroup: ConformanceTestCase[], testCase: ConformanceTestCase) {
+    if (testCase.group == undefined) {
+      testCase.resultToShow = testCase.result
+      if (currentGroup.length > 0) {
+        this.closeGroup(currentGroup)
+      }
+    } else {
+      if (currentGroup.length > 0 && currentGroup[0].group != testCase.group) {
+        this.closeGroup(currentGroup)
+      }
+      currentGroup.push(testCase)
+    }
+  }
+
+  private closeGroup(currentGroup: ConformanceTestCase[]) {
+    if (currentGroup.length > 0) {
+      currentGroup[0].groupFirst = true
+      currentGroup[currentGroup.length - 1].groupLast = true
+      let successCount = 0
+      let warningCount = 0
+      let failureCount = 0
+      let incompleteCount = 0
+      currentGroup.forEach((group) => {
+        switch (group.result) {
+          case Constants.TEST_CASE_RESULT.SUCCESS: successCount++; break
+          case Constants.TEST_CASE_RESULT.WARNING: warningCount++; break
+          case Constants.TEST_CASE_RESULT.FAILURE: failureCount++; break
+          default: incompleteCount++; break
+        }
+      })
+      let groupStatus = Constants.TEST_CASE_RESULT.UNDEFINED
+      if (successCount > 0) {
+        groupStatus = Constants.TEST_CASE_RESULT.SUCCESS
+      } else if (warningCount > 0) {
+        groupStatus = Constants.TEST_CASE_RESULT.WARNING
+      } else if (failureCount > 0) {
+        groupStatus = Constants.TEST_CASE_RESULT.FAILURE
+      }
+      currentGroup.forEach((group) => {
+        group.resultToShow = groupStatus
+      })
+      currentGroup.splice(0, currentGroup.length)
     }
   }
 

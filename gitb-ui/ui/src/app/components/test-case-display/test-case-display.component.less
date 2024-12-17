@@ -1,29 +1,78 @@
 @import '../../../styles/less/_common.less';
 
 .testCaseContainer {
-    padding: 0px 15px 10px 15px;
+    padding: 0 15px 10px 15px;
     .mainLine {
         display: flex;
         align-items: center;
         width: 100%;
     }
-    .testCase {
+    .testCaseHolder {
         display: flex;
-        flex-wrap: wrap;
-        background: @white;
-        &.shaded {
-            background: @gray-light-1;
+        border-radius: @border-radius @border-radius-more @border-radius-more @border-radius;
+        background-color: @gray-dark-1;
+        &.status-success {
+            background-color: @green-success;
         }
-        border: 1px solid @gray-dark-1;
-        align-items: center;
-        padding: 10px;
-        border-radius: @border-radius;
+        &.status-failure {
+            background-color: @red-error;
+            //border-color: @red-error;
+        }
+        &.status-warning {
+            background-color: @orange-warning;
+        }
+        &.inGroup {
+            &.padded {
+                margin-top: 0;
+            }
+            margin-top: 0;
+            border-top: 0;
+            &.groupFirst {
+                border-bottom-left-radius: 0;
+                border-bottom-right-radius: 0;
+            }
+            &.groupLast {
+                border-top-left-radius: 0;
+                border-top-right-radius: 0;
+            }
+        }
         &.padded {
             margin-top: 5px;
         }
         &.last {
             margin-bottom: 5px;
         }
+    }
+    .testCase {
+        display: flex;
+        background: @white;
+        border: 1px solid @gray-dark-1;
+        border-left: 0;
+        &.shaded {
+            background: @gray-light-1;
+        }
+        border-radius: 0 @border-radius @border-radius 0;
+        margin-left: 7px;
+        &.inGroup {
+            border-top: 0;
+            border-bottom-style: dashed;
+            border-bottom-color: @gray-dark-1;
+            //margin-right: 50px;
+            &.groupFirst {
+                margin-right: 0;
+                border-top: 1px solid @gray-dark-1;
+                border-bottom-right-radius: 0;
+            }
+            &.groupLast {
+                border-top-right-radius: 0;
+                border-bottom-style: solid;
+                border-bottom-color: @gray-dark-1;
+            }
+        }
+        flex-grow: 1;
+        flex-wrap: wrap;
+        align-items: center;
+        padding: 10px;
         &.disabled {
             .testCaseName, .testCaseDescription {
                 opacity: 0.4;
@@ -39,6 +88,11 @@
             }
         }
     }
+    //.testCaseGroupStatus {
+    //    background-color: @gray-dark-1;
+    //    display: flex;
+    //    align-items: center;
+    //}
     .collapseIconContainer {
         min-width: 25px;
     }
