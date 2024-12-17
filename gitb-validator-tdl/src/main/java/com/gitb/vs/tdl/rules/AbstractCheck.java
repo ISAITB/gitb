@@ -19,17 +19,17 @@ public abstract class AbstractCheck {
     public String getResourceLocation(Context context, Path... resources) {
         StringBuilder str = new StringBuilder();
         for (Path resource: resources) {
-            str.append(context.getTestSuiteRootPath().relativize(resource).toString()).append(", ");
+            str.append(context.getTestSuiteRootPath().relativize(resource)).append(", ");
         }
-        if (str.length() > 0) {
+        if (!str.isEmpty()) {
             str.delete(str.length() - 2, str.length());
         }
         return str.toString();
     }
 
     public String getTestSuiteLocation(Context context) {
-        if (context.getTestSuitePaths().values().size() == 1) {
-            return getResourceLocation(context, context.getTestSuitePaths().values().iterator().next().get(0));
+        if (context.getTestSuitePaths().size() == 1) {
+            return getResourceLocation(context, context.getTestSuitePaths().values().iterator().next().getFirst());
         }
         return "";
     }

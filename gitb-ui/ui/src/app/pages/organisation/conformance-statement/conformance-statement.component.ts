@@ -701,7 +701,6 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
   protected calculateWrapping() {
     if (this.statusInfoContainer && this.resultsContainer) {
       this.resultsWrapped = this.statusInfoContainer.nativeElement.getBoundingClientRect().top != this.resultsContainer.nativeElement.getBoundingClientRect().top
-      console.log(`[${this.resultsWrapped}] = [${this.statusInfoContainer.nativeElement.getBoundingClientRect().top}] != [${this.resultsContainer.nativeElement.getBoundingClientRect().top}]`)
     }
   }
 
