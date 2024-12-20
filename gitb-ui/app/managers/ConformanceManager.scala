@@ -5,9 +5,9 @@ import com.gitb.tr.TestResultType
 import config.Configurations
 import managers.ConformanceManager._
 import models.Enums.{ConformanceStatementItemType, OrganizationType, UserRole}
-import models.{FileInfo, _}
 import models.snapshot._
 import models.statement.{ConformanceItemTreeData, ConformanceStatementResults}
+import models.{FileInfo, _}
 import org.apache.commons.lang3.StringUtils
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
@@ -34,7 +34,8 @@ object ConformanceManager {
 		(Rep[String], Rep[Option[String]], Rep[Option[Timestamp]], Rep[Option[String]]), // Result
 		(Rep[Option[String]], Rep[Option[String]], Rep[Option[Long]], Rep[Option[Short]], Rep[Option[String]], Rep[Option[String]]), // Specification group
 		(Rep[Long], Rep[String], Rep[Option[String]], Rep[Boolean], Rep[Boolean], Rep[Option[String]], Rep[Short], Rep[Option[String]], Rep[Option[String]], Rep[Option[String]], Rep[String]), // Test case
-		(Rep[Long], Rep[String], Rep[Option[String]], Rep[Option[String]], Rep[Option[String]], Rep[Option[String]], Rep[String]) // Test suite
+		(Rep[Long], Rep[String], Rep[Option[String]], Rep[Option[String]], Rep[Option[String]], Rep[Option[String]], Rep[String]), // Test suite
+		(Rep[Option[Long]], Rep[Option[String]], Rep[Option[String]], Rep[Option[String]]) // Test case group
 	)
 	private type ConformanceResultFullTuple = (
 		(Long, String), // Community
@@ -46,7 +47,8 @@ object ConformanceManager {
 		(String, Option[String], Option[Timestamp], Option[String]), // Result
 		(Option[String], Option[String], Option[Long], Option[Short], Option[String], Option[String]), // Specification group
 		(Long, String, Option[String], Boolean, Boolean, Option[String], Short, Option[String], Option[String], Option[String], String), // Test case
-		(Long, String, Option[String], Option[String], Option[String], Option[String], String) // Test suite
+		(Long, String, Option[String], Option[String], Option[String], Option[String], String), // Test suite
+		(Option[Long], Option[String], Option[String], Option[String]) // Test case group
 	)
 	private type ConformanceResultFullDbQuery = Query[ConformanceResultFullDbTuple, ConformanceResultFullTuple, Seq]
 
@@ -59,7 +61,7 @@ object ConformanceManager {
 		(Rep[Long], Rep[String], Rep[String], Rep[Short]), // Specification
 		(Rep[String], Rep[Option[String]], Rep[Option[Timestamp]]), // Result
 		(Rep[Option[String]], Rep[Option[String]], Rep[Option[Long]], Rep[Option[Short]]), // Specification group
-		(Rep[Boolean], Rep[Boolean]) // Test case
+		(Rep[Boolean], Rep[Boolean], Rep[Option[Long]]) // Test case
 	)
 	private type ConformanceResultTuple = (
 		(Long, String), // Community
@@ -70,18 +72,20 @@ object ConformanceManager {
 		(Long, String, String, Short), // Specification
 		(String, Option[String], Option[Timestamp]), // Result
 		(Option[String], Option[String], Option[Long], Option[Short]), // Specification group
-		(Boolean, Boolean) // Test case
+		(Boolean, Boolean, Option[Long]) // Test case
 	)
 	private type ConformanceResultDbQuery = Query[ConformanceResultDbTuple, ConformanceResultTuple, Seq]
 
 	private type ConformanceStatusDbTuple = (
 		(Rep[Long], Rep[String], Rep[Option[String]], Rep[Boolean], Rep[Option[String]], Rep[Option[String]], Rep[Option[String]]), // Test suite
 		(Rep[Long], Rep[String], Rep[Option[String]], Rep[Boolean], Rep[Boolean], Rep[Boolean], Rep[Option[String]], Rep[Short], Rep[Option[String]], Rep[Option[String]], Rep[Option[String]]), // Test case
+		(Rep[Option[Long]], Rep[Option[String]], Rep[Option[String]], Rep[Option[String]]), // Test case group
 		(Rep[String], Rep[Option[String]], Rep[Option[String]], Rep[Option[Timestamp]]) // Result
 	)
 	private type ConformanceStatusTuple = (
 		(Long, String, Option[String], Boolean, Option[String], Option[String], Option[String]), // Test suite
 		(Long, String, Option[String], Boolean, Boolean, Boolean, Option[String], Short, Option[String], Option[String], Option[String]), // Test case
+		(Option[Long], Option[String], Option[String], Option[String]), // Test case group
 		(String, Option[String], Option[String], Option[Timestamp]) // Result
 	)
 	private type ConformanceStatusDbQuery = Query[ConformanceStatusDbTuple, ConformanceStatusTuple, Seq]
@@ -92,7 +96,7 @@ object ConformanceManager {
 			(Rep[Option[Long]], Rep[Option[String]], Rep[Option[Short]], Rep[Option[String]]), // Specification group
 			(Rep[Long], Rep[String], Rep[String], Rep[Option[String]]),  // Actor
 			(Rep[String], Rep[Option[Timestamp]]), // Result
-			(Rep[Boolean], Rep[Boolean]) // Test case
+			(Rep[Boolean], Rep[Boolean], Rep[Option[Long]]) // Test case
 		)
 	private type ConformanceStatementTuple = (
 			(Long, String, Option[String]), // Domain
@@ -100,10 +104,11 @@ object ConformanceManager {
 			(Option[Long], Option[String], Option[Short], Option[String]), // Specification group
 			(Long, String, String, Option[String]), // Actor
 			(String, Option[Timestamp]), // Result
-			(Boolean, Boolean) // Test case
+			(Boolean, Boolean, Option[Long]) // Test case
 		)
 	private type ConformanceStatementDbQuery = Query[ConformanceStatementDbTuple, ConformanceStatementTuple, Seq]
 
+	private class ResultCounter(var failed: Int, var completed: Int, var undefined: Int)
 }
 
 @Singleton
@@ -233,44 +238,47 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 		} yield results)
 	}
 
-	def getCompletedConformanceStatementsForTestSession(systemId: Long, sessionId: String): List[Long] = { // Actor IDs considered as completed.
+	def getCompletedConformanceStatementsForTestSession(systemId: Long, sessionId: String): Option[Long] = { // Actor ID considered as completed.
 		exec(
 			for {
-				// Make sure we only do subsequent lookups if we have a non-optional, non-disabled test case
-				relatedActorIds <- PersistenceSchema.conformanceResults
+				// Make sure we only do subsequent lookups if we have a non-optional, non-disabled test case that succeeded (otherwise the overall status will not have changed to be successful)
+				actorIdToCheck <- PersistenceSchema.conformanceResults
 					.join(PersistenceSchema.testCases).on(_.testcase === _.id)
 					.filter(_._1.testsession === sessionId)
 					.filter(_._2.isOptional === false)
 					.filter(_._2.isDisabled === false)
+					.filter(_._1.result === "SUCCESS")
 					.map(_._1.actor)
 					.result
+					.headOption
 				conformanceResults <- {
-					if (relatedActorIds.nonEmpty) {
+					if (actorIdToCheck.nonEmpty) {
 						PersistenceSchema.conformanceResults
-							.filter(_.sut === systemId)
-							.filter(_.actor inSet relatedActorIds)
-							.map(x => (x.actor, x.result))
+							.join(PersistenceSchema.testCases).on(_.testcase === _.id)
+							.filter(_._1.sut === systemId)
+							.filter(_._1.actor === actorIdToCheck.get)
+							.map(x => (x._1.result, x._2.isOptional, x._2.isDisabled, x._2.group))
 							.result
 					} else {
 						DBIO.successful(Seq.empty)
 					}
 				}
-				completedActors <- {
-					if (conformanceResults.nonEmpty) {
-						val map = mutable.LinkedHashMap[Long, Boolean]()
-						conformanceResults.foreach { actorInfo =>
-							val currentIsSuccess = "SUCCESS".equals(actorInfo._2)
-							val overallIsSuccess = map.getOrElseUpdate(actorInfo._1, currentIsSuccess)
-							if (overallIsSuccess && !currentIsSuccess) {
-								map.put(actorInfo._1, currentIsSuccess)
-							}
+				completedActor <- {
+					if (actorIdToCheck.isDefined && conformanceResults.nonEmpty) {
+						val builder = new ConformanceStatusBuilder.ConformanceData[ConformanceStatementResultData](new ConformanceStatementResultData())
+						conformanceResults.foreach { resultInfo =>
+							builder.addConformanceResult(resultInfo._1, resultInfo._2, resultInfo._3, resultInfo._4)
 						}
-						DBIO.successful(map.filter(_._2).keys.toList)
+						if (builder.complete().overallResult.result == "SUCCESS") {
+							DBIO.successful(actorIdToCheck)
+						} else {
+							DBIO.successful(None)
+						}
 					} else {
-						DBIO.successful(List.empty)
+						DBIO.successful(None)
 					}
 				}
-			} yield completedActors
+			} yield completedActor
 		)
 	}
 
@@ -282,28 +290,32 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 				PersistenceSchema.conformanceSnapshotResults
 					.join(PersistenceSchema.conformanceSnapshotTestCases).on((q, tc) => q.snapshotId === tc.snapshotId && q.testCaseId === tc.id)
 					.join(PersistenceSchema.conformanceSnapshotTestSuites).on((q, ts) => q._1.snapshotId === ts.snapshotId && q._1.testSuiteId === ts.id)
-					.filter(_._1._1.snapshotId === snapshotId.get)
-					.filter(_._1._1.actorId === actorId)
-					.filter(_._1._1.systemId === sutId)
-					.filterIf(!includeDisabled)(_._1._2.isDisabled === false)
-					.filterOpt(testSuiteId)((q, id) => q._1._1.testSuiteId === id)
+					.joinLeft(PersistenceSchema.conformanceSnapshotTestCaseGroups).on((q, tcg) => q._1._1.snapshotId === tcg.snapshotId && q._1._1.testCaseGroupId === tcg.id)
+					.filter(_._1._1._1.snapshotId === snapshotId.get)
+					.filter(_._1._1._1.actorId === actorId)
+					.filter(_._1._1._1.systemId === sutId)
+					.filterIf(!includeDisabled)(_._1._1._2.isDisabled === false)
+					.filterOpt(testSuiteId)((q, id) => q._1._1._1.testSuiteId === id)
 					.map(x => (
-						(x._2.id, x._2.shortname, x._2.description, false, x._2.specReference, x._2.specDescription, x._2.specLink), // Test suite
-						(x._1._2.id, x._1._2.shortname, x._1._2.description, false, x._1._2.isOptional, x._1._2.isDisabled, x._1._2.tags, x._1._2.testSuiteOrder, x._1._2.specReference, x._1._2.specDescription, x._1._2.specLink), // Test case
-						(x._1._1.result, x._1._1.outputMessage, x._1._1.testSessionId, x._1._1.updateTime) // Result
+						(x._1._2.id, x._1._2.shortname, x._1._2.description, false, x._1._2.specReference, x._1._2.specDescription, x._1._2.specLink), // Test suite
+						(x._1._1._2.id, x._1._1._2.shortname, x._1._1._2.description, false, x._1._1._2.isOptional, x._1._1._2.isDisabled, x._1._1._2.tags, x._1._1._2.testSuiteOrder, x._1._1._2.specReference, x._1._1._2.specDescription, x._1._1._2.specLink), // Test case
+						(x._2.map(_.id), x._2.map(_.identifier), x._2.map(_.name).flatten, x._2.map(_.description).flatten), // Test case group
+						(x._1._1._1.result, x._1._1._1.outputMessage, x._1._1._1.testSessionId, x._1._1._1.updateTime) // Result
 					))
 			} else {
 				PersistenceSchema.conformanceResults
 					.join(PersistenceSchema.testCases).on(_.testcase === _.id)
 					.join(PersistenceSchema.testSuites).on(_._1.testsuite === _.id)
-					.filter(_._1._1.actor === actorId)
-					.filter(_._1._1.sut === sutId)
-					.filterIf(!includeDisabled)(_._1._2.isDisabled === false)
-					.filterOpt(testSuiteId)((q, id) => q._1._1.testsuite === id)
+					.joinLeft(PersistenceSchema.testCaseGroups).on((q, g) => q._1._2.group === g.id)
+					.filter(_._1._1._1.actor === actorId)
+					.filter(_._1._1._1.sut === sutId)
+					.filterIf(!includeDisabled)(_._1._1._2.isDisabled === false)
+					.filterOpt(testSuiteId)((q, id) => q._1._1._1.testsuite === id)
 					.map(x => (
-						(x._2.id, x._2.shortname, x._2.description, x._2.hasDocumentation, x._2.specReference, x._2.specDescription, x._2.specLink), // Test suite
-						(x._1._2.id, x._1._2.shortname, x._1._2.description, x._1._2.hasDocumentation, x._1._2.isOptional, x._1._2.isDisabled, x._1._2.tags, x._1._2.testSuiteOrder, x._1._2.specReference, x._1._2.specDescription, x._1._2.specLink), // Test case
-						(x._1._1.result, x._1._1.outputMessage, x._1._1.testsession, x._1._1.updateTime) // Result
+						(x._1._2.id, x._1._2.shortname, x._1._2.description, x._1._2.hasDocumentation, x._1._2.specReference, x._1._2.specDescription, x._1._2.specLink), // Test suite
+						(x._1._1._2.id, x._1._1._2.shortname, x._1._1._2.description, x._1._1._2.hasDocumentation, x._1._1._2.isOptional, x._1._1._2.isDisabled, x._1._1._2.tags, x._1._1._2.testSuiteOrder, x._1._1._2.specReference, x._1._1._2.specDescription, x._1._1._2.specLink), // Test case
+						(x._2.map(_.id), x._2.map(_.identifier), x._2.map(_.name).flatten, x._2.map(_.description).flatten), // Test case group
+						(x._1._1._1.result, x._1._1._1.outputMessage, x._1._1._1.testsession, x._1._1._1.updateTime) // Result
 					))
 			}
 			val specificationIdsQuery = if (snapshotId.isDefined) {
@@ -325,7 +337,8 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 							ConformanceStatusItem(
 								testSuiteId = r._1._1, testSuiteName = r._1._2, testSuiteDescription = r._1._3, testSuiteHasDocumentation = r._1._4, testSuiteSpecReference = r._1._5, testSuiteSpecDescription = r._1._6, testSuiteSpecLink = r._1._7,
 								testCaseId = r._2._1, testCaseName = r._2._2, testCaseDescription = r._2._3, testCaseHasDocumentation = r._2._4, testCaseSpecReference = r._2._9, testCaseSpecDescription = r._2._10, testCaseSpecLink = r._2._11,
-								result = r._3._1, outputMessage = r._3._2, sessionId = r._3._3, sessionTime = r._3._4,
+								testCaseGroup = r._3._1.map(TestCaseGroup(_, r._3._2.get, r._3._3, r._3._4, r._1._1)),
+								result = r._4._1, outputMessage = r._4._2, sessionId = r._4._3, sessionTime = r._4._4,
 								testCaseOptional = r._2._5, testCaseDisabled = r._2._6, testCaseTags = r._2._7
 							)
 						}))
@@ -334,19 +347,23 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 			)
 			// Check to see if we have badges. We use the SUCCESS badge as this will always be present if badges are defined.
 			val hasBadge = repositoryUtil.getConformanceBadge(statusItems._2._1, Some(actorId), snapshotId, TestResultType.SUCCESS.toString, exactMatch = false, forReport = false).isDefined
-			val status = new ConformanceStatus(sutId, statusItems._2._2, statusItems._2._1, actorId, 0, 0, 0, 0, 0, 0, TestResultType.UNDEFINED, None, hasBadge, new ListBuffer[ConformanceTestSuite])
+			val status = new ConformanceStatus(sutId, statusItems._2._2, statusItems._2._1, actorId, 0, 0, 0, 0, 0, 0, 0, 0, 0, TestResultType.UNDEFINED, None, hasBadge, new ListBuffer[ConformanceTestSuite])
+			val testCaseGroups = new mutable.HashMap[Long, ResultCounter]() // Group ID to group status.
 			val testSuiteMap = new mutable.LinkedHashMap[Long, ConformanceTestSuite]()
 			statusItems._1.foreach { item =>
 				val testSuite = if (testSuiteMap.contains(item.testSuiteId)) {
 					testSuiteMap(item.testSuiteId)
 				} else {
 					// New test suite.
-					val newTestSuite = new ConformanceTestSuite(item.testSuiteId, item.testSuiteName, item.testSuiteDescription, None, item.testSuiteHasDocumentation, item.testSuiteSpecReference, item.testSuiteSpecDescription, item.testSuiteSpecLink, TestResultType.UNDEFINED, 0, 0, 0, 0, 0, 0, new ListBuffer[ConformanceTestCase])
+					val newTestSuite = new ConformanceTestSuite(item.testSuiteId, item.testSuiteName, item.testSuiteDescription, None, item.testSuiteHasDocumentation, item.testSuiteSpecReference, item.testSuiteSpecDescription, item.testSuiteSpecLink, TestResultType.UNDEFINED, 0, 0, 0, 0, 0, 0, 0, 0, 0, new ListBuffer[ConformanceTestCase], new mutable.HashSet[TestCaseGroup])
 					testSuiteMap += (item.testSuiteId -> newTestSuite)
 					newTestSuite
 				}
-				val testCase = new ConformanceTestCase(item.testCaseId, item.testCaseName, item.testCaseDescription, None, item.sessionId, item.sessionTime, item.outputMessage, item.testCaseHasDocumentation, item.testCaseOptional, item.testCaseDisabled, TestResultType.fromValue(item.result), item.testCaseTags, item.testCaseSpecReference, item.testCaseSpecDescription, item.testCaseSpecLink)
+				val testCase = new ConformanceTestCase(item.testCaseId, item.testCaseName, item.testCaseDescription, None, item.sessionId, item.sessionTime, item.outputMessage, item.testCaseHasDocumentation, item.testCaseOptional, item.testCaseDisabled, TestResultType.fromValue(item.result), item.testCaseTags, item.testCaseSpecReference, item.testCaseSpecDescription, item.testCaseSpecLink, item.testCaseGroup.map(_.id))
 				testSuite.testCases.asInstanceOf[ListBuffer[ConformanceTestCase]].append(testCase)
+				if (item.testCaseGroup.isDefined) {
+					testSuite.testCaseGroups.asInstanceOf[mutable.HashSet[TestCaseGroup]].add(item.testCaseGroup.get)
+				}
 				if (!testCase.disabled) {
 					// Update time.
 					if (testCase.updateTime.isDefined && (status.updateTime.isEmpty || status.updateTime.get.before(testCase.updateTime.get))) {
@@ -366,35 +383,87 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 						}
 					} else {
 						if (testCase.result == TestResultType.SUCCESS) {
-							if (testSuite.failed == 0 && testSuite.undefined == 0) {
-								testSuite.result = TestResultType.SUCCESS
-							}
 							status.completed += 1
 							testSuite.completed += 1
+							if (item.testCaseGroup.isEmpty) {
+								status.completedToConsider += 1
+								testSuite.completedToConsider += 1
+							} else {
+								groupResult(testCaseGroups, item.testCaseGroup.get).completed += 1
+							}
 						} else if (testCase.result == TestResultType.FAILURE) {
-							testSuite.result = TestResultType.FAILURE
 							status.failed += 1
 							testSuite.failed += 1
+							if (item.testCaseGroup.isEmpty) {
+								status.failedToConsider += 1
+								testSuite.failedToConsider += 1
+							} else {
+								groupResult(testCaseGroups, item.testCaseGroup.get).failed += 1
+							}
 						} else {
-							if (testSuite.result == TestResultType.SUCCESS) testSuite.result = TestResultType.UNDEFINED
 							status.undefined += 1
 							testSuite.undefined += 1
+							if (item.testCaseGroup.isEmpty) {
+								status.undefinedToConsider += 1
+								testSuite.undefinedToConsider += 1
+							} else {
+								groupResult(testCaseGroups, item.testCaseGroup.get).undefined += 1
+							}
 						}
 					}
 				}
 			}
-			status.testSuites = testSuiteMap.values
-			status.result = if (status.failed > 0) {
-				TestResultType.FAILURE
-			} else if (status.undefined > 0) {
-				TestResultType.UNDEFINED
-			} else if (status.completed > 0) {
-				TestResultType.SUCCESS
-			} else {
-				TestResultType.UNDEFINED
+			// Now process the results from test case groups
+			if (testCaseGroups.nonEmpty) {
+				val processedGroups = mutable.HashSet[Long]()
+				testSuiteMap.values.foreach { testSuite =>
+					testSuite.testCases.foreach { testCase =>
+						if (testCase.group.exists(!processedGroups.contains(_))) {
+							val groupResults = testCaseGroups.get(testCase.group.get)
+							if (groupResults.isDefined) {
+								if (groupResults.get.completed > 0) {
+									status.completedToConsider += 1
+									testSuite.completedToConsider += 1
+								} else if (groupResults.get.failed > 0) {
+									status.failedToConsider += 1
+									testSuite.failedToConsider += 1
+								} else {
+									status.undefinedToConsider += 1
+									testSuite.undefinedToConsider += 1
+								}
+							}
+							processedGroups += testCase.group.get
+						}
+					}
+					testSuite.result = resultStatus(testSuite.completedToConsider, testSuite.failedToConsider, testSuite.undefinedToConsider)
+				}
 			}
+			// Complete overall results
+			status.testSuites = testSuiteMap.values
+			status.result = resultStatus(status.completedToConsider, status.failedToConsider, status.undefinedToConsider)
 			Some(status)
 		}
+	}
+
+	private def resultStatus(completed: Long, failed: Long, undefined: Long): TestResultType = {
+		if (failed > 0) {
+			TestResultType.FAILURE
+		} else if (undefined > 0) {
+			TestResultType.UNDEFINED
+		} else if (completed > 0) {
+			TestResultType.SUCCESS
+		} else {
+			TestResultType.UNDEFINED
+		}
+	}
+
+	private def groupResult(groupMap: mutable.HashMap[Long, ResultCounter], group: TestCaseGroup): ResultCounter = {
+		var groupResults = groupMap.get(group.id)
+		if (groupResults.isEmpty) {
+			groupResults = Some(new ResultCounter(0, 0, 0))
+			groupMap += (group.id -> groupResults.get)
+		}
+		groupResults.get
 	}
 
 	def getSpecificationIdForTestCaseFromConformanceStatements(testCaseId: Long): Option[Long] = {
@@ -422,25 +491,27 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 				.join(PersistenceSchema.communities).on(_._1._1._1._1._1._1._2.community === _.id)
 				.join(PersistenceSchema.conformanceSnapshotTestSuites).on((q, ts) => q._1._1._1._1._1._1._1._1.snapshotId === ts.snapshotId && q._1._1._1._1._1._1._1._1.testSuiteId === ts.id)
 				.join(PersistenceSchema.conformanceSnapshotTestCases).on((q, tc) => q._1._1._1._1._1._1._1._1._1.snapshotId === tc.snapshotId && q._1._1._1._1._1._1._1._1._1.testCaseId === tc.id)
-				.filter(_._1._1._1._1._1._1._1._1._1._1.snapshotId === snapshotId.get)
-				.filterOpt(domainIds)((q, ids) => q._1._1._1._1._1._1._1._1._1._1.domainId inSet ids)
-				.filterOpt(specIds)((q, ids) => q._1._1._1._1._1._1._1._1._1._1.specificationId inSet ids)
-				.filterOpt(specGroupIds)((q, ids) => q._1._1._1._1._1._1._1._1._1._1.specificationGroupId inSet ids)
-				.filterOpt(actorIds)((q, ids) => q._1._1._1._1._1._1._1._1._1._1.actorId inSet ids)
-				.filterOpt(communityIds)((q, ids) => q._1._1._1._1._1._1._1._1._1._2.community inSet ids)
-				.filterOpt(organisationIdsToUse(organizationIds, orgParameters))((q, ids) => q._1._1._1._1._1._1._1._1._1._1.organisationId inSet ids)
-				.filterOpt(systemIdsToUse(systemIds, sysParameters))((q, ids) => q._1._1._1._1._1._1._1._1._1._1.systemId inSet ids)
+				.joinLeft(PersistenceSchema.conformanceSnapshotTestCaseGroups).on((q, tcg) => q._1._1._1._1._1._1._1._1._1._1.snapshotId === tcg.snapshotId && q._1._1._1._1._1._1._1._1._1._1.testCaseGroupId === tcg.id)
+				.filter(_._1._1._1._1._1._1._1._1._1._1._1.snapshotId === snapshotId.get)
+				.filterOpt(domainIds)((q, ids) => q._1._1._1._1._1._1._1._1._1._1._1.domainId inSet ids)
+				.filterOpt(specIds)((q, ids) => q._1._1._1._1._1._1._1._1._1._1._1.specificationId inSet ids)
+				.filterOpt(specGroupIds)((q, ids) => q._1._1._1._1._1._1._1._1._1._1._1.specificationGroupId inSet ids)
+				.filterOpt(actorIds)((q, ids) => q._1._1._1._1._1._1._1._1._1._1._1.actorId inSet ids)
+				.filterOpt(communityIds)((q, ids) => q._1._1._1._1._1._1._1._1._1._1._2.community inSet ids)
+				.filterOpt(organisationIdsToUse(organizationIds, orgParameters))((q, ids) => q._1._1._1._1._1._1._1._1._1._1._1.organisationId inSet ids)
+				.filterOpt(systemIdsToUse(systemIds, sysParameters))((q, ids) => q._1._1._1._1._1._1._1._1._1._1._1.systemId inSet ids)
 				.map(x => (
-					(x._1._1._2.id, x._1._1._2.shortname), // 1.1: Community ID, 1.2: Community shortname
-					(x._1._1._1._2.id, x._1._1._1._2.shortname), // 2.1: Organisation ID, 2.2: Organisation shortname
-					(x._1._1._1._1._2.id, x._1._1._1._1._2.shortname, x._1._1._1._1._2.badgeKey, x._1._1._1._1._2.description, x._1._1._1._1._2.version), // 3.1: System ID, 3.2: System shortname, 3.3: System badge key, 3.4: System description, 3.5: System version
-					(x._1._1._1._1._1._2.id, x._1._1._1._1._1._2.shortname, x._1._1._1._1._1._2.fullname, x._1._1._1._1._1._2.description, x._1._1._1._1._1._2.reportMetadata), // 4.1: Domain ID, 4.2: Domain shortname, 4.3: Domain fullname, 4.4: Domain description, 4.5: Domain report metadata
-					(x._1._1._1._1._1._1._2.id, x._1._1._1._1._1._1._2.actorId, x._1._1._1._1._1._1._2.name, x._1._1._1._1._1._1._2.apiKey, x._1._1._1._1._1._1._2.description, x._1._1._1._1._1._1._2.reportMetadata), // 5.1: Actor ID, 5.2: Actor identifier, 5.3: Actor name, 5.4: Actor API key, 5.5: Actor description, 5.6: Actor report metadata
-					(x._1._1._1._1._1._1._1._1._2.id, x._1._1._1._1._1._1._1._1._2.shortname, x._1._1._1._1._1._1._1._1._2.fullname, x._1._1._1._1._1._1._1._1._2.displayOrder, x._1._1._1._1._1._1._1._1._2.description, x._1._1._1._1._1._1._1._1._2.reportMetadata), // 6.1: Specification ID, 6.2: Specification shortname, 6.3: Specification fullname, 6.4: Specification order, 6.5: Specification description, 6.6: Specification report metadata
-					(x._1._1._1._1._1._1._1._1._1._1.result, x._1._1._1._1._1._1._1._1._1._1.testSessionId, x._1._1._1._1._1._1._1._1._1._1.updateTime, x._1._1._1._1._1._1._1._1._1._1.outputMessage), // 7.1: Result, 7.2: Session ID, 7.3: Update time, 7.4: Output message
-					(x._1._1._1._1._1._1._1._2.map(_.shortname), x._1._1._1._1._1._1._1._2.map(_.fullname), x._1._1._1._1._1._1._1._2.map(_.id), x._1._1._1._1._1._1._1._2.map(_.displayOrder), x._1._1._1._1._1._1._1._2.map(_.description).flatten, x._1._1._1._1._1._1._1._2.map(_.reportMetadata).flatten), // 8.1: Specification group shortname, 8.2: Specification group fullname, 8.3: Specification group ID, 8.4: Specification group order, 8.5: Specification group description, 8.6: Specification group report metadata
-					(x._2.id, x._2.shortname, x._2.description, x._2.isOptional, x._2.isDisabled, x._2.tags, x._2.testSuiteOrder, x._2.specReference, x._2.specDescription, x._2.specLink, x._2.version), // 9.1: Test case ID, 9.2: Test case shortname, 9.3: Test case description, 9.4: Test case optional, 9.5: Test case disabled, 9.6: Test case tags, 9.7: Test case order
-					(x._1._2.id, x._1._2.shortname, x._1._2.description, x._1._2.specReference, x._1._2.specDescription, x._1._2.specLink, x._1._2.version) // 10.1: Test suite ID, 10.2: Test suite shortname, 10.3: Test suite description, 10.4: Test suite spec reference, 10.5: Test suite spec description, 10.6: Test suite spec link
+					(x._1._1._1._2.id, x._1._1._1._2.shortname), // 1.1: Community ID, 1.2: Community shortname
+					(x._1._1._1._1._2.id, x._1._1._1._1._2.shortname), // 2.1: Organisation ID, 2.2: Organisation shortname
+					(x._1._1._1._1._1._2.id, x._1._1._1._1._1._2.shortname, x._1._1._1._1._1._2.badgeKey, x._1._1._1._1._1._2.description, x._1._1._1._1._1._2.version), // 3.1: System ID, 3.2: System shortname, 3.3: System badge key, 3.4: System description, 3.5: System version
+					(x._1._1._1._1._1._1._2.id, x._1._1._1._1._1._1._2.shortname, x._1._1._1._1._1._1._2.fullname, x._1._1._1._1._1._1._2.description, x._1._1._1._1._1._1._2.reportMetadata), // 4.1: Domain ID, 4.2: Domain shortname, 4.3: Domain fullname, 4.4: Domain description, 4.5: Domain report metadata
+					(x._1._1._1._1._1._1._1._2.id, x._1._1._1._1._1._1._1._2.actorId, x._1._1._1._1._1._1._1._2.name, x._1._1._1._1._1._1._1._2.apiKey, x._1._1._1._1._1._1._1._2.description, x._1._1._1._1._1._1._1._2.reportMetadata), // 5.1: Actor ID, 5.2: Actor identifier, 5.3: Actor name, 5.4: Actor API key, 5.5: Actor description, 5.6: Actor report metadata
+					(x._1._1._1._1._1._1._1._1._1._2.id, x._1._1._1._1._1._1._1._1._1._2.shortname, x._1._1._1._1._1._1._1._1._1._2.fullname, x._1._1._1._1._1._1._1._1._1._2.displayOrder, x._1._1._1._1._1._1._1._1._1._2.description, x._1._1._1._1._1._1._1._1._1._2.reportMetadata), // 6.1: Specification ID, 6.2: Specification shortname, 6.3: Specification fullname, 6.4: Specification order, 6.5: Specification description, 6.6: Specification report metadata
+					(x._1._1._1._1._1._1._1._1._1._1._1.result, x._1._1._1._1._1._1._1._1._1._1._1.testSessionId, x._1._1._1._1._1._1._1._1._1._1._1.updateTime, x._1._1._1._1._1._1._1._1._1._1._1.outputMessage), // 7.1: Result, 7.2: Session ID, 7.3: Update time, 7.4: Output message
+					(x._1._1._1._1._1._1._1._1._2.map(_.shortname), x._1._1._1._1._1._1._1._1._2.map(_.fullname), x._1._1._1._1._1._1._1._1._2.map(_.id), x._1._1._1._1._1._1._1._1._2.map(_.displayOrder), x._1._1._1._1._1._1._1._1._2.map(_.description).flatten, x._1._1._1._1._1._1._1._1._2.map(_.reportMetadata).flatten), // 8.1: Specification group shortname, 8.2: Specification group fullname, 8.3: Specification group ID, 8.4: Specification group order, 8.5: Specification group description, 8.6: Specification group report metadata
+					(x._1._2.id, x._1._2.shortname, x._1._2.description, x._1._2.isOptional, x._1._2.isDisabled, x._1._2.tags, x._1._2.testSuiteOrder, x._1._2.specReference, x._1._2.specDescription, x._1._2.specLink, x._1._2.version), // 9.1: Test case ID, 9.2: Test case shortname, 9.3: Test case description, 9.4: Test case optional, 9.5: Test case disabled, 9.6: Test case tags, 9.7: Test case order
+					(x._1._1._2.id, x._1._1._2.shortname, x._1._1._2.description, x._1._1._2.specReference, x._1._1._2.specDescription, x._1._1._2.specLink, x._1._1._2.version), // 10.1: Test suite ID, 10.2: Test suite shortname, 10.3: Test suite description, 10.4: Test suite spec reference, 10.5: Test suite spec description, 10.6: Test suite spec link
+					(x._2.map(_.id), x._2.map(_.identifier), x._2.map(_.name).flatten, x._2.map(_.description).flatten) // 11.1: Test case group ID, 11.2: Test case group identifier, 11.3: Test case group name, 11.4: Test case group description
 				))
 		} else {
 			PersistenceSchema.conformanceResults
@@ -453,24 +524,26 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 				.join(PersistenceSchema.communities).on(_._2.community === _.id)
 				.join(PersistenceSchema.testSuites).on(_._1._1._1._1._1._1._1.testsuite === _.id)
 				.join(PersistenceSchema.testCases).on(_._1._1._1._1._1._1._1._1.testcase === _.id)
-				.filterOpt(domainIds)((q, ids) => q._1._1._1._1._1._2.id inSet ids)
-				.filterOpt(specIds)((q, ids) => q._1._1._1._1._1._1._1._1._1.spec inSet ids)
-				.filterOpt(specGroupIds)((q, ids) => q._1._1._1._1._1._1._1._1._2.group inSet ids)
-				.filterOpt(actorIds)((q, ids) => q._1._1._1._1._1._1._1._1._1.actor inSet ids)
-				.filterOpt(communityIds)((q, ids) => q._1._1._2.id inSet ids)
-				.filterOpt(organisationIdsToUse(organizationIds, orgParameters))((q, ids) => q._1._1._1._2.id inSet ids)
-				.filterOpt(systemIdsToUse(systemIds, sysParameters))((q, ids) => q._1._1._1._1._1._1._1._1._1.sut inSet ids)
+				.joinLeft(PersistenceSchema.testCaseGroups).on(_._2.group === _.id)
+				.filterOpt(domainIds)((q, ids) => q._1._1._1._1._1._1._2.id inSet ids)
+				.filterOpt(specIds)((q, ids) => q._1._1._1._1._1._1._1._1._1._1.spec inSet ids)
+				.filterOpt(specGroupIds)((q, ids) => q._1._1._1._1._1._1._1._1._1._2.group inSet ids)
+				.filterOpt(actorIds)((q, ids) => q._1._1._1._1._1._1._1._1._1._1.actor inSet ids)
+				.filterOpt(communityIds)((q, ids) => q._1._1._1._2.id inSet ids)
+				.filterOpt(organisationIdsToUse(organizationIds, orgParameters))((q, ids) => q._1._1._1._1._2.id inSet ids)
+				.filterOpt(systemIdsToUse(systemIds, sysParameters))((q, ids) => q._1._1._1._1._1._1._1._1._1._1.sut inSet ids)
 				.map(x => (
-					(x._1._1._2.id, x._1._1._2.shortname), // 1.1: Community ID, 1.2: Community shortname
-					(x._1._1._1._2.id, x._1._1._1._2.shortname), // 2.1: Organisation ID, 2.2: Organisation shortname
-					(x._1._1._1._1._2.id, x._1._1._1._1._2.shortname, x._1._1._1._1._2.badgeKey, x._1._1._1._1._2.description, x._1._1._1._1._2.version), // 3.1: System ID, 3.2: System shortname, 3.3: System badge key, 3.4: System description, 3.5: System version
-					(x._1._1._1._1._1._2.id, x._1._1._1._1._1._2.shortname, x._1._1._1._1._1._2.fullname, x._1._1._1._1._1._2.description, x._1._1._1._1._1._2.reportMetadata), // 4.1: Domain ID, 4.2: Domain shortname, 4.3: Domain fullname, 4.4: Domain description, 4.5: Domain report metadata
-					(x._1._1._1._1._1._1._2.id, x._1._1._1._1._1._1._2.actorId, x._1._1._1._1._1._1._2.name, x._1._1._1._1._1._1._2.apiKey, x._1._1._1._1._1._1._2.desc, x._1._1._1._1._1._1._2.reportMetadata), // 5.1: Actor ID, 5.2: Actor identifier, 5.3: Actor name, 5.4: Actor API key, 5.5: Actor description, 5.6: Actor report metadata
-					(x._1._1._1._1._1._1._1._1._2.id, x._1._1._1._1._1._1._1._1._2.shortname, x._1._1._1._1._1._1._1._1._2.fullname, x._1._1._1._1._1._1._1._1._2.displayOrder, x._1._1._1._1._1._1._1._1._2.description, x._1._1._1._1._1._1._1._1._2.reportMetadata), // 6.1: Specification ID, 6.2: Specification shortname, 6.3: Specification fullname, 6.4: Specification order, 6.5: Specification description, 6.6: Specification report metadata
-					(x._1._1._1._1._1._1._1._1._1.result, x._1._1._1._1._1._1._1._1._1.testsession, x._1._1._1._1._1._1._1._1._1.updateTime, x._1._1._1._1._1._1._1._1._1.outputMessage), // 7.1: Result, 7.2: Session ID, 7.3: Update time, 7.4: Output message
-					(x._1._1._1._1._1._1._1._2.map(_.shortname), x._1._1._1._1._1._1._1._2.map(_.fullname), x._1._1._1._1._1._1._1._2.map(_.id), x._1._1._1._1._1._1._1._2.map(_.displayOrder), x._1._1._1._1._1._1._1._2.map(_.description).flatten, x._1._1._1._1._1._1._1._2.map(_.reportMetadata).flatten), // 8.1: Specification group shortname, 8.2: Specification group fullname, 8.3: Specification group ID, 8.4: Specification group order, 8.5: Specification group description, 8.6: Specification group report metadata
-					(x._2.id, x._2.shortname, x._2.description, x._2.isOptional, x._2.isDisabled, x._2.tags, x._2.testSuiteOrder, x._2.specReference, x._2.specDescription, x._2.specLink, x._2.version), // 9.1: Test case ID, 9.2: Test case shortname, 9.3: Test case description, 9.4: Test case optional, 9.5: Test case disabled, 9.6: Test case tags, 9.7: Test case order
-					(x._1._2.id, x._1._2.shortname, x._1._2.description, x._1._2.specReference, x._1._2.specDescription, x._1._2.specLink, x._1._2.version) // 10.1: Test suite ID, 10.2: Test suite shortname, 10.3: Test suite description, 10.4: Test suite spec reference, 10.5: Test suite spec description, 10.6: Test suite spec link
+					(x._1._1._1._2.id, x._1._1._1._2.shortname), // 1.1: Community ID, 1.2: Community shortname
+					(x._1._1._1._1._2.id, x._1._1._1._1._2.shortname), // 2.1: Organisation ID, 2.2: Organisation shortname
+					(x._1._1._1._1._1._2.id, x._1._1._1._1._1._2.shortname, x._1._1._1._1._1._2.badgeKey, x._1._1._1._1._1._2.description, x._1._1._1._1._1._2.version), // 3.1: System ID, 3.2: System shortname, 3.3: System badge key, 3.4: System description, 3.5: System version
+					(x._1._1._1._1._1._1._2.id, x._1._1._1._1._1._1._2.shortname, x._1._1._1._1._1._1._2.fullname, x._1._1._1._1._1._1._2.description, x._1._1._1._1._1._1._2.reportMetadata), // 4.1: Domain ID, 4.2: Domain shortname, 4.3: Domain fullname, 4.4: Domain description, 4.5: Domain report metadata
+					(x._1._1._1._1._1._1._1._2.id, x._1._1._1._1._1._1._1._2.actorId, x._1._1._1._1._1._1._1._2.name, x._1._1._1._1._1._1._1._2.apiKey, x._1._1._1._1._1._1._1._2.desc, x._1._1._1._1._1._1._1._2.reportMetadata), // 5.1: Actor ID, 5.2: Actor identifier, 5.3: Actor name, 5.4: Actor API key, 5.5: Actor description, 5.6: Actor report metadata
+					(x._1._1._1._1._1._1._1._1._1._2.id, x._1._1._1._1._1._1._1._1._1._2.shortname, x._1._1._1._1._1._1._1._1._1._2.fullname, x._1._1._1._1._1._1._1._1._1._2.displayOrder, x._1._1._1._1._1._1._1._1._1._2.description, x._1._1._1._1._1._1._1._1._1._2.reportMetadata), // 6.1: Specification ID, 6.2: Specification shortname, 6.3: Specification fullname, 6.4: Specification order, 6.5: Specification description, 6.6: Specification report metadata
+					(x._1._1._1._1._1._1._1._1._1._1.result, x._1._1._1._1._1._1._1._1._1._1.testsession, x._1._1._1._1._1._1._1._1._1._1.updateTime, x._1._1._1._1._1._1._1._1._1._1.outputMessage), // 7.1: Result, 7.2: Session ID, 7.3: Update time, 7.4: Output message
+					(x._1._1._1._1._1._1._1._1._2.map(_.shortname), x._1._1._1._1._1._1._1._1._2.map(_.fullname), x._1._1._1._1._1._1._1._1._2.map(_.id), x._1._1._1._1._1._1._1._1._2.map(_.displayOrder), x._1._1._1._1._1._1._1._1._2.map(_.description).flatten, x._1._1._1._1._1._1._1._1._2.map(_.reportMetadata).flatten), // 8.1: Specification group shortname, 8.2: Specification group fullname, 8.3: Specification group ID, 8.4: Specification group order, 8.5: Specification group description, 8.6: Specification group report metadata
+					(x._1._2.id, x._1._2.shortname, x._1._2.description, x._1._2.isOptional, x._1._2.isDisabled, x._1._2.tags, x._1._2.testSuiteOrder, x._1._2.specReference, x._1._2.specDescription, x._1._2.specLink, x._1._2.version), // 9.1: Test case ID, 9.2: Test case shortname, 9.3: Test case description, 9.4: Test case optional, 9.5: Test case disabled, 9.6: Test case tags, 9.7: Test case order
+					(x._1._1._2.id, x._1._1._2.shortname, x._1._1._2.description, x._1._1._2.specReference, x._1._1._2.specDescription, x._1._1._2.specLink, x._1._1._2.version), // 10.1: Test suite ID, 10.2: Test suite shortname, 10.3: Test suite description, 10.4: Test suite spec reference, 10.5: Test suite spec description, 10.6: Test suite spec link
+					(x._2.map(_.id), x._2.map(_.identifier), x._2.map(_.name).flatten, x._2.map(_.description).flatten) // 11.1: Test case group ID, 11.2: Test case group identifier, 11.3: Test case group name, 11.4: Test case group description
 				))
 		}
 		val sortColumnToApply = sortColumn.getOrElse("community")
@@ -520,9 +593,12 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 				testSuiteId = Some(result._10._1), testSuiteName = Some(result._10._2), testSuiteDescription = result._10._3, testSuiteSpecReference = result._10._4, testSuiteSpecDescription = result._10._5, testSuiteSpecLink = result._10._6, testSuiteVersion = result._10._7,
 				testCaseId = Some(result._9._1), testCaseName = Some(result._9._2), testCaseDescription = result._9._3,
 				testCaseOptional = Some(result._9._4), testCaseDisabled = Some(result._9._5), testCaseTags = result._9._6, testCaseOrder = Some(result._9._7), testCaseSpecReference = result._9._8, testCaseSpecDescription = result._9._9, testCaseSpecLink = result._9._10, testCaseVersion = result._9._11,
+				testCaseGroupId = result._11._1, testCaseGroupIdentifier = result._11._2, testCaseGroupName = result._11._3, testCaseGroupDescription = result._11._4,
 				result = result._7._1, outputMessage = result._7._4, sessionId = result._7._2, updateTime = result._7._3,
-				completedTests = 0L, failedTests = 0L, undefinedTests = 0L, completedOptionalTests = 0L, failedOptionalTests = 0L, undefinedOptionalTests = 0L)
-			resultBuilder.addConformanceResult(conformanceStatement, result._9._4, result._9._5)
+				completedTests = 0L, failedTests = 0L, undefinedTests = 0L,
+				completedOptionalTests = 0L, failedOptionalTests = 0L, undefinedOptionalTests = 0L,
+				completedTestsToConsider = 0L, failedTestsToConsider = 0L, undefinedTestsToConsider = 0L)
+			resultBuilder.addConformanceResult(conformanceStatement, result._9._4, result._9._5, result._11._1)
 		}
 		resultBuilder
 	}
@@ -571,7 +647,7 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 					(x._1._1._1._1._1._1._1._2.id, x._1._1._1._1._1._1._1._2.shortname, x._1._1._1._1._1._1._1._2.fullname, x._1._1._1._1._1._1._1._2.displayOrder), // 6.1: Specification ID, 6.2: Specification shortname, 6.3: Specification fullname, 6.4: Specification order
 					(x._1._1._1._1._1._1._1._1._1.result, x._1._1._1._1._1._1._1._1._1.testSessionId, x._1._1._1._1._1._1._1._1._1.updateTime), // 7.1: Result, 7.2: Session ID, 7.3: Update time
 					(x._2.map(_.shortname), x._2.map(_.fullname), x._2.map(_.id), x._2.map(_.displayOrder)), // 8.1: Specification group shortname, 8.2: Specification group fullname, 8.3: Specification group ID, 8.4: Specification group order
-					(x._1._2.isOptional, x._1._2.isDisabled) // 9.1: Test case optional, 9.2: Test case disabled
+					(x._1._2.isOptional, x._1._2.isDisabled, x._1._1._1._1._1._1._1._1._1.testCaseGroupId) // 9.1: Test case optional, 9.2: Test case disabled, 9.3: Test case group ID
 				))
 		} else {
 			PersistenceSchema.conformanceResults
@@ -599,7 +675,7 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 					(x._1._1._1._1._1._1._1._2.id, x._1._1._1._1._1._1._1._2.shortname, x._1._1._1._1._1._1._1._2.fullname, x._1._1._1._1._1._1._1._2.displayOrder), // 6.1: Specification ID, 6.2: Specification shortname, 6.3: Specification fullname, 6.4: Specification order
 					(x._1._1._1._1._1._1._1._1.result, x._1._1._1._1._1._1._1._1.testsession, x._1._1._1._1._1._1._1._1.updateTime), // 7.1: Result, 7.2: Session ID, 7.3: Update time
 					(x._2.map(_.shortname), x._2.map(_.fullname), x._2.map(_.id), x._2.map(_.displayOrder)), // 8.1: Specification group shortname, 8.2: Specification group fullname, 8.3: Specification group ID, 8.4: Specification group order
-					(x._1._2.isOptional, x._1._2.isDisabled) // 9.1: Test case optional, 9.2: Test case disabled
+					(x._1._2.isOptional, x._1._2.isDisabled, x._1._2.group) // 9.1: Test case optional, 9.2: Test case disabled, 9.3: Test case group ID
 				))
 		}
 		// Apply sorting
@@ -645,9 +721,12 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 				testSuiteId = None, testSuiteName = None, testSuiteDescription = None, testSuiteSpecReference = None, testSuiteSpecDescription = None, testSuiteSpecLink = None, testSuiteVersion = "",
 				testCaseId = None, testCaseName = None, testCaseDescription = None,
 				testCaseOptional = Some(result._9._1), testCaseDisabled = Some(result._9._2), testCaseTags = None, testCaseOrder = None, testCaseSpecReference = None, testCaseSpecDescription = None, testCaseSpecLink = None, testCaseVersion = "",
+				testCaseGroupId = result._9._3, testCaseGroupIdentifier = None, testCaseGroupName = None, testCaseGroupDescription = None,
 				result = result._7._1, outputMessage = None, sessionId = result._7._2, updateTime = result._7._3,
-				completedTests = 0L, failedTests = 0L, undefinedTests = 0L, completedOptionalTests = 0L, failedOptionalTests = 0L, undefinedOptionalTests = 0L)
-			resultBuilder.addConformanceResult(conformanceStatement, result._9._1, result._9._2)
+				completedTests = 0L, failedTests = 0L, undefinedTests = 0L,
+				completedOptionalTests = 0L, failedOptionalTests = 0L, undefinedOptionalTests = 0L,
+				completedTestsToConsider = 0L, failedTestsToConsider = 0L, undefinedTestsToConsider = 0L)
+			resultBuilder.addConformanceResult(conformanceStatement, result._9._1, result._9._2, result._9._3)
 		}
 		resultBuilder.getOverview(Some(new ConformanceStatusBuilder.FilterCriteria(
 			dateFromFilterString(updateTimeStart),
@@ -670,6 +749,7 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 				result._4._1, result._4._2, result._4._3, valueOrNone(result._4._4, withDescriptions), None,
 				result._2._1, result._2._2, result._2._2, valueOrNone(result._2._4, withDescriptions), None,
 				systemId, result._5._1, result._5._2,
+				0L, 0L, 0L,
 				0L, 0L, 0L,
 				0L, 0L, 0L,
 				result._3._1, result._3._2, valueOrNone(result._3._4, withDescriptions), None,
@@ -717,7 +797,7 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 							(x._1._1._1._1._2.group, x._2.map(_.fullname), x._2.map(_.displayOrder), x._2.map(_.description).flatten), // 3.1: Specification group ID, 3.2: Specification group name, 3.3: Specification group display order, 3.4: Specification group description
 							(x._1._1._1._2.id, x._1._1._1._2.actorId, x._1._1._1._2.name, x._1._1._1._2.desc), // 4.1: Actor ID, 4.2: Actor identifier, 4.3: Actor name, 4.4: Actor description
 							(x._1._1._1._1._1.result, x._1._1._1._1._1.updateTime), // 5.1: Result, 5.2: Update time
-							(x._1._2.isOptional, x._1._2.isDisabled) // 6.1: Optional test case, 6.2: Disabled test case
+							(x._1._2.isOptional, x._1._2.isDisabled, x._1._2.group) // 6.1: Optional test case, 6.2: Disabled test case, 6.3: Test case group
 						))
 				} else {
 					PersistenceSchema.conformanceSnapshotResults
@@ -735,7 +815,7 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 							(x._1._1._1._1._1.specificationGroupId, x._2.map(_.fullname), x._2.map(_.displayOrder), x._2.map(_.description).flatten), // 3.1: Specification group ID, 3.2: Specification group name, 3.3: Specification group display order, 3.4: Specification group description
 							(x._1._1._1._2.id, x._1._1._1._2.actorId, x._1._1._1._2.name, x._1._1._1._2.description), // 4.1: Actor ID, 4.2: Actor identifier, 4.3: Actor name, 4.4: Actor description
 							(x._1._1._1._1._1.result, x._1._1._1._1._1.updateTime), // 5.1: Result, 5.2: Update time
-							(x._1._2.isOptional, x._1._2.isDisabled) // 6.1: Optional test case, 6.2: Disabled test case
+							(x._1._2.isOptional, x._1._2.isDisabled, x._1._1._1._1._1.testCaseGroupId) // 6.1: Optional test case, 6.2: Disabled test case, 6.3: Test case group
 						))
 				}
 				if (!withResults) {
@@ -747,7 +827,7 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 						if (withResults) {
 							val resultBuilder = new ConformanceStatusBuilder[ConformanceStatement](recordDetails = false)
 							rawResults.foreach { result =>
-								resultBuilder.addConformanceResult(toConformanceResult(result, systemId, withDescriptions), result._6._1, result._6._2)
+								resultBuilder.addConformanceResult(toConformanceResult(result, systemId, withDescriptions), result._6._1, result._6._2, result._6._3)
 							}
 							resultBuilder.getOverview(None)
 						} else {
@@ -842,7 +922,10 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 		data.statements.foreach { statement =>
 			val actorResults = if (withResults) {
 				Some(ConformanceStatementResults(
-					statement.updateTime, statement.completedTests, statement.failedTests, statement.undefinedTests, statement.completedOptionalTests, statement.failedOptionalTests, statement.undefinedOptionalTests,
+					statement.updateTime,
+					statement.completedTests, statement.failedTests, statement.undefinedTests,
+					statement.completedOptionalTests, statement.failedOptionalTests, statement.undefinedOptionalTests,
+					statement.completedTestsToConsider, statement.failedTestsToConsider, statement.undefinedTestsToConsider,
 					// If a test suite mapper is defined we are interested in also recording the test suites and test cases per statement. This will be handled by the mapper.
 					testSuiteMapper.map(_.apply(statement))
 				))
@@ -1191,18 +1274,20 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 					.join(PersistenceSchema.organizations).on(_._2.owner === _.id)
 					.join(PersistenceSchema.testSuites).on(_._1._1._1._1._1._1.testsuite === _.id)
 					.join(PersistenceSchema.testCases).on(_._1._1._1._1._1._1._1.testcase === _.id)
-					.filter(_._1._1._2.community === communityId)
-					.filter(_._1._1._2.adminOrganization === false)
+					.joinLeft(PersistenceSchema.testCaseGroups).on(_._2.group === _.id)
+					.filter(_._1._1._1._2.community === communityId)
+					.filter(_._1._1._1._2.adminOrganization === false)
 					.map(x => (
-						(x._1._1._2.id, x._1._1._2.shortname, x._1._1._2.fullname, x._1._1._2.apiKey), // 1. Organisation
-						(x._1._1._1._2.id, x._1._1._1._2.shortname, x._1._1._1._2.fullname, x._1._1._1._2.description, x._1._1._1._2.apiKey, x._1._1._1._2.badgeKey, x._1._1._1._2.version), // 2. System
-						(x._1._1._1._1._2.id, x._1._1._1._1._2.shortname, x._1._1._1._1._2.fullname, x._1._1._1._1._2.description, x._1._1._1._1._2.reportMetadata), // 3. Domain
-						(x._1._1._1._1._1._2.id, x._1._1._1._1._1._2.actorId, x._1._1._1._1._1._2.name, x._1._1._1._1._1._2.desc, x._1._1._1._1._1._2.apiKey, x._1._1._1._1._1._2.reportMetadata), // 4. Actor
-						(x._1._1._1._1._1._1._1._2.id, x._1._1._1._1._1._1._1._2.shortname, x._1._1._1._1._1._1._1._2.fullname, x._1._1._1._1._1._1._1._2.description, x._1._1._1._1._1._1._1._2.apiKey, x._1._1._1._1._1._1._1._2.displayOrder, x._1._1._1._1._1._1._1._2.reportMetadata), // 5. Specification
-						(x._1._1._1._1._1._1._2.map(_.id), x._1._1._1._1._1._1._2.map(_.shortname), x._1._1._1._1._1._1._2.map(_.fullname), x._1._1._1._1._1._1._2.map(_.description), x._1._1._1._1._1._1._2.map(_.displayOrder), x._1._1._1._1._1._1._2.map(_.reportMetadata)), // 6. Specification group
-						(x._2.id, x._2.shortname, x._2.fullname, x._2.description, x._2.testSuiteOrder, x._2.identifier, x._2.isOptional, x._2.isDisabled, x._2.tags, x._2.specReference, x._2.specDescription, x._2.specLink, x._2.version), // 7. Test case
-						(x._1._2.id, x._1._2.shortname, x._1._2.fullname, x._1._2.description, x._1._2.identifier, x._1._2.specReference, x._1._2.specDescription, x._1._2.specLink, x._1._2.version), // 8. Test suite
-						(x._1._1._1._1._1._1._1._1.result, x._1._1._1._1._1._1._1._1.testsession, x._1._1._1._1._1._1._1._1.updateTime, x._1._1._1._1._1._1._1._1.outputMessage) // 9. Result
+						(x._1._1._1._2.id, x._1._1._1._2.shortname, x._1._1._1._2.fullname, x._1._1._1._2.apiKey), // 1. Organisation
+						(x._1._1._1._1._2.id, x._1._1._1._1._2.shortname, x._1._1._1._1._2.fullname, x._1._1._1._1._2.description, x._1._1._1._1._2.apiKey, x._1._1._1._1._2.badgeKey, x._1._1._1._1._2.version), // 2. System
+						(x._1._1._1._1._1._2.id, x._1._1._1._1._1._2.shortname, x._1._1._1._1._1._2.fullname, x._1._1._1._1._1._2.description, x._1._1._1._1._1._2.reportMetadata), // 3. Domain
+						(x._1._1._1._1._1._1._2.id, x._1._1._1._1._1._1._2.actorId, x._1._1._1._1._1._1._2.name, x._1._1._1._1._1._1._2.desc, x._1._1._1._1._1._1._2.apiKey, x._1._1._1._1._1._1._2.reportMetadata), // 4. Actor
+						(x._1._1._1._1._1._1._1._1._2.id, x._1._1._1._1._1._1._1._1._2.shortname, x._1._1._1._1._1._1._1._1._2.fullname, x._1._1._1._1._1._1._1._1._2.description, x._1._1._1._1._1._1._1._1._2.apiKey, x._1._1._1._1._1._1._1._1._2.displayOrder, x._1._1._1._1._1._1._1._1._2.reportMetadata), // 5. Specification
+						(x._1._1._1._1._1._1._1._2.map(_.id), x._1._1._1._1._1._1._1._2.map(_.shortname), x._1._1._1._1._1._1._1._2.map(_.fullname), x._1._1._1._1._1._1._1._2.map(_.description), x._1._1._1._1._1._1._1._2.map(_.displayOrder), x._1._1._1._1._1._1._1._2.map(_.reportMetadata)), // 6. Specification group
+						(x._1._2.id, x._1._2.shortname, x._1._2.fullname, x._1._2.description, x._1._2.testSuiteOrder, x._1._2.identifier, x._1._2.isOptional, x._1._2.isDisabled, x._1._2.tags, x._1._2.specReference, x._1._2.specDescription, x._1._2.specLink, x._1._2.version), // 7. Test case
+						(x._1._1._2.id, x._1._1._2.shortname, x._1._1._2.fullname, x._1._1._2.description, x._1._1._2.identifier, x._1._1._2.specReference, x._1._1._2.specDescription, x._1._1._2.specLink, x._1._1._2.version), // 8. Test suite
+						(x._1._1._1._1._1._1._1._1._1.result, x._1._1._1._1._1._1._1._1._1.testsession, x._1._1._1._1._1._1._1._1._1.updateTime, x._1._1._1._1._1._1._1._1._1.outputMessage), // 9. Result
+						(x._2.map(_.id), x._2.map(_.identifier), x._2.map(_.name).flatten, x._2.map(_.description).flatten) // 10. Test case group
 					))
 					.result
 			}
@@ -1221,6 +1306,7 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 				val addedSpecifications = new mutable.HashSet[Long]()
 				val addedSpecificationGroups = new mutable.HashSet[Long]()
 				val addedTestCases = new mutable.HashSet[Long]()
+				val addedTestCaseGroups = new mutable.HashSet[Long]()
 				val addedTestSuites = new mutable.HashSet[Long]()
 				communityResults.foreach { result =>
 					// 1. Organisation
@@ -1239,14 +1325,18 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 					}
 					// 7. Test case
 					dbActions += addIfNotProcessed(addedTestCases, result._7._1, () => PersistenceSchema.conformanceSnapshotTestCases += ConformanceSnapshotTestCase(id = result._7._1, shortname = result._7._2, fullname = result._7._3, description = result._7._4, version = result._7._13, testSuiteOrder = result._7._5, identifier = result._7._6, isOptional = result._7._7, isDisabled = result._7._8, tags = result._7._9, specReference = result._7._10, specDescription = result._7._11, specLink = result._7._12, snapshotId = snapshotId))
-					// 8. Test suite
+					// 8. Test case group
+					if (result._10._1.isDefined) {
+						dbActions += addIfNotProcessed(addedTestCaseGroups, result._10._1.get, () => PersistenceSchema.conformanceSnapshotTestCaseGroups += ConformanceSnapshotTestCaseGroup(id = result._10._1.get, identifier = result._10._2.get, name = result._10._3, description = result._10._4, snapshotId = snapshotId))
+					}
+					// 9. Test suite
 					dbActions += addIfNotProcessed(addedTestSuites, result._8._1, () => PersistenceSchema.conformanceSnapshotTestSuites += ConformanceSnapshotTestSuite(id = result._8._1, shortname = result._8._2, fullname = result._8._3, description = result._8._4, version = result._8._9, identifier = result._8._5, specReference = result._8._6, specDescription = result._8._7, specLink = result._8._8, snapshotId = snapshotId))
-					// 9. Result
+					// 10. Result
 					dbActions += (PersistenceSchema.insertConformanceSnapshotResult += ConformanceSnapshotResult(
 						id = 0L, snapshotId = snapshotId, organisationId = result._1._1, systemId = result._2._1, domainId = result._3._1,
 						actorId = result._4._1, specId = result._5._1, specGroupId = result._6._1,
-						testCaseId = result._7._1, testSuiteId = result._8._1, result = result._9._1, testSession = result._9._2,
-						updateTime = result._9._3, outputMessage = result._9._4)
+						testCaseId = result._7._1, testCaseGroupId = result._10._1, testSuiteId = result._8._1,
+						result = result._9._1, testSession = result._9._2, updateTime = result._9._3, outputMessage = result._9._4)
 					)
 				}
 				toDBIO(dbActions)
@@ -1379,6 +1469,7 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 			// Delete results.
 			_ <- PersistenceSchema.conformanceSnapshotResults.filter(_.snapshotId === snapshot).delete
 			// Delete reference data.
+			_ <- PersistenceSchema.conformanceSnapshotTestCaseGroups.filter(_.snapshotId === snapshot).delete
 			_ <- PersistenceSchema.conformanceSnapshotTestCases.filter(_.snapshotId === snapshot).delete
 			_ <- PersistenceSchema.conformanceSnapshotTestSuites.filter(_.snapshotId === snapshot).delete
 			_ <- PersistenceSchema.conformanceSnapshotActors.filter(_.snapshotId === snapshot).delete

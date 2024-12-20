@@ -23,7 +23,7 @@ import { LogLevel } from '../types/log-level';
 import { SpecificationGroup } from '../types/specification-group';
 import { Specification } from '../types/specification';
 import { DomainSpecification } from '../types/domain-specification';
-import { find } from 'lodash';
+import {find, sortBy} from 'lodash';
 import { PageChange } from '../types/page-change';
 import { BadgesInfo } from '../components/manage-badges/badges-info';
 import { BreadcrumbChange } from '../types/breadcrumb-change';
@@ -35,6 +35,8 @@ import { ConformanceStatementItem } from '../types/conformance-statement-item';
 import { EndpointParameter } from '../types/endpoint-parameter';
 import { CookieOptions, CookieService } from 'ngx-cookie-service';
 import { LocationData } from '../types/location-data';
+import {TestCaseTag} from '../types/test-case-tag';
+import {ConformanceTestCaseGroup} from '../pages/organisation/conformance-statement/conformance-test-case-group';
 
 @Injectable({
   providedIn: 'root'
@@ -1507,6 +1509,111 @@ export class DataService {
       groups: groups,
       specs: specs,
       actors: actors
+    }
+  }
+
+  toTestCaseGroupMap(testCaseGroups: ConformanceTestCaseGroup[]|undefined): Map<number, ConformanceTestCaseGroup>|undefined {
+    if (testCaseGroups) {
+      const testCaseGroupMap = new Map<number, ConformanceTestCaseGroup>()
+      for (let group of testCaseGroups) {
+        testCaseGroupMap.set(group.id, group)
+      }
+      return testCaseGroupMap
+    } else {
+      return undefined
+    }
+  }
+
+  prepareTestCaseGroupPresentation(testCases: ConformanceTestCase[], groups: Map<number, ConformanceTestCaseGroup>|undefined) {
+    let testCasesInGroup: ConformanceTestCase[] = []
+    for (let testCase of testCases) {
+      this.manageGroup(testCasesInGroup, testCase, groups)
+    }
+    this.closeGroup(testCasesInGroup, groups)
+    if (groups && groups.size > 0) {
+      let currentGroup: number|undefined = undefined
+      for (let i = 0; i < testCases.length; i++) {
+        const testCase = testCases[i]
+        testCase.groupFirst = false
+        testCase.groupLast = false
+        if (testCase.group != undefined) {
+          if (currentGroup == undefined) {
+            testCase.groupFirst = true
+            currentGroup = testCase.group
+          } else if (testCase.group != currentGroup) {
+            testCase.groupFirst = true
+            testCases[i - 1].groupLast = true
+            currentGroup = testCase.group
+          }
+          if (i == testCases.length - 1) {
+            // This is the last test case
+            testCase.groupLast = true
+          }
+        } else if (currentGroup != undefined) {
+          testCases[i-1].groupLast = true
+          currentGroup = undefined
+        }
+      }
+    }
+  }
+
+  private manageGroup(currentGroup: ConformanceTestCase[], testCase: ConformanceTestCase, groups: Map<number, ConformanceTestCaseGroup>|undefined) {
+    if (testCase.group == undefined) {
+      testCase.resultToShow = testCase.result
+      if (currentGroup.length > 0) {
+        this.closeGroup(currentGroup, groups)
+      }
+    } else {
+      if (currentGroup.length > 0 && currentGroup[0].group != testCase.group) {
+        this.closeGroup(currentGroup, groups)
+      }
+      currentGroup.push(testCase)
+    }
+  }
+
+  private closeGroup(currentGroup: ConformanceTestCase[], groups: Map<number, ConformanceTestCaseGroup>|undefined) {
+    if (currentGroup.length > 0) {
+      let groupTag: TestCaseTag|undefined
+      if (currentGroup[0].group != undefined && groups) {
+        const groupInfo = groups.get(currentGroup[0].group)!
+        if (groupInfo.name) {
+          groupTag = {
+            name: groupInfo.name,
+            description: groupInfo.description
+          }
+        }
+      }
+      let successCount = 0
+      let warningCount = 0
+      let failureCount = 0
+      let incompleteCount = 0
+      currentGroup.forEach((testCase) => {
+        testCase.groupTag = groupTag
+        if (!testCase.disabled && !testCase.optional) {
+          switch (testCase.result) {
+            case Constants.TEST_CASE_RESULT.SUCCESS: successCount++; break
+            case Constants.TEST_CASE_RESULT.WARNING: warningCount++; break
+            case Constants.TEST_CASE_RESULT.FAILURE: failureCount++; break
+            default: incompleteCount++; break
+          }
+        }
+      })
+      let groupStatus = undefined
+      if (successCount > 0) {
+        groupStatus = Constants.TEST_CASE_RESULT.SUCCESS
+      } else if (warningCount > 0) {
+        groupStatus = Constants.TEST_CASE_RESULT.WARNING
+      } else if (failureCount > 0) {
+        groupStatus = Constants.TEST_CASE_RESULT.FAILURE
+      } else if (incompleteCount > 0) {
+        groupStatus = Constants.TEST_CASE_RESULT.UNDEFINED
+      }
+      if (groupStatus) {
+        currentGroup.forEach((testCaseInGroup) => {
+          testCaseInGroup.resultToShow = groupStatus
+        })
+      }
+      currentGroup.splice(0, currentGroup.length)
     }
   }
 

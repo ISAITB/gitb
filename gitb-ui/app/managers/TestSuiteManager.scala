@@ -1,5 +1,6 @@
 package managers
 
+import com.gitb.core.TestCaseType
 import com.gitb.tr.{TAR, TestResultType}
 import managers.testsuite.{TestSuitePaths, TestSuiteSaveResult}
 import models.Enums.TestSuiteReplacementChoice.{PROCEED, TestSuiteReplacementChoice}
@@ -159,8 +160,42 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 		exec(getTestSuiteOfTestCaseInternal(testCaseId))
 	}
 
-	def getTestSuiteWithTestCases(testSuiteId: Long): TestSuite = {
-		exec(getTestSuiteWithTestCasesInternal(testSuiteId))
+	def getTestSuiteWithTestCaseData(testSuiteId: Long): TestSuite = {
+		exec(
+			for {
+				testSuite <- PersistenceSchema.testSuites
+					.filter(_.id === testSuiteId)
+					.result.head
+				testCases <- PersistenceSchema.testCases
+					.join(PersistenceSchema.testSuiteHasTestCases).on(_.id === _.testcase)
+					.filter(_._2.testsuite === testSuiteId)
+					.sortBy(_._1.testSuiteOrder)
+					.map(x => (
+						x._1.id, x._1.identifier, x._1.shortname, x._1.fullname, x._1.description,
+						x._1.group, x._1.isOptional, x._1.isDisabled, x._1.tags, x._1.testSuiteOrder,
+						x._1.hasDocumentation, x._1.specReference, x._1.specDescription, x._1.specLink)
+					)
+					.result
+				testCaseGroups <- PersistenceSchema.testCaseGroups.filter(_.testSuite === testSuiteId).result
+				results <- {
+					val result = new TestSuite(testSuite = testSuite, actors = None,
+						testCases = Some(testCases.map { data =>
+							TestCases(
+								id = data._1, shortname = data._3, fullname = data._4, version = "",
+								authors = None, originalDate = None, modificationDate = None,
+								description = data._5, keywords = None, testCaseType = TestCaseType.CONFORMANCE.ordinal().toShort,
+								path = "", testSuiteOrder = data._10, hasDocumentation = data._11, documentation = None,
+								identifier = data._2, isOptional = data._7, isDisabled = data._8, tags = data._9,
+								specReference = data._12, specDescription = data._13, specLink = data._14,
+								group = data._6
+							)
+						}.toList),
+						testCaseGroups = Some(testCaseGroups.toList)
+					)
+					DBIO.successful(result)
+				}
+			} yield results
+		)
 	}
 
 	private def getTestSuiteWithTestCasesInternal(testSuiteId: Long): DBIO[TestSuite] = {
@@ -216,7 +251,7 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 								None
 							}
 							suite.definitionPath = testSuitePathsToUse.testSuiteDefinitionPath
-							stepSaveTestSuiteAndTestCases(suite.toCaseObject, existingTestSuiteId, testCases, testSuitePathsToUse, actions.find(_.specification.isEmpty).get)
+							stepSaveTestSuiteAndTestCases(suite.toCaseObject, existingTestSuiteId, testCases, testSuitePathsToUse, suite.testCaseGroups, actions.find(_.specification.isEmpty).get)
 						}
 						_ <- {
 							onSuccessCalls += (() => {
@@ -282,7 +317,7 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 							} else {
 								getTestSuiteBySpecificationAndIdentifier(specAction.specification.get, suite.identifier)
 							}
-							result <- saveTestSuite(savedSharedTestSuite, specAction.specification.get, suite.toCaseObject, existingTestSuite, specAction, testSuiteActors, testCases, tempTestSuiteArchive, onSuccessCalls, onFailureCalls)
+							result <- saveTestSuite(savedSharedTestSuite, specAction.specification.get, suite, existingTestSuite, specAction, testSuiteActors, testCases, tempTestSuiteArchive, onSuccessCalls, onFailureCalls)
 						} yield result._2)
 					}
 				}
@@ -831,12 +866,42 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 		actorToSave.actorId != null && actorToSave.name == null && actorToSave.description.isEmpty
 	}
 
-	def stepSaveTestSuiteAndTestCases(suite: TestSuites, existingSuiteId: Option[Long], testCases: Option[List[TestCases]], testSuitePaths: TestSuitePaths, updateActions: TestSuiteDeploymentAction): DBIO[TestSuiteSaveResult] = {
+	def stepSaveTestSuiteAndTestCases(suite: TestSuites, existingSuiteId: Option[Long], testCases: Option[List[TestCases]], testSuitePaths: TestSuitePaths, testCaseGroups: Option[List[TestCaseGroup]], updateActions: TestSuiteDeploymentAction): DBIO[TestSuiteSaveResult] = {
 		for {
 			// Save the test suite (insert or update) and return the identifier to use.
 			testSuiteId <- stepSaveTestSuite(suite, existingSuiteId, updateActions)
+			// Save test case groups.
+			testCaseGroups <- for {
+				// Remove previous groupings
+				_ <- if (existingSuiteId.isDefined) {
+					for {
+						existingTestCaseIds <- PersistenceSchema.testSuiteHasTestCases
+							.filter(_.testsuite === existingSuiteId.get)
+							.map(_.testcase)
+							.result
+						_ <- PersistenceSchema.testCases.filter(_.id inSet existingTestCaseIds).filter(_.group.isDefined).map(_.group).update(None)
+						_ <- PersistenceSchema.testCaseGroups.filter(_.testSuite === existingSuiteId).delete
+					} yield ()
+				} else {
+					DBIO.successful(())
+				}
+				// Add new test case groups
+				testCaseGroups <- if (testCaseGroups.isDefined) {
+					var combinedAction: DBIO[Option[mutable.HashMap[Long, Long]]] = DBIO.successful(Some(mutable.HashMap.empty)) // Temp group ID to persisted group ID
+					testCaseGroups.get.foreach { group =>
+						combinedAction = combinedAction.flatMap { savedGroupIds =>
+							(PersistenceSchema.testCaseGroups.returning(PersistenceSchema.testCaseGroups.map(_.id)) += group.withIds(0L, testSuiteId)).flatMap { newGroupId =>
+								DBIO.successful(Some(savedGroupIds.get += (group.id -> newGroupId)))
+							}
+						}
+					}
+					combinedAction
+				} else {
+					DBIO.successful(None)
+				}
+			} yield testCaseGroups
 			// Save the test cases.
-			stepSaveTestCases <- stepSaveTestCases(testSuiteId, existingSuiteId.isDefined, testCases, testSuitePaths.testCasePaths, updateActions)
+			stepSaveTestCases <- stepSaveTestCases(testSuiteId, existingSuiteId.isDefined, testCases, testSuitePaths.testCasePaths, testCaseGroups.map(_.toMap), updateActions)
 		} yield TestSuiteSaveResult(suite.withId(testSuiteId), stepSaveTestCases._1, stepSaveTestCases._2, testSuitePaths)
 	}
 
@@ -1021,7 +1086,7 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 		combinedAction andThen DBIO.successful(result.toList)
 	}
 
-	private def stepSaveTestCases(savedTestSuiteId: Long, testSuiteExists: Boolean, testCases: Option[List[TestCases]], resourcePaths: Map[String, String], updateActions: TestSuiteDeploymentAction): DBIO[(Map[String, (Long, Boolean)], List[String])] = {
+	private def stepSaveTestCases(savedTestSuiteId: Long, testSuiteExists: Boolean, testCases: Option[List[TestCases]], resourcePaths: Map[String, String], testCaseGroups: Option[Map[Long, Long]], updateActions: TestSuiteDeploymentAction): DBIO[(Map[String, (Long, Boolean)], List[String])] = {
 		for {
 			// Lookup the existing test cases for the test suite (if it already exists).
 			existingTestCasesForTestSuite <- if (testSuiteExists) {
@@ -1035,7 +1100,7 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 			testCaseIds <- {
 				var combinedAction: DBIO[mutable.HashMap[String, (Long, Boolean)]] = DBIO.successful(mutable.HashMap.empty) // Test case identifier to (Test case ID and isNew flag)
 				for (testCase <- testCases.get) {
-					val testCaseToStore = testCase.withPath(resourcePaths(testCase.identifier))
+					val testCaseToStore = testCase.withPathAndGroup(resourcePaths(testCase.identifier), testCaseGroups.flatMap(x => testCase.group.flatMap(x.get)))
 					val existingTestCaseInfo = existingTestCaseMap.get(testCase.identifier)
 					if (existingTestCaseInfo.isDefined) {
 						val existingTestCaseId: Long = existingTestCaseInfo.get._1
@@ -1050,7 +1115,8 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 									testCaseToStore.keywords, testCaseToStore.testCaseType, testCaseToStore.path, testCaseToStore.testSuiteOrder,
 									testCaseToStore.targetActors.get, testCaseToStore.documentation.isDefined, testCaseToStore.documentation,
 									testCaseToStore.isOptional, testCaseToStore.isDisabled, testCaseToStore.tags,
-									testCaseToStore.specReference, testCaseToStore.specDescription, testCaseToStore.specLink
+									testCaseToStore.specReference, testCaseToStore.specDescription, testCaseToStore.specLink,
+									testCaseToStore.group
 								) andThen DBIO.successful(savedTestCaseIds += (testCaseToStore.identifier -> (existingTestCaseId, false)))
 							}
 						} else {
@@ -1316,13 +1382,13 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 		TestSuitePaths(targetFolder, resourcePaths._1, resourcePaths._2)
 	}
 
-	private def saveTestSuite(sharedTestSuiteInfo: Option[TestSuiteSaveResult], specificationId: Long, tempSuite: TestSuites, existingSuite: Option[TestSuites], updateActions: TestSuiteDeploymentAction, testSuiteActors: Option[List[Actor]], testCases: Option[List[TestCases]], tempTestSuiteArchive: Option[File], onSuccessCalls: mutable.ListBuffer[() => _], onFailureCalls: mutable.ListBuffer[() => _]): DBIO[(TestSuiteSaveResult, List[TestSuiteUploadItemResult])] = {
+	private def saveTestSuite(sharedTestSuiteInfo: Option[TestSuiteSaveResult], specificationId: Long, tempSuite: TestSuite, existingSuite: Option[TestSuites], updateActions: TestSuiteDeploymentAction, testSuiteActors: Option[List[Actor]], testCases: Option[List[TestCases]], tempTestSuiteArchive: Option[File], onSuccessCalls: mutable.ListBuffer[() => _], onFailureCalls: mutable.ListBuffer[() => _]): DBIO[(TestSuiteSaveResult, List[TestSuiteUploadItemResult])] = {
 		// Reuse a previously saved test suite (if applicable).
 		var suite = if (sharedTestSuiteInfo.isDefined) {
 			sharedTestSuiteInfo.get.testSuite
 		} else {
 			// Create a new test suite folder name.
-			tempSuite.withFileName(repositoryUtils.generateTestSuiteFileName())
+			tempSuite.toCaseObject.withFileName(repositoryUtils.generateTestSuiteFileName())
 		}
 		// Reuse the previously saved files (if applicable).
 		val testSuitePathsToUse = if (sharedTestSuiteInfo.isDefined) {
@@ -1351,7 +1417,7 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 					DBIO.successful(sharedTestSuiteInfo.get)
 				} else {
 					// Save the test suite.
-					stepSaveTestSuiteAndTestCases(suite, existingTestSuiteId, testCases, testSuitePathsToUse, updateActions)
+					stepSaveTestSuiteAndTestCases(suite, existingTestSuiteId, testCases, testSuitePathsToUse, tempSuite.testCaseGroups, updateActions)
 				}
 			}
 			// Process the actors (inserting and saving them as needed) and return their ID information for further processing.
@@ -1790,6 +1856,7 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 						PersistenceSchema.testCases.filter(_.id === testCase).delete
 				}): _*)
 			} yield ()) andThen
+			PersistenceSchema.testCaseGroups.filter(_.testSuite === testSuiteId).delete andThen
 			(for {
 				testSuite <- PersistenceSchema.testSuites.filter(_.id === testSuiteId).result.head
 				_ <- {

@@ -1,6 +1,6 @@
 @for (item of items; track item) {
-    <app-conformance-statement-item-display 
-        [item]="item" 
+    <app-conformance-statement-item-display
+        [item]="item"
         [shade]="item.hidden?!shade:shade"
         [wrapDescriptions]="wrapDescriptions"
         [expandable]="expandable"
@@ -18,6 +18,6 @@
         [snapshotLabel]="snapshotLabel"
         (selectionChanged)="childSelectionChanged($event)"
         (export)="childExported($event)"
-         (viewTestSession)="onViewTestSession($event)"
+        (viewTestSession)="onViewTestSession($event)"
     ></app-conformance-statement-item-display>
 }

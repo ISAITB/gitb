@@ -60,7 +60,6 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
   lastUpdate?: string
   conformanceStatus = ''
   allTestsSuccessful = false
-  runTestClicked = false
   deletePending = false
   exportPending = false
   updateConfigurationPending = false
@@ -96,6 +95,7 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
   private static SHOW_DISABLED = '4'
   testDisplayOptions!: CheckboxOption[][]
   refreshDisplayOptions = new EventEmitter<CheckboxOption[][]>()
+  refreshTestSuiteDisplay = new EventEmitter<void>()
 
   statement?: ConformanceStatementItem
   systemName?: string
@@ -207,12 +207,20 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
         if (!this.hasOptionalTests && testSuite.hasOptionalTestCases) {
           this.hasOptionalTests = true
         }
+        testSuite.testCaseGroupMap = this.dataService.toTestCaseGroupMap(testSuite.testCaseGroups)
       }
       this.testSuites = statementData.results.testSuites
       this.displayedTestSuites = this.testSuites
       this.statusCounters = {
-        completed: statementData.results.summary.completed, failed: statementData.results.summary.failed, other: statementData.results.summary.undefined,
-        completedOptional: statementData.results.summary.completedOptional, failedOptional: statementData.results.summary.failedOptional, otherOptional: statementData.results.summary.undefinedOptional
+        completed: statementData.results.summary.completed,
+        failed: statementData.results.summary.failed,
+        other: statementData.results.summary.undefined,
+        completedOptional: statementData.results.summary.completedOptional,
+        failedOptional: statementData.results.summary.failedOptional,
+        otherOptional: statementData.results.summary.undefinedOptional,
+        completedToConsider: statementData.results.summary.completedToConsider,
+        failedToConsider: statementData.results.summary.failedToConsider,
+        otherToConsider: statementData.results.summary.undefinedToConsider
       }
       this.lastUpdate = statementData.results.summary.updateTime
       if (this.lastUpdate) {
@@ -342,13 +350,6 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
     }
   }
 
-  onExpand(testSuite: ConformanceTestSuite) {
-    if (!this.runTestClicked) {
-      testSuite.expanded = !testSuite.expanded
-    }
-    this.runTestClicked = false
-  }
-
   resultFilterUpdated(choices: CheckboxOptionState) {
     this.showOptional = choices[ConformanceStatementComponent.SHOW_OPTIONAL]
     this.showDisabled = choices[ConformanceStatementComponent.SHOW_DISABLED]
@@ -404,6 +405,8 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
           hasOptionalTestCases: testSuite.hasOptionalTestCases && this.showOptional,
           hasDisabledTestCases: testSuite.hasDisabledTestCases && this.showDisabled,
           testCases: testCases,
+          testCaseGroups: testSuite.testCaseGroups,
+          testCaseGroupMap: testSuite.testCaseGroupMap,
           specReference: testSuite.specReference,
           specDescription: testSuite.specDescription,
           specLink: testSuite.specLink
@@ -411,6 +414,12 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
       }
     }
     this.displayedTestSuites = filteredTestSuites
+    for (let testSuite of this.displayedTestSuites) {
+      this.dataService.prepareTestCaseGroupPresentation(testSuite.testCases, testSuite.testCaseGroupMap)
+    }
+    setTimeout(() => {
+      this.refreshTestSuiteDisplay.emit()
+    })
   }
 
   private validateConfiguration(testSuite: ConformanceTestSuite|undefined, testCase: ConformanceTestCase|undefined): Observable<boolean> {
@@ -678,10 +687,6 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
 
   showToActor() {
     return this.showToSpecification() && this.actorId >= 0
-  }
-
-  showSpecificationNavigation() {
-    return this.showToDomain() || this.showToSpecification() || this.showToActor()
   }
 
   toggleOverviewCollapse(value: boolean) {

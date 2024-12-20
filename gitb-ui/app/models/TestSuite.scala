@@ -75,7 +75,8 @@ class TestSuite(
 							 	_updateApproach: Option[Update],
 								_specReference: Option[String],
 								_specDescription: Option[String],
-								_specLink: Option[String]
+								_specLink: Option[String],
+							  _testCaseGroups: Option[List[TestCaseGroup]]
 ) {
 	var id: Long = _id
 	var shortname: String = _shortname
@@ -102,23 +103,24 @@ class TestSuite(
 	var specReference: Option[String] = _specReference
 	var specDescription: Option[String] = _specDescription
 	var specLink: Option[String] = _specLink
+	var testCaseGroups: Option[List[TestCaseGroup]] = _testCaseGroups
 
-	def this(testSuite: TestSuites, actors: Option[List[Actor]], testCases: Option[List[TestCases]]) = {
+	def this(testSuite: TestSuites, actors: Option[List[Actor]], testCases: Option[List[TestCases]], testCaseGroups: Option[List[TestCaseGroup]]) = {
 		this(testSuite.id, testSuite.shortname, testSuite.fullname, testSuite.version,
 			if(testSuite.authors.isDefined) Some(testSuite.authors.get.split(",").toList) else None,
 			testSuite.originalDate,	testSuite.modificationDate, testSuite.description,
 			if(testSuite.keywords.isDefined) Some(testSuite.keywords.get.split(",").toList) else None,
 			actors, testCases, None, testSuite.filename, testSuite.hasDocumentation, testSuite.documentation, testSuite.identifier, testSuite.hidden, testSuite.shared, testSuite.domain, None, testSuite.definitionPath,
-			None, testSuite.specReference, testSuite.specDescription, testSuite.specLink
+			None, testSuite.specReference, testSuite.specDescription, testSuite.specLink, testCaseGroups
 		)
 	}
 
 	def this(testSuite: TestSuites, testCases: List[TestCases]) = {
-		this(testSuite, None, Some(testCases))
+		this(testSuite, None, Some(testCases), None)
 	}
 
 	def this(testSuite: TestSuites) = {
-		this(testSuite, None, None)
+		this(testSuite, None, None, None)
 	}
 
 	def toCaseObject: TestSuites = {

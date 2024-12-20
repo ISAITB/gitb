@@ -18,6 +18,7 @@ export class TestSuiteDisplayComponent implements OnInit {
   @Input() showExport? = false
   @Input() showViewDocumentation? = true
   @Input() shaded = false
+  @Input() refresh?: EventEmitter<void>
 
   @Output() viewTestSession = new EventEmitter<string>()
   @Output() viewTestCaseDocumentation = new EventEmitter<number>()
@@ -26,7 +27,7 @@ export class TestSuiteDisplayComponent implements OnInit {
 
   hovering: {[key:number]: boolean } = {}
   viewDocumentationPending: {[key:number]: boolean } = {}
-  
+
   Constants = Constants
 
   constructor(
@@ -36,6 +37,22 @@ export class TestSuiteDisplayComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
+    this.prepareTestCaseGroupMaps()
+    if (this.refresh) {
+      this.refresh.subscribe(() => {
+        this.prepareTestCaseGroupMaps()
+      })
+    }
+  }
+
+  private prepareTestCaseGroupMaps(): void {
+    if (this.testSuites) {
+      for (let testSuite of this.testSuites) {
+        if (testSuite.testCaseGroups && !testSuite.testCaseGroupMap) {
+          testSuite.testCaseGroupMap = this.dataService.toTestCaseGroupMap(testSuite.testCaseGroups)
+        }
+      }
+    }
   }
 
   onExpand(testSuite: ConformanceTestSuite) {

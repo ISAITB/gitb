@@ -1,7 +1,7 @@
 package persistence.db
 
 import models._
-import models.snapshot.{ConformanceSnapshot, ConformanceSnapshotActor, ConformanceSnapshotCertificateMessage, ConformanceSnapshotDomain, ConformanceSnapshotDomainParameter, ConformanceSnapshotOrganisation, ConformanceSnapshotOrganisationProperty, ConformanceSnapshotOverviewCertificateMessage, ConformanceSnapshotResult, ConformanceSnapshotSpecification, ConformanceSnapshotSpecificationGroup, ConformanceSnapshotSystem, ConformanceSnapshotSystemProperty, ConformanceSnapshotTestCase, ConformanceSnapshotTestSuite}
+import models.snapshot.{ConformanceSnapshot, ConformanceSnapshotActor, ConformanceSnapshotCertificateMessage, ConformanceSnapshotDomain, ConformanceSnapshotDomainParameter, ConformanceSnapshotOrganisation, ConformanceSnapshotOrganisationProperty, ConformanceSnapshotOverviewCertificateMessage, ConformanceSnapshotResult, ConformanceSnapshotSpecification, ConformanceSnapshotSpecificationGroup, ConformanceSnapshotSystem, ConformanceSnapshotSystemProperty, ConformanceSnapshotTestCase, ConformanceSnapshotTestCaseGroup, ConformanceSnapshotTestSuite}
 import models.theme.Theme
 import slick.collection.heterogeneous.HNil
 import slick.jdbc.MySQLProfile.api._
@@ -227,6 +227,16 @@ object PersistenceSchema {
   }
   val options = TableQuery[OptionsTable]
 
+  class TestCaseGroupsTable(tag: Tag) extends Table[TestCaseGroup](tag, "TestCaseGroups") {
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def identifier = column[String]("identifier")
+    def name    = column[Option[String]]("name")
+    def description    = column[Option[String]]("description", O.SqlType("TEXT"))
+    def testSuite = column[Long]("testsuite")
+    def * = (id, identifier, name, description, testSuite) <> (TestCaseGroup.tupled, TestCaseGroup.unapply)
+  }
+  val testCaseGroups = TableQuery[TestCaseGroupsTable]
+
   class TestCasesTable(tag: Tag) extends Table[TestCases](tag, "TestCases") {
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
     def identifier = column[String]("identifier")
@@ -251,7 +261,8 @@ object PersistenceSchema {
     def specReference = column[Option[String]]("spec_reference")
     def specDescription = column[Option[String]]("spec_description", O.SqlType("TEXT"))
     def specLink = column[Option[String]]("spec_link")
-    def * = (id :: shortname :: fullname :: version :: authors :: originalDate :: modificationDate :: description :: keywords :: testCaseType :: path :: targetActors :: targetOptions :: testSuiteOrder :: hasDocumentation :: documentation :: identifier :: isOptional :: isDisabled :: tags :: specReference :: specDescription :: specLink :: HNil).mapTo[TestCases]
+    def group = column[Option[Long]]("testcase_group")
+    def * = (id :: shortname :: fullname :: version :: authors :: originalDate :: modificationDate :: description :: keywords :: testCaseType :: path :: targetActors :: targetOptions :: testSuiteOrder :: hasDocumentation :: documentation :: identifier :: isOptional :: isDisabled :: tags :: specReference :: specDescription :: specLink :: group :: HNil).mapTo[TestCases]
   }
   val testCases = TableQuery[TestCasesTable]
 
@@ -710,12 +721,13 @@ object PersistenceSchema {
     def actorId = column[Long]("actor_id")
     def testSuiteId = column[Long]("test_suite_id")
     def testCaseId = column[Long]("test_case_id")
+    def testCaseGroupId = column[Option[Long]]("test_case_group_id")
     def testSessionId = column[Option[String]]("test_session_id")
     def result = column[String]("result")
     def outputMessage = column[Option[String]]("output_message", O.SqlType("TEXT"))
     def updateTime = column[Option[Timestamp]]("update_time", O.SqlType("TIMESTAMP"))
     def snapshotId = column[Long]("snapshot_id")
-    def * = (id :: snapshotId :: organisationId ::  systemId ::  domainId :: specificationGroupId :: specificationId :: actorId :: testSuiteId :: testCaseId :: testSessionId :: result :: outputMessage :: updateTime :: HNil).mapTo[ConformanceSnapshotResult]
+    def * = (id :: snapshotId :: organisationId ::  systemId ::  domainId :: specificationGroupId :: specificationId :: actorId :: testSuiteId :: testCaseId :: testCaseGroupId:: testSessionId :: result :: outputMessage :: updateTime :: HNil).mapTo[ConformanceSnapshotResult]
   }
   val conformanceSnapshotResults = TableQuery[ConformanceSnapshotResultsTable]
   val insertConformanceSnapshotResult = conformanceSnapshotResults returning conformanceSnapshotResults.map(_.id)
@@ -738,6 +750,16 @@ object PersistenceSchema {
     def * = (id :: shortname :: fullname :: description :: version :: testSuiteOrder :: identifier :: isOptional :: isDisabled :: tags :: specReference :: specDescription :: specLink :: snapshotId :: HNil).mapTo[ConformanceSnapshotTestCase]
   }
   val conformanceSnapshotTestCases = TableQuery[ConformanceSnapshotTestCasesTable]
+
+  class ConformanceSnapshotTestCaseGroupsTable(tag: Tag) extends Table[ConformanceSnapshotTestCaseGroup](tag, "ConformanceSnapshotTestCaseGroups") {
+    def id = column[Long]("id")
+    def identifier = column[String]("identifier")
+    def name = column[Option[String]]("name")
+    def description = column[Option[String]]("description", O.SqlType("TEXT"))
+    def snapshotId = column[Long]("snapshot_id")
+    def * = (id :: identifier :: name :: description :: snapshotId :: HNil).mapTo[ConformanceSnapshotTestCaseGroup]
+  }
+  val conformanceSnapshotTestCaseGroups = TableQuery[ConformanceSnapshotTestCaseGroupsTable]
 
   class ConformanceSnapshotTestSuitesTable(tag: Tag) extends Table[ConformanceSnapshotTestSuite](tag, "ConformanceSnapshotTestSuites") {
     def id = column[Long]("id")

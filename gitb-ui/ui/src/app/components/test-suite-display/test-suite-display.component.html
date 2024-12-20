@@ -27,6 +27,7 @@
                 <div class="collapsibleTestCaseDiv">
                     <app-test-case-display
                         [testCases]="testSuite.testCases"
+                        [testCaseGroups]="testSuite.testCaseGroupMap"
                         [testSuiteSpecificationReference]="testSuite"
                         [hasOptional]="testSuite.hasOptionalTestCases"
                         [hasDisabled]="testSuite.hasDisabledTestCases"
@@ -34,6 +35,7 @@
                         [showExport]="showExport"
                         [showViewDocumentation]="showViewDocumentation"
                         [shaded]="!shaded"
+                        [refresh]="refresh"
                         (viewTestSession)="propagateViewTestSession($event)"
                         (execute)="propagateExecuteTestSession($event)"
                     ></app-test-case-display>

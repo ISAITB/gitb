@@ -288,7 +288,10 @@ object JsonUtil {
           "completed" -> item.results.get.completedTests,
           "undefinedOptional" -> item.results.get.undefinedOptionalTests,
           "failedOptional" -> item.results.get.failedOptionalTests,
-          "completedOptional" -> item.results.get.completedOptionalTests
+          "completedOptional" -> item.results.get.completedOptionalTests,
+          "undefinedToConsider" -> item.results.get.undefinedTestsToConsider,
+          "failedToConsider" -> item.results.get.failedTestsToConsider,
+          "completedToConsider" -> item.results.get.completedTestsToConsider
         )
       )
     }
@@ -403,20 +406,23 @@ object JsonUtil {
     json
   }
 
-  def jsTestSuite(testSuite: TestSuite, withDocumentation: Boolean, withSpecReference: Boolean): JsObject = {
-    var jTestSuite: JsObject = jsTestSuite(testSuite.toCaseObject, testSuite.specifications, withDocumentation, withSpecReference)
+  def jsTestSuite(testSuite: TestSuite, withDocumentation: Boolean, withSpecReference: Boolean, withGroups: Boolean, withTags: Boolean): JsObject = {
+    var obj: JsObject = jsTestSuite(testSuite.toCaseObject, testSuite.specifications, withDocumentation, withSpecReference)
     if (testSuite.testCases.isDefined) {
-      jTestSuite = jTestSuite ++ Json.obj("testCases" -> jsTestCasesList(testSuite.testCases.get))
+      obj = obj ++ Json.obj("testCases" -> jsTestCasesList(testSuite.testCases.get, withSpecReference, withTags))
     } else {
-      jTestSuite = jTestSuite ++ Json.obj("testCases" -> JsNull)
+      obj = obj ++ Json.obj("testCases" -> JsNull)
     }
-    jTestSuite
+    if (withGroups && testSuite.testCaseGroups.isDefined) {
+      obj = obj ++ Json.obj("testCaseGroups" -> jsTestCaseGroups(testSuite.testCaseGroups.get))
+    }
+    obj
   }
 
   def jsTestSuiteList(testSuites: Iterable[TestSuite]): JsArray = {
     var json = Json.arr()
     testSuites.foreach { testSuite =>
-      json = json.append(jsTestSuite(testSuite, withDocumentation = false, withSpecReference = false))
+      json = json.append(jsTestSuite(testSuite, withDocumentation = false, withSpecReference = false, withGroups = false, withTags = false))
     }
     json
   }
@@ -1039,7 +1045,10 @@ object JsonUtil {
 				"completed" -> conformanceStatement.completedTests,
         "undefinedOptional" -> conformanceStatement.undefinedOptionalTests,
         "failedOptional" -> conformanceStatement.failedOptionalTests,
-        "completedOptional" -> conformanceStatement.completedOptionalTests
+        "completedOptional" -> conformanceStatement.completedOptionalTests,
+        "undefinedToConsider" -> conformanceStatement.undefinedTestsToConsider,
+        "failedToConsider" -> conformanceStatement.failedTestsToConsider,
+        "completedToConsider" -> conformanceStatement.completedTestsToConsider
       )
 		)
 		json
@@ -1936,7 +1945,8 @@ object JsonUtil {
       "path" -> testCase.path,
       "hasDocumentation" -> testCase.hasDocumentation,
       "optional" -> testCase.isOptional,
-      "disabled" -> testCase.isDisabled
+      "disabled" -> testCase.isDisabled,
+      "group" -> (if(testCase.group.isDefined) testCase.group.get else JsNull)
     )
     if (withDocumentation && testCase.documentation.isDefined) json = json + ("documentation" -> JsString(testCase.documentation.get))
     if (withTags && testCase.tags.isDefined) json = json + ("tags" -> JsString(testCase.tags.get))
@@ -1979,10 +1989,10 @@ object JsonUtil {
    * @param list List of TestCases to be converted
    * @return JsArray
    */
-  def jsTestCasesList(list:List[TestCases]):JsArray = {
+  def jsTestCasesList(list:List[TestCases], withSpecReference: Boolean = false, withTags: Boolean = false):JsArray = {
     var json = Json.arr()
     list.foreach{ testCase =>
-      json = json.append(jsTestCases(testCase, withDocumentation = false, withTags = false, withSpecReference = false))
+      json = json.append(jsTestCases(testCase, withDocumentation = false, withTags, withSpecReference = withSpecReference))
     }
     json
   }
@@ -2882,7 +2892,8 @@ object JsonUtil {
         "tags" -> (if (testCase.tags.isDefined) testCase.tags.get else JsNull),
         "specReference" -> (if (testCase.specReference.isDefined) testCase.specReference.get else JsNull),
         "specDescription" -> (if (testCase.specDescription.isDefined) testCase.specDescription.get else JsNull),
-        "specLink" -> (if (testCase.specLink.isDefined) testCase.specLink.get else JsNull)
+        "specLink" -> (if (testCase.specLink.isDefined) testCase.specLink.get else JsNull),
+        "group" -> (if (testCase.group.isDefined) testCase.group.get else JsNull)
       ))
     }
     json
@@ -2891,7 +2902,7 @@ object JsonUtil {
   def jsConformanceTestSuites(testSuites: Iterable[ConformanceTestSuite]): JsArray = {
     var json = Json.arr()
     testSuites.foreach { testSuite =>
-      json = json.append(Json.obj(
+      var obj = Json.obj(
         "id" -> testSuite.id,
         "sname" -> testSuite.name,
         "description" -> (if (testSuite.description.isDefined) testSuite.description.get else JsNull),
@@ -2901,9 +2912,30 @@ object JsonUtil {
         "specLink" -> (if (testSuite.specLink.isDefined) testSuite.specLink.get else JsNull),
         "result" -> testSuite.result.value(),
         "testCases" -> jsConformanceTestCases(testSuite.testCases)
-      ))
+      )
+      if (testSuite.testCaseGroups.nonEmpty) {
+        obj = obj + ("testCaseGroups" -> jsTestCaseGroups(testSuite.testCaseGroups))
+      }
+      json = json.append(obj)
     }
     json
+  }
+
+  def jsTestCaseGroups(testCaseGroups: Iterable[TestCaseGroup]): JsArray = {
+    var json = Json.arr()
+    testCaseGroups.foreach { group =>
+      json = json.append(jsTestCaseGroup(group))
+    }
+    json
+  }
+
+  def jsTestCaseGroup(group: TestCaseGroup): JsObject = {
+    var obj = Json.obj(
+      "id" -> group.id
+    )
+    if (group.name.isDefined) obj = obj + ("name" -> JsString(group.name.get))
+    if (group.description.isDefined) obj = obj + ("description" -> JsString(group.description.get))
+    obj
   }
 
   def jsTags(tags: Iterable[TestCaseTag]): JsArray = {
@@ -2936,6 +2968,9 @@ object JsonUtil {
         "failedOptional" -> status.failedOptional,
         "completedOptional" -> status.completedOptional,
         "undefinedOptional" -> status.undefinedOptional,
+        "failedToConsider"    -> status.failedToConsider,
+        "completedToConsider"    -> status.completedToConsider,
+        "undefinedToConsider"    -> status.undefinedToConsider,
         "result" -> status.result.value(),
         "hasBadge" -> status.hasBadge,
         "updateTime" -> (if (status.updateTime.isDefined) TimeUtil.serializeTimestamp(status.updateTime.get) else JsNull),
@@ -3004,6 +3039,9 @@ object JsonUtil {
       "failedOptional" -> item.failedOptionalTests,
       "completedOptional" -> item.completedOptionalTests,
       "undefinedOptional" -> item.undefinedOptionalTests,
+      "failedToConsider"    -> item.failedTestsToConsider,
+      "completedToConsider"    -> item.completedTestsToConsider,
+      "undefinedToConsider"    -> item.undefinedTestsToConsider,
       "result" -> item.result,
       "updateTime" -> (if(item.updateTime.isDefined) TimeUtil.serializeTimestamp(item.updateTime.get) else JsNull),
       "outputMessage" -> item.outputMessage
@@ -3361,13 +3399,12 @@ object JsonUtil {
       remainingKeys.remove(fieldName)
       val field = obj(fieldName)
       field match {
-        case array: JsArray => {
+        case array: JsArray =>
           val items = new ListBuffer[A]()
           array.value.toList.foreach { item =>
             items += reader.reads(item).get
           }
           items.toList
-        }
         case _ => throw JsonValidationException("Field [" + fieldName + "] must be defined as an array.")
       }
     } else {

@@ -757,10 +757,28 @@
                     <xsd:element name="specReference" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="specDescription" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="specLink" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="testCaseGroups" type="TestCaseGroups" minOccurs="0"/>
                     <xsd:element name="testCases" type="TestCases" minOccurs="0"/>
                 </xsd:sequence>
                 <xsd:attribute name="specification" type="xsd:IDREF"/>
                 <xsd:attribute name="actors" type="xsd:IDREFS"/>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <xsd:complexType name="TestCaseGroups">
+        <xsd:sequence>
+            <xsd:element name="testCaseGroup" type="TestCaseGroup" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+    <xsd:complexType name="TestCaseGroup">
+        <xsd:complexContent>
+            <xsd:extension base="ExportType">
+                <xsd:sequence>
+                    <xsd:element name="identifier" type="xsd:string"/>
+                    <xsd:element name="name" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="description" type="xsd:string" minOccurs="0"/>
+                </xsd:sequence>
+                <xsd:attribute name="testSuite" use="required" type="xsd:IDREF"/>
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>
@@ -798,6 +816,7 @@
                 </xsd:sequence>
                 <xsd:attribute name="testSuite" use="required" type="xsd:IDREF"/>
                 <xsd:attribute name="specification" type="xsd:IDREF"/>
+                <xsd:attribute name="group" type="xsd:IDREF"/>
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>

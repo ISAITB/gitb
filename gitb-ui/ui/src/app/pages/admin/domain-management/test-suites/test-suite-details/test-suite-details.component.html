@@ -80,16 +80,34 @@
 			<tab (selectTab)="loadTestCases()" customClass="tabClass">
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-file-code" text="Test cases"></app-tab-title></ng-template>
 				<div class="tabPanel">
-					<div class="card">
-						<div table-directive
-							[columns]="testCaseTableColumns"
-							[data]="testSuite.testCases"
-							noDataMessage="No test cases found"
-							[loadingStatus]="dataStatus"
-							[allowSelect]="true"
-							(onSelect)="onTestCaseSelect($event)">
-						</div>
-					</div>
+                    @if (dataStatus.status != Constants.STATUS.FINISHED) {
+                        <div class="message-div">
+                            <div class="pending-icon"><app-pending-block [pending]="true"></app-pending-block></div>
+                            <div class="pending-message">Loading test cases...</div>
+                        </div>
+                    } @else {
+                        @if (testCasesToShow && testCasesToShow.length > 0) {
+                            <div class="testCaseDisplayContainer">
+                                <app-test-case-display
+                                    [testCases]="testCasesToShow"
+                                    [testCaseGroups]="testCaseGroupMap"
+                                    [hasOptional]="hasOptionalTestCases"
+                                    [hasDisabled]="hasDisabledTestCases"
+                                    [showExecute]="false"
+                                    [showExport]="false"
+                                    [showResults]="false"
+                                    [showViewDocumentation]="true"
+                                    [showEdit]="true"
+                                    [shaded]="false"
+                                    (edit)="onTestCaseSelect($event.id)"
+                                ></app-test-case-display>
+                            </div>
+                        } @else {
+                            <div class="message-div">
+                                <span>No test cases found.</span>
+                            </div>
+                        }
+                    }
 				</div>
 			</tab>
 			@if (testSuite.shared) {

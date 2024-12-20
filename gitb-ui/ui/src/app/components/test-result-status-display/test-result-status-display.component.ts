@@ -11,6 +11,7 @@ export class TestResultStatusDisplayComponent implements OnInit {
 
   @Input() message?: string
   @Input() result?: string
+  @Input() ignored = false
   iconToShow!: string
   tooltipText!: string
   popoverClass!: string

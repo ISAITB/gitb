@@ -18,6 +18,8 @@ import { BsModalService } from 'ngx-bootstrap/modal';
 import { LinkSharedTestSuiteModalComponent } from 'src/app/modals/link-shared-test-suite-modal/link-shared-test-suite-modal.component';
 import { filter, find } from 'lodash';
 import { forkJoin } from 'rxjs';
+import {ConformanceTestCase} from '../../../../organisation/conformance-statement/conformance-test-case';
+import {ConformanceTestCaseGroup} from '../../../../organisation/conformance-statement/conformance-test-case-group';
 
 @Component({
   selector: 'app-test-suite-details',
@@ -32,13 +34,6 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit {
   testSuiteId!: number
   dataStatus = {status: Constants.STATUS.NONE}
   specificationStatus = {status: Constants.STATUS.NONE}
-  testCaseTableColumns: TableColumnDefinition[] = [
-    { field: 'identifier', title: 'ID' },
-    { field: 'sname', title: 'Name' },
-    { field: 'description', title: 'Description'},
-    { field: 'optional', title: 'Optional'},
-    { field: 'disabled', title: 'Disabled'}
-  ]
   specificationTableColumns: TableColumnDefinition[] = [
     { field: 'sname', title: 'Specification' },
     { field: 'description', title: 'Description' }
@@ -53,6 +48,11 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit {
   linkedSpecifications: Specification[] = []
   unlinkedSpecifications: Specification[] = []
   clearLinkedSpecificationsSelection = new EventEmitter<void>()
+
+  testCasesToShow?: ConformanceTestCase[]
+  hasDisabledTestCases = false
+  hasOptionalTestCases = false
+  testCaseGroupMap?: Map<number, ConformanceTestCaseGroup>
 
   constructor(
     public dataService: DataService,
@@ -81,6 +81,8 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit {
       this.testSuiteService.getTestSuiteWithTestCases(this.testSuiteId)
       .subscribe((data) => {
         this.testSuite = data
+        this.testCaseGroupMap = this.dataService.toTestCaseGroupMap(data.testCaseGroups)
+        this.testCasesToShow = this.toConformanceTestCases(data.testCases)
         if (this.specificationId) {
           this.routingService.testSuiteBreadcrumbs(this.domainId, this.specificationId, this.testSuiteId, this.testSuite.identifier!)
         } else {
@@ -125,7 +127,7 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit {
   copyDocumentation() {
     this.dataService.copyToClipboard(this.testSuite.documentation!).subscribe(() => {
       this.popupService.success('HTML source copied to clipboard.')
-    })    
+    })
   }
 
 	download() {
@@ -181,11 +183,11 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit {
     return !this.textProvided(this.testSuite?.sname) || !this.textProvided(this.testSuite?.version)
   }
 
-	onTestCaseSelect(testCase: TestCase) {
+	onTestCaseSelect(testCaseId: number) {
     if (this.specificationId) {
-      this.routingService.toTestCase(this.domainId, this.specificationId!, this.testSuiteId, testCase.id)
+      this.routingService.toTestCase(this.domainId, this.specificationId!, this.testSuiteId, testCaseId)
     } else {
-      this.routingService.toSharedTestCase(this.domainId, this.testSuiteId, testCase.id)
+      this.routingService.toSharedTestCase(this.domainId, this.testSuiteId, testCaseId)
     }
   }
 
@@ -253,4 +255,27 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit {
     this.selectingForUnlink = false
   }
 
+  private toConformanceTestCases(testCases: TestCase[]) {
+    const testCaseToReturn: ConformanceTestCase[] = []
+    testCases.forEach(testCase => {
+      if (testCase.optional) this.hasOptionalTestCases = true
+      if (testCase.disabled) this.hasDisabledTestCases = true
+      testCaseToReturn.push({
+        optional: testCase.optional,
+        disabled: testCase.disabled,
+        result: Constants.TEST_CASE_RESULT.UNDEFINED,
+        resultToShow: Constants.TEST_CASE_RESULT.UNDEFINED,
+        tags: testCase.tags,
+        sname: testCase.sname,
+        description: testCase.description,
+        id: testCase.id,
+        hasDocumentation: testCase.hasDocumentation == true,
+        group: testCase.group,
+        specReference: testCase.specReference,
+        specDescription: testCase.specDescription,
+        specLink: testCase.specLink
+      })
+    })
+    return testCaseToReturn;
+  }
 }
