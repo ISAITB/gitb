@@ -3,7 +3,7 @@ package controllers
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
 
 import javax.inject.Inject
-import managers.{AuthorizationManager, CommunityManager, ReportManager}
+import managers.{AuthorizationManager, CommunityManager, ReportManager, TestResultManager}
 import models.{Constants, OrganisationParameters, SystemParameters}
 import play.api.mvc._
 import utils.JsonUtil
@@ -11,7 +11,13 @@ import utils.JsonUtil
 /**
  * Created by senan on 04.12.2014.
  */
-class ReportService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, reportManager: ReportManager, testService: TestService, authorizationManager: AuthorizationManager, communityManager: CommunityManager) extends AbstractController(cc) {
+class ReportService @Inject() (authorizedAction: AuthorizedAction,
+                               cc: ControllerComponents,
+                               reportManager: ReportManager,
+                               testResultManager: TestResultManager,
+                               testService: TestService,
+                               authorizationManager: AuthorizationManager,
+                               communityManager: CommunityManager) extends AbstractController(cc) {
 
   def getSystemActiveTestResults = authorizedAction { request =>
     val organisationId = ParameterExtractor.requiredBodyParameter(request, Parameters.ORGANIZATION_ID).toLong
@@ -31,7 +37,7 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction, cc: Controlle
     val sortColumn = ParameterExtractor.optionalBodyParameter(request, Parameters.SORT_COLUMN)
     val sortOrder = ParameterExtractor.optionalBodyParameter(request, Parameters.SORT_ORDER)
 
-    val testResultReports = reportManager.getOrganisationActiveTestResults(organisationId, systemIds, domainIds, specIds, specGroupIds, actorIds, testSuiteIds, testCaseIds, startTimeBegin, startTimeEnd, sessionId, sortColumn, sortOrder)
+    val testResultReports = testResultManager.getOrganisationActiveTestResults(organisationId, systemIds, domainIds, specIds, specGroupIds, actorIds, testSuiteIds, testCaseIds, startTimeBegin, startTimeEnd, sessionId, sortColumn, sortOrder)
     val json = JsonUtil.jsTestResultReports(testResultReports, None).toString()
     ResponseConstructor.constructJsonResponse(json)
 
@@ -60,7 +66,7 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction, cc: Controlle
     val sortColumn = ParameterExtractor.optionalBodyParameter(request, Parameters.SORT_COLUMN)
     val sortOrder = ParameterExtractor.optionalBodyParameter(request, Parameters.SORT_ORDER)
 
-    val output = reportManager.getTestResults(page, limit, organisationId, systemIds, domainIds, specIds, specGroupIds, actorIds, testSuiteIds, testCaseIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, sortColumn, sortOrder)
+    val output = testResultManager.getTestResults(page, limit, organisationId, systemIds, domainIds, specIds, specGroupIds, actorIds, testSuiteIds, testCaseIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, sortColumn, sortOrder)
     val json = JsonUtil.jsTestResultReports(output._1, Some(output._2)).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -87,7 +93,7 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction, cc: Controlle
     val orgParameters = JsonUtil.parseJsIdToValuesMap(ParameterExtractor.optionalBodyParameter(request, Parameters.ORGANISATION_PARAMETERS))
     val sysParameters = JsonUtil.parseJsIdToValuesMap(ParameterExtractor.optionalBodyParameter(request, Parameters.SYSTEM_PARAMETERS))
 
-    val testResultReports = reportManager.getActiveTestResults(communityIds, domainIds, specIds, specGroupIds, actorIds, testSuiteIds, testCaseIds, organizationIds, systemIds, startTimeBegin, startTimeEnd, sessionId, orgParameters, sysParameters, sortColumn, sortOrder)
+    val testResultReports = testResultManager.getActiveTestResults(communityIds, domainIds, specIds, specGroupIds, actorIds, testSuiteIds, testCaseIds, organizationIds, systemIds, startTimeBegin, startTimeEnd, sessionId, orgParameters, sysParameters, sortColumn, sortOrder)
 
     var orgParameterDefinitions: Option[List[OrganisationParameters]] = None
     var orgParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]] = None
@@ -130,7 +136,7 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction, cc: Controlle
     val orgParameters = JsonUtil.parseJsIdToValuesMap(ParameterExtractor.optionalBodyParameter(request, Parameters.ORGANISATION_PARAMETERS))
     val sysParameters = JsonUtil.parseJsIdToValuesMap(ParameterExtractor.optionalBodyParameter(request, Parameters.SYSTEM_PARAMETERS))
 
-    val output = reportManager.getFinishedTestResults(page, limit, communityIds, domainIds, specIds, specGroupIds, actorIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, orgParameters, sysParameters, sortColumn, sortOrder)
+    val output = testResultManager.getFinishedTestResults(page, limit, communityIds, domainIds, specIds, specGroupIds, actorIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, orgParameters, sysParameters, sortColumn, sortOrder)
 
     var orgParameterDefinitions: Option[List[OrganisationParameters]] = None
     var orgParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]] = None
@@ -158,7 +164,7 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction, cc: Controlle
 
   def getTestResultOfSession(sessionId: String) = authorizedAction { request =>
     authorizationManager.canViewTestResultForSession(request, sessionId)
-    val response = reportManager.getTestResultOfSession(sessionId)
+    val response = testResultManager.getTestResultOfSession(sessionId)
     val json = JsonUtil.jsTestResult(response._1, Some(response._2), withOutputMessage = true).toString()
     ResponseConstructor.constructJsonResponse(json)
   }

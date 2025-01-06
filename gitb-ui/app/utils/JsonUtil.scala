@@ -12,6 +12,7 @@ import managers.export.{ExportSettings, ImportItem, ImportSettings}
 import models.Enums.TestSuiteReplacementChoice.TestSuiteReplacementChoice
 import models.Enums._
 import models._
+import models.TestCaseGroup
 import models.automation._
 import models.snapshot.ConformanceSnapshot
 import models.theme.Theme

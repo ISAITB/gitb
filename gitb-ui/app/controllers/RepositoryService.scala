@@ -115,7 +115,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext,
   }
 
   private def getTestResultInternal(sessionId: String, isAdmin: Boolean): Result = {
-    val result = this.reportManager.getTestResult(sessionId)
+    val result = testResultManager.getTestResult(sessionId)
     if (result.isDefined) {
       // Load also logs.
       val logContents = testResultManager.getTestSessionLog(sessionId, isExpected = true)

@@ -120,6 +120,7 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 																		organisationManager: OrganizationManager,
 																		repositoryUtils: RepositoryUtils,
 																		triggerHelper: TriggerHelper,
+																		communityHelper: CommunityHelper,
 																		dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
 	import dbConfig.profile.api._
@@ -498,8 +499,8 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 				.filterOpt(specGroupIds)((q, ids) => q._1._1._1._1._1._1._1._1._1._1._1.specificationGroupId inSet ids)
 				.filterOpt(actorIds)((q, ids) => q._1._1._1._1._1._1._1._1._1._1._1.actorId inSet ids)
 				.filterOpt(communityIds)((q, ids) => q._1._1._1._1._1._1._1._1._1._1._2.community inSet ids)
-				.filterOpt(organisationIdsToUse(organizationIds, orgParameters))((q, ids) => q._1._1._1._1._1._1._1._1._1._1._1.organisationId inSet ids)
-				.filterOpt(systemIdsToUse(systemIds, sysParameters))((q, ids) => q._1._1._1._1._1._1._1._1._1._1._1.systemId inSet ids)
+				.filterOpt(communityHelper.organisationIdsToUse(organizationIds, orgParameters))((q, ids) => q._1._1._1._1._1._1._1._1._1._1._1.organisationId inSet ids)
+				.filterOpt(communityHelper.systemIdsToUse(systemIds, sysParameters))((q, ids) => q._1._1._1._1._1._1._1._1._1._1._1.systemId inSet ids)
 				.map(x => (
 					(x._1._1._1._2.id, x._1._1._1._2.shortname), // 1.1: Community ID, 1.2: Community shortname
 					(x._1._1._1._1._2.id, x._1._1._1._1._2.shortname), // 2.1: Organisation ID, 2.2: Organisation shortname
@@ -530,8 +531,8 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 				.filterOpt(specGroupIds)((q, ids) => q._1._1._1._1._1._1._1._1._1._2.group inSet ids)
 				.filterOpt(actorIds)((q, ids) => q._1._1._1._1._1._1._1._1._1._1.actor inSet ids)
 				.filterOpt(communityIds)((q, ids) => q._1._1._1._2.id inSet ids)
-				.filterOpt(organisationIdsToUse(organizationIds, orgParameters))((q, ids) => q._1._1._1._1._2.id inSet ids)
-				.filterOpt(systemIdsToUse(systemIds, sysParameters))((q, ids) => q._1._1._1._1._1._1._1._1._1._1.sut inSet ids)
+				.filterOpt(communityHelper.organisationIdsToUse(organizationIds, orgParameters))((q, ids) => q._1._1._1._1._2.id inSet ids)
+				.filterOpt(communityHelper.systemIdsToUse(systemIds, sysParameters))((q, ids) => q._1._1._1._1._1._1._1._1._1._1.sut inSet ids)
 				.map(x => (
 					(x._1._1._1._2.id, x._1._1._1._2.shortname), // 1.1: Community ID, 1.2: Community shortname
 					(x._1._1._1._1._2.id, x._1._1._1._1._2.shortname), // 2.1: Organisation ID, 2.2: Organisation shortname
@@ -636,8 +637,8 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 				.filterOpt(specGroupIds)((q, ids) => q._1._1._1._1._1._1._1._1._1.specificationGroupId inSet ids)
 				.filterOpt(actorIds)((q, ids) => q._1._1._1._1._1._1._1._1._1.actorId inSet ids)
 				.filterOpt(communityIds)((q, ids) => q._1._1._1._1._1._1._1._1._2.community inSet ids)
-				.filterOpt(organisationIdsToUse(organizationIds, orgParameters))((q, ids) => q._1._1._1._1._1._1._1._1._1.organisationId inSet ids)
-				.filterOpt(systemIdsToUse(systemIds, sysParameters))((q, ids) => q._1._1._1._1._1._1._1._1._1.systemId inSet ids)
+				.filterOpt(communityHelper.organisationIdsToUse(organizationIds, orgParameters))((q, ids) => q._1._1._1._1._1._1._1._1._1.organisationId inSet ids)
+				.filterOpt(communityHelper.systemIdsToUse(systemIds, sysParameters))((q, ids) => q._1._1._1._1._1._1._1._1._1.systemId inSet ids)
 				.map(x => (
 					(x._1._1._2.id, x._1._1._2.shortname), // 1.1: Community ID, 1.2: Community shortname
 					(x._1._1._1._2.id, x._1._1._1._2.shortname), // 2.1: Organisation ID, 2.2: Organisation shortname
@@ -664,8 +665,8 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 				.filterOpt(specGroupIds)((q, ids) => q._1._1._1._1._1._1._1._2.group inSet ids)
 				.filterOpt(actorIds)((q, ids) => q._1._1._1._1._1._1._1._1.actor inSet ids)
 				.filterOpt(communityIds)((q, ids) => q._1._1._2.id inSet ids)
-				.filterOpt(organisationIdsToUse(organizationIds, orgParameters))((q, ids) => q._1._1._1._2.id inSet ids)
-				.filterOpt(systemIdsToUse(systemIds, sysParameters))((q, ids) => q._1._1._1._1._1._1._1._1.sut inSet ids)
+				.filterOpt(communityHelper.organisationIdsToUse(organizationIds, orgParameters))((q, ids) => q._1._1._1._2.id inSet ids)
+				.filterOpt(communityHelper.systemIdsToUse(systemIds, sysParameters))((q, ids) => q._1._1._1._1._1._1._1._1.sut inSet ids)
 				.map(x => (
 					(x._1._1._2.id, x._1._1._2.shortname), // 1.1: Community ID, 1.2: Community shortname
 					(x._1._1._1._2.id, x._1._1._1._2.shortname), // 2.1: Organisation ID, 2.2: Organisation shortname
@@ -1169,62 +1170,6 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 			}
 		} yield ()
 		action
-	}
-
-	private[managers] def organisationIdsToUse(organisationIds: Option[Iterable[Long]], orgParameters: Option[Map[Long, Set[String]]]): Option[Iterable[Long]] = {
-		var matchingIds: Option[Iterable[Long]] = None
-		if (organisationIds.isDefined) {
-			matchingIds = Some(organisationIds.get)
-		}
-		if (orgParameters.isDefined) {
-			orgParameters.get.foreach { entry =>
-				matchingIds = Some(organisationIdsForParameterValues(matchingIds, entry._1, entry._2))
-				if (matchingIds.get.isEmpty) {
-					// No matching IDs. Return immediately without checking other parameters.
-					return Some(Set[Long]())
-				}
-			}
-		}
-		matchingIds
-	}
-
-	private def organisationIdsForParameterValues(organisationIds: Option[Iterable[Long]], parameterId: Long, values: Iterable[String]): Set[Long] = {
-		exec(
-			PersistenceSchema.organisationParameterValues
-				.filterOpt(organisationIds)((table, ids) => table.organisation inSet ids)
-				.filter(_.parameter === parameterId)
-				.filter(_.value inSet values)
-				.map(x => x.organisation)
-				.result
-		).toSet
-	}
-
-	private[managers] def systemIdsToUse(systemIds: Option[Iterable[Long]], sysParameters: Option[Map[Long, Set[String]]]): Option[Iterable[Long]] = {
-		var matchingIds: Option[Iterable[Long]] = None
-		if (systemIds.isDefined) {
-			matchingIds = Some(systemIds.get)
-		}
-		if (sysParameters.isDefined) {
-			sysParameters.get.foreach { entry =>
-				matchingIds = Some(systemIdsForParameterValues(matchingIds, entry._1, entry._2))
-				if (matchingIds.get.isEmpty) {
-					// No matching IDs. Return immediately without checking other parameters.
-					return Some(Set[Long]())
-				}
-			}
-		}
-		matchingIds
-	}
-
-	private def systemIdsForParameterValues(systemIds: Option[Iterable[Long]], parameterId: Long, values: Iterable[String]): Set[Long] = {
-		exec(
-			PersistenceSchema.systemParameterValues
-				.filterOpt(systemIds)((table, ids) => table.system inSet ids)
-				.filter(_.parameter === parameterId)
-				.filter(_.value inSet values)
-				.map(x => x.system)
-				.result
-		).toSet
 	}
 
 	def getStatementParametersByCommunityId(communityId: Long): List[StatementParameterMinimal] = {

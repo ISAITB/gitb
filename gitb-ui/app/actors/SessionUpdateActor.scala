@@ -1,10 +1,9 @@
 package actors
 
 import actors.events.sessions.TestSessionCompletedEvent
-import com.gitb.core.ValueEmbeddingEnumeration
 import com.gitb.tbs.{Instruction, InteractWithUsersRequest, TestStepStatus}
 import com.gitb.tr.TAR
-import managers.{ReportManager, TestResultManager, TestbedBackendClient}
+import managers.{ReportManager, TestExecutionManager, TestResultManager, TestbedBackendClient}
 import models.{TestInteraction, TestStepResultInfo}
 import org.apache.commons.lang3.StringUtils
 import org.apache.pekko.actor.{Actor, PoisonPill}
@@ -21,7 +20,12 @@ object SessionUpdateActor {
   }
 }
 
-class SessionUpdateActor @Inject() (repositoryUtils: RepositoryUtils, reportManager: ReportManager, testResultManager: TestResultManager, webSocketActor: WebSocketActor, testbedBackendClient: TestbedBackendClient) extends Actor {
+class SessionUpdateActor @Inject() (repositoryUtils: RepositoryUtils,
+                                    testExecutionManager: TestExecutionManager,
+                                    reportManager: ReportManager,
+                                    testResultManager: TestResultManager,
+                                    webSocketActor: WebSocketActor,
+                                    testbedBackendClient: TestbedBackendClient) extends Actor {
 
   private val LOGGER = LoggerFactory.getLogger(classOf[SessionUpdateActor])
   private val END_STEP_ID = "-1"
@@ -58,7 +62,7 @@ class SessionUpdateActor @Inject() (repositoryUtils: RepositoryUtils, reportMana
               outputMessage = tar.getContext.getValue.trim
             case _ => // Do nothing
           }
-          reportManager.finishTestReport(session, testStepStatus.getReport.getResult, Option(outputMessage))
+          testExecutionManager.finishTestReport(session, testStepStatus.getReport.getResult, Option(outputMessage))
           val statusUpdates: List[(String, TestStepResultInfo)] = testResultManager.sessionRemove(session)
           val resultInfo: TestStepResultInfo = new TestStepResultInfo(testStepStatus.getStatus.ordinal.toShort, None)
           val message: String = JsonUtil.jsTestStepResultInfo(session, step, resultInfo, Option(outputMessage), statusUpdates).toString

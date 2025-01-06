@@ -1,9 +1,8 @@
 package managers
 
-import actors.events.{ConformanceStatementSucceededEvent, TestSessionFailedEvent, TestSessionSucceededEvent}
 import com.gitb.core.{Metadata, SpecificationInfo, StepStatus, Tags}
-import com.gitb.reports.{ReportGenerator, ReportSpecs}
 import com.gitb.reports.dto._
+import com.gitb.reports.{ReportGenerator, ReportSpecs}
 import com.gitb.tbs.TestStepStatus
 import com.gitb.tpl.TestCase
 import com.gitb.tr._
@@ -15,6 +14,7 @@ import models.Enums.OverviewLevelType.OverviewLevelType
 import models.Enums.ReportType.ReportType
 import models.Enums.{ConformanceStatementItemType, OverviewLevelType, ReportType, TestResultStatus}
 import models._
+import models.TestCaseGroup
 import models.automation.TestSessionStatus
 import models.statement._
 import org.apache.commons.codec.binary.Base64
@@ -83,198 +83,6 @@ class ReportManager @Inject() (communityManager: CommunityManager,
   private val gitbTplObjectFactory = new com.gitb.tpl.ObjectFactory
   private val gitbTbsObjectFactory = new com.gitb.tbs.ObjectFactory
 
-  def getOrganisationActiveTestResults(organisationId: Long,
-                                       systemIds: Option[List[Long]],
-                                       domainIds: Option[List[Long]],
-                                       specIds: Option[List[Long]],
-                                       specGroupIds: Option[List[Long]],
-                                       actorIds: Option[List[Long]],
-                                       testSuiteIds: Option[List[Long]],
-                                       testCaseIds: Option[List[Long]],
-                                       startTimeBegin: Option[String],
-                                       startTimeEnd: Option[String],
-                                       sessionId: Option[String],
-                                       sortColumn: Option[String],
-                                       sortOrder: Option[String]): List[TestResult] = {
-    exec(
-      getTestResultsQuery(None, domainIds, getSpecIdsCriterionToUse(specIds, specGroupIds), actorIds, testSuiteIds, testCaseIds, Some(List(organisationId)), systemIds, None, startTimeBegin, startTimeEnd, None, None, sessionId, Some(false), sortColumn, sortOrder)
-        .result.map(_.toList)
-    )
-  }
-
-  def getTestResults(page: Long,
-                     limit: Long,
-                     organisationId: Long,
-                     systemIds: Option[List[Long]],
-                     domainIds: Option[List[Long]],
-                     specIds: Option[List[Long]],
-                     specGroupIds: Option[List[Long]],
-                     actorIds: Option[List[Long]],
-                     testSuiteIds: Option[List[Long]],
-                     testCaseIds: Option[List[Long]],
-                     results: Option[List[String]],
-                     startTimeBegin: Option[String],
-                     startTimeEnd: Option[String],
-                     endTimeBegin: Option[String],
-                     endTimeEnd: Option[String],
-                     sessionId: Option[String],
-                     sortColumn: Option[String],
-                     sortOrder: Option[String]): (Iterable[TestResult], Int) = {
-
-    val query = getTestResultsQuery(None, domainIds, getSpecIdsCriterionToUse(specIds, specGroupIds), actorIds, testSuiteIds, testCaseIds, Some(List(organisationId)), systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder)
-    val output = exec(
-      for {
-        results <- query.drop((page - 1) * limit).take(limit).result
-        resultCount <- query.size.result
-      } yield (results, resultCount)
-    )
-    output
-  }
-
-  def getActiveTestResults(communityIds: Option[List[Long]],
-                           domainIds: Option[List[Long]],
-                           specIds: Option[List[Long]],
-                           specGroupIds: Option[List[Long]],
-                           actorIds: Option[List[Long]],
-                           testSuiteIds: Option[List[Long]],
-                           testCaseIds: Option[List[Long]],
-                           organisationIds: Option[List[Long]],
-                           systemIds: Option[List[Long]],
-                           startTimeBegin: Option[String],
-                           startTimeEnd: Option[String],
-                           sessionId: Option[String],
-                           orgParameters: Option[Map[Long, Set[String]]],
-                           sysParameters: Option[Map[Long, Set[String]]],
-                           sortColumn: Option[String],
-                           sortOrder: Option[String]): List[TestResult] = {
-    exec(
-      getTestResultsQuery(communityIds, domainIds, getSpecIdsCriterionToUse(specIds, specGroupIds), actorIds, testSuiteIds, testCaseIds, conformanceManager.organisationIdsToUse(organisationIds, orgParameters), conformanceManager.systemIdsToUse(systemIds, sysParameters), None, startTimeBegin, startTimeEnd, None, None, sessionId, Some(false), sortColumn, sortOrder)
-        .result.map(_.toList)
-    )
-  }
-
-  def getFinishedTestResults(page: Long,
-                             limit: Long,
-                             communityIds: Option[List[Long]],
-                             domainIds: Option[List[Long]],
-                             specIds: Option[List[Long]],
-                             specGroupIds: Option[List[Long]],
-                             actorIds: Option[List[Long]],
-                             testSuiteIds: Option[List[Long]],
-                             testCaseIds: Option[List[Long]],
-                             organisationIds: Option[List[Long]],
-                             systemIds: Option[List[Long]],
-                             results: Option[List[String]],
-                             startTimeBegin: Option[String],
-                             startTimeEnd: Option[String],
-                             endTimeBegin: Option[String],
-                             endTimeEnd: Option[String],
-                             sessionId: Option[String],
-                             orgParameters: Option[Map[Long, Set[String]]],
-                             sysParameters: Option[Map[Long, Set[String]]],
-                             sortColumn: Option[String],
-                             sortOrder: Option[String]): (Iterable[TestResult], Int) = {
-
-    val query = getTestResultsQuery(communityIds, domainIds, getSpecIdsCriterionToUse(specIds, specGroupIds), actorIds, testSuiteIds, testCaseIds, conformanceManager.organisationIdsToUse(organisationIds, orgParameters), conformanceManager.systemIdsToUse(systemIds, sysParameters), results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder)
-    val output = exec(
-      for {
-        results <- query.drop((page - 1) * limit).take(limit).result
-        resultCount <- query.size.result
-      } yield (results, resultCount)
-    )
-    output
-  }
-
-  def getTestResult(sessionId: String): Option[TestResult] = {
-    val query = getTestResultsQuery(None, None, None, None, None, None, None, None, None, None, None, None, None, Some(sessionId), None, None, None)
-    exec(query.result.headOption)
-  }
-
-  private def getSpecIdsCriterionToUse(specIds: Option[List[Long]], specGroupIds: Option[List[Long]]): Option[List[Long]] = {
-    // We use the groups to get the applicable spec IDs. This is because specs can move around in groups, and we shouldn't link
-    // test results directly to the groups.
-    val specIdsToUse = if (specGroupIds.isDefined && specGroupIds.get.nonEmpty) {
-      exec(PersistenceSchema.specifications.filter(_.group inSet specGroupIds.get).map(_.id).result.map(x => Some(x.toList)))
-    } else {
-      specIds
-    }
-    specIdsToUse
-  }
-
-  private def getTestResultsQuery(communityIds: Option[List[Long]],
-                                  domainIds: Option[List[Long]],
-                                  specIds: Option[List[Long]],
-                                  actorIds: Option[List[Long]],
-                                  testSuiteIds: Option[List[Long]],
-                                  testCaseIds: Option[List[Long]],
-                                  organizationIds: Option[Iterable[Long]],
-                                  systemIds: Option[Iterable[Long]],
-                                  results: Option[List[String]],
-                                  startTimeBegin: Option[String],
-                                  startTimeEnd: Option[String],
-                                  endTimeBegin: Option[String],
-                                  endTimeEnd: Option[String],
-                                  sessionId: Option[String],
-                                  completedStatus: Option[Boolean],
-                                  sortColumn: Option[String],
-                                  sortOrder: Option[String]) = {
-    var query = PersistenceSchema.testResults
-      .filterOpt(communityIds)((table, ids) => table.communityId inSet ids)
-      .filterOpt(domainIds)((table, ids) => table.domainId inSet ids)
-      .filterOpt(specIds)((table, ids) => table.specificationId inSet ids)
-      .filterOpt(actorIds)((table, ids) => table.actorId inSet ids)
-      .filterOpt(testCaseIds)((table, ids) => table.testCaseId inSet ids)
-      .filterOpt(organizationIds)((table, ids) => table.organizationId inSet ids)
-      .filterOpt(systemIds)((table, ids) => table.sutId inSet ids)
-      .filterOpt(results)((table, results) => table.result inSet results)
-      .filterOpt(testSuiteIds)((table, ids) => table.testSuiteId inSet ids)
-      .filterOpt(startTimeBegin)((table, timeStr) => table.startTime >= TimeUtil.parseTimestamp(timeStr))
-      .filterOpt(startTimeEnd)((table, timeStr) => table.startTime <= TimeUtil.parseTimestamp(timeStr))
-      .filterOpt(endTimeBegin)((table, timeStr) => table.endTime >= TimeUtil.parseTimestamp(timeStr))
-      .filterOpt(endTimeEnd)((table, timeStr) => table.endTime <= TimeUtil.parseTimestamp(timeStr))
-      .filterOpt(sessionId)((table, id) => table.testSessionId === id)
-      .filterOpt(completedStatus)((table, completed) => if (completed) table.endTime.isDefined else table.endTime.isEmpty)
-    // Apply sorting
-    if (sortColumn.isDefined && sortOrder.isDefined) {
-      if (sortOrder.get == "asc") {
-        query = sortColumn.get match {
-          case "specification" => query.sortBy(_.specification)
-          case "session" => query.sortBy(_.testSessionId)
-          case "startTime" => query.sortBy(_.startTime)
-          case "endTime" => query.sortBy(_.endTime)
-          case "organization" => query.sortBy(_.organization)
-          case "system" => query.sortBy(_.sut)
-          case "result" => query.sortBy(_.result)
-          case "testCase" => query.sortBy(_.testCase)
-          case "actor" => query.sortBy(_.actor)
-          case _ => query
-        }
-      }
-      if (sortOrder.get == "desc") {
-        query = sortColumn.get match {
-          case "specification" => query.sortBy(_.specification.desc)
-          case "session" => query.sortBy(_.testSessionId.desc)
-          case "startTime" => query.sortBy(_.startTime.desc)
-          case "endTime" => query.sortBy(_.endTime.desc)
-          case "organization" => query.sortBy(_.organization.desc)
-          case "system" => query.sortBy(_.sut.desc)
-          case "result" => query.sortBy(_.result.desc)
-          case "testCase" => query.sortBy(_.testCase.desc)
-          case "actor" => query.sortBy(_.actor.desc)
-          case _ => query
-        }
-      }
-    }
-    query
-  }
-
-  def getTestResultOfSession(sessionId: String): (TestResult, String) = {
-    val result = testResultManager.getTestResultForSessionWrapper(sessionId)
-    val testcase = XMLUtils.unmarshal(classOf[TestCase], new StreamSource(new StringReader(result.get._2)))
-    val json = JacksonUtil.serializeTestCasePresentation(testcase)
-    (result.get._1, json)
-  }
-
   private def removeStepDocumentation(testCase: com.gitb.tpl.TestCase): Unit = {
     if (testCase.getSteps != null && testCase.getSteps.getSteps != null) {
       import scala.jdk.CollectionConverters._
@@ -330,88 +138,6 @@ class ReportManager @Inject() (communityManager: CommunityManager,
           .map(c => (c.testsession, c.result, c.outputMessage, c.updateTime))
           .update(Some(sessionId), initialStatus, None, Some(startTime))
       } yield ()).transactionally
-    )
-  }
-
-  def finishTestReport(sessionId: String, status: TestResultType, outputMessage: Option[String]): Unit = {
-    val now = Some(TimeUtil.getCurrentTimestamp())
-    val onSuccessCalls = mutable.ListBuffer[() => _]()
-    val dbAction = for {
-      startTime <- PersistenceSchema.testResults.filter(_.testSessionId === sessionId).map(_.startTime).result.headOption
-      _ <- {
-        if (startTime.isDefined) {
-          // Test session finalisation and cleanup actions.
-          for {
-            _ <- PersistenceSchema.testResults
-              .filter(_.testSessionId === sessionId)
-              .map(x => (x.result, x.endTime, x.outputMessage))
-              .update(status.value(), now, outputMessage)
-            // Delete any pending test interactions
-            _ <- testResultManager.deleteTestInteractions(sessionId, None)
-            // Update also the conformance results for the system
-            _ <- PersistenceSchema.conformanceResults
-              .filter(_.testsession === sessionId)
-              .map(x => (x.result, x.outputMessage, x.updateTime))
-              .update(status.value(), outputMessage, now)
-            // Delete temporary test session data (used for user interactions).
-            _ <- {
-              onSuccessCalls += (() => {
-                val sessionFolderInfo = repositoryUtils.getPathForTestSessionObj(sessionId, startTime, isExpected = true)
-                val tempDataFolder = repositoryUtils.getPathForTestSessionData(sessionFolderInfo, tempData = true)
-                FileUtils.deleteQuietly(tempDataFolder.toFile)
-              })
-              DBIO.successful(())
-            }
-          } yield ()
-        } else {
-          // The test session was not recorded - nothing to do.
-          DBIO.successful(())
-        }
-      }
-    } yield ()
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
-    // Triggers linked to test sessions: (communityID, systemID, actorID)
-    val sessionIds: Option[(Option[Long], Option[Long], Option[Long])] = exec(
-      PersistenceSchema.testResults
-        .filter(_.testSessionId === sessionId)
-        .map(x => (x.communityId, x.sutId, x.actorId))
-        .result
-        .headOption
-    )
-    if (sessionIds.isDefined && sessionIds.get._1.isDefined && sessionIds.get._2.isDefined && sessionIds.get._3.isDefined) {
-      val communityId = sessionIds.get._1.get
-      val systemId = sessionIds.get._2.get
-      // We have all the data we need to fire the triggers.
-      if (status == TestResultType.SUCCESS) {
-        triggerHelper.publishTriggerEvent(new TestSessionSucceededEvent(communityId, sessionId))
-      } else if (status == TestResultType.FAILURE) {
-        triggerHelper.publishTriggerEvent(new TestSessionFailedEvent(communityId, sessionId))
-      }
-      // See if the conformance statement is now successfully completed and fire an additional trigger if so.
-      val completedActors = conformanceManager.getCompletedConformanceStatementsForTestSession(systemId, sessionId)
-      completedActors.foreach { actorId =>
-        triggerHelper.publishTriggerEvent(new ConformanceStatementSucceededEvent(communityId, systemId, actorId))
-      }
-    }
-    // Flush remaining log messages
-    testResultManager.flushSessionLogs(sessionId, None)
-  }
-
-  def setEndTimeNow(sessionId: String): Unit = {
-    val now = Some(TimeUtil.getCurrentTimestamp())
-    exec (
-      (for {
-        testSession <- PersistenceSchema.testResults.filter(_.testSessionId === sessionId).result.headOption
-        _ <- {
-          if (testSession.isDefined) {
-            (for {t <- PersistenceSchema.testResults if t.testSessionId === sessionId} yield t.endTime).update(now) andThen
-              (for {c <- PersistenceSchema.conformanceResults if c.testsession === sessionId} yield (c.result, c.updateTime)).update(testSession.get.result, now)
-          } else {
-            DBIO.successful(())
-          }
-        }
-      } yield ()
-      ).transactionally
     )
   }
 
@@ -1033,7 +759,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
       if (testSuite.isEmpty) {
         testSuite = Some(new ConformanceTestSuite(
           statement.testSuiteId.get, statement.testSuiteName.get, statement.testSuiteDescription, Some(statement.testSuiteVersion), false, statement.testSuiteSpecReference, statement.testSuiteSpecDescription, statement.testSuiteSpecLink,
-          TestResultType.UNDEFINED, 0, 0, 0, 0, 0, 0, 0, 0, 0, new ListBuffer[ConformanceTestCase], new mutable.HashSet[TestCaseGroup]
+          TestResultType.UNDEFINED, 0, 0, 0, 0, 0, 0, 0, 0, 0, new ListBuffer[ConformanceTestCase], new mutable.HashSet[models.TestCaseGroup]
         ))
         actorTestSuites.get += (testSuite.get.id -> testSuite.get)
       }
