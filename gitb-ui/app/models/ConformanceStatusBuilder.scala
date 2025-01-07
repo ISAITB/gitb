@@ -137,35 +137,34 @@ object ConformanceStatusBuilder {
 
 class ConformanceStatusBuilder[A <: ConformanceStatement](recordDetails: Boolean) {
 
-  // SystemID|ActorID -> (Aggregated conformance status, List of conformance results, Map[TestCaseGroupID to Group results], Group results applied)
-  private val conformanceMap = new util.LinkedHashMap[String, ConformanceData[A]]
-  private val detailedResults: ListBuffer[A] = new ListBuffer[A]
+  // SystemID|ActorID -> (Aggregated conformance status, List of conformance results)
+  private val conformanceMap = new util.LinkedHashMap[String, (ConformanceData[A], ListBuffer[A])]
 
   def addConformanceResult(result: A, isOptional: Boolean, isDisabled: Boolean, testCaseGroupId: Option[Long]): Unit = {
     val key = s"${result.systemId}|${result.actorId}"
     var data = conformanceMap.get(key)
     if (data == null) {
-      data = new ConformanceData[A](result.copy().asInstanceOf[A])
+      data = (new ConformanceData[A](result.copy().asInstanceOf[A]), new ListBuffer[A])
       conformanceMap.put(key, data)
     }
     // Record statistics.
-    data.addConformanceResult(result.result, isOptional, isDisabled, testCaseGroupId)
+    data._1.addConformanceResult(result.result, isOptional, isDisabled, testCaseGroupId)
     // Set overall last update time.
-    if (result.updateTime.isDefined && (data.overallResult.updateTime.isEmpty || data.overallResult.updateTime.get.before(result.updateTime.get))) {
-      data.overallResult.updateTime = TimeUtil.copyTimestamp(result.updateTime)
+    if (result.updateTime.isDefined && (data._1.overallResult.updateTime.isEmpty || data._1.overallResult.updateTime.get.before(result.updateTime.get))) {
+      data._1.overallResult.updateTime = TimeUtil.copyTimestamp(result.updateTime)
     }
     // Record individual result.
     if (recordDetails) {
-      detailedResults += result
+      data._2 += result
     }
   }
 
   def getOverview(filter: Option[FilterCriteria[A]]): List[A] = {
     val statements = new ListBuffer[A]
     for (conformanceEntry <- conformanceMap.asScala) {
-      conformanceEntry._2.complete()
-      if (filter.isEmpty || filter.get.check(conformanceEntry._2.overallResult)) {
-        statements += conformanceEntry._2.overallResult
+      conformanceEntry._2._1.complete()
+      if (filter.isEmpty || filter.get.check(conformanceEntry._2._1.overallResult)) {
+        statements += conformanceEntry._2._1.overallResult
       }
     }
     statements.toList
@@ -174,9 +173,9 @@ class ConformanceStatusBuilder[A <: ConformanceStatement](recordDetails: Boolean
   def getDetails(filter: Option[FilterCriteria[A]]): List[A] = {
     val statements = new ListBuffer[A]
     for (conformanceEntry <- conformanceMap.asScala) {
-      conformanceEntry._2.complete()
-      if (filter.isEmpty || filter.get.check(conformanceEntry._2.overallResult)) {
-        statements ++= detailedResults
+      conformanceEntry._2._1.complete()
+      if (filter.isEmpty || filter.get.check(conformanceEntry._2._1.overallResult)) {
+        statements ++= conformanceEntry._2._2
       }
     }
     statements.toList

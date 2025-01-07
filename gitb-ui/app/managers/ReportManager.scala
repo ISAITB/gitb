@@ -5,6 +5,7 @@ import com.gitb.reports.dto._
 import com.gitb.reports.{ReportGenerator, ReportSpecs}
 import com.gitb.tbs.TestStepStatus
 import com.gitb.tpl.TestCase
+import com.gitb.tr
 import com.gitb.tr._
 import com.gitb.utils.{XMLDateTimeUtils, XMLUtils}
 import config.Configurations
@@ -58,7 +59,6 @@ class ReportManager @Inject() (communityManager: CommunityManager,
                                systemManager: SystemManager,
                                domainParameterManager: DomainParameterManager,
                                reportHelper: ReportHelper,
-                               triggerHelper: TriggerHelper,
                                testCaseReportProducer: TestCaseReportProducer,
                                testSuiteManager: TestSuiteManager,
                                specificationManager: SpecificationManager,
@@ -748,48 +748,69 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     val conformanceDetails = conformanceInfoBuilder.getDetails(None)
     val actorLastUpdateTime = new mutable.HashMap[Long, Timestamp]()
     // Map actor IDs to test suites.
-    val actorTestSuiteMap = new mutable.LinkedHashMap[Long, mutable.LinkedHashMap[Long, ConformanceTestSuite]]() // Actor ID to test suite map, test suite map
+    val actorTestSuiteMap = new mutable.LinkedHashMap[Long, mutable.LinkedHashMap[Long, (ConformanceTestSuite, mutable.LinkedHashMap[Long, (TestCaseGroup, Counters)])]]() // Actor ID to test suite map -- test suite map maps test suite ID to group map (group ID to (group, counters))
     conformanceDetails.foreach { statement =>
       var actorTestSuites = actorTestSuiteMap.get(statement.actorId)
       if (actorTestSuites.isEmpty) {
-        actorTestSuites = Some(new mutable.LinkedHashMap[Long, ConformanceTestSuite])
+        actorTestSuites = Some(new mutable.LinkedHashMap[Long, (ConformanceTestSuite, mutable.LinkedHashMap[Long, (TestCaseGroup, Counters)])])
         actorTestSuiteMap += (statement.actorId -> actorTestSuites.get)
       }
       var testSuite = actorTestSuites.get.get(statement.testSuiteId.get)
       if (testSuite.isEmpty) {
         testSuite = Some(new ConformanceTestSuite(
           statement.testSuiteId.get, statement.testSuiteName.get, statement.testSuiteDescription, Some(statement.testSuiteVersion), false, statement.testSuiteSpecReference, statement.testSuiteSpecDescription, statement.testSuiteSpecLink,
-          TestResultType.UNDEFINED, 0, 0, 0, 0, 0, 0, 0, 0, 0, new ListBuffer[ConformanceTestCase], new mutable.HashSet[models.TestCaseGroup]
-        ))
-        actorTestSuites.get += (testSuite.get.id -> testSuite.get)
+          TestResultType.UNDEFINED, 0, 0, 0, 0, 0, 0, 0, 0, 0, new ListBuffer[ConformanceTestCase], new ListBuffer[models.TestCaseGroup]),
+          new mutable.LinkedHashMap[Long, (TestCaseGroup, Counters)]()
+        )
+        actorTestSuites.get += (testSuite.get._1.id -> testSuite.get)
       }
+      var testCaseGroup: Option[(TestCaseGroup, Counters)] = None
       if (statement.testCaseGroupId.isDefined) {
-        testSuite.get.testCaseGroups.asInstanceOf[mutable.HashSet[TestCaseGroup]] += TestCaseGroup(statement.testCaseGroupId.get, statement.testCaseGroupIdentifier.get, statement.testCaseGroupName, statement.testCaseGroupDescription, testSuite.get.id)
+        testCaseGroup = testSuite.get._2.get(statement.testCaseGroupId.get)
+        if (testCaseGroup.isEmpty) {
+          testCaseGroup = Some(TestCaseGroup(statement.testCaseGroupId.get, statement.testCaseGroupIdentifier.get, statement.testCaseGroupName, statement.testCaseGroupDescription, testSuite.get._1.id), new Counters(0, 0, 0))
+          testSuite.get._2 += (statement.testCaseGroupId.get -> testCaseGroup.get)
+          testSuite.get._1.testCaseGroups.asInstanceOf[mutable.ListBuffer[models.TestCaseGroup]] += testCaseGroup.get._1
+        }
       }
       val testCase = new ConformanceTestCase(
         statement.testCaseId.get, statement.testCaseName.get, statement.testCaseDescription, Some(statement.testCaseVersion), None, statement.updateTime, None, false,
         statement.testCaseOptional.get, statement.testCaseDisabled.get, TestResultType.fromValue(statement.result), statement.testCaseTags,
         statement.testCaseSpecReference, statement.testCaseSpecDescription, statement.testCaseSpecLink, statement.testCaseGroupId
       )
-      testSuite.get.testCases.asInstanceOf[ListBuffer[ConformanceTestCase]] += testCase
+      testSuite.get._1.testCases.asInstanceOf[ListBuffer[ConformanceTestCase]] += testCase
+      // Record result to counters
       if (!testCase.disabled) {
-        if (testCase.result == TestResultType.SUCCESS) {
-          if (testCase.optional) {
-            testSuite.get.completedOptional += 1
+        if (testCase.optional) {
+          if (testCase.result == TestResultType.SUCCESS) {
+            testSuite.get._1.completedOptional += 1
+          } else if (testCase.result == TestResultType.FAILURE) {
+            testSuite.get._1.failedOptional += 1
           } else {
-            testSuite.get.completed += 1
-          }
-        } else if (testCase.result == TestResultType.FAILURE) {
-          if (testCase.optional) {
-            testSuite.get.failedOptional += 1
-          } else {
-            testSuite.get.failed += 1
+            testSuite.get._1.undefinedOptional += 1
           }
         } else {
-          if (testCase.optional) {
-            testSuite.get.undefinedOptional += 1
+          if (testCase.result == TestResultType.SUCCESS) {
+            testSuite.get._1.completed += 1
+            if (testCase.group.isEmpty) {
+              testSuite.get._1.completedToConsider += 1
+            } else {
+              groupResult(testSuite.get._2, testCaseGroup.get._1).successes += 1
+            }
+          } else if (testCase.result == TestResultType.FAILURE) {
+            testSuite.get._1.failed += 1
+            if (testCase.group.isEmpty) {
+              testSuite.get._1.failedToConsider += 1
+            } else {
+              groupResult(testSuite.get._2, testCaseGroup.get._1).failures += 1
+            }
           } else {
-            testSuite.get.undefined += 1
+            testSuite.get._1.undefined += 1
+            if (testCase.group.isEmpty) {
+              testSuite.get._1.undefinedToConsider += 1
+            } else {
+              groupResult(testSuite.get._2, testCaseGroup.get._1).other += 1
+            }
           }
         }
       }
@@ -804,14 +825,37 @@ class ReportManager @Inject() (communityManager: CommunityManager,
         }
       }
     }
+    // Set the status of the collected test suites
     actorTestSuiteMap.values.foreach { testSuites =>
       testSuites.values.foreach { testSuite =>
-        testSuite.result = TestResultType.fromValue(testSuite.resultStatus())
+        // Process groups
+        if (testSuite._2.nonEmpty) {
+          // We have groups
+          testSuite._2.values.foreach { group =>
+            if (group._2.successes > 0) {
+              testSuite._1.completedToConsider += 1
+            } else if (group._2.failures > 0) {
+              testSuite._1.failedToConsider += 1
+            } else if (group._2.other > 0) {
+              testSuite._1.undefinedToConsider += 1
+            }
+          }
+        }
+        // Calculate test suite result
+        if (testSuite._1.failedToConsider > 0) {
+          testSuite._1.result = TestResultType.FAILURE
+        } else if (testSuite._1.undefinedToConsider > 0) {
+          testSuite._1.result = TestResultType.UNDEFINED
+        } else if (testSuite._1.completedToConsider > 0) {
+          testSuite._1.result = TestResultType.SUCCESS
+        } else {
+          testSuite._1.result = TestResultType.UNDEFINED
+        }
       }
     }
     val conformanceItemTree = conformanceManager.createConformanceItemTree(ConformanceItemTreeData(conformanceOverview, actorIdsToDisplay), withResults = true, snapshotId, testSuiteMapper = Some((statement: models.ConformanceStatement) => {
       if (actorTestSuiteMap.contains(statement.actorId)) {
-        actorTestSuiteMap(statement.actorId).values.toList
+        actorTestSuiteMap(statement.actorId).values.map(_._1).toList
       } else {
         List.empty
       }
@@ -986,9 +1030,9 @@ class ReportManager @Inject() (communityManager: CommunityManager,
       }
     } else if (item.results.nonEmpty) {
       // We have results
-      if (item.results.get.failedTests > 0) {
+      if (item.results.get.failedTestsToConsider > 0) {
         xmlItem.get.setResult(TestResultType.FAILURE)
-      } else if (item.results.get.undefinedTests > 0) {
+      } else if (item.results.get.undefinedTestsToConsider > 0) {
         xmlItem.get.setResult(TestResultType.UNDEFINED)
       } else {
         xmlItem.get.setResult(TestResultType.SUCCESS)
@@ -1167,11 +1211,14 @@ class ReportManager @Inject() (communityManager: CommunityManager,
           statement.setLastUpdate(XMLDateTimeUtils.getXMLGregorianCalendarDateTime(conformanceData.actorLastUpdateTime(conformanceStatement.getActorId)))
         }
         // Summary
-        statement.setSummary(new ResultSummary)
+        statement.setSummary(new ResultSummaryWithIgnoredResults)
         statement.getSummary.setStatus(TestResultType.fromValue(conformanceStatement.getOverallStatus))
         statement.getSummary.setSucceeded(BigInteger.valueOf(conformanceStatement.getCompletedTests))
         statement.getSummary.setFailed(BigInteger.valueOf(conformanceStatement.getFailedTests))
         statement.getSummary.setIncomplete(BigInteger.valueOf(conformanceStatement.getUndefinedTests))
+        statement.getSummary.setSucceededIgnored(BigInteger.valueOf(conformanceStatement.getCompletedTestsIgnored))
+        statement.getSummary.setFailedIgnored(BigInteger.valueOf(conformanceStatement.getFailedTestsIgnored))
+        statement.getSummary.setIncompleteIgnored(BigInteger.valueOf(conformanceStatement.getUndefinedTestsIgnored))
         // Test overview
         statement.setTestOverview(new TestSuiteOverviews)
         conformanceStatement.getTestSuites.forEach { testSuiteInfo =>
@@ -1188,12 +1235,24 @@ class ReportManager @Inject() (communityManager: CommunityManager,
             testSuite.getMetadata.getSpecification.setDescription(testSuiteInfo.getSpecDescription)
           }
           testSuite.setResult(TestResultType.fromValue(testSuiteInfo.getOverallStatus))
+          // Test suite test case groups
+          if (testSuiteInfo.getTestCaseGroups != null && !testSuiteInfo.getTestCaseGroups.isEmpty) {
+            testSuite.setTestCaseGroups(new TestCaseGroups)
+            testSuiteInfo.getTestCaseGroups.forEach { group =>
+              val testCaseGroup = new tr.TestCaseGroup
+              testCaseGroup.setId(group.getId)
+              testCaseGroup.setName(group.getName)
+              testCaseGroup.setDescription(group.getDescription)
+              testSuite.getTestCaseGroups.getGroup.add(testCaseGroup)
+            }
+          }
           // Test suite test cases
           testSuite.setTestCases(new TestCaseOverviews)
           if (!testSuiteInfo.getTestCases.isEmpty) {
             testSuite.setTestCases(new TestCaseOverviews)
             testSuiteInfo.getTestCases.forEach { testCaseInfo =>
               val testCase = new com.gitb.tr.TestCaseOverview()
+              testCase.setGroup(testCaseInfo.getGroup)
               testCase.setMetadata(new Metadata)
               testCase.getMetadata.setName(testCaseInfo.getTestName)
               testCase.getMetadata.setDescription(testCaseInfo.getTestDescription)
@@ -1674,12 +1733,19 @@ class ReportManager @Inject() (communityManager: CommunityManager,
       }
     } else if (item.results.isDefined) {
       val counters = new Counters(item.results.get.completedTests, item.results.get.failedTests, item.results.get.undefinedTests)
+      val countersToConsider = new Counters(item.results.get.completedTestsToConsider, item.results.get.failedTestsToConsider, item.results.get.undefinedTestsToConsider)
+      val countersOptional = new Counters(item.results.get.completedOptionalTests, item.results.get.failedOptionalTests, item.results.get.undefinedOptionalTests)
       newItem.setOverallStatus(counters.resultStatus())
       newItem.setData(new ConformanceStatementData())
       newItem.getData.setOverallStatus(newItem.getOverallStatus)
-      newItem.getData.setCompletedTests(counters.successes.toInt)
-      newItem.getData.setFailedTests(counters.failures.toInt)
-      newItem.getData.setUndefinedTests(counters.other.toInt)
+      // Set counters
+      newItem.getData.setCompletedTests(countersToConsider.successes.toInt)
+      newItem.getData.setFailedTests(countersToConsider.failures.toInt)
+      newItem.getData.setUndefinedTests(countersToConsider.other.toInt)
+      newItem.getData.setCompletedTestsIgnored(counters.successes.toInt - countersToConsider.successes.toInt + countersOptional.successes.toInt)
+      newItem.getData.setFailedTestsIgnored(counters.failures.toInt - countersToConsider.failures.toInt + countersOptional.failures.toInt)
+      newItem.getData.setUndefinedTestsIgnored(counters.other.toInt - countersToConsider.other.toInt + countersOptional.other.toInt)
+      // Set context
       newItem.getData.setTestDomain(reportData.domainName.orNull)
       newItem.getData.setTestDomainDescription(reportData.domainDescription.orNull)
       newItem.getData.setTestDomainReportMetadata(reportData.domainReportMetadata.orNull)
@@ -1707,10 +1773,23 @@ class ReportManager @Inject() (communityManager: CommunityManager,
           testSuiteOverview.setSpecReference(testSuite.specReference.orNull)
           testSuiteOverview.setSpecLink(testSuite.specLink.orNull)
           testSuiteOverview.setSpecDescription(testSuite.specDescription.orNull)
+          val groupMap = new mutable.HashMap[Long, String] // Group ID to group identifier
+          if (testSuite.testCaseGroups.nonEmpty) {
+            testSuiteOverview.setTestCaseGroups(new util.ArrayList[com.gitb.reports.dto.TestCaseGroup]())
+            testSuite.testCaseGroups.foreach { group =>
+              val testCaseGroup = new com.gitb.reports.dto.TestCaseGroup()
+              testSuiteOverview.getTestCaseGroups.add(testCaseGroup)
+              testCaseGroup.setId(group.identifier)
+              testCaseGroup.setName(group.name.orNull)
+              testCaseGroup.setDescription(group.description.orNull)
+              groupMap += (group.id -> group.identifier)
+            }
+          }
           testSuiteOverview.setTestCases(new util.ArrayList[com.gitb.reports.dto.TestCaseOverview]())
           testSuite.testCases.foreach { testCase =>
             val testCaseOverview = new com.gitb.reports.dto.TestCaseOverview()
             testSuiteOverview.getTestCases.add(testCaseOverview)
+            testCaseOverview.setGroup(testCase.group.flatMap(groupMap.get).orNull)
             testCaseOverview.setTestName(testCase.name)
             testCaseOverview.setReportResult(testCase.result.value())
             testCaseOverview.setEndTimeInternal(testCase.updateTime.orNull)
@@ -1901,22 +1980,16 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     var failedTests = 0
     var completedTests = 0
     var undefinedTests = 0
+    var failedTestsIgnored = 0
+    var completedTestsIgnored = 0
+    var undefinedTestsIgnored = 0
     var index = 0
-    val testMap = new mutable.TreeMap[Long, (com.gitb.tr.TestSuiteOverview, Counters)]
+    val testMap = new mutable.TreeMap[Long, (com.gitb.tr.TestSuiteOverview, Counters, mutable.LinkedHashMap[Long, (TestCaseGroup, Counters)])]
     if (addTestCases) {
       report.getStatement.setTestDetails(new TestCaseDetails)
     }
     conformanceInfo.foreach { info =>
       val result = TestResultStatus.withName(info.result)
-      if (!info.testCaseDisabled.get && !info.testCaseOptional.get) {
-        if (result == TestResultStatus.SUCCESS) {
-          completedTests += 1
-        } else if (result == TestResultStatus.FAILURE) {
-          failedTests += 1
-        } else {
-          undefinedTests += 1
-        }
-      }
       // Test case
       val testCaseOverview = new com.gitb.tr.TestCaseOverview()
       testCaseOverview.setMetadata(new Metadata)
@@ -1940,6 +2013,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
           tagToExport
         }).foreach(testCaseOverview.getMetadata.getTags.getTag.add(_))
       }
+      testCaseOverview.setGroup(info.testCaseGroupIdentifier.orNull)
       testCaseOverview.setResult(TestResultType.fromValue(info.result))
       testCaseOverview.setLastUpdate(info.updateTime.map(XMLDateTimeUtils.getXMLGregorianCalendarDateTime(_)).orNull)
       val optional = info.testCaseOptional.getOrElse(false)
@@ -2005,16 +2079,47 @@ class ReportManager @Inject() (communityManager: CommunityManager,
         }
         testSuite.setResult(TestResultType.UNDEFINED)
         testSuite.setTestCases(new TestCaseOverviews)
-        (testSuite, new Counters(0, 0, 0))
+        (testSuite, new Counters(0, 0, 0), new mutable.LinkedHashMap[Long, (models.TestCaseGroup, Counters)]())
       })
+      // Record the group information
+      val group = info.testCaseGroupId.map { _ =>
+        models.TestCaseGroup(info.testCaseGroupId.get, info.testCaseGroupIdentifier.get, info.testCaseGroupName, info.testCaseGroupDescription, info.testSuiteId.get)
+      }
+      if (group.nonEmpty) {
+        groupResult(testSuiteOverview._3, group.get)
+      }
       // Update the test suite's results.
-      if (!info.testCaseDisabled.get && !info.testCaseOptional.get) {
-        if (result == TestResultStatus.SUCCESS) {
-          testSuiteOverview._2.successes += 1
-        } else if (result == TestResultStatus.FAILURE) {
-          testSuiteOverview._2.failures += 1
+      if (!info.testCaseDisabled.get) {
+        if (info.testCaseOptional.get) {
+          if (result == TestResultStatus.SUCCESS) {
+            completedTestsIgnored += 1
+          } else if (result == TestResultStatus.FAILURE) {
+            failedTestsIgnored += 1
+          } else {
+            undefinedTestsIgnored += 1
+          }
         } else {
-          testSuiteOverview._2.other += 1
+          // Required test
+          if (info.testCaseGroupId.isEmpty) {
+            if (result == TestResultStatus.SUCCESS) {
+              completedTests += 1
+              testSuiteOverview._2.successes += 1
+            } else if (result == TestResultStatus.FAILURE) {
+              failedTests += 1
+              testSuiteOverview._2.failures += 1
+            } else {
+              undefinedTests += 1
+              testSuiteOverview._2.other += 1
+            }
+          } else {
+            if (result == TestResultStatus.SUCCESS) {
+              groupResult(testSuiteOverview._3, group.get).successes += 1
+            } else if (result == TestResultStatus.FAILURE) {
+              groupResult(testSuiteOverview._3, group.get).failures += 1
+            } else {
+              groupResult(testSuiteOverview._3, group.get).other += 1
+            }
+          }
         }
       }
       testSuiteOverview._1.getTestCases.getTestCase.add(testCaseOverview)
@@ -2022,6 +2127,31 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     if (testMap.nonEmpty) {
       // Set the status of the collected test suites
       testMap.values.foreach { testSuiteInfo =>
+        // Process groups
+        if (testSuiteInfo._3.nonEmpty) {
+          testSuiteInfo._1.setTestCaseGroups(new TestCaseGroups)
+          testSuiteInfo._3.values.foreach { group =>
+            val reportGroup = new tr.TestCaseGroup
+            reportGroup.setId(group._1.identifier)
+            reportGroup.setName(group._1.name.orNull)
+            reportGroup.setDescription(group._1.description.orNull)
+            testSuiteInfo._1.getTestCaseGroups.getGroup.add(reportGroup)
+            if (group._2.successes > 0) {
+              completedTests += 1
+              failedTestsIgnored += group._2.failures.toInt
+              undefinedTestsIgnored += group._2.other.toInt
+              testSuiteInfo._2.successes += 1
+            } else if (group._2.failures > 0) {
+              failedTests += 1
+              undefinedTestsIgnored += group._2.other.toInt
+              testSuiteInfo._2.failures += 1
+            } else if (group._2.other > 0) {
+              undefinedTests += 1
+              testSuiteInfo._2.other += 1
+            }
+          }
+        }
+        // Calculate test suite result
         if (testSuiteInfo._2.failures > 0) {
           testSuiteInfo._1.setResult(TestResultType.FAILURE)
         } else if (testSuiteInfo._2.other > 0) {
@@ -2039,7 +2169,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
       }
     }
     // Summary
-    report.getStatement.setSummary(new ResultSummary)
+    report.getStatement.setSummary(new ResultSummaryWithIgnoredResults)
     report.getStatement.getSummary.setStatus(TestResultType.UNDEFINED)
     if (failedTests > 0) {
       report.getStatement.getSummary.setStatus(TestResultType.FAILURE)
@@ -2052,6 +2182,9 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     report.getStatement.getSummary.setSucceeded(BigInteger.valueOf(completedTests))
     report.getStatement.getSummary.setFailed(BigInteger.valueOf(failedTests))
     report.getStatement.getSummary.setIncomplete(BigInteger.valueOf(undefinedTests))
+    report.getStatement.getSummary.setSucceededIgnored(BigInteger.valueOf(completedTestsIgnored))
+    report.getStatement.getSummary.setFailedIgnored(BigInteger.valueOf(failedTestsIgnored))
+    report.getStatement.getSummary.setIncompleteIgnored(BigInteger.valueOf(undefinedTestsIgnored))
     // Produce XML report
     Files.createDirectories(reportPath.getParent)
     Using.resource(Files.newOutputStream(reportPath)) { fos =>
@@ -2060,6 +2193,15 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     }
     // Apply XSLT if needed
     applyXsltToReportAndPrettyPrint(reportPath, transformer)
+  }
+
+  private def groupResult(groupMap: mutable.Map[Long, (TestCaseGroup, Counters)], group: TestCaseGroup): Counters = {
+    var groupResults = groupMap.get(group.id)
+    if (groupResults.isEmpty) {
+      groupResults = Some(group, new Counters(0, 0, 0))
+      groupMap += (group.id -> groupResults.get)
+    }
+    groupResults.get._2
   }
 
   private def callCustomPdfGenerationService(serviceUri: String, inputXmlPath: Path, outputPdfPath: Path): Unit = {

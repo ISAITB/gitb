@@ -13,7 +13,16 @@ public class TestSuiteOverview {
     private String specDescription;
     private String specLink;
     private String version;
+    private List<TestCaseGroup> testCaseGroups;
     private List<TestCaseOverview> testCases;
+
+    public List<TestCaseGroup> getTestCaseGroups() {
+        return testCaseGroups;
+    }
+
+    public void setTestCaseGroups(List<TestCaseGroup> testCaseGroups) {
+        this.testCaseGroups = testCaseGroups;
+    }
 
     public List<TestCaseOverview> getTestCases() {
         return testCases;

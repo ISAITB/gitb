@@ -234,13 +234,14 @@
                                                     <div class="spinnerPadded">
                                                         <app-pending-block></app-pending-block>
                                                     </div>
+                                                } @else {
+                                                    <app-test-suite-display
+                                                        [testSuites]="statement.testSuites"
+                                                        [showExecute]="false"
+                                                        [showExport]="true"
+                                                        (viewTestSession)="toTestSession($event)"
+                                                    ></app-test-suite-display>
                                                 }
-                                                <app-test-suite-display
-                                                    [testSuites]="statement.testSuites"
-                                                    [showExecute]="false"
-                                                    [showExport]="true"
-                                                    (viewTestSession)="toTestSession($event)"
-                                                ></app-test-suite-display>
                                             </div>
                                         </div>
                                     </td>

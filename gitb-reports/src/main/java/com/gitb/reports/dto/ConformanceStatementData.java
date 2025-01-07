@@ -26,6 +26,9 @@ public class ConformanceStatementData {
     private int completedTests = 0;
     private int failedTests = 0;
     private int undefinedTests = 0;
+    private int completedTestsIgnored = 0;
+    private int failedTestsIgnored = 0;
+    private int undefinedTestsIgnored = 0;
     private String overallStatus;
     private List<TestSuiteOverview> testSuites;
     private Boolean hasOptionalTests = null;
@@ -87,6 +90,30 @@ public class ConformanceStatementData {
 
     public void setUndefinedTests(int undefinedTests) {
         this.undefinedTests = undefinedTests;
+    }
+
+    public int getCompletedTestsIgnored() {
+        return completedTestsIgnored;
+    }
+
+    public void setCompletedTestsIgnored(int completedTestsIgnored) {
+        this.completedTestsIgnored = completedTestsIgnored;
+    }
+
+    public int getFailedTestsIgnored() {
+        return failedTestsIgnored;
+    }
+
+    public void setFailedTestsIgnored(int failedTestsIgnored) {
+        this.failedTestsIgnored = failedTestsIgnored;
+    }
+
+    public int getUndefinedTestsIgnored() {
+        return undefinedTestsIgnored;
+    }
+
+    public void setUndefinedTestsIgnored(int undefinedTestsIgnored) {
+        this.undefinedTestsIgnored = undefinedTestsIgnored;
     }
 
     public String getOverallStatus() {
