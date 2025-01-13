@@ -130,15 +130,15 @@ export class TestCaseDisplayComponent extends BaseComponent implements OnInit {
   groupTooltip(resultToShow: string | undefined): string {
     let tooltip
     if (resultToShow == Constants.TEST_CASE_RESULT.SUCCESS) {
-      tooltip = 'Success (at least one required test is successful)'
+      tooltip = 'Group success (at least one required test is successful)'
     } else if (resultToShow == Constants.TEST_CASE_RESULT.FAILURE) {
-      tooltip = 'Failure (no successful required tests and at least one failure)'
+      tooltip = 'Group failure (no successful required tests and at least one failure)'
     } else if (resultToShow == Constants.TEST_CASE_RESULT.WARNING) {
-      tooltip = 'Warning (no successful required tests and at least one warning)'
+      tooltip = 'Group warning (no successful required tests and at least one warning)'
     } else if (resultToShow == Constants.TEST_CASE_RESULT.UNDEFINED) {
-      tooltip = 'Incomplete (all required tests are incomplete)'
+      tooltip = 'Group incomplete (all required tests are incomplete)'
     } else {
-      tooltip = 'Ignored (all tests are ignored)'
+      tooltip = 'Group ignored (all tests are ignored)'
     }
     return tooltip;
   }
