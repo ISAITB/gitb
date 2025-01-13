@@ -41,7 +41,9 @@
 								(createEndpoint)="createEndpoint()"></app-endpoint-parameter-tab-content>
 						} @else {
 							<div class="tabControls">
-								<button type="button" class="btn btn-secondary" (click)="createEndpoint()">Create {{dataService.labelEndpointLower()}}</button>
+                                <div class="btn-toolbar">
+                                    <button type="button" class="btn btn-secondary" (click)="createEndpoint()">Create {{dataService.labelEndpointLower()}}</button>
+                                </div>
 							</div>
 							<div class="card">
 								<div table-directive

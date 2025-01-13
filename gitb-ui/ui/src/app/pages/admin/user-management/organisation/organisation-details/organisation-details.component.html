@@ -46,15 +46,17 @@
                 <div class="tabPanel">
                     @if (showCreateSystem) {
                         <div class="tabControls">
-                            <button type="button" class="btn btn-secondary" (click)="createSystem()">Create {{dataService.labelSystemLower()}}</button>
+                            <div class="btn-toolbar">
+                                <button type="button" class="btn btn-secondary" (click)="createSystem()">Create {{dataService.labelSystemLower()}}</button>
+                            </div>
                         </div>
                     }
                     <div class="card">
-                        <div table-directive 
-                            [columns]="systemColumns" 
+                        <div table-directive
+                            [columns]="systemColumns"
                             [data]="systems"
                             [noDataMessage]="'No '+dataService.labelSystemsLower()+' found'"
-                            [loadingStatus]="systemsStatus" 
+                            [loadingStatus]="systemsStatus"
                             [allowSelect]="true"
                             (onSelect)="systemSelect($event)">
                         </div>
@@ -67,15 +69,17 @@
                     <div class="tabPanel">
                         @if (showCreateUser) {
                             <div class="tabControls">
-                                <button type="button" class="btn btn-secondary" (click)="createUser()">Create user</button>
+                                <div class="btn-toolbar">
+                                    <button type="button" class="btn btn-secondary" (click)="createUser()">Create user</button>
+                                </div>
                             </div>
                         }
                         <div class="card">
-                            <div table-directive 
-                                [columns]="userColumns" 
+                            <div table-directive
+                                [columns]="userColumns"
                                 [data]="users"
                                 [noDataMessage]="'No users found'"
-                                [loadingStatus]="usersStatus" 
+                                [loadingStatus]="usersStatus"
                                 [allowSelect]="showCreateUser"
                                 (onSelect)="userSelect($event)">
                             </div>
@@ -87,8 +91,8 @@
                 <tab (selectTab)="showApiInfo()" customClass="tabClass">
                     <ng-template tabHeading><app-tab-title icon="fa-solid fa-key" text="REST API keys"></app-tab-title></ng-template>
                     <div class="tabPanel">
-                        <app-api-key-info 
-                            [organisationId]="orgId" 
+                        <app-api-key-info
+                            [organisationId]="orgId"
                             [organisationName]="organisation.fname"
                             [adminOrganisation]="organisation.adminOrganization == true"
                             [communityId]="communityId"
