@@ -2,7 +2,7 @@ package managers
 
 import com.gitb.core.{Metadata, SpecificationInfo, StepStatus, Tags}
 import com.gitb.reports.dto._
-import com.gitb.reports.{ReportGenerator, ReportSpecs}
+import com.gitb.reports.{ReportGenerator, ReportSpecs, dto}
 import com.gitb.tbs.TestStepStatus
 import com.gitb.tpl.TestCase
 import com.gitb.tr
@@ -1735,7 +1735,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
       val counters = new Counters(item.results.get.completedTests, item.results.get.failedTests, item.results.get.undefinedTests)
       val countersToConsider = new Counters(item.results.get.completedTestsToConsider, item.results.get.failedTestsToConsider, item.results.get.undefinedTestsToConsider)
       val countersOptional = new Counters(item.results.get.completedOptionalTests, item.results.get.failedOptionalTests, item.results.get.undefinedOptionalTests)
-      newItem.setOverallStatus(counters.resultStatus())
+      newItem.setOverallStatus(countersToConsider.resultStatus())
       newItem.setData(new ConformanceStatementData())
       newItem.getData.setOverallStatus(newItem.getOverallStatus)
       // Set counters
@@ -2360,19 +2360,13 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     var failedTests = 0
     var completedTests = 0
     var undefinedTests = 0
+    var failedTestsIgnored = 0
+    var completedTestsIgnored = 0
+    var undefinedTestsIgnored = 0
     var index = 1
-    val testMap = new mutable.TreeMap[Long, (com.gitb.reports.dto.TestSuiteOverview, Counters)]
+    val testMap = new mutable.TreeMap[Long, (com.gitb.reports.dto.TestSuiteOverview, Counters, mutable.LinkedHashMap[Long, (TestCaseGroup, Counters)])]
     conformanceInfo.foreach { info =>
       val result = TestResultStatus.withName(info.result)
-      if (!info.testCaseDisabled.get && !info.testCaseOptional.get) {
-        if (result == TestResultStatus.SUCCESS) {
-          completedTests += 1
-        } else if (result == TestResultStatus.FAILURE) {
-          failedTests += 1
-        } else {
-          undefinedTests += 1
-        }
-      }
       if (addTestCaseResults) {
         val testCaseOverview = new com.gitb.reports.dto.TestCaseOverview()
         testCaseOverview.setId(index.toString)
@@ -2382,6 +2376,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
         } else {
           testCaseOverview.setTestDescription("-")
         }
+        testCaseOverview.setGroup(info.testCaseGroupIdentifier.orNull)
         testCaseOverview.setSpecReference(info.testCaseSpecReference.orNull)
         testCaseOverview.setSpecDescription(info.testCaseSpecDescription.orNull)
         testCaseOverview.setSpecLink(info.testCaseSpecLink.orNull)
@@ -2428,6 +2423,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
         }
         val testSuiteOverview = testMap.getOrElseUpdate(info.testSuiteId.get, {
           val testSuite = new com.gitb.reports.dto.TestSuiteOverview
+          testSuite.setTestSuiteId(info.testSuiteId.get)
           testSuite.setTestSuiteName(info.testSuiteName.get)
           testSuite.setTestSuiteDescription(info.testSuiteDescription.orNull)
           testSuite.setSpecReference(info.testSuiteSpecReference.orNull)
@@ -2435,49 +2431,109 @@ class ReportManager @Inject() (communityManager: CommunityManager,
           testSuite.setSpecLink(info.testSuiteSpecLink.orNull)
           testSuite.setOverallStatus("UNDEFINED")
           testSuite.setTestCases(new util.ArrayList[com.gitb.reports.dto.TestCaseOverview]())
-          (testSuite, new Counters(0, 0, 0))
+          (testSuite, new Counters(0, 0, 0), new mutable.LinkedHashMap[Long, (models.TestCaseGroup, Counters)]())
         })
+        // Record the group information
+        val group = info.testCaseGroupId.map { _ =>
+          models.TestCaseGroup(info.testCaseGroupId.get, info.testCaseGroupIdentifier.get, info.testCaseGroupName, info.testCaseGroupDescription, info.testSuiteId.get)
+        }
+        if (group.nonEmpty) {
+          groupResult(testSuiteOverview._3, group.get)
+        }
         // Update the test suite's results.
-        if (!info.testCaseDisabled.get && !info.testCaseOptional.get) {
-          if (result == TestResultStatus.SUCCESS) {
-            testSuiteOverview._2.successes += 1
-          } else if (result == TestResultStatus.FAILURE) {
-            testSuiteOverview._2.failures += 1
+        if (!info.testCaseDisabled.get) {
+          if (info.testCaseOptional.get) {
+            if (result == TestResultStatus.SUCCESS) {
+              completedTestsIgnored += 1
+            } else if (result == TestResultStatus.FAILURE) {
+              failedTestsIgnored += 1
+            } else {
+              undefinedTestsIgnored += 1
+            }
           } else {
-            testSuiteOverview._2.other += 1
+            // Required test
+            if (info.testCaseGroupId.isEmpty) {
+              if (result == TestResultStatus.SUCCESS) {
+                completedTests += 1
+                testSuiteOverview._2.successes += 1
+              } else if (result == TestResultStatus.FAILURE) {
+                failedTests += 1
+                testSuiteOverview._2.failures += 1
+              } else {
+                undefinedTests += 1
+                testSuiteOverview._2.other += 1
+              }
+            } else {
+              if (result == TestResultStatus.SUCCESS) {
+                groupResult(testSuiteOverview._3, group.get).successes += 1
+              } else if (result == TestResultStatus.FAILURE) {
+                groupResult(testSuiteOverview._3, group.get).failures += 1
+              } else {
+                groupResult(testSuiteOverview._3, group.get).other += 1
+              }
+            }
           }
         }
         testSuiteOverview._1.getTestCases.add(testCaseOverview)
         index += 1
       }
     }
-    overview.setOverallStatus("UNDEFINED")
-    if (failedTests > 0) {
-      overview.setOverallStatus("FAILURE")
-    } else if (undefinedTests > 0) {
-      overview.setOverallStatus("UNDEFINED")
-    } else if (completedTests > 0) {
-      overview.setOverallStatus("SUCCESS")
-    }
-    overview.setCompletedTests(completedTests)
-    overview.setFailedTests(failedTests)
-    overview.setUndefinedTests(undefinedTests)
     if (testMap.nonEmpty) {
       // Set the status of the collected test suites
       testMap.values.foreach { testSuiteInfo =>
+        // Process groups
+        if (testSuiteInfo._3.nonEmpty) {
+          testSuiteInfo._1.setTestCaseGroups(new util.ArrayList[dto.TestCaseGroup]())
+          testSuiteInfo._3.values.foreach { group =>
+            val reportGroup = new dto.TestCaseGroup
+            reportGroup.setId(group._1.identifier)
+            reportGroup.setName(group._1.name.orNull)
+            reportGroup.setDescription(group._1.description.orNull)
+            testSuiteInfo._1.getTestCaseGroups.add(reportGroup)
+            if (group._2.successes > 0) {
+              completedTests += 1
+              failedTestsIgnored += group._2.failures.toInt
+              undefinedTestsIgnored += group._2.other.toInt
+              testSuiteInfo._2.successes += 1
+            } else if (group._2.failures > 0) {
+              failedTests += 1
+              undefinedTestsIgnored += group._2.other.toInt
+              testSuiteInfo._2.failures += 1
+            } else if (group._2.other > 0) {
+              undefinedTests += 1
+              testSuiteInfo._2.other += 1
+            }
+          }
+        }
+        // Calculate test suite result
         if (testSuiteInfo._2.failures > 0) {
-          testSuiteInfo._1.setOverallStatus("FAILURE")
+          testSuiteInfo._1.setOverallStatus(TestResultType.FAILURE.value())
         } else if (testSuiteInfo._2.other > 0) {
-          testSuiteInfo._1.setOverallStatus("UNDEFINED")
+          testSuiteInfo._1.setOverallStatus(TestResultType.UNDEFINED.value())
         } else if (testSuiteInfo._2.successes > 0) {
-          testSuiteInfo._1.setOverallStatus("SUCCESS")
+          testSuiteInfo._1.setOverallStatus(TestResultType.SUCCESS.value())
         } else {
-          testSuiteInfo._1.setOverallStatus("UNDEFINED")
+          testSuiteInfo._1.setOverallStatus(TestResultType.UNDEFINED.value())
         }
       }
       // Add to overall output
       overview.setTestSuites(new util.ArrayList[com.gitb.reports.dto.TestSuiteOverview](testMap.values.map(_._1).toList.asJavaCollection))
     }
+    // Summary
+    overview.setOverallStatus(TestResultType.UNDEFINED.value())
+    if (failedTests > 0) {
+      overview.setOverallStatus(TestResultType.FAILURE.value())
+    } else if (undefinedTests > 0) {
+      overview.setOverallStatus(TestResultType.UNDEFINED.value())
+    } else if (completedTests > 0) {
+      overview.setOverallStatus(TestResultType.SUCCESS.value())
+    }
+    overview.setCompletedTests(completedTests)
+    overview.setFailedTests(failedTests)
+    overview.setUndefinedTests(undefinedTests)
+    overview.setCompletedTestsIgnored(completedTestsIgnored)
+    overview.setFailedTestsIgnored(failedTestsIgnored)
+    overview.setUndefinedTestsIgnored(undefinedTestsIgnored)
     overview.setIncludeTestStatus(addTestStatus)
     // Replace message placeholders
     if (addMessage && message.isDefined) {

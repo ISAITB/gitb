@@ -38,6 +38,9 @@ public class TestCaseOverview {
     private String specLink;
     private String version;
     private Timestamp endTimeInternal;
+    private boolean inGroup;
+    private boolean firstInGroup;
+    private boolean lastInGroup;
 
     private List<Report> steps = new ArrayList<>();
 
@@ -277,6 +280,30 @@ public class TestCaseOverview {
         this.endTimeInternal = endTimeInternal;
     }
 
+    public boolean isInGroup() {
+        return inGroup;
+    }
+
+    public void setInGroup(boolean inGroup) {
+        this.inGroup = inGroup;
+    }
+
+    public boolean isFirstInGroup() {
+        return firstInGroup;
+    }
+
+    public void setFirstInGroup(boolean firstInGroup) {
+        this.firstInGroup = firstInGroup;
+    }
+
+    public boolean isLastInGroup() {
+        return lastInGroup;
+    }
+
+    public void setLastInGroup(boolean lastInGroup) {
+        this.lastInGroup = lastInGroup;
+    }
+
     public void setLogMessages(List<String> logLines) {
         logMessages = null;
         var tempMessages = new ArrayList<LogMessage>();
@@ -285,7 +312,7 @@ public class TestCaseOverview {
             var messageParts = StringUtils.split(StringUtils.replaceChars(line, '\r', '\n'), '\n');
             if (messageParts != null) {
                 for (var part: messageParts) {
-                    if (part.length() > 0) {
+                    if (!part.isEmpty()) {
                         short partLevel = previousLevel;
                         if (part.length() > 22) { // The timestamp part is of length 22 "[yyyy-mm-dd HH:MM:SS] "
                             var withoutTimestamp = part.substring(22);

@@ -104,6 +104,7 @@
             <div>Test cases</div>
         </div>
         <div class="section-content">
+            ${data.prepareTestCaseGroups()}
             <#assign overallIndex = 0>
             <#list data.testSuites as testSuite>
                 <#assign tsIndex = testSuite?counter>
@@ -127,30 +128,68 @@
                         <#list testSuite.testCases as testCase>
                             <#assign index = testCase?counter>
                             <#assign overallIndex = overallIndex + 1>
-                            <div class="test-case-container<#if testCase.disabled> disabled</#if>">
-                                <div class="test-case-first-line">
-                                    <div class="test-case-first-line-start">
-                                        <table class="test-case-table">
-                                            <tr>
-                                                <#if data.hasOptionalTests() || data.hasDisabledTests()>
-                                                    <td class="test-case-prescription-td"><div class="test-case-prescription-level icon"><img src="classpath:reports/images/icon-<#if testCase.disabled>disabled<#elseif testCase.optional>optional<#else>required</#if>.png"/></div></td>
-                                                </#if>
-                                                <td class="test-case-name-td"><div class="test-case-name"><#if includeTestCaseReports><a class="page-link" href="#test-${tsIndex}-${index}"></#if>${escape(testCase.testName)}<#if includeTestCaseReports></a></#if></div></td>
-                                                <#if testCase.tags??>
-                                                    <td class="test-case-tags-td"><div class="test-case-tags"><#list testCase.tags as tag><div class="test-case-tag" style="background-color: ${tag.background()}; color: ${tag.foreground()}">${escape(tag.name())}</div></#list></div></td>
-                                                </#if>
-                                            </tr>
-                                        </table>
-                                    </div>
-                                    <div class="test-case-status icon value-inline"><img src="classpath:reports/images/icon-${testCase.reportResult}.png"/></div>
-                                </div>
-                                <#if testCase.testDescription?? && testCase.testDescription != "">
-                                    <div class="test-case-description"><div>${escape(testCase.testDescription)}</div></div>
+                            <#if testCase.inGroup && testCase.firstInGroup>
+                                <div class="test-case-group-overall-container"><#t>
+                            </#if>
+                            <div class="test-case-container<#if testCase.disabled> disabled</#if><#if testCase.inGroup> in-group</#if>"><#t>
+                                <#if testCase.inGroup>
+                                    <#assign group = data.getTestCaseGroup(testSuite.testSuiteId, testCase.getGroup())>
+                                    <div class="group-marker background-<#if group.result??>${group.result}<#else>NONE</#if><#if testCase.firstInGroup> group-first</#if><#if testCase.lastInGroup> group-last</#if>"></div><#t>
                                 </#if>
-                                <#if testCase.specReference?? || testCase.specDescription?? || testCase.specLink??>
-                                    <div class="test-suite-test-case-spec-info"><div class="spec-reference-container"><@common.specificationInfo testCase.specReference testCase.specDescription testCase.specLink/></div></div>
-                                </#if>
-                            </div>
+                                <div class="test-case-content<#if testCase.inGroup> in-group</#if><#if testCase.firstInGroup> group-first</#if><#if testCase.lastInGroup> group-last</#if>">
+                                    <div class="test-case-first-line"><#t>
+                                        <#if data.hasOptionalTests() || data.hasDisabledTests()>
+                                            <div class="test-case-prescription-level"><#t>
+                                                <img src="classpath:reports/images/icon-<#if testCase.disabled>disabled<#elseif testCase.optional>optional<#else>required</#if>.png"/><#t>
+                                            </div><#t>
+                                        </#if>
+                                        <div class="test-case-first-line-start<#if data.hasOptionalTests() || data.hasDisabledTests()> with-prescription</#if><#if testCase.inGroup> with-group</#if>"><#t>
+                                            <div class="test-case-name<#if !includeTestCaseReports> without-link</#if>"><#t>
+                                                <div class="test-case-name-value display-inline"><#t>
+                                                    <#if includeTestCaseReports><a class="page-link" href="#test-${tsIndex}-${index}"></#if><#t>
+                                                        ${escape(testCase.testName)}<#t>
+                                                    <#if includeTestCaseReports></a></#if>
+                                                </div><#t>
+                                            </div><#t>
+                                            <#if testCase.inGroup>
+                                                <#assign group = data.getTestCaseGroup(testSuite.testSuiteId, testCase.getGroup())>
+                                                <#if group?? && group.name??>
+                                                    <div class="test-case-group-container"><#t>
+                                                        <div class="test-case-group"><#t>
+                                                            ${escape(group.name)}<#t>
+                                                        </div><#t>
+                                                    </div><#t>
+                                                </#if>
+                                            </#if><#t>
+                                            <#if testCase.tags??>
+                                                <div class="test-case-tags"><#t>
+                                                    <#list testCase.tags as tag>
+                                                        <div class="test-case-tag" style="background-color: ${tag.background()}; color: ${tag.foreground()}">${escape(tag.name())}</div><#t>
+                                                    </#list>
+                                                </div><#t>
+                                            </#if><#t>
+                                        </div><#t>
+                                        <div class="test-case-status icon display-inline"><#t>
+                                            <img src="classpath:reports/images/icon-${testCase.reportResult}.png"/><#t>
+                                        </div><#t>
+                                    </div><#t>
+                                    <#if testCase.testDescription?? && testCase.testDescription != "">
+                                        <div class="test-case-description"><#t>
+                                            <div>${escape(testCase.testDescription)}</div><#t>
+                                        </div><#t>
+                                    </#if>
+                                    <#if testCase.specReference?? || testCase.specDescription?? || testCase.specLink??>
+                                        <div class="test-suite-test-case-spec-info"><#t>
+                                            <div class="spec-reference-container"><#t>
+                                                <@common.specificationInfo testCase.specReference testCase.specDescription testCase.specLink/><#t>
+                                            </div><#t>
+                                        </div><#t>
+                                    </#if>
+                                </div><#t>
+                            </div><#t>
+                            <#if testCase.inGroup && testCase.lastInGroup>
+                                </div><#t>
+                            </#if>
                         </#list>
                     </div>
                     <#if testSuite.specReference?? || testSuite.specDescription?? || testSuite.specLink??>

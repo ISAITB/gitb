@@ -5,6 +5,7 @@ public class TestCaseGroup {
     private String id;
     private String name;
     private String description;
+    private String result;
 
     public String getId() {
         return id;
@@ -30,4 +31,11 @@ public class TestCaseGroup {
         this.description = description;
     }
 
+    public String getResult() {
+        return result;
+    }
+
+    public void setResult(String result) {
+        this.result = result;
+    }
 }
