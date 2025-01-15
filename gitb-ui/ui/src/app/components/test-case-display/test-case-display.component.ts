@@ -1,4 +1,4 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, HostListener, Input, OnInit, Output} from '@angular/core';
 import {mergeMap, of, share} from 'rxjs';
 import {Constants} from 'src/app/common/constants';
 import {ConformanceTestCase} from 'src/app/pages/organisation/conformance-statement/conformance-test-case';
@@ -10,8 +10,8 @@ import {HtmlService} from 'src/app/services/html.service';
 import {SpecificationReferenceInfo} from 'src/app/types/specification-reference-info';
 import {ConformanceTestCaseGroup} from '../../pages/organisation/conformance-statement/conformance-test-case-group';
 import {BaseComponent} from '../../pages/base-component.component';
-import {TestCaseTag} from '../../types/test-case-tag';
 import {DataService} from '../../services/data.service';
+import {CloseEvent} from '../test-result-status-display/close-event';
 
 @Component({
   selector: 'app-test-case-display',
@@ -45,6 +45,7 @@ export class TestCaseDisplayComponent extends BaseComponent implements OnInit {
   hasDescriptions = false
   hasDescription: {[key:number]: boolean } = {}
   descriptionVisible: {[key:number]: boolean } = {}
+  statusCloseEmitter = new EventEmitter<CloseEvent>()
 
   constructor(
     private reportService: ReportService,
@@ -147,5 +148,15 @@ export class TestCaseDisplayComponent extends BaseComponent implements OnInit {
     if (this.showEdit) {
       this.edit.emit(testCase)
     }
+  }
+
+  testCaseClicked(testCaseId: number) {
+    this.descriptionVisible[testCaseId] = !this.descriptionVisible[testCaseId]
+    // Make sure that any status display messages are closed
+    this.statusCloseEmitter.emit({})
+  }
+
+  statusPopupOpened(openedTestCaseId: number) {
+    this.statusCloseEmitter.emit({idToSkip: openedTestCaseId})
   }
 }

@@ -1,6 +1,6 @@
 <div (click)="clicked($event);tooltip.hide()" class="rootDiv" [class.ignored]="ignored" containerClass="shortTooltip" #tooltip="bs-tooltip" [tooltip]="tooltipText">
     @if ((result == Constants.TEST_CASE_RESULT.SUCCESS || result == Constants.TEST_CASE_RESULT.FAILURE) && message != undefined) {
-        <span class="pointer" [popover]="message!" [outsideClick]="true" placement="left" [containerClass]="popoverClass"><i [ngClass]="iconToShow"></i></span>
+        <span class="pointer" [popover]="message!" triggers="" [isOpen]="isOpen" (onHidden)="closed()" [outsideClick]="true" placement="left" [containerClass]="popoverClass"><i [ngClass]="iconToShow"></i></span>
     } @else {
         <span><i [ngClass]="iconToShow"></i></span>
     }
