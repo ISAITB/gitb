@@ -10,7 +10,8 @@ class ErrorPageData(
   _testBedHomeLink: String,
   _releaseInfoEnabled: Boolean,
   _releaseInfoLink: String,
-  _contextPath: String
+  _contextPath: String,
+  _restAPI: Option[String]
 ) {
 
   var versionNumber: String = _versionNumber
@@ -23,5 +24,6 @@ class ErrorPageData(
   var releaseInfoEnabled: Boolean = _releaseInfoEnabled
   var releaseInfoLink: String = _releaseInfoLink
   var contextPath: String = _contextPath
+  var restApi: Option[String] = _restAPI
 
 }
