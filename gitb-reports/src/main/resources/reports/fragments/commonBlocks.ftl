@@ -145,7 +145,7 @@
                                         </#if>
                                         <div class="test-case-first-line-start<#if data.hasOptionalTests() || data.hasDisabledTests()> with-prescription</#if><#if testCase.inGroup> with-group</#if>"><#t>
                                             <div class="test-case-name<#if !includeTestCaseReports> without-link</#if>"><#t>
-                                                <div class="test-case-name-value display-inline"><#t>
+                                                <div class="test-case-name-value"><#t>
                                                     <#if includeTestCaseReports><a class="page-link" href="#test-${tsIndex}-${index}"></#if><#t>
                                                         ${escape(testCase.testName)}<#t>
                                                     <#if includeTestCaseReports></a></#if>
