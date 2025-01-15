@@ -393,6 +393,7 @@
     }
     .test-case-name-value {
         margin-right: 10px;
+        white-space: nowrap;
     }
     .test-case-description {
         display: inline-block;

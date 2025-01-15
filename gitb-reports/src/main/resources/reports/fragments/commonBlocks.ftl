@@ -147,7 +147,7 @@
                                             <div class="test-case-name<#if !includeTestCaseReports> without-link</#if>"><#t>
                                                 <div class="test-case-name-value"><#t>
                                                     <#if includeTestCaseReports><a class="page-link" href="#test-${tsIndex}-${index}"></#if><#t>
-                                                        ${escape(testCase.testName)}<#t>
+                                                        ${escape(trim(testCase.testName))}<#t>
                                                     <#if includeTestCaseReports></a></#if>
                                                 </div><#t>
                                             </div><#t>
