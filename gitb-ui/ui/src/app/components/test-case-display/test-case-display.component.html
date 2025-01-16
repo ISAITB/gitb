@@ -36,12 +36,12 @@
                             <app-prescription-level [optional]="testCase.optional" [disabled]="testCase.disabled"></app-prescription-level>
                         </div>
                     }
-                    <div class="testCaseName">{{testCase.sname}}</div>
                     @if (testCase.groupTag) {
                         <div class="testCaseGroupContainer">
                             <app-tags-display [tags]="[testCase.groupTag]"></app-tags-display>
                         </div>
                     }
+                    <div class="testCaseName">{{testCase.sname}}</div>
                     <div class="testCaseExecution">
                         @if (testCase.parsedTags) {
                             <div class="testCaseTagsContainer">
