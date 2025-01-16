@@ -252,7 +252,7 @@
 </#macro>
 <#macro testCoverage>
     .coverage-container {
-        margin-top: -2px;
+        margin-top: -1px;
     }
     .coverage-result.start {
         border-top-left-radius: 4px;
@@ -267,7 +267,7 @@
         text-align: center;
         font-size: 90%;
         font-weight: bold;
-        padding: 1px 0px;
+        padding: 2px 0px 1px 0px;
     }
     .coverage-passed {
         color: #ffffff;
@@ -314,8 +314,10 @@
     }
     .test-case-prescription-level {
         padding-right: 5px;
-        float: left;
-        padding-top: 0.17rem;
+        width: 1%;
+        display: table-cell;
+        white-space: nowrap;
+        vertical-align: top;
     }
     .test-case-prescription-level > img {
         width: 16px;
@@ -337,6 +339,7 @@
         padding-right: 11px;
     }
     .test-case-status.icon img, .test-suite-status.icon img {
+        vertical-align: top;
         margin-top: -3px;
     }
     .test-case-group-overall-container {
@@ -384,16 +387,14 @@
         border-bottom-width: 0;
     }
     .test-case-name {
-        display: inline-block;
+        display: table-cell;
+        vertical-align: top;
         font-weight: bold;
+        padding-top: 0.15rem;
     }
     .test-case-name.without-link {
         position: relative;
         top: 0.075rem;
-    }
-    .test-case-name-value {
-        margin-right: 10px;
-        white-space: nowrap;
     }
     .test-case-description {
         display: inline-block;
@@ -401,26 +402,23 @@
         margin-bottom: 5px;
         width: 99%;
     }
-    .test-case-first-line-start {
-        display: inline-block;
-        width: 953px;
-    }
-    .test-case-first-line-start.with-group {
-        width: 940px;
-    }
-    .test-case-first-line-start.with-prescription {
-        width: 933px;
-    }
-    .test-case-first-line-start.with-prescription.with-group {
-        width: 920px;
+    .test-case-first-line {
+        display: table;
+        width: 100%;
     }
     .test-case-status {
-        display: inline;
-        float: right;
+        display: table-cell;
+        width: 1px;
+        vertical-align: top;
+        padding-left: 10px;
     }
     .test-case-group-container {
-        display: inline;
-        margin-right: 10px;
+        display: table-cell;
+        white-space: nowrap;
+        padding-right: 10px;
+        width: 1px;
+        vertical-align: top;
+        padding-top: 0.1rem;
     }
     .test-case-group {
         display: inline;
@@ -436,9 +434,12 @@
         top: -0.015rem;
     }
     .test-case-tags {
+        display: table-cell;
+        white-space: nowrap;
         padding-left: 10px;
-        display: inline;
-        float: right;
+        vertical-align: top;
+        text-align: right;
+        padding-top: 0.1rem;
     }
     .test-case-tag {
         display: inline;
