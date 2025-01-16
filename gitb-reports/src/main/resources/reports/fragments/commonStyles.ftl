@@ -226,8 +226,8 @@
         border: 1px solid #bee3be;
     }
     .output-message.UNDEFINED {
-        background: #ededed;
-        border: 1px solid #000000;
+        background: #d9edf7;
+        border: 1px solid #bddded;
     }
     td.cell-label-end-time {
         font-weight: bold;

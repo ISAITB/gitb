@@ -410,41 +410,6 @@ bs-tooltip-container {
 	min-width: 250px !important;
 }
 
-.popover.result-message-popover {
-	padding: 10px;
-	max-width: 800px;
-	top: -4px !important;
-	left: -4px !important;
-	&.success {
-		> .arrow {
-			border-left-color: @green-success-border;
-			&:after {
-				border-left-color: @green-success-background;
-			}
-		}
-		background-color: @green-success-background;
-		border-color: @green-success-border;
-		.popover-body {
-			background-color: @green-success-background;
-			color: @green-success-content;
-		}
-	}
-	&.failure {
-		> .arrow {
-			border-left-color: @red-error-border;
-			&:after {
-				border-left-color: @red-error-background;
-			}
-		}
-		background-color: @red-error-background;
-		border-color: @red-error-border;
-		.popover-body {
-			background-color: @red-error-background;
-			color: @red-error-content;
-		}
-	}
-}
-
 .pointer {
 	cursor: pointer !important;
 }

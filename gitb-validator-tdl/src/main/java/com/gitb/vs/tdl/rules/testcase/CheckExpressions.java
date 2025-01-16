@@ -171,6 +171,13 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
                 }
                 checkExpression(output.getFailure().getDefault());
             }
+            if (output.getUndefined() != null) {
+                for (OutputCase outputCase: output.getUndefined().getCase()) {
+                    checkExpression(outputCase.getCond());
+                    checkExpression(outputCase.getMessage());
+                }
+                checkExpression(output.getUndefined().getDefault());
+            }
         }
     }
 

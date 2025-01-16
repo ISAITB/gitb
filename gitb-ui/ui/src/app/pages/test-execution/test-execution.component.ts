@@ -1147,8 +1147,15 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   }
 
   alertTypeForStatus(status: number) {
-    if (status == Constants.TEST_CASE_STATUS.COMPLETED) return 'success'
-    else return 'danger'
+    let resultType: string
+    if (status == Constants.TEST_CASE_STATUS.COMPLETED) {
+      resultType = Constants.TEST_CASE_RESULT.SUCCESS
+    } else if (status == Constants.TEST_CASE_STATUS.ERROR) {
+      resultType = Constants.TEST_CASE_RESULT.FAILURE
+    } else {
+      resultType = Constants.TEST_CASE_RESULT.UNDEFINED
+    }
+    return this.dataService.determineOutputMessageType(resultType)
   }
 
   leavingTestExecutionPage() {

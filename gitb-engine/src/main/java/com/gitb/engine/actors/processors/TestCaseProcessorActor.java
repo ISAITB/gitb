@@ -158,7 +158,7 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
             report.setResult(TestResultType.FAILURE);
         }
         // Set output message (if defined).
-        if (testCase.getOutput() != null && status != StepStatus.SKIPPED) {
+        if (testCase.getOutput() != null) {
             var previousState = context.getCurrentState();
             context.setCurrentState(TestCaseContext.TestCaseStateEnum.OUTPUT);
             try {
@@ -167,6 +167,8 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
                     outputMessage = calculateOutputMessage(testCase.getOutput().getSuccess(), context);
                 } else if (report.getResult() == TestResultType.FAILURE) {
                     outputMessage = calculateOutputMessage(testCase.getOutput().getFailure(), context);
+                } else if (report.getResult() == TestResultType.UNDEFINED) {
+                    outputMessage = calculateOutputMessage(testCase.getOutput().getUndefined(), context);
                 }
                 if (outputMessage != null) {
                     report.setContext(new AnyContent());

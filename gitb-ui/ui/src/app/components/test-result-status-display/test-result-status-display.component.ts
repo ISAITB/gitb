@@ -30,9 +30,12 @@ export class TestResultStatusDisplayComponent implements OnInit {
   ngOnInit(): void {
     this.iconToShow = this.dataService.iconForTestResult(this.result)
     this.tooltipText = this.dataService.tooltipForTestResult(this.result)
-    this.popoverClass = 'result-message-popover failure'
     if (this.result == Constants.TEST_CASE_RESULT.SUCCESS) {
       this.popoverClass = 'result-message-popover success'
+    } else if (this.result == Constants.TEST_CASE_RESULT.FAILURE) {
+      this.popoverClass = 'result-message-popover failure'
+    } else {
+      this.popoverClass = 'result-message-popover undefined'
     }
     if (this.close) {
       this.close.subscribe((event) => {

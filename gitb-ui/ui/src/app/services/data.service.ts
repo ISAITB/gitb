@@ -1894,4 +1894,16 @@ export class DataService {
     }
   }
 
+  determineOutputMessageType(result: string) {
+    let outputMessageType: string
+    if (result == Constants.TEST_CASE_RESULT.SUCCESS) {
+      outputMessageType = 'success'
+    } else if (result == Constants.TEST_CASE_RESULT.FAILURE) {
+      outputMessageType = 'danger'
+    } else {
+      outputMessageType = 'info'
+    }
+    return outputMessageType
+  }
+
 }
