@@ -61,9 +61,6 @@ public class DisplayProcessor extends AbstractProcessingHandler {
             }
         }
         var parameters = getInputForName(input, INPUT__PARAMETERS, MapType.class);
-        if (parameters == null) {
-            parameters = getDefaultInput(input, MapType.class);
-        }
         var report = createReport(result);
         if (parameters != null) {
             parameters.getItems().forEach((key, value) -> {
