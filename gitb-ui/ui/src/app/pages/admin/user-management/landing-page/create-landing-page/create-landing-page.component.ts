@@ -29,6 +29,7 @@ export class CreateLandingPageComponent extends BaseComponent implements OnInit,
   savePending = false
   tooltipForDefaultCheck!: string
   validation = new ValidationState()
+  Constants = Constants
 
   constructor(
     private routingService: RoutingService,
@@ -76,7 +77,7 @@ export class CreateLandingPageComponent extends BaseComponent implements OnInit,
   }
 
   private clearCachedLandingPageIfNeeded() {
-    if ((this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin) 
+    if ((this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin)
       && this.dataService.vendor!.community == this.communityId && this.page.default) {
         // Update if we are Test Bed or community admins and we are editing the default landing page.
         this.dataService.currentLandingPageContent = undefined

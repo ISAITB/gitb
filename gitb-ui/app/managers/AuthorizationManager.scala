@@ -1856,7 +1856,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
   private def checkIsAuthenticated(request: RequestWithAttributes[_]): Boolean = {
     getRequestUserId(request)
     var ok = false
-    if (checkHasPrincipal(request, true)) {
+    if (checkHasPrincipal(request, skipForNonSSO = true)) {
       ok = true
       setAuthResult(request, ok, "User is not authenticated")
     }

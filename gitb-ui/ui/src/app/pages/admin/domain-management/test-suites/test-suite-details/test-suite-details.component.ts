@@ -1,23 +1,23 @@
-import { Component, EventEmitter, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { Constants } from 'src/app/common/constants';
-import { BaseComponent } from 'src/app/pages/base-component.component';
-import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
-import { ConformanceService } from 'src/app/services/conformance.service';
-import { DataService } from 'src/app/services/data.service';
-import { HtmlService } from 'src/app/services/html.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { RoutingService } from 'src/app/services/routing.service';
-import { TestSuiteService } from 'src/app/services/test-suite.service';
-import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
-import { TestCase } from 'src/app/types/test-case';
-import { TestSuiteWithTestCases } from 'src/app/types/test-suite-with-test-cases';
-import { saveAs } from 'file-saver'
-import { Specification } from 'src/app/types/specification';
-import { BsModalService } from 'ngx-bootstrap/modal';
-import { LinkSharedTestSuiteModalComponent } from 'src/app/modals/link-shared-test-suite-modal/link-shared-test-suite-modal.component';
-import { filter, find } from 'lodash';
-import { forkJoin } from 'rxjs';
+import {Component, EventEmitter, OnInit} from '@angular/core';
+import {ActivatedRoute} from '@angular/router';
+import {Constants} from 'src/app/common/constants';
+import {BaseComponent} from 'src/app/pages/base-component.component';
+import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
+import {ConformanceService} from 'src/app/services/conformance.service';
+import {DataService} from 'src/app/services/data.service';
+import {HtmlService} from 'src/app/services/html.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {RoutingService} from 'src/app/services/routing.service';
+import {TestSuiteService} from 'src/app/services/test-suite.service';
+import {TableColumnDefinition} from 'src/app/types/table-column-definition.type';
+import {TestCase} from 'src/app/types/test-case';
+import {TestSuiteWithTestCases} from 'src/app/types/test-suite-with-test-cases';
+import {saveAs} from 'file-saver';
+import {Specification} from 'src/app/types/specification';
+import {BsModalService} from 'ngx-bootstrap/modal';
+import {LinkSharedTestSuiteModalComponent} from 'src/app/modals/link-shared-test-suite-modal/link-shared-test-suite-modal.component';
+import {filter, find} from 'lodash';
+import {forkJoin} from 'rxjs';
 import {ConformanceTestCase} from '../../../../organisation/conformance-statement/conformance-test-case';
 import {ConformanceTestCaseGroup} from '../../../../organisation/conformance-statement/conformance-test-case-group';
 
@@ -53,6 +53,7 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit {
   hasDisabledTestCases = false
   hasOptionalTestCases = false
   testCaseGroupMap?: Map<number, ConformanceTestCaseGroup>
+  communityId?: number
 
   constructor(
     public dataService: DataService,
@@ -71,6 +72,11 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit {
     const specIdParameter = this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID)
     if (specIdParameter) {
       this.specificationId = Number(specIdParameter)
+    }
+    if (this.dataService.isCommunityAdmin) {
+      this.communityId = this.dataService.vendor?.community
+    } else {
+      this.communityId = this.route.snapshot.data[Constants.NAVIGATION_DATA.IMPLICIT_COMMUNITY_ID] as number|undefined
     }
     this.testSuiteId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.TEST_SUITE_ID))
     this.loadTestCases()

@@ -41,6 +41,7 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit {
   testEvents: {[key: number]: DiagramEvents} = {}
   previewPending = false
   private tagCounter = 0
+  communityId?: number
 
   constructor(
     public dataService: DataService,
@@ -63,6 +64,11 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit {
     }
     this.testSuiteId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.TEST_SUITE_ID))
     this.testCaseId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.TEST_CASE_ID))
+    if (this.dataService.isCommunityAdmin) {
+      this.communityId = this.dataService.vendor?.community
+    } else {
+      this.communityId = this.route.snapshot.data[Constants.NAVIGATION_DATA.IMPLICIT_COMMUNITY_ID] as number|undefined
+    }
 		this.testSuiteService.getTestCase(this.testCaseId)
     .subscribe((data) => {
 			this.testCase = data
@@ -80,7 +86,7 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit {
     }).add(() => {
       this.loaded = true
     })
-    this.testEvents[this.testCaseId] = new DiagramEvents()    
+    this.testEvents[this.testCaseId] = new DiagramEvents()
     this.getTestCaseDefinition(this.testCaseId).subscribe(() => {}).add(() => {
       this.diagramLoaded = true
     })
@@ -110,7 +116,7 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit {
   copyDocumentation() {
     this.dataService.copyToClipboard(this.testCase.documentation!).subscribe(() => {
       this.popupService.success('HTML source copied to clipboard.')
-    })    
+    })
   }
 
   private serialiseTags() {

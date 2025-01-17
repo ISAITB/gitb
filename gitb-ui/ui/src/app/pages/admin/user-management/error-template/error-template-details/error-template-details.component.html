@@ -33,7 +33,7 @@
 					<div class="row mt-3">
                         <div class="col-12">
 							<div class="mb-3">
-                                <app-placeholder-selector [placeholders]="placeholders" [resources]="dataService.isCommunityAdmin" [community]="communityId"></app-placeholder-selector>
+                                <app-placeholder-selector [placeholders]="placeholders" [resources]="communityId != Constants.DEFAULT_COMMUNITY_ID" [community]="communityId"></app-placeholder-selector>
 							</div>
                             <app-editor id="content" name="content" [(ngModel)]="template.content"></app-editor>
 						</div>

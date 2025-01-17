@@ -198,6 +198,12 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
         this.systemName = statementData.system.fname
         this.organisationName = statementData.organisation.fname
         this.communityIdOfStatement = statementData.organisation.community
+        if (this.dataService.isSystemAdmin && this.communityIdOfStatement == Constants.DEFAULT_COMMUNITY_ID) {
+          const communityIdForActor = this.route.snapshot.data[Constants.NAVIGATION_DATA.IMPLICIT_COMMUNITY_ID] as number|undefined
+          if (communityIdForActor != undefined) {
+            this.communityIdOfStatement = communityIdForActor
+          }
+        }
         // Statement definition.
         this.prepareStatement(statementData.statement)
         this.statement = statementData.statement

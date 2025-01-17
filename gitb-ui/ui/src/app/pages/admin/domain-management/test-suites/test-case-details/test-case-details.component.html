@@ -64,9 +64,9 @@
                 <app-form-section sectionTitle="Documentation" [collapsed]="true" [marginBefore]="true">
 					<div class="row mb-3 mt-3">
 						<div class="offset-1 col-10">
-							@if (dataService.isCommunityAdmin) {
+							@if (communityId != undefined) {
 								<div class="mb-3">
-									<app-placeholder-selector [resources]="true" [community]="dataService.vendor?.community"></app-placeholder-selector>
+									<app-placeholder-selector [resources]="true" [community]="communityId"></app-placeholder-selector>
 								</div>
 							}
 							<div class="editorContainer">

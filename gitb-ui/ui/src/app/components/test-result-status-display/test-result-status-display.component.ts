@@ -29,6 +29,7 @@ export class TestResultStatusDisplayComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
+    this.initialise()
     if (this.close) {
       this.close.subscribe((event) => {
         if (event.idToSkip != this.popupId && this.isOpen) {

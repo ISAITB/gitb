@@ -18,6 +18,7 @@ export class TestSuiteDisplayComponent implements OnInit {
   @Input() showExport? = false
   @Input() showViewDocumentation? = true
   @Input() shaded = false
+  @Input() communityId?: number
   @Input() refresh?: EventEmitter<void>
 
   @Output() viewTestSession = new EventEmitter<string>()
@@ -69,6 +70,7 @@ export class TestSuiteDisplayComponent implements OnInit {
 
   showTestSuiteDocumentation(testSuite: ConformanceTestSuite) {
     this.viewDocumentationPending[testSuite.id] = true
+    this.dataService.setImplicitCommunity(this.communityId)
     this.conformanceService.getTestSuiteDocumentation(testSuite.id)
     .subscribe((data) => {
       this.htmlService.showHtml("Test suite documentation", data)

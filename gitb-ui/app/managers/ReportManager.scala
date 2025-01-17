@@ -14,8 +14,7 @@ import models.Enums.ConformanceStatementItemType.ConformanceStatementItemType
 import models.Enums.OverviewLevelType.OverviewLevelType
 import models.Enums.ReportType.ReportType
 import models.Enums.{ConformanceStatementItemType, OverviewLevelType, ReportType, TestResultStatus}
-import models._
-import models.TestCaseGroup
+import models.{TestCaseGroup, _}
 import models.automation.TestSessionStatus
 import models.statement._
 import org.apache.commons.codec.binary.Base64
@@ -205,11 +204,51 @@ class ReportManager @Inject() (communityManager: CommunityManager,
   }
 
   private def resolveCommunityId(sessionId: String, userId: Option[Long]): Option[Long] = {
-    var communityId = testResultManager.getCommunityIdForTestSession(sessionId).flatMap(_._2)
-    if (communityId.isEmpty && userId.isDefined) {
-      communityId = Some(communityManager.getUserCommunityId(userId.get))
-    }
-    communityId
+    exec(
+      for {
+        ids <- PersistenceSchema.testResults
+          .filter(_.testSessionId === sessionId)
+          .map(x => (x.communityId, x.domainId))
+          .result
+          .headOption
+        communityIdFromSession <- {
+          val communityId = ids.flatMap(_._1)
+          val domainId = ids.flatMap(_._2)
+          if (communityId.exists(_ != Constants.DefaultCommunityId)) {
+            // Community defined that is not the default community ID
+            DBIO.successful(communityId)
+          } else if ((communityId.contains(Constants.DefaultCommunityId) || communityId.isEmpty) && domainId.nonEmpty) {
+            // The community ID is the default community - try to lookup based on the domain.
+            for {
+              domainCommunityIds <- PersistenceSchema.communities
+                .filter(_.domain === domainId.get)
+                .map(_.id)
+                .result
+              domainCommunityId <- {
+                if (domainCommunityIds.size == 1) {
+                  DBIO.successful(Some(domainCommunityIds.head))
+                } else {
+                  // We can't determine a single domain from the test session.
+                  DBIO.successful(None)
+                }
+              }
+            } yield domainCommunityId
+          } else {
+            DBIO.successful(None)
+          }
+        }
+        communityIdToUse <- {
+          if (communityIdFromSession.nonEmpty) {
+            DBIO.successful(communityIdFromSession)
+          } else if (userId.nonEmpty) {
+            // Last resort is to look up based on the user's community.
+            communityManager.getUserCommunityIdInternal(userId.get)
+          } else {
+            DBIO.successful(None)
+          }
+        }
+      } yield communityIdToUse
+    )
   }
 
   private def createDemoTestCaseOverview(communityId: Long, source: TestCaseOverviewReportType, reportSpecs: ReportSpecs): com.gitb.reports.dto.TestCaseOverview = {

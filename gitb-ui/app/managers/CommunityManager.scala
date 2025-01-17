@@ -164,12 +164,16 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
   }
 
   def getUserCommunityId(userId: Long): Long = {
-    exec(PersistenceSchema.users
+    exec(getUserCommunityIdInternal(userId)).get
+  }
+
+  def getUserCommunityIdInternal(userId: Long): DBIO[Option[Long]] = {
+    PersistenceSchema.users
       .join(PersistenceSchema.organizations).on(_.organization === _.id)
       .filter(_._1.id === userId)
       .map(_._2.community)
       .result
-      .head)
+      .headOption
   }
 
   /**
@@ -1727,6 +1731,45 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
       }
     } yield ()
     exec(dbAction.transactionally)
+  }
+
+  def getCommunityIdOfDomain(domainId: Long): Option[Long] = {
+    val communityIds = exec(
+      PersistenceSchema.communities
+        .filter(_.domain === domainId)
+        .map(_.id)
+        .result
+    )
+    if (communityIds.size == 1) {
+      Some(communityIds.head)
+    } else {
+      None
+    }
+  }
+
+  def getCommunityIdOfActor(actorId: Long): Option[Long] = {
+    val communityIds = exec(
+      PersistenceSchema.communities
+        .join(PersistenceSchema.actors).on(_.domain === _.domain)
+        .filter(_._2.id === actorId)
+        .map(_._1.id)
+        .result
+    )
+    if (communityIds.size == 1) {
+      Some(communityIds.head)
+    } else {
+      None
+    }
+  }
+
+  def getCommunityIdOfSnapshot(snapshotId: Long): Option[Long] = {
+    exec(
+      PersistenceSchema.conformanceSnapshots
+      .filter(_.id === snapshotId)
+      .map(_.community)
+      .result
+      .headOption
+    )
   }
 
 }

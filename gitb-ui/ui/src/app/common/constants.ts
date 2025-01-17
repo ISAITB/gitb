@@ -352,6 +352,10 @@ export class Constants {
 		TAB: 'snapshot_id'
 	}
 
+  public static NAVIGATION_DATA = {
+    IMPLICIT_COMMUNITY_ID: 'implicitCommunityId'
+  }
+
 	public static SYSTEM_CONFIG = {
 		SESSION_ALIVE_TIME: 'session_alive_time',
 		REST_API_ENABLED: 'rest_api_enabled',

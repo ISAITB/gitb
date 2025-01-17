@@ -105,8 +105,13 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
   }
 
   def getCommunityIdForTestSession(sessionId: String): Option[(String, Option[Long])] = {
-    val result = exec(PersistenceSchema.testResults.filter(_.testSessionId === sessionId).map(r => (r.testSessionId, r.communityId)).result.headOption)
-    result
+    exec(
+      PersistenceSchema.testResults
+        .filter(_.testSessionId === sessionId)
+        .map(r => (r.testSessionId, r.communityId))
+        .result
+        .headOption
+    )
   }
 
   def getOrganisationIdForTestSession(sessionId: String): Option[(String, Option[Long])] = {

@@ -499,7 +499,7 @@ export class CommunityService {
     return this.restService.get<CommunityResource[]>({
       path: ROUTES.controllers.CommunityService.getCommunityResources(communityId).url,
       authenticate: true
-    })    
+    })
   }
 
   downloadCommunityResources(communityId: number, filter: string|undefined) {
@@ -583,6 +583,36 @@ export class CommunityService {
 			arrayBuffer: true,
       httpResponse: true
 		})
+  }
+
+  getCommunityIdOfDomain(domainId: number) {
+    return this.restService.get<{id: number}|undefined>({
+      path: ROUTES.controllers.CommunityService.getCommunityIdOfDomain().url,
+      authenticate: true,
+      params: {
+        domain_id: domainId
+      }
+    })
+  }
+
+  getCommunityIdOfActor(actorId: number) {
+    return this.restService.get<{id: number}|undefined>({
+      path: ROUTES.controllers.CommunityService.getCommunityIdOfActor().url,
+      authenticate: true,
+      params: {
+        actor_id: actorId
+      }
+    })
+  }
+
+  getCommunityIdOfSnapshot(snapshotId: number) {
+    return this.restService.get<{id: number}|undefined>({
+      path: ROUTES.controllers.CommunityService.getCommunityIdOfSnapshot().url,
+      authenticate: true,
+      params: {
+        snapshot: snapshotId
+      }
+    })
   }
 
 }

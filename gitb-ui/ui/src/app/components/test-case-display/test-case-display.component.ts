@@ -31,6 +31,7 @@ export class TestCaseDisplayComponent extends BaseComponent implements OnInit {
   @Input() showResults? = true
   @Input() showEdit? = false
   @Input() shaded = true
+  @Input() communityId?: number
   @Input() refresh?: EventEmitter<void>
 
   @Output() viewTestSession = new EventEmitter<string>()
@@ -84,6 +85,7 @@ export class TestCaseDisplayComponent extends BaseComponent implements OnInit {
 
   showTestCaseDocumentation(testCase: ConformanceTestCase) {
     this.viewDocumentationPending[testCase.id] = true
+    this.dataService.setImplicitCommunity(this.communityId)
     this.conformanceService.getTestCaseDocumentation(testCase.id)
     .subscribe((data) => {
       this.htmlService.showHtml("Test case documentation", data)

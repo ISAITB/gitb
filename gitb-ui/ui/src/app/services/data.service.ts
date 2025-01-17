@@ -1906,4 +1906,14 @@ export class DataService {
     return outputMessageType
   }
 
+  clearImplicitCommunity() {
+    this.cookieService.delete("implicitCommunity")
+  }
+
+  setImplicitCommunity(communityId?: number) {
+    if (this.isSystemAdmin && communityId != undefined) {
+      this.setCookie("implicitCommunity", communityId.toString())
+    }
+  }
+
 }

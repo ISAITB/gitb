@@ -1,14 +1,14 @@
-import { Injectable } from '@angular/core';
-import { NavigationEnd, NavigationExtras, NavigationStart, Router } from '@angular/router';
-import { CommunityTab } from '../pages/admin/user-management/community/community-details/community-tab.enum';
-import { ConformanceStatementTab } from '../pages/organisation/conformance-statement/conformance-statement-tab';
-import { OrganisationTab } from '../pages/admin/user-management/organisation/organisation-details/OrganisationTab';
-import { Constants } from '../common/constants';
-import { DataService } from './data.service';
-import { MenuItem } from '../types/menu-item.enum';
-import { SystemAdministrationTab } from '../pages/admin/system-administration/system-administration-tab.enum';
-import { BreadcrumbItem } from '../components/breadcrumb/breadcrumb-item';
-import { BreadcrumbType } from '../types/breadcrumb-type';
+import {Injectable} from '@angular/core';
+import {NavigationEnd, NavigationExtras, NavigationStart, Router} from '@angular/router';
+import {CommunityTab} from '../pages/admin/user-management/community/community-details/community-tab.enum';
+import {ConformanceStatementTab} from '../pages/organisation/conformance-statement/conformance-statement-tab';
+import {OrganisationTab} from '../pages/admin/user-management/organisation/organisation-details/OrganisationTab';
+import {Constants} from '../common/constants';
+import {DataService} from './data.service';
+import {MenuItem} from '../types/menu-item.enum';
+import {SystemAdministrationTab} from '../pages/admin/system-administration/system-administration-tab.enum';
+import {BreadcrumbItem} from '../components/breadcrumb/breadcrumb-item';
+import {BreadcrumbType} from '../types/breadcrumb-type';
 
 @Injectable({
   providedIn: 'root'
@@ -29,6 +29,8 @@ export class RoutingService {
         if (!event.url.startsWith('/login')) {
           this.dataService.recordLocationData(event.url)
         }
+        // Clear cookies to be defined by resolvers.
+        this.dataService.clearImplicitCommunity()
       } else if (event instanceof NavigationEnd) {
         /*
          * We only need to do this matching if we are coming to a page without going through
