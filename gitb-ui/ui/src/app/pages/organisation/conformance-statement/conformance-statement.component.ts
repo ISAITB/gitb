@@ -1,39 +1,40 @@
 import {AfterViewInit, Component, ElementRef, EventEmitter, NgZone, OnInit, ViewChild} from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
-import { saveAs } from 'file-saver';
-import { find, map } from 'lodash';
-import { BsModalService } from 'ngx-bootstrap/modal';
-import { TabsetComponent } from 'ngx-bootstrap/tabs';
-import { Observable, forkJoin, mergeMap, of } from 'rxjs';
-import { Constants } from 'src/app/common/constants';
-import { CheckboxOption } from 'src/app/components/checkbox-option-panel/checkbox-option';
-import { CheckboxOptionState } from 'src/app/components/checkbox-option-panel/checkbox-option-state';
-import { Counters } from 'src/app/components/test-status-icons/counters';
-import { MissingConfigurationAction } from 'src/app/modals/missing-configuration-modal/missing-configuration-action';
-import { MissingConfigurationModalComponent } from 'src/app/modals/missing-configuration-modal/missing-configuration-modal.component';
-import { CommunityService } from 'src/app/services/community.service';
-import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
-import { ConformanceService } from 'src/app/services/conformance.service';
-import { DataService } from 'src/app/services/data.service';
-import { OrganisationService } from 'src/app/services/organisation.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { ReportSupportService } from 'src/app/services/report-support.service';
-import { ReportService } from 'src/app/services/report.service';
-import { RoutingService } from 'src/app/services/routing.service';
-import { SystemService } from 'src/app/services/system.service';
-import { TestService } from 'src/app/services/test.service';
-import { ConformanceStatementItem } from 'src/app/types/conformance-statement-item';
-import { EndpointParameter } from 'src/app/types/endpoint-parameter';
-import { LoadingStatus } from 'src/app/types/loading-status.type';
-import { OrganisationParameter } from 'src/app/types/organisation-parameter';
-import { SystemParameter } from 'src/app/types/system-parameter';
-import { ConformanceStatementTab } from './conformance-statement-tab';
-import { ConformanceTestCase } from './conformance-test-case';
-import { ConformanceTestSuite } from './conformance-test-suite';
-import { ConfigurationPropertyVisibility } from 'src/app/types/configuration-property-visibility';
-import { CustomProperty } from 'src/app/types/custom-property.type';
-import { BaseComponent } from '../../base-component.component';
-import { ValidationState } from 'src/app/types/validation-state';
+import {ActivatedRoute, Router} from '@angular/router';
+import {saveAs} from 'file-saver';
+import {find, map} from 'lodash';
+import {BsModalService} from 'ngx-bootstrap/modal';
+import {TabsetComponent} from 'ngx-bootstrap/tabs';
+import {finalize, forkJoin, mergeMap, Observable, of, tap} from 'rxjs';
+import {Constants} from 'src/app/common/constants';
+import {CheckboxOption} from 'src/app/components/checkbox-option-panel/checkbox-option';
+import {CheckboxOptionState} from 'src/app/components/checkbox-option-panel/checkbox-option-state';
+import {Counters} from 'src/app/components/test-status-icons/counters';
+import {MissingConfigurationAction} from 'src/app/modals/missing-configuration-modal/missing-configuration-action';
+import {MissingConfigurationModalComponent} from 'src/app/modals/missing-configuration-modal/missing-configuration-modal.component';
+import {CommunityService} from 'src/app/services/community.service';
+import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
+import {ConformanceService} from 'src/app/services/conformance.service';
+import {DataService} from 'src/app/services/data.service';
+import {OrganisationService} from 'src/app/services/organisation.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {ReportSupportService} from 'src/app/services/report-support.service';
+import {ReportService} from 'src/app/services/report.service';
+import {RoutingService} from 'src/app/services/routing.service';
+import {SystemService} from 'src/app/services/system.service';
+import {TestService} from 'src/app/services/test.service';
+import {ConformanceStatementItem} from 'src/app/types/conformance-statement-item';
+import {EndpointParameter} from 'src/app/types/endpoint-parameter';
+import {LoadingStatus} from 'src/app/types/loading-status.type';
+import {OrganisationParameter} from 'src/app/types/organisation-parameter';
+import {SystemParameter} from 'src/app/types/system-parameter';
+import {ConformanceStatementTab} from './conformance-statement-tab';
+import {ConformanceTestCase} from './conformance-test-case';
+import {ConformanceTestSuite} from './conformance-test-suite';
+import {ConfigurationPropertyVisibility} from 'src/app/types/configuration-property-visibility';
+import {CustomProperty} from 'src/app/types/custom-property.type';
+import {BaseComponent} from '../../base-component.component';
+import {ValidationState} from 'src/app/types/validation-state';
+import {share} from 'rxjs/operators';
 
 @Component({
   selector: 'app-conformance-statement',
@@ -119,6 +120,8 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
   @ViewChild('resultsContainer') resultsContainer?: ElementRef
   resizeObserver!: ResizeObserver
   resultsWrapped = false
+  refreshPending = false
+  refreshCounters = new EventEmitter<Counters>()
 
   constructor(
     public dataService: DataService,
@@ -177,66 +180,77 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
     }
     this.isReadonly = this.snapshotId != undefined
     this.prepareTestFilter()
+    this.loadData()
+  }
+
+  private loadData(): Observable<any> {
     // Load conformance statement and its results.
     const statementsLoaded = this.conformanceService.getConformanceStatement(this.systemId, this.actorId, this.snapshotId)
     const snapshotLabelLoaded = this.retrieveSnapshotLabel(this.snapshotId, this.snapshotLabel)
-    forkJoin([statementsLoaded, snapshotLabelLoaded]).subscribe((results) => {
-      const statementData = results[0]
-      let snapshotLabel: string|undefined
-      if (results[1]) {
-        snapshotLabel = results[1]
-      }
-      // Party definition.
-      this.systemName = statementData.system.fname
-      this.organisationName = statementData.organisation.fname
-      this.communityIdOfStatement = statementData.organisation.community
-      // Statement definition.
-      this.prepareStatement(statementData.statement)
-      this.statement = statementData.statement
-      this.routingService.conformanceStatementBreadcrumbs(this.organisationId, this.systemId, this.actorId, this.communityId, this.breadcrumbLabel(), this.organisationName, this.systemName, this.snapshotId, snapshotLabel)
-      // IDs.
-      this.domainId = this.findByType([this.statement]!, Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.DOMAIN)!.id
-      this.specId = this.findByType([this.statement]!, Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION)!.id
-      // Test results.
-      for (let testSuite of statementData.results.testSuites) {
-        testSuite.hasDisabledTestCases = find(testSuite.testCases, (testCase) => testCase.disabled) != undefined
-        testSuite.hasOptionalTestCases = find(testSuite.testCases, (testCase) => testCase.optional) != undefined
-        if (!this.hasDisabledTests && testSuite.hasDisabledTestCases) {
-          this.hasDisabledTests = true
+    const obs$ = forkJoin([statementsLoaded, snapshotLabelLoaded]).pipe(
+      tap((results) => {
+        const statementData = results[0]
+        let snapshotLabel: string|undefined
+        if (results[1]) {
+          snapshotLabel = results[1]
         }
-        if (!this.hasOptionalTests && testSuite.hasOptionalTestCases) {
-          this.hasOptionalTests = true
+        // Party definition.
+        this.systemName = statementData.system.fname
+        this.organisationName = statementData.organisation.fname
+        this.communityIdOfStatement = statementData.organisation.community
+        // Statement definition.
+        this.prepareStatement(statementData.statement)
+        this.statement = statementData.statement
+        this.routingService.conformanceStatementBreadcrumbs(this.organisationId, this.systemId, this.actorId, this.communityId, this.breadcrumbLabel(), this.organisationName, this.systemName, this.snapshotId, snapshotLabel)
+        // IDs.
+        this.domainId = this.findByType([this.statement]!, Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.DOMAIN)!.id
+        this.specId = this.findByType([this.statement]!, Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION)!.id
+        // Test results.
+        for (let testSuite of statementData.results.testSuites) {
+          testSuite.hasDisabledTestCases = find(testSuite.testCases, (testCase) => testCase.disabled) != undefined
+          testSuite.hasOptionalTestCases = find(testSuite.testCases, (testCase) => testCase.optional) != undefined
+          if (!this.hasDisabledTests && testSuite.hasDisabledTestCases) {
+            this.hasDisabledTests = true
+          }
+          if (!this.hasOptionalTests && testSuite.hasOptionalTestCases) {
+            this.hasOptionalTests = true
+          }
+          testSuite.testCaseGroupMap = this.dataService.toTestCaseGroupMap(testSuite.testCaseGroups)
         }
-        testSuite.testCaseGroupMap = this.dataService.toTestCaseGroupMap(testSuite.testCaseGroups)
-      }
-      this.testSuites = statementData.results.testSuites
-      this.displayedTestSuites = this.testSuites
-      this.statusCounters = {
-        completed: statementData.results.summary.completed,
-        failed: statementData.results.summary.failed,
-        other: statementData.results.summary.undefined,
-        completedOptional: statementData.results.summary.completedOptional,
-        failedOptional: statementData.results.summary.failedOptional,
-        otherOptional: statementData.results.summary.undefinedOptional,
-        completedToConsider: statementData.results.summary.completedToConsider,
-        failedToConsider: statementData.results.summary.failedToConsider,
-        otherToConsider: statementData.results.summary.undefinedToConsider
-      }
-      this.lastUpdate = statementData.results.summary.updateTime
-      if (this.lastUpdate) {
-        this.hasTests = true
-      }
-      this.conformanceStatus = statementData.results.summary.result
-      this.allTestsSuccessful = this.conformanceStatus == Constants.TEST_CASE_RESULT.SUCCESS
-      this.hasBadge = statementData.results.summary.hasBadge
-      this.canEditOrganisationConfiguration = this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || (this.dataService.isVendorAdmin && (this.dataService.community!.allowPostTestOrganisationUpdates || !this.hasTests))
-      this.canEditSystemConfiguration = this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || (this.dataService.isVendorAdmin && (this.dataService.community!.allowPostTestSystemUpdates || !this.hasTests))
-      this.canEditStatementConfiguration = this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || (this.dataService.isVendorAdmin && (this.dataService.community!.allowPostTestStatementUpdates || !this.hasTests))
-      this.prepareTestFilter()
-      this.applySearchFilters()
-    }).add(() => {
-      this.loadingTests = false
-    })
+        this.testSuites = statementData.results.testSuites
+        this.displayedTestSuites = this.testSuites
+        this.statusCounters = {
+          completed: statementData.results.summary.completed,
+          failed: statementData.results.summary.failed,
+          other: statementData.results.summary.undefined,
+          completedOptional: statementData.results.summary.completedOptional,
+          failedOptional: statementData.results.summary.failedOptional,
+          otherOptional: statementData.results.summary.undefinedOptional,
+          completedToConsider: statementData.results.summary.completedToConsider,
+          failedToConsider: statementData.results.summary.failedToConsider,
+          otherToConsider: statementData.results.summary.undefinedToConsider
+        }
+        this.lastUpdate = statementData.results.summary.updateTime
+        if (this.lastUpdate) {
+          this.hasTests = true
+        }
+        this.conformanceStatus = statementData.results.summary.result
+        this.allTestsSuccessful = this.conformanceStatus == Constants.TEST_CASE_RESULT.SUCCESS
+        this.hasBadge = statementData.results.summary.hasBadge
+        this.canEditOrganisationConfiguration = this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || (this.dataService.isVendorAdmin && (this.dataService.community!.allowPostTestOrganisationUpdates || !this.hasTests))
+        this.canEditSystemConfiguration = this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || (this.dataService.isVendorAdmin && (this.dataService.community!.allowPostTestSystemUpdates || !this.hasTests))
+        this.canEditStatementConfiguration = this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || (this.dataService.isVendorAdmin && (this.dataService.community!.allowPostTestStatementUpdates || !this.hasTests))
+        this.prepareTestFilter()
+        this.applySearchFilters()
+        this.loadingTests = false
+      }),
+      finalize(() => {
+        this.loadingTests = false
+      }),
+      share()
+    )
+    obs$.subscribe()
+    return obs$
   }
 
   private retrieveSnapshotLabel(snapshotId: number|undefined, labelFromNavigation: string|undefined): Observable<string|null> {
@@ -506,9 +520,9 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
     this.testService.startHeadlessTestSessions(testCaseIds, this.specId!, this.systemId, this.actorId, this.executionMode == this.executionModeSequential)
     .subscribe(() => {
       if (testCaseIds.length == 1) {
-        this.popupService.success('Started test session.<br/>Check <b>Test Sessions</b> for progress.')
+        this.popupService.success('Started test session.')
       } else {
-        this.popupService.success('Started '+testCaseIds.length+' test sessions.<br/>Check <b>Test Sessions</b> for progress.')
+        this.popupService.success('Started '+testCaseIds.length+' test sessions.')
       }
     })
   }
@@ -709,4 +723,14 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
     }
   }
 
+  refresh() {
+    this.refreshPending = true
+    this.loadData().subscribe(() => {
+      if (this.statusCounters) {
+        this.refreshCounters.emit(this.statusCounters)
+      }
+      this.refreshTestSuiteDisplay.emit()
+      this.refreshPending = false
+    })
+  }
 }

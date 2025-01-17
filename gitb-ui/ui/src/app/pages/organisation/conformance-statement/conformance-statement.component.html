@@ -52,10 +52,10 @@
 										Test results
 									</div>
 									<div class="status-counts">
-										<app-test-status-icons [counters]="statusCounters" [centerAligned]="false"></app-test-status-icons>
+										<app-test-status-icons [counters]="statusCounters" [refresh]="refreshCounters" [centerAligned]="false"></app-test-status-icons>
 									</div>
 									<div class="status-ratios">
-										<app-test-result-ratio [counters]="statusCounters" [asLine]="true"></app-test-result-ratio>
+										<app-test-result-ratio [counters]="statusCounters" [refresh]="refreshCounters" [asLine]="true"></app-test-result-ratio>
 									</div>
 								</div>
 							</div>
@@ -152,6 +152,9 @@
 							}
 						}
 					}
+                    @if (snapshotId == undefined) {
+                        <button type="button" class="btn btn-secondary" (click)="refresh()" [pending]="refreshPending">Refresh</button>
+                    }
 					<button type="button" class="btn btn-secondary" (click)="back()">Back</button>
 				</div>
 				@if (canDelete()) {

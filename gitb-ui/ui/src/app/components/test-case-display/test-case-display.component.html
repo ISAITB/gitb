@@ -81,6 +81,7 @@
                                     [result]="testCase.result"
                                     [ignored]="testCase.result != testCase.resultToShow"
                                     [close]="statusCloseEmitter"
+                                    [refresh]="refresh"
                                     (open)="statusPopupOpened($event)"></app-test-result-status-display>
                             </div>
                         }

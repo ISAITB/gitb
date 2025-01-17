@@ -14,6 +14,7 @@ export class TestResultStatusDisplayComponent implements OnInit {
   @Input() message?: string
   @Input() result?: string
   @Input() ignored = false
+  @Input() refresh?: EventEmitter<void>
   @Input() close?: EventEmitter<CloseEvent>
   @Output() open = new EventEmitter<number>()
   isOpen = false
@@ -28,6 +29,21 @@ export class TestResultStatusDisplayComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
+    if (this.close) {
+      this.close.subscribe((event) => {
+        if (event.idToSkip != this.popupId && this.isOpen) {
+          this.isOpen = false
+        }
+      })
+    }
+    if (this.refresh) {
+      this.refresh.subscribe(() => {
+        this.initialise()
+      })
+    }
+  }
+
+  private initialise() {
     this.iconToShow = this.dataService.iconForTestResult(this.result)
     this.tooltipText = this.dataService.tooltipForTestResult(this.result)
     if (this.result == Constants.TEST_CASE_RESULT.SUCCESS) {
@@ -37,13 +53,7 @@ export class TestResultStatusDisplayComponent implements OnInit {
     } else {
       this.popoverClass = 'result-message-popover undefined'
     }
-    if (this.close) {
-      this.close.subscribe((event) => {
-        if (event.idToSkip != this.popupId && this.isOpen) {
-          this.isOpen = false
-        }
-      })
-    }
+    this.isOpen = false
   }
 
   clicked(event: Event) {

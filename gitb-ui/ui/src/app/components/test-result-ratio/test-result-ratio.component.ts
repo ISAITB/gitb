@@ -1,5 +1,4 @@
-import { Component, ElementRef, HostListener, Input, OnInit } from '@angular/core';
-import { Counters } from '../test-status-icons/counters';
+import {Component, ElementRef, HostListener, Input, OnInit} from '@angular/core';
 import {TestStatusBase} from '../test-status-base/test-status-base';
 
 @Component({
@@ -38,6 +37,10 @@ export class TestResultRatioComponent extends TestStatusBase implements OnInit {
 
   ngOnInit(): void {
     super.ngOnInit();
+  }
+
+  protected updateCounters() {
+    super.updateCounters();
     let total = this.completed + this.failed + this.other;
     if (total > 0) {
       this.completedPercentage = ((this.completed / total) * 100).toFixed(1);

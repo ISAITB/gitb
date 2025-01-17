@@ -1,10 +1,11 @@
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit} from '@angular/core';
 import {Counters} from '../test-status-icons/counters';
 
 @Component({ template: '' })
 export abstract class TestStatusBase implements OnInit {
 
   @Input() counters!: Counters
+  @Input() refresh?: EventEmitter<Counters>
 
   hasRequired = false
   hasIgnored = false
@@ -17,6 +18,16 @@ export abstract class TestStatusBase implements OnInit {
   tooltipRequiredTestDescription = 'test cases'
 
   ngOnInit(): void {
+    this.updateCounters()
+    if (this.refresh) {
+      this.refresh.subscribe((counters) => {
+        this.counters = counters
+        this.updateCounters()
+      })
+    }
+  }
+
+  protected updateCounters() {
     this.completed = this.counters.completedToConsider
     this.failed = this.counters.failedToConsider
     this.other = this.counters.otherToConsider

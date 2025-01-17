@@ -1,7 +1,7 @@
-import { Component, ElementRef, HostListener, Input, OnInit } from '@angular/core';
-import { Constants } from 'src/app/common/constants';
-import { DataService } from 'src/app/services/data.service';
-import { Counters } from './counters';
+import {Component, ElementRef, EventEmitter, HostListener, Input, OnInit} from '@angular/core';
+import {Constants} from 'src/app/common/constants';
+import {DataService} from 'src/app/services/data.service';
+import {Counters} from './counters';
 import {TestStatusBase} from '../test-status-base/test-status-base';
 
 @Component({
@@ -14,6 +14,7 @@ export class TestStatusIconsComponent extends TestStatusBase implements OnInit {
   @Input() centerAligned = true
   @Input() asLine? = false
   @Input() tooltipOnLeft? = false
+  @Input() refresh?: EventEmitter<Counters>
 
   successIcon!: string
   failedIcon!: string
@@ -27,6 +28,10 @@ export class TestStatusIconsComponent extends TestStatusBase implements OnInit {
 
   ngOnInit(): void {
     super.ngOnInit();
+  }
+
+  protected updateCounters() {
+    super.updateCounters();
     this.successIcon = this.dataService.iconForTestResult(Constants.TEST_CASE_RESULT.SUCCESS)
     this.failedIcon = this.dataService.iconForTestResult(Constants.TEST_CASE_RESULT.FAILURE)
     this.otherIcon = this.dataService.iconForTestResult(Constants.TEST_CASE_RESULT.UNDEFINED)
