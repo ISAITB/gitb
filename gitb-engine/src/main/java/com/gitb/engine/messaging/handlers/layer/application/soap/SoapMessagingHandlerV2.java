@@ -156,6 +156,11 @@ public class SoapMessagingHandlerV2 extends AbstractNonWorkerMessagingHandler {
                 bodyItem.ifPresent(body -> responseItem.addItem(REPORT_ITEM_BODY, body));
                 attachmentsItem.ifPresent(item -> responseItem.addItem(REPORT_ITEM_ATTACHMENTS, item));
             } catch (Exception e) {
+                if (tolerateNonSoapResponse) {
+                    LOG.info(MarkerFactory.getDetachedMarker(sessionId), "Ignored error processing SOAP response: {}", e.getMessage());
+                } else {
+                    LOG.error(MarkerFactory.getDetachedMarker(sessionId), "Error while processing SOAP response: {}", e.getMessage(), e);
+                }
                 // Error extracting SOAP. Extract simply the body.
                 getResponseBody(response).ifPresent(body -> responseItem.addItem(REPORT_ITEM_ERROR, body));
                 errorRaised = true;
