@@ -88,7 +88,10 @@ public class RemoteProcessingModuleClient extends RemoteServiceClient implements
         ProcessingData data = new ProcessingData();
         for (AnyContent content : output) {
             if (content.getName() != null) {
-                data.getData().put(content.getName(), DataTypeFactory.getInstance().create(content));
+                var value = DataTypeFactory.getInstance().create(content);
+                if (value != null) {
+                    data.getData().put(content.getName(), value);
+                }
             }
         }
         return data;
