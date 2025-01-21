@@ -1,8 +1,8 @@
 package com.gitb.engine.messaging.handlers.layer.application.soap;
 
+import com.sun.xml.messaging.saaj.soap.ver1_1.SOAPMessageFactory1_1Impl;
+import com.sun.xml.messaging.saaj.soap.ver1_2.SOAPMessageFactory1_2Impl;
 import jakarta.xml.soap.MessageFactory;
-import jakarta.xml.soap.SOAPConstants;
-import jakarta.xml.soap.SOAPException;
 
 import java.util.HashSet;
 import java.util.Optional;
@@ -10,18 +10,18 @@ import java.util.Set;
 
 public enum SoapVersion {
 
-    VERSION_1_1("1.1", "text/xml", Optional.of(Set.of("application/xml")), SOAPConstants.SOAP_1_1_PROTOCOL),
-    VERSION_1_2("1.2", "application/soap+xml", Optional.empty(), SOAPConstants.SOAP_1_2_PROTOCOL);
+    VERSION_1_1("1.1", "text/xml", Optional.of(Set.of("application/xml")), new SOAPMessageFactory1_1Impl()),
+    VERSION_1_2("1.2", "application/soap+xml", Optional.empty(), new SOAPMessageFactory1_2Impl());
 
     private final String version;
     private final String contentType;
     private final Set<String> acceptedContentTypes;
-    private final String soapProtocol;
+    private final MessageFactory messageFactory;
 
-    SoapVersion(String name, String contentType, Optional<Set<String>> acceptedContentTypes, String soapProtocol) {
+    SoapVersion(String name, String contentType, Optional<Set<String>> acceptedContentTypes, MessageFactory messageFactory) {
         this.version = name;
         this.contentType = contentType;
-        this.soapProtocol = soapProtocol;
+        this.messageFactory = messageFactory;
         this.acceptedContentTypes = acceptedContentTypes
                 .map(types -> {
                     Set<String> newTypes = new HashSet<>(types);
@@ -61,10 +61,6 @@ public enum SoapVersion {
     }
 
     public MessageFactory buildMessageFactory() {
-        try {
-            return  MessageFactory.newInstance(soapProtocol);
-        } catch (SOAPException e) {
-            throw new IllegalStateException("Unable to create SOAP message factory for version [%s]".formatted(version), e);
-        }
+        return messageFactory;
     }
 }
