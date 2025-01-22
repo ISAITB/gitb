@@ -661,8 +661,8 @@ class ReportManager @Inject() (communityManager: CommunityManager,
       domainId, domainName, domainName, Some(domainName+" description"), Some(domainName+" metadata"),
       actorId, actorName, actorName, Some(actorName+" description"), Some(actorName+" metadata") ,"",
       specificationId, specificationName, specificationName, Some(specificationName+" description"), Some(specificationName+" metadata"), 0,
-      Some(groupId), Some(groupName), Some(groupName), Some(groupName+" description"), Some(groupName+" metadata"), Some(0),
-      specificationName, specificationName,
+      Some(groupId), Some(groupName), Some(groupName+" description"), Some(groupName+" metadata"),
+      Some(groupName), Option(0), specificationName, specificationName,
       Some(testSuiteIndex), Some("Sample test suite "+testSuiteIndex), Some("Description for Sample test suite "+testSuiteIndex), None, None, None, "1.0",
       Some(testCaseIndex), Some("Sample test case "+testCaseIndex), Some("Description for Sample test case "+testCaseIndex), Some(false), Some(false), None,  None, None, None, None, "1.0",
       None, None, None, None,
@@ -1615,7 +1615,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
           ("", "<tr>", "</tr>", "")
         }
         val placeholderTable = new StringBuilder()
-        placeholderTable.append("<table>")
+        placeholderTable.append("<table style='margin-left:auto;margin-right:auto'>")
         placeholderTable.append(additions._1)
         var index = 0
         statements.forEach { statement =>
