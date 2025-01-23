@@ -1372,11 +1372,14 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 		if (snapshotId.isEmpty) {
 			getLatestConformanceStatusLabel(communityId)
 		} else {
-			exec(PersistenceSchema.conformanceSnapshots
+			val labels = exec(PersistenceSchema.conformanceSnapshots
 				.filter(_.id === snapshotId.get)
 				.filter(_.isPublic === true)
-				.map(_.publicLabel)
-				.result.headOption).flatten
+				.map(x => (x.label, x.publicLabel))
+				.result.headOption)
+			labels.map { x =>
+				x._2.getOrElse(x._1)
+			}
 		}
 	}
 
