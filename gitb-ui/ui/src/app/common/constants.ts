@@ -145,6 +145,9 @@ export class Constants {
 	public static PLACEHOLDER__DOMAIN = "$DOMAIN"
 	public static PLACEHOLDER__BADGE = "$BADGE"
 	public static PLACEHOLDER__BADGES = "$BADGES"
+  public static PLACEHOLDER__LAST_UPDATE_DATE = "$LAST_UPDATE_DATE"
+  public static PLACEHOLDER__REPORT_DATE = "$REPORT_DATE"
+  public static PLACEHOLDER__SNAPSHOT = "$SNAPSHOT"
 
 	public static TEST_STATUS = {
 		UNKNOWN: null,

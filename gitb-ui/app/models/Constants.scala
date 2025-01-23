@@ -48,6 +48,9 @@ object Constants {
   val PlaceholderDomain = "$DOMAIN"
   val PlaceholderBadge = "$BADGE"
   val PlaceholderBadges = "$BADGES"
+  val PlaceholderReportDate = "$REPORT_DATE"
+  val PlaceholderLastUpdateDate = "$LAST_UPDATE_DATE"
+  val PlaceholderSnapshot = "$SNAPSHOT"
 
   val ProductionMode = "production"
   val DevelopmentMode = "development"

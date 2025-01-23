@@ -20,6 +20,7 @@ import models.statement._
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.io.{FileUtils, IOUtils}
 import org.apache.commons.lang3.StringUtils
+import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import utils._
@@ -69,6 +70,8 @@ class ReportManager @Inject() (communityManager: CommunityManager,
 
   import dbConfig.profile.api._
 
+  private val LOGGER = LoggerFactory.getLogger(classOf[ReportManager])
+
   private val PLACEHOLDER_DOMAIN_WITH_INDEX_REGEXP = Pattern.compile("(\\"+Constants.PlaceholderDomain+"\\{(\\d+)\\})")
   private val PLACEHOLDER_SPECIFICATION_GROUP_WITH_INDEX_REGEXP = Pattern.compile("(\\"+Constants.PlaceholderSpecificationGroup+"\\{(\\d+)\\})")
   private val PLACEHOLDER_SPECIFICATION_GROUP_OPTION_WITH_INDEX_REGEXP = Pattern.compile("(\\"+Constants.PlaceholderSpecificationGroupOption+"\\{(\\d+)\\})")
@@ -77,6 +80,8 @@ class ReportManager @Inject() (communityManager: CommunityManager,
   private val PLACEHOLDER_BADGE_REGEXP = Pattern.compile("(\\"+Constants.PlaceholderBadge+"(?:\\{(\\d+)(?:\\|(\\d+))?\\})?)")
   private val PLACEHOLDER_BADGE_WITHOUT_INDEX_REGEXP = Pattern.compile("(\\"+Constants.PlaceholderBadge+"(?:\\{(\\d+)\\})?)")
   private val PLACEHOLDER_BADGE_LIST_REGEXP = Pattern.compile("(\\"+Constants.PlaceholderBadges+"\\{((?:horizontal)|(?:vertical))(?:\\|(\\d+))?\\})")
+  private val PLACEHOLDER_LAST_UPDATE_DATE_REGEXP = Pattern.compile("(\\"+Constants.PlaceholderLastUpdateDate+"\\{(.+)\\})")
+  private val PLACEHOLDER_REPORT_DATE_REGEXP = Pattern.compile("(\\"+Constants.PlaceholderReportDate+"\\{(.+)\\})")
   private val BADGE_PREVIEW_URL_REGEXP = Pattern.compile("['\"](\\S*/badgereportpreview/([A-Z]+)/(-?\\d+)/(-?\\d+)/(-?\\d+)(?:/(\\d+))?)['\"]")
   private val gitbTrObjectFactory = new com.gitb.tr.ObjectFactory
   private val gitbTplObjectFactory = new com.gitb.tpl.ObjectFactory
@@ -937,7 +942,8 @@ class ReportManager @Inject() (communityManager: CommunityManager,
       getOverallConformanceOverviewStatus(conformanceItems),
       conformanceItems,
       conformanceItemTree,
-      actorLastUpdateTime.toMap
+      actorLastUpdateTime.toMap,
+      Calendar.getInstance().getTime
     )
   }
 
@@ -1383,7 +1389,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
       } else {
         overview.setTitle("Conformance Overview Report")
       }
-      overview.setReportDate(new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(Calendar.getInstance().getTime))
+      overview.setReportDate(new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(conformanceData.reportDate))
       overview.setOrganisation(conformanceData.organisationName.getOrElse("-"))
       overview.setSystem(conformanceData.systemName.getOrElse("-"))
       if (certificateSettings.isDefined) {
@@ -1434,9 +1440,11 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     messageToUse = replaceDomainParameters(messageToUse, communityId, snapshotId)
     messageToUse = replaceOrganisationPropertyPlaceholders(messageToUse, isDemo, communityId, conformanceData.organisationId, snapshotId)
     messageToUse = replaceSystemPropertyPlaceholders(messageToUse, isDemo, communityId, conformanceData.systemId, snapshotId)
-    messageToUse = replaceSimplePlaceholders(messageToUse, None, conformanceData.specificationName, conformanceData.specificationName, conformanceData.groupName, conformanceData.domainName, conformanceData.organisationName, conformanceData.systemName)
+    messageToUse = replaceSimplePlaceholders(messageToUse, communityId, None, conformanceData.specificationName, conformanceData.specificationName, conformanceData.groupName, conformanceData.domainName, conformanceData.organisationName, conformanceData.systemName, snapshotId)
     messageToUse = replaceBadgeListPlaceholders(messageToUse, isDemo, conformanceData, snapshotId, useUrlPlaceholders)
     messageToUse = replaceBadgePlaceholdersByIndex(messageToUse, isDemo, conformanceData, snapshotId, useUrlPlaceholders)
+    messageToUse = replaceDatePlaceholder(messageToUse, Some(conformanceData.reportDate), PLACEHOLDER_REPORT_DATE_REGEXP)
+    messageToUse = replaceDatePlaceholder(messageToUse, conformanceData.getOverallLastUpdateTime(), PLACEHOLDER_LAST_UPDATE_DATE_REGEXP)
     if (!useUrlPlaceholders) {
       messageToUse = replaceBadgePreviewUrls(messageToUse, snapshotId)
     }
@@ -1526,7 +1534,9 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     messageToUse
   }
 
-  private def replaceSimplePlaceholders(message: String, actor: Option[String], specification: Option[String], option: Option[String], group: Option[String], domain: Option[String], organisation: Option[String], system: Option[String]): String = {
+  private def replaceSimplePlaceholders(message: String, communityId: Long, actor: Option[String], specification: Option[String],
+                                        option: Option[String], group: Option[String], domain: Option[String],
+                                        organisation: Option[String], system: Option[String], snapshotId: Option[Long]): String = {
     var messageToUse = message
     if (actor.isDefined) messageToUse = messageToUse.replace(Constants.PlaceholderActor, actor.get)
     if (domain.isDefined) messageToUse = messageToUse.replace(Constants.PlaceholderDomain, domain.get)
@@ -1535,6 +1545,10 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     if (group.isDefined) messageToUse = messageToUse.replace(Constants.PlaceholderSpecificationGroup, group.get)
     if (specification.isDefined) messageToUse = messageToUse.replace(Constants.PlaceholderSpecification, specification.get)
     if (system.isDefined) messageToUse = messageToUse.replace(Constants.PlaceholderSystem, system.get)
+    if (messageToUse.contains(Constants.PlaceholderSnapshot)) {
+      val snapshotLabel = conformanceManager.getPublicSnapshotLabel(communityId, snapshotId)
+      messageToUse = messageToUse.replace(Constants.PlaceholderSnapshot, snapshotLabel.getOrElse(""))
+    }
     messageToUse
   }
 
@@ -1660,6 +1674,34 @@ class ReportManager @Inject() (communityManager: CommunityManager,
       } else if (isDemo) {
         // A conformance statement at the given index was not found. If this is a demo report then replace it with the demo badge.
         messageToUse = replaceBadgePlaceholder(messageToUse, indexedPlaceholder, isDemo, None, None, snapshotId, data.overallResult, useActualInDemo = false, useUrlPlaceholders = false, None)
+      }
+    }
+    messageToUse
+  }
+
+  private def getDateFormatter(format: String): Option[SimpleDateFormat] = {
+      try {
+        Some(new SimpleDateFormat(format))
+      } catch {
+        case e: Exception =>
+          LOGGER.warn("Invalid date format {}", format, e)
+          None
+      }
+  }
+
+  private def replaceDatePlaceholder(message: String, dateValue: Option[Date], placeHolderPattern: Pattern): String = {
+    var messageToUse = message
+    val matches = placeHolderPattern.matcher(message).results().collect(Collectors.toList())
+    if (matches.size() > 0) {
+      if (dateValue.isDefined) {
+        matches.forEach { result =>
+          val textToSet = getDateFormatter(result.group(2)).map(_.format(dateValue.get)).getOrElse("")
+          messageToUse = message.replace(result.group(1), textToSet)
+        }
+      } else {
+        matches.forEach { result =>
+          messageToUse = message.replace(result.group(1), "")
+        }
       }
     }
     messageToUse
@@ -2369,6 +2411,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     val sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss")
     val overview = new com.gitb.reports.dto.ConformanceStatementOverview()
     val specs = reportHelper.createReportSpecs(Some(communityId))
+    val reportDate = Calendar.getInstance().getTime
     // Labels
     overview.setLabelDomain(communityLabelManager.getLabel(labels, models.Enums.LabelType.Domain))
     overview.setLabelSpecificationGroup(communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationGroup))
@@ -2574,9 +2617,10 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     overview.setFailedTestsIgnored(failedTestsIgnored)
     overview.setUndefinedTestsIgnored(undefinedTestsIgnored)
     overview.setIncludeTestStatus(addTestStatus)
+    overview.setReportDate(sdf.format(reportDate))
     // Replace message placeholders
     if (addMessage && message.isDefined) {
-      val messageToUse = resolveConformanceStatementCertificateMessage(message.get, communityId, snapshotId, conformanceData, overview.getOverallStatus, isDemo, useUrlPlaceholders = false)
+      val messageToUse = resolveConformanceStatementCertificateMessage(message.get, communityId, snapshotId, conformanceData, overview.getOverallStatus, isDemo, useUrlPlaceholders = false, reportDate)
       overview.setMessage(messageToUse)
     }
     Files.createDirectories(reportPath.getParent)
@@ -2611,16 +2655,19 @@ class ReportManager @Inject() (communityManager: CommunityManager,
       "UNDEFINED"
     }
     // Process placeholders
-    resolveConformanceStatementCertificateMessage(rawMessage, communityId, snapshotId, conformanceInfo.head, overallStatus, isDemo = false, useUrlPlaceholders = true)
+    val reportDate = Calendar.getInstance().getTime
+    resolveConformanceStatementCertificateMessage(rawMessage, communityId, snapshotId, conformanceInfo.head, overallStatus, isDemo = false, useUrlPlaceholders = true, reportDate)
   }
 
-  private def resolveConformanceStatementCertificateMessage(rawMessage: String, communityId: Long, snapshotId: Option[Long], conformanceData: ConformanceStatementFull, overallStatus: String, isDemo: Boolean, useUrlPlaceholders: Boolean): String = {
+  private def resolveConformanceStatementCertificateMessage(rawMessage: String, communityId: Long, snapshotId: Option[Long], conformanceData: ConformanceStatementFull, overallStatus: String, isDemo: Boolean, useUrlPlaceholders: Boolean, reportDate: Date): String = {
     var messageToUse = rawMessage
     messageToUse = replaceDomainParameters(messageToUse, communityId, snapshotId)
     messageToUse = replaceOrganisationPropertyPlaceholders(messageToUse, isDemo, communityId, Some(conformanceData.organizationId), snapshotId)
     messageToUse = replaceSystemPropertyPlaceholders(messageToUse, isDemo, communityId, Some(conformanceData.systemId), snapshotId)
-    messageToUse = replaceSimplePlaceholders(messageToUse, Some(conformanceData.actorFull), Some(conformanceData.specificationNameFull), Some(conformanceData.specificationGroupOptionNameFull), conformanceData.specificationGroupNameFull, Some(conformanceData.domainNameFull), Some(conformanceData.organizationName), Some(conformanceData.systemName))
+    messageToUse = replaceSimplePlaceholders(messageToUse, communityId, Some(conformanceData.actorFull), Some(conformanceData.specificationNameFull), Some(conformanceData.specificationGroupOptionNameFull), conformanceData.specificationGroupNameFull, Some(conformanceData.domainNameFull), Some(conformanceData.organizationName), Some(conformanceData.systemName), snapshotId)
     messageToUse = replaceBadgePlaceholders(messageToUse, isDemo, Some(conformanceData.specificationId), Some(conformanceData.actorId), snapshotId, overallStatus, useUrlPlaceholders, Some(conformanceData.systemId))
+    messageToUse = replaceDatePlaceholder(messageToUse, Some(reportDate), PLACEHOLDER_REPORT_DATE_REGEXP)
+    messageToUse = replaceDatePlaceholder(messageToUse, conformanceData.updateTime, PLACEHOLDER_LAST_UPDATE_DATE_REGEXP)
     if (!useUrlPlaceholders) {
       messageToUse = replaceBadgePreviewUrls(messageToUse, snapshotId)
     }

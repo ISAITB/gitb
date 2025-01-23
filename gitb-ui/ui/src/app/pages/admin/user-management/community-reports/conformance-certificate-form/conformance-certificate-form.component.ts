@@ -42,8 +42,11 @@ export class ConformanceCertificateFormComponent extends BaseCertificateSettings
       { key: Constants.PLACEHOLDER__ACTOR, value: 'The name of the ' + this.dataService.labelActorLower() + ' linked to the conformance statement.' },
       { key: Constants.PLACEHOLDER__ORGANISATION, value: 'The name of the ' + this.dataService.labelOrganisationLower() + ' to be granted the certificate.' },
       { key: Constants.PLACEHOLDER__SYSTEM, value: 'The name of the ' + this.dataService.labelSystemLower() + ' that was used in the tests.' },
+      { key: Constants.PLACEHOLDER__SNAPSHOT, value: 'The public name of the relevant conformance snapshot.' },
       { key: Constants.PLACEHOLDER__BADGE, value: 'The badge image corresponding to the current conformance status (original image size).'},
-      { key: Constants.PLACEHOLDER__BADGE+'{width}', value: 'The badge image corresponding to the current conformance status (with fixed width in pixels).', select: () => Constants.PLACEHOLDER__BADGE+'{100}' }
+      { key: Constants.PLACEHOLDER__BADGE+'{width}', value: 'The badge image corresponding to the current conformance status (with fixed width in pixels).', select: () => Constants.PLACEHOLDER__BADGE+'{100}' },
+      { key: Constants.PLACEHOLDER__REPORT_DATE+'{format}', value: 'The report generation date (with date format).', select: () => Constants.PLACEHOLDER__REPORT_DATE+'{dd/MM/yyyy}' },
+      { key: Constants.PLACEHOLDER__LAST_UPDATE_DATE+'{format}', value: 'The conformance last update time (with date format).', select: () => Constants.PLACEHOLDER__LAST_UPDATE_DATE+'{dd/MM/yyyy}' }
     ]
   }
 

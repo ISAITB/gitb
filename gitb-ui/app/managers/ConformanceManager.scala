@@ -1349,20 +1349,47 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 		}
 	}
 
+	private def getLatestConformanceStatusLabelInternal(communityId: Long): DBIO[Option[String]] = {
+		PersistenceSchema.communities.filter(_.id === communityId).map(_.latestStatusLabel).result.head
+	}
+
 	def getLatestConformanceStatusLabel(communityId: Long): Option[String] = {
-		exec(PersistenceSchema.communities.filter(_.id === communityId).map(_.latestStatusLabel).result.head)
+		exec(getLatestConformanceStatusLabelInternal(communityId))
 	}
 
 	def setLatestConformanceStatusLabel(communityId: Long, label: Option[String]): Unit = {
 		exec(PersistenceSchema.communities.filter(_.id === communityId).map(_.latestStatusLabel).update(label).transactionally)
 	}
 
-	def getConformanceSnapshots(community: Long, onlyPublic: Boolean): List[ConformanceSnapshot] = {
-		exec(PersistenceSchema.conformanceSnapshots
+	def getConformanceSnapshotsWithLatest(community: Long, onlyPublic: Boolean): (Seq[ConformanceSnapshot], Option[String]) = {
+		exec(for {
+			snapshots <- getConformanceSnapshotsInternal(community, onlyPublic)
+			latestLabel <- getLatestConformanceStatusLabelInternal(community)
+		} yield (snapshots, latestLabel))
+	}
+
+	def getPublicSnapshotLabel(communityId: Long, snapshotId: Option[Long]): Option[String] = {
+		if (snapshotId.isEmpty) {
+			getLatestConformanceStatusLabel(communityId)
+		} else {
+			exec(PersistenceSchema.conformanceSnapshots
+				.filter(_.id === snapshotId.get)
+				.filter(_.isPublic === true)
+				.map(_.publicLabel)
+				.result.headOption).flatten
+		}
+	}
+
+	private def getConformanceSnapshotsInternal(community: Long, onlyPublic: Boolean): DBIO[Seq[ConformanceSnapshot]] = {
+		PersistenceSchema.conformanceSnapshots
 			.filter(_.community === community)
 			.filterIf(onlyPublic)(_.isPublic === true)
 			.sortBy(_.snapshotTime.desc)
-			.result).toList
+			.result
+	}
+
+	def getConformanceSnapshots(community: Long, onlyPublic: Boolean): List[ConformanceSnapshot] = {
+		exec(getConformanceSnapshotsInternal(community, onlyPublic)).toList
 	}
 
 	def getConformanceSnapshot(snapshot: Long): ConformanceSnapshot = {
