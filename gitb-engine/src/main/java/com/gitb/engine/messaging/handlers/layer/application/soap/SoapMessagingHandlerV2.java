@@ -96,12 +96,11 @@ public class SoapMessagingHandlerV2 extends AbstractNonWorkerMessagingHandler {
         headers.forEach((key, value) -> value.forEach(headerValue -> builder.header(key, headerValue)));
         // Make request.
         CompletableFuture<HttpResponse<byte[]>> asyncResponse;
-        try {
-            asyncResponse = HttpClient.newBuilder()
-                    .connectTimeout(Duration.ofSeconds(10))
-                    .followRedirects(HttpClient.Redirect.ALWAYS)
-                    .build()
-                    .sendAsync(builder.build(), HttpResponse.BodyHandlers.ofByteArray());
+        try (HttpClient client = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(10))
+                .followRedirects(HttpClient.Redirect.ALWAYS)
+                .build()) {
+            asyncResponse = client.sendAsync(builder.build(), HttpResponse.BodyHandlers.ofByteArray());
         } catch (Exception e) {
             throw new IllegalStateException("Error while contacting remote system", e);
         }
