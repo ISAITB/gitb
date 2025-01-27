@@ -59,12 +59,12 @@ public class VariableUtils extends AbstractProcessingHandler {
         }
         ProcessingData data = new ProcessingData();
         if (OPERATION__EXISTS.equalsIgnoreCase(operation)) {
-            var variableResolver = new VariableResolver(scope);
+            var variableResolver = new VariableResolver(getScope(session));
             var variableName = getRequiredInputForName(input, INPUT__NAME, StringType.class);
             var matchedVariable = variableResolver.resolveVariable("$"+variableName, true);
             data.getData().put(OUTPUT__OUTPUT, new BooleanType(matchedVariable.isPresent()));
         } else if (OPERATION__TYPE.equalsIgnoreCase(operation)) {
-            var variableResolver = new VariableResolver(scope);
+            var variableResolver = new VariableResolver(getScope(session));
             var variableName = getRequiredInputForName(input, INPUT__NAME, StringType.class);
             var matchedVariable = variableResolver.resolveVariable("$"+variableName, true);
             data.getData().put(OUTPUT__OUTPUT, new StringType(matchedVariable.map(DataType::getType).orElse("")));

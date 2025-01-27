@@ -40,9 +40,8 @@ import java.util.*;
 public abstract class AbstractMessagingHandler extends AbstractHandler implements IMessagingHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractMessagingHandler.class);
-    private String testSessionId;
 
-    protected Marker addMarker() {
+    protected Marker addMarker(String testSessionId) {
         return MarkerFactory.getDetachedMarker(testSessionId);
     }
 
@@ -53,11 +52,8 @@ public abstract class AbstractMessagingHandler extends AbstractHandler implement
 
     public InitiateResponse initiateWithSession(List<ActorConfiguration> actorConfigurations, String testSessionId) {
         try {
-            this.testSessionId = testSessionId;
             SessionManager sessionManager = SessionManager.getInstance();
-
             validateActorConfigurations(actorConfigurations);
-
             return sessionManager.createSession(testSessionId, this, getMessagingServer(), actorConfigurations);
         } catch (GITBEngineInternalError e) {
             throw e;
@@ -145,7 +141,7 @@ public abstract class AbstractMessagingHandler extends AbstractHandler implement
                 return onSuccess(sentMessage);
             }
         } catch (Exception e) {
-            return onError(new GITBEngineInternalError(e));
+            return onError(new GITBEngineInternalError(e), sessionId);
         } finally {
             transactionContext.clearNonCriticalErrors();
         }
@@ -213,9 +209,9 @@ public abstract class AbstractMessagingHandler extends AbstractHandler implement
             incomingMessage = listener.listen(configurations, inputs);
         } catch (Exception e) {
             if(e instanceof GITBEngineInternalError) {
-                return onError((GITBEngineInternalError) e);
+                return onError((GITBEngineInternalError) e, sessionId);
             } else {
-                return onError(new GITBEngineInternalError(e));
+                return onError(new GITBEngineInternalError(e), sessionId);
             }
         }
 
@@ -366,8 +362,8 @@ public abstract class AbstractMessagingHandler extends AbstractHandler implement
         return MessagingHandlerUtils.generateSkipReport();
     }
 
-    protected MessagingReport onError(GITBEngineInternalError error) {
-        logger.error(addMarker(), "An error occurred", error);
+    protected MessagingReport onError(GITBEngineInternalError error, String sessionId) {
+        logger.error(addMarker(sessionId), "An error occurred", error);
         return MessagingHandlerUtils.generateErrorReport(error);
     }
 
@@ -434,10 +430,10 @@ public abstract class AbstractMessagingHandler extends AbstractHandler implement
                 }
             } catch (InterruptedException e) {
                 // Ignore this can be expected.
-                logger.debug("Messaging handler for session ["+handler.testSessionId+"] was interrupted");
+                logger.debug("Messaging handler for session ["+sessionId+"] was interrupted");
                 return handler.onSkip();
             } catch (Exception e) {
-                return handler.onError(new GITBEngineInternalError(e));
+                return handler.onError(new GITBEngineInternalError(e), sessionId);
             } finally {
                 transactionContext.clearNonCriticalErrors();
             }

@@ -1,31 +1,34 @@
 package com.gitb.engine.actors.processors;
 
-import com.gitb.engine.actors.ActorSystem;
-import com.gitb.engine.processing.handlers.AbstractProcessingHandler;
-import com.gitb.engine.utils.StepContext;
-import com.gitb.tdl.ErrorLevel;
-import org.apache.pekko.actor.ActorRef;
-import org.apache.pekko.dispatch.Futures;
-import org.apache.pekko.dispatch.OnFailure;
-import org.apache.pekko.dispatch.OnSuccess;
 import com.gitb.core.AnyContent;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.StepStatus;
+import com.gitb.engine.actors.ActorSystem;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.processing.ProcessingContext;
+import com.gitb.engine.processing.handlers.XPathProcessor;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.engine.utils.HandlerUtils;
+import com.gitb.engine.utils.StepContext;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.processing.DeferredProcessingReport;
 import com.gitb.processing.IProcessingHandler;
+import com.gitb.processing.ProcessingData;
 import com.gitb.processing.ProcessingReport;
+import com.gitb.tdl.ErrorLevel;
 import com.gitb.tdl.Process;
 import com.gitb.tr.TAR;
 import com.gitb.tr.TestResultType;
 import com.gitb.tr.TestStepReportType;
 import com.gitb.types.DataType;
+import com.gitb.types.MapType;
 import com.gitb.utils.DataTypeUtils;
 import com.gitb.utils.ErrorUtils;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.dispatch.Futures;
+import org.apache.pekko.dispatch.OnFailure;
+import org.apache.pekko.dispatch.OnSuccess;
 import scala.concurrent.Future;
 import scala.concurrent.Promise;
 
@@ -104,10 +107,11 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
             } else if (step.getOperationAttribute() != null) {
                 operation = step.getOperationAttribute();
             }
-            if (handler instanceof AbstractProcessingHandler builtInHandler) {
-                builtInHandler.setScope(scope);
+            ProcessingData input = getData(handler, operation);
+            if (handler instanceof XPathProcessor) {
+                input.addInput(HandlerUtils.NAMESPACE_MAP_INPUT, MapType.fromMap(scope.getNamespaceDefinitions()));
             }
-            ProcessingReport report = handler.process(context.getSession(), step.getId(), operation, getData(handler, operation));
+            ProcessingReport report = handler.process(context.getSession(), step.getId(), operation, input);
             Promise<TestStepReportType> taskPromise = Futures.promise();
             if (report instanceof DeferredProcessingReport deferredReport) {
                 getContext().getSystem().getScheduler().scheduleOnce(
