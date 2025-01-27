@@ -50,7 +50,7 @@ public enum ErrorCode {
     INVALID_VARIABLE_REFERENCE(                         "TDL-039", "%s [%s] in step %s defines an invalid variable reference [%s].", ERROR, true),
     VARIABLE_NOT_IN_SCOPE(                              "TDL-040", "%s [%s] in step %s refers to an undefined variable [%s].", ERROR, true),
     SIMPLE_VARIABLE_REFERENCED_AS_CONTAINER(            "TDL-041", "%s [%s] in step %s refers to a simple variable [%s] as if it was a container type.", ERROR, true),
-    INVALID_EXPRESSION(                                 "TDL-042", "%s [%s] in step %s defines an invalid expression [%s].", ERROR, true),
+    INVALID_EXPRESSION(                                 "TDL-042", "%s [%s] in step %s defines an invalid expression [%s]. Cause: [%s].", ERROR, true),
     UNEXPECTED_HANDLER_INPUT(                           "TDL-043", "%s [%s] in step %s for handler %s defines an unexpected input [%s].", WARNING, true),
     MISSING_HANDLER_INPUT(                              "TDL-044", "%s [%s] in step %s for handler %s does not provide a required input [%s].", ERROR, true),
     UNEXPECTED_HANDLER_CONFIG(                          "TDL-045", "%s [%s] in step %s for handler %s defines an unexpected configuration parameter [%s].", WARNING, true),

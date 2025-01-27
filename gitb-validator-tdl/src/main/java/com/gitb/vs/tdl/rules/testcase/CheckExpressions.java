@@ -393,7 +393,14 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
                             }
                             expression.evaluate(Utils.getSecureDocumentBuilderFactory().newDocumentBuilder().newDocument());
                         } catch (XPathExpressionException e) {
-                            addReportItem(ErrorCode.INVALID_EXPRESSION, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentStep, currentScriptlet), token);
+                            String cause = "";
+                            if (e.getMessage() != null) {
+                                int exceptionIndex = e.getMessage().indexOf("Exception:");
+                                if (exceptionIndex > -1 && e.getMessage().length() > (exceptionIndex+10)) {
+                                    cause = e.getMessage().substring(exceptionIndex+10).trim();
+                                }
+                            }
+                            addReportItem(ErrorCode.INVALID_EXPRESSION, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentStep, currentScriptlet), token, cause);
                         } catch (ParserConfigurationException e) {
                             throw new IllegalStateException(e);
                         } finally {
