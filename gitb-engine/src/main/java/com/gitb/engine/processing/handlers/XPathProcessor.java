@@ -20,7 +20,7 @@ import java.util.List;
 public class XPathProcessor extends AbstractProcessingHandler {
 
     private static final String OPERATION__PROCESS = "process";
-    private static final String INPUT__CONTENT = "content";
+    private static final String INPUT__INPUT = "input";
     private static final String INPUT__EXPRESSION = "expression";
     private static final String INPUT__TYPE = "type";
     private static final String OUTPUT__OUTPUT = "output";
@@ -35,7 +35,7 @@ public class XPathProcessor extends AbstractProcessingHandler {
         module.setConfigs(new ConfigurationParameters());
         module.getOperation().add(createProcessingOperation(OPERATION__PROCESS,
             List.of(
-                    createParameter(INPUT__CONTENT, "object", UsageEnumeration.R, ConfigurationType.SIMPLE, "The XML content to evaluate the expression on."),
+                    createParameter(INPUT__INPUT, "object", UsageEnumeration.R, ConfigurationType.SIMPLE, "The XML content to evaluate the expression on."),
                     createParameter(INPUT__EXPRESSION, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The XPath expression to evaluate."),
                     createParameter(INPUT__TYPE, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, "The expected result type.")
             ),
@@ -48,10 +48,10 @@ public class XPathProcessor extends AbstractProcessingHandler {
     public ProcessingReport process(String session, String operation, ProcessingData input) {
         // Collect inputs
         ObjectType contentToProcess;
-        if (!input.getData().containsKey(INPUT__CONTENT)) {
+        if (!input.getData().containsKey(INPUT__INPUT)) {
             throw new IllegalArgumentException("The XML content to evaluate the expression on is required");
         } else {
-            contentToProcess = getAndConvert(input.getData(), INPUT__CONTENT, DataType.OBJECT_DATA_TYPE, ObjectType.class);
+            contentToProcess = getAndConvert(input.getData(), INPUT__INPUT, DataType.OBJECT_DATA_TYPE, ObjectType.class);
         }
         StringType expression;
         if (!input.getData().containsKey(INPUT__EXPRESSION)) {
