@@ -23,5 +23,6 @@ CREATE TABLE `conformancesnapshottestcasegroups` (
   KEY `cs_tcg_id` (`id`),
   CONSTRAINT `cs_tcg_fk_cs` FOREIGN KEY (`snapshot_id`) REFERENCES `conformancesnapshots`(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+CREATE INDEX `cs_tcg_fk_cs_idx` ON `conformancesnapshottestcasegroups` (`snapshot_id`);
 
 ALTER TABLE `conformancesnapshotresults` ADD COLUMN `test_case_group_id` BIGINT;
