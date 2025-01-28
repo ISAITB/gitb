@@ -436,8 +436,11 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 							processedGroups += testCase.group.get
 						}
 					}
-					testSuite.result = resultStatus(testSuite.completedToConsider, testSuite.failedToConsider, testSuite.undefinedToConsider)
 				}
+			}
+			// Complete test suite results
+			testSuiteMap.values.foreach { testSuite =>
+				testSuite.result = resultStatus(testSuite.completedToConsider, testSuite.failedToConsider, testSuite.undefinedToConsider)
 			}
 			// Complete overall results
 			status.testSuites = testSuiteMap.values
