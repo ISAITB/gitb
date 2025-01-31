@@ -12,5 +12,8 @@ case class ConformanceStatementResults(
   completedOptionalTests: Long,
   failedOptionalTests: Long,
   undefinedOptionalTests: Long,
+  completedTestsToConsider: Long,
+  failedTestsToConsider: Long,
+  undefinedTestsToConsider: Long,
   testSuites: Option[Iterable[ConformanceTestSuite]] = None
 )

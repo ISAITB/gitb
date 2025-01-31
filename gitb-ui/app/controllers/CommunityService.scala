@@ -494,9 +494,14 @@ class CommunityService @Inject() (implicit ec: ExecutionContext, authorizedActio
   }
 
   def downloadCommunityResourceByName(resourceName: String) = authorizedAction { request =>
-    authorizationManager.canViewOwnCommunity(request)
+    val communityId = request.cookies.get("implicitCommunity").map(_.value.toLong)
+    if (communityId.isDefined) {
+      authorizationManager.canViewCommunityBasic(request, communityId.get)
+    } else {
+      authorizationManager.canViewOwnCommunity(request)
+    }
     val userId = authorizationManager.getRequestUserId(request)
-    val resource = communityResourceManager.getCommunityResourceFileByName(userId, resourceName)
+    val resource = communityResourceManager.getCommunityResourceFileByName(communityId, userId, resourceName)
     if (resource.isDefined && resource.get.exists()) {
       Ok.sendFile(
         content = resource.get,
@@ -517,6 +522,39 @@ class CommunityService @Inject() (implicit ec: ExecutionContext, authorizedActio
       )
     } else {
       NotFound
+    }
+  }
+
+  def getCommunityIdOfDomain: Action[AnyContent] = authorizedAction { request =>
+    val domainId = ParameterExtractor.requiredQueryParameter(request, Parameters.DOMAIN_ID).toLong
+    authorizationManager.checkTestBedAdmin(request)
+    val communityId = communityManager.getCommunityIdOfDomain(domainId)
+    if (communityId.isDefined) {
+      ResponseConstructor.constructJsonResponse(JsonUtil.jsId(communityId.get).toString())
+    } else {
+      ResponseConstructor.constructEmptyResponse
+    }
+  }
+
+  def getCommunityIdOfActor: Action[AnyContent] = authorizedAction { request =>
+    val actorId = ParameterExtractor.requiredQueryParameter(request, Parameters.ACTOR_ID).toLong
+    authorizationManager.checkTestBedAdmin(request)
+    val communityId = communityManager.getCommunityIdOfActor(actorId)
+    if (communityId.isDefined) {
+      ResponseConstructor.constructJsonResponse(JsonUtil.jsId(communityId.get).toString())
+    } else {
+      ResponseConstructor.constructEmptyResponse
+    }
+  }
+
+  def getCommunityIdOfSnapshot: Action[AnyContent] = authorizedAction { request =>
+    val snapshotId = ParameterExtractor.requiredQueryParameter(request, Parameters.SNAPSHOT).toLong
+    authorizationManager.checkTestBedAdmin(request)
+    val communityId = communityManager.getCommunityIdOfSnapshot(snapshotId)
+    if (communityId.isDefined) {
+      ResponseConstructor.constructJsonResponse(JsonUtil.jsId(communityId.get).toString())
+    } else {
+      ResponseConstructor.constructEmptyResponse
     }
   }
 

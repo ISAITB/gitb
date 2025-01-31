@@ -14,8 +14,6 @@ import com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.Message;
 import com.gitb.messaging.MessagingReport;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
@@ -30,9 +28,6 @@ public class DNSMessagingHandler extends AbstractMessagingHandler {
 	public static final String DNS_ADDRESS_FIELD_NAME = "dns.address";
 
 	public static final String MODULE_DEFINITION_XML = "/messaging/dns-messaging-definition.xml";
-
-	private static final Logger logger = LoggerFactory.getLogger(DNSMessagingHandler.class);
-
 	private static final MessagingModule module = MessagingHandlerUtils.readModuleDefinition(MODULE_DEFINITION_XML);
 
 	/**
@@ -66,7 +61,7 @@ public class DNSMessagingHandler extends AbstractMessagingHandler {
 			try {
 				dnsServer = new DNSMessagingServer();
 			} catch (IOException e) {
-				logger.error(addMarker(), "An error occurred while creating a DNS server instance", e);
+				throw new GITBEngineInternalError("An error occurred while creating a DNS server instance", e);
 			}
 		}
 

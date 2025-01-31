@@ -1,14 +1,14 @@
-import { Component, Input } from '@angular/core';
-import { BsModalRef } from 'ngx-bootstrap/modal';
-import { Constants } from 'src/app/common/constants';
-import { DataService } from 'src/app/services/data.service';
-import { ReportService } from 'src/app/services/report.service';
-import { saveAs } from 'file-saver'
-import { ConformanceOverviewCertificateSettings } from 'src/app/types/conformance-overview-certificate-settings';
-import { BaseComponent } from 'src/app/pages/base-component.component';
-import { Observable } from 'rxjs';
-import { ConformanceOverviewMessage } from 'src/app/pages/admin/user-management/community-reports/conformance-overview-message';
-import { ConformanceService } from 'src/app/services/conformance.service';
+import {Component, ElementRef, EventEmitter, Input, ViewChild} from '@angular/core';
+import {BsModalRef} from 'ngx-bootstrap/modal';
+import {Constants} from 'src/app/common/constants';
+import {DataService} from 'src/app/services/data.service';
+import {ReportService} from 'src/app/services/report.service';
+import {saveAs} from 'file-saver';
+import {ConformanceOverviewCertificateSettings} from 'src/app/types/conformance-overview-certificate-settings';
+import {BaseComponent} from 'src/app/pages/base-component.component';
+import {Observable} from 'rxjs';
+import {ConformanceOverviewMessage} from 'src/app/pages/admin/user-management/community-reports/conformance-overview-message';
+import {ConformanceService} from 'src/app/services/conformance.service';
 
 @Component({
   selector: 'app-conformance-overview-certificate-modal',
@@ -22,6 +22,7 @@ export class ConformanceOverviewCertificateModalComponent extends BaseComponent 
   @Input() snapshotId?: number
   @Input() reportLevel!: 'all'|'domain'|'specification'|'group'
   @Input() settings?: ConformanceOverviewCertificateSettings
+  @ViewChild("editorContainer") editorContainerRef?: ElementRef;
 
   message?: string
   messagePending = false
@@ -29,6 +30,9 @@ export class ConformanceOverviewCertificateModalComponent extends BaseComponent 
   exportPending = false
   choice = Constants.REPORT_OPTION_CHOICE.REPORT
   Constants = Constants
+  maximised = false
+  editorHeight = 300
+  editorSizeEmitter = new EventEmitter<number>()
 
   constructor(
     public dataService: DataService,
@@ -36,6 +40,16 @@ export class ConformanceOverviewCertificateModalComponent extends BaseComponent 
     private reportService: ReportService,
     private conformanceService: ConformanceService
   ) { super() }
+
+  expandModal(): void {
+    this.modalInstance.setClass("conformanceCertificatePreview")
+    this.maximised = true
+    if (this.editorContainerRef) {
+      const editorBottom = this.editorContainerRef.nativeElement.getBoundingClientRect().bottom
+      const windowHeight = window.innerHeight
+      this.editorSizeEmitter.emit(this.editorHeight + windowHeight - editorBottom - 45)
+    }
+  }
 
   choiceChanged() {
     if (this.choice == Constants.REPORT_OPTION_CHOICE.CERTIFICATE && (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin) && this.settings) {

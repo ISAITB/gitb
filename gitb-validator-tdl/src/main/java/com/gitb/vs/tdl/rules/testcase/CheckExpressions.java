@@ -30,6 +30,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
     private static final Pattern MAP_APPEND_EXPRESSION_PATTERN = Pattern.compile("(\\$?[a-zA-Z][a-zA-Z\\-_0-9]*(?:\\{(?:[\\$\\{\\}a-zA-Z\\-\\._0-9]*)\\})*)\\{(\\$?[a-zA-Z][a-zA-Z\\-\\._0-9]*)\\}");
     private static final String ATTRIBUTE_DESC = "desc";
     private static final String ATTRIBUTE_HIDDEN = "hidden";
+    private static final String ATTRIBUTE_HIDDEN_CONTAINER = "hiddenContainer";
     private static final String ATTRIBUTE_TITLE = "title";
     private static final String ATTRIBUTE_WITH = "with";
     private static final String ATTRIBUTE_FROM = "from";
@@ -170,72 +171,82 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
                 }
                 checkExpression(output.getFailure().getDefault());
             }
+            if (output.getUndefined() != null) {
+                for (OutputCase outputCase: output.getUndefined().getCase()) {
+                    checkExpression(outputCase.getCond());
+                    checkExpression(outputCase.getMessage());
+                }
+                checkExpression(output.getUndefined().getDefault());
+            }
         }
     }
 
     @Override
     public void handleStep(Object step) {
         super.handleStep(step);
-        if (step instanceof TestConstruct && ((TestConstruct)step).getId() != null) {
-            recordVariable(((TestConstruct)step).getId(), true);
+        if (step instanceof TestConstruct testConstructStep && testConstructStep.getId() != null) {
+            recordVariable(testConstructStep.getId(), true);
         }
-        if (step instanceof TestStep) {
-            checkConstantReferenceInScriptlet(((TestStep) step).getDesc(), ATTRIBUTE_DESC);
-            checkConstantReferenceInScriptlet(((TestStep) step).getHidden(), ATTRIBUTE_HIDDEN);
+        if (step instanceof TestStep testStep) {
+            checkConstantReferenceInScriptlet(testStep.getDesc(), ATTRIBUTE_DESC);
+            checkConstantReferenceInScriptlet(testStep.getHidden(), ATTRIBUTE_HIDDEN);
         }
-        if (step instanceof BeginTransaction) {
-            checkConstantReferenceInScriptlet(((BeginTransaction) step).getFrom(), ATTRIBUTE_FROM);
-            checkConstantReferenceInScriptlet(((BeginTransaction) step).getTo(), ATTRIBUTE_TO);
-            checkToken(((BeginTransaction) step).getHandler(), TokenType.STRING_OR_VARIABLE_REFERENCE);
-            checkConfigurations(((BeginTransaction) step).getProperty());
-            checkConfigurations(((BeginTransaction) step).getConfig());
-        } else if (step instanceof MessagingStep) {
-            checkConstantReferenceInScriptlet(((MessagingStep) step).getFrom(), ATTRIBUTE_FROM);
-            checkConstantReferenceInScriptlet(((MessagingStep) step).getTo(), ATTRIBUTE_TO);
-            checkConstantReferenceInScriptlet(((MessagingStep) step).getReply(), ATTRIBUTE_REPLY);
-            checkConfigurations(((MessagingStep) step).getConfig());
-            checkBindings(((MessagingStep) step).getInput());
-            if (step instanceof Receive) {
-                checkToken(((Receive) step).getTimeout(), TokenType.STRING_OR_VARIABLE_REFERENCE);
-                checkToken(((Receive) step).getTimeoutFlag(), TokenType.STRING_OR_VARIABLE_REFERENCE);
-                checkToken(((Receive) step).getTimeoutIsError(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+        if (step instanceof BeginTransaction beginTransactionStep) {
+            checkConstantReferenceInScriptlet(beginTransactionStep.getFrom(), ATTRIBUTE_FROM);
+            checkConstantReferenceInScriptlet(beginTransactionStep.getTo(), ATTRIBUTE_TO);
+            checkToken(beginTransactionStep.getHandler(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+            checkConfigurations(beginTransactionStep.getProperty());
+            checkConfigurations(beginTransactionStep.getConfig());
+        } else if (step instanceof MessagingStep messagingStep) {
+            checkConstantReferenceInScriptlet(messagingStep.getFrom(), ATTRIBUTE_FROM);
+            checkConstantReferenceInScriptlet(messagingStep.getTo(), ATTRIBUTE_TO);
+            checkConstantReferenceInScriptlet(messagingStep.getReply(), ATTRIBUTE_REPLY);
+            checkConfigurations(messagingStep.getConfig());
+            checkBindings(messagingStep.getInput());
+            checkToken(messagingStep.getLevel(), TokenType.ERROR_LEVEL_OR_VARIABLE_REFERENCE);
+            if (step instanceof Receive receiveStep) {
+                checkToken(receiveStep.getTimeout(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+                checkToken(receiveStep.getTimeoutFlag(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+                checkToken(receiveStep.getTimeoutIsError(), TokenType.STRING_OR_VARIABLE_REFERENCE);
             }
-        } else if (step instanceof BeginProcessingTransaction) {
-            checkToken(((BeginProcessingTransaction) step).getHandler(), TokenType.STRING_OR_VARIABLE_REFERENCE);
-            checkConfigurations(((BeginProcessingTransaction) step).getProperty());
-            checkConfigurations(((BeginProcessingTransaction) step).getConfig());
-        } else if (step instanceof Process) {
-            checkBindings(((Process) step).getInput());
-            checkToken(((Process) step).getInputAttribute(), TokenType.STRING_OR_VARIABLE_REFERENCE);
-            if (((Process)step).getOutput() != null) {
-                recordVariable(((Process)step).getOutput(), true);
+        } else if (step instanceof BeginProcessingTransaction beginProcessingTransactionStep) {
+            checkToken(beginProcessingTransactionStep.getHandler(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+            checkConfigurations(beginProcessingTransactionStep.getProperty());
+            checkConfigurations(beginProcessingTransactionStep.getConfig());
+        } else if (step instanceof Process processStep) {
+            checkBindings(processStep.getInput());
+            checkToken(processStep.getInputAttribute(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+            checkToken(processStep.getLevel(), TokenType.ERROR_LEVEL_OR_VARIABLE_REFERENCE);
+            if (processStep.getOutput() != null) {
+                recordVariable(processStep.getOutput(), true);
             }
-        } else if (step instanceof IfStep) {
-            checkConstantReferenceInScriptlet(((IfStep) step).getTitle(), ATTRIBUTE_TITLE);
-            checkConstantReferenceInScriptlet(((IfStep) step).getThen().getHidden(), ATTRIBUTE_HIDDEN);
-            if (((IfStep) step).getElse() != null) {
-                checkConstantReferenceInScriptlet(((IfStep) step).getElse().getHidden(), ATTRIBUTE_HIDDEN);
+        } else if (step instanceof IfStep ifStep) {
+            checkConstantReferenceInScriptlet(ifStep.getTitle(), ATTRIBUTE_TITLE);
+            checkConstantReferenceInScriptlet(ifStep.getThen().getHidden(), ATTRIBUTE_HIDDEN);
+            if (ifStep.getElse() != null) {
+                checkConstantReferenceInScriptlet(ifStep.getElse().getHidden(), ATTRIBUTE_HIDDEN);
             }
-            checkExpression(((IfStep) step).getCond());
-        } else if (step instanceof WhileStep) {
-            checkConstantReferenceInScriptlet(((WhileStep) step).getTitle(), ATTRIBUTE_TITLE);
-            checkExpression(((WhileStep) step).getCond());
-        } else if (step instanceof RepeatUntilStep) {
-            checkConstantReferenceInScriptlet(((RepeatUntilStep) step).getTitle(), ATTRIBUTE_TITLE);
-            checkExpression(((RepeatUntilStep) step).getCond());
-        } else if (step instanceof ForEachStep) {
-            checkConstantReferenceInScriptlet(((ForEachStep) step).getTitle(), ATTRIBUTE_TITLE);
-            checkToken(((ForEachStep) step).getStart(), TokenType.STRING_OR_VARIABLE_REFERENCE);
-            checkToken(((ForEachStep) step).getEnd(), TokenType.STRING_OR_VARIABLE_REFERENCE);
-            if (((ForEachStep) step).getCounter() != null) {
-                recordVariable(((ForEachStep) step).getCounter(), false);
+            checkExpression(ifStep.getCond());
+        } else if (step instanceof WhileStep whileStep) {
+            checkConstantReferenceInScriptlet(whileStep.getTitle(), ATTRIBUTE_TITLE);
+            checkExpression(whileStep.getCond());
+        } else if (step instanceof RepeatUntilStep repeatUntilStep) {
+            checkConstantReferenceInScriptlet(repeatUntilStep.getTitle(), ATTRIBUTE_TITLE);
+            checkExpression(repeatUntilStep.getCond());
+        } else if (step instanceof ForEachStep forEachStep) {
+            checkConstantReferenceInScriptlet(forEachStep.getTitle(), ATTRIBUTE_TITLE);
+            checkToken(forEachStep.getStart(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+            checkToken(forEachStep.getEnd(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+            if (forEachStep.getCounter() != null) {
+                recordVariable(forEachStep.getCounter(), false);
             } else {
                 recordVariable("i", false);
             }
-        } else if (step instanceof ExitStep) {
-            checkToken(((ExitStep)step).getSuccess(), TokenType.STRING_OR_VARIABLE_REFERENCE);
-        } else if (step instanceof Assign) {
-            String toToken = ((Assign) step).getTo();
+        } else if (step instanceof ExitStep exitStep) {
+            checkToken(exitStep.getSuccess(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+            checkToken(exitStep.getUndefined(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+        } else if (step instanceof Assign assignStep) {
+            String toToken = assignStep.getTo();
             checkToken(toToken, TokenType.STRING_OR_VARIABLE_REFERENCE);
             if (toToken != null) {
                 if (!toToken.startsWith("$")) {
@@ -261,54 +272,56 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
                     }
                 }
             }
-            checkToken(((Assign) step).getSource(), TokenType.VARIABLE_REFERENCE);
-            checkToken(((Assign) step).getValue(), TokenType.EXPRESSION);
-        } else if (step instanceof Log) {
-            checkToken(((Log) step).getSource(), TokenType.VARIABLE_REFERENCE);
-            checkToken(((Log) step).getValue(), TokenType.EXPRESSION);
-            checkToken(((Log)step).getLevel(), TokenType.LOG_LEVEL_OR_VARIABLE_REFERENCE);
-        } else if (step instanceof Verify) {
-            checkToken(((Verify)step).getHandler(), TokenType.STRING_OR_VARIABLE_REFERENCE);
-            checkToken(((Verify)step).getLevel(), TokenType.ERROR_LEVEL_OR_VARIABLE_REFERENCE);
-            checkConfigurations(((Verify) step).getProperty());
-            checkConfigurations(((Verify) step).getConfig());
-            checkBindings(((Verify) step).getInput());
-            if (((Verify)step).getOutput() != null) {
-                recordVariable(((Verify)step).getOutput(), true);
+            checkToken(assignStep.getSource(), TokenType.VARIABLE_REFERENCE);
+            checkToken(assignStep.getValue(), TokenType.EXPRESSION);
+        } else if (step instanceof Log logStep) {
+            checkToken(logStep.getSource(), TokenType.VARIABLE_REFERENCE);
+            checkToken(logStep.getValue(), TokenType.EXPRESSION);
+            checkToken(logStep.getLevel(), TokenType.LOG_LEVEL_OR_VARIABLE_REFERENCE);
+        } else if (step instanceof Verify verifyStep) {
+            checkToken(verifyStep.getHandler(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+            checkToken(verifyStep.getLevel(), TokenType.ERROR_LEVEL_OR_VARIABLE_REFERENCE);
+            checkConfigurations(verifyStep.getProperty());
+            checkConfigurations(verifyStep.getConfig());
+            checkBindings(verifyStep.getInput());
+            if (verifyStep.getOutput() != null) {
+                recordVariable(verifyStep.getOutput(), true);
             }
-        } else if (step instanceof CallStep) {
-            checkConstantReferenceInScriptlet(((CallStep) step).getHidden(), ATTRIBUTE_HIDDEN);
-            checkBindings(((CallStep) step).getInput());
-            checkToken(((CallStep) step).getInputAttribute(), TokenType.STRING_OR_VARIABLE_REFERENCE);
-            if (((CallStep)step).getOutputAttribute() != null) {
-                recordVariable(((CallStep)step).getOutputAttribute(), true);
+        } else if (step instanceof CallStep callStep) {
+            checkConstantReferenceInScriptlet(callStep.getHidden(), ATTRIBUTE_HIDDEN);
+            checkBindings(callStep.getInput());
+            checkToken(callStep.getInputAttribute(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+            if (callStep.getOutputAttribute() != null) {
+                recordVariable(callStep.getOutputAttribute(), true);
             }
-        } else if (step instanceof UserInteraction) {
-            checkConstantReferenceInScriptlet(((UserInteraction) step).getTitle(), ATTRIBUTE_TITLE);
-            checkConstantReferenceInScriptlet(((UserInteraction) step).getDesc(), ATTRIBUTE_DESC);
-            checkConstantReferenceInScriptlet(((UserInteraction) step).getWith(), ATTRIBUTE_WITH);
-            checkToken(((UserInteraction) step).getInputTitle(), TokenType.STRING_OR_VARIABLE_REFERENCE);
-            if (((UserInteraction)step).getInstructOrRequest() != null) {
-                for (InstructionOrRequest ir: ((UserInteraction)step).getInstructOrRequest()) {
+        } else if (step instanceof UserInteraction userInteractionStep) {
+            checkConstantReferenceInScriptlet(userInteractionStep.getTitle(), ATTRIBUTE_TITLE);
+            checkConstantReferenceInScriptlet(userInteractionStep.getDesc(), ATTRIBUTE_DESC);
+            checkConstantReferenceInScriptlet(userInteractionStep.getWith(), ATTRIBUTE_WITH);
+            checkToken(userInteractionStep.getInputTitle(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+            if (userInteractionStep.getInstructOrRequest() != null) {
+                for (InstructionOrRequest ir: userInteractionStep.getInstructOrRequest()) {
                     checkConstantReferenceInScriptlet(ir.getDesc(), ATTRIBUTE_DESC);
                     checkConstantReferenceInScriptlet(ir.getWith(), ATTRIBUTE_WITH);
-                    if (ir instanceof UserRequest) {
+                    if (ir instanceof UserRequest userRequest) {
                         checkToken(ir.getValue(), TokenType.VARIABLE_REFERENCE);
-                        checkToken(((UserRequest) ir).getOptions(), TokenType.STRING_OR_VARIABLE_REFERENCE);
-                        checkToken(((UserRequest) ir).getOptionLabels(), TokenType.STRING_OR_VARIABLE_REFERENCE);
-                        checkToken(((UserRequest) ir).getMultiple(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+                        checkToken(userRequest.getOptions(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+                        checkToken(userRequest.getOptionLabels(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+                        checkToken(userRequest.getMultiple(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+                        checkToken(userRequest.getFileName(), TokenType.STRING_OR_VARIABLE_REFERENCE);
                     } else {
                         checkExpression(ir);
                     }
                 }
             }
-        } else if (step instanceof Group) {
-            checkConstantReferenceInScriptlet(((Group) step).getDesc(), ATTRIBUTE_DESC);
-            checkConstantReferenceInScriptlet(((Group) step).getTitle(), ATTRIBUTE_TITLE);
-        } else if (step instanceof FlowStep) {
-            checkConstantReferenceInScriptlet(((FlowStep) step).getDesc(), ATTRIBUTE_DESC);
-            checkConstantReferenceInScriptlet(((FlowStep) step).getTitle(), ATTRIBUTE_TITLE);
-            for (var thread: ((FlowStep) step).getThread()) {
+        } else if (step instanceof Group groupStep) {
+            checkConstantReferenceInScriptlet(groupStep.getDesc(), ATTRIBUTE_DESC);
+            checkConstantReferenceInScriptlet(groupStep.getTitle(), ATTRIBUTE_TITLE);
+            checkConstantReferenceInScriptlet(groupStep.getHiddenContainer(), ATTRIBUTE_HIDDEN_CONTAINER);
+        } else if (step instanceof FlowStep flowStep) {
+            checkConstantReferenceInScriptlet(flowStep.getDesc(), ATTRIBUTE_DESC);
+            checkConstantReferenceInScriptlet(flowStep.getTitle(), ATTRIBUTE_TITLE);
+            for (var thread: flowStep.getThread()) {
                 checkConstantReferenceInScriptlet(thread.getHidden(), ATTRIBUTE_HIDDEN);
             }
         }
@@ -380,7 +393,14 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
                             }
                             expression.evaluate(Utils.getSecureDocumentBuilderFactory().newDocumentBuilder().newDocument());
                         } catch (XPathExpressionException e) {
-                            addReportItem(ErrorCode.INVALID_EXPRESSION, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentStep, currentScriptlet), token);
+                            String cause = "";
+                            if (e.getMessage() != null) {
+                                int exceptionIndex = e.getMessage().indexOf("Exception:");
+                                if (exceptionIndex > -1 && e.getMessage().length() > (exceptionIndex+10)) {
+                                    cause = e.getMessage().substring(exceptionIndex+10).trim();
+                                }
+                            }
+                            addReportItem(ErrorCode.INVALID_EXPRESSION, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentStep, currentScriptlet), token, cause);
                         } catch (ParserConfigurationException e) {
                             throw new IllegalStateException(e);
                         } finally {

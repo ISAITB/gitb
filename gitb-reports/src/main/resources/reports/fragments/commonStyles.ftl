@@ -97,6 +97,9 @@
         display: inline-block;
         vertical-align: top;
     }
+    .display-inline {
+        display: inline;
+    }
     .value-inline {
         display: inline;
         vertical-align: top;
@@ -154,6 +157,9 @@
     }
     .background-UNDEFINED {
         background-color: #343a40;
+    }
+    .background-NONE {
+        background-color: #c5c5c5;
     }
     .background-strong-error {
         background-color: #f1aeb5;
@@ -220,8 +226,8 @@
         border: 1px solid #bee3be;
     }
     .output-message.UNDEFINED {
-        background: #ededed;
-        border: 1px solid #000000;
+        background: #d9edf7;
+        border: 1px solid #bddded;
     }
     td.cell-label-end-time {
         font-weight: bold;
@@ -246,7 +252,7 @@
 </#macro>
 <#macro testCoverage>
     .coverage-container {
-        margin-top: -2px;
+        margin-top: -1px;
     }
     .coverage-result.start {
         border-top-left-radius: 4px;
@@ -261,7 +267,7 @@
         text-align: center;
         font-size: 90%;
         font-weight: bold;
-        padding: 1px 0px;
+        padding: 2px 0px 1px 0px;
     }
     .coverage-passed {
         color: #ffffff;
@@ -290,7 +296,6 @@
     .test-suite-test-case-spec-info {
         padding-top: 5px;
         border-top: 1px solid #c4c4c4;
-        margin-left: 5px;
     }
     .test-suite-content {
         margin-top: 10px;
@@ -308,7 +313,14 @@
         color: #B4B4B4;
     }
     .test-case-prescription-level {
-        padding-right: 20px;
+        padding-right: 5px;
+        width: 1%;
+        display: table-cell;
+        white-space: nowrap;
+        vertical-align: top;
+    }
+    .test-case-prescription-level > img {
+        width: 16px;
     }
     .test-suite-name {
         display: inline-block;
@@ -327,19 +339,62 @@
         padding-right: 11px;
     }
     .test-case-status.icon img, .test-suite-status.icon img {
+        vertical-align: top;
         margin-top: -3px;
+    }
+    .test-case-group-overall-container {
+        border: 1px solid #000000;
+        margin-top: 5px;
+        border-radius: 5px;
+        background: #efefef;
+        padding: 3px 0px 3px 3px;
     }
     .test-case-container {
         border: 1px solid #000000;
         margin-top: 5px;
         border-radius: 5px;
-        padding: 5px 10px;
         background: #efefef;
         page-break-inside: avoid;
+        display: table;
+        width: 100%;
+    }
+    .test-case-container.in-group {
+        border-width: 0;
+        margin-top: 0px;
+    }
+    .group-marker {
+        display: table-cell;
+        padding: 0.3rem;
+        border-radius: 0;
+    }
+    .group-marker.group-first {
+        border-top-left-radius: 0.3rem;
+        border-top-right-radius: 0.3rem;
+    }
+    .group-marker.group-last {
+        border-bottom-left-radius: 0.3rem;
+        border-bottom-right-radius: 0.3rem;
+    }
+    .test-case-content {
+        display: table-cell;
+        width: 99%;
+        padding: 5px 10px;
+    }
+    .test-case-content.in-group {
+        border-bottom: 1px solid #000000;
+    }
+    .test-case-content.in-group.group-last {
+        border-bottom-width: 0;
     }
     .test-case-name {
-        display: inline-block;
+        display: table-cell;
+        vertical-align: top;
         font-weight: bold;
+        padding-top: 0.15rem;
+    }
+    .test-case-name.without-link {
+        position: relative;
+        top: 0.075rem;
     }
     .test-case-description {
         display: inline-block;
@@ -347,28 +402,44 @@
         margin-bottom: 5px;
         width: 99%;
     }
-    .test-case-first-line-start {
-        display: inline-block;
+    .test-case-first-line {
+        display: table;
+        width: 100%;
     }
     .test-case-status {
-        display: inline;
-        float: right;
-    }
-    .test-case-table {
-        width: 950px;
-    }
-    .test-case-prescription-td {
-        width: 20px;
-    }
-    .test-case-name-td {
-    }
-    .test-case-tags-td {
-        text-align: right;
+        display: table-cell;
+        width: 1px;
         vertical-align: top;
+        padding-left: 10px;
+    }
+    .test-case-group-container {
+        display: table-cell;
+        white-space: nowrap;
+        padding-right: 10px;
+        width: 1px;
+        vertical-align: top;
+        padding-top: 0.1rem;
+    }
+    .test-case-group {
+        display: inline;
+        border-radius: 15px;
+        padding-left: 5px;
+        padding-right: 5px;
+        font-weight: bold;
+        font-size: smaller;
+        white-space: nowrap;
+        color: #000000;
+        background: #ffffff;
+        position: relative;
+        top: -0.015rem;
     }
     .test-case-tags {
-        padding-right: 10px;
+        display: table-cell;
+        white-space: nowrap;
         padding-left: 10px;
+        vertical-align: top;
+        text-align: right;
+        padding-top: 0.1rem;
     }
     .test-case-tag {
         display: inline;
@@ -379,6 +450,11 @@
         font-weight: bold;
         font-size: smaller;
         white-space: nowrap;
+        position: relative;
+        top: -0.015rem;
+    }
+    .test-case-tag:last-child {
+        margin-right: 0px;
     }
     .test-suite-header-texts {
         display: inline-block;

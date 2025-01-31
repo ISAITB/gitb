@@ -41,7 +41,7 @@ export abstract class BaseConformanceItemDisplayComponent implements AfterViewIn
   ) {}
 
   ngAfterViewInit(): void {
-    this.resizeObserver = new ResizeObserver(entries => {
+    this.resizeObserver = new ResizeObserver(() => {
       this.zone.run(() => {
         this.calculateWrapping()
       })
@@ -147,7 +147,7 @@ export abstract class BaseConformanceItemDisplayComponent implements AfterViewIn
 
   private checkItemStatus(item: ConformanceStatementItem, statusToLookFor: string): boolean {
     if (item.results) {
-      return this.dataService.conformanceStatusForTests(item.results.completed, item.results.failed, item.results.undefined) == statusToLookFor
+      return this.dataService.conformanceStatusForTests(item.results.completedToConsider, item.results.failedToConsider, item.results.undefinedToConsider) == statusToLookFor
     } else if (item.items) {
       return this.checkItemsStatus(item.items, statusToLookFor)
     } else {

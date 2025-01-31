@@ -19,5 +19,6 @@ class ConformanceTestCase(
   var tags: Option[String],
   var specReference: Option[String],
   var specDescription: Option[String],
-  var specLink: Option[String]
+  var specLink: Option[String],
+  var group: Option[Long]
 ) {}

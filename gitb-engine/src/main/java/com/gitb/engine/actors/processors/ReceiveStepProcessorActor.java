@@ -13,12 +13,15 @@ import com.gitb.engine.messaging.MessagingContext;
 import com.gitb.engine.messaging.TransactionContext;
 import com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.engine.utils.StepContext;
+import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.DeferredMessagingReport;
 import com.gitb.messaging.IMessagingHandler;
 import com.gitb.messaging.Message;
 import com.gitb.messaging.MessagingReport;
 import com.gitb.messaging.callback.SessionCallbackData;
+import com.gitb.tdl.ErrorLevel;
 import com.gitb.tr.TAR;
 import com.gitb.tr.TestStepReportType;
 import com.gitb.types.BooleanType;
@@ -35,6 +38,7 @@ import org.slf4j.LoggerFactory;
 import scala.concurrent.Future;
 import scala.concurrent.Promise;
 
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -51,8 +55,8 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 
 	private Promise<TestStepReportType> promise;
 
-	public ReceiveStepProcessorActor(com.gitb.tdl.Receive step, TestCaseScope scope, String stepId) {
-		super(step, scope, stepId);
+	public ReceiveStepProcessorActor(com.gitb.tdl.Receive step, TestCaseScope scope, String stepId, StepContext stepContext) {
+		super(step, scope, stepId, stepContext);
 	}
 
 	@Override
@@ -207,15 +211,17 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 	}
 
 	private TAR handleMessagingResult(MessagingReport report) {
+		TAR reportToReturn;
+		Optional<VariableResolver> resolver = Optional.empty();
 		if (report != null && report.getMessage() != null) {
 			Message message = report.getMessage();
 			if (step.getId() != null) {
 				MapType map;
 				if (step.getTimeout() != null && !StringUtils.isBlank(step.getTimeoutFlag())) {
 					String flagName;
-					VariableResolver resolver = new VariableResolver(scope);
 					if (VariableResolver.isVariableReference(step.getTimeoutFlag())) {
-						flagName = resolver.resolveVariableAsString(step.getTimeoutFlag()).toString();
+						resolver = Optional.of(new VariableResolver(scope));
+						flagName = resolver.get().resolveVariableAsString(step.getTimeoutFlag()).toString();
 					} else {
 						flagName = step.getTimeoutFlag();
 					}
@@ -241,12 +247,15 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 					.createVariable(step.getId())
 					.setValue(map);
 			}
-			return report.getReport();
+			reportToReturn = report.getReport();
 		} else if (report != null) {
-			return report.getReport();
+			reportToReturn = report.getReport();
 		} else {
-			return MessagingHandlerUtils.generateSuccessReport(null).getReport();
+			reportToReturn = MessagingHandlerUtils.generateSuccessReport(null).getReport();
 		}
+		ErrorLevel errorLevel = TestCaseUtils.resolveReportErrorLevel(step.getLevel(), scope.getContext().getSessionId(), resolver.orElse(new VariableResolver(scope)));
+		TestCaseUtils.postProcessReport(step.isInvert(), errorLevel, reportToReturn);
+		return reportToReturn;
 	}
 
 	@Override
@@ -261,8 +270,8 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
         return messagingContext;
     }
 
-	public static ActorRef create(ActorContext context, com.gitb.tdl.Receive step, TestCaseScope scope, String stepId) throws Exception {
-		return context.actorOf(props(ReceiveStepProcessorActor.class, step, scope, stepId).withDispatcher(ActorSystem.BLOCKING_DISPATCHER), getName(NAME));
+	public static ActorRef create(ActorContext context, com.gitb.tdl.Receive step, TestCaseScope scope, String stepId, StepContext stepContext) throws Exception {
+		return context.actorOf(props(ReceiveStepProcessorActor.class, step, scope, stepId, stepContext).withDispatcher(ActorSystem.BLOCKING_DISPATCHER), getName(NAME));
 	}
 
 }

@@ -15,7 +15,6 @@ export class ViewBadgeButtonComponent implements OnInit {
   @Input() systemId!: number
   @Input() actorId!: number
   @Input() snapshotId?: number
-  @Input() leftMargin = false
 
   copyBadgePending = false
 
@@ -54,13 +53,13 @@ export class ViewBadgeButtonComponent implements OnInit {
   previewBadge() {
     this.modalService.show(PreviewBadgeModalComponent, {
       initialState: {
-        config: { 
+        config: {
           systemId: this.systemId,
           actorId: this.actorId,
           snapshotId: this.snapshotId
         }
       }
-    })    
+    })
   }
 
 }

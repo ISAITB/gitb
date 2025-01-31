@@ -227,10 +227,13 @@ export class ConformanceOverviewCertificateFormComponent extends BaseCertificate
     placeholders.push(this.placeholderForActor(true))
     placeholders.push({ key: Constants.PLACEHOLDER__ORGANISATION, value: 'The name of the ' + this.dataService.labelOrganisationLower() + ' to be granted the certificate.' })
     placeholders.push({ key: Constants.PLACEHOLDER__SYSTEM, value: 'The name of the ' + this.dataService.labelSystemLower() + ' that was used in the tests.' })
+    placeholders.push({ key: Constants.PLACEHOLDER__SNAPSHOT, value: 'The public name of the relevant conformance snapshot.' })
     placeholders.push({ key: Constants.PLACEHOLDER__BADGE+'{index}', value: 'The conformance badge image of the statement at the specific order index (original image size).', select: () => Constants.PLACEHOLDER__BADGE+'{0}'})
     placeholders.push({ key: Constants.PLACEHOLDER__BADGE+'{index|width}', value: 'The conformance badge image of the statement at the specific order index (with fixed width in pixels).', select: () => Constants.PLACEHOLDER__BADGE+'{0|100}'})
     placeholders.push({ key: Constants.PLACEHOLDER__BADGES+'{layout}', value: 'The list of all conformance badges using a horizontal (the default) or vertical layout.', select: () => Constants.PLACEHOLDER__BADGES+'{horizontal}'})
     placeholders.push({ key: Constants.PLACEHOLDER__BADGES+'{layout|width}', value: 'The list of all conformance badges (with fixed width in pixels) using a \'horizontal\' (the default) or \'vertical\' layout.', select: () => Constants.PLACEHOLDER__BADGES+'{horizontal|100}'})
+    placeholders.push({ key: Constants.PLACEHOLDER__REPORT_DATE+'{format}', value: 'The report generation date (with date format).', select: () => Constants.PLACEHOLDER__REPORT_DATE+'{dd/MM/yyyy}' })
+    placeholders.push({ key: Constants.PLACEHOLDER__LAST_UPDATE_DATE+'{format}', value: 'The conformance last update time (with date format).', select: () => Constants.PLACEHOLDER__LAST_UPDATE_DATE+'{dd/MM/yyyy}' })
     return placeholders
   }
 

@@ -33,6 +33,7 @@ export class ErrorTemplateDetailsComponent extends BaseComponent implements OnIn
   tooltipForDefaultCheck!: string
   validation = new ValidationState()
   loaded = false
+  Constants = Constants
 
   constructor(
     public dataService: DataService,

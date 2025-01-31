@@ -49,10 +49,12 @@ input, textarea {
 }
 
 .btn-toolbar {
-	&>.btn, &>.btn-group, &>.input-group, &>.btn-toolbar {
-		margin-left: 5px;
-		&:first-child {
-			margin-left: 0px;
+    & > * {
+        margin-top:1px;
+        margin-bottom:1px;
+		margin-right: 5px;
+		&:last-child {
+			margin-right: 0;
 		}
 	}
 }
@@ -408,41 +410,6 @@ bs-tooltip-container {
 	min-width: 250px !important;
 }
 
-.popover.result-message-popover {
-	padding: 10px;
-	max-width: 800px;
-	top: -4px !important;
-	left: -4px !important;
-	&.success {
-		> .arrow {
-			border-left-color: @green-success-border;
-			&:after {
-				border-left-color: @green-success-background;
-			}
-		}
-		background-color: @green-success-background;
-		border-color: @green-success-border;
-		.popover-body {
-			background-color: @green-success-background;
-			color: @green-success-content;
-		}
-	}
-	&.failure {
-		> .arrow {
-			border-left-color: @red-error-border;
-			&:after {
-				border-left-color: @red-error-background;
-			}
-		}
-		background-color: @red-error-background;
-		border-color: @red-error-border;
-		.popover-body {
-			background-color: @red-error-background;
-			color: @red-error-content;
-		}
-	}
-}
-
 .pointer {
 	cursor: pointer !important;
 }
@@ -747,16 +714,20 @@ div.non-padded-alert div.alert {
 		display: flex;
 		&.btn-toolbar-delete {
 			margin-left: auto;
+            align-items: start;
 		}
+        .btn {
+            white-space: nowrap;
+        }
 	}
 	&.modal-footer {
 		.btn-toolbar {
 			margin-left: auto;
 			&.btn-toolbar-delete {
-				margin-left: inherit;
+            	margin-left: calc(var(--bs-modal-footer-gap)* 0.5);
 				margin-right: auto;
-				.btn:first-child {
-					margin-left: 0px;
+				.btn:last-child {
+					margin-right: 0;
 				}
 			}
 		}
@@ -780,6 +751,10 @@ span.mini-tab{
 
 .caret.withMargin {
 	margin-left: 10px;
+}
+
+.modal-dialog.conformanceCertificatePreview {
+    max-width: 95%;
 }
 
 .modal-dialog.landingPagePreview {

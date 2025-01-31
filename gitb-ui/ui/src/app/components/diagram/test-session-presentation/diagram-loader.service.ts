@@ -11,6 +11,7 @@ import { SessionPresentationData } from './session-presentation-data';
 import { TestStepResult } from 'src/app/types/test-step-result';
 import { DiagramEvents } from '../diagram-events';
 import { TestInteractionData } from 'src/app/types/test-interaction-data';
+import {DataService} from '../../../services/data.service';
 
 @Injectable({
   providedIn: 'root'
@@ -19,7 +20,8 @@ export class DiagramLoaderService {
 
   constructor(
     private reportService: ReportService,
-    private testService: TestService
+    private testService: TestService,
+    private dataService: DataService
   ) { }
 
   findNodeWithStepId(steps: StepData[]|undefined, stepId: string): StepData|undefined {
@@ -103,15 +105,7 @@ export class DiagramLoaderService {
   }
 
   determineOutputMessageType(result: "SUCCESS"|"FAILURE"|"UNDEFINED") {
-    let outputMessageType: string
-    if (result == Constants.TEST_CASE_RESULT.SUCCESS) {
-      outputMessageType = 'success'
-    } else if (result == Constants.TEST_CASE_RESULT.FAILURE) {
-      outputMessageType = 'danger'
-    } else {
-      outputMessageType = 'info'
-    }
-    return outputMessageType
+    return this.dataService.determineOutputMessageType(result)
   }
 
   loadTestSessionData(session: SessionData): Observable<SessionPresentationData> {

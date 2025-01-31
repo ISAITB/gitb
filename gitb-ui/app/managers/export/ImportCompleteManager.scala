@@ -510,7 +510,8 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
         Option(exportedTestCase.getTargetActors), None, exportedTestCase.getTestSuiteOrder, exportedTestCase.isHasDocumentation,
         Option(exportedTestCase.getDocumentation), exportedTestCase.getIdentifier,
         Option(exportedTestCase.isOptional).exists(_.booleanValue()), Option(exportedTestCase.isDisabled).exists(_.booleanValue()),
-        Option(exportedTestCase.getTags), Option(exportedTestCase.getSpecReference), Option(exportedTestCase.getSpecDescription), Option(exportedTestCase.getSpecLink)
+        Option(exportedTestCase.getTags), Option(exportedTestCase.getSpecReference), Option(exportedTestCase.getSpecDescription), Option(exportedTestCase.getSpecLink),
+        Option(exportedTestCase.getGroup).map(_.getId.hashCode)
       )
     }
     testCases.toList
@@ -673,6 +674,19 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     }
   }
 
+  private def toModelTriggerFireExpressionType(expressionType: com.gitb.xml.export.TriggerFireExpressionType): Short = {
+    require(expressionType != null, "Enum value cannot be null")
+    expressionType match {
+      case com.gitb.xml.export.TriggerFireExpressionType.TEST_CASE_IDENTIFIER => Enums.TriggerFireExpressionType.TestCaseIdentifier.id.toShort
+      case com.gitb.xml.export.TriggerFireExpressionType.TEST_SUITE_IDENTIFIER => Enums.TriggerFireExpressionType.TestSuiteIdentifier.id.toShort
+      case com.gitb.xml.export.TriggerFireExpressionType.ACTOR_IDENTIFIER => Enums.TriggerFireExpressionType.ActorIdentifier.id.toShort
+      case com.gitb.xml.export.TriggerFireExpressionType.SPECIFICATION_NAME => Enums.TriggerFireExpressionType.SpecificationName.id.toShort
+      case com.gitb.xml.export.TriggerFireExpressionType.SYSTEM_NAME => Enums.TriggerFireExpressionType.SystemName.id.toShort
+      case com.gitb.xml.export.TriggerFireExpressionType.ORGANISATION_NAME => Enums.TriggerFireExpressionType.OrganisationName.id.toShort
+      case _ => throw new IllegalArgumentException("Unknown enum value ["+expressionType+"]")
+    }
+  }
+
   private def toModelTriggerDataType(dataType: com.gitb.xml.export.TriggerDataType): Short = {
     require(dataType != null, "Enum value cannot be null")
     dataType match {
@@ -718,7 +732,17 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
       }
       modelDataItems = Some(modelDataItemsToProcess.toList)
     }
-    new models.Trigger(modelTrigger, modelDataItems)
+    var modelFireExpressions: Option[List[models.TriggerFireExpression]] = None
+    if (data.getFireExpressions != null) {
+      val expressions = ListBuffer[models.TriggerFireExpression]()
+      data.getFireExpressions.getTriggerFireExpression.asScala.foreach { expression =>
+        expressions += models.TriggerFireExpression(0L, expression.getExpression, toModelTriggerFireExpressionType(expression.getExpressionType), expression.isNotMatch, modelTriggerId.getOrElse(0L))
+      }
+      if (expressions.nonEmpty) {
+        modelFireExpressions = Some(expressions.toList)
+      }
+    }
+    new models.Trigger(modelTrigger, modelDataItems, modelFireExpressions)
   }
 
   private def toModelCommunityResource(data: com.gitb.xml.export.CommunityResource, communityId: Long): models.CommunityResources = {
@@ -770,6 +794,20 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     dbId
   }
 
+  private def toModelTestCaseGroups(data: TestSuite): Option[List[models.TestCaseGroup]] = {
+    var exportedGroups: Option[List[models.TestCaseGroup]] = None
+    if (data.getTestCaseGroups != null) {
+      val groupsBuffer = ListBuffer[models.TestCaseGroup]()
+      data.getTestCaseGroups.getTestCaseGroup.forEach { group =>
+        groupsBuffer += models.TestCaseGroup(group.getId.hashCode, group.getIdentifier, Option(group.getName), Option(group.getDescription), 0L)
+      }
+      if (groupsBuffer.nonEmpty) {
+        exportedGroups = Some(groupsBuffer.toList)
+      }
+    }
+    exportedGroups
+  }
+
   private def createSharedTestSuite(data: TestSuite, ctx: ImportContext, item: ImportItem): DBIO[Long] = {
     val domainId = getDomainIdFromParentItem(item)
     // File system operations
@@ -788,9 +826,10 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     }
     val testCasesToUse = Some(toModelTestCases(testCases))
     val updateActions = testSuiteUpdateActions(None, testCases)
+    val groups = toModelTestCaseGroups(data)
     val action = for {
       // Save test suite and test cases.
-      stepSaveTestSuite <- testSuiteManager.stepSaveTestSuiteAndTestCases(toModelTestSuite(data, domainId, testSuitePaths.testSuiteFolder.getName, testCases.nonEmpty, testSuitePaths.testSuiteDefinitionPath, shared = true), None, testCasesToUse, testSuitePaths, updateActions)
+      stepSaveTestSuite <- testSuiteManager.stepSaveTestSuiteAndTestCases(toModelTestSuite(data, domainId, testSuitePaths.testSuiteFolder.getName, testCases.nonEmpty, testSuitePaths.testSuiteDefinitionPath, shared = true), None, testCasesToUse, testSuitePaths, groups, updateActions)
       _ <- {
         // Needed to map specifications to shared test suites.
         ctx.sharedTestSuiteInfo += (stepSaveTestSuite.testSuite.id -> (testCasesToUse, stepSaveTestSuite.updatedTestCases))
@@ -853,9 +892,10 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     // Process DB operations
     val testCasesToUse = Some(toModelTestCases(testCases))
     val updateActions = testSuiteUpdateActions(Some(specificationId), testCases)
+    val groups = toModelTestCaseGroups(data)
     val action = for {
       // Save test suite and test cases.
-      stepSaveTestSuite <- testSuiteManager.stepSaveTestSuiteAndTestCases(toModelTestSuite(data, domainId, testSuitePaths.testSuiteFolder.getName, testCases.nonEmpty, testSuitePaths.testSuiteDefinitionPath, shared = false), None, testCasesToUse, testSuitePaths, updateActions)
+      stepSaveTestSuite <- testSuiteManager.stepSaveTestSuiteAndTestCases(toModelTestSuite(data, domainId, testSuitePaths.testSuiteFolder.getName, testCases.nonEmpty, testSuitePaths.testSuiteDefinitionPath, shared = false), None, testCasesToUse, testSuitePaths, groups, updateActions)
       _ <- {
         if (ctx.savedSpecificationActors.contains(specificationId)) {
           // Make all actor and specification updates.
@@ -901,11 +941,12 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     // Process DB operations
     val updateActions = testSuiteUpdateActions(None, testCases)
     val testCasesToUse = Some(toModelTestCases(testCases))
+    val groups = toModelTestCaseGroups(data)
     val action = for {
       // Lookup existing test suite file (for later cleanup).
       existingTestSuiteFile <- PersistenceSchema.testSuites.filter(_.id === testSuiteId).map(x => x.filename).result.head
       // Update existing test suite and test cases.
-      stepSaveTestSuite <- testSuiteManager.stepSaveTestSuiteAndTestCases(toModelTestSuite(data, domainId, testSuitePaths.testSuiteFolder.getName, testCases.nonEmpty, testSuitePaths.testSuiteDefinitionPath, shared = true), Some(testSuiteId), testCasesToUse, testSuitePaths, updateActions)
+      stepSaveTestSuite <- testSuiteManager.stepSaveTestSuiteAndTestCases(toModelTestSuite(data, domainId, testSuitePaths.testSuiteFolder.getName, testCases.nonEmpty, testSuitePaths.testSuiteDefinitionPath, shared = true), Some(testSuiteId), testCasesToUse, testSuitePaths, groups, updateActions)
       _ <- {
         // Needed to map specifications to shared test suites.
         ctx.sharedTestSuiteInfo += (stepSaveTestSuite.testSuite.id -> (testCasesToUse, stepSaveTestSuite.updatedTestCases))
@@ -945,11 +986,12 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     // Process DB operations
     val updateActions = testSuiteUpdateActions(Some(specificationId), testCases)
     val testCasesToUse = Some(toModelTestCases(testCases))
+    val groups = toModelTestCaseGroups(data)
     val action = for {
       // Lookup existing test suite file (for later cleanup).
       existingTestSuiteFile <- PersistenceSchema.testSuites.filter(_.id === testSuiteId).map(x => x.filename).result.head
       // Update existing test suite and test cases.
-      stepSaveTestSuite <- testSuiteManager.stepSaveTestSuiteAndTestCases(toModelTestSuite(data, domainId, testSuitePaths.testSuiteFolder.getName, testCases.nonEmpty, testSuitePaths.testSuiteDefinitionPath, shared = false), Some(testSuiteId), testCasesToUse, testSuitePaths, updateActions)
+      stepSaveTestSuite <- testSuiteManager.stepSaveTestSuiteAndTestCases(toModelTestSuite(data, domainId, testSuitePaths.testSuiteFolder.getName, testCases.nonEmpty, testSuitePaths.testSuiteDefinitionPath, shared = false), Some(testSuiteId), testCasesToUse, testSuitePaths, groups, updateActions)
       // Specification-related updates.
       _ <- if (ctx.savedSpecificationActors.contains(specificationId)) {
           testSuiteManager.stepUpdateTestSuiteSpecificationLinks(specificationId, testSuiteId, testCasesToUse,

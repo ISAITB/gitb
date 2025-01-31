@@ -1,10 +1,11 @@
-import { Component, forwardRef, Input, OnInit } from '@angular/core';
+import {Component, EventEmitter, forwardRef, Input, OnInit, ViewChild} from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { DataService } from 'src/app/services/data.service';
+import { EditorComponent as TinyMceEditorComponent } from '@tinymce/tinymce-angular';
 
 @Component({
   selector: 'app-editor',
-  template: '<editor [init]="editorConfig" [(ngModel)]="editorValue"></editor>',
+  template: '<editor #editor [init]="editorConfig" [(ngModel)]="editorValue"></editor>',
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,
@@ -17,6 +18,8 @@ export class EditorComponent implements OnInit, ControlValueAccessor {
 
   @Input() type:'normal'|'minimal'|'pdf'|'line' = 'normal'
   @Input() height?: number
+  @Input() newHeight?: EventEmitter<number>
+  @ViewChild("editor") editor?: TinyMceEditorComponent;
   editorConfig: any = {}
   _editorValue: string = ''
   onChange = (_: any) => {}
@@ -73,6 +76,13 @@ export class EditorComponent implements OnInit, ControlValueAccessor {
       config.toolbar = 'bold italic | charmap | link'
     }
     this.editorConfig = config
+    if (this.newHeight) {
+      this.newHeight.subscribe(value => {
+        if (this.editor?.editor.editorContainer) {
+          this.editor.editor.editorContainer.style.height = value+"px"
+        }
+      })
+    }
   }
 
   emitChanges() {

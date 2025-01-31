@@ -83,10 +83,13 @@ export class ConformanceStatementItemDisplayComponent implements OnInit {
           other: this.results.undefined,
           completedOptional: this.results.completedOptional,
           failedOptional: this.results.failedOptional,
-          otherOptional: this.results.undefinedOptional
+          otherOptional: this.results.undefinedOptional,
+          completedToConsider: this.results.completedToConsider,
+          failedToConsider: this.results.failedToConsider,
+          otherToConsider: this.results.undefinedToConsider,
         }
         this.updateTime = this.results.updateTime
-        this.status = this.dataService.conformanceStatusForTests(this.results.completed, this.results.failed, this.results.undefined)
+        this.status = this.dataService.conformanceStatusForTests(this.results.completedToConsider, this.results.failedToConsider, this.results.undefinedToConsider)
       }
     }
   }

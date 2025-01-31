@@ -30,6 +30,7 @@ export class LegalNoticeDetailsComponent extends BaseComponent implements OnInit
   tooltipForDefaultCheck!: string
   validation = new ValidationState()
   loaded = false
+  Constants = Constants
 
   constructor(
     public dataService: DataService,

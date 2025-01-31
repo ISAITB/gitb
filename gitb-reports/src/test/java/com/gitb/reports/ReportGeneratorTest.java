@@ -4,11 +4,12 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import com.gitb.core.AnyContent;
 import com.gitb.core.ValueEmbeddingEnumeration;
-import com.gitb.reports.dto.*;
 import com.gitb.reports.dto.ConformanceOverview;
 import com.gitb.reports.dto.ConformanceStatementOverview;
+import com.gitb.reports.dto.TestCaseGroup;
 import com.gitb.reports.dto.TestCaseOverview;
 import com.gitb.reports.dto.TestSuiteOverview;
+import com.gitb.reports.dto.*;
 import com.gitb.tr.*;
 import jakarta.xml.bind.JAXBElement;
 import org.junit.jupiter.api.BeforeEach;
@@ -47,8 +48,44 @@ public class ReportGeneratorTest {
         ((Logger)LoggerFactory.getLogger("com.openhtmltopdf")).setLevel(Level.WARN);
     }
 
-    private TestSuiteOverview getTestSuiteOverview(String name, String description, ReportSpecs specs) throws DatatypeConfigurationException {
+    private TestSuiteOverview getTestSuiteOverviewWithGroups(Long testSuiteId, String name, String description, ReportSpecs specs) throws DatatypeConfigurationException {
         TestSuiteOverview data = new TestSuiteOverview();
+        data.setTestSuiteId(testSuiteId);
+        data.setOverallStatus("SUCCESS");
+        data.setTestSuiteName(name);
+        data.setTestSuiteDescription(description);
+        data.setSpecReference("Chapter 1.1");
+        data.setSpecDescription("Specification reference with further details online.");
+        data.setSpecLink("https://joinup.ec.europa.eu/");
+        data.setTestCases(List.of(
+                getTestCaseOverview("Test Case Report #0", specs, false, false, null, null),
+                getTestCaseOverview("Test Case Report #1", specs, false, false, null, "G1", "FAILURE"),
+                getTestCaseOverview("Test Case Report #2", specs, false, false, List.of(new TestCaseOverview.Tag("security", "Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. ", "#FFFFFF", "#ff3c33"), new TestCaseOverview.Tag("performance", "Test case relevant to performance issues.", "#FFFFFF", "#000000")), "G2"),
+                getTestCaseOverview("Test Case Report #3", specs, false, false, null, "G2", "FAILURE"),
+                getTestCaseOverview("Test Case Report #4", specs, false, true, null, "G2", "FAILURE"),
+                getTestCaseOverview("Test Case Report #5", specs, true, false, null, "G3"),
+                getTestCaseOverview("Test Case Report #6", specs, true, false, null, "G3"),
+                getTestCaseOverview("Test Case Report #7", specs, false, false, List.of(new TestCaseOverview.Tag("security", "Test case relevant to security issues.", "#FFFF00", "#ff3c33"), new TestCaseOverview.Tag("first issue", "First issue to deal with.", "#FFFFFF", "#ff3c33")), null)
+        ));
+        data.setTestCaseGroups(List.of(
+                getTestCaseGroup("G1", "Group 1", "Description for group 1"),
+                getTestCaseGroup("G2", "Group 2", "Description for group 2"),
+                getTestCaseGroup("G3", null, "Description for group 3")
+        ));
+        return data;
+    }
+
+    private TestCaseGroup getTestCaseGroup(String id, String name, String description) {
+        var group = new TestCaseGroup();
+        group.setId(id);
+        group.setName(name);
+        group.setDescription(description);
+        return group;
+    }
+
+    private TestSuiteOverview getTestSuiteOverview(Long testSuiteId, String name, String description, ReportSpecs specs) throws DatatypeConfigurationException {
+        TestSuiteOverview data = new TestSuiteOverview();
+        data.setTestSuiteId(testSuiteId);
         data.setOverallStatus("SUCCESS");
         data.setTestSuiteName(name);
         data.setTestSuiteDescription(description);
@@ -57,19 +94,23 @@ public class ReportGeneratorTest {
         data.setSpecLink("https://joinup.ec.europa.eu/");
         data.setTestCases(List.of(
                 getTestCaseOverview("Test Case Report #1", specs),
-                getTestCaseOverview("Test Case Report #2", specs, true, false, List.of(new TestCaseOverview.Tag("security", "Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. ", "#FFFFFF", "#ff3c33"), new TestCaseOverview.Tag("performance", "Test case relevant to performance issues.", "#FFFFFF", "#000000"))),
-                getTestCaseOverview("Test Case Report #3", specs, false, true, null),
+                getTestCaseOverview("Test Case Report #2", specs, false, false, List.of(new TestCaseOverview.Tag("security", "Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. ", "#FFFFFF", "#ff3c33"), new TestCaseOverview.Tag("performance", "Test case relevant to performance issues.", "#FFFFFF", "#000000")), null),
+                getTestCaseOverview("Test Case Report #3", specs, false, false, null, null),
                 getTestCaseOverview("Test Case Report #4", specs),
-                getTestCaseOverview("Test Case Report #5", specs, false, false, List.of(new TestCaseOverview.Tag("security", "Test case relevant to security issues.", "#FFFF00", "#ff3c33"), new TestCaseOverview.Tag("first issue", "First issue to deal with.", "#FFFFFF", "#ff3c33")))
+                getTestCaseOverview("Test Case Report #5", specs, false, false, List.of(new TestCaseOverview.Tag("security", "Test case relevant to security issues.", "#FFFF00", "#ff3c33"), new TestCaseOverview.Tag("first issue", "First issue to deal with.", "#FFFFFF", "#ff3c33")), null)
         ));
         return data;
     }
 
     private TestCaseOverview getTestCaseOverview(String title, ReportSpecs specs) throws DatatypeConfigurationException {
-        return getTestCaseOverview(title, specs, false, false, null);
+        return getTestCaseOverview(title, specs, false, false, null, null);
     }
 
-    private TestCaseOverview getTestCaseOverview(String title, ReportSpecs specs, boolean optional, boolean disabled, List<TestCaseOverview.Tag> tags) throws DatatypeConfigurationException {
+    private TestCaseOverview getTestCaseOverview(String title, ReportSpecs specs, boolean optional, boolean disabled, List<TestCaseOverview.Tag> tags, String groupId) throws DatatypeConfigurationException {
+        return getTestCaseOverview(title, specs, optional, disabled, tags, groupId, "SUCCESS");
+    }
+
+    private TestCaseOverview getTestCaseOverview(String title, ReportSpecs specs, boolean optional, boolean disabled, List<TestCaseOverview.Tag> tags, String groupId, String result) throws DatatypeConfigurationException {
         TestCaseOverview data = new TestCaseOverview();
         // Labels
         data.setTitle(title);
@@ -81,6 +122,7 @@ public class ReportGeneratorTest {
 //        data.setLabelSpecification("Specification profile to test");
         data.setLabelActor("Actor");
         // Basic data
+        data.setGroup(groupId);
         data.setOrganisation("My organisation");
         data.setSystem("My system");
         data.setTestDomain("My domain");
@@ -91,12 +133,12 @@ public class ReportGeneratorTest {
 //        data.setTestName("Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 ");
         data.setTestDescription("Description for test case 1");
 //        data.setTestDescription("");
-        data.setTestDescription("Description for test case 1. Description for test case 1. Description for test case 1. Description for test case 1. Description for test case 1. Description for test case 1. Description for test case 1. Description for test case 1. Description for test case 1. ");
+//        data.setTestDescription("Description for test case 1. Description for test case 1. Description for test case 1. Description for test case 1. Description for test case 1. Description for test case 1. Description for test case 1. Description for test case 1. Description for test case 1. ");
         data.setSpecReference("Chapter 1.1");
-//        data.setSpecDescription("Specification reference with further details online.");
-        data.setSpecDescription("Specification reference with further details online. Specification reference with further details online. Specification reference with further details online. Specification reference with further details online. Specification reference with further details online. Specification reference with further details online.");
+        data.setSpecDescription("Specification reference with further details online.");
+//        data.setSpecDescription("Specification reference with further details online. Specification reference with further details online. Specification reference with further details online. Specification reference with further details online. Specification reference with further details online. Specification reference with further details online.");
         data.setSpecLink("https://joinup.ec.europa.eu/");
-        data.setReportResult(TestResultType.SUCCESS.value());
+        data.setReportResult(result);
         data.setStartTime("06/04/2023 10:21:43");
         data.setEndTime("06/04/2023 10:21:44");
         data.setOutputMessage("This is the output message for your test session. Check the different report steps for details.");
@@ -252,8 +294,8 @@ public class ReportGeneratorTest {
         spec1_1.getData().setOverallStatus("SUCCESS");
         spec1_1.getData().setLastUpdated("12/02/2024 12:30:21");
         spec1_1.getData().setTestSuites(List.of(
-                getTestSuiteOverview("The third test suite", "Description for the third test suite", specs),
-                getTestSuiteOverview("Test suite 2", "Description for test suite 2", specs)
+                getTestSuiteOverview(1L, "The third test suite", "Description for the third test suite", specs),
+                getTestSuiteOverview(2L, "Test suite 2", "Description for test suite 2", specs)
         ));
         var spec1_2 = getConformanceItem("Specification 2", "Description for specification 2", "UNDEFINED");
         spec1_2.setData(new ConformanceStatementData());
@@ -265,8 +307,8 @@ public class ReportGeneratorTest {
         spec1_2.getData().setUndefinedTests(30);
         spec1_2.getData().setOverallStatus("UNDEFINED");
         spec1_2.getData().setTestSuites(List.of(
-                getTestSuiteOverview("The third test suite", "Description for the third test suite", specs),
-                getTestSuiteOverview("Test suite 2", "Description for test suite 2", specs)
+                getTestSuiteOverview(3L, "The third test suite", "Description for the third test suite", specs),
+                getTestSuiteOverview(4L, "Test suite 2", "Description for test suite 2", specs)
         ));
         var spec1_3 = getConformanceItem("Specification 3", "Description for specification 3", "FAILURE");
         spec1_3.setData(new ConformanceStatementData());
@@ -278,8 +320,8 @@ public class ReportGeneratorTest {
         spec1_3.getData().setUndefinedTests(0);
         spec1_3.getData().setOverallStatus("FAILURE");
         spec1_3.getData().setTestSuites(List.of(
-                getTestSuiteOverview("The third test suite", "Description for the third test suite", specs),
-                getTestSuiteOverview("Test suite 2", "Description for test suite 2", specs)
+                getTestSuiteOverview(5L,"The third test suite", "Description for the third test suite", specs),
+                getTestSuiteOverview(6L, "Test suite 2", "Description for test suite 2", specs)
         ));
 
         group1.setItems(List.of(spec1_1, spec1_2, spec1_3));
@@ -346,7 +388,7 @@ public class ReportGeneratorTest {
         data.setIncludeDetails(true);
         data.setIncludeMessage(true);
         data.setIncludeTestStatus(true);
-        data.setIncludeTestCases(true);
+        data.setIncludeTestCases(false);
         data.setIncludePageNumbers(false);
 
 //        data.setMessage("<strong>This is the result.</strong><img src=\"%s\"/>".formatted(Path.of("C:\\work\\gitb-repository\\files\\badges\\latest\\1\\SUCCESS.png").toUri()));
@@ -356,8 +398,9 @@ public class ReportGeneratorTest {
         data.setTestSuites(List.of(
 //                getTestSuiteOverview("The first test suite", "Description for the first test suite", specs),
 //                getTestSuiteOverview("The second test suite", "Description for the second test suite", specs),
-                getTestSuiteOverview("The third test suite", "Description for the third test suite", specs),
-                getTestSuiteOverview("Test suite 2", "Description for test suite 2", specs)
+                getTestSuiteOverviewWithGroups(1L, "The first test suite", "Description for the first test suite", specs),
+                getTestSuiteOverview(2L, "The third test suite", "Description for the third test suite", specs),
+                getTestSuiteOverview(3L, "Test suite 2", "Description for test suite 2", specs)
         ));
         data.setCompletedTests(245);
         data.setFailedTests(105);

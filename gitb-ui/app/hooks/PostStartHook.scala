@@ -9,7 +9,7 @@ import managers._
 import managers.export.ImportCompleteManager
 import models.Constants
 import models.Enums.UserRole
-import org.apache.commons.io.FileUtils
+import org.apache.commons.io.{FileUtils, IOUtils}
 import org.apache.commons.io.comparator.NameFileComparator
 import org.apache.commons.lang3.StringUtils
 import org.apache.cxf.jaxws.EndpointImpl
@@ -77,8 +77,12 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext,
       if (Configurations.STARTUP_FAILURE) {
         logger.error("Application failed to start")
       } else {
+        var banner = ""
+        Using.resource(Thread.currentThread().getContextClassLoader.getResourceAsStream("banner.txt")) { stream =>
+          banner = new String(stream.readAllBytes(), StandardCharsets.UTF_8)
+        }
         logger.info("Web context root is [{}], public context root is [{}] and public home link is [{}]", Configurations.WEB_CONTEXT_ROOT, Configurations.PUBLIC_CONTEXT_ROOT, Configurations.TESTBED_HOME_LINK)
-        logger.info("Application started in {} mode - release {} built on {}", Configurations.TESTBED_MODE, Constants.VersionNumber, Configurations.BUILD_TIMESTAMP)
+        logger.info("Started ITB frontend (itb-ui) in {} mode - release {} ({})\n{}", Configurations.TESTBED_MODE, Constants.VersionNumber, Configurations.BUILD_TIMESTAMP, banner)
       }
     }
   }

@@ -5,6 +5,7 @@ import models.ConformanceStatementItem
 import models.Enums.OverviewLevelType.OverviewLevelType
 
 import java.sql.Timestamp
+import java.util.Date
 
 case class ConformanceData(
                             reportLevel: OverviewLevelType,
@@ -27,7 +28,8 @@ case class ConformanceData(
                             overallResult: String,
                             conformanceItems: java.util.List[ConformanceItem],
                             conformanceItemTree: List[ConformanceStatementItem],
-                            actorLastUpdateTime: Map[Long, Timestamp]
+                            actorLastUpdateTime: Map[Long, Timestamp],
+                            reportDate: Date
                           ) {
 
   private var conformanceStatements: Option[java.util.List[ConformanceStatementData]] = None
@@ -41,6 +43,16 @@ case class ConformanceData(
       conformanceStatements = Some(ConformanceItem.flattenStatements(conformanceItems))
     }
     conformanceStatements.get
+  }
+
+  def getOverallLastUpdateTime(): Option[Date] = {
+    var date: Option[Date] = None
+    actorLastUpdateTime.values.foreach { actorDate =>
+      if (date.isEmpty || (date.get.before(actorDate))) {
+        date = Some(actorDate)
+      }
+    }
+    date
   }
 
 }

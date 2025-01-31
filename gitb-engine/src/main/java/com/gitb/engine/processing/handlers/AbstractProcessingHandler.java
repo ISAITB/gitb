@@ -1,7 +1,7 @@
 package com.gitb.engine.processing.handlers;
 
 import com.gitb.core.*;
-import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.engine.AbstractHandler;
 import com.gitb.processing.IProcessingHandler;
 import com.gitb.processing.ProcessingData;
 import com.gitb.processing.ProcessingReport;
@@ -16,13 +16,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.GregorianCalendar;
 import java.util.List;
 
-public abstract class AbstractProcessingHandler implements IProcessingHandler {
-
-    protected TestCaseScope scope;
-
-    public void setScope(TestCaseScope scope) {
-        this.scope = scope;
-    }
+public abstract class AbstractProcessingHandler extends AbstractHandler implements IProcessingHandler {
 
     @Override
     public String beginTransaction(String stepId, List<Configuration> config) {

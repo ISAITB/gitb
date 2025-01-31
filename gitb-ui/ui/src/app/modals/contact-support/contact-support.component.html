@@ -21,12 +21,6 @@
             </div>
             <div app-tooltip class="col-auto" tbTooltip="Select the nature of your request to facilitate its processing by support staff."></div>
         </div>
-        <div class="row mb-3">
-            <label class="col-3 col-form-label text-end">* Message:</label>
-            <div class="col-7">
-                <app-editor name="contentMessage" [(ngModel)]="contentMessage" [type]="'minimal'" [height]="300"></app-editor>
-            </div>
-        </div>
         @if (showUpload() && attachments.length == 0) {
             <div class="row mb-3">
                 <label class="col-3 col-form-label text-end">Attachment(s):</label>
@@ -54,6 +48,11 @@
                 </div>
             </div>
         }
+        <div class="row mb-3">
+            <div class="col-12">
+                <app-editor name="contentMessage" [(ngModel)]="contentMessage" [type]="'minimal'" [height]="300"></app-editor>
+            </div>
+        </div>
         @if (showSurveyLink()) {
             <div class="row mb-3">
                 <div class="col-12">

@@ -34,7 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.gitb.engine.validation.handlers.xpath.XPathValidator.NAMESPACE_MAP_INPUT;
+import static com.gitb.engine.utils.HandlerUtils.NAMESPACE_MAP_INPUT;
 
 @ValidationHandler(name="XmlMatchValidator")
 public class XmlMatchValidator extends AbstractValidator {

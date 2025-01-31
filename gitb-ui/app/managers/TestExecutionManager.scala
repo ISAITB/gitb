@@ -1,18 +1,21 @@
 package managers
 
 import actors.SessionManagerActor
+import actors.events.{ConformanceStatementSucceededEvent, TestSessionFailedEvent, TestSessionSucceededEvent}
 import actors.events.sessions.{PrepareTestSessionsEvent, TerminateSessionsEvent}
 import com.gitb.core.{ActorConfiguration, AnyContent, Configuration, ValueEmbeddingEnumeration}
+import com.gitb.tr.TestResultType
 import exceptions.{AutomationApiException, ErrorCodes, MissingRequiredParameterException}
 import models.Enums.InputMappingMatchType
 import models._
 import models.automation.{InputMappingContent, TestSessionLaunchInfo, TestSessionLaunchRequest}
 import models.prerequisites.PrerequisiteUtil
+import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.StringUtils
 import org.apache.pekko.actor.{ActorRef, ActorSystem}
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
-import utils.{MimeUtil, RepositoryUtils}
+import utils.{MimeUtil, RepositoryUtils, TimeUtil}
 
 import java.time.Duration
 import java.time.temporal.ChronoUnit
@@ -25,13 +28,15 @@ import scala.concurrent.ExecutionContext.Implicits.global
 @Singleton
 class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClient,
                                       domainParameterManager: DomainParameterManager,
-                                      reportManager: ReportManager,
+                                      testResultManager: TestResultManager,
                                       repositoryUtils: RepositoryUtils,
                                       actorManager: ActorManager,
                                       actorSystem: ActorSystem,
                                       organisationManager: OrganizationManager,
                                       systemManager: SystemManager,
                                       apiHelper: AutomationApiHelper,
+                                      triggerHelper: TriggerHelper,
+                                      conformanceManager: ConformanceManager,
                                       dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
@@ -59,7 +64,7 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
 
   def endSession(session:String): Unit = {
     testbedClient.stop(session)
-    reportManager.setEndTimeNow(session)
+    setEndTimeNow(session)
   }
 
   def loadConformanceStatementParameters(systemId: Long, actorId: Long): List[ActorConfiguration] = {
@@ -414,6 +419,88 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
     sessionData._2.foreach { sessionId =>
       testbedClient.stop(sessionId)
     }
+  }
+
+  def finishTestReport(sessionId: String, status: TestResultType, outputMessage: Option[String]): Unit = {
+    val now = Some(TimeUtil.getCurrentTimestamp())
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val dbAction = for {
+      startTime <- PersistenceSchema.testResults.filter(_.testSessionId === sessionId).map(_.startTime).result.headOption
+      _ <- {
+        if (startTime.isDefined) {
+          // Test session finalisation and cleanup actions.
+          for {
+            _ <- PersistenceSchema.testResults
+              .filter(_.testSessionId === sessionId)
+              .map(x => (x.result, x.endTime, x.outputMessage))
+              .update(status.value(), now, outputMessage)
+            // Delete any pending test interactions
+            _ <- testResultManager.deleteTestInteractions(sessionId, None)
+            // Update also the conformance results for the system
+            _ <- PersistenceSchema.conformanceResults
+              .filter(_.testsession === sessionId)
+              .map(x => (x.result, x.outputMessage, x.updateTime))
+              .update(status.value(), outputMessage, now)
+            // Delete temporary test session data (used for user interactions).
+            _ <- {
+              onSuccessCalls += (() => {
+                val sessionFolderInfo = repositoryUtils.getPathForTestSessionObj(sessionId, startTime, isExpected = true)
+                val tempDataFolder = repositoryUtils.getPathForTestSessionData(sessionFolderInfo, tempData = true)
+                FileUtils.deleteQuietly(tempDataFolder.toFile)
+              })
+              DBIO.successful(())
+            }
+          } yield ()
+        } else {
+          // The test session was not recorded - nothing to do.
+          DBIO.successful(())
+        }
+      }
+    } yield ()
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+    // Triggers linked to test sessions: (communityID, systemID, actorID)
+    val sessionIds: Option[(Option[Long], Option[Long], Option[Long])] = exec(
+      PersistenceSchema.testResults
+        .filter(_.testSessionId === sessionId)
+        .map(x => (x.communityId, x.sutId, x.actorId))
+        .result
+        .headOption
+    )
+    if (sessionIds.isDefined && sessionIds.get._1.isDefined && sessionIds.get._2.isDefined && sessionIds.get._3.isDefined) {
+      val communityId = sessionIds.get._1.get
+      val systemId = sessionIds.get._2.get
+      // We have all the data we need to fire the triggers.
+      if (status == TestResultType.SUCCESS) {
+        triggerHelper.publishTriggerEvent(new TestSessionSucceededEvent(communityId, sessionId))
+      } else if (status == TestResultType.FAILURE) {
+        triggerHelper.publishTriggerEvent(new TestSessionFailedEvent(communityId, sessionId))
+      }
+      // See if the conformance statement is now successfully completed and fire an additional trigger if so.
+      val completedActors = conformanceManager.getCompletedConformanceStatementsForTestSession(systemId, sessionId)
+      completedActors.foreach { actorId =>
+        triggerHelper.publishTriggerEvent(new ConformanceStatementSucceededEvent(communityId, systemId, actorId))
+      }
+    }
+    // Flush remaining log messages
+    testResultManager.flushSessionLogs(sessionId, None)
+  }
+
+  private def setEndTimeNow(sessionId: String): Unit = {
+    val now = Some(TimeUtil.getCurrentTimestamp())
+    exec (
+      (for {
+        testSession <- PersistenceSchema.testResults.filter(_.testSessionId === sessionId).result.headOption
+        _ <- {
+          if (testSession.isDefined) {
+            (for {t <- PersistenceSchema.testResults if t.testSessionId === sessionId} yield t.endTime).update(now) andThen
+              (for {c <- PersistenceSchema.conformanceResults if c.testsession === sessionId} yield (c.result, c.updateTime)).update(testSession.get.result, now)
+          } else {
+            DBIO.successful(())
+          }
+        }
+      } yield ()
+        ).transactionally
+    )
   }
 
 }

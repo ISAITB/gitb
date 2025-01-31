@@ -1,6 +1,8 @@
 package managers
 
 import com.gitb.core.StepStatus
+import com.gitb.tpl.TestCase
+import com.gitb.utils.XMLUtils
 import config.Configurations
 import models.Enums.TestResultStatus
 import models._
@@ -9,13 +11,14 @@ import org.apache.pekko.actor.{ActorSystem, Cancellable}
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
-import utils.{EmailUtil, RepositoryUtils}
+import utils.{EmailUtil, JacksonUtil, RepositoryUtils, TimeUtil}
 
-import java.io.File
+import java.io.{File, StringReader}
 import java.nio.file.{Files, Paths, StandardOpenOption}
 import java.sql.Timestamp
 import java.util.Calendar
 import javax.inject.{Inject, Singleton}
+import javax.xml.transform.stream.StreamSource
 import scala.collection.concurrent.TrieMap
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -25,7 +28,10 @@ import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 @Singleton
-class TestResultManager @Inject() (actorSystem: ActorSystem, repositoryUtils: RepositoryUtils, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class TestResultManager @Inject() (actorSystem: ActorSystem,
+                                   repositoryUtils: RepositoryUtils,
+                                   communityHelper: CommunityHelper,
+                                   dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   private def logger = LoggerFactory.getLogger("TestResultManager")
   private var interactionNotificationFuture: Option[Cancellable] = None
@@ -99,8 +105,13 @@ class TestResultManager @Inject() (actorSystem: ActorSystem, repositoryUtils: Re
   }
 
   def getCommunityIdForTestSession(sessionId: String): Option[(String, Option[Long])] = {
-    val result = exec(PersistenceSchema.testResults.filter(_.testSessionId === sessionId).map(r => (r.testSessionId, r.communityId)).result.headOption)
-    result
+    exec(
+      PersistenceSchema.testResults
+        .filter(_.testSessionId === sessionId)
+        .map(r => (r.testSessionId, r.communityId))
+        .result
+        .headOption
+    )
   }
 
   def getOrganisationIdForTestSession(sessionId: String): Option[(String, Option[Long])] = {
@@ -624,4 +635,197 @@ class TestResultManager @Inject() (actorSystem: ActorSystem, repositoryUtils: Re
       }
     }
   }
+
+  def getTestResultOfSession(sessionId: String): (TestResult, String) = {
+    val result = getTestResultForSessionWrapper(sessionId)
+    val testcase = XMLUtils.unmarshal(classOf[TestCase], new StreamSource(new StringReader(result.get._2)))
+    val json = JacksonUtil.serializeTestCasePresentation(testcase)
+    (result.get._1, json)
+  }
+
+  def getOrganisationActiveTestResults(organisationId: Long,
+                                       systemIds: Option[List[Long]],
+                                       domainIds: Option[List[Long]],
+                                       specIds: Option[List[Long]],
+                                       specGroupIds: Option[List[Long]],
+                                       actorIds: Option[List[Long]],
+                                       testSuiteIds: Option[List[Long]],
+                                       testCaseIds: Option[List[Long]],
+                                       startTimeBegin: Option[String],
+                                       startTimeEnd: Option[String],
+                                       sessionId: Option[String],
+                                       sortColumn: Option[String],
+                                       sortOrder: Option[String]): List[TestResult] = {
+    exec(
+      getTestResultsQuery(None, domainIds, getSpecIdsCriterionToUse(specIds, specGroupIds), actorIds, testSuiteIds, testCaseIds, Some(List(organisationId)), systemIds, None, startTimeBegin, startTimeEnd, None, None, sessionId, Some(false), sortColumn, sortOrder)
+        .result.map(_.toList)
+    )
+  }
+
+  def getTestResults(page: Long,
+                     limit: Long,
+                     organisationId: Long,
+                     systemIds: Option[List[Long]],
+                     domainIds: Option[List[Long]],
+                     specIds: Option[List[Long]],
+                     specGroupIds: Option[List[Long]],
+                     actorIds: Option[List[Long]],
+                     testSuiteIds: Option[List[Long]],
+                     testCaseIds: Option[List[Long]],
+                     results: Option[List[String]],
+                     startTimeBegin: Option[String],
+                     startTimeEnd: Option[String],
+                     endTimeBegin: Option[String],
+                     endTimeEnd: Option[String],
+                     sessionId: Option[String],
+                     sortColumn: Option[String],
+                     sortOrder: Option[String]): (Iterable[TestResult], Int) = {
+
+    val query = getTestResultsQuery(None, domainIds, getSpecIdsCriterionToUse(specIds, specGroupIds), actorIds, testSuiteIds, testCaseIds, Some(List(organisationId)), systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder)
+    val output = exec(
+      for {
+        results <- query.drop((page - 1) * limit).take(limit).result
+        resultCount <- query.size.result
+      } yield (results, resultCount)
+    )
+    output
+  }
+
+  def getActiveTestResults(communityIds: Option[List[Long]],
+                           domainIds: Option[List[Long]],
+                           specIds: Option[List[Long]],
+                           specGroupIds: Option[List[Long]],
+                           actorIds: Option[List[Long]],
+                           testSuiteIds: Option[List[Long]],
+                           testCaseIds: Option[List[Long]],
+                           organisationIds: Option[List[Long]],
+                           systemIds: Option[List[Long]],
+                           startTimeBegin: Option[String],
+                           startTimeEnd: Option[String],
+                           sessionId: Option[String],
+                           orgParameters: Option[Map[Long, Set[String]]],
+                           sysParameters: Option[Map[Long, Set[String]]],
+                           sortColumn: Option[String],
+                           sortOrder: Option[String]): List[TestResult] = {
+    exec(
+      getTestResultsQuery(communityIds, domainIds, getSpecIdsCriterionToUse(specIds, specGroupIds), actorIds, testSuiteIds, testCaseIds, communityHelper.organisationIdsToUse(organisationIds, orgParameters), communityHelper.systemIdsToUse(systemIds, sysParameters), None, startTimeBegin, startTimeEnd, None, None, sessionId, Some(false), sortColumn, sortOrder)
+        .result.map(_.toList)
+    )
+  }
+
+  def getFinishedTestResults(page: Long,
+                             limit: Long,
+                             communityIds: Option[List[Long]],
+                             domainIds: Option[List[Long]],
+                             specIds: Option[List[Long]],
+                             specGroupIds: Option[List[Long]],
+                             actorIds: Option[List[Long]],
+                             testSuiteIds: Option[List[Long]],
+                             testCaseIds: Option[List[Long]],
+                             organisationIds: Option[List[Long]],
+                             systemIds: Option[List[Long]],
+                             results: Option[List[String]],
+                             startTimeBegin: Option[String],
+                             startTimeEnd: Option[String],
+                             endTimeBegin: Option[String],
+                             endTimeEnd: Option[String],
+                             sessionId: Option[String],
+                             orgParameters: Option[Map[Long, Set[String]]],
+                             sysParameters: Option[Map[Long, Set[String]]],
+                             sortColumn: Option[String],
+                             sortOrder: Option[String]): (Iterable[TestResult], Int) = {
+
+    val query = getTestResultsQuery(communityIds, domainIds, getSpecIdsCriterionToUse(specIds, specGroupIds), actorIds, testSuiteIds, testCaseIds, communityHelper.organisationIdsToUse(organisationIds, orgParameters), communityHelper.systemIdsToUse(systemIds, sysParameters), results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder)
+    val output = exec(
+      for {
+        results <- query.drop((page - 1) * limit).take(limit).result
+        resultCount <- query.size.result
+      } yield (results, resultCount)
+    )
+    output
+  }
+
+  def getTestResult(sessionId: String): Option[TestResult] = {
+    val query = getTestResultsQuery(None, None, None, None, None, None, None, None, None, None, None, None, None, Some(sessionId), None, None, None)
+    exec(query.result.headOption)
+  }
+
+  private def getSpecIdsCriterionToUse(specIds: Option[List[Long]], specGroupIds: Option[List[Long]]): Option[List[Long]] = {
+    // We use the groups to get the applicable spec IDs. This is because specs can move around in groups, and we shouldn't link
+    // test results directly to the groups.
+    val specIdsToUse = if (specGroupIds.isDefined && specGroupIds.get.nonEmpty) {
+      exec(PersistenceSchema.specifications.filter(_.group inSet specGroupIds.get).map(_.id).result.map(x => Some(x.toList)))
+    } else {
+      specIds
+    }
+    specIdsToUse
+  }
+
+  private def getTestResultsQuery(communityIds: Option[List[Long]],
+                                  domainIds: Option[List[Long]],
+                                  specIds: Option[List[Long]],
+                                  actorIds: Option[List[Long]],
+                                  testSuiteIds: Option[List[Long]],
+                                  testCaseIds: Option[List[Long]],
+                                  organizationIds: Option[Iterable[Long]],
+                                  systemIds: Option[Iterable[Long]],
+                                  results: Option[List[String]],
+                                  startTimeBegin: Option[String],
+                                  startTimeEnd: Option[String],
+                                  endTimeBegin: Option[String],
+                                  endTimeEnd: Option[String],
+                                  sessionId: Option[String],
+                                  completedStatus: Option[Boolean],
+                                  sortColumn: Option[String],
+                                  sortOrder: Option[String]) = {
+    var query = PersistenceSchema.testResults
+      .filterOpt(communityIds)((table, ids) => table.communityId inSet ids)
+      .filterOpt(domainIds)((table, ids) => table.domainId inSet ids)
+      .filterOpt(specIds)((table, ids) => table.specificationId inSet ids)
+      .filterOpt(actorIds)((table, ids) => table.actorId inSet ids)
+      .filterOpt(testCaseIds)((table, ids) => table.testCaseId inSet ids)
+      .filterOpt(organizationIds)((table, ids) => table.organizationId inSet ids)
+      .filterOpt(systemIds)((table, ids) => table.sutId inSet ids)
+      .filterOpt(results)((table, results) => table.result inSet results)
+      .filterOpt(testSuiteIds)((table, ids) => table.testSuiteId inSet ids)
+      .filterOpt(startTimeBegin)((table, timeStr) => table.startTime >= TimeUtil.parseTimestamp(timeStr))
+      .filterOpt(startTimeEnd)((table, timeStr) => table.startTime <= TimeUtil.parseTimestamp(timeStr))
+      .filterOpt(endTimeBegin)((table, timeStr) => table.endTime >= TimeUtil.parseTimestamp(timeStr))
+      .filterOpt(endTimeEnd)((table, timeStr) => table.endTime <= TimeUtil.parseTimestamp(timeStr))
+      .filterOpt(sessionId)((table, id) => table.testSessionId === id)
+      .filterOpt(completedStatus)((table, completed) => if (completed) table.endTime.isDefined else table.endTime.isEmpty)
+    // Apply sorting
+    if (sortColumn.isDefined && sortOrder.isDefined) {
+      if (sortOrder.get == "asc") {
+        query = sortColumn.get match {
+          case "specification" => query.sortBy(_.specification)
+          case "session" => query.sortBy(_.testSessionId)
+          case "startTime" => query.sortBy(_.startTime)
+          case "endTime" => query.sortBy(_.endTime)
+          case "organization" => query.sortBy(_.organization)
+          case "system" => query.sortBy(_.sut)
+          case "result" => query.sortBy(_.result)
+          case "testCase" => query.sortBy(_.testCase)
+          case "actor" => query.sortBy(_.actor)
+          case _ => query
+        }
+      }
+      if (sortOrder.get == "desc") {
+        query = sortColumn.get match {
+          case "specification" => query.sortBy(_.specification.desc)
+          case "session" => query.sortBy(_.testSessionId.desc)
+          case "startTime" => query.sortBy(_.startTime.desc)
+          case "endTime" => query.sortBy(_.endTime.desc)
+          case "organization" => query.sortBy(_.organization.desc)
+          case "system" => query.sortBy(_.sut.desc)
+          case "result" => query.sortBy(_.result.desc)
+          case "testCase" => query.sortBy(_.testCase.desc)
+          case "actor" => query.sortBy(_.actor.desc)
+          case _ => query
+        }
+      }
+    }
+    query
+  }
+
 }

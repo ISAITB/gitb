@@ -35,7 +35,7 @@
                         <div class="item-check">
                             <input type="checkbox" class="form-check-input" name="itemCheck" [(ngModel)]="item.checked" (ngModelChange)="updateChecked()">
                         </div>
-                    } 
+                    }
                     <div class="item-name">{{item.name}}</div>
                 </div>
                 @if (item.description) {
@@ -44,8 +44,8 @@
                 @if (withExport && expandable && hasChildren && !allChildrenHidden) {
                     <div class="item-controls">
                         <div class="btn-toolbar">
-                            <button class="btn btn-secondary" (click)="onExport({statementReport: false, item: item, format: 'xml'}); $event.stopPropagation();" [pending]="item.exportXmlPending" [icon]="true"  containerClass="shortTooltip" tooltip="Export (XML)" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-regular fa-file-lines"></i></button>
-                            <button class="btn btn-secondary" (click)="onExport({statementReport: false, item: item, format: 'pdf'}); $event.stopPropagation();" [pending]="item.exportPdfPending" [icon]="true"  containerClass="shortTooltip" tooltip="Export (PDF)" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-regular fa-file-pdf"></i></button>
+                            <button class="btn btn-secondary" (click)="onExport({statementReport: false, item: item, format: 'xml'}); $event.stopPropagation();" [pending]="item.exportXmlPending" [icon]="true"  containerClass="shortTooltip" container="body" tooltip="Export (XML)" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-regular fa-file-lines"></i></button>
+                            <button class="btn btn-secondary" (click)="onExport({statementReport: false, item: item, format: 'pdf'}); $event.stopPropagation();" [pending]="item.exportPdfPending" [icon]="true"  containerClass="shortTooltip" container="body" tooltip="Export (PDF)" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-regular fa-file-pdf"></i></button>
                         </div>
                     </div>
                 }
@@ -105,8 +105,9 @@
                                     [showExecute]="false"
                                     [showExport]="true"
                                     [shaded]="shade"
+                                    [communityId]="communityId"
                                     (viewTestSession)="onViewTestSession($event)"
-                                ></app-test-suite-display>                    
+                                ></app-test-suite-display>
                             </div>
                         }
                     </div>

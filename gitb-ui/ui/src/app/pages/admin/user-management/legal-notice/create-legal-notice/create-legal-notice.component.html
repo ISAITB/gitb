@@ -32,7 +32,7 @@
                 <app-form-section sectionTitle="Content">
 					<div class="row mt-3">
                         <div class="col-12">
-                            @if (dataService.isCommunityAdmin) {
+                            @if (communityId != Constants.DEFAULT_COMMUNITY_ID) {
                                 <div class="mb-3">
                                     <app-placeholder-selector [resources]="true" [community]="communityId"></app-placeholder-selector>
                                 </div>

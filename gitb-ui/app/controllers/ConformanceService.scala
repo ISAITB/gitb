@@ -1117,9 +1117,8 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
       authorizationManager.canManageCommunity(request, communityId)
     }
     val withApiKeys = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.KEYS).getOrElse(false)
-    val snapshots = conformanceManager.getConformanceSnapshots(communityId, public)
-    val latestLabel = conformanceManager.getLatestConformanceStatusLabel(communityId)
-    ResponseConstructor.constructJsonResponse(JsonUtil.jsConformanceSnapshotList(latestLabel, snapshots, public, withApiKeys).toString)
+    val snapshotData = conformanceManager.getConformanceSnapshotsWithLatest(communityId, public)
+    ResponseConstructor.constructJsonResponse(JsonUtil.jsConformanceSnapshotList(snapshotData._2, snapshotData._1, public, withApiKeys).toString)
   }
 
   def setLatestConformanceStatusLabel(communityId: Long): Action[AnyContent] = authorizedAction { request =>

@@ -45,7 +45,7 @@ redis:
 #
 mysql:
   # mysql.image is the (full) image to use to create mysql container(s).
-  image: isaitb/gitb-mysql:1.24.4
+  image: isaitb/gitb-mysql:1.25.0
   #
   # mysql.name is the name to use for the mysql deployment and (by default) service.
   name: itb-mysql
@@ -94,7 +94,7 @@ mysql:
 #
 srv:
   # srv.image is the (full) image to use to create srv container(s).
-  image: isaitb/gitb-srv:1.24.4
+  image: isaitb/gitb-srv:1.25.0
   #
   # srv.name is the name to use for the srv deployment and (by default) service.
   name: itb-srv
@@ -137,7 +137,7 @@ srv:
 #
 ui:
   # ui.image is the (full) image to use to create ui container(s).
-  image: isaitb/gitb-ui:1.24.4
+  image: isaitb/gitb-ui:1.25.0
   #
   # ui.name is the name to use for the ui deployment and (by default) service.
   name: itb-ui
@@ -254,8 +254,11 @@ ingress:
     # In doing so you will be able to access the ITB over HTTP without a forced redirect to HTTPS.
     # Note that doing this you will also need to set "ui.env.TESTBED_HOME_LINK" and "srv.env.CALLBACK_ROOT_URL"
     # accordingly.
-    acme.cert-manager.io/http01-edit-in-place: "true"
-    cert-manager.io/cluster-issuer: "dev-prod"
+    #
+    # Depending on how you manage certificates in your cluster you may need to define additional annotations for
+    # this purpose. For example, using cert-manager in your cluster you define its use as follows:
+    #   acme.cert-manager.io/http01-edit-in-place: "true"
+    #   cert-manager.io/cluster-issuer: "my-cluster-issuer"
 
 #
 # Configuration of volumes used to persist data.

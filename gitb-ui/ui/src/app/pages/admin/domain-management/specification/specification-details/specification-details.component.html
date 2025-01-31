@@ -62,11 +62,11 @@
 					</div>
 					<app-alert-display [alerts]="alerts" [outerClass]="'inTab'"></app-alert-display>
 					<div class="card">
-						<div table-directive id="test-suites-table" 
-							[columns]="testSuiteTableColumns" 
+						<div table-directive id="test-suites-table"
+							[columns]="testSuiteTableColumns"
 							[data]="testSuites"
 							noDataMessage="No test suites found"
-							[loadingStatus]="testSuiteStatus" 
+							[loadingStatus]="testSuiteStatus"
 							[allowSelect]="true"
 							(onSelect)="onTestSuiteSelect($event)">
 						</div>
@@ -77,14 +77,16 @@
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-circle-user" [text]="dataService.labelActors()"></app-tab-title></ng-template>
 				<div class="tabPanel">
 					<div class="tabControls">
-						<button class="btn btn-secondary" type="button" (click)="createActor()">Create {{dataService.labelActorLower()}}</button>
+                        <div class="btn-toolbar">
+                            <button class="btn btn-secondary" type="button" (click)="createActor()">Create {{dataService.labelActorLower()}}</button>
+                        </div>
 					</div>
 					<div class="card">
 						<div table-directive
 							[columns]="actorTableColumns"
 							[data]="actors"
 							[noDataMessage]="'No '+dataService.labelActorsLower()+' found'"
-							[loadingStatus]="actorStatus" 
+							[loadingStatus]="actorStatus"
 							[allowSelect]="true"
 							(onSelect)="onActorSelect($event)">
 						</div>

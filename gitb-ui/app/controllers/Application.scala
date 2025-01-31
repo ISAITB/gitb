@@ -49,7 +49,8 @@ class Application @Inject() (implicit ec: ExecutionContext, cc: ControllerCompon
       Configurations.RELEASE_INFO_ENABLED,
       Configurations.RELEASE_INFO_ADDRESS,
       Configurations.WELCOME_MESSAGE,
-      Configurations.WEB_CONTEXT_ROOT_WITH_SLASH
+      Configurations.WEB_CONTEXT_ROOT_WITH_SLASH,
+      Configurations.restApiLink()
     )))
   }
 

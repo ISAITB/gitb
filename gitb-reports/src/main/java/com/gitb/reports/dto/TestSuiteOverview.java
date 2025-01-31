@@ -6,6 +6,7 @@ import java.util.List;
 
 public class TestSuiteOverview {
 
+    private Long testSuiteId;
     private String testSuiteName;
     private String testSuiteDescription;
     private String overallStatus;
@@ -13,7 +14,24 @@ public class TestSuiteOverview {
     private String specDescription;
     private String specLink;
     private String version;
+    private List<TestCaseGroup> testCaseGroups;
     private List<TestCaseOverview> testCases;
+
+    public Long getTestSuiteId() {
+        return testSuiteId;
+    }
+
+    public void setTestSuiteId(Long testSuiteId) {
+        this.testSuiteId = testSuiteId;
+    }
+
+    public List<TestCaseGroup> getTestCaseGroups() {
+        return testCaseGroups;
+    }
+
+    public void setTestCaseGroups(List<TestCaseGroup> testCaseGroups) {
+        this.testCaseGroups = testCaseGroups;
+    }
 
     public List<TestCaseOverview> getTestCases() {
         return testCases;

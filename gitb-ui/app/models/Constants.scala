@@ -48,6 +48,9 @@ object Constants {
   val PlaceholderDomain = "$DOMAIN"
   val PlaceholderBadge = "$BADGE"
   val PlaceholderBadges = "$BADGES"
+  val PlaceholderReportDate = "$REPORT_DATE"
+  val PlaceholderLastUpdateDate = "$LAST_UPDATE_DATE"
+  val PlaceholderSnapshot = "$SNAPSHOT"
 
   val ProductionMode = "production"
   val DevelopmentMode = "development"
@@ -70,7 +73,7 @@ object Constants {
   val UserAttributeAuthenticationLevel = "authLevel"
 
   // When ending in "-snapshot", this is considered a non-published release.
-  val VersionNumber = "1.24.4"
-  val VersionNumberPostfixForResources = "-1"
+  val VersionNumber = "1.25.0"
+  val VersionNumberPostfixForResources = ""
 
 }

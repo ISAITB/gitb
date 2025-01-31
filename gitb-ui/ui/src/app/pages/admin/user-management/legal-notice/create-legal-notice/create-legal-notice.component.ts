@@ -28,6 +28,7 @@ export class CreateLegalNoticeComponent extends BaseComponent implements OnInit,
   savePending = false
   tooltipForDefaultCheck!: string
   validation = new ValidationState()
+  Constants = Constants
 
   constructor(
     private routingService: RoutingService,
@@ -100,6 +101,6 @@ export class CreateLegalNoticeComponent extends BaseComponent implements OnInit,
 
   preview() {
     this.htmlService.showHtml('Legal Notice', this.notice.content!)
-  }  
+  }
 
 }

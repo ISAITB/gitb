@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.3.5</version>
+        <version>3.4.2</version>
     </parent>
     <groupId>com.gitb</groupId>
     <artifactId>GITB</artifactId>
@@ -24,17 +24,17 @@
              mvn versions:display-dependency-updates -N -N
         -->
         <!-- Plugin versions -->
-        <version.plugin.dependency-check-maven>11.1.0</version.plugin.dependency-check-maven>
+        <version.plugin.dependency-check-maven>12.0.1</version.plugin.dependency-check-maven>
         <version.plugin.maven-deploy-plugin>3.1.1</version.plugin.maven-deploy-plugin>
         <version.plugin.maven-compiler-plugin>3.11.0</version.plugin.maven-compiler-plugin>
         <version.jaxb2-maven-plugin>3.1.0</version.jaxb2-maven-plugin>
         <!-- Dependency versions -->
-        <version.springBoot>3.3.5</version.springBoot>
-        <version.gitbTypes>1.24.4</version.gitbTypes>
+        <version.springBoot>3.4.2</version.springBoot>
+        <version.gitbTypes>1.25.0</version.gitbTypes>
         <version.bouncycastle>1.78.1</version.bouncycastle>
-        <version.helgerSchematron>8.0.3</version.helgerSchematron>
+        <version.helgerSchematron>8.0.5</version.helgerSchematron>
         <version.metaInfServices>1.9</version.metaInfServices>
-        <version.cxf>4.0.5</version.cxf>
+        <version.cxf>4.1.0</version.cxf>
         <version.httpComponents>4.5.13</version.httpComponents>
         <version.commonsCodec>1.17.1</version.commonsCodec>
         <version.reflections>0.10.2</version.reflections>
@@ -102,7 +102,7 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>${version.plugin.maven-compiler-plugin}</version>
                     <configuration>
-                        <release>17</release>
+                        <release>21</release>
                         <forceJavacCompilerUse>true</forceJavacCompilerUse>
                     </configuration>
                 </plugin>

@@ -50,7 +50,7 @@ public enum ErrorCode {
     INVALID_VARIABLE_REFERENCE(                         "TDL-039", "%s [%s] in step %s defines an invalid variable reference [%s].", ERROR, true),
     VARIABLE_NOT_IN_SCOPE(                              "TDL-040", "%s [%s] in step %s refers to an undefined variable [%s].", ERROR, true),
     SIMPLE_VARIABLE_REFERENCED_AS_CONTAINER(            "TDL-041", "%s [%s] in step %s refers to a simple variable [%s] as if it was a container type.", ERROR, true),
-    INVALID_EXPRESSION(                                 "TDL-042", "%s [%s] in step %s defines an invalid expression [%s].", ERROR, true),
+    INVALID_EXPRESSION(                                 "TDL-042", "%s [%s] in step %s defines an invalid expression [%s]. Cause: [%s].", ERROR, true),
     UNEXPECTED_HANDLER_INPUT(                           "TDL-043", "%s [%s] in step %s for handler %s defines an unexpected input [%s].", WARNING, true),
     MISSING_HANDLER_INPUT(                              "TDL-044", "%s [%s] in step %s for handler %s does not provide a required input [%s].", ERROR, true),
     UNEXPECTED_HANDLER_CONFIG(                          "TDL-045", "%s [%s] in step %s for handler %s defines an unexpected configuration parameter [%s].", WARNING, true),
@@ -140,7 +140,11 @@ public enum ErrorCode {
     DUPLICATE_TEST_CASE_REFERENCE(                      "TDL-119", "The test suite references the same test case multiple times [%s].", ERROR),
     DEPRECATED_HANDLER(                                 "TDL-120", "%s [%s] in step %s refers to deprecated handler %s.", WARNING, true),
     DEPRECATED_HANDLER_WITH_REPLACEMENT(                "TDL-121", "%s [%s] in step %s refers to deprecated handler %s. Consider using the %s handler instead.", WARNING, true),
-    SCRIPTLET_EMPTY_AND_DEFAULT_INPUTS(                 "TDL-122", "Scriptlet [%s] defines an input parameter [%s] that is set as empty by default but is also provided with default values. The provided default values will be ignored.", WARNING, false)
+    SCRIPTLET_EMPTY_AND_DEFAULT_INPUTS(                 "TDL-122", "Scriptlet [%s] defines an input parameter [%s] that is set as empty by default but is also provided with default values. The provided default values will be ignored.", WARNING, false),
+    NON_CONSECUTIVE_TEST_CASES_IN_GROUP(                "TDL-123", "The test suite defines a test case group [%s] that includes non-consecutive test cases. The defined ordering will be ignored to ensure the group's test cases are executed and displayed consecutively.", WARNING),
+    TEST_CASE_GROUP_NOT_USED(                           "TDL-124", "The test suite defines a test case group [%s] that is not referenced by any test cases. The group will be ignored.", WARNING),
+    TEST_CASE_GROUP_WITH_SINGLE_TEST_CASE(              "TDL-125", "The test suite defines a test case group [%s] that is referenced by a single test case.", WARNING),
+    TEST_CASE_GROUP_WITH_TEST_CASES_FOR_DIFFERENT_SUTS( "TDL-126", "The test suite defines a test case group [%s] that includes test cases for different SUTs.", ERROR),
     ;
 
     private final String code;

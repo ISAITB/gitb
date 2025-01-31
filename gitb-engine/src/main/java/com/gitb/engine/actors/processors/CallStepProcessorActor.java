@@ -1,7 +1,5 @@
 package com.gitb.engine.actors.processors;
 
-import com.gitb.tdl.*;
-import org.apache.pekko.actor.ActorRef;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.StepStatus;
 import com.gitb.engine.commands.interaction.StartCommand;
@@ -10,8 +8,10 @@ import com.gitb.engine.expr.ExpressionHandler;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.engine.utils.StepContext;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
+import com.gitb.tdl.*;
 import com.gitb.types.DataType;
 import com.gitb.types.DataTypeFactory;
 import com.gitb.types.MapType;
@@ -19,6 +19,7 @@ import com.gitb.types.StringType;
 import com.gitb.utils.BindingUtils;
 import com.gitb.utils.ErrorUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.pekko.actor.ActorRef;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
@@ -35,8 +36,8 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 	private Scriptlet scriptlet;
 	private TestCaseScope childScope;
 
-	public CallStepProcessorActor(CallStep step, TestCaseScope scope, String stepId) {
-		super(step, scope, stepId);
+	public CallStepProcessorActor(CallStep step, TestCaseScope scope, String stepId, StepContext stepContext) {
+		super(step, scope, stepId, stepContext);
 	}
 
 	@Override
@@ -47,9 +48,9 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 	@Override
 	protected void start() throws Exception {
 		childScope = createChildScope();
-		TestCaseUtils.applyStopOnErrorSemantics(scriptlet.getSteps(), step.isStopOnError());
+		TestCaseUtils.applyStopOnErrorSemantics(step, scriptlet.getSteps());
 		TestCaseUtils.initialiseStepStatusMaps(getStepSuccessMap(), getStepStatusMap(), scriptlet.getSteps(), childScope);
-		ActorRef child = SequenceProcessorActor.create(getContext(), scriptlet.getSteps(), childScope, stepId);
+		ActorRef child = SequenceProcessorActor.create(getContext(), scriptlet.getSteps(), childScope, stepId, stepContext);
 
 		StartCommand command = new StartCommand(scope.getContext().getSessionId());
 		child.tell(command, self());
@@ -305,7 +306,7 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 		childScope.createVariable(variableName).setValue(value);
 	}
 
-	public static ActorRef create(ActorContext context, CallStep step, TestCaseScope scope, String stepId) throws Exception {
-		return create(CallStepProcessorActor.class, context, step, scope, stepId);
+	public static ActorRef create(ActorContext context, CallStep step, TestCaseScope scope, String stepId, StepContext stepContext) throws Exception {
+		return create(CallStepProcessorActor.class, context, step, scope, stepId, stepContext);
 	}
 }

@@ -26,12 +26,81 @@ public class ConformanceStatementData {
     private int completedTests = 0;
     private int failedTests = 0;
     private int undefinedTests = 0;
+    private int completedTestsIgnored = 0;
+    private int failedTestsIgnored = 0;
+    private int undefinedTestsIgnored = 0;
     private String overallStatus;
     private List<TestSuiteOverview> testSuites;
     private Boolean hasOptionalTests = null;
     private Boolean hasRequiredTests = null;
     private Boolean hasDisabledTests = null;
     private List<TestCaseOverview.Tag> distinctTags;
+    private Map<Long, LinkedHashMap<String, TestCaseGroup>> groupMap;
+
+    public void prepareTestCaseGroups() {
+        if (testSuites != null) {
+            for (var testSuite: testSuites) {
+                Map<String, Counters> groupResults = new HashMap<>();
+                if (testSuite.getTestCases() != null) {
+                    TestCaseOverview lastTestCase = null;
+                    for (var testCase: testSuite.getTestCases()) {
+                        if (testCase.getGroup() != null) {
+                            testCase.setInGroup(true);
+                            if (lastTestCase != null) {
+                                if (!Objects.equals(testCase.getGroup(), lastTestCase.getGroup())) {
+                                    testCase.setFirstInGroup(true);
+                                    if (lastTestCase.getGroup() != null) {
+                                        lastTestCase.setLastInGroup(true);
+                                    }
+                                }
+                            } else {
+                                testCase.setFirstInGroup(true);
+                            }
+                            // Add result
+                            groupResults.computeIfAbsent(testCase.getGroup(), (key) -> new Counters()).addResult(testCase);
+                        } else if (lastTestCase != null && lastTestCase.getGroup() != null) {
+                            lastTestCase.setLastInGroup(true);
+                        }
+                        lastTestCase = testCase;
+                    }
+                    if (lastTestCase != null && lastTestCase.getGroup() != null) {
+                        lastTestCase.setLastInGroup(true);
+                    }
+                }
+                // Set group results
+                var groupMap = getGroupMap(testSuite.getTestSuiteId());
+                groupResults.forEach(((groupId, counters) -> groupMap.get(groupId).setResult(counters.toResult())));
+            }
+        }
+    }
+
+    public TestCaseGroup getTestCaseGroup(Long testSuiteId, String groupId) {
+        var groupMap = getGroupMap(testSuiteId);
+        if (groupMap != null) {
+            return groupMap.get(groupId);
+        }
+        return null;
+    }
+
+    private LinkedHashMap<String, TestCaseGroup> getGroupMap(Long testSuiteId) {
+        if (groupMap == null) {
+            groupMap = new HashMap<>();
+            if (testSuites != null) {
+                for (var ts: testSuites) {
+                    var groups = new LinkedHashMap<String, TestCaseGroup>();
+                    if (ts.getTestCaseGroups() != null) {
+                        for (var group: ts.getTestCaseGroups()) {
+                            if (group.getId() != null) {
+                                groups.put(group.getId(), group);
+                            }
+                        }
+                    }
+                    groupMap.put(ts.getTestSuiteId(), groups);
+                }
+            }
+        }
+        return groupMap.get(testSuiteId);
+    }
 
     public String getTestActor() {
         return testActor;
@@ -87,6 +156,30 @@ public class ConformanceStatementData {
 
     public void setUndefinedTests(int undefinedTests) {
         this.undefinedTests = undefinedTests;
+    }
+
+    public int getCompletedTestsIgnored() {
+        return completedTestsIgnored;
+    }
+
+    public void setCompletedTestsIgnored(int completedTestsIgnored) {
+        this.completedTestsIgnored = completedTestsIgnored;
+    }
+
+    public int getFailedTestsIgnored() {
+        return failedTestsIgnored;
+    }
+
+    public void setFailedTestsIgnored(int failedTestsIgnored) {
+        this.failedTestsIgnored = failedTestsIgnored;
+    }
+
+    public int getUndefinedTestsIgnored() {
+        return undefinedTestsIgnored;
+    }
+
+    public void setUndefinedTestsIgnored(int undefinedTestsIgnored) {
+        this.undefinedTestsIgnored = undefinedTestsIgnored;
     }
 
     public String getOverallStatus() {
@@ -273,5 +366,33 @@ public class ConformanceStatementData {
 
     public void setTestDomainReportMetadata(String testDomainReportMetadata) {
         this.testDomainReportMetadata = testDomainReportMetadata;
+    }
+
+    private static class Counters {
+        private int successes = 0;
+        private int failures = 0;
+        private int incomplete = 0;
+
+        private void addResult(TestCaseOverview testCase) {
+            if (!testCase.isDisabled() && !testCase.isOptional()) {
+                switch (testCase.getReportResult()) {
+                    case "FAILURE" -> failures += 1;
+                    case "UNDEFINED" -> incomplete += 1;
+                    default -> successes += 1;
+                }
+            }
+        }
+
+        private String toResult() {
+            if (successes > 0) {
+                return "SUCCESS";
+            } else if (failures > 0) {
+                return "FAILURE";
+            } else if (incomplete > 0) {
+                return "UNDEFINED";
+            } else {
+                return null;
+            }
+        }
     }
 }

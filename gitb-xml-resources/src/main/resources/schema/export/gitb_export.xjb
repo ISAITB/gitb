@@ -58,9 +58,19 @@
             <jxb:baseType name="com.gitb.xml.export.Actor"/>
         </jxb:property>
     </jxb:bindings>
+    <jxb:bindings node="//xsd:complexType[@name='TestCaseGroup']/xsd:complexContent/xsd:extension/xsd:attribute[@name='testSuite']">
+        <jxb:property name="testSuite">
+            <jxb:baseType name="com.gitb.xml.export.TestSuite"/>
+        </jxb:property>
+    </jxb:bindings>
     <jxb:bindings node="//xsd:complexType[@name='TestCase']/xsd:complexContent/xsd:extension/xsd:attribute[@name='testSuite']">
         <jxb:property name="testSuite">
             <jxb:baseType name="com.gitb.xml.export.TestSuite"/>
+        </jxb:property>
+    </jxb:bindings>
+    <jxb:bindings node="//xsd:complexType[@name='TestCase']/xsd:complexContent/xsd:extension/xsd:attribute[@name='group']">
+        <jxb:property name="group">
+            <jxb:baseType name="com.gitb.xml.export.TestCaseGroup"/>
         </jxb:property>
     </jxb:bindings>
     <jxb:bindings node="//xsd:complexType[@name='TestCase']/xsd:complexContent/xsd:extension/xsd:attribute[@name='specification']">

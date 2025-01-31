@@ -11,6 +11,7 @@ import com.gitb.engine.events.model.InputEvent;
 import com.gitb.engine.expr.ExpressionHandler;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.engine.utils.StepContext;
 import com.gitb.engine.utils.TemplateUtils;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
@@ -27,6 +28,7 @@ import com.gitb.tr.TestStepReportType;
 import com.gitb.types.DataType;
 import com.gitb.types.DataTypeFactory;
 import com.gitb.types.MapType;
+import com.gitb.types.StringType;
 import com.gitb.utils.DataTypeUtils;
 import com.gitb.utils.ErrorUtils;
 import com.gitb.utils.XMLDateTimeUtils;
@@ -58,8 +60,8 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
     private static final Logger logger = LoggerFactory.getLogger(InteractionStepProcessorActor.class);
     private Promise<TestStepReportType> promise;
 
-    public InteractionStepProcessorActor(UserInteraction step, TestCaseScope scope, String stepId) {
-        super(step, scope, stepId);
+    public InteractionStepProcessorActor(UserInteraction step, TestCaseScope scope, String stepId, StepContext stepContext) {
+        super(step, scope, stepId, stepContext);
     }
 
     @Override
@@ -363,6 +365,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                 throw new IllegalStateException(e);
             }
             if (!userInputs.isEmpty()) {
+                VariableResolver variableResolver = new VariableResolver(scope);
                 report.setContext(new AnyContent());
                 report.getContext().setType("list");
                 //Assign the content for each input to either given variable or to the Interaction Map (with the given name as key)
@@ -388,7 +391,6 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                     if (StringUtils.isNotBlank(targetRequest.getValue())) {
                         //Find the variable that the given input content is assigned(bound) to
                         String assignedVariableExpression = targetRequest.getValue();
-                        VariableResolver variableResolver = new VariableResolver(scope);
                         DataType assignedVariable = variableResolver.resolveVariable(assignedVariableExpression);
                         if (targetRequest.isAsTemplate()) {
                             DataTypeUtils.setDataTypeValueWithAnyContent(assignedVariable, userInput, (dataType) -> {
@@ -413,6 +415,16 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                         if (targetRequest.getName() != null) {
                             interactionResult.addItem(targetRequest.getName(), assignedValue);
                         }
+                        if (targetRequest instanceof UserRequest userRequest && StringUtils.isNotBlank(userRequest.getFileName()) && StringUtils.isNotBlank(userInput.getFileName())) {
+                            // Record the file name under the provided variable
+                            String variableName;
+                            if (VariableResolver.isVariableReference(userRequest.getFileName())) {
+                                variableName = variableResolver.resolveVariableAsString(userRequest.getFileName()).toString();
+                            } else {
+                                variableName = userRequest.getFileName().trim();
+                            }
+                            interactionResult.addItem(variableName, new StringType(userInput.getFileName()));
+                        }
                     }
                 }
             }
@@ -434,7 +446,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         }
     }
 
-    public static ActorRef create(ActorContext context, UserInteraction step, TestCaseScope scope, String stepId) throws Exception {
-        return context.actorOf(props(InteractionStepProcessorActor.class, step, scope, stepId), getName(NAME));
+    public static ActorRef create(ActorContext context, UserInteraction step, TestCaseScope scope, String stepId, StepContext stepContext) throws Exception {
+        return context.actorOf(props(InteractionStepProcessorActor.class, step, scope, stepId, stepContext), getName(NAME));
     }
 }

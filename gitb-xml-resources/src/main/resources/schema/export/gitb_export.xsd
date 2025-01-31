@@ -317,6 +317,7 @@
                     <xsd:element name="operation" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="active" type="xsd:boolean"/>
                     <xsd:element name="dataItems" type="TriggerDataItems" minOccurs="0"/>
+                    <xsd:element name="fireExpressions" type="TriggerFireExpressions" minOccurs="0"/>
                 </xsd:sequence>
                 <xsd:attribute name="eventType" type="TriggerEventType" use="required"/>
                 <xsd:attribute name="serviceType" type="TriggerServiceType" default="GITB"/>
@@ -333,6 +334,22 @@
             <xsd:extension base="ExportType">
                 <xsd:attribute name="dataType" type="TriggerDataType" use="required"/>
                 <xsd:attribute name="dataId" type="xsd:IDREF"/>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <xsd:complexType name="TriggerFireExpressions">
+        <xsd:sequence>
+            <xsd:element name="triggerFireExpression" type="TriggerFireExpression" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+    <xsd:complexType name="TriggerFireExpression">
+        <xsd:complexContent>
+            <xsd:extension base="ExportType">
+                <xsd:sequence>
+                    <xsd:element name="expression" type="xsd:string"/>
+                </xsd:sequence>
+                <xsd:attribute name="notMatch" type="xsd:boolean" default="false"/>
+                <xsd:attribute name="expressionType" type="TriggerFireExpressionType" use="required"/>
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>
@@ -696,6 +713,16 @@
             <xsd:enumeration value="JSON"/>
         </xsd:restriction>
     </xsd:simpleType>
+    <xsd:simpleType name="TriggerFireExpressionType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="TEST_CASE_IDENTIFIER"/>
+            <xsd:enumeration value="TEST_SUITE_IDENTIFIER"/>
+            <xsd:enumeration value="ACTOR_IDENTIFIER"/>
+            <xsd:enumeration value="SPECIFICATION_NAME"/>
+            <xsd:enumeration value="SYSTEM_NAME"/>
+            <xsd:enumeration value="ORGANISATION_NAME"/>
+        </xsd:restriction>
+    </xsd:simpleType>
     <xsd:simpleType name="TriggerDataType">
         <xsd:restriction base="xsd:string">
             <xsd:enumeration value="COMMUNITY"/>
@@ -730,10 +757,28 @@
                     <xsd:element name="specReference" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="specDescription" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="specLink" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="testCaseGroups" type="TestCaseGroups" minOccurs="0"/>
                     <xsd:element name="testCases" type="TestCases" minOccurs="0"/>
                 </xsd:sequence>
                 <xsd:attribute name="specification" type="xsd:IDREF"/>
                 <xsd:attribute name="actors" type="xsd:IDREFS"/>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <xsd:complexType name="TestCaseGroups">
+        <xsd:sequence>
+            <xsd:element name="testCaseGroup" type="TestCaseGroup" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+    <xsd:complexType name="TestCaseGroup">
+        <xsd:complexContent>
+            <xsd:extension base="ExportType">
+                <xsd:sequence>
+                    <xsd:element name="identifier" type="xsd:string"/>
+                    <xsd:element name="name" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="description" type="xsd:string" minOccurs="0"/>
+                </xsd:sequence>
+                <xsd:attribute name="testSuite" use="required" type="xsd:IDREF"/>
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>
@@ -771,6 +816,7 @@
                 </xsd:sequence>
                 <xsd:attribute name="testSuite" use="required" type="xsd:IDREF"/>
                 <xsd:attribute name="specification" type="xsd:IDREF"/>
+                <xsd:attribute name="group" type="xsd:IDREF"/>
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>

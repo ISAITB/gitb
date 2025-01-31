@@ -1,0 +1,79 @@
+package com.gitb.engine.processing.handlers;
+
+import com.gitb.core.ConfigurationParameters;
+import com.gitb.core.ConfigurationType;
+import com.gitb.core.Metadata;
+import com.gitb.core.UsageEnumeration;
+import com.gitb.engine.expr.resolvers.VariableResolver;
+import com.gitb.engine.processing.ProcessingHandler;
+import com.gitb.engine.utils.HandlerUtils;
+import com.gitb.processing.ProcessingData;
+import com.gitb.processing.ProcessingReport;
+import com.gitb.ps.ProcessingModule;
+import com.gitb.tr.TestResultType;
+import com.gitb.types.*;
+
+import javax.xml.xpath.XPathExpression;
+import java.util.List;
+
+@ProcessingHandler(name="XPathProcessor")
+public class XPathProcessor extends AbstractProcessingHandler {
+
+    private static final String OPERATION__PROCESS = "process";
+    private static final String INPUT__INPUT = "input";
+    private static final String INPUT__EXPRESSION = "expression";
+    private static final String INPUT__TYPE = "type";
+    private static final String OUTPUT__OUTPUT = "output";
+
+    @Override
+    public ProcessingModule getModuleDefinition() {
+        ProcessingModule module = new ProcessingModule();
+        module.setId("XPathProcessor");
+        module.setMetadata(new Metadata());
+        module.getMetadata().setName(module.getId());
+        module.getMetadata().setVersion("1.0");
+        module.setConfigs(new ConfigurationParameters());
+        module.getOperation().add(createProcessingOperation(OPERATION__PROCESS,
+            List.of(
+                    createParameter(INPUT__INPUT, "object", UsageEnumeration.R, ConfigurationType.SIMPLE, "The XML content to evaluate the expression on."),
+                    createParameter(INPUT__EXPRESSION, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The XPath expression to evaluate."),
+                    createParameter(INPUT__TYPE, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, "The expected result type.")
+            ),
+            List.of(createParameter(OUTPUT__OUTPUT, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The result after evaluating the expression."))
+        ));
+        return module;
+    }
+
+    @Override
+    public ProcessingReport process(String session, String operation, ProcessingData input) {
+        // Collect inputs
+        ObjectType contentToProcess;
+        if (!input.getData().containsKey(INPUT__INPUT)) {
+            throw new IllegalArgumentException("The XML content to evaluate the expression on is required");
+        } else {
+            contentToProcess = getAndConvert(input.getData(), INPUT__INPUT, DataType.OBJECT_DATA_TYPE, ObjectType.class);
+        }
+        StringType expression;
+        if (!input.getData().containsKey(INPUT__EXPRESSION)) {
+            throw new IllegalArgumentException("The XPath expression is required");
+        } else {
+            expression = getAndConvert(input.getData(), INPUT__EXPRESSION, DataType.STRING_DATA_TYPE, StringType.class);
+        }
+        String resultType;
+        if (!input.getData().containsKey(INPUT__TYPE)) {
+            resultType = DataType.STRING_DATA_TYPE;
+        } else {
+            resultType = DataTypeFactory.getInstance().create((String) getAndConvert(input.getData(), INPUT__TYPE, DataType.STRING_DATA_TYPE, StringType.class).getValue()).getType();
+        }
+        MapType namespaces = (MapType) input.getData().get(HandlerUtils.NAMESPACE_MAP_INPUT);
+        // Compile expression
+        XPathExpression xpath = HandlerUtils.compileXPathExpression(namespaces, expression, new VariableResolver(getScope(session)));
+        // Process expression
+        DataType result = contentToProcess.processXPath(xpath, resultType);
+        // Return report
+        ProcessingData data = new ProcessingData();
+        data.getData().put(OUTPUT__OUTPUT, result);
+        return new ProcessingReport(createReport(TestResultType.SUCCESS), data);
+    }
+
+}

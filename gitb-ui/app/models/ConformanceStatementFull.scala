@@ -57,6 +57,10 @@ class ConformanceStatementFull(
     val testCaseSpecDescription: Option[String],
     val testCaseSpecLink: Option[String],
     val testCaseVersion: String,
+    val testCaseGroupId: Option[Long],
+    val testCaseGroupIdentifier: Option[String],
+    val testCaseGroupName: Option[String],
+    val testCaseGroupDescription: Option[String],
     result: String,
     val outputMessage: Option[String],
     val sessionId: Option[String],
@@ -66,12 +70,19 @@ class ConformanceStatementFull(
     undefinedTests: Long,
     completedOptionalTests: Long,
     failedOptionalTests: Long,
-    undefinedOptionalTests: Long
+    undefinedOptionalTests: Long,
+    completedTestsToConsider: Long,
+    failedTestsToConsider: Long,
+    undefinedTestsToConsider: Long
 ) extends ConformanceStatement(
   domainId, domainName, domainNameFull, domainDescription, domainReportMetadata,
   actorId, actorName, actorFull, actorDescription, actorReportMetadata,
   specificationId, specificationName, specificationNameFull, specificationDescription, specificationReportMetadata, systemId,
-  result, updateTime, completedTests, failedTests, undefinedTests, completedOptionalTests, failedOptionalTests, undefinedOptionalTests, specificationGroupId, specificationGroupName, specificationGroupDescription, specificationGroupReportMetadata, specificationDisplayOrder, specificationGroupDisplayOrder) {
+  result, updateTime,
+  completedTests, failedTests, undefinedTests,
+  completedOptionalTests, failedOptionalTests, undefinedOptionalTests,
+  completedTestsToConsider, failedTestsToConsider, undefinedTestsToConsider,
+  specificationGroupId, specificationGroupName, specificationGroupDescription, specificationGroupReportMetadata, specificationDisplayOrder, specificationGroupDisplayOrder) {
 
 
   override def copy(): ConformanceStatementFull = {
@@ -128,6 +139,10 @@ class ConformanceStatementFull(
       this.testCaseSpecDescription,
       this.testCaseSpecLink,
       this.testCaseVersion,
+      this.testCaseGroupId,
+      this.testCaseGroupIdentifier,
+      this.testCaseGroupName,
+      this.testCaseGroupDescription,
       this.result,
       this.outputMessage,
       this.sessionId,
@@ -137,7 +152,10 @@ class ConformanceStatementFull(
       this.undefinedTests,
       this.completedOptionalTests,
       this.failedOptionalTests,
-      this.undefinedOptionalTests
+      this.undefinedOptionalTests,
+      this.completedTestsToConsider,
+      this.failedTestsToConsider,
+      this.undefinedTestsToConsider
     )
   }
 

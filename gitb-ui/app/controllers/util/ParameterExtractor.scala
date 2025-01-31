@@ -5,7 +5,7 @@ import exceptions.{ErrorCodes, InvalidRequestException}
 import models.Enums._
 import controllers.util.Parameters
 import models.theme.{Theme, ThemeFiles}
-import models.{Actor, Badges, Communities, CommunityReportSettings, CommunityResources, Configs, Constants, Domain, Endpoints, ErrorTemplates, FileInfo, LandingPages, LegalNotices, NamedFile, OrganisationParameterValues, Organizations, SpecificationGroups, Specifications, SystemParameterValues, Systems, Trigger, TriggerData, Triggers, Users}
+import models.{Actor, Badges, Communities, CommunityReportSettings, CommunityResources, Configs, Constants, Domain, Endpoints, ErrorTemplates, FileInfo, LandingPages, LegalNotices, NamedFile, OrganisationParameterValues, Organizations, SpecificationGroups, Specifications, SystemParameterValues, Systems, Trigger, TriggerData, TriggerFireExpression, Triggers, Users}
 import org.apache.commons.lang3.StringUtils
 import org.mindrot.jbcrypt.BCrypt
 import play.api.mvc._
@@ -670,6 +670,15 @@ object ParameterExtractor {
     triggerData
   }
 
+  def extractTriggerFireExpressions(request:Request[AnyContent], parameter: String, triggerId: Option[Long]): Option[List[TriggerFireExpression]] = {
+    val triggerExpressionsStr = optionalBodyParameter(request, parameter)
+    var triggerExpressions: Option[List[TriggerFireExpression]] = None
+    if (triggerExpressionsStr.isDefined) {
+      triggerExpressions = Some(JsonUtil.parseJsTriggerFireExpressions(triggerExpressionsStr.get, triggerId))
+    }
+    triggerExpressions
+  }
+
   def extractCommunityResource(paramMap:Option[Map[String, Seq[String]]], communityId: Long): CommunityResources = {
     val name = requiredBodyParameter(paramMap, Parameters.NAME)
     val description = optionalBodyParameter(paramMap, Parameters.DESCRIPTION)
@@ -690,7 +699,8 @@ object ParameterExtractor {
     val communityId = requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
     new Trigger(
       Triggers(triggerId.getOrElse(0L), name, description, url, eventType, serviceType, operation, active, None, None, communityId),
-      extractTriggerDataItems(request, Parameters.DATA, triggerId)
+      extractTriggerDataItems(request, Parameters.DATA, triggerId),
+      extractTriggerFireExpressions(request, Parameters.EXPRESSIONS, triggerId)
     )
   }
 

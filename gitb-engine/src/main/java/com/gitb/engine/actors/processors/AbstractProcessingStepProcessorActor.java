@@ -7,10 +7,10 @@ import com.gitb.core.UsageEnumeration;
 import com.gitb.engine.expr.ExpressionHandler;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.engine.utils.StepContext;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.processing.IProcessingHandler;
 import com.gitb.processing.ProcessingData;
-import com.gitb.ps.ProcessingOperation;
 import com.gitb.tdl.Binding;
 import com.gitb.tdl.Process;
 import com.gitb.types.DataType;
@@ -26,8 +26,8 @@ public abstract class AbstractProcessingStepProcessorActor<T extends Process> ex
 
     private final ExpressionHandler expressionHandler;
 
-    public AbstractProcessingStepProcessorActor(T step, TestCaseScope scope, String stepId) {
-        super(step, scope, stepId);
+    public AbstractProcessingStepProcessorActor(T step, TestCaseScope scope, String stepId, StepContext stepContext) {
+        super(step, scope, stepId, stepContext);
         expressionHandler = new ExpressionHandler(scope);
     }
 

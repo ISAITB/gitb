@@ -1,108 +1,138 @@
 <div class="page index">
-  <div class="header-bar">
-    <div class="container">
-      <div class="header-container">
-        <div class="header-logo-container">
-          <img class="logo"/>
-        </div>
-        <div class="header-menu-container">
-          <app-header-menu [logoutInProgress]="logoutInProgress"></app-header-menu>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="child">
-    <div class="page">
-      <section class="page-top">
-          <div class="container">
-              <div class="row">
-                  <div class="col-12">
-                      <div class="page-title">{{pageTitle}}</div>
-                  </div>
-              </div>
-          </div>
-      </section>
-      @if (dataService.showNavigationControls) {
-        <app-breadcrumb [logoutInProgress]="logoutInProgress"></app-breadcrumb>
-      }
-      @if (logoutInProgress) {
-        <div class="logout-notification">
-          <app-pending-block [pending]="true"></app-pending-block>
-          <div class="logout-message">Logout in progress</div>
-        </div>
-      }
-      <div class="page-root" [class.disable-events]="logoutInProgress">
-        @if (dataService.showNavigationControls) {
-          <div class="page-menu">
-            <app-menu-item (click)="routingService.toHome()" [type]="MenuItem.home" label="Home" icon="fa-solid fa-house" [expanded]="menuExpanded"></app-menu-item>
-            @if (dataService.showSystemAdminMenu || dataService.showCommunityAdminMenu) {
-              <app-menu-group label="Administration" [expanded]="menuExpanded"></app-menu-group>
-              <app-menu-item (click)="routingService.toConformanceDashboard()" [type]="MenuItem.conformanceDashboard" label="Conformance dashboard" icon="fa-solid fa-gauge-simple-high" [expanded]="menuExpanded"></app-menu-item>
-              <app-menu-item (click)="routingService.toSessionDashboard()" [type]="MenuItem.sessionDashboard" label="Session dashboard" icon="fa-solid fa-rectangle-list" [expanded]="menuExpanded"></app-menu-item>
-              <app-menu-item (click)="toDomainManagement()" [type]="MenuItem.domainManagement" [label]="dataService.labelDomain() +' management'" icon="fa-solid fa-sitemap" [expanded]="menuExpanded"></app-menu-item>
-              <app-menu-item (click)="dataService.isSystemAdmin?routingService.toUserManagement():routingService.toCommunity(dataService.community!.id)" [type]="MenuItem.communityManagement" label="Community management" icon="fa-solid fa-people-group" [expanded]="menuExpanded"></app-menu-item>
-              <app-menu-item (click)="routingService.toDataExport()" [type]="MenuItem.dataExport" label="Data export" icon="fa-solid fa-file-export" [expanded]="menuExpanded"></app-menu-item>
-              <app-menu-item (click)="routingService.toDataImport()" [type]="MenuItem.dataImport" label="Data import" icon="fa-solid fa-file-import" [expanded]="menuExpanded"></app-menu-item>
-              @if (dataService.showSystemAdminMenu) {
-                <app-menu-item (click)="routingService.toSystemAdministration()" [type]="MenuItem.systemAdministration" label="System administration" icon="fa-solid fa-gear" [expanded]="menuExpanded"></app-menu-item>
-              }
-            }
-            <app-menu-group label="My tests" [expanded]="menuExpanded"></app-menu-group>
-            <app-menu-item (click)="routingService.toOwnConformanceStatements(dataService.vendor!.id)" [type]="MenuItem.myConformanceStatements" label="My conformance statements" icon="fa-solid fa-award" [expanded]="menuExpanded"></app-menu-item>
-            <app-menu-item (click)="routingService.toTestHistory(dataService.vendor!.id)" [type]="MenuItem.myTestSessions" label="My test sessions" icon="fa-regular fa-rectangle-list" [expanded]="menuExpanded"></app-menu-item>
-            <app-menu-item (click)="routingService.toOwnOrganisationDetails()" [type]="MenuItem.myOrganisation" [label]="'My '+dataService.labelOrganisationLower()" icon="fa-solid fa-building" [expanded]="menuExpanded"></app-menu-item>
-            <app-menu-group [expanded]="menuExpanded"></app-menu-group>
-            <app-menu-item label="Link to current page" icon="fa-solid fa-link" (click)="copyExternalLink()" [expanded]="menuExpanded"></app-menu-item>
-            <app-menu-item [label]="menuExpanded?'Collapse menu':'Expand menu'" [icon]="'fa-solid '+(menuExpanded?'fa-angles-left':'fa-angles-right')" (click)="toggleMenu()" [expanded]="menuExpanded"></app-menu-item>
-          </div>
-        }
-        <div class="page-content" appFileDropTarget>
-          @if (!dataService.showNavigationControls && isAuthenticated() && !logoutInProgress) {
-            <div class="container">
-              <div class="initial-load-indicator">
-                <app-pending-block [icon]="true" [large]="true"></app-pending-block>
-              </div>
+    <div class="header-bar">
+        <div class="container">
+            <div class="header-container">
+                <div class="header-logo-container">
+                    <img class="logo"/>
+                </div>
+                <div class="header-menu-container">
+                    <app-header-menu [logoutInProgress]="logoutInProgress"></app-header-menu>
+                </div>
             </div>
-          }          
-          <router-outlet></router-outlet>
         </div>
-      </div>
     </div>
-  </div>
-  <div class="footer-bar">
-    <div class="container">
-      <div class="footer-logo">
-        <img />
-      </div>
-      @if (dataService.isDevelopmentMode()) {
-        <div class="footer-devmode-container">
-          <div class="footer-devmode"><span><i class="fa-solid fa-exclamation-circle" aria-hidden="true"></i></span><span>Development mode</span></div>
+    <div class="child">
+        <div class="page">
+            <section class="page-top">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="page-title">{{ pageTitle }}</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            @if (dataService.showNavigationControls) {
+                <app-breadcrumb [logoutInProgress]="logoutInProgress"></app-breadcrumb>
+            }
+            @if (logoutInProgress) {
+                <div class="logout-notification">
+                    <app-pending-block [pending]="true"></app-pending-block>
+                    <div class="logout-message">Logout in progress</div>
+                </div>
+            }
+            <div class="page-root" [class.disable-events]="logoutInProgress">
+                @if (dataService.showNavigationControls) {
+                    <div class="page-menu">
+                        <app-menu-item (click)="routingService.toHome()" [type]="MenuItem.home" label="Home"
+                                       icon="fa-solid fa-house" [expanded]="menuExpanded"></app-menu-item>
+                        @if (dataService.showSystemAdminMenu || dataService.showCommunityAdminMenu) {
+                            <app-menu-group label="Administration" [expanded]="menuExpanded"></app-menu-group>
+                            <app-menu-item (click)="routingService.toConformanceDashboard()"
+                                           [type]="MenuItem.conformanceDashboard" label="Conformance dashboard"
+                                           icon="fa-solid fa-gauge-simple-high"
+                                           [expanded]="menuExpanded"></app-menu-item>
+                            <app-menu-item (click)="routingService.toSessionDashboard()"
+                                           [type]="MenuItem.sessionDashboard" label="Session dashboard"
+                                           icon="fa-solid fa-rectangle-list" [expanded]="menuExpanded"></app-menu-item>
+                            <app-menu-item (click)="toDomainManagement()" [type]="MenuItem.domainManagement"
+                                           [label]="dataService.labelDomain() +' management'" icon="fa-solid fa-sitemap"
+                                           [expanded]="menuExpanded"></app-menu-item>
+                            <app-menu-item (click)="dataService.isSystemAdmin?routingService.toUserManagement():routingService.toCommunity(dataService.community!.id)"
+                                           [type]="MenuItem.communityManagement" label="Community management"
+                                           icon="fa-solid fa-people-group" [expanded]="menuExpanded"></app-menu-item>
+                            <app-menu-item (click)="routingService.toDataExport()" [type]="MenuItem.dataExport"
+                                           label="Data export" icon="fa-solid fa-file-export"
+                                           [expanded]="menuExpanded"></app-menu-item>
+                            <app-menu-item (click)="routingService.toDataImport()" [type]="MenuItem.dataImport"
+                                           label="Data import" icon="fa-solid fa-file-import"
+                                           [expanded]="menuExpanded"></app-menu-item>
+                            @if (dataService.showSystemAdminMenu) {
+                                <app-menu-item (click)="routingService.toSystemAdministration()"
+                                               [type]="MenuItem.systemAdministration" label="System administration"
+                                               icon="fa-solid fa-gear" [expanded]="menuExpanded"></app-menu-item>
+                            }
+                        }
+                        <app-menu-group label="My tests" [expanded]="menuExpanded"></app-menu-group>
+                        <app-menu-item (click)="routingService.toOwnConformanceStatements(dataService.vendor!.id)"
+                                       [type]="MenuItem.myConformanceStatements" label="My conformance statements"
+                                       icon="fa-solid fa-award" [expanded]="menuExpanded"></app-menu-item>
+                        <app-menu-item (click)="routingService.toTestHistory(dataService.vendor!.id)"
+                                       [type]="MenuItem.myTestSessions" label="My test sessions"
+                                       icon="fa-regular fa-rectangle-list" [expanded]="menuExpanded"></app-menu-item>
+                        <app-menu-item (click)="routingService.toOwnOrganisationDetails()"
+                                       [type]="MenuItem.myOrganisation"
+                                       [label]="'My '+dataService.labelOrganisationLower()" icon="fa-solid fa-building"
+                                       [expanded]="menuExpanded"></app-menu-item>
+                        <app-menu-group [expanded]="menuExpanded"></app-menu-group>
+                        <app-menu-item label="Link to current page" icon="fa-solid fa-link" (click)="copyExternalLink()"
+                                       [expanded]="menuExpanded"></app-menu-item>
+                        <app-menu-item [label]="menuExpanded?'Collapse menu':'Expand menu'"
+                                       [icon]="'fa-solid '+(menuExpanded?'fa-angles-left':'fa-angles-right')"
+                                       (click)="toggleMenu()" [expanded]="menuExpanded"></app-menu-item>
+                    </div>
+                }
+                <div class="page-content" appFileDropTarget>
+                    @if (!dataService.showNavigationControls && isAuthenticated() && !logoutInProgress) {
+                        <div class="container">
+                            <div class="initial-load-indicator">
+                                <app-pending-block [icon]="true" [large]="true"></app-pending-block>
+                            </div>
+                        </div>
+                    }
+                    <router-outlet></router-outlet>
+                </div>
+            </div>
         </div>
-      }
-      <div class="version-div">
-        <div class="footer-links">
-          @if (showUserGuide()) {
-            <div class="footer-link"><a href (click)="userGuideLink();$event.preventDefault()" target="blank">User guide</a></div>
-          }
-          @if (showProvideFeedback()) {
-            <div class="footer-link"><a [href]="provideFeedbackLink()" target="blank">Provide feedback</a></div>
-          }
-          @if (showContactUs()) {
-            <div class="footer-link"><a href="#" (click)="contactUs();$event.preventDefault()">Contact support</a></div>
-          }
-          @if (showLegalNotice()) {
-            <div class="footer-link"><a href (click)="onLegalNotice();$event.preventDefault()">Legal notice</a></div>
-          }
-          @if (showMoreInfo()) {
-            <div class="footer-link"><a [href]="moreInfoLink()" target="blank">Find out more</a></div>
-          }
-          @if (showReleaseInfo()) {
-            <div class="footer-link"><a [href]="releaseInfoLink()" target="blank">{{version}}</a></div>
-          } @else {
-            <div class="footer-link"><span class="version-text">{{version}}</span></div>
-          }
-        </div>
-      </div>
     </div>
-  </div>
+    <div class="footer-bar">
+        <div class="container">
+            <div class="footer-logo">
+                <img/>
+            </div>
+            @if (dataService.isDevelopmentMode()) {
+                <div class="footer-devmode-container">
+                    <div class="footer-devmode"><span><i class="fa-solid fa-exclamation-circle" aria-hidden="true"></i></span><span>Development mode</span></div>
+                </div>
+            }
+            <div class="version-div">
+                <div class="footer-links">
+                    @if (showUserGuide()) {
+                        <div class="footer-link"><a href (click)="userGuideLink();$event.preventDefault()" target="blank">User guide</a></div>
+                    }
+                    @if (showRestApi()) {
+                        <div class="footer-link"><a href="api/rest" target="blank">REST API</a></div>
+                    }
+                    @if (showProvideFeedback()) {
+                        <div class="footer-link"><a [href]="provideFeedbackLink()" target="blank">Provide feedback</a></div>
+                    }
+                    @if (showContactUs()) {
+                        <div class="footer-link"><a href="#" (click)="contactUs();$event.preventDefault()">Contact support</a></div>
+                    }
+                    @if (showLegalNotice()) {
+                        <div class="footer-link"><a href (click)="onLegalNotice();$event.preventDefault()">Legal
+                            notice</a></div>
+                    }
+                    @if (showMoreInfo()) {
+                        <div class="footer-link"><a [href]="moreInfoLink()" target="blank">Find out more</a></div>
+                    }
+                    @if (showReleaseInfo()) {
+                        <div class="footer-link"><a [href]="releaseInfoLink()" target="blank">{{ version }}</a></div>
+                    } @else {
+                        <div class="footer-link"><span class="version-text">{{ version }}</span></div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
 </div>

@@ -1,6 +1,5 @@
 package models
 
-import models.statement.ResultHolder
 import utils.TimeUtil
 
 import java.sql.Timestamp
@@ -22,15 +21,18 @@ class ConformanceStatement(
     val specificationDescription: Option[String],
     val specificationReportMetadata: Option[String],
     val systemId: Long,
-    var result: String,
+    result: String,
     var updateTime: Option[Timestamp],
 
-    var completedTests: Long,
-    var failedTests: Long,
-    var undefinedTests: Long,
-    var completedOptionalTests: Long,
-    var failedOptionalTests: Long,
-    var undefinedOptionalTests: Long,
+    completedTests: Long,
+    failedTests: Long,
+    undefinedTests: Long,
+    completedOptionalTests: Long,
+    failedOptionalTests: Long,
+    undefinedOptionalTests: Long,
+    completedTestsToConsider: Long,
+    failedTestsToConsider: Long,
+    undefinedTestsToConsider: Long,
 
     var specificationGroupId: Option[Long] = None,
     var specificationGroupName: Option[String] = None,
@@ -38,19 +40,21 @@ class ConformanceStatement(
     var specificationGroupReportMetadata: Option[String] = None,
     var specificationDisplayOrder: Short = 0,
     var specificationGroupDisplayOrder: Option[Short] = None
-) extends ResultHolder {
+) extends ConformanceStatementResultData(
+  result, completedTests: Long, failedTests: Long, undefinedTests: Long,
+  completedOptionalTests: Long, failedOptionalTests: Long, undefinedOptionalTests: Long,
+  completedTestsToConsider: Long, failedTestsToConsider: Long, undefinedTestsToConsider: Long
+) {
 
-  def copy(): ConformanceStatement = {
+  override def copy(): ConformanceStatement = {
     new ConformanceStatement(
       domainId, domainName, domainNameFull, domainDescription, domainReportMetadata, actorId, actorName, actorFull, actorDescription, actorReportMetadata,
       specificationId, specificationName, specificationNameFull, specificationDescription, specificationReportMetadata, systemId,
       result, TimeUtil.copyTimestamp(this.updateTime), completedTests, failedTests, undefinedTests,
       completedOptionalTests, failedOptionalTests, undefinedOptionalTests,
+      completedTestsToConsider, failedTestsToConsider, undefinedTestsToConsider,
       specificationGroupId, specificationGroupName, specificationGroupDescription, specificationGroupReportMetadata, specificationDisplayOrder, specificationGroupDisplayOrder
     )
   }
 
-  override def resultStatus(): String = {
-    result
-  }
 }

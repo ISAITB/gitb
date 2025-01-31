@@ -15,12 +15,16 @@
                         </#if>
                     </td>
                     <#if item.isStatement()>
-                        <td class="conformance-item-data-td">
-                            <div class="conformance-item-coverage">${coverageBlock(item.data.completedTests, item.data.failedTests, item.data.undefinedTests, 270)}</div>
-                            <div class="conformance-item-status icon">
-                                <img src="classpath:reports/images/icon-${item.data.overallStatus}.png"/>
-                            </div>
-                        </td>
+                        <td class="conformance-item-data-td"><#t>
+                            <div class="conformance-item-data-container"><#t>
+                                <div class="conformance-item-coverage">${coverageBlock(item.data.completedTests, item.data.failedTests, item.data.undefinedTests, 270)}</div><#t>
+                                <div class="conformance-item-status"><#t>
+                                    <div class=icon><#t>
+                                        <img src="classpath:reports/images/icon-${item.data.overallStatus}.png"/><#t>
+                                    </div><#t>
+                                </div><#t>
+                            </div><#t>
+                        </td><#t>
                     <#else>
                         <td class="conformance-item-status-td">
                             <div class="conformance-item-status icon">
@@ -52,8 +56,18 @@
                 padding: 10px;
                 margin-top: 10px;
 	        }
-	        .conformance-item-coverage, .conformance-item-status {
-	            display: inline-block;
+	        .conformance-item-data-container {
+	            display: table;
+	            width: 100%;
+	        }
+	        .conformance-item-coverage {
+                display: table-cell;
+                vertical-align: middle;
+	        }
+	        .conformance-item-data-container > .conformance-item-status {
+                display: table-cell;
+                vertical-align: middle;
+                width: 1px;
 	        }
 	        .conformance-item-name {
                 font-weight: bold;

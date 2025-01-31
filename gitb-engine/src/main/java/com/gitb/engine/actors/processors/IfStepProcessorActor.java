@@ -1,6 +1,5 @@
 package com.gitb.engine.actors.processors;
 
-import org.apache.pekko.actor.ActorRef;
 import com.gitb.core.StepStatus;
 import com.gitb.engine.commands.interaction.StartCommand;
 import com.gitb.engine.events.TestStepStatusEventBus;
@@ -8,12 +7,14 @@ import com.gitb.engine.events.model.StatusEvent;
 import com.gitb.engine.events.model.TestStepStatusEvent;
 import com.gitb.engine.expr.ExpressionHandler;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.engine.utils.StepContext;
 import com.gitb.tdl.IfStep;
 import com.gitb.tr.SR;
 import com.gitb.tr.TestResultType;
 import com.gitb.tr.TestStepReportType;
 import com.gitb.types.DataType;
 import com.gitb.utils.XMLDateTimeUtils;
+import org.apache.pekko.actor.ActorRef;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 
@@ -30,8 +31,8 @@ public class IfStepProcessorActor extends AbstractTestStepActor<IfStep> {
 
 	private boolean condition;
 
-	public IfStepProcessorActor(IfStep step, TestCaseScope scope, String stepId) {
-		super(step, scope, stepId);
+	public IfStepProcessorActor(IfStep step, TestCaseScope scope, String stepId, StepContext stepContext) {
+		super(step, scope, stepId, stepContext);
 	}
 
 	@Override
@@ -50,13 +51,13 @@ public class IfStepProcessorActor extends AbstractTestStepActor<IfStep> {
 
 		ActorRef branch = null;
 		if(condition) {
-			branch = SequenceProcessorActor.create(getContext(), step.getThen(), scope, stepId + THEN_BRANCH_ID);
+			branch = SequenceProcessorActor.create(getContext(), step.getThen(), scope, stepId + THEN_BRANCH_ID, this.stepContext);
 			if (step.getElse() != null) {
 				sendSkippedStatusEvent(stepId + ELSE_BRANCH_ID);
 			}
 		} else {
 			if (step.getElse() != null) {
-				branch = SequenceProcessorActor.create(getContext(), step.getElse(), scope, stepId + ELSE_BRANCH_ID);
+				branch = SequenceProcessorActor.create(getContext(), step.getElse(), scope, stepId + ELSE_BRANCH_ID, this.stepContext);
 			}
             sendSkippedStatusEvent(stepId + THEN_BRANCH_ID);
 		}
@@ -91,7 +92,7 @@ public class IfStepProcessorActor extends AbstractTestStepActor<IfStep> {
 		}
     }
 
-	public static ActorRef create(ActorContext context, IfStep step, TestCaseScope scope, String stepId) throws Exception {
-		return create(IfStepProcessorActor.class, context, step, scope, stepId);
+	public static ActorRef create(ActorContext context, IfStep step, TestCaseScope scope, String stepId, StepContext stepContext) throws Exception {
+		return create(IfStepProcessorActor.class, context, step, scope, stepId, stepContext);
 	}
 }

@@ -1,12 +1,12 @@
-import { Component, Input } from '@angular/core';
-import { BsModalRef } from 'ngx-bootstrap/modal';
-import { Constants } from 'src/app/common/constants';
-import { DataService } from 'src/app/services/data.service';
-import { ReportService } from 'src/app/services/report.service';
-import { ConformanceCertificateSettings } from 'src/app/types/conformance-certificate-settings';
-import { saveAs } from 'file-saver'
-import { Observable } from 'rxjs';
-import { ConformanceService } from 'src/app/services/conformance.service';
+import {Component, ElementRef, EventEmitter, Input, ViewChild} from '@angular/core';
+import {BsModalRef} from 'ngx-bootstrap/modal';
+import {Constants} from 'src/app/common/constants';
+import {DataService} from 'src/app/services/data.service';
+import {ReportService} from 'src/app/services/report.service';
+import {ConformanceCertificateSettings} from 'src/app/types/conformance-certificate-settings';
+import {saveAs} from 'file-saver';
+import {Observable} from 'rxjs';
+import {ConformanceService} from 'src/app/services/conformance.service';
 
 @Component({
   selector: 'app-conformance-certificate-modal',
@@ -21,12 +21,16 @@ export class ConformanceCertificateModalComponent {
   @Input() format!: 'xml'|'pdf'
   @Input() settings?: ConformanceCertificateSettings
   @Input() certificateEnabled!: boolean
+  @ViewChild("editorContainer") editorContainerRef?: ElementRef;
 
   exportPending = false
   messagePending = false
   messageLoaded = false
   choice = Constants.REPORT_OPTION_CHOICE.REPORT
   Constants = Constants
+  maximised = false
+  editorHeight = 300
+  editorSizeEmitter = new EventEmitter<number>()
 
   constructor(
     private dataService: DataService,
@@ -34,6 +38,16 @@ export class ConformanceCertificateModalComponent {
     private reportService: ReportService,
     private conformanceService: ConformanceService
   ) { }
+
+  expandModal(): void {
+    this.modalInstance.setClass("conformanceCertificatePreview")
+    this.maximised = true
+    if (this.editorContainerRef) {
+      const editorBottom = this.editorContainerRef.nativeElement.getBoundingClientRect().bottom
+      const windowHeight = window.innerHeight
+      this.editorSizeEmitter.emit(this.editorHeight + windowHeight - editorBottom - 45)
+    }
+  }
 
   choiceChanged() {
     if (this.choice == Constants.REPORT_OPTION_CHOICE.CERTIFICATE && this.settings) {
@@ -91,7 +105,7 @@ export class ConformanceCertificateModalComponent {
         if (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin) {
           exportObservable = this.reportService.exportConformanceStatementReportInXML(this.actorId, this.systemId, this.communityId, includeDetails, this.snapshotId)
         } else {
-          exportObservable = this.reportService.exportOwnConformanceStatementReportInXML(this.actorId, this.systemId, includeDetails, this.snapshotId)          
+          exportObservable = this.reportService.exportOwnConformanceStatementReportInXML(this.actorId, this.systemId, includeDetails, this.snapshotId)
         }
       }
     }

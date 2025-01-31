@@ -80,6 +80,10 @@ export class IndexComponent implements OnInit, OnDestroy {
     return this.userLoaded() && this.dataService.vendor != undefined
   }
 
+  showRestApi(): boolean {
+    return this.dataService.configuration && this.dataService.configuration.automationApiEnabled
+  }
+
   showContactUs(): boolean {
     return this.dataService.configuration && this.dataService.configuration.emailEnabled && this.dataService.configuration.emailContactFormEnabled
   }

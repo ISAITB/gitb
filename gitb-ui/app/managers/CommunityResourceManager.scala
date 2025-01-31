@@ -49,18 +49,29 @@ class CommunityResourceManager @Inject()(repositoryUtils: RepositoryUtils, dbCon
     }
   }
 
-  def getCommunityResourceFileByName(userId: Long, name: String): Option[File] = {
+  def getCommunityResourceFileByName(communityId: Option[Long], userId: Long, name: String): Option[File] = {
     val resourceIds = exec(for {
+      resourceCommunityId <- {
+        if (communityId.isDefined) {
+          DBIO.successful(communityId.get)
+        } else {
+          PersistenceSchema.users
+            .join(PersistenceSchema.organizations).on(_.organization === _.id)
+            .filter(_._1.id === userId)
+            .map(_._2.community)
+            .result
+            .head
+        }
+      }
       userCommunityResult <-
         // Check first in the user's own community.
-        PersistenceSchema.users
-          .join(PersistenceSchema.organizations).on(_.organization === _.id)
-          .join(PersistenceSchema.communityResources).on(_._2.community === _.community)
-          .filter(_._1._1.id === userId)
-          .filter(_._2.name === name)
-          .map(x => (x._2.id, x._2.community))
+        PersistenceSchema.communityResources
+          .filter(_.community === resourceCommunityId)
+          .filter(_.name === name)
+          .map(_.id)
           .result
           .headOption
+          .map(_.map((_, resourceCommunityId)))
       finalResult <- {
         if (userCommunityResult.isDefined) {
           DBIO.successful(userCommunityResult)

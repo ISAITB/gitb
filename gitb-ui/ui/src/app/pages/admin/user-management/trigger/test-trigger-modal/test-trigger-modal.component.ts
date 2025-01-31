@@ -6,6 +6,7 @@ import { EditorOptions } from 'src/app/components/code-editor-modal/code-editor-
 import { TriggerService } from 'src/app/services/trigger.service';
 import { Subscription } from 'rxjs';
 import { Constants } from 'src/app/common/constants';
+import {BaseComponent} from '../../../../base-component.component';
 
 @Component({
   selector: 'app-test-trigger-modal',
@@ -13,11 +14,11 @@ import { Constants } from 'src/app/common/constants';
   styles: [
   ]
 })
-export class TestTriggerModalComponent implements OnInit {
+export class TestTriggerModalComponent extends BaseComponent implements OnInit {
 
   @Input() request!: string
   @Input() communityId!: number
-  @Input() url!: string
+  @Input() url: string|undefined
   @Input() serviceType!: number
   initialRequest!: string
   callSubscription?: Subscription
@@ -34,7 +35,7 @@ export class TestTriggerModalComponent implements OnInit {
     public dataService: DataService,
     private popupService: PopupService,
     private triggerService: TriggerService
-  ) { }
+  ) { super() }
 
   ngOnInit(): void {
     if (this.serviceType == Constants.TRIGGER_SERVICE_TYPE.JSON) {
@@ -65,27 +66,29 @@ export class TestTriggerModalComponent implements OnInit {
   }
 
   callService() {
-    this.actionPending = true
-    this.callSubscription = this.triggerService.test(this.url, this.serviceType, this.request, this.communityId)
-    .subscribe((data) => {
-      if (data?.texts?.length) {
-        if (data.success) {
-          this.responseSuccess = true
-          if (this.serviceType == Constants.TRIGGER_SERVICE_TYPE.JSON) {
-            this.response = this.dataService.prettifyJSON(data.texts[0])
-          } else {
-            this.response = data.texts[0]
+    if (this.url) {
+      this.actionPending = true
+      this.callSubscription = this.triggerService.test(this.url, this.serviceType, this.request, this.communityId)
+        .subscribe((data) => {
+          if (data?.texts?.length) {
+            if (data.success) {
+              this.responseSuccess = true
+              if (this.serviceType == Constants.TRIGGER_SERVICE_TYPE.JSON) {
+                this.response = this.dataService.prettifyJSON(data.texts[0])
+              } else {
+                this.response = data.texts[0]
+              }
+            } else {
+              this.responseSuccess = false
+              this.response = this.dataService.errorArrayToString(data.texts)
+            }
+            this.editStep = false
           }
-        } else {
-          this.responseSuccess = false
-          this.response = this.dataService.errorArrayToString(data.texts)
-        }
-        this.editStep = false
-      }
-    })
-    this.callSubscription.add(() => {
-      this.actionPending = false
-    })
+        })
+      this.callSubscription.add(() => {
+        this.actionPending = false
+      })
+    }
   }
 
   reset() {

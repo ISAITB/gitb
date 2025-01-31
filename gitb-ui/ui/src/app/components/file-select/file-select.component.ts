@@ -27,7 +27,7 @@ export class FileSelectComponent implements OnInit, OnDestroy {
   @ViewChild('fileInput') fileInput?: ElementRef
 
   Constants = Constants
-  
+
   maxSizeKbs?: number
   acceptString?: string
   dragActive = false
@@ -90,7 +90,7 @@ export class FileSelectComponent implements OnInit, OnDestroy {
   }
 
   private selectFile(file: File) {
-    if (file != undefined) {
+    if (file != undefined && file.size > 0) {
       if (this.maxSize > 0 && file.size >= this.maxSize) {
         this.popupService.warning('The maximum allowed size for files is '+this.maxSizeKbs+' KBs.')
         if (this.fileInput) {

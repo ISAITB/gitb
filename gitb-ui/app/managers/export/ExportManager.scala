@@ -340,6 +340,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
     var actorEndpointMap: scala.collection.mutable.Map[Long, ListBuffer[models.Endpoints]] = null
     var endpointParameterMap: scala.collection.mutable.Map[Long, ListBuffer[models.Parameters]] = null
     var specificationTestSuiteMap: scala.collection.mutable.Map[Long, ListBuffer[models.TestSuites]] = null
+    var testSuiteTestCaseGroupMap: scala.collection.mutable.Map[Long, ListBuffer[models.TestCaseGroup]] = null
     var testSuiteTestCaseMap: scala.collection.mutable.Map[Long, ListBuffer[models.TestCases]] = null
     var testSuiteActorMap: scala.collection.mutable.Map[Long, ListBuffer[Long]] = null
     if (exportSettings.specifications) {
@@ -356,6 +357,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
       // Test suites.
       if (exportSettings.testSuites) {
         testSuiteActorMap = scala.collection.mutable.Map[Long, ListBuffer[Long]]()
+        testSuiteTestCaseGroupMap = scala.collection.mutable.Map[Long, ListBuffer[models.TestCaseGroup]]()
         testSuiteTestCaseMap = scala.collection.mutable.Map[Long, ListBuffer[models.TestCases]]()
         specificationTestSuiteMap = loadSpecificationTestSuiteMap(domainId)
         exec(PersistenceSchema.testSuites
@@ -370,6 +372,20 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
             testSuiteActorMap += (x._1 -> actors.get)
           }
           actors.get += x._2 // Actor ID
+        }
+        // Test case groups.
+        exec(PersistenceSchema.testCaseGroups
+          .join(PersistenceSchema.testSuites).on(_.testSuite === _.id)
+          .filter(_._2.domain === domainId)
+          .map(x => (x._1.id, x._1))
+          .result
+        ).foreach { x =>
+          var testCaseGroups = testSuiteTestCaseGroupMap.get(x._1)
+          if (testCaseGroups.isEmpty) {
+            testCaseGroups = Some(new ListBuffer[models.TestCaseGroup])
+            testSuiteTestCaseGroupMap += (x._2.testSuite -> testCaseGroups.get)
+          }
+          testCaseGroups.get += x._2
         }
         // Test cases.
         exec(PersistenceSchema.testCases
@@ -409,7 +425,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
       if (testSuites.nonEmpty) {
         val sharedTestSuites = new com.gitb.xml.export.TestSuites
         testSuites.foreach { testSuite =>
-          val exportedTestSuite = toExportedTestSuite(sequence, testSuite, None, testSuiteTestCaseMap.getOrElse(testSuite.id, ListBuffer.empty).toList)
+          val exportedTestSuite = toExportedTestSuite(sequence, testSuite, None, testSuiteTestCaseGroupMap.getOrElse(testSuite.id, ListBuffer.empty).toList, testSuiteTestCaseMap.getOrElse(testSuite.id, ListBuffer.empty).toList)
           sharedTestSuites.getTestSuite.add(exportedTestSuite)
           exportedSharedTestSuiteMap += (testSuite.id -> exportedTestSuite)
         }
@@ -549,7 +565,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
               exportedSpecification.setTestSuites(new com.gitb.xml.export.TestSuites)
               specificTestSuites.foreach { testSuite =>
                 // Test suite specific to the specification.
-                val exportedTestSuite = toExportedTestSuite(sequence, testSuite, Some(exportedSpecification), testSuiteTestCaseMap.getOrElse(testSuite.id, ListBuffer.empty).toList)
+                val exportedTestSuite = toExportedTestSuite(sequence, testSuite, Some(exportedSpecification), testSuiteTestCaseGroupMap.getOrElse(testSuite.id, ListBuffer.empty).toList, testSuiteTestCaseMap.getOrElse(testSuite.id, ListBuffer.empty).toList)
                 exportedSpecification.getTestSuites.getTestSuite.add(exportedTestSuite)
               }
             }
@@ -585,7 +601,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
     DomainExportInfo(sequence.current(), exportedActorMap, exportedEndpointParameterMap, Some(exportedDomain), actorEndpointMap, endpointParameterMap, exportedDomainParameterMap, exportedSpecificationGroupMap, exportedSpecificationMap)
   }
 
-  private def toExportedTestSuite(sequence:IdGenerator, testSuite: models.TestSuites, specificationToSet: Option[com.gitb.xml.export.Specification], testCases: List[models.TestCases]):com.gitb.xml.export.TestSuite  = {
+  private def toExportedTestSuite(sequence:IdGenerator, testSuite: models.TestSuites, specificationToSet: Option[com.gitb.xml.export.Specification], testCaseGroups: List[models.TestCaseGroup], testCases: List[models.TestCases]):com.gitb.xml.export.TestSuite  = {
     val exportedTestSuite = new com.gitb.xml.export.TestSuite
     exportedTestSuite.setId(toId(sequence.next()))
     exportedTestSuite.setIdentifier(testSuite.identifier)
@@ -611,6 +627,21 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
       )
     } finally {
       FileUtils.deleteQuietly(testTestSuitePath.toFile)
+    }
+    // Test case groups.
+    val exportedGroupMap = mutable.HashMap[Long, com.gitb.xml.export.TestCaseGroup]()
+    if (testCaseGroups.nonEmpty) {
+      exportedTestSuite.setTestCaseGroups(new TestCaseGroups)
+      testCaseGroups.foreach { group =>
+        val exportedGroup = new com.gitb.xml.export.TestCaseGroup
+        exportedGroup.setId(toId(sequence.next()))
+        exportedGroup.setIdentifier(group.identifier)
+        exportedGroup.setName(group.name.orNull)
+        exportedGroup.setDescription(group.description.orNull)
+        exportedGroup.setTestSuite(exportedTestSuite)
+        exportedTestSuite.getTestCaseGroups.getTestCaseGroup.add(exportedGroup)
+        exportedGroupMap += (group.id -> exportedGroup)
+      }
     }
     // Test cases.
     if (testCases.nonEmpty) {
@@ -640,6 +671,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
         exportedTestCase.setSpecReference(testCase.specReference.orNull)
         exportedTestCase.setSpecDescription(testCase.specReference.orNull)
         exportedTestCase.setSpecReference(testCase.specReference.orNull)
+        exportedTestCase.setGroup(testCase.group.flatMap(exportedGroupMap.get).orNull)
         // Test case path - remove first part which represents the test suite
         val firstPathSeparatorIndex = testCase.path.indexOf('/')
         if (firstPathSeparatorIndex != -1) {
@@ -1240,6 +1272,24 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
             }
             if (exportedTrigger.getDataItems != null && exportedTrigger.getDataItems.getTriggerDataItem.isEmpty) {
               exportedTrigger.setDataItems(null)
+            }
+          }
+          if (trigger.fireExpressions.isDefined && trigger.fireExpressions.get.nonEmpty) {
+            exportedTrigger.setFireExpressions(new TriggerFireExpressions)
+            trigger.fireExpressions.get.foreach { expression =>
+              val exportedFireExpression = new com.gitb.xml.export.TriggerFireExpression
+              exportedFireExpression.setId(toId(idSequence.next()))
+              exportedFireExpression.setExpression(expression.expression)
+              models.Enums.TriggerFireExpressionType.apply(expression.expressionType) match {
+                case models.Enums.TriggerFireExpressionType.TestCaseIdentifier => exportedFireExpression.setExpressionType(com.gitb.xml.export.TriggerFireExpressionType.TEST_CASE_IDENTIFIER)
+                case models.Enums.TriggerFireExpressionType.TestSuiteIdentifier => exportedFireExpression.setExpressionType(com.gitb.xml.export.TriggerFireExpressionType.TEST_SUITE_IDENTIFIER)
+                case models.Enums.TriggerFireExpressionType.ActorIdentifier => exportedFireExpression.setExpressionType(com.gitb.xml.export.TriggerFireExpressionType.ACTOR_IDENTIFIER)
+                case models.Enums.TriggerFireExpressionType.SpecificationName => exportedFireExpression.setExpressionType(com.gitb.xml.export.TriggerFireExpressionType.SPECIFICATION_NAME)
+                case models.Enums.TriggerFireExpressionType.SystemName => exportedFireExpression.setExpressionType(com.gitb.xml.export.TriggerFireExpressionType.SYSTEM_NAME)
+                case models.Enums.TriggerFireExpressionType.OrganisationName => exportedFireExpression.setExpressionType(com.gitb.xml.export.TriggerFireExpressionType.ORGANISATION_NAME)
+              }
+              exportedFireExpression.setNotMatch(expression.notMatch)
+              exportedTrigger.getFireExpressions.getTriggerFireExpression.add(exportedFireExpression)
             }
           }
           communityData.getTriggers.getTrigger.add(exportedTrigger)

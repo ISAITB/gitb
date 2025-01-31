@@ -16,6 +16,7 @@ case class ConformanceSnapshotResult(
   actorId: Long,
   testSuiteId: Long,
   testCaseId: Long,
+  testCaseGroupId: Option[Long],
   testSession: Option[String],
   result: String,
   outputMessage: Option[String],

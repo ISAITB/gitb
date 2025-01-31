@@ -31,6 +31,7 @@ export class CreateErrorTemplateComponent extends BaseComponent implements OnIni
   savePending = false
   tooltipForDefaultCheck!: string
   validation = new ValidationState()
+  Constants = Constants
 
   constructor(
     private routingService: RoutingService,

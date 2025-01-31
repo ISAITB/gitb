@@ -29,7 +29,6 @@ import javax.xml.datatype.DatatypeConfigurationException;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Created by serbay on 9/5/14.
  * Actor processing the TestCase definition
  */
 public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
@@ -53,8 +52,6 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
 
     /**
      * Initializing the children actors and the TestCaseContext
-     *
-     * @throws IllegalAccessException
      */
     private void init() throws Exception {
         TestCaseContext context = SessionManager
@@ -62,9 +59,9 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
                 .getContext(sessionId);
         if (context != null) {
             testCase = context.getTestCase();
-            TestCaseUtils.applyStopOnErrorSemantics(testCase.getSteps(), testCase.getSteps().isStopOnError());
+            TestCaseUtils.applyStopOnErrorSemantics(testCase.getSteps());
             if (testCase.getPreliminary() != null) {
-                preliminaryProcessorActor = InteractionStepProcessorActor.create(InteractionStepProcessorActor.class, getContext(), testCase.getPreliminary(), context.getScope(), PRELIMINARY_STEP_ID);
+                preliminaryProcessorActor = InteractionStepProcessorActor.create(InteractionStepProcessorActor.class, getContext(), testCase.getPreliminary(), context.getScope(), PRELIMINARY_STEP_ID, null);
             }
         }
     }
@@ -100,7 +97,7 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
             }
             //Stop command for test case processing
             else if (message instanceof RestartCommand) {
-	            logger.debug("Restarting session ["+sessionId+"].");
+                logger.debug("Restarting session [{}].", sessionId);
 	            //Stop child sequence processor
 	            if (sequenceProcessorActor != null) {
 		            sequenceProcessorActor.tell(message, self());
@@ -125,14 +122,12 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
             else if (message instanceof StatusEvent) {
 	            if(getSender().equals(sequenceProcessorActor)) {
 		            StepStatus status = ((StatusEvent) message).getStatus();
-		            if (status == StepStatus.COMPLETED || status == StepStatus.ERROR || status == StepStatus.WARNING) {
+		            if (status == StepStatus.COMPLETED || status == StepStatus.ERROR || status == StepStatus.WARNING || status == StepStatus.SKIPPED) {
 		                // Construct the final report.
                         TestStepReportType resultReport = constructResultReport(status, context);
                         // Notify for the completion of the test session after a grace period.
                         getContext().system().scheduler().scheduleOnce(
-                                scala.concurrent.duration.Duration.apply(500L, TimeUnit.MILLISECONDS), () -> {
-                                    getContext().getParent().tell(new TestSessionFinishedCommand(sessionId, status, resultReport), self());
-                                },
+                                scala.concurrent.duration.Duration.apply(500L, TimeUnit.MILLISECONDS), () -> getContext().getParent().tell(new TestSessionFinishedCommand(sessionId, status, resultReport), self()),
                                 getContext().dispatcher()
                         );
 		            }
@@ -157,6 +152,8 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
         // We treat a final result of "WARNING" as a "SUCCESS". This is the overall test session result.
         if (status == StepStatus.COMPLETED || status == StepStatus.WARNING) {
             report.setResult(TestResultType.SUCCESS);
+        } else if (status == StepStatus.SKIPPED) {
+            report.setResult(TestResultType.UNDEFINED);
         } else {
             report.setResult(TestResultType.FAILURE);
         }
@@ -170,6 +167,8 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
                     outputMessage = calculateOutputMessage(testCase.getOutput().getSuccess(), context);
                 } else if (report.getResult() == TestResultType.FAILURE) {
                     outputMessage = calculateOutputMessage(testCase.getOutput().getFailure(), context);
+                } else if (report.getResult() == TestResultType.UNDEFINED) {
+                    outputMessage = calculateOutputMessage(testCase.getOutput().getUndefined(), context);
                 }
                 if (outputMessage != null) {
                     report.setContext(new AnyContent());

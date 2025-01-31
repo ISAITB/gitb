@@ -8,11 +8,14 @@ import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.messaging.MessagingContext;
 import com.gitb.engine.messaging.TransactionContext;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.engine.utils.StepContext;
+import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.DeferredMessagingReport;
 import com.gitb.messaging.IMessagingHandler;
 import com.gitb.messaging.Message;
 import com.gitb.messaging.MessagingReport;
+import com.gitb.tdl.ErrorLevel;
 import com.gitb.tdl.Send;
 import com.gitb.tr.TAR;
 import com.gitb.tr.TestResultType;
@@ -40,8 +43,8 @@ public class SendStepProcessorActor extends AbstractMessagingStepProcessorActor<
 
 	private Promise<TestStepReportType> promise;
 
-	public SendStepProcessorActor(Send step, TestCaseScope scope, String stepId) {
-		super(step, scope, stepId);
+	public SendStepProcessorActor(Send step, TestCaseScope scope, String stepId, StepContext stepContext) {
+		super(step, scope, stepId, stepContext);
 	}
 
     @Override
@@ -109,11 +112,11 @@ public class SendStepProcessorActor extends AbstractMessagingStepProcessorActor<
 					});
 					return null;
 				} else if (report != null) {
-					return buildReport(report);
+					return buildReport(report, resolver);
 				} else {
 					TAR tar = new TAR();
 					tar.setResult(TestResultType.SUCCESS);
-					return tar;
+					return completeReport(tar, resolver);
 				}
 			}, getContext().getSystem().dispatchers().lookup(ActorSystem.BLOCKING_IO_DISPATCHER));
 
@@ -124,7 +127,16 @@ public class SendStepProcessorActor extends AbstractMessagingStepProcessorActor<
 		}
 	}
 
-	private TAR buildReport(MessagingReport report) {
+	private TAR completeReport(TAR report, VariableResolver resolver) {
+		if (resolver == null) {
+			resolver = new VariableResolver(scope);
+		}
+		ErrorLevel errorLevel = TestCaseUtils.resolveReportErrorLevel(step.getLevel(), scope.getContext().getSessionId(), resolver);
+		TestCaseUtils.postProcessReport(step.isInvert(), errorLevel, report);
+		return report;
+	}
+
+	private TAR buildReport(MessagingReport report, VariableResolver resolver) {
 		//id parameter must be set for Send steps, so that sent message
 		//is saved to scope
 		if (step.getId() != null && report.getMessage() != null) {
@@ -134,14 +146,14 @@ public class SendStepProcessorActor extends AbstractMessagingStepProcessorActor<
 					.createVariable(step.getId())
 					.setValue(map);
 		}
-		return report.getReport();
+		return completeReport(report.getReport(), resolver);
 	}
 
 	@Override
 	public void onReceive(Object message) {
 		try {
 			if (message instanceof NotificationReceived) {
-				signalStepStatus(buildReport(((NotificationReceived) message).getReport()));
+				signalStepStatus(buildReport(((NotificationReceived) message).getReport(), null));
 			} else {
 				super.onReceive(message);
 			}
@@ -162,7 +174,7 @@ public class SendStepProcessorActor extends AbstractMessagingStepProcessorActor<
         return messagingContext;
     }
 
-	public static ActorRef create(ActorContext context, Send step, TestCaseScope scope, String stepId) throws Exception {
-		return context.actorOf(props(SendStepProcessorActor.class, step, scope, stepId).withDispatcher(ActorSystem.BLOCKING_DISPATCHER), getName(NAME));
+	public static ActorRef create(ActorContext context, Send step, TestCaseScope scope, String stepId, StepContext stepContext) throws Exception {
+		return context.actorOf(props(SendStepProcessorActor.class, step, scope, stepId, stepContext).withDispatcher(ActorSystem.BLOCKING_DISPATCHER), getName(NAME));
 	}
 }

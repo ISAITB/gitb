@@ -86,13 +86,13 @@
                                     <app-text-filter name="statementFilter" [width]="350" [placeholder]="'Search statements...'" [(ngModel)]="statementFilter" (apply)="filterStatements()"></app-text-filter>
                                 </div>
                                 <div class="status-filter">
-                                    <app-checkbox-option-panel 
-                                        label="Show statements..." 
-                                        [options]="statusOptions" 
+                                    <app-checkbox-option-panel
+                                        label="Show statements..."
+                                        [options]="statusOptions"
                                         (updated)="filterByStatus($event)"></app-checkbox-option-panel>
                                 </div>
                                 <div class="btn-group export-group" dropdown [isDisabled]="selectedSystemId == undefined || statements.length == 0 || exportOverviewPending">
-                                    <button type="button" [disable]="selectedSystemId == undefined || statements.length == 0 || exportOverviewPending" [pending]="exportOverviewPending" class="btn btn-secondary" (click)="exportOverview('pdf')">Download report</button>
+                                    <button type="button" [disable]="selectedSystemId == undefined || statements.length == 0 || exportOverviewPending" [pending]="exportOverviewPending" class="btn btn-secondary text-nowrap" (click)="exportOverview('pdf')">Download report</button>
                                     <button id="button-export" type="button" [disabled]="selectedSystemId == undefined || statements.length == 0 || exportOverviewPending" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
                                         <span class="caret"></span>
                                         <span class="sr-only visually-hidden">Download report</span>
@@ -206,8 +206,8 @@
                                     <td class="td-min-centered"><span><i containerClass="shortTooltip" [tooltip]="dataService.tooltipForTestResult(statement.overallStatus)" [ngClass]="dataService.iconForTestResult(statement.overallStatus)"></i></span></td>
                                     <td class="td-min-centered">
                                         <div class="btn-toolbar no-wrap">
-                                            <button class="btn btn-secondary" (click)="onExportConformanceStatement(statement, 'xml'); $event.stopPropagation();" [pending]="statement.exportXmlPending" [icon]="true"  containerClass="shortTooltip" tooltip="Export (XML)" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-regular fa-file-lines"></i></button>
-                                            <button class="btn btn-secondary" (click)="onExportConformanceStatement(statement, 'pdf'); $event.stopPropagation();" [pending]="statement.exportPdfPending" [icon]="true"  containerClass="shortTooltip" tooltip="Export (PDF)" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-regular fa-file-pdf"></i></button>
+                                            <button class="btn btn-secondary" (click)="onExportConformanceStatement(statement, 'xml'); $event.stopPropagation();" [pending]="statement.exportXmlPending" [icon]="true"  containerClass="shortTooltip" container="body" tooltip="Export (XML)" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-regular fa-file-lines"></i></button>
+                                            <button class="btn btn-secondary" (click)="onExportConformanceStatement(statement, 'pdf'); $event.stopPropagation();" [pending]="statement.exportPdfPending" [icon]="true"  containerClass="shortTooltip" container="body" tooltip="Export (PDF)" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-regular fa-file-pdf"></i></button>
                                         </div>
                                     </td>
                                 </tr>
@@ -234,13 +234,15 @@
                                                     <div class="spinnerPadded">
                                                         <app-pending-block></app-pending-block>
                                                     </div>
+                                                } @else {
+                                                    <app-test-suite-display
+                                                        [testSuites]="statement.testSuites"
+                                                        [showExecute]="false"
+                                                        [showExport]="true"
+                                                        [communityId]="statement.communityId"
+                                                        (viewTestSession)="toTestSession($event)"
+                                                    ></app-test-suite-display>
                                                 }
-                                                <app-test-suite-display
-                                                    [testSuites]="statement.testSuites"
-                                                    [showExecute]="false"
-                                                    [showExport]="true"
-                                                    (viewTestSession)="toTestSession($event)"
-                                                ></app-test-suite-display>
                                             </div>
                                         </div>
                                     </td>

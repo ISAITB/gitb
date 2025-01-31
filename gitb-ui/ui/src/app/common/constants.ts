@@ -145,6 +145,9 @@ export class Constants {
 	public static PLACEHOLDER__DOMAIN = "$DOMAIN"
 	public static PLACEHOLDER__BADGE = "$BADGE"
 	public static PLACEHOLDER__BADGES = "$BADGES"
+  public static PLACEHOLDER__LAST_UPDATE_DATE = "$LAST_UPDATE_DATE"
+  public static PLACEHOLDER__REPORT_DATE = "$REPORT_DATE"
+  public static PLACEHOLDER__SNAPSHOT = "$SNAPSHOT"
 
 	public static TEST_STATUS = {
 		UNKNOWN: null,
@@ -352,6 +355,10 @@ export class Constants {
 		TAB: 'snapshot_id'
 	}
 
+  public static NAVIGATION_DATA = {
+    IMPLICIT_COMMUNITY_ID: 'implicitCommunityId'
+  }
+
 	public static SYSTEM_CONFIG = {
 		SESSION_ALIVE_TIME: 'session_alive_time',
 		REST_API_ENABLED: 'rest_api_enabled',
@@ -377,6 +384,15 @@ export class Constants {
 		CONFORMANCE_STATEMENT_CERTIFICATE: 5,
 		CONFORMANCE_OVERVIEW_CERTIFICATE: 6
 	}
+
+  public static TRIGGER_FIRE_EXPRESSION_TYPE = {
+    TEST_CASE_IDENTIFIER: 1,
+    TEST_SUITE_IDENTIFIER: 2,
+    ACTOR_IDENTIFIER: 3,
+    SPECIFICATION_NAME: 4,
+    SYSTEM_NAME: 5,
+    ORGANISATION_NAME: 6
+  }
 
 	public static FILTER_COMMAND = {
 		TOGGLE: 1,

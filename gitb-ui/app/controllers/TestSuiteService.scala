@@ -116,9 +116,8 @@ class TestSuiteService @Inject() (implicit ec: ExecutionContext, authorizedActio
 
 	def getTestSuiteWithTestCases(testSuiteId: Long): Action[AnyContent] = authorizedAction { request =>
 		authorizationManager.canViewTestSuite(request, testSuiteId)
-
-		val testSuite = testSuiteManager.getTestSuiteWithTestCases(testSuiteId)
-		val json = JsonUtil.jsTestSuite(testSuite, withDocumentation = true, withSpecReference = true).toString()
+		val testSuite = testSuiteManager.getTestSuiteWithTestCaseData(testSuiteId)
+		val json = JsonUtil.jsTestSuite(testSuite, withDocumentation = true, withSpecReference = true, withGroups = true, withTags = true).toString()
 		ResponseConstructor.constructJsonResponse(json)
 	}
 

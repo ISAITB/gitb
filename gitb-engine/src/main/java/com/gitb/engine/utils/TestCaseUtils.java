@@ -14,15 +14,17 @@ import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.repository.ITestCaseRepository;
 import com.gitb.tdl.Process;
 import com.gitb.tdl.*;
-import com.gitb.tr.TAR;
-import com.gitb.tr.TestAssertionGroupReportsType;
-import com.gitb.tr.TestResultType;
-import com.gitb.tr.ValidationCounters;
+import com.gitb.tr.ObjectFactory;
+import com.gitb.tr.*;
 import com.gitb.types.*;
 import com.gitb.utils.ErrorUtils;
 import com.gitb.utils.XMLDateTimeUtils;
+import jakarta.xml.bind.JAXBElement;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MarkerFactory;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 import java.io.IOException;
@@ -38,12 +40,13 @@ import java.util.function.Supplier;
 public class TestCaseUtils {
 
     public static final String TEST_ENGINE_VERSION;
+    private static final ObjectFactory OBJECT_FACTORY_TR = new ObjectFactory();
+    private static final Logger LOG = LoggerFactory.getLogger(TestCaseUtils.class);
 
     static {
         TEST_ENGINE_VERSION = getTestEngineVersion();
     }
 
-	// TODO add the test case construct classes to report their statuses (COMPLETED, ERROR, etc.)
 	private static final Class<?>[] TEST_CONSTRUCTS_TO_REPORT = {
         com.gitb.tdl.MessagingStep.class, Verify.class, IfStep.class, RepeatUntilStep.class,
 		ForEachStep.class, WhileStep.class, com.gitb.tdl.FlowStep.class, Process.class,
@@ -88,7 +91,7 @@ public class TestCaseUtils {
 	public static boolean shouldBeReported(Class<?> stepClass) {
 		for(Class<?> c : TEST_CONSTRUCTS_TO_REPORT) {
             Class<?> current = stepClass;
-            while(current != null) {
+            while (current != null) {
                 if(current.equals(c)) {
                     return true;
                 }
@@ -131,46 +134,92 @@ public class TestCaseUtils {
         if (foundScriptlet == null) {
             if (required) {
                 if (from == null) {
-                    throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Scriptlet definition ["+ scriptletPath+"] not found."));
+                    throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Scriptlet definition [%s] not found.".formatted(scriptletPath)));
                 } else {
-                    throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Scriptlet definition from ["+StringUtils.defaultString(from, "")+"] path ["+ scriptletPath+"] not found."));
+                    throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Scriptlet definition from [%s] path [%s] not found.".formatted(Objects.toString(from, ""), scriptletPath)));
                 }
             }
         }
         return foundScriptlet;
     }
 
-    public static void applyStopOnErrorSemantics(TestConstruct step, Boolean parentStopOnErrorSetting) {
-        if (step != null) {
-            boolean parentStopOnErrorSettingToUse = parentStopOnErrorSetting != null && parentStopOnErrorSetting;
-            if (step.isStopOnError() == null) {
-                // Inherit parent setting.
-                step.setStopOnError(parentStopOnErrorSettingToUse);
+    public static void applyStopOnErrorSemantics(TestCaseSteps steps) {
+        applyStopOnErrorSemantics(steps, steps.isStopOnError(), steps.isStopOnChildError());
+    }
+
+    public static void applyStopOnErrorSemantics(CallStep callStep, Sequence steps) {
+        applyStopOnErrorSemantics(steps, callStep.isStopOnError(), callStep.isStopOnChildError());
+    }
+
+    private static Pair<Boolean, Boolean> stopOnErrorChildFlags(Pair<Boolean, Boolean> parentFlags, Pair<Boolean, Boolean> ownFlags) {
+        Boolean stopOnError;
+        Boolean stopOnChildError;
+        // Stop on error
+        if (ownFlags.getLeft() != null) {
+            stopOnError = ownFlags.getLeft();
+        } else {
+            stopOnError = Boolean.TRUE.equals(parentFlags.getLeft());
+        }
+        // Stop on child error
+        if (ownFlags.getRight() != null) {
+            stopOnChildError = ownFlags.getRight();
+        } else if (parentFlags.getRight() != null) {
+            stopOnChildError = parentFlags.getRight();
+        } else {
+            stopOnChildError = null;
+        }
+        return Pair.of(stopOnError, stopOnChildError);
+    }
+
+    private static void applyStopOnErrorSemantics(TestConstruct step, Boolean parentStopOnErrorSetting, Boolean parentStopChildOnErrorSetting) {
+        if (step instanceof Sequence containerStep) {
+            var flags = stopOnErrorChildFlags(Pair.of(parentStopOnErrorSetting, parentStopChildOnErrorSetting), Pair.of(containerStep.isStopOnError(), containerStep.isStopOnChildError()));
+            containerStep.setStopOnError(flags.getLeft());
+            containerStep.setStopOnChildError(flags.getRight());
+            for (Object childStep: containerStep.getSteps()) {
+                if (childStep instanceof TestConstruct construct) {
+                    applyStopOnErrorSemantics(construct, containerStep.isStopOnError(), containerStep.isStopOnChildError());
+                }
             }
-            if (step instanceof Sequence) {
-                for (Object childStep: ((Sequence)step).getSteps()) {
-                    if (childStep instanceof TestConstruct) {
-                        applyStopOnErrorSemantics((TestConstruct)childStep, step.isStopOnError());
-                    }
+        } else if (step instanceof IfStep containerStep) {
+            var flags = stopOnErrorChildFlags(Pair.of(parentStopOnErrorSetting, parentStopChildOnErrorSetting), Pair.of(containerStep.isStopOnError(), containerStep.isStopOnChildError()));
+            containerStep.setStopOnError(flags.getLeft());
+            containerStep.setStopOnChildError(flags.getRight());
+            applyStopOnErrorSemantics(containerStep.getThen(), containerStep.isStopOnError(), containerStep.isStopOnChildError());
+            applyStopOnErrorSemantics(containerStep.getElse(), containerStep.isStopOnError(), containerStep.isStopOnChildError());
+        } else if (step instanceof WhileStep containerStep) {
+            var flags = stopOnErrorChildFlags(Pair.of(parentStopOnErrorSetting, parentStopChildOnErrorSetting), Pair.of(containerStep.isStopOnError(), containerStep.isStopOnChildError()));
+            containerStep.setStopOnError(flags.getLeft());
+            containerStep.setStopOnChildError(flags.getRight());
+            applyStopOnErrorSemantics(containerStep.getDo(), containerStep.isStopOnError(), containerStep.isStopOnChildError());
+        } else if (step instanceof ForEachStep containerStep) {
+            var flags = stopOnErrorChildFlags(Pair.of(parentStopOnErrorSetting, parentStopChildOnErrorSetting), Pair.of(containerStep.isStopOnError(), containerStep.isStopOnChildError()));
+            containerStep.setStopOnError(flags.getLeft());
+            containerStep.setStopOnChildError(flags.getRight());
+            applyStopOnErrorSemantics(containerStep.getDo(), containerStep.isStopOnError(), containerStep.isStopOnChildError());
+        } else if (step instanceof RepeatUntilStep containerStep) {
+            var flags = stopOnErrorChildFlags(Pair.of(parentStopOnErrorSetting, parentStopChildOnErrorSetting), Pair.of(containerStep.isStopOnError(), containerStep.isStopOnChildError()));
+            containerStep.setStopOnError(flags.getLeft());
+            containerStep.setStopOnChildError(flags.getRight());
+            applyStopOnErrorSemantics(containerStep.getDo(), containerStep.isStopOnError(), containerStep.isStopOnChildError());
+        } else if (step instanceof FlowStep containerStep) {
+            var flags = stopOnErrorChildFlags(Pair.of(parentStopOnErrorSetting, parentStopChildOnErrorSetting), Pair.of(containerStep.isStopOnError(), containerStep.isStopOnChildError()));
+            containerStep.setStopOnError(flags.getLeft());
+            containerStep.setStopOnChildError(flags.getRight());
+            if (containerStep.getThread() != null) {
+                for (Sequence thread: containerStep.getThread()) {
+                    applyStopOnErrorSemantics(thread, containerStep.isStopOnError(), containerStep.isStopOnChildError());
                 }
-            } else {
-                // Cover also the steps that have internal sequences.
-                if (step instanceof IfStep) {
-                    applyStopOnErrorSemantics(((IfStep) step).getThen(), step.isStopOnError());
-                    applyStopOnErrorSemantics(((IfStep) step).getElse(), step.isStopOnError());
-                } else if (step instanceof WhileStep) {
-                    applyStopOnErrorSemantics(((WhileStep) step).getDo(), step.isStopOnError());
-                } else if (step instanceof ForEachStep) {
-                    applyStopOnErrorSemantics(((ForEachStep) step).getDo(), step.isStopOnError());
-                } else if (step instanceof RepeatUntilStep) {
-                    applyStopOnErrorSemantics(((RepeatUntilStep) step).getDo(), step.isStopOnError());
-                } else if (step instanceof FlowStep) {
-                    if (((FlowStep) step).getThread() != null) {
-                        for (Sequence thread: ((FlowStep) step).getThread()) {
-                            applyStopOnErrorSemantics(thread, step.isStopOnError());
-                        }
-                    }
-                }
+            }
+        } else if (step instanceof CallStep containerStep) {
+            var flags = stopOnErrorChildFlags(Pair.of(parentStopOnErrorSetting, parentStopChildOnErrorSetting), Pair.of(containerStep.isStopOnError(), containerStep.isStopOnChildError()));
+            containerStep.setStopOnError(flags.getLeft());
+            containerStep.setStopOnChildError(flags.getRight());
+        } else if (step != null) {
+            // Basic step
+            if (step.isStopOnError() == null) {
+                // Inherit parent configuration
+                step.setStopOnError(Boolean.TRUE.equals(parentStopChildOnErrorSetting) || (parentStopChildOnErrorSetting == null && Boolean.TRUE.equals(parentStopOnErrorSetting)));
             }
         }
     }
@@ -275,7 +324,7 @@ public class TestCaseUtils {
                 dataType = DataType.BOOLEAN_DATA_TYPE;
                 nonVariableValueFn = () -> variableClass.cast(Boolean.valueOf(originalValue));
             } else {
-                throw new IllegalArgumentException("Unsupported variable class ["+variableClass+"]");
+                throw new IllegalArgumentException("Unsupported variable class [%s]".formatted(variableClass));
             }
             if (!scriptletStepStack.isEmpty() && VariableResolver.isVariableReference(originalValue)) {
                 // The description may be set dynamically from the call inputs.
@@ -420,6 +469,113 @@ public class TestCaseUtils {
             throw new IllegalStateException("Exception while creating XMLGregorianCalendar", e);
         }
         return report;
+    }
+
+    public static ErrorLevel resolveReportErrorLevel(String stepLevel, String sessionId, VariableResolver resolver) {
+        var errorLevel = ErrorLevel.ERROR;
+        if (VariableResolver.isVariableReference(stepLevel)) {
+            var resolvedErrorLevel = resolver.resolveVariableAsString(stepLevel);
+            try {
+                errorLevel = ErrorLevel.valueOf((String) resolvedErrorLevel.getValue());
+            } catch (NullPointerException e) {
+                LOG.warn(MarkerFactory.getDetachedMarker(sessionId), "Severity level for step could not be determined using expression [%s]. Using %s level instead.".formatted(stepLevel, ErrorLevel.ERROR));
+            } catch (IllegalArgumentException e) {
+                LOG.warn(MarkerFactory.getDetachedMarker(sessionId), "Invalid severity level [%s] for step determined using expression [%s]. Using %s level instead.".formatted(errorLevel, stepLevel, ErrorLevel.ERROR));
+            }
+        } else {
+            errorLevel = ErrorLevel.valueOf(stepLevel);
+        }
+        return errorLevel;
+    }
+
+    public static void postProcessReport(boolean invert, ErrorLevel errorLevel, TestStepReportType report) {
+        if (report != null) {
+            // Invert the result if required to do so.
+            if (invert) {
+                if (report.getResult().equals(TestResultType.FAILURE)) {
+                    report.setResult(TestResultType.SUCCESS);
+                } else if (report.getResult().equals(TestResultType.SUCCESS)) {
+                    report.setResult(TestResultType.FAILURE);
+                }
+            }
+            // Transform errors to warnings if the step is at warning level.
+            if (errorLevel == ErrorLevel.WARNING && report.getResult().equals(TestResultType.FAILURE)) {
+                // Failed report but with step at warning level - mark as success and convert reported error items to warnings
+                convertErrorItemsToWarnings(report);
+            }
+            // Complete the report's counters.
+            if (report instanceof TAR) {
+                completeReportCounters((TAR)report);
+            }
+        }
+    }
+
+    public static void convertErrorItemsToWarnings(TestStepReportType report) {
+        report.setResult(TestResultType.WARNING);
+        if (report instanceof TAR) {
+            // Set errors to warnings in counters.
+            ValidationCounters counters = ((TAR)report).getCounters();
+            if (counters != null) {
+                int errorCount = 0;
+                if (counters.getNrOfErrors() != null) {
+                    errorCount = counters.getNrOfErrors().intValue();
+                }
+                int warningCount = 0;
+                if (counters.getNrOfWarnings() != null) {
+                    warningCount = counters.getNrOfWarnings().intValue();
+                }
+                counters.setNrOfErrors(BigInteger.ZERO);
+                counters.setNrOfWarnings(BigInteger.valueOf(errorCount + warningCount));
+            }
+            // Set errors to warnings in report items.
+            TestAssertionGroupReportsType reportsType = ((TAR)report).getReports();
+            if (reportsType != null) {
+                List<JAXBElement<TestAssertionReportType>> newReports = new ArrayList<>(reportsType.getInfoOrWarningOrError().size());
+                for (JAXBElement<TestAssertionReportType> item: reportsType.getInfoOrWarningOrError()) {
+                    if (item.getValue() instanceof BAR) {
+                        if (item.getName().getLocalPart().equals("error")) {
+                            newReports.add(OBJECT_FACTORY_TR.createTestAssertionGroupReportsTypeWarning(item.getValue()));
+                        } else {
+                            newReports.add(item);
+                        }
+                    }
+                }
+                reportsType.getInfoOrWarningOrError().clear();
+                reportsType.getInfoOrWarningOrError().addAll(newReports);
+            }
+        }
+    }
+
+    public static void completeReportCounters(TAR report) {
+        int errorCount = 0;
+        int warningCount = 0;
+        int infoCount = 0;
+        TestAssertionGroupReportsType reportsType = report.getReports();
+        if (reportsType != null) {
+            for (JAXBElement<TestAssertionReportType> item : reportsType.getInfoOrWarningOrError()) {
+                if (item.getValue() instanceof BAR) {
+                    if (item.getName().getLocalPart().equals("error")) {
+                        errorCount += 1;
+                    } else if (item.getName().getLocalPart().equals("warning")) {
+                        warningCount += 1;
+                    } else {
+                        infoCount += 1;
+                    }
+                }
+            }
+        }
+        if (report.getCounters() == null) {
+            report.setCounters(new ValidationCounters());
+        }
+        if (report.getCounters().getNrOfErrors() == null) {
+            report.getCounters().setNrOfErrors(BigInteger.valueOf(errorCount));
+        }
+        if (report.getCounters().getNrOfWarnings() == null) {
+            report.getCounters().setNrOfWarnings(BigInteger.valueOf(warningCount));
+        }
+        if (report.getCounters().getNrOfAssertions() == null) {
+            report.getCounters().setNrOfAssertions(BigInteger.valueOf(infoCount));
+        }
     }
 
     public static void applyContentTypes(DataType contentType, AnyContent reportItem) {

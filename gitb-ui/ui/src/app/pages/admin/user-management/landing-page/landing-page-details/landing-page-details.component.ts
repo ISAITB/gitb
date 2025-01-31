@@ -31,6 +31,7 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
   tooltipForDefaultCheck!: string
   validation = new ValidationState()
   loaded = false
+  Constants = Constants
 
   constructor(
     private routingService: RoutingService,
@@ -81,12 +82,12 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
   }
 
   private clearCachedLandingPageIfNeeded() {
-    if ((this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin) && 
+    if ((this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin) &&
         (
           (this.dataService.vendor!.landingPage == this.page.id) ||
           (
-            this.dataService.vendor!.landingPage == undefined && 
-            this.dataService.vendor!.community == this.communityId && 
+            this.dataService.vendor!.landingPage == undefined &&
+            this.dataService.vendor!.community == this.communityId &&
             this.page.default
           )
         )

@@ -140,4 +140,9 @@ object Enums {
     val ConformanceStatementReport, ConformanceOverviewReport, TestCaseReport, TestStepReport, ConformanceStatementCertificate, ConformanceOverviewCertificate = Value
   }
 
+  object TriggerFireExpressionType extends Enumeration(1) {
+    type TriggerFireExpressionType = Value
+    val TestCaseIdentifier, TestSuiteIdentifier, ActorIdentifier, SpecificationName, SystemName, OrganisationName = Value
+  }
+
 }

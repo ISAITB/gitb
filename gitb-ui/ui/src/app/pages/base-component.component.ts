@@ -27,6 +27,18 @@ export abstract class BaseComponent {
         return valid
     }
 
+    isValidRegularExpression(expression: string|undefined): boolean {
+      let valid = this.textProvided(expression)
+      if (valid && expression != undefined) {
+        try {
+          new RegExp(expression);
+        } catch (e) {
+          valid = false
+        }
+      }
+      return valid
+    }
+
     isDifferent(value1: any, value2: any): boolean {
         let valid = true
         if (value1 === value2) {
@@ -72,5 +84,5 @@ export abstract class BaseComponent {
     protected isErrorDescription(obj: ErrorDescription|any): obj is ErrorDescription {
         return obj != undefined && ((obj as ErrorDescription).error_description != undefined || (obj as ErrorDescription).error_id != undefined)
     }
-        
+
 }

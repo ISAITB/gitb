@@ -1,11 +1,7 @@
-<div class="rootDiv">
-    @if (disabled) {
-        <span class="boundary" tooltip="Disabled test case that cannot be executed and is ignored for the conformance statement's status."><i class="fa-solid fa-ban"></i></span>
-    } @else {
-        @if (optional) {
-            <span class="boundary" tooltip="Optional test case that is ignored for the conformance statement's status."><i class="fa-regular fa-circle"></i></span>
-        } @else {
-            <span class="boundary" tooltip="Required test case that is counted towards the conformance statement's status."><i class="fa-regular fa-circle-dot"></i></span>
-        }
-    }
-</div>
+@if (disabled) {
+    <span class="boundary" tooltip="Disabled test case that cannot be executed and is ignored for the conformance statement's status."><i class="fa-solid fa-ban"></i></span>
+} @else if (optional) {
+    <span class="boundary" tooltip="Optional test case that is ignored for the conformance statement's status."><i class="fa-regular fa-circle"></i></span>
+} @else {
+    <span class="boundary" tooltip="Required test case that is counted towards the conformance statement's status."><i class="fa-regular fa-circle-dot"></i></span>
+}

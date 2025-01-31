@@ -1,32 +1,34 @@
-import { Component, EventEmitter, NgZone, OnInit } from '@angular/core';
-import { BsModalService } from 'ngx-bootstrap/modal';
-import { Observable, of } from 'rxjs';
-import { Constants } from 'src/app/common/constants';
-import { ConformanceService } from 'src/app/services/conformance.service';
-import { DataService } from 'src/app/services/data.service';
-import { RoutingService } from 'src/app/services/routing.service';
-import { ConformanceCertificateSettings } from 'src/app/types/conformance-certificate-settings';
-import { ConformanceResultFull } from 'src/app/types/conformance-result-full';
-import { ConformanceResultFullList } from 'src/app/types/conformance-result-full-list';
-import { ConformanceResultFullWithTestSuites } from 'src/app/types/conformance-result-full-with-test-suites';
-import { ConformanceStatusItem } from 'src/app/types/conformance-status-item';
-import { FilterState } from 'src/app/types/filter-state';
-import { TestResultSearchCriteria } from 'src/app/types/test-result-search-criteria';
-import { ConformanceSnapshot } from 'src/app/types/conformance-snapshot';
-import { ConformanceSnapshotsModalComponent } from 'src/app/modals/conformance-snapshots-modal/conformance-snapshots-modal.component';
-import { Community } from 'src/app/types/community';
-import { Organisation } from 'src/app/types/organisation.type';
-import { System } from 'src/app/types/system';
-import { CommunityService } from 'src/app/services/community.service';
-import { OrganisationService } from 'src/app/services/organisation.service';
-import { SystemService } from 'src/app/services/system.service';
-import { ConformanceStatementItem } from 'src/app/types/conformance-statement-item';
-import { ExportReportEvent } from 'src/app/types/export-report-event';
-import { ReportSupportService } from 'src/app/services/report-support.service';
-import { find } from 'lodash';
-import { MultiSelectConfig } from 'src/app/components/multi-select-filter/multi-select-config';
-import { FilterUpdate } from 'src/app/components/test-filter/filter-update';
-import { BaseConformanceItemDisplayComponent } from 'src/app/components/base-conformance-item-display/base-conformance-item-display.component';
+import {Component, EventEmitter, NgZone, OnInit} from '@angular/core';
+import {BsModalService} from 'ngx-bootstrap/modal';
+import {Observable, of} from 'rxjs';
+import {Constants} from 'src/app/common/constants';
+import {ConformanceService} from 'src/app/services/conformance.service';
+import {DataService} from 'src/app/services/data.service';
+import {RoutingService} from 'src/app/services/routing.service';
+import {ConformanceCertificateSettings} from 'src/app/types/conformance-certificate-settings';
+import {ConformanceResultFull} from 'src/app/types/conformance-result-full';
+import {ConformanceResultFullList} from 'src/app/types/conformance-result-full-list';
+import {ConformanceResultFullWithTestSuites} from 'src/app/types/conformance-result-full-with-test-suites';
+import {ConformanceStatusItem} from 'src/app/types/conformance-status-item';
+import {FilterState} from 'src/app/types/filter-state';
+import {TestResultSearchCriteria} from 'src/app/types/test-result-search-criteria';
+import {ConformanceSnapshot} from 'src/app/types/conformance-snapshot';
+import {ConformanceSnapshotsModalComponent} from 'src/app/modals/conformance-snapshots-modal/conformance-snapshots-modal.component';
+import {Community} from 'src/app/types/community';
+import {Organisation} from 'src/app/types/organisation.type';
+import {System} from 'src/app/types/system';
+import {CommunityService} from 'src/app/services/community.service';
+import {OrganisationService} from 'src/app/services/organisation.service';
+import {SystemService} from 'src/app/services/system.service';
+import {ConformanceStatementItem} from 'src/app/types/conformance-statement-item';
+import {ExportReportEvent} from 'src/app/types/export-report-event';
+import {ReportSupportService} from 'src/app/services/report-support.service';
+import {find} from 'lodash';
+import {MultiSelectConfig} from 'src/app/components/multi-select-filter/multi-select-config';
+import {FilterUpdate} from 'src/app/components/test-filter/filter-update';
+import {
+  BaseConformanceItemDisplayComponent
+} from 'src/app/components/base-conformance-item-display/base-conformance-item-display.component';
 
 @Component({
   selector: 'app-conformance-dashboard',
@@ -208,7 +210,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
   }
 
 	getConformanceStatementsInternal(fullResults: boolean, forExport: boolean) {
-    const result = new Observable<ConformanceResultFullList>((subscriber) => {
+    return new Observable<ConformanceResultFullList>((subscriber) => {
       let params = this.getCurrentSearchCriteria()
       let pageToUse = this.currentPage
       let limitToUse = 10
@@ -217,27 +219,30 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
         limitToUse = 1000000
       }
       this.conformanceService.getConformanceOverview(params, this.activeConformanceSnapshot?.id, fullResults, forExport, this.sortColumn, this.sortOrder, pageToUse, limitToUse)
-      .subscribe((data: ConformanceResultFullList) => {
-        for (let conformanceStatement of data.data) {
-          const completedCount = Number(conformanceStatement.completed)
-          const failedCount = Number(conformanceStatement.failed)
-          const undefinedCount = Number(conformanceStatement.undefined)
-          const completedOptionalCount = Number(conformanceStatement.completedOptional)
-          const failedOptionalCount = Number(conformanceStatement.failedOptional)
-          const undefinedOptionalCount = Number(conformanceStatement.undefinedOptional)
-          conformanceStatement.counters = {
-            completed: completedCount, failed: failedCount, other: undefinedCount,
-            completedOptional: completedOptionalCount, failedOptional: failedOptionalCount, otherOptional: undefinedOptionalCount
+        .subscribe((data: ConformanceResultFullList) => {
+          for (let conformanceStatement of data.data) {
+            const completedCountToConsider = Number(conformanceStatement.completedToConsider)
+            const failedCountToConsider = Number(conformanceStatement.failedToConsider)
+            const undefinedCountToConsider = Number(conformanceStatement.undefinedToConsider)
+            conformanceStatement.counters = {
+              completed: Number(conformanceStatement.completed),
+              failed: Number(conformanceStatement.failed),
+              other: Number(conformanceStatement.undefined),
+              completedOptional: Number(conformanceStatement.completedOptional),
+              failedOptional: Number(conformanceStatement.failedOptional),
+              otherOptional: Number(conformanceStatement.undefinedOptional),
+              completedToConsider: completedCountToConsider,
+              failedToConsider: failedCountToConsider,
+              otherToConsider: undefinedCountToConsider
+            }
+            conformanceStatement.overallStatus = this.dataService.conformanceStatusForTests(completedCountToConsider, failedCountToConsider, undefinedCountToConsider)
           }
-          conformanceStatement.overallStatus = this.dataService.conformanceStatusForTests(completedCount, failedCount, undefinedCount)
-        }
-        subscriber.next(data)
-      }).add(() => {
+          subscriber.next(data)
+        }).add(() => {
         this.dataStatus = {status: Constants.STATUS.FINISHED}
         subscriber.complete()
       })
     })
-    return result
   }
 
 	getConformanceStatements() {
@@ -525,7 +530,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
       }
       observable.subscribe((data) => {
         this.availableCommunities = data
-        let communityToApply: Community|undefined 
+        let communityToApply: Community|undefined
         if (data.length == 1) {
           communityToApply = data[0]
           this.selectedCommunityId = communityToApply.id
@@ -540,7 +545,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
         }
         if (this.dataService.isSystemAdmin) {
           // Force a switch back to the latest snapshot and refresh
-          this.viewLatestConformanceSnapshot(true)      
+          this.viewLatestConformanceSnapshot(true)
         } else {
           this.communityChanged(true)
         }
@@ -555,7 +560,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
       this.statements = []
       if (this.dataService.isSystemAdmin) {
         // Force a switch back to the latest snapshot and refresh
-        this.viewLatestConformanceSnapshot(true)      
+        this.viewLatestConformanceSnapshot(true)
       } else {
         // Refresh search results
         this.getConformanceStatements()
@@ -590,7 +595,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
           this.selectedOrganisationId = undefined
         }
       } else {
-        this.selectedOrganisationId = undefined            
+        this.selectedOrganisationId = undefined
       }
       setTimeout(() => {
         this.organisationSelectConfig!.replaceItems!.emit(this.availableOrganisations)

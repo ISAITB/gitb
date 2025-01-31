@@ -12,10 +12,10 @@
                         <div class="testSuiteControls">
                             <div class="btn-toolbar">
                                 @if (testSuite.hasDocumentation && showViewDocumentation) {
-                                    <button type="button" class="btn btn-secondary" (click)="showTestSuiteDocumentation(testSuite); $event.stopPropagation();" [icon]="true" [pending]="viewDocumentationPending[testSuite.id]" containerClass="shortTooltip" tooltip="Documentation" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-info-circle"></i></button>
+                                    <button type="button" class="btn btn-secondary" (click)="showTestSuiteDocumentation(testSuite); $event.stopPropagation();" [icon]="true" [pending]="viewDocumentationPending[testSuite.id]" containerClass="shortTooltip" container="body"  tooltip="Documentation" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-info-circle"></i></button>
                                 }
                                 @if (showExecute) {
-                                    <button class="btn btn-primary" (click)="onTestSuiteSelect(testSuite); $event.stopPropagation();" [pending]="testSuite.executionPending" [icon]="true" containerClass="shortTooltip" tooltip="Run all" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-play"></i></button>
+                                    <button class="btn btn-primary" (click)="onTestSuiteSelect(testSuite); $event.stopPropagation();" [pending]="testSuite.executionPending" [icon]="true" containerClass="shortTooltip" container="body" tooltip="Run all" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-play"></i></button>
                                 }
                             </div>
                         </div>
@@ -25,8 +25,9 @@
             </div>
             <div [collapse]="!testSuite.expanded" [isAnimated]="true">
                 <div class="collapsibleTestCaseDiv">
-                    <app-test-case-display 
+                    <app-test-case-display
                         [testCases]="testSuite.testCases"
+                        [testCaseGroups]="testSuite.testCaseGroupMap"
                         [testSuiteSpecificationReference]="testSuite"
                         [hasOptional]="testSuite.hasOptionalTestCases"
                         [hasDisabled]="testSuite.hasDisabledTestCases"
@@ -34,6 +35,8 @@
                         [showExport]="showExport"
                         [showViewDocumentation]="showViewDocumentation"
                         [shaded]="!shaded"
+                        [refresh]="refresh"
+                        [communityId]="communityId"
                         (viewTestSession)="propagateViewTestSession($event)"
                         (execute)="propagateExecuteTestSession($event)"
                     ></app-test-case-display>

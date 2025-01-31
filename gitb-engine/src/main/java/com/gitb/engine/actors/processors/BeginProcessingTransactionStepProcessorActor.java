@@ -4,6 +4,7 @@ import com.gitb.core.Configuration;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.processing.ProcessingContext;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.engine.utils.StepContext;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.tdl.BeginProcessingTransaction;
 import org.apache.pekko.actor.ActorRef;
@@ -12,12 +13,12 @@ public class BeginProcessingTransactionStepProcessorActor extends AbstractTestSt
 
     public static final String NAME = "bptxn-p";
 
-    public BeginProcessingTransactionStepProcessorActor(BeginProcessingTransaction step, TestCaseScope scope, String stepId) {
-        super(step, scope, stepId);
+    public BeginProcessingTransactionStepProcessorActor(BeginProcessingTransaction step, TestCaseScope scope, String stepId, StepContext stepContext) {
+        super(step, scope, stepId, stepContext);
     }
 
-    public static ActorRef create(ActorContext context, BeginProcessingTransaction step, TestCaseScope scope, String stepId) throws Exception {
-        return create(BeginProcessingTransactionStepProcessorActor.class, context, step, scope, stepId);
+    public static ActorRef create(ActorContext context, BeginProcessingTransaction step, TestCaseScope scope, String stepId, StepContext stepContext) throws Exception {
+        return create(BeginProcessingTransactionStepProcessorActor.class, context, step, scope, stepId, stepContext);
     }
 
     @Override

@@ -23,13 +23,14 @@ case class TestCases(
 											tags: Option[String] = None,
 											specReference: Option[String] = None,
 											specDescription: Option[String] = None,
-											specLink: Option[String] = None
+											specLink: Option[String] = None,
+											group: Option[Long] = None
 	                    ) {
 
-	def withPath(path: String): TestCases = {
+	def withPathAndGroup(path: String, group: Option[Long]): TestCases = {
 		TestCases(this.id, this.shortname, this.fullname, this.version, this.authors, this.originalDate,
 			this.modificationDate, this.description, this.keywords, this.testCaseType, path, this.targetActors, this.targetOptions, this.testSuiteOrder, this.hasDocumentation, this.documentation, this.identifier, this.isOptional, this.isDisabled, this.tags,
-			this.specReference, this.specDescription, this.specLink)
+			this.specReference, this.specDescription, this.specLink, group)
 	}
 
 }

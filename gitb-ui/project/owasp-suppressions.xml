@@ -119,4 +119,18 @@
         <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty/jetty-.*@.*$</packageUrl>
         <cve>CVE-2024-6763</cve>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: logback-core-1.5.11.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/ch\.qos\.logback/logback-.*@.*$</packageUrl>
+        <vulnerabilityName>CVE-2024-12798</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: logback-core-1.5.12.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/ch\.qos\.logback/logback-.*@.*$</packageUrl>
+        <vulnerabilityName>CVE-2024-12801</vulnerabilityName>
+    </suppress>
 </suppressions>

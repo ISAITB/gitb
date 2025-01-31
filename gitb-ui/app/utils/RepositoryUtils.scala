@@ -2,6 +2,7 @@ package utils
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.gitb.core._
+import com.gitb.tdl.TestCaseEntry
 import com.gitb.utils.XMLUtils
 import config.Configurations
 import managers.{BaseManager, TestSuiteManager}
@@ -21,6 +22,7 @@ import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
 import java.sql.Timestamp
 import java.time.LocalDateTime
+import java.util
 import java.util.UUID
 import java.util.zip.{ZipEntry, ZipFile}
 import javax.inject.{Inject, Singleton}
@@ -752,52 +754,124 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 							specificationInfo.flatMap(x => Option(x.getDescription)),
 							specificationInfo.flatMap(x => Option(x.getLink))
 						)
-
 						var testCases: Option[List[TestCases]] = None
+						var testCaseGroups: Option[List[TestCaseGroup]] = None
 						var testCaseUpdateApproach: Option[Map[String, Update]] = None
 						if (completeParse) {
-							var testCaseCounter = 0
 							val testCaseUpdateApproachTemp = new mutable.HashMap[String, Update]()
-							testCases = Some(tdlTestCaseEntries.map {
-								entry =>
-									testCaseCounter += 1
-									val tdlTestCase = tdlTestCases.find(_.getId == entry.getId).get
-									val actorString = new StringBuilder
-									tdlTestCase.getActors.getActor.asScala.foreach(role => {
-										actorString.append(role.getId)
-										if (role.getRole == TestRoleEnumeration.SUT) {
-											actorString.append("[SUT]")
+							/*
+							 * Process test case groupings
+							 */
+							// Map groups to test case indexes
+							val groupMap = new mutable.HashMap[String, (TestCaseGroup, ListBuffer[Int])]() // Group identifier to group data and list of test case indexes.
+							if (tdlTestSuite.getGroups != null && !tdlTestSuite.getGroups.getGroup.isEmpty) {
+								val definedGroups = new mutable.HashMap[String, TestCaseGroup]()
+								var counter = 0
+								tdlTestSuite.getGroups.getGroup.forEach { tdlGroup =>
+									definedGroups += (tdlGroup.getId -> TestCaseGroup(counter, tdlGroup.getId, Option(tdlGroup.getName), Option(tdlGroup.getDesc), 0L))
+									counter += 1
+								}
+								counter = 0
+								tdlTestCaseEntries.foreach { testCase =>
+									if (testCase.getGroup != null && !testCase.getGroup.isBlank && definedGroups.contains(testCase.getGroup)) {
+										val indexes = if (!groupMap.contains(testCase.getGroup)) {
+											val buffer = new ListBuffer[Int]
+											groupMap += testCase.getGroup -> (definedGroups(testCase.getGroup), buffer)
+											buffer
+										} else {
+											groupMap(testCase.getGroup)._2
 										}
-										actorString.append(',')
-									})
-									actorString.deleteCharAt(actorString.length - 1)
-
-									var testCaseType = TestCaseType.CONFORMANCE
-									if (Option(tdlTestCase.getMetadata.getType).isDefined) {
-										testCaseType = tdlTestCase.getMetadata.getType
+										indexes += counter
 									}
-									var documentation: Option[String] = None
-									if (tdlTestCase.getMetadata.getDocumentation != null) {
-										documentation = getDocumentation(tdlTestSuite.getId, tdlTestCase.getMetadata.getDocumentation, zip, specificationId, domainId)
+									counter += 1
+								}
+							}
+							// Read test cases and order them considering their groups
+							val orderedTestCases = new util.LinkedList[TestCaseEntry]()
+							val processedTestCases = new mutable.HashSet[String]()
+							tdlTestCaseEntries.foreach { entry =>
+								if (!processedTestCases.contains(entry.getId)) {
+									if (entry.getGroup != null && !entry.getGroup.isBlank) {
+										if (groupMap.contains(entry.getGroup)) {
+											var processed = false
+											groupMap(entry.getGroup)._2.foreach { testCaseIndex =>
+												if (testCaseIndex < tdlTestCaseEntries.length) {
+													val testCaseAtIndex = tdlTestCaseEntries(testCaseIndex)
+													if (!processedTestCases.contains(testCaseAtIndex.getId)) {
+														processed = true
+														orderedTestCases.addLast(testCaseAtIndex)
+														processedTestCases.add(testCaseAtIndex.getId)
+													}
+												}
+											}
+											if (!processed) {
+												// We should normally never reach this case
+												orderedTestCases.addLast(entry)
+												processedTestCases.add(entry.getId)
+											}
+										} else {
+											// We should normally never reach this case
+											orderedTestCases.addLast(entry)
+											processedTestCases.add(entry.getId)
+										}
+									} else {
+										orderedTestCases.addLast(entry)
+										processedTestCases.add(entry.getId)
 									}
-									if (tdlTestCase.getMetadata.getUpdate != null) {
-										testCaseUpdateApproachTemp += (tdlTestCase.getId -> tdlTestCase.getMetadata.getUpdate)
+								}
+							}
+							/*
+							 * Process test cases
+							 */
+							var testCaseCounter = 0
+							val testCaseBuffer = new ListBuffer[TestCases]
+							orderedTestCases.forEach { entry =>
+								testCaseCounter += 1
+								val tdlTestCase = tdlTestCases.find(_.getId == entry.getId).get
+								val actorString = new StringBuilder
+								tdlTestCase.getActors.getActor.asScala.foreach(role => {
+									actorString.append(role.getId)
+									if (role.getRole == TestRoleEnumeration.SUT) {
+										actorString.append("[SUT]")
 									}
-									val testCaseSpecificationInfo = Option(tdlTestCase.getMetadata.getSpecification)
-									TestCases(
-										0L, tdlTestCase.getMetadata.getName, tdlTestCase.getMetadata.getName, Option(tdlTestCase.getMetadata.getVersion).getOrElse(""),
-										Option(tdlTestCase.getMetadata.getAuthors), Option(tdlTestCase.getMetadata.getPublished),
-										Option(tdlTestCase.getMetadata.getLastModified), Option(tdlTestCase.getMetadata.getDescription),
-										None, testCaseType.ordinal().toShort, null, Some(actorString.toString()), None,
-										testCaseCounter.toShort, documentation.isDefined, documentation, tdlTestCase.getId, tdlTestCase.isOptional, tdlTestCase.isDisabled, getTagsStr(tdlTestCase),
-										testCaseSpecificationInfo.flatMap(x => Option(x.getReference)),
-										testCaseSpecificationInfo.flatMap(x => Option(x.getDescription)),
-										testCaseSpecificationInfo.flatMap(x => Option(x.getLink))
-									)
-							}.toList)
+									actorString.append(',')
+								})
+								actorString.deleteCharAt(actorString.length - 1)
+								var testCaseType = TestCaseType.CONFORMANCE
+								if (Option(tdlTestCase.getMetadata.getType).isDefined) {
+									testCaseType = tdlTestCase.getMetadata.getType
+								}
+								var documentation: Option[String] = None
+								if (tdlTestCase.getMetadata.getDocumentation != null) {
+									documentation = getDocumentation(tdlTestSuite.getId, tdlTestCase.getMetadata.getDocumentation, zip, specificationId, domainId)
+								}
+								if (tdlTestCase.getMetadata.getUpdate != null) {
+									testCaseUpdateApproachTemp += (tdlTestCase.getId -> tdlTestCase.getMetadata.getUpdate)
+								}
+								val testCaseSpecificationInfo = Option(tdlTestCase.getMetadata.getSpecification)
+								testCaseBuffer += TestCases(
+									0L, tdlTestCase.getMetadata.getName, tdlTestCase.getMetadata.getName, Option(tdlTestCase.getMetadata.getVersion).getOrElse(""),
+									Option(tdlTestCase.getMetadata.getAuthors), Option(tdlTestCase.getMetadata.getPublished),
+									Option(tdlTestCase.getMetadata.getLastModified), Option(tdlTestCase.getMetadata.getDescription),
+									None, testCaseType.ordinal().toShort, null, Some(actorString.toString()), None,
+									testCaseCounter.toShort, documentation.isDefined, documentation, tdlTestCase.getId, tdlTestCase.isOptional, tdlTestCase.isDisabled, getTagsStr(tdlTestCase),
+									testCaseSpecificationInfo.flatMap(x => Option(x.getReference)),
+									testCaseSpecificationInfo.flatMap(x => Option(x.getDescription)),
+									testCaseSpecificationInfo.flatMap(x => Option(x.getLink)),
+									Option(entry.getGroup).filter(groupMap.get(_).exists(_._2.nonEmpty)).map(groupMap(_)._1.id)
+								)
+							}
+							testCases = Some(testCaseBuffer.toList)
+							testCaseGroups = if (groupMap.nonEmpty) {
+								Some(groupMap.filter(_._2._2.nonEmpty).map { entry =>
+									entry._2._1
+								}.toList)
+							} else {
+								None
+							}
 							testCaseUpdateApproach = Some(testCaseUpdateApproachTemp.toMap)
 						}
-						val testSuite = new TestSuite(caseObject, Some(testSuiteActorInfo(tdlTestSuite)), testCases)
+						val testSuite = new TestSuite(caseObject, Some(testSuiteActorInfo(tdlTestSuite)), testCases, testCaseGroups)
 						testSuite.updateApproach = Option(tdlTestSuite.getMetadata.getUpdate)
 						testSuite.testCaseUpdateApproach = testCaseUpdateApproach
 						testSuite

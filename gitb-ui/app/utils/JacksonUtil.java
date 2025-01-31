@@ -6,7 +6,6 @@ import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.module.jakarta.xmlbind.JakartaXmlBindAnnotationModule;
-import com.gitb.core.Actor;
 import com.gitb.core.StepStatus;
 import com.gitb.core.TestCaseType;
 import com.gitb.tbs.ConfigurationCompleteRequest;
@@ -52,16 +51,8 @@ public class JacksonUtil {
         mapper.registerModule(customSerializersModule);
     }
 
-    public static String serializeAny(Object obj) throws JsonProcessingException {
-        return mapper.writeValueAsString(obj);
-    }
-
     public static String serializeTestCasePresentation(TestCase testCase) throws JsonProcessingException {
         return mapper.writeValueAsString(testCase);
-    }
-
-    public static String serializeActorPresentation(Actor actor) throws JsonProcessingException {
-        return mapper.writeValueAsString(actor);
     }
 
     public static String serializeConfigurationCompleteRequest(ConfigurationCompleteRequest request) throws JsonProcessingException {
@@ -85,14 +76,14 @@ public class JacksonUtil {
 
     private static class StatusSerializer extends JsonSerializer<StepStatus> {
         @Override
-        public void serialize(StepStatus status, JsonGenerator json, SerializerProvider serializerProvider) throws IOException, JsonProcessingException {
+        public void serialize(StepStatus status, JsonGenerator json, SerializerProvider serializerProvider) throws IOException {
             json.writeNumber(status.ordinal());
         }
     }
 
     private static class TestCaseTypeSerializer extends JsonSerializer<TestCaseType> {
         @Override
-        public void serialize(TestCaseType value, JsonGenerator json, SerializerProvider provider) throws IOException, JsonProcessingException {
+        public void serialize(TestCaseType value, JsonGenerator json, SerializerProvider provider) throws IOException {
             json.writeNumber(value.ordinal());
         }
     }
@@ -100,7 +91,7 @@ public class JacksonUtil {
     private static class PreliminarySerializer extends JsonSerializer<Preliminary> {
 
         @Override
-        public void serialize(Preliminary value, JsonGenerator json, SerializerProvider provider) throws IOException, JsonProcessingException {
+        public void serialize(Preliminary value, JsonGenerator json, SerializerProvider provider) throws IOException {
             json.writeStartObject();
             json.writeArrayFieldStart("interactions");
             for (InstructionOrRequest item: value.getInstructOrRequest()) {
@@ -123,7 +114,7 @@ public class JacksonUtil {
     private static class TestStepReportTypeSerializer extends JsonSerializer<TestStepReportType> {
 
         @Override
-        public void serialize(TestStepReportType testStepReport, JsonGenerator json, SerializerProvider serializerProvider) throws IOException, JsonProcessingException {
+        public void serialize(TestStepReportType testStepReport, JsonGenerator json, SerializerProvider serializerProvider) throws IOException {
             json.writeStartObject();
             if(testStepReport instanceof TAR tar) {
                 json.writeStringField("name", tar.getName());
@@ -154,7 +145,7 @@ public class JacksonUtil {
     private static class TestAssertionGroupReportsTypeSerializer extends JsonSerializer<TestAssertionGroupReportsType> {
 
         @Override
-        public void serialize(TestAssertionGroupReportsType testAssertionGroupReportsType, JsonGenerator json, SerializerProvider serializerProvider) throws IOException, JsonProcessingException {
+        public void serialize(TestAssertionGroupReportsType testAssertionGroupReportsType, JsonGenerator json, SerializerProvider serializerProvider) throws IOException {
             json.writeStartObject();
             json.writeArrayFieldStart("reports");
             for(TAR tar : testAssertionGroupReportsType.getReports()) {
@@ -176,7 +167,7 @@ public class JacksonUtil {
     private static class InteractWithUsersRequestSerializer extends JsonSerializer<InteractWithUsersRequest> {
 
         @Override
-        public void serialize(InteractWithUsersRequest value, JsonGenerator json, SerializerProvider provider) throws IOException, JsonProcessingException {
+        public void serialize(InteractWithUsersRequest value, JsonGenerator json, SerializerProvider provider) throws IOException {
             json.writeStartObject();
             json.writeStringField("stepId", value.getStepId());
             json.writeStringField("tcInstanceId", value.getTcInstanceid());
@@ -296,78 +287,71 @@ public class JacksonUtil {
         }
 
         @Override
-        public void serialize(TestStep step, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException, JsonProcessingException {
-            if (step instanceof MessagingStep) {
-                writeStep(jsonGenerator, step, () -> {
+        public void serialize(TestStep step, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
+            switch (step) {
+                case MessagingStep messagingStep -> writeStep(jsonGenerator, messagingStep, () -> {
                     jsonGenerator.writeStringField("type", "msg");
-                    jsonGenerator.writeStringField("from", ((MessagingStep) step).getFrom());
-                    jsonGenerator.writeStringField("to", ((MessagingStep) step).getTo());
-                    jsonGenerator.writeBooleanField("reply", ((MessagingStep) step).isReply());
+                    jsonGenerator.writeStringField("from", messagingStep.getFrom());
+                    jsonGenerator.writeStringField("to", messagingStep.getTo());
+                    jsonGenerator.writeBooleanField("reply", messagingStep.isReply());
                 });
-            } else if (step instanceof DecisionStep) {
-                writeStep(jsonGenerator, step, () -> {
+                case DecisionStep decisionStep -> writeStep(jsonGenerator, decisionStep, () -> {
                     jsonGenerator.writeStringField("type", "decision");
-                    jsonGenerator.writeStringField("title", ((DecisionStep) step).getTitle());
-                    jsonGenerator.writeObjectField("then", ((DecisionStep) step).getThen());
-                    jsonGenerator.writeObjectField("else", ((DecisionStep) step).getElse());
-                    jsonGenerator.writeBooleanField("collapsed", ((DecisionStep) step).isCollapsed());
+                    jsonGenerator.writeStringField("title", decisionStep.getTitle());
+                    jsonGenerator.writeObjectField("then", decisionStep.getThen());
+                    jsonGenerator.writeObjectField("else", decisionStep.getElse());
+                    jsonGenerator.writeBooleanField("collapsed", decisionStep.isCollapsed());
                 });
-            } else if (step instanceof LoopStep) {
-                writeStep(jsonGenerator, step, () -> {
+                case LoopStep loopStep -> writeStep(jsonGenerator, loopStep, () -> {
                     jsonGenerator.writeStringField("type", "loop");
-                    jsonGenerator.writeStringField("title", ((LoopStep) step).getTitle());
-                    jsonGenerator.writeBooleanField("collapsed", ((LoopStep) step).isCollapsed());
+                    jsonGenerator.writeStringField("title", loopStep.getTitle());
+                    jsonGenerator.writeBooleanField("collapsed", loopStep.isCollapsed());
                     jsonGenerator.writeArrayFieldStart("steps");
-                    for(TestStep testStep : ((Sequence) step).getSteps()) {
+                    for (TestStep testStep : loopStep.getSteps()) {
                         jsonGenerator.writeObject(testStep);
                     }
                     jsonGenerator.writeEndArray();
                 });
-            } else if (step instanceof GroupStep) {
-                writeStep(jsonGenerator, step, () -> {
+                case GroupStep groupStep -> writeStep(jsonGenerator, groupStep, () -> {
                     jsonGenerator.writeStringField("type", "group");
-                    jsonGenerator.writeStringField("title", ((GroupStep) step).getTitle());
-                    jsonGenerator.writeBooleanField("collapsed", ((GroupStep) step).isCollapsed());
+                    jsonGenerator.writeStringField("title", groupStep.getTitle());
+                    jsonGenerator.writeBooleanField("collapsed", groupStep.isCollapsed());
                     jsonGenerator.writeArrayFieldStart("steps");
-                    for(TestStep testStep : ((Sequence) step).getSteps()) {
+                    for (TestStep testStep : groupStep.getSteps()) {
                         jsonGenerator.writeObject(testStep);
                     }
                     jsonGenerator.writeEndArray();
                 });
-            } else if (step instanceof FlowStep) {
-                writeStep(jsonGenerator, step, () -> {
+                case FlowStep flowStep -> writeStep(jsonGenerator, step, () -> {
                     jsonGenerator.writeStringField("type", "flow");
-                    jsonGenerator.writeStringField("title", ((FlowStep) step).getTitle());
-                    jsonGenerator.writeBooleanField("collapsed", ((FlowStep) step).isCollapsed());
+                    jsonGenerator.writeStringField("title", flowStep.getTitle());
+                    jsonGenerator.writeBooleanField("collapsed", flowStep.isCollapsed());
                     jsonGenerator.writeArrayFieldStart("threads");
-                    for(Sequence sequence : ((FlowStep) step).getThread()) {
+                    for (Sequence sequence : flowStep.getThread()) {
                         jsonGenerator.writeObject(sequence);
                     }
                     jsonGenerator.writeEndArray();
                 });
-            } else if (step instanceof ExitStep) {
-                writeStep(jsonGenerator, step, () -> {
-                    jsonGenerator.writeStringField("type", "exit");
-                });
-            } else if (step instanceof UserInteractionStep) {
-                writeStep(jsonGenerator, step, () -> {
+                case ExitStep ignored -> writeStep(jsonGenerator, step, () ->
+                    jsonGenerator.writeStringField("type", "exit"));
+                case UserInteractionStep userInteractionStep -> writeStep(jsonGenerator, step, () -> {
                     jsonGenerator.writeStringField("type", "interact");
-                    jsonGenerator.writeStringField("title", ((UserInteractionStep) step).getTitle());
-                    jsonGenerator.writeBooleanField("collapsed", ((UserInteractionStep) step).isCollapsed());
-                    jsonGenerator.writeBooleanField("admin", ((UserInteractionStep) step).isAdmin());
+                    jsonGenerator.writeStringField("title", userInteractionStep.getTitle());
+                    jsonGenerator.writeBooleanField("collapsed", userInteractionStep.isCollapsed());
+                    jsonGenerator.writeBooleanField("admin", userInteractionStep.isAdmin());
                     jsonGenerator.writeArrayFieldStart("interactions");
-                    for(InstructionOrRequest ior : ((UserInteractionStep) step).getInstructOrRequest()){
+                    for (InstructionOrRequest ior : userInteractionStep.getInstructOrRequest()) {
                         jsonGenerator.writeStartObject();
-                        if(ior instanceof Instruction) {
+                        if (ior instanceof Instruction) {
                             jsonGenerator.writeStringField("type", "instruction");
-                        } else if (ior instanceof UserRequest){
+                        } else if (ior instanceof UserRequest) {
                             jsonGenerator.writeStringField("type", "request");
                         }
-                        jsonGenerator.writeStringField("id",   ior.getId());
-                        if(ior.getDesc() != null) {
+                        jsonGenerator.writeStringField("id", ior.getId());
+                        if (ior.getDesc() != null) {
                             jsonGenerator.writeStringField("desc", ior.getDesc());
                         }
-                        if(ior.getWith() != null) {
+                        if (ior.getWith() != null) {
                             jsonGenerator.writeStringField("with", ior.getWith());
                         }
                         jsonGenerator.writeEndObject();
@@ -375,22 +359,21 @@ public class JacksonUtil {
                     jsonGenerator.writeEndArray();
                     jsonGenerator.writeStringField("with", ((UserInteractionStep) step).getWith());
                 });
-            } else if (step instanceof VerifyStep) {
-                writeStep(jsonGenerator, step, () -> {
-                    jsonGenerator.writeStringField("type", "verify");
-                });
-            } else if (step instanceof ProcessStep) {
-                writeStep(jsonGenerator, step, () -> {
-                    jsonGenerator.writeStringField("type", "process");
-                });
-            } else if (step instanceof Sequence) {
-                jsonGenerator.writeStartArray();
-                for(TestStep testStep : ((Sequence) step).getSteps()) {
-                    jsonGenerator.writeObject(testStep);
+                case VerifyStep ignored -> writeStep(jsonGenerator, step, () ->
+                    jsonGenerator.writeStringField("type", "verify"));
+                case ProcessStep ignored -> writeStep(jsonGenerator, step, () ->
+                    jsonGenerator.writeStringField("type", "process"));
+                case Sequence sequence -> {
+                    jsonGenerator.writeStartArray();
+                    for (TestStep testStep : sequence.getSteps()) {
+                        jsonGenerator.writeObject(testStep);
+                    }
+                    jsonGenerator.writeEndArray();
                 }
-                jsonGenerator.writeEndArray();
-            } else {
-                LOG.warn("Encountered unknown step type ["+step.getClass().getName()+"] to serialize - ignoring.");
+                case null ->
+                    LOG.warn("Encountered unknown step type to serialize - ignoring.");
+                default ->
+                    LOG.warn("Encountered unknown step type [{}] to serialize - ignoring.", step.getClass().getName());
             }
         }
     }

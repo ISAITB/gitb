@@ -16,6 +16,7 @@ import com.gitb.engine.events.model.InputEvent;
 import com.gitb.engine.events.model.StatusEvent;
 import com.gitb.engine.events.model.TestStepStatusEvent;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.engine.utils.StepContext;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tdl.IfStep;
@@ -52,11 +53,13 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 	protected final T step;
 	protected final TestCaseScope scope;
 	protected final String stepId;
+	protected final StepContext stepContext;
 
-	public AbstractTestStepActor(T step, TestCaseScope scope, String stepId) {
+	public AbstractTestStepActor(T step, TestCaseScope scope, String stepId, StepContext stepContext) {
 		this.scope = scope;
 		this.stepId = stepId;
 		this.step = step;
+		this.stepContext = stepContext;
 	}
 
 	protected Marker addMarker() {
@@ -357,22 +360,26 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 			report.getReports().getInfoOrWarningOrError().add(trObjectFactory.createTestAssertionGroupReportsTypeError(error));
 
 		} catch (DatatypeConfigurationException e) {
-			logger.error(addMarker(), "An error occurred while trying to construct a report for exception [" + ((ErrorStatusEvent) statusEvent).getException() + "]", e);
+			logger.error(addMarker(), "An error occurred while trying to construct a report for exception [" + statusEvent.getException() + "]", e);
 		}
 		return report;
 	}
 
-	public static <T, S extends AbstractTestStepActor<T>> ActorRef create(final Class<S> clazz, ActorContext context, T step, TestCaseScope scope, String stepId) throws Exception {
+	public static <T, S extends AbstractTestStepActor<T>> ActorRef create(final Class<S> clazz, ActorContext context, T step, TestCaseScope scope, String stepId, StepContext stepContext) throws Exception {
 		String name = (String) FieldUtils.readStaticField(clazz, "NAME");
 		if (name == null) {
-			return context.actorOf(props(clazz, step, scope, stepId));
+			return context.actorOf(props(clazz, step, scope, stepId, stepContext));
 		} else {
-			return context.actorOf(props(clazz, step, scope, stepId), getName(name));
+			return context.actorOf(props(clazz, step, scope, stepId, stepContext), getName(name));
 		}
 	}
 
 	public static <T, S extends AbstractTestStepActor<T>> Props props(final Class<S> clazz, final T step, final TestCaseScope scope, final String stepId) throws Exception {
 		return Props.create(clazz, (Creator<S>) () -> ConstructorUtils.invokeConstructor(clazz, step, scope, stepId));
+	}
+
+	public static <T, S extends AbstractTestStepActor<T>> Props props(final Class<S> clazz, final T step, final TestCaseScope scope, final String stepId, final StepContext stepContext) throws Exception {
+		return Props.create(clazz, (Creator<S>) () -> ConstructorUtils.invokeConstructor(clazz, step, scope, stepId, stepContext));
 	}
 
 	public static String getName(String actorName) {

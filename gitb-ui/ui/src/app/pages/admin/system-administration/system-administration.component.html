@@ -141,7 +141,7 @@
                                                                 <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="StartTLS is a backwards compatibility flag allowing you to connect to a SMTP server over a plain text channel and then upgrade automatically to an encrypted one."></div>
                                                             </label>
                                                         </div>
-                                                    </div>                                        
+                                                    </div>
                                                 </div>
                                                 <div [collapse]="!emailSettings.sslEnabled" [isAnimated]="true">
                                                     <div class="row mt-3">
@@ -366,7 +366,7 @@
                                     </div>
                                     <div class="col-auto">
                                         <app-api-key-text idName="restApiAdminKey" name="restApiAdminKey"
-                                            [key]="restApiAdminKey" 
+                                            [key]="restApiAdminKey"
                                             [supportUpdate]="true"
                                             [updatePending]="updateRestApiAdminKeyPending"
                                             [label]="'Master API key'"
@@ -442,7 +442,9 @@
                 <!-- Administrators -->
                 <div class="tabPanel">
                     <div class="tabControls">
-                        <button type="button" class="btn btn-secondary" (click)="createAdmin()">Create system administrator</button>
+                        <div class="btn-toolbar">
+                            <button type="button" class="btn btn-secondary" (click)="createAdmin()">Create system administrator</button>
+                        </div>
                     </div>
                     <div class="card">
                         <div table-directive

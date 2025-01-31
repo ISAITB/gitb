@@ -19,7 +19,11 @@ class ConformanceTestSuite(
   var failedOptional: Long,
   var completedOptional: Long,
   var undefinedOptional: Long,
-  var testCases: Iterable[ConformanceTestCase]
+  var failedToConsider: Long,
+  var completedToConsider:Long,
+  var undefinedToConsider:Long,
+  var testCases: Iterable[ConformanceTestCase],
+  var testCaseGroups: Iterable[TestCaseGroup]
 ) extends ResultCountHolder {
 
   override def completedCount(): Long = completed
