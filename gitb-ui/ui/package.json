@@ -7,7 +7,10 @@
     "build": "ng build --progress --output-path ../app/assets/build",
     "build:dev": "ng build --progress --watch --output-path ../app/assets/build",
     "build:prod": "ng build --progress --configuration production --output-path ../app/assets/build --output-hashing none",
-    "audit": "better-npm-audit audit --production"
+    "audit": "better-npm-audit audit --production",
+    "licence-report": "license-report --only=prod --output=markdown --fields=licenseType --fields=name --fields=installedVersion --fields=link",
+    "licence-report-save": "npm run licence-report > ./dist/THIRD_PARTY_LICENCES.md",
+    "licence-check": "license-checker-rseidelsohn --production --depth 0 --excludePrivatePackages --onlyAllow MIT;Apache-2.0 --summary"
   },
   "private": true,
   "dependencies": {
@@ -45,6 +48,8 @@
     "@types/node": "^20.12.7",
     "better-npm-audit": "^3.11.0",
     "codelyzer": "^6.0.2",
+    "license-checker-rseidelsohn": "^4.4.2",
+    "license-report": "^6.7.1",
     "ts-node": "~10.9.2",
     "tslib": "^2.7.0",
     "tslint": "~6.1.0",

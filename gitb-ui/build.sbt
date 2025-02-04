@@ -1,17 +1,8 @@
+import sbtlicensereport.license.{LicenseCategory, LicenseInfo}
+
 name := """GITB"""
 version := "1.0-SNAPSHOT"
 maintainer := "DIGIT-ITB@ec.europa.eu"
-
-/*
-Dependency checking is disabled given that the sbt-dependency-check is not updated for the NVP 9+ API.
-To run the dependency check the simplest and fastest approach is to do a sbt dist and then extract the
-libraries from the produced archive and pass them to the ODC CLI. The settings to include for a ODC run
-with the sbt-dependency-check would be as follows.
-
-  .settings(dependencyCheckOSSIndexWarnOnlyOnRemoteErrors := Some(true))
-  .settings(dependencyCheckFailBuildOnCVSS := 0)
-  .settings(dependencyCheckSuppressionFile := Some(file("project/owasp-suppressions.xml")))
-*/
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
 
@@ -100,3 +91,66 @@ Compile / packageDoc / publishArtifact := false
 resolvers += Resolver.mavenLocal
 
 routesGenerator := InjectedRoutesGenerator
+
+/*
+ * Licence reporting - START
+ */
+licenseCheckAllow := Seq(
+  LicenseCategory.Apache,
+  LicenseCategory.BouncyCastle,
+  LicenseCategory.BSD,
+  LicenseCategory.CC0,
+  LicenseCategory.EPL,
+  LicenseCategory.MIT,
+  LicenseCategory.Mozilla,
+  LicenseCategory.PublicDomain,
+  LicenseCategory.JSON,
+  LicenseCategory.Unicode,
+  LicenseCategory.IBM_IPLA,
+  LicenseCategory.LGPL,
+  LicenseCategory.GPLClasspath
+)
+licenseOverrides := {
+  case DepModuleInfo("jakarta.annotation", "jakarta.annotation-api", _) => LicenseInfo(LicenseCategory.GPLClasspath, LicenseCategory.GPLClasspath.name, "")
+  case DepModuleInfo("jakarta.servlet", "jakarta.servlet-api", _) => LicenseInfo(LicenseCategory.GPLClasspath, LicenseCategory.GPLClasspath.name, "")
+  case DepModuleInfo("commons-collections", "commons-collections", "3.2.2") => LicenseInfo(LicenseCategory.Apache, LicenseCategory.Apache.name, "")
+  case DepModuleInfo("commons-digester", "commons-digester", "2.1") => LicenseInfo(LicenseCategory.Apache, LicenseCategory.Apache.name, "")
+  case DepModuleInfo("org.apache.commons", "commons-exec", "1.3") => LicenseInfo(LicenseCategory.Apache, LicenseCategory.Apache.name, "")
+  case DepModuleInfo("org.apereo.cas.client", "cas-client-core", "4.0.4") => LicenseInfo(LicenseCategory.Apache, LicenseCategory.Apache.name, "")
+  case DepModuleInfo("org.apereo.cas.client", "cas-client-support-saml", "4.0.4") => LicenseInfo(LicenseCategory.Apache, LicenseCategory.Apache.name, "")
+  case DepModuleInfo("org.hamcrest", "hamcrest-core", "1.3") => LicenseInfo(LicenseCategory.BSD, LicenseCategory.BSD.name, "")
+  case DepModuleInfo("xml-resolver", "xml-resolver", "1.2") => LicenseInfo(LicenseCategory.Apache, LicenseCategory.Apache.name, "")
+  case DepModuleInfo("com.google.code.findbugs", "findbugs-annotations", "3.0.1") => LicenseInfo(LicenseCategory.LGPL, LicenseCategory.LGPL.name, "")
+}
+licenseDepExclusions := {
+  case DepModuleInfo("com.gitb", _, _) => true
+  case DepModuleInfo("eu.europa.ec.itb", _, _) => true
+  case DepModuleInfo("org.hamcrest", _, _) => true
+  case DepModuleInfo("org.scala-sbt", "test-interface", _) => true
+  case DepModuleInfo("org.jline", "jline", _) => true
+  case DepModuleInfo("com.github.sbt", "junit-interface", _) => true
+}
+licenseCheckExclusions := {
+  case DepModuleInfo("com.mysql", "mysql-connector-j", "8.4.0") => true
+  case DepModuleInfo("wsdl4j", "wsdl4j", "1.6.3") => true
+}
+licenseReportNotes := {
+  case DepModuleInfo("com.mysql", "mysql-connector-j", "8.4.0") => "The Universal FOSS Exception allows its usage as it is used unchanged."
+  case DepModuleInfo("wsdl4j", "wsdl4j", "1.6.3") => "Used transitively by CXF, see (https://www.apache.org/legal/resolved.html#category-b)."
+}
+licenseConfigurations := Set("compile", "provided")
+licenseReportTitle := "THIRD_PARTY_LICENCES"
+/*
+ * Licence reporting - END
+ */
+
+/*
+ * Dependency checking is disabled given that the sbt-dependency-check is not updated for the NVP 9+ API.
+ * To run the dependency check the simplest and fastest approach is to do a sbt dist and then extract the
+ * libraries from the produced archive and pass them to the ODC CLI. The settings to include for a ODC run
+ * with the sbt-dependency-check would be as follows.
+ *
+ *   .settings(dependencyCheckOSSIndexWarnOnlyOnRemoteErrors := Some(true))
+ *   .settings(dependencyCheckFailBuildOnCVSS := 0)
+ *   .settings(dependencyCheckSuppressionFile := Some(file("project/owasp-suppressions.xml")))
+ */

@@ -27,7 +27,8 @@
         <version.plugin.dependency-check-maven>12.0.2</version.plugin.dependency-check-maven>
         <version.plugin.maven-deploy-plugin>3.1.1</version.plugin.maven-deploy-plugin>
         <version.plugin.maven-compiler-plugin>3.11.0</version.plugin.maven-compiler-plugin>
-        <version.jaxb2-maven-plugin>3.1.0</version.jaxb2-maven-plugin>
+        <version.plugin.jaxb2-maven-plugin>3.1.0</version.plugin.jaxb2-maven-plugin>
+        <version.plugin.license-maven-plugin>2.5.0</version.plugin.license-maven-plugin>
         <!-- Dependency versions -->
         <version.springBoot>3.4.2</version.springBoot>
         <version.gitbTypes>1.25.0</version.gitbTypes>
@@ -134,7 +135,76 @@
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>jaxb2-maven-plugin</artifactId>
-                    <version>${version.jaxb2-maven-plugin}</version>
+                    <version>${version.plugin.jaxb2-maven-plugin}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>license-maven-plugin</artifactId>
+                    <version>${version.plugin.license-maven-plugin}</version>
+                    <configuration>
+                        <fileTemplate>${project.basedir}/etc/licence/third-party-licence-template.ftl</fileTemplate>
+                        <outputDirectory>${project.build.directory}/generated-sources/license/temp</outputDirectory>
+                        <thirdPartyFilename>THIRD_PARTY_LICENCES-gitb-srv.md</thirdPartyFilename>
+                        <excludedGroups>com.gitb|eu.europa.ec.itb</excludedGroups>
+                        <excludedScopes>test</excludedScopes>
+                        <failOnMissing>true</failOnMissing>
+                        <licenseMerges>
+                            <licenseMerge>Apache License, Version 2.0|The Apache Software License, Version 2.0|Apache-2.0|Apache License 2.0|Apache 2|The Apache License, Version 2.0|Apache License|Apache License version 2.0</licenseMerge>
+                            <licenseMerge>MIT License|The MIT License</licenseMerge>
+                            <licenseMerge>Eclipse Distribution License - v1.0|EDL 1.0|Eclipse Distribution License - v 1.0</licenseMerge>
+                            <licenseMerge>Eclipse Public License - v1.0|Eclipse Public License - v 1.0</licenseMerge>
+                            <licenseMerge>Eclipse Public License - v2.0|EPL 2.0</licenseMerge>
+                            <licenseMerge>GNU General Public License (GPL), Version 2 (with Classpath Exception)|GPL2 w/ CPE</licenseMerge>
+                            <licenseMerge>GNU Lesser General Public License (LGPL), Version 2.1|GNU Lesser General Public License (LGPL), version 2.1 or later|LGPL 2.1|GNU Lesser General Public License</licenseMerge>
+                            <licenseMerge>The 3-Clause BSD License|BSD-3-Clause</licenseMerge>
+                            <licenseMerge>The 2-Clause BSD License|The BSD 2-Clause License</licenseMerge>
+                            <licenseMerge>Common Public License 1.0|CPL</licenseMerge>
+                        </licenseMerges>
+                    </configuration>
+                    <!--
+                        To generate the complete third party licence file do as follows:
+                            1. Generate the gitb-ui licence content by issuing in gitb-ui: `sbt dumpLicenseReport`
+                            2. Generate the gitb-ui/ui licence content by issuing in gitb-ui/ui: `npm run licence-report-save`
+                            3. Generate the gitb-srv licence content by issuing in this project `mvn license:aggregate-add-third-party`
+                            4. Aggregate all content, by issuing in this project `mvn antrun:run -pl .`
+                        The resulting licence file is prepared in target/generated-sources/license/temp/THIRD_PARTY_LICENCES.md
+
+                        In case specific licences and attributions need to be included, these need to be added to etc/licence/third-party-licence-template.ftl
+                        Once added, repeat the commands from steps [3] and [4] above.
+                    -->
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-antrun-plugin</artifactId>
+                    <version>3.1.0</version>
+                    <configuration>
+                        <target>
+                            <!-- Step 1: Copy the licence information from gitb-ui -->
+                            <loadfile property="licence.placeholder1" srcFile="gitb-ui/target/license-reports/THIRD_PARTY_LICENCES.md">
+                                <filterchain>
+                                    <headfilter lines="-1" skip="2"/>
+                                    <ignoreblank/>
+                                    <prefixlines prefix="| "/>
+                                    <suffixlines suffix=" |"/>
+                                </filterchain>
+                            </loadfile>
+                            <!-- Step 2: Copy the licence information from gitb-ui/ui -->
+                            <loadfile property="licence.placeholder2" srcFile="gitb-ui/ui/dist/THIRD_PARTY_LICENCES.md">
+                                <filterchain>
+                                    <headfilter lines="-1" skip="4"/>
+                                    <ignoreblank/>
+                                </filterchain>
+                            </loadfile>
+                            <delete file="target/generated-sources/license/THIRD_PARTY_LICENCES.md" quiet="true"/>
+                            <copy file="target/generated-sources/license/temp/THIRD_PARTY_LICENCES-gitb-srv.md" tofile="target/generated-sources/license/THIRD_PARTY_LICENCES.md"/>
+                            <replace file="target/generated-sources/license/THIRD_PARTY_LICENCES.md"
+                                     token="~~PLACEHOLDER1~~"
+                                     value="${licence.placeholder1}" />
+                            <replace file="target/generated-sources/license/THIRD_PARTY_LICENCES.md"
+                                     token="~~PLACEHOLDER2~~"
+                                     value="${licence.placeholder2}" />
+                        </target>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
