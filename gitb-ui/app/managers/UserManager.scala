@@ -6,10 +6,10 @@ import javax.inject.{Inject, Singleton}
 import models.Enums.UserRole
 import models.Enums.UserRole._
 import models._
-import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
+import utils.CryptoUtil
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -110,7 +110,7 @@ class UserManager @Inject() (accountManager: AccountManager, organizationManager
       var action: DBIO[_] = null
       if (password.isDefined) {
         val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.name, u.password, u.onetimePassword)
-        action = q.update(name, BCrypt.hashpw(password.get.trim, BCrypt.gensalt()), true)
+        action = q.update(name, CryptoUtil.hashPassword(String.valueOf(password.get.trim)), true)
       } else {
         val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.name)
         action = q.update(name)
@@ -128,7 +128,7 @@ class UserManager @Inject() (accountManager: AccountManager, organizationManager
       var action: DBIO[_] = null
       if (password.isDefined) {
         val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.name, u.password, u.onetimePassword)
-        action = q.update(name, BCrypt.hashpw(password.get.trim, BCrypt.gensalt()), true)
+        action = q.update(name, CryptoUtil.hashPassword(password.get.trim), true)
       } else {
         val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.name)
         action = q.update(name)
@@ -151,7 +151,7 @@ class UserManager @Inject() (accountManager: AccountManager, organizationManager
       } else {
         if (password.isDefined) {
           val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.name, u.role, u.password, u.onetimePassword)
-          action = q.update(name.get, roleId, BCrypt.hashpw(password.get.trim, BCrypt.gensalt()), true)
+          action = q.update(name.get, roleId, CryptoUtil.hashPassword(password.get.trim), true)
         } else {
           val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.name, u.role)
           action = q.update(name.get, roleId)

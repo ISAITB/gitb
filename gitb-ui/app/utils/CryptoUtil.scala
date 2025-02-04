@@ -1,7 +1,7 @@
 package utils
 
+import com.password4j.Password
 import config.Configurations
-import org.mindrot.jbcrypt.BCrypt
 
 import java.util.UUID
 
@@ -17,7 +17,7 @@ object CryptoUtil {
    * @return
    */
   def encrypt(string:String):String = {
-    BCrypt.hashpw(string, BCrypt.gensalt(12))
+    Password.hash(string).withBcrypt().getResult
   }
 
   /**
@@ -27,7 +27,7 @@ object CryptoUtil {
    * @return true if they match, false otherwise
    */
   def check(string:String, encrypted:String):Boolean = {
-    BCrypt.checkpw(string, encrypted)
+    Password.check(string, encrypted).withBcrypt()
   }
 
   /**
@@ -37,4 +37,13 @@ object CryptoUtil {
   def isAcceptedPassword(value: String): Boolean = {
     Configurations.PASSWORD_COMPLEXITY_RULE_REGEX.pattern.matcher(value).matches()
   }
+
+  def checkPassword(clearPassword: String, hashedPassword: String): Boolean = {
+    Password.check(clearPassword, hashedPassword).withBcrypt()
+  }
+
+  def hashPassword(clearPassword: String): String = {
+    Password.hash(clearPassword).withBcrypt().getResult
+  }
+
 }

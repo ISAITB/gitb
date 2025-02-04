@@ -5,14 +5,12 @@ import exceptions._
 import models.Enums.UserRole.UserRole
 import models.Enums._
 import models._
-import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
-import utils.EmailUtil
+import utils.{CryptoUtil, EmailUtil}
 
 import javax.inject.{Inject, Singleton}
-import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
@@ -178,11 +176,11 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider, landing
               .map(_.password)
               .result.headOption
             _ <- {
-              if (currentPassword.isDefined && BCrypt.checkpw(oldPassword.get.trim, currentPassword.get)) {
+              if (currentPassword.isDefined && CryptoUtil.checkPassword(oldPassword.get.trim, currentPassword.get)) {
                 // Provided password matches.
                 PersistenceSchema.users.filter(_.id === userId)
                   .map(x => (x.password, x.onetimePassword))
-                  .update((BCrypt.hashpw(password.get.trim, BCrypt.gensalt()), false))
+                  .update((CryptoUtil.hashPassword(password.get.trim), false))
               } else {
                 // Invalid password.
                 throw InvalidRequestException(ErrorCodes.INVALID_CREDENTIALS, "Incorrect password.")

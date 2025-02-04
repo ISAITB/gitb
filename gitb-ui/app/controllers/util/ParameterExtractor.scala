@@ -7,7 +7,6 @@ import controllers.util.Parameters
 import models.theme.{Theme, ThemeFiles}
 import models.{Actor, Badges, Communities, CommunityReportSettings, CommunityResources, Configs, Constants, Domain, Endpoints, ErrorTemplates, FileInfo, LandingPages, LegalNotices, NamedFile, OrganisationParameterValues, Organizations, SpecificationGroups, Specifications, SystemParameterValues, Systems, Trigger, TriggerData, TriggerFireExpression, Triggers, Users}
 import org.apache.commons.lang3.StringUtils
-import org.mindrot.jbcrypt.BCrypt
 import play.api.mvc._
 import utils.{ClamAVClient, CryptoUtil, HtmlUtil, JsonUtil, MimeUtil}
 
@@ -402,7 +401,7 @@ object ParameterExtractor {
       val name = requiredBodyParameter(request, Parameters.USER_NAME)
       val email = requiredBodyParameter(request, Parameters.USER_EMAIL).trim
       val password = requiredBodyParameter(request, Parameters.PASSWORD).trim
-      Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), onetimePassword = true, UserRole.SystemAdmin.id.toShort, 0L, None, None, UserSSOStatus.NotMigrated.id.toShort)
+      Users(0L, name, email, CryptoUtil.hashPassword(password), onetimePassword = true, UserRole.SystemAdmin.id.toShort, 0L, None, None, UserSSOStatus.NotMigrated.id.toShort)
     }
   }
 
@@ -414,7 +413,7 @@ object ParameterExtractor {
       val name = requiredBodyParameter(request, Parameters.USER_NAME)
       val email = requiredBodyParameter(request, Parameters.USER_EMAIL).trim
       val password = requiredBodyParameter(request, Parameters.PASSWORD).trim
-      Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), onetimePassword = true, UserRole.CommunityAdmin.id.toShort, 0L, None, None, UserSSOStatus.NotMigrated.id.toShort)
+      Users(0L, name, email, CryptoUtil.hashPassword(password), onetimePassword = true, UserRole.CommunityAdmin.id.toShort, 0L, None, None, UserSSOStatus.NotMigrated.id.toShort)
     }
   }
 
@@ -431,7 +430,7 @@ object ParameterExtractor {
       val name = requiredBodyParameter(paramMap, Parameters.USER_NAME)
       val email = requiredBodyParameter(paramMap, Parameters.USER_EMAIL).trim
       val password = requiredBodyParameter(paramMap, Parameters.PASSWORD).trim
-      Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), passwordIsOneTime.getOrElse(true), UserRole.VendorAdmin.id.toShort, 0L, None, None, UserSSOStatus.NotMigrated.id.toShort)
+      Users(0L, name, email, CryptoUtil.hashPassword(password), passwordIsOneTime.getOrElse(true), UserRole.VendorAdmin.id.toShort, 0L, None, None, UserSSOStatus.NotMigrated.id.toShort)
     }
   }
 
@@ -444,7 +443,7 @@ object ParameterExtractor {
     val name = s"User [$randomPart]"
     val email = s"$randomPart@itb.ec.europa.eu"
     val password = randomPart.toString
-    Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), onetimePassword = true, role, 0L, None, Some(ssoEmail), UserSSOStatus.NotLinked.id.toShort)
+    Users(0L, name, email, CryptoUtil.hashPassword(password), onetimePassword = true, role, 0L, None, Some(ssoEmail), UserSSOStatus.NotLinked.id.toShort)
   }
 
   def extractUserInfo(request:Request[AnyContent]):Users = {
@@ -455,7 +454,7 @@ object ParameterExtractor {
       val name = requiredBodyParameter(request, Parameters.USER_NAME)
       val email = requiredBodyParameter(request, Parameters.USER_EMAIL).trim
       val password = requiredBodyParameter(request, Parameters.PASSWORD).trim
-      Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), onetimePassword = true, UserRole.VendorUser.id.toShort, 0L, None, None, UserSSOStatus.NotMigrated.id.toShort)
+      Users(0L, name, email, CryptoUtil.hashPassword(password), onetimePassword = true, UserRole.VendorUser.id.toShort, 0L, None, None, UserSSOStatus.NotMigrated.id.toShort)
     }
   }
 

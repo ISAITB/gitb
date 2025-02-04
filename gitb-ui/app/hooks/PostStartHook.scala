@@ -9,12 +9,11 @@ import managers._
 import managers.export.ImportCompleteManager
 import models.Constants
 import models.Enums.UserRole
-import org.apache.commons.io.{FileUtils, IOUtils}
+import org.apache.commons.io.FileUtils
 import org.apache.commons.io.comparator.NameFileComparator
 import org.apache.commons.lang3.StringUtils
 import org.apache.cxf.jaxws.EndpointImpl
 import org.apache.pekko.actor.ActorSystem
-import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
 import play.api.{Configuration, Environment}
 import utils.{CryptoUtil, JsonUtil, RepositoryUtils, TimeUtil, ZipArchiver}
@@ -191,12 +190,12 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext,
     var existingValue: Option[String] = None
     if (existingHash.isEmpty || existingHash.get.parameter.isEmpty) {
       // Store master password.
-      existingValue = Some(BCrypt.hashpw(String.valueOf(Configurations.MASTER_PASSWORD), BCrypt.gensalt()))
+      existingValue = Some(CryptoUtil.hashPassword(String.valueOf(Configurations.MASTER_PASSWORD)))
       systemConfigurationManager.updateSystemParameter(Constants.MasterPassword, existingValue)
     } else {
       existingValue = existingHash.get.parameter
     }
-    if (BCrypt.checkpw(String.valueOf(Configurations.MASTER_PASSWORD), existingValue.get)) {
+    if (CryptoUtil.checkPassword(String.valueOf(Configurations.MASTER_PASSWORD), existingValue.get)) {
       // Set master password matches stored value.
       if (Configurations.MASTER_PASSWORD_TO_REPLACE.isDefined) {
         Configurations.MASTER_PASSWORD_TO_REPLACE = None
@@ -211,13 +210,13 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext,
     } else {
       // Set master password does not match stored value.
       if (Configurations.MASTER_PASSWORD_TO_REPLACE.isDefined) {
-        if (BCrypt.checkpw(String.valueOf(Configurations.MASTER_PASSWORD_TO_REPLACE.get), existingValue.get)) {
+        if (CryptoUtil.checkPassword(String.valueOf(Configurations.MASTER_PASSWORD_TO_REPLACE.get), existingValue.get)) {
           systemConfigurationManager.updateMasterPassword(Configurations.MASTER_PASSWORD_TO_REPLACE.get, Configurations.MASTER_PASSWORD)
           logger.info("The master password has been successfully updated and existing secrets have been re-encrypted using it. " +
             "In the application's next startup remove property MASTER_PASSWORD_TO_REPLACE to avoid startup warnings.")
         } else {
           if (Configurations.MASTER_PASSWORD_FORCE) {
-            systemConfigurationManager.updateSystemParameter(Constants.MasterPassword, Some(BCrypt.hashpw(String.valueOf(Configurations.MASTER_PASSWORD), BCrypt.gensalt())))
+            systemConfigurationManager.updateSystemParameter(Constants.MasterPassword, Some(CryptoUtil.hashPassword(String.valueOf(Configurations.MASTER_PASSWORD))))
             logger.warn("The configured MASTER_PASSWORD does not match the one currently in place but the previous one to " +
               "replace, provided via MASTER_PASSWORD_TO_REPLACE, does not match it either. As property MASTER_PASSWORD_FORCE " +
               "is set to true the new MASTER_PASSWORD will be used from now on, however any existing secret values will be " +
@@ -235,7 +234,7 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext,
         }
       } else {
         if (Configurations.MASTER_PASSWORD_FORCE) {
-          systemConfigurationManager.updateSystemParameter(Constants.MasterPassword, Some(BCrypt.hashpw(String.valueOf(Configurations.MASTER_PASSWORD), BCrypt.gensalt())))
+          systemConfigurationManager.updateSystemParameter(Constants.MasterPassword, Some(CryptoUtil.hashPassword(String.valueOf(Configurations.MASTER_PASSWORD))))
           logger.warn("The configured MASTER_PASSWORD does not match the one currently in place but you did not specify " +
             "the previous password via property MASTER_PASSWORD_TO_REPLACE. As property MASTER_PASSWORD_FORCE is set to true " +
             "the new MASTER_PASSWORD will be used from now on, however any existing secret values will be rendered invalid and lost " +

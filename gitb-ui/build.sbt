@@ -56,7 +56,7 @@ libraryDependencies ++= Seq(
   "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-annotations" % jacksonVersion,
   "com.fasterxml.jackson.module" % "jackson-module-jakarta-xmlbind-annotations" % jacksonVersion,
-  "org.mindrot"  % "jbcrypt" % "0.4",  // For password encryption
+  "com.password4j"  % "password4j" % "1.8.2",
   "net.debasishg" %% "redisclient" % "3.42",
   // For calling and exporting JAX-WS services.
   "org.apache.cxf" % "cxf-rt-frontend-jaxws" % cxfVersion,

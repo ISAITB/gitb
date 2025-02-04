@@ -3,7 +3,6 @@ package managers
 import config.Configurations
 import models.{Enums, Token, Users}
 import org.apache.commons.lang3.RandomStringUtils
-import org.mindrot.jbcrypt.BCrypt
 import persistence.cache.TokenCache
 import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
@@ -59,7 +58,7 @@ class AuthenticationManager @Inject()(dbConfigProvider: DatabaseConfigProvider) 
       passwordToUse <- {
         if (adminIdToProcess.isDefined) {
           val newPassword = UUID.randomUUID().toString
-          PersistenceSchema.users.filter(_.id === adminIdToProcess).map(_.password).update(BCrypt.hashpw(newPassword, BCrypt.gensalt())) andThen DBIO.successful(Some(newPassword))
+          PersistenceSchema.users.filter(_.id === adminIdToProcess).map(_.password).update(CryptoUtil.hashPassword(newPassword)) andThen DBIO.successful(Some(newPassword))
         } else {
           DBIO.successful(None)
         }
@@ -69,7 +68,7 @@ class AuthenticationManager @Inject()(dbConfigProvider: DatabaseConfigProvider) 
 
   def checkUserByEmail(email:String, passwd:String): Option[Users] = {
     val user = exec(PersistenceSchema.users.filter(_.email === email).result.headOption)
-    if (user.isDefined && BCrypt.checkpw(passwd, user.get.password)) user else None
+    if (user.isDefined && CryptoUtil.checkPassword(passwd, user.get.password)) user else None
   }
 
   def replaceOnetimePassword(email: String, newPassword: String, oldPassword: String): Option[Long] = {
@@ -80,10 +79,10 @@ class AuthenticationManager @Inject()(dbConfigProvider: DatabaseConfigProvider) 
       resultUserId <- {
         if (userData.isDefined) {
           if (userData.get._3 || !CryptoUtil.isAcceptedPassword(oldPassword)) {
-            if (BCrypt.checkpw(oldPassword, userData.get._2)) {
+            if (CryptoUtil.checkPassword(oldPassword, userData.get._2)) {
               // Old password matches - do update
               val update = for { u <- PersistenceSchema.users.filter(_.id === userData.get._1)} yield (u.password, u.onetimePassword)
-              update.update(BCrypt.hashpw(newPassword, BCrypt.gensalt()), false) andThen
+              update.update(CryptoUtil.hashPassword(newPassword), false) andThen
                 DBIO.successful(Some(userData.get._1))
             } else {
               DBIO.successful(None)

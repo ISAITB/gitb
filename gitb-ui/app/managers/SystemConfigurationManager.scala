@@ -6,7 +6,6 @@ import models._
 import models.theme.{Theme, ThemeFiles}
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.lang3.StringUtils
-import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
@@ -327,7 +326,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
   def updateMasterPassword(previousPassword: Array[Char], newPassword: Array[Char]): Unit = {
     val dbAction: DBIO[_] = for {
       // Update the hashed stored value
-      _ <- updateSystemParameterInternal(Constants.MasterPassword, Some(BCrypt.hashpw(String.valueOf(newPassword), BCrypt.gensalt())), applySetting = false)
+      _ <- updateSystemParameterInternal(Constants.MasterPassword, Some(CryptoUtil.hashPassword(String.valueOf(newPassword))), applySetting = false)
       // Update domain parameters
       domainParams <- PersistenceSchema.domainParameters.filter(_.kind === "HIDDEN").filter(_.value.isDefined).map(x => (x.id, x.value)).result
       _ <- {
