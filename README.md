@@ -233,6 +233,8 @@ and [sample usage tutorials](https://www.itb.ec.europa.eu/docs/guides/latest/def
 This software is shared under the European Union Public Licence (EUPL) version 1.1, featuring a CEN-specific extension for 
 the GITB CWA to limit its liability and trademark use. See [here](https://github.com/ISAITB/gitb/blob/master/LICENCE.md) for details.
 
+Third-party library licences and attributions are listed in [THIRD_PARTY_LICENCES.md](THIRD_PARTY_LICENCES.md).
+
 # Legal notice
 
 The authors of this software waive any and all liability linked to its usage, or the interpretation of any results it may produce.
