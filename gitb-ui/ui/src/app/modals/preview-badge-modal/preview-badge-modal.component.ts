@@ -8,9 +8,10 @@ import { BsModalRef } from 'ngx-bootstrap/modal';
 import { DataService } from 'src/app/services/data.service';
 
 @Component({
-  selector: 'app-preview-badge-modal',
-  templateUrl: './preview-badge-modal.component.html',
-  styleUrls: [ './preview-badge-modal.component.less']
+    selector: 'app-preview-badge-modal',
+    templateUrl: './preview-badge-modal.component.html',
+    styleUrls: ['./preview-badge-modal.component.less'],
+    standalone: false
 })
 export class PreviewBadgeModalComponent implements OnInit {
 

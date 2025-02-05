@@ -9,10 +9,10 @@ import { FileData } from 'src/app/types/file-data.type';
 import { saveAs } from 'file-saver'
 
 @Component({
-  selector: 'app-create-edit-community-resource-modal',
-  templateUrl: './create-edit-community-resource-modal.component.html',
-  styles: [
-  ]
+    selector: 'app-create-edit-community-resource-modal',
+    templateUrl: './create-edit-community-resource-modal.component.html',
+    styles: [],
+    standalone: false
 })
 export class CreateEditCommunityResourceModalComponent extends BaseComponent implements OnInit {
 

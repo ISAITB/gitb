@@ -10,8 +10,9 @@ import { DataService } from 'src/app/services/data.service';
 import { ErrorService } from 'src/app/services/error.service';
 
 @Component({
-  selector: 'app-conformance-overview-report-form',
-  templateUrl: './../community-xml-report-form/community-xml-report-form.component.html'
+    selector: 'app-conformance-overview-report-form',
+    templateUrl: './../community-xml-report-form/community-xml-report-form.component.html',
+    standalone: false
 })
 export class ConformanceOverviewReportFormComponent extends CommunityXmlReportFormComponent {
 

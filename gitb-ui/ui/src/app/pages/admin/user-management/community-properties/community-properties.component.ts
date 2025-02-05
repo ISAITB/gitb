@@ -20,8 +20,9 @@ import { RoutingService } from 'src/app/services/routing.service';
 import { CdkDragDrop } from '@angular/cdk/drag-drop';
 
 @Component({
-  selector: 'app-community-properties',
-  templateUrl: './community-properties.component.html'
+    selector: 'app-community-properties',
+    templateUrl: './community-properties.component.html',
+    standalone: false
 })
 export class CommunityPropertiesComponent implements OnInit {
 

@@ -8,10 +8,10 @@ import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.
 import { PopupService } from 'src/app/services/popup.service';
 
 @Component({
-  selector: 'app-system-form',
-  templateUrl: './system-form.component.html',
-  styles: [
-  ]
+    selector: 'app-system-form',
+    templateUrl: './system-form.component.html',
+    styles: [],
+    standalone: false
 })
 export class SystemFormComponent implements OnInit {
 

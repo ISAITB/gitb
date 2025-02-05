@@ -13,10 +13,10 @@ import { CommunityService } from 'src/app/services/community.service';
 import { forkJoin } from 'rxjs';
 
 @Component({
-  selector: 'app-create-system',
-  templateUrl: './create-system.component.html',
-  styles: [
-  ]
+    selector: 'app-create-system',
+    templateUrl: './create-system.component.html',
+    styles: [],
+    standalone: false
 })
 export class CreateSystemComponent extends BaseComponent implements OnInit {
 

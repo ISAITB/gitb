@@ -19,9 +19,10 @@ import { filter, find } from 'lodash';
 import { PopupService } from 'src/app/services/popup.service';
 
 @Component({
-  selector: '[app-session-table]',
-  templateUrl: './session-table.component.html',
-  styleUrls: [ './session-table.component.less' ]
+    selector: '[app-session-table]',
+    templateUrl: './session-table.component.html',
+    styleUrls: ['./session-table.component.less'],
+    standalone: false
 })
 export class SessionTableComponent extends BaseTableComponent implements OnInit {
 

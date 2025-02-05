@@ -9,8 +9,9 @@ import {Observable} from 'rxjs';
 import {ConformanceService} from 'src/app/services/conformance.service';
 
 @Component({
-  selector: 'app-conformance-certificate-modal',
-  templateUrl: './conformance-certificate-modal.component.html'
+    selector: 'app-conformance-certificate-modal',
+    templateUrl: './conformance-certificate-modal.component.html',
+    standalone: false
 })
 export class ConformanceCertificateModalComponent {
 

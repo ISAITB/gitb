@@ -2,9 +2,10 @@ import { Component, Input, OnInit } from '@angular/core';
 import { TestSuiteUploadTestCaseChoice } from 'src/app/modals/test-suite-upload-modal/test-suite-upload-test-case-choice';
 
 @Component({
-  selector: 'app-test-case-update-list',
-  templateUrl: './test-case-update-list.component.html',
-  styleUrls: [ './test-case-update-list.component.less' ]
+    selector: 'app-test-case-update-list',
+    templateUrl: './test-case-update-list.component.html',
+    styleUrls: ['./test-case-update-list.component.less'],
+    standalone: false
 })
 export class TestCaseUpdateListComponent implements OnInit {
 

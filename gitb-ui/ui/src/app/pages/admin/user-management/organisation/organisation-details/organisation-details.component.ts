@@ -30,8 +30,9 @@ import { LegalNoticeService } from 'src/app/services/legal-notice.service';
 import { ErrorTemplateService } from 'src/app/services/error-template.service';
 
 @Component({
-  selector: 'app-organisation-details',
-  templateUrl: './organisation-details.component.html'
+    selector: 'app-organisation-details',
+    templateUrl: './organisation-details.component.html',
+    standalone: false
 })
 export class OrganisationDetailsComponent extends BaseComponent implements OnInit, AfterViewInit {
 

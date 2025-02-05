@@ -5,10 +5,10 @@ import { Parameter } from 'src/app/types/parameter';
 import { BaseParameterModalComponent } from '../base-parameter-modal.component';
 
 @Component({
-  selector: 'app-create-parameter-modal',
-  templateUrl: './create-parameter-modal.component.html',
-  styles: [
-  ]
+    selector: 'app-create-parameter-modal',
+    templateUrl: './create-parameter-modal.component.html',
+    styles: [],
+    standalone: false
 })
 export class CreateParameterModalComponent extends BaseParameterModalComponent implements OnInit {
 

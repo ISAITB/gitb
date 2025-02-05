@@ -3,10 +3,10 @@ import { TableColumnDefinition } from 'src/app/types/table-column-definition.typ
 import { BaseTableComponent } from '../base-table/base-table.component';
 
 @Component({
-  selector: '[table-directive]',
-  templateUrl: './table.component.html',
-  styles: [
-  ]
+    selector: '[table-directive]',
+    templateUrl: './table.component.html',
+    styles: [],
+    standalone: false
 })
 export class TableComponent extends BaseTableComponent implements OnInit {
 

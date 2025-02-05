@@ -15,9 +15,10 @@ import { FilterUpdate } from 'src/app/components/test-filter/filter-update';
 import { Constants } from 'src/app/common/constants';
 
 @Component({
-  selector: 'app-export',
-  templateUrl: './export.component.html',
-  styleUrls: [ './export.component.less' ]
+    selector: 'app-export',
+    templateUrl: './export.component.html',
+    styleUrls: ['./export.component.less'],
+    standalone: false
 })
 export class ExportComponent extends BaseComponent implements OnInit {
 

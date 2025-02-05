@@ -4,10 +4,10 @@ import { ErrorData } from 'src/app/types/error-data.type';
 import { BsModalRef } from 'ngx-bootstrap/modal'
 
 @Component({
-  selector: 'app-error',
-  templateUrl: './error.component.html',
-  styles: [
-  ]
+    selector: 'app-error',
+    templateUrl: './error.component.html',
+    styles: [],
+    standalone: false
 })
 export class ErrorComponent implements OnInit {
 

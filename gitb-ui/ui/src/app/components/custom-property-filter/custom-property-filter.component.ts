@@ -4,10 +4,10 @@ import { CustomPropertyPresetValue } from 'src/app/types/custom-property-preset-
 import { CustomProperty } from './custom-property';
 
 @Component({
-  selector: 'app-custom-property-filter',
-  templateUrl: './custom-property-filter.component.html',
-  styles: [
-  ]
+    selector: 'app-custom-property-filter',
+    templateUrl: './custom-property-filter.component.html',
+    styles: [],
+    standalone: false
 })
 export class CustomPropertyFilterComponent implements OnInit {
 

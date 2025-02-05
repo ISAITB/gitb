@@ -5,10 +5,10 @@ import { Parameter } from 'src/app/types/parameter';
 import { Constants } from 'src/app/common/constants';
 
 @Component({
-  selector: 'app-parameter-display',
-  templateUrl: './parameter-display.component.html',
-  styles: [
-  ]
+    selector: 'app-parameter-display',
+    templateUrl: './parameter-display.component.html',
+    styles: [],
+    standalone: false
 })
 export class ParameterDisplayComponent<T extends Parameter> implements OnInit {
 

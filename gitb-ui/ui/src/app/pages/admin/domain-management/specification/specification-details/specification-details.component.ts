@@ -21,8 +21,9 @@ import { TableColumnDefinition } from 'src/app/types/table-column-definition.typ
 import { TestSuite } from 'src/app/types/test-suite';
 
 @Component({
-  selector: 'app-specification-details',
-  templateUrl: './specification-details.component.html'
+    selector: 'app-specification-details',
+    templateUrl: './specification-details.component.html',
+    standalone: false
 })
 export class SpecificationDetailsComponent extends BaseTabbedComponent implements OnInit, AfterViewInit {
 

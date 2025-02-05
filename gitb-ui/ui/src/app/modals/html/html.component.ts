@@ -2,10 +2,10 @@ import { Component, OnInit } from '@angular/core';
 import { BsModalRef } from 'ngx-bootstrap/modal'
 
 @Component({
-  selector: 'app-html',
-  templateUrl: './html.component.html',
-  styles: [
-  ]
+    selector: 'app-html',
+    templateUrl: './html.component.html',
+    styles: [],
+    standalone: false
 })
 export class HtmlComponent implements OnInit {
 

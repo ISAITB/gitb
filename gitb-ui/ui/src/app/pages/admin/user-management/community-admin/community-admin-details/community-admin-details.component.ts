@@ -12,10 +12,10 @@ import { Constants } from 'src/app/common/constants';
 import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 
 @Component({
-  selector: 'app-community-admin-details',
-  templateUrl: './community-admin-details.component.html',
-  styles: [
-  ]
+    selector: 'app-community-admin-details',
+    templateUrl: './community-admin-details.component.html',
+    styles: [],
+    standalone: false
 })
 export class CommunityAdminDetailsComponent extends BaseComponent implements OnInit {
 

@@ -2,10 +2,10 @@ import { Component, OnInit, EventEmitter } from '@angular/core';
 import { BsModalRef } from 'ngx-bootstrap/modal'
 
 @Component({
-  selector: 'app-confirmation',
-  templateUrl: './confirmation.component.html',
-  styles: [
-  ]
+    selector: 'app-confirmation',
+    templateUrl: './confirmation.component.html',
+    styles: [],
+    standalone: false
 })
 export class ConfirmationComponent implements OnInit {
 

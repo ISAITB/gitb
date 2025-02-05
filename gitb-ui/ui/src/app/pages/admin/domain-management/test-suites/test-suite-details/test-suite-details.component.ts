@@ -22,9 +22,10 @@ import {ConformanceTestCase} from '../../../../organisation/conformance-statemen
 import {ConformanceTestCaseGroup} from '../../../../organisation/conformance-statement/conformance-test-case-group';
 
 @Component({
-  selector: 'app-test-suite-details',
-  templateUrl: './test-suite-details.component.html',
-  styleUrls: [ './test-suite-details.component.less' ]
+    selector: 'app-test-suite-details',
+    templateUrl: './test-suite-details.component.html',
+    styleUrls: ['./test-suite-details.component.less'],
+    standalone: false
 })
 export class TestSuiteDetailsComponent extends BaseComponent implements OnInit {
 

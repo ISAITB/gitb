@@ -4,15 +4,16 @@ import { DataService } from 'src/app/services/data.service';
 import { EditorComponent as TinyMceEditorComponent } from '@tinymce/tinymce-angular';
 
 @Component({
-  selector: 'app-editor',
-  template: '<editor #editor [init]="editorConfig" [(ngModel)]="editorValue"></editor>',
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => EditorComponent),
-      multi: true
-    }
-  ]
+    selector: 'app-editor',
+    template: '<editor #editor [init]="editorConfig" [(ngModel)]="editorValue"></editor>',
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => EditorComponent),
+            multi: true
+        }
+    ],
+    standalone: false
 })
 export class EditorComponent implements OnInit, ControlValueAccessor {
 

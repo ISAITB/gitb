@@ -13,10 +13,10 @@ import { UserAccount } from 'src/app/types/user-account';
 import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
-  selector: 'app-link-account',
-  templateUrl: './link-account.component.html',
-  styles: [
-  ]
+    selector: 'app-link-account',
+    templateUrl: './link-account.component.html',
+    styles: [],
+    standalone: false
 })
 export class LinkAccountComponent extends BaseComponent implements OnInit {
 

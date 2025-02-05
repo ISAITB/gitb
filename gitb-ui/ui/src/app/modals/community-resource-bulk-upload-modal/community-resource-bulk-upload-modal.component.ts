@@ -5,10 +5,10 @@ import { PopupService } from 'src/app/services/popup.service';
 import { FileData } from 'src/app/types/file-data.type';
 
 @Component({
-  selector: 'app-community-resource-bulk-upload-modal',
-  templateUrl: './community-resource-bulk-upload-modal.component.html',
-  styles: [
-  ]
+    selector: 'app-community-resource-bulk-upload-modal',
+    templateUrl: './community-resource-bulk-upload-modal.component.html',
+    styles: [],
+    standalone: false
 })
 export class CommunityResourceBulkUploadModalComponent implements OnInit {
 

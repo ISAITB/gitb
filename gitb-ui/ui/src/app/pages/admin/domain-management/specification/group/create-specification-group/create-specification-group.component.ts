@@ -9,10 +9,10 @@ import { SpecificationService } from 'src/app/services/specification.service';
 import { SpecificationGroup } from 'src/app/types/specification-group';
 
 @Component({
-  selector: 'app-create-specification-group',
-  templateUrl: './create-specification-group.component.html',
-  styles: [
-  ]
+    selector: 'app-create-specification-group',
+    templateUrl: './create-specification-group.component.html',
+    styles: [],
+    standalone: false
 })
 export class CreateSpecificationGroupComponent extends BaseComponent implements OnInit {
 

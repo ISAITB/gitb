@@ -23,9 +23,10 @@ import { MultiSelectConfig } from 'src/app/components/multi-select-filter/multi-
 import { FilterUpdate } from 'src/app/components/test-filter/filter-update';
 
 @Component({
-  selector: 'app-test-suite-upload-modal',
-  templateUrl: './test-suite-upload-modal.component.html',
-  styleUrls: ['./test-suite-upload-modal.component.less']
+    selector: 'app-test-suite-upload-modal',
+    templateUrl: './test-suite-upload-modal.component.html',
+    styleUrls: ['./test-suite-upload-modal.component.less'],
+    standalone: false
 })
 export class TestSuiteUploadModalComponent extends BaseComponent implements OnInit {
 

@@ -6,9 +6,10 @@ import { ActorInfo } from '../diagram/actor-info';
 import { BsModalRef } from 'ngx-bootstrap/modal';
 
 @Component({
-  selector: 'app-simulated-configuration-display-modal',
-  templateUrl: './simulated-configuration-display-modal.component.html',
-  styleUrls: ['./simulated-configuration-display-modal.component.less']
+    selector: 'app-simulated-configuration-display-modal',
+    templateUrl: './simulated-configuration-display-modal.component.html',
+    styleUrls: ['./simulated-configuration-display-modal.component.less'],
+    standalone: false
 })
 export class SimulatedConfigurationDisplayModalComponent implements OnInit {
 

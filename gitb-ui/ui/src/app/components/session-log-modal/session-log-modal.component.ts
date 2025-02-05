@@ -8,9 +8,10 @@ import { LineInfo } from './line-info';
 import { LogLevel } from '../../types/log-level';
 
 @Component({
-  selector: 'app-session-log-modal',
-  templateUrl: './session-log-modal.component.html',
-  styleUrls: ['./session-log-modal.component.less']
+    selector: 'app-session-log-modal',
+    templateUrl: './session-log-modal.component.html',
+    styleUrls: ['./session-log-modal.component.less'],
+    standalone: false
 })
 export class SessionLogModalComponent extends BaseCodeEditorModalComponent {
 

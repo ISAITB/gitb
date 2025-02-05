@@ -19,8 +19,9 @@ import { HttpResponse } from '@angular/common/http';
 import { ErrorService } from 'src/app/services/error.service';
 
 @Component({
-  selector: 'app-conformance-overview-certificate-form',
-  templateUrl: './conformance-overview-certificate-form.component.html'
+    selector: 'app-conformance-overview-certificate-form',
+    templateUrl: './conformance-overview-certificate-form.component.html',
+    standalone: false
 })
 export class ConformanceOverviewCertificateFormComponent extends BaseCertificateSettingsFormComponent<ConformanceOverviewCertificateSettings> {
 

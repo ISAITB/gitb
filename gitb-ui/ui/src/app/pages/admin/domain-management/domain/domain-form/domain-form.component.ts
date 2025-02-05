@@ -3,10 +3,10 @@ import { DataService } from 'src/app/services/data.service';
 import { Domain } from 'src/app/types/domain';
 
 @Component({
-  selector: 'app-domain-form',
-  templateUrl: './domain-form.component.html',
-  styles: [
-  ]
+    selector: 'app-domain-form',
+    templateUrl: './domain-form.component.html',
+    styles: [],
+    standalone: false
 })
 export class DomainFormComponent implements OnInit {
 

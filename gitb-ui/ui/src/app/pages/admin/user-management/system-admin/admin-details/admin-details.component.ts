@@ -12,8 +12,9 @@ import { SystemAdministrationTab } from '../../../system-administration/system-a
 import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 
 @Component({
-  selector: 'app-admin-details',
-  templateUrl: './admin-details.component.html'
+    selector: 'app-admin-details',
+    templateUrl: './admin-details.component.html',
+    standalone: false
 })
 export class AdminDetailsComponent extends BaseComponent implements OnInit, AfterViewInit {
 

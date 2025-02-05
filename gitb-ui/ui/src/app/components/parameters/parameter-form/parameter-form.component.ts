@@ -7,10 +7,10 @@ import { ParameterReference } from 'src/app/types/parameter-reference';
 import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
-  selector: 'app-parameter-form',
-  templateUrl: './parameter-form.component.html',
-  styles: [
-  ]
+    selector: 'app-parameter-form',
+    templateUrl: './parameter-form.component.html',
+    styles: [],
+    standalone: false
 })
 export class ParameterFormComponent implements OnInit, AfterViewInit {
 

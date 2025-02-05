@@ -7,7 +7,10 @@ import { EditorOptions } from '../code-editor-modal/code-editor-options';
 import { Indicator } from '../code-editor-modal/indicator';
 import { saveAs } from 'file-saver'
 
-@Component({ template: '' })
+@Component({
+    template: '',
+    standalone: false
+})
 export class BaseCodeEditorModalComponent implements AfterViewInit {
 
   editorOptions?: EditorOptions

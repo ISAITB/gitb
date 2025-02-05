@@ -13,9 +13,10 @@ import { MultiSelectConfig } from 'src/app/components/multi-select-filter/multi-
 import { FilterUpdate } from 'src/app/components/test-filter/filter-update';
 
 @Component({
-  selector: 'app-link-shared-test-suite-modal',
-  templateUrl: './link-shared-test-suite-modal.component.html',
-  styleUrls: [ './link-shared-test-suite-modal.component.less' ]
+    selector: 'app-link-shared-test-suite-modal',
+    templateUrl: './link-shared-test-suite-modal.component.html',
+    styleUrls: ['./link-shared-test-suite-modal.component.less'],
+    standalone: false
 })
 export class LinkSharedTestSuiteModalComponent extends BaseComponent implements OnInit {
 

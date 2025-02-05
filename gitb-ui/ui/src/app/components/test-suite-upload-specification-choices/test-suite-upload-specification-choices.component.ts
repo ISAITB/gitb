@@ -4,9 +4,10 @@ import { SpecificationChoice } from 'src/app/modals/test-suite-upload-modal/spec
 import { DataService } from 'src/app/services/data.service';
 
 @Component({
-  selector: 'app-test-suite-upload-specification-choices',
-  templateUrl: './test-suite-upload-specification-choices.component.html',
-  styleUrls: [ './test-suite-upload-specification-choices.component.less' ]
+    selector: 'app-test-suite-upload-specification-choices',
+    templateUrl: './test-suite-upload-specification-choices.component.html',
+    styleUrls: ['./test-suite-upload-specification-choices.component.less'],
+    standalone: false
 })
 export class TestSuiteUploadSpecificationChoicesComponent implements OnInit {
 

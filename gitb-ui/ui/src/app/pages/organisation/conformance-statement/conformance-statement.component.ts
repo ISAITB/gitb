@@ -37,9 +37,10 @@ import {ValidationState} from 'src/app/types/validation-state';
 import {share} from 'rxjs/operators';
 
 @Component({
-  selector: 'app-conformance-statement',
-  templateUrl: './conformance-statement.component.html',
-  styleUrls: ['./conformance-statement.component.less']
+    selector: 'app-conformance-statement',
+    templateUrl: './conformance-statement.component.html',
+    styleUrls: ['./conformance-statement.component.less'],
+    standalone: false
 })
 export class ConformanceStatementComponent extends BaseComponent implements OnInit, AfterViewInit {
 

@@ -12,8 +12,9 @@ import { Subscription } from 'rxjs';
 import { StepReport } from '../report/step-report';
 
 @Component({
-  selector: 'app-sequence-diagram-message',
-  templateUrl: './sequence-diagram-message.component.html'
+    selector: 'app-sequence-diagram-message',
+    templateUrl: './sequence-diagram-message.component.html',
+    standalone: false
 })
 export class SequenceDiagramMessageComponent implements OnInit, OnDestroy {
 

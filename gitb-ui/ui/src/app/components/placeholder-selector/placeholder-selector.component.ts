@@ -14,9 +14,10 @@ import { SystemParameter } from 'src/app/types/system-parameter';
 import { Constants } from 'src/app/common/constants';
 
 @Component({
-  selector: 'app-placeholder-selector',
-  templateUrl: './placeholder-selector.component.html',
-  styleUrls: [ './placeholder-selector.component.less' ]
+    selector: 'app-placeholder-selector',
+    templateUrl: './placeholder-selector.component.html',
+    styleUrls: ['./placeholder-selector.component.less'],
+    standalone: false
 })
 export class PlaceholderSelectorComponent implements OnInit {
 

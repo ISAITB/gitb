@@ -18,9 +18,10 @@ import { ConformanceSnapshot } from 'src/app/types/conformance-snapshot';
 import { ConformanceSnapshotList } from 'src/app/types/conformance-snapshot-list';
 
 @Component({
-  selector: 'app-api-key-info',
-  templateUrl: './api-key-info.component.html',
-  styleUrls: ['./api-key-info.component.less']
+    selector: 'app-api-key-info',
+    templateUrl: './api-key-info.component.html',
+    styleUrls: ['./api-key-info.component.less'],
+    standalone: false
 })
 export class ApiKeyInfoComponent implements OnInit {
 

@@ -3,7 +3,8 @@ import { InvalidFormControlConfig } from '../types/invalid-form-control-config';
 import { ReplaySubject, Subscription } from 'rxjs';
 
 @Directive({
-  selector: '[invalid]'
+    selector: '[invalid]',
+    standalone: false
 })
 export class InvalidFormControlDirective implements AfterViewInit, OnDestroy {
 

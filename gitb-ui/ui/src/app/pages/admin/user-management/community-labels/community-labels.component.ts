@@ -9,9 +9,10 @@ import { RoutingService } from 'src/app/services/routing.service';
 import { TypedLabelConfig } from 'src/app/types/typed-label-config.type';
 
 @Component({
-  selector: 'app-community-labels',
-  templateUrl: './community-labels.component.html',
-  styleUrls: [ './community-labels.component.less' ]
+    selector: 'app-community-labels',
+    templateUrl: './community-labels.component.html',
+    styleUrls: ['./community-labels.component.less'],
+    standalone: false
 })
 export class CommunityLabelsComponent extends BaseComponent implements OnInit {
 

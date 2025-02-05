@@ -3,8 +3,9 @@ import { DataService } from 'src/app/services/data.service';
 import { OptionalCustomPropertyFormData } from './optional-custom-property-form-data.type';
 
 @Component({
-  selector: 'app-optional-custom-property-form',
-  templateUrl: './optional-custom-property-form.component.html'
+    selector: 'app-optional-custom-property-form',
+    templateUrl: './optional-custom-property-form.component.html',
+    standalone: false
 })
 export class OptionalCustomPropertyFormComponent implements OnInit {
 

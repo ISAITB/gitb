@@ -12,10 +12,10 @@ import { RoutingService } from 'src/app/services/routing.service';
 import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
-  selector: 'app-profile',
-  templateUrl: './profile.component.html',
-  styles: [
-  ]
+    selector: 'app-profile',
+    templateUrl: './profile.component.html',
+    styles: [],
+    standalone: false
 })
 export class ProfileComponent extends BaseComponent implements OnInit, AfterViewInit {
 

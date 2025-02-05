@@ -31,9 +31,10 @@ import {
 } from 'src/app/components/base-conformance-item-display/base-conformance-item-display.component';
 
 @Component({
-  selector: 'app-conformance-dashboard',
-  templateUrl: './conformance-dashboard.component.html',
-  styleUrls: [ './conformance-dashboard.component.less' ]
+    selector: 'app-conformance-dashboard',
+    templateUrl: './conformance-dashboard.component.html',
+    styleUrls: ['./conformance-dashboard.component.less'],
+    standalone: false
 })
 export class ConformanceDashboardComponent extends BaseConformanceItemDisplayComponent implements OnInit {
 

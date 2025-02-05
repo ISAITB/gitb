@@ -5,16 +5,17 @@ import { Constants } from 'src/app/common/constants';
 import { InvalidFormControlConfig } from 'src/app/types/invalid-form-control-config';
 
 @Component({
-  selector: 'app-secret-input',
-  templateUrl: './secret-input.component.html',
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => SecretInputComponent),
-      multi: true
-    }
-  ],
-  styles: ['button {box-shadow: none;outline: none !important; width: 43px; }']
+    selector: 'app-secret-input',
+    templateUrl: './secret-input.component.html',
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => SecretInputComponent),
+            multi: true
+        }
+    ],
+    styles: ['button {box-shadow: none;outline: none !important; width: 43px; }'],
+    standalone: false
 })
 export class SecretInputComponent implements OnInit, AfterViewInit,  ControlValueAccessor, OnDestroy {
 

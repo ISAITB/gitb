@@ -22,9 +22,10 @@ import { CreateEditTagComponent } from 'src/app/modals/create-edit-tag/create-ed
 import { TestCaseTag } from 'src/app/types/test-case-tag';
 
 @Component({
-  selector: 'app-test-case-details',
-  templateUrl: './test-case-details.component.html',
-  styleUrls: [ './test-case-details.component.less' ]
+    selector: 'app-test-case-details',
+    templateUrl: './test-case-details.component.html',
+    styleUrls: ['./test-case-details.component.less'],
+    standalone: false
 })
 export class TestCaseDetailsComponent extends BaseComponent implements OnInit {
 

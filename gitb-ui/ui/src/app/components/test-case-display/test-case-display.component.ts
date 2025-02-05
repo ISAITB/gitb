@@ -14,9 +14,10 @@ import {DataService} from '../../services/data.service';
 import {CloseEvent} from '../test-result-status-display/close-event';
 
 @Component({
-  selector: 'app-test-case-display',
-  templateUrl: './test-case-display.component.html',
-  styleUrls: [ './test-case-display.component.less' ]
+    selector: 'app-test-case-display',
+    templateUrl: './test-case-display.component.html',
+    styleUrls: ['./test-case-display.component.less'],
+    standalone: false
 })
 export class TestCaseDisplayComponent extends BaseComponent implements OnInit {
 

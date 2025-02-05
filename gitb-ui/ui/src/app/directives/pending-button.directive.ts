@@ -1,7 +1,8 @@
 import { AfterViewInit, Directive, ElementRef, Input, Renderer2 } from '@angular/core';
 
 @Directive({
-  selector: 'button[pending]'
+    selector: 'button[pending]',
+    standalone: false
 })
 export class PendingButtonDirective implements AfterViewInit {
 

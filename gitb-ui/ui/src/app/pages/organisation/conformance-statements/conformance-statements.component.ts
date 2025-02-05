@@ -16,9 +16,10 @@ import { BaseConformanceItemDisplayComponent } from 'src/app/components/base-con
 import { ConformanceSnapshotList } from 'src/app/types/conformance-snapshot-list';
 
 @Component({
-  selector: 'app-conformance-statements',
-  templateUrl: './conformance-statements.component.html',
-  styleUrls: [ './conformance-statements.component.less' ]
+    selector: 'app-conformance-statements',
+    templateUrl: './conformance-statements.component.html',
+    styleUrls: ['./conformance-statements.component.less'],
+    standalone: false
 })
 export class ConformanceStatementsComponent extends BaseConformanceItemDisplayComponent implements OnInit {
 

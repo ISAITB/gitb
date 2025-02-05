@@ -4,10 +4,10 @@ import { DataService } from 'src/app/services/data.service';
 import { Specification } from 'src/app/types/specification';
 
 @Component({
-  selector: 'app-specification-form',
-  templateUrl: './specification-form.component.html',
-  styles: [
-  ]
+    selector: 'app-specification-form',
+    templateUrl: './specification-form.component.html',
+    styles: [],
+    standalone: false
 })
 export class SpecificationFormComponent implements OnInit {
 

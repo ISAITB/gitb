@@ -2,9 +2,10 @@ import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { Constants } from 'src/app/common/constants';
 
 @Component({
-  selector: 'app-tag',
-  templateUrl: './tag.component.html',
-  styleUrls: [ './tag.component.less' ]
+    selector: 'app-tag',
+    templateUrl: './tag.component.html',
+    styleUrls: ['./tag.component.less'],
+    standalone: false
 })
 export class TagComponent implements OnInit {
 

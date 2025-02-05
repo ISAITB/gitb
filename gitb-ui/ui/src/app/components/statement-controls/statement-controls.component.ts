@@ -4,8 +4,9 @@ import { RoutingService } from 'src/app/services/routing.service';
 import { ConformanceIds } from 'src/app/types/conformance-ids';
 
 @Component({
-  selector: 'app-statement-controls',
-  templateUrl: './statement-controls.component.html'
+    selector: 'app-statement-controls',
+    templateUrl: './statement-controls.component.html',
+    standalone: false
 })
 export class StatementControlsComponent {
 

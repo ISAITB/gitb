@@ -35,9 +35,10 @@ import { WebSocketMessage } from 'src/app/types/web-socket-message';
 import { ConformanceTestCase } from '../organisation/conformance-statement/conformance-test-case';
 
 @Component({
-  selector: 'app-test-execution',
-  templateUrl: './test-execution.component.html',
-  styleUrls: ['./test-execution.component.less']
+    selector: 'app-test-execution',
+    templateUrl: './test-execution.component.html',
+    styleUrls: ['./test-execution.component.less'],
+    standalone: false
 })
 export class TestExecutionComponent implements OnInit, OnDestroy {
 

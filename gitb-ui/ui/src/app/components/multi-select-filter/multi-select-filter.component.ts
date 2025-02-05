@@ -9,9 +9,10 @@ import { FilterUpdate } from '../test-filter/filter-update';
 import { Observable, Subscription, map, of, share } from 'rxjs';
 
 @Component({
-  selector: 'app-multi-select-filter',
-  templateUrl: './multi-select-filter.component.html',
-  styleUrls: [ './multi-select-filter.component.less' ]
+    selector: 'app-multi-select-filter',
+    templateUrl: './multi-select-filter.component.html',
+    styleUrls: ['./multi-select-filter.component.less'],
+    standalone: false
 })
 export class MultiSelectFilterComponent<T extends EntityWithId> implements OnInit, OnDestroy {
 

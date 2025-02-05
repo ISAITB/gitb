@@ -9,10 +9,10 @@ import { RoutingService } from 'src/app/services/routing.service';
 import { Actor } from 'src/app/types/actor';
 
 @Component({
-  selector: 'app-create-actor',
-  templateUrl: './create-actor.component.html',
-  styles: [
-  ]
+    selector: 'app-create-actor',
+    templateUrl: './create-actor.component.html',
+    styles: [],
+    standalone: false
 })
 export class CreateActorComponent extends BaseComponent implements OnInit, AfterViewInit {
 

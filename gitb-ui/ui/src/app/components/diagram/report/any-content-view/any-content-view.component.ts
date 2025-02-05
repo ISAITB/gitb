@@ -13,9 +13,10 @@ import { saveAs } from 'file-saver'
 import { HtmlService } from 'src/app/services/html.service';
 
 @Component({
-  selector: 'app-any-content-view',
-  templateUrl: './any-content-view.component.html',
-  styleUrls: ['./any-content-view.component.less']
+    selector: 'app-any-content-view',
+    templateUrl: './any-content-view.component.html',
+    styleUrls: ['./any-content-view.component.less'],
+    standalone: false
 })
 export class AnyContentViewComponent extends ReportSupport implements OnInit {
 

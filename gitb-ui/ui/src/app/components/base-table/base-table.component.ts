@@ -3,7 +3,10 @@ import { BaseComponent } from 'src/app/pages/base-component.component';
 import { LoadingStatus } from 'src/app/types/loading-status.type';
 import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
 
-@Component({ template: '' })
+@Component({
+    template: '',
+    standalone: false
+})
 export abstract class BaseTableComponent extends BaseComponent {
 
 	@Input() data?: any[]

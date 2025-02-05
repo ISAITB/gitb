@@ -33,9 +33,10 @@ import {TriggerFireExpression} from '../../../../types/trigger-fire-expression';
 import {TriggerFireExpressionModalComponent} from './trigger-fire-expression-modal/trigger-fire-expression-modal.component';
 
 @Component({
-  selector: 'app-trigger',
-  templateUrl: './trigger.component.html',
-  styleUrls: [ './trigger.component.less' ]
+    selector: 'app-trigger',
+    templateUrl: './trigger.component.html',
+    styleUrls: ['./trigger.component.less'],
+    standalone: false
 })
 export class TriggerComponent extends BaseComponent implements OnInit {
 

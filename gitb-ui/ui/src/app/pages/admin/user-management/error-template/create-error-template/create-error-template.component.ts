@@ -16,10 +16,10 @@ import { SystemAdministrationTab } from '../../../system-administration/system-a
 import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
-  selector: 'app-create-error-template',
-  templateUrl: './create-error-template.component.html',
-  styles: [
-  ]
+    selector: 'app-create-error-template',
+    templateUrl: './create-error-template.component.html',
+    styles: [],
+    standalone: false
 })
 export class CreateErrorTemplateComponent extends BaseComponent implements OnInit, AfterViewInit {
 

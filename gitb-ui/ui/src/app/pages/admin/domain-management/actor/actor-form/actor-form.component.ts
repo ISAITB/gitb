@@ -3,10 +3,10 @@ import { DataService } from 'src/app/services/data.service';
 import { Actor } from 'src/app/types/actor';
 
 @Component({
-  selector: 'app-actor-form',
-  templateUrl: './actor-form.component.html',
-  styles: [
-  ]
+    selector: 'app-actor-form',
+    templateUrl: './actor-form.component.html',
+    styles: [],
+    standalone: false
 })
 export class ActorFormComponent implements OnInit {
 

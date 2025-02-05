@@ -16,10 +16,10 @@ import { OrganisationTab } from '../../organisation/organisation-details/Organis
 import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
-  selector: 'app-create-user',
-  templateUrl: './create-user.component.html',
-  styles: [
-  ]
+    selector: 'app-create-user',
+    templateUrl: './create-user.component.html',
+    styles: [],
+    standalone: false
 })
 export class CreateUserComponent extends BaseComponent implements OnInit, AfterViewInit {
 

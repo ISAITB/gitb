@@ -11,8 +11,9 @@ import {ConformanceOverviewMessage} from 'src/app/pages/admin/user-management/co
 import {ConformanceService} from 'src/app/services/conformance.service';
 
 @Component({
-  selector: 'app-conformance-overview-certificate-modal',
-  templateUrl: './conformance-overview-certificate-modal.component.html'
+    selector: 'app-conformance-overview-certificate-modal',
+    templateUrl: './conformance-overview-certificate-modal.component.html',
+    standalone: false
 })
 export class ConformanceOverviewCertificateModalComponent extends BaseComponent {
 

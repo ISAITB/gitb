@@ -7,9 +7,10 @@ import { DomainSpecification } from 'src/app/types/domain-specification';
 import { SpecificationGroup } from 'src/app/types/specification-group';
 
 @Component({
-  selector: 'app-domain-specification-display',
-  templateUrl: './domain-specification-display.component.html',
-  styleUrls: [ './domain-specification-display.component.less' ]
+    selector: 'app-domain-specification-display',
+    templateUrl: './domain-specification-display.component.html',
+    styleUrls: ['./domain-specification-display.component.less'],
+    standalone: false
 })
 export class DomainSpecificationDisplayComponent implements OnInit {
 

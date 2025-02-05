@@ -7,8 +7,9 @@ import { RoutingService } from 'src/app/services/routing.service';
 import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
-  selector: 'app-password',
-  templateUrl: './password.component.html'
+    selector: 'app-password',
+    templateUrl: './password.component.html',
+    standalone: false
 })
 export class PasswordComponent extends BaseComponent implements OnInit, AfterViewInit {
 

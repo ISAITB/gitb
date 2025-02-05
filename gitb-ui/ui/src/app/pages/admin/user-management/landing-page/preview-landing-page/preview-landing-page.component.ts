@@ -2,8 +2,9 @@ import { Component, Input, OnInit } from '@angular/core';
 import { BsModalRef } from 'ngx-bootstrap/modal';
 
 @Component({
-  selector: 'app-preview-landing-page',
-  templateUrl: './preview-landing-page.component.html'
+    selector: 'app-preview-landing-page',
+    templateUrl: './preview-landing-page.component.html',
+    standalone: false
 })
 export class PreviewLandingPageComponent implements OnInit {
 

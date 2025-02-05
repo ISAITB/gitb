@@ -19,10 +19,10 @@ import { ValidationState } from 'src/app/types/validation-state';
 import { ErrorDescription } from 'src/app/types/error-description';
 
 @Component({
-  selector: 'app-import',
-  templateUrl: './import.component.html',
-  styles: [
-  ]
+    selector: 'app-import',
+    templateUrl: './import.component.html',
+    styles: [],
+    standalone: false
 })
 export class ImportComponent extends BaseComponent implements OnInit, OnDestroy {
 

@@ -22,8 +22,9 @@ import { FieldInfo } from 'src/app/types/field-info';
 import { SessionData } from 'src/app/components/diagram/test-session-presentation/session-data';
 
 @Component({
-  selector: 'app-session-dashboard',
-  templateUrl: './session-dashboard.component.html'
+    selector: 'app-session-dashboard',
+    templateUrl: './session-dashboard.component.html',
+    standalone: false
 })
 export class SessionDashboardComponent implements OnInit {
 

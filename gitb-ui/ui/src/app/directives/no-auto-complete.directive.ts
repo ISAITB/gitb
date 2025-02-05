@@ -1,7 +1,8 @@
 import { Directive, ElementRef, OnInit, Renderer2 } from '@angular/core';
 
 @Directive({
-  selector: 'input[type=text]'
+    selector: 'input[type=text]',
+    standalone: false
 })
 export class NoAutoCompleteDirective implements OnInit {
 

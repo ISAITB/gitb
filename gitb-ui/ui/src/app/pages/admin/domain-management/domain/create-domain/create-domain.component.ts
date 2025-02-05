@@ -7,10 +7,10 @@ import { RoutingService } from 'src/app/services/routing.service';
 import { Domain } from 'src/app/types/domain';
 
 @Component({
-  selector: 'app-create-domain',
-  templateUrl: './create-domain.component.html',
-  styles: [
-  ]
+    selector: 'app-create-domain',
+    templateUrl: './create-domain.component.html',
+    styles: [],
+    standalone: false
 })
 export class CreateDomainComponent extends BaseComponent implements OnInit, AfterViewInit {
 

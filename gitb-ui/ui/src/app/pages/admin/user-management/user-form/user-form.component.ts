@@ -5,10 +5,10 @@ import { User } from 'src/app/types/user.type';
 import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
-  selector: 'app-user-form',
-  templateUrl: './user-form.component.html',
-  styles: [
-  ]
+    selector: 'app-user-form',
+    templateUrl: './user-form.component.html',
+    styles: [],
+    standalone: false
 })
 export class UserFormComponent {
 

@@ -3,8 +3,9 @@ import { DiagramLoaderService } from './diagram-loader.service';
 import { SessionData } from './session-data';
 
 @Component({
-  selector: 'app-test-session-presentation',
-  templateUrl: './test-session-presentation.component.html'
+    selector: 'app-test-session-presentation',
+    templateUrl: './test-session-presentation.component.html',
+    standalone: false
 })
 export class TestSessionPresentationComponent implements OnInit {
 

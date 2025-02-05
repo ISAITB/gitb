@@ -3,10 +3,10 @@ import { DataService } from 'src/app/services/data.service';
 import { SpecificationGroup } from 'src/app/types/specification-group';
 
 @Component({
-  selector: 'app-specification-group-form',
-  templateUrl: './specification-group-form.component.html',
-  styles: [
-  ]
+    selector: 'app-specification-group-form',
+    templateUrl: './specification-group-form.component.html',
+    styles: [],
+    standalone: false
 })
 export class SpecificationGroupFormComponent {
 

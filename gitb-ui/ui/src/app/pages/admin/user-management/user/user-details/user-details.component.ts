@@ -17,10 +17,10 @@ import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
-  selector: 'app-user-details',
-  templateUrl: './user-details.component.html',
-  styles: [
-  ]
+    selector: 'app-user-details',
+    templateUrl: './user-details.component.html',
+    styles: [],
+    standalone: false
 })
 export class UserDetailsComponent extends BaseComponent implements OnInit {
 

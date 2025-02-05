@@ -8,10 +8,10 @@ import { PopupService } from 'src/app/services/popup.service';
 import { BaseCodeEditorModalComponent } from '../base-code-editor-modal/base-code-editor-modal.component';
 
 @Component({
-  selector: 'app-code-editor-modal',
-  templateUrl: './code-editor-modal.component.html',
-  styles: [
-  ]
+    selector: 'app-code-editor-modal',
+    templateUrl: './code-editor-modal.component.html',
+    styles: [],
+    standalone: false
 })
 export class CodeEditorModalComponent extends BaseCodeEditorModalComponent implements OnInit {
 

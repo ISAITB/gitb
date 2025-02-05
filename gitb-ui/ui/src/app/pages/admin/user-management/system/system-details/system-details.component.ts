@@ -15,10 +15,10 @@ import { forkJoin, Observable, of } from 'rxjs';
 import { System } from 'src/app/types/system';
 
 @Component({
-  selector: 'app-system-details',
-  templateUrl: './system-details.component.html',
-  styles: [
-  ]
+    selector: 'app-system-details',
+    templateUrl: './system-details.component.html',
+    styles: [],
+    standalone: false
 })
 export class SystemDetailsComponent extends BaseComponent implements OnInit {
 

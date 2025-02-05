@@ -20,10 +20,10 @@ import { RoutingService } from 'src/app/services/routing.service';
 import { FieldInfo } from 'src/app/types/field-info';
 
 @Component({
-  selector: 'app-organisation-tests',
-  templateUrl: './organisation-tests.component.html',
-  styles: [
-  ]
+    selector: 'app-organisation-tests',
+    templateUrl: './organisation-tests.component.html',
+    styles: [],
+    standalone: false
 })
 export class OrganisationTestsComponent implements OnInit {
 

@@ -9,10 +9,10 @@ import { RoutingService } from 'src/app/services/routing.service';
 import { Endpoint } from 'src/app/types/endpoint';
 
 @Component({
-  selector: 'app-create-endpoint',
-  templateUrl: './create-endpoint.component.html',
-  styles: [
-  ]
+    selector: 'app-create-endpoint',
+    templateUrl: './create-endpoint.component.html',
+    styles: [],
+    standalone: false
 })
 export class CreateEndpointComponent extends BaseComponent implements OnInit, AfterViewInit {
 

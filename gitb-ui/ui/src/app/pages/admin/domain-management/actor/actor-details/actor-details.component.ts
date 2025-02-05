@@ -17,10 +17,10 @@ import { EndpointParameter } from 'src/app/types/endpoint-parameter';
 import { forkJoin } from 'rxjs';
 
 @Component({
-  selector: 'app-actor-details',
-  templateUrl: './actor-details.component.html',
-  styles: [
-  ]
+    selector: 'app-actor-details',
+    templateUrl: './actor-details.component.html',
+    styles: [],
+    standalone: false
 })
 export class ActorDetailsComponent extends BaseComponent implements OnInit {
 

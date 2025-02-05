@@ -35,9 +35,10 @@ import { ValidationState } from 'src/app/types/validation-state';
 import { Observable, of } from 'rxjs';
 
 @Component({
-  selector: 'app-community-details',
-  templateUrl: './community-details.component.html',
-  styleUrls: ['./community-details.component.less']
+    selector: 'app-community-details',
+    templateUrl: './community-details.component.html',
+    styleUrls: ['./community-details.component.less'],
+    standalone: false
 })
 export class CommunityDetailsComponent extends BaseComponent implements OnInit, AfterViewInit {
 

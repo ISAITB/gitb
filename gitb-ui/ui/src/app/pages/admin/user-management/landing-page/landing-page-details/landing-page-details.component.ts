@@ -16,8 +16,9 @@ import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
-  selector: 'app-landing-page-details',
-  templateUrl: './landing-page-details.component.html'
+    selector: 'app-landing-page-details',
+    templateUrl: './landing-page-details.component.html',
+    standalone: false
 })
 export class LandingPageDetailsComponent extends BaseComponent implements OnInit {
 

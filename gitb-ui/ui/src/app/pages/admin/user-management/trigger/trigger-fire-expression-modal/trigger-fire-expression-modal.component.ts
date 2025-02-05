@@ -6,9 +6,10 @@ import {BaseComponent} from '../../../../base-component.component';
 import {ValidationState} from '../../../../../types/validation-state';
 
 @Component({
-  selector: 'app-trigger-fire-expression-modal',
-  templateUrl: './trigger-fire-expression-modal.component.html',
-  styleUrl: './trigger-fire-expression-modal.component.less'
+    selector: 'app-trigger-fire-expression-modal',
+    templateUrl: './trigger-fire-expression-modal.component.html',
+    styleUrl: './trigger-fire-expression-modal.component.less',
+    standalone: false
 })
 export class TriggerFireExpressionModalComponent extends BaseComponent implements OnInit, AfterViewInit {
 

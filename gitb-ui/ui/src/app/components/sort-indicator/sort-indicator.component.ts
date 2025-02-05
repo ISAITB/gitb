@@ -2,8 +2,9 @@ import { Component, Input } from '@angular/core';
 import { Constants } from 'src/app/common/constants';
 
 @Component({
-  selector: 'app-sort-indicator',
-  templateUrl: './sort-indicator.component.html'
+    selector: 'app-sort-indicator',
+    templateUrl: './sort-indicator.component.html',
+    standalone: false
 })
 export class SortIndicatorComponent {
 

@@ -8,9 +8,10 @@ import { DataService } from 'src/app/services/data.service';
 import { EndpointParameter } from 'src/app/types/endpoint-parameter';
 
 @Component({
-  selector: 'app-missing-configuration-modal',
-  templateUrl: './missing-configuration-modal.component.html',
-  styleUrls: [ './missing-configuration-modal.component.less']
+    selector: 'app-missing-configuration-modal',
+    templateUrl: './missing-configuration-modal.component.html',
+    styleUrls: ['./missing-configuration-modal.component.less'],
+    standalone: false
 })
 export class MissingConfigurationModalComponent implements OnInit {
 

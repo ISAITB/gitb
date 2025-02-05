@@ -7,8 +7,9 @@ import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.
 import { DataService } from 'src/app/services/data.service';
 
 @Component({
-  selector: 'app-disconnect-role',
-  templateUrl: './disconnect-role.component.html'
+    selector: 'app-disconnect-role',
+    templateUrl: './disconnect-role.component.html',
+    standalone: false
 })
 export class DisconnectRoleComponent extends BaseComponent {
 

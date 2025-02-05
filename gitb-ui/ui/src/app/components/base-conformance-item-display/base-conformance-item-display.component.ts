@@ -6,7 +6,10 @@ import { find } from 'lodash';
 import { Constants } from 'src/app/common/constants';
 import { CheckboxOptionState } from '../checkbox-option-panel/checkbox-option-state';
 
-@Component({ template: '' })
+@Component({
+    template: '',
+    standalone: false
+})
 export abstract class BaseConformanceItemDisplayComponent implements AfterViewInit, OnDestroy {
 
   @ViewChild('searchControls') searchControls?: ElementRef

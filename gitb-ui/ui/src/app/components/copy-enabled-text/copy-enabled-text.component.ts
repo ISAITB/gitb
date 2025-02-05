@@ -3,9 +3,10 @@ import { DataService } from 'src/app/services/data.service';
 import { PopupService } from 'src/app/services/popup.service';
 
 @Component({
-  selector: 'app-copy-enabled-text',
-  templateUrl: './copy-enabled-text.component.html',
-  styleUrls: [ './copy-enabled-text.component.less' ]
+    selector: 'app-copy-enabled-text',
+    templateUrl: './copy-enabled-text.component.html',
+    styleUrls: ['./copy-enabled-text.component.less'],
+    standalone: false
 })
 export class CopyEnabledTextComponent implements OnInit {
 

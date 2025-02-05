@@ -6,10 +6,10 @@ import { Constants } from 'src/app/common/constants';
 import { DiagramEvents } from '../diagram-events';
 
 @Component({
-  selector: 'app-sequence-diagram',
-  templateUrl: './sequence-diagram.component.html',
-  styles: [
-  ]
+    selector: 'app-sequence-diagram',
+    templateUrl: './sequence-diagram.component.html',
+    styles: [],
+    standalone: false
 })
 export class SequenceDiagramComponent implements OnInit {
 

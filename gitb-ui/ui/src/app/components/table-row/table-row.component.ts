@@ -5,9 +5,10 @@ import { TableColumnData } from 'src/app/types/table-column-data.type';
 import { Constants } from 'src/app/common/constants';
 
 @Component({
-  selector: '[table-row-directive]',
-  templateUrl: './table-row.component.html',
-  styles: [ 'div.btn-toolbar {display: flex; flex-wrap: nowrap; justify-content: right;}' ]
+    selector: '[table-row-directive]',
+    templateUrl: './table-row.component.html',
+    styles: ['div.btn-toolbar {display: flex; flex-wrap: nowrap; justify-content: right;}'],
+    standalone: false
 })
 export class TableRowComponent implements OnInit {
 

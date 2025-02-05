@@ -11,8 +11,9 @@ import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 import { SpecificationGroup } from 'src/app/types/specification-group';
 
 @Component({
-  selector: 'app-specification-group-details',
-  templateUrl: './specification-group-details.component.html'
+    selector: 'app-specification-group-details',
+    templateUrl: './specification-group-details.component.html',
+    standalone: false
 })
 export class SpecificationGroupDetailsComponent extends BaseComponent implements OnInit {
 

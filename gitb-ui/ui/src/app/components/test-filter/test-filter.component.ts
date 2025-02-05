@@ -34,9 +34,10 @@ import { FilterUpdate } from './filter-update';
 import { EntityWithId } from 'src/app/types/entity-with-id';
 
 @Component({
-  selector: 'app-test-filter',
-  templateUrl: './test-filter.component.html',
-  styleUrls: [ './test-filter.component.less' ]
+    selector: 'app-test-filter',
+    templateUrl: './test-filter.component.html',
+    styleUrls: ['./test-filter.component.less'],
+    standalone: false
 })
 export class TestFilterComponent implements OnInit {
 

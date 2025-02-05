@@ -21,10 +21,10 @@ import { CommunityService } from 'src/app/services/community.service';
 import { Organisation } from 'src/app/types/organisation.type';
 
 @Component({
-  selector: 'app-create-organisation',
-  templateUrl: './create-organisation.component.html',
-  styles: [
-  ]
+    selector: 'app-create-organisation',
+    templateUrl: './create-organisation.component.html',
+    styles: [],
+    standalone: false
 })
 export class CreateOrganisationComponent extends BaseComponent implements OnInit {
 

@@ -3,7 +3,10 @@ import { Router } from "@angular/router";
 import { TabsetComponent } from "ngx-bootstrap/tabs";
 import { BaseComponent } from "./base-component.component";
 
-@Component({ template: '' })
+@Component({
+    template: '',
+    standalone: false
+})
 export abstract class BaseTabbedComponent extends BaseComponent {
 
     @ViewChild('tabs', { static: false }) tabs?: TabsetComponent;

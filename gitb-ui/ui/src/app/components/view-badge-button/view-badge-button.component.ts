@@ -6,9 +6,10 @@ import { DataService } from 'src/app/services/data.service';
 import { PopupService } from 'src/app/services/popup.service';
 
 @Component({
-  selector: 'app-view-badge-button',
-  templateUrl: './view-badge-button.component.html',
-  styleUrls: [ './view-badge-button.component.less' ]
+    selector: 'app-view-badge-button',
+    templateUrl: './view-badge-button.component.html',
+    styleUrls: ['./view-badge-button.component.less'],
+    standalone: false
 })
 export class ViewBadgeButtonComponent implements OnInit {
 

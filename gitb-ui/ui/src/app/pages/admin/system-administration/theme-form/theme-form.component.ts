@@ -10,8 +10,9 @@ import { saveAs } from 'file-saver';
 import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
-  selector: 'app-theme-form',
-  templateUrl: './theme-form.component.html'
+    selector: 'app-theme-form',
+    templateUrl: './theme-form.component.html',
+    standalone: false
 })
 export class ThemeFormComponent implements OnInit, AfterViewInit {
 

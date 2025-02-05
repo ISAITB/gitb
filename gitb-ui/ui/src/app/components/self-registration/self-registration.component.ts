@@ -10,11 +10,12 @@ import { TableColumnDefinition } from 'src/app/types/table-column-definition.typ
 import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
-  selector: 'app-self-registration',
-  templateUrl: './self-registration.component.html',
-  styles: [
-    '.self-reg-option-table.is-invalid { border-color: var(--bs-form-invalid-color); }'
-  ]
+    selector: 'app-self-registration',
+    templateUrl: './self-registration.component.html',
+    styles: [
+        '.self-reg-option-table.is-invalid { border-color: var(--bs-form-invalid-color); }'
+    ],
+    standalone: false
 })
 export class SelfRegistrationComponent extends BaseComponent implements OnInit {
 

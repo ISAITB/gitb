@@ -14,10 +14,10 @@ import { HtmlService } from 'src/app/services/html.service';
 import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
-  selector: 'app-create-legal-notice',
-  templateUrl: './create-legal-notice.component.html',
-  styles: [
-  ]
+    selector: 'app-create-legal-notice',
+    templateUrl: './create-legal-notice.component.html',
+    styles: [],
+    standalone: false
 })
 export class CreateLegalNoticeComponent extends BaseComponent implements OnInit, AfterViewInit {
 

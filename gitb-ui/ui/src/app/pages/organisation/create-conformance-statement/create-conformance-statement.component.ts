@@ -11,9 +11,10 @@ import { SystemService } from 'src/app/services/system.service';
 import { filter, find, remove } from 'lodash';
 
 @Component({
-  selector: 'app-create-conformance-statement',
-  templateUrl: './create-conformance-statement.component.html',
-  styleUrls: [ './create-conformance-statement.component.less' ]
+    selector: 'app-create-conformance-statement',
+    templateUrl: './create-conformance-statement.component.html',
+    styleUrls: ['./create-conformance-statement.component.less'],
+    standalone: false
 })
 export class CreateConformanceStatementComponent implements OnInit {
 

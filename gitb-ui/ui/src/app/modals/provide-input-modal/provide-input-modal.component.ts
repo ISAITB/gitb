@@ -8,9 +8,10 @@ import { UserInteraction } from 'src/app/types/user-interaction';
 import { UserInteractionInput } from 'src/app/types/user-interaction-input';
 
 @Component({
-  selector: 'app-provide-input-modal',
-  templateUrl: './provide-input-modal.component.html',
-  styleUrls: [ './provide-input-modal.component.less' ]
+    selector: 'app-provide-input-modal',
+    templateUrl: './provide-input-modal.component.html',
+    styleUrls: ['./provide-input-modal.component.less'],
+    standalone: false
 })
 export class ProvideInputModalComponent implements OnInit, AfterViewInit {
 

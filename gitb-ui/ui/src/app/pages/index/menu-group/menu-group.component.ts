@@ -1,9 +1,10 @@
 import { Component, Input, OnInit } from '@angular/core';
 
 @Component({
-  selector: 'app-menu-group',
-  templateUrl: './menu-group.component.html',
-  styleUrls: [ './menu-group.component.less' ]
+    selector: 'app-menu-group',
+    templateUrl: './menu-group.component.html',
+    styleUrls: ['./menu-group.component.less'],
+    standalone: false
 })
 export class MenuGroupComponent implements OnInit {
 

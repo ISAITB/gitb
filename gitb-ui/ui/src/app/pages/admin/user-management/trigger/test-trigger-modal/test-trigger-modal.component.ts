@@ -9,10 +9,10 @@ import { Constants } from 'src/app/common/constants';
 import {BaseComponent} from '../../../../base-component.component';
 
 @Component({
-  selector: 'app-test-trigger-modal',
-  templateUrl: './test-trigger-modal.component.html',
-  styles: [
-  ]
+    selector: 'app-test-trigger-modal',
+    templateUrl: './test-trigger-modal.component.html',
+    styles: [],
+    standalone: false
 })
 export class TestTriggerModalComponent extends BaseComponent implements OnInit {
 

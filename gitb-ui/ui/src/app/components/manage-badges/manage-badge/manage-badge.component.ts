@@ -8,8 +8,9 @@ import { PreviewByFile } from 'src/app/modals/preview-badge-modal/preview-by-fil
 import { PreviewForStatus } from 'src/app/modals/preview-badge-modal/preview-for-status';
 
 @Component({
-  selector: 'app-manage-badge',
-  templateUrl: './manage-badge.component.html'
+    selector: 'app-manage-badge',
+    templateUrl: './manage-badge.component.html',
+    standalone: false
 })
 export class ManageBadgeComponent implements OnInit {
 

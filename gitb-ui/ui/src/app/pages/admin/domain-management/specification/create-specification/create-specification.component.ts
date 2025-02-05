@@ -11,10 +11,10 @@ import { Specification } from 'src/app/types/specification';
 import { SpecificationGroup } from 'src/app/types/specification-group';
 
 @Component({
-  selector: 'app-create-specification',
-  templateUrl: './create-specification.component.html',
-  styles: [
-  ]
+    selector: 'app-create-specification',
+    templateUrl: './create-specification.component.html',
+    styles: [],
+    standalone: false
 })
 export class CreateSpecificationComponent extends BaseComponent implements OnInit, AfterViewInit {
 

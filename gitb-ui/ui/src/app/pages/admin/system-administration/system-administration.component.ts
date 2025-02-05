@@ -33,9 +33,10 @@ import { BsModalService } from 'ngx-bootstrap/modal';
 import { SystemConfiguration } from 'src/app/types/system-configuration';
 
 @Component({
-  selector: 'app-system-administration',
-  templateUrl: './system-administration.component.html',
-  styleUrls: [ './system-administration.component.less' ]
+    selector: 'app-system-administration',
+    templateUrl: './system-administration.component.html',
+    styleUrls: ['./system-administration.component.less'],
+    standalone: false
 })
 export class SystemAdministrationComponent extends BaseComponent implements OnInit, AfterViewInit {
 

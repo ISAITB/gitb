@@ -13,9 +13,10 @@ import { MenuItem } from 'src/app/types/menu-item.enum';
 import { PopupService } from 'src/app/services/popup.service';
 
 @Component({
-  selector: 'app-index',
-  templateUrl: './index.component.html',
-  styleUrls: ['./index.component.less']
+    selector: 'app-index',
+    templateUrl: './index.component.html',
+    styleUrls: ['./index.component.less'],
+    standalone: false
 })
 export class IndexComponent implements OnInit, OnDestroy {
 

@@ -9,10 +9,10 @@ import { OrganisationFormData } from './organisation-form-data';
 import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
-  selector: 'app-organisation-form',
-  templateUrl: './organisation-form.component.html',
-  styles: [
-  ]
+    selector: 'app-organisation-form',
+    templateUrl: './organisation-form.component.html',
+    styles: [],
+    standalone: false
 })
 export class OrganisationFormComponent implements OnInit {
 

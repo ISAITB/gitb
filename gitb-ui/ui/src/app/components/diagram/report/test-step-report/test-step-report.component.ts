@@ -3,9 +3,10 @@ import { StepData } from '../../step-data';
 import { StepReport } from '../step-report';
 
 @Component({
-  selector: 'app-test-step-report',
-  templateUrl: './test-step-report.component.html',
-  styleUrls: [ './test-step-report.component.less' ]
+    selector: 'app-test-step-report',
+    templateUrl: './test-step-report.component.html',
+    styleUrls: ['./test-step-report.component.less'],
+    standalone: false
 })
 export class TestStepReportComponent implements OnInit {
 

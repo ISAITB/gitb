@@ -15,10 +15,10 @@ import { PreviewLandingPageComponent } from '../preview-landing-page/preview-lan
 import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
-  selector: 'app-create-landing-page',
-  templateUrl: './create-landing-page.component.html',
-  styles: [
-  ]
+    selector: 'app-create-landing-page',
+    templateUrl: './create-landing-page.component.html',
+    styles: [],
+    standalone: false
 })
 export class CreateLandingPageComponent extends BaseComponent implements OnInit, AfterViewInit {
 

@@ -2,9 +2,10 @@ import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { AssertionReport } from '../diagram/assertion-report';
 
 @Component({
-  selector: 'app-tar-report',
-  templateUrl: './tar-report.component.html',
-  styleUrls: [ './tar-report.component.less' ]
+    selector: 'app-tar-report',
+    templateUrl: './tar-report.component.html',
+    styleUrls: ['./tar-report.component.less'],
+    standalone: false
 })
 export class TarReportComponent implements OnInit {
 
