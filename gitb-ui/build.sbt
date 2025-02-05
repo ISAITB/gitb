@@ -7,12 +7,12 @@ maintainer := "DIGIT-ITB@ec.europa.eu"
 lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
 
 scalaVersion := "2.13.14"
-val pekkoVersion = "1.0.3"
-val jacksonVersion = "2.16.2"
+val pekkoVersion = "1.1.3"
+val jacksonVersion = "2.18.2"
 val cxfVersion = "4.1.0"
-val commonsTextVersion = "1.12.0"
-val gitbTypesVersion = "1.25.0"
-val bouncyCastleVersion = "1.78.1"
+val gitbTypesVersion = "1.26.0-SNAPSHOT"
+val bouncyCastleVersion = "1.80"
+val commonsTextVersion = "1.13.0"
 
 useCoursier := false
 
@@ -31,7 +31,7 @@ libraryDependencies ++= Seq(
   "com.gitb" % "gitb-reports" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-validator-tdl" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-xml-resources" % "1.0-SNAPSHOT",
-  "com.mysql" % "mysql-connector-j" % "8.4.0" exclude("com.google.protobuf", "protobuf-java"), // Exclude protobuf as we don't need the X DevAPI.
+  "com.mysql" % "mysql-connector-j" % "9.2.0" exclude("com.google.protobuf", "protobuf-java"), // Exclude protobuf as we don't need the X DevAPI.
   "org.apache.pekko" %% "pekko-actor" % pekkoVersion,
   "org.apache.pekko" %% "pekko-actor-typed" % pekkoVersion,
   "org.apache.pekko" %% "pekko-remote" % pekkoVersion,
@@ -39,8 +39,8 @@ libraryDependencies ++= Seq(
   "org.apache.pekko" %% "pekko-slf4j" % pekkoVersion,
   "org.apache.pekko" %% "pekko-serialization-jackson" % pekkoVersion,
   "org.playframework" %% "play-slick" % "6.1.1",
-  "org.pac4j" %% "play-pac4j" % "12.0.0-PLAY3.0",
-  "org.pac4j" % "pac4j-cas" % "6.0.2" exclude("org.bouncycastle", "bcpkix-jdk15on"), // Needs to stay at 6.0.2 to match Play Jackson version (at 2.16.2)
+  "org.pac4j" %% "play-pac4j" % "12.0.2-PLAY3.0",
+  "org.pac4j" % "pac4j-cas" % "6.1.1" exclude("org.bouncycastle", "bcpkix-jdk15on"),
   "org.apache.commons" % "commons-lang3" % "3.17.0",
   "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
@@ -54,7 +54,7 @@ libraryDependencies ++= Seq(
   "org.apache.cxf" % "cxf-rt-transports-http" % cxfVersion,
   "org.apache.cxf" % "cxf-rt-transports-http-jetty" % cxfVersion,
   // ---
-  "org.apache.tika" % "tika-core" % "2.9.2",
+  "org.apache.tika" % "tika-core" % "3.1.0",
   "org.webjars" % "jquery" % "3.7.1",
   "org.webjars" % "bootstrap" % "5.3.3",
   "com.sun.mail" % "jakarta.mail" % "2.0.1",
@@ -71,11 +71,10 @@ libraryDependencies ++= Seq(
   "org.jasypt" % "jasypt" % "1.9.3",
   "org.apache.httpcomponents" % "httpclient" % "4.5.14",
   "org.flywaydb" %% "flyway-play" % "9.1.0",
-  "org.flywaydb" % "flyway-mysql" % "10.15.2",
+  "org.flywaydb" % "flyway-mysql" % "11.3.1",
   "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20240325.1",
   "net.lingala.zip4j" % "zip4j" % "2.11.5",
-  // Specific version overrides (to be removed if no longer needed)
-  "org.apache.commons" % "commons-text" % commonsTextVersion, // Set explicitly to resolve CVE-2022-42889
+  "org.apache.commons" % "commons-text" % commonsTextVersion
 )
 
 // Deactivate repeatable builds to speed up via parallelization

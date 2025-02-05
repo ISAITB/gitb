@@ -31,8 +31,8 @@
         <version.plugin.license-maven-plugin>2.5.0</version.plugin.license-maven-plugin>
         <!-- Dependency versions -->
         <version.springBoot>3.4.2</version.springBoot>
-        <version.gitbTypes>1.25.0</version.gitbTypes>
-        <version.bouncycastle>1.78.1</version.bouncycastle>
+        <version.gitbTypes>1.26.0-SNAPSHOT</version.gitbTypes>
+        <version.bouncycastle>1.80</version.bouncycastle>
         <version.helgerSchematron>8.0.5</version.helgerSchematron>
         <version.metaInfServices>1.9</version.metaInfServices>
         <version.cxf>4.1.0</version.cxf>
@@ -41,7 +41,7 @@
         <version.reflections>0.10.2</version.reflections>
         <version.commonsIo>2.17.0</version.commonsIo>
         <version.commonsLang3>3.17.0</version.commonsLang3>
-        <version.tika>2.9.2</version.tika>
+        <version.tika>3.1.0</version.tika>
         <version.xerces>2.12.2</version.xerces>
         <version.jaxbApi>4.0.2</version.jaxbApi>
         <version.jaxbRuntime>4.0.4</version.jaxbRuntime>
@@ -50,8 +50,8 @@
         <version.jwsApi>3.0.0</version.jwsApi>
         <version.activation>2.1.2</version.activation>
         <version.commonsConfiguration>2.11.0</version.commonsConfiguration>
-        <version.commonsText>1.12.0</version.commonsText>
-        <version.pekko>1.0.2</version.pekko>
+        <version.commonsText>1.13.0</version.commonsText>
+        <version.pekko>1.1.3</version.pekko>
         <version.rgxgen>1.4</version.rgxgen>
         <version.saajImpl>3.0.4</version.saajImpl>
         <version.helgerCommons>11.1.6</version.helgerCommons>
@@ -61,7 +61,7 @@
         <version.xmlUnit>2.10.0</version.xmlUnit>
         <version.jerseyClient>1.19.4</version.jerseyClient>
         <version.beanUtils>1.9.4</version.beanUtils>
-        <version.freeMarker>2.3.32</version.freeMarker>
+        <version.freeMarker>2.3.34</version.freeMarker>
         <version.com.openhtmltopdf>1.0.10</version.com.openhtmltopdf>
         <version.org.jsoup>1.15.4</version.org.jsoup>
         <!-- Other version overrides - START -->
@@ -350,7 +350,7 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.pekko</groupId>
-                <artifactId>pekko-actor_2.13</artifactId>
+                <artifactId>pekko-actor_3</artifactId>
                 <version>${version.pekko}</version>
             </dependency>
             <dependency>
