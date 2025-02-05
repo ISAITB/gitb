@@ -35,7 +35,7 @@ In subsequent sections these components are referred to using their Docker image
 
 ## Documentation
 
-The main documentation hub for the Test Bed is its [Joinup space](https://joinup.ec.europa.eu/collection/interoperability-test-bed-repository/solution/interoperability-test-bed)
+The main documentation hub for the Test Bed is its [Interoperable Europe Portal site](https://interoperable-europe.ec.europa.eu/collection/interoperability-test-bed-repository/solution/interoperability-test-bed)
 from where you can access all [types of documentation](https://joinup.ec.europa.eu/collection/interoperability-test-bed-repository/solution/interoperability-test-bed/documentation).
 Documentation highlights include:
 - The [developer onboarding guide](https://www.itb.ec.europa.eu/docs/guides/latest/onboardingDevelopers/index.html), that provides a technical overview of how the Test Bed works.
@@ -250,7 +250,7 @@ feel free to contact the Test Bed team via email at [DIGIT-ITB@ec.europa.eu](mai
 # See also
 
 For general information on all aspects of the Interoperability Test Bed and the GITB software in particular you may refer
-to its [Joinup space](https://joinup.ec.europa.eu/collection/interoperability-test-bed-repository/solution/interoperability-test-bed).
+to its [Interoperable Europe Portal site](https://interoperable-europe.ec.europa.eu/collection/interoperability-test-bed-repository/solution/interoperability-test-bed).
 
 The GITB software is used to realise a complete conformance testing platform. If you are more interested in standalone 
 data validation you may find interesting the Test Bed's validators for [XML](https://github.com/ISAITB/xml-validator),
