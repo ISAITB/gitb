@@ -1,12 +1,11 @@
-version: '2.1'
-
 volumes:
    gitb-repo:
    gitb-dbdata:
 
 services:
    gitb-redis:
-      image: redis:7.2.5
+      build:
+        context: ./etc/docker/gitb-redis
       restart: unless-stopped
    gitb-mysql:
       build:
