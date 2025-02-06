@@ -1,6 +1,6 @@
 # Introduction
 
-This repository contains the main application components that are used by the [Interoperability Test Bed](https://joinup.ec.europa.eu/collection/interoperability-test-bed-repository/solution/interoperability-test-bed).
+This repository contains the main application components that are used by the [Interoperability Test Bed](https://interoperable-europe.ec.europa.eu/collection/interoperability-test-bed-repository/solution/interoperability-test-bed).
 
 ## What is the Interoperability Test Bed?
 
@@ -35,8 +35,8 @@ In subsequent sections these components are referred to using their Docker image
 
 ## Documentation
 
-The main documentation hub for the Test Bed is its [Joinup space](https://joinup.ec.europa.eu/collection/interoperability-test-bed-repository/solution/interoperability-test-bed)
-from where you can access all [types of documentation](https://joinup.ec.europa.eu/collection/interoperability-test-bed-repository/solution/interoperability-test-bed/documentation).
+The main documentation hub for the Test Bed is its [Interoperable Europe Portal site](https://interoperable-europe.ec.europa.eu/collection/interoperability-test-bed-repository/solution/interoperability-test-bed)
+from where you can access all [types of documentation](https://interoperable-europe.ec.europa.eu/collection/interoperability-test-bed-repository/solution/interoperability-test-bed/documentation).
 Documentation highlights include:
 - The [developer onboarding guide](https://www.itb.ec.europa.eu/docs/guides/latest/onboardingDevelopers/index.html), that provides a technical overview of how the Test Bed works.
 - The Test Bed's [user guide](https://www.itb.ec.europa.eu/docs/itb-ta/latest/). 
@@ -191,6 +191,10 @@ to build Docker images.
 
 1. From the `etc/docker/gitb-mysql` folder build the image with `docker build -t isaitb/gitb-mysql .`
 
+### Session cache (gitb-redis)
+
+1. From the `etc/docker/gitb-redis` folder build the image with `docker build -t isaitb/gitb-redis .`
+
 ### Create the overall service
 
 1. Follow the [development installation guide](https://www.itb.ec.europa.eu/docs/guides/latest/installingTheTestBed/index.html).
@@ -211,7 +215,7 @@ Once a complete Test Bed instance has been set up, either in development or as a
 Test Bed administrator account as follows:
 1. Go to http://localhost:9000.
 2. Click on the login button.
-3. Authenticate using ``admin@itb``. This account is set with a one-time password that is refreshed at start-up until a
+3. Authenticate using `admin@itb`. This account is set with a one-time password that is refreshed at start-up until a
    first login is made. The password to use is obtained by checking the logs of container `gitb-ui`.
 
 An example log output to retrieve the administrator password is as follows: 
