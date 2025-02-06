@@ -10,7 +10,7 @@
             <arg line="/c sbt licenseCheck"/>
         </exec>
         <exec executable="sh" dir="gitb-ui" failonerror="true" failifexecutionfails="true" osfamily="unix">
-            <arg line="/c sbt licenseCheck"/>
+            <arg line="-c 'sbt licenseCheck'"/>
         </exec>
         <!-- Step 2: Create gitb-ui licence report -->
         <echo level="info">Generating gitb-ui licence report</echo>
