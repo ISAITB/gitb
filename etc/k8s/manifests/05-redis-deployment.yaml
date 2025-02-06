@@ -14,7 +14,7 @@ spec:
     spec:
       automountServiceAccountToken: false
       containers:
-        - image: "redis:7.2.5"
+        - image: "isaitb/gitb-redis:1.25.0"
           imagePullPolicy: "IfNotPresent"
           name: itb-redis
           ports:

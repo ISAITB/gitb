@@ -27,6 +27,10 @@ When using to create a development instance, you may find it more suitable to ha
 pointed to the Test Bed's "nightly" tags, and also to have TLS disabled. To set up such a development 
 instance you can use a value override file when installing or upgrading, as follows:
 ```yaml
+redis:
+  # Switch the image to point to the nightly tag and ensure it is always pulled.
+  image: isaitb/gitb-redis:nightly
+  imagePullPolicy: Always
 mysql:
   # Switch the image to point to the nightly tag and ensure it is always pulled.
   image: isaitb/gitb-mysql:nightly
