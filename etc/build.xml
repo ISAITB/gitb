@@ -71,10 +71,7 @@
         <replace file="target/generated-sources/license/THIRD_PARTY_LICENCES.md"
                  token="~~PLACEHOLDER2~~"
                  value="${licence.placeholder2}" />
-        <!-- Step 6: Replace the versioned licence report -->
-        <copy file="target/generated-sources/license/THIRD_PARTY_LICENCES.md"
-              tofile="THIRD_PARTY_LICENCES.md"
-              overwrite="true"/>
-        <echo level="info">Licence report ready</echo>
+        <!-- Step 6: Done -->
+        <echo level="info">Licence report ready at [target/generated-sources/license/THIRD_PARTY_LICENCES.md]</echo>
     </target>
 </project>
