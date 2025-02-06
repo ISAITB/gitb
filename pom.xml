@@ -148,6 +148,7 @@
                         <excludedGroups>com.gitb|eu.europa.ec.itb</excludedGroups>
                         <excludedScopes>test</excludedScopes>
                         <failOnMissing>true</failOnMissing>
+                        <failOnBlacklist>true</failOnBlacklist>
                         <licenseMerges>
                             <licenseMerge>Apache License, Version 2.0|The Apache Software License, Version 2.0|Apache-2.0|Apache License 2.0|Apache 2|The Apache License, Version 2.0|Apache License|Apache License version 2.0</licenseMerge>
                             <licenseMerge>MIT License|The MIT License</licenseMerge>
@@ -159,18 +160,28 @@
                             <licenseMerge>The 3-Clause BSD License|BSD-3-Clause</licenseMerge>
                             <licenseMerge>The 2-Clause BSD License|The BSD 2-Clause License</licenseMerge>
                             <licenseMerge>Common Public License 1.0|CPL</licenseMerge>
+                            <licenseMerge>Mozilla Public License Version 1.1|MPL 1.1</licenseMerge>
                         </licenseMerges>
+                        <includedLicenses>
+                            <includedLicense>Apache License, Version 2.0</includedLicense>
+                            <includedLicense>MIT License</includedLicense>
+                            <includedLicense>Eclipse Distribution License - v1.0</includedLicense>
+                            <includedLicense>Eclipse Public License - v1.0</includedLicense>
+                            <includedLicense>Eclipse Public License - v2.0</includedLicense>
+                            <includedLicense>GNU General Public License (GPL), Version 2 (with Classpath Exception)</includedLicense>
+                            <includedLicense>GNU Lesser General Public License (LGPL), Version 2.1</includedLicense>
+                            <includedLicense>The 3-Clause BSD License</includedLicense>
+                            <includedLicense>The 2-Clause BSD License</includedLicense>
+                            <includedLicense>Mozilla Public License Version 2.0</includedLicense>
+                            <includedLicense>Common Public License 1.0</includedLicense>
+                        </includedLicenses>
                     </configuration>
                     <!--
-                        To generate the complete third party licence file do as follows:
-                            1. Generate the gitb-ui licence content by issuing in gitb-ui: `sbt dumpLicenseReport`
-                            2. Generate the gitb-ui/ui licence content by issuing in gitb-ui/ui: `npm run licence-report-save`
-                            3. Generate the gitb-srv licence content by issuing in this project `mvn license:aggregate-add-third-party`
-                            4. Aggregate all content, by issuing in this project `mvn antrun:run -pl .`
-                        The resulting licence file is prepared in target/generated-sources/license/temp/THIRD_PARTY_LICENCES.md
+                        To check and generate the third party licence report for gitb-srv issue: `mvn license:aggregate-add-third-party`
+                        To generate the aggregate third party licence report for all modules issue: `mvn antrun:run -pl .`
 
                         In case specific licences and attributions need to be included, these need to be added to etc/licence/third-party-licence-template.ftl
-                        Once added, repeat the commands from steps [3] and [4] above.
+                        Once added, repeat the report generation command (see above).
                     -->
                 </plugin>
                 <plugin>
@@ -179,30 +190,9 @@
                     <version>3.1.0</version>
                     <configuration>
                         <target>
-                            <!-- Step 1: Copy the licence information from gitb-ui -->
-                            <loadfile property="licence.placeholder1" srcFile="gitb-ui/target/license-reports/THIRD_PARTY_LICENCES.md">
-                                <filterchain>
-                                    <headfilter lines="-1" skip="2"/>
-                                    <ignoreblank/>
-                                    <prefixlines prefix="| "/>
-                                    <suffixlines suffix=" |"/>
-                                </filterchain>
-                            </loadfile>
-                            <!-- Step 2: Copy the licence information from gitb-ui/ui -->
-                            <loadfile property="licence.placeholder2" srcFile="gitb-ui/ui/dist/THIRD_PARTY_LICENCES.md">
-                                <filterchain>
-                                    <headfilter lines="-1" skip="4"/>
-                                    <ignoreblank/>
-                                </filterchain>
-                            </loadfile>
-                            <delete file="target/generated-sources/license/THIRD_PARTY_LICENCES.md" quiet="true"/>
-                            <copy file="target/generated-sources/license/temp/THIRD_PARTY_LICENCES-gitb-srv.md" tofile="target/generated-sources/license/THIRD_PARTY_LICENCES.md"/>
-                            <replace file="target/generated-sources/license/THIRD_PARTY_LICENCES.md"
-                                     token="~~PLACEHOLDER1~~"
-                                     value="${licence.placeholder1}" />
-                            <replace file="target/generated-sources/license/THIRD_PARTY_LICENCES.md"
-                                     token="~~PLACEHOLDER2~~"
-                                     value="${licence.placeholder2}" />
+                            <ant antfile="etc/build.xml" dir=".">
+                                <target name="licence-report"/>
+                            </ant>
                         </target>
                     </configuration>
                 </plugin>

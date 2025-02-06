@@ -1,0 +1,80 @@
+<project name="GITB">
+    <description>
+        Ant build file with extensions used in the maven build (via the antrun plugin).
+    </description>
+    <!-- Generate the aggregate third party licence report for all GITB components (gitb-srv, gitb-ui, gitb-ui frontend) -->
+    <target name="licence-report">
+        <!-- Step 1: Check gitb-ui licences -->
+        <echo level="info">Checking gitb-ui licences</echo>
+        <exec executable="cmd" dir="gitb-ui" failonerror="true" failifexecutionfails="true" osfamily="windows">
+            <arg line="/c sbt licenseCheck"/>
+        </exec>
+        <exec executable="cmd" dir="gitb-ui" failonerror="true" failifexecutionfails="true" osfamily="unix">
+            <arg line="/c sbt licenseCheck"/>
+        </exec>
+        <!-- Step 2: Create gitb-ui licence report -->
+        <echo level="info">Generating gitb-ui licence report</echo>
+        <exec executable="cmd" dir="gitb-ui" failonerror="true" failifexecutionfails="true" osfamily="windows">
+            <arg line="/c sbt dumpLicenseReport"/>
+        </exec>
+        <exec executable="sh" dir="gitb-ui" failonerror="true" failifexecutionfails="true" osfamily="unix">
+            <arg line="-c 'sbt dumpLicenseReport'"/>
+        </exec>
+        <!-- Step 3: Check gitb-ui frontend licences -->
+        <echo level="info">Checking gitb-ui frontend licences</echo>
+        <exec executable="cmd" dir="gitb-ui/ui" failonerror="true" failifexecutionfails="true" osfamily="windows">
+            <arg line="/c npm run licence-check"/>
+        </exec>
+        <exec executable="sh" dir="gitb-ui/ui" failonerror="true" failifexecutionfails="true" osfamily="unix">
+            <arg line="-c 'npm run licence-check'"/>
+        </exec>
+        <!-- Step 4: Create gitb-ui frontend licence report -->
+        <echo level="info">Generating gitb-ui frontend licence report</echo>
+        <exec executable="cmd" dir="gitb-ui/ui" failonerror="true" failifexecutionfails="true" osfamily="windows">
+            <arg line="/c npm run licence-report-save"/>
+        </exec>
+        <exec executable="sh" dir="gitb-ui/ui" failonerror="true" failifexecutionfails="true" osfamily="unix">
+            <arg line="-c 'npm run licence-report-save'"/>
+        </exec>
+        <!-- Step 5: Create gitb-srv licence report -->
+        <echo level="info">Generating gitb-srv licence report</echo>
+        <exec executable="cmd" failonerror="true" failifexecutionfails="true" osfamily="windows">
+            <arg line="/c mvn license:aggregate-add-third-party"/>
+        </exec>
+        <exec executable="sh" failonerror="true" failifexecutionfails="true" osfamily="unix">
+            <arg line="-c 'mvn license:aggregate-add-third-party'"/>
+        </exec>
+        <!-- Step 5: Aggregate reports -->
+        <echo level="info">Aggregating licence reports</echo>
+        <!-- Step 5.1: Copy the licence information from gitb-ui -->
+        <loadfile property="licence.placeholder1" srcFile="gitb-ui/target/license-reports/THIRD_PARTY_LICENCES.md">
+            <filterchain>
+                <headfilter lines="-1" skip="2"/>
+                <ignoreblank/>
+                <prefixlines prefix="| "/>
+                <suffixlines suffix=" |"/>
+            </filterchain>
+        </loadfile>
+        <!-- Step 5.2: Copy the licence information from gitb-ui/ui -->
+        <loadfile property="licence.placeholder2" srcFile="gitb-ui/ui/dist/THIRD_PARTY_LICENCES.md">
+            <filterchain>
+                <headfilter lines="-1" skip="4"/>
+                <ignoreblank/>
+            </filterchain>
+        </loadfile>
+        <copy file="target/generated-sources/license/temp/THIRD_PARTY_LICENCES-gitb-srv.md"
+              tofile="target/generated-sources/license/THIRD_PARTY_LICENCES.md"
+              overwrite="true"/>
+        <replace file="target/generated-sources/license/THIRD_PARTY_LICENCES.md"
+                 token="~~PLACEHOLDER1~~"
+                 value="${licence.placeholder1}" />
+        <replace file="target/generated-sources/license/THIRD_PARTY_LICENCES.md"
+                 token="~~PLACEHOLDER2~~"
+                 value="${licence.placeholder2}" />
+        <!-- Step 6: Replace the versioned licence report -->
+        <copy file="target/generated-sources/license/THIRD_PARTY_LICENCES.md"
+              tofile="THIRD_PARTY_LICENCES.md"
+              overwrite="true"/>
+        <echo level="info">Licence report ready</echo>
+    </target>
+</project>

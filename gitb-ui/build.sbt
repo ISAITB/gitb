@@ -128,13 +128,14 @@ licenseDepExclusions := {
   case DepModuleInfo("org.scala-sbt", "test-interface", _) => true
   case DepModuleInfo("org.jline", "jline", _) => true
   case DepModuleInfo("com.github.sbt", "junit-interface", _) => true
+  case DepModuleInfo("commons-io", "commons-io", "2.17.0") => true // This is evicted but appears in the licence report
 }
 licenseCheckExclusions := {
-  case DepModuleInfo("com.mysql", "mysql-connector-j", "8.4.0") => true
+  case DepModuleInfo("com.mysql", "mysql-connector-j", "9.2.0") => true
   case DepModuleInfo("wsdl4j", "wsdl4j", "1.6.3") => true
 }
 licenseReportNotes := {
-  case DepModuleInfo("com.mysql", "mysql-connector-j", "8.4.0") => "The Universal FOSS Exception allows its usage as it is used unchanged."
+  case DepModuleInfo("com.mysql", "mysql-connector-j", "9.2.0") => "The Universal FOSS Exception allows its usage as it is used unchanged."
   case DepModuleInfo("wsdl4j", "wsdl4j", "1.6.3") => "Used transitively by CXF, see (https://www.apache.org/legal/resolved.html#category-b)."
 }
 licenseConfigurations := Set("compile", "provided")
