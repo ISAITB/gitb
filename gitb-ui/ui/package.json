@@ -10,7 +10,8 @@
     "audit": "better-npm-audit audit --production",
     "licence-report": "license-report --only=prod --output=markdown --fields=licenseType --fields=name --fields=installedVersion --fields=link",
     "licence-report-save": "npm run licence-report > ./dist/THIRD_PARTY_LICENCES.md",
-    "licence-check": "license-checker-rseidelsohn --production --depth 0 --excludePrivatePackages --onlyAllow MIT;Apache-2.0 --summary"
+    "licence-check": "license-checker-rseidelsohn --production --depth 0 --excludePrivatePackages --onlyAllow MIT;Apache-2.0 --summary",
+    "licence-check-linux": "license-checker-rseidelsohn --production --depth 0 --excludePrivatePackages --onlyAllow MIT\\;Apache-2.0 --summary"
   },
   "private": true,
   "dependencies": {

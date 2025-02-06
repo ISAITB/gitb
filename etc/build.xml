@@ -26,7 +26,7 @@
             <arg line="/c npm run licence-check"/>
         </exec>
         <exec executable="sh" dir="gitb-ui/ui" failonerror="true" failifexecutionfails="true" osfamily="unix">
-            <arg line="-c 'npm run licence-check'"/>
+            <arg line="-c 'npm run licence-check-linux'"/>
         </exec>
         <!-- Step 4: Create gitb-ui frontend licence report -->
         <echo level="info">Generating gitb-ui frontend licence report</echo>
