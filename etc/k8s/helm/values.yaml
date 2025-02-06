@@ -12,7 +12,7 @@
 #
 redis:
   # redis.image is the (full) image to use to create redis container(s).
-  image: redis:7.2.5
+  image: isaitb/gitb-redis:1.25.0
   #
   # redis.name is the name to use for the redis deployment and (by default) service.
   name: itb-redis
