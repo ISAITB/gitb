@@ -126,7 +126,7 @@ Library licences are organised in three sections:
 | Eclipse Distribution License - v1.0 | JAXB Runtime | org.glassfish.jaxb:jaxb-runtime | 4.0.5 | https://eclipse-ee4j.github.io/jaxb-ri/ |
 | Eclipse Distribution License - v1.0 | TXW2 Runtime | org.glassfish.jaxb:txw2 | 4.0.5 | https://eclipse-ee4j.github.io/jaxb-ri/ |
 | Apache License, Version 2.0 | Hibernate Validator Engine | org.hibernate.validator:hibernate-validator | 8.0.2.Final | http://hibernate.org/validator/hibernate-validator |
-| Apache License, Version 2.0, GNU Lesser General Public License (LGPL), Version 2.1, MPL 1.1 | Javassist | org.javassist:javassist | 3.28.0-GA | http://www.javassist.org/ |
+| Apache License, Version 2.0, GNU Lesser General Public License (LGPL), Version 2.1, Mozilla Public License Version 1.1 | Javassist | org.javassist:javassist | 3.28.0-GA | http://www.javassist.org/ |
 | Apache License, Version 2.0 | JBoss Logging 3 | org.jboss.logging:jboss-logging | 3.6.1.Final | http://www.jboss.org |
 | MIT License | jsoup Java HTML Parser | org.jsoup:jsoup | 1.15.4 | https://jsoup.org/ |
 | Eclipse Distribution License - v1.0 | Extended StAX API | org.jvnet.staxex:stax-ex | 2.1.0 | https://projects.eclipse.org/projects/ee4j/stax-ex |
@@ -429,17 +429,17 @@ Library licences are organised in three sections:
 
 | License type                    | Name                              | Installed version | Link                                                        |
 | :------------------------------ | :-------------------------------- | :---------------- | :---------------------------------------------------------- |
-| MIT                             | @angular/animations               | 19.1.4            | git+https://github.com/angular/angular.git                  |
-| MIT                             | @angular/cdk                      | 19.1.2            | git+https://github.com/angular/components.git               |
-| MIT                             | @angular/common                   | 19.1.4            | git+https://github.com/angular/angular.git                  |
-| MIT                             | @angular/compiler                 | 19.1.4            | git+https://github.com/angular/angular.git                  |
-| MIT                             | @angular/core                     | 19.1.4            | git+https://github.com/angular/angular.git                  |
-| MIT                             | @angular/forms                    | 19.1.4            | git+https://github.com/angular/angular.git                  |
-| MIT                             | @angular/platform-browser         | 19.1.4            | git+https://github.com/angular/angular.git                  |
-| MIT                             | @angular/platform-browser-dynamic | 19.1.4            | git+https://github.com/angular/angular.git                  |
-| MIT                             | @angular/router                   | 19.1.4            | git+https://github.com/angular/angular.git                  |
+| MIT                             | @angular/animations               | 19.1.5            | git+https://github.com/angular/angular.git                  |
+| MIT                             | @angular/cdk                      | 19.1.3            | git+https://github.com/angular/components.git               |
+| MIT                             | @angular/common                   | 19.1.5            | git+https://github.com/angular/angular.git                  |
+| MIT                             | @angular/compiler                 | 19.1.5            | git+https://github.com/angular/angular.git                  |
+| MIT                             | @angular/core                     | 19.1.5            | git+https://github.com/angular/angular.git                  |
+| MIT                             | @angular/forms                    | 19.1.5            | git+https://github.com/angular/angular.git                  |
+| MIT                             | @angular/platform-browser         | 19.1.5            | git+https://github.com/angular/angular.git                  |
+| MIT                             | @angular/platform-browser-dynamic | 19.1.5            | git+https://github.com/angular/angular.git                  |
+| MIT                             | @angular/router                   | 19.1.5            | git+https://github.com/angular/angular.git                  |
 | MIT                             | @ctrl/ngx-codemirror              | 7.0.0             | git+https://github.com/scttcper/ngx-codemirror.git          |
-| (CC-BY-4.0 AND OFL-1.1 AND MIT) | @fortawesome/fontawesome-free     | 6.7.1             | git+https://github.com/FortAwesome/Font-Awesome.git         |
+| (CC-BY-4.0 AND OFL-1.1 AND MIT) | @fortawesome/fontawesome-free     | 6.7.2             | git+https://github.com/FortAwesome/Font-Awesome.git         |
 | MIT                             | @tinymce/tinymce-angular          | 8.0.1             | git+https://github.com/tinymce/tinymce-angular.git          |
 | MIT                             | angular2-notifications            | 16.0.1            | git+https://github.com/flauc/angular2-notifications.git     |
 | MIT                             | bootstrap                         | 5.3.3             | git+https://github.com/twbs/bootstrap.git                   |
