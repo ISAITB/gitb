@@ -176,7 +176,7 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction,
     val actorId = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID).toLong
     val testId = ParameterExtractor.requiredBodyParameter(request, Parameters.TEST_ID)
 
-    val response = testService.getTestCasePresentation(testId, Some(sessionId))
+    val response = testService.getTestCasePresentationByStatement(testId, Some(sessionId), actorId, systemId)
     reportManager.createTestReport(sessionId, systemId, testId, actorId, response.getTestcase)
     ResponseConstructor.constructEmptyResponse
   }

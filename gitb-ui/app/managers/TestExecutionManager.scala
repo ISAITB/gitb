@@ -1,9 +1,9 @@
 package managers
 
 import actors.SessionManagerActor
-import actors.events.{ConformanceStatementSucceededEvent, TestSessionFailedEvent, TestSessionSucceededEvent}
 import actors.events.sessions.{PrepareTestSessionsEvent, TerminateSessionsEvent}
-import com.gitb.core.{ActorConfiguration, AnyContent, Configuration, ValueEmbeddingEnumeration}
+import actors.events.{ConformanceStatementSucceededEvent, TestSessionFailedEvent, TestSessionSucceededEvent}
+import com.gitb.core.{AnyContent, Configuration, ValueEmbeddingEnumeration}
 import com.gitb.tr.TestResultType
 import exceptions.{AutomationApiException, ErrorCodes, MissingRequiredParameterException}
 import models.Enums.InputMappingMatchType
@@ -49,10 +49,10 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
   def startHeadlessTestSessions(testCaseIds: List[Long], systemId: Long, actorId: Long, testCaseToInputMap: Option[Map[Long, List[AnyContent]]], sessionIdsToAssign: Option[Map[Long, String]], forceSequentialExecution: Boolean): Unit = {
     if (testCaseIds.nonEmpty) {
       // Load information common to all test sessions
-      val statementParameters = loadConformanceStatementParameters(systemId, actorId)
-      val domainParameters = loadDomainParameters(actorId)
-      val organisationData = loadOrganisationParameters(systemId)
-      val systemParameters = loadSystemParameters(systemId)
+      val statementParameters = loadConformanceStatementParameters(systemId, actorId, onlySimple = false)
+      val domainParameters = loadDomainParametersByActorId(actorId, onlySimple = false)
+      val organisationData = loadOrganisationParameters(systemId, onlySimple = false)
+      val systemParameters = loadSystemParameters(systemId, onlySimple = false)
       // Schedule test sessions
       val launchInfo = PrepareTestSessionsEvent(TestSessionLaunchData(
         organisationData._1.community, organisationData._1.id, systemId, actorId, testCaseIds,
@@ -67,7 +67,7 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
     setEndTimeNow(session)
   }
 
-  def loadConformanceStatementParameters(systemId: Long, actorId: Long): List[ActorConfiguration] = {
+  def loadConformanceStatementParameters(systemId: Long, actorId: Long, onlySimple: Boolean): List[TypedActorConfiguration] = {
     // Get parameter information from the DB
     val result = exec(for {
       actorIdentifier <- PersistenceSchema.actors.filter(_.id === actorId).map(x => x.actorId).result.head
@@ -97,18 +97,16 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
     } yield (actorIdentifier, parameters))
     // Keep only the values that have valid prerequisites defined.
     val parameterData = PrerequisiteUtil.withValidPrerequisites(result._2)
-    val actorMap = new mutable.HashMap[String, ActorConfiguration]()
+    val actorMap = new mutable.HashMap[String, (String, String, ListBuffer[TypedConfiguration])]()
     parameterData.foreach{ p =>
       if (p.parameterUse == "R" && p.parameterValue.isEmpty) {
         throw MissingRequiredParameterException(p.parameterName, "Missing required conformance statement parameter ["+p.parameterName+"]")
-      } else if (!p.notForTests && p.parameterValue.isDefined) {
+      } else if (!p.notForTests && p.parameterValue.isDefined && (!onlySimple || p.parameterKind == "SIMPLE")) {
         var actorConfigEntry = actorMap.get(p.endpointName)
         if (actorConfigEntry.isEmpty) {
-          val actorConfig = new ActorConfiguration()
-          actorConfig.setActor(result._1)
-          actorConfig.setEndpoint(p.endpointName)
-          actorMap += (p.endpointName -> actorConfig)
-          actorConfigEntry = Some(actorConfig)
+          val actorConfigData = (result._1, p.endpointName, new ListBuffer[TypedConfiguration])
+          actorMap += (p.endpointName -> actorConfigData)
+          actorConfigEntry = Some(actorConfigData)
         }
         val config = new Configuration()
         config.setName(p.parameterKey)
@@ -119,42 +117,41 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
         } else {
           config.setValue(p.parameterValue.get)
         }
-        actorConfigEntry.get.getConfig.add(config)
+        actorConfigEntry.get._3 += TypedConfiguration(config, p.parameterKind)
       }
     }
-    actorMap.values.toList
+    actorMap.values.map(actorData => TypedActorConfiguration(actorData._1, actorData._2, actorData._3.toList)).toList
   }
 
-  def loadDomainParameters(actorId: Long): Option[ActorConfiguration] = {
-    val domainId = actorManager.getById(actorId).get.domain
-    val parameters = domainParameterManager.getDomainParameters(domainId, loadValues = true, Some(true), onlySimple = false)
+  def loadDomainParametersByDomainId(domainId: Long, onlySimple: Boolean): Option[TypedActorConfiguration] = {
+    val parameters = domainParameterManager.getDomainParameters(domainId, loadValues = true, Some(true), onlySimple = onlySimple)
     if (parameters.nonEmpty) {
-      val domainConfiguration = new ActorConfiguration()
-      domainConfiguration.setActor(Constants.domainConfigurationName)
-      domainConfiguration.setEndpoint(Constants.domainConfigurationName)
-      parameters.foreach { parameter =>
+      val configs = parameters.map(parameter => {
         if (parameter.kind == "HIDDEN") {
-          addConfig(domainConfiguration, parameter.name, MimeUtil.decryptString(parameter.value.get))
+          toTypedConfig(parameter.name, MimeUtil.decryptString(parameter.value.get), parameter.kind)
         } else if (parameter.kind == "BINARY") {
-          addConfig(domainConfiguration, parameter.name, MimeUtil.getFileAsDataURL(repositoryUtils.getDomainParameterFile(domainId, parameter.id), parameter.contentType.orNull))
+          toTypedConfig(parameter.name, MimeUtil.getFileAsDataURL(repositoryUtils.getDomainParameterFile(domainId, parameter.id), parameter.contentType.orNull), parameter.kind)
         } else {
-          addConfig(domainConfiguration, parameter.name, parameter.value.get)
+          toTypedConfig(parameter.name, parameter.value.get, parameter.kind)
         }
-      }
-      Some(domainConfiguration)
+      })
+      Some(TypedActorConfiguration(Constants.domainConfigurationName, Constants.domainConfigurationName, configs))
     } else {
       None
     }
   }
 
-  def loadOrganisationParameters(systemId: Long): (Organizations, ActorConfiguration) = {
+  def loadDomainParametersByActorId(actorId: Long, onlySimple: Boolean): Option[TypedActorConfiguration] = {
+    val domainId = actorManager.getById(actorId).get.domain
+    loadDomainParametersByDomainId(domainId, onlySimple)
+  }
+
+  def loadOrganisationParameters(systemId: Long, onlySimple: Boolean): (Organizations, TypedActorConfiguration) = {
     val organisation = organisationManager.getOrganizationBySystemId(systemId)
-    val organisationConfiguration = new ActorConfiguration()
-    organisationConfiguration.setActor(Constants.organisationConfigurationName)
-    organisationConfiguration.setEndpoint(Constants.organisationConfigurationName)
-    addConfig(organisationConfiguration, Constants.organisationConfiguration_fullName, organisation.fullname)
-    addConfig(organisationConfiguration, Constants.organisationConfiguration_shortName, organisation.shortname)
-    val organisationProperties = PrerequisiteUtil.withValidPrerequisites(organisationManager.getOrganisationParameterValues(organisation.id))
+    val configs = new ListBuffer[TypedConfiguration]
+    configs += toTypedConfig(Constants.organisationConfiguration_fullName, organisation.fullname, "SIMPLE")
+    configs += toTypedConfig(Constants.organisationConfiguration_shortName, organisation.shortname, "SIMPLE")
+    val organisationProperties = PrerequisiteUtil.withValidPrerequisites(organisationManager.getOrganisationParameterValues(organisation.id, onlySimple = Some(onlySimple)))
     if (organisationProperties.nonEmpty) {
       organisationProperties.foreach{ property =>
         if (property.parameter.use == "R" && property.value.isEmpty) {
@@ -162,30 +159,28 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
         }
         if (!property.parameter.notForTests && property.value.isDefined) {
           if (property.parameter.kind == "SECRET") {
-            addConfig(organisationConfiguration, property.parameter.testKey, MimeUtil.decryptString(property.value.get.value))
+            configs += toTypedConfig(property.parameter.testKey, MimeUtil.decryptString(property.value.get.value), property.parameter.kind)
           } else if (property.parameter.kind == "BINARY") {
-            addConfig(organisationConfiguration, property.parameter.testKey, MimeUtil.getFileAsDataURL(repositoryUtils.getOrganisationPropertyFile(property.parameter.id, organisation.id), property.value.get.contentType.orNull))
+            configs += toTypedConfig(property.parameter.testKey, MimeUtil.getFileAsDataURL(repositoryUtils.getOrganisationPropertyFile(property.parameter.id, organisation.id), property.value.get.contentType.orNull), property.parameter.kind)
           } else {
-            addConfig(organisationConfiguration, property.parameter.testKey, property.value.get.value)
+            configs += toTypedConfig(property.parameter.testKey, property.value.get.value, property.parameter.kind)
           }
         }
       }
     }
-    (organisation, organisationConfiguration)
+    (organisation, TypedActorConfiguration(Constants.organisationConfigurationName, Constants.organisationConfigurationName, configs.toList))
   }
 
-  def loadSystemParameters(systemId: Long): ActorConfiguration = {
+  def loadSystemParameters(systemId: Long, onlySimple: Boolean): TypedActorConfiguration = {
     val system = systemManager.getSystemById(systemId).get
-    val systemConfiguration = new ActorConfiguration()
-    systemConfiguration.setActor(Constants.systemConfigurationName)
-    systemConfiguration.setEndpoint(Constants.systemConfigurationName)
-    addConfig(systemConfiguration, Constants.systemConfiguration_fullName, system.fullname)
-    addConfig(systemConfiguration, Constants.systemConfiguration_shortName, system.shortname)
+    val configs = new ListBuffer[TypedConfiguration]
+    configs += toTypedConfig(Constants.systemConfiguration_fullName, system.fullname, "SIMPLE")
+    configs += toTypedConfig(Constants.systemConfiguration_shortName, system.shortname, "SIMPLE")
     if (system.version.nonEmpty) {
-      addConfig(systemConfiguration, Constants.systemConfiguration_version, system.version.get)
+      configs += toTypedConfig(Constants.systemConfiguration_version, system.version.get, "SIMPLE")
     }
-    addConfig(systemConfiguration, Constants.systemConfiguration_apiKey, system.apiKey)
-    val systemProperties = PrerequisiteUtil.withValidPrerequisites(systemManager.getSystemParameterValues(systemId))
+    configs += toTypedConfig(Constants.systemConfiguration_apiKey, system.apiKey, "SIMPLE")
+    val systemProperties = PrerequisiteUtil.withValidPrerequisites(systemManager.getSystemParameterValues(systemId, onlySimple = Some(onlySimple)))
     if (systemProperties.nonEmpty) {
       systemProperties.foreach{ property =>
         if (property.parameter.use == "R" && property.value.isEmpty) {
@@ -193,23 +188,23 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
         }
         if (!property.parameter.notForTests && property.value.isDefined) {
           if (property.parameter.kind == "SECRET") {
-            addConfig(systemConfiguration, property.parameter.testKey, MimeUtil.decryptString(property.value.get.value))
+            configs += toTypedConfig(property.parameter.testKey, MimeUtil.decryptString(property.value.get.value), property.parameter.kind)
           } else if (property.parameter.kind == "BINARY") {
-            addConfig(systemConfiguration, property.parameter.testKey, MimeUtil.getFileAsDataURL(repositoryUtils.getSystemPropertyFile(property.parameter.id, systemId), property.value.get.contentType.orNull))
+            configs += toTypedConfig(property.parameter.testKey, MimeUtil.getFileAsDataURL(repositoryUtils.getSystemPropertyFile(property.parameter.id, systemId), property.value.get.contentType.orNull), property.parameter.kind)
           } else {
-            addConfig(systemConfiguration, property.parameter.testKey, property.value.get.value)
+            configs += toTypedConfig(property.parameter.testKey, property.value.get.value, property.parameter.kind)
           }
         }
       }
     }
-    systemConfiguration
+    TypedActorConfiguration(Constants.systemConfigurationName, Constants.systemConfigurationName, configs.toList)
   }
 
-  private def addConfig(configuration: ActorConfiguration, key: String, value: String) =  {
+  private def toTypedConfig(key: String, value: String, kind: String): TypedConfiguration =  {
     val config = new Configuration()
     config.setName(key)
     config.setValue(value)
-    configuration.getConfig.add(config)
+    TypedConfiguration(config, kind)
   }
 
   private def getSessionManagerActor(): ActorRef = {

@@ -4,6 +4,7 @@ import com.gitb.core.{ActorConfiguration, AnyContent}
 import com.gitb.tbs._
 import config.Configurations
 import jaxws.HeaderHandlerResolver
+import models.SessionConfigurationData
 import org.slf4j.{Logger, LoggerFactory}
 
 import java.net.URI
@@ -40,17 +41,12 @@ class TestbedBackendClient {
     response.getTcInstanceId
   }
 
-  def configure(sessionId: String, statementParameters: List[ActorConfiguration], domainParameters: Option[ActorConfiguration], organisationParameters: ActorConfiguration, systemParameters: ActorConfiguration, inputs: Option[List[AnyContent]]): Unit = {
+  def configure(sessionId: String, configuration: SessionConfigurationData, inputs: Option[List[AnyContent]]): Unit = {
     val cRequest: ConfigureRequest = new ConfigureRequest
     cRequest.setTcInstanceId(sessionId)
-    import scala.jdk.CollectionConverters._
-    cRequest.getConfigs.addAll(statementParameters.asJava)
-    if (domainParameters.nonEmpty) {
-      cRequest.getConfigs.add(domainParameters.get)
-    }
-    cRequest.getConfigs.add(organisationParameters)
-    cRequest.getConfigs.add(systemParameters)
+    configuration.apply(cRequest.getConfigs)
     if (inputs.isDefined) {
+      import scala.jdk.CollectionConverters._
       cRequest.getInputs.addAll(inputs.get.asJava)
     }
     service().configure(cRequest)
@@ -87,12 +83,13 @@ class TestbedBackendClient {
     service().provideInput(pRequest)
   }
 
-  def getTestCaseDefinition(testId:String, sessionId: Option[String]): GetTestCaseDefinitionResponse = {
+  def getTestCaseDefinition(testId:String, sessionId: Option[String], configuration: SessionConfigurationData): GetTestCaseDefinitionResponse = {
     val request = new GetTestCaseDefinitionRequest
     request.setTcId(testId)
     if (sessionId.isDefined) {
       request.setTcInstanceId(sessionId.get)
     }
+    configuration.apply(request.getConfigs)
     service().getTestCaseDefinition(request)
   }
 

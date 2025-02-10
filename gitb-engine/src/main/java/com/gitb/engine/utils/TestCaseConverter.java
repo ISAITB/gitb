@@ -1,8 +1,13 @@
 package com.gitb.engine.utils;
 
+import com.gitb.core.ActorConfiguration;
 import com.gitb.core.Documentation;
 import com.gitb.core.ErrorCode;
 import com.gitb.engine.ModuleManager;
+import com.gitb.engine.SessionConfigurationData;
+import com.gitb.engine.expr.StaticExpressionHandler;
+import com.gitb.engine.testcase.TestCaseContext;
+import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.repository.ITestCaseRepository;
 import com.gitb.tdl.Instruction;
@@ -38,15 +43,24 @@ public class TestCaseConverter {
     private final LinkedList<Boolean> scriptletStepHiddenAttributeStack = new LinkedList<>();
     private final com.gitb.tdl.TestCase testCase;
     private final ScriptletCache scriptletCache;
+    private final StaticExpressionHandler expressionHandler;
     private Set<String> actorIds = null;
 
-    public TestCaseConverter(com.gitb.tdl.TestCase testCase) {
-        this(testCase, null);
+    public TestCaseConverter(com.gitb.tdl.TestCase testCase, List<ActorConfiguration> configs) {
+        this(testCase, null, configs);
     }
 
-    public TestCaseConverter(com.gitb.tdl.TestCase testCase, ScriptletCache scriptletCache) {
+    public TestCaseConverter(com.gitb.tdl.TestCase testCase, ScriptletCache scriptletCache, List<ActorConfiguration> configs) {
         this.testCase = testCase;
         this.scriptletCache = Objects.requireNonNullElseGet(scriptletCache, ScriptletCache::new);
+        this.expressionHandler = new StaticExpressionHandler(createScope(testCase, configs));
+    }
+
+    private static TestCaseScope createScope(com.gitb.tdl.TestCase testCase, List<ActorConfiguration> configs) {
+        var context = new TestCaseContext(testCase, testCase.getId(), "");
+        var configData = new SessionConfigurationData(configs);
+        context.configure(configData.getActorConfigurations(), configData.getDomainConfiguration(), configData.getOrganisationConfiguration(), configData.getSystemConfiguration());
+        return context.getScope();
     }
 
     public TestCase convertTestCase(String testCaseId) {
@@ -157,16 +171,16 @@ public class TestCaseConverter {
     }
 
     private String fixedOrVariableValueAsString(String originalValue) {
-        return TestCaseUtils.fixedOrVariableValue(originalValue, String.class, scriptletStepStack);
+        return TestCaseUtils.fixedOrVariableValue(originalValue, String.class, scriptletStepStack, expressionHandler);
     }
 
     private Boolean fixedOrVariableValueAsBoolean(String originalValue, boolean defaultIfMissing) {
-        var result = TestCaseUtils.fixedOrVariableValue(originalValue, Boolean.class, scriptletStepStack);
+        var result = TestCaseUtils.fixedOrVariableValue(originalValue, Boolean.class, scriptletStepStack, expressionHandler);
         return Objects.requireNonNullElse(result, defaultIfMissing);
     }
 
     private String fixedOrVariableValueForActor(String originalValue) {
-        var value = TestCaseUtils.fixedOrVariableValue(originalValue, String.class, scriptletStepStack);
+        var value = TestCaseUtils.fixedOrVariableValue(originalValue, String.class, scriptletStepStack, expressionHandler);
         if (actorIds == null) {
             actorIds = new HashSet<>();
             if (testCase.getActors() != null) {

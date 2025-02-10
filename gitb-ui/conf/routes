@@ -281,7 +281,8 @@ GET     /api/tests/result/:sessionId            @controllers.RepositoryService.g
 GET     /api/tests/resultadmin/:sessionId       @controllers.RepositoryService.getTestResultAdmin(sessionId: String)
 
 # Test management API
-GET	    /api/tests/:test_id/definition          @controllers.TestService.getTestCaseDefinition(test_id : String)
+GET	    /api/tests/:test_id/definitionByStatement @controllers.TestService.getTestCaseDefinitionByStatement(test_id : String)
+GET	    /api/tests/:test_id/definitionByDomain    @controllers.TestService.getTestCaseDefinitionByDomain(test_id : String)
 GET	    /api/actordefinitions                   @controllers.TestService.getActorDefinitions()
 POST	/api/tests/:test_id/initiate            @controllers.TestService.initiate(test_id:String)
 POST	/api/tests/:session_id/configure        @controllers.TestService.configure(session_id:String)

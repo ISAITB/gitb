@@ -96,6 +96,7 @@ object Parameters {
   val STATEMENT_PARAMETERS = "stm_params"
 
   //System Service parameters
+  val SYSTEM    = "system"
   val SYSTEM_ID    = "system_id"
   val SYSTEM_SNAME = "system_sname"
   val SYSTEM_FNAME = "system_fname"
@@ -116,6 +117,7 @@ object Parameters {
 	val FULL_NAME = "fname"
 	val DESC  = "description"
   val METADATA  = "metadata"
+  val DOMAIN = "domain"
   val DOMAIN_ID = "domain_id"
   val GROUP_ID = "group_id"
   val GROUP_IDS = "group_ids"

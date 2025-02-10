@@ -272,7 +272,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   }
 
   getTestCaseDefinition(testCaseToLookup: number): Observable<void> {
-    return this.testService.getTestCaseDefinition(testCaseToLookup).pipe(
+    return this.testService.getTestCaseDefinitionByStatement(testCaseToLookup, this.actorId, this.systemId).pipe(
       mergeMap((testCase) => {
         if (testCase.preliminary != undefined) {
           this.currentTest!.preliminary = testCase.preliminary

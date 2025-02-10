@@ -36,9 +36,9 @@ public class TestbedServiceImpl implements TestbedService {
         try {
             TestCase testCase;
             if (parameters.getTcInstanceId() != null) {
-                testCase = TestCaseManager.getTestCasePresentationBySessionId(parameters.getTcInstanceId());
+                testCase = TestCaseManager.getTestCasePresentationBySessionId(parameters.getTcInstanceId(), parameters.getConfigs());
             } else {
-                testCase = TestCaseManager.getTestCasePresentationByTestCaseId(parameters.getTcId());
+                testCase = TestCaseManager.getTestCasePresentationByTestCaseId(parameters.getTcId(), parameters.getConfigs());
             }
             //Construct Response
             GetTestCaseDefinitionResponse response = new GetTestCaseDefinitionResponse();

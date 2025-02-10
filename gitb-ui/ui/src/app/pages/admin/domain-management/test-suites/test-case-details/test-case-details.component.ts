@@ -152,7 +152,7 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit {
   }
 
   getTestCaseDefinition(testCaseToLookup: number): Observable<void> {
-    return this.testService.getTestCaseDefinition(testCaseToLookup).pipe(
+    return this.testService.getTestCaseDefinitionByDomain(testCaseToLookup, this.domainId).pipe(
       mergeMap((testCase) => {
         return this.testService.prepareTestCaseDisplayActors(testCase, this.specificationId).pipe(
           map((actorData) => {

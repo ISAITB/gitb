@@ -8,6 +8,7 @@ import config.Configurations
 import controllers.util._
 import exceptions.ErrorCodes
 import managers._
+import models.SessionConfigurationData
 import org.apache.commons.io.FileUtils
 import play.api.mvc._
 import utils._
@@ -18,19 +19,37 @@ import javax.inject.{Inject, Singleton}
 @Singleton
 class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, actorManager: ActorManager, authorizationManager: AuthorizationManager, testbedClient: managers.TestbedBackendClient, actorSystem: ActorSystem, testResultManager: TestResultManager, testExecutionManager: TestExecutionManager, triggerHelper: TriggerHelper) extends AbstractController(cc) {
 
-  def getTestCasePresentation(testId:String, sessionId: Option[String]): GetTestCaseDefinitionResponse = {
-    testbedClient.getTestCaseDefinition(testId, sessionId)
+  private def getTestCasePresentationByDomain(testId:String, domainId: Long): GetTestCaseDefinitionResponse = {
+    testbedClient.getTestCaseDefinition(testId, None, getSessionConfigurationData(domainId))
+  }
+
+  def getTestCasePresentationByStatement(testId:String, sessionId: Option[String], actorId: Long, systemId: Long): GetTestCaseDefinitionResponse = {
+    testbedClient.getTestCaseDefinition(testId, sessionId, getSessionConfigurationData(systemId, actorId, onlySimple = true))
   }
 
   /**
    * Gets the test case definition for a specific test
    */
-  def getTestCaseDefinition(test_id:String): Action[AnyContent] = authorizedAction { request =>
+  def getTestCaseDefinitionByStatement(test_id:String): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canViewTestCase(request, test_id)
-    val response = getTestCasePresentation(test_id, None)
+    val actorId = ParameterExtractor.requiredQueryParameter(request, Parameters.ACTOR).toLong
+    val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM).toLong
+    val response = getTestCasePresentationByStatement(test_id, None, actorId, systemId)
     val json = JacksonUtil.serializeTestCasePresentation(response.getTestcase)
     ResponseConstructor.constructJsonResponse(json)
   }
+
+  /**
+   * Gets the test case definition for a specific test
+   */
+  def getTestCaseDefinitionByDomain(test_id:String): Action[AnyContent] = authorizedAction { request =>
+    authorizationManager.canViewTestCase(request, test_id)
+    val domainId = ParameterExtractor.requiredQueryParameter(request, Parameters.DOMAIN).toLong
+    val response = getTestCasePresentationByDomain(test_id, domainId)
+    val json = JacksonUtil.serializeTestCasePresentation(response.getTestcase)
+    ResponseConstructor.constructJsonResponse(json)
+  }
+
   /**
    * Gets the definition for a actor test
    */
@@ -50,6 +69,24 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
     ResponseConstructor.constructStringResponse(testbedClient.initiate(test_id.toLong, None))
   }
 
+  private def getSessionConfigurationData(domainId: Long): SessionConfigurationData = {
+    SessionConfigurationData(
+      None,
+      testExecutionManager.loadDomainParametersByDomainId(domainId, onlySimple = true),
+      None,
+      None
+    )
+  }
+
+  private def getSessionConfigurationData(systemId: Long, actorId: Long, onlySimple: Boolean): SessionConfigurationData = {
+    SessionConfigurationData(
+      Some(testExecutionManager.loadConformanceStatementParameters(systemId, actorId, onlySimple)),
+      testExecutionManager.loadDomainParametersByActorId(actorId, onlySimple),
+      Some(testExecutionManager.loadOrganisationParameters(systemId, onlySimple)._2),
+      Some(testExecutionManager.loadSystemParameters(systemId, onlySimple)),
+    )
+  }
+
   /**
    * Sends the required data on preliminary steps
    */
@@ -57,15 +94,7 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
     authorizationManager.canExecuteTestSession(request, sessionId)
     val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
     val actorId = ParameterExtractor.requiredQueryParameter(request, Parameters.ACTOR_ID).toLong
-    val organisationData = testExecutionManager.loadOrganisationParameters(systemId)
-    testbedClient.configure(
-      sessionId,
-      testExecutionManager.loadConformanceStatementParameters(systemId, actorId),
-      testExecutionManager.loadDomainParameters(actorId),
-      organisationData._2,
-      testExecutionManager.loadSystemParameters(systemId),
-      None
-    )
+    testbedClient.configure(sessionId, getSessionConfigurationData(systemId, actorId, onlySimple = false), None)
     ResponseConstructor.constructEmptyResponse
   }
 

@@ -4,6 +4,7 @@ import actors.events.TestSessionStartedEvent
 import actors.events.sessions._
 import com.gitb.tpl.TestCase
 import managers.{ReportManager, TestbedBackendClient, TriggerHelper}
+import models.{SessionConfigurationData, TypedActorConfiguration}
 import org.apache.pekko.actor.{Actor, PoisonPill}
 import org.slf4j.LoggerFactory
 
@@ -97,7 +98,7 @@ class SessionLaunchActor @Inject() (reportManager: ReportManager, testbedBackend
     var testCaseDefinition = state.testCaseDefinition(testCaseId)
     var stateToReturn = state
     if (testCaseDefinition.isEmpty) {
-      testCaseDefinition = Some(testbedBackendClient.getTestCaseDefinition(testCaseId.toString, None).getTestcase)
+      testCaseDefinition = Some(testbedBackendClient.getTestCaseDefinition(testCaseId.toString, None, getSessionConfigurationData(stateToReturn, onlySimple = true)).getTestcase)
       stateToReturn = replace(state.newForLoadedTestCaseDefinition(testCaseId, testCaseDefinition.get))
     }
     (testCaseDefinition.get, stateToReturn)
@@ -106,6 +107,30 @@ class SessionLaunchActor @Inject() (reportManager: ReportManager, testbedBackend
   private def replace(newState: SessionLaunchState): SessionLaunchState = {
     context.become(active(newState), discardOld = true)
     newState
+  }
+
+  private def getSessionConfigurationData(state: SessionLaunchState, onlySimple: Boolean): SessionConfigurationData = {
+    if (onlySimple) {
+      // Include only the configuration values that are simple texts
+      SessionConfigurationData(
+        Some(state.data.get.statementParameters.map { x =>
+          TypedActorConfiguration(x.actor, x.endpoint, x.config.filter(_.kind == "SIMPLE"))
+        }),
+        state.data.get.domainParameters.map { x =>
+          TypedActorConfiguration(x.actor, x.endpoint, x.config.filter(_.kind == "SIMPLE"))
+        },
+        Some(TypedActorConfiguration(state.data.get.organisationParameters.actor, state.data.get.organisationParameters.endpoint, state.data.get.organisationParameters.config.filter(_.kind == "SIMPLE"))),
+        Some(TypedActorConfiguration(state.data.get.systemParameters.actor, state.data.get.systemParameters.endpoint, state.data.get.systemParameters.config.filter(_.kind == "SIMPLE")))
+      )
+    } else {
+      // Include all configuration values
+      SessionConfigurationData(
+        Some(state.data.get.statementParameters),
+        state.data.get.domainParameters,
+        Some(state.data.get.organisationParameters),
+        Some(state.data.get.systemParameters)
+      )
+    }
   }
 
   private def processNextTestSession(initialState: SessionLaunchState): Unit = {
@@ -125,7 +150,7 @@ class SessionLaunchActor @Inject() (reportManager: ReportManager, testbedBackend
             if (LOGGER.isDebugEnabled()) LOGGER.debug("Configuring test session [{}] for test case [{}]. {}", testSessionId.get, testCaseDefinitionLoad._1.getId, latestState.statusText())
             webSocketActor.registerActiveTestSession(testSessionId.get)
             // Send the configure request. The response will be returned asynchronously.
-            testbedBackendClient.configure(testSessionId.get, latestState.data.get.statementParameters, latestState.data.get.domainParameters, latestState.data.get.organisationParameters, latestState.data.get.systemParameters, latestState.testCaseInputs(testCaseId))
+            testbedBackendClient.configure(testSessionId.get, getSessionConfigurationData(latestState, onlySimple = false), latestState.testCaseInputs(testCaseId))
           } catch {
             case e: Exception =>
               if (testSessionId.isEmpty) {

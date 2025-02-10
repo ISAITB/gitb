@@ -70,14 +70,28 @@ export class TestService {
     return this.restService.post<void>({
         path: ROUTES.controllers.TestService.startHeadlessTestSessions().url,
         authenticate: true,
-        data: data            
+        data: data
     })
   }
 
-  getTestCaseDefinition(testCase: number) {
+  getTestCaseDefinitionByDomain(testCase: number, domainId: number) {
     return this.restService.get<TestCaseDefinition>({
-        path: ROUTES.controllers.TestService.getTestCaseDefinition(testCase).url,
-        authenticate: true
+      path: ROUTES.controllers.TestService.getTestCaseDefinitionByDomain(testCase).url,
+      authenticate: true,
+      params: {
+        domain: domainId
+      }
+    })
+  }
+
+  getTestCaseDefinitionByStatement(testCase: number, actorId: number, systemId: number) {
+    return this.restService.get<TestCaseDefinition>({
+      path: ROUTES.controllers.TestService.getTestCaseDefinitionByStatement(testCase).url,
+      authenticate: true,
+      params: {
+        actor: actorId,
+        system: systemId
+      }
     })
   }
 

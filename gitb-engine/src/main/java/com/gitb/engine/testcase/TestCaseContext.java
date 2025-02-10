@@ -5,6 +5,7 @@ import com.gitb.core.LogLevel;
 import com.gitb.engine.ModuleManager;
 import com.gitb.engine.SessionManager;
 import com.gitb.engine.TestEngineConfiguration;
+import com.gitb.engine.expr.StaticExpressionHandler;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.messaging.MessagingContext;
 import com.gitb.engine.messaging.handlers.layer.AbstractMessagingHandler;
@@ -110,6 +111,8 @@ public class TestCaseContext {
      * Current state of the test case execution
      */
     private TestCaseStateEnum currentState;
+
+	private StaticExpressionHandler staticExpressionHandler;
 
 	/**
 	 * Test session state enumeration
@@ -389,7 +392,7 @@ public class TestCaseContext {
 	}
 
 	private List<SUTConfiguration> configureSimulatedActorsForSUTs(List<ActorConfiguration> configurations) {
-		List<TransactionInfo> testCaseTransactions = createTransactionInfo(testCase.getSteps(), null, new VariableResolver(scope), new LinkedList<>());
+		List<TransactionInfo> testCaseTransactions = createTransactionInfo(testCase.getSteps(), null, new VariableResolver(scope, true), new LinkedList<>());
 		Map<String, MessagingContextBuilder> messagingContextBuilders = new HashMap<>();
 
         // collect all transactions needed to configure the messaging handlers
@@ -461,12 +464,19 @@ public class TestCaseContext {
 		return new ArrayList<>(groups.values());
 	}
 
+	private StaticExpressionHandler getStaticExpressionHandler(VariableResolver resolver) {
+		if (staticExpressionHandler == null) {
+			staticExpressionHandler = new StaticExpressionHandler(scope, resolver);
+		}
+		return staticExpressionHandler;
+	}
+
 	private TransactionInfo buildTransactionInfo(String from, String to, String handler, List<Configuration> properties, VariableResolver resolver, LinkedList<Pair<CallStep, Scriptlet>> scriptletCallStack) {
 		return new TransactionInfo(
-				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractActorId(from), String.class, scriptletCallStack),
-				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractEndpointName(from), String.class, scriptletCallStack),
-				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractActorId(to), String.class, scriptletCallStack),
-				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractEndpointName(to), String.class, scriptletCallStack),
+				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractActorId(from), String.class, scriptletCallStack, getStaticExpressionHandler(resolver)),
+				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractEndpointName(from), String.class, scriptletCallStack, getStaticExpressionHandler(resolver)),
+				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractActorId(to), String.class, scriptletCallStack, getStaticExpressionHandler(resolver)),
+				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractEndpointName(to), String.class, scriptletCallStack, getStaticExpressionHandler(resolver)),
 				VariableResolver.isVariableReference(handler)?resolver.resolveVariableAsString(handler).toString():handler,
 				TestCaseUtils.getStepProperties(properties, resolver)
 		);
@@ -482,12 +492,10 @@ public class TestCaseContext {
         for(Object step : sequence.getSteps()) {
             if(step instanceof Sequence) {
                 transactions.addAll(createTransactionInfo((Sequence) step, testSuiteContext, resolver, scriptletCallStack));
-            } else if(step instanceof BeginTransaction) {
-				var beginTransactionStep = (BeginTransaction) step;
-				transactions.add(buildTransactionInfo(beginTransactionStep.getFrom(), beginTransactionStep.getTo(), beginTransactionStep.getHandler(), beginTransactionStep.getProperty(), resolver, scriptletCallStack));
-			} else if (step instanceof MessagingStep) {
-				var messagingStep = (MessagingStep) step;
-				if (StringUtils.isBlank(messagingStep.getTxnId()) && StringUtils.isNotBlank(messagingStep.getHandler())) {
+            } else if(step instanceof BeginTransaction beginTransactionStep) {
+                transactions.add(buildTransactionInfo(beginTransactionStep.getFrom(), beginTransactionStep.getTo(), beginTransactionStep.getHandler(), beginTransactionStep.getProperty(), resolver, scriptletCallStack));
+			} else if (step instanceof MessagingStep messagingStep) {
+                if (StringUtils.isBlank(messagingStep.getTxnId()) && StringUtils.isNotBlank(messagingStep.getHandler())) {
 					transactions.add(buildTransactionInfo(messagingStep.getFrom(), messagingStep.getTo(), messagingStep.getHandler(), messagingStep.getProperty(), resolver, scriptletCallStack));
 				}
             } else if (step instanceof IfStep) {

@@ -313,7 +313,7 @@ public class TestCaseUtils {
         return description;
     }
 
-    public static <T> T fixedOrVariableValue(String originalValue, Class<T> variableClass, LinkedList<Pair<CallStep, Scriptlet>> scriptletStepStack) {
+    public static <T> T fixedOrVariableValue(String originalValue, Class<T> variableClass, LinkedList<Pair<CallStep, Scriptlet>> scriptletStepStack, StaticExpressionHandler expressionHandler) {
         if (originalValue != null) {
             String dataType;
             Supplier<T> nonVariableValueFn;
@@ -331,7 +331,7 @@ public class TestCaseUtils {
                 return TestCaseUtils.getConstantCallInput(
                         VariableResolver.extractVariableNameFromExpression(originalValue).getLeft(),
                         variableClass,
-                        dataType, scriptletStepStack
+                        dataType, scriptletStepStack, expressionHandler
                 ).orElseGet(nonVariableValueFn);
             }
             return nonVariableValueFn.get();
@@ -340,23 +340,27 @@ public class TestCaseUtils {
         }
     }
 
-    private static <T> Optional<T> getConstantCallInput(String inputName, Class<T> constantClass, String constantDataType, LinkedList<Pair<CallStep, Scriptlet>> scriptletStepStack) {
+    private static <T> Optional<T> getConstantCallInput(String inputName, Class<T> constantClass, String constantDataType, LinkedList<Pair<CallStep, Scriptlet>> scriptletStepStack, StaticExpressionHandler expressionHandler) {
         var originalInputName = inputName;
         DataType dataToUse = null;
         var iterator = scriptletStepStack.descendingIterator();
+        String lastVariableExpression = null;
         while (iterator.hasNext()) {
             var callData = iterator.next();
             var inputToLookFor = inputName;
             var matchedInput = callData.getLeft().getInput().stream().filter(input -> inputToLookFor.equals(input.getName())).findFirst();
             if (matchedInput.isPresent()) {
                 // We found a matching input.
+                lastVariableExpression = null;
                 var inputValueExpression = matchedInput.get().getValue();
                 if (VariableResolver.isVariableReference(inputValueExpression)) {
                     // The input's value is itself a variable reference.
+                    lastVariableExpression = inputValueExpression;
                     inputName = VariableResolver.extractVariableNameFromExpression(inputValueExpression).getLeft();
                     continue;
+                } else {
+                    dataToUse = expressionHandler.processExpression(matchedInput.get(), constantDataType);
                 }
-                dataToUse = new StaticExpressionHandler().processExpression(matchedInput.get(), constantDataType);
             }
             break;
         }
@@ -370,6 +374,12 @@ public class TestCaseUtils {
                     dataToUse = DataTypeFactory.getInstance().create(matchedVariableValue.get());
                 }
             }
+        }
+        if (dataToUse == null && lastVariableExpression != null) {
+            // Still no value found. We stopped processing previously with a variable expression.
+            var variableValue = expressionHandler.getVariableResolver().resolveVariable(lastVariableExpression, true);
+            // If not resolved return the expression itself.
+            dataToUse = variableValue.orElse(new StringType(lastVariableExpression));
         }
         if (dataToUse != null) {
             var valueToUse = dataToUse.convertTo(constantDataType).getValue();

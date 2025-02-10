@@ -58,28 +58,12 @@ public class TestbedService {
 		if (sessionManager.notExists(sessionId)) {
 			throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_SESSION, "Could not find session [" + sessionId + "]..."));
 		}
-		List<ActorConfiguration> actorConfigurations = new ArrayList<>();
-		ActorConfiguration domainConfiguration = null;
-		ActorConfiguration organisationConfiguration = null;
-		ActorConfiguration systemConfiguration = null;
-		if (allConfigurations != null) {
-			for (ActorConfiguration configuration: allConfigurations) {
-				if ("com.gitb.DOMAIN".equals(configuration.getActor())) {
-					domainConfiguration = configuration;
-				} else if ("com.gitb.ORGANISATION".equals(configuration.getActor())) {
-					organisationConfiguration = configuration;
-				} else if ("com.gitb.SYSTEM".equals(configuration.getActor())) {
-					systemConfiguration = configuration;
-				} else {
-					actorConfigurations.add(configuration);
-				}
-			}
-		}
+		var configData = new SessionConfigurationData(allConfigurations);
 		TestEngine
 				.getInstance()
 				.getEngineActorSystem()
 				.getSessionSupervisor()
-				.tell(new ConfigureCommand(sessionId, actorConfigurations, domainConfiguration, organisationConfiguration, systemConfiguration, inputs), ActorRef.noSender());
+				.tell(new ConfigureCommand(sessionId, configData.getActorConfigurations(), configData.getDomainConfiguration(), configData.getOrganisationConfiguration(), configData.getSystemConfiguration(), inputs), ActorRef.noSender());
 	}
 
 	private static List<String> extractFailureDetails(Throwable error) {
