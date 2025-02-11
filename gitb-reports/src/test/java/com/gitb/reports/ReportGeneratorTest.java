@@ -141,7 +141,7 @@ public class ReportGeneratorTest {
         data.setReportResult(result);
         data.setStartTime("06/04/2023 10:21:43");
         data.setEndTime("06/04/2023 10:21:44");
-        data.setOutputMessage("This is the output message for your test session. Check the different report steps for details.");
+        data.setOutputMessages(List.of("This is the output message for your test session. Check the different report steps for details.", "This is an extra message."));
         data.setOptional(optional);
         data.setDisabled(disabled);
         // Test steps

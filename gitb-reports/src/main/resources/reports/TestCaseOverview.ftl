@@ -134,10 +134,12 @@
                             </table>
                         </div>
                     </div>
-                    <#if outputMessage??>
-                        <div class="row output-message ${reportResult}">
-                            ${escape(outputMessage)}
-                        </div>
+                    <#if outputMessages??>
+                        <div class="row output-message ${reportResult}"><#t>
+                            <#list outputMessages as message><#t>
+                                <div>${escape(message)}</div><#t>
+                            </#list><#t>
+                        </div><#t>
                     </#if>
                 </div>
             </div>

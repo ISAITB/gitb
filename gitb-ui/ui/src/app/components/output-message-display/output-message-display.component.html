@@ -1,0 +1,7 @@
+<div class="test-output-container">
+    <div class="alert alert-info mb-0" [class.alert-info]="messageType == 'info'" [class.alert-success]="messageType == 'success'" [class.alert-danger]="messageType == 'danger'">
+        @for (line of lines; track $index) {
+            <div [class.mt-1]="!$first" [class.mb-1]="!$last">{{line}}</div>
+        }
+    </div>
+</div>

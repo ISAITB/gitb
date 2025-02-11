@@ -1,15 +1,13 @@
 @if (session.diagramState) {
     <div class="test-session-presentation-div">
-        <app-sequence-diagram 
+        <app-sequence-diagram
             [stepsOfTests]="session.diagramState.stepsOfTests"
             [test]="session.session"
             [actorInfoOfTests]="session.diagramState.actorInfoOfTests"
             [events]="session.diagramState.events">
         </app-sequence-diagram>
         @if (session.diagramState.outputMessage) {
-            <div class="test-output-container">
-                <alert [type]="session.diagramState.outputMessageType!" [dismissible]="false">{{session.diagramState.outputMessage}}</alert>
-            </div>
+            <app-output-message-display [message]="session.diagramState.outputMessage" [messageType]="session.diagramState.outputMessageType!"></app-output-message-display>
         }
     </div>
 }

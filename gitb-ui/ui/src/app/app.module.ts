@@ -200,6 +200,7 @@ import { InvalidFormControlDirective } from './directives/invalid-form-control.d
 import { PendingDivComponent } from './components/pending-div/pending-div.component';
 import { TriggerFireExpressionControlComponent } from './pages/admin/user-management/trigger/trigger-fire-expression-control/trigger-fire-expression-control.component';
 import { TriggerFireExpressionModalComponent } from './pages/admin/user-management/trigger/trigger-fire-expression-modal/trigger-fire-expression-modal.component';
+import { OutputMessageDisplayComponent } from './components/output-message-display/output-message-display.component';
 
 @NgModule({ declarations: [
         AppComponent,
@@ -383,7 +384,8 @@ import { TriggerFireExpressionModalComponent } from './pages/admin/user-manageme
         CustomPropertyPanelComponent,
         PendingDivComponent,
         TriggerFireExpressionControlComponent,
-        TriggerFireExpressionModalComponent
+        TriggerFireExpressionModalComponent,
+        OutputMessageDisplayComponent
     ],
     bootstrap: [AppComponent], imports: [ColorPickerModule,
         BrowserModule,

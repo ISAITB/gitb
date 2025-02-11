@@ -470,7 +470,9 @@ public class ReportGenerator {
             parameters.put("testSpecification", testCaseOverview.getTestSpecification());
             parameters.put("testActor", testCaseOverview.getTestActor());
             parameters.put("reportResult", testCaseOverview.getReportResult());
-            parameters.put("outputMessage", testCaseOverview.getOutputMessage());
+            if (testCaseOverview.getOutputMessages() != null && !testCaseOverview.getOutputMessages().isEmpty()) {
+                parameters.put("outputMessages", testCaseOverview.getOutputMessages());
+            }
             parameters.put("startTime", testCaseOverview.getStartTime());
             parameters.put("endTime", testCaseOverview.getEndTime());
             parameters.put("testName", testCaseOverview.getTestName());

@@ -270,7 +270,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     overview.setLabelSystem(communityLabelManager.getLabel(labels, models.Enums.LabelType.System))
     // Result
     overview.setReportResult(source.getResult.value())
-    overview.setOutputMessage(source.getMessage)
+    overview.setOutputMessages(source.getMessage)
     // Start time
     overview.setStartTime(sdf.format(source.getStartTime.toGregorianCalendar.getTime))
     // End time
@@ -301,7 +301,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
   private def createDemoTestCaseOverviewReport(): TestCaseOverviewReportType = {
     val report = new TestCaseOverviewReportType
     report.setResult(TestResultType.FAILURE)
-    report.setMessage("Test session resulted in a failure.")
+    report.getMessage.add("Test session resulted in a failure.")
     report.setStartTime(XMLDateTimeUtils.getXMLGregorianCalendarDateTime)
     report.setEndTime(report.getStartTime)
     // Test case metadata
@@ -2109,7 +2109,11 @@ class ReportManager @Inject() (communityManager: CommunityManager,
         testCaseReport.setId(testCaseOverview.getRef)
         testCaseReport.setMetadata(testCaseOverview.getMetadata)
         testCaseReport.setResult(testCaseOverview.getResult)
-        testCaseReport.setMessage(info.outputMessage.orNull)
+        info.outputMessage.foreach { msgs =>
+          msgs.split('\n').foreach { msg =>
+            testCaseReport.getMessage.add(msg)
+          }
+        }
         // Times and steps
         if (isDemo) {
           testCaseReport.setStartTime(XMLDateTimeUtils.getXMLGregorianCalendarDateTime())
@@ -2463,7 +2467,12 @@ class ReportManager @Inject() (communityManager: CommunityManager,
         testCaseOverview.setSpecDescription(info.testCaseSpecDescription.orNull)
         testCaseOverview.setSpecLink(info.testCaseSpecLink.orNull)
         testCaseOverview.setReportResult(info.result)
-        testCaseOverview.setOutputMessage(info.outputMessage.orNull)
+        info.outputMessage.foreach { msgs =>
+          testCaseOverview.setOutputMessages(new util.ArrayList())
+          msgs.split('\n').foreach { msg =>
+            testCaseOverview.getOutputMessages.add(msg)
+          }
+        }
         testCaseOverview.setOptional(info.testCaseOptional.get)
         testCaseOverview.setDisabled(info.testCaseDisabled.get)
         if (info.testCaseTags.isDefined) {

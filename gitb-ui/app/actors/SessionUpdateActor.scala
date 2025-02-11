@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory
 import utils._
 
 import java.nio.file.Files
+import java.util.Objects
 import javax.inject.Inject
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
@@ -58,8 +59,19 @@ class SessionUpdateActor @Inject() (repositoryUtils: RepositoryUtils,
         try {
           var outputMessage: String = null
           testStepStatus.getReport match {
-            case tar: TAR if tar.getContext != null && tar.getContext.getValue != null && !tar.getContext.getValue.isBlank =>
-              outputMessage = tar.getContext.getValue.trim
+            case tar: TAR if tar.getContext != null =>
+              val outputMessages = new StringBuilder()
+              if (!tar.getContext.getItem.isEmpty) {
+                tar.getContext.getItem.stream()
+                  .filter(x => Objects.nonNull(x))
+                  .map(x => x.getValue)
+                  .filter(x => StringUtils.isNotBlank(x))
+                  .map(x => x.trim)
+                  .forEach(x => outputMessages.append('\n').append(x))
+                outputMessage = outputMessages.toString().trim
+              } else if (StringUtils.isNotBlank(tar.getContext.getValue)) {
+                outputMessage = tar.getContext.getValue.trim
+              }
             case _ => // Do nothing
           }
           testExecutionManager.finishTestReport(session, testStepStatus.getReport.getResult, Option(outputMessage))

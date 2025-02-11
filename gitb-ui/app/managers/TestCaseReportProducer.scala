@@ -18,6 +18,7 @@ import utils.RepositoryUtils
 import java.io.{File, StringReader}
 import java.nio.file.{Files, Path, Paths}
 import java.text.SimpleDateFormat
+import java.util
 import java.util.{Date, UUID}
 import javax.inject.{Inject, Singleton}
 import javax.xml.transform.stream.StreamSource
@@ -73,7 +74,11 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper, testResultMa
     val overview = new TestCaseOverviewReportType()
     val testResult = exec(PersistenceSchema.testResults.filter(_.testSessionId === sessionId).result.head)
     overview.setResult(TestResultType.fromValue(testResult.result))
-    overview.setMessage(testResult.outputMessage.orNull)
+    testResult.outputMessage.foreach { msgs =>
+      msgs.split('\n').foreach { msg =>
+        overview.getMessage.add(msg)
+      }
+    }
     overview.setStartTime(XMLDateTimeUtils.getXMLGregorianCalendarDateTime(testResult.startTime))
     if (testResult.endTime.isDefined) {
       overview.setEndTime(XMLDateTimeUtils.getXMLGregorianCalendarDateTime(testResult.endTime.get))
@@ -117,7 +122,12 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper, testResultMa
     // Result
     val testResult = exec(PersistenceSchema.testResults.filter(_.testSessionId === sessionId).result.head)
     overview.setReportResult(testResult.result)
-    overview.setOutputMessage(testResult.outputMessage.orNull)
+    testResult.outputMessage.foreach { msgs =>
+      overview.setOutputMessages(new util.ArrayList())
+      msgs.split('\n').foreach { msg =>
+        overview.getOutputMessages.add(msg)
+      }
+    }
     // Start time
     val start = testResult.startTime
     overview.setStartTime(sdf.format(new Date(start.getTime)))

@@ -47,7 +47,7 @@
                     </thead>
                     <tbody>
                         @for (testCase of testsToExecute; track testCase.id) {
-                            <tr (click)="viewTestCase(testCase)" 
+                            <tr (click)="viewTestCase(testCase)"
                                 [class.expandable-table-row-collapsed]="isTestCaseClickable(testCase)"
                                 [class.no-display]="!testCaseVisible[testCase.id]">
                                 <td class="td-min-centered">
@@ -109,7 +109,7 @@
                                                                                         <a class="dropdown-item" href (click)="displayPendingInteraction(interaction.stepId);$event.preventDefault();">{{labelForPendingInteraction(interaction, index)}}</a>
                                                                                     </li>
                                                                                 }
-                                                                            </ul>                                                                        
+                                                                            </ul>
                                                                         </div>
                                                                     }
                                                                 }
@@ -122,17 +122,17 @@
                                                                     <ul id="dropdown-export" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-export">
                                                                         <li role="menuitem"><a class="dropdown-item" href (click)="exportXml(testCase);$event.preventDefault();">Download report as XML</a></li>
                                                                     </ul>
-                                                                </div>                                                                                
+                                                                </div>
                                                                 <div class="viewLogButton">
                                                                     <button type="button" class="btn btn-secondary position-relative" (click)="viewLog(testCase)">
                                                                         View log
-                                                                        <span 
-                                                                            [class.badgeLogErrors]="unreadLogErrors[testCase.id]" 
-                                                                            [class.badgeLogWarnings]="unreadLogWarnings[testCase.id] && !unreadLogErrors[testCase.id]"                                                                             
+                                                                        <span
+                                                                            [class.badgeLogErrors]="unreadLogErrors[testCase.id]"
+                                                                            [class.badgeLogWarnings]="unreadLogWarnings[testCase.id] && !unreadLogErrors[testCase.id]"
                                                                             [class.badgeLogMessages]="unreadLogMessages[testCase.id] && !unreadLogWarnings[testCase.id] && !unreadLogErrors[testCase.id]"
-                                                                            [class.hidden]="!unreadLogErrors[testCase.id] && !unreadLogWarnings[testCase.id] && !unreadLogMessages[testCase.id]" 
+                                                                            [class.hidden]="!unreadLogErrors[testCase.id] && !unreadLogWarnings[testCase.id] && !unreadLogMessages[testCase.id]"
                                                                             class="buttonBadge position-absolute top-0 start-100 translate-middle border border-light rounded-circle">
-                                                                        </span>                                                                        
+                                                                        </span>
                                                                     </button>
                                                                 </div>
                                                             </div>
@@ -144,16 +144,14 @@
                                                         <app-pending-block></app-pending-block>
                                                     } @else {
                                                         <div class="sessionDiagramDiv">
-                                                            <app-sequence-diagram 
+                                                            <app-sequence-diagram
                                                                 [stepsOfTests]="stepsOfTests"
                                                                 [test]="testCase.id+''"
                                                                 [actorInfoOfTests]="actorInfoOfTests"
                                                                 [events]="testEvents[testCase.id]">
                                                             </app-sequence-diagram>
                                                             @if (testCaseOutput[testCase.id]) {
-                                                                <div class="test-output-container">
-                                                                    <alert [type]="alertTypeForStatus(testCaseStatus[testCase.id])" [dismissible]="false">{{testCaseOutput[testCase.id]}}</alert>
-                                                                </div>
+                                                                <app-output-message-display [message]="testCaseOutput[testCase.id]" [messageType]="alertTypeForStatus(testCaseStatus[testCase.id])"></app-output-message-display>
                                                             }
                                                         </div>
                                                     }
