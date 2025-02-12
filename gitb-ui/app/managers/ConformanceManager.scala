@@ -324,7 +324,7 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 					.filter(_.actorId === actorId)
 					.filter(_.systemId === sutId)
 					.filter(_.snapshotId === snapshotId.get)
-					.map(x => (x.actorId, x.domainId)).result.head
+					.map(x => (x.specificationId, x.domainId)).result.head
 			} else {
 				PersistenceSchema.specificationHasActors
 					.join(PersistenceSchema.specifications).on(_.specId === _.id)
