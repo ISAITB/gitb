@@ -14,7 +14,7 @@ spec:
     spec:
       automountServiceAccountToken: false
       containers:
-        - image: "isaitb/gitb-ui:1.25.0"
+        - image: "isaitb/gitb-ui:1.25.1"
           imagePullPolicy: "IfNotPresent"
           name: itb-ui
           env:

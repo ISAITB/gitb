@@ -20,7 +20,7 @@ val pekkoVersion = "1.0.3"
 val jacksonVersion = "2.16.2"
 val cxfVersion = "4.1.0"
 val commonsTextVersion = "1.12.0"
-val gitbTypesVersion = "1.25.0"
+val gitbTypesVersion = "1.25.1"
 val bouncyCastleVersion = "1.78.1"
 
 useCoursier := false
@@ -35,11 +35,11 @@ libraryDependencies ++= Seq(
   cacheApi,
   ws,
   "eu.europa.ec.itb" % "gitb-types-jakarta" % gitbTypesVersion,
-  "com.gitb" % "gitb-core" % "1.0-SNAPSHOT",
-  "com.gitb" % "gitb-lib" % "1.0-SNAPSHOT",
-  "com.gitb" % "gitb-reports" % "1.0-SNAPSHOT",
-  "com.gitb" % "gitb-validator-tdl" % "1.0-SNAPSHOT",
-  "com.gitb" % "gitb-xml-resources" % "1.0-SNAPSHOT",
+  "com.gitb" % "gitb-core" % "1.0-SNAPSHOT" exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
+  "com.gitb" % "gitb-lib" % "1.0-SNAPSHOT" exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
+  "com.gitb" % "gitb-reports" % "1.0-SNAPSHOT" exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
+  "com.gitb" % "gitb-validator-tdl" % "1.0-SNAPSHOT" exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
+  "com.gitb" % "gitb-xml-resources" % "1.0-SNAPSHOT" exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
   "com.mysql" % "mysql-connector-j" % "8.4.0" exclude("com.google.protobuf", "protobuf-java"), // Exclude protobuf as we don't need the X DevAPI.
   "org.apache.pekko" %% "pekko-actor" % pekkoVersion,
   "org.apache.pekko" %% "pekko-actor-typed" % pekkoVersion,

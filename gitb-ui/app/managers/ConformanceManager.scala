@@ -949,9 +949,8 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 					// Record the specification group
 					domainEntry._2 += (statement.specificationGroupId.get -> (
 						ConformanceStatementItem(statement.specificationGroupId.get, statement.specificationGroupName.get, statement.specificationGroupDescription, statement.specificationGroupReportMetadata, ConformanceStatementItemType.SPECIFICATION_GROUP, None, statement.specificationGroupDisplayOrder.getOrElse(0)),
-						new mutable.HashMap()
+						new mutable.HashMap())
 					)
-						)
 				}
 				val specificationGroupEntry = domainEntry._2(statement.specificationGroupId.get)
 				if (!specificationGroupEntry._2.contains(statement.specificationId)) {
