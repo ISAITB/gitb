@@ -7,7 +7,7 @@ html {
 
 body {
 	margin: 0;
-	font-family: "Open Sans", sans-serif;
+	font-family: @font-family;
 }
 
 input, textarea {
@@ -986,3 +986,78 @@ span.mini-tab{
 		}
 	}
 }
+
+// TinyMCE override styles - START
+.itb-body {
+    .tox input.tox-checkbox__input:focus+.tox-checkbox__icons {
+        box-shadow: none !important;
+    }
+    .tox .tox-checkbox__icons .tox-checkbox-icon__checked svg {
+        fill: var(--itb-btn-primary-color) !important;
+    }
+    .tox {
+        font-family: @font-family !important;
+        .tox-collection__item-label, .tox-checkbox__label, .tox-textfield,.tox-listbox--select {
+            font-family: @font-family !important;
+            color: var(--bs-body-color) !important;
+        }
+        .tox-dialog__title {
+            color: var(--itb-modal-title-color) !important;
+        }
+        .tox-textarea {
+            font-family: monospace !important;
+            color: var(--bs-body-color) !important;
+        }
+        .tox-label {
+            margin-top: 4px;
+            margin-bottom: 4px;
+        }
+        .tox-textarea-wrap:focus-within {
+            background-color: var(--bs-body-bg) !important;
+            border-color: @bs-input-focus-highlight !important;
+            outline: 0 !important;
+            box-shadow: 0 0 0 0.25rem rgba(51, 122, 183, 0.25) !important;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        .tox-textfield,.tox-listbox--select,.tox-textarea {
+            font-size: @bs-control-font-size !important;
+            &:focus {
+                background-color: var(--bs-body-bg) !important;
+                border-color: @bs-input-focus-highlight !important;
+                outline: 0 !important;
+                box-shadow: 0 0 0 0.25rem rgba(51, 122, 183, 0.25) !important;
+                transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+            }
+        }
+        .tox-button {
+            font-size: @bs-btn-font-size !important;
+            font-weight: @bs-btn-font-weight !important;
+            font-family: @font-family !important;
+            background-color: var(--itb-btn-primary-color) !important;
+            border-color: var(--itb-btn-primary-color) !important;
+            color: var(--itb-btn-primary-label-color) !important;
+            &:hover {
+                background-color: var(--itb-btn-primary-hover-color) !important;
+                border-color: var(--itb-btn-primary-hover-color) !important;
+            }
+            &:active {
+                background-color: var(--itb-btn-primary-active-color) !important;
+                border-color: var(--itb-btn-primary-active-color) !important;
+            }
+            &.tox-button--secondary {
+                background-color: var(--itb-btn-secondary-color) !important;
+                border-color: var(--itb-btn-secondary-color) !important;
+                color: var(--itb-btn-secondary-label-color) !important;
+                &:hover {
+                    background-color: var(--itb-btn-secondary-hover-color) !important;
+                    border-color: var(--itb-btn-secondary-hover-color) !important;
+                }
+                &:active {
+                    background-color: var(--itb-btn-secondary-active-color) !important;
+                    border-color: var(--itb-btn-secondary-active-color) !important;
+                }
+            }
+        }
+    }
+}
+// TinyMCE override styles - END

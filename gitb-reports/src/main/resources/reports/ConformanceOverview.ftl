@@ -20,7 +20,7 @@
                                 <div class="conformance-item-coverage">${coverageBlock(item.data.completedTests, item.data.failedTests, item.data.undefinedTests, 270)}</div><#t>
                                 <div class="conformance-item-status"><#t>
                                     <div class=icon><#t>
-                                        <img src="classpath:reports/images/icon-${item.data.overallStatus}.png"/><#t>
+                                        <img src="classpath:reports/images/icon-${item.data.overallStatus}.svg"/><#t>
                                     </div><#t>
                                 </div><#t>
                             </div><#t>
@@ -28,7 +28,7 @@
                     <#else>
                         <td class="conformance-item-status-td">
                             <div class="conformance-item-status icon">
-                                <img src="classpath:reports/images/icon-${item.overallStatus}.png"/>
+                                <img src="classpath:reports/images/icon-${item.overallStatus}.svg"/>
                             </div>
                         </td>
                     </#if>

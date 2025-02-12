@@ -86,7 +86,7 @@
                         <div class="report-item background-strong-${item.level}">
                             <div class="report-item-container background-${item.level} border-${item.level}">
                                 <div class="row">
-                                    <div class="icon"><img src="classpath:reports/images/${item.level}.png"/></div>
+                                    <div class="icon"><img src="classpath:reports/images/${item.level}.svg"/></div>
                                     <div class="description">${escape(item.description)}</div>
                                 </div>
                                 <#if item.location?? || item.test??>

@@ -788,6 +788,10 @@ class ReportManager @Inject() (communityManager: CommunityManager,
   private def getConformanceDataForOverviewReport(conformanceInfoBuilder: ConformanceStatusBuilder[ConformanceStatementFull], reportLevel: OverviewLevelType, communityId: Long, actorIdsToDisplay: Option[Set[Long]], snapshotId: Option[Long]): ConformanceData = {
     // The overview is a list of aggregated conformance statements.
     val conformanceOverview = conformanceInfoBuilder.getOverview(None)
+    val actorIdMap = new mutable.HashMap[Long, ConformanceStatementFull]
+    conformanceOverview.foreach { aggregatedStatement =>
+      actorIdMap += (aggregatedStatement.actorId -> aggregatedStatement)
+    }
     // The details is a list of the detailed conformance results (at test case level).
     val conformanceDetails = conformanceInfoBuilder.getDetails(None)
     val actorLastUpdateTime = new mutable.HashMap[Long, Timestamp]()
@@ -909,16 +913,10 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     // Construct the DTOs expected by the report template.
     val conformanceItems = toConformanceItems(conformanceItemTree, None, new ReportData(!displayDomainInStatementTree))
     // Set also the correct IDs.
-    val statementList = ConformanceItem.flattenStatements(conformanceItems)
-    if (statementList.size() == conformanceOverview.size) {
-      var index = 0
-      statementList.forEach { statementData =>
-        val statement = conformanceOverview(index)
-        statementData.setActorId(statement.actorId)
-        statementData.setSpecificationId(statement.specificationId)
-        statementData.setSystemId(statement.systemId)
-        index += 1
-      }
+    ConformanceItem.flattenStatements(conformanceItems).forEach { statementData =>
+      val idData = actorIdMap(statementData.getActorId)
+      statementData.setSpecificationId(idData.specificationId)
+      statementData.setSystemId(idData.systemId)
     }
     // Return results.
     ConformanceData(
@@ -1778,18 +1776,15 @@ class ReportManager @Inject() (communityManager: CommunityManager,
       reportData.domainName = Some(newItem.getName)
       reportData.domainDescription = Option(newItem.getDescription)
       reportData.domainReportMetadata = Option(newItem.getReportMetadata)
-    }
-    if (item.itemType == ConformanceStatementItemType.SPECIFICATION_GROUP) {
+    } else if (item.itemType == ConformanceStatementItemType.SPECIFICATION_GROUP) {
       reportData.groupName = Some(newItem.getName)
       reportData.groupDescription = Option(newItem.getDescription)
       reportData.groupReportMetadata = Option(newItem.getReportMetadata)
-    }
-    if (item.itemType == ConformanceStatementItemType.SPECIFICATION) {
+    } else if (item.itemType == ConformanceStatementItemType.SPECIFICATION) {
       reportData.specName = Some(newItem.getName)
       reportData.specDescription = Option(newItem.getDescription)
       reportData.specReportMetadata = Option(newItem.getReportMetadata)
-    }
-    if (item.itemType == ConformanceStatementItemType.ACTOR) {
+    } else if (item.itemType == ConformanceStatementItemType.ACTOR) {
       reportData.actorName = Some(newItem.getName)
       reportData.actorDescription = Option(newItem.getDescription)
       reportData.actorReportMetadata = Option(newItem.getReportMetadata)
@@ -1819,6 +1814,9 @@ class ReportManager @Inject() (communityManager: CommunityManager,
       newItem.setOverallStatus(countersToConsider.resultStatus())
       newItem.setData(new ConformanceStatementData())
       newItem.getData.setOverallStatus(newItem.getOverallStatus)
+      if (item.itemType == ConformanceStatementItemType.ACTOR) {
+        newItem.getData.setActorId(item.id)
+      }
       // Set counters
       newItem.getData.setCompletedTests(countersToConsider.successes.toInt)
       newItem.getData.setFailedTests(countersToConsider.failures.toInt)

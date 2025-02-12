@@ -62,7 +62,7 @@ export class EditorComponent implements OnInit, ControlValueAccessor {
     }
     if (this.type == 'normal') {
       config.plugins = 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table code'
-      config.toolbar = 'undo redo | insert | styles | bold italic | charmap | forecolor backcolor | fontsize | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image | table tabledelete | tableprops tablerowprops tablecellprops | tableinsertrowbefore tableinsertrowafter tabledeleterow | tableinsertcolbefore tableinsertcolafter tabledeletecol'
+      config.toolbar = 'undo redo | code | insert | styles | bold italic | charmap | forecolor backcolor | fontsize | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image | table tabledelete | tableprops tablerowprops tablecellprops | tableinsertrowbefore tableinsertrowafter tabledeleterow | tableinsertcolbefore tableinsertcolafter tabledeletecol'
       config.table_appearance_options = true
     } else if (this.type == 'minimal') {
       config.plugins = 'advlist autolink lists link charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table code'
@@ -70,7 +70,7 @@ export class EditorComponent implements OnInit, ControlValueAccessor {
     } else if (this.type == 'pdf') {
       // Same as normal
       config.plugins = 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table code'
-      config.toolbar = 'undo redo | insert | styles | bold italic | charmap | forecolor backcolor | fontsize | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image | table tabledelete | tableprops tablerowprops tablecellprops | tableinsertrowbefore tableinsertrowafter tabledeleterow | tableinsertcolbefore tableinsertcolafter tabledeletecol'
+      config.toolbar = 'undo redo | code | insert | styles | bold italic | charmap | forecolor backcolor | fontsize | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image | table tabledelete | tableprops tablerowprops tablecellprops | tableinsertrowbefore tableinsertrowafter tabledeleterow | tableinsertcolbefore tableinsertcolafter tabledeletecol'
       config.table_appearance_options = true
     } else if (this.type == 'line') {
       config.plugins =  'autolink link charmap anchor visualblocks code fullscreen code'
