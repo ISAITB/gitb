@@ -9,7 +9,7 @@
 <#macro printStepsOverview steps withLinks=false>
     <div class="step-pills"><#list steps as step><#assign index = step?counter><div class="step-pill">
         <div class="step-text value-inline"><#if withLinks><a class="page-link" href="#step-${index}">${escape(step.title?keep_before(":"))}</a><#else>${escape(step.title?keep_before(":"))}</#if><#if (step.title?keep_after(":"))?has_content>: </#if>${escape(step.title?keep_after(":"))}</div>
-        <div class="step-icon icon value-inline"><img src="classpath:reports/images/icon-${step.reportResult}.png"/></div>
+        <div class="step-icon icon value-inline"><img src="classpath:reports/images/icon-${step.reportResult}.svg"/></div>
     </div></#list></div>
 </#macro>
 <#macro specificationInfo reference="" description="" link=""><#if reference != ""><span class="spec-reference"><#if link != ""><a href="${link}"></#if>${escape(reference)}<#if link != ""></a></#if></span><#elseif link != ""><a href="${link}">Link</a></#if><#if description != ""><#if reference != "" || link != ""><span class="inline-text-separator">|</span></#if><span class="spec-description">${escape(description)}</#if></#macro>
@@ -121,7 +121,7 @@
                             </table>
                         </div>
                         <div class="test-suite-status icon value-inline">
-                            <img src="classpath:reports/images/icon-${testSuite.overallStatus}.png"/>
+                            <img src="classpath:reports/images/icon-${testSuite.overallStatus}.svg"/>
                         </div>
                     </div>
                     <div class="test-suite-content">
@@ -140,7 +140,7 @@
                                     <div class="test-case-first-line"><#t>
                                         <#if data.hasOptionalTests() || data.hasDisabledTests()>
                                             <div class="test-case-prescription-level icon"><#t>
-                                                <img src="classpath:reports/images/icon-<#if testCase.disabled>disabled<#elseif testCase.optional>optional<#else>required</#if>.png"/><#t>
+                                                <img src="classpath:reports/images/icon-<#if testCase.disabled>disabled<#elseif testCase.optional>optional<#else>required</#if>.svg"/><#t>
                                             </div><#t>
                                         </#if>
                                         <#if testCase.inGroup>
@@ -166,7 +166,7 @@
                                             </div><#t>
                                         </#if><#t>
                                         <div class="test-case-status icon"><#t>
-                                            <img src="classpath:reports/images/icon-${testCase.reportResult}.png"/><#t>
+                                            <img src="classpath:reports/images/icon-${testCase.reportResult}.svg"/><#t>
                                         </div><#t>
                                     </div><#t>
                                     <#if testCase.testDescription?? && testCase.testDescription != "">
@@ -197,22 +197,22 @@
             </#list>
             <#if data.hasOptionalTests() || data.hasDisabledTests() || data.hasTags()>
                 <div class="test-case-legend">
-                    <div class="legend-highlight"><img src="classpath:reports/images/icon-legend.png"/></div>
+                    <div class="legend-highlight"><img src="classpath:reports/images/icon-legend.svg"/></div>
                     <div class="legend-content">
                         <#if data.hasOptionalTests() || data.hasDisabledTests()>
                             <div class="legend-prescription-div">
                                 <table class="legend-prescription-table">
                                     <tr>
                                         <#if data.hasRequiredTests()>
-                                            <td class="legend-prescription-icon icon"><img src="classpath:reports/images/icon-required.png"/></td>
+                                            <td class="legend-prescription-icon icon"><img src="classpath:reports/images/icon-required.svg"/></td>
                                             <td class="legend-prescription-text">Required test case.</td>
                                         </#if>
                                         <#if data.hasOptionalTests()>
-                                            <td class="legend-prescription-icon icon"><img src="classpath:reports/images/icon-optional.png"/></td>
+                                            <td class="legend-prescription-icon icon"><img src="classpath:reports/images/icon-optional.svg"/></td>
                                             <td class="legend-prescription-text">Optional test case.</td>
                                         </#if>
                                         <#if data.hasDisabledTests()>
-                                            <td class="legend-prescription-icon icon"><img src="classpath:reports/images/icon-disabled.png"/></td>
+                                            <td class="legend-prescription-icon icon"><img src="classpath:reports/images/icon-disabled.svg"/></td>
                                             <td class="legend-prescription-text">Disabled test case.</td>
                                         </#if>
                                     </tr>
