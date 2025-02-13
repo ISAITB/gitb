@@ -38,8 +38,7 @@ RUN java -Dfile.encoding=UTF-8 -Xss2M -Dsbt.log.noformat=true -Dsbt.script=/usr/
 WORKDIR /app
 RUN mkdir -p /app/tmp \
     && apt-get update && apt-get install -y unzip \
-    && unzip /app/gitb-ui/target/universal/gitb-1.0-SNAPSHOT.zip -d /app/tmp/gitb-ui \
-    && mv /app/tmp/gitb-ui/gitb-1.0-SNAPSHOT /app/tmp/gitb-ui/gitb-ui
+    && unzip /app/gitb-ui/target/universal/gitb-ui.zip -d /app/tmp/gitb-ui
 
 # Stage 2: Run application
 FROM eclipse-temurin:21-jre-jammy
