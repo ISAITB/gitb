@@ -208,7 +208,11 @@
                     <executions>
                         <execution>
                             <phase>none</phase>
-                            <!-- Run manually with mvn versions:set -DnewVersion=1.26.0 -->
+                            <!--
+                                Run manually with `mvn versions:set -DnewVersion=1.26.0`
+                                For a new development cycle run `mvn versions:set -DnewVersion=1.27.0-SNAPSHOT`
+                                The version number should be aligned with the gitb-types-jakarta dependency.
+                            -->
                         </execution>
                     </executions>
                 </plugin>
