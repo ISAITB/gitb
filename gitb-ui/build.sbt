@@ -1,11 +1,5 @@
 import sbtlicensereport.license.{LicenseCategory, LicenseInfo}
 
-name := """GITB"""
-version := "1.0-SNAPSHOT"
-maintainer := "DIGIT-ITB@ec.europa.eu"
-
-lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
-
 scalaVersion := "2.13.14"
 val pekkoVersion = "1.1.3"
 val jacksonVersion = "2.18.2"
@@ -13,6 +7,12 @@ val cxfVersion = "4.1.0"
 val gitbTypesVersion = "1.26.0-SNAPSHOT"
 val bouncyCastleVersion = "1.80"
 val commonsTextVersion = "1.13.0"
+
+name := """GITB"""
+version := gitbTypesVersion
+maintainer := "DIGIT-ITB@ec.europa.eu"
+
+lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
 
 useCoursier := false
 
@@ -26,11 +26,11 @@ libraryDependencies ++= Seq(
   cacheApi,
   ws,
   "eu.europa.ec.itb" % "gitb-types-jakarta" % gitbTypesVersion,
-  "com.gitb" % "gitb-core" % "1.0-SNAPSHOT" exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
-  "com.gitb" % "gitb-lib" % "1.0-SNAPSHOT" exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
-  "com.gitb" % "gitb-reports" % "1.0-SNAPSHOT" exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
-  "com.gitb" % "gitb-validator-tdl" % "1.0-SNAPSHOT" exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
-  "com.gitb" % "gitb-xml-resources" % "1.0-SNAPSHOT" exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
+  "com.gitb" % "gitb-core" % gitbTypesVersion exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
+  "com.gitb" % "gitb-lib" % gitbTypesVersion exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
+  "com.gitb" % "gitb-reports" % gitbTypesVersion exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
+  "com.gitb" % "gitb-validator-tdl" % gitbTypesVersion exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
+  "com.gitb" % "gitb-xml-resources" % gitbTypesVersion exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
   "com.mysql" % "mysql-connector-j" % "9.2.0" exclude("com.google.protobuf", "protobuf-java"), // Exclude protobuf as we don't need the X DevAPI.
   "org.apache.pekko" %% "pekko-actor" % pekkoVersion,
   "org.apache.pekko" %% "pekko-actor-typed" % pekkoVersion,

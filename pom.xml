@@ -11,7 +11,7 @@
     </parent>
     <groupId>com.gitb</groupId>
     <artifactId>GITB</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.26.0-SNAPSHOT</version>
     <name>GITB</name>
     <packaging>pom</packaging>
 
@@ -29,6 +29,8 @@
         <version.plugin.maven-compiler-plugin>3.11.0</version.plugin.maven-compiler-plugin>
         <version.plugin.jaxb2-maven-plugin>3.1.0</version.plugin.jaxb2-maven-plugin>
         <version.plugin.license-maven-plugin>2.5.0</version.plugin.license-maven-plugin>
+        <version.plugin.antrun-plugin>3.1.0</version.plugin.antrun-plugin>
+        <version.plugin.versions-maven-plugin>2.18.0</version.plugin.versions-maven-plugin>
         <!-- Dependency versions -->
         <version.springBoot>3.4.2</version.springBoot>
         <version.gitbTypes>1.26.0-SNAPSHOT</version.gitbTypes>
@@ -187,7 +189,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-antrun-plugin</artifactId>
-                    <version>3.1.0</version>
+                    <version>${version.plugin.antrun-plugin}</version>
                     <configuration>
                         <target>
                             <ant antfile="etc/build.xml" dir=".">
@@ -195,6 +197,20 @@
                             </ant>
                         </target>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>versions-maven-plugin</artifactId>
+                    <version>${version.plugin.versions-maven-plugin}</version>
+                    <configuration>
+                        <generateBackupPoms>false</generateBackupPoms>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <phase>none</phase>
+                            <!-- Run manually with mvn versions:set -DnewVersion=1.26.0 -->
+                        </execution>
+                    </executions>
                 </plugin>
             </plugins>
         </pluginManagement>
