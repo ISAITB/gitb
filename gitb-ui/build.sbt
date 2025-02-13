@@ -77,6 +77,15 @@ libraryDependencies ++= Seq(
   "org.apache.commons" % "commons-text" % commonsTextVersion
 )
 
+// Produce GITB.zip as the final artifact name
+Universal / packageBin := {
+  val originalFileName = (Universal / packageBin).value
+  val (base, ext) = originalFileName.baseAndExt
+  val newFileName = file(originalFileName.getParent) / ("gitb-ui." + ext)
+  IO.move(originalFileName, newFileName)
+  newFileName
+}
+
 // Deactivate repeatable builds to speed up via parallelization
 ThisBuild / assemblyRepeatableBuild := false
 
