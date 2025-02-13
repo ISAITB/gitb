@@ -9,7 +9,7 @@ val bouncyCastleVersion = "1.80"
 val commonsTextVersion = "1.13.0"
 
 name := """GITB"""
-version := gitbTypesVersion
+version := "1.0-SNAPSHOT"
 maintainer := "DIGIT-ITB@ec.europa.eu"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
@@ -76,15 +76,6 @@ libraryDependencies ++= Seq(
   "net.lingala.zip4j" % "zip4j" % "2.11.5",
   "org.apache.commons" % "commons-text" % commonsTextVersion
 )
-
-// Produce GITB.zip as the final artifact name
-Universal / packageBin := {
-  val originalFileName = (Universal / packageBin).value
-  val (base, ext) = originalFileName.baseAndExt
-  val newFileName = file(originalFileName.getParent) / ("gitb-ui." + ext)
-  IO.move(originalFileName, newFileName)
-  newFileName
-}
 
 // Deactivate repeatable builds to speed up via parallelization
 ThisBuild / assemblyRepeatableBuild := false
