@@ -98,7 +98,7 @@ export class UserService {
     })
   }
 
-  createSystemAdmin(userName: string, userEmail: string, userPassword: string) {
+  createSystemAdmin(userName: string|undefined, userEmail: string, userPassword: string|undefined) {
     return this.restService.post<void>({
       path: ROUTES.controllers.UserService.createSystemAdmin().url,
       data: {
@@ -111,7 +111,7 @@ export class UserService {
     })
   }
 
-  createCommunityAdmin(userName: string, userEmail: string, userPassword: string, communityId: number) {
+  createCommunityAdmin(userName: string|undefined, userEmail: string, userPassword: string|undefined, communityId: number) {
     return this.restService.post<void>({
       path: ROUTES.controllers.UserService.createCommunityAdmin().url,
       data: {
@@ -124,7 +124,7 @@ export class UserService {
     })
   }
 
-  createVendorUser(userName: string, userEmail: string, userPassword: string, orgId: number, roleId: number) {
+  createVendorUser(userName: string|undefined, userEmail: string, userPassword: string|undefined, orgId: number, roleId: number) {
     return this.restService.post<void>({
       path: ROUTES.controllers.UserService.createUser(orgId).url,
       data: {

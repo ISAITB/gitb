@@ -49,7 +49,7 @@ export class CreateAdminComponent extends BaseComponent implements OnInit, After
     if (this.isSSO) {
       feedback = 'An administrator with this email address has already been registered.'
     } else {
-      feedback = 'An administrator with this username has already been registered.'
+      feedback = 'A user with this username has already been registered.'
     }
     this.validation.invalid('email', feedback)
   }
@@ -58,8 +58,8 @@ export class CreateAdminComponent extends BaseComponent implements OnInit, After
     if (this.isSSO) {
       return !this.textProvided(this.user.email)
     } else {
-      return !(this.textProvided(this.user.name) 
-        && this.textProvided(this.user.email) 
+      return !(this.textProvided(this.user.name)
+        && this.textProvided(this.user.email)
         && this.textProvided(this.user.password))
     }
   }
@@ -91,7 +91,7 @@ export class CreateAdminComponent extends BaseComponent implements OnInit, After
       this.checkEmail(this.user.email!).pipe(
         mergeMap((data) => {
           if (data.available) {
-            return this.userService.createSystemAdmin(this.user.name!.trim(), this.user.email!.trim(), this.user.password!.trim()).pipe(
+            return this.userService.createSystemAdmin(this.trimString(this.user.name), this.trimString(this.user.email)!, this.trimString(this.user.password)).pipe(
               map(() => {
                 this.cancelCreateAdmin()
                 this.popupService.success('Administrator created.')

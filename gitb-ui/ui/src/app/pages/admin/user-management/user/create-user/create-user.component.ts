@@ -45,7 +45,7 @@ export class CreateUserComponent extends BaseComponent implements OnInit, AfterV
     if (this.dataService.configuration.ssoEnabled) {
       this.dataService.focus('email')
     } else {
-      this.dataService.focus('name')    
+      this.dataService.focus('name')
     }
   }
 
@@ -85,7 +85,7 @@ export class CreateUserComponent extends BaseComponent implements OnInit, AfterV
       ok = this.isValidUsername(this.user.email)
       if (!ok) {
         this.validation.invalid('email', 'The username cannot contain spaces.')
-      }      
+      }
       emailCheckResult = this.authService.checkEmail(this.user.email!)
     }
     if (ok) {
@@ -95,9 +95,9 @@ export class CreateUserComponent extends BaseComponent implements OnInit, AfterV
           if (data.available) {
             let result: Observable<void>
             if (this.fromCommunityManagement) {
-              result = this.userService.createVendorUser(this.user.name!, this.user.email!, this.user.password!, this.orgId!, this.user.role!)
+              result = this.userService.createVendorUser(this.trimString(this.user.name), this.trimString(this.user.email)!, this.trimString(this.user.password), this.orgId!, this.user.role!)
             } else {
-              result = this.accountService.registerUser(this.user.name!, this.user.email!, this.user.password!, this.user.role!)
+              result = this.accountService.registerUser(this.trimString(this.user.name), this.trimString(this.user.email)!, this.trimString(this.user.password), this.user.role!)
             }
             return result.pipe(
               map(() => {

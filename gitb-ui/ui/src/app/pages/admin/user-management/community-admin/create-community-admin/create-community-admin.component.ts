@@ -53,8 +53,8 @@ export class CreateCommunityAdminComponent extends BaseComponent implements OnIn
     if (this.isSSO) {
       return !this.textProvided(this.user.email)
     } else {
-      return !(this.textProvided(this.user.name) 
-        && this.textProvided(this.user.email) 
+      return !(this.textProvided(this.user.name)
+        && this.textProvided(this.user.email)
         && this.textProvided(this.user.password))
     }
   }
@@ -86,7 +86,7 @@ export class CreateCommunityAdminComponent extends BaseComponent implements OnIn
       this.checkEmail(this.user.email!).pipe(
         mergeMap((data) => {
           if (data.available) {
-            return this.userService.createCommunityAdmin(this.user.name!, this.user.email!, this.user.password!, this.communityId).pipe(
+            return this.userService.createCommunityAdmin(this.trimString(this.user.name), this.trimString(this.user.email)!, this.trimString(this.user.password), this.communityId).pipe(
               map(() => {
                 this.cancelCreateAdmin()
                 this.popupService.success('Administrator created.')
@@ -109,7 +109,7 @@ export class CreateCommunityAdminComponent extends BaseComponent implements OnIn
     if (this.isSSO) {
       feedback = 'An administrator with this email address has already been registered.'
     } else {
-      feedback = 'An administrator with this username has already been registered.'
+      feedback = 'A user with this username has already been registered.'
     }
     this.validation.invalid('email', feedback)
   }

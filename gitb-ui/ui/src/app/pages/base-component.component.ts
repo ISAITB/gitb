@@ -81,6 +81,14 @@ export abstract class BaseComponent {
         }
     }
 
+    trimString(textToTrim: string|undefined): string|undefined {
+      if (textToTrim != undefined) {
+        return textToTrim.trim()
+      } else {
+        return undefined
+      }
+    }
+
     protected isErrorDescription(obj: ErrorDescription|any): obj is ErrorDescription {
         return obj != undefined && ((obj as ErrorDescription).error_description != undefined || (obj as ErrorDescription).error_id != undefined)
     }

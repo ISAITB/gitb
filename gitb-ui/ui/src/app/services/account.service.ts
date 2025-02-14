@@ -97,7 +97,7 @@ export class AccountService {
     })
   }
 
-  registerUser(userName: string, userEmail: string, userPassword: string, roleId: number) {
+  registerUser(userName: string|undefined, userEmail: string, userPassword: string|undefined, roleId: number) {
     return this.restService.post<void>({
       path: ROUTES.controllers.AccountService.registerUser().url,
       data: {
