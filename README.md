@@ -1,10 +1,8 @@
-# Introduction
+![Banner](https://www.itb.ec.europa.eu/files/banners/gitb_banner.png)
 
-This repository contains the main application components that are used by the [Interoperability Test Bed](https://interoperable-europe.ec.europa.eu/collection/interoperability-test-bed-repository/solution/interoperability-test-bed).
+# Interoperability Test Bed
 
-## What is the Interoperability Test Bed?
-
-The Interoperability Test Bed is a service offered by the European Commission’s DIGIT for the **conformance testing** of IT systems.
+The [Interoperability Test Bed](https://interoperable-europe.ec.europa.eu/collection/interoperability-test-bed-repository/solution/interoperability-test-bed) is a service offered by the European Commission’s DIGIT for the **conformance testing** of IT systems.
 It approaches conformance testing by means of scenario-based test cases expressed in the [GITB Test Description Language (TDL)](https://www.itb.ec.europa.eu/docs/tdl/latest/),
 that defines test steps implemented using built-in capabilities or by orchestration of [extension services](https://www.itb.ec.europa.eu/docs/services/latest/).
 
