@@ -26,6 +26,7 @@ libraryDependencies ++= Seq(
   cacheApi,
   ws,
   "eu.europa.ec.itb" % "gitb-types-jakarta" % gitbTypesVersion,
+  "eu.europa.ec.itb" % "gitb-types-specs" % gitbTypesVersion,
   "com.gitb" % "gitb-core" % gitbTypesVersion exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
   "com.gitb" % "gitb-lib" % gitbTypesVersion exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
   "com.gitb" % "gitb-reports" % gitbTypesVersion exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
