@@ -84,7 +84,7 @@
                                                 } @else {
                                                     <select name="demoAccount" [disabled]="!demoAccountEnabled || loadUsersPending || users.length == 0" [(ngModel)]="demoAccount" [compareWith]="dataService.sameId" class="form-select demoSelect">
                                                         @for (user of users; track user.id) {
-                                                            <option [ngValue]="user">{{user.name}}</option>
+                                                            <option [ngValue]="user">{{user.email}}</option>
                                                         }
                                                     </select>
                                                 }
