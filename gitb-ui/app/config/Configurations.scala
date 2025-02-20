@@ -232,10 +232,10 @@ object Configurations {
       RELEASE_INFO_ENABLED = fromEnv("RELEASE_INFO_ENABLED", conf.getString("releaseinfo.enabled")).toBoolean
       RELEASE_INFO_ADDRESS = fromEnv("RELEASE_INFO_ADDRESS", conf.getString("releaseinfo.address"))
 
-      USERGUIDE_OU = fromEnv("USERGUIDE_OU", conf.getString("userguide.ou"))
-      USERGUIDE_OA = fromEnv("USERGUIDE_OA", conf.getString("userguide.oa"))
-      USERGUIDE_CA = fromEnv("USERGUIDE_CA", conf.getString("userguide.ca"))
-      USERGUIDE_TA = fromEnv("USERGUIDE_TA", conf.getString("userguide.ta"))
+      USERGUIDE_OU = replaceUserGuideRelease(fromEnv("USERGUIDE_OU", conf.getString("userguide.ou")))
+      USERGUIDE_OA = replaceUserGuideRelease(fromEnv("USERGUIDE_OA", conf.getString("userguide.oa")))
+      USERGUIDE_CA = replaceUserGuideRelease(fromEnv("USERGUIDE_CA", conf.getString("userguide.ca")))
+      USERGUIDE_TA = replaceUserGuideRelease(fromEnv("USERGUIDE_TA", conf.getString("userguide.ta")))
 
       ANTIVIRUS_SERVER_ENABLED = fromEnv("ANTIVIRUS_SERVER_ENABLED", conf.getString("antivirus.enabled")).toBoolean
       if (ANTIVIRUS_SERVER_ENABLED) {
@@ -366,6 +366,15 @@ object Configurations {
     } else {
       None
     }
+  }
+
+  private def replaceUserGuideRelease(link: String): String = {
+    val versionNumberForDocs = if (Constants.VersionNumber.toLowerCase().contains("snapshot")) {
+      "latest"
+    } else {
+      Constants.VersionNumber
+    }
+    StringUtils.replace(link, "{RELEASE}", versionNumberForDocs)
   }
 
 }
