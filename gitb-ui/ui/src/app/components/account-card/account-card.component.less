@@ -1,0 +1,54 @@
+@import "../../../styles/less/_common";
+
+@account-card-oa: #555;
+@account-card-ou: #adadad;
+@account-card-ta: #0065A2;
+@account-card-ca: #a94442;
+@account-card-internal: @gray-light-2;
+@account-card-internal-highlight: @gray-light-2-highlight;
+
+.account-card {
+    border-radius: @border-radius 0.5rem 0.5rem @border-radius;
+    cursor: pointer;
+    border-width: 1px;
+    border-style: solid;
+    &.oa {
+        border-color: @account-card-oa;
+        background-color: @account-card-oa;
+    }
+
+    &.ou {
+        border-color: @account-card-ou;
+        background-color: @account-card-ou;
+    }
+
+    &.ta {
+        border-color: @account-card-ta;
+        background-color: @account-card-ta;
+    }
+
+    &.ca {
+        border-color: @account-card-ca;
+        background-color: @account-card-ca;
+    }
+    &.selected {
+        .account-card-internal {
+            background-color: @gray-button !important;
+        }
+    }
+    &:hover {
+        .account-card-internal {
+            background-color: @account-card-internal-highlight;
+        }
+    }
+    .account-card-internal {
+        margin-left: 15px;
+        border-top-right-radius: @border-radius;
+        border-bottom-right-radius: @border-radius;
+        background-color: @account-card-internal;
+        .account-card-text {
+            padding: 20px 30px 20px 30px;
+            font-weight: bold;
+        }
+    }
+}

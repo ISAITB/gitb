@@ -201,6 +201,7 @@ import { PendingDivComponent } from './components/pending-div/pending-div.compon
 import { TriggerFireExpressionControlComponent } from './pages/admin/user-management/trigger/trigger-fire-expression-control/trigger-fire-expression-control.component';
 import { TriggerFireExpressionModalComponent } from './pages/admin/user-management/trigger/trigger-fire-expression-modal/trigger-fire-expression-modal.component';
 import { OutputMessageDisplayComponent } from './components/output-message-display/output-message-display.component';
+import { AccountCardComponent } from './components/account-card/account-card.component';
 
 @NgModule({ declarations: [
         AppComponent,
@@ -385,7 +386,8 @@ import { OutputMessageDisplayComponent } from './components/output-message-displ
         PendingDivComponent,
         TriggerFireExpressionControlComponent,
         TriggerFireExpressionModalComponent,
-        OutputMessageDisplayComponent
+        OutputMessageDisplayComponent,
+        AccountCardComponent
     ],
     bootstrap: [AppComponent], imports: [ColorPickerModule,
         BrowserModule,
