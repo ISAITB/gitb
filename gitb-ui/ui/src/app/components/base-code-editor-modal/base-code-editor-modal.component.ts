@@ -30,7 +30,7 @@ export class BaseCodeEditorModalComponent implements AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    setTimeout(() => {
+    this.codeEditor?.codeMirrorLoaded.subscribe(() => {
       if (this.applyLineStyles()) {
         if (this.codeEditor?.codeMirror) {
           this.codeEditor.codeMirror.refresh()
