@@ -2,6 +2,14 @@
 
 # Interoperability Test Bed
 
+[![licence](https://img.shields.io/github/license/ISAITB/gitb.svg?color=blue)](https://github.com/ISAITB/csv-validator/blob/master/LICENCE.txt)
+[![docs](https://img.shields.io/static/v1?label=docs&message=Interoperable%20Europe%20Portal&color=blue)](https://www.itb.ec.europa.eu)
+[![docs](https://img.shields.io/static/v1?label=docs&message=Test%20Bed%20guides&color=blue)](https://www.itb.ec.europa.eu/docs/guides/latest/)
+[![docs](https://img.shields.io/static/v1?label=docs&message=GITB%20TDL%20&color=blue)](https://www.itb.ec.europa.eu/docs/tdl/latest/)
+[![docs](https://img.shields.io/static/v1?label=docs&message=GITB%20test%20services&color=blue)](https://www.itb.ec.europa.eu/docs/services/latest/)
+[![Gurubase](https://img.shields.io/badge/Gurubase-Ask%20ITB%20Guru-006BFF?color=blue)](https://gurubase.io/g/itb)
+[![docker](https://img.shields.io/docker/pulls/isaitb/gitb-ui?color=blue&logo=docker&logoColor=white)](https://hub.docker.com/r/isaitb/gitb-ui)
+
 The [Interoperability Test Bed](https://interoperable-europe.ec.europa.eu/collection/interoperability-test-bed-repository/solution/interoperability-test-bed) is a service offered by the European Commission’s DIGIT for the **conformance testing** of IT systems.
 It approaches conformance testing by means of scenario-based test cases expressed in the [GITB Test Description Language (TDL)](https://www.itb.ec.europa.eu/docs/tdl/latest/),
 that defines test steps implemented using built-in capabilities or by orchestration of [extension services](https://www.itb.ec.europa.eu/docs/services/latest/).
