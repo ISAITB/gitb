@@ -32,11 +32,9 @@
                 <app-form-section sectionTitle="Content">
 					<div class="row mt-3">
 						<div class="col-12">
-                            @if (communityId != Constants.DEFAULT_COMMUNITY_ID) {
-                                <div class="mb-3">
-                                    <app-placeholder-selector [resources]="true" [community]="communityId"></app-placeholder-selector>
-                                </div>
-                            }
+                            <div class="mb-3">
+                                <app-placeholder-selector [resources]="communityId != Constants.DEFAULT_COMMUNITY_ID" [systemResources]="dataService.isSystemAdmin" [community]="communityId"></app-placeholder-selector>
+                            </div>
                             <app-editor id="content" name="content" [(ngModel)]="page.content"></app-editor>
 						</div>
                     </div>

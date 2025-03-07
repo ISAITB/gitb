@@ -28,6 +28,13 @@ class ReportHelper @Inject()(repositoryUtils: RepositoryUtils, communityResource
           if (file.nonEmpty) {
             resolvedPath = file.get.toURI.toString
           }
+        } else if (resourceUri.startsWith("systemResources/")) {
+          // System resource
+          val resourceName = URLDecoder.decode(StringUtils.removeStart(resourceUri, "systemResources/"), StandardCharsets.UTF_8)
+          val file = communityResourceManager.getSystemResourceFileByName(resourceName)
+          if (file.nonEmpty) {
+            resolvedPath = file.get.toURI.toString
+          }
         } else if (resourceUri.startsWith("badgereportpreview/")) {
           // Conformance badge
           // URI format is as such: badgereportpreview/status/systemId/specificationId/actorId/snapshotId

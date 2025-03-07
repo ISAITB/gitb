@@ -31,7 +31,7 @@
                 </div>
             </div>
         </div>
-        <div [collapse]="!anyLevelEnabled" [isAnimated]="levelAnimated" (expanding)="messageBlockAnimated = false" (expanded)="levelBlockExpanded()">
+        <div [collapse]="!anyLevelEnabled" [isAnimated]="levelAnimated" (expands)="messageBlockAnimated = false" (expanded)="levelBlockExpanded()">
             <div class="row mt-3 pt-1">
                 <legend class="col-3 col-form-label text-end pt-0">* Report configuration:</legend>
                 <div class="col-8">
@@ -264,7 +264,7 @@
                         }
                         <div class="row mt-3">
                             <div class="col-auto pe-0">
-                                <app-placeholder-selector [placeholders]="placeholders" [domainParameters]="true" [domainChanged]="domainChangedEmitter" [organisationParameters]="true" [systemParameters]="true" [resources]="true" [community]="communityId" [domainId]="domainId"></app-placeholder-selector>
+                                <app-placeholder-selector [placeholders]="placeholders" [domainParameters]="true" [domainChanged]="domainChangedEmitter" [organisationParameters]="true" [systemParameters]="true" [resources]="true" [systemResources]="dataService.isSystemAdmin" [community]="communityId" [domainId]="domainId"></app-placeholder-selector>
                             </div>
                             <div class="col-auto ps-0">
                                 <button class="btn btn-secondary" type="button" (click)="clearCurrentMessage()" [disabled]="!textProvided(currentMessageContent)">Remove message</button>

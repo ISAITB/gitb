@@ -28,6 +28,7 @@ export class PlaceholderSelectorComponent implements OnInit {
   @Input() organisationParameters: boolean = false
   @Input() systemParameters: boolean = false
   @Input() resources: boolean = false
+  @Input() systemResources: boolean = false
   @Input() community?: number
   @Input() domainChanged?: EventEmitter<number>
 
@@ -35,8 +36,8 @@ export class PlaceholderSelectorComponent implements OnInit {
   domainParameterPlaceholders?: KeyValue[]
   organisationParameterPlaceholders?: KeyValue[]
   systemParameterPlaceholders?: KeyValue[]
-  communityResources?: CommunityResource[]
   communityResourceConfig?: MultiSelectConfig<CommunityResource>
+  systemResourceConfig?: MultiSelectConfig<CommunityResource>
 
   constructor(
     private dataService: DataService,
@@ -113,6 +114,18 @@ export class PlaceholderSelectorComponent implements OnInit {
         }
       }
     }
+    // System resources
+    if (this.systemResources) {
+      this.systemResourceConfig = {
+        name: 'systemResources',
+        textField: 'name',
+        filterLabel: 'Copy system-wide resource reference',
+        singleSelection: true,
+        loader: () => {
+          return this.communityResourceService.getSystemResources()
+        }
+      }
+    }
     // Listen for domain changes
     if (this.domainChanged) {
       this.domainChanged.subscribe((newDomainId) => {
@@ -174,6 +187,12 @@ export class PlaceholderSelectorComponent implements OnInit {
   }
 
   resourceSelected(update: FilterUpdate<CommunityResource>) {
+    if (update.values.active.length > 0) {
+      this.copyValue(update.values.active[0].reference, 'Resource reference copied to clipboard.')
+    }
+  }
+
+  systemResourceSelected(update: FilterUpdate<CommunityResource>) {
     if (update.values.active.length > 0) {
       this.copyValue(update.values.active[0].reference, 'Resource reference copied to clipboard.')
     }

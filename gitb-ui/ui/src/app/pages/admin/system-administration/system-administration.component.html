@@ -19,7 +19,10 @@
                             [(status)]="welcomePageStatus"
                         >
                             <form>
-                                <app-editor id="welcomePageMessage" name="welcomePageMessage" [(ngModel)]="welcomePageMessage" type="normal" [height]="200"></app-editor>
+                                <app-placeholder-selector [systemResources]="true"></app-placeholder-selector>
+                                <div class="mt-3">
+                                    <app-editor id="welcomePageMessage" name="welcomePageMessage" [(ngModel)]="welcomePageMessage" type="normal" [height]="200"></app-editor>
+                                </div>
                                 <div class="btn-toolbar mt-3">
                                     <button type="submit" class="btn btn-secondary" [disable]="welcomePageResetPending || !textProvided(welcomePageMessage)" [pending]="welcomePageStatus.pending" (click)="saveWelcomePage()">Save</button>
                                     <button type="button" class="btn btn-secondary" [disable]="welcomePageStatus.fromDefault || welcomePageStatus.fromEnv || welcomePageStatus.pending" [pending]="welcomePageResetPending" (click)="resetWelcomePage()">Reset to default</button>

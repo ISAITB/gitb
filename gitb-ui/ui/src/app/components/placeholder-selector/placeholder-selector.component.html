@@ -40,8 +40,18 @@
                 <app-multi-select-filter [config]="communityResourceConfig" (apply)="resourceSelected($event)"></app-multi-select-filter>
             </div>
             <div class="help">
-                <div app-tooltip class="col-auto d-inline-flex" tbTooltip="Resources defined for the community can be referenced in the content (for example as image sources)." [inline]="true"></div>
-            </div>    
+                <div app-tooltip class="col-auto d-inline-flex" tbTooltip="Resources defined for the community that can be referenced in the content (for example as image sources)." [inline]="true"></div>
+            </div>
+        </div>
+    }
+    @if (systemResourceConfig) {
+        <div class="buttonContainer">
+            <div class="communityResourceControl">
+                <app-multi-select-filter [config]="systemResourceConfig" (apply)="systemResourceSelected($event)"></app-multi-select-filter>
+            </div>
+            <div class="help">
+                <div app-tooltip class="col-auto d-inline-flex" tbTooltip="System-wide resources that can be referenced in the content (for example as image sources)." [inline]="true"></div>
+            </div>
         </div>
     }
 </div>
