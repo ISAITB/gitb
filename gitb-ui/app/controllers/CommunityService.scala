@@ -1,25 +1,22 @@
 package controllers
 
 import config.Configurations
-import controllers.util.ParameterExtractor.{optionalBodyParameter, requiredBodyParameter}
+import controllers.util.ParameterExtractor.requiredBodyParameter
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
 import exceptions.ErrorCodes
-
-import javax.inject.Inject
-import managers.{AuthenticationManager, AuthorizationManager, CommunityManager, CommunityResourceManager, OrganizationManager}
+import managers.{AuthenticationManager, AuthorizationManager, CommunityManager}
 import models.Enums.{SelfRegistrationRestriction, SelfRegistrationType}
 import models.{ActualUserInfo, Communities, Organizations, Users}
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.StringUtils
 import org.slf4j.{Logger, LoggerFactory}
-import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents, Result}
+import play.api.mvc._
 import utils.{CryptoUtil, EmailUtil, HtmlUtil, JsonUtil}
 
-import java.io.File
-import java.nio.file.Path
+import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 
-class CommunityService @Inject() (implicit ec: ExecutionContext, authorizedAction: AuthorizedAction, cc: ControllerComponents, communityManager: CommunityManager, communityResourceManager: CommunityResourceManager, authorizationManager: AuthorizationManager, organisationManager: OrganizationManager, authenticationManager: AuthenticationManager) extends AbstractController(cc) {
+class CommunityService @Inject() (implicit ec: ExecutionContext, authorizedAction: AuthorizedAction, cc: ControllerComponents, communityManager: CommunityManager, authorizationManager: AuthorizationManager, authenticationManager: AuthenticationManager) extends AbstractController(cc) {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[CommunityService])
 
   /**
@@ -360,169 +357,6 @@ class CommunityService @Inject() (implicit ec: ExecutionContext, authorizedActio
     val labels = JsonUtil.parseJsCommunityLabels(communityId, requiredBodyParameter(request, Parameters.VALUES))
     communityManager.setCommunityLabels(communityId, labels)
     ResponseConstructor.constructEmptyResponse
-  }
-
-  def createCommunityResource(communityId: Long) = authorizedAction { request =>
-    try {
-      authorizationManager.canManageCommunity(request, communityId)
-      var response: Result = null
-      val files = ParameterExtractor.extractFiles(request)
-      if (files.contains(Parameters.FILE)) {
-        val fileToStore = files(Parameters.FILE).file
-        if (Configurations.ANTIVIRUS_SERVER_ENABLED && ParameterExtractor.virusPresentInFiles(List(fileToStore))) {
-          response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")
-        } else {
-          val paramMap = ParameterExtractor.paramMap(request)
-          val resource = ParameterExtractor.extractCommunityResource(paramMap, communityId)
-          communityResourceManager.createCommunityResource(resource, fileToStore)
-          response = ResponseConstructor.constructEmptyResponse
-        }
-      } else {
-        response = ResponseConstructor.constructBadRequestResponse(500, "No file provided for the resource.")
-      }
-      response
-    } finally {
-      if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
-    }
-  }
-
-  def updateCommunityResource(resourceId: Long) = authorizedAction { request =>
-    try {
-      authorizationManager.canManageCommunityResource(request, resourceId)
-      var response: Result = null
-      val files = ParameterExtractor.extractFiles(request)
-      var fileToStore: Option[File] = None
-      if (files.contains(Parameters.FILE)) {
-        fileToStore = Some(files(Parameters.FILE).file)
-        if (Configurations.ANTIVIRUS_SERVER_ENABLED && ParameterExtractor.virusPresentInFiles(List(fileToStore.get))) {
-          response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")
-        }
-      }
-      if (response == null) {
-        val paramMap = ParameterExtractor.paramMap(request)
-        val name = requiredBodyParameter(paramMap, Parameters.NAME)
-        val description = optionalBodyParameter(paramMap, Parameters.DESCRIPTION)
-        communityResourceManager.updateCommunityResource(resourceId, name, description, fileToStore)
-        response = ResponseConstructor.constructEmptyResponse
-      }
-      response
-    } finally {
-      if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
-    }
-  }
-
-  def uploadCommunityResourcesInBulk(communityId: Long) = authorizedAction { request =>
-    try {
-      authorizationManager.canManageCommunity(request, communityId)
-      var response: Result = null
-      val files = ParameterExtractor.extractFiles(request)
-      if (files.contains(Parameters.FILE)) {
-        val fileToStore = files(Parameters.FILE).file
-        if (Configurations.ANTIVIRUS_SERVER_ENABLED && ParameterExtractor.virusPresentInFiles(List(fileToStore))) {
-          response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")
-        } else {
-          val paramMap = ParameterExtractor.paramMap(request)
-          val updateMatchingResources = ParameterExtractor.optionalBooleanBodyParameter(paramMap, Parameters.UPDATE).getOrElse(true)
-          val counts = communityResourceManager.saveCommunityResourcesInBulk(communityId, fileToStore, updateMatchingResources)
-          response = ResponseConstructor.constructJsonResponse(JsonUtil.jsUpdateCounts(counts._1, counts._2).toString())
-        }
-      } else {
-        response = ResponseConstructor.constructBadRequestResponse(500, "No file provided for the resource.")
-      }
-      response
-    } finally {
-      if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
-    }
-  }
-
-  def deleteCommunityResource(resourceId: Long) = authorizedAction { request =>
-    authorizationManager.canManageCommunityResource(request, resourceId)
-    communityResourceManager.deleteCommunityResource(resourceId)
-    ResponseConstructor.constructEmptyResponse
-  }
-
-  def deleteCommunityResources(communityId: Long) = authorizedAction { request =>
-    authorizationManager.canManageCommunity(request, communityId)
-    val resourceIds = ParameterExtractor.extractIdsBodyParameter(request)
-    communityResourceManager.deleteCommunityResources(communityId, resourceIds)
-    ResponseConstructor.constructEmptyResponse
-  }
-
-  def downloadCommunityResources(communityId: Long) = authorizedAction { request =>
-    authorizationManager.canManageCommunity(request, communityId)
-    val filter = ParameterExtractor.optionalQueryParameter(request, Parameters.FILTER)
-    var archive: Option[Path] = None
-    try {
-      archive = Some(communityResourceManager.createCommunityResourceArchive(communityId, filter))
-      Ok.sendFile(
-        content = archive.get.toFile,
-        fileName = _ => Some("resources.zip"),
-        onClose = () => {
-          if (archive.isDefined) {
-            FileUtils.deleteQuietly(archive.get.toFile)
-          }
-        }
-      )
-    } catch {
-      case e: Exception =>
-        if (archive.isDefined) {
-          FileUtils.deleteQuietly(archive.get.toFile)
-        }
-        throw e
-    }
-  }
-
-  def getCommunityResources(communityId: Long) = authorizedAction { request =>
-    authorizationManager.canManageCommunity(request, communityId)
-    val result = communityResourceManager.getCommunityResources(communityId)
-    ResponseConstructor.constructJsonResponse(JsonUtil.jsCommunityResources(result).toString)
-  }
-
-  def searchCommunityResources(communityId: Long) = authorizedAction { request =>
-    authorizationManager.canManageCommunity(request, communityId)
-    val filter = ParameterExtractor.optionalQueryParameter(request, Parameters.FILTER)
-    val page = ParameterExtractor.optionalQueryParameter(request, Parameters.PAGE) match {
-      case Some(v) => v.toLong
-      case None => 1L
-    }
-    val limit = ParameterExtractor.optionalQueryParameter(request, Parameters.LIMIT) match {
-      case Some(v) => v.toLong
-      case None => 10L
-    }
-    val result = communityResourceManager.searchCommunityResources(communityId, page, limit, filter)
-    ResponseConstructor.constructJsonResponse(JsonUtil.jsCommunityResourceSearchResult(result._1, result._2).toString)
-  }
-
-  def downloadCommunityResourceByName(resourceName: String) = authorizedAction { request =>
-    val communityId = request.cookies.get("implicitCommunity").map(_.value.toLong)
-    if (communityId.isDefined) {
-      authorizationManager.canViewCommunityBasic(request, communityId.get)
-    } else {
-      authorizationManager.canViewOwnCommunity(request)
-    }
-    val userId = authorizationManager.getRequestUserId(request)
-    val resource = communityResourceManager.getCommunityResourceFileByName(communityId, userId, resourceName)
-    if (resource.isDefined && resource.get.exists()) {
-      Ok.sendFile(
-        content = resource.get,
-        fileName = _ => Some(resourceName),
-      )
-    } else {
-      NotFound
-    }
-  }
-
-  def downloadCommunityResourceById(resourceId: Long) = authorizedAction { request =>
-    authorizationManager.canManageCommunityResource(request, resourceId)
-    val resource = communityResourceManager.getCommunityResourceFileById(resourceId)
-    if (resource._2.exists()) {
-      Ok.sendFile(
-        content = resource._2,
-        fileName = _ => Some(resource._1),
-      )
-    } else {
-      NotFound
-    }
   }
 
   def getCommunityIdOfDomain: Action[AnyContent] = authorizedAction { request =>

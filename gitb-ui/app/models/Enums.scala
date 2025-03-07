@@ -64,7 +64,7 @@ object Enums {
     Community, Administrator, CustomLabel, OrganisationProperty, SystemProperty, LandingPage, LegalNotice, ErrorTemplate,
     Organisation, OrganisationUser, OrganisationPropertyValue, System, SystemPropertyValue,
     Statement, StatementConfiguration, Trigger, CommunityResource, SpecificationGroup, Settings, Theme,
-    DefaultLandingPage, DefaultLegalNotice, DefaultErrorTemplate, SystemAdministrator, SystemConfiguration = Value
+    DefaultLandingPage, DefaultLegalNotice, DefaultErrorTemplate, SystemAdministrator, SystemConfiguration, SystemResource = Value
   }
 
   object ImportItemMatch extends Enumeration(1) {

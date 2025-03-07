@@ -327,7 +327,11 @@ object JsonUtil {
   }
 
   private def pathForResource(resource: CommunityResources): String = {
-    "resources/" + resource.name
+    if (resource.community == Constants.DefaultCommunityId) {
+      "systemResources/" + resource.name
+    } else {
+      "resources/" + resource.name
+    }
   }
 
   def jsTestSuite(suite: TestSuites, specificationIds: Option[List[Long]], withDocumentation: Boolean, withSpecReference: Boolean): JsObject = {
@@ -1749,6 +1753,7 @@ object JsonUtil {
     settings.testSuites = (jsonConfig \ "testSuites").as[Boolean]
     if (includeSettings) {
       settings.themes = (jsonConfig \ "themes").as[Boolean]
+      settings.systemResources = (jsonConfig \ "systemResources").as[Boolean]
       settings.systemAdministrators = (jsonConfig \ "systemAdministrators").as[Boolean]
       settings.defaultLandingPages = (jsonConfig \ "defaultLandingPages").as[Boolean]
       settings.defaultLegalNotices = (jsonConfig \ "defaultLegalNotices").as[Boolean]
@@ -1756,6 +1761,7 @@ object JsonUtil {
       settings.systemConfigurations = (jsonConfig \ "systemConfigurations").as[Boolean]
     } else {
       settings.themes = false
+      settings.systemResources = false
       settings.systemAdministrators = false
       settings.defaultLandingPages = false
       settings.defaultLegalNotices = false

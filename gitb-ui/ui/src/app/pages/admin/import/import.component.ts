@@ -171,6 +171,7 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.STATEMENT] = 'Conformance statements'
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.STATEMENT_CONFIGURATION] = 'Conformance statement configurations'
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.SYSTEM_SETTINGS] = 'System settings'
+    this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.SYSTEM_RESOURCE] = 'Resources'
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.THEME] = 'Themes'
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.DEFAULT_LANDING_PAGE] = 'Default landing pages'
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.DEFAULT_LEGAL_NOTICE] = 'Default legal notices'
@@ -206,18 +207,18 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
 
   importDisabled() {
     return this.importStep1 && !(
-      this.archiveData?.file != undefined 
-        && this.textProvided(this.settings.encryptionKey) 
+      this.archiveData?.file != undefined
+        && this.textProvided(this.settings.encryptionKey)
         && (
           this.exportType == 'domain' && (
-              (this.newTarget && (!this.replaceName || (this.textProvided(this.settings.shortNameReplacement) && this.textProvided(this.settings.fullNameReplacement)))) 
+              (this.newTarget && (!this.replaceName || (this.textProvided(this.settings.shortNameReplacement) && this.textProvided(this.settings.fullNameReplacement))))
               || (!this.newTarget && this.domain != undefined)
-          ) || 
+          ) ||
           this.exportType == 'community' && (
-              (this.newTarget && (!this.replaceName || (this.textProvided(this.settings.shortNameReplacement) && this.textProvided(this.settings.fullNameReplacement)))) 
+              (this.newTarget && (!this.replaceName || (this.textProvided(this.settings.shortNameReplacement) && this.textProvided(this.settings.fullNameReplacement))))
               || (!this.newTarget && this.community != undefined)
-          ) || 
-          this.exportType == 'settings' || 
+          ) ||
+          this.exportType == 'settings' ||
           this.exportType == 'deletions'
         )
     )
@@ -278,7 +279,7 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
               importItemStates.push(groupMap[item.type])
             }
             groupMap[item.type].items.push(state)
-      
+
             importItemStates.push()
           }
         }

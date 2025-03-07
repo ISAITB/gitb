@@ -202,6 +202,7 @@ import { TriggerFireExpressionControlComponent } from './pages/admin/user-manage
 import { TriggerFireExpressionModalComponent } from './pages/admin/user-management/trigger/trigger-fire-expression-modal/trigger-fire-expression-modal.component';
 import { OutputMessageDisplayComponent } from './components/output-message-display/output-message-display.component';
 import { AccountCardComponent } from './components/account-card/account-card.component';
+import { ResourceManagementTabComponent } from './components/resource-management-tab/resource-management-tab.component';
 
 @NgModule({ declarations: [
         AppComponent,
@@ -387,7 +388,8 @@ import { AccountCardComponent } from './components/account-card/account-card.com
         TriggerFireExpressionControlComponent,
         TriggerFireExpressionModalComponent,
         OutputMessageDisplayComponent,
-        AccountCardComponent
+        AccountCardComponent,
+        ResourceManagementTabComponent
     ],
     bootstrap: [AppComponent], imports: [ColorPickerModule,
         BrowserModule,

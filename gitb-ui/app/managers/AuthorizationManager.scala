@@ -1140,6 +1140,11 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     setAuthResult(request, ok, "User cannot view the default landing page")
   }
 
+  def canViewSystemResource(request: RequestWithAttributes[_]):Boolean = {
+    val ok = true
+    setAuthResult(request, ok, "User cannot view the requested resource")
+  }
+
   def canViewDefaultLegalNotice(request: RequestWithAttributes[_], communityId: Long):Boolean = {
     canViewCommunityBasic(request, communityId)
   }

@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
+import {AfterViewInit, Component, EventEmitter, OnInit, ViewChild} from '@angular/core';
 import { TabsetComponent } from 'ngx-bootstrap/tabs';
 import { SystemAdministrationTab } from './system-administration-tab.enum';
 import { BaseComponent } from '../../base-component.component';
@@ -31,6 +31,9 @@ import { EmailSettings } from 'src/app/types/email-settings';
 import { CodeEditorModalComponent } from 'src/app/components/code-editor-modal/code-editor-modal.component';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { SystemConfiguration } from 'src/app/types/system-configuration';
+import {ResourceActions} from '../../../components/resource-management-tab/resource-actions';
+import {FileData} from '../../../types/file-data.type';
+import {CommunityResourceService} from '../../../services/community-resource.service';
 
 @Component({
     selector: 'app-system-administration',
@@ -128,6 +131,10 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
   emailTestToAddress?: string
   emailSettings: EmailSettings = { enabled: false }
 
+  // Resources
+  resourceActions!: ResourceActions
+  resourceEmitter = new EventEmitter<void>()
+
   constructor(
     router: Router,
     private userService: UserService,
@@ -139,6 +146,7 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
     private popupService: PopupService,
     private systemConfigurationService: SystemConfigurationService,
     private communityService: CommunityService,
+    private communityResourceService: CommunityResourceService,
     private organisationService: OrganisationService,
     private confirmationDialogService: ConfirmationDialogService,
     private modalService: BsModalService
@@ -164,6 +172,7 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
       this.adminColumns.push({ field: 'email', title: 'Username' })
     }
     this.adminColumns.push({ field: 'ssoStatusText', title: 'Status', cellClass: 'td-nowrap' })
+    this.resourceActions = this.createResourceActions()
     this.loadCommunitiesPending = true
     const communityObs = this.communityService.getUserCommunities()
     .pipe(
@@ -429,6 +438,10 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
     }
   }
 
+  showResources() {
+    this.resourceEmitter.emit()
+  }
+
   createLandingPage() {
     this.routingService.toCreateLandingPage()
   }
@@ -474,7 +487,7 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
     if (!this.accountRetentionPeriodEnabled) {
       this.accountRetentionPeriodValue = undefined
     }
-  }  
+  }
 
   saveTTL() {
     this.ttlStatus.pending = true
@@ -672,16 +685,16 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
   emailSettingsOk() {
     return !this.emailSettings.enabled ||
       (
-        this.textProvided(this.emailSettings.host) && 
+        this.textProvided(this.emailSettings.host) &&
         this.numberProvided(this.emailSettings.port, 1) &&
         (!this.emailSettings.authenticate || (
-          this.textProvided(this.emailSettings.username) && 
+          this.textProvided(this.emailSettings.username) &&
           ((!this.emailSettings.updatePassword && this.textProvided(this.emailSettings.password)) || (this.emailSettings.updatePassword && this.textProvided(this.emailSettings.newPassword)))
         )) &&
-        this.textProvided(this.emailSettings.from) && 
+        this.textProvided(this.emailSettings.from) &&
         (!this.emailSettings.contactFormEnabled || (
-          this.textProvided(this.emailSettings.defaultSupportMailbox) && 
-          this.numberProvided(this.emailSettings.maxAttachmentCount, 0) && 
+          this.textProvided(this.emailSettings.defaultSupportMailbox) &&
+          this.numberProvided(this.emailSettings.maxAttachmentCount, 0) &&
           this.numberProvided(this.emailSettings.maxAttachmentSize, 1)
         )) &&
         this.numberProvided(this.emailSettings.testInteractionReminder, 1)
@@ -791,6 +804,36 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
       }).add(() => {
         this.emailTestPending = false
       })
+    }
+  }
+
+  createResourceActions(): ResourceActions {
+    return {
+      searchResources: (filter: string|undefined, page: number|undefined, limit: number|undefined) => {
+        return this.communityResourceService.searchSystemResources(filter, page, limit)
+      },
+      downloadResources: (filter: string|undefined) => {
+        return this.communityResourceService.downloadSystemResources(filter)
+      },
+      downloadResource: (resourceId: number) => {
+        return this.communityResourceService.downloadSystemResourceById(resourceId)
+      },
+      deleteResources: (resourceIds: number[]) => {
+        return this.communityResourceService.deleteSystemResources(resourceIds)
+      },
+      deleteResource: (resourceId: number) => {
+        return this.communityResourceService.deleteSystemResource(resourceId)
+      },
+      createResource: (name: string, description: string|undefined, file: FileData) => {
+        return this.communityResourceService.createSystemResource(name, description, file)
+      },
+      updateResource: (resourceId: number, name: string, description: string|undefined, file?: FileData) => {
+        return this.communityResourceService.updateSystemResource(resourceId, name, description, file)
+      },
+      uploadBulk: (file: FileData, updateMatching?: boolean) => {
+        return this.communityResourceService.uploadSystemResourcesInBulk(file, updateMatching)
+      },
+      systemScope: true
     }
   }
 

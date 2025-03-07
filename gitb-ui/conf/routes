@@ -265,15 +265,27 @@ POST    /api/communities/admins/create          @controllers.UserService.createC
 POST    /api/communities/admins/:id             @controllers.UserService.updateCommunityAdminProfile(id : Long)
 GET     /api/communities/labels/:id             @controllers.CommunityService.getCommunityLabels(id: Long)
 POST    /api/communities/labels/:id             @controllers.CommunityService.setCommunityLabels(id: Long)
-POST    /api/communities/:communityId/resources @controllers.CommunityService.createCommunityResource(communityId: Long)
-POST    /api/communities/resources/:id          @controllers.CommunityService.updateCommunityResource(id: Long)
-DELETE  /api/communities/resources/:id          @controllers.CommunityService.deleteCommunityResource(id: Long)
-POST    /api/communities/:communityId/resources/delete @controllers.CommunityService.deleteCommunityResources(communityId: Long)
-GET     /api/communities/:communityId/resources @controllers.CommunityService.searchCommunityResources(communityId: Long)
-GET     /api/communities/resources/:id/download @controllers.CommunityService.downloadCommunityResourceById(id: Long)
-GET     /api/communities/:communityId/resources/list @controllers.CommunityService.getCommunityResources(communityId: Long)
-GET     /api/communities/:communityId/resources/archive @controllers.CommunityService.downloadCommunityResources(communityId: Long)
-POST    /api/communities/:communityId/resources/archive @controllers.CommunityService.uploadCommunityResourcesInBulk(communityId: Long)
+
+# Community resources
+PUT     /api/resource/community/:communityId            @controllers.CommunityResourceService.createCommunityResource(communityId: Long)
+POST    /api/resource/community/:id                     @controllers.CommunityResourceService.updateCommunityResource(id: Long)
+DELETE  /api/resource/community/:id                     @controllers.CommunityResourceService.deleteCommunityResource(id: Long)
+POST    /api/resource/community/:communityId/delete     @controllers.CommunityResourceService.deleteCommunityResources(communityId: Long)
+GET     /api/resource/community/:communityId            @controllers.CommunityResourceService.searchCommunityResources(communityId: Long)
+GET     /api/resource/community/resources/:id/download  @controllers.CommunityResourceService.downloadCommunityResourceById(id: Long)
+GET     /api/resource/community/:communityId/list       @controllers.CommunityResourceService.getCommunityResources(communityId: Long)
+GET     /api/resource/community/:communityId/archive    @controllers.CommunityResourceService.downloadCommunityResources(communityId: Long)
+POST    /api/resource/community/:communityId/archive    @controllers.CommunityResourceService.uploadCommunityResourcesInBulk(communityId: Long)
+# System resources
+PUT     /api/resource/system                            @controllers.CommunityResourceService.createSystemResource()
+POST    /api/resource/system/update/:id                 @controllers.CommunityResourceService.updateSystemResource(id: Long)
+DELETE  /api/resource/system/delete/:id                 @controllers.CommunityResourceService.deleteSystemResource(id: Long)
+POST    /api/resource/system/delete                     @controllers.CommunityResourceService.deleteSystemResources()
+GET     /api/resource/system                            @controllers.CommunityResourceService.searchSystemResources()
+GET     /api/resource/system/:id/download               @controllers.CommunityResourceService.downloadSystemResourceById(id: Long)
+GET     /api/resource/system/list                       @controllers.CommunityResourceService.getSystemResources()
+GET     /api/resource/system/archive                    @controllers.CommunityResourceService.downloadSystemResources()
+POST    /api/resource/system/archive                    @controllers.CommunityResourceService.uploadSystemResourcesInBulk()
 
 # Test Result management API
 POST    /api/tests/binaryMetadata               @controllers.TestResultService.getBinaryMetadata()
@@ -445,7 +457,9 @@ DELETE  /api/rest/system/:system                                 @controllers.re
 
 POST    /api/crumbs                                              @controllers.BreadcrumbService.getBreadcrumbLabels()
 
-GET     /resources/:resourceName                                 @controllers.CommunityService.downloadCommunityResourceByName(resourceName: String)
+GET     /resources/:resourceName                                 @controllers.CommunityResourceService.downloadCommunityResourceByName(resourceName: String)
+GET     /systemResources/:resourceName                           @controllers.CommunityResourceService.downloadSystemResourceByName(resourceName: String)
+
 GET     /badgereportpreview/:status/:systemId/:specId/:actorId             @controllers.ConformanceService.conformanceBadgeReportPreview(status: String, systemId: Long, specId: Long, actorId: Long)
 GET     /badgereportpreview/:status/:systemId/:specId/:actorId/:snapshotId @controllers.ConformanceService.conformanceBadgeReportPreviewForSnapshot(status: String, systemId: Long, specId: Long, actorId: Long, snapshotId: Long)
 

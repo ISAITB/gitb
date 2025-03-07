@@ -1023,6 +1023,9 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     if (canManageSettings) {
       // Load existing values.
       var systemAdminOrganisationId: Option[Long] = None
+      if (ctx.importTargets.hasSystemResources) {
+        exec(PersistenceSchema.communityResources.filter(_.community === Constants.DefaultCommunityId).map(x => x.id).result).foreach(x => ctx.existingIds.map(ImportItemType.SystemResource) += x.toString)
+      }
       if (ctx.importTargets.hasThemes) {
         exportManager.loadThemes().foreach { theme =>
           ctx.existingIds.map(ImportItemType.Theme) += theme.id.toString
@@ -1051,6 +1054,36 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
         }
       }
       for {
+        // Resources
+        _ <- {
+          val dbActions = ListBuffer[DBIO[_]]()
+          if (exportedSettings.getResources != null) {
+            exportedSettings.getResources.getResource.asScala.foreach { exportedContent =>
+              dbActions += processFromArchive(ImportItemType.SystemResource, exportedContent, exportedContent.getId, ctx,
+                ImportCallbacks.set(
+                  (data: com.gitb.xml.export.CommunityResource, item: ImportItem) => {
+                    val fileToStore = dataUrlToTempFile(data.getContent)
+                    ctx.onFailureCalls += (() => if (fileToStore.exists()) { FileUtils.deleteQuietly(fileToStore) })
+                    communityResourceManager.createCommunityResourceInternal(toModelCommunityResource(data, Constants.DefaultCommunityId), fileToStore, ctx.onSuccessCalls)
+                  },
+                  (data: com.gitb.xml.export.CommunityResource, targetKey: String, item: ImportItem) => {
+                    val fileToStore = dataUrlToTempFile(data.getContent)
+                    ctx.onFailureCalls += (() => if (fileToStore.exists()) { FileUtils.deleteQuietly(fileToStore) })
+                    communityResourceManager.updateCommunityResourceInternal(Some(Constants.DefaultCommunityId), targetKey.toLong, Some(data.getName), Some(Option(data.getDescription)), Some(fileToStore), ctx.onSuccessCalls)
+                  }
+                )
+              )
+            }
+          }
+          toDBIO(dbActions)
+        }
+        _ <- {
+          processRemaining(ImportItemType.SystemResource, ctx,
+            (targetKey: String, item: ImportItem) => {
+              communityResourceManager.deleteCommunityResourceInternal(Some(Constants.DefaultCommunityId), targetKey.toLong, ctx.onSuccessCalls)
+            }
+          )
+        }
         // Themes
         _ <- {
           val dbActions = ListBuffer[DBIO[_]]()
@@ -2365,7 +2398,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
         toDBIO(dbActions)
       }
       _ <- {
-        processRemaining(ImportItemType.Trigger, ctx,
+        processRemaining(ImportItemType.CommunityResource, ctx,
           (targetKey: String, item: ImportItem) => {
             communityResourceManager.deleteCommunityResourceInternal(Some(item.parentItem.get.targetKey.get.toLong), targetKey.toLong, ctx.onSuccessCalls)
           }

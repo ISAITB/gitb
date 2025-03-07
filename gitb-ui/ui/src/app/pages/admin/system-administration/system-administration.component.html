@@ -542,6 +542,11 @@
                     </div>
                 </div>
             </tab>
+            <tab (selectTab)="showResources()" customClass="tabClass">
+                <ng-template tabHeading><app-tab-title icon="fa-solid fa-image" text="Resources"></app-tab-title></ng-template>
+                <!-- System-wide resources -->
+                <app-resource-management-tab [actions]="resourceActions" [deferredActivation]="resourceEmitter"></app-resource-management-tab>
+            </tab>
         </tabset>
     </div>
 </div>

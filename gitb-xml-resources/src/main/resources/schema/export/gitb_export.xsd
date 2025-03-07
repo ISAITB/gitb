@@ -835,6 +835,7 @@
     </xsd:complexType>
     <xsd:complexType name="Settings">
         <xsd:sequence>
+            <xsd:element name="resources" type="CommunityResources" minOccurs="0"/>
             <xsd:element name="themes" type="Themes" minOccurs="0"/>
             <xsd:element name="systemConfigurations" type="SystemConfigurations" minOccurs="0"/>
             <xsd:element name="landingPages" type="LandingPages" minOccurs="0"/>

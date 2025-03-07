@@ -1,38 +1,36 @@
-import { AfterViewInit, Component, EventEmitter, OnInit, ViewChild } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
-import { Constants } from 'src/app/common/constants';
-import { BaseComponent } from 'src/app/pages/base-component.component';
-import { CommunityService } from 'src/app/services/community.service';
-import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
-import { ConformanceService } from 'src/app/services/conformance.service';
-import { DataService } from 'src/app/services/data.service';
-import { ErrorTemplateService } from 'src/app/services/error-template.service';
-import { LandingPageService } from 'src/app/services/landing-page.service';
-import { LegalNoticeService } from 'src/app/services/legal-notice.service';
-import { OrganisationService } from 'src/app/services/organisation.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { RoutingService } from 'src/app/services/routing.service';
-import { TriggerService } from 'src/app/services/trigger.service';
-import { UserService } from 'src/app/services/user.service';
-import { Community } from 'src/app/types/community';
-import { Domain } from 'src/app/types/domain';
-import { ErrorTemplate } from 'src/app/types/error-template';
-import { LandingPage } from 'src/app/types/landing-page';
-import { LegalNotice } from 'src/app/types/legal-notice';
-import { Organisation } from 'src/app/types/organisation.type';
-import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
-import { Trigger } from 'src/app/types/trigger';
-import { User } from 'src/app/types/user.type';
-import { TabsetComponent } from 'ngx-bootstrap/tabs';
-import { CommunityTab } from './community-tab.enum';
-import { CommunityResource } from 'src/app/types/community-resource';
-import { BsModalService } from 'ngx-bootstrap/modal';
-import { CreateEditCommunityResourceModalComponent } from 'src/app/modals/create-edit-community-resource-modal/create-edit-community-resource-modal.component';
-import { saveAs } from 'file-saver';
-import { CommunityResourceBulkUploadModalComponent } from 'src/app/modals/community-resource-bulk-upload-modal/community-resource-bulk-upload-modal.component';
-import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
-import { ValidationState } from 'src/app/types/validation-state';
-import { Observable, of } from 'rxjs';
+import {AfterViewInit, Component, EventEmitter, OnInit, ViewChild} from '@angular/core';
+import {ActivatedRoute, Router} from '@angular/router';
+import {Constants} from 'src/app/common/constants';
+import {BaseComponent} from 'src/app/pages/base-component.component';
+import {CommunityService} from 'src/app/services/community.service';
+import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
+import {ConformanceService} from 'src/app/services/conformance.service';
+import {DataService} from 'src/app/services/data.service';
+import {ErrorTemplateService} from 'src/app/services/error-template.service';
+import {LandingPageService} from 'src/app/services/landing-page.service';
+import {LegalNoticeService} from 'src/app/services/legal-notice.service';
+import {OrganisationService} from 'src/app/services/organisation.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {RoutingService} from 'src/app/services/routing.service';
+import {TriggerService} from 'src/app/services/trigger.service';
+import {UserService} from 'src/app/services/user.service';
+import {Community} from 'src/app/types/community';
+import {Domain} from 'src/app/types/domain';
+import {ErrorTemplate} from 'src/app/types/error-template';
+import {LandingPage} from 'src/app/types/landing-page';
+import {LegalNotice} from 'src/app/types/legal-notice';
+import {Organisation} from 'src/app/types/organisation.type';
+import {TableColumnDefinition} from 'src/app/types/table-column-definition.type';
+import {Trigger} from 'src/app/types/trigger';
+import {User} from 'src/app/types/user.type';
+import {TabsetComponent} from 'ngx-bootstrap/tabs';
+import {CommunityTab} from './community-tab.enum';
+import {BreadcrumbType} from 'src/app/types/breadcrumb-type';
+import {ValidationState} from 'src/app/types/validation-state';
+import {Observable, of} from 'rxjs';
+import {ResourceActions} from '../../../../../components/resource-management-tab/resource-actions';
+import {FileData} from '../../../../../types/file-data.type';
+import {CommunityResourceService} from '../../../../../services/community-resource.service';
 
 @Component({
     selector: 'app-community-details',
@@ -49,7 +47,6 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   errorTemplateStatus = {status: Constants.STATUS.NONE}
   legalNoticeStatus = {status: Constants.STATUS.NONE}
   triggerStatus = {status: Constants.STATUS.NONE}
-  resourcesStatus = {status: Constants.STATUS.NONE}
   loaded = false
   savePending = false
   deletePending = false
@@ -82,11 +79,6 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
     { field: 'active', title: 'Active' },
     { field: 'statusText', title: 'Status', iconFn: this.dataService.iconForTestResult, iconTooltipFn: this.tooltipForTriggerResult }
   ]
-  resourceColumns: TableColumnDefinition[] = [
-    { field: 'name', title: 'Name' },
-    { field: 'reference', title: 'Reference to use' },
-    { field: 'description', title: 'Description' }
-  ]
   domains: Domain[] = []
   admins: User[] = []
   organizations: Organisation[] = []
@@ -94,7 +86,6 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   legalNotices: LegalNotice[] = []
   errorTemplates: ErrorTemplate[] = []
   triggers: Trigger[] = []
-  resources: CommunityResource[] = []
   testBedLegalNotice?: LegalNotice
   testBedLandingPage?: LandingPage
   testBedErrorTemplate?: ErrorTemplate
@@ -103,17 +94,12 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   @ViewChild('tabs', { static: false }) tabs?: TabsetComponent;
 
   organisationFilter?: string
-  resourceFilter?: string
   currentOrganisationsPage = 1
-  currentResourcesPage = 1
   organisationCount = 0
-  resourcesCount = 0
   organisationSortOrder = 'asc'
   organisationSortColumn = 'shortname'
   isNextPageOrganisationsDisabled = false
   isPreviousPageOrganisationsDisabled = false
-  isNextPageResourcesDisabled = false
-  isPreviousPageResourcesDisabled = false
 
   sortByCreationOrderNone = "none"
   sortByCreationOrderAsc = "asc"
@@ -125,12 +111,9 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   sortByCreationOrder = this.sortByCreationOrderNone
 
   organisationsRefreshing = false
-  resourcesRefreshing = false
-  downloadAllResourcesPending = false
-  deleteResourcesPending = false
-  selectingForDeleteResources = false
 
-  clearResourceSelections = new EventEmitter<void>()
+  resourceActions!: ResourceActions
+  resourceEmitter = new EventEmitter<void>()
   validation = new ValidationState()
 
   constructor(
@@ -147,7 +130,7 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
     private organisationService: OrganisationService,
     private communityService: CommunityService,
     private conformanceService: ConformanceService,
-    private modalService: BsModalService,
+    private communityResourceService: CommunityResourceService,
     private popupService: PopupService
   ) {
     super()
@@ -169,7 +152,7 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
     this.communityId = this.community.id
     if (Number(this.communityId) == Constants.DEFAULT_COMMUNITY_ID) {
       this.routingService.toSystemAdministration()
-    }    
+    }
     this.community.domainId = this.community.domain?.id
     this.originalDomainId = this.community.domain?.id
     this.adminColumns.push({ field: 'name', title: 'Name' })
@@ -182,6 +165,7 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
     if (this.dataService.configuration.registrationEnabled) {
       this.organizationColumns.push({ field: 'templateName', title: 'Set as template', sortable: true })
     }
+    this.resourceActions = this.createCommunityResourceActions()
     this.routingService.communityBreadcrumbs(this.communityId, this.community.sname)
     // Setup tab triggers
     this.setupTabs()
@@ -235,24 +219,6 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
     .add(() => {
       this.organisationsRefreshing = false
       this.organisationStatus.status = Constants.STATUS.FINISHED
-    })
-  }
-
-  queryResources() {
-    if (this.resourcesStatus.status == Constants.STATUS.FINISHED) {
-      this.resourcesRefreshing = true
-    } else {
-      this.resourcesStatus.status = Constants.STATUS.PENDING
-    }
-    this.clearResourceSelections.emit()
-    this.communityService.searchCommunityResources(this.communityId, this.resourceFilter, this.currentResourcesPage, Constants.TABLE_PAGE_SIZE)
-    .subscribe((data) => {
-      this.resources = data.data
-      this.resourcesCount = data.count!
-      this.updateResourcesPagination()
-    }).add(() => {
-      this.resourcesRefreshing = false
-      this.resourcesStatus.status = Constants.STATUS.FINISHED
     })
   }
 
@@ -343,151 +309,8 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
     }
   }
 
-  applyResourceFilter() {
-    this.goFirstPageResources()
-  }
-
   showResources() {
-    if (this.resourcesStatus.status == Constants.STATUS.NONE) {
-      this.goFirstPageResources()
-    }
-  }
-
-  private openResourceModal(resourceToEdit?: CommunityResource) {
-    const modal = this.modalService.show(CreateEditCommunityResourceModalComponent, {
-      class: 'modal-lg',
-      initialState: {
-        communityId: this.communityId,
-        resource: resourceToEdit
-      }
-    })
-    modal.content!.resourceUpdated.subscribe((updateMade) => {
-      if (updateMade) {
-        this.queryResources()
-      }
-    })
-    modal.onHide!.subscribe(() => {
-      this.clearResourceSelections.emit()
-    })
-  }
-
-  uploadResource() {
-    this.openResourceModal()
-  } 
-
-  uploadResourceBulk() {
-    const modal = this.modalService.show(CommunityResourceBulkUploadModalComponent, {
-      class: 'modal-lg',
-      initialState: {
-        communityId: this.communityId
-      }
-    })
-    modal.content!.resourcesUpdated.subscribe((updateMade) => {
-      if (updateMade) {
-        this.queryResources()
-      }
-    })
-  }
-
-  downloadAllResources() {
-    if (this.resources.length > 0) {
-      this.downloadAllResourcesPending = true
-      this.communityService.downloadCommunityResources(this.communityId, this.resourceFilter)
-      .subscribe((data) => {
-        const blobData = new Blob([data], {type: 'application/zip'})
-        saveAs(blobData, 'resources.zip')
-      }).add(() => {
-        this.downloadAllResourcesPending = false
-      })
-    }
-  }
-
-  selectResource(resource: CommunityResource) {
-    this.cancelDeleteResources()
-    this.openResourceModal(resource)
-  }
-
-  copyResourceReference(resource: CommunityResource) {
-    this.dataService.copyToClipboard(resource.reference).subscribe(() => {
-      this.popupService.success('Reference copied to clipboard.')
-    })
-  }
-
-  downloadResource(resource: CommunityResource) {
-    resource.downloadPending = true
-    this.communityService.downloadCommunityResourceById(resource.id)
-    .subscribe((response) => {
-      let fileName = "file"
-      const contentDisposition = response.headers.get('Content-Disposition')
-      if (contentDisposition != null) {
-        fileName = contentDisposition.split(';')[1].trim().split('=')[1].replace(/"/g, '')
-      }
-      const bb = new Blob([response.body as ArrayBuffer])
-      saveAs(bb, fileName)
-    }).add(() => {
-      resource.downloadPending = false
-    })
-  }
-
-  selectDeleteResources() {
-    this.selectingForDeleteResources = true
-  }
-
-  confirmDeleteResources() {
-    const resourceIds: number[] = []
-    for (let resource of this.resources) {
-      if (resource.checked != undefined && resource.checked) {
-        resourceIds.push(resource.id)
-      }
-    }
-    let msg: string
-    if (resourceIds.length == 1) {
-      msg = 'Are you sure you want to delete the selected resource?'
-    } else {
-      msg = 'Are you sure you want to delete the selected resources?'
-    }
-    this.confirmationDialogService.confirmedDangerous("Confirm delete", msg, "Delete", "Cancel").subscribe(() => {
-      this.deleteResourcesPending = true
-      this.resourcesRefreshing = true
-      this.communityService.deleteCommunityResources(this.communityId, resourceIds).subscribe(() => {
-        this.popupService.success("Resources deleted.")
-      }).add(() => {
-        this.deleteResourcesPending = false
-        this.selectingForDeleteResources = false
-        this.goFirstPageResources()
-      })
-    })
-  }
-
-  cancelDeleteResources() {
-    this.clearResourceSelections.emit()
-    this.selectingForDeleteResources = false
-    for (let resource of this.resources) {
-      if (resource.checked != undefined) {
-        resource.checked = false
-      }
-    }
-  }
-
-  resourcesChecked() {
-    for (let resource of this.resources) {
-      if (resource.checked !== undefined && resource.checked) {
-        return true
-      }
-    }
-    return false
-  }
-
-  deleteResource(resource: CommunityResource) {
-    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this resource?", "Delete", "Cancel").subscribe(() => {
-      resource.deletePending = true
-      this.communityService.deleteCommunityResource(resource.id).subscribe(() => {
-        this.popupService.success("Resource deleted.")
-        this.queryResources()
-      }).add(() => {
-        resource.deletePending = false
-      })
-    })
+    this.resourceEmitter.emit()
   }
 
   saveDisabled() {
@@ -607,7 +430,7 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   }
 
   updateReportSettings() {
-    this.routingService.toCommunityReportSettings(this.community.id)    
+    this.routingService.toCommunityReportSettings(this.community.id)
   }
 
   updateParameters() {
@@ -631,19 +454,9 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
     this.queryOrganisations()
   }
 
-  goPreviousPageResources() {
-    this.currentResourcesPage -= 1
-    this.queryResources()
-  }
-
   goNextPageOrganisations() {
     this.currentOrganisationsPage += 1
     this.queryOrganisations()
-  }
-
-  goNextPageResources() {
-    this.currentResourcesPage += 1
-    this.queryResources()
   }
 
   goFirstPageOrganisations() {
@@ -651,19 +464,9 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
     this.queryOrganisations()
   }
 
-  goFirstPageResources() {
-    this.currentResourcesPage = 1
-    this.queryResources()
-  }
-
   goLastPageOrganisations() {
     this.currentOrganisationsPage = Math.ceil(this.organisationCount / Constants.TABLE_PAGE_SIZE)
     this.queryOrganisations()
-  }
-
-  goLastPageResources() {
-    this.currentResourcesPage = Math.ceil(this.resourcesCount / Constants.TABLE_PAGE_SIZE)
-    this.queryResources()
   }
 
   private updateOrganisationPagination() {
@@ -676,19 +479,6 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
     } else {
       this.isNextPageOrganisationsDisabled = false
       this.isPreviousPageOrganisationsDisabled = false
-    }
-  }
-
-  private updateResourcesPagination() {
-    if (this.currentResourcesPage == 1) {
-      this.isNextPageResourcesDisabled = this.resourcesCount <= Constants.TABLE_PAGE_SIZE
-      this.isPreviousPageResourcesDisabled = true
-    } else if (this.currentResourcesPage == Math.ceil(this.resourcesCount / Constants.TABLE_PAGE_SIZE)) {
-      this.isNextPageResourcesDisabled = true
-      this.isPreviousPageResourcesDisabled = false
-    } else {
-      this.isNextPageResourcesDisabled = false
-      this.isPreviousPageResourcesDisabled = false
     }
   }
 
@@ -735,5 +525,36 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
       text = "Unknown"
     }
     return text
-  }  
+  }
+
+  createCommunityResourceActions(): ResourceActions {
+    return {
+      searchResources: (filter: string|undefined, page: number|undefined, limit: number|undefined) => {
+        return this.communityResourceService.searchCommunityResources(this.communityId, filter, page, limit)
+      },
+      downloadResources: (filter: string|undefined) => {
+        return this.communityResourceService.downloadCommunityResources(this.communityId, filter)
+      },
+      downloadResource: (resourceId: number) => {
+        return this.communityResourceService.downloadCommunityResourceById(resourceId)
+      },
+      deleteResources: (resourceIds: number[]) => {
+        return this.communityResourceService.deleteCommunityResources(this.communityId, resourceIds)
+      },
+      deleteResource: (resourceId: number) => {
+        return this.communityResourceService.deleteCommunityResource(resourceId)
+      },
+      createResource: (name: string, description: string|undefined, file: FileData) => {
+        return this.communityResourceService.createCommunityResource(name, description, file, this.communityId)
+      },
+      updateResource: (resourceId: number, name: string, description: string|undefined, file?: FileData) => {
+        return this.communityResourceService.updateCommunityResource(resourceId, name, description, file)
+      },
+      uploadBulk: (file: FileData, updateMatching?: boolean) => {
+        return this.communityResourceService.uploadCommunityResourcesInBulk(this.communityId, file, updateMatching)
+      },
+      systemScope: false
+    }
+  }
+
 }

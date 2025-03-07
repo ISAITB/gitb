@@ -68,6 +68,7 @@ export class ExportComponent extends BaseComponent implements OnInit {
     testSuites: false,
     communityAdministrators: false,
     organisationUsers: false,
+    systemResources: false,
     themes: false,
     defaultLandingPages: false,
     defaultLegalNotices: false,
@@ -162,6 +163,7 @@ export class ExportComponent extends BaseComponent implements OnInit {
       testSuites: false,
       communityAdministrators: false,
       organisationUsers: false,
+      systemResources: false,
       themes: false,
       defaultLandingPages: false,
       defaultLegalNotices: false,
@@ -176,7 +178,7 @@ export class ExportComponent extends BaseComponent implements OnInit {
   resetSettings(full?:boolean) {
     this.resetIncludes()
     this.settings.encryptionKey = undefined
-    if (this.dataService.isSystemAdmin) { 
+    if (this.dataService.isSystemAdmin) {
       this.domain = undefined
       this.community = undefined
       this.showSystemSettingsOption = true
@@ -252,6 +254,7 @@ export class ExportComponent extends BaseComponent implements OnInit {
 
   allSystemSettingDataChanged() {
     if (this.allSystemSettingData && this.showSystemSettingsOption) {
+      this.settings.systemResources = this.allSystemSettingData
       this.settings.themes = this.allSystemSettingData
       this.settings.defaultLandingPages = this.allSystemSettingData
       this.settings.defaultLegalNotices = this.allSystemSettingData
@@ -423,6 +426,7 @@ export class ExportComponent extends BaseComponent implements OnInit {
       this.settings.testSuites ||
       this.settings.communityAdministrators ||
       this.settings.organisationUsers ||
+      this.settings.systemResources ||
       this.settings.themes ||
       this.settings.defaultLandingPages ||
       this.settings.defaultLegalNotices ||
@@ -434,10 +438,10 @@ export class ExportComponent extends BaseComponent implements OnInit {
 
   exportDisabled() {
     return !(
-      this.textProvided(this.settings.encryptionKey) && 
+      this.textProvided(this.settings.encryptionKey) &&
         (
-          (this.exportType == 'domain' && this.domain != undefined) || 
-          (this.exportType == 'community' && this.community != undefined) || 
+          (this.exportType == 'domain' && this.domain != undefined) ||
+          (this.exportType == 'community' && this.community != undefined) ||
           this.exportType == 'settings' ||
           (this.exportType == 'deletions' && (this.domainsForDeletion.length > 0 || this.communitiesForDeletion.length > 0 || (this.addExtraDomainsForDeletion && this.extraDomainsForDeletion.length > 0) || (this.addExtraCommunitiesForDeletion && this.extraCommunitiesForDeletion.length > 0)))
         )
@@ -505,11 +509,11 @@ export class ExportComponent extends BaseComponent implements OnInit {
   }
 
   deleteExtraDomainKey(index: number) {
-    this.extraDomainsForDeletion.splice(index, 1)    
+    this.extraDomainsForDeletion.splice(index, 1)
   }
 
   deleteExtraCommunityKey(index: number) {
-    this.extraCommunitiesForDeletion.splice(index, 1)    
+    this.extraCommunitiesForDeletion.splice(index, 1)
   }
 
 }

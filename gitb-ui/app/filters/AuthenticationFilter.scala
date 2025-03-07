@@ -169,6 +169,7 @@ class AuthenticationFilter @Inject() (implicit ec: ExecutionContext, implicit va
       request.path.equals("%s/initdata".formatted(API_ROOT)) ||
       request.path.equals("%s/healthcheck".formatted(API_ROOT)) ||
       request.path.startsWith("%sbadge/".formatted(WEB_CONTEXT_ROOT_WITH_SLASH)) ||
+      request.path.startsWith("%ssystemResources/".formatted(WEB_CONTEXT_ROOT_WITH_SLASH)) ||
       //public assets
       request.path.startsWith("%sassets/".formatted(WEB_CONTEXT_ROOT_WITH_SLASH)) ||
       request.path.startsWith("%swebjars/".formatted(WEB_CONTEXT_ROOT_WITH_SLASH)) ||

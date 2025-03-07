@@ -49,6 +49,16 @@ class CommunityResourceManager @Inject()(repositoryUtils: RepositoryUtils, dbCon
     }
   }
 
+  def getSystemResourceFileByName(name: String): Option[File] = {
+    exec(PersistenceSchema.communityResources
+      .filter(_.community === Constants.DefaultCommunityId)
+      .filter(_.name === name)
+      .map(x => (x.id, x.community))
+      .result
+      .headOption
+    ).map(x => repositoryUtils.getCommunityResource(x._2, x._1))
+  }
+
   def getCommunityResourceFileByName(communityId: Option[Long], userId: Long, name: String): Option[File] = {
     val resourceIds = exec(for {
       resourceCommunityId <- {

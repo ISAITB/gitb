@@ -183,61 +183,7 @@
             <tab (selectTab)="showResources()" customClass="tabClass">
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-image" text="Resources"></app-tab-title></ng-template>
                 <!-- Community resources -->
-                <div class="tabPanel">
-                    <div class="tabControls">
-                        <div class="searchControls btn-toolbar">
-                            <app-text-filter name="resourceFilter" [width]="300" [placeholder]="'Search resources...'" [(ngModel)]="resourceFilter" (apply)="applyResourceFilter()"></app-text-filter>
-                            <div class="btn-group" dropdown [isDisabled]="downloadAllResourcesPending || selectingForDeleteResources">
-                                <button type="button" class="btn btn-secondary" (click)="uploadResource()" [disabled]="downloadAllResourcesPending || selectingForDeleteResources">Upload resource</button>
-                                <button id="button-upload-resource" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split" aria-controls="dropdown-upload-resource" [disabled]="downloadAllResourcesPending || selectingForDeleteResources">
-                                    <span class="caret"></span>
-                                    <span class="sr-only visually-hidden"></span>
-                                </button>
-                                <ul id="dropdown-upload-resource" *dropdownMenu class="dropdown-menu">
-                                    <li role="menuitem"><a class="dropdown-item" href (click)="uploadResourceBulk(); $event.preventDefault()">Bulk upload</a></li>
-                                </ul>
-                            </div>
-                            <button type="button" class="btn btn-secondary" (click)="downloadAllResources()" [disable]="resources.length == 0 || selectingForDeleteResources" [pending]="downloadAllResourcesPending">Download all</button>
-                            @if (!selectingForDeleteResources) {
-                                <button type="button" class="btn btn-secondary" (click)="selectDeleteResources()" [disabled]="resources.length == 0 || downloadAllResourcesPending">Delete resources...</button>
-                            } @else {
-                                <button type="button" class="btn btn-secondary" (click)="cancelDeleteResources()" [disabled]="deleteResourcesPending">Cancel</button>
-                                <button type="button" class="btn btn-outline-danger" (click)="confirmDeleteResources()" [disable]="!resourcesChecked()" [pending]="deleteResourcesPending">Confirm</button>
-                            }
-                        </div>
-                    </div>
-                    <div class="card">
-                        <div table-directive
-                            [columns]="resourceColumns"
-                            [data]="resources"
-                            noDataMessage="No community resources found"
-                            [loadingStatus]="resourcesStatus"
-                            [contentRefreshing]="resourcesRefreshing"
-                            [allowSelect]="true"
-                            [actionVisible]="true"
-                            [operationsVisible]="true"
-                            [exportVisible]="true"
-                            [actionIcon]="'fa-solid fa-clipboard'"
-                            [exportIcon]="'fa-solid fa-download'"
-                            [actionTooltip]="'Copy resource reference'"
-                            [exportTooltip]="'Download'"
-                            [clearSelection]="clearResourceSelections"
-                            [deletePendingProperty]="'deletePending'"
-                            [exportPendingProperty]="'downloadPending'"
-                            [nextDisabled]="isNextPageResourcesDisabled"
-                            [prevDisabled]="isPreviousPageResourcesDisabled"
-                            [checkboxEnabled]="selectingForDeleteResources"
-                            (onSelect)="selectResource($event)"
-                            (onAction)="copyResourceReference($event)"
-                            (onExport)="downloadResource($event)"
-                            (onDelete)="deleteResource($event)"
-                            (nextPage)="goNextPageResources()"
-                            (lastPage)="goLastPageResources()"
-                            (firstPage)="goFirstPageResources()"
-                            (prevPage)="goPreviousPageResources()">
-                        </div>
-                    </div>
-                </div>
+                <app-resource-management-tab [actions]="resourceActions" [deferredActivation]="resourceEmitter"></app-resource-management-tab>
             </tab>
         </tabset>
     </div>

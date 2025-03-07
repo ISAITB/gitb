@@ -4,6 +4,7 @@ export default [
         '/api',
         '/assets',
         '/resources',
+        '/systemResources',
         '/badgereportpreview'
     ],
     target: 'http://localhost:9000',

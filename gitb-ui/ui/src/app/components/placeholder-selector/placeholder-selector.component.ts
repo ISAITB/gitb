@@ -12,6 +12,7 @@ import { PlaceholderInfo } from './placeholder-info';
 import { OrganisationParameter } from 'src/app/types/organisation-parameter';
 import { SystemParameter } from 'src/app/types/system-parameter';
 import { Constants } from 'src/app/common/constants';
+import {CommunityResourceService} from '../../services/community-resource.service';
 
 @Component({
     selector: 'app-placeholder-selector',
@@ -41,7 +42,8 @@ export class PlaceholderSelectorComponent implements OnInit {
     private dataService: DataService,
     private popupService: PopupService,
     private conformanceService: ConformanceService,
-    private communityService: CommunityService
+    private communityService: CommunityService,
+    private communityResourceService: CommunityResourceService
   ) { }
 
   ngOnInit(): void {
@@ -51,7 +53,7 @@ export class PlaceholderSelectorComponent implements OnInit {
       communityIdToUse = this.dataService.community?.id
     } else {
       communityIdToUse = this.community
-    }    
+    }
     // Domain parameters
     const domainParameterObservable = this.updateDomainParameters(this.domainId)
     // Organisation properties
@@ -105,9 +107,9 @@ export class PlaceholderSelectorComponent implements OnInit {
           textField: 'name',
           filterLabel: 'Copy resource reference',
           singleSelection: true,
-          loader: (() => {
-            return this.communityService.getCommunityResources(communityIdToUse!)
-          }).bind(this)
+          loader: () => {
+            return this.communityResourceService.getCommunityResources(communityIdToUse!)
+          }
         }
       }
     }

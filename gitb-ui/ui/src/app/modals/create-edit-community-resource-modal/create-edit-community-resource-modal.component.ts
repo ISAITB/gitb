@@ -1,12 +1,12 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { BsModalRef } from 'ngx-bootstrap/modal';
-import { BaseComponent } from 'src/app/pages/base-component.component';
-import { CommunityService } from 'src/app/services/community.service';
-import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { CommunityResource } from 'src/app/types/community-resource';
-import { FileData } from 'src/app/types/file-data.type';
-import { saveAs } from 'file-saver'
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {BsModalRef} from 'ngx-bootstrap/modal';
+import {BaseComponent} from 'src/app/pages/base-component.component';
+import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {CommunityResource} from 'src/app/types/community-resource';
+import {FileData} from 'src/app/types/file-data.type';
+import {saveAs} from 'file-saver';
+import {ResourceActions} from '../../components/resource-management-tab/resource-actions';
 
 @Component({
     selector: 'app-create-edit-community-resource-modal',
@@ -17,7 +17,7 @@ import { saveAs } from 'file-saver'
 export class CreateEditCommunityResourceModalComponent extends BaseComponent implements OnInit {
 
   @Input() resource?: CommunityResource
-  @Input() communityId!: number
+  @Input() actions!: ResourceActions
   @Output() resourceUpdated = new EventEmitter<boolean>()
 
   resourceToUse!: Partial<CommunityResource>
@@ -29,10 +29,9 @@ export class CreateEditCommunityResourceModalComponent extends BaseComponent imp
 
   constructor(
     private modalInstance: BsModalRef,
-    private communityService: CommunityService,
     private popupService: PopupService,
     private confirmationDialogService: ConfirmationDialogService
-  ) { 
+  ) {
     super()
   }
 
@@ -44,9 +43,9 @@ export class CreateEditCommunityResourceModalComponent extends BaseComponent imp
       this.resourceToUse.description = this.resource.description
     }
     if (this.resourceToUse.id == undefined) {
-      this.title = "Upload community resource"
+      this.title = `Upload ${this.actions.systemScope?'system':'community'} resource`
     } else {
-      this.title = "Update community resource"
+      this.title = `Update ${this.actions.systemScope?'system':'community'} resource`
     }
   }
 
@@ -64,7 +63,7 @@ export class CreateEditCommunityResourceModalComponent extends BaseComponent imp
       this.savePending = true
       if (this.resourceToUse.id == undefined) {
         // Create.
-        this.communityService.createCommunityResource(this.resourceToUse.name!, this.resourceToUse.description, this.file!, this.communityId)
+        this.actions.createResource(this.resourceToUse.name!, this.resourceToUse.description, this.file!)
         .subscribe(() => {
           this.resourceUpdated.emit(true)
           this.modalInstance.hide()
@@ -74,7 +73,7 @@ export class CreateEditCommunityResourceModalComponent extends BaseComponent imp
         })
       } else {
         // Update.
-        this.communityService.updateCommunityResource(this.resourceToUse.id!, this.resourceToUse.name!, this.resourceToUse.description, this.file)
+        this.actions.updateResource(this.resourceToUse.id!, this.resourceToUse.name!, this.resourceToUse.description, this.file)
         .subscribe(() => {
           this.resourceUpdated.emit(true)
           this.modalInstance.hide()
@@ -93,7 +92,7 @@ export class CreateEditCommunityResourceModalComponent extends BaseComponent imp
       this.downloadPending = false
     } else if (this.resourceToUse.id != undefined) {
       this.downloadPending = true
-      this.communityService.downloadCommunityResourceById(this.resourceToUse.id)
+      this.actions.downloadResource(this.resourceToUse.id)
       .subscribe((response) => {
         const bb = new Blob([response.body as ArrayBuffer])
         saveAs(bb, this.resourceToUse.name)
@@ -107,12 +106,12 @@ export class CreateEditCommunityResourceModalComponent extends BaseComponent imp
     if (this.resourceToUse.id != undefined) {
       this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this resource?", "Delete", "Cancel").subscribe(() => {
         this.deletePending = true
-        this.communityService.deleteCommunityResource(this.resourceToUse.id!).subscribe(() => {
+        this.actions.deleteResource(this.resourceToUse.id!).subscribe(() => {
           this.resourceUpdated.emit(true)
           this.modalInstance.hide()
           this.popupService.success("Resource deleted.")
         }).add(() => {
-          this.deletePending = false          
+          this.deletePending = false
         })
       })
     }

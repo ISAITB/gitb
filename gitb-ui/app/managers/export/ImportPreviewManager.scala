@@ -84,6 +84,13 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, systemConfigu
 
   private def previewSystemSettingsImportInternal(exportedSettings: com.gitb.xml.export.Settings, referenceUserEmails: mutable.Set[String]): ImportItem = {
     val importTargets = ImportTargets.fromSettings(exportedSettings)
+    val targetResourceMap = mutable.Map[String, ListBuffer[Long]]()
+    exec(PersistenceSchema.communityResources.filter(_.community === Constants.DefaultCommunityId).map(x => (x.name, x.id)).result).map { x =>
+      if (!targetResourceMap.contains(x._1)) {
+        targetResourceMap += (x._1 -> new ListBuffer[Long]())
+      }
+      targetResourceMap(x._1) += x._2
+    }
     val targetThemeMap = mutable.Map[String, ListBuffer[Long]]()
     exec(PersistenceSchema.themes.filter(_.custom === true).result).foreach { x =>
         if (!targetThemeMap.contains(x.key)) {
@@ -122,6 +129,24 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, systemConfigu
     }
     val importItemSettings = new ImportItem(Some("System settings"), ImportItemType.Settings, ImportItemMatch.Both, None, None)
     if (importTargets.hasSettings) {
+      // System resources.
+      if (importTargets.hasSystemResources) {
+        exportedSettings.getResources.getResource.asScala.foreach { exportedResource =>
+          var targetResource: Option[Long] = None
+          val foundContent = targetResourceMap.get(exportedResource.getName)
+          if (foundContent.isDefined && foundContent.get.nonEmpty) {
+            targetResource = Some(foundContent.get.remove(0))
+            if (foundContent.get.isEmpty) {
+              targetResourceMap.remove(exportedResource.getName)
+            }
+          }
+          if (targetResource.isDefined) {
+            new ImportItem(Some(exportedResource.getName), ImportItemType.SystemResource, ImportItemMatch.Both, Some(targetResource.get.toString), Some(exportedResource.getId), importItemSettings)
+          } else {
+            new ImportItem(Some(exportedResource.getName), ImportItemType.SystemResource, ImportItemMatch.ArchiveOnly, None, Some(exportedResource.getId), importItemSettings)
+          }
+        }
+      }
       // Themes.
       if (importTargets.hasThemes) {
         exportedSettings.getThemes.getTheme.asScala.foreach { exportedTheme =>
@@ -221,6 +246,11 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, systemConfigu
       }
     }
     // Mark items not found for deletion.
+    targetResourceMap.foreach { entry =>
+      entry._2.foreach { id =>
+        new ImportItem(Some(entry._1), ImportItemType.SystemResource, ImportItemMatch.DBOnly, Some(id.toString), None, importItemSettings)
+      }
+    }
     targetThemeMap.foreach { entry =>
       entry._2.foreach { id =>
         new ImportItem(Some(entry._1), ImportItemType.Theme, ImportItemMatch.DBOnly, Some(id.toString), None, importItemSettings)

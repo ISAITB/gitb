@@ -691,9 +691,28 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
     exportData
   }
 
+  private def toExportedCommunityResource(resource: models.CommunityResources, sequence: IdGenerator) = {
+    val exportedResource = new CommunityResource
+    exportedResource.setId(toId(sequence.next()))
+    exportedResource.setName(resource.name)
+    exportedResource.setDescription(resource.description.orNull)
+    exportedResource.setContent(MimeUtil.getFileAsDataURL(repositoryUtils.getCommunityResource(resource.community, resource.id), DEFAULT_CONTENT_TYPE))
+    exportedResource
+  }
+
   private def exportSystemSettingsInternal(exportSettings: ExportSettings, exportedUserMap: Option[mutable.HashMap[Long, String]], latestSequenceId: Option[Int]): SystemSettingsExportInfo = {
     val sequence = new IdGenerator(latestSequenceId.getOrElse(0))
     val exportedSettings = new com.gitb.xml.export.Settings
+    // Resources
+    if (exportSettings.systemResources) {
+      val resources = communityResourceManager.getCommunityResources(Constants.DefaultCommunityId)
+      if (resources.nonEmpty) {
+        exportedSettings.setResources(new com.gitb.xml.export.CommunityResources)
+        resources.foreach { resource =>
+          exportedSettings.getResources.getResource.add(toExportedCommunityResource(resource, sequence))
+        }
+      }
+    }
     // Themes
     if (exportSettings.themes) {
       val themes = loadThemes()
@@ -1302,12 +1321,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
       if (resources.nonEmpty) {
         communityData.setResources(new com.gitb.xml.export.CommunityResources)
         resources.foreach { resource =>
-          val exportedResource = new CommunityResource
-          exportedResource.setId(toId(idSequence.next()))
-          exportedResource.setName(resource.name)
-          exportedResource.setDescription(resource.description.orNull)
-          exportedResource.setContent(MimeUtil.getFileAsDataURL(repositoryUtils.getCommunityResource(communityId, resource.id), DEFAULT_CONTENT_TYPE))
-          communityData.getResources.getResource.add(exportedResource)
+          communityData.getResources.getResource.add(toExportedCommunityResource(resource, idSequence))
         }
       }
     }
