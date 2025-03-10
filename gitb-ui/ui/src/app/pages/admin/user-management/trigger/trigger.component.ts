@@ -416,12 +416,24 @@ export class TriggerComponent extends BaseComponent implements OnInit {
     this.triggerService.testTriggerEndpoint(this.trigger.url!, this.trigger.serviceType!, this.communityId)
     .subscribe((result) => {
       if (result.success) {
+        let valueToShow = ''
+        if (result.texts.length > 0 && result.texts.length > 0) {
+          valueToShow = result.texts[0]
+          if (result.contentType == 'application/json') {
+            try {
+              valueToShow = this.dataService.prettifyJSON(valueToShow)
+            } catch (e) {
+              console.warn('Response reported as JSON but could not be parsed')
+              valueToShow = result.texts[0]
+            }
+          }
+        }
         this.modalService.show(CodeEditorModalComponent, {
           class: 'modal-lg',
           initialState: {
             documentName: 'Test success',
             editorOptions: {
-              value: (result.contentType == 'application/json')? this.dataService.prettifyJSON(result.texts[0]) : result.texts[0],
+              value: valueToShow,
               readOnly: true,
               lineNumbers: true,
               smartIndent: false,

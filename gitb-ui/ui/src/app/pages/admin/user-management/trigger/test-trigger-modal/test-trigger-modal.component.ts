@@ -74,7 +74,17 @@ export class TestTriggerModalComponent extends BaseComponent implements OnInit {
             if (data.success) {
               this.responseSuccess = true
               if (this.serviceType == Constants.TRIGGER_SERVICE_TYPE.JSON) {
-                this.response = this.dataService.prettifyJSON(data.texts[0])
+                let valueToShow = ''
+                if (data.texts.length > 0 && data.texts.length > 0) {
+                  valueToShow = data.texts[0]
+                  try {
+                    valueToShow = this.dataService.prettifyJSON(valueToShow)
+                  } catch (e) {
+                    console.warn('Response reported as JSON but could not be parsed')
+                    valueToShow = data.texts[0]
+                  }
+                }
+                this.response = valueToShow
               } else {
                 this.response = data.texts[0]
               }

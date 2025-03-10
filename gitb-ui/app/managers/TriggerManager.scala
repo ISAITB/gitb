@@ -10,6 +10,7 @@ import models.Enums.TriggerServiceType.TriggerServiceType
 import models.Enums.{TriggerDataType, TriggerFireExpressionType, TriggerServiceType}
 import models._
 import org.apache.commons.io.{FileUtils, IOUtils}
+import org.apache.commons.lang3.StringUtils
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.Environment
@@ -728,8 +729,9 @@ class TriggerManager @Inject()(env: Environment,
       payload <- Future { fnPayloadProvider.apply() }
       response <- ws.url(url)
         .addHttpHeaders("Content-Type" -> "application/json")
+        .withFollowRedirects(true)
         .post(payload)
-        .map(response => (response.status == 200, List(response.body), response.headers.getOrElse("Content-Type", List("text/plain")).head))
+        .map(response => (response.status < 400, List(response.body), response.headers.getOrElse("Content-Type", List("text/plain")).head))
     } yield response
   }
 
@@ -980,7 +982,7 @@ class TriggerManager @Inject()(env: Environment,
         JsonUtil.jsProcessRequest(request).toString()
       }).map { result =>
         if (result._1) {
-          JsonUtil.parseJsProcessResponse(Json.parse(result._2.headOption.getOrElse("{}")))
+          JsonUtil.parseJsProcessResponse(Json.parse(result._2.headOption.filter(StringUtils.isNotEmpty(_)).getOrElse("{}")))
         } else {
           throw new IllegalStateException(result._2.headOption.getOrElse("Unexpected error"))
         }
