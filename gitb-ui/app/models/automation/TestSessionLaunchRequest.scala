@@ -7,5 +7,7 @@ case class TestSessionLaunchRequest(
   testSuite: List[String],
   testCase: List[String],
   inputMapping: List[InputMapping],
-  forceSequentialExecution: Boolean
+  forceSequentialExecution: Boolean,
+  waitForCompletion: Boolean,
+  maximumWaitTime: Option[Long]
 ) {}

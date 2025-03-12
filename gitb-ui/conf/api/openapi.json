@@ -2317,6 +2317,15 @@
             "type": "boolean",
             "default": false
           },
+          "waitForCompletion": {
+            "description": "Whether the call should only return once the started test sessions have completed (or until a maximum wait time has elapsed).",
+            "type": "boolean",
+            "default": false
+          },
+          "maximumWaitTime": {
+            "description": "In case the call should wait for the test sessions to complete, this is the maximum time (in milliseconds) to wait before returning.",
+            "type": "number"
+          },
           "testSuite": {
             "description": "The identifier(s) of the test suites to execute.",
             "type": "array",
@@ -2512,6 +2521,10 @@
           "session": {
             "description": "The identifier assigned to the test session.",
             "type": "string"
+          },
+          "completed": {
+            "description": "If the call waited until test sessions were completed, this flag specifies whether the given test session is known to be completed. This may be false if the session did not complete within the maximum wait time, or altogether missing if the call was not set to wait for test session completion.",
+            "type": "boolean"
           }
         },
         "required": [

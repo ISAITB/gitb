@@ -171,14 +171,18 @@ object JsonUtil {
     json
   }
 
-  def jsTestSessionLaunchInfo(sessionInfo: Seq[TestSessionLaunchInfo]): JsObject = {
+  def jsTestSessionLaunchInfo(sessions: Seq[TestSessionLaunchInfo]): JsObject = {
     var jsonItems = Json.arr()
-    sessionInfo.foreach{ item =>
-      jsonItems = jsonItems.append(Json.obj(
+    sessions.foreach{ item =>
+      var session = Json.obj(
         "testSuite" -> item.testSuiteIdentifier,
         "testCase" -> item.testCaseIdentifier,
         "session" -> item.testSessionIdentifier
-      ))
+      )
+      if (item.completed.isDefined) {
+        session = session + ("completed" -> JsBoolean(item.completed.get))
+      }
+      jsonItems = jsonItems.append(session)
     }
     val json = Json.obj("createdSessions" -> jsonItems)
     json
@@ -1134,7 +1138,9 @@ object JsonUtil {
       parseJsInputMapping(jsValue)
     }.toList
     val forceSequential = (jsonConfig \ "forceSequentialExecution").asOpt[Boolean].getOrElse(false)
-    TestSessionLaunchRequest(organisationKey, system, actor, testSuites, testCases, inputMappings, forceSequential)
+    val waitForCompletion = (jsonConfig \ "waitForCompletion").asOpt[Boolean].getOrElse(false)
+    val maximumWaitTime = (jsonConfig \ "maximumWaitTime").asOpt[Long]
+    TestSessionLaunchRequest(organisationKey, system, actor, testSuites, testCases, inputMappings, forceSequential, waitForCompletion, maximumWaitTime)
   }
 
   def parseJsTestSuiteDeployRequest(jsonConfig: JsValue, sharedTestSuite: Boolean): (TestSuiteDeployRequest, String) = {

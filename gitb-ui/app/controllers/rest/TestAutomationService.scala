@@ -5,7 +5,6 @@ import exceptions.{AutomationApiException, ErrorCodes}
 import managers.{AuthorizationManager, ReportManager, SystemManager, TestExecutionManager}
 import models.Constants
 import org.apache.commons.io.FileUtils
-import play.api.http.MimeTypes
 import play.api.mvc._
 import utils.{JsonUtil, RepositoryUtils}
 
@@ -22,13 +21,16 @@ class TestAutomationService @Inject() (authorizedAction: AuthorizedAction,
                                        systemManager: SystemManager,
                                        testExecutionManager: TestExecutionManager) extends BaseAutomationService(cc) {
 
-  def start: Action[AnyContent] = authorizedAction { request =>
-    processAsJson(request, Some(authorizationManager.canOrganisationUseAutomationApi),
+  def start: Action[AnyContent] = authorizedAction.async { request =>
+    processAsJsonAsync(request, Some(authorizationManager.canOrganisationUseAutomationApi),
       { body =>
         val organisationKey = request.headers.get(Constants.AutomationHeader).get
         val input = JsonUtil.parseJsTestSessionLaunchRequest(body, organisationKey)
-        val sessionIds = testExecutionManager.processAutomationLaunchRequest(input)
-        ResponseConstructor.constructJsonResponse(JsonUtil.jsTestSessionLaunchInfo(sessionIds).toString())
+        testExecutionManager.processAutomationLaunchRequest(input).map { result =>
+          ResponseConstructor.constructJsonResponse(JsonUtil.jsTestSessionLaunchInfo(result).toString())
+        }.recover {
+          case e: Throwable => handleException(e)
+        }
       }
     )
   }

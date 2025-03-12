@@ -7,6 +7,9 @@ import org.slf4j.LoggerFactory
 import play.api.libs.json.{JsResultException, JsValue, Json}
 import play.api.mvc._
 
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+
 abstract class BaseAutomationService(protected val cc: ControllerComponents) extends AbstractController(cc) {
 
   private val LOG = LoggerFactory.getLogger(classOf[BaseAutomationService])
@@ -49,6 +52,22 @@ abstract class BaseAutomationService(protected val cc: ControllerComponents) ext
       }
     } catch {
       case e: Throwable => result = handleException(e)
+    }
+    result
+  }
+
+  protected def processAsJsonAsync(request: RequestWithAttributes[AnyContent], authorisationFn: Option[RequestWithAttributes[AnyContent] => _], processFn: JsValue => Future[Result]): Future[Result] = {
+    if (authorisationFn.isDefined) {
+      authorisationFn.get.apply(request)
+    }
+    var result: Future[Result] = null
+    val json = bodyToJson(request)
+    if (json.isEmpty) {
+      result = Future {
+        ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "Failed to parse provided payload as JSON")
+      }
+    } else {
+      result = processFn(json.get)
     }
     result
   }

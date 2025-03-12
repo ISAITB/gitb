@@ -12,7 +12,8 @@ import models.automation.{InputMappingContent, TestSessionLaunchInfo, TestSessio
 import models.prerequisites.PrerequisiteUtil
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.StringUtils
-import org.apache.pekko.actor.{ActorRef, ActorSystem}
+import org.apache.pekko.actor.{ActorRef, ActorSystem, Scheduler}
+import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import utils.{MimeUtil, RepositoryUtils, TimeUtil}
@@ -20,10 +21,13 @@ import utils.{MimeUtil, RepositoryUtils, TimeUtil}
 import java.time.Duration
 import java.time.temporal.ChronoUnit
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
 @Singleton
 class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClient,
@@ -40,6 +44,7 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
                                       dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
+  private val LOGGER = LoggerFactory.getLogger(classOf[TestExecutionManager])
   private var sessionManagerActor: Option[ActorRef] = None
   private final val reservedInputNames = Set(
     Constants.systemTestVariable, Constants.organisationTestVariable, Constants.domainTestVariable,
@@ -227,7 +232,7 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
     }
   }
 
-  def processAutomationLaunchRequest(request: TestSessionLaunchRequest): Seq[TestSessionLaunchInfo] = {
+  def processAutomationLaunchRequest(request: TestSessionLaunchRequest): Future[Seq[TestSessionLaunchInfo]] = {
     val q = for {
       statementIds <- apiHelper.getStatementIdsForApiKeys(request.organisation, request.system, request.actor, None, Some(request.testSuite), Some(request.testCase))
       testCaseData <- {
@@ -256,9 +261,9 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
         requestedTestCases.addAll(request.testCase)
         // Map to lookup TC IDs only based on TC identifiers
         val testCaseIdentifierToIdMap = new mutable.HashMap[String, mutable.HashSet[Long]]()
-        // Map to lookup the TC identifiers for given TS identifiers
+        // Map to look up the TC identifiers for given TS identifiers
         val testSuiteIdentifierToTestCaseIdentifiersMap = new mutable.HashMap[String, mutable.HashSet[String]]()
-        // Map to lookup the TC ids for specific TS and TC identifier combinations
+        // Map to look up the TC ids for specific TS and TC identifier combinations
         val completeTestCaseIdentifierToIdMap = new mutable.HashMap[String, Long]()
         // Prepare test case IDs
         val testCaseIds = ListBuffer[Long]()
@@ -288,7 +293,7 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
           // Prepare test session ID
           val testSessionId = UUID.randomUUID().toString
           sessionIdsToAssign += (testCaseId -> testSessionId)
-          sessionLaunchInfo += TestSessionLaunchInfo(testSuiteIdentifier, testCaseIdentifier, testSessionId)
+          sessionLaunchInfo += TestSessionLaunchInfo(testSuiteIdentifier, testCaseIdentifier, testSessionId, None)
         }
         if (requestedTestCases.nonEmpty) {
           throw AutomationApiException(ErrorCodes.API_TEST_CASE_NOT_FOUND, "One or more requested test cases could not be found ["+requestedTestCases.mkString(",")+"]")
@@ -363,9 +368,85 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
         DBIO.successful((testCaseIds.toList, testCaseInputs, sessionLaunchInfo.toList, sessionIdsToAssign.toMap))
       }
     } yield (testCaseInputData._1, statementIds.systemId, statementIds.actorId, testCaseInputData._2, testCaseInputData._3, testCaseInputData._4)
-    val results = exec(q)
-    startHeadlessTestSessions(results._1, results._2, results._3, results._4, Some(results._6), request.forceSequentialExecution)
-    results._5
+    DB.run(q).flatMap { results =>
+      startHeadlessTestSessions(results._1, results._2, results._3, results._4, Some(results._6), request.forceSequentialExecution)
+      if (request.waitForCompletion) {
+        // Wait until the test sessions have completed.
+        val sessionBuffer = new ListBuffer[TestSessionLaunchInfo]()
+        sessionBuffer.addAll(results._5)
+        val maximumWaitTime = request.maximumWaitTime.getOrElse(30.seconds.toMillis)
+        val scheduler = actorSystem.scheduler
+        val startTime = System.currentTimeMillis()
+        after(getPollDelay(0, maximumWaitTime), scheduler)(checkTestSessionsUntilFinished(sessionBuffer, startTime, maximumWaitTime, scheduler)).map { sessionInfo =>
+            sessionInfo.toList
+        }
+      } else {
+        Future.successful(results._5)
+      }
+    }
+  }
+
+  private def checkTestSessionsUntilFinished(sessions: ListBuffer[TestSessionLaunchInfo], startMillis: Long, maximumWait: Long, scheduler: Scheduler): Future[ListBuffer[TestSessionLaunchInfo]] = {
+    LOGGER.debug("Checking test sessions for completion...")
+    checkAllTestSessionsFinished(sessions).flatMap { sessionInfo =>
+      if (!sessionInfo.exists(_.completed.getOrElse(false) == false)) {
+        // All test sessions completed.
+        Future.successful(sessionInfo)
+      } else {
+        val elapsedMillis = System.currentTimeMillis() - startMillis
+        if (elapsedMillis > maximumWait) {
+          // Not all sessions completed in the allotted time.
+          Future.successful(sessionInfo)
+        } else {
+          // Schedule another check after a brief delay. If the delay exceeds the maximum wait time then try one last time at the maximum wait time.
+          val pollDelay = getPollDelay(elapsedMillis, maximumWait)
+          after(pollDelay, scheduler)(checkTestSessionsUntilFinished(sessionInfo, startMillis, maximumWait, scheduler))
+        }
+      }
+    }
+  }
+
+  private def getPollDelay(elapsedMillis: Long, maximumWait: Long): FiniteDuration = {
+    var pollDelay = 5000L // Delay of 5 seconds by default
+    val millisToGoBeforeTimeout = maximumWait - elapsedMillis
+    if (millisToGoBeforeTimeout < pollDelay) {
+      // If we are set to stop polling before the next 5 seconds elapse, poll at the timeout time.
+      pollDelay = millisToGoBeforeTimeout
+    }
+    LOGGER.debug("Polling in {} milliseconds ({} elapsed and {} until timeout)", pollDelay, elapsedMillis, millisToGoBeforeTimeout)
+    FiniteDuration(pollDelay, TimeUnit.MILLISECONDS)
+  }
+
+  // Helper function for scheduling a Future after a delay
+  private def after[T](delay: FiniteDuration, scheduler: Scheduler)(future: => Future[T]): Future[T] = {
+    val promise = scala.concurrent.Promise[T]()
+    scheduler.scheduleOnce(delay)(promise.completeWith(future))
+    promise.future
+  }
+
+  private def checkAllTestSessionsFinished(sessions: ListBuffer[TestSessionLaunchInfo]): Future[ListBuffer[TestSessionLaunchInfo]] = {
+    // Check only the session IDs that are not yet completed.
+    val pendingSessionIds = sessions.filter(_.completed.getOrElse(false) != true).map(_.testSessionIdentifier)
+    // Query the DB for those sessions that are newly completed.
+    DB.run(
+      PersistenceSchema.testResults
+        .filter(_.testSessionId inSet pendingSessionIds)
+        .filter(_.endTime.isDefined)
+        .map(x => x.testSessionId)
+        .result
+    ).map { completedSessionIds =>
+      // Update the results to flag the newly completed sessions as such.
+      LOGGER.debug("Completed sessions: {}", completedSessionIds)
+      val completedSessionSet = completedSessionIds.toSet
+      sessions.zipWithIndex.foreach { entry =>
+        if (completedSessionSet.contains(entry._1.testSessionIdentifier)) {
+          sessions(entry._2) = entry._1.withCompletedFlag(true)
+        } else if (entry._1.completed.isEmpty) {
+          sessions(entry._2) = entry._1.withCompletedFlag(false)
+        }
+      }
+      sessions
+    }
   }
 
   private def recordTestCaseInput(map: mutable.HashMap[Long, mutable.HashMap[String, InputMappingContent]], testCaseId: Long, input: InputMappingContent): Unit = {
