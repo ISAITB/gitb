@@ -27,7 +27,7 @@ class ErrorHandler @Inject() (legalNoticeManager: LegalNoticeManager) extends Ht
   override def onServerError(request: RequestHeader, ex: Throwable): Future[Result] = {
     val requestedWithHeader = request.headers.get("X-Requested-With")
     val acceptHeader = request.headers.get("Accept")
-    val errorAsJson = requestedWithHeader.isDefined || (acceptHeader.isDefined && StringUtils.contains(acceptHeader.get.toLowerCase, "application/json"))
+    val errorAsJson = requestedWithHeader.isDefined || acceptHeader.exists(x => StringUtils.contains(x.toLowerCase, "application/json")) || request.path.startsWith(Configurations.API_ROOT)
     val errorIdentifier = RandomStringUtils.secure().nextAlphabetic(10).toUpperCase()
     logger.error("Error ["+errorIdentifier+"]", ex)
     if (errorAsJson) {

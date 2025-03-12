@@ -17,6 +17,8 @@ import utils.RepositoryUtils
 
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 
 object AuthorizationManager {
   val AUTHORIZATION_CHECKED = "AUTH_CHECKED"
@@ -122,6 +124,28 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
       }
     }
     setAuthResult(request, ok, "You are not allowed to manage test sessions through the automation API")
+  }
+
+  def canOrganisationUseAutomationApiAsync(request: RequestWithAttributes[_]): Future[Boolean] = {
+    val check = if (Configurations.AUTOMATION_API_ENABLED) {
+      val apiKey = request.headers.get(Constants.AutomationHeader)
+      if (apiKey.isDefined) {
+        organizationManager.getByApiKeyAsync(apiKey.get).flatMap { organisation =>
+          if (organisation.isDefined) {
+            communityManager.getByIdAsync(organisation.get.community).flatMap { community =>
+              Future.successful(community.isDefined && community.get.allowAutomationApi)
+            }
+          } else {
+            Future.successful(false)
+          }
+        }
+      } else {
+        Future.successful(false)
+      }
+    } else {
+      Future.successful(false)
+    }
+    check.map(setAuthResult(request, _, "You are not allowed to manage test sessions through the automation API"))
   }
 
   def canManageConfigurationThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {

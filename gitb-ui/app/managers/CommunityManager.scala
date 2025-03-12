@@ -16,6 +16,7 @@ import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.language.postfixOps
 
 @Singleton
@@ -137,6 +138,10 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
 
   def getById(id: Long): Option[Communities] = {
     exec(getByIdInternal(id))
+  }
+
+  def getByIdAsync(id: Long): Future[Option[Communities]] = {
+    DB.run(getByIdInternal(id))
   }
 
   def getByApiKey(apiKey: String): Option[Communities] = {

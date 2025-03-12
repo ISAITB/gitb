@@ -22,17 +22,19 @@ class TestAutomationService @Inject() (authorizedAction: AuthorizedAction,
                                        testExecutionManager: TestExecutionManager) extends BaseAutomationService(cc) {
 
   def start: Action[AnyContent] = authorizedAction.async { request =>
-    processAsJsonAsync(request, Some(authorizationManager.canOrganisationUseAutomationApi),
-      { body =>
-        val organisationKey = request.headers.get(Constants.AutomationHeader).get
-        val input = JsonUtil.parseJsTestSessionLaunchRequest(body, organisationKey)
-        testExecutionManager.processAutomationLaunchRequest(input).map { result =>
-          ResponseConstructor.constructJsonResponse(JsonUtil.jsTestSessionLaunchInfo(result).toString())
-        }.recover {
-          case e: Throwable => handleException(e)
+    for {
+      _ <- authorizationManager.canOrganisationUseAutomationApiAsync(request)
+      result <- processAsJsonAsync(request, { body =>
+          val organisationKey = request.headers.get(Constants.AutomationHeader).get
+          val input = JsonUtil.parseJsTestSessionLaunchRequest(body, organisationKey)
+          testExecutionManager.processAutomationLaunchRequest(input).map { result =>
+            ResponseConstructor.constructJsonResponse(JsonUtil.jsTestSessionLaunchInfo(result).toString())
+          }.recover {
+            case e: Throwable => handleException(e)
+          }
         }
-      }
-    )
+      )
+    } yield result
   }
 
   def stop: Action[AnyContent] = authorizedAction { request =>

@@ -13,6 +13,7 @@ import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 /**
  * Created by VWYNGAET on 26/10/2016.
@@ -138,6 +139,10 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
 
   def getByApiKey(apiKey: String): Option[Organizations] = {
     exec(PersistenceSchema.organizations.filter(_.apiKey === apiKey).result.headOption)
+  }
+
+  def getByApiKeyAsync(apiKey: String): Future[Option[Organizations]] = {
+    DB.run(PersistenceSchema.organizations.filter(_.apiKey === apiKey).result.headOption)
   }
 
   /**

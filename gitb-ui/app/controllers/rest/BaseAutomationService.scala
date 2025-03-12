@@ -2,7 +2,7 @@ package controllers.rest
 
 import com.fasterxml.jackson.core.JsonParseException
 import controllers.util.{RequestWithAttributes, ResponseConstructor}
-import exceptions.{AutomationApiException, ErrorCodes, MissingRequiredParameterException}
+import exceptions.{AutomationApiException, ErrorCodes, MissingRequiredParameterException, UnauthorizedAccessException}
 import org.slf4j.LoggerFactory
 import play.api.libs.json.{JsResultException, JsValue, Json}
 import play.api.mvc._
@@ -15,14 +15,18 @@ abstract class BaseAutomationService(protected val cc: ControllerComponents) ext
   private val LOG = LoggerFactory.getLogger(classOf[BaseAutomationService])
 
   private def bodyToJson(request: Request[AnyContent]): Option[JsValue] = {
-    var result: Option[JsValue] = request.body.asJson
-    if (result.isEmpty) {
-      val text = request.body.asText
-      if (text.isDefined) {
-        result = Some(Json.parse(text.get))
+    try {
+      var result: Option[JsValue] = request.body.asJson
+      if (result.isEmpty) {
+        val text = request.body.asText
+        if (text.isDefined) {
+          result = Some(Json.parse(text.get))
+        }
       }
+      result
+    } catch {
+      case _: Throwable => None
     }
-    result
   }
 
   protected def process(request: RequestWithAttributes[AnyContent], authorisationFn: Option[RequestWithAttributes[AnyContent] => _], processFn: Any => Result): Result = {
@@ -56,20 +60,19 @@ abstract class BaseAutomationService(protected val cc: ControllerComponents) ext
     result
   }
 
-  protected def processAsJsonAsync(request: RequestWithAttributes[AnyContent], authorisationFn: Option[RequestWithAttributes[AnyContent] => _], processFn: JsValue => Future[Result]): Future[Result] = {
-    if (authorisationFn.isDefined) {
-      authorisationFn.get.apply(request)
-    }
-    var result: Future[Result] = null
-    val json = bodyToJson(request)
-    if (json.isEmpty) {
-      result = Future {
-        ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "Failed to parse provided payload as JSON")
+  protected def processAsJsonAsync(request: RequestWithAttributes[AnyContent], processFn: JsValue => Future[Result]): Future[Result] = {
+    for {
+      result <- {
+        val json = bodyToJson(request)
+        if (json.isEmpty) {
+          Future {
+            ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "Failed to parse provided payload as JSON")
+          }
+        } else {
+          processFn(json.get)
+        }
       }
-    } else {
-      result = processFn(json.get)
-    }
-    result
+    } yield result
   }
 
   protected def handleException(cause: Throwable): Result = {
