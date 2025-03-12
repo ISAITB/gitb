@@ -31,9 +31,9 @@ Library licences are organised in three sections:
 | Apache License, Version 2.0 | ph-commons | com.helger.commons:ph-commons | 11.1.6 | https://github.com/phax/ph-commons/ph-commons |
 | Apache License, Version 2.0 | ph-jaxb | com.helger.commons:ph-jaxb | 11.1.6 | https://github.com/phax/ph-commons/ph-jaxb |
 | Apache License, Version 2.0 | ph-xml | com.helger.commons:ph-xml | 11.1.6 | https://github.com/phax/ph-commons/ph-xml |
-| Apache License, Version 2.0 | ph-schematron-api | com.helger.schematron:ph-schematron-api | 8.0.5 | https://github.com/phax/ph-schematron/ph-schematron-api |
-| Apache License, Version 2.0 | ph-schematron-pure | com.helger.schematron:ph-schematron-pure | 8.0.5 | https://github.com/phax/ph-schematron/ph-schematron-pure |
-| Apache License, Version 2.0 | ph-schematron-xslt | com.helger.schematron:ph-schematron-xslt | 8.0.5 | https://github.com/phax/ph-schematron/ph-schematron-xslt |
+| Apache License, Version 2.0 | ph-schematron-api | com.helger.schematron:ph-schematron-api | 8.0.6 | https://github.com/phax/ph-schematron/ph-schematron-api |
+| Apache License, Version 2.0 | ph-schematron-pure | com.helger.schematron:ph-schematron-pure | 8.0.6 | https://github.com/phax/ph-schematron/ph-schematron-pure |
+| Apache License, Version 2.0 | ph-schematron-xslt | com.helger.schematron:ph-schematron-xslt | 8.0.6 | https://github.com/phax/ph-schematron/ph-schematron-xslt |
 | Apache License, Version 2.0 | ph-xsds-xml | com.helger.xsd:ph-xsds-xml | 3.0.0 | https://github.com/phax/ph-xsds/ph-xsds-xml |
 | GNU Lesser General Public License (LGPL), Version 2.1 | Openhtmltopdf Core Renderer | com.openhtmltopdf:openhtmltopdf-core | 1.0.10 | https://github.com/danfickle/openhtmltopdf/openhtmltopdf-core |
 | GNU Lesser General Public License (LGPL), Version 2.1 | Openhtmltopdf PDF Rendering (Apache PDF-BOX 2) | com.openhtmltopdf:openhtmltopdf-pdfbox | 1.0.10 | https://github.com/danfickle/openhtmltopdf/openhtmltopdf-pdfbox |
