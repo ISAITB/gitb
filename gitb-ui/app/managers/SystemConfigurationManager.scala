@@ -18,12 +18,14 @@ import java.util.{Calendar, UUID}
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future, Promise}
 import scala.util.{Failure, Success}
 
 @Singleton
-class SystemConfigurationManager @Inject() (testResultManager: TestResultManager, repositoryUtils: RepositoryUtils, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class SystemConfigurationManager @Inject() (testResultManager: TestResultManager,
+                                            repositoryUtils: RepositoryUtils,
+                                            dbConfigProvider: DatabaseConfigProvider)
+                                           (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -50,8 +52,10 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
       .toString()
   }
 
-  def getThemeResource(themeId: Long, resourceName: String): Option[File] = {
-    repositoryUtils.getThemeResource(themeId, resourceName)
+  def getThemeResource(themeId: Long, resourceName: String): Future[Option[File]] = {
+    Future.successful {
+      repositoryUtils.getThemeResource(themeId, resourceName)
+    }
   }
 
   private def getOrSetActiveTheme(): DBIO[(Option[Theme], Option[Theme], Option[Theme])] = {
@@ -94,19 +98,19 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
     } yield (activeTheme, environmentTheme, defaultTheme)
   }
 
-  def reloadThemeCss(): Unit = {
-    val themeData = exec(getOrSetActiveTheme().transactionally)
-    val themeToUse = if (themeData._1.isDefined) {
-      logger.info(s"Loaded theme [${themeData._1.get.key}] marked as active.")
-      themeData._1.get
-    } else if (themeData._2.isDefined) {
-      logger.info(s"Loaded theme [${themeData._2.get.key}] selected via environment variable.")
-      themeData._2.get
-    } else {
-      logger.info("Loaded default theme.")
-      themeData._3.get
-    }
-    val cssContent = ":root {" +
+  def reloadThemeCss(): Future[Unit] = {
+    DB.run(getOrSetActiveTheme().transactionally).map { themeData =>
+      val themeToUse = if (themeData._1.isDefined) {
+        logger.info(s"Loaded theme [${themeData._1.get.key}] marked as active.")
+        themeData._1.get
+      } else if (themeData._2.isDefined) {
+        logger.info(s"Loaded theme [${themeData._2.get.key}] selected via environment variable.")
+        themeData._2.get
+      } else {
+        logger.info("Loaded default theme.")
+        themeData._3.get
+      }
+      val cssContent = ":root {" +
         "  --itb-separator-title-color: " + themeToUse.separatorTitleColor + ";\n" +
         "  --itb-modal-title-color: " + themeToUse.modalTitleColor + ";\n" +
         "  --itb-table-title-color: " + themeToUse.tableTitleColor + ";\n" +
@@ -131,78 +135,100 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
         "  --itb-btn-secondary-label-color: " + themeToUse.secondaryButtonLabelColor + ";\n" +
         "  --itb-btn-secondary-hover-color: " + themeToUse.secondaryButtonHoverColor + ";\n" +
         "  --itb-btn-secondary-active-color: " + themeToUse.secondaryButtonActiveColor + ";\n" +
-    "}"
-    activeThemeCss = Some(cssContent)
-    activeThemeFavicon = Some(themeToUse.faviconPath)
-    activeThemeId = Some(themeToUse.id)
+        "}"
+      activeThemeCss = Some(cssContent)
+      activeThemeFavicon = Some(themeToUse.faviconPath)
+      activeThemeId = Some(themeToUse.id)
+    }
   }
 
-  def getActiveThemeId(): Long = {
+  def getActiveThemeId(): Future[Long] = {
     if (activeThemeId.isEmpty) {
-      reloadThemeCss()
+      reloadThemeCss().map { _ =>
+        activeThemeId.get
+      }
+    } else {
+      Future.successful {
+        activeThemeId.get
+      }
     }
-    activeThemeId.get
   }
 
-  def getCssForActiveTheme(): String = {
+  def getCssForActiveTheme(): Future[String] = {
     if (activeThemeCss.isEmpty) {
-      reloadThemeCss()
+      reloadThemeCss().map { _ =>
+        activeThemeCss.get
+      }
+    } else {
+      Future.successful {
+        activeThemeCss.get
+      }
     }
-    activeThemeCss.get
   }
 
-  def getFaviconPath(): String = {
+  def getFaviconPath(): Future[String] = {
     if (activeThemeFavicon.isEmpty) {
-      reloadThemeCss()
+      reloadThemeCss().map { _ =>
+        activeThemeFavicon.get
+      }
+    } else {
+      Future.successful {
+        activeThemeFavicon.get
+      }
     }
-    activeThemeFavicon.get
+  }
+
+  def getSystemConfigurationAsync(name: String): Future[Option[SystemConfigurations]] = {
+    DB.run(PersistenceSchema.systemConfigurations.filter(_.name === name).result.headOption)
   }
 
   /**
    * Gets system config by name
    */
-  def getSystemConfiguration(name: String): Option[SystemConfigurations] = {
-    exec(PersistenceSchema.systemConfigurations.filter(_.name === name).result.headOption)
+  def getSystemConfiguration(name: String): Future[Option[SystemConfigurations]] = {
+    DB.run(PersistenceSchema.systemConfigurations.filter(_.name === name).result.headOption)
   }
 
-  def getEditableSystemConfigurationValues(onlyPersisted: Boolean = false): List[SystemConfigurationsWithEnvironment] = {
-    var persistedConfigs = exec(
+  def getEditableSystemConfigurationValues(onlyPersisted: Boolean = false): Future[List[SystemConfigurationsWithEnvironment]] = {
+    DB.run(
       PersistenceSchema.systemConfigurations
         .filter(_.name inSet editableSystemConfigurationTypes)
         .map(x => (x.name, x.parameter))
         .result
-    ).map(x => SystemConfigurationsWithEnvironment(SystemConfigurations(x._1, x._2, None), defaultSetting = false, environmentSetting = false)).toList
-    if (!onlyPersisted) {
-      val restApiEnabledConfig = persistedConfigs.find(config => config.config.name == Constants.RestApiEnabled)
-      val demoAccountConfig = persistedConfigs.find(config => config.config.name == Constants.DemoAccount)
-      val selfRegistrationConfig = persistedConfigs.find(config => config.config.name == Constants.SelfRegistrationEnabled)
-      val welcomeMessageConfig = persistedConfigs.find(config => config.config.name == Constants.WelcomeMessage)
-      val emailSettingsConfig = persistedConfigs.find(config => config.config.name == Constants.EmailSettings)
-      if (restApiEnabledConfig.isEmpty) {
-        persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.RestApiEnabled, Some(Configurations.AUTOMATION_API_ENABLED.toString), None), defaultSetting = true, environmentSetting = sys.env.contains("AUTOMATION_API_ENABLED"))
-      }
-      if (selfRegistrationConfig.isEmpty) {
-        persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.SelfRegistrationEnabled, Some(Configurations.REGISTRATION_ENABLED.toString), None), defaultSetting = true, environmentSetting = sys.env.contains("REGISTRATION_ENABLED"))
-      }
-      if (demoAccountConfig.isEmpty) {
-        if (Configurations.DEMOS_ENABLED && Configurations.DEMOS_ACCOUNT != -1) {
-          persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.DemoAccount, Some(Configurations.DEMOS_ACCOUNT.toString), None), defaultSetting = true, environmentSetting = sys.env.contains("DEMOS_ENABLED") && sys.env.contains("DEMOS_ACCOUNT"))
-        } else {
+    ).map { results =>
+      var persistedConfigs = results.map(x => SystemConfigurationsWithEnvironment(SystemConfigurations(x._1, x._2, None), defaultSetting = false, environmentSetting = false)).toList
+      if (!onlyPersisted) {
+        val restApiEnabledConfig = persistedConfigs.find(config => config.config.name == Constants.RestApiEnabled)
+        val demoAccountConfig = persistedConfigs.find(config => config.config.name == Constants.DemoAccount)
+        val selfRegistrationConfig = persistedConfigs.find(config => config.config.name == Constants.SelfRegistrationEnabled)
+        val welcomeMessageConfig = persistedConfigs.find(config => config.config.name == Constants.WelcomeMessage)
+        val emailSettingsConfig = persistedConfigs.find(config => config.config.name == Constants.EmailSettings)
+        if (restApiEnabledConfig.isEmpty) {
+          persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.RestApiEnabled, Some(Configurations.AUTOMATION_API_ENABLED.toString), None), defaultSetting = true, environmentSetting = sys.env.contains("AUTOMATION_API_ENABLED"))
+        }
+        if (selfRegistrationConfig.isEmpty) {
+          persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.SelfRegistrationEnabled, Some(Configurations.REGISTRATION_ENABLED.toString), None), defaultSetting = true, environmentSetting = sys.env.contains("REGISTRATION_ENABLED"))
+        }
+        if (demoAccountConfig.isEmpty) {
+          if (Configurations.DEMOS_ENABLED && Configurations.DEMOS_ACCOUNT != -1) {
+            persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.DemoAccount, Some(Configurations.DEMOS_ACCOUNT.toString), None), defaultSetting = true, environmentSetting = sys.env.contains("DEMOS_ENABLED") && sys.env.contains("DEMOS_ACCOUNT"))
+          } else {
+            persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.DemoAccount, None, None), defaultSetting = true, environmentSetting = sys.env.contains("DEMOS_ENABLED") || sys.env.contains("DEMOS_ACCOUNT"))
+          }
+        } else if (demoAccountConfig.get.config.parameter.nonEmpty && demoAccountConfig.get.config.parameter.get.toLong != Configurations.DEMOS_ACCOUNT) {
+          // Invalid ID configured in the DB.
+          persistedConfigs = persistedConfigs.filterNot(config => config.config.name == Constants.DemoAccount)
           persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.DemoAccount, None, None), defaultSetting = true, environmentSetting = sys.env.contains("DEMOS_ENABLED") || sys.env.contains("DEMOS_ACCOUNT"))
         }
-      } else if (demoAccountConfig.get.config.parameter.nonEmpty && demoAccountConfig.get.config.parameter.get.toLong != Configurations.DEMOS_ACCOUNT) {
-        // Invalid ID configured in the DB.
-        persistedConfigs = persistedConfigs.filterNot(config => config.config.name == Constants.DemoAccount)
-        persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.DemoAccount, None, None), defaultSetting = true, environmentSetting = sys.env.contains("DEMOS_ENABLED") || sys.env.contains("DEMOS_ACCOUNT"))
+        if (welcomeMessageConfig.isEmpty) {
+          persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.WelcomeMessage, Some(Configurations.WELCOME_MESSAGE), None), defaultSetting = true, environmentSetting = false)
+        }
+        if (emailSettingsConfig.isEmpty) {
+          persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.EmailSettings, Some(JsonUtil.jsEmailSettings(EmailSettings.fromEnvironment()).toString()), None), defaultSetting = true, environmentSetting = sys.env.contains("EMAIL_ENABLED"))
+        }
       }
-      if (welcomeMessageConfig.isEmpty) {
-        persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.WelcomeMessage, Some(Configurations.WELCOME_MESSAGE), None), defaultSetting = true, environmentSetting = false)
-      }
-      if (emailSettingsConfig.isEmpty) {
-        persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.EmailSettings, Some(JsonUtil.jsEmailSettings(EmailSettings.fromEnvironment()).toString()), None), defaultSetting = true, environmentSetting = sys.env.contains("EMAIL_ENABLED"))
-      }
+      persistedConfigs
     }
-    persistedConfigs
   }
 
   def isEditableSystemParameter(name: String): Boolean = {
@@ -212,8 +238,8 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
   /**
    * Set system parameter
    */
-  def updateSystemParameter(name: String, value: Option[String] = None): Option[SystemConfigurationsWithEnvironment] = {
-    exec(updateSystemParameterInternal(name, value, applySetting = true).transactionally)
+  def updateSystemParameter(name: String, value: Option[String] = None): Future[Option[SystemConfigurationsWithEnvironment]] = {
+    DB.run(updateSystemParameterInternal(name, value, applySetting = true).transactionally)
   }
 
   private def processReceivedEmailSettings(jsonString: String): EmailSettings = {
@@ -294,7 +320,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
             }
           case Constants.AccountRetentionPeriod =>
             if (value.isDefined) {
-              deleteInactiveUserAccountsInternal() andThen DBIO.successful(None)
+              deleteInactiveUserAccountsInternal().map(_ => None)
             } else {
               DBIO.successful(None)
             }
@@ -323,8 +349,8 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
     } yield returnValue
   }
 
-  def updateMasterPassword(previousPassword: Array[Char], newPassword: Array[Char]): Unit = {
-    val dbAction: DBIO[_] = for {
+  def updateMasterPassword(previousPassword: Array[Char], newPassword: Array[Char]): Future[Unit] = {
+    val dbAction = for {
       // Update the hashed stored value
       _ <- updateSystemParameterInternal(Constants.MasterPassword, Some(CryptoUtil.hashPassword(String.valueOf(newPassword))), applySetting = false)
       // Update domain parameters
@@ -409,19 +435,19 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
         }
       }
     } yield ()
-    exec(dbAction.transactionally)
+    DB.run(dbAction.transactionally)
   }
 
-  def getThemes(): List[Theme] = {
-    exec(PersistenceSchema.themes.sortBy(_.key.asc).result).toList
+  def getThemes(): Future[List[Theme]] = {
+    DB.run(PersistenceSchema.themes.sortBy(_.key.asc).result).map(_.toList)
   }
 
-  def getTheme(themeId: Long): Theme = {
-    exec(PersistenceSchema.themes.filter(_.id === themeId).result).head
+  def getTheme(themeId: Long): Future[Theme] = {
+    DB.run(PersistenceSchema.themes.filter(_.id === themeId).result).map(_.head)
   }
 
-  def themeExists(themeKey: String, exclude: Option[Long]): Boolean = {
-    exec(
+  def themeExists(themeKey: String, exclude: Option[Long]): Future[Boolean] = {
+    DB.run(
       PersistenceSchema.themes
       .filter(_.key === themeKey)
       .filterOpt(exclude)((q, id) => q.id =!= id)
@@ -430,23 +456,27 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
     )
   }
 
-  def createTheme(referenceThemeId: Long, theme: Theme, themeFiles: ThemeFiles): Unit = {
+  def createTheme(referenceThemeId: Long, theme: Theme, themeFiles: ThemeFiles): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = createThemeInternal(Some(referenceThemeId), theme, themeFiles, onSuccessCalls)
-    val reloadNeeded = exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
-    if (reloadNeeded) {
-      reloadThemeCss()
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally).flatMap { reloadNeeded =>
+      if (reloadNeeded) {
+        reloadThemeCss()
+      } else {
+        Future.successful(())
+      }
     }
   }
 
-  def activateTheme(themeId: Long): Unit = {
-    exec((for {
+  def activateTheme(themeId: Long): Future[Unit] = {
+    DB.run((for {
       // Deactivate previously active theme.
       _ <- PersistenceSchema.themes.filter(_.active === true).map(_.active).update(false)
       // Activate theme.
       _ <- PersistenceSchema.themes.filter(_.id === themeId).map(_.active).update(true)
-    } yield ()).transactionally)
-    reloadThemeCss()
+    } yield ()).transactionally).map { _ =>
+      reloadThemeCss()
+    }
   }
 
   def createThemeInternal(referenceThemeId: Option[Long], theme: Theme, themeFiles: ThemeFiles, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Boolean] = {
@@ -476,7 +506,10 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
       // Deactivate the other active theme if this was active.
       reloadNeeded <- {
         if (savedTheme.active) {
-          PersistenceSchema.themes.filter(_.id =!= savedTheme.id).filter(_.active === true).map(_.active).update(false) andThen getOrSetActiveTheme() andThen DBIO.successful(true)
+          for {
+            _ <- PersistenceSchema.themes.filter(_.id =!= savedTheme.id).filter(_.active === true).map(_.active).update(false)
+            _ <- getOrSetActiveTheme()
+          } yield true
         } else {
           DBIO.successful(false)
         }
@@ -537,12 +570,15 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
     "public/" + StringUtils.removeStartIgnoreCase(resourcePath, "/assets/")
   }
 
-  def updateTheme(theme: Theme, themeFiles: ThemeFiles): Unit = {
+  def updateTheme(theme: Theme, themeFiles: ThemeFiles): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = updateThemeInternal(theme, themeFiles, onSuccessCalls)
-    val reloadNeeded = exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
-    if (reloadNeeded) {
-      reloadThemeCss()
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally).flatMap { reloadNeeded =>
+      if (reloadNeeded) {
+        reloadThemeCss()
+      } else {
+        Future.successful(())
+      }
     }
   }
 
@@ -570,7 +606,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
             theme.footerBorderColor :: footerPathToUse :: theme.footerLogoDisplay :: faviconPathToUse ::
             theme.primaryButtonColor :: theme.primaryButtonLabelColor :: theme.primaryButtonHoverColor :: theme.primaryButtonActiveColor ::
             theme.secondaryButtonColor :: theme.secondaryButtonLabelColor :: theme.secondaryButtonHoverColor :: theme.secondaryButtonActiveColor :: HNil
-          ) andThen DBIO.successful(Some(headerPathToUse, footerPathToUse, faviconPathToUse))
+          ).map(_ => Some(headerPathToUse, footerPathToUse, faviconPathToUse))
         } else {
           DBIO.successful(None)
         }
@@ -580,13 +616,16 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
         if (existingTheme.isDefined) {
           if (existingTheme.get.active && theme.active) {
             // Update to the currently active theme.
-            getOrSetActiveTheme() andThen DBIO.successful(true)
+            getOrSetActiveTheme().map(_ => true)
           } else if (existingTheme.get.active && !theme.active) {
             // The currently active theme was deactivated.
-            getOrSetActiveTheme() andThen DBIO.successful(true)
+            getOrSetActiveTheme().map(_ => true)
           } else if (!existingTheme.get.active && theme.active) {
             // The theme was activated. Deactivate the previously active theme and refresh.
-            PersistenceSchema.themes.filter(_.id =!= theme.id).filter(_.active === true).map(_.active).update(false) andThen getOrSetActiveTheme() andThen DBIO.successful(true)
+            for {
+              _ <- PersistenceSchema.themes.filter(_.id =!= theme.id).filter(_.active === true).map(_.active).update(false)
+              _ <- getOrSetActiveTheme()
+            } yield true
           } else {
             // No changes needed.
             DBIO.successful(false)
@@ -614,14 +653,20 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
     }
   }
 
-  def deleteTheme(themeId: Long): Boolean = {
+  def deleteTheme(themeId: Long): Future[Boolean] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = deleteThemeInternal(themeId, onSuccessCalls)
-    val results = exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
-    if (results._2) {
-      reloadThemeCss()
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally).flatMap { results =>
+      if (results._2) {
+        reloadThemeCss().map { _ =>
+          results._1
+        }
+      } else {
+        Future.successful {
+          results._1
+        }
+      }
     }
-    results._1
   }
 
   def deleteThemeInternal(themeId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[(Boolean, Boolean)] = {
@@ -636,14 +681,17 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
       // Delete the theme.
       reloadNeeded <- {
         if (existingThemeInfo.isDefined) {
-          PersistenceSchema.themes.filter(_.id === themeId).delete andThen {
-            if (existingThemeInfo.get) {
-              // This was the active theme.
-              getOrSetActiveTheme() andThen DBIO.successful(true)
-            } else {
-              DBIO.successful(false)
+          for {
+            _ <- PersistenceSchema.themes.filter(_.id === themeId).delete
+            reloadNeeded <- {
+              if (existingThemeInfo.get) {
+                // This was the active theme.
+                getOrSetActiveTheme() andThen DBIO.successful(true)
+              } else {
+                DBIO.successful(false)
+              }
             }
-          }
+          } yield reloadNeeded
         } else {
           DBIO.successful(false)
         }
@@ -695,8 +743,8 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
     } yield usersDeleted
   }
 
-  def deleteInactiveUserAccounts(): Option[Int] = {
-    exec(deleteInactiveUserAccountsInternal().transactionally)
+  def deleteInactiveUserAccounts(): Future[Option[Int]] = {
+    DB.run(deleteInactiveUserAccountsInternal().transactionally)
   }
 
   def testEmailSettings(settings: EmailSettings, toAddress: String): Future[Option[List[String]]] = {
@@ -706,9 +754,8 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
     } else {
       settings
     }
-    implicit val executionContext: ExecutionContextExecutor = ExecutionContext.global
     val promise = Promise[Option[List[String]]]()
-    val future = scala.concurrent.Future {
+    val future = Future {
       val subject = "Test Bed test email"
       var content = "<h2>Test Bed email settings verification</h2>"
       content += "Receiving this email confirms that your Test Bed instance's email settings are correctly configured."

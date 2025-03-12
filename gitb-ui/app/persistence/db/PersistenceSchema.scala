@@ -1,7 +1,7 @@
 package persistence.db
 
 import models._
-import models.snapshot.{ConformanceSnapshot, ConformanceSnapshotActor, ConformanceSnapshotCertificateMessage, ConformanceSnapshotDomain, ConformanceSnapshotDomainParameter, ConformanceSnapshotOrganisation, ConformanceSnapshotOrganisationProperty, ConformanceSnapshotOverviewCertificateMessage, ConformanceSnapshotResult, ConformanceSnapshotSpecification, ConformanceSnapshotSpecificationGroup, ConformanceSnapshotSystem, ConformanceSnapshotSystemProperty, ConformanceSnapshotTestCase, ConformanceSnapshotTestCaseGroup, ConformanceSnapshotTestSuite}
+import models.snapshot._
 import models.theme.Theme
 import slick.collection.heterogeneous.HNil
 import slick.jdbc.MySQLProfile.api._

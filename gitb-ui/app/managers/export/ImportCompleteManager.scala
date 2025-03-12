@@ -1,16 +1,16 @@
 package managers.export
 
-import com.gitb.xml.export.{SelfRegistrationRestriction => _, _}
-import com.gitb.xml.export.ReportType
+import com.gitb.xml.export.{ReportType, SelfRegistrationRestriction => _, _}
 import config.Configurations
 import managers._
 import managers.testsuite.TestSuitePaths
+import managers.triggers.TriggerHelper
 import models.Enums.ImportItemType.ImportItemType
 import models.Enums.OverviewLevelType.OverviewLevelType
 import models.Enums.TestSuiteReplacementChoice.PROCEED
 import models.Enums._
 import models.theme.ThemeFiles
-import models.{BadgeInfo, Badges, ConformanceOverviewCertificateWithMessages, Constants, Enums, NamedFile, ProcessedArchive, TestCaseDeploymentAction, TestCases, TestSuiteDeploymentAction}
+import models.{TestCases, _}
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.codec.digest.DigestUtils
 import org.apache.commons.io.{FileUtils, FilenameUtils}
@@ -18,14 +18,14 @@ import org.apache.commons.lang3.StringUtils
 import org.slf4j.LoggerFactory
 import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
-import utils.{ClamAVClient, CryptoUtil, JsonUtil, MimeUtil, RepositoryUtils, TimeUtil}
+import utils._
 
 import java.io.{ByteArrayInputStream, File}
 import java.nio.file.{Files, Paths}
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Using
 
 @Singleton
@@ -50,7 +50,8 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                                       importPreviewManager: ImportPreviewManager,
                                       repositoryUtils: RepositoryUtils,
                                       reportManager: ReportManager,
-                                      dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+                                      dbConfigProvider: DatabaseConfigProvider)
+                                     (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
   private def logger = LoggerFactory.getLogger("ImportCompleteManager")
 
@@ -58,7 +59,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
 
   import scala.jdk.CollectionConverters._
 
-  def completeDomainImport(exportedDomain: com.gitb.xml.export.Domain, importSettings: ImportSettings, importItems: List[ImportItem], targetDomainId: Option[Long], canAddOrDeleteDomain: Boolean): Unit = {
+  def completeDomainImport(exportedDomain: com.gitb.xml.export.Domain, importSettings: ImportSettings, importItems: List[ImportItem], targetDomainId: Option[Long], canAddOrDeleteDomain: Boolean): Future[Unit] = {
     // Load context
     val ctx = ImportContext(
       importSettings,
@@ -71,10 +72,19 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
       mutable.ListBuffer[() => _](),
       mutable.ListBuffer[() => _]()
     )
-    exec(completeFileSystemFinalisation(ctx, completeDomainImportInternal(exportedDomain, targetDomainId, ctx, canAddOrDeleteDomain, linkedToCommunity = false)).transactionally)
+    for {
+      ctx <- {
+        if (targetDomainId.isDefined) {
+          loadExistingDomainData(ctx, targetDomainId.get)
+        } else {
+          Future.successful(ctx)
+        }
+      }
+      _ <- DB.run(completeFileSystemFinalisation(ctx, completeDomainImportInternal(exportedDomain, ctx, canAddOrDeleteDomain, linkedToCommunity = false)).transactionally)
+    } yield ()
   }
 
-  def completeSystemSettingsImport(exportedSettings: com.gitb.xml.export.Settings, importSettings: ImportSettings, importItems: List[ImportItem], canManageSettings: Boolean, ownUserId: Option[Long]): Unit = {
+  def completeSystemSettingsImport(exportedSettings: com.gitb.xml.export.Settings, importSettings: ImportSettings, importItems: List[ImportItem], canManageSettings: Boolean, ownUserId: Option[Long]): Future[Unit] = {
     // Load context
     val ctx = ImportContext(
       importSettings,
@@ -87,10 +97,32 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
       mutable.ListBuffer[() => _](),
       mutable.ListBuffer[() => _]()
     )
-    exec(completeFileSystemFinalisation(ctx, completeSystemSettingsImportInternal(exportedSettings, ctx, canManageSettings, ownUserId, new mutable.HashSet[String]())).transactionally)
+    loadExistingSystemSettingsData(canManageSettings, ctx).flatMap { data =>
+      DB.run(completeFileSystemFinalisation(data._1, completeSystemSettingsImportInternal(exportedSettings, data._1, canManageSettings, ownUserId, new mutable.HashSet[String](), data._2)).transactionally)
+    }
   }
 
-  def completeDeletionsImport(exportedDeletions: com.gitb.xml.export.Deletions, importSettings: ImportSettings, importItems: List[ImportItem]): Unit = {
+  private def loadExistingDeletionsData(ctx: ImportContext): Future[ImportContext] = {
+    for {
+      ctx <- {
+        loadIfApplicable(ctx.importTargets.hasDomain,
+          () => DB.run(PersistenceSchema.domains.map(_.id).result)
+        ).zip(
+          loadIfApplicable(ctx.importTargets.hasCommunity,
+            () => DB.run(PersistenceSchema.communities.map(_.id).result)
+          )
+        ).map { results =>
+          val domains = results._1
+          val communities = results._2
+          domains.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.Domain) += x.toString))
+          communities.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.Community) += x.toString))
+          ctx
+        }
+      }
+    } yield ctx
+  }
+
+  def completeDeletionsImport(exportedDeletions: com.gitb.xml.export.Deletions, importSettings: ImportSettings, importItems: List[ImportItem]): Future[Unit] = {
     if (exportedDeletions != null && (!exportedDeletions.getDomain.isEmpty || !exportedDeletions.getCommunity.isEmpty)) {
       val ctx = ImportContext(
         importSettings,
@@ -103,64 +135,61 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
         mutable.ListBuffer[() => _](),
         mutable.ListBuffer[() => _]()
       )
-      // Load existing data
-      if (ctx.importTargets.hasDomain) {
-        exec(PersistenceSchema.domains.map(_.id).result).foreach { domainId =>
-          ctx.existingIds.map(ImportItemType.Domain) += domainId.toString
-        }
-      }
-      if (ctx.importTargets.hasCommunity) {
-        exec(PersistenceSchema.communities.map(_.id).result).foreach { communityId =>
-          ctx.existingIds.map(ImportItemType.Community) += communityId.toString
-        }
-      }
-      val dbAction = for {
-        // Domains
+      for {
+        // Load existing data
+        ctx <- loadExistingDeletionsData(ctx)
         _ <- {
-          val dbActions = ListBuffer[DBIO[_]]()
-          if (exportedDeletions.getDomain != null) {
-            exportedDeletions.getDomain.asScala.foreach { domain =>
-              dbActions += processFromArchive(ImportItemType.Domain, domain, domain, ctx,
-                ImportCallbacks.set(
-                  (_: String, _: ImportItem) => DBIO.successful(()),
-                  (_: String, _: String, _: ImportItem) => DBIO.successful(())
-                )
+          val dbAction = for {
+            // Domains
+            _ <- {
+              val dbActions = ListBuffer[DBIO[_]]()
+              if (exportedDeletions.getDomain != null) {
+                exportedDeletions.getDomain.asScala.foreach { domain =>
+                  dbActions += processFromArchive(ImportItemType.Domain, domain, domain, ctx,
+                    ImportCallbacks.set(
+                      (_: String, _: ImportItem) => DBIO.successful(()),
+                      (_: String, _: String, _: ImportItem) => DBIO.successful(())
+                    )
+                  )
+                }
+              }
+              toDBIO(dbActions)
+            }
+            _ <- {
+              processRemaining(ImportItemType.Domain, ctx,
+                (targetKey: String, _: ImportItem) => {
+                  domainManager.deleteDomainInternal(targetKey.toLong, ctx.onSuccessCalls)
+                }
               )
             }
-          }
-          toDBIO(dbActions)
-        }
-        _ <- {
-          processRemaining(ImportItemType.Domain, ctx,
-            (targetKey: String, _: ImportItem) => {
-              domainManager.deleteDomainInternal(targetKey.toLong, ctx.onSuccessCalls)
+            // Communities
+            _ <- {
+              val dbActions = ListBuffer[DBIO[_]]()
+              if (exportedDeletions.getCommunity != null) {
+                exportedDeletions.getCommunity.asScala.foreach { community =>
+                  dbActions += processFromArchive(ImportItemType.Community, community, community, ctx,
+                    ImportCallbacks.set(
+                      (_: String, _: ImportItem) => DBIO.successful(()),
+                      (_: String, _: String, _: ImportItem) => DBIO.successful(())
+                    )
+                  )
+                }
+              }
+              toDBIO(dbActions)
             }
-          )
-        }
-        // Communities
-        _ <- {
-          val dbActions = ListBuffer[DBIO[_]]()
-          if (exportedDeletions.getCommunity != null) {
-            exportedDeletions.getCommunity.asScala.foreach { community =>
-              dbActions += processFromArchive(ImportItemType.Community, community, community, ctx,
-                ImportCallbacks.set(
-                  (_: String, _: ImportItem) => DBIO.successful(()),
-                  (_: String, _: String, _: ImportItem) => DBIO.successful(())
-                )
+            _ <- {
+              processRemaining(ImportItemType.Community, ctx,
+                (targetKey: String, _: ImportItem) => {
+                  communityManager.deleteCommunityInternal(targetKey.toLong, ctx.onSuccessCalls)
+                }
               )
             }
-          }
-          toDBIO(dbActions)
-        }
-        _ <- {
-          processRemaining(ImportItemType.Community, ctx,
-            (targetKey: String, _: ImportItem) => {
-              communityManager.deleteCommunityInternal(targetKey.toLong, ctx.onSuccessCalls)
-            }
-          )
+          } yield ()
+          DB.run(completeFileSystemFinalisation(ctx, dbAction).transactionally)
         }
       } yield ()
-      exec(completeFileSystemFinalisation(ctx, dbAction).transactionally)
+    } else {
+      Future.successful(())
     }
   }
 
@@ -517,7 +546,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     testCases.toList
   }
 
-  private def saveTestSuiteFiles(data: TestSuite, item: ImportItem, domainId: Long, ctx: ImportContext): TestSuitePaths = {
+  private def saveTestSuiteFiles(data: com.gitb.xml.export.TestSuite, item: ImportItem, domainId: Long, ctx: ImportContext): TestSuitePaths = {
     // File system operations
     val testSuiteData = Base64.decodeBase64(data.getData)
     if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
@@ -794,7 +823,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     dbId
   }
 
-  private def toModelTestCaseGroups(data: TestSuite): Option[List[models.TestCaseGroup]] = {
+  private def toModelTestCaseGroups(data: com.gitb.xml.export.TestSuite): Option[List[models.TestCaseGroup]] = {
     var exportedGroups: Option[List[models.TestCaseGroup]] = None
     if (data.getTestCaseGroups != null) {
       val groupsBuffer = ListBuffer[models.TestCaseGroup]()
@@ -808,7 +837,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     exportedGroups
   }
 
-  private def createSharedTestSuite(data: TestSuite, ctx: ImportContext, item: ImportItem): DBIO[Long] = {
+  private def createSharedTestSuite(data: com.gitb.xml.export.TestSuite, ctx: ImportContext, item: ImportItem): DBIO[Long] = {
     val domainId = getDomainIdFromParentItem(item)
     // File system operations
     val testSuitePaths = saveTestSuiteFiles(data, item, domainId, ctx)
@@ -818,7 +847,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
         FileUtils.deleteDirectory(testSuitePaths.testSuiteFolder)
       }
     })
-    var testCases: List[TestCase] = null
+    var testCases: List[com.gitb.xml.export.TestCase] = null
     if (data.getTestCases != null && data.getTestCases.getTestCase != null) {
       testCases = data.getTestCases.getTestCase.asScala.toList
     } else {
@@ -872,7 +901,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     }
   }
 
-  private def createTestSuite(data: TestSuite, ctx: ImportContext, item: ImportItem): DBIO[Long] = {
+  private def createTestSuite(data: com.gitb.xml.export.TestSuite, ctx: ImportContext, item: ImportItem): DBIO[Long] = {
     val domainId = getDomainIdFromParentItem(item)
     val specificationId = item.parentItem.get.targetKey.get.toLong
     // File system operations
@@ -883,7 +912,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
         FileUtils.deleteDirectory(testSuitePaths.testSuiteFolder)
       }
     })
-    var testCases: List[TestCase] = null
+    var testCases: List[com.gitb.xml.export.TestCase] = null
     if (data.getTestCases != null && data.getTestCases.getTestCase != null) {
       testCases = data.getTestCases.getTestCase.asScala.toList
     } else {
@@ -910,7 +939,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     action
   }
 
-  private def testSuiteUpdateActions(specification: Option[Long], testCases: List[TestCase]): TestSuiteDeploymentAction = {
+  private def testSuiteUpdateActions(specification: Option[Long], testCases: List[com.gitb.xml.export.TestCase]): TestSuiteDeploymentAction = {
     val sharedTestSuite = specification.isEmpty
     val updateActors = if (sharedTestSuite) {
       None
@@ -927,12 +956,12 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     new TestSuiteDeploymentAction(specification, PROCEED, updateTestSuite = true, updateActors, sharedTestSuite, testCaseUpdates)
   }
 
-  private def updateSharedTestSuite(data: TestSuite, ctx: ImportContext, item: ImportItem): DBIO[_] = {
+  private def updateSharedTestSuite(data: com.gitb.xml.export.TestSuite, ctx: ImportContext, item: ImportItem): DBIO[_] = {
     val domainId = getDomainIdFromParentItem(item)
     val testSuiteId = item.targetKey.get.toLong
     // File system operations
     val testSuitePaths = saveTestSuiteFiles(data, item, domainId, ctx)
-    var testCases: List[TestCase] = null
+    var testCases: List[com.gitb.xml.export.TestCase] = null
     if (data.getTestCases != null && data.getTestCases.getTestCase != null) {
       testCases = data.getTestCases.getTestCase.asScala.toList
     } else {
@@ -971,13 +1000,13 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     })
   }
 
-  private def updateTestSuite(data: TestSuite, ctx: ImportContext, item: ImportItem): DBIO[_] = {
+  private def updateTestSuite(data: com.gitb.xml.export.TestSuite, ctx: ImportContext, item: ImportItem): DBIO[_] = {
     val domainId = getDomainIdFromParentItem(item)
     val specificationId = item.parentItem.get.targetKey.get.toLong
     val testSuiteId = item.targetKey.get.toLong
     // File system operations
     val testSuitePaths = saveTestSuiteFiles(data, item, domainId, ctx)
-    var testCases: List[TestCase] = null
+    var testCases: List[com.gitb.xml.export.TestCase] = null
     if (data.getTestCases != null && data.getTestCases.getTestCase != null) {
       testCases = data.getTestCases.getTestCase.asScala.toList
     } else {
@@ -1019,40 +1048,74 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     })
   }
 
-  private def completeSystemSettingsImportInternal(exportedSettings: com.gitb.xml.export.Settings, ctx: ImportContext, canManageSettings: Boolean, ownUserId: Option[Long], referenceUserEmails: mutable.Set[String]): DBIO[_] = {
+  private def loadExistingSystemSettingsData(canManageSettings: Boolean, ctx: ImportContext): Future[(ImportContext, Option[Long])] = {
     if (canManageSettings) {
-      // Load existing values.
-      var systemAdminOrganisationId: Option[Long] = None
-      if (ctx.importTargets.hasSystemResources) {
-        exec(PersistenceSchema.communityResources.filter(_.community === Constants.DefaultCommunityId).map(x => x.id).result).foreach(x => ctx.existingIds.map(ImportItemType.SystemResource) += x.toString)
-      }
-      if (ctx.importTargets.hasThemes) {
-        exportManager.loadThemes().foreach { theme =>
-          ctx.existingIds.map(ImportItemType.Theme) += theme.id.toString
-        }
-      }
-      if (ctx.importTargets.hasDefaultLandingPages) {
-        exec(PersistenceSchema.landingPages.filter(_.community === Constants.DefaultCommunityId).map(x => x.id).result).foreach(x => ctx.existingIds.map(ImportItemType.DefaultLandingPage) += x.toString)
-      }
-      if (ctx.importTargets.hasDefaultLegalNotices) {
-        exec(PersistenceSchema.legalNotices.filter(_.community === Constants.DefaultCommunityId).map(x => x.id).result).foreach(x => ctx.existingIds.map(ImportItemType.DefaultLegalNotice) += x.toString)
-      }
-      if (ctx.importTargets.hasDefaultErrorTemplates) {
-        exec(PersistenceSchema.errorTemplates.filter(_.community === Constants.DefaultCommunityId).map(x => x.id).result).foreach(x => ctx.existingIds.map(ImportItemType.DefaultErrorTemplate) += x.toString)
-      }
-      if (!Configurations.AUTHENTICATION_SSO_ENABLED && ctx.importTargets.hasSystemAdministrators) {
-        exportManager.loadSystemAdministrators().foreach { x =>
-          ctx.existingIds.map(ImportItemType.SystemAdministrator) += x.id.toString
-          if (systemAdminOrganisationId.isEmpty) {
-            systemAdminOrganisationId = Some(x.organization)
+      for {
+        // Load existing values.
+        systemAdminOrganisationId <- {
+          // System resources
+          loadIfApplicable(ctx.importTargets.hasSystemResources,
+            () => DB.run(PersistenceSchema.communityResources.filter(_.community === Constants.DefaultCommunityId).map(_.id).result)
+          ).zip(
+            // Themes
+            loadIfApplicable(ctx.importTargets.hasThemes,
+              () => DB.run(PersistenceSchema.themes.filter(_.custom === true).map(_.id).result)
+            )
+          ).zip(
+            // Default landing pages
+            loadIfApplicable(ctx.importTargets.hasDefaultLandingPages,
+              () => DB.run(PersistenceSchema.landingPages.filter(_.community === Constants.DefaultCommunityId).map(x => x.id).result)
+            )
+          ).zip(
+            // Default legal notices
+            loadIfApplicable(ctx.importTargets.hasDefaultLegalNotices,
+              () => DB.run(PersistenceSchema.legalNotices.filter(_.community === Constants.DefaultCommunityId).map(x => x.id).result)
+            )
+          ).zip(
+            // Default error templates
+            loadIfApplicable(ctx.importTargets.hasDefaultErrorTemplates,
+              () => DB.run(PersistenceSchema.errorTemplates.filter(_.community === Constants.DefaultCommunityId).map(x => x.id).result)
+            )
+          ).zip(
+            // System administrators
+            loadIfApplicable(!Configurations.AUTHENTICATION_SSO_ENABLED && ctx.importTargets.hasSystemAdministrators,
+              () => exportManager.loadSystemAdministrators()
+            )
+          ).zip(
+            // System configurations
+            loadIfApplicable(ctx.importTargets.hasSystemConfigurations,
+              () => systemConfigurationManager.getEditableSystemConfigurationValues(onlyPersisted = true)
+            )
+          ).map { results =>
+            val systemResources = results._1._1._1._1._1._1
+            val themes = results._1._1._1._1._1._2
+            val defaultLandingPages = results._1._1._1._1._2
+            val defaultLegalNotices = results._1._1._1._2
+            val defaultErrorTemplates = results._1._1._2
+            val systemAdministrators = results._1._2
+            val systemConfigurations = results._2
+            var systemAdminOrganisationId: Option[Long] = None
+            systemResources.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.SystemResource) += x.toString))
+            themes.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.Theme) += x.toString))
+            defaultLandingPages.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.DefaultLandingPage) += x.toString))
+            defaultLegalNotices.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.DefaultLegalNotice) += x.toString))
+            defaultErrorTemplates.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.DefaultErrorTemplate) += x.toString))
+            systemAdministrators.foreach(admins => {
+              admins.foreach(x => ctx.existingIds.map(ImportItemType.SystemAdministrator) += x.id.toString)
+              systemAdminOrganisationId = admins.headOption.map(_.organization)
+            })
+            systemConfigurations.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.SystemConfiguration) += x.config.name))
+            systemAdminOrganisationId
           }
         }
-      }
-      if (ctx.importTargets.hasSystemConfigurations) {
-        systemConfigurationManager.getEditableSystemConfigurationValues(onlyPersisted = true).foreach { x =>
-          ctx.existingIds.map(ImportItemType.SystemConfiguration) += x.config.name
-        }
-      }
+      } yield (ctx, systemAdminOrganisationId)
+    } else {
+      Future.successful((ctx, None))
+    }
+  }
+
+  private def completeSystemSettingsImportInternal(exportedSettings: com.gitb.xml.export.Settings, ctx: ImportContext, canManageSettings: Boolean, ownUserId: Option[Long], referenceUserEmails: mutable.Set[String], systemAdminOrganisationId: Option[Long]): DBIO[_] = {
+    if (canManageSettings) {
       for {
         // Resources
         _ <- {
@@ -1291,7 +1354,100 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     }
   }
 
-  private def completeDomainImportInternal(exportedDomain: com.gitb.xml.export.Domain, targetDomainId: Option[Long], ctx: ImportContext, canAddOrDeleteDomain: Boolean, linkedToCommunity: Boolean): DBIO[_] = {
+  private def loadExistingDomainData(ctx: ImportContext, domainId: Long): Future[ImportContext] = {
+    // Load values pertinent to domain to ensure we are modifying items within (for security purposes).
+    // Domain
+    DB.run(
+      PersistenceSchema.domains.filter(_.id === domainId).map(_.id).result.headOption
+    ).zip(
+      // Shared test suites
+      loadIfApplicable(ctx.importTargets.hasTestSuites,
+        () => DB.run(PersistenceSchema.testSuites
+          .filter(_.domain === domainId)
+          .filter(_.shared)
+          .map(_.id)
+          .result
+        )
+      )
+    ).zip(
+      // Specifications
+      loadIfApplicable(ctx.importTargets.hasSpecifications,
+        () => DB.run(PersistenceSchema.specifications.filter(_.domain === domainId).map(_.id).result)
+      )
+    ).zip(
+      // Specification groups
+      loadIfApplicable(ctx.importTargets.hasSpecifications,
+        () => DB.run(PersistenceSchema.specificationGroups.filter(_.domain === domainId).map(_.id).result)
+      )
+    ).zip(
+      // Test suites
+      loadIfApplicable(ctx.importTargets.hasSpecifications && ctx.importTargets.hasTestSuites,
+        () => DB.run(PersistenceSchema.testSuites
+          .join(PersistenceSchema.specificationHasTestSuites).on(_.id === _.testSuiteId)
+          .filter(_._1.domain === domainId)
+          .map(_._1.id)
+          .result
+        )
+      )
+    ).zip(
+      // Actors
+      loadIfApplicable(ctx.importTargets.hasSpecifications && ctx.importTargets.hasActors,
+        () => DB.run(PersistenceSchema.actors
+            .filter(_.domain === domainId)
+            .map(_.id)
+            .result
+        )
+      )
+    ).zip(
+      // Endpoints
+      loadIfApplicable(ctx.importTargets.hasSpecifications && ctx.importTargets.hasActors && ctx.importTargets.hasEndpoints,
+        () => DB.run(PersistenceSchema.endpoints
+          .join(PersistenceSchema.actors).on(_.actor === _.id)
+          .filter(_._2.domain === domainId)
+          .map(_._1.id)
+          .result
+        )
+      )
+    ).zip(
+      // Endpoint parameters
+      loadIfApplicable(ctx.importTargets.hasSpecifications && ctx.importTargets.hasActors && ctx.importTargets.hasEndpoints && ctx.importTargets.hasEndpointParameters,
+        () => DB.run(PersistenceSchema.parameters
+            .join(PersistenceSchema.endpoints).on(_.endpoint === _.id)
+            .join(PersistenceSchema.actors).on(_._2.actor === _.id)
+            .filter(_._2.domain === domainId)
+            .map(_._1._1.id)
+            .result
+        )
+      )
+    ).zip(
+      // Domain parameters
+      loadIfApplicable(ctx.importTargets.hasDomainParameters,
+        () => DB.run(PersistenceSchema.domainParameters.filter(_.domain === domainId).map(_.id).result)
+      )
+    ).map { results =>
+      val domain =              results._1._1._1._1._1._1._1._1
+      val sharedTestSuites =    results._1._1._1._1._1._1._1._2
+      val specifications =      results._1._1._1._1._1._1._2
+      val specificationGroups = results._1._1._1._1._1._2
+      val testSuites =          results._1._1._1._1._2
+      val actors =              results._1._1._1._2
+      val endpoints =           results._1._1._2
+      val endpointParameters =  results._1._2
+      val domainParameters =    results._2
+      domain.foreach(x => ctx.existingIds.map(ImportItemType.Domain) += x.toString)
+      sharedTestSuites.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.TestSuite) += x.toString))
+      specifications.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.Specification) += x.toString))
+      specificationGroups.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.SpecificationGroup) += x.toString))
+      testSuites.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.TestSuite) += x.toString))
+      actors.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.Actor) += x.toString))
+      endpoints.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.Endpoint) += x.toString))
+      endpointParameters.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.EndpointParameter) += x.toString))
+      domainParameters.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.DomainParameter) += x.toString))
+      ctx
+    }
+  }
+
+  private def completeDomainImportInternal(exportedDomain: com.gitb.xml.export.Domain, ctx: ImportContext, canAddOrDeleteDomain: Boolean, linkedToCommunity: Boolean): DBIO[_] = {
     var createdDomainId: Option[Long] = None
     // Ensure that a domain cannot be created or added without appropriate access.
     if (!canAddOrDeleteDomain) {
@@ -1307,63 +1463,6 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
           // Force the deletion or creation to be skipped.
           domainImportItem.get.itemChoice = Some(ImportItemChoice.Skip)
         }
-      }
-    }
-    // Load values pertinent to domain to ensure we are modifying items within (for security purposes).
-    if (targetDomainId.isDefined) {
-      exec(PersistenceSchema.domains.filter(_.id === targetDomainId.get).map(x => x.id).result).map(x => ctx.existingIds.map(ImportItemType.Domain) += x.toString)
-      if (ctx.importTargets.hasTestSuites) {
-        exportManager.loadSharedTestSuites(targetDomainId.get).foreach { testSuite =>
-          ctx.existingIds.map(ImportItemType.TestSuite) += testSuite.id.toString
-        }
-      }
-      if (ctx.importTargets.hasSpecifications) {
-        exec(PersistenceSchema.specificationGroups
-          .filter(_.domain === targetDomainId.get)
-          .result
-        ).foreach(x => {
-          ctx.existingIds.map(ImportItemType.SpecificationGroup) += x.id.toString
-        })
-        exec(PersistenceSchema.specifications
-          .filter(_.domain === targetDomainId.get)
-          .result
-        ).map(x => {
-          ctx.existingIds.map(ImportItemType.Specification) += x.id.toString
-        })
-        if (ctx.importTargets.hasTestSuites) {
-          exportManager.loadSpecificationTestSuiteMap(targetDomainId.get).foreach { x =>
-            x._2.foreach { testSuite =>
-              ctx.existingIds.map(ImportItemType.TestSuite) += testSuite.id.toString
-            }
-          }
-        }
-        if (ctx.importTargets.hasActors) {
-          exportManager.loadSpecificationActorMap(targetDomainId.get).foreach { x =>
-            x._2.foreach { actor =>
-              ctx.existingIds.map(ImportItemType.Actor) += actor.id.toString
-            }
-          }
-          if (ctx.importTargets.hasEndpoints) {
-            exportManager.loadActorEndpointMap(targetDomainId.get).foreach { x =>
-              x._2.foreach { endpoint =>
-                ctx.existingIds.map(ImportItemType.Endpoint) += endpoint.id.toString
-              }
-            }
-            if (ctx.importTargets.hasEndpointParameters) {
-              exportManager.loadEndpointParameterMap(targetDomainId.get).foreach { x =>
-                x._2.foreach { parameter =>
-                  ctx.existingIds.map(ImportItemType.EndpointParameter) += parameter.id.toString
-                }
-              }
-            }
-          }
-        }
-      }
-      if (ctx.importTargets.hasDomainParameters) {
-        exec(PersistenceSchema.domainParameters
-          .filter(_.domain === targetDomainId.get)
-          .result
-        ).map(x => ctx.existingIds.map(ImportItemType.DomainParameter) += x.id.toString)
       }
     }
     val dbAction = for {
@@ -1817,8 +1916,8 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     ctx.existingIds.map.contains(itemType) && ctx.existingIds.map(itemType).contains(key)
   }
 
-  private def completeFileSystemFinalisation(ctx: ImportContext, dbAction: DBIO[_]): DBIO[_] = {
-    dbActionFinalisation(Some(ctx.onSuccessCalls), Some(ctx.onFailureCalls), dbAction)
+  private def completeFileSystemFinalisation(ctx: ImportContext, dbAction: DBIO[_]): DBIO[Unit] = {
+    dbActionFinalisation(Some(ctx.onSuccessCalls), Some(ctx.onFailureCalls), dbAction).map(_ => ())
   }
 
   private def prepareSmtpSettings(value: Option[String], importSettings: ImportSettings): Option[String] = {
@@ -1836,7 +1935,182 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     }
   }
 
-  def completeCommunityImport(exportedData: com.gitb.xml.export.Export, importSettings: ImportSettings, importItems: List[ImportItem], targetCommunityId: Option[Long], canDoAdminOperations: Boolean, ownUserId: Option[Long]): Unit = {
+  private def loadExistingCommunityData(ctx: ImportContext, communityId: Long, domainId: Option[Long]): Future[ImportContext] = {
+    // Labels
+    loadIfApplicable(ctx.importTargets.hasCustomLabels,
+      () => DB.run(PersistenceSchema.communityLabels.filter(_.community === communityId).map(x => (x.community, x.labelType)).result)
+    ).zip(
+      // Organisation properties
+      loadIfApplicable(ctx.importTargets.hasOrganisationProperties,
+        () => DB.run(PersistenceSchema.organisationParameters.filter(_.community === communityId).map(_.id).result)
+      )
+    ).zip(
+      // System properties
+      loadIfApplicable(ctx.importTargets.hasSystemProperties,
+        () => DB.run(PersistenceSchema.systemParameters.filter(_.community === communityId).map(_.id).result)
+      )
+    ).zip(
+      // Landing pages
+      loadIfApplicable(ctx.importTargets.hasLandingPages,
+        () => DB.run(PersistenceSchema.landingPages.filter(_.community === communityId).map(_.id).result)
+      )
+    ).zip(
+      // Legal notices
+      loadIfApplicable(ctx.importTargets.hasLegalNotices,
+        () => DB.run(PersistenceSchema.legalNotices.filter(_.community === communityId).map(_.id).result)
+      )
+    ).zip(
+      // Error templates
+      loadIfApplicable(ctx.importTargets.hasErrorTemplates,
+        () => DB.run(PersistenceSchema.errorTemplates.filter(_.community === communityId).map(_.id).result)
+      )
+    ).zip(
+      // Triggers
+      loadIfApplicable(ctx.importTargets.hasTriggers,
+        () => DB.run(PersistenceSchema.triggers.filter(_.community === communityId).map(_.id).result)
+      )
+    ).zip(
+      // Resources
+      loadIfApplicable(ctx.importTargets.hasResources,
+        () => DB.run(PersistenceSchema.communityResources.filter(_.community === communityId).map(_.id).result)
+      )
+    ).zip(
+      // Administrators
+      loadIfApplicable(!Configurations.AUTHENTICATION_SSO_ENABLED && ctx.importTargets.hasAdministrators,
+        () => DB.run(PersistenceSchema.users
+            .join(PersistenceSchema.organizations).on(_.organization === _.id)
+            .filter(_._2.community === communityId)
+            .filter(_._2.adminOrganization === true)
+            .filter(_._1.role === UserRole.CommunityAdmin.id.toShort)
+            .map(_._1.id)
+            .result
+        )
+      )
+    ).zip(
+      // Organisations
+      loadIfApplicable(ctx.importTargets.hasOrganisations,
+        () => DB.run(PersistenceSchema.organizations.filter(_.community === communityId).map(_.id).result)
+      )
+    ).zip(
+      // Organisation users
+      loadIfApplicable(ctx.importTargets.hasOrganisations && !Configurations.AUTHENTICATION_SSO_ENABLED && ctx.importTargets.hasOrganisationUsers,
+        () => DB.run(PersistenceSchema.users
+            .join(PersistenceSchema.organizations).on(_.organization === _.id)
+            .filter(_._2.adminOrganization === false)
+            .filter(_._2.community === communityId)
+            .map(_._1.id)
+            .result
+        )
+      )
+    ).zip(
+      // Organisation property values
+      loadIfApplicable(ctx.importTargets.hasOrganisations && ctx.importTargets.hasOrganisationPropertyValues,
+        () => DB.run(PersistenceSchema.organisationParameterValues
+            .join(PersistenceSchema.organizations).on(_.organisation === _.id)
+            .filter(_._2.adminOrganization === false)
+            .filter(_._2.community === communityId)
+            .map(x => (x._2.id, x._1.parameter)) // Organisation ID, ParameterID
+            .result
+        )
+      )
+    ).zip(
+      // Systems
+      loadIfApplicable(ctx.importTargets.hasOrganisations && ctx.importTargets.hasSystems,
+        () => DB.run(PersistenceSchema.systems
+            .join(PersistenceSchema.organizations).on(_.owner === _.id)
+            .filter(_._2.adminOrganization === false)
+            .filter(_._2.community === communityId)
+            .map(_._1.id)
+            .result
+        )
+      )
+    ).zip(
+      // System property values
+      loadIfApplicable(ctx.importTargets.hasOrganisations && ctx.importTargets.hasSystems && ctx.importTargets.hasSystemPropertyValues,
+        () => DB.run(
+          PersistenceSchema.systemParameterValues
+            .join(PersistenceSchema.systems).on(_.system === _.id)
+            .join(PersistenceSchema.organizations).on(_._2.owner === _.id)
+            .filter(_._2.adminOrganization === false)
+            .filter(_._2.community === communityId)
+            .map(x => (x._1._2.id, x._1._1.parameter)) // System ID, Parameter ID
+            .result
+        )
+      )
+    ).zip(
+      // Statements
+      loadIfApplicable(ctx.importTargets.hasOrganisations && ctx.importTargets.hasSystems && ctx.importTargets.hasStatements,
+        () => DB.run(PersistenceSchema.systemImplementsActors
+          .join(PersistenceSchema.systems).on(_.systemId === _.id)
+          .join(PersistenceSchema.organizations).on(_._2.owner === _.id)
+          .join(PersistenceSchema.actors).on(_._1._1.actorId === _.id)
+          .join(PersistenceSchema.specificationHasActors).on(_._2.id === _.actorId)
+          .join(PersistenceSchema.specifications).on(_._2.specId === _.id)
+          .filter(_._1._1._1._2.adminOrganization === false)
+          .filter(_._1._1._1._2.community === communityId)
+          .filterOpt(domainId)((q, id) => q._2.domain === id)
+          .map(x => (x._1._1._1._1._1.systemId, x._1._1._1._1._1.actorId)) // System ID, Actor ID
+          .result
+        )
+      )
+    ).zip(
+      // Statement configurations
+      loadIfApplicable(ctx.importTargets.hasOrganisations && ctx.importTargets.hasSystems && ctx.importTargets.hasStatements && ctx.importTargets.hasStatementConfigurations,
+        () => DB.run(PersistenceSchema.configs
+          .join(PersistenceSchema.endpoints).on(_.endpoint === _.id)
+          .join(PersistenceSchema.actors).on(_._2.actor === _.id)
+          .join(PersistenceSchema.systems).on(_._1._1.system === _.id)
+          .join(PersistenceSchema.organizations).on(_._2.owner === _.id)
+          .filter(_._2.adminOrganization === false)
+          .filter(_._2.community === communityId)
+          .filterOpt(domainId)((q, id) => q._1._1._2.domain === id)
+          .map(x => (x._1._1._2.id, x._1._1._1._2.id, x._1._2.id, x._1._1._1._1.parameter)) // [Actor ID]_[Endpoint ID]_[System ID]_[Endpoint parameter ID]
+          .result
+        )
+      )
+    ).map { results =>
+      val labels =                     results._1._1._1._1._1._1._1._1._1._1._1._1._1._1._1
+      val organisationProperties =     results._1._1._1._1._1._1._1._1._1._1._1._1._1._1._2
+      val systemProperties =           results._1._1._1._1._1._1._1._1._1._1._1._1._1._2
+      val landingPages =               results._1._1._1._1._1._1._1._1._1._1._1._1._2
+      val legalNotices =               results._1._1._1._1._1._1._1._1._1._1._1._2
+      val errorTemplates =             results._1._1._1._1._1._1._1._1._1._1._2
+      val triggers =                   results._1._1._1._1._1._1._1._1._1._2
+      val resources =                  results._1._1._1._1._1._1._1._1._2
+      val administrators =             results._1._1._1._1._1._1._1._2
+      val organisations =              results._1._1._1._1._1._1._2
+      val organisationUsers =          results._1._1._1._1._1._2
+      val organisationPropertyValues = results._1._1._1._1._2
+      val systems =                    results._1._1._1._2
+      val systemPropertyValues =       results._1._1._2
+      val statements =                 results._1._2
+      val statementConfigurations =    results._2
+
+      // Add the community
+      ctx.existingIds.map(ImportItemType.Community) += communityId.toString
+      // Add the community-related data
+      labels.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.CustomLabel) += s"${x._1}_${x._2}"))
+      organisationProperties.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.OrganisationProperty) += x.toString))
+      systemProperties.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.SystemProperty) += x.toString))
+      landingPages.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.LandingPage) += x.toString))
+      legalNotices.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.LegalNotice) += x.toString))
+      errorTemplates.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.ErrorTemplate) += x.toString))
+      triggers.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.Trigger) += x.toString))
+      resources.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.CommunityResource) += x.toString))
+      administrators.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.Administrator) += x.toString))
+      organisations.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.Organisation) += x.toString))
+      organisationUsers.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.OrganisationUser) += x.toString))
+      organisationPropertyValues.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.OrganisationPropertyValue) += s"${x._1}_${x._2}"))
+      systems.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.System) += x.toString))
+      systemPropertyValues.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.SystemPropertyValue) += s"${x._1}_${x._2}"))
+      statements.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.Statement) += s"${x._1}_${x._2}"))
+      statementConfigurations.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.StatementConfiguration) += s"${x._1}_${x._2}_${x._3}_${x._4}"))
+      // Return the updated context
+      ctx
+    }
+  }
+
+  def completeCommunityImport(exportedData: com.gitb.xml.export.Export, importSettings: ImportSettings, importItems: List[ImportItem], targetCommunityId: Option[Long], canDoAdminOperations: Boolean, ownUserId: Option[Long]): Future[Unit] = {
     val ctx = ImportContext(
       importSettings,
       toImportItemMaps(importItems, ImportItemType.Community),
@@ -1849,136 +2123,57 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
       mutable.ListBuffer[() => _]()
     )
     val exportedCommunity = exportedData.getCommunities.getCommunity.asScala.head
-    // Load values pertinent to domain to ensure we are modifying items within (for security purposes).
-    var targetCommunity: Option[models.Communities] = None
-    var communityAdminOrganisationId: Option[Long] = None
-    if (targetCommunityId.isDefined) {
-      // Community
-      targetCommunity = exec(PersistenceSchema.communities.filter(_.id === targetCommunityId.get).result.headOption)
-      if (targetCommunity.isDefined) {
-        ctx.existingIds.map(ImportItemType.Community) += targetCommunity.get.id.toString
-        // Load the admin organisation ID for the community
-        communityAdminOrganisationId = exec(PersistenceSchema.organizations.filter(_.community === targetCommunityId.get).filter(_.adminOrganization === true).map(x => x.id).result.headOption)
-      }
-      // Labels
-      if (ctx.importTargets.hasCustomLabels) {
-        exec(PersistenceSchema.communityLabels.filter(_.community === targetCommunityId.get).map(x => (x.community, x.labelType)).result).foreach(x => ctx.existingIds.map(ImportItemType.CustomLabel) += s"${x._1}_${x._2}")
-      }
-      // Organisation properties
-      if (ctx.importTargets.hasOrganisationProperties) {
-        exportManager.loadOrganisationProperties(targetCommunityId.get).foreach { x =>
-          ctx.existingIds.map(ImportItemType.OrganisationProperty) += x.id.toString
+    for {
+      /*
+       * Start with database lookups for existing data
+       */
+      targetCommunity <- {
+        if (targetCommunityId.isDefined) {
+          DB.run(PersistenceSchema.communities.filter(_.id === targetCommunityId.get).result.headOption)
+        } else {
+          Future.successful(None)
         }
       }
-      // System properties
-      if (ctx.importTargets.hasSystemProperties) {
-        exportManager.loadSystemProperties(targetCommunityId.get).foreach { x =>
-          ctx.existingIds.map(ImportItemType.SystemProperty) += x.id.toString
+      // Load the admin organisation ID for the community
+      existingCommunityAdminOrganisationId <- {
+        if (targetCommunity.isDefined) {
+          DB.run(PersistenceSchema.organizations.filter(_.community === targetCommunityId.get).filter(_.adminOrganization === true).map(x => x.id).result.headOption)
+        } else {
+          Future.successful(None)
         }
       }
-      // Landing pages
-      if (ctx.importTargets.hasLandingPages) {
-        exec(PersistenceSchema.landingPages.filter(_.community === targetCommunityId.get).map(x => x.id).result).foreach(x => ctx.existingIds.map(ImportItemType.LandingPage) += x.toString)
-      }
-      // Legal notices
-      if (ctx.importTargets.hasLegalNotices) {
-        exec(PersistenceSchema.legalNotices.filter(_.community === targetCommunityId.get).map(x => x.id).result).foreach(x => ctx.existingIds.map(ImportItemType.LegalNotice) += x.toString)
-      }
-      // Error templates
-      if (ctx.importTargets.hasErrorTemplates) {
-        exec(PersistenceSchema.errorTemplates.filter(_.community === targetCommunityId.get).map(x => x.id).result).foreach(x => ctx.existingIds.map(ImportItemType.ErrorTemplate) += x.toString)
-      }
-      // Triggers
-      if (ctx.importTargets.hasTriggers) {
-        exec(PersistenceSchema.triggers.filter(_.community === targetCommunityId.get).map(x => x.id).result).foreach(x => ctx.existingIds.map(ImportItemType.Trigger) += x.toString)
-      }
-      // Resources.
-      if (ctx.importTargets.hasResources) {
-        exec(PersistenceSchema.communityResources.filter(_.community === targetCommunityId.get).map(x => x.id).result).foreach(x => ctx.existingIds.map(ImportItemType.CommunityResource) += x.toString)
-      }
-      // Administrators
-      if (!Configurations.AUTHENTICATION_SSO_ENABLED && ctx.importTargets.hasAdministrators) {
-        exportManager.loadCommunityAdministrators(targetCommunityId.get).foreach { x =>
-          ctx.existingIds.map(ImportItemType.Administrator) += x.id.toString
+      // Load existing data
+      data <- {
+        if (targetCommunity.isDefined) {
+          loadExistingCommunityData(ctx, targetCommunity.get.id, targetCommunity.get.domain)
+        } else {
+          Future.successful(ctx)
         }
       }
-      // Organisations
-      if (ctx.importTargets.hasOrganisations) {
-        exec(PersistenceSchema.organizations.filter(_.community === targetCommunityId.get).map(x => x.id).result).foreach { x =>
-          ctx.existingIds.map(ImportItemType.Organisation) += x.toString
-        }
-        // Organisation users
-        if (!Configurations.AUTHENTICATION_SSO_ENABLED && ctx.importTargets.hasOrganisationUsers) {
-          exportManager.loadOrganisationUserMap(targetCommunityId.get).foreach { x =>
-            x._2.foreach { user =>
-              ctx.existingIds.map(ImportItemType.OrganisationUser) +=  user.id.toString
-            }
-          }
-        }
-        // Organisation property values
-        if (ctx.importTargets.hasOrganisationPropertyValues) {
-          exportManager.loadOrganisationParameterValueMap(targetCommunityId.get).foreach { x =>
-            x._2.foreach { value =>
-              ctx.existingIds.map(ImportItemType.OrganisationPropertyValue) += s"${value.organisation}_${value.parameter}"
-            }
-          }
-        }
-        // Systems
-        if (ctx.importTargets.hasSystems) {
-          exportManager.loadOrganisationSystemMap(targetCommunityId.get).foreach { x =>
-            x._2.foreach { system =>
-              ctx.existingIds.map(ImportItemType.System) +=  system.id.toString
-            }
-          }
-          // System property values
-          if (ctx.importTargets.hasSystemPropertyValues) {
-            exportManager.loadSystemParameterValues(targetCommunityId.get).foreach { x =>
-              x._2.foreach { value =>
-                ctx.existingIds.map(ImportItemType.SystemPropertyValue) +=  s"${value.system}_${value.parameter}"
-              }
-            }
-          }
-          // Statements
-          if (ctx.importTargets.hasStatements && targetCommunity.isDefined) {
-            exportManager.loadSystemStatementsMap(targetCommunity.get.id, targetCommunity.get.domain).foreach { x =>
-              x._2.foreach { statement =>
-                ctx.existingIds.map(ImportItemType.Statement) +=  s"${x._1}_${statement._2.id}" // [System ID]_[Actor ID]
-              }
-            }
-            // Statement configurations
-            if (ctx.importTargets.hasStatementConfigurations) {
-              exportManager.loadSystemConfigurationsMap(targetCommunity.get).foreach { x =>
-                ctx.existingIds.map(ImportItemType.StatementConfiguration) += x._1 // [Actor ID]_[Endpoint ID]_[System ID]_[Endpoint parameter ID]
-              }
-            }
-          }
+      // If we have users load their emails to ensure we don't end up with duplicates.
+      existingUserEmails <- {
+        if (!Configurations.AUTHENTICATION_SSO_ENABLED && (ctx.importTargets.hasAdministrators || ctx.importTargets.hasOrganisationUsers)) {
+          importPreviewManager.loadUserEmailSet()
+        } else {
+          Future.successful(Set.empty[String])
         }
       }
-    }
-    // Load also set of unique email emails to ensure these are unique.
-    var referenceUserEmails = mutable.Set[String]()
-    if (!Configurations.AUTHENTICATION_SSO_ENABLED && (ctx.importTargets.hasAdministrators || ctx.importTargets.hasOrganisationUsers)) {
-      referenceUserEmails = importPreviewManager.loadUserEmailSet()
-    }
-    // Load the domain ID corresponding to the community's linked domain API key.
-    val domainIdFromArchive = if (canDoAdminOperations) {
-      Option(exportedCommunity.getDomain)
-        .flatMap(domain => domainManager.getByApiKey(domain.getApiKey))
-        .map(_.id)
-    } else {
-      None
-    }
-    // If we have users load their emails to ensure we don't end up with duplicates.
-    val dbAction = for {
-      // Domain
-      _ <- {
+      // Load the domain ID corresponding to the community's linked domain API key.
+      domainIdFromArchive <- {
+        if (canDoAdminOperations && exportedCommunity.getDomain != null) {
+          domainManager.getByApiKey(exportedCommunity.getDomain.getApiKey).map(_.map(_.id))
+        } else {
+          Future.successful(None)
+        }
+      }
+      domainInfo <- {
+        var targetDomainId: Option[Long] = None
+        var proceedWithDomainImport = false
         if (exportedCommunity.getDomain != null) {
           var domainIdFromDatabase: Option[Long] = None
           if (targetCommunity.isDefined && targetCommunity.get.domain.isDefined) {
             domainIdFromDatabase = targetCommunity.get.domain
           }
-          var targetDomainId: Option[Long] = None
-          var proceedWithDomainImport = false
           if (domainIdFromDatabase.isDefined && domainIdFromArchive.isDefined) {
             if (domainIdFromDatabase.get == domainIdFromArchive.get) {
               // The community is linked to an existing domain, which is the same domain the community is linked to in the imported archive.
@@ -2002,678 +2197,619 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
             targetDomainId = None
             proceedWithDomainImport = canDoAdminOperations
           }
-          if (proceedWithDomainImport) {
-            /*
-             * We only allow a domain import to proceed if the user is a Test Bed administrator or
-             * if the target community also has a domain (i.e. this is an update). A community
-             * administrator can never add domains, delete domains, or update previously unrelated domains;
-             * only update the community's (existing) domain.
-             */
-            mergeImportItemMaps(ctx.importItemMaps, toImportItemMaps(importItems, ImportItemType.Domain))
-            completeDomainImportInternal(exportedCommunity.getDomain, targetDomainId, ctx, canDoAdminOperations, linkedToCommunity = true)
+        }
+        if (proceedWithDomainImport) {
+          /*
+           * We only allow a domain import to proceed if the user is a Test Bed administrator or
+           * if the target community also has a domain (i.e. this is an update). A community
+           * administrator can never add domains, delete domains, or update previously unrelated domains;
+           * only update the community's (existing) domain.
+           */
+          mergeImportItemMaps(ctx.importItemMaps, toImportItemMaps(importItems, ImportItemType.Domain))
+          if (targetDomainId.isDefined) {
+            loadExistingDomainData(ctx, targetDomainId.get).map(ctx => (ctx, proceedWithDomainImport))
           } else {
+            Future.successful((ctx, proceedWithDomainImport))
+          }
+        } else {
+          Future.successful((ctx, proceedWithDomainImport))
+        }
+      }
+      proceedWithDomainImport <- Future.successful(domainInfo._2)
+      ctx <- Future.successful(domainInfo._1)
+      // Settings
+      settingsInfo <- {
+        if (canDoAdminOperations && exportedData.getSettings != null) {
+          mergeImportItemMaps(ctx.importItemMaps, toImportItemMaps(importItems, ImportItemType.Settings))
+          loadExistingSystemSettingsData(canDoAdminOperations, ctx)
+        } else {
+          Future.successful((ctx, None))
+        }
+      }
+      systemAdminOrganisationId <- Future.successful(settingsInfo._2)
+      ctx <- Future.successful(settingsInfo._1)
+      /*
+       * Proceed with database updates
+       */
+      _ <- {
+        var communityAdminOrganisationId = existingCommunityAdminOrganisationId
+        val referenceUserEmails = mutable.Set.from(existingUserEmails)
+        val dbAction = for {
+          // Domain
+          _ <- {
+            if (proceedWithDomainImport) {
+              completeDomainImportInternal(exportedCommunity.getDomain, ctx, canDoAdminOperations, linkedToCommunity = true)
+            } else {
+              DBIO.successful(())
+            }
+          }
+          // Community
+          _ <- {
+            processFromArchive(ImportItemType.Community, exportedCommunity, exportedCommunity.getId, ctx,
+              ImportCallbacks.set(
+                (data: com.gitb.xml.export.Community, item: ImportItem) => {
+                  val domainId = determineDomainIdForCommunityUpdate(exportedCommunity, None, ctx)
+                  val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
+                  // This returns a tuple: (community ID, admin organisation ID)
+                  communityManager.createCommunityInternal(models.Communities(0L,
+                    ctx.importSettings.shortNameReplacement.getOrElse(data.getShortName),
+                    ctx.importSettings.fullNameReplacement.getOrElse(data.getFullName),
+                    Option(data.getSupportEmail),
+                    selfRegistrationMethodToModel(data.getSelfRegistrationSettings.getMethod), Option(data.getSelfRegistrationSettings.getToken), Option(data.getSelfRegistrationSettings.getTokenHelpText),
+                    data.getSelfRegistrationSettings.isNotifications, data.isInteractionNotification, Option(data.getDescription), selfRegistrationRestrictionToModel(data.getSelfRegistrationSettings.getRestriction),
+                    data.getSelfRegistrationSettings.isForceTemplateSelection, data.getSelfRegistrationSettings.isForceRequiredProperties,
+                    data.isAllowCertificateDownload, data.isAllowStatementManagement, data.isAllowSystemManagement,
+                    data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates, data.isAllowAutomationApi, apiKey, None,
+                    domainId
+                  ), checkApiKeyUniqueness = true)
+                },
+                (data: com.gitb.xml.export.Community, targetKey: String, item: ImportItem) => {
+                  val domainId = determineDomainIdForCommunityUpdate(exportedCommunity, targetCommunity, ctx)
+                  val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
+                  communityManager.updateCommunityInternal(targetCommunity.get, data.getShortName, data.getFullName, Option(data.getSupportEmail),
+                    selfRegistrationMethodToModel(data.getSelfRegistrationSettings.getMethod), Option(data.getSelfRegistrationSettings.getToken), Option(data.getSelfRegistrationSettings.getTokenHelpText), data.getSelfRegistrationSettings.isNotifications,
+                    data.isInteractionNotification, Option(data.getDescription), selfRegistrationRestrictionToModel(data.getSelfRegistrationSettings.getRestriction),
+                    data.getSelfRegistrationSettings.isForceTemplateSelection, data.getSelfRegistrationSettings.isForceRequiredProperties,
+                    data.isAllowCertificateDownload, data.isAllowStatementManagement, data.isAllowSystemManagement,
+                    data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates, Some(data.isAllowAutomationApi), Some(apiKey),
+                    domainId, checkApiKeyUniqueness = true, ctx.onSuccessCalls
+                  )
+                },
+                None,
+                (data: com.gitb.xml.export.Community, targetKey: String, newId: Any, item: ImportItem) => {
+                  val ids: (Long, Long) = newId.asInstanceOf[(Long, Long)] // (community ID, admin organisation ID)
+                  // Set on import item.
+                  item.targetKey = Some(ids._1.toString)
+                  // Record community ID.
+                  addIdToProcessedIdMap(ImportItemType.Community, data.getId, ids._1.toString, ctx)
+                  // Record admin organisation ID.
+                  communityAdminOrganisationId = Some(ids._2)
+                }
+              ).withFnForSkipButProcessChildren((data: com.gitb.xml.export.Community, targetKey: String, item: ImportItem) => {
+                /*
+                 Exceptional case for community import to make sure we always update its domain. Not doing so would create problems for
+                 triggers with domain parameters and conformance statements. We cannot do these checks using a normal approach on the ID
+                 being processed as the domain is processed separately.
+                 */
+                val domainId = determineDomainIdForCommunityUpdate(exportedCommunity, targetCommunity, ctx)
+                communityManager.updateCommunityDomain(targetCommunity.get, domainId, ctx.onSuccessCalls)
+              })
+            )
+          }
+          // Certificate settings
+          _ <- {
+            val communityId = getProcessedDbId(exportedCommunity, ImportItemType.Community, ctx)
+            if (communityId.isDefined) {
+              if (exportedCommunity.getConformanceCertificateSettings == null) {
+                // Delete
+                communityManager.deleteConformanceCertificateSettings(communityId.get)
+              } else {
+                // Update/Add
+                for {
+                  _ <- reportManager.updateConformanceCertificateSettingsInternal(
+                    models.ConformanceCertificate(
+                      0L, Option(exportedCommunity.getConformanceCertificateSettings.getTitle),
+                      exportedCommunity.getConformanceCertificateSettings.isAddTitle, exportedCommunity.getConformanceCertificateSettings.isAddMessage, exportedCommunity.getConformanceCertificateSettings.isAddResultOverview,
+                      exportedCommunity.getConformanceCertificateSettings.isAddTestCases, exportedCommunity.getConformanceCertificateSettings.isAddDetails,
+                      exportedCommunity.getConformanceCertificateSettings.isAddSignature, exportedCommunity.getConformanceCertificateSettings.isAddPageNumbers,
+                      Option(exportedCommunity.getConformanceCertificateSettings.getMessage), communityId.get
+                    )
+                  )
+                  _ <- {
+                    if (exportedCommunity.getConformanceCertificateSettings.getSignature != null) {
+                      // This case is added here for backwards compatibility. Signature settings are normally added directly under the community.
+                      handleCommunityKeystore(exportedCommunity.getConformanceCertificateSettings.getSignature, communityId.get, importSettings)
+                    } else {
+                      DBIO.successful(())
+                    }
+                  }
+                } yield ()
+              }
+            } else {
+              DBIO.successful(())
+            }
+          }
+          // Certificate overview settings
+          _ <- {
+            DBIO.successful(())
+            val communityId = getProcessedDbId(exportedCommunity, ImportItemType.Community, ctx)
+            if (communityId.isDefined) {
+              if (exportedCommunity.getConformanceOverviewCertificateSettings == null) {
+                // Delete
+                communityManager.deleteConformanceOverviewCertificateSettings(communityId.get)
+              } else {
+                // Update/Add
+                reportManager.updateConformanceOverviewCertificateSettingsInternal(
+                  toModelConformanceOverCertificateSettingsWithMessages(exportedCommunity.getConformanceOverviewCertificateSettings, communityId.get, ctx)
+                )
+              }
+            } else {
+              DBIO.successful(())
+            }
+          }
+          // Signature settings
+          _ <- {
+            val communityId = getProcessedDbId(exportedCommunity, ImportItemType.Community, ctx)
+            if (communityId.isDefined) {
+              if (exportedCommunity.getSignatureSettings == null) {
+                // Delete
+                communityManager.deleteCommunityKeystoreInternal(communityId.get)
+              } else {
+                // Update/Add
+                handleCommunityKeystore(exportedCommunity.getSignatureSettings, communityId.get, importSettings)
+              }
+            } else {
+              DBIO.successful(())
+            }
+          }
+          // Community report stylesheets
+          _ <- {
+            val communityId = getProcessedDbId(exportedCommunity, ImportItemType.Community, ctx)
+            if (communityId.isDefined && exportedCommunity.getReportStylesheets != null) {
+              var hasConformanceOverview = false
+              var hasConformanceStatement = false
+              var hasTestCase = false
+              var hasTestStep = false
+              var hasConformanceOverviewCertificate = false
+              var hasConformanceStatementCertificate = false
+              exportedCommunity.getReportStylesheets.getStylesheet.forEach { stylesheet =>
+                val tempFile = stringToTempFile(stylesheet.getContent).toPath
+                val reportType = toModelReportType(stylesheet.getReportType)
+                reportType match {
+                  case models.Enums.ReportType.ConformanceOverviewReport => hasConformanceOverview = true
+                  case models.Enums.ReportType.ConformanceStatementReport => hasConformanceStatement = true
+                  case models.Enums.ReportType.TestCaseReport => hasTestCase = true
+                  case models.Enums.ReportType.TestStepReport => hasTestStep = true
+                  case models.Enums.ReportType.ConformanceStatementCertificate => hasConformanceStatementCertificate = true
+                  case models.Enums.ReportType.ConformanceOverviewCertificate => hasConformanceOverviewCertificate = true
+                }
+                ctx.onSuccessCalls += (() => repositoryUtils.saveCommunityReportStylesheet(communityId.get, reportType, tempFile))
+                ctx.onSuccessCalls += (() => if (Files.exists(tempFile)) { FileUtils.deleteQuietly(tempFile.toFile) })
+                ctx.onFailureCalls += (() => if (Files.exists(tempFile)) { FileUtils.deleteQuietly(tempFile.toFile) })
+              }
+              if (!hasConformanceOverview) ctx.onSuccessCalls += (() => repositoryUtils.deleteCommunityReportStylesheet(communityId.get, models.Enums.ReportType.ConformanceOverviewReport))
+              if (!hasConformanceStatement) ctx.onSuccessCalls += (() => repositoryUtils.deleteCommunityReportStylesheet(communityId.get, models.Enums.ReportType.ConformanceStatementReport))
+              if (!hasTestCase) ctx.onSuccessCalls += (() => repositoryUtils.deleteCommunityReportStylesheet(communityId.get, models.Enums.ReportType.TestCaseReport))
+              if (!hasTestStep) ctx.onSuccessCalls += (() => repositoryUtils.deleteCommunityReportStylesheet(communityId.get, models.Enums.ReportType.TestStepReport))
+              if (!hasConformanceOverviewCertificate) ctx.onSuccessCalls += (() => repositoryUtils.deleteCommunityReportStylesheet(communityId.get, models.Enums.ReportType.ConformanceOverviewCertificate))
+              if (!hasConformanceStatementCertificate) ctx.onSuccessCalls += (() => repositoryUtils.deleteCommunityReportStylesheet(communityId.get, models.Enums.ReportType.ConformanceStatementCertificate))
+            }
             DBIO.successful(())
           }
-        } else {
-          DBIO.successful(())
-        }
-      }
-      // Community
-      _ <- {
-        processFromArchive(ImportItemType.Community, exportedCommunity, exportedCommunity.getId, ctx,
-          ImportCallbacks.set(
-            (data: com.gitb.xml.export.Community, item: ImportItem) => {
-              val domainId = determineDomainIdForCommunityUpdate(exportedCommunity, None, ctx)
-              val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
-              // This returns a tuple: (community ID, admin organisation ID)
-              communityManager.createCommunityInternal(models.Communities(0L,
-                ctx.importSettings.shortNameReplacement.getOrElse(data.getShortName),
-                ctx.importSettings.fullNameReplacement.getOrElse(data.getFullName),
-                Option(data.getSupportEmail),
-                selfRegistrationMethodToModel(data.getSelfRegistrationSettings.getMethod), Option(data.getSelfRegistrationSettings.getToken), Option(data.getSelfRegistrationSettings.getTokenHelpText),
-                data.getSelfRegistrationSettings.isNotifications, data.isInteractionNotification, Option(data.getDescription), selfRegistrationRestrictionToModel(data.getSelfRegistrationSettings.getRestriction),
-                data.getSelfRegistrationSettings.isForceTemplateSelection, data.getSelfRegistrationSettings.isForceRequiredProperties,
-                data.isAllowCertificateDownload, data.isAllowStatementManagement, data.isAllowSystemManagement,
-                data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates, data.isAllowAutomationApi, apiKey, None,
-                domainId
-              ), checkApiKeyUniqueness = true)
-            },
-            (data: com.gitb.xml.export.Community, targetKey: String, item: ImportItem) => {
-              val domainId = determineDomainIdForCommunityUpdate(exportedCommunity, targetCommunity, ctx)
-              val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
-              communityManager.updateCommunityInternal(targetCommunity.get, data.getShortName, data.getFullName, Option(data.getSupportEmail),
-                selfRegistrationMethodToModel(data.getSelfRegistrationSettings.getMethod), Option(data.getSelfRegistrationSettings.getToken), Option(data.getSelfRegistrationSettings.getTokenHelpText), data.getSelfRegistrationSettings.isNotifications,
-                data.isInteractionNotification, Option(data.getDescription), selfRegistrationRestrictionToModel(data.getSelfRegistrationSettings.getRestriction),
-                data.getSelfRegistrationSettings.isForceTemplateSelection, data.getSelfRegistrationSettings.isForceRequiredProperties,
-                data.isAllowCertificateDownload, data.isAllowStatementManagement, data.isAllowSystemManagement,
-                data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates, Some(data.isAllowAutomationApi), Some(apiKey),
-                domainId, checkApiKeyUniqueness = true, ctx.onSuccessCalls
-              )
-            },
-            None,
-            (data: com.gitb.xml.export.Community, targetKey: String, newId: Any, item: ImportItem) => {
-              val ids: (Long, Long) = newId.asInstanceOf[(Long, Long)] // (community ID, admin organisation ID)
-              // Set on import item.
-              item.targetKey = Some(ids._1.toString)
-              // Record community ID.
-              addIdToProcessedIdMap(ImportItemType.Community, data.getId, ids._1.toString, ctx)
-              // Record admin organisation ID.
-              communityAdminOrganisationId = Some(ids._2)
-            }
-          ).withFnForSkipButProcessChildren((data: com.gitb.xml.export.Community, targetKey: String, item: ImportItem) => {
-            /*
-             Exceptional case for community import to make sure we always update its domain. Not doing so would create problems for
-             triggers with domain parameters and conformance statements. We cannot do these checks using a normal approach on the ID
-             being processed as the domain is processed separately.
-             */
-            val domainId = determineDomainIdForCommunityUpdate(exportedCommunity, targetCommunity, ctx)
-            communityManager.updateCommunityDomain(targetCommunity.get, domainId, ctx.onSuccessCalls)
-          })
-        )
-      }
-      // Certificate settings
-      _ <- {
-        val communityId = getProcessedDbId(exportedCommunity, ImportItemType.Community, ctx)
-        if (communityId.isDefined) {
-          if (exportedCommunity.getConformanceCertificateSettings == null) {
-            // Delete
-            communityManager.deleteConformanceCertificateSettings(communityId.get)
-          } else {
-            // Update/Add
-            reportManager.updateConformanceCertificateSettingsInternal(
-                models.ConformanceCertificate(
-                  0L, Option(exportedCommunity.getConformanceCertificateSettings.getTitle),
-                  exportedCommunity.getConformanceCertificateSettings.isAddTitle, exportedCommunity.getConformanceCertificateSettings.isAddMessage, exportedCommunity.getConformanceCertificateSettings.isAddResultOverview,
-                  exportedCommunity.getConformanceCertificateSettings.isAddTestCases, exportedCommunity.getConformanceCertificateSettings.isAddDetails,
-                  exportedCommunity.getConformanceCertificateSettings.isAddSignature, exportedCommunity.getConformanceCertificateSettings.isAddPageNumbers,
-                  Option(exportedCommunity.getConformanceCertificateSettings.getMessage), communityId.get
-                )
-            ) andThen {
-              if (exportedCommunity.getConformanceCertificateSettings.getSignature != null) {
-                // This case is added here for backwards compatibility. Signature settings are normally added directly under the community.
-                handleCommunityKeystore(exportedCommunity.getConformanceCertificateSettings.getSignature, communityId.get, importSettings)
-              } else {
-                DBIO.successful(())
+          // Community report settings
+          _ <- {
+            val communityId = getProcessedDbId(exportedCommunity, ImportItemType.Community, ctx)
+            if (communityId.isDefined && exportedCommunity.getReportSettings != null) {
+              val dbActions = ListBuffer[DBIO[_]]()
+              exportedCommunity.getReportSettings.getReportSetting.forEach { exportedSetting =>
+                dbActions += reportManager.updateReportSettingsInternal(toModelReportSetting(exportedSetting, communityId.get), None, ctx.onSuccessCalls)
               }
-            }
-          }
-        } else {
-          DBIO.successful(())
-        }
-      }
-      // Certificate overview settings
-      _ <- {
-        DBIO.successful(())
-        val communityId = getProcessedDbId(exportedCommunity, ImportItemType.Community, ctx)
-        if (communityId.isDefined) {
-          if (exportedCommunity.getConformanceOverviewCertificateSettings == null) {
-            // Delete
-            communityManager.deleteConformanceOverviewCertificateSettings(communityId.get)
-          } else {
-            // Update/Add
-            reportManager.updateConformanceOverviewCertificateSettingsInternal(
-              toModelConformanceOverCertificateSettingsWithMessages(exportedCommunity.getConformanceOverviewCertificateSettings, communityId.get, ctx)
-            )
-          }
-        } else {
-          DBIO.successful(())
-        }
-      }
-      // Signature settings
-      _ <- {
-        val communityId = getProcessedDbId(exportedCommunity, ImportItemType.Community, ctx)
-        if (communityId.isDefined) {
-          if (exportedCommunity.getSignatureSettings == null) {
-            // Delete
-            communityManager.deleteCommunityKeystoreInternal(communityId.get)
-          } else {
-            // Update/Add
-            handleCommunityKeystore(exportedCommunity.getSignatureSettings, communityId.get, importSettings)
-          }
-        } else {
-          DBIO.successful(())
-        }
-      }
-      // Community report stylesheets
-      _ <- {
-        val communityId = getProcessedDbId(exportedCommunity, ImportItemType.Community, ctx)
-        if (communityId.isDefined && exportedCommunity.getReportStylesheets != null) {
-          var hasConformanceOverview = false
-          var hasConformanceStatement = false
-          var hasTestCase = false
-          var hasTestStep = false
-          var hasConformanceOverviewCertificate = false
-          var hasConformanceStatementCertificate = false
-          exportedCommunity.getReportStylesheets.getStylesheet.forEach { stylesheet =>
-            val tempFile = stringToTempFile(stylesheet.getContent).toPath
-            val reportType = toModelReportType(stylesheet.getReportType)
-            reportType match {
-              case models.Enums.ReportType.ConformanceOverviewReport => hasConformanceOverview = true
-              case models.Enums.ReportType.ConformanceStatementReport => hasConformanceStatement = true
-              case models.Enums.ReportType.TestCaseReport => hasTestCase = true
-              case models.Enums.ReportType.TestStepReport => hasTestStep = true
-              case models.Enums.ReportType.ConformanceStatementCertificate => hasConformanceStatementCertificate = true
-              case models.Enums.ReportType.ConformanceOverviewCertificate => hasConformanceOverviewCertificate = true
-            }
-            ctx.onSuccessCalls += (() => repositoryUtils.saveCommunityReportStylesheet(communityId.get, reportType, tempFile))
-            ctx.onSuccessCalls += (() => if (Files.exists(tempFile)) { FileUtils.deleteQuietly(tempFile.toFile) })
-            ctx.onFailureCalls += (() => if (Files.exists(tempFile)) { FileUtils.deleteQuietly(tempFile.toFile) })
-          }
-          if (!hasConformanceOverview) ctx.onSuccessCalls += (() => repositoryUtils.deleteCommunityReportStylesheet(communityId.get, models.Enums.ReportType.ConformanceOverviewReport))
-          if (!hasConformanceStatement) ctx.onSuccessCalls += (() => repositoryUtils.deleteCommunityReportStylesheet(communityId.get, models.Enums.ReportType.ConformanceStatementReport))
-          if (!hasTestCase) ctx.onSuccessCalls += (() => repositoryUtils.deleteCommunityReportStylesheet(communityId.get, models.Enums.ReportType.TestCaseReport))
-          if (!hasTestStep) ctx.onSuccessCalls += (() => repositoryUtils.deleteCommunityReportStylesheet(communityId.get, models.Enums.ReportType.TestStepReport))
-          if (!hasConformanceOverviewCertificate) ctx.onSuccessCalls += (() => repositoryUtils.deleteCommunityReportStylesheet(communityId.get, models.Enums.ReportType.ConformanceOverviewCertificate))
-          if (!hasConformanceStatementCertificate) ctx.onSuccessCalls += (() => repositoryUtils.deleteCommunityReportStylesheet(communityId.get, models.Enums.ReportType.ConformanceStatementCertificate))
-        }
-        DBIO.successful(())
-      }
-      // Community report settings
-      _ <- {
-        val communityId = getProcessedDbId(exportedCommunity, ImportItemType.Community, ctx)
-        if (communityId.isDefined && exportedCommunity.getReportSettings != null) {
-          val dbActions = ListBuffer[DBIO[_]]()
-          exportedCommunity.getReportSettings.getReportSetting.forEach { exportedSetting =>
-            dbActions += reportManager.updateReportSettingsInternal(toModelReportSetting(exportedSetting, communityId.get), None, ctx.onSuccessCalls)
-          }
-          toDBIO(dbActions)
-        } else {
-          DBIO.successful(())
-        }
-      }
-      // Custom labels
-      _ <- {
-        val dbActions = ListBuffer[DBIO[_]]()
-        if (exportedCommunity.getCustomLabels != null) {
-          exportedCommunity.getCustomLabels.getLabel.asScala.foreach { exportedLabel =>
-            dbActions += processFromArchive(ImportItemType.CustomLabel, exportedLabel, exportedLabel.getId, ctx,
-              ImportCallbacks.set(
-                (data: com.gitb.xml.export.CustomLabel, item: ImportItem) => {
-                  val communityId = item.parentItem.get.targetKey.get.toLong
-                  val labelObject = toModelCustomLabel(data, communityId)
-                  val key = s"${communityId}_${labelObject.labelType}"
-                  if (!hasExisting(ImportItemType.CustomLabel, key, ctx)) {
-                    communityManager.createCommunityLabel(labelObject) andThen
-                      DBIO.successful(key)
-                  } else {
-                    DBIO.successful(())
-                  }
-                },
-                (data: com.gitb.xml.export.CustomLabel, targetKey: String, item: ImportItem) => {
-                  val keyParts = StringUtils.split(targetKey, "_") // [community_id]_[label_type]
-                  communityManager.deleteCommunityLabel(keyParts(0).toLong, keyParts(1).toShort) andThen
-                    communityManager.createCommunityLabel(toModelCustomLabel(data, item.parentItem.get.targetKey.get.toLong))
-                }
-              )
-            )
-          }
-        }
-        toDBIO(dbActions)
-      }
-      _ <- {
-        processRemaining(ImportItemType.CustomLabel, ctx,
-          (targetKey: String, item: ImportItem) => {
-            val keyParts = StringUtils.split(targetKey, "_") // [community_id]_[label_type]
-            communityManager.deleteCommunityLabel(keyParts(0).toLong, keyParts(1).toShort)
-          }
-        )
-      }
-      // Organisation properties
-      _ <- {
-        val dbActions = ListBuffer[DBIO[_]]()
-        if (exportedCommunity.getOrganisationProperties != null) {
-          exportedCommunity.getOrganisationProperties.getProperty.asScala.foreach { exportedProperty =>
-            dbActions += processFromArchive(ImportItemType.OrganisationProperty, exportedProperty, exportedProperty.getId, ctx,
-              ImportCallbacks.set(
-                (data: com.gitb.xml.export.OrganisationProperty, item: ImportItem) => {
-                  communityManager.createOrganisationParameterInternal(toModelOrganisationParameter(data, item.parentItem.get.targetKey.get.toLong, None))
-                },
-                (data: com.gitb.xml.export.OrganisationProperty, targetKey: String, item: ImportItem) => {
-                  communityManager.updateOrganisationParameterInternal(toModelOrganisationParameter(data, item.parentItem.get.targetKey.get.toLong, Some(targetKey.toLong)), updateDisplayOrder = true, ctx.onSuccessCalls)
-                }
-              )
-            )
-          }
-        }
-        toDBIO(dbActions)
-      }
-      _ <- {
-        processRemaining(ImportItemType.OrganisationProperty, ctx,
-          (targetKey: String, item: ImportItem) => {
-            communityManager.deleteOrganisationParameter(targetKey.toLong, ctx.onSuccessCalls)
-          }
-        )
-      }
-      // System properties
-      _ <- {
-        val dbActions = ListBuffer[DBIO[_]]()
-        if (exportedCommunity.getSystemProperties != null) {
-          exportedCommunity.getSystemProperties.getProperty.asScala.foreach { exportedProperty =>
-            dbActions += processFromArchive(ImportItemType.SystemProperty, exportedProperty, exportedProperty.getId, ctx,
-              ImportCallbacks.set(
-                (data: com.gitb.xml.export.SystemProperty, item: ImportItem) => {
-                  communityManager.createSystemParameterInternal(toModelSystemParameter(data, item.parentItem.get.targetKey.get.toLong, None))
-                },
-                (data: com.gitb.xml.export.SystemProperty, targetKey: String, item: ImportItem) => {
-                  communityManager.updateSystemParameterInternal(toModelSystemParameter(data, item.parentItem.get.targetKey.get.toLong, Some(targetKey.toLong)), updateDisplayOrder = true, ctx.onSuccessCalls)
-                }
-              )
-            )
-          }
-        }
-        toDBIO(dbActions)
-      }
-      _ <- {
-        processRemaining(ImportItemType.SystemProperty, ctx,
-          (targetKey: String, item: ImportItem) => {
-            communityManager.deleteSystemParameter(targetKey.toLong, ctx.onSuccessCalls)
-          }
-        )
-      }
-      // Landing pages
-      _ <- {
-        val dbActions = ListBuffer[DBIO[_]]()
-        if (exportedCommunity.getLandingPages != null) {
-          exportedCommunity.getLandingPages.getLandingPage.asScala.foreach { exportedContent =>
-            dbActions += processFromArchive(ImportItemType.LandingPage, exportedContent, exportedContent.getId, ctx,
-              ImportCallbacks.set(
-                (data: com.gitb.xml.export.LandingPage, item: ImportItem) => {
-                  landingPageManager.createLandingPageInternal(toModelLandingPage(data, item.parentItem.get.targetKey.get.toLong))
-                },
-                (data: com.gitb.xml.export.LandingPage, targetKey: String, item: ImportItem) => {
-                  landingPageManager.updateLandingPageInternal(targetKey.toLong, data.getName, Option(data.getDescription), data.getContent, data.isDefault, item.parentItem.get.targetKey.get.toLong)
-                }
-              )
-            )
-          }
-        }
-        toDBIO(dbActions)
-      }
-      _ <- {
-        processRemaining(ImportItemType.LandingPage, ctx,
-          (targetKey: String, item: ImportItem) => {
-            landingPageManager.deleteLandingPageInternal(targetKey.toLong)
-          }
-        )
-      }
-      // Legal notices
-      _ <- {
-        val dbActions = ListBuffer[DBIO[_]]()
-        if (exportedCommunity.getLegalNotices != null) {
-          exportedCommunity.getLegalNotices.getLegalNotice.asScala.foreach { exportedContent =>
-            dbActions += processFromArchive(ImportItemType.LegalNotice, exportedContent, exportedContent.getId, ctx,
-              ImportCallbacks.set(
-                (data: com.gitb.xml.export.LegalNotice, item: ImportItem) => {
-                  legalNoticeManager.createLegalNoticeInternal(toModelLegalNotice(data, item.parentItem.get.targetKey.get.toLong))
-                },
-                (data: com.gitb.xml.export.LegalNotice, targetKey: String, item: ImportItem) => {
-                  legalNoticeManager.updateLegalNoticeInternal(targetKey.toLong, data.getName, Option(data.getDescription), data.getContent, data.isDefault, item.parentItem.get.targetKey.get.toLong)
-                }
-              )
-            )
-          }
-        }
-        toDBIO(dbActions)
-      }
-      _ <- {
-        processRemaining(ImportItemType.LegalNotice, ctx,
-          (targetKey: String, item: ImportItem) => {
-            legalNoticeManager.deleteLegalNoticeInternal(targetKey.toLong)
-          }
-        )
-      }
-      // Error templates
-      _ <- {
-        val dbActions = ListBuffer[DBIO[_]]()
-        if (exportedCommunity.getErrorTemplates != null) {
-          exportedCommunity.getErrorTemplates.getErrorTemplate.asScala.foreach { exportedContent =>
-            dbActions += processFromArchive(ImportItemType.ErrorTemplate, exportedContent, exportedContent.getId, ctx,
-              ImportCallbacks.set(
-                (data: com.gitb.xml.export.ErrorTemplate, item: ImportItem) => {
-                  errorTemplateManager.createErrorTemplateInternal(toModelErrorTemplate(data, item.parentItem.get.targetKey.get.toLong))
-                },
-                (data: com.gitb.xml.export.ErrorTemplate, targetKey: String, item: ImportItem) => {
-                  errorTemplateManager.updateErrorTemplateInternal(targetKey.toLong, data.getName, Option(data.getDescription), data.getContent, data.isDefault, item.parentItem.get.targetKey.get.toLong)
-                }
-              )
-            )
-          }
-        }
-        toDBIO(dbActions)
-      }
-      _ <- {
-        processRemaining(ImportItemType.ErrorTemplate, ctx,
-          (targetKey: String, item: ImportItem) => {
-            errorTemplateManager.deleteErrorTemplateInternal(targetKey.toLong)
-          }
-        )
-      }
-      // Triggers
-      _ <- {
-        val dbActions = ListBuffer[DBIO[_]]()
-        if (exportedCommunity.getTriggers != null) {
-          exportedCommunity.getTriggers.getTrigger.asScala.foreach { exportedContent =>
-            dbActions += processFromArchive(ImportItemType.Trigger, exportedContent, exportedContent.getId, ctx,
-              ImportCallbacks.set(
-                (data: com.gitb.xml.export.Trigger, item: ImportItem) => {
-                  triggerManager.createTriggerInternal(toModelTrigger(None, data, item.parentItem.get.targetKey.get.toLong, ctx))
-                },
-                (data: com.gitb.xml.export.Trigger, targetKey: String, item: ImportItem) => {
-                  triggerManager.updateTriggerInternal(toModelTrigger(Some(targetKey.toLong), data, item.parentItem.get.targetKey.get.toLong, ctx))
-                }
-              )
-            )
-          }
-        }
-        toDBIO(dbActions)
-      }
-      _ <- {
-        processRemaining(ImportItemType.Trigger, ctx,
-          (targetKey: String, item: ImportItem) => {
-            triggerHelper.deleteTriggerInternal(targetKey.toLong)
-          }
-        )
-      }
-      // Resources
-      _ <- {
-        val dbActions = ListBuffer[DBIO[_]]()
-        if (exportedCommunity.getResources != null) {
-          exportedCommunity.getResources.getResource.asScala.foreach { exportedContent =>
-            dbActions += processFromArchive(ImportItemType.CommunityResource, exportedContent, exportedContent.getId, ctx,
-              ImportCallbacks.set(
-                (data: com.gitb.xml.export.CommunityResource, item: ImportItem) => {
-                  val fileToStore = dataUrlToTempFile(data.getContent)
-                  ctx.onFailureCalls += (() => if (fileToStore.exists()) { FileUtils.deleteQuietly(fileToStore) })
-                  communityResourceManager.createCommunityResourceInternal(toModelCommunityResource(data, item.parentItem.get.targetKey.get.toLong), fileToStore, ctx.onSuccessCalls)
-                },
-                (data: com.gitb.xml.export.CommunityResource, targetKey: String, item: ImportItem) => {
-                  val fileToStore = dataUrlToTempFile(data.getContent)
-                  ctx.onFailureCalls += (() => if (fileToStore.exists()) { FileUtils.deleteQuietly(fileToStore) })
-                  communityResourceManager.updateCommunityResourceInternal(Some(item.parentItem.get.targetKey.get.toLong), targetKey.toLong, Some(data.getName), Some(Option(data.getDescription)), Some(fileToStore), ctx.onSuccessCalls)
-                }
-              )
-            )
-          }
-        }
-        toDBIO(dbActions)
-      }
-      _ <- {
-        processRemaining(ImportItemType.CommunityResource, ctx,
-          (targetKey: String, item: ImportItem) => {
-            communityResourceManager.deleteCommunityResourceInternal(Some(item.parentItem.get.targetKey.get.toLong), targetKey.toLong, ctx.onSuccessCalls)
-          }
-        )
-      }
-      // Administrators
-      _ <- {
-        val dbActions = ListBuffer[DBIO[_]]()
-        if (!Configurations.AUTHENTICATION_SSO_ENABLED && exportedCommunity.getAdministrators != null) {
-          exportedCommunity.getAdministrators.getAdministrator.asScala.foreach { exportedUser =>
-            dbActions += processFromArchive(ImportItemType.Administrator, exportedUser, exportedUser.getId, ctx,
-              ImportCallbacks.set(
-                (data: com.gitb.xml.export.CommunityAdministrator, item: ImportItem) => {
-                  if (!referenceUserEmails.contains(exportedUser.getEmail.toLowerCase)) {
-                    referenceUserEmails += exportedUser.getEmail.toLowerCase
-                    PersistenceSchema.insertUser += toModelAdministrator(data, None, communityAdminOrganisationId.get, ctx.importSettings)
-                  } else {
-                    DBIO.successful(())
-                  }
-                },
-                (data: com.gitb.xml.export.CommunityAdministrator, targetKey: String, item: ImportItem) => {
-                  /*
-                    We don't update the email as this must anyway be already matching (this was how the user was found
-                    to be existing). Not updating the email avoids the need to check that the email is unique with respect
-                    to other users.
-                   */
-                  val query = for {
-                    user <- PersistenceSchema.users.filter(_.id === targetKey.toLong)
-                  } yield (user.name, user.password, user.onetimePassword)
-                  query.update(data.getName, decrypt(ctx.importSettings, data.getPassword), data.isOnetimePassword)
-                }
-              )
-            )
-          }
-        }
-        toDBIO(dbActions)
-      }
-      _ <- {
-        if (!Configurations.AUTHENTICATION_SSO_ENABLED) {
-          processRemaining(ImportItemType.Administrator, ctx,
-            (targetKey: String, item: ImportItem) => {
-              val userId = targetKey.toLong
-              if (ownUserId.isDefined && ownUserId.get.longValue() != userId) {
-                // Avoid deleting self
-                PersistenceSchema.users.filter(_.id === userId).delete
-              } else {
-                DBIO.successful(())
-              }
-            }
-          )
-        } else {
-          DBIO.successful(())
-        }
-      }
-      // Organisations
-      _ <- {
-        val dbActions = ListBuffer[DBIO[_]]()
-        if (exportedCommunity.getOrganisations != null) {
-          exportedCommunity.getOrganisations.getOrganisation.asScala.foreach { exportedOrganisation =>
-            dbActions += processFromArchive(ImportItemType.Organisation, exportedOrganisation, exportedOrganisation.getId, ctx,
-              ImportCallbacks.set(
-                (data: com.gitb.xml.export.Organisation, item: ImportItem) => {
-                  for {
-                    orgInfo <- {
-                      organisationManager.createOrganizationWithRelatedData(
-                        models.Organizations(
-                          0L, data.getShortName, data.getFullName, OrganizationType.Vendor.id.toShort, adminOrganization = false,
-                          getProcessedDbId(data.getLandingPage, ImportItemType.LandingPage, ctx),
-                          getProcessedDbId(data.getLegalNotice, ImportItemType.LegalNotice, ctx),
-                          getProcessedDbId(data.getErrorTemplate, ImportItemType.ErrorTemplate, ctx),
-                          template = data.isTemplate, Option(data.getTemplateName), Option(data.getApiKey), item.parentItem.get.targetKey.get.toLong
-                        ), None, None, None, copyOrganisationParameters = false, copySystemParameters = false, copyStatementParameters = false,
-                        checkApiKeyUniqueness = true, setDefaultPropertyValues = false, ctx.onSuccessCalls
-                      )
-                    }
-                  } yield orgInfo.organisationId
-                },
-                (data: com.gitb.xml.export.Organisation, targetKey: String, item: ImportItem) => {
-                  if (communityAdminOrganisationId.get.longValue() == targetKey.toLong.longValue()) {
-                    // Prevent updating the community's admin organisation.
-                    DBIO.successful(())
-                  } else {
-                    organisationManager.updateOrganizationInternal(targetKey.toLong, data.getShortName, data.getFullName,
-                      getProcessedDbId(data.getLandingPage, ImportItemType.LandingPage, ctx),
-                      getProcessedDbId(data.getLegalNotice, ImportItemType.LegalNotice, ctx),
-                      getProcessedDbId(data.getErrorTemplate, ImportItemType.ErrorTemplate, ctx),
-                      None, data.isTemplate, Option(data.getTemplateName), Some(Option(data.getApiKey)), None, None,
-                      copyOrganisationParameters = false, copySystemParameters = false, copyStatementParameters = false,
-                      checkApiKeyUniqueness = true, ctx.onSuccessCalls
-                    )
-                  }
-                }
-              )
-            )
-          }
-        }
-        toDBIO(dbActions)
-      }
-      _ <- {
-        processRemaining(ImportItemType.Organisation, ctx,
-          (targetKey: String, item: ImportItem) => {
-            if (communityAdminOrganisationId.get.longValue() == targetKey.toLong.longValue()) {
-              // Prevent deleting the community's admin organisation.
-              DBIO.successful(())
+              toDBIO(dbActions)
             } else {
-              organisationManager.deleteOrganization(targetKey.toLong, ctx.onSuccessCalls)
+              DBIO.successful(())
             }
           }
-        )
-      }
-      // Organisation users
-      _ <- {
-        val dbActions = ListBuffer[DBIO[_]]()
-        if (!Configurations.AUTHENTICATION_SSO_ENABLED && exportedCommunity.getOrganisations != null) {
-          exportedCommunity.getOrganisations.getOrganisation.asScala.foreach { exportedOrganisation =>
-            if (exportedOrganisation.getUsers != null) {
-              exportedOrganisation.getUsers.getUser.asScala.foreach { exportedUser =>
-                dbActions += processFromArchive(ImportItemType.OrganisationUser, exportedUser, exportedUser.getId, ctx,
+          // Custom labels
+          _ <- {
+            val dbActions = ListBuffer[DBIO[_]]()
+            if (exportedCommunity.getCustomLabels != null) {
+              exportedCommunity.getCustomLabels.getLabel.asScala.foreach { exportedLabel =>
+                dbActions += processFromArchive(ImportItemType.CustomLabel, exportedLabel, exportedLabel.getId, ctx,
                   ImportCallbacks.set(
-                    (data: com.gitb.xml.export.OrganisationUser, item: ImportItem) => {
-                      if (!referenceUserEmails.contains(exportedUser.getEmail.toLowerCase)) {
-                        referenceUserEmails += exportedUser.getEmail.toLowerCase
-                        PersistenceSchema.insertUser += toModelOrganisationUser(data, None, toModelUserRole(data.getRole), item.parentItem.get.targetKey.get.toLong, ctx.importSettings)
+                    (data: com.gitb.xml.export.CustomLabel, item: ImportItem) => {
+                      val communityId = item.parentItem.get.targetKey.get.toLong
+                      val labelObject = toModelCustomLabel(data, communityId)
+                      val key = s"${communityId}_${labelObject.labelType}"
+                      if (!hasExisting(ImportItemType.CustomLabel, key, ctx)) {
+                        for {
+                          _ <- communityManager.createCommunityLabel(labelObject)
+                          key <- DBIO.successful(key)
+                        } yield key
                       } else {
                         DBIO.successful(())
                       }
                     },
-                    (data: com.gitb.xml.export.OrganisationUser, targetKey: String, item: ImportItem) => {
+                    (data: com.gitb.xml.export.CustomLabel, targetKey: String, item: ImportItem) => {
+                      val keyParts = StringUtils.split(targetKey, "_") // [community_id]_[label_type]
+                      for {
+                        _ <- communityManager.deleteCommunityLabel(keyParts(0).toLong, keyParts(1).toShort)
+                        _ <- communityManager.createCommunityLabel(toModelCustomLabel(data, item.parentItem.get.targetKey.get.toLong))
+                      } yield ()
+                    }
+                  )
+                )
+              }
+            }
+            toDBIO(dbActions)
+          }
+          _ <- {
+            processRemaining(ImportItemType.CustomLabel, ctx,
+              (targetKey: String, item: ImportItem) => {
+                val keyParts = StringUtils.split(targetKey, "_") // [community_id]_[label_type]
+                communityManager.deleteCommunityLabel(keyParts(0).toLong, keyParts(1).toShort)
+              }
+            )
+          }
+          // Organisation properties
+          _ <- {
+            val dbActions = ListBuffer[DBIO[_]]()
+            if (exportedCommunity.getOrganisationProperties != null) {
+              exportedCommunity.getOrganisationProperties.getProperty.asScala.foreach { exportedProperty =>
+                dbActions += processFromArchive(ImportItemType.OrganisationProperty, exportedProperty, exportedProperty.getId, ctx,
+                  ImportCallbacks.set(
+                    (data: com.gitb.xml.export.OrganisationProperty, item: ImportItem) => {
+                      communityManager.createOrganisationParameterInternal(toModelOrganisationParameter(data, item.parentItem.get.targetKey.get.toLong, None))
+                    },
+                    (data: com.gitb.xml.export.OrganisationProperty, targetKey: String, item: ImportItem) => {
+                      communityManager.updateOrganisationParameterInternal(toModelOrganisationParameter(data, item.parentItem.get.targetKey.get.toLong, Some(targetKey.toLong)), updateDisplayOrder = true, ctx.onSuccessCalls)
+                    }
+                  )
+                )
+              }
+            }
+            toDBIO(dbActions)
+          }
+          _ <- {
+            processRemaining(ImportItemType.OrganisationProperty, ctx,
+              (targetKey: String, item: ImportItem) => {
+                communityManager.deleteOrganisationParameter(targetKey.toLong, ctx.onSuccessCalls)
+              }
+            )
+          }
+          // System properties
+          _ <- {
+            val dbActions = ListBuffer[DBIO[_]]()
+            if (exportedCommunity.getSystemProperties != null) {
+              exportedCommunity.getSystemProperties.getProperty.asScala.foreach { exportedProperty =>
+                dbActions += processFromArchive(ImportItemType.SystemProperty, exportedProperty, exportedProperty.getId, ctx,
+                  ImportCallbacks.set(
+                    (data: com.gitb.xml.export.SystemProperty, item: ImportItem) => {
+                      communityManager.createSystemParameterInternal(toModelSystemParameter(data, item.parentItem.get.targetKey.get.toLong, None))
+                    },
+                    (data: com.gitb.xml.export.SystemProperty, targetKey: String, item: ImportItem) => {
+                      communityManager.updateSystemParameterInternal(toModelSystemParameter(data, item.parentItem.get.targetKey.get.toLong, Some(targetKey.toLong)), updateDisplayOrder = true, ctx.onSuccessCalls)
+                    }
+                  )
+                )
+              }
+            }
+            toDBIO(dbActions)
+          }
+          _ <- {
+            processRemaining(ImportItemType.SystemProperty, ctx,
+              (targetKey: String, item: ImportItem) => {
+                communityManager.deleteSystemParameter(targetKey.toLong, ctx.onSuccessCalls)
+              }
+            )
+          }
+          // Landing pages
+          _ <- {
+            val dbActions = ListBuffer[DBIO[_]]()
+            if (exportedCommunity.getLandingPages != null) {
+              exportedCommunity.getLandingPages.getLandingPage.asScala.foreach { exportedContent =>
+                dbActions += processFromArchive(ImportItemType.LandingPage, exportedContent, exportedContent.getId, ctx,
+                  ImportCallbacks.set(
+                    (data: com.gitb.xml.export.LandingPage, item: ImportItem) => {
+                      landingPageManager.createLandingPageInternal(toModelLandingPage(data, item.parentItem.get.targetKey.get.toLong))
+                    },
+                    (data: com.gitb.xml.export.LandingPage, targetKey: String, item: ImportItem) => {
+                      landingPageManager.updateLandingPageInternal(targetKey.toLong, data.getName, Option(data.getDescription), data.getContent, data.isDefault, item.parentItem.get.targetKey.get.toLong)
+                    }
+                  )
+                )
+              }
+            }
+            toDBIO(dbActions)
+          }
+          _ <- {
+            processRemaining(ImportItemType.LandingPage, ctx,
+              (targetKey: String, item: ImportItem) => {
+                landingPageManager.deleteLandingPageInternal(targetKey.toLong)
+              }
+            )
+          }
+          // Legal notices
+          _ <- {
+            val dbActions = ListBuffer[DBIO[_]]()
+            if (exportedCommunity.getLegalNotices != null) {
+              exportedCommunity.getLegalNotices.getLegalNotice.asScala.foreach { exportedContent =>
+                dbActions += processFromArchive(ImportItemType.LegalNotice, exportedContent, exportedContent.getId, ctx,
+                  ImportCallbacks.set(
+                    (data: com.gitb.xml.export.LegalNotice, item: ImportItem) => {
+                      legalNoticeManager.createLegalNoticeInternal(toModelLegalNotice(data, item.parentItem.get.targetKey.get.toLong))
+                    },
+                    (data: com.gitb.xml.export.LegalNotice, targetKey: String, item: ImportItem) => {
+                      legalNoticeManager.updateLegalNoticeInternal(targetKey.toLong, data.getName, Option(data.getDescription), data.getContent, data.isDefault, item.parentItem.get.targetKey.get.toLong)
+                    }
+                  )
+                )
+              }
+            }
+            toDBIO(dbActions)
+          }
+          _ <- {
+            processRemaining(ImportItemType.LegalNotice, ctx,
+              (targetKey: String, item: ImportItem) => {
+                legalNoticeManager.deleteLegalNoticeInternal(targetKey.toLong)
+              }
+            )
+          }
+          // Error templates
+          _ <- {
+            val dbActions = ListBuffer[DBIO[_]]()
+            if (exportedCommunity.getErrorTemplates != null) {
+              exportedCommunity.getErrorTemplates.getErrorTemplate.asScala.foreach { exportedContent =>
+                dbActions += processFromArchive(ImportItemType.ErrorTemplate, exportedContent, exportedContent.getId, ctx,
+                  ImportCallbacks.set(
+                    (data: com.gitb.xml.export.ErrorTemplate, item: ImportItem) => {
+                      errorTemplateManager.createErrorTemplateInternal(toModelErrorTemplate(data, item.parentItem.get.targetKey.get.toLong))
+                    },
+                    (data: com.gitb.xml.export.ErrorTemplate, targetKey: String, item: ImportItem) => {
+                      errorTemplateManager.updateErrorTemplateInternal(targetKey.toLong, data.getName, Option(data.getDescription), data.getContent, data.isDefault, item.parentItem.get.targetKey.get.toLong)
+                    }
+                  )
+                )
+              }
+            }
+            toDBIO(dbActions)
+          }
+          _ <- {
+            processRemaining(ImportItemType.ErrorTemplate, ctx,
+              (targetKey: String, item: ImportItem) => {
+                errorTemplateManager.deleteErrorTemplateInternal(targetKey.toLong)
+              }
+            )
+          }
+          // Triggers
+          _ <- {
+            val dbActions = ListBuffer[DBIO[_]]()
+            if (exportedCommunity.getTriggers != null) {
+              exportedCommunity.getTriggers.getTrigger.asScala.foreach { exportedContent =>
+                dbActions += processFromArchive(ImportItemType.Trigger, exportedContent, exportedContent.getId, ctx,
+                  ImportCallbacks.set(
+                    (data: com.gitb.xml.export.Trigger, item: ImportItem) => {
+                      triggerManager.createTriggerInternal(toModelTrigger(None, data, item.parentItem.get.targetKey.get.toLong, ctx))
+                    },
+                    (data: com.gitb.xml.export.Trigger, targetKey: String, item: ImportItem) => {
+                      triggerManager.updateTriggerInternal(toModelTrigger(Some(targetKey.toLong), data, item.parentItem.get.targetKey.get.toLong, ctx))
+                    }
+                  )
+                )
+              }
+            }
+            toDBIO(dbActions)
+          }
+          _ <- {
+            processRemaining(ImportItemType.Trigger, ctx,
+              (targetKey: String, item: ImportItem) => {
+                triggerHelper.deleteTriggerInternal(targetKey.toLong)
+              }
+            )
+          }
+          // Resources
+          _ <- {
+            val dbActions = ListBuffer[DBIO[_]]()
+            if (exportedCommunity.getResources != null) {
+              exportedCommunity.getResources.getResource.asScala.foreach { exportedContent =>
+                dbActions += processFromArchive(ImportItemType.CommunityResource, exportedContent, exportedContent.getId, ctx,
+                  ImportCallbacks.set(
+                    (data: com.gitb.xml.export.CommunityResource, item: ImportItem) => {
+                      val fileToStore = dataUrlToTempFile(data.getContent)
+                      ctx.onFailureCalls += (() => if (fileToStore.exists()) { FileUtils.deleteQuietly(fileToStore) })
+                      communityResourceManager.createCommunityResourceInternal(toModelCommunityResource(data, item.parentItem.get.targetKey.get.toLong), fileToStore, ctx.onSuccessCalls)
+                    },
+                    (data: com.gitb.xml.export.CommunityResource, targetKey: String, item: ImportItem) => {
+                      val fileToStore = dataUrlToTempFile(data.getContent)
+                      ctx.onFailureCalls += (() => if (fileToStore.exists()) { FileUtils.deleteQuietly(fileToStore) })
+                      communityResourceManager.updateCommunityResourceInternal(Some(item.parentItem.get.targetKey.get.toLong), targetKey.toLong, Some(data.getName), Some(Option(data.getDescription)), Some(fileToStore), ctx.onSuccessCalls)
+                    }
+                  )
+                )
+              }
+            }
+            toDBIO(dbActions)
+          }
+          _ <- {
+            processRemaining(ImportItemType.CommunityResource, ctx,
+              (targetKey: String, item: ImportItem) => {
+                communityResourceManager.deleteCommunityResourceInternal(Some(item.parentItem.get.targetKey.get.toLong), targetKey.toLong, ctx.onSuccessCalls)
+              }
+            )
+          }
+          // Administrators
+          _ <- {
+            val dbActions = ListBuffer[DBIO[_]]()
+            if (!Configurations.AUTHENTICATION_SSO_ENABLED && exportedCommunity.getAdministrators != null) {
+              exportedCommunity.getAdministrators.getAdministrator.asScala.foreach { exportedUser =>
+                dbActions += processFromArchive(ImportItemType.Administrator, exportedUser, exportedUser.getId, ctx,
+                  ImportCallbacks.set(
+                    (data: com.gitb.xml.export.CommunityAdministrator, item: ImportItem) => {
+                      if (!referenceUserEmails.contains(exportedUser.getEmail.toLowerCase)) {
+                        referenceUserEmails += exportedUser.getEmail.toLowerCase
+                        PersistenceSchema.insertUser += toModelAdministrator(data, None, communityAdminOrganisationId.get, ctx.importSettings)
+                      } else {
+                        DBIO.successful(())
+                      }
+                    },
+                    (data: com.gitb.xml.export.CommunityAdministrator, targetKey: String, item: ImportItem) => {
                       /*
                         We don't update the email as this must anyway be already matching (this was how the user was found
                         to be existing). Not updating the email avoids the need to check that the email is unique with respect
                         to other users.
                        */
-                      val q = for { u <- PersistenceSchema.users.filter(_.id === targetKey.toLong) } yield (u.name, u.password, u.onetimePassword, u.role)
-                      q.update(data.getName, decrypt(ctx.importSettings, data.getPassword), data.isOnetimePassword, toModelUserRole(data.getRole))
+                      val query = for {
+                        user <- PersistenceSchema.users.filter(_.id === targetKey.toLong)
+                      } yield (user.name, user.password, user.onetimePassword)
+                      query.update(data.getName, decrypt(ctx.importSettings, data.getPassword), data.isOnetimePassword)
                     }
                   )
                 )
               }
             }
+            toDBIO(dbActions)
           }
-        }
-        toDBIO(dbActions)
-      }
-      _ <- {
-        if (!Configurations.AUTHENTICATION_SSO_ENABLED) {
-          processRemaining(ImportItemType.OrganisationUser, ctx,
-            (targetKey: String, item: ImportItem) => {
-              PersistenceSchema.users.filter(_.id === targetKey.toLong).delete
+          _ <- {
+            if (!Configurations.AUTHENTICATION_SSO_ENABLED) {
+              processRemaining(ImportItemType.Administrator, ctx,
+                (targetKey: String, item: ImportItem) => {
+                  val userId = targetKey.toLong
+                  if (ownUserId.isDefined && ownUserId.get.longValue() != userId) {
+                    // Avoid deleting self
+                    PersistenceSchema.users.filter(_.id === userId).delete
+                  } else {
+                    DBIO.successful(())
+                  }
+                }
+              )
+            } else {
+              DBIO.successful(())
             }
-          )
-        } else {
-          DBIO.successful(())
-        }
-      }
-      // Organisation property values
-      _ <- {
-        val dbActions = ListBuffer[DBIO[_]]()
-        if (exportedCommunity.getOrganisations != null) {
-          exportedCommunity.getOrganisations.getOrganisation.asScala.foreach { exportedOrganisation =>
-            if (exportedOrganisation.getPropertyValues != null) {
-              exportedOrganisation.getPropertyValues.getProperty.asScala.foreach { exportedValue =>
-                dbActions += processFromArchive(ImportItemType.OrganisationPropertyValue, exportedValue, exportedValue.getId, ctx,
+          }
+          // Organisations
+          _ <- {
+            val dbActions = ListBuffer[DBIO[_]]()
+            if (exportedCommunity.getOrganisations != null) {
+              exportedCommunity.getOrganisations.getOrganisation.asScala.foreach { exportedOrganisation =>
+                dbActions += processFromArchive(ImportItemType.Organisation, exportedOrganisation, exportedOrganisation.getId, ctx,
                   ImportCallbacks.set(
-                    (data: com.gitb.xml.export.OrganisationPropertyValue, item: ImportItem) => {
-                      val relatedPropertyId = getProcessedDbId(data.getProperty, ImportItemType.OrganisationProperty, ctx)
-                      if (relatedPropertyId.isDefined) {
-                        val organisationId = item.parentItem.get.targetKey.get.toLong
-                        // The property this value related to has either been updated or inserted.
-                        val key = s"${organisationId}_${relatedPropertyId.get}"
-                        if (!hasExisting(ImportItemType.OrganisationPropertyValue, key, ctx)) {
-                          val fileData = parameterFileMetadata(ctx, data.getProperty.getType, isDomainParameter = false, data.getValue)
-                          if (fileData._3.isDefined) {
-                            ctx.onSuccessCalls += (() => repositoryUtils.setOrganisationPropertyFile(relatedPropertyId.get, organisationId, fileData._3.get))
-                          }
-                          (PersistenceSchema.organisationParameterValues += models.OrganisationParameterValues(organisationId, relatedPropertyId.get, manageEncryptionIfNeeded(ctx.importSettings, data.getProperty.getType, Option(data.getValue)).get, fileData._2)) andThen
-                            DBIO.successful(key)
-                        } else {
-                          DBIO.successful(())
+                    (data: com.gitb.xml.export.Organisation, item: ImportItem) => {
+                      for {
+                        orgInfo <- {
+                          organisationManager.createOrganizationWithRelatedData(
+                            models.Organizations(
+                              0L, data.getShortName, data.getFullName, OrganizationType.Vendor.id.toShort, adminOrganization = false,
+                              getProcessedDbId(data.getLandingPage, ImportItemType.LandingPage, ctx),
+                              getProcessedDbId(data.getLegalNotice, ImportItemType.LegalNotice, ctx),
+                              getProcessedDbId(data.getErrorTemplate, ImportItemType.ErrorTemplate, ctx),
+                              template = data.isTemplate, Option(data.getTemplateName), Option(data.getApiKey), item.parentItem.get.targetKey.get.toLong
+                            ), None, None, None, copyOrganisationParameters = false, copySystemParameters = false, copyStatementParameters = false,
+                            checkApiKeyUniqueness = true, setDefaultPropertyValues = false, ctx.onSuccessCalls
+                          )
                         }
-                      } else {
-                        DBIO.successful(())
-                      }
+                      } yield orgInfo.organisationId
                     },
-                    (data: com.gitb.xml.export.OrganisationPropertyValue, targetKey: String, item: ImportItem) => {
-                      val keyParts = StringUtils.split(targetKey, "_") // target key: [organisation ID]_[property ID]
-                      val organisationId = keyParts(0).toLong
-                      val propertyId = keyParts(1).toLong
-                      if (getProcessedDbId(data.getProperty, ImportItemType.OrganisationProperty, ctx).isDefined) {
-                        val fileData = parameterFileMetadata(ctx, data.getProperty.getType, isDomainParameter = false, data.getValue)
-                        if (fileData._3.isDefined) {
-                          ctx.onSuccessCalls += (() => repositoryUtils.setOrganisationPropertyFile(propertyId, organisationId, fileData._3.get))
-                        }
-                        val q = for { p <- PersistenceSchema.organisationParameterValues.filter(_.organisation === organisationId).filter(_.parameter === propertyId) } yield (p.value, p.contentType)
-                        q.update(manageEncryptionIfNeeded(ctx.importSettings, data.getProperty.getType, Some(data.getValue)).get, fileData._2)
-                      } else {
+                    (data: com.gitb.xml.export.Organisation, targetKey: String, item: ImportItem) => {
+                      if (communityAdminOrganisationId.get.longValue() == targetKey.toLong.longValue()) {
+                        // Prevent updating the community's admin organisation.
                         DBIO.successful(())
+                      } else {
+                        organisationManager.updateOrganizationInternal(targetKey.toLong, data.getShortName, data.getFullName,
+                          getProcessedDbId(data.getLandingPage, ImportItemType.LandingPage, ctx),
+                          getProcessedDbId(data.getLegalNotice, ImportItemType.LegalNotice, ctx),
+                          getProcessedDbId(data.getErrorTemplate, ImportItemType.ErrorTemplate, ctx),
+                          None, data.isTemplate, Option(data.getTemplateName), Some(Option(data.getApiKey)), None, None,
+                          copyOrganisationParameters = false, copySystemParameters = false, copyStatementParameters = false,
+                          checkApiKeyUniqueness = true, ctx.onSuccessCalls
+                        )
                       }
                     }
                   )
                 )
               }
             }
+            toDBIO(dbActions)
           }
-        }
-        toDBIO(dbActions)
-      }
-      _ <- {
-        processRemaining(ImportItemType.OrganisationPropertyValue, ctx,
-          (targetKey: String, item: ImportItem) => {
-            val keyParts = StringUtils.split(targetKey, "_") // target key: [organisation ID]_[property ID]
-            val organisationId = keyParts(0).toLong
-            val propertyId = keyParts(1).toLong
-            ctx.onSuccessCalls += (() => repositoryUtils.deleteOrganisationPropertyFile(propertyId, organisationId))
-            PersistenceSchema.organisationParameterValues.filter(_.organisation === organisationId).filter(_.parameter === propertyId).delete
-          }
-        )
-      }
-      // Systems
-      _ <- {
-        val dbActions = ListBuffer[DBIO[_]]()
-        if (exportedCommunity.getOrganisations != null) {
-          exportedCommunity.getOrganisations.getOrganisation.asScala.foreach { exportedOrganisation =>
-            if (exportedOrganisation.getSystems != null) {
-              exportedOrganisation.getSystems.getSystem.asScala.foreach { exportedSystem =>
-                dbActions += processFromArchive(ImportItemType.System, exportedSystem, exportedSystem.getId, ctx,
-                  ImportCallbacks.set(
-                    (data: com.gitb.xml.export.System, item: ImportItem) => {
-                      systemManager.registerSystemInternal(models.Systems(0L, data.getShortName, data.getFullName, Option(data.getDescription), Option(data.getVersion), Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey()), Option(data.getBadgeKey).getOrElse(CryptoUtil.generateApiKey()), item.parentItem.get.targetKey.get.toLong), checkApiKeyUniqueness = true)
-                    },
-                    (data: com.gitb.xml.export.System, targetKey: String, item: ImportItem) => {
-                      systemManager.updateSystemProfileInternal(None, targetCommunityId, item.targetKey.get.toLong, data.getShortName, data.getFullName, Option(data.getDescription), Option(data.getVersion), Option(data.getApiKey), Option(data.getBadgeKey),
-                        None, None, None, copySystemParameters = false, copyStatementParameters = false,
-                        checkApiKeyUniqueness = true, ctx.onSuccessCalls
-                      )
-                    }
-                  )
-                )
+          _ <- {
+            processRemaining(ImportItemType.Organisation, ctx,
+              (targetKey: String, item: ImportItem) => {
+                if (communityAdminOrganisationId.get.longValue() == targetKey.toLong.longValue()) {
+                  // Prevent deleting the community's admin organisation.
+                  DBIO.successful(())
+                } else {
+                  organisationManager.deleteOrganization(targetKey.toLong, ctx.onSuccessCalls)
+                }
               }
-            }
+            )
           }
-        }
-        toDBIO(dbActions)
-      }
-      _ <- {
-        processRemaining(ImportItemType.System, ctx,
-          (targetKey: String, item: ImportItem) => {
-            systemManager.deleteSystem(targetKey.toLong, ctx.onSuccessCalls)
-          }
-        )
-      }
-      // System property values
-      _ <- {
-        val dbActions = ListBuffer[DBIO[_]]()
-        if (exportedCommunity.getOrganisations != null) {
-          exportedCommunity.getOrganisations.getOrganisation.asScala.foreach { exportedOrganisation =>
-            if (exportedOrganisation.getSystems != null) {
-              exportedOrganisation.getSystems.getSystem.asScala.foreach { exportedSystem =>
-                if (exportedSystem.getPropertyValues != null) {
-                  exportedSystem.getPropertyValues.getProperty.asScala.foreach { exportedValue =>
-                    dbActions += processFromArchive(ImportItemType.SystemPropertyValue, exportedValue, exportedValue.getId, ctx,
+          // Organisation users
+          _ <- {
+            val dbActions = ListBuffer[DBIO[_]]()
+            if (!Configurations.AUTHENTICATION_SSO_ENABLED && exportedCommunity.getOrganisations != null) {
+              exportedCommunity.getOrganisations.getOrganisation.asScala.foreach { exportedOrganisation =>
+                if (exportedOrganisation.getUsers != null) {
+                  exportedOrganisation.getUsers.getUser.asScala.foreach { exportedUser =>
+                    dbActions += processFromArchive(ImportItemType.OrganisationUser, exportedUser, exportedUser.getId, ctx,
                       ImportCallbacks.set(
-                        (data: com.gitb.xml.export.SystemPropertyValue, item: ImportItem) => {
-                          val relatedPropertyId = getProcessedDbId(data.getProperty, ImportItemType.SystemProperty, ctx)
+                        (data: com.gitb.xml.export.OrganisationUser, item: ImportItem) => {
+                          if (!referenceUserEmails.contains(exportedUser.getEmail.toLowerCase)) {
+                            referenceUserEmails += exportedUser.getEmail.toLowerCase
+                            PersistenceSchema.insertUser += toModelOrganisationUser(data, None, toModelUserRole(data.getRole), item.parentItem.get.targetKey.get.toLong, ctx.importSettings)
+                          } else {
+                            DBIO.successful(())
+                          }
+                        },
+                        (data: com.gitb.xml.export.OrganisationUser, targetKey: String, item: ImportItem) => {
+                          /*
+                            We don't update the email as this must anyway be already matching (this was how the user was found
+                            to be existing). Not updating the email avoids the need to check that the email is unique with respect
+                            to other users.
+                           */
+                          val q = for { u <- PersistenceSchema.users.filter(_.id === targetKey.toLong) } yield (u.name, u.password, u.onetimePassword, u.role)
+                          q.update(data.getName, decrypt(ctx.importSettings, data.getPassword), data.isOnetimePassword, toModelUserRole(data.getRole))
+                        }
+                      )
+                    )
+                  }
+                }
+              }
+            }
+            toDBIO(dbActions)
+          }
+          _ <- {
+            if (!Configurations.AUTHENTICATION_SSO_ENABLED) {
+              processRemaining(ImportItemType.OrganisationUser, ctx,
+                (targetKey: String, item: ImportItem) => {
+                  PersistenceSchema.users.filter(_.id === targetKey.toLong).delete
+                }
+              )
+            } else {
+              DBIO.successful(())
+            }
+          }
+          // Organisation property values
+          _ <- {
+            val dbActions = ListBuffer[DBIO[_]]()
+            if (exportedCommunity.getOrganisations != null) {
+              exportedCommunity.getOrganisations.getOrganisation.asScala.foreach { exportedOrganisation =>
+                if (exportedOrganisation.getPropertyValues != null) {
+                  exportedOrganisation.getPropertyValues.getProperty.asScala.foreach { exportedValue =>
+                    dbActions += processFromArchive(ImportItemType.OrganisationPropertyValue, exportedValue, exportedValue.getId, ctx,
+                      ImportCallbacks.set(
+                        (data: com.gitb.xml.export.OrganisationPropertyValue, item: ImportItem) => {
+                          val relatedPropertyId = getProcessedDbId(data.getProperty, ImportItemType.OrganisationProperty, ctx)
                           if (relatedPropertyId.isDefined) {
-                            val systemId = item.parentItem.get.targetKey.get.toLong
+                            val organisationId = item.parentItem.get.targetKey.get.toLong
                             // The property this value related to has either been updated or inserted.
-                            val key = s"${systemId}_${relatedPropertyId.get}"
-                            if (!hasExisting(ImportItemType.SystemPropertyValue, key, ctx)) {
+                            val key = s"${organisationId}_${relatedPropertyId.get}"
+                            if (!hasExisting(ImportItemType.OrganisationPropertyValue, key, ctx)) {
                               val fileData = parameterFileMetadata(ctx, data.getProperty.getType, isDomainParameter = false, data.getValue)
                               if (fileData._3.isDefined) {
-                                ctx.onSuccessCalls += (() => repositoryUtils.setSystemPropertyFile(relatedPropertyId.get, systemId, fileData._3.get))
+                                ctx.onSuccessCalls += (() => repositoryUtils.setOrganisationPropertyFile(relatedPropertyId.get, organisationId, fileData._3.get))
                               }
-                              (PersistenceSchema.systemParameterValues += models.SystemParameterValues(systemId, relatedPropertyId.get, manageEncryptionIfNeeded(ctx.importSettings, data.getProperty.getType, Option(data.getValue)).get, fileData._2)) andThen
-                                DBIO.successful(key)
+                              for {
+                                _ <- PersistenceSchema.organisationParameterValues += models.OrganisationParameterValues(organisationId, relatedPropertyId.get, manageEncryptionIfNeeded(ctx.importSettings, data.getProperty.getType, Option(data.getValue)).get, fileData._2)
+                                key <- DBIO.successful(key)
+                              } yield key
                             } else {
                               DBIO.successful(())
                             }
@@ -2681,16 +2817,16 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                             DBIO.successful(())
                           }
                         },
-                        (data: com.gitb.xml.export.SystemPropertyValue, targetKey: String, item: ImportItem) => {
-                          val keyParts = StringUtils.split(targetKey, "_") // target key: [system ID]_[property ID]
-                          val systemId = keyParts(0).toLong
+                        (data: com.gitb.xml.export.OrganisationPropertyValue, targetKey: String, item: ImportItem) => {
+                          val keyParts = StringUtils.split(targetKey, "_") // target key: [organisation ID]_[property ID]
+                          val organisationId = keyParts(0).toLong
                           val propertyId = keyParts(1).toLong
-                          if (getProcessedDbId(data.getProperty, ImportItemType.SystemProperty, ctx).isDefined) {
+                          if (getProcessedDbId(data.getProperty, ImportItemType.OrganisationProperty, ctx).isDefined) {
                             val fileData = parameterFileMetadata(ctx, data.getProperty.getType, isDomainParameter = false, data.getValue)
                             if (fileData._3.isDefined) {
-                              ctx.onSuccessCalls += (() => repositoryUtils.setSystemPropertyFile(propertyId, systemId, fileData._3.get))
+                              ctx.onSuccessCalls += (() => repositoryUtils.setOrganisationPropertyFile(propertyId, organisationId, fileData._3.get))
                             }
-                            val q = for { p <- PersistenceSchema.systemParameterValues.filter(_.system === systemId).filter(_.parameter === propertyId) } yield (p.value, p.contentType)
+                            val q = for { p <- PersistenceSchema.organisationParameterValues.filter(_.organisation === organisationId).filter(_.parameter === propertyId) } yield (p.value, p.contentType)
                             q.update(manageEncryptionIfNeeded(ctx.importSettings, data.getProperty.getType, Some(data.getValue)).get, fileData._2)
                           } else {
                             DBIO.successful(())
@@ -2702,54 +2838,36 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                 }
               }
             }
+            toDBIO(dbActions)
           }
-        }
-        toDBIO(dbActions)
-      }
-      _ <- {
-        processRemaining(ImportItemType.SystemPropertyValue, ctx,
-          (targetKey: String, item: ImportItem) => {
-            val keyParts = StringUtils.split(targetKey, "_") // target key: [system ID]_[property ID]
-            val systemId = keyParts(0).toLong
-            val propertyId = keyParts(1).toLong
-            ctx.onSuccessCalls += (() => repositoryUtils.deleteSystemPropertyFile(propertyId, systemId))
-            PersistenceSchema.systemParameterValues.filter(_.system === systemId).filter(_.parameter === propertyId).delete
+          _ <- {
+            processRemaining(ImportItemType.OrganisationPropertyValue, ctx,
+              (targetKey: String, item: ImportItem) => {
+                val keyParts = StringUtils.split(targetKey, "_") // target key: [organisation ID]_[property ID]
+                val organisationId = keyParts(0).toLong
+                val propertyId = keyParts(1).toLong
+                ctx.onSuccessCalls += (() => repositoryUtils.deleteOrganisationPropertyFile(propertyId, organisationId))
+                PersistenceSchema.organisationParameterValues.filter(_.organisation === organisationId).filter(_.parameter === propertyId).delete
+              }
+            )
           }
-        )
-      }
-      // Statements
-      _ <- {
-        val dbActions = ListBuffer[DBIO[_]]()
-        if (exportedCommunity.getOrganisations != null) {
-          exportedCommunity.getOrganisations.getOrganisation.asScala.foreach { exportedOrganisation =>
-            if (exportedOrganisation.getSystems != null) {
-              exportedOrganisation.getSystems.getSystem.asScala.foreach { exportedSystem =>
-                if (exportedSystem.getStatements != null) {
-                  exportedSystem.getStatements.getStatement.asScala.foreach { exportedStatement =>
-                    dbActions += processFromArchive(ImportItemType.Statement, exportedStatement, exportedStatement.getId, ctx,
+          // Systems
+          _ <- {
+            val dbActions = ListBuffer[DBIO[_]]()
+            if (exportedCommunity.getOrganisations != null) {
+              exportedCommunity.getOrganisations.getOrganisation.asScala.foreach { exportedOrganisation =>
+                if (exportedOrganisation.getSystems != null) {
+                  exportedOrganisation.getSystems.getSystem.asScala.foreach { exportedSystem =>
+                    dbActions += processFromArchive(ImportItemType.System, exportedSystem, exportedSystem.getId, ctx,
                       ImportCallbacks.set(
-                        (data: com.gitb.xml.export.ConformanceStatement, item: ImportItem) => {
-                          val relatedActorId = getProcessedDbId(data.getActor, ImportItemType.Actor, ctx)
-                          var relatedSpecId: Option[Long] = None
-                          if (data.getActor != null) {
-                            relatedSpecId = getProcessedDbId(data.getActor.getSpecification, ImportItemType.Specification, ctx)
-                          }
-                          if (relatedActorId.isDefined && relatedSpecId.isDefined) {
-                            val systemId = item.parentItem.get.targetKey.get.toLong
-                            val key = s"${systemId}_${relatedActorId.get}"
-                            if (!hasExisting(ImportItemType.Statement, key, ctx)) {
-                              systemManager.defineConformanceStatement(systemId, relatedSpecId.get, relatedActorId.get, setDefaultParameterValues = false) andThen
-                                DBIO.successful(key)
-                            } else {
-                              DBIO.successful(())
-                            }
-                          } else {
-                            DBIO.successful(())
-                          }
+                        (data: com.gitb.xml.export.System, item: ImportItem) => {
+                          systemManager.registerSystemInternal(models.Systems(0L, data.getShortName, data.getFullName, Option(data.getDescription), Option(data.getVersion), Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey()), Option(data.getBadgeKey).getOrElse(CryptoUtil.generateApiKey()), item.parentItem.get.targetKey.get.toLong), checkApiKeyUniqueness = true)
                         },
-                        (data: com.gitb.xml.export.ConformanceStatement, targetKey: String, item: ImportItem) => {
-                          // Nothing to update.
-                          DBIO.successful(())
+                        (data: com.gitb.xml.export.System, targetKey: String, item: ImportItem) => {
+                          systemManager.updateSystemProfileInternal(None, targetCommunityId, item.targetKey.get.toLong, data.getShortName, data.getFullName, Option(data.getDescription), Option(data.getVersion), Option(data.getApiKey), Option(data.getBadgeKey),
+                            None, None, None, copySystemParameters = false, copyStatementParameters = false,
+                            checkApiKeyUniqueness = true, ctx.onSuccessCalls
+                          )
                         }
                       )
                     )
@@ -2757,50 +2875,41 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                 }
               }
             }
+            toDBIO(dbActions)
           }
-        }
-        toDBIO(dbActions)
-      }
-      _ <- {
-        processRemaining(ImportItemType.Statement, ctx,
-          (targetKey: String, item: ImportItem) => {
-            // Key: [System ID]_[actor ID]
-            val keyParts = StringUtils.split(targetKey, "_")
-            val systemId = keyParts(0).toLong
-            val actorId = keyParts(1).toLong
-            systemManager.deleteConformanceStatements(systemId, List(actorId), ctx.onSuccessCalls)
+          _ <- {
+            processRemaining(ImportItemType.System, ctx,
+              (targetKey: String, item: ImportItem) => {
+                systemManager.deleteSystem(targetKey.toLong, ctx.onSuccessCalls)
+              }
+            )
           }
-        )
-      }
-      // Statement configurations
-      _ <- {
-        val dbActions = ListBuffer[DBIO[_]]()
-        if (exportedCommunity.getOrganisations != null) {
-          exportedCommunity.getOrganisations.getOrganisation.asScala.foreach { exportedOrganisation =>
-            if (exportedOrganisation.getSystems != null) {
-              exportedOrganisation.getSystems.getSystem.asScala.foreach { exportedSystem =>
-                if (exportedSystem.getStatements != null) {
-                  exportedSystem.getStatements.getStatement.asScala.foreach { exportedStatement =>
-                    if (exportedStatement.getConfigurations != null) {
-                      exportedStatement.getConfigurations.getConfiguration.asScala.foreach { exportedValue =>
-                        dbActions += processFromArchive(ImportItemType.StatementConfiguration, exportedValue, exportedValue.getId, ctx,
+          // System property values
+          _ <- {
+            val dbActions = ListBuffer[DBIO[_]]()
+            if (exportedCommunity.getOrganisations != null) {
+              exportedCommunity.getOrganisations.getOrganisation.asScala.foreach { exportedOrganisation =>
+                if (exportedOrganisation.getSystems != null) {
+                  exportedOrganisation.getSystems.getSystem.asScala.foreach { exportedSystem =>
+                    if (exportedSystem.getPropertyValues != null) {
+                      exportedSystem.getPropertyValues.getProperty.asScala.foreach { exportedValue =>
+                        dbActions += processFromArchive(ImportItemType.SystemPropertyValue, exportedValue, exportedValue.getId, ctx,
                           ImportCallbacks.set(
-                            (data: com.gitb.xml.export.Configuration, item: ImportItem) => {
-                              val relatedParameterId = getProcessedDbId(data.getParameter, ImportItemType.EndpointParameter, ctx)
-                              var relatedEndpointId: Option[Long] = None
-                              if (data.getParameter != null) {
-                                relatedEndpointId = getProcessedDbId(data.getParameter.getEndpoint, ImportItemType.Endpoint, ctx)
-                              }
-                              if (relatedParameterId.isDefined && relatedEndpointId.isDefined) {
-                                val statementTargetKeyParts = StringUtils.split(item.parentItem.get.targetKey.get, "_") // [System ID]_[Actor ID]
-                                val relatedActorId = statementTargetKeyParts(1).toLong
-                                val relatedSystemId = item.parentItem.get.parentItem.get.targetKey.get.toLong // Statement -> System
-                                val key = s"${relatedActorId}_${relatedEndpointId.get}_${relatedSystemId}_${relatedParameterId.get}"
-                                if (!hasExisting(ImportItemType.StatementConfiguration, key, ctx)) {
-                                  val fileData = parameterFileMetadata(ctx, data.getParameter.getType, isDomainParameter = false, data.getValue)
-                                  systemManager.saveEndpointConfigurationInternal(forceAdd = true, forceUpdate = false,
-                                    models.Configs(relatedSystemId, relatedParameterId.get, relatedEndpointId.get, manageEncryptionIfNeeded(ctx.importSettings, data.getParameter.getType, Option(data.getValue)).get, fileData._2), fileData._3, ctx.onSuccessCalls) andThen
-                                    DBIO.successful(s"${relatedEndpointId.get}_${relatedSystemId}_${relatedParameterId.get}")
+                            (data: com.gitb.xml.export.SystemPropertyValue, item: ImportItem) => {
+                              val relatedPropertyId = getProcessedDbId(data.getProperty, ImportItemType.SystemProperty, ctx)
+                              if (relatedPropertyId.isDefined) {
+                                val systemId = item.parentItem.get.targetKey.get.toLong
+                                // The property this value related to has either been updated or inserted.
+                                val key = s"${systemId}_${relatedPropertyId.get}"
+                                if (!hasExisting(ImportItemType.SystemPropertyValue, key, ctx)) {
+                                  val fileData = parameterFileMetadata(ctx, data.getProperty.getType, isDomainParameter = false, data.getValue)
+                                  if (fileData._3.isDefined) {
+                                    ctx.onSuccessCalls += (() => repositoryUtils.setSystemPropertyFile(relatedPropertyId.get, systemId, fileData._3.get))
+                                  }
+                                  for {
+                                    _ <- PersistenceSchema.systemParameterValues += models.SystemParameterValues(systemId, relatedPropertyId.get, manageEncryptionIfNeeded(ctx.importSettings, data.getProperty.getType, Option(data.getValue)).get, fileData._2)
+                                    key <- DBIO.successful(key)
+                                  } yield key
                                 } else {
                                   DBIO.successful(())
                                 }
@@ -2808,20 +2917,17 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                                 DBIO.successful(())
                               }
                             },
-                            (data: com.gitb.xml.export.Configuration, targetKey: String, item: ImportItem) => {
-                              val configKeyParts = StringUtils.split(targetKey, "_") // [Actor ID]_[endpoint ID]_[System ID]_[parameter ID]
-                              val relatedActorId = configKeyParts(0).toLong
-                              val relatedParameterId = getProcessedDbId(data.getParameter, ImportItemType.EndpointParameter, ctx)
-                              var relatedEndpointId: Option[Long] = None
-                              if (data.getParameter != null) {
-                                relatedEndpointId = getProcessedDbId(data.getParameter.getEndpoint, ImportItemType.Endpoint, ctx)
-                              }
-                              if (relatedParameterId.isDefined && relatedEndpointId.isDefined) {
-                                val fileData = parameterFileMetadata(ctx, data.getParameter.getType, isDomainParameter = false, data.getValue)
-                                val relatedSystemId = item.parentItem.get.parentItem.get.targetKey.get.toLong // Statement -> System
-                                systemManager.saveEndpointConfigurationInternal(forceAdd = false, forceUpdate = true,
-                                  models.Configs(relatedSystemId, relatedParameterId.get, relatedEndpointId.get, manageEncryptionIfNeeded(ctx.importSettings, data.getParameter.getType, Option(data.getValue)).get, fileData._2), fileData._3, ctx.onSuccessCalls) andThen
-                                DBIO.successful(s"${relatedActorId}_${relatedEndpointId.get}_${relatedSystemId}_${relatedParameterId.get}")
+                            (data: com.gitb.xml.export.SystemPropertyValue, targetKey: String, item: ImportItem) => {
+                              val keyParts = StringUtils.split(targetKey, "_") // target key: [system ID]_[property ID]
+                              val systemId = keyParts(0).toLong
+                              val propertyId = keyParts(1).toLong
+                              if (getProcessedDbId(data.getProperty, ImportItemType.SystemProperty, ctx).isDefined) {
+                                val fileData = parameterFileMetadata(ctx, data.getProperty.getType, isDomainParameter = false, data.getValue)
+                                if (fileData._3.isDefined) {
+                                  ctx.onSuccessCalls += (() => repositoryUtils.setSystemPropertyFile(propertyId, systemId, fileData._3.get))
+                                }
+                                val q = for { p <- PersistenceSchema.systemParameterValues.filter(_.system === systemId).filter(_.parameter === propertyId) } yield (p.value, p.contentType)
+                                q.update(manageEncryptionIfNeeded(ctx.importSettings, data.getProperty.getType, Some(data.getValue)).get, fileData._2)
                               } else {
                                 DBIO.successful(())
                               }
@@ -2834,148 +2940,321 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                 }
               }
             }
+            toDBIO(dbActions)
           }
-        }
-        toDBIO(dbActions)
-      }
-      _ <- {
-        processRemaining(ImportItemType.StatementConfiguration, ctx,
-          (targetKey: String, item: ImportItem) => {
-            // Key: [Actor ID]_[Endpoint ID]_[System ID]_[Endpoint parameter ID]
-            val keyParts = StringUtils.split(targetKey, "_")
-            val endpointId = keyParts(1).toLong
-            val systemId = keyParts(2).toLong
-            val parameterId = keyParts(3).toLong
-            systemManager.deleteEndpointConfigurationInternal(systemId, parameterId, endpointId, ctx.onSuccessCalls)
+          _ <- {
+            processRemaining(ImportItemType.SystemPropertyValue, ctx,
+              (targetKey: String, item: ImportItem) => {
+                val keyParts = StringUtils.split(targetKey, "_") // target key: [system ID]_[property ID]
+                val systemId = keyParts(0).toLong
+                val propertyId = keyParts(1).toLong
+                ctx.onSuccessCalls += (() => repositoryUtils.deleteSystemPropertyFile(propertyId, systemId))
+                PersistenceSchema.systemParameterValues.filter(_.system === systemId).filter(_.parameter === propertyId).delete
+              }
+            )
           }
-        )
-      }
-      // Settings
-      // We process this here to allow a possible demo account setting to match a previously imported user.
-      _ <- {
-        if (canDoAdminOperations && exportedData.getSettings != null) {
-          mergeImportItemMaps(ctx.importItemMaps, toImportItemMaps(importItems, ImportItemType.Settings))
-          completeSystemSettingsImportInternal(exportedData.getSettings, ctx, canDoAdminOperations, ownUserId, referenceUserEmails)
-        } else {
-          DBIO.successful(())
-        }
+          // Statements
+          _ <- {
+            val dbActions = ListBuffer[DBIO[_]]()
+            if (exportedCommunity.getOrganisations != null) {
+              exportedCommunity.getOrganisations.getOrganisation.asScala.foreach { exportedOrganisation =>
+                if (exportedOrganisation.getSystems != null) {
+                  exportedOrganisation.getSystems.getSystem.asScala.foreach { exportedSystem =>
+                    if (exportedSystem.getStatements != null) {
+                      exportedSystem.getStatements.getStatement.asScala.foreach { exportedStatement =>
+                        dbActions += processFromArchive(ImportItemType.Statement, exportedStatement, exportedStatement.getId, ctx,
+                          ImportCallbacks.set(
+                            (data: com.gitb.xml.export.ConformanceStatement, item: ImportItem) => {
+                              val relatedActorId = getProcessedDbId(data.getActor, ImportItemType.Actor, ctx)
+                              var relatedSpecId: Option[Long] = None
+                              if (data.getActor != null) {
+                                relatedSpecId = getProcessedDbId(data.getActor.getSpecification, ImportItemType.Specification, ctx)
+                              }
+                              if (relatedActorId.isDefined && relatedSpecId.isDefined) {
+                                val systemId = item.parentItem.get.targetKey.get.toLong
+                                val key = s"${systemId}_${relatedActorId.get}"
+                                if (!hasExisting(ImportItemType.Statement, key, ctx)) {
+                                  for {
+                                    _ <- systemManager.defineConformanceStatement(systemId, relatedSpecId.get, relatedActorId.get, setDefaultParameterValues = false)
+                                    key <- DBIO.successful(key)
+                                  } yield key
+                                } else {
+                                  DBIO.successful(())
+                                }
+                              } else {
+                                DBIO.successful(())
+                              }
+                            },
+                            (data: com.gitb.xml.export.ConformanceStatement, targetKey: String, item: ImportItem) => {
+                              // Nothing to update.
+                              DBIO.successful(())
+                            }
+                          )
+                        )
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            toDBIO(dbActions)
+          }
+          _ <- {
+            processRemaining(ImportItemType.Statement, ctx,
+              (targetKey: String, item: ImportItem) => {
+                // Key: [System ID]_[actor ID]
+                val keyParts = StringUtils.split(targetKey, "_")
+                val systemId = keyParts(0).toLong
+                val actorId = keyParts(1).toLong
+                systemManager.deleteConformanceStatements(systemId, List(actorId), ctx.onSuccessCalls)
+              }
+            )
+          }
+          // Statement configurations
+          _ <- {
+            val dbActions = ListBuffer[DBIO[_]]()
+            if (exportedCommunity.getOrganisations != null) {
+              exportedCommunity.getOrganisations.getOrganisation.asScala.foreach { exportedOrganisation =>
+                if (exportedOrganisation.getSystems != null) {
+                  exportedOrganisation.getSystems.getSystem.asScala.foreach { exportedSystem =>
+                    if (exportedSystem.getStatements != null) {
+                      exportedSystem.getStatements.getStatement.asScala.foreach { exportedStatement =>
+                        if (exportedStatement.getConfigurations != null) {
+                          exportedStatement.getConfigurations.getConfiguration.asScala.foreach { exportedValue =>
+                            dbActions += processFromArchive(ImportItemType.StatementConfiguration, exportedValue, exportedValue.getId, ctx,
+                              ImportCallbacks.set(
+                                (data: com.gitb.xml.export.Configuration, item: ImportItem) => {
+                                  val relatedParameterId = getProcessedDbId(data.getParameter, ImportItemType.EndpointParameter, ctx)
+                                  var relatedEndpointId: Option[Long] = None
+                                  if (data.getParameter != null) {
+                                    relatedEndpointId = getProcessedDbId(data.getParameter.getEndpoint, ImportItemType.Endpoint, ctx)
+                                  }
+                                  if (relatedParameterId.isDefined && relatedEndpointId.isDefined) {
+                                    val statementTargetKeyParts = StringUtils.split(item.parentItem.get.targetKey.get, "_") // [System ID]_[Actor ID]
+                                    val relatedActorId = statementTargetKeyParts(1).toLong
+                                    val relatedSystemId = item.parentItem.get.parentItem.get.targetKey.get.toLong // Statement -> System
+                                    val key = s"${relatedActorId}_${relatedEndpointId.get}_${relatedSystemId}_${relatedParameterId.get}"
+                                    if (!hasExisting(ImportItemType.StatementConfiguration, key, ctx)) {
+                                      val fileData = parameterFileMetadata(ctx, data.getParameter.getType, isDomainParameter = false, data.getValue)
+                                      for {
+                                        _ <- systemManager.saveEndpointConfigurationInternal(forceAdd = true, forceUpdate = false,
+                                          models.Configs(relatedSystemId, relatedParameterId.get, relatedEndpointId.get, manageEncryptionIfNeeded(ctx.importSettings, data.getParameter.getType, Option(data.getValue)).get, fileData._2), fileData._3, ctx.onSuccessCalls)
+                                        key <- DBIO.successful(s"${relatedEndpointId.get}_${relatedSystemId}_${relatedParameterId.get}")
+                                      } yield key
+                                    } else {
+                                      DBIO.successful(())
+                                    }
+                                  } else {
+                                    DBIO.successful(())
+                                  }
+                                },
+                                (data: com.gitb.xml.export.Configuration, targetKey: String, item: ImportItem) => {
+                                  val configKeyParts = StringUtils.split(targetKey, "_") // [Actor ID]_[endpoint ID]_[System ID]_[parameter ID]
+                                  val relatedActorId = configKeyParts(0).toLong
+                                  val relatedParameterId = getProcessedDbId(data.getParameter, ImportItemType.EndpointParameter, ctx)
+                                  var relatedEndpointId: Option[Long] = None
+                                  if (data.getParameter != null) {
+                                    relatedEndpointId = getProcessedDbId(data.getParameter.getEndpoint, ImportItemType.Endpoint, ctx)
+                                  }
+                                  if (relatedParameterId.isDefined && relatedEndpointId.isDefined) {
+                                    val fileData = parameterFileMetadata(ctx, data.getParameter.getType, isDomainParameter = false, data.getValue)
+                                    val relatedSystemId = item.parentItem.get.parentItem.get.targetKey.get.toLong // Statement -> System
+                                    for {
+                                      _ <- systemManager.saveEndpointConfigurationInternal(forceAdd = false, forceUpdate = true,
+                                        models.Configs(relatedSystemId, relatedParameterId.get, relatedEndpointId.get, manageEncryptionIfNeeded(ctx.importSettings, data.getParameter.getType, Option(data.getValue)).get, fileData._2), fileData._3, ctx.onSuccessCalls)
+                                      key <- DBIO.successful(s"${relatedActorId}_${relatedEndpointId.get}_${relatedSystemId}_${relatedParameterId.get}")
+                                    } yield key
+                                  } else {
+                                    DBIO.successful(())
+                                  }
+                                }
+                              )
+                            )
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            toDBIO(dbActions)
+          }
+          _ <- {
+            processRemaining(ImportItemType.StatementConfiguration, ctx,
+              (targetKey: String, item: ImportItem) => {
+                // Key: [Actor ID]_[Endpoint ID]_[System ID]_[Endpoint parameter ID]
+                val keyParts = StringUtils.split(targetKey, "_")
+                val endpointId = keyParts(1).toLong
+                val systemId = keyParts(2).toLong
+                val parameterId = keyParts(3).toLong
+                systemManager.deleteEndpointConfigurationInternal(systemId, parameterId, endpointId, ctx.onSuccessCalls)
+              }
+            )
+          }
+          // Settings
+          // We process this here to allow a possible demo account setting to match a previously imported user.
+          _ <- {
+            if (canDoAdminOperations && exportedData.getSettings != null) {
+              completeSystemSettingsImportInternal(exportedData.getSettings, ctx, canDoAdminOperations, ownUserId, referenceUserEmails, systemAdminOrganisationId)
+            } else {
+              DBIO.successful(())
+            }
+          }
+        } yield ()
+        DB.run(completeFileSystemFinalisation(ctx, dbAction).transactionally)
       }
     } yield ()
-    exec(completeFileSystemFinalisation(ctx, dbAction).transactionally)
   }
 
-  private def recordProcessedArchive(archiveHash: String): Unit = {
-    exec(PersistenceSchema.insertProcessedArchive += ProcessedArchive(0L, archiveHash, TimeUtil.getCurrentTimestamp()))
+  private def recordProcessedArchive(archiveHash: String): Future[Unit] = {
+    DB.run(PersistenceSchema.insertProcessedArchive += ProcessedArchive(0L, archiveHash, TimeUtil.getCurrentTimestamp())).map(_ => ())
   }
 
-  private def findProcessedArchive(archiveHash: String): Option[ProcessedArchive] = {
-    exec(PersistenceSchema.processedArchives.filter(_.hash === archiveHash).result.headOption)
+  private def findProcessedArchive(archiveHash: String): Future[Option[ProcessedArchive]] = {
+    DB.run(PersistenceSchema.processedArchives.filter(_.hash === archiveHash).result.headOption)
   }
 
-  def importSandboxData(archive: File, archiveKey: String): (Boolean, Option[String]) = {
-    var processingComplete = false
-    var errorMessage: Option[String] = None
-    var archiveHash: Option[String] = None
-    Using.resource(Files.newInputStream(archive.toPath)) { inputStream =>
-      archiveHash = Some(DigestUtils.sha256Hex(inputStream))
-    }
-    val processedArchive = findProcessedArchive(archiveHash.get)
-    if (processedArchive.isDefined) {
-      logger.info("Skipping data archive ["+archive.getName+"] as it has already been processed on ["+TimeUtil.serializeTimestamp(processedArchive.get.processTime)+"]")
-    } else {
-      logger.info("Processing data archive ["+archive.getName+"]")
-      val importSettings = new ImportSettings()
-      importSettings.encryptionKey = Some(archiveKey)
-      val preparationResult = importPreviewManager.prepareImportPreview(archive, importSettings, requireDomain = false, requireCommunity = false, requireSettings = false, requireDeletions = false)
-      try {
-        if (preparationResult._1.isDefined) {
-          errorMessage = Some(preparationResult._1.get._2)
-          logger.warn("Unable to process data archive ["+archive.getName+"]: " + preparationResult._1.get._2)
-        } else {
-          if (preparationResult._2.get.getCommunities != null && !preparationResult._2.get.getCommunities.getCommunity.isEmpty) {
-            // Community import.
-            val exportData = preparationResult._2.get
-            // Step 1 - prepare import.
-            var importItems: List[ImportItem] = null
-            // Check to see if a community can be matched by the defined (in the archive) API key.
-            val targetCommunityId = communityManager.getByApiKey(exportData.getCommunities.getCommunity.get(0).getApiKey).map(_.id)
-            val previewResult = importPreviewManager.previewCommunityImport(exportData, targetCommunityId, canDoAdminOperations = true, new ImportSettings)
-            val items = new ListBuffer[ImportItem]()
-            // First add domain.
-            if (previewResult._2.isDefined) {
-              items += previewResult._2.get
-            }
-            // Next add community.
-            items += previewResult._1
-            // Finally add system settings.
-            if (previewResult._3.isDefined) {
-              items += previewResult._3.get
-            }
-            importItems = items.toList
-            // Set all import items to proceed.
-            approveImportItems(importItems)
-            // Step 2 - Import.
-            importSettings.dataFilePath = Some(importPreviewManager.getPendingImportFile(preparationResult._4.get, preparationResult._3.get).get.toPath)
-            completeCommunityImport(exportData, importSettings, importItems, targetCommunityId, canDoAdminOperations = true, None)
-            // Avoid processing this archive again.
-            processingComplete = true
-          } else if (preparationResult._2.get.getDomains != null && !preparationResult._2.get.getDomains.getDomain.isEmpty) {
-            // Domain import.
-            val exportedDomain = preparationResult._2.get.getDomains.getDomain.get(0)
-            // Step 1 - prepare import.
-            // Check to see if a domain can be matched by the defined (in the archive) API key.
-            val targetDomainId = domainManager.getByApiKey(exportedDomain.getApiKey).map(_.id)
-            val importItems = List(importPreviewManager.previewDomainImport(exportedDomain, targetDomainId, canDoAdminOperations = true, new ImportSettings))
-            // Set all import items to proceed.
-            approveImportItems(importItems)
-            // Step 2 - Import.
-            importSettings.dataFilePath = Some(importPreviewManager.getPendingImportFile(preparationResult._4.get, preparationResult._3.get).get.toPath)
-            completeDomainImport(exportedDomain, importSettings, importItems, targetDomainId, canAddOrDeleteDomain = true)
-            // Avoid processing this archive again.
-            processingComplete = true
-          } else if (preparationResult._2.get.getSettings != null) {
-            // System settings import.
-            val exportedSettings = preparationResult._2.get.getSettings
-            // Step 1 - prepare import.
-            val importItems = List(importPreviewManager.previewSystemSettingsImport(exportedSettings))
-            // Set all import items to proceed.
-            approveImportItems(importItems)
-            // Step 2 - Import.
-            importSettings.dataFilePath = Some(importPreviewManager.getPendingImportFile(preparationResult._4.get, preparationResult._3.get).get.toPath)
-            completeSystemSettingsImport(exportedSettings, importSettings, importItems, canManageSettings = true, None)
-            // Avoid processing this archive again.
-            processingComplete = true
-          } else if (preparationResult._2.get.getDeletions != null) {
-            // Deletions import.
-            val exportedDeletions = preparationResult._2.get.getDeletions
-            // Step 1 - prepare import.
-            val importItems = importPreviewManager.previewDeletionsImport(exportedDeletions)
-            // Set all import items to proceed.
-            approveImportItems(importItems)
-            // Step 2 - Import.
-            importSettings.dataFilePath = Some(importPreviewManager.getPendingImportFile(preparationResult._4.get, preparationResult._3.get).get.toPath)
-            completeDeletionsImport(exportedDeletions, importSettings, importItems)
-            // Avoid processing this archive again.
-            processingComplete = true
+  def importSandboxData(archive: File, archiveKey: String): Future[SandboxImportResult] = {
+    val task = for {
+      resultWithHash <- {
+        var archiveHash: Option[String] = None
+        Using.resource(Files.newInputStream(archive.toPath)) { inputStream =>
+          archiveHash = Some(DigestUtils.sha256Hex(inputStream))
+        }
+        findProcessedArchive(archiveHash.get).map { processedArchive =>
+          if (processedArchive.isDefined) {
+            logger.info("Skipping data archive ["+archive.getName+"] as it has already been processed on ["+TimeUtil.serializeTimestamp(processedArchive.get.processTime)+"]")
+            (Some(SandboxImportResult.incomplete()), archiveHash.get)
           } else {
-            errorMessage = Some("Provided data archive is empty")
-            logger.warn(errorMessage.get)
+            (None, archiveHash.get)
           }
         }
-      } catch {
-        case e:Exception =>
-          logger.warn("Unexpected exception while processing data archive ["+archive.getName+"]", e)
-      } finally {
-        if (preparationResult._4.isDefined) {
-          FileUtils.deleteQuietly(preparationResult._4.get.toFile)
+      }
+      result <- {
+        if (resultWithHash._1.isDefined) {
+          Future.successful(resultWithHash._1.get)
+        } else {
+          logger.info("Processing data archive [" + archive.getName + "]")
+          // TODO test this - ensure we don't have a problem with the importSettings properties being vars.
+          val importSettings = new ImportSettings()
+          importSettings.encryptionKey = Some(archiveKey)
+          importPreviewManager.prepareImportPreview(archive, importSettings, requireDomain = false, requireCommunity = false, requireSettings = false, requireDeletions = false).flatMap { preparationResult =>
+            val task = if (preparationResult._1.isDefined) {
+              logger.warn("Unable to process data archive ["+archive.getName+"]: " + preparationResult._1.get._2)
+              Future.successful {
+                SandboxImportResult.incomplete(preparationResult._1.get._2)
+              }
+            } else {
+              if (preparationResult._2.get.getCommunities != null && !preparationResult._2.get.getCommunities.getCommunity.isEmpty) {
+                // Community import.
+                val exportData = preparationResult._2.get
+                // Step 1 - prepare import.
+                var importItems: List[ImportItem] = null
+                // Check to see if a community can be matched by the defined (in the archive) API key.
+                communityManager.getByApiKey(exportData.getCommunities.getCommunity.get(0).getApiKey).flatMap { community =>
+                  val targetCommunityId = community.map(_.id)
+                  importPreviewManager.previewCommunityImport(exportData, targetCommunityId, canDoAdminOperations = true, new ImportSettings).flatMap { previewResult =>
+                    val items = new ListBuffer[ImportItem]()
+                    // First add domain.
+                    if (previewResult._2.isDefined) {
+                      items += previewResult._2.get
+                    }
+                    // Next add community.
+                    items += previewResult._1.get
+                    // Finally add system settings.
+                    if (previewResult._3.isDefined) {
+                      items += previewResult._3.get
+                    }
+                    importItems = items.toList
+                    // Set all import items to proceed.
+                    approveImportItems(importItems)
+                    // Step 2 - Import.
+                    importSettings.dataFilePath = Some(importPreviewManager.getPendingImportFile(preparationResult._4.get, preparationResult._3.get).get.toPath)
+                    completeCommunityImport(exportData, importSettings, importItems, targetCommunityId, canDoAdminOperations = true, None).map { _ =>
+                      // Avoid processing this archive again.
+                      SandboxImportResult.complete()
+                    }
+                  }
+                }
+              } else if (preparationResult._2.get.getDomains != null && !preparationResult._2.get.getDomains.getDomain.isEmpty) {
+                // Domain import.
+                val exportedDomain = preparationResult._2.get.getDomains.getDomain.get(0)
+                // Step 1 - prepare import.
+                // Check to see if a domain can be matched by the defined (in the archive) API key.
+                domainManager.getByApiKey(exportedDomain.getApiKey).flatMap { domain =>
+                  val targetDomainId = domain.map(_.id)
+                  importPreviewManager.previewDomainImport(exportedDomain, targetDomainId, canDoAdminOperations = true, new ImportSettings).flatMap { previewResult =>
+                    val importItems = List(previewResult)
+                    // Set all import items to proceed.
+                    approveImportItems(importItems)
+                    // Step 2 - Import.
+                    importSettings.dataFilePath = Some(importPreviewManager.getPendingImportFile(preparationResult._4.get, preparationResult._3.get).get.toPath)
+                    completeDomainImport(exportedDomain, importSettings, importItems, targetDomainId, canAddOrDeleteDomain = true).map { _ =>
+                      // Avoid processing this archive again.
+                      SandboxImportResult.complete()
+                    }
+                  }
+                }
+              } else if (preparationResult._2.get.getSettings != null) {
+                // System settings import.
+                val exportedSettings = preparationResult._2.get.getSettings
+                // Step 1 - prepare import.
+                importPreviewManager.previewSystemSettingsImport(exportedSettings).flatMap { previewResult =>
+                  val importItems = List(previewResult._1)
+                  // Set all import items to proceed.
+                  approveImportItems(importItems)
+                  // Step 2 - Import.
+                  importSettings.dataFilePath = Some(importPreviewManager.getPendingImportFile(preparationResult._4.get, preparationResult._3.get).get.toPath)
+                  completeSystemSettingsImport(exportedSettings, importSettings, importItems, canManageSettings = true, None).map { _ =>
+                    // Avoid processing this archive again.
+                    SandboxImportResult.complete()
+                  }
+                }
+              } else if (preparationResult._2.get.getDeletions != null) {
+                // Deletions import.
+                val exportedDeletions = preparationResult._2.get.getDeletions
+                // Step 1 - prepare import.
+                importPreviewManager.previewDeletionsImport(exportedDeletions).flatMap { previewResult =>
+                  // Set all import items to proceed.
+                  approveImportItems(previewResult)
+                  // Step 2 - Import.
+                  importSettings.dataFilePath = Some(importPreviewManager.getPendingImportFile(preparationResult._4.get, preparationResult._3.get).get.toPath)
+                  completeDeletionsImport(exportedDeletions, importSettings, previewResult).map { _ =>
+                    // Avoid processing this archive again.
+                    SandboxImportResult.complete()
+                  }
+                }
+              } else {
+                val result = SandboxImportResult.incomplete("Provided data archive is empty")
+                logger.warn(result.errorMessage.get)
+                Future.successful(result)
+              }
+            }
+            task.andThen { _ =>
+              if (preparationResult._4.isDefined) {
+                FileUtils.deleteQuietly(preparationResult._4.get.toFile)
+              }
+            }
+          }
         }
       }
-      if (processingComplete) {
-        recordProcessedArchive(archiveHash.get)
+    } yield (result, resultWithHash._2)
+    task.flatMap { taskOutput =>
+      val recordTask = if (taskOutput._1.processingComplete) {
+        recordProcessedArchive(taskOutput._2)
+      } else {
+        Future.successful(())
       }
-      logger.info("Finished processing data archive ["+archive.getName+"]")
+      recordTask.map { _ =>
+        logger.info("Finished processing data archive ["+archive.getName+"]")
+        taskOutput._1
+      }
+    }.recover {
+      case e:Exception =>
+        logger.warn("Unexpected exception while processing data archive ["+archive.getName+"]", e)
+        SandboxImportResult.incomplete()
     }
-    (processingComplete, errorMessage)
   }
 
   private def approveImportItems(items: List[ImportItem]): Unit = {

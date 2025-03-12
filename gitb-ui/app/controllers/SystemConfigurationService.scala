@@ -10,13 +10,18 @@ import play.api.mvc._
 import utils.{HtmlUtil, JsonUtil, RepositoryUtils}
 
 import javax.inject.Inject
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
-class SystemConfigurationService @Inject()(implicit ec: ExecutionContext, authorizedAction: AuthorizedAction, cc: ControllerComponents, repositoryUtils: RepositoryUtils, systemConfigurationManager: SystemConfigurationManager, environment: play.api.Environment, authorizationManager: AuthorizationManager) extends AbstractController(cc) {
+class SystemConfigurationService @Inject()(authorizedAction: AuthorizedAction,
+                                           cc: ControllerComponents,
+                                           repositoryUtils: RepositoryUtils,
+                                           systemConfigurationManager: SystemConfigurationManager,
+                                           environment: play.api.Environment,
+                                           authorizationManager: AuthorizationManager)
+                                          (implicit ec: ExecutionContext) extends AbstractController(cc) {
 
-  def testEmailSettings(): Action[AnyContent] = Action.async { request =>
-    authorizedAction.wrap(request, (request: RequestWithAttributes[AnyContent]) => {
-      authorizationManager.checkTestBedAdmin(request)
+  def testEmailSettings(): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.checkTestBedAdmin(request).flatMap { _ =>
       val toAddress = ParameterExtractor.requiredBodyParameter(request, Parameters.TO)
       val settingsJson = ParameterExtractor.requiredBodyParameter(request, Parameters.SETTINGS)
       val emailSettings = JsonUtil.parseJsEmailSettings(settingsJson)
@@ -27,50 +32,61 @@ class SystemConfigurationService @Inject()(implicit ec: ExecutionContext, author
         }
         ResponseConstructor.constructJsonResponse(json.toString())
       }
-    })
-  }
-
-  def getConfigurationValues() = authorizedAction { request =>
-    authorizationManager.canViewSystemConfigurationValues(request)
-    val configs = systemConfigurationManager.getEditableSystemConfigurationValues()
-    val json: String = JsonUtil.jsSystemConfigurations(configs).toString
-    ResponseConstructor.constructJsonResponse(json)
-  }
-
-  def updateConfigurationValue() = authorizedAction { request =>
-    authorizationManager.canUpdateSystemConfigurationValues(request)
-    val name = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
-    var value = ParameterExtractor.optionalBodyParameter(request, Parameters.PARAMETER)
-    if (systemConfigurationManager.isEditableSystemParameter(name)) {
-      if (name == Constants.WelcomeMessage && value.isDefined) {
-        value = Some(HtmlUtil.sanitizeEditorContent(value.get))
-        if (value.get.isBlank) {
-          value = None
-        }
-      }
-      val resultToReport = systemConfigurationManager.updateSystemParameter(name, value)
-      if (resultToReport.isDefined) {
-        ResponseConstructor.constructJsonResponse(JsonUtil.jsSystemConfiguration(resultToReport.get).toString)
-      } else {
-        ResponseConstructor.constructEmptyResponse
-      }
-    } else {
-      ResponseConstructor.constructEmptyResponse
     }
   }
 
-  def getCssForTheme = authorizedAction { request =>
-    authorizationManager.canAccessThemeData(request)
-    ResponseConstructor.constructCssResponse(systemConfigurationManager.getCssForActiveTheme())
+  def getConfigurationValues(): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canViewSystemConfigurationValues(request).flatMap { _ =>
+      systemConfigurationManager.getEditableSystemConfigurationValues().map { configs =>
+        val json: String = JsonUtil.jsSystemConfigurations(configs).toString
+        ResponseConstructor.constructJsonResponse(json)
+      }
+    }
   }
 
-  def getThemeResource(themeId: Long, resourceName: String) = authorizedAction { request =>
-    authorizationManager.canAccessThemeData(request)
-    val resourceFile = systemConfigurationManager.getThemeResource(themeId, resourceName)
-    if (resourceFile.isDefined) {
-      Ok.sendFile(content = resourceFile.get)
-    } else {
-      NotFound
+  def updateConfigurationValue(): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canUpdateSystemConfigurationValues(request).flatMap { _ =>
+      val name = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
+      var value = ParameterExtractor.optionalBodyParameter(request, Parameters.PARAMETER)
+      if (systemConfigurationManager.isEditableSystemParameter(name)) {
+        if (name == Constants.WelcomeMessage && value.isDefined) {
+          value = Some(HtmlUtil.sanitizeEditorContent(value.get))
+          if (value.get.isBlank) {
+            value = None
+          }
+        }
+        systemConfigurationManager.updateSystemParameter(name, value).map { resultToReport =>
+          if (resultToReport.isDefined) {
+            ResponseConstructor.constructJsonResponse(JsonUtil.jsSystemConfiguration(resultToReport.get).toString)
+          } else {
+            ResponseConstructor.constructEmptyResponse
+          }
+        }
+      } else {
+        Future.successful {
+          ResponseConstructor.constructEmptyResponse
+        }
+      }
+    }
+  }
+
+  def getCssForTheme: Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canAccessThemeData(request).flatMap { _ =>
+      systemConfigurationManager.getCssForActiveTheme().map { css =>
+        ResponseConstructor.constructCssResponse(css)
+      }
+    }
+  }
+
+  def getThemeResource(themeId: Long, resourceName: String): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canAccessThemeData(request).flatMap { _ =>
+      systemConfigurationManager.getThemeResource(themeId, resourceName).map { resourceFile =>
+        if (resourceFile.isDefined) {
+          Ok.sendFile(content = resourceFile.get)
+        } else {
+          NotFound
+        }
+      }
     }
   }
 
@@ -94,90 +110,118 @@ class SystemConfigurationService @Inject()(implicit ec: ExecutionContext, author
     }
   }
 
-  def previewThemeResource = authorizedAction { request =>
-    authorizationManager.canManageThemes(request)
-    val themeId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.ID)
-    val resourcePath = ParameterExtractor.requiredQueryParameter(request, Parameters.NAME)
-    streamThemeResource(resourcePath, themeId)
+  def previewThemeResource: Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageThemes(request).map { _ =>
+      val themeId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.ID)
+      val resourcePath = ParameterExtractor.requiredQueryParameter(request, Parameters.NAME)
+      streamThemeResource(resourcePath, themeId)
+    }
   }
 
-  def getFaviconForTheme = authorizedAction { request =>
-    authorizationManager.canAccessThemeData(request)
-    val activeThemeId = systemConfigurationManager.getActiveThemeId()
-    val faviconPath = systemConfigurationManager.getFaviconPath()
-    streamThemeResource(faviconPath, Some(activeThemeId))
+  def getFaviconForTheme: Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canAccessThemeData(request).flatMap { _ =>
+      systemConfigurationManager.getActiveThemeId().flatMap { activeThemeId =>
+        systemConfigurationManager.getFaviconPath().map { faviconPath =>
+          streamThemeResource(faviconPath, Some(activeThemeId))
+        }
+      }
+    }
   }
 
-  def getThemes = authorizedAction { request =>
-    authorizationManager.canManageThemes(request)
-    val themes = systemConfigurationManager.getThemes()
-    ResponseConstructor.constructJsonResponse(JsonUtil.jsThemes(themes).toString)
+  def getThemes: Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageThemes(request).flatMap { _ =>
+      systemConfigurationManager.getThemes().map { themes =>
+        ResponseConstructor.constructJsonResponse(JsonUtil.jsThemes(themes).toString)
+      }
+    }
   }
 
-  def getTheme(themeId: Long) = authorizedAction { request =>
-    authorizationManager.canManageThemes(request)
-    val theme = systemConfigurationManager.getTheme(themeId)
-    ResponseConstructor.constructJsonResponse(JsonUtil.jsTheme(theme).toString)
+  def getTheme(themeId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageThemes(request).flatMap { _ =>
+      systemConfigurationManager.getTheme(themeId).map { theme =>
+        ResponseConstructor.constructJsonResponse(JsonUtil.jsTheme(theme).toString)
+      }
+    }
   }
 
-  def createTheme = authorizedAction { request =>
-    try {
-      authorizationManager.canManageThemes(request)
+  def createTheme: Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageThemes(request).flatMap { _ =>
       val paramMap = ParameterExtractor.paramMap(request)
       val themeData = ParameterExtractor.extractTheme(request, paramMap)
       if (themeData._3.isDefined) {
-        themeData._3.get
+        Future.successful {
+          themeData._3.get
+        }
       } else if (themeData._1.isDefined && themeData._2.isDefined) {
-        if (systemConfigurationManager.themeExists(themeData._1.get.key, None)) {
-          ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "A theme with this key already exists.", Some("key"))
-        } else {
-          val referenceThemeId = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.REFERENCE).toLong
-          systemConfigurationManager.createTheme(referenceThemeId, themeData._1.get, themeData._2.get)
-          ResponseConstructor.constructEmptyResponse
+        systemConfigurationManager.themeExists(themeData._1.get.key, None).flatMap { exists =>
+          if (exists) {
+            Future.successful {
+              ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "A theme with this key already exists.", Some("key"))
+            }
+          } else {
+            val referenceThemeId = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.REFERENCE).toLong
+            systemConfigurationManager.createTheme(referenceThemeId, themeData._1.get, themeData._2.get).map { _ =>
+              ResponseConstructor.constructEmptyResponse
+            }
+          }
         }
       } else {
-        ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "Missing expected information.")
+        Future.successful {
+          ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "Missing expected information.")
+        }
       }
-    } finally {
+    }.andThen { _ =>
       if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
     }
   }
 
-  def activateTheme(themeId: Long) = authorizedAction { request =>
-    authorizationManager.canManageThemes(request)
-    systemConfigurationManager.activateTheme(themeId)
-    ResponseConstructor.constructEmptyResponse
+  def activateTheme(themeId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageThemes(request).flatMap { _ =>
+      systemConfigurationManager.activateTheme(themeId).map { _ =>
+        ResponseConstructor.constructEmptyResponse
+      }
+    }
   }
 
-  def updateTheme(themeId: Long) = authorizedAction { request =>
-    try {
-      authorizationManager.canManageThemes(request)
+  def updateTheme(themeId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageThemes(request).flatMap { _ =>
       val paramMap = ParameterExtractor.paramMap(request)
       val themeData = ParameterExtractor.extractTheme(request, paramMap, Some(themeId))
       if (themeData._3.isDefined) {
-        themeData._3.get
+        Future.successful {
+          themeData._3.get
+        }
       } else if (themeData._1.isDefined && themeData._2.isDefined) {
-        if (systemConfigurationManager.themeExists(themeData._1.get.key, Some(themeId))) {
-          ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "A theme with this key already exists.", Some("key"))
-        } else {
-          systemConfigurationManager.updateTheme(themeData._1.get, themeData._2.get)
-          ResponseConstructor.constructEmptyResponse
+        systemConfigurationManager.themeExists(themeData._1.get.key, Some(themeId)).flatMap { exists =>
+          if (exists) {
+            Future.successful {
+              ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "A theme with this key already exists.", Some("key"))
+            }
+          } else {
+            systemConfigurationManager.updateTheme(themeData._1.get, themeData._2.get).map { _ =>
+              ResponseConstructor.constructEmptyResponse
+            }
+          }
         }
       } else {
-        ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "Missing expected information.")
+        Future.successful {
+          ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "Missing expected information.")
+        }
       }
-    } finally {
+    }.andThen { _ =>
       if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
     }
   }
 
-  def deleteTheme(themeId: Long) = authorizedAction { request =>
-    authorizationManager.canManageThemes(request)
-    val deleted = systemConfigurationManager.deleteTheme(themeId)
-    if (deleted) {
-      ResponseConstructor.constructEmptyResponse
-    } else {
-      ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "The selected theme cannot be deleted.")
+  def deleteTheme(themeId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageThemes(request).flatMap { _ =>
+      systemConfigurationManager.deleteTheme(themeId).map { deleted =>
+        if (deleted) {
+          ResponseConstructor.constructEmptyResponse
+        } else {
+          ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "The selected theme cannot be deleted.")
+        }
+      }
     }
   }
 

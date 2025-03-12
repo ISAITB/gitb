@@ -1,6 +1,7 @@
 package controllers
 
 import config.Configurations
+import controllers.CommunityService.SelfRegistrationInfo
 import controllers.util.ParameterExtractor.requiredBodyParameter
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
 import exceptions.ErrorCodes
@@ -14,216 +15,304 @@ import play.api.mvc._
 import utils.{CryptoUtil, EmailUtil, HtmlUtil, JsonUtil}
 
 import javax.inject.Inject
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
+import scala.concurrent.{ExecutionContext, Future}
 
-class CommunityService @Inject() (implicit ec: ExecutionContext, authorizedAction: AuthorizedAction, cc: ControllerComponents, communityManager: CommunityManager, authorizationManager: AuthorizationManager, authenticationManager: AuthenticationManager) extends AbstractController(cc) {
+object CommunityService {
+
+  object SelfRegistrationInfo {
+
+    def create(): SelfRegistrationInfo = {
+      SelfRegistrationInfo(None, None, None, None)
+    }
+
+  }
+
+  case class SelfRegistrationInfo(failure: Option[Result], community: Option[Communities], actualUserInfo: Option[ActualUserInfo], organisationAdmin: Option[Users]) {
+
+    def withCommunity(community: Communities): SelfRegistrationInfo = {
+      SelfRegistrationInfo(failure, Some(community), actualUserInfo, organisationAdmin)
+    }
+
+    def withFailure(result: Result): SelfRegistrationInfo = {
+      SelfRegistrationInfo(Some(result), community, actualUserInfo, organisationAdmin)
+    }
+
+    def withFailure(result: Result, community: Communities): SelfRegistrationInfo = {
+      SelfRegistrationInfo(Some(result), Some(community), actualUserInfo, organisationAdmin)
+    }
+
+    def withUser(actualUserInfo: Option[ActualUserInfo], organisationAdmin: Users): SelfRegistrationInfo = {
+      SelfRegistrationInfo(failure, community, actualUserInfo, Some(organisationAdmin))
+    }
+
+  }
+
+}
+
+class CommunityService @Inject() (authorizedAction: AuthorizedAction,
+                                  cc: ControllerComponents,
+                                  communityManager: CommunityManager,
+                                  authorizationManager: AuthorizationManager,
+                                  authenticationManager: AuthenticationManager)
+                                 (implicit ec: ExecutionContext) extends AbstractController(cc) {
+
   private final val logger: Logger = LoggerFactory.getLogger(classOf[CommunityService])
 
   /**
     * Gets all communities with given ids or all if none specified
     */
-  def getCommunities() = authorizedAction { request =>
+  def getCommunities(): Action[AnyContent] = authorizedAction.async { request =>
     val communityIds = ParameterExtractor.extractLongIdsQueryParameter(request)
-    authorizationManager.canViewCommunities(request, communityIds)
-    val skipDefault = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.SKIP_DEFAULT)
-    val communities = communityManager.getCommunities(communityIds, skipDefault.isDefined && skipDefault.get)
-    val json = JsonUtil.jsCommunities(communities).toString()
-    ResponseConstructor.constructJsonResponse(json)
+    authorizationManager.canViewCommunities(request, communityIds).flatMap { _ =>
+      val skipDefault = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.SKIP_DEFAULT)
+      communityManager.getCommunities(communityIds, skipDefault.isDefined && skipDefault.get).map { communities =>
+        val json = JsonUtil.jsCommunities(communities).toString()
+        ResponseConstructor.constructJsonResponse(json)
+      }
+    }
   }
 
-  def getUserCommunities() = authorizedAction { request =>
+  def getUserCommunities(): Action[AnyContent] = authorizedAction.async { request =>
     val communityIds = ParameterExtractor.extractLongIdsQueryParameter(request)
-    authorizationManager.canViewCommunities(request, communityIds)
-    val communities = communityManager.getCommunities(communityIds, skipDefault = true)
-    val json = JsonUtil.jsCommunities(communities).toString()
-    ResponseConstructor.constructJsonResponse(json)
+    authorizationManager.canViewCommunities(request, communityIds).flatMap { _ =>
+      communityManager.getCommunities(communityIds, skipDefault = true).map { communities =>
+        val json = JsonUtil.jsCommunities(communities).toString()
+        ResponseConstructor.constructJsonResponse(json)
+      }
+    }
   }
 
   /**
     * Creates new community
     */
-  def createCommunity() = authorizedAction { request =>
-    authorizationManager.canCreateCommunity(request)
-    val community = ParameterExtractor.extractCommunityInfo(request)
-    communityManager.createCommunity(community)
-    ResponseConstructor.constructEmptyResponse
+  def createCommunity(): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canCreateCommunity(request).flatMap { _ =>
+      val community = ParameterExtractor.extractCommunityInfo(request)
+      communityManager.createCommunity(community).map { _ =>
+        ResponseConstructor.constructEmptyResponse
+      }
+    }
   }
 
   /**
     * Gets the community with specified id
     */
-  def getCommunityById(communityId: Long) = authorizedAction { request =>
-    authorizationManager.canViewCommunityFull(request, communityId)
-    val community = communityManager.getCommunityById(communityId)
-    val json: String = JsonUtil.serializeCommunity(community, None, includeAdminInfo = true)
-    ResponseConstructor.constructJsonResponse(json)
+  def getCommunityById(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canViewCommunityFull(request, communityId).flatMap { _ =>
+      communityManager.getCommunityById(communityId).map { community =>
+        val json: String = JsonUtil.serializeCommunity(community, None, includeAdminInfo = true)
+        ResponseConstructor.constructJsonResponse(json)
+      }
+    }
   }
 
   /**
     * Updates community
     */
-  def updateCommunity(communityId: Long) = authorizedAction { request =>
-    authorizationManager.canUpdateCommunity(request, communityId)
-    val shortName = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_SNAME)
-    val fullName = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_FNAME)
-    val email = ParameterExtractor.optionalBodyParameter(request, Parameters.COMMUNITY_EMAIL)
-    val description = ParameterExtractor.optionalBodyParameter(request, Parameters.DESCRIPTION)
-    val allowCertificateDownload = ParameterExtractor.requiredBodyParameter(request, Parameters.ALLOW_CERTIFICATE_DOWNLOAD).toBoolean
-    val allowStatementManagement = requiredBodyParameter(request, Parameters.ALLOW_STATEMENT_MANAGEMENT).toBoolean
-    val allowSystemManagement = requiredBodyParameter(request, Parameters.ALLOW_SYSTEM_MANAGEMENT).toBoolean
-    val allowPostTestOrganisationUpdate = requiredBodyParameter(request, Parameters.ALLOW_POST_TEST_ORG_UPDATE).toBoolean
-    val allowPostTestSystemUpdate = requiredBodyParameter(request, Parameters.ALLOW_POST_TEST_SYS_UPDATE).toBoolean
-    val allowPostTestStatementUpdate = requiredBodyParameter(request, Parameters.ALLOW_POST_TEST_STM_UPDATE).toBoolean
-    var allowAutomationApi: Option[Boolean] = None
-    if (Configurations.AUTOMATION_API_ENABLED) {
-      allowAutomationApi = Some(requiredBodyParameter(request, Parameters.ALLOW_AUTOMATION_API).toBoolean)
+  def updateCommunity(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canUpdateCommunity(request, communityId).flatMap { _ =>
+      val shortName = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_SNAME)
+      val fullName = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_FNAME)
+      val email = ParameterExtractor.optionalBodyParameter(request, Parameters.COMMUNITY_EMAIL)
+      val description = ParameterExtractor.optionalBodyParameter(request, Parameters.DESCRIPTION)
+      val allowCertificateDownload = ParameterExtractor.requiredBodyParameter(request, Parameters.ALLOW_CERTIFICATE_DOWNLOAD).toBoolean
+      val allowStatementManagement = requiredBodyParameter(request, Parameters.ALLOW_STATEMENT_MANAGEMENT).toBoolean
+      val allowSystemManagement = requiredBodyParameter(request, Parameters.ALLOW_SYSTEM_MANAGEMENT).toBoolean
+      val allowPostTestOrganisationUpdate = requiredBodyParameter(request, Parameters.ALLOW_POST_TEST_ORG_UPDATE).toBoolean
+      val allowPostTestSystemUpdate = requiredBodyParameter(request, Parameters.ALLOW_POST_TEST_SYS_UPDATE).toBoolean
+      val allowPostTestStatementUpdate = requiredBodyParameter(request, Parameters.ALLOW_POST_TEST_STM_UPDATE).toBoolean
+      var allowAutomationApi: Option[Boolean] = None
+      if (Configurations.AUTOMATION_API_ENABLED) {
+        allowAutomationApi = Some(requiredBodyParameter(request, Parameters.ALLOW_AUTOMATION_API).toBoolean)
+      }
+      val interactionNotification = requiredBodyParameter(request, Parameters.COMMUNITY_INTERACTION_NOTIFICATION).toBoolean
+      var selfRegType: Short = SelfRegistrationType.NotSupported.id.toShort
+      var selfRegRestriction: Short = SelfRegistrationRestriction.NoRestriction.id.toShort
+      var selfRegToken: Option[String] = None
+      var selfRegTokenHelpText: Option[String] = None
+      var selfRegNotification: Boolean = false
+      var selfRegForceTemplateSelection: Boolean = false
+      var selfRegForceRequiredProperties: Boolean = false
+      if (Configurations.REGISTRATION_ENABLED) {
+        selfRegType = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_TYPE).toShort
+        if (!ParameterExtractor.validCommunitySelfRegType(selfRegType)) {
+          throw new IllegalArgumentException("Unsupported value [" + selfRegType + "] for self-registration type")
+        }
+        selfRegToken = ParameterExtractor.optionalBodyParameter(request, Parameters.COMMUNITY_SELFREG_TOKEN)
+        selfRegTokenHelpText = ParameterExtractor.optionalBodyParameter(request, Parameters.COMMUNITY_SELFREG_TOKEN_HELP_TEXT)
+        if (selfRegTokenHelpText.isDefined) {
+          selfRegTokenHelpText = Some(HtmlUtil.sanitizeEditorContent(selfRegTokenHelpText.get))
+        }
+        if (selfRegType == SelfRegistrationType.Token.id.toShort || selfRegType == SelfRegistrationType.PublicListingWithToken.id.toShort) {
+          if (selfRegToken.isEmpty || StringUtils.isBlank(selfRegToken.get)) {
+            throw new IllegalArgumentException("Missing self-registration token")
+          }
+        } else {
+          selfRegToken = None
+          selfRegTokenHelpText = None
+        }
+        if (selfRegType != SelfRegistrationType.NotSupported.id.toShort) {
+          selfRegForceTemplateSelection = requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_FORCE_TEMPLATE).toBoolean
+          selfRegForceRequiredProperties = requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_FORCE_PROPERTIES).toBoolean
+          if (Configurations.EMAIL_ENABLED) {
+            selfRegNotification = requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_NOTIFICATION).toBoolean
+          }
+          if (Configurations.AUTHENTICATION_SSO_ENABLED) {
+            selfRegRestriction = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_RESTRICTION).toShort
+          }
+        }
+      }
+      val domainId: Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
+      communityManager.updateCommunity(
+        communityId, shortName, fullName, email, selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification,
+        interactionNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties,
+        allowCertificateDownload, allowStatementManagement, allowSystemManagement,
+        allowPostTestOrganisationUpdate, allowPostTestSystemUpdate, allowPostTestStatementUpdate, allowAutomationApi,
+        domainId
+      ).map { _ =>
+        ResponseConstructor.constructEmptyResponse
+      }
     }
-    val interactionNotification = requiredBodyParameter(request, Parameters.COMMUNITY_INTERACTION_NOTIFICATION).toBoolean
-    var selfRegType: Short = SelfRegistrationType.NotSupported.id.toShort
-    var selfRegRestriction: Short = SelfRegistrationRestriction.NoRestriction.id.toShort
-    var selfRegToken: Option[String] = None
-    var selfRegTokenHelpText: Option[String] = None
-    var selfRegNotification: Boolean = false
-    var selfRegForceTemplateSelection: Boolean = false
-    var selfRegForceRequiredProperties: Boolean = false
-    if (Configurations.REGISTRATION_ENABLED) {
-      selfRegType = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_TYPE).toShort
-      if (!ParameterExtractor.validCommunitySelfRegType(selfRegType)) {
-        throw new IllegalArgumentException("Unsupported value [" + selfRegType + "] for self-registration type")
-      }
-      selfRegToken = ParameterExtractor.optionalBodyParameter(request, Parameters.COMMUNITY_SELFREG_TOKEN)
-      selfRegTokenHelpText = ParameterExtractor.optionalBodyParameter(request, Parameters.COMMUNITY_SELFREG_TOKEN_HELP_TEXT)
-      if (selfRegTokenHelpText.isDefined) {
-        selfRegTokenHelpText = Some(HtmlUtil.sanitizeEditorContent(selfRegTokenHelpText.get))
-      }
-      if (selfRegType == SelfRegistrationType.Token.id.toShort || selfRegType == SelfRegistrationType.PublicListingWithToken.id.toShort) {
-        if (selfRegToken.isEmpty || StringUtils.isBlank(selfRegToken.get)) {
-          throw new IllegalArgumentException("Missing self-registration token")
-        }
-      } else {
-        selfRegToken = None
-        selfRegTokenHelpText = None
-      }
-      if (selfRegType != SelfRegistrationType.NotSupported.id.toShort) {
-        selfRegForceTemplateSelection = requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_FORCE_TEMPLATE).toBoolean
-        selfRegForceRequiredProperties = requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_FORCE_PROPERTIES).toBoolean
-        if (Configurations.EMAIL_ENABLED) {
-          selfRegNotification = requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_NOTIFICATION).toBoolean
-        }
-        if (Configurations.AUTHENTICATION_SSO_ENABLED) {
-          selfRegRestriction = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_RESTRICTION).toShort
-        }
-      }
-    }
-    val domainId: Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
-    communityManager.updateCommunity(
-      communityId, shortName, fullName, email, selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification,
-      interactionNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties,
-      allowCertificateDownload, allowStatementManagement, allowSystemManagement,
-      allowPostTestOrganisationUpdate, allowPostTestSystemUpdate, allowPostTestStatementUpdate, allowAutomationApi,
-      domainId
-    )
-    ResponseConstructor.constructEmptyResponse
   }
 
   /**
     * Deletes the community with specified id
     */
-  def deleteCommunity(communityId: Long) = authorizedAction { request =>
-    authorizationManager.canDeleteCommunity(request, communityId)
-    communityManager.deleteCommunity(communityId)
-    ResponseConstructor.constructEmptyResponse
+  def deleteCommunity(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canDeleteCommunity(request, communityId).flatMap { _ =>
+      communityManager.deleteCommunity(communityId).map { _ =>
+        ResponseConstructor.constructEmptyResponse
+      }
+    }
   }
 
-  def selfRegister() = authorizedAction { request =>
-    try {
-      val paramMap = ParameterExtractor.paramMap(request)
-      var response: Result = null
-      val selfRegToken = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.COMMUNITY_SELFREG_TOKEN)
-      val organisation = ParameterExtractor.extractOrganizationInfo(paramMap)
-      var organisationAdmin: Users = null
-      var actualUserInfo: Option[ActualUserInfo] = None
-      if (Configurations.AUTHENTICATION_SSO_ENABLED) {
-        actualUserInfo = Some(authorizationManager.getPrincipal(request))
-        organisationAdmin = ParameterExtractor.extractAdminInfo(paramMap, Some(actualUserInfo.get.email), None)
-      } else {
-        organisationAdmin = ParameterExtractor.extractAdminInfo(paramMap, None, Some(false))
-        if (!CryptoUtil.isAcceptedPassword(organisationAdmin.password)) {
-          response = ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_CREDENTIALS, "The provided password does not match minimum complexity requirements.", Some("new"))
+  def selfRegister(): Action[AnyContent] = authorizedAction.async { request =>
+    val task = for {
+      paramMap <- Future.successful(ParameterExtractor.paramMap(request))
+      selfRegToken <- Future.successful(ParameterExtractor.optionalBodyParameter(paramMap, Parameters.COMMUNITY_SELFREG_TOKEN))
+      organisation <- Future.successful(ParameterExtractor.extractOrganizationInfo(paramMap))
+      templateId  <- Future.successful(ParameterExtractor.optionalLongBodyParameter(paramMap, Parameters.TEMPLATE_ID))
+      info <- {
+        if (Configurations.AUTHENTICATION_SSO_ENABLED) {
+          authorizationManager.getPrincipal(request).map { actualUserInfo =>
+            val organisationAdmin = ParameterExtractor.extractAdminInfo(paramMap, Some(actualUserInfo.email), None)
+            SelfRegistrationInfo.create().withUser(Some(actualUserInfo), organisationAdmin)
+          }
+        } else {
+          val organisationAdmin = ParameterExtractor.extractAdminInfo(paramMap, None, Some(false))
+          if (CryptoUtil.isAcceptedPassword(organisationAdmin.password)) {
+            Future.successful {
+              SelfRegistrationInfo.create().withUser(None, organisationAdmin)
+            }
+          } else {
+            Future.successful {
+              SelfRegistrationInfo.create().withFailure(ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_CREDENTIALS, "The provided password does not match minimum complexity requirements.", Some("new")))
+            }
+          }
         }
       }
-
-      if (response == null) {
-        val templateId = ParameterExtractor.optionalLongBodyParameter(paramMap, Parameters.TEMPLATE_ID)
-        authorizationManager.canSelfRegister(request, organisation, organisationAdmin, selfRegToken, templateId)
-        val community = communityManager.getById(organisation.community)
-        if (community.isDefined) {
-          // Check in case template selection is required
-          if (community.get.selfRegForceTemplateSelection && templateId.isEmpty) {
-            response = ResponseConstructor.constructErrorResponse(ErrorCodes.MISSING_PARAMS, "A configuration template must be selected.", Some("template"))
-          }
-          if (response == null) {
-            // Check that the token (if required) matches
-            if (community.get.selfRegType == SelfRegistrationType.PublicListingWithToken.id.toShort
-              && selfRegToken.isDefined && community.get.selfRegToken.isDefined
-              && community.get.selfRegToken.get != selfRegToken.get) {
-              response = ResponseConstructor.constructErrorResponse(ErrorCodes.INCORRECT_SELFREG_TOKEN, "The provided token is incorrect.", Some("token"))
-            }
-          }
-          if (response == null) {
-            if (Configurations.AUTHENTICATION_SSO_ENABLED) {
-              // Check to see whether self-registration restrictions are in force (only if SSO)
-              if (community.get.selfRegRestriction == SelfRegistrationRestriction.UserEmail.id.toShort && communityManager.existsOrganisationWithSameUserEmail(community.get.id, actualUserInfo.get.email)) {
-                response = ResponseConstructor.constructErrorResponse(ErrorCodes.SELF_REG_RESTRICTION_USER_EMAIL, "You are already registered in this community.", Some("community"))
-              } else if (community.get.selfRegRestriction == SelfRegistrationRestriction.UserEmailDomain.id.toShort && communityManager.existsOrganisationWithSameUserEmailDomain(community.get.id, actualUserInfo.get.email)) {
-                response = ResponseConstructor.constructErrorResponse(ErrorCodes.SELF_REG_RESTRICTION_USER_EMAIL_DOMAIN, "Your organisation is already registered in this community.", Some("community"))
-              }
-            } else {
-              // Check the user email (only if not SSO)
-              if (!authenticationManager.checkEmailAvailability(organisationAdmin.email, None, None, None)) {
-                response = ResponseConstructor.constructErrorResponse(ErrorCodes.EMAIL_EXISTS, "The provided username is already defined.", Some("adminEmail"))
-              }
-            }
-          }
-          if (response == null) {
-            val customPropertyValues = ParameterExtractor.extractOrganisationParameterValues(paramMap, Parameters.PROPERTIES, optional = true)
-            val customPropertyFiles = ParameterExtractor.extractFiles(request).map {
-              case (key, value) => (key.substring(key.indexOf('_')+1).toLong, value)
-            }
-            if (Configurations.ANTIVIRUS_SERVER_ENABLED && ParameterExtractor.virusPresentInFiles(customPropertyFiles.map(entry => entry._2.file))) {
-              response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")
-            }
-            if (response == null) {
-              val userId = communityManager.selfRegister(organisation, organisationAdmin, templateId, actualUserInfo, customPropertyValues, Some(customPropertyFiles), community.get.selfRegForceRequiredProperties)
-              if (Configurations.AUTHENTICATION_SSO_ENABLED) {
-                val json: String = JsonUtil.jsActualUserInfo(authorizationManager.getAccountInfo(request)).toString
-                response = ResponseConstructor.constructJsonResponse(json)
+      info <- {
+        if (info.failure.isEmpty) {
+          authorizationManager.canSelfRegister(request, organisation, selfRegToken, templateId).flatMap { _ =>
+            communityManager.getById(organisation.community).flatMap { community =>
+              if (community.isDefined) {
+                // Check in case template selection is required
+                if (community.get.selfRegForceTemplateSelection && templateId.isEmpty) {
+                  Future.successful {
+                    info.withFailure(ResponseConstructor.constructErrorResponse(ErrorCodes.MISSING_PARAMS, "A configuration template must be selected.", Some("template")), community.get)
+                  }
+                } else {
+                  // Check that the token (if required) matches
+                  if (community.get.selfRegType == SelfRegistrationType.PublicListingWithToken.id.toShort
+                    && selfRegToken.isDefined && community.get.selfRegToken.isDefined
+                    && community.get.selfRegToken.get != selfRegToken.get) {
+                    Future.successful {
+                      info.withFailure(ResponseConstructor.constructErrorResponse(ErrorCodes.INCORRECT_SELFREG_TOKEN, "The provided token is incorrect.", Some("token")), community.get)
+                    }
+                  } else {
+                    if (Configurations.AUTHENTICATION_SSO_ENABLED) {
+                      // Check to see whether self-registration restrictions are in force (only if SSO)
+                      if (community.get.selfRegRestriction == SelfRegistrationRestriction.UserEmail.id.toShort) {
+                        communityManager.existsOrganisationWithSameUserEmail(community.get.id, info.actualUserInfo.get.email).map { exists =>
+                          if (exists) {
+                            info.withFailure(ResponseConstructor.constructErrorResponse(ErrorCodes.SELF_REG_RESTRICTION_USER_EMAIL, "You are already registered in this community.", Some("community")), community.get)
+                          } else {
+                            info.withCommunity(community.get)
+                          }
+                        }
+                      } else if (community.get.selfRegRestriction == SelfRegistrationRestriction.UserEmailDomain.id.toShort) {
+                        communityManager.existsOrganisationWithSameUserEmailDomain(community.get.id, info.actualUserInfo.get.email).map { exists =>
+                          if (exists) {
+                            info.withFailure(ResponseConstructor.constructErrorResponse(ErrorCodes.SELF_REG_RESTRICTION_USER_EMAIL_DOMAIN, "Your organisation is already registered in this community.", Some("community")), community.get)
+                          } else {
+                            info.withCommunity(community.get)
+                          }
+                        }
+                      } else {
+                        Future.successful(info.withCommunity(community.get))
+                      }
+                    } else {
+                      // Check the user email (only if not SSO)
+                      authenticationManager.checkEmailAvailability(info.organisationAdmin.get.email, None, None, None).map { available =>
+                        if (!available) {
+                          info.withFailure(ResponseConstructor.constructErrorResponse(ErrorCodes.EMAIL_EXISTS, "The provided username is already defined.", Some("adminEmail")), community.get)
+                        } else {
+                          info.withCommunity(community.get)
+                        }
+                      }
+                    }
+                  }
+                }
               } else {
-                response = ResponseConstructor.constructJsonResponse(JsonUtil.jsId(userId).toString)
-              }
-              // Self registration successful - notify support email if configured to do so.
-              if (Configurations.EMAIL_ENABLED && community.get.selfRegNotification) {
-                notifyForSelfRegistration(community.get, organisation)
+                Future.successful(info)
               }
             }
           }
+        } else {
+          Future.successful(info)
         }
       }
-      if (response == null) {
-        response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_SELFREG_DATA, "Unable to self-register due to error in provided configuration.")
+      result <- {
+        if (info.failure.isEmpty) {
+          val customPropertyValues = ParameterExtractor.extractOrganisationParameterValues(paramMap, Parameters.PROPERTIES, optional = true)
+          val customPropertyFiles = ParameterExtractor.extractFiles(request).map {
+            case (key, value) => (key.substring(key.indexOf('_')+1).toLong, value)
+          }
+          if (Configurations.ANTIVIRUS_SERVER_ENABLED && ParameterExtractor.virusPresentInFiles(customPropertyFiles.map(entry => entry._2.file))) {
+            Future.successful {
+              ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")
+            }
+          } else {
+            communityManager.selfRegister(organisation, info.organisationAdmin.get, templateId, info.actualUserInfo, customPropertyValues, Some(customPropertyFiles), info.community.get.selfRegForceRequiredProperties).flatMap { userId =>
+              // Self registration successful - notify support email if configured to do so.
+              if (Configurations.EMAIL_ENABLED && info.community.get.selfRegNotification) {
+                notifyForSelfRegistration(info.community.get, organisation)
+              }
+              if (Configurations.AUTHENTICATION_SSO_ENABLED) {
+                authorizationManager.getAccountInfo(request).map { accountInfo =>
+                  val json: String = JsonUtil.jsActualUserInfo(accountInfo).toString
+                  ResponseConstructor.constructJsonResponse(json)
+                }
+              } else {
+                Future.successful {
+                  ResponseConstructor.constructJsonResponse(JsonUtil.jsId(userId).toString)
+                }
+              }
+            }
+          }
+        } else {
+          Future.successful(info.failure.get)
+        }
       }
-      response
-
-
-    } finally {
+    } yield result
+    task.andThen { _ =>
       if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
     }
   }
 
-  private def notifyForSelfRegistration(community: Communities, organisation: Organizations) = {
+  private def notifyForSelfRegistration(community: Communities, organisation: Organizations): Future[Unit] = {
     if (Configurations.EMAIL_ENABLED && community.selfRegNotification && community.supportEmail.isDefined) {
-      implicit val executionContext: ExecutionContextExecutor = ExecutionContext.global
-      scala.concurrent.Future {
+      Future {
         val subject = "Test Bed self-registration notification"
         var content = "<h2>New Test Bed community member</h2>"
         // User information not included to avoid data privacy statements
@@ -235,160 +324,212 @@ class CommunityService @Inject() (implicit ec: ExecutionContext, authorizedActio
         try {
           EmailUtil.sendEmail(Array[String](community.supportEmail.get), null, subject, content, null)
         } catch {
-          case e:Exception => {
+          case e:Exception =>
             logger.error("Error while sending self registration notification for community ["+community.id+"]", e)
+        }
+      }
+    } else {
+      Future.successful(())
+    }
+  }
+
+  def getSelfRegistrationOptions(): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canViewSelfRegistrationOptions(request).flatMap { _ =>
+      communityManager.getSelfRegistrationOptions().map { options =>
+        val json: String = JsonUtil.jsSelfRegOptions(options).toString
+        ResponseConstructor.constructJsonResponse(json)
+      }
+    }
+  }
+
+  /**
+    * Returns the community of the authenticated user
+    */
+  def getUserCommunity: Action[AnyContent] = authorizedAction.async { request =>
+    val userId = ParameterExtractor.extractUserId(request)
+    authorizationManager.canViewOwnCommunity(request).flatMap { _ =>
+      communityManager.getUserCommunity(userId).flatMap { community =>
+        communityManager.getCommunityLabels(community.id).map { labels =>
+          val json: String = JsonUtil.serializeCommunity(community, Some(labels), includeAdminInfo = false)
+          ResponseConstructor.constructJsonResponse(json)
+        }
+      }
+    }
+  }
+
+  def orderOrganisationParameters(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageCommunity(request, communityId).flatMap { _ =>
+      val orderedIds = ParameterExtractor.extractLongIdsBodyParameter(request)
+      communityManager.orderOrganisationParameters(communityId, orderedIds.getOrElse(List[Long]())).map { _ =>
+        ResponseConstructor.constructEmptyResponse
+      }
+    }
+  }
+
+  def orderSystemParameters(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageCommunity(request, communityId).flatMap { _ =>
+      val orderedIds = ParameterExtractor.extractLongIdsBodyParameter(request)
+      communityManager.orderSystemParameters(communityId, orderedIds.getOrElse(List[Long]())).map { _ =>
+        ResponseConstructor.constructEmptyResponse
+      }
+    }
+  }
+
+  def createOrganisationParameter(): Action[AnyContent] = authorizedAction.async { request =>
+    val parameter = ParameterExtractor.extractOrganisationParameter(request)
+    authorizationManager.canManageCommunity(request, parameter.community).flatMap { _ =>
+      communityManager.checkOrganisationParameterExists(parameter, isUpdate = false).flatMap { exists =>
+        if (exists) {
+          Future.successful {
+            ResponseConstructor.constructBadRequestResponse(ErrorCodes.NAME_EXISTS, "The name and key of the property must be unique.")
+          }
+        } else {
+          communityManager.createOrganisationParameter(parameter).map { id =>
+            ResponseConstructor.constructJsonResponse(JsonUtil.jsId(id).toString)
           }
         }
       }
     }
   }
 
-  def getSelfRegistrationOptions() = authorizedAction { request =>
-    authorizationManager.canViewSelfRegistrationOptions(request)
-    val options = communityManager.getSelfRegistrationOptions()
-    val json: String = JsonUtil.jsSelfRegOptions(options).toString
-    ResponseConstructor.constructJsonResponse(json)
-  }
-
-  /**
-    * Returns the community of the authenticated user
-    */
-  def getUserCommunity = authorizedAction { request =>
-    val userId = ParameterExtractor.extractUserId(request)
-    authorizationManager.canViewOwnCommunity(request)
-
-    val community = communityManager.getUserCommunity(userId)
-    val labels = communityManager.getCommunityLabels(community.id)
-    val json: String = JsonUtil.serializeCommunity(community, Some(labels), includeAdminInfo = false)
-    ResponseConstructor.constructJsonResponse(json)
-  }
-
-  def orderOrganisationParameters(communityId: Long): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.canManageCommunity(request, communityId)
-    val orderedIds = ParameterExtractor.extractLongIdsBodyParameter(request)
-    communityManager.orderOrganisationParameters(communityId, orderedIds.getOrElse(List[Long]()))
-    ResponseConstructor.constructEmptyResponse
-  }
-
-  def orderSystemParameters(communityId: Long): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.canManageCommunity(request, communityId)
-    val orderedIds = ParameterExtractor.extractLongIdsBodyParameter(request)
-    communityManager.orderSystemParameters(communityId, orderedIds.getOrElse(List[Long]()))
-    ResponseConstructor.constructEmptyResponse
-  }
-
-  def createOrganisationParameter(): Action[AnyContent] = authorizedAction { request =>
-    val parameter = ParameterExtractor.extractOrganisationParameter(request)
-    authorizationManager.canManageCommunity(request, parameter.community)
-    if (communityManager.checkOrganisationParameterExists(parameter, isUpdate = false)) {
-      ResponseConstructor.constructBadRequestResponse(ErrorCodes.NAME_EXISTS, "The name and key of the property must be unique.")
-    } else {
-      val id = communityManager.createOrganisationParameter(parameter)
-      ResponseConstructor.constructJsonResponse(JsonUtil.jsId(id).toString)
-    }
-  }
-
-  def createSystemParameter() = authorizedAction { request =>
+  def createSystemParameter(): Action[AnyContent] = authorizedAction.async { request =>
     val parameter = ParameterExtractor.extractSystemParameter(request)
-    authorizationManager.canManageCommunity(request, parameter.community)
-    if (communityManager.checkSystemParameterExists(parameter, false)) {
-      ResponseConstructor.constructBadRequestResponse(ErrorCodes.NAME_EXISTS, "The name and key of the property must be unique.")
-    } else {
-      val id = communityManager.createSystemParameter(parameter)
-      ResponseConstructor.constructJsonResponse(JsonUtil.jsId(id).toString)
+    authorizationManager.canManageCommunity(request, parameter.community).flatMap { _ =>
+      communityManager.checkSystemParameterExists(parameter, isUpdate = false).flatMap { exists =>
+        if (exists) {
+          Future.successful {
+            ResponseConstructor.constructBadRequestResponse(ErrorCodes.NAME_EXISTS, "The name and key of the property must be unique.")
+          }
+        } else {
+          communityManager.createSystemParameter(parameter).map { id =>
+            ResponseConstructor.constructJsonResponse(JsonUtil.jsId(id).toString)
+          }
+        }
+      }
     }
   }
 
-  def deleteOrganisationParameter(parameterId: Long) = authorizedAction { request =>
-    authorizationManager.canManageOrganisationParameter(request, parameterId)
-    communityManager.deleteOrganisationParameterWrapper(parameterId)
-    ResponseConstructor.constructEmptyResponse
+  def deleteOrganisationParameter(parameterId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageOrganisationParameter(request, parameterId).flatMap { _ =>
+      communityManager.deleteOrganisationParameterWrapper(parameterId).map { _ =>
+        ResponseConstructor.constructEmptyResponse
+      }
+    }
   }
 
-  def deleteSystemParameter(parameterId: Long) = authorizedAction { request =>
-    authorizationManager.canManageSystemParameter(request, parameterId)
-    communityManager.deleteSystemParameterWrapper(parameterId)
-    ResponseConstructor.constructEmptyResponse
+  def deleteSystemParameter(parameterId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageSystemParameter(request, parameterId).flatMap { _ =>
+      communityManager.deleteSystemParameterWrapper(parameterId).map { _ =>
+        ResponseConstructor.constructEmptyResponse
+      }
+    }
   }
 
-  def updateOrganisationParameter(parameterId: Long) = authorizedAction { request =>
+  def updateOrganisationParameter(parameterId: Long): Action[AnyContent] = authorizedAction.async { request =>
     val parameter = ParameterExtractor.extractOrganisationParameter(request)
-    authorizationManager.canManageCommunity(request, parameter.community)
-
-    if (communityManager.checkOrganisationParameterExists(parameter, true)) {
-      ResponseConstructor.constructBadRequestResponse(ErrorCodes.NAME_EXISTS, "The name and key of the property must be unique.")
-    } else {
-      communityManager.updateOrganisationParameter(parameter)
-      ResponseConstructor.constructEmptyResponse
+    authorizationManager.canManageCommunity(request, parameter.community).flatMap { _ =>
+      communityManager.checkOrganisationParameterExists(parameter, isUpdate = true).flatMap { exists =>
+        if (exists) {
+          Future.successful {
+            ResponseConstructor.constructBadRequestResponse(ErrorCodes.NAME_EXISTS, "The name and key of the property must be unique.")
+          }
+        } else {
+          communityManager.updateOrganisationParameter(parameter).map { _ =>
+            ResponseConstructor.constructEmptyResponse
+          }
+        }
+      }
     }
   }
 
-  def updateSystemParameter(parameterId: Long) = authorizedAction { request =>
+  def updateSystemParameter(parameterId: Long): Action[AnyContent] = authorizedAction.async { request =>
     val parameter = ParameterExtractor.extractSystemParameter(request)
-    authorizationManager.canManageCommunity(request, parameter.community)
-
-    if (communityManager.checkSystemParameterExists(parameter, true)) {
-      ResponseConstructor.constructBadRequestResponse(ErrorCodes.NAME_EXISTS, "The name and key of the property must be unique.")
-    } else {
-      communityManager.updateSystemParameter(parameter)
-      ResponseConstructor.constructEmptyResponse
+    authorizationManager.canManageCommunity(request, parameter.community).flatMap { _ =>
+      communityManager.checkSystemParameterExists(parameter, isUpdate = true).flatMap { exists =>
+        if (exists) {
+          Future.successful {
+            ResponseConstructor.constructBadRequestResponse(ErrorCodes.NAME_EXISTS, "The name and key of the property must be unique.")
+          }
+        } else {
+          communityManager.updateSystemParameter(parameter).map { _ =>
+            ResponseConstructor.constructEmptyResponse
+          }
+        }
+      }
     }
   }
 
-  def getOrganisationParameters(communityId: Long) = authorizedAction { request =>
-    authorizationManager.canManageCommunity(request, communityId)
-    val forFiltering = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.FILTERING)
-    ResponseConstructor.constructJsonResponse(JsonUtil.jsOrganisationParameters(communityManager.getOrganisationParameters(communityId, forFiltering)).toString)
+  def getOrganisationParameters(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageCommunity(request, communityId).flatMap { _ =>
+      val forFiltering = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.FILTERING)
+      communityManager.getOrganisationParameters(communityId, forFiltering).map { parameters =>
+        ResponseConstructor.constructJsonResponse(JsonUtil.jsOrganisationParameters(parameters).toString)
+      }
+    }
   }
 
-  def getSystemParameters(communityId: Long) = authorizedAction { request =>
-    authorizationManager.canViewCommunityBasic(request, communityId)
-    val forFiltering = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.FILTERING)
-    ResponseConstructor.constructJsonResponse(JsonUtil.jsSystemParameters(communityManager.getSystemParameters(communityId, forFiltering)).toString)
+  def getSystemParameters(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canViewCommunityBasic(request, communityId).flatMap { _ =>
+      val forFiltering = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.FILTERING)
+      communityManager.getSystemParameters(communityId, forFiltering).map { params =>
+        ResponseConstructor.constructJsonResponse(JsonUtil.jsSystemParameters(params).toString)
+      }
+    }
   }
 
-  def getCommunityLabels(communityId: Long) = authorizedAction { request =>
-    authorizationManager.canViewCommunityBasic(request, communityId)
-    ResponseConstructor.constructJsonResponse(JsonUtil.jsCommunityLabels(communityManager.getCommunityLabels(communityId)).toString)
+  def getCommunityLabels(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canViewCommunityBasic(request, communityId).flatMap { _ =>
+      communityManager.getCommunityLabels(communityId).map { labels =>
+        ResponseConstructor.constructJsonResponse(JsonUtil.jsCommunityLabels(labels).toString)
+      }
+    }
   }
 
-  def setCommunityLabels(communityId: Long) = authorizedAction { request =>
-    authorizationManager.canManageCommunity(request, communityId)
-    val labels = JsonUtil.parseJsCommunityLabels(communityId, requiredBodyParameter(request, Parameters.VALUES))
-    communityManager.setCommunityLabels(communityId, labels)
-    ResponseConstructor.constructEmptyResponse
+  def setCommunityLabels(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageCommunity(request, communityId).flatMap { _ =>
+      val labels = JsonUtil.parseJsCommunityLabels(communityId, requiredBodyParameter(request, Parameters.VALUES))
+      communityManager.setCommunityLabels(communityId, labels).map { _ =>
+        ResponseConstructor.constructEmptyResponse
+      }
+    }
   }
 
-  def getCommunityIdOfDomain: Action[AnyContent] = authorizedAction { request =>
+  def getCommunityIdOfDomain: Action[AnyContent] = authorizedAction.async { request =>
     val domainId = ParameterExtractor.requiredQueryParameter(request, Parameters.DOMAIN_ID).toLong
-    authorizationManager.checkTestBedAdmin(request)
-    val communityId = communityManager.getCommunityIdOfDomain(domainId)
-    if (communityId.isDefined) {
-      ResponseConstructor.constructJsonResponse(JsonUtil.jsId(communityId.get).toString())
-    } else {
-      ResponseConstructor.constructEmptyResponse
+    authorizationManager.checkTestBedAdmin(request).flatMap { _ =>
+      communityManager.getCommunityIdOfDomain(domainId).map { communityId =>
+        if (communityId.isDefined) {
+          ResponseConstructor.constructJsonResponse(JsonUtil.jsId(communityId.get).toString())
+        } else {
+          ResponseConstructor.constructEmptyResponse
+        }
+      }
     }
   }
 
-  def getCommunityIdOfActor: Action[AnyContent] = authorizedAction { request =>
+  def getCommunityIdOfActor: Action[AnyContent] = authorizedAction.async { request =>
     val actorId = ParameterExtractor.requiredQueryParameter(request, Parameters.ACTOR_ID).toLong
-    authorizationManager.checkTestBedAdmin(request)
-    val communityId = communityManager.getCommunityIdOfActor(actorId)
-    if (communityId.isDefined) {
-      ResponseConstructor.constructJsonResponse(JsonUtil.jsId(communityId.get).toString())
-    } else {
-      ResponseConstructor.constructEmptyResponse
+    authorizationManager.checkTestBedAdmin(request).flatMap { _ =>
+      communityManager.getCommunityIdOfActor(actorId).map { communityId =>
+        if (communityId.isDefined) {
+          ResponseConstructor.constructJsonResponse(JsonUtil.jsId(communityId.get).toString())
+        } else {
+          ResponseConstructor.constructEmptyResponse
+        }
+      }
     }
   }
 
-  def getCommunityIdOfSnapshot: Action[AnyContent] = authorizedAction { request =>
+  def getCommunityIdOfSnapshot: Action[AnyContent] = authorizedAction.async { request =>
     val snapshotId = ParameterExtractor.requiredQueryParameter(request, Parameters.SNAPSHOT).toLong
-    authorizationManager.checkTestBedAdmin(request)
-    val communityId = communityManager.getCommunityIdOfSnapshot(snapshotId)
-    if (communityId.isDefined) {
-      ResponseConstructor.constructJsonResponse(JsonUtil.jsId(communityId.get).toString())
-    } else {
-      ResponseConstructor.constructEmptyResponse
+    authorizationManager.checkTestBedAdmin(request).flatMap { _ =>
+      communityManager.getCommunityIdOfSnapshot(snapshotId).map { communityId =>
+        if (communityId.isDefined) {
+          ResponseConstructor.constructJsonResponse(JsonUtil.jsId(communityId.get).toString())
+        } else {
+          ResponseConstructor.constructEmptyResponse
+        }
+      }
     }
   }
 

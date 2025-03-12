@@ -5,9 +5,9 @@ import play.api.mvc.{Request, WrappedRequest}
 object RequestWithAttributes {
 
   def apply[A](request: Request[A]): RequestWithAttributes[A] = {
-    new RequestWithAttributes(scala.collection.mutable.Map.empty[String, String], request)
+    new RequestWithAttributes(request, false)
   }
 }
 
-class RequestWithAttributes[A](val attributes: scala.collection.mutable.Map[String, String], val request: Request[A]) extends WrappedRequest[A](request) {
+class RequestWithAttributes[A](val request: Request[A], var authorised: Boolean) extends WrappedRequest[A](request) {
 }

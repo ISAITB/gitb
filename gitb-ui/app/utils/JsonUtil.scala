@@ -5,6 +5,7 @@ import com.gitb.ps.{ProcessRequest, ProcessResponse}
 import com.gitb.tbs.UserInput
 import com.gitb.tr._
 import config.Configurations
+import controllers.dto.ParameterInfo
 import exceptions.JsonValidationException
 import jakarta.xml.bind.JAXBElement
 import managers.breadcrumb.BreadcrumbLabelResponse
@@ -2064,7 +2065,7 @@ object JsonUtil {
   def jsTestResultReports(list: Iterable[TestResult], resultCount: Option[Int]): JsObject = {
     var json = Json.arr()
     list.foreach { report =>
-      json = json.append(jsTestResultReport(report, None, None, None, None))
+      json = json.append(jsTestResultReport(report, None))
     }
     val jsonResult = Json.obj(
       "data" -> json,
@@ -2073,25 +2074,23 @@ object JsonUtil {
     jsonResult
   }
 
-  def jsTestResultSessionReports(list: Iterable[TestResult], orgParameterDefinitions: Option[List[OrganisationParameters]], orgParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]], sysParameterDefinitions: Option[List[SystemParameters]], sysParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]], resultCount: Option[Int]): JsObject = {
+  def jsTestResultSessionReports(list: Iterable[TestResult], parameterInfo: Option[ParameterInfo], resultCount: Option[Int]): JsObject = {
     var json = Json.arr()
     list.foreach { report =>
-      json = json.append(jsTestResultReport(report, orgParameterDefinitions, orgParameterValues, sysParameterDefinitions, sysParameterValues))
+      json = json.append(jsTestResultReport(report, parameterInfo))
     }
     var jsonResult = Json.obj(
       "data" -> json,
       "count" -> (if (resultCount.isDefined) resultCount.get else JsNull)
     )
-    if (orgParameterDefinitions.isDefined) {
+    if (parameterInfo.isDefined) {
       var orgParameters = Json.arr()
-      orgParameterDefinitions.get.foreach{ param =>
+      parameterInfo.get.orgDefinitions.foreach{ param =>
         orgParameters = orgParameters.append(JsString(param.testKey))
       }
       jsonResult = jsonResult.+("orgParameters" -> orgParameters)
-    }
-    if (sysParameterDefinitions.isDefined) {
       var sysParameters = Json.arr()
-      sysParameterDefinitions.get.foreach{ param =>
+      parameterInfo.get.sysDefinitions.foreach{ param =>
         sysParameters = sysParameters.append(JsString(param.testKey))
       }
       jsonResult = jsonResult.+("sysParameters" -> sysParameters)
@@ -2106,7 +2105,7 @@ object JsonUtil {
     json
   }
 
-  def jsOrgParameterValuesForExport(organisationId: Long, orgParameterDefinitions: List[OrganisationParameters], orgParameterValues: scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]): JsObject = {
+  def jsOrgParameterValuesForExport(organisationId: Long, orgParameterDefinitions: List[OrganisationParameters], orgParameterValues: Map[Long, Map[Long, String]]): JsObject = {
     var json = Json.obj()
     orgParameterDefinitions.foreach{ param =>
       if (orgParameterValues.contains(organisationId)) {
@@ -2119,7 +2118,7 @@ object JsonUtil {
     json
   }
 
-  def jsSysParameterValuesForExport(systemId: Long, sysParameterDefinitions: List[SystemParameters], sysParameterValues: scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]): JsObject = {
+  def jsSysParameterValuesForExport(systemId: Long, sysParameterDefinitions: List[SystemParameters], sysParameterValues: Map[Long, Map[Long, String]]): JsObject = {
     var json = Json.obj()
     sysParameterDefinitions.foreach{ param =>
       if (sysParameterValues.contains(systemId)) {
@@ -2133,10 +2132,7 @@ object JsonUtil {
   }
 
   def jsTestResultReport(result: TestResult,
-                         orgParameterDefinitions: Option[List[OrganisationParameters]],
-                         orgParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]],
-                         sysParameterDefinitions: Option[List[SystemParameters]],
-                         sysParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]],
+                         parameterInfo: Option[ParameterInfo],
                          withOutputMessage: Boolean = false,
                          logEntries: Option[List[String]] = None,
                          pendingInteractions: Option[List[TestInteraction]] = None
@@ -2154,7 +2150,7 @@ object JsonUtil {
           "id"    -> (if (result.organizationId.isDefined) result.organizationId.get else JsNull),
           "sname" -> (if (result.organization.isDefined) result.organization.get else JsNull),
           "community" -> (if (result.communityId.isDefined) result.communityId.get else JsNull),
-          "parameters" -> (if (result.organizationId.isDefined && orgParameterDefinitions.isDefined && orgParameterValues.isDefined) jsOrgParameterValuesForExport(result.organizationId.get, orgParameterDefinitions.get, orgParameterValues.get) else JsNull)
+          "parameters" -> (if (result.organizationId.isDefined && parameterInfo.isDefined) jsOrgParameterValuesForExport(result.organizationId.get, parameterInfo.get.orgDefinitions, parameterInfo.get.orgValues) else JsNull)
         )
       },
       "system" -> {
@@ -2162,7 +2158,7 @@ object JsonUtil {
           "id"    -> (if (result.systemId.isDefined) result.systemId.get else JsNull),
           "sname" -> (if (result.system.isDefined) result.system.get else JsNull),
           "owner" -> (if (result.organizationId.isDefined) result.organizationId.get else JsNull),
-          "parameters" -> (if (result.systemId.isDefined && sysParameterDefinitions.isDefined && sysParameterValues.isDefined) jsSysParameterValuesForExport(result.systemId.get, sysParameterDefinitions.get, sysParameterValues.get) else JsNull)
+          "parameters" -> (if (result.systemId.isDefined && parameterInfo.isDefined) jsSysParameterValuesForExport(result.systemId.get, parameterInfo.get.sysDefinitions, parameterInfo.get.sysValues) else JsNull)
         )
       },
       "actor" -> {
@@ -2709,15 +2705,19 @@ object JsonUtil {
     Json.obj("apiKey" -> apiKey)
   }
 
+  private def toJsonString(value: Option[String]): JsValue = {
+    value.map(JsString).getOrElse(JsNull)
+  }
+
   def jsTestSuiteUploadResult(result: TestSuiteUploadResult):JsObject = {
     val json = Json.obj(
       "success"    -> result.success,
-      "errorInformation"  -> result.errorInformation,
-      "pendingFolderId"  -> result.pendingTestSuiteFolderName,
+      "errorInformation"  -> toJsonString(result.errorInformation),
+      "pendingFolderId"  -> toJsonString(result.pendingTestSuiteFolderName),
       "existsForSpecs" -> testSuiteExistsForSpec(result.existsForSpecs),
       "matchingDataExists" -> toJsArray(result.matchingDataExists),
-      "items" -> jsTestSuiteUploadItemResults(result.items.asScala),
-      "validationReport" -> (if (result.validationReport != null) jsTAR(result.validationReport) else JsNull),
+      "items" -> (if (result.items.isDefined) jsTestSuiteUploadItemResults(result.items.get) else JsNull),
+      "validationReport" -> (if (result.validationReport.isDefined) jsTAR(result.validationReport.get) else JsNull),
       "needsConfirmation" -> result.needsConfirmation,
       "testCases" -> (if (result.testCases.isDefined) jsTestSuiteUploadSpecificationTestCases(result.testCases.get) else JsNull),
       "sharedTestSuiteId" -> (if (result.sharedTestSuiteId.isDefined) result.sharedTestSuiteId.get else JsNull),
@@ -2766,16 +2766,16 @@ object JsonUtil {
     testCaseArray
   }
 
-  def jsTestSuiteDeployInfo(result: TestSuiteUploadResultWithApiKeys):JsObject = {
+  def jsTestSuiteDeployInfo(resultWithKeys: TestSuiteUploadResultWithApiKeys):JsObject = {
     var errors = Json.arr()
     var warnings = Json.arr()
     var messages = Json.arr()
-    if (result.existsForSpecs.nonEmpty) {
+    if (resultWithKeys.result.existsForSpecs.nonEmpty) {
       // Non-shared test suite that we tried to deploy to a specification with a matching (by identifier) shared test suite.
       messages = messages.append(Json.obj("description" -> "The specification contains a shared test suite with the same identifier. Deployment was skipped."))
     }
-    if (result.validationReport != null && result.validationReport.getReports != null) {
-      result.validationReport.getReports.getInfoOrWarningOrError.asScala.toList.foreach(item => {
+    if (resultWithKeys.result.validationReport.exists(_.getReports != null)) {
+      resultWithKeys.result.validationReport.get.getReports.getInfoOrWarningOrError.asScala.toList.foreach(item => {
         var itemJson = Json.obj("description" -> item.getValue.asInstanceOf[BAR].getDescription)
         if (item.getValue.asInstanceOf[BAR].getLocation != null) {
           itemJson = itemJson.+("location", JsString(item.getValue.asInstanceOf[BAR].getLocation))
@@ -2790,7 +2790,7 @@ object JsonUtil {
       })
     }
     var json = Json.obj(
-      "completed" -> result.success
+      "completed" -> resultWithKeys.result.success
     )
     if (errors.value.nonEmpty) {
       json = json.+("errors", errors)
@@ -2802,15 +2802,15 @@ object JsonUtil {
       json = json.+("messages", messages)
     }
     // API key identifiers.
-    if (result.testSuiteIdentifier.isDefined) {
+    if (resultWithKeys.testSuiteIdentifier.isDefined) {
       var identifiers = Json.obj(
-        "testSuite" -> result.testSuiteIdentifier.get
+        "testSuite" -> resultWithKeys.testSuiteIdentifier.get
       )
-      if (result.testCaseIdentifiers.isDefined && result.testCaseIdentifiers.get.nonEmpty) {
-        identifiers = identifiers+("testCases" -> jsStringArray(result.testCaseIdentifiers.get))
+      if (resultWithKeys.testCaseIdentifiers.isDefined && resultWithKeys.testCaseIdentifiers.get.nonEmpty) {
+        identifiers = identifiers+("testCases" -> jsStringArray(resultWithKeys.testCaseIdentifiers.get))
       }
-      if (result.specifications.isDefined && result.specifications.get.nonEmpty) {
-        identifiers = identifiers+("specifications" -> jsTestSuiteSpecificationApiKeys(result.specifications.get))
+      if (resultWithKeys.specifications.isDefined && resultWithKeys.specifications.get.nonEmpty) {
+        identifiers = identifiers+("specifications" -> jsTestSuiteSpecificationApiKeys(resultWithKeys.specifications.get))
       }
       json = json+("identifiers", identifiers)
     }
@@ -2997,25 +2997,23 @@ object JsonUtil {
     json
   }
 
-  def jsConformanceResultFullList(list: List[ConformanceStatementFull], orgParameterDefinitions: Option[List[OrganisationParameters]], orgParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]], sysParameterDefinitions: Option[List[SystemParameters]], sysParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]], count: Int): JsObject = {
+  def jsConformanceResultFullList(list: List[ConformanceStatementFull], parameterInfo: Option[ParameterInfo], count: Int): JsObject = {
     var json = Json.arr()
     list.foreach{ info =>
-      json = json.append(jsConformanceResultFull(info, orgParameterDefinitions, orgParameterValues, sysParameterDefinitions, sysParameterValues))
+      json = json.append(jsConformanceResultFull(info, parameterInfo))
     }
     var jsonResult = Json.obj(
       "data" -> json,
       "count" -> count
     )
-    if (orgParameterDefinitions.isDefined) {
+    if (parameterInfo.isDefined) {
       var orgParameters = Json.arr()
-      orgParameterDefinitions.get.foreach{ param =>
+      parameterInfo.get.orgDefinitions.foreach{ param =>
         orgParameters = orgParameters.append(JsString(param.testKey))
       }
       jsonResult = jsonResult.+("orgParameters" -> orgParameters)
-    }
-    if (sysParameterDefinitions.isDefined) {
       var sysParameters = Json.arr()
-      sysParameterDefinitions.get.foreach{ param =>
+      parameterInfo.get.sysDefinitions.foreach{ param =>
         sysParameters = sysParameters.append(JsString(param.testKey))
       }
       jsonResult = jsonResult.+("sysParameters" -> sysParameters)
@@ -3024,10 +3022,7 @@ object JsonUtil {
   }
 
   def jsConformanceResultFull(item: ConformanceStatementFull,
-                              orgParameterDefinitions: Option[List[OrganisationParameters]],
-                              orgParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]],
-                              sysParameterDefinitions: Option[List[SystemParameters]],
-                              sysParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]]): JsObject = {
+                              parameterInfo: Option[ParameterInfo]): JsObject = {
     var json = Json.obj(
       "communityId"    -> item.communityId,
       "communityName"    -> item.communityName,
@@ -3059,20 +3054,18 @@ object JsonUtil {
       "updateTime" -> (if(item.updateTime.isDefined) TimeUtil.serializeTimestamp(item.updateTime.get) else JsNull),
       "outputMessage" -> item.outputMessage
     )
-    if (orgParameterDefinitions.isDefined && orgParameterValues.isDefined) {
-      orgParameterDefinitions.get.foreach{ param =>
-        if (orgParameterValues.get.contains(item.organizationId)) {
-          val value = orgParameterValues.get(item.organizationId).get(param.id)
+    if (parameterInfo.isDefined) {
+      parameterInfo.get.orgDefinitions.foreach{ param =>
+        if (parameterInfo.get.orgValues.contains(item.organizationId)) {
+          val value = parameterInfo.get.orgValues(item.organizationId).get(param.id)
           if (value.isDefined) {
             json = json.+("orgparam_"+param.testKey -> JsString(value.get))
           }
         }
       }
-    }
-    if (sysParameterDefinitions.isDefined && sysParameterValues.isDefined) {
-      sysParameterDefinitions.get.foreach{ param =>
-        if (sysParameterValues.get.contains(item.systemId)) {
-          val value = sysParameterValues.get(item.systemId).get(param.id)
+      parameterInfo.get.sysDefinitions.foreach{ param =>
+        if (parameterInfo.get.sysValues.contains(item.systemId)) {
+          val value = parameterInfo.get.sysValues(item.systemId).get(param.id)
           if (value.isDefined) {
             json = json.+("sysparam_"+param.testKey -> JsString(value.get))
           }

@@ -10,14 +10,15 @@ import utils.CryptoUtil
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class AuthenticationManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class AuthenticationManager @Inject()(dbConfigProvider: DatabaseConfigProvider)
+                                     (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
-  def checkEmailAvailability(email:String, organisationId: Option[Long], communityId: Option[Long], roleId: Option[Short]): Boolean = {
+  def checkEmailAvailability(email:String, organisationId: Option[Long], communityId: Option[Long], roleId: Option[Short]): Future[Boolean] = {
     if (Configurations.AUTHENTICATION_SSO_ENABLED) {
       if (organisationId.isDefined) {
         // We should not have a member user with the same email address within the organisation
@@ -27,7 +28,7 @@ class AuthenticationManager @Inject()(dbConfigProvider: DatabaseConfigProvider) 
         if (roleId.isDefined) {
           q = q.filter(_.role === roleId.get)
         }
-        exec(q.result.headOption).isEmpty
+        DB.run(q.result.headOption).map(_.isEmpty)
       } else {
         if (communityId.isDefined) {
           // We should not have multiple community admins in the same community with the same email.
@@ -36,29 +37,29 @@ class AuthenticationManager @Inject()(dbConfigProvider: DatabaseConfigProvider) 
             .filter(_._1.ssoEmail.toLowerCase === email.toLowerCase())
             .filter(_._2.community === communityId.get)
             .filter(_._1.role === Enums.UserRole.CommunityAdmin.id.toShort)
-          exec(q.result.headOption).isEmpty
+          DB.run(q.result.headOption).map(_.isEmpty)
         } else {
           // We should not have multiple system admins with the same email.
           val q = PersistenceSchema.users
             .filter(_.ssoEmail.toLowerCase === email.toLowerCase())
             .filter(_.role === Enums.UserRole.SystemAdmin.id.toShort)
-          exec(q.result.headOption).isEmpty
+          DB.run(q.result.headOption).map(_.isEmpty)
         }
       }
     } else {
       // The email is a username and needs to be unique across the entire test bed.
       val q = PersistenceSchema.users.filter(_.email === email)
-      exec(q.result.headOption).isEmpty
+      DB.run(q.result.headOption).map(_.isEmpty)
     }
   }
 
-  def replaceDefaultAdminPasswordIfNeeded(username: String): Option[String] = {
-    exec(for {
+  def replaceDefaultAdminPasswordIfNeeded(username: String): Future[Option[String]] = {
+    DB.run(for {
       adminIdToProcess <- PersistenceSchema.users.filter(_.email === username).filter(_.onetimePassword === true).map(_.id).result.headOption
       passwordToUse <- {
         if (adminIdToProcess.isDefined) {
           val newPassword = UUID.randomUUID().toString
-          PersistenceSchema.users.filter(_.id === adminIdToProcess).map(_.password).update(CryptoUtil.hashPassword(newPassword)) andThen DBIO.successful(Some(newPassword))
+          PersistenceSchema.users.filter(_.id === adminIdToProcess).map(_.password).update(CryptoUtil.hashPassword(newPassword)).map(_ => Some(newPassword))
         } else {
           DBIO.successful(None)
         }
@@ -66,12 +67,13 @@ class AuthenticationManager @Inject()(dbConfigProvider: DatabaseConfigProvider) 
     } yield passwordToUse)
   }
 
-  def checkUserByEmail(email:String, passwd:String): Option[Users] = {
-    val user = exec(PersistenceSchema.users.filter(_.email === email).result.headOption)
-    if (user.isDefined && CryptoUtil.checkPassword(passwd, user.get.password)) user else None
+  def checkUserByEmail(email:String, passwd:String): Future[Option[Users]] = {
+    DB.run(PersistenceSchema.users.filter(_.email === email).result.headOption).map { user =>
+      if (user.isDefined && CryptoUtil.checkPassword(passwd, user.get.password)) user else None
+    }
   }
 
-  def replaceOnetimePassword(email: String, newPassword: String, oldPassword: String): Option[Long] = {
+  def replaceOnetimePassword(email: String, newPassword: String, oldPassword: String): Future[Option[Long]] = {
     val q = for {
       userData <- PersistenceSchema.users
         .filter(_.email === email)
@@ -82,8 +84,9 @@ class AuthenticationManager @Inject()(dbConfigProvider: DatabaseConfigProvider) 
             if (CryptoUtil.checkPassword(oldPassword, userData.get._2)) {
               // Old password matches - do update
               val update = for { u <- PersistenceSchema.users.filter(_.id === userData.get._1)} yield (u.password, u.onetimePassword)
-              update.update(CryptoUtil.hashPassword(newPassword), false) andThen
-                DBIO.successful(Some(userData.get._1))
+              update.update(CryptoUtil.hashPassword(newPassword), false).map { _ =>
+                Some(userData.get._1)
+              }
             } else {
               DBIO.successful(None)
             }
@@ -95,7 +98,7 @@ class AuthenticationManager @Inject()(dbConfigProvider: DatabaseConfigProvider) 
         }
       }
     } yield resultUserId
-    exec(q.transactionally)
+    DB.run(q.transactionally)
   }
 
 

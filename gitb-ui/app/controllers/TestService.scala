@@ -7,6 +7,7 @@ import config.Configurations
 import controllers.util._
 import exceptions.ErrorCodes
 import managers._
+import managers.triggers.TriggerHelper
 import models.SessionConfigurationData
 import org.apache.commons.io.FileUtils
 import org.apache.pekko.actor.ActorSystem
@@ -15,90 +16,127 @@ import utils._
 
 import java.nio.file.Path
 import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, actorManager: ActorManager, authorizationManager: AuthorizationManager, testbedClient: managers.TestbedBackendClient, actorSystem: ActorSystem, testResultManager: TestResultManager, testExecutionManager: TestExecutionManager, triggerHelper: TriggerHelper) extends AbstractController(cc) {
+class TestService @Inject() (authorizedAction: AuthorizedAction,
+                             cc: ControllerComponents,
+                             actorManager: ActorManager,
+                             authorizationManager: AuthorizationManager,
+                             testbedClient: managers.TestbedBackendClient,
+                             actorSystem: ActorSystem,
+                             testResultManager: TestResultManager,
+                             testExecutionManager: TestExecutionManager,
+                             triggerHelper: TriggerHelper)
+                            (implicit ec: ExecutionContext) extends AbstractController(cc) {
 
-  private def getTestCasePresentationByDomain(testId:String, domainId: Long): GetTestCaseDefinitionResponse = {
-    testbedClient.getTestCaseDefinition(testId, None, getSessionConfigurationData(domainId))
+  private def getTestCasePresentationByDomain(testId:String, domainId: Long): Future[GetTestCaseDefinitionResponse] = {
+    getSessionConfigurationData(domainId).flatMap { configData =>
+      testbedClient.getTestCaseDefinition(testId, None, configData)
+    }
   }
 
-  def getTestCasePresentationByStatement(testId:String, sessionId: Option[String], actorId: Long, systemId: Long): GetTestCaseDefinitionResponse = {
-    testbedClient.getTestCaseDefinition(testId, sessionId, getSessionConfigurationData(systemId, actorId, onlySimple = true))
+  def getTestCasePresentationByStatement(testId:String, sessionId: Option[String], actorId: Long, systemId: Long): Future[GetTestCaseDefinitionResponse] = {
+    getSessionConfigurationData(systemId, actorId, onlySimple = true).flatMap { configData =>
+      testbedClient.getTestCaseDefinition(testId, sessionId, configData)
+    }
   }
 
   /**
    * Gets the test case definition for a specific test
    */
-  def getTestCaseDefinitionByStatement(test_id:String): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.canViewTestCase(request, test_id)
-    val actorId = ParameterExtractor.requiredQueryParameter(request, Parameters.ACTOR).toLong
-    val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM).toLong
-    val response = getTestCasePresentationByStatement(test_id, None, actorId, systemId)
-    val json = JacksonUtil.serializeTestCasePresentation(response.getTestcase)
-    ResponseConstructor.constructJsonResponse(json)
+  def getTestCaseDefinitionByStatement(test_id:String): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canViewTestCase(request, test_id).flatMap { _ =>
+      val actorId = ParameterExtractor.requiredQueryParameter(request, Parameters.ACTOR).toLong
+      val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM).toLong
+      getTestCasePresentationByStatement(test_id, None, actorId, systemId).map { response =>
+        val json = JacksonUtil.serializeTestCasePresentation(response.getTestcase)
+        ResponseConstructor.constructJsonResponse(json)
+      }
+    }
   }
 
   /**
    * Gets the test case definition for a specific test
    */
-  def getTestCaseDefinitionByDomain(test_id:String): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.canViewTestCase(request, test_id)
-    val domainId = ParameterExtractor.requiredQueryParameter(request, Parameters.DOMAIN).toLong
-    val response = getTestCasePresentationByDomain(test_id, domainId)
-    val json = JacksonUtil.serializeTestCasePresentation(response.getTestcase)
-    ResponseConstructor.constructJsonResponse(json)
+  def getTestCaseDefinitionByDomain(test_id:String): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canViewTestCase(request, test_id).flatMap { _ =>
+      val domainId = ParameterExtractor.requiredQueryParameter(request, Parameters.DOMAIN).toLong
+      getTestCasePresentationByDomain(test_id, domainId).map { response =>
+        val json = JacksonUtil.serializeTestCasePresentation(response.getTestcase)
+        ResponseConstructor.constructJsonResponse(json)
+      }
+    }
   }
 
   /**
    * Gets the definition for a actor test
    */
-  def getActorDefinitions: Action[AnyContent] = authorizedAction { request =>
+  def getActorDefinitions: Action[AnyContent] = authorizedAction.async { request =>
     val specId = ParameterExtractor.requiredQueryParameter(request, Parameters.SPECIFICATION_ID).toLong
-    authorizationManager.canViewActorsBySpecificationId(request, specId)
-    val actors = actorManager.getActorsWithSpecificationId(None, Some(List(specId)))
-    val json = JsonUtil.jsActorsNonCase(actors).toString()
-    ResponseConstructor.constructJsonResponse(json)
+    authorizationManager.canViewActorsBySpecificationId(request, specId).flatMap { _ =>
+      actorManager.getActorsWithSpecificationId(None, Some(List(specId))).map { actors =>
+        val json = JsonUtil.jsActorsNonCase(actors).toString()
+        ResponseConstructor.constructJsonResponse(json)
+      }
+    }
   }
 
   /**
    * Initiates the test case
    */
-  def initiate(test_id:String): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.canExecuteTestCase(request, test_id)
-    ResponseConstructor.constructStringResponse(testbedClient.initiate(test_id.toLong, None))
+  def initiate(test_id:String): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canExecuteTestCase(request, test_id).flatMap { _ =>
+      testbedClient.initiate(test_id.toLong, None).map { response =>
+        ResponseConstructor.constructStringResponse(response)
+      }
+    }
   }
 
-  private def getSessionConfigurationData(domainId: Long): SessionConfigurationData = {
-    SessionConfigurationData(
-      None,
-      testExecutionManager.loadDomainParametersByDomainId(domainId, onlySimple = true),
-      None,
-      None
-    )
+  private def getSessionConfigurationData(domainId: Long): Future[SessionConfigurationData] = {
+    testExecutionManager.loadDomainParametersByDomainId(domainId, onlySimple = true).map { domainParameters =>
+      SessionConfigurationData(
+        None,
+        domainParameters,
+        None,
+        None
+      )
+    }
   }
 
-  private def getSessionConfigurationData(systemId: Long, actorId: Long, onlySimple: Boolean): SessionConfigurationData = {
-    SessionConfigurationData(
-      Some(testExecutionManager.loadConformanceStatementParameters(systemId, actorId, onlySimple)),
-      testExecutionManager.loadDomainParametersByActorId(actorId, onlySimple),
-      Some(testExecutionManager.loadOrganisationParameters(systemId, onlySimple)._2),
-      Some(testExecutionManager.loadSystemParameters(systemId, onlySimple)),
-    )
+  private def getSessionConfigurationData(systemId: Long, actorId: Long, onlySimple: Boolean): Future[SessionConfigurationData] = {
+    testExecutionManager.loadConformanceStatementParameters(systemId, actorId, onlySimple).zip(
+      testExecutionManager.loadDomainParametersByActorId(actorId, onlySimple).zip(
+        testExecutionManager.loadOrganisationParameters(systemId, onlySimple).zip(
+          testExecutionManager.loadSystemParameters(systemId, onlySimple)
+        )
+      )
+    ).map { x =>
+      SessionConfigurationData(
+        Some(x._1),
+        x._2._1,
+        Some(x._2._2._1._2),
+        Some(x._2._2._2)
+      )
+    }
   }
 
   /**
    * Sends the required data on preliminary steps
    */
-  def configure(sessionId:String): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.canExecuteTestSession(request, sessionId)
-    val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
-    val actorId = ParameterExtractor.requiredQueryParameter(request, Parameters.ACTOR_ID).toLong
-    testbedClient.configure(sessionId, getSessionConfigurationData(systemId, actorId, onlySimple = false), None)
-    ResponseConstructor.constructEmptyResponse
+  def configure(sessionId:String): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canExecuteTestSession(request, sessionId).flatMap { _ =>
+      val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
+      val actorId = ParameterExtractor.requiredQueryParameter(request, Parameters.ACTOR_ID).toLong
+      getSessionConfigurationData(systemId, actorId, onlySimple = false).flatMap { config =>
+        testbedClient.configure(sessionId, config, None).map { _ =>
+          ResponseConstructor.constructEmptyResponse
+        }
+      }
+    }
   }
 
-  private def provideInputInternal(sessionId: String, request: RequestWithAttributes[AnyContent], isAdmin: Boolean): Result = {
+  private def provideInputInternal(sessionId: String, request: RequestWithAttributes[AnyContent], isAdmin: Boolean): Future[Result] = {
     val paramMap = ParameterExtractor.paramMap(request)
     val files = ParameterExtractor.extractFiles(request)
     var response: Result = null
@@ -118,22 +156,24 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
           userInput.setFileName(Path.of(fileInfo.name).getFileName.toString)
         }
       }
-      testbedClient.provideInput(sessionId, step, Some(userInputs), isAdmin)
-      // Delete the test interaction entry.
-      testResultManager.deleteTestInteractionsWrapper(sessionId, Some(step))
-      response = ResponseConstructor.constructEmptyResponse
+      testbedClient.provideInput(sessionId, step, Some(userInputs), isAdmin).flatMap { _ =>
+        // Delete the test interaction entry.
+        testResultManager.deleteTestInteractionsWrapper(sessionId, Some(step)).map { _ =>
+          ResponseConstructor.constructEmptyResponse
+        }
+      }
+    } else {
+      Future.successful(response)
     }
-    response
   }
 
   /**
    * Sends inputs to the TestbedService
    */
-  def provideInput(sessionId:String): Action[AnyContent] = authorizedAction { request =>
-    try {
-      authorizationManager.canExecuteTestSession(request, sessionId)
+  def provideInput(sessionId:String): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canExecuteTestSession(request, sessionId).flatMap { _ =>
       provideInputInternal(sessionId, request, isAdmin = false)
-    } finally {
+    }.andThen { _ =>
       if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
     }
   }
@@ -141,11 +181,10 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
   /**
    * Sends inputs to the TestbedService as an administrator
    */
-  def provideInputAdmin(sessionId:String): Action[AnyContent] = authorizedAction { request =>
-    try {
-      authorizationManager.canExecuteTestSession(request, sessionId, requireAdmin = true)
+  def provideInputAdmin(sessionId:String): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canExecuteTestSession(request, sessionId, requireAdmin = true).flatMap { _ =>
       provideInputInternal(sessionId, request, isAdmin = true)
-    } finally {
+    }.andThen { _ =>
       if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
     }
   }
@@ -153,86 +192,118 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
   /**
    * Starts the preliminary phase if test case description has one
    */
-  def initiatePreliminary(session_id:String): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.canExecuteTestSession(request, session_id)
-    testbedClient.initiatePreliminary(session_id)
-    ResponseConstructor.constructEmptyResponse
+  def initiatePreliminary(session_id:String): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canExecuteTestSession(request, session_id).flatMap { _ =>
+      testbedClient.initiatePreliminary(session_id).map { _ =>
+        ResponseConstructor.constructEmptyResponse
+      }
+    }
   }
 
-  private def callSessionStartTrigger(sessionId: String) = {
-    val ids = testResultManager.getCommunityIdForTestSession(sessionId)
-    if (ids.isDefined && ids.get._2.isDefined) {
-      triggerHelper.publishTriggerEvent(new TestSessionStartedEvent(ids.get._2.get, ids.get._1))
+  private def callSessionStartTrigger(sessionId: String): Future[Unit] = {
+    testResultManager.getCommunityIdForTestSession(sessionId).map { ids =>
+      if (ids.isDefined && ids.get._2.isDefined) {
+        triggerHelper.publishTriggerEvent(new TestSessionStartedEvent(ids.get._2.get, ids.get._1))
+      }
     }
   }
 
   /**
    * Starts the test case
    */
-  def start(sessionId:String): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.canExecuteTestSession(request, sessionId)
-    callSessionStartTrigger(sessionId)
-    testbedClient.start(sessionId)
-    ResponseConstructor.constructEmptyResponse
+  def start(sessionId:String): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canExecuteTestSession(request, sessionId).flatMap { _ =>
+      callSessionStartTrigger(sessionId).flatMap { _ =>
+        testbedClient.start(sessionId).map { _ =>
+          ResponseConstructor.constructEmptyResponse
+        }
+      }
+    }
   }
 
   /**
    * Stops the test case
    */
-  def stop(session_id:String): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.canExecuteTestSession(request, session_id)
-    testExecutionManager.endSession(session_id)
-    ResponseConstructor.constructEmptyResponse
+  def stop(session_id:String): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canExecuteTestSession(request, session_id).map { _ =>
+      testExecutionManager.endSession(session_id)
+      ResponseConstructor.constructEmptyResponse
+    }
   }
 
-  def stopAll(): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.canManageAnyTestSession(request)
-    actorSystem.eventStream.publish(TerminateAllSessionsEvent(None, None, None))
-    testResultManager.getAllRunningSessions().foreach { sessionId =>
-      testExecutionManager.endSession(sessionId)
+  def stopAll(): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageAnyTestSession(request).flatMap { _ =>
+      actorSystem.eventStream.publish(TerminateAllSessionsEvent(None, None, None))
+      testResultManager.getAllRunningSessions().flatMap { sessions =>
+        val stopTasks = sessions.map {sessionId =>
+          testExecutionManager.endSession(sessionId)
+        }
+        // Wait for all stop Futures to complete
+        Future.sequence(stopTasks).map { _ =>
+          ResponseConstructor.constructEmptyResponse
+        }
+      }
     }
-    ResponseConstructor.constructEmptyResponse
   }
 
-  def stopAllCommunitySessions(communityId: Long): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.canManageCommunity(request, communityId)
-    actorSystem.eventStream.publish(TerminateAllSessionsEvent(Some(communityId), None, None))
-    testResultManager.getRunningSessionsForCommunity(communityId).foreach { sessionId =>
-      testExecutionManager.endSession(sessionId)
+  def stopAllCommunitySessions(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageCommunity(request, communityId).flatMap { _ =>
+      actorSystem.eventStream.publish(TerminateAllSessionsEvent(Some(communityId), None, None))
+      testResultManager.getRunningSessionsForCommunity(communityId).flatMap { sessions =>
+        val stopTasks = sessions.map { sessionId =>
+          testExecutionManager.endSession(sessionId)
+        }
+        Future.sequence(stopTasks).map { _ =>
+          ResponseConstructor.constructEmptyResponse
+        }
+      }
     }
-    ResponseConstructor.constructEmptyResponse
   }
 
-  def stopAllOrganisationSessions(organisationId: Long): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.canViewOrganisation(request, organisationId)
-    actorSystem.eventStream.publish(TerminateAllSessionsEvent(None, Some(organisationId), None))
-    testResultManager.getRunningSessionsForOrganisation(organisationId).foreach { sessionId =>
-      testExecutionManager.endSession(sessionId)
+  def stopAllOrganisationSessions(organisationId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canViewOrganisation(request, organisationId).flatMap { _ =>
+      actorSystem.eventStream.publish(TerminateAllSessionsEvent(None, Some(organisationId), None))
+      testResultManager.getRunningSessionsForOrganisation(organisationId).flatMap { sessions =>
+        val stopTasks = sessions.map { sessionId =>
+          testExecutionManager.endSession(sessionId)
+        }
+        Future.sequence(stopTasks).map { _ =>
+          ResponseConstructor.constructEmptyResponse
+        }
+      }
     }
-    ResponseConstructor.constructEmptyResponse
   }
 
   /**
    * Restarts the test case with same preliminary data
    */
-  def restart(session_id:String): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.canExecuteTestSession(request, session_id)
-    callSessionStartTrigger(session_id)
-    testbedClient.restart(session_id)
-    ResponseConstructor.constructEmptyResponse
+  def restart(session_id:String): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canExecuteTestSession(request, session_id).flatMap { _ =>
+      callSessionStartTrigger(session_id).flatMap { _ =>
+        testbedClient.restart(session_id).map { _ =>
+          ResponseConstructor.constructEmptyResponse
+        }
+      }
+    }
   }
 
-  def startHeadlessTestSessions(): Action[AnyContent] = authorizedAction { request =>
+  def startHeadlessTestSessions(): Action[AnyContent] = authorizedAction.async { request =>
     val testCaseIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.TEST_CASE_IDS)
     val specId = ParameterExtractor.requiredBodyParameter(request, Parameters.SPECIFICATION_ID).toLong
     val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
     val actorId = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID).toLong
     val forceSequentialExecution = ParameterExtractor.optionalBodyParameter(request, Parameters.SEQUENTIAL).getOrElse("false").toBoolean
     if (testCaseIds.isDefined && testCaseIds.get.nonEmpty) {
-      authorizationManager.canExecuteTestCases(request, testCaseIds.get, specId, systemId, actorId)
-      testExecutionManager.startHeadlessTestSessions(testCaseIds.get, systemId, actorId, None, None, forceSequentialExecution)
+      authorizationManager.canExecuteTestCases(request, testCaseIds.get, specId, systemId, actorId).flatMap { _ =>
+        testExecutionManager.startHeadlessTestSessions(testCaseIds.get, systemId, actorId, None, None, forceSequentialExecution).map { _ =>
+          ResponseConstructor.constructEmptyResponse
+        }
+      }
+    } else {
+      Future.successful {
+        ResponseConstructor.constructEmptyResponse
+      }
     }
-    ResponseConstructor.constructEmptyResponse
   }
 
 }

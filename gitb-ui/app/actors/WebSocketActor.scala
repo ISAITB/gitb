@@ -7,8 +7,7 @@ import play.api.libs.json._
 import javax.inject.{Inject, Singleton}
 import scala.collection.concurrent.TrieMap
 import scala.collection.mutable
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 
 object WebSocketActor {
@@ -16,16 +15,18 @@ object WebSocketActor {
   //references to all the connection handling actors
   //[sessionId -> Actor]
   var webSockets: mutable.Map[String, ActorRef] = TrieMap[String, ActorRef]()
-  var activeSessions: Set[String] = Set[String]()
+  private var activeSessions: Set[String] = Set[String]()
 
 }
 
 @Singleton
-class WebSocketActor @Inject() (actorSystem: ActorSystem, testbedClient: managers.TestbedBackendClient) {
+class WebSocketActor @Inject() (actorSystem: ActorSystem,
+                                testbedClient: managers.TestbedBackendClient)
+                               (implicit ec: ExecutionContext) {
 
   private final val logger = LoggerFactory.getLogger("WebSocketActor")
 
-  def pingTestEngineForClosedConnection(sessionId: String): Unit = {
+  def pingTestEngineForClosedConnection(sessionId: String): Future[Unit] = {
     testbedClient.stop("CONNECTION_CLOSED|"+sessionId)
   }
 
@@ -81,7 +82,7 @@ class WebSocketActor @Inject() (actorSystem: ActorSystem, testbedClient: manager
     broadcast(sessionId, msg, retry = true)
   }
 
-  def broadcastMessage(sessionId:String, msg:String):Boolean = {
+  private def broadcastMessage(sessionId:String, msg:String):Boolean = {
     val webSocketInfo = WebSocketActor.webSockets.get(sessionId)
     if (webSocketInfo.isDefined) {
       // Send message to the ActorRef of the session ID
@@ -161,7 +162,7 @@ class WebSocketActorHandler (out: ActorRef, webSocketActor: WebSocketActor) exte
   }
 
   /**
-   * Called when WebSocket with the client has been closed. Do the clean up
+   * Called when WebSocket with the client has been closed. Do the cleanup.
    */
   override def postStop(): Unit = {
     WebSocketActor.webSockets.synchronized {

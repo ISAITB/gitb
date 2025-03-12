@@ -11,7 +11,7 @@ import play.api.mvc._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ErrorFilter @Inject() (implicit ec: ExecutionContext, implicit val mat: Materializer) extends Filter{
+class ErrorFilter @Inject() (implicit ec: ExecutionContext, implicit val mat: Materializer) extends Filter {
 
   def apply(next: (RequestHeader) => Future[Result])
            (requestHeader: RequestHeader): Future[Result] = {

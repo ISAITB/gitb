@@ -7,23 +7,24 @@ import play.api.db.slick.DatabaseConfigProvider
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class EndPointManager @Inject() (parameterManager: ParameterManager,
-                                 dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+                                 dbConfigProvider: DatabaseConfigProvider)
+                                (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
-  def createEndpointWrapper(endpoint: models.Endpoints): Long = {
-    exec(createEndpoint(endpoint).transactionally)
+  def createEndpointWrapper(endpoint: models.Endpoints): Future[Long] = {
+    DB.run(createEndpoint(endpoint).transactionally)
   }
 
   def createEndpoint(endpoint: models.Endpoints): DBIO[Long] = {
     PersistenceSchema.endpoints.returning(PersistenceSchema.endpoints.map(_.id)) += endpoint
   }
 
-  def checkEndPointExistsForActor(endPointName: String, actorId: Long, otherThanId: Option[Long]): Boolean = {
+  def checkEndPointExistsForActor(endPointName: String, actorId: Long, otherThanId: Option[Long]): Future[Boolean] = {
     var endpointQuery = PersistenceSchema.endpoints
       .filter(_.name === endPointName)
       .filter(_.actor === actorId)
@@ -31,7 +32,7 @@ class EndPointManager @Inject() (parameterManager: ParameterManager,
       endpointQuery = endpointQuery.filter(_.id =!= otherThanId.get)
     }
     val endpoint = endpointQuery.result.headOption
-    exec(endpoint).isDefined
+    DB.run(endpoint).map(_.isDefined)
   }
 
   def deleteEndPointByActor(actorId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
@@ -42,43 +43,49 @@ class EndPointManager @Inject() (parameterManager: ParameterManager,
     action
   }
 
-  def getById(endPointId: Long): Endpoints = {
-    val endpoint = exec(PersistenceSchema.endpoints.filter(_.id === endPointId).result.head)
-    endpoint
+  def getById(endPointId: Long): Future[Endpoints] = {
+    DB.run(PersistenceSchema.endpoints.filter(_.id === endPointId).result.head)
   }
 
-  def deleteEndPoint(endPointId: Long): Unit = {
+  def getDomainIdsOfEndpoints(endpointIds: List[Long]): Future[Seq[Long]] = {
+    DB.run(
+      PersistenceSchema.endpoints
+        .join(PersistenceSchema.actors).on(_.actor === _.id)
+        .filter(_._1.id inSet endpointIds)
+        .map(_._2.domain)
+        .distinct
+        .result
+    )
+  }
+
+  def deleteEndPoint(endPointId: Long): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = delete(endPointId, onSuccessCalls)
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally).map(_ => ())
   }
 
   def delete(endPointId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
-    (for {
+    for {
       endPoint <- PersistenceSchema.endpoints.filter(_.id === endPointId).result.head
       _ <- PersistenceSchema.endpointSupportsTransactions.filter(_.endpoint === endPoint.name).delete
-    } yield()) andThen
-    parameterManager.deleteParameterByEndPoint(endPointId, onSuccessCalls) andThen
-    PersistenceSchema.endpoints.filter(_.id === endPointId).delete
+      _ <- parameterManager.deleteParameterByEndPoint(endPointId, onSuccessCalls)
+      _ <- PersistenceSchema.endpoints.filter(_.id === endPointId).delete
+    } yield()
   }
 
-  def updateEndPointWrapper(endPointId: Long, name: String, description: Option[String]): Unit =  {
-    exec(updateEndPoint(endPointId, name, description).transactionally)
+  def updateEndPointWrapper(endPointId: Long, name: String, description: Option[String]): Future[Unit] =  {
+    DB.run(updateEndPoint(endPointId, name, description).transactionally).map(_ => ())
   }
 
   def updateEndPoint(endPointId: Long, name: String, description: Option[String]): DBIO[_] =  {
-    val q1 = for {e <- PersistenceSchema.endpoints if e.id === endPointId} yield (e.name)
-    val q2 = for {e <- PersistenceSchema.endpoints if e.id === endPointId} yield (e.desc)
-    q1.update(name) andThen
-    q2.update(description)
+    PersistenceSchema.endpoints
+      .filter(_.id === endPointId)
+      .map(x => (x.name, x.desc))
+      .update((name, description))
   }
 
-  def getEndpointsCaseForActor(actorId: Long): List[Endpoints] = {
-    exec(PersistenceSchema.endpoints.filter(_.actor === actorId).sortBy(_.name.asc).result).toList
-  }
-
-  def getEndpointsForActor(actorId: Long): List[Endpoint] = {
-    val result = exec(
+  def getEndpointsForActor(actorId: Long): Future[List[Endpoint]] = {
+    DB.run(
       for {
         endpoints <- PersistenceSchema.endpoints
           .join(PersistenceSchema.actors).on(_.actor === _.id)
@@ -93,27 +100,54 @@ class EndPointManager @Inject() (parameterManager: ParameterManager,
           .map(_._1)
           .result
       } yield (endpoints, parameters)
-    )
-    result._1.map(endpointInfo => {
-      new Endpoint(endpointInfo._1.id, endpointInfo._1.name, endpointInfo._1.desc,
-        Some(endpointInfo._2), // Actor
-        Some(result._2.filter(_.endpoint == endpointInfo._1.id).toList) // Parameters
-      )
-    }).toList
+    ).map { result =>
+      result._1.map(endpointInfo => {
+        new Endpoint(endpointInfo._1.id, endpointInfo._1.name, endpointInfo._1.desc,
+          Some(endpointInfo._2), // Actor
+          Some(result._2.filter(_.endpoint == endpointInfo._1.id).toList) // Parameters
+        )
+      }).toList
+    }
   }
 
-  def getEndpoints(ids: Option[List[Long]]): List[Endpoint] = {
-    val endpoints = new ListBuffer[Endpoint]()
-    val q = ids match {
-      case Some(list) => PersistenceSchema.endpoints.filter(_.id inSet list)
-      case None => PersistenceSchema.endpoints
-    }
-    exec(q.sortBy(_.name.asc).result).map { caseObject =>
-      val actor = exec(PersistenceSchema.actors.filter(_.id === caseObject.actor).result.head)
-      val parameters = exec(PersistenceSchema.parameters.filter(_.endpoint === caseObject.id).sortBy(x => (x.displayOrder.asc, x.name.asc)).result.map(_.toList))
-      endpoints += new Endpoint(caseObject, actor, parameters)
-    }
-    endpoints.toList
+  def getEndpoints(ids: Option[List[Long]]): Future[List[Endpoint]] = {
+    DB.run(
+      for {
+        endpointsWithActors <- PersistenceSchema.endpoints
+          .join(PersistenceSchema.actors).on(_.actor === _.id)
+          .filterOpt(ids)((q, ids) => q._1.id inSet ids)
+          .sortBy(_._1.name.asc)
+          .result
+        parameterMap <- {
+          PersistenceSchema.parameters
+            .filter(_.endpoint inSet endpointsWithActors.map(_._1.id))
+            .sortBy(x => (x.displayOrder.asc, x.name.asc))
+            .result
+            .map { results =>
+              val parameterMap = mutable.HashMap[Long, ListBuffer[models.Parameters]]()
+              results.foreach { parameter =>
+                val buffer = if (parameterMap.contains(parameter.endpoint)) {
+                  parameterMap(parameter.endpoint)
+                } else {
+                  val endpointBuffer = new ListBuffer[models.Parameters]
+                  parameterMap += (parameter.endpoint -> endpointBuffer)
+                  endpointBuffer
+                }
+                buffer += parameter
+              }
+              parameterMap
+            }
+        }
+        results <- {
+          val buffer = new ListBuffer[Endpoint]
+          endpointsWithActors.foreach { endpointWithActor =>
+            val endpointParameters = parameterMap.get(endpointWithActor._1.id).map(_.toList).getOrElse(List())
+            buffer += new Endpoint(endpointWithActor._1, endpointWithActor._2, endpointParameters)
+          }
+          DBIO.successful(buffer.toList)
+        }
+      } yield results
+    )
   }
 
 }

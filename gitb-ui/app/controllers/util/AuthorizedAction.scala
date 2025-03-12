@@ -11,9 +11,9 @@ class AuthorizedAction @Inject() (val parser: BodyParsers.Default) (implicit val
   def wrap[A](request: Request[A], block: RequestWithAttributes[A] => Future[Result]): Future[Result] = {
     // Perform an input sanitization check first. This is done here and not via filter to benefit from the already parsed request body.
     InputSanitizer.check(request)
-    val enhancedRequest = new RequestWithAttributes(scala.collection.mutable.Map.empty[String, String], request)
+    val enhancedRequest = RequestWithAttributes(request)
     block(enhancedRequest).map(result =>
-      if (enhancedRequest.attributes.contains(AuthorizationManager.AUTHORIZATION_CHECKED)) {
+      if (enhancedRequest.authorised) {
         result
       } else {
         throw new IllegalStateException("Authorization check missing for path ["+enhancedRequest.path+"]")

@@ -1,22 +1,24 @@
-package managers
+package managers.triggers
 
 import actors.events.{ConformanceStatementCreatedEvent, OrganisationCreatedEvent, SystemCreatedEvent, TriggerEvent}
+import managers.BaseManager
 import models.Enums.TriggerDataType
 import models.Enums.TriggerDataType.TriggerDataType
 import models.{OrganisationCreationDbInfo, SystemCreationDbInfo}
 import org.apache.pekko.actor.ActorSystem
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
+import slick.dbio.DBIO
+import slick.jdbc.MySQLProfile.api._
 
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class TriggerHelper @Inject() (actorSystem: ActorSystem,
-                               dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
-
-  import dbConfig.profile.api._
+                               dbConfigProvider: DatabaseConfigProvider)
+                              (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
   def publishTriggerEvent[T <: TriggerEvent](event:T):Unit = {
     actorSystem.eventStream.publish(event)
@@ -48,8 +50,8 @@ class TriggerHelper @Inject() (actorSystem: ActorSystem,
     }
   }
 
-  def deleteTrigger(triggerId: Long): Unit = {
-    exec(deleteTriggerInternal(triggerId).transactionally)
+  def deleteTrigger(triggerId: Long): Future[Unit] = {
+    DB.run(deleteTriggerInternal(triggerId).transactionally)
   }
 
   private[managers] def deleteTriggersByCommunity(communityId: Long): DBIO[_] = {
@@ -65,10 +67,12 @@ class TriggerHelper @Inject() (actorSystem: ActorSystem,
     } yield ()
   }
 
-  private[managers] def deleteTriggerInternal(triggerId: Long): DBIO[_] = {
-    deleteTriggerDataInternal(triggerId) andThen
-      deleteTriggerFireExpressionsInternal(triggerId) andThen
-      PersistenceSchema.triggers.filter(_.id === triggerId).delete
+  private[managers] def deleteTriggerInternal(triggerId: Long): DBIO[Unit] = {
+    for {
+      _ <- deleteTriggerDataInternal(triggerId)
+      _ <- deleteTriggerFireExpressionsInternal(triggerId)
+      _ <- PersistenceSchema.triggers.filter(_.id === triggerId).delete
+    } yield ()
   }
 
   private[managers] def deleteTriggerDataByDataType(dataId: Long, dataType: TriggerDataType): DBIO[_] = {

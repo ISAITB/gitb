@@ -39,7 +39,7 @@
         @if (emailEnabled) {
             <div class="mt-3 row pt-0">
                 <div class="col-7 offset-3">
-                    @if (selfRegOptionsVisible) {
+                    @if (selfRegEnabled && selfRegOptionsVisible) {
                         <div class="form-check form-check-inline">
                             <input class="form-check-input" type="checkbox" id="selfRegNotification" name="selfRegNotification" [(ngModel)]="community.selfRegNotification">
                             <label class="form-check-label" for="selfRegNotification">Notify for self-registrations
