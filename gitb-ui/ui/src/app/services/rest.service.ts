@@ -105,7 +105,7 @@ export class RestService {
           if (shown) {
             this.routingService.toHome()
           }
-          return of(error.error)
+          return throwError(() => error)
         }
       ), share())
     } else {
