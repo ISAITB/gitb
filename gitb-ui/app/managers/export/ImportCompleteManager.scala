@@ -2365,7 +2365,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
         toDBIO(dbActions)
       }
       _ <- {
-        processRemaining(ImportItemType.Trigger, ctx,
+        processRemaining(ImportItemType.CommunityResource, ctx,
           (targetKey: String, item: ImportItem) => {
             communityResourceManager.deleteCommunityResourceInternal(Some(item.parentItem.get.targetKey.get.toLong), targetKey.toLong, ctx.onSuccessCalls)
           }

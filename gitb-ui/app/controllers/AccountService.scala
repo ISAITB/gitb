@@ -11,7 +11,7 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.tika.Tika
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc._
-import utils.{ClamAVClient, CryptoUtil, HtmlUtil, JsonUtil}
+import utils.{CryptoUtil, HtmlUtil, JsonUtil}
 
 import java.nio.file.Files
 import javax.inject.Inject
@@ -199,20 +199,10 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction, cc: Controll
             // Size.
             response = ResponseConstructor.constructErrorResponse(ErrorCodes.EMAIL_ATTACHMENT_COUNT_EXCEEDED, s"The total size of attachments cannot exceed ${Configurations.EMAIL_ATTACHMENTS_MAX_SIZE} MBs.", Some("files"))
           } else {
-            var virusScanner: Option[ClamAVClient] = None
-            if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
-              virusScanner = Some(new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT))
-            }
             if (response == null) {
               // Check for viruses.
-              attachments.foreach { attachment =>
-                if (virusScanner.isDefined && response != null) {
-                  val scanResult = virusScanner.get.scan(attachment._2.getContent)
-                  if (!ClamAVClient.isCleanReply(scanResult)) {
-                    logger.warn("Attachment [" + attachment._2.getName + "] found to contain virus.")
-                    response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Attachments failed virus scan.")
-                  }
-                }
+              if (Configurations.ANTIVIRUS_SERVER_ENABLED && ParameterExtractor.virusPresentInFiles(attachments.map(_._2.getContent))) {
+                response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Attachments failed virus scan.")
               }
               // Check (and set) mime types.
               if (response == null) {
