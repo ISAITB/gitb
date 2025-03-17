@@ -146,6 +146,7 @@ class SessionLaunchActor @Inject() (reportManager: ReportManager, testbedBackend
           try {
             val sessionIdToAssign = latestState.assignPredefinedSessionId(testCaseId)
             testSessionId = Some(testbedBackendClient.initiate(testCaseId, sessionIdToAssign))
+            val testCaseInputs = latestState.testCaseInputs(testCaseId)
             latestState = replace(latestState.newForConfiguredTestSession(testCaseId, testSessionId.get))
             if (LOGGER.isDebugEnabled()) LOGGER.debug("Configuring test session [{}] for test case [{}]. {}", testSessionId.get, testCaseDefinitionLoad._1.getId, latestState.statusText())
             webSocketActor.registerActiveTestSession(testSessionId.get)

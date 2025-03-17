@@ -2,7 +2,6 @@ package controllers
 
 import actors.events.TestSessionStartedEvent
 import actors.events.sessions.TerminateAllSessionsEvent
-import org.apache.pekko.actor.ActorSystem
 import com.gitb.tbs._
 import config.Configurations
 import controllers.util._
@@ -10,6 +9,7 @@ import exceptions.ErrorCodes
 import managers._
 import models.SessionConfigurationData
 import org.apache.commons.io.FileUtils
+import org.apache.pekko.actor.ActorSystem
 import play.api.mvc._
 import utils._
 
@@ -102,17 +102,9 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
     val paramMap = ParameterExtractor.paramMap(request)
     val files = ParameterExtractor.extractFiles(request)
     var response: Result = null
-    if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
-      // Check for viruses in the uploaded file(s)
-      val scanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
-      files.foreach { file =>
-        if (response == null) {
-          val scanResult = scanner.scan(file._2.file)
-          if (!ClamAVClient.isCleanReply(scanResult)) {
-            response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Provided file failed virus scan.")
-          }
-        }
-      }
+    // Check for viruses in the uploaded file(s)
+    if (Configurations.ANTIVIRUS_SERVER_ENABLED && ParameterExtractor.virusPresentInFiles(files.map(_._2.file))) {
+      response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Provided file failed virus scan.")
     }
     if (response == null) {
       val inputs = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.INPUTS)
