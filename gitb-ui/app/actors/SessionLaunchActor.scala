@@ -146,12 +146,13 @@ class SessionLaunchActor @Inject() (reportManager: ReportManager, testbedBackend
           try {
             val sessionIdToAssign = latestState.assignPredefinedSessionId(testCaseId)
             testSessionId = Some(testbedBackendClient.initiate(testCaseId, sessionIdToAssign))
-            val testCaseInputs = latestState.testCaseInputs(testCaseId)
+            val testCaseInputs = latestState.testCaseInputs(testCaseId) // Record now as these will change when replacing the state
+            val testCaseConfiguration = getSessionConfigurationData(latestState, onlySimple = false)
             latestState = replace(latestState.newForConfiguredTestSession(testCaseId, testSessionId.get))
             if (LOGGER.isDebugEnabled()) LOGGER.debug("Configuring test session [{}] for test case [{}]. {}", testSessionId.get, testCaseDefinitionLoad._1.getId, latestState.statusText())
             webSocketActor.registerActiveTestSession(testSessionId.get)
             // Send the configure request. The response will be returned asynchronously.
-            testbedBackendClient.configure(testSessionId.get, getSessionConfigurationData(latestState, onlySimple = false), latestState.testCaseInputs(testCaseId))
+            testbedBackendClient.configure(testSessionId.get, testCaseConfiguration, testCaseInputs)
           } catch {
             case e: Exception =>
               if (testSessionId.isEmpty) {
