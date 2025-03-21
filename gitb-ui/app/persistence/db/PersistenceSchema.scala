@@ -319,7 +319,7 @@ object PersistenceSchema {
 
   class TestResultDefinitionsTable(tag: Tag) extends Table[TestResultDefinition](tag, "TestResultDefinitions") {
     def testSessionId = column[String]("test_session_id", O.PrimaryKey)
-    def tpl = column[String]("tpl", O.SqlType("BLOB"))
+    def tpl = column[String]("tpl", O.SqlType("MEDIUMBLOB"))
     def * = (testSessionId, tpl) <> (TestResultDefinition.tupled, TestResultDefinition.unapply)
   }
   val testResultDefinitions = TableQuery[TestResultDefinitionsTable]
