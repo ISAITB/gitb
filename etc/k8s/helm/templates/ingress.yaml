@@ -21,14 +21,14 @@ spec:
   rules:
     - http:
         paths:
-          - path: /itbsrv
+          - path: {{ .Values.ingress.path.srv }}
             pathType: Prefix
             backend:
               service:
                 name: {{ include "srv.serviceName" . }}
                 port:
                   number: {{ include "srv.servicePort" . }}
-          - path: /itb
+          - path: {{ .Values.ingress.path.ui }}
             pathType: Prefix
             backend:
               service:
