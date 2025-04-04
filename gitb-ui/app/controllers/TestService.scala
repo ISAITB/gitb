@@ -225,9 +225,10 @@ class TestService @Inject() (authorizedAction: AuthorizedAction,
    * Stops the test case
    */
   def stop(session_id:String): Action[AnyContent] = authorizedAction.async { request =>
-    authorizationManager.canExecuteTestSession(request, session_id).map { _ =>
-      testExecutionManager.endSession(session_id)
-      ResponseConstructor.constructEmptyResponse
+    authorizationManager.canExecuteTestSession(request, session_id).flatMap { _ =>
+      testExecutionManager.endSession(session_id).map { _ =>
+        ResponseConstructor.constructEmptyResponse
+      }
     }
   }
 
