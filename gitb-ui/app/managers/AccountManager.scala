@@ -5,36 +5,40 @@ import exceptions._
 import models.Enums.UserRole.UserRole
 import models.Enums._
 import models._
-import org.slf4j.LoggerFactory
+import org.slf4j.{Logger, LoggerFactory}
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import utils.{CryptoUtil, EmailUtil}
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager) extends BaseManager(dbConfigProvider) {
+class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
+                               landingPageManager: LandingPageManager,
+                               legalNoticeManager: LegalNoticeManager,
+                               errorTemplateManager: ErrorTemplateManager)
+                              (implicit ec: ExecutionContext)extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
-  def logger = LoggerFactory.getLogger("AccountManager")
+  def logger: Logger = LoggerFactory.getLogger("AccountManager")
 
-  def disconnectAccount(userId: Long, uid: String) = {
+  def disconnectAccount(userId: Long): Future[Int] = {
     val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.ssoUid, u.ssoStatus)
-    exec(q.update(None, UserSSOStatus.NotLinked.id.toShort).transactionally)
+    DB.run(q.update(None, UserSSOStatus.NotLinked.id.toShort).transactionally)
   }
 
-  def migrateAccount(userId: Long, userInfo: ActualUserInfo): Unit = {
+  def migrateAccount(userId: Long, userInfo: ActualUserInfo): Future[Int] = {
     val dbAction = PersistenceSchema.users
         .filter(_.id === userId)
         .map(x => (x.ssoUid, x.ssoEmail, x.name, x.ssoStatus, x.onetimePassword))
         .update((Some(userInfo.uid), Some(userInfo.email), userInfo.firstName+" "+userInfo.lastName, UserSSOStatus.Linked.id.toShort, false))
-    exec(dbAction.transactionally)
+    DB.run(dbAction.transactionally)
   }
 
-  def getUnlinkedUserAccountsForEmail(email: String): List[UserAccount] = {
-    val results = exec(
+  def getUnlinkedUserAccountsForEmail(email: String): Future[List[UserAccount]] = {
+    DB.run(
       PersistenceSchema.users
         .join(PersistenceSchema.organizations).on(_.organization === _.id)
         .join(PersistenceSchema.communities).on(_._2.community === _.id)
@@ -47,8 +51,8 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider, landing
         )
         .result
         .map(_.toList)
-    )
-      .map(x => new UserAccount(
+    ).map { results =>
+      results.map(x => new UserAccount(
         Users(x._1, x._2, x._3, null, onetimePassword = false, x._4, x._5, None, None, UserSSOStatus.NotLinked.id.toShort),
         Organizations(x._5, x._6, x._7, -1, x._8, null, null, null, template = false, None, None, x._9),
         Communities(x._9, x._10, x._11, None, -1, None, None, selfRegNotification = false, interactionNotification = false, None, SelfRegistrationRestriction.NoRestriction.id.toShort, selfRegForceTemplateSelection = false, selfRegForceRequiredProperties = false,
@@ -56,8 +60,8 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider, landing
           allowPostTestOrganisationUpdates = false, allowPostTestSystemUpdates = false, allowPostTestStatementUpdates = false,
           allowAutomationApi = false, "", None,
           None)
-      ))
-    results.sorted
+      )).sorted
+    }
   }
 
   def linkAccountInternal(userId: Long, userInfo: ActualUserInfo): DBIO[_] = {
@@ -65,12 +69,12 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider, landing
     q.update(Some(userInfo.uid), userInfo.firstName+" "+userInfo.lastName, UserSSOStatus.Linked.id.toShort)
   }
 
-  def linkAccount(userId: Long, userInfo: ActualUserInfo) = {
-    exec(linkAccountInternal(userId, userInfo).transactionally)
+  def linkAccount(userId: Long, userInfo: ActualUserInfo): Future[Unit] = {
+    DB.run(linkAccountInternal(userId, userInfo).transactionally).map(_ => ())
   }
 
-  def getUserAccountsForUid(uid: String): List[UserAccount] = {
-    val results = exec(
+  def getUserAccountsForUid(uid: String): Future[List[UserAccount]] = {
+    DB.run(
       PersistenceSchema.users
         .join(PersistenceSchema.organizations).on(_.organization === _.id)
         .join(PersistenceSchema.communities).on(_._2.community === _.id)
@@ -82,21 +86,22 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider, landing
         )
         .result
         .map(_.toList)
-    )
-    .map(x => new UserAccount(
-      Users(x._1, x._2, x._3, null, onetimePassword = false, x._4, x._5, None, None, UserSSOStatus.Linked.id.toShort),
-      Organizations(x._5, x._6, x._7, -1, x._8, null, null, null, template = false, None, None, x._9),
-      Communities(x._9, x._10, x._11, None, -1, None, None, selfRegNotification = false, interactionNotification = false, None, SelfRegistrationRestriction.NoRestriction.id.toShort, selfRegForceTemplateSelection = false, selfRegForceRequiredProperties = false,
-        allowCertificateDownload = false, allowStatementManagement = false, allowSystemManagement = false,
-        allowPostTestOrganisationUpdates = false, allowPostTestSystemUpdates = false, allowPostTestStatementUpdates = false,
-        allowAutomationApi = false, "", None,
-        None)
-    ))
-    results.sorted
+    ).map { results =>
+      results
+        .map(x => new UserAccount(
+          Users(x._1, x._2, x._3, null, onetimePassword = false, x._4, x._5, None, None, UserSSOStatus.Linked.id.toShort),
+          Organizations(x._5, x._6, x._7, -1, x._8, null, null, null, template = false, None, None, x._9),
+          Communities(x._9, x._10, x._11, None, -1, None, None, selfRegNotification = false, interactionNotification = false, None, SelfRegistrationRestriction.NoRestriction.id.toShort, selfRegForceTemplateSelection = false, selfRegForceRequiredProperties = false,
+            allowCertificateDownload = false, allowStatementManagement = false, allowSystemManagement = false,
+            allowPostTestOrganisationUpdates = false, allowPostTestSystemUpdates = false, allowPostTestStatementUpdates = false,
+            allowAutomationApi = false, "", None,
+            None))
+        ).sorted
+    }
   }
 
-  def getVendorProfile(userId: Long) = {
-    val result = exec(for {
+  def getVendorProfile(userId: Long): Future[Organization] = {
+    val result = DB.run(for {
       organisation <- PersistenceSchema.users
         .join(PersistenceSchema.organizations).on(_.organization === _.id)
         .filter(_._1.id === userId)
@@ -132,11 +137,13 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider, landing
         }
       }
     } yield (organisation, landingPage, legalNotice, errorTemplate, communityLegalNoticeAppliesAndExists))
-    new Organization(result._1, result._2.orNull, result._3.orNull, result._4.orNull, result._5)
+    result.map { result =>
+      new Organization(result._1, result._2.orNull, result._3.orNull, result._4.orNull, result._5)
+    }
   }
 
-  def registerUser(adminId: Long, user: Users) = {
-    exec(
+  def registerUser(adminId: Long, user: Users): Future[Unit] = {
+    DB.run(
       (for {
         //1) Get organization id of the admin
         orgId <- PersistenceSchema.users.filter(_.id === adminId).result.headOption
@@ -146,17 +153,19 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider, landing
     )
   }
 
-  def getUserProfile(userId: Long): User = {
-    //1) Get User info
-    val u = exec(PersistenceSchema.users.filter(_.id === userId).result.headOption).get
-    //2) Get Organization info
-    val o = exec(PersistenceSchema.organizations.filter(_.id === u.organization).result.headOption).get
-    //3) Merge User and Organization info
-    val user = new User(u, o)
-    user
+  def getUserProfile(userId: Long): Future[User] = {
+    DB.run(
+      PersistenceSchema.users
+        .join(PersistenceSchema.organizations).on(_.organization === _.id)
+        .filter(_._1.id === userId)
+        .result
+        .head
+    ).map { result =>
+      new User(result._1, result._2)
+    }
   }
 
-  def updateUserProfile(userId: Long, name: Option[String], password: Option[String], oldPassword: Option[String]): Unit = {
+  def updateUserProfile(userId: Long, name: Option[String], password: Option[String], oldPassword: Option[String]): Future[Unit] = {
     val dbAction = for {
       // Update name.
       _ <- {
@@ -192,104 +201,92 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider, landing
         }
       }
     } yield ()
-    exec(dbAction.transactionally)
+    DB.run(dbAction.transactionally)
   }
 
-  def getVendorUsers(userId: Long): List[Users] = {
-    //1) Get organization id of the user first
-    val orgId = exec(PersistenceSchema.users.filter(_.id === userId).result.headOption).get.organization
-
-    //2) Get all users of the organization
-    val users = exec(PersistenceSchema.users.filter(_.organization === orgId)
-      .sortBy(x => (x.role.asc, x.name.asc))
-      .result
-      .map(_.toList))
-    users
+  def getVendorUsers(userId: Long): Future[List[Users]] = {
+    DB.run(for {
+      //1) Get organization id of the user first
+      orgId <- PersistenceSchema.users.filter(_.id === userId).map(_.organization).result.headOption
+      //2) Get all users of the organization
+      users <- PersistenceSchema.users.filter(_.organization === orgId)
+        .sortBy(x => (x.role.asc, x.name.asc))
+        .result
+        .map(_.toList)
+    } yield users)
   }
 
-  def isAdmin(userId: Long) = checkUserRole(userId, UserRole.VendorAdmin, UserRole.SystemAdmin, UserRole.CommunityAdmin)
-
-  def isVendorAdmin(userId: Long) = checkUserRole(userId, UserRole.VendorAdmin)
-
-  def isSystemAdmin(userId: Long) = checkUserRole(userId, UserRole.SystemAdmin)
-
-  def isCommunityAdmin(userId: Long, communityId: Long): Boolean = {
-    getCommunityAdministrators(communityId).map(u => u.id).contains(userId)
+  def isAdmin(userId: Long): Future[Boolean] = {
+    checkUserRole(userId, UserRole.VendorAdmin, UserRole.SystemAdmin, UserRole.CommunityAdmin)
   }
 
-  /**
-    * Gets all community administrators of the given community
-    */
-  private def getCommunityAdministrators(communityId: Long): List[Users] = {
-    val organizations = exec(PersistenceSchema.organizations.filter(_.community === communityId).map(_.id).result.map(_.toList))
-    val users = exec(PersistenceSchema.users.filter(_.organization inSet organizations).filter(_.role === UserRole.CommunityAdmin.id.toShort)
-      .sortBy(_.name.asc)
-      .result
-      .map(_.toList))
-    users
+  def isSystemAdmin(userId: Long): Future[Boolean] = {
+    checkUserRole(userId, UserRole.SystemAdmin)
   }
 
-  def isVendorAdmin(userId: Long, organisationId: Long): Boolean = {
-    val user = getUserById(userId)
-    user.role == UserRole.VendorAdmin.id.toShort && user.organization.get.id == organisationId
+  def checkUserRole(userId: Long, roles: UserRole*): Future[Boolean] = {
+    DB.run(PersistenceSchema.users.filter(_.id === userId).result.headOption).map { user =>
+      user.isDefined && (roles.map(r => r.id.toShort) contains user.get.role)
+    }
   }
 
-  /**
-    * Gets user with specified id
-    */
-  private def getUserById(userId: Long): User = {
-    val u = exec(PersistenceSchema.users.filter(_.id === userId).result.head)
-    val o = exec(PersistenceSchema.organizations.filter(_.id === u.organization).result.head)
-    val user = new User(u, o)
-    user
+  private def getCommunityNameAndEmail(communityId: Long): Future[(String, Option[String])] = {
+    DB.run(
+      PersistenceSchema.communities
+        .filter(_.id === communityId)
+        .map(x => (x.fullname, x.supportEmail))
+        .result
+        .head
+    )
   }
 
-  def checkUserRole(userId: Long, roles: UserRole*): Boolean = {
-    val option = exec(PersistenceSchema.users.filter(_.id === userId).result.headOption)
-    option.isDefined && (roles.map(r => r.id.toShort) contains option.get.role)
-  }
-
-  /**
-    * Gets community with specified id
-    */
-  private def getCommunityById(communityId: Long): Community = {
-    val c = exec(PersistenceSchema.communities.filter(_.id === communityId).result.head)
-    val d = exec(PersistenceSchema.domains.filter(_.id === c.domain).result.headOption)
-    val community = new Community(c, d)
-    community
-  }
-
-  def submitFeedback(userId: Option[Long], userEmail: String, messageTypeId: String, messageTypeDescription: String, messageContent: String, attachments: Array[AttachmentType]): Unit = {
+  def submitFeedback(userId: Option[Long], userEmail: String, messageTypeId: String, messageTypeDescription: String, messageContent: String, attachments: Array[AttachmentType]): Future[Unit] = {
     val subject = "Test Bed feedback form submission"
-    var content = "<h2>Message information</h2>"
+    val baseContent = "<h2>Message information</h2>"
     var toAddresses: Array[String] = Configurations.EMAIL_TO.getOrElse(Array.empty)
     var ccAddresses: Array[String] = null
-    if (userId.isDefined) {
-      val user = getUserProfile(userId.get)
-      var community: Community = null
-      if (user.organization.isDefined) {
-        community = getCommunityById(user.organization.get.community)
-      }
-      content += s"<b>User:</b> ${user.name} [$userEmail]<br/>"
-      if (user.organization.isDefined) {
-        content += s"<b>Organisation:</b> ${user.organization.get.fullname}<br/>"
-      }
-      if (community != null) {
-        content += s"<b>Community:</b> ${community.fullname}<br/>"
-        if (community.supportEmail.isDefined) {
-          toAddresses = Array[String](community.supportEmail.get)
-          if (Configurations.EMAIL_CONTACT_FORM_COPY_DEFAULT_MAILBOX.getOrElse(true) && Configurations.EMAIL_TO.isDefined) {
-            ccAddresses = Configurations.EMAIL_TO.get
+    for {
+      emailData <- {
+        if (userId.isDefined) {
+          getUserProfile(userId.get).flatMap { user =>
+            var newContent = baseContent + s"<b>User:</b> ${user.name} [$userEmail]<br/>"
+            if (user.organization.isDefined) {
+              newContent += s"<b>Organisation:</b> ${user.organization.get.fullname}<br/>"
+            }
+            val communityInfo = if (user.organization.isDefined) {
+              getCommunityNameAndEmail(user.organization.get.community).map(Some(_))
+            } else {
+              Future.successful(None)
+            }
+            communityInfo.map { communityInfo =>
+              if (communityInfo.isDefined) {
+                newContent += s"<b>Community:</b> ${communityInfo.get._1}<br/>"
+                if (communityInfo.get._2.isDefined) {
+                  toAddresses = Array[String](communityInfo.get._2.get)
+                  if (Configurations.EMAIL_CONTACT_FORM_COPY_DEFAULT_MAILBOX.getOrElse(true) && Configurations.EMAIL_TO.isDefined) {
+                    ccAddresses = Configurations.EMAIL_TO.get
+                  }
+                }
+              }
+              (newContent, toAddresses, Some(ccAddresses))
+            }
+          }
+        } else {
+          // Form submission before an account is selected
+          val newContent = baseContent + s"<b>User: </b>$userEmail<br/>"
+          Future.successful {
+            (newContent, toAddresses, None)
           }
         }
       }
-    } else {
-      // Form submission before an account is selected
-      content += s"<b>User: </b>$userEmail<br/>"
-    }
-    content += s"<b>Message type:</b> $messageTypeId - $messageTypeDescription<br/>"
-    content += "<h2>Message content</h2>"
-    content += s"<p>$messageContent</p>"
-    EmailUtil.sendEmail(toAddresses, ccAddresses, subject, content, attachments)
+      _ <- {
+        var finalContent = emailData._1
+        finalContent += s"<b>Message type:</b> $messageTypeId - $messageTypeDescription<br/>"
+        finalContent += "<h2>Message content</h2>"
+        finalContent += s"<p>$messageContent</p>"
+        EmailUtil.sendEmail(emailData._2, emailData._3.orNull, subject, finalContent, attachments)
+        Future.successful(())
+      }
+    } yield ()
   }
 }

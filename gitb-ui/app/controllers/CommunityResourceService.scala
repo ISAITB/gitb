@@ -11,219 +11,230 @@ import play.api.mvc._
 import utils.JsonUtil
 
 import java.io.File
-import java.nio.file.Path
 import javax.inject.Inject
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
-class CommunityResourceService @Inject() (implicit ec: ExecutionContext,
-                                          authorizedAction: AuthorizedAction,
+class CommunityResourceService @Inject() (authorizedAction: AuthorizedAction,
                                           cc: ControllerComponents,
                                           communityResourceManager: CommunityResourceManager,
-                                          authorizationManager: AuthorizationManager
-                                         ) extends AbstractController(cc) {
+                                          authorizationManager: AuthorizationManager)
+                                         (implicit ec: ExecutionContext) extends AbstractController(cc) {
 
-  def createSystemResource(): Action[AnyContent] = authorizedAction { request =>
-    try {
-      authorizationManager.checkTestBedAdmin(request)
+  def createSystemResource(): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.checkTestBedAdmin(request).flatMap { _ =>
       createResourceInternal(Constants.DefaultCommunityId, request)
-    } finally {
+    }.andThen { _ =>
       if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
     }
   }
 
-  def createCommunityResource(communityId: Long): Action[AnyContent] = authorizedAction { request =>
-    try {
-      authorizationManager.canManageCommunity(request, communityId)
+  def createCommunityResource(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageCommunity(request, communityId).flatMap { _ =>
       createResourceInternal(communityId, request)
-    } finally {
+    }.andThen { _ =>
       if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
     }
   }
 
-  private def createResourceInternal(communityId: Long, request: RequestWithAttributes[AnyContent]): Result = {
-    var response: Result = null
+  private def createResourceInternal(communityId: Long, request: RequestWithAttributes[AnyContent]): Future[Result] = {
     val files = ParameterExtractor.extractFiles(request)
     if (files.contains(Parameters.FILE)) {
       val fileToStore = files(Parameters.FILE).file
       if (Configurations.ANTIVIRUS_SERVER_ENABLED && ParameterExtractor.virusPresentInFiles(List(fileToStore))) {
-        response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")
+        Future.successful {
+          ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")
+        }
       } else {
         val paramMap = ParameterExtractor.paramMap(request)
         val resource = ParameterExtractor.extractCommunityResource(paramMap, communityId)
-        communityResourceManager.createCommunityResource(resource, fileToStore)
-        response = ResponseConstructor.constructEmptyResponse
+        communityResourceManager.createCommunityResource(resource, fileToStore).map { _ =>
+          ResponseConstructor.constructEmptyResponse
+        }
       }
     } else {
-      response = ResponseConstructor.constructBadRequestResponse(500, "No file provided for the resource.")
-    }
-    response
-  }
-
-  def updateSystemResource(resourceId: Long): Action[AnyContent] = authorizedAction { request =>
-    try {
-      authorizationManager.checkTestBedAdmin(request)
-      updateResourceInternal(resourceId, request)
-    } finally {
-      if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
-    }
-  }
-
-  def updateCommunityResource(resourceId: Long): Action[AnyContent] = authorizedAction { request =>
-    try {
-      authorizationManager.canManageCommunityResource(request, resourceId)
-      updateResourceInternal(resourceId, request)
-    } finally {
-      if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
-    }
-  }
-
-  private def updateResourceInternal(resourceId: Long, request: RequestWithAttributes[AnyContent]): Result = {
-    var response: Result = null
-    val files = ParameterExtractor.extractFiles(request)
-    var fileToStore: Option[File] = None
-    if (files.contains(Parameters.FILE)) {
-      fileToStore = Some(files(Parameters.FILE).file)
-      if (Configurations.ANTIVIRUS_SERVER_ENABLED && ParameterExtractor.virusPresentInFiles(List(fileToStore.get))) {
-        response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")
+      Future.successful {
+        ResponseConstructor.constructBadRequestResponse(500, "No file provided for the resource.")
       }
     }
-    if (response == null) {
-      val paramMap = ParameterExtractor.paramMap(request)
-      val name = requiredBodyParameter(paramMap, Parameters.NAME)
-      val description = optionalBodyParameter(paramMap, Parameters.DESCRIPTION)
-      communityResourceManager.updateCommunityResource(resourceId, name, description, fileToStore)
-      response = ResponseConstructor.constructEmptyResponse
-    }
-    response
   }
 
-  def uploadSystemResourcesInBulk(): Action[AnyContent] = authorizedAction { request =>
-    try {
-      authorizationManager.checkTestBedAdmin(request)
+  def updateSystemResource(resourceId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.checkTestBedAdmin(request).flatMap { _ =>
+      updateResourceInternal(resourceId, request)
+    }.andThen { _ =>
+      if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
+    }
+  }
+
+  def updateCommunityResource(resourceId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageCommunityResource(request, resourceId).flatMap { _ =>
+      updateResourceInternal(resourceId, request)
+    }.andThen { _ =>
+      if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
+    }
+  }
+
+  private def updateResourceInternal(resourceId: Long, request: RequestWithAttributes[AnyContent]): Future[Result] = {
+    for {
+      fileToStore <- {
+        val files = ParameterExtractor.extractFiles(request)
+        if (files.contains(Parameters.FILE)) {
+          val fileToStore = Some(files(Parameters.FILE).file)
+          if (Configurations.ANTIVIRUS_SERVER_ENABLED && ParameterExtractor.virusPresentInFiles(List(fileToStore.get))) {
+            Future.successful((None, Some(ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan."))))
+          } else {
+            Future.successful((fileToStore, None))
+          }
+        } else {
+          Future.successful((None, None))
+        }
+      }
+      result <- {
+        if (fileToStore._2.isEmpty) {
+          val paramMap = ParameterExtractor.paramMap(request)
+          val name = requiredBodyParameter(paramMap, Parameters.NAME)
+          val description = optionalBodyParameter(paramMap, Parameters.DESCRIPTION)
+          communityResourceManager.updateCommunityResource(resourceId, name, description, fileToStore._1).map { _ =>
+            ResponseConstructor.constructEmptyResponse
+          }
+        } else {
+          Future.successful(fileToStore._2.get)
+        }
+      }
+    } yield result
+  }
+
+  def uploadSystemResourcesInBulk(): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.checkTestBedAdmin(request).flatMap { _ =>
       uploadResourcesInBulkInternal(Constants.DefaultCommunityId, request)
-    } finally {
+    }.andThen { _ =>
       if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
     }
   }
 
-  def uploadCommunityResourcesInBulk(communityId: Long): Action[AnyContent] = authorizedAction { request =>
-    try {
-      authorizationManager.canManageCommunity(request, communityId)
+  def uploadCommunityResourcesInBulk(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageCommunity(request, communityId).flatMap { _ =>
       uploadResourcesInBulkInternal(communityId, request)
-    } finally {
+    }.andThen { _ =>
       if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
     }
   }
 
-  private def uploadResourcesInBulkInternal(communityId: Long, request: RequestWithAttributes[AnyContent]): Result = {
-    var response: Result = null
+  private def uploadResourcesInBulkInternal(communityId: Long, request: RequestWithAttributes[AnyContent]): Future[Result] = {
     val files = ParameterExtractor.extractFiles(request)
     if (files.contains(Parameters.FILE)) {
       val fileToStore = files(Parameters.FILE).file
       if (Configurations.ANTIVIRUS_SERVER_ENABLED && ParameterExtractor.virusPresentInFiles(List(fileToStore))) {
-        response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")
+        Future.successful {
+          ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")
+        }
       } else {
         val paramMap = ParameterExtractor.paramMap(request)
         val updateMatchingResources = ParameterExtractor.optionalBooleanBodyParameter(paramMap, Parameters.UPDATE).getOrElse(true)
-        val counts = communityResourceManager.saveCommunityResourcesInBulk(communityId, fileToStore, updateMatchingResources)
-        response = ResponseConstructor.constructJsonResponse(JsonUtil.jsUpdateCounts(counts._1, counts._2).toString())
+        communityResourceManager.saveCommunityResourcesInBulk(communityId, fileToStore, updateMatchingResources).map { counts =>
+          ResponseConstructor.constructJsonResponse(JsonUtil.jsUpdateCounts(counts._1, counts._2).toString())
+        }
       }
     } else {
-      response = ResponseConstructor.constructBadRequestResponse(500, "No file provided for the resource.")
+      Future.successful {
+        ResponseConstructor.constructBadRequestResponse(500, "No file provided for the resource.")
+      }
     }
-    response
   }
 
-  def deleteSystemResource(resourceId: Long): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.checkTestBedAdmin(request)
-    deleteResourceInternal(resourceId)
+  def deleteSystemResource(resourceId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.checkTestBedAdmin(request).flatMap { _ =>
+      deleteResourceInternal(resourceId)
+    }
   }
 
-  def deleteCommunityResource(resourceId: Long): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.canManageCommunityResource(request, resourceId)
-    deleteResourceInternal(resourceId)
+  def deleteCommunityResource(resourceId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageCommunityResource(request, resourceId).flatMap { _ =>
+      deleteResourceInternal(resourceId)
+    }
   }
 
-  private def deleteResourceInternal(resourceId: Long): Result = {
-    communityResourceManager.deleteCommunityResource(resourceId)
-    ResponseConstructor.constructEmptyResponse
+  private def deleteResourceInternal(resourceId: Long): Future[Result] = {
+    communityResourceManager.deleteCommunityResource(resourceId).map { _ =>
+      ResponseConstructor.constructEmptyResponse
+    }
   }
 
-  def deleteSystemResources(): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.checkTestBedAdmin(request)
-    deleteResourcesInternal(Constants.DefaultCommunityId, request)
+  def deleteSystemResources(): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.checkTestBedAdmin(request).flatMap { _ =>
+      deleteResourcesInternal(Constants.DefaultCommunityId, request)
+    }
   }
 
-  def deleteCommunityResources(communityId: Long): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.canManageCommunity(request, communityId)
-    deleteResourcesInternal(communityId, request)
+  def deleteCommunityResources(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageCommunity(request, communityId).flatMap { _ =>
+      deleteResourcesInternal(communityId, request)
+    }
   }
 
-  private def deleteResourcesInternal(communityId: Long, request: RequestWithAttributes[AnyContent]): Result = {
+  private def deleteResourcesInternal(communityId: Long, request: RequestWithAttributes[AnyContent]): Future[Result] = {
     val resourceIds = ParameterExtractor.extractIdsBodyParameter(request)
-    communityResourceManager.deleteCommunityResources(communityId, resourceIds)
-    ResponseConstructor.constructEmptyResponse
+    communityResourceManager.deleteCommunityResources(communityId, resourceIds).map { _ =>
+      ResponseConstructor.constructEmptyResponse
+    }
   }
 
-  def downloadSystemResources(): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.checkTestBedAdmin(request)
-    downloadResourcesInternal(Constants.DefaultCommunityId, request)
+  def downloadSystemResources(): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.checkTestBedAdmin(request).flatMap { _ =>
+      downloadResourcesInternal(Constants.DefaultCommunityId, request)
+    }
   }
 
-  def downloadCommunityResources(communityId: Long): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.canManageCommunity(request, communityId)
-    downloadResourcesInternal(communityId, request)
+  def downloadCommunityResources(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageCommunity(request, communityId).flatMap { _ =>
+      downloadResourcesInternal(communityId, request)
+    }
   }
 
-  private def downloadResourcesInternal(communityId: Long, request: RequestWithAttributes[AnyContent]): Result = {
+  private def downloadResourcesInternal(communityId: Long, request: RequestWithAttributes[AnyContent]): Future[Result] = {
     val filter = ParameterExtractor.optionalQueryParameter(request, Parameters.FILTER)
-    var archive: Option[Path] = None
-    try {
-      archive = Some(communityResourceManager.createCommunityResourceArchive(communityId, filter))
+    communityResourceManager.createCommunityResourceArchive(communityId, filter).map { archive =>
       Ok.sendFile(
-        content = archive.get.toFile,
+        content = archive.toFile,
         fileName = _ => Some("resources.zip"),
         onClose = () => {
-          if (archive.isDefined) {
-            FileUtils.deleteQuietly(archive.get.toFile)
-          }
+          FileUtils.deleteQuietly(archive.toFile)
         }
       )
-    } catch {
-      case e: Exception =>
-        if (archive.isDefined) {
-          FileUtils.deleteQuietly(archive.get.toFile)
-        }
-        throw e
     }
   }
 
-  def getSystemResources(): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.checkTestBedAdmin(request)
-    getResourcesInternal(Constants.DefaultCommunityId)
+  def getSystemResources(): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.checkTestBedAdmin(request).flatMap { _ =>
+      getResourcesInternal(Constants.DefaultCommunityId)
+    }
   }
 
-  def getCommunityResources(communityId: Long): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.canManageCommunity(request, communityId)
-    getResourcesInternal(communityId)
+  def getCommunityResources(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageCommunity(request, communityId).flatMap { _ =>
+      getResourcesInternal(communityId)
+    }
   }
 
-  private def getResourcesInternal(communityId: Long): Result = {
-    val result = communityResourceManager.getCommunityResources(communityId)
-    ResponseConstructor.constructJsonResponse(JsonUtil.jsCommunityResources(result).toString)
+  private def getResourcesInternal(communityId: Long): Future[Result] = {
+    communityResourceManager.getCommunityResources(communityId).map { result =>
+      ResponseConstructor.constructJsonResponse(JsonUtil.jsCommunityResources(result).toString)
+    }
   }
 
-  def searchSystemResources(): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.checkTestBedAdmin(request)
-    searchResourcesInternal(Constants.DefaultCommunityId, request)
+  def searchSystemResources(): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.checkTestBedAdmin(request).flatMap { _ =>
+      searchResourcesInternal(Constants.DefaultCommunityId, request)
+    }
   }
 
-  def searchCommunityResources(communityId: Long): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.canManageCommunity(request, communityId)
-    searchResourcesInternal(communityId, request)
+  def searchCommunityResources(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageCommunity(request, communityId).flatMap { _ =>
+      searchResourcesInternal(communityId, request)
+    }
   }
 
-  private def searchResourcesInternal(communityId: Long, request: RequestWithAttributes[AnyContent]): Result = {
+  private def searchResourcesInternal(communityId: Long, request: RequestWithAttributes[AnyContent]): Future[Result] = {
     val filter = ParameterExtractor.optionalQueryParameter(request, Parameters.FILTER)
     val page = ParameterExtractor.optionalQueryParameter(request, Parameters.PAGE) match {
       case Some(v) => v.toLong
@@ -233,29 +244,40 @@ class CommunityResourceService @Inject() (implicit ec: ExecutionContext,
       case Some(v) => v.toLong
       case None => 10L
     }
-    val result = communityResourceManager.searchCommunityResources(communityId, page, limit, filter)
-    ResponseConstructor.constructJsonResponse(JsonUtil.jsCommunityResourceSearchResult(result._1, result._2).toString)
-  }
-
-  def downloadSystemResourceByName(resourceName: String): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.canViewSystemResource(request)
-    val resource = communityResourceManager.getSystemResourceFileByName(resourceName)
-    downloadResourceByNameInternal(resourceName, resource)
-  }
-
-  def downloadCommunityResourceByName(resourceName: String): Action[AnyContent] = authorizedAction { request =>
-    val communityId = request.cookies.get("implicitCommunity").map(_.value.toLong)
-    if (communityId.isDefined) {
-      authorizationManager.canViewCommunityBasic(request, communityId.get)
-    } else {
-      authorizationManager.canViewOwnCommunity(request)
+    communityResourceManager.searchCommunityResources(communityId, page, limit, filter).map { result =>
+      ResponseConstructor.constructJsonResponse(JsonUtil.jsCommunityResourceSearchResult(result._1, result._2).toString)
     }
-    val userId = authorizationManager.getRequestUserId(request)
-    val resource = communityResourceManager.getCommunityResourceFileByName(communityId, userId, resourceName)
-    downloadResourceByNameInternal(resourceName, resource)
   }
 
-  private def downloadResourceByNameInternal(resourceName: String, resourceFile: Option[File]) = {
+  def downloadSystemResourceByName(resourceName: String): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canViewSystemResource(request).flatMap { _ =>
+      communityResourceManager.getSystemResourceFileByName(resourceName).map { resource =>
+        downloadResourceByNameInternal(resourceName, resource)
+      }
+    }
+  }
+
+  def downloadCommunityResourceByName(resourceName: String): Action[AnyContent] = authorizedAction.async { request =>
+    val communityId = request.cookies.get("implicitCommunity").map(_.value.toLong)
+    for {
+      _ <- {
+        if (communityId.isDefined) {
+          authorizationManager.canViewCommunityBasic(request, communityId.get)
+        } else {
+          authorizationManager.canViewOwnCommunity(request)
+        }
+      }
+      result <- {
+        authorizationManager.getUserIdFromRequest(request).flatMap { userId =>
+          communityResourceManager.getCommunityResourceFileByName(communityId, userId, resourceName).map { resource =>
+            downloadResourceByNameInternal(resourceName, resource)
+          }
+        }
+      }
+    } yield result
+  }
+
+  private def downloadResourceByNameInternal(resourceName: String, resourceFile: Option[File]): Result = {
     if (resourceFile.isDefined && resourceFile.get.exists()) {
       Ok.sendFile(
         content = resourceFile.get,
@@ -266,25 +288,28 @@ class CommunityResourceService @Inject() (implicit ec: ExecutionContext,
     }
   }
 
-  def downloadSystemResourceById(resourceId: Long): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.checkTestBedAdmin(request)
-    downloadResourceByIdInternal(resourceId)
+  def downloadSystemResourceById(resourceId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.checkTestBedAdmin(request).flatMap { _ =>
+      downloadResourceByIdInternal(resourceId)
+    }
   }
 
-  def downloadCommunityResourceById(resourceId: Long): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.canManageCommunityResource(request, resourceId)
-    downloadResourceByIdInternal(resourceId)
+  def downloadCommunityResourceById(resourceId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageCommunityResource(request, resourceId).flatMap { _ =>
+      downloadResourceByIdInternal(resourceId)
+    }
   }
 
-  private def downloadResourceByIdInternal(resourceId: Long): Result = {
-    val resource = communityResourceManager.getCommunityResourceFileById(resourceId)
-    if (resource._2.exists()) {
-      Ok.sendFile(
-        content = resource._2,
-        fileName = _ => Some(resource._1),
-      )
-    } else {
-      NotFound
+  private def downloadResourceByIdInternal(resourceId: Long): Future[Result] = {
+    communityResourceManager.getCommunityResourceFileById(resourceId).map { resource =>
+      if (resource._2.exists()) {
+        Ok.sendFile(
+          content = resource._2,
+          fileName = _ => Some(resource._1),
+        )
+      } else {
+        NotFound
+      }
     }
   }
 

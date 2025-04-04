@@ -3,17 +3,16 @@ package managers
 import exceptions.{AutomationApiException, ErrorCodes}
 import models.Enums.TestResultStatus
 import models.automation.{CreateActorRequest, UpdateActorRequest}
-
-import javax.inject.{Inject, Singleton}
 import models.{Actor, Actors, BadgeInfo, Badges}
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import slick.dbio.DBIOAction
 import utils.{CryptoUtil, RepositoryUtils}
 
+import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
@@ -21,14 +20,15 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
                               endPointManager: EndPointManager,
                               optionManager: OptionManager,
                               automationApiHelper: AutomationApiHelper,
-                              dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+                              dbConfigProvider: DatabaseConfigProvider)
+                             (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
   /**
    * Checks if actor exists
    */
-  def checkActorExistsInSpecification(actorId: String, specificationId: Long, otherThanId: Option[Long]): Boolean = {
+  def checkActorExistsInSpecification(actorId: String, specificationId: Long, otherThanId: Option[Long]): Future[Boolean] = {
     var query = PersistenceSchema.actors
       .join(PersistenceSchema.specificationHasActors).on(_.id === _.actorId)
     query = query
@@ -38,20 +38,20 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
       query = query.filter(_._1.id =!= otherThanId.get)
     }
     val actor = query.result.headOption
-    exec(actor).isDefined
+    DB.run(actor).map(_.isDefined)
   }
 
-  def deleteActorWrapper(actorId: Long): Unit = {
+  def deleteActorWrapper(actorId: Long): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = deleteActor(actorId, onSuccessCalls)
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally).map(_ => ())
   }
 
   def deleteActor(actorId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
     delete(actorId, onSuccessCalls)
   }
 
-  def deleteActorThroughAutomationApi(actorApiKey: String, communityApiKey: String): Unit = {
+  def deleteActorThroughAutomationApi(actorApiKey: String, communityApiKey: String): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val action = for {
       domainId <- automationApiHelper.getDomainIdByCommunity(communityApiKey)
@@ -69,39 +69,38 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
         }
       }
     } yield ()
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
   }
 
   private def delete(actorId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
     for {
       specificationId <- PersistenceSchema.specificationHasActors.filter(_.actorId === actorId).map(_.specId).result.head
+      _ <- testResultManager.updateForDeletedActor(actorId)
+      _ <- PersistenceSchema.testCaseHasActors.filter(_.actor === actorId).delete
+      _ <- PersistenceSchema.testSuiteHasActors.filter(_.actor === actorId).delete
+      _ <- PersistenceSchema.systemImplementsActors.filter(_.actorId === actorId).delete
+      _ <- PersistenceSchema.specificationHasActors.filter(_.actorId === actorId).delete
+      _ <- PersistenceSchema.endpointSupportsTransactions.filter(_.actorId === actorId).delete
+      _ <- endPointManager.deleteEndPointByActor(actorId, onSuccessCalls)
+      _ <- optionManager.deleteOptionByActor(actorId)
+      _ <- PersistenceSchema.conformanceResults.filter(_.actor === actorId).delete
+      _ <- PersistenceSchema.conformanceSnapshotResults.filter(_.actorId === actorId).map(_.actorId).update(actorId * -1)
+      _ <- PersistenceSchema.conformanceSnapshotActors.filter(_.id === actorId).map(_.id).update(actorId * -1)
+      _ <- PersistenceSchema.actors.filter(_.id === actorId).delete
       _ <- {
-        testResultManager.updateForDeletedActor(actorId) andThen
-          PersistenceSchema.testCaseHasActors.filter(_.actor === actorId).delete andThen
-          PersistenceSchema.testSuiteHasActors.filter(_.actor === actorId).delete andThen
-          PersistenceSchema.systemImplementsActors.filter(_.actorId === actorId).delete andThen
-          PersistenceSchema.specificationHasActors.filter(_.actorId === actorId).delete andThen
-          PersistenceSchema.endpointSupportsTransactions.filter(_.actorId === actorId).delete andThen
-          endPointManager.deleteEndPointByActor(actorId, onSuccessCalls) andThen
-          optionManager.deleteOptionByActor(actorId) andThen
-          PersistenceSchema.conformanceResults.filter(_.actor === actorId).delete andThen
-          PersistenceSchema.conformanceSnapshotResults.filter(_.actorId === actorId).map(_.actorId).update(actorId * -1) andThen
-          PersistenceSchema.conformanceSnapshotActors.filter(_.id === actorId).map(_.id).update(actorId * -1) andThen
-          PersistenceSchema.actors.filter(_.id === actorId).delete andThen {
-            onSuccessCalls += (() => repositoryUtils.deleteActorBadges(specificationId, actorId))
-            DBIO.successful(())
-        }
+        onSuccessCalls += (() => repositoryUtils.deleteActorBadges(specificationId, actorId))
+        DBIO.successful(())
       }
     } yield ()
   }
 
-  def updateActorWrapper(id: Long, actorId: String, name: String, description: Option[String], reportMetadata: Option[String], default: Option[Boolean], hidden: Boolean, displayOrder: Option[Short], specificationId: Long, badges: BadgeInfo): Unit = {
+  def updateActorWrapper(id: Long, actorId: String, name: String, description: Option[String], reportMetadata: Option[String], default: Option[Boolean], hidden: Boolean, displayOrder: Option[Short], specificationId: Long, badges: BadgeInfo): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = updateActor(id, actorId, name, description, reportMetadata, default, hidden, displayOrder, specificationId, None, checkApiKeyUniqueness = false, Some(badges), onSuccessCalls)
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally).map(_ => ())
   }
 
-  def updateActorThroughAutomationApi(updateRequest: UpdateActorRequest): Unit = {
+  def updateActorThroughAutomationApi(updateRequest: UpdateActorRequest): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val action = for {
       domainId <- automationApiHelper.getDomainIdByCommunity(updateRequest.communityApiKey)
@@ -148,7 +147,7 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
         onSuccessCalls
       )
     } yield ()
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
   }
 
   def updateActor(id: Long, actorId: String, name: String, description: Option[String], reportMetadata: Option[String], default: Option[Boolean], hidden: Boolean, displayOrder: Option[Short], specificationId: Long, apiKey: Option[String], checkApiKeyUniqueness: Boolean, badges: Option[BadgeInfo], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
@@ -158,7 +157,7 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
     } else {
       defaultToSet = default
     }
-    (for  {
+    for  {
       _ <- {
         val q1 = for {a <- PersistenceSchema.actors if a.id === id} yield (a.name, a.desc, a.reportMetadata, a.actorId, a.default, a.hidden, a.displayOrder)
         q1.update((name, description, reportMetadata, actorId, defaultToSet, hidden, displayOrder))
@@ -192,12 +191,22 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
         }
         DBIO.successful(())
       }
-    } yield()) andThen
-    testResultManager.updateForUpdatedActor(id, name)
+      _ <- testResultManager.updateForUpdatedActor(id, name)
+    } yield()
   }
 
-  def getById(id: Long): Option[Actors] = {
-    exec(PersistenceSchema.actors.filter(_.id === id).result.headOption)
+  def getById(id: Long): Future[Option[Actors]] = {
+    DB.run(PersistenceSchema.actors.filter(_.id === id).result.headOption)
+  }
+
+  def getActorDomainIds(actorIds: Iterable[Long]): Future[Set[Long]] = {
+    DB.run(
+      PersistenceSchema.actors
+        .filter(_.id inSet actorIds)
+        .map(_.domain)
+        .distinct
+        .result
+    ).map(_.toSet)
   }
 
   private def setOtherActorsAsNonDefault(defaultActorId: Long, specificationId: Long) = {
@@ -218,10 +227,10 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
     actions
   }
 
-  def createActorWrapper(actor: Actors, specificationId: Long, badges: BadgeInfo): Long = {
+  def createActorWrapper(actor: Actors, specificationId: Long, badges: BadgeInfo): Future[Long] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = createActor(actor, specificationId, checkApiKeyUniqueness = false, Some(badges), onSuccessCalls)
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
   }
 
   private def ensureActorIdentifierIsUnique(specificationId: Long, actorIdentifier: String, actorIdToIgnore: Option[Long]): DBIO[_] = {
@@ -243,7 +252,7 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
     } yield ()
   }
 
-  def createActorThroughAutomationApi(input: CreateActorRequest): String = {
+  def createActorThroughAutomationApi(input: CreateActorRequest): Future[String] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val action = for {
       domainId <- automationApiHelper.getDomainIdByCommunity(input.communityApiKey)
@@ -289,7 +298,7 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
         )
       }
     } yield apiKeyToUse
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
   }
 
   def createActor(actor: Actors, specificationId: Long, checkApiKeyUniqueness: Boolean, badges: Option[BadgeInfo], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Long] = {
@@ -346,8 +355,8 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
     if (badges.failure.isDefined) repositoryUtils.setActorBadge(specId, actorId, badges.failure.get, TestResultStatus.FAILURE.toString, forReport)
   }
 
-  def searchActors(domainIds: Option[List[Long]], specificationIds: Option[List[Long]], specificationGroupIds: Option[List[Long]]): List[Actor] = {
-    exec(
+  def searchActors(domainIds: Option[List[Long]], specificationIds: Option[List[Long]], specificationGroupIds: Option[List[Long]]): Future[List[Actor]] = {
+    DB.run(
       PersistenceSchema.actors
         .join(PersistenceSchema.specificationHasActors).on(_.id === _.actorId)
         .join(PersistenceSchema.specifications).on(_._2.specId === _.id)
@@ -357,38 +366,41 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
         .sortBy(_._1._1.actorId.asc)
         .map(x => (x._1._1, x._1._2.specId))
         .result
-    ).map(x => new Actor(x._1, null, null, x._2)).toList
+    ).map { results =>
+      results.map(x => new Actor(x._1, null, null, x._2)).toList
+    }
   }
 
-  def getActorIdsOfSpecifications(specIds: List[Long]): Map[Long, Set[String]] = {
-    val results = exec(
+  def getActorIdsOfSpecifications(specIds: List[Long]): Future[Map[Long, Set[String]]] = {
+    DB.run(
       PersistenceSchema.actors
         .join(PersistenceSchema.specificationHasActors).on(_.id === _.actorId)
         .filter(_._2.specId inSet specIds)
         .map(x => (x._1.actorId, x._2.specId))
         .result
         .map(_.toList)
-    )
-    val specMap = mutable.Map[Long, mutable.Set[String]]()
-    results.foreach { result =>
-      var actorIdSet = specMap.get(result._2)
-      if (actorIdSet.isEmpty) {
-        actorIdSet = Some(mutable.Set[String]())
-        specMap += (result._2 -> actorIdSet.get)
+    ).map { results =>
+      val specMap = mutable.Map[Long, mutable.Set[String]]()
+      results.foreach { result =>
+        var actorIdSet = specMap.get(result._2)
+        if (actorIdSet.isEmpty) {
+          actorIdSet = Some(mutable.Set[String]())
+          specMap += (result._2 -> actorIdSet.get)
+        }
+        actorIdSet.get += result._1
       }
-      actorIdSet.get += result._1
-    }
-    // Add empty sets for spec IDs with no results.
-    specIds.foreach { specId =>
-      if (!specMap.contains(specId)) {
-        specMap += (specId -> mutable.Set[String]())
+      // Add empty sets for spec IDs with no results.
+      specIds.foreach { specId =>
+        if (!specMap.contains(specId)) {
+          specMap += (specId -> mutable.Set[String]())
+        }
       }
+      specMap.iterator.toMap.map(x => (x._1, x._2.toSet))
     }
-    specMap.iterator.toMap.map(x => (x._1, x._2.toSet))
   }
 
-  def getActorsWithSpecificationId(actorIds: Option[List[Long]], specIds: Option[List[Long]]): List[Actor] = {
-    exec(
+  def getActorsWithSpecificationId(actorIds: Option[List[Long]], specIds: Option[List[Long]]): Future[List[Actor]] = {
+    DB.run(
       PersistenceSchema.actors
         .join(PersistenceSchema.specificationHasActors).on(_.id === _.actorId)
         .filterOpt(actorIds)((q, ids) => q._1.id inSet ids)
@@ -396,7 +408,9 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
         .sortBy(_._1.actorId.asc)
         .map(x => (x._1, x._2.specId))
         .result
-    ).map(x => new Actor(x._1, null, null, x._2)).toList
+    ).map { results =>
+      results.map(x => new Actor(x._1, null, null, x._2)).toList
+    }
   }
 
 }

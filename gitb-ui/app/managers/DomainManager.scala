@@ -10,7 +10,7 @@ import utils.{CryptoUtil, RepositoryUtils}
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class DomainManager @Inject() (domainParameterManager: DomainParameterManager,
@@ -20,27 +20,37 @@ class DomainManager @Inject() (domainParameterManager: DomainParameterManager,
                                specificationManager: SpecificationManager,
                                testResultManager: TestResultManager,
                                automationApiHelper: AutomationApiHelper,
-                               dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+                               dbConfigProvider: DatabaseConfigProvider)
+                              (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
-  def getDomainById(id: Long): Domain = {
-    exec(PersistenceSchema.domains.filter(_.id === id).result.head)
+  def getDomainById(id: Long): Future[Domain] = {
+    DB.run(PersistenceSchema.domains.filter(_.id === id).result.head)
   }
 
-  def getByApiKey(apiKey: String): Option[Domain] = {
-    exec(PersistenceSchema.domains.filter(_.apiKey === apiKey).result.headOption)
+  def getDomainByIdAsync(id: Long): Future[Domain] = {
+    DB.run(PersistenceSchema.domains.filter(_.id === id).result.head)
+  }
+
+  def getByApiKey(apiKey: String): Future[Option[Domain]] = {
+    DB.run(PersistenceSchema.domains.filter(_.apiKey === apiKey).result.headOption)
   }
 
   /**
    * Checks if domain exists
    */
-  def checkDomainExists(domainId: Long): Boolean = {
-    exec(PersistenceSchema.domains.filter(_.id === domainId).result.headOption).isDefined
+  def checkDomainExists(domainId: Long): Future[Boolean] = {
+    DB.run(
+      PersistenceSchema.domains
+        .filter(_.id === domainId)
+        .exists
+        .result
+    )
   }
 
-  def getDomains(ids: Option[List[Long]] = None): List[Domain] = {
-    exec(
+  def getDomains(ids: Option[List[Long]] = None): Future[List[Domain]] = {
+    DB.run(
       PersistenceSchema.domains
         .filterOpt(ids)((q, ids) => q.id inSet ids)
         .sortBy(_.shortname.asc)
@@ -49,8 +59,8 @@ class DomainManager @Inject() (domainParameterManager: DomainParameterManager,
     )
   }
 
-  def getCommunityDomain(communityId: Long): Option[Domain] = {
-    exec(
+  def getCommunityDomain(communityId: Long): Future[Option[Domain]] = {
+    DB.run(
       PersistenceSchema.communities
       .join(PersistenceSchema.domains).on(_.domain === _.id)
       .filter(_._1.id === communityId)
@@ -60,8 +70,8 @@ class DomainManager @Inject() (domainParameterManager: DomainParameterManager,
     )
   }
 
-  def getDomainOfActor(actorId: Long): Domain = {
-    exec(
+  def getDomainOfActor(actorId: Long): Future[Domain] = {
+    DB.run(
       PersistenceSchema.actors
         .join(PersistenceSchema.domains).on(_.domain === _.id)
         .filter(_._1.id === actorId)
@@ -71,8 +81,8 @@ class DomainManager @Inject() (domainParameterManager: DomainParameterManager,
     )
   }
 
-  def getDomainOfSpecification(specificationId: Long): Domain = {
-    exec(
+  def getDomainOfSpecification(specificationId: Long): Future[Domain] = {
+    DB.run(
       PersistenceSchema.domains
         .join(PersistenceSchema.specifications).on(_.id === _.domain)
         .filter(_._2.id === specificationId)
@@ -114,19 +124,19 @@ class DomainManager @Inject() (domainParameterManager: DomainParameterManager,
     } yield (newDomainId, apiKeyToUse)
   }
 
-  def createDomain(domain: Domain): Long = {
-    exec(createDomainInternal(domain, checkApiKeyUniqueness = false))._1
+  def createDomain(domain: Domain): Future[Long] = {
+    DB.run(createDomainInternal(domain, checkApiKeyUniqueness = false)).map(_._1)
   }
 
-  def createDomain(domain: Domain, checkApiKeyUniqueness: Boolean): String = {
-    exec(createDomainInternal(domain, checkApiKeyUniqueness))._2
+  def createDomain(domain: Domain, checkApiKeyUniqueness: Boolean): Future[String] = {
+    DB.run(createDomainInternal(domain, checkApiKeyUniqueness)).map(_._2)
   }
 
-  def updateDomain(domainId: Long, shortName: String, fullName: String, description: Option[String], reportMetadata: Option[String]): Unit = {
-    exec(updateDomainInternal(domainId, shortName, fullName, description, reportMetadata, None).transactionally)
+  def updateDomain(domainId: Long, shortName: String, fullName: String, description: Option[String], reportMetadata: Option[String]): Future[Unit] = {
+    DB.run(updateDomainInternal(domainId, shortName, fullName, description, reportMetadata, None).transactionally).map(_ => ())
   }
 
-  def updateDomainThroughAutomationApi(updateRequest: UpdateDomainRequest): Unit = {
+  def updateDomainThroughAutomationApi(updateRequest: UpdateDomainRequest): Future[Unit] = {
     val action = for {
       domain <- {
         if (updateRequest.domainApiKey.isDefined) {
@@ -159,7 +169,7 @@ class DomainManager @Inject() (domainParameterManager: DomainParameterManager,
         }
       }
     } yield ()
-    exec(action.transactionally)
+    DB.run(action.transactionally)
   }
 
   def updateDomainInternal(domainId: Long, shortName: String, fullName: String, description: Option[String], reportMetadata: Option[String], apiKey: Option[String]): DBIO[_] = {
@@ -230,22 +240,21 @@ class DomainManager @Inject() (domainParameterManager: DomainParameterManager,
     } yield ()
   }
 
-  def deleteDomain(domain: Long): Unit = {
+  def deleteDomain(domain: Long): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val action = deleteDomainInternal(domain, onSuccessCalls)
-    exec(
-      dbActionFinalisation(Some(onSuccessCalls), None, action)
-        .transactionally
-    )
+    DB.run(
+      dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally
+    ).map(_ => ())
   }
 
-  def deleteDomainThroughAutomationApi(apiKey: String): Unit = {
+  def deleteDomainThroughAutomationApi(apiKey: String): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val action = for {
       domainId <- automationApiHelper.getDomainIdByDomainApiKey(apiKey)
       _ <- deleteDomainInternal(domainId, onSuccessCalls)
     } yield ()
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
   }
 
   private def deleteTransactionByDomain(domainId: Long) = {

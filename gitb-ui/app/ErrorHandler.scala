@@ -9,18 +9,21 @@ import play.api.mvc.Results.{BadRequest, NotFound}
 import play.api.mvc.{RequestHeader, Result}
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class ErrorHandler @Inject() (legalNoticeManager: LegalNoticeManager) extends HttpErrorHandler {
+class ErrorHandler @Inject() (legalNoticeManager: LegalNoticeManager)
+                             (implicit ec: ExecutionContext) extends HttpErrorHandler {
 
   private def logger = LoggerFactory.getLogger(this.getClass)
 
   override def onClientError(request: RequestHeader, statusCode: Int, message: String): Future[Result] = {
-    if (statusCode == 404) {
-      Future.successful(NotFound)
-    } else {
-      Future.successful(ResponseConstructor.constructServerError("Unexpected error", message, Some("")))
+    Future.successful {
+      if (statusCode == 404) {
+        NotFound
+      } else {
+        ResponseConstructor.constructServerError("Unexpected error", message, Some(""))
+      }
     }
   }
 
@@ -34,34 +37,34 @@ class ErrorHandler @Inject() (legalNoticeManager: LegalNoticeManager) extends Ht
       val result = ResponseConstructor.constructServerError("Unexpected error", "An unexpected error occurred.", Some(errorIdentifier))
       Future.successful(result)
     } else {
-      var legalNoticeContent = ""
-      var hasDefaultLegalNotice = false
-      try {
-        val legalNotice = legalNoticeManager.getCommunityDefaultLegalNotice(Constants.DefaultCommunityId)
+      legalNoticeManager.getCommunityDefaultLegalNotice(Constants.DefaultCommunityId).map { legalNotice =>
         if (legalNotice.isDefined && !StringUtils.isBlank(legalNotice.get.content)) {
-          hasDefaultLegalNotice = true
-          legalNoticeContent = legalNotice.get.content
+          Some(legalNotice.get.content)
+        } else {
+          None
         }
-      } catch {
-        case e:Exception =>
+      }.map { legalNoticeContent =>
+        val versionInfo = Configurations.versionInfo()
+        BadRequest(views.html.error(
+          new ErrorPageData(
+            versionInfo,
+            versionInfo.replace(' ', '_'),
+            legalNoticeContent.isDefined,
+            legalNoticeContent.getOrElse(""),
+            Configurations.USERGUIDE_OU,
+            errorIdentifier,
+            Configurations.TESTBED_HOME_LINK,
+            Configurations.RELEASE_INFO_ENABLED,
+            Configurations.RELEASE_INFO_ADDRESS,
+            Configurations.PUBLIC_CONTEXT_ROOT_WITH_SLASH,
+            Configurations.restApiLink()
+          ))
+        )
+      }.recover {
+        case e: Exception =>
           logger.error("Error while creating error page content", e)
+          BadRequest
       }
-      val versionInfo = Configurations.versionInfo()
-      Future.successful(BadRequest(views.html.error(
-        new ErrorPageData(
-          versionInfo,
-          versionInfo.replace(' ', '_'),
-          hasDefaultLegalNotice,
-          legalNoticeContent,
-          Configurations.USERGUIDE_OU,
-          errorIdentifier,
-          Configurations.TESTBED_HOME_LINK,
-          Configurations.RELEASE_INFO_ENABLED,
-          Configurations.RELEASE_INFO_ADDRESS,
-          Configurations.PUBLIC_CONTEXT_ROOT_WITH_SLASH,
-          Configurations.restApiLink()
-        )))
-      )
     }
   }
 

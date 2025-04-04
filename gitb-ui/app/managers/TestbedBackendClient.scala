@@ -1,6 +1,6 @@
 package managers
 
-import com.gitb.core.{ActorConfiguration, AnyContent}
+import com.gitb.core.AnyContent
 import com.gitb.tbs._
 import config.Configurations
 import jaxws.HeaderHandlerResolver
@@ -8,10 +8,11 @@ import models.SessionConfigurationData
 import org.slf4j.{Logger, LoggerFactory}
 
 import java.net.URI
-import javax.inject.Singleton
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class TestbedBackendClient {
+class TestbedBackendClient @Inject() (implicit ec: ExecutionContext) {
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[TestbedBackendClient])
 
@@ -31,72 +32,89 @@ class TestbedBackendClient {
     portInternal
   }
 
-  def initiate(testCaseId: Long, sessionId: Option[String]): String = {
-    val requestData: InitiateRequest = new InitiateRequest
-    requestData.setTcId(testCaseId.toString)
-    if (sessionId.isDefined) {
-      requestData.setTcInstanceId(sessionId.get)
+  def initiate(testCaseId: Long, sessionId: Option[String]): Future[String] = {
+    Future {
+      val requestData: InitiateRequest = new InitiateRequest
+      requestData.setTcId(testCaseId.toString)
+      if (sessionId.isDefined) {
+        requestData.setTcInstanceId(sessionId.get)
+      }
+      val response = service().initiate(requestData)
+      response.getTcInstanceId
     }
-    val response = service().initiate(requestData)
-    response.getTcInstanceId
   }
 
-  def configure(sessionId: String, configuration: SessionConfigurationData, inputs: Option[List[AnyContent]]): Unit = {
-    val cRequest: ConfigureRequest = new ConfigureRequest
-    cRequest.setTcInstanceId(sessionId)
-    configuration.apply(cRequest.getConfigs)
-    if (inputs.isDefined) {
-      import scala.jdk.CollectionConverters._
-      cRequest.getInputs.addAll(inputs.get.asJava)
+  def configure(sessionId: String, configuration: SessionConfigurationData, inputs: Option[List[AnyContent]]): Future[Unit] = {
+    Future {
+      val cRequest: ConfigureRequest = new ConfigureRequest
+      cRequest.setTcInstanceId(sessionId)
+      configuration.apply(cRequest.getConfigs)
+      if (inputs.isDefined) {
+        import scala.jdk.CollectionConverters._
+        cRequest.getInputs.addAll(inputs.get.asJava)
+      }
+      service().configure(cRequest)
     }
-    service().configure(cRequest)
   }
 
-  def restart(sessionId: String): Unit = {
-    val bRequest: BasicCommand = new BasicCommand
-    bRequest.setTcInstanceId(sessionId)
-    service().restart(bRequest)
-  }
-
-  def stop(sessionId: String): Unit = {
-    val request: BasicCommand = new BasicCommand
-    request.setTcInstanceId(sessionId)
-    service().stop(request)
-  }
-
-  def start(sessionId: String): Unit = {
-    val bRequest: BasicCommand = new BasicCommand
-    bRequest.setTcInstanceId(sessionId)
-    service().start(bRequest)
-  }
-
-  def provideInput(sessionId: String, stepId: String, userInputs: Option[List[UserInput]], isAdmin: Boolean): Unit = {
-    val pRequest: ProvideInputRequest = new ProvideInputRequest
-    pRequest.setTcInstanceId(sessionId)
-    pRequest.setStepId(stepId)
-    pRequest.setAdmin(isAdmin)
-    if (userInputs.nonEmpty) {
-      // User inputs are empty when this is a headless session
-      import scala.jdk.CollectionConverters._
-      pRequest.getInput.addAll(userInputs.get.asJava)
+  def restart(sessionId: String): Future[Unit] = {
+    Future {
+      val bRequest: BasicCommand = new BasicCommand
+      bRequest.setTcInstanceId(sessionId)
+      service().restart(bRequest)
     }
-    service().provideInput(pRequest)
   }
 
-  def getTestCaseDefinition(testId:String, sessionId: Option[String], configuration: SessionConfigurationData): GetTestCaseDefinitionResponse = {
-    val request = new GetTestCaseDefinitionRequest
-    request.setTcId(testId)
-    if (sessionId.isDefined) {
-      request.setTcInstanceId(sessionId.get)
+  def stop(sessionId: String): Future[Unit] = {
+    Future {
+      val request: BasicCommand = new BasicCommand
+      request.setTcInstanceId(sessionId)
+      service().stop(request)
     }
-    configuration.apply(request.getConfigs)
-    service().getTestCaseDefinition(request)
   }
 
-  def initiatePreliminary(sessionId: String): Unit = {
-    val bRequest:BasicCommand = new BasicCommand
-    bRequest.setTcInstanceId(sessionId)
-    service().initiatePreliminary(bRequest)
+  def start(sessionId: String): Future[Unit] = {
+    logger.info("Starting test session [{}]", sessionId)
+    Future {
+      val bRequest: BasicCommand = new BasicCommand
+      bRequest.setTcInstanceId(sessionId)
+      service().start(bRequest)
+    }
+  }
+
+  def provideInput(sessionId: String, stepId: String, userInputs: Option[List[UserInput]], isAdmin: Boolean): Future[Unit] = {
+    Future {
+      val pRequest: ProvideInputRequest = new ProvideInputRequest
+      pRequest.setTcInstanceId(sessionId)
+      pRequest.setStepId(stepId)
+      pRequest.setAdmin(isAdmin)
+      if (userInputs.nonEmpty) {
+        // User inputs are empty when this is a headless session
+        import scala.jdk.CollectionConverters._
+        pRequest.getInput.addAll(userInputs.get.asJava)
+      }
+      service().provideInput(pRequest)
+    }
+  }
+
+  def getTestCaseDefinition(testId:String, sessionId: Option[String], configuration: SessionConfigurationData): Future[GetTestCaseDefinitionResponse] = {
+    Future {
+      val request = new GetTestCaseDefinitionRequest
+      request.setTcId(testId)
+      if (sessionId.isDefined) {
+        request.setTcInstanceId(sessionId.get)
+      }
+      configuration.apply(request.getConfigs)
+      service().getTestCaseDefinition(request)
+    }
+  }
+
+  def initiatePreliminary(sessionId: String): Future[Unit] = {
+    Future {
+      val bRequest:BasicCommand = new BasicCommand
+      bRequest.setTcInstanceId(sessionId)
+      service().initiatePreliminary(bRequest)
+    }
   }
 
 }

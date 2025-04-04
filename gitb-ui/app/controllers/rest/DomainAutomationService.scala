@@ -7,6 +7,7 @@ import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import utils.JsonUtil
 
 import javax.inject.{Inject, Singleton}
+import scala.concurrent.ExecutionContext
 
 @Singleton
 class DomainAutomationService @Inject() (authorizedAction: AuthorizedAction,
@@ -14,117 +15,129 @@ class DomainAutomationService @Inject() (authorizedAction: AuthorizedAction,
                                          domainManager: DomainManager,
                                          specificationManager: SpecificationManager,
                                          actorManager: ActorManager,
-                                         authorizationManager: AuthorizationManager) extends BaseAutomationService(cc) {
+                                         authorizationManager: AuthorizationManager)
+                                        (implicit ec: ExecutionContext) extends BaseAutomationService(cc) {
 
-  def createDomain(): Action[AnyContent] = authorizedAction { request =>
-    processAsJson(request, Some(authorizationManager.canCreateDomainThroughAutomationApi), { body =>
+  def createDomain(): Action[AnyContent] = authorizedAction.async { request =>
+    processAsJson(request, () => authorizationManager.canCreateDomainThroughAutomationApi(request), { body =>
       val domain = JsonUtil.parseJsCreateDomainRequest(body).toDomain()
-      val savedApiKey = domainManager.createDomain(domain, checkApiKeyUniqueness = true)
-      ResponseConstructor.constructJsonResponse(JsonUtil.jsApiKey(savedApiKey).toString())
+      domainManager.createDomain(domain, checkApiKeyUniqueness = true).map { savedApiKey =>
+        ResponseConstructor.constructJsonResponse(JsonUtil.jsApiKey(savedApiKey).toString())
+      }
     })
   }
 
-  def deleteDomain(domain: String): Action[AnyContent] = authorizedAction { request =>
-    process(request, Some(authorizationManager.canDeleteDomainThroughAutomationApi), { _ =>
-      domainManager.deleteDomainThroughAutomationApi(domain)
-      ResponseConstructor.constructEmptyResponse
+  def deleteDomain(domain: String): Action[AnyContent] = authorizedAction.async { request =>
+    process(() => authorizationManager.canDeleteDomainThroughAutomationApi(request), { _ =>
+      domainManager.deleteDomainThroughAutomationApi(domain).map { _ =>
+        ResponseConstructor.constructEmptyResponse
+      }
     })
   }
 
-  def updateDomain(domain: String): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.canUpdateDomainThroughAutomationApi(request, Some(domain))
-    processAsJson(request, None, { body =>
+  def updateDomain(domain: String): Action[AnyContent] = authorizedAction.async { request =>
+    processAsJson(request, () => authorizationManager.canUpdateDomainThroughAutomationApi(request, Some(domain)), { body =>
       val input = JsonUtil.parseJsUpdateDomainRequest(body, Some(domain), None)
-      domainManager.updateDomainThroughAutomationApi(input)
-      ResponseConstructor.constructEmptyResponse
+      domainManager.updateDomainThroughAutomationApi(input).map { _ =>
+        ResponseConstructor.constructEmptyResponse
+      }
     })
   }
 
-  def updateDomainOfCommunity(): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.canUpdateDomainThroughAutomationApi(request, None)
-    processAsJson(request, None, { body =>
+  def updateDomainOfCommunity(): Action[AnyContent] = authorizedAction.async { request =>
+    processAsJson(request, () => authorizationManager.canUpdateDomainThroughAutomationApi(request, None), { body =>
       val communityKey = request.headers.get(Constants.AutomationHeader).get
       val input = JsonUtil.parseJsUpdateDomainRequest(body, None, Some(communityKey))
-      domainManager.updateDomainThroughAutomationApi(input)
-      ResponseConstructor.constructEmptyResponse
+      domainManager.updateDomainThroughAutomationApi(input).map { _ =>
+        ResponseConstructor.constructEmptyResponse
+      }
     })
   }
 
-  def createSpecificationGroup(): Action[AnyContent] = authorizedAction { request =>
-    processAsJson(request, Some(authorizationManager.canManageSpecificationGroupThroughAutomationApi), { body =>
+  def createSpecificationGroup(): Action[AnyContent] = authorizedAction.async { request =>
+    processAsJson(request, () => authorizationManager.canManageSpecificationGroupThroughAutomationApi(request), { body =>
       val communityKey = request.headers.get(Constants.AutomationHeader).get
       val input = JsonUtil.parseJsCreateSpecificationGroupRequest(body, communityKey)
-      val savedApiKey = specificationManager.createSpecificationGroupThroughAutomationApi(input)
-      ResponseConstructor.constructJsonResponse(JsonUtil.jsApiKey(savedApiKey).toString())
+      specificationManager.createSpecificationGroupThroughAutomationApi(input).map { savedApiKey =>
+        ResponseConstructor.constructJsonResponse(JsonUtil.jsApiKey(savedApiKey).toString())
+      }
     })
   }
 
-  def deleteSpecificationGroup(group: String): Action[AnyContent] = authorizedAction { request =>
-    process(request, Some(authorizationManager.canManageSpecificationGroupThroughAutomationApi), { _ =>
+  def deleteSpecificationGroup(group: String): Action[AnyContent] = authorizedAction.async { request =>
+    process(() => authorizationManager.canManageSpecificationGroupThroughAutomationApi(request), { _ =>
       val communityKey = request.headers.get(Constants.AutomationHeader).get
-      specificationManager.deleteSpecificationGroupThroughAutomationApi(group, communityKey)
-      ResponseConstructor.constructEmptyResponse
+      specificationManager.deleteSpecificationGroupThroughAutomationApi(group, communityKey).map { _ =>
+        ResponseConstructor.constructEmptyResponse
+      }
     })
   }
 
-  def updateSpecificationGroup(group: String): Action[AnyContent] = authorizedAction { request =>
-    processAsJson(request, Some(authorizationManager.canManageSpecificationGroupThroughAutomationApi), { body =>
+  def updateSpecificationGroup(group: String): Action[AnyContent] = authorizedAction.async { request =>
+    processAsJson(request, () => authorizationManager.canManageSpecificationGroupThroughAutomationApi(request), { body =>
       val communityKey = request.headers.get(Constants.AutomationHeader).get
       val input = JsonUtil.parseJsUpdateSpecificationGroupRequest(body, group, communityKey)
-      specificationManager.updateSpecificationGroupThroughAutomationApi(input)
-      ResponseConstructor.constructEmptyResponse
+      specificationManager.updateSpecificationGroupThroughAutomationApi(input).map { _ =>
+        ResponseConstructor.constructEmptyResponse
+      }
     })
   }
 
-  def createSpecification(): Action[AnyContent] = authorizedAction { request =>
-    processAsJson(request, Some(authorizationManager.canManageSpecificationThroughAutomationApi), { body =>
+  def createSpecification(): Action[AnyContent] = authorizedAction.async { request =>
+    processAsJson(request, () => authorizationManager.canManageSpecificationThroughAutomationApi(request), { body =>
       val communityKey = request.headers.get(Constants.AutomationHeader).get
       val input = JsonUtil.parseJsCreateSpecificationRequest(body, communityKey)
-      val savedApiKey = specificationManager.createSpecificationThroughAutomationApi(input)
-      ResponseConstructor.constructJsonResponse(JsonUtil.jsApiKey(savedApiKey).toString())
+      specificationManager.createSpecificationThroughAutomationApi(input).map { savedApiKey =>
+        ResponseConstructor.constructJsonResponse(JsonUtil.jsApiKey(savedApiKey).toString())
+      }
     })
   }
 
-  def deleteSpecification(specification: String): Action[AnyContent] = authorizedAction { request =>
-    process(request, Some(authorizationManager.canManageSpecificationThroughAutomationApi), { _ =>
+  def deleteSpecification(specification: String): Action[AnyContent] = authorizedAction.async { request =>
+    process(() => authorizationManager.canManageSpecificationThroughAutomationApi(request), { _ =>
       val communityKey = request.headers.get(Constants.AutomationHeader).get
-      specificationManager.deleteSpecificationThroughAutomationApi(specification, communityKey)
-      ResponseConstructor.constructEmptyResponse
+      specificationManager.deleteSpecificationThroughAutomationApi(specification, communityKey).map { _ =>
+        ResponseConstructor.constructEmptyResponse
+      }
     })
   }
 
-  def updateSpecification(specification: String): Action[AnyContent] = authorizedAction { request =>
-    processAsJson(request, Some(authorizationManager.canManageSpecificationThroughAutomationApi), { body =>
+  def updateSpecification(specification: String): Action[AnyContent] = authorizedAction.async { request =>
+    processAsJson(request, () => authorizationManager.canManageSpecificationThroughAutomationApi(request), { body =>
       val communityKey = request.headers.get(Constants.AutomationHeader).get
       val input = JsonUtil.parseJsUpdateSpecificationRequest(body, specification, communityKey)
-      specificationManager.updateSpecificationThroughAutomationApi(input)
-      ResponseConstructor.constructEmptyResponse
+      specificationManager.updateSpecificationThroughAutomationApi(input).map { _ =>
+        ResponseConstructor.constructEmptyResponse
+      }
     })
   }
 
-  def createActor(): Action[AnyContent] = authorizedAction { request =>
-    processAsJson(request, Some(authorizationManager.canManageActorThroughAutomationApi), { body =>
+  def createActor(): Action[AnyContent] = authorizedAction.async { request =>
+    processAsJson(request, () => authorizationManager.canManageActorThroughAutomationApi(request), { body =>
       val communityKey = request.headers.get(Constants.AutomationHeader).get
       val input = JsonUtil.parseJsCreateActorRequest(body, communityKey)
-      val savedApiKey = actorManager.createActorThroughAutomationApi(input)
-      ResponseConstructor.constructJsonResponse(JsonUtil.jsApiKey(savedApiKey).toString())
+      actorManager.createActorThroughAutomationApi(input).map { savedApiKey =>
+        ResponseConstructor.constructJsonResponse(JsonUtil.jsApiKey(savedApiKey).toString())
+      }
     })
   }
 
-  def deleteActor(actor: String): Action[AnyContent] = authorizedAction { request =>
-    process(request, Some(authorizationManager.canManageActorThroughAutomationApi), { _ =>
+  def deleteActor(actor: String): Action[AnyContent] = authorizedAction.async { request =>
+    process(() => authorizationManager.canManageActorThroughAutomationApi(request), { _ =>
       val communityKey = request.headers.get(Constants.AutomationHeader).get
-      actorManager.deleteActorThroughAutomationApi(actor, communityKey)
-      ResponseConstructor.constructEmptyResponse
+      actorManager.deleteActorThroughAutomationApi(actor, communityKey).map { _ =>
+        ResponseConstructor.constructEmptyResponse
+      }
     })
   }
 
-  def updateActor(actor: String): Action[AnyContent] = authorizedAction { request =>
-    processAsJson(request, Some(authorizationManager.canManageActorThroughAutomationApi), { body =>
+  def updateActor(actor: String): Action[AnyContent] = authorizedAction.async { request =>
+    processAsJson(request, () => authorizationManager.canManageActorThroughAutomationApi(request), { body =>
       val communityKey = request.headers.get(Constants.AutomationHeader).get
       val input = JsonUtil.parseJsUpdateActorRequest(body, actor, communityKey)
-      actorManager.updateActorThroughAutomationApi(input)
-      ResponseConstructor.constructEmptyResponse
+      actorManager.updateActorThroughAutomationApi(input).map { _ =>
+        ResponseConstructor.constructEmptyResponse
+      }
     })
   }
 

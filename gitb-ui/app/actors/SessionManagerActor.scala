@@ -4,6 +4,7 @@ import actors.events.sessions.{PrepareTestSessionsEvent, TerminateSessionsEvent,
 import org.apache.pekko.actor.{Actor, ActorContext, ActorRef}
 import com.gitb.tbs.{ConfigurationCompleteRequest, InteractWithUsersRequest, TestStepStatus}
 import org.apache.commons.lang3.StringUtils
+import org.apache.pekko.actor.Status.Failure
 import org.slf4j.LoggerFactory
 import play.api.libs.concurrent.InjectedActorSupport
 import utils.JacksonUtil
@@ -43,11 +44,13 @@ class SessionManagerActor @Inject() (sessionUpdateActorFactory: SessionUpdateAct
       prepareTestSessions(msg)
     case msg: TerminateSessionsEvent =>
       terminateSessions(msg)
+    case msg: Failure =>
+      LOGGER.error("Session manager actor caught unexpected error", msg.cause)
     case msg: Object =>
       LOGGER.warn(s"Session manager received unexpected message [${msg.getClass.getName}]")
   }
 
-  private def notifyConfigurationCompleteEvent(event: ConfigurationCompleteRequest) = {
+  private def notifyConfigurationCompleteEvent(event: ConfigurationCompleteRequest): Unit = {
     try {
       // Notify open web sockets in case this is an interactive session
       webSocketActor.broadcast(event.getTcInstanceId, JacksonUtil.serializeConfigurationCompleteRequest(event))
@@ -63,7 +66,6 @@ class SessionManagerActor @Inject() (sessionUpdateActorFactory: SessionUpdateAct
     context.child("session-"+sessionId) match {
       case Some(actorRef) => actorRef
       case None =>
-        LOGGER.info("Starting test session ["+sessionId+"]")
         implicit val context: ActorContext = this.context
         injectedChild(sessionUpdateActorFactory(), "session-"+sessionId, props => props.withDispatcher("session-actor-dispatcher"))
     }

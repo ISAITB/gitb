@@ -6,10 +6,11 @@ import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class LegalNoticeManager @Inject() (dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class LegalNoticeManager @Inject() (dbConfigProvider: DatabaseConfigProvider)
+                                   (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -18,8 +19,8 @@ class LegalNoticeManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ex
   /**
    * Gets all landing pages for the specified community without rich content
    */
-  def getLegalNoticesByCommunityWithoutContent(communityId: Long): List[LegalNotice] = {
-    exec(
+  def getLegalNoticesByCommunityWithoutContent(communityId: Long): Future[List[LegalNotice]] = {
+    DB.run(
       PersistenceSchema.legalNotices
         .filter(_.community === communityId)
         .map(x => (x.id, x.name, x.description, x.default))
@@ -32,52 +33,66 @@ class LegalNoticeManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ex
   /**
    * Gets all legal notices for the specified community
    */
-  def getLegalNoticesByCommunity(communityId: Long): List[LegalNotices] = {
-    val legalNotices = exec(PersistenceSchema.legalNotices.filter(_.community === communityId)
+  def getLegalNoticesByCommunity(communityId: Long): Future[List[LegalNotices]] = {
+    DB.run(
+      PersistenceSchema.legalNotices
+        .filter(_.community === communityId)
         .sortBy(_.name.asc)
-      .result.map(_.toList))
-    legalNotices
+        .result
+        .map(_.toList)
+    )
   }
 
   /**
    * Checks if name exists
    */
-  def checkUniqueName(name: String, communityId: Long): Boolean = {
-    val firstOption = exec(PersistenceSchema.legalNotices.filter(_.community === communityId).filter(_.name === name).result.headOption)
-    firstOption.isEmpty
+  def checkUniqueName(name: String, communityId: Long): Future[Boolean] = {
+    DB.run(
+      PersistenceSchema.legalNotices
+        .filter(_.community === communityId)
+        .filter(_.name === name)
+        .exists
+        .result
+    )
   }
 
   /**
     * Checks if a legal notice with given name exists for the given community
     */
-  def checkUniqueName(noticeId: Long, name: String, communityId: Long): Boolean = {
-    val firstOption = exec(PersistenceSchema.legalNotices.filter(_.community === communityId).filter(_.id =!= noticeId).filter(_.name === name).result.headOption)
-    firstOption.isEmpty
+  def checkUniqueName(noticeId: Long, name: String, communityId: Long): Future[Boolean] = {
+    DB.run(
+      PersistenceSchema.legalNotices
+        .filter(_.community === communityId)
+        .filter(_.id =!= noticeId)
+        .filter(_.name === name)
+        .exists
+        .result
+    )
   }
 
   /**
    * Gets legal notice with specified id
    */
-  def getLegalNoticeById(noticeId: Long): Option[LegalNotices] = {
-    exec(getLegalNoticeByIdInternal(noticeId))
+  def getLegalNoticeById(noticeId: Long): Future[Option[LegalNotices]] = {
+    DB.run(getLegalNoticeByIdInternal(noticeId))
   }
 
   def getLegalNoticeByIdInternal(noticeId: Long): DBIO[Option[LegalNotices]] = {
     PersistenceSchema.legalNotices.filter(_.id === noticeId).result.headOption
   }
 
-  def getCommunityId(noticeId: Long): Long = {
-    exec(PersistenceSchema.legalNotices.filter(_.id === noticeId).map(x => x.community).result.head)
+  def getCommunityId(noticeId: Long): Future[Long] = {
+    DB.run(PersistenceSchema.legalNotices.filter(_.id === noticeId).map(x => x.community).result.head)
   }
 
   /**
    * Creates new legal notice
    */
-  def createLegalNotice(legalNotice: LegalNotices) = {
-    exec(createLegalNoticeInternal(legalNotice).transactionally)
+  def createLegalNotice(legalNotice: LegalNotices): Future[Long] = {
+    DB.run(createLegalNoticeInternal(legalNotice).transactionally)
   }
 
-  def createLegalNoticeInternal(legalNotice: LegalNotices) = {
+  def createLegalNoticeInternal(legalNotice: LegalNotices): DBIO[Long] = {
     for {
       _ <- {
         val actions = new ListBuffer[DBIO[_]]()
@@ -98,11 +113,11 @@ class LegalNoticeManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ex
   /**
    * Updates legal notice
    */
-  def updateLegalNotice(noticeId: Long, name: String, description: Option[String], content: String, default: Boolean, communityId: Long) = {
-    exec(updateLegalNoticeInternal(noticeId, name, description, content, default, communityId).transactionally)
+  def updateLegalNotice(noticeId: Long, name: String, description: Option[String], content: String, default: Boolean, communityId: Long): Future[Unit] = {
+    DB.run(updateLegalNoticeInternal(noticeId, name, description, content, default, communityId).transactionally)
   }
 
-  def updateLegalNoticeInternal(noticeId: Long, name: String, description: Option[String], content: String, default: Boolean, communityId: Long) = {
+  def updateLegalNoticeInternal(noticeId: Long, name: String, description: Option[String], content: String, default: Boolean, communityId: Long): DBIO[Unit] = {
     for {
       legalNoticeOption <- PersistenceSchema.legalNotices.filter(_.id === noticeId).result.headOption
       _ <- {
@@ -142,8 +157,8 @@ class LegalNoticeManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ex
   /**
    * Deletes legal notice with specified id
    */
-  def deleteLegalNotice(noticeId: Long) = {
-    exec(deleteLegalNoticeInternal(noticeId).transactionally)
+  def deleteLegalNotice(noticeId: Long): Future[Unit] = {
+    DB.run(deleteLegalNoticeInternal(noticeId).transactionally).map(_ => ())
   }
 
   def deleteLegalNoticeInternal(noticeId: Long): DBIO[_] = {
@@ -164,15 +179,18 @@ class LegalNoticeManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ex
   /**
    * Gets the default legal notice for given community
    */
-  def getCommunityDefaultLegalNotice(communityId: Long): Option[LegalNotices] = {
+  def getCommunityDefaultLegalNotice(communityId: Long): Future[Option[LegalNotices]] = {
     if (communityId == Constants.DefaultCommunityId && globalDefaultLegalNotice.isDefined) {
-        globalDefaultLegalNotice.get
+        Future.successful {
+          globalDefaultLegalNotice.get
+        }
     } else {
-      val defaultLegalNotice = exec(PersistenceSchema.legalNotices.filter(_.community === communityId).filter(_.default === true).result.headOption)
-      if (communityId == Constants.DefaultCommunityId) {
-        globalDefaultLegalNotice = Some(defaultLegalNotice)
+      DB.run(PersistenceSchema.legalNotices.filter(_.community === communityId).filter(_.default === true).result.headOption).map { defaultLegalNotice =>
+        if (communityId == Constants.DefaultCommunityId) {
+          globalDefaultLegalNotice = Some(defaultLegalNotice)
+        }
+        defaultLegalNotice
       }
-      defaultLegalNotice
     }
   }
 
@@ -184,7 +202,7 @@ class LegalNoticeManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ex
     }
   }
 
-  def deleteLegalNoticeByCommunity(communityId: Long) = {
+  def deleteLegalNoticeByCommunity(communityId: Long): DBIO[Unit] = {
     for {
       _ <- PersistenceSchema.legalNotices.filter(_.community === communityId).delete
       _ <- {

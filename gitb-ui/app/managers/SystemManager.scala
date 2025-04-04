@@ -2,6 +2,7 @@ package managers
 
 import actors.events.{ConformanceStatementCreatedEvent, SystemUpdatedEvent}
 import exceptions.{AutomationApiException, ErrorCodes}
+import managers.triggers.TriggerHelper
 import models.Enums.{TestResultStatus, UserRole}
 import models._
 import models.automation.{CreateSystemRequest, UpdateSystemRequest}
@@ -15,21 +16,17 @@ import java.util
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
                                apiHelper: AutomationApiHelper,
                                testResultManager: TestResultManager,
                                triggerHelper: TriggerHelper,
-                               dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+                               dbConfigProvider: DatabaseConfigProvider)
+                              (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
-
-  def checkSystemExists(sysId: Long): Boolean = {
-    val firstOption = exec(PersistenceSchema.systems.filter(_.id === sysId).result.headOption)
-    firstOption.isDefined
-  }
 
   def copyTestSetup(fromSystem: Long, toSystem: Long, copySystemParameters: Boolean, copyStatementParameters: Boolean, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[List[Long]] = {
     for {
@@ -47,44 +44,40 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
             actions += defineConformanceStatement(toSystem, otherConformanceStatement.spec, otherConformanceStatement.actor, setDefaultParameterValues = !copyStatementParameters)
           }
         }
-        toDBIO(actions) andThen DBIO.successful(linkedActorIds.toList)
+        toDBIO(actions).map(_ => linkedActorIds.toList)
       }
       _ <- {
         if (copySystemParameters) {
-          deleteSystemParameterValues(toSystem, onSuccessCalls) andThen
-          (
-            for {
-              otherValues <- PersistenceSchema.systemParameterValues.filter(_.system === fromSystem).result.map(_.toList)
-              _ <- {
-                val copyActions = new ListBuffer[DBIO[_]]()
-                otherValues.foreach(otherValue => {
-                  onSuccessCalls += (() => repositoryUtils.setSystemPropertyFile(otherValue.parameter, toSystem, repositoryUtils.getSystemPropertyFile(otherValue.parameter, fromSystem), copy = true))
-                  copyActions += (PersistenceSchema.systemParameterValues += SystemParameterValues(toSystem, otherValue.parameter, otherValue.value, otherValue.contentType))
-                })
-                DBIO.seq(copyActions.toList.map(a => a): _*)
-              }
-            } yield()
-          )
+          for {
+            _ <- deleteSystemParameterValues(toSystem, onSuccessCalls)
+            otherValues <- PersistenceSchema.systemParameterValues.filter(_.system === fromSystem).result.map(_.toList)
+            _ <- {
+              val copyActions = new ListBuffer[DBIO[_]]()
+              otherValues.foreach(otherValue => {
+                onSuccessCalls += (() => repositoryUtils.setSystemPropertyFile(otherValue.parameter, toSystem, repositoryUtils.getSystemPropertyFile(otherValue.parameter, fromSystem), copy = true))
+                copyActions += (PersistenceSchema.systemParameterValues += SystemParameterValues(toSystem, otherValue.parameter, otherValue.value, otherValue.contentType))
+              })
+              DBIO.seq(copyActions.toList.map(a => a): _*)
+            }
+          } yield ()
         } else {
           DBIO.successful(())
         }
       }
       _ <- {
         if (copyStatementParameters) {
-          deleteSystemStatementConfiguration(toSystem, onSuccessCalls) andThen
-          (
-            for {
-              otherValues <- PersistenceSchema.configs.filter(_.system === fromSystem).result.map(_.toList)
-              _ <- {
-                val copyActions = new ListBuffer[DBIO[_]]()
-                otherValues.foreach(otherValue => {
-                  onSuccessCalls += (() => repositoryUtils.setStatementParameterFile(otherValue.parameter, toSystem, repositoryUtils.getStatementParameterFile(otherValue.parameter, fromSystem), copy = true))
-                  copyActions += (PersistenceSchema.configs += Configs(toSystem, otherValue.parameter, otherValue.endpoint, otherValue.value, otherValue.contentType))
-                })
-                DBIO.seq(copyActions.toList.map(a => a): _*)
-              }
-            } yield()
-          )
+          for {
+            _ <- deleteSystemStatementConfiguration(toSystem, onSuccessCalls)
+            otherValues <- PersistenceSchema.configs.filter(_.system === fromSystem).result.map(_.toList)
+            _ <- {
+              val copyActions = new ListBuffer[DBIO[_]]()
+              otherValues.foreach(otherValue => {
+                onSuccessCalls += (() => repositoryUtils.setStatementParameterFile(otherValue.parameter, toSystem, repositoryUtils.getStatementParameterFile(otherValue.parameter, fromSystem), copy = true))
+                copyActions += (PersistenceSchema.configs += Configs(toSystem, otherValue.parameter, otherValue.endpoint, otherValue.value, otherValue.contentType))
+              })
+              DBIO.seq(copyActions.toList.map(a => a): _*)
+            }
+          } yield ()
         } else {
           DBIO.successful(())
         }
@@ -96,7 +89,7 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
     PersistenceSchema.organizations.filter(_.id === organisationId).map(x => x.community).result.head
   }
 
-  def createSystemThroughAutomationApi(input: CreateSystemRequest): String = {
+  def createSystemThroughAutomationApi(input: CreateSystemRequest): Future[String] = {
     val action = for {
       communityId <- apiHelper.getCommunityByCommunityApiKey(input.communityApiKey)
       organisationId <- {
@@ -136,14 +129,15 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
         ), checkApiKeyUniqueness = false)
       }
     } yield (communityId, apiKeyToUse, newSystemId)
-    val result = exec(action.transactionally)
-    // Call triggers in separate transactions.
-    triggerHelper.triggersFor(result._1, new SystemCreationDbInfo(result._3, Some(List[Long]())))
-    // Return assigned API key.
-    result._2
+    DB.run(action.transactionally).map { result =>
+      // Call triggers in separate transactions.
+      triggerHelper.triggersFor(result._1, new SystemCreationDbInfo(result._3, Some(List[Long]())))
+      // Return assigned API key.
+      result._2
+    }
   }
 
-  def registerSystemWrapper(userId:Long, system: Systems, otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copySystemParameters: Boolean, copyStatementParameters: Boolean): (Long, List[Long], Long) = {
+  def registerSystemWrapper(userId:Long, system: Systems, otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copySystemParameters: Boolean, copyStatementParameters: Boolean): Future[(Long, List[Long], Long)] = {
     var propertyValuesToUse = propertyValues
     if (otherSystem.isDefined && copySystemParameters) {
       propertyValuesToUse = None
@@ -170,9 +164,10 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
         }
       }
     } yield (newSystemId, linkedActorIds, communityId)
-    val ids = exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
-    triggerHelper.triggersFor(ids._3, new SystemCreationDbInfo(ids._1, Some(ids._2)))
-    ids
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally).map { ids =>
+      triggerHelper.triggersFor(ids._3, new SystemCreationDbInfo(ids._1, Some(ids._2)))
+      ids
+    }
   }
 
   def registerSystemInternal(system: Systems, checkApiKeyUniqueness: Boolean): DBIO[Long] = {
@@ -306,7 +301,7 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
     dbAction
   }
 
-  def updateSystemThroughAutomationApi(updateRequest: UpdateSystemRequest): Unit = {
+  def updateSystemThroughAutomationApi(updateRequest: UpdateSystemRequest): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val action = for {
       communityId <- apiHelper.getCommunityByCommunityApiKey(updateRequest.communityApiKey)
@@ -339,21 +334,23 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
         )
       }
     } yield (communityId, system.id, linkedActorIds)
-    val result = exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
-    // Call triggers in separate transactions.
-    triggerHelper.publishTriggerEvent(new SystemUpdatedEvent(result._1, result._2))
-    triggerHelper.triggersFor(result._1, result._2, Some(result._3))
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally).map { result =>
+      // Call triggers in separate transactions.
+      triggerHelper.publishTriggerEvent(new SystemUpdatedEvent(result._1, result._2))
+      triggerHelper.triggersFor(result._1, result._2, Some(result._3))
+    }
   }
 
-  def updateSystemProfile(userId: Long, systemId: Long, shortName: String, fullName: String, description: Option[String], version: Option[String], otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copySystemParameters: Boolean, copyStatementParameters: Boolean): Unit = {
+  def updateSystemProfile(userId: Long, systemId: Long, shortName: String, fullName: String, description: Option[String], version: Option[String], otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copySystemParameters: Boolean, copyStatementParameters: Boolean): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = for {
       communityId <- getCommunityIdOfSystemInternal(systemId)
       linkedActorIds <- updateSystemProfileInternal(Some(userId), None, systemId, shortName, fullName, description, version, None, None, otherSystem, propertyValues, propertyFiles, copySystemParameters, copyStatementParameters, checkApiKeyUniqueness = false, onSuccessCalls)
     } yield (communityId, linkedActorIds)
-    val result = exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
-    triggerHelper.publishTriggerEvent(new SystemUpdatedEvent(result._1, systemId))
-    triggerHelper.triggersFor(result._1, systemId, Some(result._2))
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally).map { result =>
+      triggerHelper.publishTriggerEvent(new SystemUpdatedEvent(result._1, systemId))
+      triggerHelper.triggersFor(result._1, systemId, Some(result._2))
+    }
   }
 
   def updateSystemProfileInternal(userId: Option[Long], communityId: Option[Long], systemId: Long, shortName: String, fullName: String, description: Option[String], version: Option[String], apiKey: Option[String], badgeKey: Option[String], otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copySystemParameters: Boolean, copyStatementParameters: Boolean, checkApiKeyUniqueness: Boolean, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[List[Long]] = {
@@ -399,8 +396,10 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
       // Update test configuration
       linkedActorIds <- {
         if (otherSystem.isDefined) {
-          deleteAllConformanceStatements(systemId, onSuccessCalls) andThen
-            copyTestSetup(otherSystem.get, systemId, copySystemParameters, copyStatementParameters, onSuccessCalls)
+          for {
+            _ <- deleteAllConformanceStatements(systemId, onSuccessCalls)
+            result <- copyTestSetup(otherSystem.get, systemId, copySystemParameters, copyStatementParameters, onSuccessCalls)
+          } yield result
         } else {
           DBIO.successful(List[Long]())
         }
@@ -434,36 +433,49 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
     } yield linkedActorIds
   }
 
-  def getSystemProfile(systemId: Long): models.System = {
-    val result = exec(
+  def getSystemProfile(systemId: Long): Future[models.System] = {
+    DB.run(
       PersistenceSchema.systems
         .join(PersistenceSchema.organizations).on(_.owner === _.id)
         .filter(_._1.id === systemId)
         .result
         .head
-    )
-    new models.System(result._1, result._2)
+    ).map { result =>
+      new models.System(result._1, result._2)
+    }
   }
 
-  def getSystemIdsForOrganization(orgId: Long): Set[Long] = {
-    val systemIds = exec(PersistenceSchema.systems.filter(_.owner === orgId).map(s => {s.id}).result.map(_.toSet))
-    systemIds
+  def getCommunityIdsOfSystems(systemIds: Iterable[Long]): Future[Set[Long]] = {
+    DB.run(
+      PersistenceSchema.systems
+        .join(PersistenceSchema.organizations).on(_.owner === _.id)
+        .filter(_._1.id inSet systemIds)
+        .map(_._2.community)
+        .distinct
+        .result
+    ).map(_.toSet)
   }
 
-  def checkIfSystemsHaveTests(systemIds: Set[Long]): Set[Long] = {
-    exec(
+  def getSystemIdsForOrganization(orgId: Long): Future[Set[Long]] = {
+    DB.run(PersistenceSchema.systems.filter(_.owner === orgId).map(s => {s.id}).result.map(_.toSet))
+  }
+
+  def checkIfSystemsHaveTests(systemIds: Set[Long]): Future[Set[Long]] = {
+    DB.run(
       PersistenceSchema.testResults
         .filter(_.sutId inSet systemIds)
         .map(x => x.sutId)
         .result
-    ).map(x => x.get).toSet
+    ).map { results =>
+      results.map(x => x.get).toSet
+    }
   }
 
-  def getSystemsByOrganization(orgId: Long, snapshotId: Option[Long]): List[Systems] = {
+  def getSystemsByOrganization(orgId: Long, snapshotId: Option[Long]): Future[List[Systems]] = {
     if (snapshotId.isEmpty) {
-      exec(getSystemsByOrganizationInternal(orgId))
+      DB.run(getSystemsByOrganizationInternal(orgId))
     } else {
-      exec(
+      DB.run(
         PersistenceSchema.conformanceSnapshotResults
           .join(PersistenceSchema.conformanceSnapshotSystems).on((res, sys) => res.snapshotId === sys.snapshotId && res.systemId === sys.id)
           .filter(_._1.snapshotId === snapshotId.get)
@@ -472,8 +484,11 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
           .distinct
           .sortBy(_.shortname.asc)
           .result
-      ).map(x => Systems(id = x.id, shortname = x.shortname, fullname = x.fullname, description = x.description, version = None, apiKey = x.apiKey, badgeKey = x.badgeKey, owner = orgId))
-        .toList
+      ).map { results =>
+        results
+          .map(x => Systems(id = x.id, shortname = x.shortname, fullname = x.fullname, description = x.description, version = None, apiKey = x.apiKey, badgeKey = x.badgeKey, owner = orgId))
+          .toList
+      }
     }
   }
 
@@ -483,43 +498,46 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
       .result.map(_.toList)
   }
 
-  def defineConformanceStatements(systemId: Long, actorIds: Seq[Long]):Unit = {
-    val result = exec((for {
-      communityId <- getCommunityIdOfSystemInternal(systemId)
-      domainId <- {
-        if (communityId == Constants.DefaultCommunityId) {
-          // This is to allow the test bed admin to create any statement.
-          DBIO.successful(None)
-        } else {
-          PersistenceSchema.communities.filter(_.id === communityId).map(_.domain).result.head
+  def defineConformanceStatements(systemId: Long, actorIds: Seq[Long]): Future[Unit] = {
+    DB.run(
+      (for {
+        communityId <- getCommunityIdOfSystemInternal(systemId)
+        domainId <- {
+          if (communityId == Constants.DefaultCommunityId) {
+            // This is to allow the test bed admin to create any statement.
+            DBIO.successful(None)
+          } else {
+            PersistenceSchema.communities.filter(_.id === communityId).map(_.domain).result.head
+          }
         }
-      }
-      existingStatementActorIds <- PersistenceSchema.systemImplementsActors
-        .filter(_.systemId === systemId)
-        .map(_.actorId)
-        .result
-      actorsToProcess <- PersistenceSchema.specificationHasActors
-        .join(PersistenceSchema.actors).on(_.actorId === _.id)
-        .filterOpt(domainId)((q, id) => q._2.domain === id) // Ensure these are valid actors within the domain.
-        .filter(_._1.actorId inSet actorIds)
-        .filterNot(_._1.actorId inSet existingStatementActorIds)
-        .map(_._1)
-        .result
-      _ <- {
-        val actions = new ListBuffer[DBIO[_]]
-        actorsToProcess.foreach { actor =>
-          actions += defineConformanceStatement(systemId, actor._1, actor._2, setDefaultParameterValues = true)
+        existingStatementActorIds <- PersistenceSchema.systemImplementsActors
+          .filter(_.systemId === systemId)
+          .map(_.actorId)
+          .result
+        actorsToProcess <- PersistenceSchema.specificationHasActors
+          .join(PersistenceSchema.actors).on(_.actorId === _.id)
+          .filterOpt(domainId)((q, id) => q._2.domain === id) // Ensure these are valid actors within the domain.
+          .filter(_._1.actorId inSet actorIds)
+          .filterNot(_._1.actorId inSet existingStatementActorIds)
+          .map(_._1)
+          .result
+        _ <- {
+          val actions = new ListBuffer[DBIO[_]]
+          actorsToProcess.foreach { actor =>
+            actions += defineConformanceStatement(systemId, actor._1, actor._2, setDefaultParameterValues = true)
+          }
+          toDBIO(actions)
         }
-        toDBIO(actions)
+      } yield (communityId, actorsToProcess.map(_._2))).transactionally
+    ).map { result =>
+      result._2.foreach { actorId =>
+        triggerHelper.publishTriggerEvent(new ConformanceStatementCreatedEvent(result._1, systemId, actorId))
       }
-    } yield (communityId, actorsToProcess.map(_._2))).transactionally)
-    result._2.foreach { actorId =>
-      triggerHelper.publishTriggerEvent(new ConformanceStatementCreatedEvent(result._1, systemId, actorId))
     }
   }
 
-  def defineConformanceStatementViaApi(organisationKey: String, systemKey: String, actorKey: String): Unit = {
-    exec((
+  def defineConformanceStatementViaApi(organisationKey: String, systemKey: String, actorKey: String): Future[Unit] = {
+    DB.run((
       for {
         statementIds <- apiHelper.getStatementIdsForApiKeys(organisationKey, Some(systemKey), Some(actorKey), None, None, None)
         // Check to see if statement already exists
@@ -662,13 +680,13 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
     } yield ()
   }
 
-  def deleteConformanceStatementsWrapper(systemId: Long, actorIds: List[Long]): Unit = {
+  def deleteConformanceStatementsWrapper(systemId: Long, actorIds: List[Long]): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = deleteConformanceStatements(systemId, actorIds, onSuccessCalls)
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally).map(_ => ())
   }
 
-  def deleteConformanceStatementViaApi(organisationKey: String, systemKey: String, actorKey: String): Unit = {
+  def deleteConformanceStatementViaApi(organisationKey: String, systemKey: String, actorKey: String): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = for {
       statementIds <- apiHelper.getStatementIdsForApiKeys(organisationKey, Some(systemKey), Some(actorKey), None, None, None)
@@ -687,13 +705,13 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
         }
       }
     } yield ()
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
   }
 
   def deleteConformanceStatements(systemId: Long, actorIds: List[Long], onSuccess: mutable.ListBuffer[() => _]): DBIO[_] = {
     for {
-      _ <- PersistenceSchema.systemImplementsActors.filter(_.systemId === systemId).filter(_.actorId inSet actorIds).delete andThen
-              PersistenceSchema.conformanceResults.filter(_.sut === systemId).filter(_.actor inSet actorIds).delete
+      _ <- PersistenceSchema.systemImplementsActors.filter(_.systemId === systemId).filter(_.actorId inSet actorIds).delete
+      _ <- PersistenceSchema.conformanceResults.filter(_.sut === systemId).filter(_.actor inSet actorIds).delete
       actorParameters <- PersistenceSchema.parameters
                           .join(PersistenceSchema.endpoints).on(_.endpoint === _.id)
                           .filter(_._2.actor inSet actorIds)
@@ -761,7 +779,7 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
     } yield ()
   }
 
-  def deleteSystemThroughAutomationApi(systemApiKey: String, communityApiKey: String): Unit = {
+  def deleteSystemThroughAutomationApi(systemApiKey: String, communityApiKey: String): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val action = for {
       communityId <- apiHelper.getCommunityByCommunityApiKey(communityApiKey)
@@ -780,13 +798,13 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
           }
         }
     } yield ()
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
   }
 
-  def deleteSystemWrapper(systemId: Long): Unit = {
+  def deleteSystemWrapper(systemId: Long): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = deleteSystem(systemId, onSuccessCalls)
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally).map(_ => ())
   }
 
   private def deleteSystemParameterValues(systemId: Long, onSuccess: mutable.ListBuffer[() => _]) = {
@@ -814,17 +832,19 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
   }
 
   def deleteSystem(systemId: Long, onSuccess: mutable.ListBuffer[() => _]): DBIO[_] = {
-    testResultManager.updateForDeletedSystem(systemId) andThen
-    deleteSystemStatementConfiguration(systemId, onSuccess) andThen
-    PersistenceSchema.systemHasAdmins.filter(_.systemId === systemId).delete andThen
-    PersistenceSchema.systemImplementsActors.filter(_.systemId === systemId).delete andThen
-    PersistenceSchema.systemImplementsOptions.filter(_.systemId === systemId).delete andThen
-    PersistenceSchema.conformanceResults.filter(_.sut === systemId).delete andThen
-    PersistenceSchema.conformanceSnapshotResults.filter(_.systemId === systemId).map(_.systemId).update(systemId * -1) andThen
-    PersistenceSchema.conformanceSnapshotSystems.filter(_.id === systemId).map(_.id).update(systemId * -1) andThen
-    PersistenceSchema.conformanceSnapshotSystemProperties.filter(_.systemId === systemId).map(_.systemId).update(systemId * -1) andThen
-    deleteSystemParameterValues(systemId, onSuccess) andThen
-    PersistenceSchema.systems.filter(_.id === systemId).delete
+    for {
+      _ <- testResultManager.updateForDeletedSystem(systemId)
+      _ <- deleteSystemStatementConfiguration(systemId, onSuccess)
+      _ <- PersistenceSchema.systemHasAdmins.filter(_.systemId === systemId).delete
+      _ <- PersistenceSchema.systemImplementsActors.filter(_.systemId === systemId).delete
+      _ <- PersistenceSchema.systemImplementsOptions.filter(_.systemId === systemId).delete
+      _ <- PersistenceSchema.conformanceResults.filter(_.sut === systemId).delete
+      _ <- PersistenceSchema.conformanceSnapshotResults.filter(_.systemId === systemId).map(_.systemId).update(systemId * -1)
+      _ <- PersistenceSchema.conformanceSnapshotSystems.filter(_.id === systemId).map(_.id).update(systemId * -1)
+      _ <- PersistenceSchema.conformanceSnapshotSystemProperties.filter(_.systemId === systemId).map(_.systemId).update(systemId * -1)
+      _ <- deleteSystemParameterValues(systemId, onSuccess)
+      _ <- PersistenceSchema.systems.filter(_.id === systemId).delete
+    } yield ()
   }
 
   def deleteSystemByOrganization(orgId: Long, onSuccess: mutable.ListBuffer[() => _]): DBIO[_] = {
@@ -834,62 +854,65 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
     } yield()
 	}
 
-  def getSystemById(id: Long): Option[Systems] = {
-    val system = exec(PersistenceSchema.systems.filter(_.id === id).result.headOption)
-    system
+  def getSystemById(id: Long): Future[Option[Systems]] = {
+    DB.run(PersistenceSchema.systems.filter(_.id === id).result.headOption)
   }
 
-  def getSystems(ids: Option[List[Long]]): List[Systems] = {
+  def getSystems(ids: Option[List[Long]]): Future[List[Systems]] = {
     val q = ids match {
       case Some(idList) =>
         PersistenceSchema.systems.filter(_.id inSet idList)
       case None =>
         PersistenceSchema.systems
     }
-    exec(q.sortBy(_.shortname.asc)
-      .result.map(_.toList))
+    DB.run(q.sortBy(_.shortname.asc).result.map(_.toList))
   }
 
-  def getCommunityIdOfSystem(systemId: Long): Long = {
-    exec(getCommunityIdOfSystemInternal(systemId))
+  def getCommunityIdOfSystem(systemId: Long): Future[Long] = {
+    DB.run(getCommunityIdOfSystemInternal(systemId))
   }
 
-  private def getCommunityIdOfSystemInternal(systemId: Long): DBIO[Long] = {
+  def getCommunityIdOfSystemInternal(systemId: Long): DBIO[Long] = {
     PersistenceSchema.systems
       .join(PersistenceSchema.organizations).on(_.owner === _.id)
       .filter(_._1.id === systemId)
       .map(x => x._2.community).result.head
   }
 
-  def getSystemParameterValues(systemId: Long, onlySimple: Option[Boolean] = None, forExports: Option[Boolean] = None): List[SystemParametersWithValue] = {
+  def getSystemParameterValues(systemId: Long, onlySimple: Option[Boolean] = None, forExports: Option[Boolean] = None): Future[List[SystemParametersWithValue]] = {
     var typeToCheck: Option[String] = None
     if (onlySimple.isDefined && onlySimple.get) {
       typeToCheck = Some("SIMPLE")
     }
-    val communityId = getCommunityIdOfSystem(systemId)
-    exec(PersistenceSchema.systemParameters
-      .joinLeft(PersistenceSchema.systemParameterValues).on((p, v) => p.id === v.parameter && v.system === systemId)
-      .filter(_._1.community === communityId)
-      .filterOpt(forExports)((q, flag) => q._1.inExports === flag)
-      .filterOpt(typeToCheck)((table, propertyType)=> table._1.kind === propertyType)
-      .sortBy(x => (x._1.displayOrder.asc, x._1.name.asc))
-      .map(x => (x._1, x._2))
-      .result
-    ).toList.map(r => new SystemParametersWithValue(r._1, r._2))
+    val action = for {
+      communityId <- getCommunityIdOfSystemInternal(systemId)
+      values <- PersistenceSchema.systemParameters
+        .joinLeft(PersistenceSchema.systemParameterValues).on((p, v) => p.id === v.parameter && v.system === systemId)
+        .filter(_._1.community === communityId)
+        .filterOpt(forExports)((q, flag) => q._1.inExports === flag)
+        .filterOpt(typeToCheck)((table, propertyType)=> table._1.kind === propertyType)
+        .sortBy(x => (x._1.displayOrder.asc, x._1.name.asc))
+        .map(x => (x._1, x._2))
+        .result
+    } yield values
+    DB.run(action).map { values =>
+      values.toList.map(r => new SystemParametersWithValue(r._1, r._2))
+    }
   }
 
-  def updateSystemApiKey(systemId: Long): String = {
+  def updateSystemApiKey(systemId: Long): Future[String] = {
     val newApiKey = CryptoUtil.generateApiKey()
-    updateSystemApiKeyInternal(systemId, newApiKey)
-    newApiKey
+    updateSystemApiKeyInternal(systemId, newApiKey).map { _ =>
+      newApiKey
+    }
   }
 
-  private def updateSystemApiKeyInternal(systemId: Long, apiKey: String): Unit = {
-    exec(PersistenceSchema.systems.filter(_.id === systemId).map(_.apiKey).update(apiKey).transactionally)
+  private def updateSystemApiKeyInternal(systemId: Long, apiKey: String): Future[Unit] = {
+    DB.run(PersistenceSchema.systems.filter(_.id === systemId).map(_.apiKey).update(apiKey).transactionally).map(_ => ())
   }
 
-  def searchSystems(communityIds: Option[List[Long]], organisationIds: Option[List[Long]]): List[Systems] = {
-    exec(
+  def searchSystems(communityIds: Option[List[Long]], organisationIds: Option[List[Long]]): Future[List[Systems]] = {
+    DB.run(
       PersistenceSchema.systems
         .join(PersistenceSchema.organizations).on(_.owner === _.id)
         .filterOpt(organisationIds)((q, ids) => q._1.owner inSet ids)

@@ -1,7 +1,9 @@
 package managers
 
 import config.Configurations
+import controllers.dto.ParameterInfo
 import exceptions.{AutomationApiException, ErrorCodes}
+import managers.triggers.TriggerHelper
 import models.Enums.OverviewLevelType.OverviewLevelType
 import models.Enums._
 import models._
@@ -15,8 +17,7 @@ import java.util
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.language.postfixOps
 
 @Singleton
@@ -32,22 +33,23 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
                                   accountManager: AccountManager,
                                   domainParameterManager: DomainParameterManager,
                                   automationApiHelper: AutomationApiHelper,
-                                  dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+                                  dbConfigProvider: DatabaseConfigProvider)
+                                 (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
-  def existsOrganisationWithSameUserEmail(communityId: Long, email: String): Boolean = {
-    exec(PersistenceSchema.users
+  def existsOrganisationWithSameUserEmail(communityId: Long, email: String): Future[Boolean] = {
+    DB.run(PersistenceSchema.users
       .join(PersistenceSchema.organizations).on(_.organization === _.id)
       .filter(_._2.community === communityId)
       .filter(_._1.ssoEmail.toLowerCase === email.toLowerCase)
+      .exists
       .result
-      .headOption
-    ).isDefined
+    )
   }
 
-  def existsOrganisationWithSameUserEmailDomain(communityId: Long, email: String): Boolean = {
-    val existingUsers = exec(PersistenceSchema.users
+  def existsOrganisationWithSameUserEmailDomain(communityId: Long, email: String): Future[Boolean] = {
+    DB.run(PersistenceSchema.users
       .join(PersistenceSchema.organizations).on(_.organization === _.id)
       .filter(_._2.community === communityId)
       .filter(_._1.ssoEmail.isDefined)
@@ -55,20 +57,18 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
       .distinct
       .result
       .map(_.toSet)
-    )
-    val newUserEmailDomain = StringUtils.substringAfter(email.toLowerCase, "@")
-    existingUsers.foreach { existingUserEmail =>
-      if (existingUserEmail.isDefined) {
-        val userEmailDomain = StringUtils.substringAfter(existingUserEmail.get.toLowerCase, "@")
-        if (newUserEmailDomain.equals(userEmailDomain)) {
-          return true
+    ).map { existingUsers =>
+      val newUserEmailDomain = StringUtils.substringAfter(email.toLowerCase, "@")
+      existingUsers.exists { existingUserEmail =>
+        existingUserEmail.exists { email =>
+          val userEmailDomain = StringUtils.substringAfter(email.toLowerCase, "@")
+          newUserEmailDomain.equals(userEmailDomain)
         }
       }
     }
-    false
   }
 
-  def selfRegister(organisation: Organizations, organisationAdmin: Users, templateId: Option[Long], actualUserInfo: Option[ActualUserInfo], customPropertyValues: Option[List[OrganisationParameterValues]], customPropertyFiles: Option[Map[Long, FileInfo]], requireMandatoryPropertyValues: Boolean): Long = {
+  def selfRegister(organisation: Organizations, organisationAdmin: Users, templateId: Option[Long], actualUserInfo: Option[ActualUserInfo], customPropertyValues: Option[List[OrganisationParameterValues]], customPropertyFiles: Option[Map[Long, FileInfo]], requireMandatoryPropertyValues: Boolean): Future[Long] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction: DBIO[(Long, OrganisationCreationDbInfo)] = for {
       // Save organisation
@@ -93,15 +93,16 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
           DBIO.successful(())
         }
     } yield (userId, organisationInfo)
-    val ids = exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally).map { ids =>
     triggerHelper.triggersFor(organisation.community, ids._2)
-    ids._1
+      ids._1
+    }
   }
 
   /**
     * Gets all communities with given ids or all if none specified
     */
-  def getCommunities(ids: Option[List[Long]], skipDefault: Boolean): List[Communities] = {
+  def getCommunities(ids: Option[List[Long]], skipDefault: Boolean): Future[List[Communities]] = {
     var q = ids match {
       case Some(idList) =>
         PersistenceSchema.communities.filter(_.id inSet idList)
@@ -111,17 +112,99 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
     if (skipDefault) {
       q = q.filter(_.id =!= Constants.DefaultCommunityId)
     }
-    exec(q.sortBy(_.shortname.asc)
-      .result.map(_.toList))
+    DB.run(
+      q.sortBy(_.shortname.asc)
+        .result
+        .map(_.toList)
+    )
   }
 
-  def getSelfRegistrationOptions(): List[SelfRegOption] = {
-    exec(
-      PersistenceSchema.communities
+  def getSelfRegistrationOptions(): Future[List[SelfRegOption]] = {
+    val action = for {
+      // Load self registration-enabled communities and domains
+      communities <- PersistenceSchema.communities
         .joinLeft(PersistenceSchema.domains).on(_.domain === _.id)
         .filter(x => x._1.selfRegType === SelfRegistrationType.PublicListing.id.toShort || x._1.selfRegType === SelfRegistrationType.PublicListingWithToken.id.toShort)
-        .sortBy(_._1.shortname.asc).result
-    ).map(x => new SelfRegOption(x._1.id, x._1.shortname, selfRegDescriptionToUse(x._1.description, x._2), x._1.selfRegTokenHelpText, x._1.selfRegType, organizationManager.getOrganisationTemplates(x._1.id), getCommunityLabels(x._1.id), getOrganisationParametersForSelfRegistration(x._1.id), x._1.selfRegForceTemplateSelection, x._1.selfRegForceRequiredProperties)).toList
+        .sortBy(_._1.shortname.asc)
+        .result
+      communityIds <- DBIO.successful(communities.map(_._1.id))
+      // Load templates
+      templates <- PersistenceSchema.organizations
+        .filter(_.community inSet communityIds)
+        .filter(_.template === true)
+        .sortBy(_.templateName)
+        .result
+        .map { results =>
+          val templateMap = mutable.HashMap[Long, ListBuffer[SelfRegTemplate]]()
+          results.foreach { result =>
+            val buffer = if (templateMap.contains(result.community)) {
+              templateMap(result.community)
+            } else {
+              val templateBuffer = new ListBuffer[SelfRegTemplate]
+              templateMap += (result.community -> templateBuffer)
+              templateBuffer
+            }
+            buffer += new SelfRegTemplate(result.id, result.templateName.get)
+          }
+          templateMap.view.mapValues(_.toList).toMap
+        }
+      // Load labels
+      labels <- PersistenceSchema.communityLabels
+        .filter(_.community inSet communityIds)
+        .result
+        .map { results =>
+          val labelMap = mutable.HashMap[Long, ListBuffer[CommunityLabels]]()
+          results.foreach { result =>
+            val buffer = if (labelMap.contains(result.community)) {
+              labelMap(result.community)
+            } else {
+              val labelBuffer = new ListBuffer[CommunityLabels]
+              labelMap += (result.community -> labelBuffer)
+              labelBuffer
+            }
+            buffer += result
+          }
+          labelMap.view.mapValues(_.toList).toMap
+        }
+      // Load organisation parameters
+      orgParameters <- PersistenceSchema.organisationParameters
+        .filter(_.community inSet communityIds)
+        .filter(_.inSelfRegistration === true)
+        .sortBy(x => (x.displayOrder.asc, x.name.asc))
+        .result
+        .map { results =>
+          val paramMap = mutable.HashMap[Long, ListBuffer[OrganisationParameters]]()
+          results.foreach { result =>
+            val buffer = if (paramMap.contains(result.community)) {
+              paramMap(result.community)
+            } else {
+              val paramBuffer = new ListBuffer[OrganisationParameters]
+              paramMap += (result.community -> paramBuffer)
+              paramBuffer
+            }
+            buffer += result
+          }
+          paramMap.view.mapValues(_.toList).toMap
+        }
+    } yield (communities, templates, labels, orgParameters)
+    DB.run(action).map { results =>
+      val buffer = new ListBuffer[SelfRegOption]
+      results._1.foreach { community =>
+        buffer += new SelfRegOption(
+          community._1.id,
+          community._1.shortname,
+          selfRegDescriptionToUse(community._1.description, community._2),
+          community._1.selfRegTokenHelpText,
+          community._1.selfRegType,
+          results._2.get(community._1.id), // Templates
+          results._3.getOrElse(community._1.id, List()), // Labels
+          results._4.getOrElse(community._1.id, List()), // Organisation parameters
+          community._1.selfRegForceTemplateSelection,
+          community._1.selfRegForceRequiredProperties
+        )
+      }
+      buffer.toList
+    }
   }
 
   private def selfRegDescriptionToUse(communityDescription: Option[String], communityDomain: Option[Domain]): Option[String] = {
@@ -136,40 +219,47 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
     }
   }
 
-  def getById(id: Long): Option[Communities] = {
-    exec(getByIdInternal(id))
-  }
-
-  def getByIdAsync(id: Long): Future[Option[Communities]] = {
+  def getById(id: Long): Future[Option[Communities]] = {
     DB.run(getByIdInternal(id))
   }
 
-  def getByApiKey(apiKey: String): Option[Communities] = {
-    exec(PersistenceSchema.communities.filter(_.apiKey === apiKey).result.headOption)
+  def getByApiKey(apiKey: String): Future[Option[Communities]] = {
+    DB.run(PersistenceSchema.communities.filter(_.apiKey === apiKey).result.headOption)
   }
 
   private def getByIdInternal(id: Long) = {
     PersistenceSchema.communities.filter(_.id === id).result.headOption
   }
 
-  def getCommunityDomain(communityId: Long): Option[Long] = {
-    exec(PersistenceSchema.communities.filter(_.id === communityId).map(_.domain).result.headOption).flatten
+  def getCommunityDomain(communityId: Long): Future[Option[Long]] = {
+    DB.run(
+      PersistenceSchema.communities
+        .filter(_.id === communityId)
+        .map(_.domain)
+        .result
+        .headOption
+    ).map(_.flatten)
   }
 
   /**
     * Gets the user community
     */
-  def getUserCommunity(userId: Long): Community = {
-    val u = exec(PersistenceSchema.users.filter(_.id === userId).result.head)
-    val o = exec(PersistenceSchema.organizations.filter(_.id === u.organization).result.head)
-    val c = exec(PersistenceSchema.communities.filter(_.id === o.community).result.head)
-    val d = exec(PersistenceSchema.domains.filter(_.id === c.domain).result.headOption)
-    val community = new Community(c, d)
-    community
+  def getUserCommunity(userId: Long): Future[Community] = {
+    DB.run(PersistenceSchema.users
+      .join(PersistenceSchema.organizations).on(_.organization === _.id)
+      .join(PersistenceSchema.communities).on(_._2.community === _.id)
+      .joinLeft(PersistenceSchema.domains).on(_._2.domain === _.id)
+      .filter(_._1._1._1.id === userId)
+      .map(x => (x._2, x._1._2))
+      .result
+      .head
+    ).map { result =>
+      new Community(result._2, result._1)
+    }
   }
 
-  def getUserCommunityId(userId: Long): Long = {
-    exec(getUserCommunityIdInternal(userId)).get
+  def getUserCommunityId(userId: Long): Future[Long] = {
+    DB.run(getUserCommunityIdInternal(userId)).map(_.get)
   }
 
   def getUserCommunityIdInternal(userId: Long): DBIO[Option[Long]] = {
@@ -184,11 +274,11 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
   /**
     * Creates new community
     */
-  def createCommunity(community: Communities): (Long, Long) = {
-    exec(createCommunityInternal(community).transactionally)
+  def createCommunity(community: Communities): Future[(Long, Long)] = {
+    DB.run(createCommunityInternal(community).transactionally)
   }
 
-  def createCommunityThroughAutomationApi(input: CreateCommunityRequest): String = {
+  def createCommunityThroughAutomationApi(input: CreateCommunityRequest): Future[String] = {
     val action = for {
       apiKeyToUse <- {
         for {
@@ -224,7 +314,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
         ))
       }
     } yield apiKeyToUse
-    exec(action.transactionally)
+    DB.run(action.transactionally)
   }
 
   def createCommunityInternal(community: Communities): DBIO[(Long, Long)] = {
@@ -251,15 +341,19 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
   /**
     * Gets community with specified id
     */
-  def getCommunityById(communityId: Long): Community = {
-    val c = exec(PersistenceSchema.communities.filter(_.id === communityId).result.head)
-    val d = exec(PersistenceSchema.domains.filter(_.id === c.domain).result.headOption)
-    val community = new Community(c, d)
-    community
+  def getCommunityById(communityId: Long): Future[Community] = {
+    DB.run(
+      for {
+        c <- PersistenceSchema.communities.filter(_.id === communityId).result.head
+        d <- PersistenceSchema.domains.filter(_.id === c.domain).result.headOption
+      } yield new Community(c, d)
+    )
   }
 
-  def checkCommunityAllowsAutomationApi(communityId: Long): Boolean = {
-    exec(PersistenceSchema.communities.filter(_.id === communityId).map(_.allowAutomationApi).result.headOption).getOrElse(false)
+  def checkCommunityAllowsAutomationApi(communityId: Long): Future[Boolean] = {
+    DB.run(
+      PersistenceSchema.communities.filter(_.id === communityId).map(_.allowAutomationApi).result.headOption
+    ).map(_.getOrElse(false))
   }
 
   private def updateCommunityDomainDependencies(community: Communities, domainId: Option[Long], onSuccess: mutable.ListBuffer[() => _]): DBIO[_] = {
@@ -297,8 +391,10 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
         }
         _ <- {
           // Delete conformance statement data for collected IDs.
-          PersistenceSchema.systemImplementsActors.filter(_.systemId inSet systemAndActorIds._2).filter(_.actorId inSet systemAndActorIds._1).delete andThen
-            PersistenceSchema.conformanceResults.filter(_.sut inSet systemAndActorIds._2).filter(_.actor inSet systemAndActorIds._1).delete
+          for {
+            _ <- PersistenceSchema.systemImplementsActors.filter(_.systemId inSet systemAndActorIds._2).filter(_.actorId inSet systemAndActorIds._1).delete
+            _ <- PersistenceSchema.conformanceResults.filter(_.sut inSet systemAndActorIds._2).filter(_.actor inSet systemAndActorIds._1).delete
+          } yield ()
         }
       } yield ()
       actions += action
@@ -307,10 +403,13 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
   }
 
   private[managers] def updateCommunityDomain(community: Communities, domainId: Option[Long], onSuccess: mutable.ListBuffer[() => _]): DBIO[_] = {
-    updateCommunityDomainDependencies(community, domainId, onSuccess) andThen {
-      val qs = for {c <- PersistenceSchema.communities if c.id === community.id} yield c.domain
-      qs.update(domainId)
-    }
+    for {
+      _ <- updateCommunityDomainDependencies(community, domainId, onSuccess)
+      _ <- {
+        val qs = for {c <- PersistenceSchema.communities if c.id === community.id} yield c.domain
+        qs.update(domainId)
+      }
+    } yield ()
   }
 
   private[managers] def updateCommunityInternal(community: Communities, shortName: String, fullName: String, supportEmail: Option[String],
@@ -323,8 +422,10 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
       // Update short name.
       _ <- {
         if (shortName.nonEmpty && community.shortname != shortName) {
-          PersistenceSchema.communities.filter(_.id === community.id).map(_.shortname).update(shortName) andThen
-            testResultManager.updateForUpdatedCommunity(community.id, shortName)
+          for {
+            _ <- PersistenceSchema.communities.filter(_.id === community.id).map(_.shortname).update(shortName)
+            _ <- testResultManager.updateForUpdatedCommunity(community.id, shortName)
+          } yield ()
         } else {
           DBIO.successful(())
         }
@@ -394,7 +495,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
     } yield ()
   }
 
-  def updateCommunityThroughAutomationApi(updateRequest: UpdateCommunityRequest, allowDomainChange: Boolean): Unit = {
+  def updateCommunityThroughAutomationApi(updateRequest: UpdateCommunityRequest, allowDomainChange: Boolean): Future[Unit] = {
     val onSuccess = ListBuffer[() => _]()
     val action = for {
       community <- {
@@ -469,7 +570,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
         )
       }
     } yield ()
-    exec(dbActionFinalisation(Some(onSuccess), None, action).transactionally)
+    DB.run(dbActionFinalisation(Some(onSuccess), None, action).transactionally)
   }
 
   /**
@@ -482,7 +583,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
                       allowCertificateDownload: Boolean, allowStatementManagement: Boolean, allowSystemManagement: Boolean,
                       allowPostTestOrganisationUpdates: Boolean, allowPostTestSystemUpdates: Boolean,
                       allowPostTestStatementUpdates: Boolean, allowAutomationApi: Option[Boolean],
-                      domainId: Option[Long]): Unit = {
+                      domainId: Option[Long]): Future[Unit] = {
 
     val onSuccess = ListBuffer[() => _]()
     val dbAction = for {
@@ -501,44 +602,46 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
         }
       }
     } yield ()
-    exec(dbActionFinalisation(Some(onSuccess), None, dbAction).transactionally)
+    DB.run(dbActionFinalisation(Some(onSuccess), None, dbAction).transactionally).map(_ => ())
   }
 
   /**
     * Deletes the community with specified id
     */
-  def deleteCommunity(communityId: Long): Unit = {
+  def deleteCommunity(communityId: Long): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = deleteCommunityInternal(communityId, onSuccessCalls)
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally).map(_ => ())
   }
 
-  def deleteCommunityThroughAutomationApi(communityApiKey: String): Unit = {
+  def deleteCommunityThroughAutomationApi(communityApiKey: String): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val action = for {
       communityId <- automationApiHelper.getCommunityByCommunityApiKey(communityApiKey)
       _ <- deleteCommunityInternal(communityId, onSuccessCalls)
     } yield ()
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
   }
 
   def deleteCommunityInternal(communityId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
-    conformanceManager.deleteConformanceSnapshotsOfCommunity(communityId, onSuccessCalls) andThen
-      organizationManager.deleteOrganizationByCommunity(communityId, onSuccessCalls) andThen
-      landingPageManager.deleteLandingPageByCommunity(communityId) andThen
-      legalNoticeManager.deleteLegalNoticeByCommunity(communityId) andThen
-      errorTemplateManager.deleteErrorTemplateByCommunity(communityId) andThen
-      triggerHelper.deleteTriggersByCommunity(communityId) andThen
-      testResultManager.updateForDeletedCommunity(communityId) andThen
-      deleteConformanceCertificateSettings(communityId) andThen
-      deleteConformanceOverviewCertificateSettings(communityId) andThen
-      deleteOrganisationParametersByCommunity(communityId) andThen
-      deleteSystemParametersByCommunity(communityId) andThen
-      communityResourceManager.deleteResourcesOfCommunity(communityId, onSuccessCalls) andThen
-      deleteCommunityKeystoreInternal(communityId) andThen
-      deleteCommunityReportStylesheets(communityId, onSuccessCalls) andThen
-      PersistenceSchema.communityLabels.filter(_.community === communityId).delete andThen
-      PersistenceSchema.communities.filter(_.id === communityId).delete
+    for {
+      _ <- conformanceManager.deleteConformanceSnapshotsOfCommunity(communityId, onSuccessCalls)
+      _ <- organizationManager.deleteOrganizationByCommunity(communityId, onSuccessCalls)
+      _ <- landingPageManager.deleteLandingPageByCommunity(communityId)
+      _ <- legalNoticeManager.deleteLegalNoticeByCommunity(communityId)
+      _ <- errorTemplateManager.deleteErrorTemplateByCommunity(communityId)
+      _ <- triggerHelper.deleteTriggersByCommunity(communityId)
+      _ <- testResultManager.updateForDeletedCommunity(communityId)
+      _ <- deleteConformanceCertificateSettings(communityId)
+      _ <- deleteConformanceOverviewCertificateSettings(communityId)
+      _ <- deleteOrganisationParametersByCommunity(communityId)
+      _ <- deleteSystemParametersByCommunity(communityId)
+      _ <- communityResourceManager.deleteResourcesOfCommunity(communityId, onSuccessCalls)
+      _ <- deleteCommunityKeystoreInternal(communityId)
+      _ <- deleteCommunityReportStylesheets(communityId, onSuccessCalls)
+      _ <- PersistenceSchema.communityLabels.filter(_.community === communityId).delete
+      _ <- PersistenceSchema.communities.filter(_.id === communityId).delete
+    } yield ()
   }
 
   private def deleteCommunityReportStylesheets(communityId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
@@ -550,8 +653,8 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
     PersistenceSchema.organisationParameters.returning(PersistenceSchema.organisationParameters.map(_.id)) += parameter
   }
 
-  def createOrganisationParameter(parameter: OrganisationParameters): Long = {
-    exec(createOrganisationParameterInternal(parameter).transactionally)
+  def createOrganisationParameter(parameter: OrganisationParameters): Future[Long] = {
+    DB.run(createOrganisationParameterInternal(parameter).transactionally)
   }
 
   private def setOrganisationParameterPrerequisitesForKey(communityId: Long, key: String, newKey: Option[String]): DBIO[_] = {
@@ -612,12 +715,12 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
     } yield ()
   }
 
-  def updateOrganisationParameter(parameter: OrganisationParameters): Unit = {
+  def updateOrganisationParameter(parameter: OrganisationParameters): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, updateOrganisationParameterInternal(parameter, updateDisplayOrder = false, onSuccessCalls)).transactionally)
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, updateOrganisationParameterInternal(parameter, updateDisplayOrder = false, onSuccessCalls)).transactionally).map(_ => ())
   }
 
-  def updateOrganisationParameterDefinitionThroughAutomationApi(communityKey: String, input: CustomPropertyInfo): Unit = {
+  def updateOrganisationParameterDefinitionThroughAutomationApi(communityKey: String, input: CustomPropertyInfo): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = for {
       // Load communityID.
@@ -653,10 +756,10 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
         ), updateDisplayOrder = true, onSuccessCalls)
       }
     } yield ()
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction.transactionally))
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction.transactionally))
   }
 
-  def updateSystemParameterDefinitionThroughAutomationApi(communityKey: String, input: CustomPropertyInfo): Unit = {
+  def updateSystemParameterDefinitionThroughAutomationApi(communityKey: String, input: CustomPropertyInfo): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = for {
       // Load communityID.
@@ -691,7 +794,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
         ), updateDisplayOrder = true, onSuccessCalls)
       }
     } yield ()
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction.transactionally))
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction.transactionally))
   }
 
   private def checkDependedOrganisationParameterExistence(communityId: Long, dependsOn: Option[String], propertyIdToIgnore: Option[Long]): DBIO[Option[OrganisationParameters]] = {
@@ -728,13 +831,13 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
     }
   }
 
-  def deleteOrganisationParameterWrapper(parameterId: Long): Unit = {
+  def deleteOrganisationParameterWrapper(parameterId: Long): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = deleteOrganisationParameter(parameterId, onSuccessCalls)
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally).map(_ => ())
   }
 
-  def deleteOrganisationParameterDefinitionThroughAutomationApi(communityKey: String, propertyKey: String): Unit = {
+  def deleteOrganisationParameterDefinitionThroughAutomationApi(communityKey: String, propertyKey: String): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = for {
       // Load community ID.
@@ -746,10 +849,10 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
         deleteOrganisationParameter(property.get.id, onSuccessCalls)
       }
     } yield ()
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
   }
 
-  def deleteSystemParameterDefinitionThroughAutomationApi(communityKey: String, propertyApiKey: String): Unit = {
+  def deleteSystemParameterDefinitionThroughAutomationApi(communityKey: String, propertyApiKey: String): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = for {
       // Load community ID.
@@ -761,24 +864,24 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
         deleteSystemParameter(property.get.id, onSuccessCalls)
       }
     } yield ()
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
   }
 
   def deleteOrganisationParameter(parameterId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
     onSuccessCalls += (() => repositoryUtils.deleteOrganisationPropertiesFolder(parameterId))
-    triggerHelper.deleteTriggerDataByDataType(parameterId, TriggerDataType.OrganisationParameter) andThen
-      PersistenceSchema.organisationParameterValues.filter(_.parameter === parameterId).delete andThen
-      (for {
-        existingParameter <- PersistenceSchema.organisationParameters.filter(_.id === parameterId).map(x => (x.community, x.testKey, x.kind)).result.head
-        _ <- {
-          if (existingParameter._3.equals("SIMPLE")) {
-            setOrganisationParameterPrerequisitesForKey(existingParameter._1, existingParameter._2, None)
-          } else {
-            DBIO.successful(())
-          }
+    for {
+      _ <- triggerHelper.deleteTriggerDataByDataType(parameterId, TriggerDataType.OrganisationParameter)
+      _ <- PersistenceSchema.organisationParameterValues.filter(_.parameter === parameterId).delete
+      existingParameter <- PersistenceSchema.organisationParameters.filter(_.id === parameterId).map(x => (x.community, x.testKey, x.kind)).result.head
+      _ <- {
+        if (existingParameter._3.equals("SIMPLE")) {
+          setOrganisationParameterPrerequisitesForKey(existingParameter._1, existingParameter._2, None)
+        } else {
+          DBIO.successful(())
         }
-      } yield ()) andThen
-      PersistenceSchema.organisationParameters.filter(_.id === parameterId).delete
+      }
+      _ <- PersistenceSchema.organisationParameters.filter(_.id === parameterId).delete
+    } yield ()
   }
 
   private def deleteOrganisationParametersByCommunity(communityId: Long) = {
@@ -786,7 +889,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
     PersistenceSchema.organisationParameters.filter(_.community === communityId).delete
   }
 
-  def orderOrganisationParameters(communityId: Long, orderedIds: List[Long]): Unit = {
+  def orderOrganisationParameters(communityId: Long, orderedIds: List[Long]): Future[Unit] = {
     val dbActions = ListBuffer[DBIO[_]]()
     var counter = 0
     orderedIds.foreach { id =>
@@ -794,10 +897,10 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
       val q = for { p <- PersistenceSchema.organisationParameters.filter(_.community === communityId).filter(_.id === id) } yield p.displayOrder
       dbActions += q.update(counter.toShort)
     }
-    exec(toDBIO(dbActions).transactionally)
+    DB.run(toDBIO(dbActions).transactionally).map(_ => ())
   }
 
-  def orderSystemParameters(communityId: Long, orderedIds: List[Long]): Unit = {
+  def orderSystemParameters(communityId: Long, orderedIds: List[Long]): Future[Unit] = {
     val dbActions = ListBuffer[DBIO[_]]()
     var counter = 0
     orderedIds.foreach { id =>
@@ -805,15 +908,15 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
       val q = for { p <- PersistenceSchema.systemParameters.filter(_.community === communityId).filter(_.id === id) } yield p.displayOrder
       dbActions += q.update(counter.toShort)
     }
-    exec(toDBIO(dbActions).transactionally)
+    DB.run(toDBIO(dbActions).transactionally).map(_ => ())
   }
 
   def createSystemParameterInternal(parameter: SystemParameters): DBIO[Long] = {
     PersistenceSchema.systemParameters.returning(PersistenceSchema.systemParameters.map(_.id)) += parameter
   }
 
-  def createSystemParameter(parameter: SystemParameters): Long = {
-    exec(createSystemParameterInternal(parameter).transactionally)
+  def createSystemParameter(parameter: SystemParameters): Future[Long] = {
+    DB.run(createSystemParameterInternal(parameter).transactionally)
   }
 
   def updateSystemParameterInternal(parameter: SystemParameters, updateDisplayOrder: Boolean, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
@@ -854,32 +957,32 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
     } yield ()
   }
 
-  def updateSystemParameter(parameter: SystemParameters): Unit = {
+  def updateSystemParameter(parameter: SystemParameters): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, updateSystemParameterInternal(parameter, updateDisplayOrder = false, onSuccessCalls)).transactionally)
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, updateSystemParameterInternal(parameter, updateDisplayOrder = false, onSuccessCalls)).transactionally).map(_ => ())
   }
 
-  def deleteSystemParameterWrapper(parameterId: Long): Unit = {
+  def deleteSystemParameterWrapper(parameterId: Long): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = deleteSystemParameter(parameterId, onSuccessCalls)
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally).map(_ => ())
   }
 
   def deleteSystemParameter(parameterId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
     onSuccessCalls += (() => repositoryUtils.deleteSystemPropertiesFolder(parameterId))
-    triggerHelper.deleteTriggerDataByDataType(parameterId, TriggerDataType.SystemParameter) andThen
-    PersistenceSchema.systemParameterValues.filter(_.parameter === parameterId).delete andThen
-      (for {
-        existingParameter <- PersistenceSchema.systemParameters.filter(_.id === parameterId).map(x => (x.community, x.testKey, x.kind)).result.head
-        _ <- {
-          if (existingParameter._3.equals("SIMPLE")) {
-            setSystemParameterPrerequisitesForKey(existingParameter._1, existingParameter._2, None)
-          } else {
-            DBIO.successful(())
-          }
+    for {
+      _ <- triggerHelper.deleteTriggerDataByDataType(parameterId, TriggerDataType.SystemParameter)
+      _ <- PersistenceSchema.systemParameterValues.filter(_.parameter === parameterId).delete
+      existingParameter <- PersistenceSchema.systemParameters.filter(_.id === parameterId).map(x => (x.community, x.testKey, x.kind)).result.head
+      _ <- {
+        if (existingParameter._3.equals("SIMPLE")) {
+          setSystemParameterPrerequisitesForKey(existingParameter._1, existingParameter._2, None)
+        } else {
+          DBIO.successful(())
         }
-      } yield ()) andThen
-      PersistenceSchema.systemParameters.filter(_.id === parameterId).delete
+      }
+      _ <- PersistenceSchema.systemParameters.filter(_.id === parameterId).delete
+    } yield ()
   }
 
   private def deleteSystemParametersByCommunity(communityId: Long): DBIO[_] = {
@@ -887,7 +990,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
     PersistenceSchema.systemParameters.filter(_.community === communityId).delete
   }
 
-  def checkOrganisationParameterExists(parameter: OrganisationParameters, isUpdate: Boolean): Boolean = {
+  def checkOrganisationParameterExists(parameter: OrganisationParameters, isUpdate: Boolean): Future[Boolean] = {
     var q = PersistenceSchema.organisationParameters
       .filter(_.community === parameter.community)
       .filter(x => {
@@ -896,10 +999,10 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
     if (isUpdate) {
       q = q.filter(_.id =!= parameter.id)
     }
-    exec(q.result.headOption).isDefined
+    DB.run(q.result.headOption).map(_.isDefined)
   }
 
-  def checkSystemParameterExists(parameter: SystemParameters, isUpdate: Boolean): Boolean = {
+  def checkSystemParameterExists(parameter: SystemParameters, isUpdate: Boolean): Future[Boolean] = {
     var q = PersistenceSchema.systemParameters
       .filter(_.community === parameter.community)
       .filter(x => {
@@ -908,51 +1011,43 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
     if (isUpdate) {
       q = q.filter(_.id =!= parameter.id)
     }
-    exec(q.result.headOption).isDefined
+    DB.run(q.result.headOption).map(_.isDefined)
   }
 
-  def getOrganisationParameterById(parameterId: Long): Option[OrganisationParameters] = {
-    exec(PersistenceSchema.organisationParameters.filter(_.id === parameterId).result.headOption)
+  def getOrganisationParameterById(parameterId: Long): Future[Option[OrganisationParameters]] = {
+    DB.run(PersistenceSchema.organisationParameters.filter(_.id === parameterId).result.headOption)
   }
 
-  def getSystemParameterById(parameterId: Long): Option[SystemParameters] = {
-    exec(PersistenceSchema.systemParameters.filter(_.id === parameterId).result.headOption)
+  def getSystemParameterById(parameterId: Long): Future[Option[SystemParameters]] = {
+    DB.run(PersistenceSchema.systemParameters.filter(_.id === parameterId).result.headOption)
   }
 
-  def getOrganisationParameters(communityId: Long): List[OrganisationParameters] = {
+  def getOrganisationParameters(communityId: Long): Future[List[OrganisationParameters]] = {
     getOrganisationParameters(communityId, None)
   }
 
-  def getOrganisationParameters(communityId: Long, forFiltering: Option[Boolean]): List[OrganisationParameters] = {
+  def getOrganisationParameters(communityId: Long, forFiltering: Option[Boolean]): Future[List[OrganisationParameters]] = {
     var typeToCheck: Option[String] = None
     if (forFiltering.isDefined && forFiltering.get) {
       typeToCheck = Some("SIMPLE")
     }
-    exec(PersistenceSchema.organisationParameters
+    DB.run(PersistenceSchema.organisationParameters
       .filter(_.community === communityId)
       .filterOpt(typeToCheck)((table, propertyType)=> table.kind === propertyType)
       .sortBy(x => (x.displayOrder.asc, x.name.asc))
-      .result).toList
+      .result).map(_.toList)
   }
 
-  def getSimpleOrganisationParameters(communityId: Long, forExports: Option[Boolean]): List[OrganisationParameters] = {
-    exec(PersistenceSchema.organisationParameters
+  def getSimpleOrganisationParameters(communityId: Long, forExports: Option[Boolean]): Future[List[OrganisationParameters]] = {
+    DB.run(PersistenceSchema.organisationParameters
       .filter(_.community === communityId)
       .filterOpt(forExports)((q, flag) => q.inExports === flag)
       .filter(_.kind === "SIMPLE")
       .sortBy(_.testKey.asc)
-      .result).toList
+      .result).map(_.toList)
   }
 
-  private def getOrganisationParametersForSelfRegistration(communityId: Long): List[OrganisationParameters] = {
-    exec(PersistenceSchema.organisationParameters
-      .filter(_.community === communityId)
-      .filter(_.inSelfRegistration === true)
-      .sortBy(x => (x.displayOrder.asc, x.name.asc))
-      .result).toList
-  }
-
-  def getOrganisationParametersValuesForExport(communityId: Long, organisationIds: Option[List[Long]]): scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]] = {
+  private def getOrganisationParametersValuesForExport(communityId: Long, organisationIds: Option[List[Long]]): Future[Map[Long, Map[Long, String]]] = {
     // Maps are based on organisationID, parameterID pointing to value.
     var query = PersistenceSchema.organisationParameterValues
       .join(PersistenceSchema.organisationParameters).on(_.parameter === _.id)
@@ -963,45 +1058,60 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
     if (organisationIds.isDefined) {
       query = query.filter(_._2.id inSet organisationIds.get)
     }
-    val values = exec(query.result).toList
-    val valuesPerOrganisation = scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]()
-    values.foreach{ value =>
-      var parameterMap = valuesPerOrganisation.get(value._2.id)
-      if (parameterMap.isEmpty) {
-        parameterMap = Some(scala.collection.mutable.Map[Long, String]())
-        valuesPerOrganisation(value._2.id) = parameterMap.get
+    DB.run(query.result).map { values =>
+      val valuesPerOrganisation = mutable.Map[Long, mutable.Map[Long, String]]()
+      values.foreach{ value =>
+        var parameterMap = valuesPerOrganisation.get(value._2.id)
+        if (parameterMap.isEmpty) {
+          parameterMap = Some(mutable.Map[Long, String]())
+          valuesPerOrganisation(value._2.id) = parameterMap.get
+        }
+        parameterMap.get(value._1._1.parameter) = value._1._1.value
       }
-      parameterMap.get(value._1._1.parameter) = value._1._1.value
+      valuesPerOrganisation.view.mapValues(_.toMap).toMap
     }
-    valuesPerOrganisation
   }
 
-  def getSystemParameters(communityId: Long): List[SystemParameters] = {
+  def getSystemParameters(communityId: Long): Future[List[SystemParameters]] = {
     getSystemParameters(communityId, None)
   }
 
-  def getSystemParameters(communityId: Long, forFiltering: Option[Boolean]): List[SystemParameters] = {
+  def getSystemParameters(communityId: Long, forFiltering: Option[Boolean]): Future[List[SystemParameters]] = {
     var typeToCheck: Option[String] = None
     if (forFiltering.isDefined && forFiltering.get) {
       typeToCheck = Some("SIMPLE")
     }
-    exec(PersistenceSchema.systemParameters
+    DB.run(PersistenceSchema.systemParameters
       .filter(_.community === communityId)
       .filterOpt(typeToCheck)((table, propertyType)=> table.kind === propertyType)
       .sortBy(x => (x.displayOrder.asc, x.name.asc))
-      .result).toList
+      .result).map(_.toList)
   }
 
-  def getSimpleSystemParameters(communityId: Long, forExports: Option[Boolean]): List[SystemParameters] = {
-    exec(PersistenceSchema.systemParameters
+  def getSimpleSystemParameters(communityId: Long, forExports: Option[Boolean]): Future[List[SystemParameters]] = {
+    DB.run(PersistenceSchema.systemParameters
       .filter(_.community === communityId)
       .filterOpt(forExports)((q, flag) => q.inExports === flag)
       .filter(_.kind === "SIMPLE")
       .sortBy(_.testKey.asc)
-      .result).toList
+      .result).map(_.toList)
   }
 
-  def getSystemParametersValuesForExport(communityId: Long, organisationIds: Option[List[Long]], systemIds: Option[List[Long]]): scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]] = {
+  def getParameterInfo(communityId: Long, organizationIds: Option[List[Long]], systemIds: Option[List[Long]]): Future[ParameterInfo] = {
+    // Run futures in parallel
+    getSimpleOrganisationParameters(communityId, Some(true)).zip(
+      getOrganisationParametersValuesForExport(communityId, organizationIds).zip(
+        getSimpleSystemParameters(communityId, Some(true)).zip(
+          getSystemParametersValuesForExport(communityId, organizationIds, systemIds)
+        )
+      )
+    ).map { results =>
+      // Flatten the results
+      ParameterInfo(results._1, results._2._1, results._2._2._1, results._2._2._2)
+    }
+  }
+
+  private def getSystemParametersValuesForExport(communityId: Long, organisationIds: Option[List[Long]], systemIds: Option[List[Long]]): Future[Map[Long, Map[Long, String]]] = {
     // Maps are based on systemID, parameterID pointing to value.
     var query = PersistenceSchema.systemParameterValues
       .join(PersistenceSchema.systemParameters).on(_.parameter === _.id)
@@ -1016,17 +1126,18 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
     if (systemIds.isDefined) {
       query = query.filter(_._1._2.id inSet systemIds.get)
     }
-    val values = exec(query.result).toList
-    val valuesPerSystem = scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]()
-    values.foreach{ value =>
-      var parameterMap = valuesPerSystem.get(value._1._2.id)
-      if (parameterMap.isEmpty) {
-        parameterMap = Some(scala.collection.mutable.Map[Long, String]())
-        valuesPerSystem(value._1._2.id) = parameterMap.get
+    DB.run(query.result).map { values =>
+      val valuesPerSystem = mutable.Map[Long, mutable.Map[Long, String]]()
+      values.foreach{ value =>
+        var parameterMap = valuesPerSystem.get(value._1._2.id)
+        if (parameterMap.isEmpty) {
+          parameterMap = Some(scala.collection.mutable.Map[Long, String]())
+          valuesPerSystem(value._1._2.id) = parameterMap.get
+        }
+        parameterMap.get(value._1._1._2.id) = value._1._1._1.value
       }
-      parameterMap.get(value._1._1._2.id) = value._1._1._1.value
+      valuesPerSystem.view.mapValues(_.toMap).toMap
     }
-    valuesPerSystem
   }
 
   def deleteCommunityLabel(communityId: Long, labelType: Short): DBIO[_] = {
@@ -1048,29 +1159,36 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
     toDBIO(actions)
   }
 
-  def setCommunityLabels(communityId: Long, labels: List[CommunityLabels]): Unit = {
-    exec(setCommunityLabelsInternal(communityId, labels).transactionally)
+  def setCommunityLabels(communityId: Long, labels: List[CommunityLabels]): Future[Unit] = {
+    DB.run(setCommunityLabelsInternal(communityId, labels).transactionally).map(_ => ())
   }
 
-  def getCommunityLabels(communityId: Long): List[CommunityLabels] = {
-    exec(PersistenceSchema.communityLabels.filter(_.community === communityId).result).toList
+  def getCommunityLabels(communityId: Long): Future[List[CommunityLabels]] = {
+    DB.run(getCommunityLabelsInternal(communityId)).map(_.toList)
   }
 
-  def getCommunityKeystoreType(communityId: Long): Option[String] = {
-    exec(PersistenceSchema.communityKeystores.filter(_.community === communityId).map(_.keystoreType).result.headOption)
+  private def getCommunityLabelsInternal(communityId: Long): DBIO[Seq[CommunityLabels]] = {
+    PersistenceSchema.communityLabels
+      .filter(_.community === communityId)
+      .result
   }
 
-  def getCommunityKeystore(communityId: Long, decryptKeys: Boolean): Option[CommunityKeystore] = {
-    val keystore = exec(PersistenceSchema.communityKeystores.filter(_.community === communityId).result.headOption)
-    if (decryptKeys && keystore.isDefined) {
-      Some(keystore.get.withDecryptedKeys())
-    } else {
-      keystore
+  def getCommunityKeystoreType(communityId: Long): Future[Option[String]] = {
+    DB.run(PersistenceSchema.communityKeystores.filter(_.community === communityId).map(_.keystoreType).result.headOption)
+  }
+
+  def getCommunityKeystore(communityId: Long, decryptKeys: Boolean): Future[Option[CommunityKeystore]] = {
+    DB.run(PersistenceSchema.communityKeystores.filter(_.community === communityId).result.headOption).map { keystore =>
+      if (decryptKeys && keystore.isDefined) {
+        Some(keystore.get.withDecryptedKeys())
+      } else {
+        keystore
+      }
     }
   }
 
-  def deleteCommunityKeystore(communityId: Long): Unit = {
-    exec(deleteCommunityKeystoreInternal(communityId).transactionally)
+  def deleteCommunityKeystore(communityId: Long): Future[Unit] = {
+    DB.run(deleteCommunityKeystoreInternal(communityId).transactionally).map(_ => ())
   }
 
   def deleteCommunityKeystoreInternal(communityId: Long): DBIO[_] = {
@@ -1122,65 +1240,72 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
     query
   }
 
-  def saveCommunityKeystore(communityId: Long, keystoreType: String, keystoreData: Option[String], keyPass: Option[String], keystorePass: Option[String]): Unit = {
+  def saveCommunityKeystore(communityId: Long, keystoreType: String, keystoreData: Option[String], keyPass: Option[String], keystorePass: Option[String]): Future[Unit] = {
     val query = saveCommunityKeystoreInternal(communityId, keystoreType, keystoreData, keyPass, keystorePass)
-    exec(query.transactionally)
+    DB.run(query.transactionally).map(_ => ())
   }
 
-  def getConformanceCertificateSettingsForExport(communityId: Long, snapshotId: Option[Long]): ConformanceCertificateInfo = {
-    val settings = getConformanceCertificateSettingsWrapper(communityId, defaultIfMissing = true, snapshotId).get
-    val keystore = getCommunityKeystore(communityId, decryptKeys = true)
-    settings.toConformanceCertificateInfo(keystore)
-  }
-
-  def getConformanceCertificateSettingsWrapper(communityId: Long, defaultIfMissing: Boolean, snapshotId: Option[Long]): Option[ConformanceCertificate] = {
-    var settings = exec(getConformanceCertificateSettings(communityId, snapshotId))
-    if (settings.isEmpty && defaultIfMissing) {
-      val title = "Conformance Certificate"
-      settings = Some(ConformanceCertificate(
-        id = 0L, title = Some(title), includeTitle = true, includeMessage = false, includeTestStatus = true, includeTestCases = true,
-        includeDetails = true, includeSignature = false, includePageNumbers = true, message = None, community = communityId
-      ))
+  def getConformanceCertificateSettingsForExport(communityId: Long, snapshotId: Option[Long]): Future[ConformanceCertificateInfo] = {
+    getConformanceCertificateSettingsWrapper(communityId, defaultIfMissing = true, snapshotId).flatMap { settings =>
+      getCommunityKeystore(communityId, decryptKeys = true).map { keystore =>
+        settings.get.toConformanceCertificateInfo(keystore)
+      }
     }
-    settings
   }
 
-  def conformanceOverviewCertificateEnabled(communityId: Long, level: OverviewLevelType): Boolean = {
-    val flags = exec(
+  def getConformanceCertificateSettingsWrapper(communityId: Long, defaultIfMissing: Boolean, snapshotId: Option[Long]): Future[Option[ConformanceCertificate]] = {
+    DB.run(getConformanceCertificateSettings(communityId, snapshotId)).map { settings =>
+      if (settings.isEmpty && defaultIfMissing) {
+        val title = "Conformance Certificate"
+        Some(ConformanceCertificate(
+          id = 0L, title = Some(title), includeTitle = true, includeMessage = false, includeTestStatus = true, includeTestCases = true,
+          includeDetails = true, includeSignature = false, includePageNumbers = true, message = None, community = communityId
+        ))
+      } else {
+        settings
+      }
+    }
+  }
+
+  def conformanceOverviewCertificateEnabled(communityId: Long, level: OverviewLevelType): Future[Boolean] = {
+    DB.run(
       PersistenceSchema.conformanceOverviewCertificates
         .filter(_.community === communityId)
         .map(x => (x.enableAllLevel, x.enableDomainLevel, x.enableGroupLevel, x.enableSpecificationLevel))
         .result
         .headOption
-    )
-    if (flags.isDefined) {
-      level match {
-        case OverviewLevelType.DomainLevel => flags.get._2
-        case OverviewLevelType.SpecificationGroupLevel => flags.get._3
-        case OverviewLevelType.SpecificationLevel => flags.get._4
-        case _ => flags.get._1
+    ).map { flags =>
+      if (flags.isDefined) {
+        level match {
+          case OverviewLevelType.DomainLevel => flags.get._2
+          case OverviewLevelType.SpecificationGroupLevel => flags.get._3
+          case OverviewLevelType.SpecificationLevel => flags.get._4
+          case _ => flags.get._1
+        }
+      } else {
+        false
       }
-    } else {
-      false
     }
   }
 
-  def getConformanceOverviewCertificateSettingsWrapper(communityId: Long, defaultIfMissing: Boolean, snapshotId: Option[Long], levelForMessage: Option[OverviewLevelType], identifierForMessage: Option[Long]): Option[ConformanceOverviewCertificateWithMessages] = {
-    var settings = exec(getConformanceOverviewCertificateSettings(communityId, snapshotId, levelForMessage, identifierForMessage))
-    if (settings.isEmpty && defaultIfMissing) {
-      val title = "Conformance Overview Certificate"
-      settings = Some(
-        ConformanceOverviewCertificateWithMessages(
-          ConformanceOverviewCertificate(
-            id = 0L, title = Some(title), includeTitle = true, includeMessage = false, includeStatementStatus = true, includeStatements = true, includeStatementDetails = true,
-            includeDetails = true, includeSignature = false, includePageNumbers = true, enableAllLevel = false, enableDomainLevel = false,
-            enableGroupLevel = false, enableSpecificationLevel = false, community = communityId
-          ),
-          List.empty
+  def getConformanceOverviewCertificateSettingsWrapper(communityId: Long, defaultIfMissing: Boolean, snapshotId: Option[Long], levelForMessage: Option[OverviewLevelType], identifierForMessage: Option[Long]): Future[Option[ConformanceOverviewCertificateWithMessages]] = {
+    DB.run(getConformanceOverviewCertificateSettings(communityId, snapshotId, levelForMessage, identifierForMessage)).map { settings =>
+      if (settings.isEmpty && defaultIfMissing) {
+        val title = "Conformance Overview Certificate"
+        Some(
+          ConformanceOverviewCertificateWithMessages(
+            ConformanceOverviewCertificate(
+              id = 0L, title = Some(title), includeTitle = true, includeMessage = false, includeStatementStatus = true, includeStatements = true, includeStatementDetails = true,
+              includeDetails = true, includeSignature = false, includePageNumbers = true, enableAllLevel = false, enableDomainLevel = false,
+              enableGroupLevel = false, enableSpecificationLevel = false, community = communityId
+            ),
+            List.empty
+          )
         )
-      )
+      } else {
+        settings
+      }
     }
-    settings
   }
 
   private def getConformanceCertificateSettings(communityId: Long, snapshotId: Option[Long]): DBIO[Option[ConformanceCertificate]] = {
@@ -1207,8 +1332,8 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
     }
   }
 
-  def getConformanceStatementCertificateMessage(snapshotId: Option[Long], communityId: Long): Option[String] = {
-    exec(
+  def getConformanceStatementCertificateMessage(snapshotId: Option[Long], communityId: Long): Future[Option[String]] = {
+    DB.run(
       for {
         message <- if (snapshotId.isEmpty) {
           PersistenceSchema.conformanceCertificates.filter(_.community === communityId).map(_.message).result.headOption
@@ -1229,8 +1354,8 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
     )
   }
 
-  def getConformanceOverviewCertificateMessage(snapshot: Boolean, messageId: Long): Option[String] = {
-    exec(for {
+  def getConformanceOverviewCertificateMessage(snapshot: Boolean, messageId: Long): Future[Option[String]] = {
+    DB.run(for {
         message <- if (snapshot) {
           PersistenceSchema.conformanceSnapshotOverviewCertificateMessages.filter(_.id === messageId).map(_.message).result.headOption
         } else {
@@ -1310,11 +1435,13 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
   }
 
   def deleteConformanceOverviewCertificateSettings(communityId: Long): DBIO[_] = {
-    PersistenceSchema.conformanceOverviewCertificateMessages.filter(_.community === communityId).delete andThen
-      PersistenceSchema.conformanceOverviewCertificates.filter(_.community === communityId).delete
+    for {
+      _ <- PersistenceSchema.conformanceOverviewCertificateMessages.filter(_.community === communityId).delete
+      _ <- PersistenceSchema.conformanceOverviewCertificates.filter(_.community === communityId).delete
+    } yield ()
   }
 
-  def applyConfigurationViaAutomationApi(communityKey: String, request: ConfigurationRequest): List[String] = {
+  def applyConfigurationViaAutomationApi(communityKey: String, request: ConfigurationRequest): Future[List[String]] = {
     val warnings = new ListBuffer[String]()
     val dbAction = for {
       communityIds <- PersistenceSchema.communities.filter(_.apiKey === communityKey).map(x => (x.id, x.domain)).result.headOption
@@ -1361,7 +1488,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
         toDBIO(actions)
       }
     } yield warnings.toList
-    exec(dbAction.transactionally)
+    DB.run(dbAction.transactionally)
   }
 
   private def updateStatementPropertiesViaApi(updateData: StatementConfiguration, communityId: Long, domainId: Option[Long], warnings: ListBuffer[String]): DBIO[_] = {
@@ -1671,7 +1798,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
     } yield property
   }
 
-  def createOrganisationParameterDefinitionThroughAutomationApi(communityApiKey: String, input: CustomPropertyInfo): Unit = {
+  def createOrganisationParameterDefinitionThroughAutomationApi(communityApiKey: String, input: CustomPropertyInfo): Future[Unit] = {
     val dbAction = for {
       // Load community ID.
       communityId <- automationApiHelper.getCommunityByCommunityApiKey(communityApiKey)
@@ -1702,10 +1829,10 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
         ))
       }
     } yield ()
-    exec(dbAction.transactionally)
+    DB.run(dbAction.transactionally)
   }
 
-  def createSystemParameterDefinitionThroughAutomationApi(communityApiKey: String, input: CustomPropertyInfo): Unit = {
+  def createSystemParameterDefinitionThroughAutomationApi(communityApiKey: String, input: CustomPropertyInfo): Future[Unit] = {
     val dbAction = for {
       // Load community ID.
       communityId <- automationApiHelper.getCommunityByCommunityApiKey(communityApiKey)
@@ -1735,40 +1862,42 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
         ))
       }
     } yield ()
-    exec(dbAction.transactionally)
+    DB.run(dbAction.transactionally)
   }
 
-  def getCommunityIdOfDomain(domainId: Long): Option[Long] = {
-    val communityIds = exec(
+  def getCommunityIdOfDomain(domainId: Long): Future[Option[Long]] = {
+    DB.run(
       PersistenceSchema.communities
         .filter(_.domain === domainId)
         .map(_.id)
         .result
-    )
-    if (communityIds.size == 1) {
-      Some(communityIds.head)
-    } else {
-      None
+    ).map { communityIds =>
+      if (communityIds.size == 1) {
+        Some(communityIds.head)
+      } else {
+        None
+      }
     }
   }
 
-  def getCommunityIdOfActor(actorId: Long): Option[Long] = {
-    val communityIds = exec(
+  def getCommunityIdOfActor(actorId: Long): Future[Option[Long]] = {
+    DB.run(
       PersistenceSchema.communities
         .join(PersistenceSchema.actors).on(_.domain === _.domain)
         .filter(_._2.id === actorId)
         .map(_._1.id)
         .result
-    )
-    if (communityIds.size == 1) {
-      Some(communityIds.head)
-    } else {
-      None
+    ).map { communityIds =>
+      if (communityIds.size == 1) {
+        Some(communityIds.head)
+      } else {
+        None
+      }
     }
   }
 
-  def getCommunityIdOfSnapshot(snapshotId: Long): Option[Long] = {
-    exec(
+  def getCommunityIdOfSnapshot(snapshotId: Long): Future[Option[Long]] = {
+    DB.run(
       PersistenceSchema.conformanceSnapshots
       .filter(_.id === snapshotId)
       .map(_.community)

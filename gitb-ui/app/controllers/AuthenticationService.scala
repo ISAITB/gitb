@@ -11,82 +11,122 @@ import play.api.mvc._
 import utils.{CryptoUtil, JsonUtil, RepositoryUtils}
 
 import javax.inject.Inject
+import scala.concurrent.{ExecutionContext, Future}
 
-class AuthenticationService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, accountManager: AccountManager, authManager: AuthenticationManager, authorizationManager: AuthorizationManager, userManager: UserManager, repositoryUtils: RepositoryUtils) extends AbstractController(cc) {
+class AuthenticationService @Inject() (authorizedAction: AuthorizedAction,
+                                       cc: ControllerComponents,
+                                       accountManager: AccountManager,
+                                       authManager: AuthenticationManager,
+                                       authorizationManager: AuthorizationManager,
+                                       userManager: UserManager,
+                                       repositoryUtils: RepositoryUtils)
+                                      (implicit ec: ExecutionContext) extends AbstractController(cc) {
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[AuthenticationService])
   private final val BEARER = "Bearer"
 
-  def getUserFunctionalAccounts = authorizedAction { request =>
-    authorizationManager.canViewUserFunctionalAccounts(request)
-    val json: String = JsonUtil.jsActualUserInfo(authorizationManager.getAccountInfo(request)).toString
-    ResponseConstructor.constructJsonResponse(json)
-  }
-
-  def getUserUnlinkedFunctionalAccounts = authorizedAction { request =>
-    authorizationManager.canViewUserFunctionalAccounts(request)
-    val accountInfo = authorizationManager.getPrincipal(request)
-    val userAccounts = accountManager.getUnlinkedUserAccountsForEmail(accountInfo.email)
-    val json: String = JsonUtil.jsUserAccounts(userAccounts).toString
-    ResponseConstructor.constructJsonResponse(json)
-  }
-
-  def linkFunctionalAccount = authorizedAction { request =>
-    val userId = ParameterExtractor.requiredBodyParameter(request, Parameters.ID).toLong
-    authorizationManager.canLinkFunctionalAccount(request, userId)
-    accountManager.linkAccount(userId, authorizationManager.getPrincipal(request))
-    // Return new account info
-    val json: String = JsonUtil.jsActualUserInfo(authorizationManager.getAccountInfo(request)).toString
-    ResponseConstructor.constructJsonResponse(json)
-  }
-
-  def migrateFunctionalAccount = authorizedAction { request =>
-    authorizationManager.canMigrateAccount(request)
-    val email = ParameterExtractor.requiredBodyParameter(request, Parameters.EMAIL).trim
-    val password = ParameterExtractor.requiredBodyParameter(request, Parameters.PASSWORD).trim
-    val result = authManager.checkUserByEmail(email, password)
-    if (result.isDefined) {
-      if (result.get.ssoUid.isDefined || result.get.ssoEmail.isDefined) {
-        // User already migrated.
-        ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_CREDENTIALS, "The provided credentials match an already migrated account.", Some("username"))
-      } else if (Configurations.DEMOS_ENABLED && Configurations.DEMOS_ACCOUNT == result.get.id) {
-        // Attempt to migrate the demo account. Return message as if the user doesn't exist.
-        logger.warn("Attempt made by ["+authorizationManager.getPrincipal(request).uid+"] to migrate the demo account ["+Configurations.DEMOS_ACCOUNT+"]")
-        ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_CREDENTIALS, "The provided credentials did not match a previously existing account.", Some("username"))
-      } else {
-        // Link the account.
-        accountManager.migrateAccount(result.get.id, authorizationManager.getPrincipal(request))
-        val json: String = JsonUtil.jsActualUserInfo(authorizationManager.getAccountInfo(request)).toString
+  def getUserFunctionalAccounts: Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canViewUserFunctionalAccounts(request).flatMap { _ =>
+      authorizationManager.getAccountInfo(request).map { accountInfo =>
+        val json: String = JsonUtil.jsActualUserInfo(accountInfo).toString
         ResponseConstructor.constructJsonResponse(json)
       }
-    } else {
-      // User not found
-      ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_CREDENTIALS, "The provided credentials did not match a previously existing account.", Some("username"))
     }
   }
 
-  def selectFunctionalAccount = authorizedAction { request =>
+  def getUserUnlinkedFunctionalAccounts: Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canViewUserFunctionalAccounts(request).flatMap { _ =>
+      authorizationManager.getPrincipal(request).flatMap { accountInfo =>
+        accountManager.getUnlinkedUserAccountsForEmail(accountInfo.email).map { userAccounts =>
+          val json: String = JsonUtil.jsUserAccounts(userAccounts).toString
+          ResponseConstructor.constructJsonResponse(json)
+        }
+      }
+    }
+  }
+
+  def linkFunctionalAccount: Action[AnyContent] = authorizedAction.async { request =>
     val userId = ParameterExtractor.requiredBodyParameter(request, Parameters.ID).toLong
-    authorizationManager.canSelectFunctionalAccount(request, userId)
-    completeAccessTokenLogin(userId)
+    authorizationManager.canLinkFunctionalAccount(request, userId).flatMap { _ =>
+      authorizationManager.getPrincipal(request).flatMap { principal =>
+        accountManager.linkAccount(userId, principal).flatMap { _ =>
+          // Return new account info
+          authorizationManager.getAccountInfo(request).map { accountInfo =>
+            val json: String = JsonUtil.jsActualUserInfo(accountInfo).toString
+            ResponseConstructor.constructJsonResponse(json)
+          }
+        }
+      }
+    }
   }
 
-  def disconnectFunctionalAccount = authorizedAction { request =>
-    authorizationManager.canDisconnectFunctionalAccount(request)
-    val userId = ParameterExtractor.extractUserId(request)
-    val userInfo = authorizationManager.getPrincipal(request)
-    val option = ParameterExtractor.requiredBodyParameter(request, Parameters.TYPE).toShort
-    if (option == 1) {
-      // Current partial.
-      accountManager.disconnectAccount(userId, userInfo.uid)
-    } else if (option == 2) {
-      // Current full.
-      userManager.deleteUserExceptTestBedAdmin(userId)
-    } else if (option == 3) {
-      // All.
-      userManager.deleteUsersByUidExceptTestBedAdmin(userInfo.uid, userInfo.email)
+  def migrateFunctionalAccount: Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canMigrateAccount(request).flatMap { _ =>
+      val email = ParameterExtractor.requiredBodyParameter(request, Parameters.EMAIL).trim
+      val password = ParameterExtractor.requiredBodyParameter(request, Parameters.PASSWORD).trim
+      authManager.checkUserByEmail(email, password).flatMap { result =>
+        if (result.isDefined) {
+          if (result.get.ssoUid.isDefined || result.get.ssoEmail.isDefined) {
+            // User already migrated.
+            Future.successful {
+              ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_CREDENTIALS, "The provided credentials match an already migrated account.", Some("username"))
+            }
+          } else if (Configurations.DEMOS_ENABLED && Configurations.DEMOS_ACCOUNT == result.get.id) {
+            // Attempt to migrate the demo account. Return message as if the user doesn't exist.
+            authorizationManager.getPrincipal(request).map { principal =>
+              logger.warn("Attempt made by ["+principal.uid+"] to migrate the demo account ["+Configurations.DEMOS_ACCOUNT+"]")
+              ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_CREDENTIALS, "The provided credentials did not match a previously existing account.", Some("username"))
+            }
+          } else {
+            // Link the account.
+            authorizationManager.getPrincipal(request).flatMap { principal =>
+              accountManager.migrateAccount(result.get.id, principal).flatMap { _ =>
+                authorizationManager.getAccountInfo(request).map { accountInfo =>
+                  val json: String = JsonUtil.jsActualUserInfo(accountInfo).toString
+                  ResponseConstructor.constructJsonResponse(json)
+                }
+              }
+            }
+          }
+        } else {
+          // User not found
+          Future.successful {
+            ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_CREDENTIALS, "The provided credentials did not match a previously existing account.", Some("username"))
+          }
+        }
+      }
     }
-    ResponseConstructor.constructEmptyResponse
+  }
+
+  def selectFunctionalAccount: Action[AnyContent] = authorizedAction.async { request =>
+    val userId = ParameterExtractor.requiredBodyParameter(request, Parameters.ID).toLong
+    authorizationManager.canSelectFunctionalAccount(request, userId).map { _ =>
+      completeAccessTokenLogin(userId)
+    }
+  }
+
+  def disconnectFunctionalAccount: Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canDisconnectFunctionalAccount(request).flatMap { _ =>
+      val userId = ParameterExtractor.extractUserId(request)
+      authorizationManager.getPrincipal(request).flatMap { userInfo =>
+        val option = ParameterExtractor.requiredBodyParameter(request, Parameters.TYPE).toShort
+        val action = if (option == 1) {
+          // Current partial.
+          accountManager.disconnectAccount(userId)
+        } else if (option == 2) {
+          // Current full.
+          userManager.deleteUserExceptTestBedAdmin(userId)
+        } else if (option == 3) {
+          // All.
+          userManager.deleteUsersByUidExceptTestBedAdmin(userInfo.uid, userInfo.email)
+        } else {
+          Future.successful(true)
+        }
+        action.map { _ =>
+          ResponseConstructor.constructEmptyResponse
+        }
+      }
+    }
   }
 
   private def completeAccessTokenLogin(userId: Long): Result = {
@@ -95,108 +135,126 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction, cc: C
     ResponseConstructor.constructOauthResponse(tokens, userId)
   }
 
-  def replaceOnetimePassword = authorizedAction { request =>
-    authorizationManager.canLogin(request)
-    val email = ParameterExtractor.requiredBodyParameter(request, Parameters.EMAIL)
-    val newPassword = ParameterExtractor.requiredBodyParameter(request, Parameters.PASSWORD)
-    if (CryptoUtil.isAcceptedPassword(newPassword)) {
-      val oldPassword = ParameterExtractor.requiredBodyParameter(request, Parameters.OLD_PASSWORD)
-      val result = authManager.replaceOnetimePassword(email, newPassword, oldPassword)
-      if (result.isEmpty) {
-        ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_CREDENTIALS, "Incorrect password.", Some("current"))
+  def replaceOnetimePassword: Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canLogin(request).flatMap { _ =>
+      val email = ParameterExtractor.requiredBodyParameter(request, Parameters.EMAIL)
+      val newPassword = ParameterExtractor.requiredBodyParameter(request, Parameters.PASSWORD)
+      if (CryptoUtil.isAcceptedPassword(newPassword)) {
+        val oldPassword = ParameterExtractor.requiredBodyParameter(request, Parameters.OLD_PASSWORD)
+        authManager.replaceOnetimePassword(email, newPassword, oldPassword).map { result =>
+          if (result.isEmpty) {
+            ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_CREDENTIALS, "Incorrect password.", Some("current"))
+          } else {
+            completeAccessTokenLogin(result.get)
+          }
+        }
       } else {
-        completeAccessTokenLogin(result.get)
+        Future.successful {
+          ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_CREDENTIALS, "Password does not match required complexity rules. It must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one digit and one symbol.", Some("new"))
+        }
       }
-    } else {
-      ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_CREDENTIALS, "Password does not match required complexity rules. It must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one digit and one symbol.", Some("new"))
     }
   }
 
   /**
     * OAuth2.0 request (Resource Owner Password Credentials Grant) for getting or refreshing access token
     */
-  def access_token = authorizedAction { request =>
-    authorizationManager.canLogin(request)
-    val email = ParameterExtractor.requiredBodyParameter(request, Parameters.EMAIL)
-    val passwd = ParameterExtractor.requiredBodyParameter(request, Parameters.PASSWORD)
-    val result = authManager.checkUserByEmail(email, passwd)
-    // User found
-    if (result.isDefined) {
-      if (result.get.onetimePassword) {
-        // Onetime password needs to be replaced first.
-        Ok("{\"onetime\": true}").as(JSON)
-      } else if (!CryptoUtil.isAcceptedPassword(passwd)) {
-        Ok("{\"weakPassword\": true}").as(JSON)
-      } else {
-        // All ok.
-        completeAccessTokenLogin(result.get.id)
+  def access_token: Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canLogin(request).flatMap { _ =>
+      val email = ParameterExtractor.requiredBodyParameter(request, Parameters.EMAIL)
+      val passwd = ParameterExtractor.requiredBodyParameter(request, Parameters.PASSWORD)
+      authManager.checkUserByEmail(email, passwd).map { result =>
+        // User found
+        if (result.isDefined) {
+          if (result.get.onetimePassword) {
+            // Onetime password needs to be replaced first.
+            Ok("{\"onetime\": true}").as(JSON)
+          } else if (!CryptoUtil.isAcceptedPassword(passwd)) {
+            Ok("{\"weakPassword\": true}").as(JSON)
+          } else {
+            // All ok.
+            completeAccessTokenLogin(result.get.id)
+          }
+        } else {
+          // No user with given credentials
+          throw InvalidAuthorizationException(ErrorCodes.INVALID_CREDENTIALS, "Invalid credentials")
+        }
       }
-    } else {
-      // No user with given credentials
-      throw InvalidAuthorizationException(ErrorCodes.INVALID_CREDENTIALS, "Invalid credentials")
     }
   }
 
   /**
     * Check email availability
     */
-  def checkEmail = authorizedAction { request =>
-    authorizationManager.canCheckAnyUserEmail(request)
-    val email = ParameterExtractor.requiredQueryParameter(request, Parameters.EMAIL)
-    val isAvailable = authManager.checkEmailAvailability(email, None, None, Some(Enums.UserRole.VendorUser.id.toShort))
-    ResponseConstructor.constructAvailabilityResponse(isAvailable)
-  }
-
-  /**
-    * Check email availability
-    */
-  def checkEmailOfOrganisationMember = authorizedAction { request =>
-    val userId = ParameterExtractor.extractUserId(request)
-    val userInfo = accountManager.getUserProfile(userId)
-    authorizationManager.canCheckUserEmail(request, userInfo.organization.get.id)
-    val email = ParameterExtractor.requiredQueryParameter(request, Parameters.EMAIL)
-    val roleId = if (Configurations.AUTHENTICATION_SSO_ENABLED) {
-      Some(ParameterExtractor.requiredQueryParameter(request, Parameters.ROLE_ID).toShort)
-    } else {
-      None
+  def checkEmail: Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canCheckAnyUserEmail(request).flatMap { _ =>
+      val email = ParameterExtractor.requiredQueryParameter(request, Parameters.EMAIL)
+      authManager.checkEmailAvailability(email, None, None, Some(Enums.UserRole.VendorUser.id.toShort)).map { isAvailable =>
+        ResponseConstructor.constructAvailabilityResponse(isAvailable)
+      }
     }
-    val isAvailable = authManager.checkEmailAvailability(email, Some(userInfo.organization.get.id), None, roleId)
-    ResponseConstructor.constructAvailabilityResponse(isAvailable)
   }
 
   /**
     * Check email availability
     */
-  def checkEmailOfSystemAdmin = authorizedAction { request =>
+  def checkEmailOfOrganisationMember(): Action[AnyContent] = authorizedAction.async { request =>
     val userId = ParameterExtractor.extractUserId(request)
-    val userInfo = accountManager.getUserProfile(userId)
-    authorizationManager.canCheckSystemAdminEmail(request)
-    val email = ParameterExtractor.requiredQueryParameter(request, Parameters.EMAIL)
-    val isAvailable = authManager.checkEmailAvailability(email, Some(userInfo.organization.get.id), None, None)
-    ResponseConstructor.constructAvailabilityResponse(isAvailable)
+    accountManager.getUserProfile(userId).flatMap { userInfo =>
+      authorizationManager.canCheckUserEmail(request, userInfo.organization.get.id).flatMap { _ =>
+        val email = ParameterExtractor.requiredQueryParameter(request, Parameters.EMAIL)
+        val roleId = if (Configurations.AUTHENTICATION_SSO_ENABLED) {
+          Some(ParameterExtractor.requiredQueryParameter(request, Parameters.ROLE_ID).toShort)
+        } else {
+          None
+        }
+        authManager.checkEmailAvailability(email, Some(userInfo.organization.get.id), None, roleId).map { isAvailable =>
+          ResponseConstructor.constructAvailabilityResponse(isAvailable)
+        }
+      }
+    }
   }
 
   /**
     * Check email availability
     */
-  def checkEmailOfCommunityAdmin = authorizedAction { request =>
+  def checkEmailOfSystemAdmin: Action[AnyContent] = authorizedAction.async { request =>
+    val userId = ParameterExtractor.extractUserId(request)
+    accountManager.getUserProfile(userId).flatMap { userInfo =>
+      authorizationManager.canCheckSystemAdminEmail(request).flatMap { _ =>
+        val email = ParameterExtractor.requiredQueryParameter(request, Parameters.EMAIL)
+        authManager.checkEmailAvailability(email, Some(userInfo.organization.get.id), None, None).map { isAvailable =>
+          ResponseConstructor.constructAvailabilityResponse(isAvailable)
+        }
+      }
+    }
+  }
+
+  /**
+    * Check email availability
+    */
+  def checkEmailOfCommunityAdmin: Action[AnyContent] = authorizedAction.async { request =>
     val communityId = ParameterExtractor.requiredQueryParameter(request, Parameters.COMMUNITY_ID).toLong
-    authorizationManager.canCheckCommunityAdminEmail(request, communityId)
-    val email = ParameterExtractor.requiredQueryParameter(request, Parameters.EMAIL)
-    val isAvailable = authManager.checkEmailAvailability(email, None, Some(communityId), None)
-    ResponseConstructor.constructAvailabilityResponse(isAvailable)
+    authorizationManager.canCheckCommunityAdminEmail(request, communityId).flatMap { _ =>
+      val email = ParameterExtractor.requiredQueryParameter(request, Parameters.EMAIL)
+      authManager.checkEmailAvailability(email, None, Some(communityId), None).map { isAvailable =>
+        ResponseConstructor.constructAvailabilityResponse(isAvailable)
+      }
+    }
   }
 
   /**
     * Check email availability
     */
-  def checkEmailOfOrganisationUser = authorizedAction { request =>
+  def checkEmailOfOrganisationUser(): Action[AnyContent] = authorizedAction.async { request =>
     val organisationId = ParameterExtractor.requiredQueryParameter(request, Parameters.ORGANIZATION_ID).toLong
-    authorizationManager.canCheckOrganisationUserEmail(request, organisationId)
-    val email = ParameterExtractor.requiredQueryParameter(request, Parameters.EMAIL)
-    val roleId = ParameterExtractor.requiredQueryParameter(request, Parameters.ROLE_ID).toShort
-    val isAvailable = authManager.checkEmailAvailability(email, Some(organisationId), None, Some(roleId))
-    ResponseConstructor.constructAvailabilityResponse(isAvailable)
+    authorizationManager.canCheckOrganisationUserEmail(request, organisationId).flatMap { _ =>
+      val email = ParameterExtractor.requiredQueryParameter(request, Parameters.EMAIL)
+      val roleId = ParameterExtractor.requiredQueryParameter(request, Parameters.ROLE_ID).toShort
+      authManager.checkEmailAvailability(email, Some(organisationId), None, Some(roleId)).map { isAvailable =>
+        ResponseConstructor.constructAvailabilityResponse(isAvailable)
+      }
+    }
   }
 
   /**
@@ -204,21 +262,22 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction, cc: C
     *
     * @return
     */
-  def logout = authorizedAction { request =>
-    authorizationManager.canLogout(request)
-    val isFullLogout = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL).toBoolean
-    val authzHeader = request.headers.get(AUTHORIZATION)
-    if (authzHeader.isDefined){
-      val list = authzHeader.get.split(BEARER + " ")
-      if(list.length == 2) {
-        val accessToken = list(1)
-        TokenCache.deleteOAthToken(accessToken)
+  def logout: Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canLogout(request).map { _ =>
+      val isFullLogout = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL).toBoolean
+      val authzHeader = request.headers.get(AUTHORIZATION)
+      if (authzHeader.isDefined){
+        val list = authzHeader.get.split(BEARER + " ")
+        if(list.length == 2) {
+          val accessToken = list(1)
+          TokenCache.deleteOAthToken(accessToken)
+        }
       }
-    }
-    if (isFullLogout) {
-      ResponseConstructor.constructEmptyResponse.withNewSession
-    } else {
-      ResponseConstructor.constructEmptyResponse
+      if (isFullLogout) {
+        ResponseConstructor.constructEmptyResponse.withNewSession
+      } else {
+        ResponseConstructor.constructEmptyResponse
+      }
     }
   }
 

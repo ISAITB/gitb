@@ -9,6 +9,8 @@ import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 import javax.inject.{Inject, Singleton}
+import scala.concurrent.Await
+import scala.concurrent.duration.{Duration, SECONDS}
 
 @Singleton
 class ReportHelper @Inject()(repositoryUtils: RepositoryUtils, communityResourceManager: CommunityResourceManager) {
@@ -24,14 +26,16 @@ class ReportHelper @Inject()(repositoryUtils: RepositoryUtils, communityResource
         if (communityId.isDefined && resourceUri.startsWith("resources/")) {
           // Community-specific resource
           val resourceName = URLDecoder.decode(StringUtils.removeStart(resourceUri, "resources/"), StandardCharsets.UTF_8)
-          val file = communityResourceManager.getCommunityResourceFileByNameAndCommunity(communityId.get, resourceName)
+          // We cannot work with async tasks at this point - do a synchronous lookup of the file
+          val file = Await.result(communityResourceManager.getCommunityResourceFileByNameAndCommunity(communityId.get, resourceName), Duration(30, SECONDS))
           if (file.nonEmpty) {
             resolvedPath = file.get.toURI.toString
           }
         } else if (resourceUri.startsWith("systemResources/")) {
           // System resource
           val resourceName = URLDecoder.decode(StringUtils.removeStart(resourceUri, "systemResources/"), StandardCharsets.UTF_8)
-          val file = communityResourceManager.getSystemResourceFileByName(resourceName)
+          // We cannot work with async tasks at this point - do a synchronous lookup of the file
+          val file = Await.result(communityResourceManager.getSystemResourceFileByName(resourceName), Duration(30, SECONDS))
           if (file.nonEmpty) {
             resolvedPath = file.get.toURI.toString
           }

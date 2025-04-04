@@ -2,88 +2,115 @@ package actors.events.sessions
 
 import com.gitb.core.AnyContent
 import com.gitb.tpl.TestCase
-import models.TestSessionLaunchData
+import models.{SessionConfigurationData, TestSessionLaunchData, TypedActorConfiguration}
 
-object SessionLaunchState {
+import scala.collection.mutable
 
-  def newState(): SessionLaunchState = {
-    SessionLaunchState(None, Set.empty, Set.empty, Set.empty, Map.empty, Map.empty)
+class SessionLaunchState {
+
+  private var data = Option.empty[TestSessionLaunchData]
+  private val pendingTestCases = mutable.LinkedHashSet[Long]()
+  private val loadingDefinitionTestCases = mutable.Set[Long]()
+  private val inProgressTestCases = mutable.Set[Long]()
+  private val completedTestCases = mutable.Set[Long]()
+  private val configuredTestSessions = mutable.Set[String]()
+  private val inProgressTestSessions = mutable.Set[String]()
+  private val startedTestSessions = mutable.Set[String]()
+  private val completedTestSessions = mutable.Set[String]()
+  private val idToSessionMap = mutable.Map[Long, String]()
+  private val sessionToIdMap = mutable.Map[String, Long]()
+  private val testCaseDefinitionCache = mutable.Map[Long, TestCase]()
+
+  def setLaunchData(data: TestSessionLaunchData): SessionLaunchState = {
+    this.data = Some(data)
+    this.pendingTestCases.addAll(data.testCases)
+    this
   }
 
-}
-
-case class SessionLaunchState (
-  data: Option[TestSessionLaunchData],
-  configuredTestSessions: Set[String],
-  startedTestSessions: Set[String],
-  completedTestSessions: Set[String],
-  sessionIdMap: Map[String, Long],
-  testCaseDefinitionCache: Map[Long, TestCase]
-) {
-
-  def newForLaunchData(data: TestSessionLaunchData): SessionLaunchState = {
-    SessionLaunchState(Some(data), configuredTestSessions, startedTestSessions, completedTestSessions, sessionIdMap, testCaseDefinitionCache)
-  }
-
-  def newForStartedTestSession(startedSessionId: String): SessionLaunchState = {
+  def setStartedTestSession(startedSessionId: String): SessionLaunchState = {
     // Record the test session as started and add the mapping between test case ID and test session ID
-    SessionLaunchState(data, configuredTestSessions, startedTestSessions + startedSessionId, completedTestSessions, sessionIdMap, testCaseDefinitionCache)
+    this.startedTestSessions += startedSessionId
+    this
   }
 
-  def newForConfiguredTestSession(configuredTestCaseId: Long, assignedSessionId: String): SessionLaunchState = {
+  def setInProgressTestSession(testCaseId: Long): SessionLaunchState = {
+    this.loadingDefinitionTestCases -= testCaseId
+    this.inProgressTestCases += testCaseId
+    this
+  }
+
+  def setLoadingDefinitionForTestCase(testCaseId: Long): SessionLaunchState = {
+    this.pendingTestCases -= testCaseId
+    this.loadingDefinitionTestCases += testCaseId
+    this
+  }
+
+  def setConfiguredTestSession(configuredTestCaseId: Long, assignedSessionId: String): SessionLaunchState = {
     // Record the test session as configured and add the mapping between test case ID and test session ID
-    if (data.isEmpty) {
-      SessionLaunchState(None, configuredTestSessions + assignedSessionId, startedTestSessions, completedTestSessions, sessionIdMap + (assignedSessionId -> configuredTestCaseId), testCaseDefinitionCache)
-    } else {
-      SessionLaunchState(dataForRemovedTestCaseId(configuredTestCaseId), configuredTestSessions + assignedSessionId, startedTestSessions, completedTestSessions, sessionIdMap + (assignedSessionId -> configuredTestCaseId), testCaseDefinitionCache)
+    this.inProgressTestSessions += assignedSessionId
+    this.configuredTestSessions += assignedSessionId
+    this.sessionToIdMap += (assignedSessionId -> configuredTestCaseId)
+    this.idToSessionMap += (configuredTestCaseId -> assignedSessionId)
+    this
+  }
+
+  def setFailedTestCase(testCaseId: Long): SessionLaunchState = {
+    this.loadingDefinitionTestCases -= testCaseId
+    this.inProgressTestCases -= testCaseId
+    this.completedTestCases += testCaseId
+    idToSessionMap.get(testCaseId).foreach { testSessionId =>
+      this.inProgressTestSessions -= testSessionId
     }
+    releaseTestCaseState(testCaseId)
+    this
   }
 
-  private def dataForRemovedTestCaseId(testCaseId: Long): Option[TestSessionLaunchData] = {
-    val otherTestCaseIds = data.get.testCases.filter(_ != testCaseId)
-    // Input map
-    var inputMapToUse: Option[Map[Long, List[AnyContent]]] = None
-    if (data.get.testCaseToInputMap.nonEmpty) {
-      inputMapToUse = Some(data.get.testCaseToInputMap.get.removed(testCaseId))
+  def setFailedTestSession(testSessionId: String): SessionLaunchState = {
+    this.inProgressTestSessions -= testSessionId
+    sessionToIdMap.get(testSessionId).foreach { testCaseId =>
+      this.loadingDefinitionTestCases -= testCaseId
+      this.inProgressTestCases -= testCaseId
+      this.completedTestCases += testCaseId
+      releaseTestCaseState(testCaseId)
     }
-    // New data
-    Some(TestSessionLaunchData(
-      data.get.communityId, data.get.organisationId, data.get.systemId, data.get.actorId,
-      otherTestCaseIds, data.get.statementParameters, data.get.domainParameters, data.get.organisationParameters,
-      data.get.systemParameters, inputMapToUse, data.get.sessionIdsToAssign, data.get.forceSequentialExecution
-    ))
+    this
   }
 
-  def newForFailedTestCase(testCaseId: Long): SessionLaunchState = {
-    SessionLaunchState(dataForRemovedTestCaseId(testCaseId), configuredTestSessions, startedTestSessions, completedTestSessions, sessionIdMap, testCaseDefinitionCache)
+  def setCompletedTestSession(testSessionId: String): SessionLaunchState = {
+    this.completedTestSessions += testSessionId
+    this.inProgressTestSessions -= testSessionId
+    sessionToIdMap.get(testSessionId).foreach { testCaseId =>
+      this.inProgressTestCases -= testCaseId
+      this.completedTestCases += testCaseId
+    }
+    this
   }
 
-  def newForCompletedTestSession(sessionId: String): SessionLaunchState = {
-    SessionLaunchState(data, configuredTestSessions, startedTestSessions, completedTestSessions + sessionId, sessionIdMap, testCaseDefinitionCache)
+  private def releaseTestCaseState(testCaseId: Long): Unit = {
+    testCaseDefinitionCache.remove(testCaseId)
   }
 
-  def newWithoutTestSessions(testSessions: Set[String]): SessionLaunchState = {
-    if (data.exists(_.sessionIdsToAssign.isDefined)) {
-      val testCaseIdsToRemove = data.get.sessionIdsToAssign.get.filter(x => testSessions.contains(x._2)).keys.toSet
-      if (testCaseIdsToRemove.nonEmpty) {
-        SessionLaunchState(
-          data.map(_.newWithoutTestCaseIds(testCaseIdsToRemove)),
-          configuredTestSessions,
-          startedTestSessions,
-          completedTestSessions,
-          sessionIdMap,
-          testCaseDefinitionCache.removedAll(testCaseIdsToRemove)
-        )
-      } else {
-        this
+  def removeTestSessions(testSessions: Set[String]): Int = {
+    var counter = 0
+    testSessions.foreach { testSessionId =>
+      if (sessionToIdMap.contains(testSessionId)) {
+        counter += 1
+        this.inProgressTestSessions -= testSessionId
+        sessionToIdMap.get(testSessionId).foreach { testCaseId =>
+          this.loadingDefinitionTestCases -= testCaseId
+          this.inProgressTestCases -= testCaseId
+          this.pendingTestCases -= testCaseId
+          this.completedTestCases += testCaseId
+          releaseTestCaseState(testCaseId)
+        }
       }
-    } else {
-      this
     }
+    counter
   }
 
-  def newForLoadedTestCaseDefinition(testCaseId: Long, definition: TestCase): SessionLaunchState = {
-    SessionLaunchState(data, configuredTestSessions, startedTestSessions, completedTestSessions, sessionIdMap, testCaseDefinitionCache + (testCaseId -> definition))
+  def setTestCaseDefinition(testCaseId: Long, definition: TestCase): SessionLaunchState = {
+    testCaseDefinitionCache += (testCaseId -> definition)
+    this
   }
 
   private def isSequentialExecution(): Boolean = {
@@ -91,7 +118,39 @@ case class SessionLaunchState (
   }
 
   def nextTestCaseId(): Long = {
-    data.get.testCases.head
+    pendingTestCases.head
+  }
+
+  def getSessionConfigurationData(onlySimple: Boolean): SessionConfigurationData = {
+    if (onlySimple) {
+      // Include only the configuration values that are simple texts
+      SessionConfigurationData(
+        Some(data.get.statementParameters.map { x =>
+          TypedActorConfiguration(x.actor, x.endpoint, x.config.filter(_.kind == "SIMPLE"))
+        }),
+        data.get.domainParameters.map { x =>
+          TypedActorConfiguration(x.actor, x.endpoint, x.config.filter(_.kind == "SIMPLE"))
+        },
+        Some(TypedActorConfiguration(data.get.organisationParameters.actor, data.get.organisationParameters.endpoint, data.get.organisationParameters.config.filter(_.kind == "SIMPLE"))),
+        Some(TypedActorConfiguration(data.get.systemParameters.actor, data.get.systemParameters.endpoint, data.get.systemParameters.config.filter(_.kind == "SIMPLE")))
+      )
+    } else {
+      // Include all configuration values
+      SessionConfigurationData(
+        Some(data.get.statementParameters),
+        data.get.domainParameters,
+        Some(data.get.organisationParameters),
+        Some(data.get.systemParameters)
+      )
+    }
+  }
+
+  def sessionForTestCaseId(testCaseId: Long): Option[String] = {
+    idToSessionMap.get(testCaseId)
+  }
+
+  def testCaseIdForSession(testSessionId: String): Option[Long] = {
+    sessionToIdMap.get(testSessionId)
   }
 
   def testCaseInputs(testCaseId: Long): Option[List[AnyContent]] = {
@@ -99,22 +158,28 @@ case class SessionLaunchState (
   }
 
   def testCaseAllowedToExecute(newTestCaseId: Long): Boolean = {
-    val incompleteSessions = configuredTestSessions.union(startedTestSessions).removedAll(completedTestSessions)
     if (isSequentialExecution()) {
-      incompleteSessions.isEmpty
+      !loadingDefinitionTestCases.exists(id => id != newTestCaseId) && !inProgressTestCases.exists(id => id != newTestCaseId)
     } else {
-      val otherIncompleteTestCaseIds = sessionIdMap.filter(x => {
-        incompleteSessions.contains(x._1)
-      }).values
-      val otherIncompleteTestCasesRequireSequentialExecution = otherIncompleteTestCaseIds.exists(id => {
+      val otherInProgressTestCases = inProgressTestCases.filter(id => id != newTestCaseId)
+      val otherIncompleteTestCasesRequireSequentialExecution = otherInProgressTestCases.exists(id => {
         testCaseDefinitionCache.get(id).exists(!_.isSupportsParallelExecution)
       })
-      !otherIncompleteTestCasesRequireSequentialExecution && (incompleteSessions.isEmpty || testCaseDefinitionCache.get(newTestCaseId).exists(_.isSupportsParallelExecution))
+      val newTestCaseDefinition = testCaseDefinitionCache.get(newTestCaseId)
+      !otherIncompleteTestCasesRequireSequentialExecution && (otherInProgressTestCases.isEmpty || newTestCaseDefinition.isEmpty || newTestCaseDefinition.get.isSupportsParallelExecution)
     }
   }
 
   def assignPredefinedSessionId(testCaseId: Long): Option[String] = {
     data.flatMap(_.sessionIdsToAssign.flatMap(_.get(testCaseId)))
+  }
+
+  def isLoadingDefinition(testCaseId: Long): Boolean = {
+    loadingDefinitionTestCases.contains(testCaseId)
+  }
+
+  def isInProgress(testCaseId: Long): Boolean = {
+    inProgressTestCases.contains(testCaseId)
   }
 
   def isConfiguredSession(sessionId: String): Boolean = {
@@ -146,32 +211,39 @@ case class SessionLaunchState (
   }
 
   def allSessionsStarted(): Boolean = {
-    // The completed sessions include those that encountered errors
-    testSessionCount() == 0 && configuredTestSessions.removedAll(startedTestSessions).removedAll(completedTestSessions).isEmpty
+    data.isDefined && startedTestSessions.size == data.get.testCases.size
   }
 
   def hasSessionsToProcess(): Boolean = {
-    data.get.testCases.nonEmpty
+    pendingTestCases.nonEmpty
   }
 
   def hasData(): Boolean = {
     data.nonEmpty
   }
 
-  def testSessionCount(): Int = {
-    data.map(_.testCases.size).getOrElse(0)
+  private def pendingCount(): Int = {
+    pendingTestCases.size
+  }
+
+  private def inProgressCount(): Int = {
+    inProgressTestCases.size
   }
 
   private def startedSessionCount(): Int = {
     startedTestSessions.size
   }
 
-  private def configuredSessionCount(): Int = {
+  private def configuredCount(): Int = {
     configuredTestSessions.size
   }
 
-  private def completedSessionCount(): Int = {
+  private def completedCount(): Int = {
     completedTestSessions.size
+  }
+
+  private def finishedCount(): Int = {
+    completedTestCases.size
   }
 
   def testCaseDefinition(testCaseId: Long): Option[TestCase] = {
@@ -179,7 +251,14 @@ case class SessionLaunchState (
   }
 
   def statusText(): String = {
-    "Status: pending %s, configured %s, started %s, completed %s".formatted(testSessionCount(), configuredSessionCount(), startedSessionCount(), completedSessionCount())
+    "Status: pending %s, in progress %s, configured %s, started %s, completed %s, finished %s".formatted(
+      pendingCount(),
+      inProgressCount(),
+      configuredCount(),
+      startedSessionCount(),
+      completedCount(),
+      finishedCount()
+    )
   }
 
 }

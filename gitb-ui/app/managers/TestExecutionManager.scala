@@ -6,6 +6,7 @@ import actors.events.{ConformanceStatementSucceededEvent, TestSessionFailedEvent
 import com.gitb.core.{AnyContent, Configuration, ValueEmbeddingEnumeration}
 import com.gitb.tr.TestResultType
 import exceptions.{AutomationApiException, ErrorCodes, MissingRequiredParameterException}
+import managers.triggers.TriggerHelper
 import models.Enums.InputMappingMatchType
 import models._
 import models.automation.{InputMappingContent, TestSessionLaunchInfo, TestSessionLaunchRequest}
@@ -25,8 +26,7 @@ import java.util.concurrent.TimeUnit
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
 @Singleton
@@ -41,7 +41,8 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
                                       apiHelper: AutomationApiHelper,
                                       triggerHelper: TriggerHelper,
                                       conformanceManager: ConformanceManager,
-                                      dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+                                      dbConfigProvider: DatabaseConfigProvider)
+                                     (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
   private val LOGGER = LoggerFactory.getLogger(classOf[TestExecutionManager])
@@ -51,158 +52,182 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
     Constants.systemConfigurationName, Constants.organisationConfigurationName, Constants.domainConfigurationName
   )
 
-  def startHeadlessTestSessions(testCaseIds: List[Long], systemId: Long, actorId: Long, testCaseToInputMap: Option[Map[Long, List[AnyContent]]], sessionIdsToAssign: Option[Map[Long, String]], forceSequentialExecution: Boolean): Unit = {
+  def startHeadlessTestSessions(testCaseIds: List[Long], systemId: Long, actorId: Long, testCaseToInputMap: Option[Map[Long, List[AnyContent]]], sessionIdsToAssign: Option[Map[Long, String]], forceSequentialExecution: Boolean): Future[Unit] = {
     if (testCaseIds.nonEmpty) {
       // Load information common to all test sessions
-      val statementParameters = loadConformanceStatementParameters(systemId, actorId, onlySimple = false)
-      val domainParameters = loadDomainParametersByActorId(actorId, onlySimple = false)
-      val organisationData = loadOrganisationParameters(systemId, onlySimple = false)
-      val systemParameters = loadSystemParameters(systemId, onlySimple = false)
-      // Schedule test sessions
-      val launchInfo = PrepareTestSessionsEvent(TestSessionLaunchData(
-        organisationData._1.community, organisationData._1.id, systemId, actorId, testCaseIds,
-        statementParameters, domainParameters, organisationData._2, systemParameters,
-        testCaseToInputMap, sessionIdsToAssign, forceSequentialExecution))
-      getSessionManagerActor().tell(launchInfo, ActorRef.noSender)
-    }
-  }
-
-  def endSession(session:String): Unit = {
-    testbedClient.stop(session)
-    setEndTimeNow(session)
-  }
-
-  def loadConformanceStatementParameters(systemId: Long, actorId: Long, onlySimple: Boolean): List[TypedActorConfiguration] = {
-    // Get parameter information from the DB
-    val result = exec(for {
-      actorIdentifier <- PersistenceSchema.actors.filter(_.id === actorId).map(x => x.actorId).result.head
-      parameterData <- PersistenceSchema.endpoints
-        .join(PersistenceSchema.parameters).on(_.id === _.endpoint)
-        .joinLeft(PersistenceSchema.configs).on((p, c) => p._2.id === c.parameter && c.system === systemId)
-        .filter(_._1._1.actor === actorId)
-        .map(x => (
-          x._1._1.name, // Endpoint name [1]
-          x._1._2.name, // Parameter name [2]
-          x._2, // Parameter value [3]
-          x._1._2.dependsOn, // DependsOn [4]
-          x._1._2.dependsOnValue, // DependsOnValue [5]
-          x._1._2.kind, // Kind [6]
-          x._1._2.id, // Parameter ID [7]
-          x._1._2.use, // Parameter use [8]
-          x._1._2.notForTests, // Parameter not for tests [9]
-          x._1._2.testKey // Parameter test key [10]
-        )).result
-      parameters <- DBIO.successful(parameterData.map { x =>
-        val parameterValueData: (Option[String], Option[String]) = x._3 match {
-          case Some(v) => (Some(v.value), v.contentType)
-          case None => (None, None)
-        }
-        new SystemConfigurationParameterMinimal(x._7, x._1, x._2, x._10, parameterValueData._1, x._4, x._5, x._6, x._8, parameterValueData._2, x._9)
-      })
-    } yield (actorIdentifier, parameters))
-    // Keep only the values that have valid prerequisites defined.
-    val parameterData = PrerequisiteUtil.withValidPrerequisites(result._2)
-    val actorMap = new mutable.HashMap[String, (String, String, ListBuffer[TypedConfiguration])]()
-    parameterData.foreach{ p =>
-      if (p.parameterUse == "R" && p.parameterValue.isEmpty) {
-        throw MissingRequiredParameterException(p.parameterName, "Missing required conformance statement parameter ["+p.parameterName+"]")
-      } else if (!p.notForTests && p.parameterValue.isDefined && (!onlySimple || p.parameterKind == "SIMPLE")) {
-        var actorConfigEntry = actorMap.get(p.endpointName)
-        if (actorConfigEntry.isEmpty) {
-          val actorConfigData = (result._1, p.endpointName, new ListBuffer[TypedConfiguration])
-          actorMap += (p.endpointName -> actorConfigData)
-          actorConfigEntry = Some(actorConfigData)
-        }
-        val config = new Configuration()
-        config.setName(p.parameterKey)
-        if (p.parameterKind == "SECRET") {
-          config.setValue(MimeUtil.decryptString(p.parameterValue.get))
-        } else if (p.parameterKind == "BINARY") {
-          config.setValue(MimeUtil.getFileAsDataURL(repositoryUtils.getStatementParameterFile(p.parameterId, systemId), p.valueContentType.orNull))
-        } else {
-          config.setValue(p.parameterValue.get)
-        }
-        actorConfigEntry.get._3 += TypedConfiguration(config, p.parameterKind)
+      loadConformanceStatementParameters(systemId, actorId, onlySimple = false).zip(
+        loadDomainParametersByActorId(actorId, onlySimple = false).zip(
+          loadOrganisationParameters(systemId, onlySimple = false).zip(
+            loadSystemParameters(systemId, onlySimple = false)
+          )
+        )
+      ).map { results =>
+        val statementParameters = results._1
+        val domainParameters = results._2._1
+        val organisationData = results._2._2._1
+        val systemParameters = results._2._2._2
+        // Schedule test sessions
+        val launchInfo = PrepareTestSessionsEvent(TestSessionLaunchData(
+          organisationData._1.community, organisationData._1.id, systemId, actorId, testCaseIds,
+          statementParameters, domainParameters, organisationData._2, systemParameters,
+          testCaseToInputMap, sessionIdsToAssign, forceSequentialExecution))
+        getSessionManagerActor().tell(launchInfo, ActorRef.noSender)
       }
-    }
-    actorMap.values.map(actorData => TypedActorConfiguration(actorData._1, actorData._2, actorData._3.toList)).toList
-  }
-
-  def loadDomainParametersByDomainId(domainId: Long, onlySimple: Boolean): Option[TypedActorConfiguration] = {
-    val parameters = domainParameterManager.getDomainParameters(domainId, loadValues = true, Some(true), onlySimple = onlySimple)
-    if (parameters.nonEmpty) {
-      val configs = parameters.map(parameter => {
-        if (parameter.kind == "HIDDEN") {
-          toTypedConfig(parameter.name, MimeUtil.decryptString(parameter.value.get), parameter.kind)
-        } else if (parameter.kind == "BINARY") {
-          toTypedConfig(parameter.name, MimeUtil.getFileAsDataURL(repositoryUtils.getDomainParameterFile(domainId, parameter.id), parameter.contentType.orNull), parameter.kind)
-        } else {
-          toTypedConfig(parameter.name, parameter.value.get, parameter.kind)
-        }
-      })
-      Some(TypedActorConfiguration(Constants.domainConfigurationName, Constants.domainConfigurationName, configs))
     } else {
-      None
+      Future.successful(())
     }
   }
 
-  def loadDomainParametersByActorId(actorId: Long, onlySimple: Boolean): Option[TypedActorConfiguration] = {
-    val domainId = actorManager.getById(actorId).get.domain
-    loadDomainParametersByDomainId(domainId, onlySimple)
+  def endSession(session:String): Future[Unit] = {
+    testbedClient.stop(session).flatMap { _ =>
+      setEndTimeNow(session)
+    }
   }
 
-  def loadOrganisationParameters(systemId: Long, onlySimple: Boolean): (Organizations, TypedActorConfiguration) = {
-    val organisation = organisationManager.getOrganizationBySystemId(systemId)
-    val configs = new ListBuffer[TypedConfiguration]
-    configs += toTypedConfig(Constants.organisationConfiguration_fullName, organisation.fullname, "SIMPLE")
-    configs += toTypedConfig(Constants.organisationConfiguration_shortName, organisation.shortname, "SIMPLE")
-    val organisationProperties = PrerequisiteUtil.withValidPrerequisites(organisationManager.getOrganisationParameterValues(organisation.id, onlySimple = Some(onlySimple)))
-    if (organisationProperties.nonEmpty) {
-      organisationProperties.foreach{ property =>
-        if (property.parameter.use == "R" && property.value.isEmpty) {
-          throw MissingRequiredParameterException(property.parameter.name, "Missing required organisation parameter ["+property.parameter.name+"]")
-        }
-        if (!property.parameter.notForTests && property.value.isDefined) {
-          if (property.parameter.kind == "SECRET") {
-            configs += toTypedConfig(property.parameter.testKey, MimeUtil.decryptString(property.value.get.value), property.parameter.kind)
-          } else if (property.parameter.kind == "BINARY") {
-            configs += toTypedConfig(property.parameter.testKey, MimeUtil.getFileAsDataURL(repositoryUtils.getOrganisationPropertyFile(property.parameter.id, organisation.id), property.value.get.contentType.orNull), property.parameter.kind)
-          } else {
-            configs += toTypedConfig(property.parameter.testKey, property.value.get.value, property.parameter.kind)
+  def loadConformanceStatementParameters(systemId: Long, actorId: Long, onlySimple: Boolean): Future[List[TypedActorConfiguration]] = {
+    // Get parameter information from the DB
+    DB.run(
+      for {
+        actorIdentifier <- PersistenceSchema.actors.filter(_.id === actorId).map(x => x.actorId).result.head
+        parameterData <- PersistenceSchema.endpoints
+          .join(PersistenceSchema.parameters).on(_.id === _.endpoint)
+          .joinLeft(PersistenceSchema.configs).on((p, c) => p._2.id === c.parameter && c.system === systemId)
+          .filter(_._1._1.actor === actorId)
+          .map(x => (
+            x._1._1.name, // Endpoint name [1]
+            x._1._2.name, // Parameter name [2]
+            x._2, // Parameter value [3]
+            x._1._2.dependsOn, // DependsOn [4]
+            x._1._2.dependsOnValue, // DependsOnValue [5]
+            x._1._2.kind, // Kind [6]
+            x._1._2.id, // Parameter ID [7]
+            x._1._2.use, // Parameter use [8]
+            x._1._2.notForTests, // Parameter not for tests [9]
+            x._1._2.testKey // Parameter test key [10]
+          )).result
+        parameters <- DBIO.successful(parameterData.map { x =>
+          val parameterValueData: (Option[String], Option[String]) = x._3 match {
+            case Some(v) => (Some(v.value), v.contentType)
+            case None => (None, None)
           }
+          new SystemConfigurationParameterMinimal(x._7, x._1, x._2, x._10, parameterValueData._1, x._4, x._5, x._6, x._8, parameterValueData._2, x._9)
+        })
+      } yield (actorIdentifier, parameters)
+    ).map { result =>
+      // Keep only the values that have valid prerequisites defined.
+      val parameterData = PrerequisiteUtil.withValidPrerequisites(result._2)
+      val actorMap = new mutable.HashMap[String, (String, String, ListBuffer[TypedConfiguration])]()
+      parameterData.foreach{ p =>
+        if (p.parameterUse == "R" && p.parameterValue.isEmpty) {
+          throw MissingRequiredParameterException(p.parameterName, "Missing required conformance statement parameter ["+p.parameterName+"]")
+        } else if (!p.notForTests && p.parameterValue.isDefined && (!onlySimple || p.parameterKind == "SIMPLE")) {
+          var actorConfigEntry = actorMap.get(p.endpointName)
+          if (actorConfigEntry.isEmpty) {
+            val actorConfigData = (result._1, p.endpointName, new ListBuffer[TypedConfiguration])
+            actorMap += (p.endpointName -> actorConfigData)
+            actorConfigEntry = Some(actorConfigData)
+          }
+          val config = new Configuration()
+          config.setName(p.parameterKey)
+          if (p.parameterKind == "SECRET") {
+            config.setValue(MimeUtil.decryptString(p.parameterValue.get))
+          } else if (p.parameterKind == "BINARY") {
+            config.setValue(MimeUtil.getFileAsDataURL(repositoryUtils.getStatementParameterFile(p.parameterId, systemId), p.valueContentType.orNull))
+          } else {
+            config.setValue(p.parameterValue.get)
+          }
+          actorConfigEntry.get._3 += TypedConfiguration(config, p.parameterKind)
         }
       }
+      actorMap.values.map(actorData => TypedActorConfiguration(actorData._1, actorData._2, actorData._3.toList)).toList
     }
-    (organisation, TypedActorConfiguration(Constants.organisationConfigurationName, Constants.organisationConfigurationName, configs.toList))
   }
 
-  def loadSystemParameters(systemId: Long, onlySimple: Boolean): TypedActorConfiguration = {
-    val system = systemManager.getSystemById(systemId).get
-    val configs = new ListBuffer[TypedConfiguration]
-    configs += toTypedConfig(Constants.systemConfiguration_fullName, system.fullname, "SIMPLE")
-    configs += toTypedConfig(Constants.systemConfiguration_shortName, system.shortname, "SIMPLE")
-    if (system.version.nonEmpty) {
-      configs += toTypedConfig(Constants.systemConfiguration_version, system.version.get, "SIMPLE")
-    }
-    configs += toTypedConfig(Constants.systemConfiguration_apiKey, system.apiKey, "SIMPLE")
-    val systemProperties = PrerequisiteUtil.withValidPrerequisites(systemManager.getSystemParameterValues(systemId, onlySimple = Some(onlySimple)))
-    if (systemProperties.nonEmpty) {
-      systemProperties.foreach{ property =>
-        if (property.parameter.use == "R" && property.value.isEmpty) {
-          throw exceptions.MissingRequiredParameterException(property.parameter.name, "Missing required system parameter ["+property.parameter.name+"]")
-        }
-        if (!property.parameter.notForTests && property.value.isDefined) {
-          if (property.parameter.kind == "SECRET") {
-            configs += toTypedConfig(property.parameter.testKey, MimeUtil.decryptString(property.value.get.value), property.parameter.kind)
-          } else if (property.parameter.kind == "BINARY") {
-            configs += toTypedConfig(property.parameter.testKey, MimeUtil.getFileAsDataURL(repositoryUtils.getSystemPropertyFile(property.parameter.id, systemId), property.value.get.contentType.orNull), property.parameter.kind)
+  def loadDomainParametersByDomainId(domainId: Long, onlySimple: Boolean): Future[Option[TypedActorConfiguration]] = {
+    domainParameterManager.getDomainParameters(domainId, loadValues = true, Some(true), onlySimple = onlySimple).map { parameters =>
+      if (parameters.nonEmpty) {
+        val configs = parameters.map(parameter => {
+          if (parameter.kind == "HIDDEN") {
+            toTypedConfig(parameter.name, MimeUtil.decryptString(parameter.value.get), parameter.kind)
+          } else if (parameter.kind == "BINARY") {
+            toTypedConfig(parameter.name, MimeUtil.getFileAsDataURL(repositoryUtils.getDomainParameterFile(domainId, parameter.id), parameter.contentType.orNull), parameter.kind)
           } else {
-            configs += toTypedConfig(property.parameter.testKey, property.value.get.value, property.parameter.kind)
+            toTypedConfig(parameter.name, parameter.value.get, parameter.kind)
           }
-        }
+        })
+        Some(TypedActorConfiguration(Constants.domainConfigurationName, Constants.domainConfigurationName, configs))
+      } else {
+        None
       }
     }
-    TypedActorConfiguration(Constants.systemConfigurationName, Constants.systemConfigurationName, configs.toList)
+  }
+
+  def loadDomainParametersByActorId(actorId: Long, onlySimple: Boolean): Future[Option[TypedActorConfiguration]] = {
+    actorManager.getById(actorId).flatMap { actor =>
+      val domainId = actor.get.domain
+      loadDomainParametersByDomainId(domainId, onlySimple)
+    }
+  }
+
+  def loadOrganisationParameters(systemId: Long, onlySimple: Boolean): Future[(Organizations, TypedActorConfiguration)] = {
+    organisationManager.getOrganizationBySystemId(systemId).flatMap { organisation =>
+      val configs = new ListBuffer[TypedConfiguration]
+      configs += toTypedConfig(Constants.organisationConfiguration_fullName, organisation.fullname, "SIMPLE")
+      configs += toTypedConfig(Constants.organisationConfiguration_shortName, organisation.shortname, "SIMPLE")
+      organisationManager.getOrganisationParameterValues(organisation.id, onlySimple = Some(onlySimple)).map { parameters =>
+        val organisationProperties = PrerequisiteUtil.withValidPrerequisites(parameters)
+        if (organisationProperties.nonEmpty) {
+          organisationProperties.foreach{ property =>
+            if (property.parameter.use == "R" && property.value.isEmpty) {
+              throw MissingRequiredParameterException(property.parameter.name, "Missing required organisation parameter ["+property.parameter.name+"]")
+            }
+            if (!property.parameter.notForTests && property.value.isDefined) {
+              if (property.parameter.kind == "SECRET") {
+                configs += toTypedConfig(property.parameter.testKey, MimeUtil.decryptString(property.value.get.value), property.parameter.kind)
+              } else if (property.parameter.kind == "BINARY") {
+                configs += toTypedConfig(property.parameter.testKey, MimeUtil.getFileAsDataURL(repositoryUtils.getOrganisationPropertyFile(property.parameter.id, organisation.id), property.value.get.contentType.orNull), property.parameter.kind)
+              } else {
+                configs += toTypedConfig(property.parameter.testKey, property.value.get.value, property.parameter.kind)
+              }
+            }
+          }
+        }
+        (organisation, TypedActorConfiguration(Constants.organisationConfigurationName, Constants.organisationConfigurationName, configs.toList))
+      }
+    }
+  }
+
+  def loadSystemParameters(systemId: Long, onlySimple: Boolean): Future[TypedActorConfiguration] = {
+    systemManager.getSystemById(systemId).flatMap { result =>
+      val system = result.get
+      val configs = new ListBuffer[TypedConfiguration]
+      configs += toTypedConfig(Constants.systemConfiguration_fullName, system.fullname, "SIMPLE")
+      configs += toTypedConfig(Constants.systemConfiguration_shortName, system.shortname, "SIMPLE")
+      if (system.version.nonEmpty) {
+        configs += toTypedConfig(Constants.systemConfiguration_version, system.version.get, "SIMPLE")
+      }
+      configs += toTypedConfig(Constants.systemConfiguration_apiKey, system.apiKey, "SIMPLE")
+      systemManager.getSystemParameterValues(systemId, onlySimple = Some(onlySimple)).map { parameters =>
+        val systemProperties = PrerequisiteUtil.withValidPrerequisites(parameters)
+        if (systemProperties.nonEmpty) {
+          systemProperties.foreach{ property =>
+            if (property.parameter.use == "R" && property.value.isEmpty) {
+              throw exceptions.MissingRequiredParameterException(property.parameter.name, "Missing required system parameter ["+property.parameter.name+"]")
+            }
+            if (!property.parameter.notForTests && property.value.isDefined) {
+              if (property.parameter.kind == "SECRET") {
+                configs += toTypedConfig(property.parameter.testKey, MimeUtil.decryptString(property.value.get.value), property.parameter.kind)
+              } else if (property.parameter.kind == "BINARY") {
+                configs += toTypedConfig(property.parameter.testKey, MimeUtil.getFileAsDataURL(repositoryUtils.getSystemPropertyFile(property.parameter.id, systemId), property.value.get.contentType.orNull), property.parameter.kind)
+              } else {
+                configs += toTypedConfig(property.parameter.testKey, property.value.get.value, property.parameter.kind)
+              }
+            }
+          }
+        }
+        TypedActorConfiguration(Constants.systemConfigurationName, Constants.systemConfigurationName, configs.toList)
+      }
+    }
   }
 
   private def toTypedConfig(key: String, value: String, kind: String): TypedConfiguration =  {
@@ -369,19 +394,20 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
       }
     } yield (testCaseInputData._1, statementIds.systemId, statementIds.actorId, testCaseInputData._2, testCaseInputData._3, testCaseInputData._4)
     DB.run(q).flatMap { results =>
-      startHeadlessTestSessions(results._1, results._2, results._3, results._4, Some(results._6), request.forceSequentialExecution)
-      if (request.waitForCompletion) {
-        // Wait until the test sessions have completed.
-        val sessionBuffer = new ListBuffer[TestSessionLaunchInfo]()
-        sessionBuffer.addAll(results._5)
-        val maximumWaitTime = request.maximumWaitTime.getOrElse(30.seconds.toMillis)
-        val scheduler = actorSystem.scheduler
-        val startTime = System.currentTimeMillis()
-        after(getPollDelay(0, maximumWaitTime), scheduler)(checkTestSessionsUntilFinished(sessionBuffer, startTime, maximumWaitTime, scheduler)).map { sessionInfo =>
+      startHeadlessTestSessions(results._1, results._2, results._3, results._4, Some(results._6), request.forceSequentialExecution).flatMap { _ =>
+        if (request.waitForCompletion) {
+          // Wait until the test sessions have completed.
+          val sessionBuffer = new ListBuffer[TestSessionLaunchInfo]()
+          sessionBuffer.addAll(results._5)
+          val maximumWaitTime = request.maximumWaitTime.getOrElse(30.seconds.toMillis)
+          val scheduler = actorSystem.scheduler
+          val startTime = System.currentTimeMillis()
+          after(getPollDelay(0, maximumWaitTime), scheduler)(checkTestSessionsUntilFinished(sessionBuffer, startTime, maximumWaitTime, scheduler)).map { sessionInfo =>
             sessionInfo.toList
+          }
+        } else {
+          Future.successful(results._5)
         }
-      } else {
-        Future.successful(results._5)
       }
     }
   }
@@ -477,27 +503,35 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
     }
   }
 
-  def processAutomationStopRequest(organisationKey: String, sessionIds: List[String]): Unit = {
-    val sessionData = exec(
-      for {
-        organisationData <- apiHelper.loadOrganisationDataForAutomationProcessing(organisationKey)
-        _ <- apiHelper.checkOrganisationForAutomationApiUse(organisationData)
-        verifiedSessionIds <- PersistenceSchema.testResults
-            .filter(_.organizationId === organisationData.get.organisationId)
-            .filter(_.testSessionId inSet sessionIds)
-            .map(x => x.testSessionId)
-            .result
-      } yield (organisationData.get.organisationId, verifiedSessionIds)
-    )
-    // Signal stop to session manager (for tests that haven't started yet)
-    getSessionManagerActor().tell(TerminateSessionsEvent(sessionData._1, sessionIds.toSet), ActorRef.noSender)
-    // Signal stop to test engine (for already tests that are already running).
-    sessionData._2.foreach { sessionId =>
-      testbedClient.stop(sessionId)
-    }
+  def processAutomationStopRequest(organisationKey: String, sessionIds: List[String]): Future[Unit] = {
+    for {
+      sessionData <- {
+        DB.run(
+          for {
+            organisationData <- apiHelper.loadOrganisationDataForAutomationProcessing(organisationKey)
+            _ <- apiHelper.checkOrganisationForAutomationApiUse(organisationData)
+            verifiedSessionIds <- PersistenceSchema.testResults
+              .filter(_.organizationId === organisationData.get.organisationId)
+              .filter(_.testSessionId inSet sessionIds)
+              .map(x => x.testSessionId)
+              .result
+          } yield (organisationData.get.organisationId, verifiedSessionIds)
+        )
+      }
+      _ <- {
+        // Signal stop to session manager (for tests that haven't started yet)
+        getSessionManagerActor().tell(TerminateSessionsEvent(sessionData._1, sessionIds.toSet), ActorRef.noSender)
+        // Signal stop to test engine (for already tests that are already running).
+        Future.sequence {
+          sessionData._2.map { sessionId =>
+            testbedClient.stop(sessionId)
+          }
+        }
+      }
+    } yield ()
   }
 
-  def finishTestReport(sessionId: String, status: TestResultType, outputMessage: Option[String]): Unit = {
+  def finishTestReport(sessionId: String, status: TestResultType, outputMessage: Option[String]): Future[Unit] = {
     val now = Some(TimeUtil.getCurrentTimestamp())
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = for {
@@ -532,50 +566,59 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
           DBIO.successful(())
         }
       }
-    } yield ()
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
-    // Triggers linked to test sessions: (communityID, systemID, actorID)
-    val sessionIds: Option[(Option[Long], Option[Long], Option[Long])] = exec(
-      PersistenceSchema.testResults
-        .filter(_.testSessionId === sessionId)
-        .map(x => (x.communityId, x.sutId, x.actorId))
-        .result
-        .headOption
-    )
-    if (sessionIds.isDefined && sessionIds.get._1.isDefined && sessionIds.get._2.isDefined && sessionIds.get._3.isDefined) {
-      val communityId = sessionIds.get._1.get
-      val systemId = sessionIds.get._2.get
-      // We have all the data we need to fire the triggers.
-      if (status == TestResultType.SUCCESS) {
-        triggerHelper.publishTriggerEvent(new TestSessionSucceededEvent(communityId, sessionId))
-      } else if (status == TestResultType.FAILURE) {
-        triggerHelper.publishTriggerEvent(new TestSessionFailedEvent(communityId, sessionId))
-      }
-      // See if the conformance statement is now successfully completed and fire an additional trigger if so.
-      val completedActors = conformanceManager.getCompletedConformanceStatementsForTestSession(systemId, sessionId)
-      completedActors.foreach { actorId =>
-        triggerHelper.publishTriggerEvent(new ConformanceStatementSucceededEvent(communityId, systemId, actorId))
+    } yield startTime.isDefined
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally).flatMap { sessionWasRecorded =>
+      if (sessionWasRecorded) {
+        // Triggers linked to test sessions: (communityID, systemID, actorID)
+        DB.run(
+          PersistenceSchema.testResults
+            .filter(_.testSessionId === sessionId)
+            .map(x => (x.communityId, x.sutId, x.actorId))
+            .result
+            .headOption
+        ).flatMap { sessionIds =>
+          if (sessionIds.isDefined && sessionIds.get._1.isDefined && sessionIds.get._2.isDefined && sessionIds.get._3.isDefined) {
+            val communityId = sessionIds.get._1.get
+            val systemId = sessionIds.get._2.get
+            // We have all the data we need to fire the triggers.
+            if (status == TestResultType.SUCCESS) {
+              triggerHelper.publishTriggerEvent(new TestSessionSucceededEvent(communityId, sessionId))
+            } else if (status == TestResultType.FAILURE) {
+              triggerHelper.publishTriggerEvent(new TestSessionFailedEvent(communityId, sessionId))
+            }
+            // See if the conformance statement is now successfully completed and fire an additional trigger if so.
+            conformanceManager.getCompletedConformanceStatementsForTestSession(systemId, sessionId).map { completedActors =>
+              completedActors.foreach { actorId =>
+                triggerHelper.publishTriggerEvent(new ConformanceStatementSucceededEvent(communityId, systemId, actorId))
+              }
+            }
+          }
+          // Flush remaining log messages
+          testResultManager.flushSessionLogs(sessionId, None)
+        }
+      } else {
+        Future.successful(())
       }
     }
-    // Flush remaining log messages
-    testResultManager.flushSessionLogs(sessionId, None)
   }
 
-  private def setEndTimeNow(sessionId: String): Unit = {
+  private def setEndTimeNow(sessionId: String): Future[Unit] = {
     val now = Some(TimeUtil.getCurrentTimestamp())
-    exec (
+    DB.run (
       (for {
         testSession <- PersistenceSchema.testResults.filter(_.testSessionId === sessionId).result.headOption
         _ <- {
           if (testSession.isDefined) {
-            (for {t <- PersistenceSchema.testResults if t.testSessionId === sessionId} yield t.endTime).update(now) andThen
-              (for {c <- PersistenceSchema.conformanceResults if c.testsession === sessionId} yield (c.result, c.updateTime)).update(testSession.get.result, now)
+            for {
+              _ <- PersistenceSchema.testResults.filter(_.testSessionId === sessionId).map(_.endTime).update(now)
+              _ <- PersistenceSchema.conformanceResults.filter(_.testsession === sessionId).map(c => (c.result, c.updateTime)).update(testSession.get.result, now)
+            } yield ()
           } else {
             DBIO.successful(())
           }
         }
       } yield ()
-        ).transactionally
+      ).transactionally
     )
   }
 

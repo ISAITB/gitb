@@ -15,6 +15,7 @@ import org.apache.commons.lang3.{RandomStringUtils, StringUtils}
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
+import utils.RepositoryUtils.TestCaseInfo
 
 import java.io.{File, StringWriter}
 import java.nio.charset.Charset
@@ -29,15 +30,21 @@ import javax.inject.{Inject, Singleton}
 import javax.xml.transform.stream.StreamSource
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Using
 import scala.xml.XML
 
+object RepositoryUtils {
+
+	case class TestCaseInfo(testCases: Option[List[TestCases]], testCaseGroups: Option[List[TestCaseGroup]], testCaseUpdateApproach: Option[Map[String, Update]])
+
+}
+
 @Singleton
-class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
+																(implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
 	import dbConfig.profile.api._
-
 	import scala.jdk.CollectionConverters._
 
 	private final val logger = LoggerFactory.getLogger("RepositoryUtils")
@@ -619,65 +626,93 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 		fileName
 	}
 
-	private def getDocumentation(testSuiteId: String, documentation: Documentation, testSuiteArchive: ZipFile, specification: Option[Long], domain: Long): Option[String] = {
-		var documentationText: Option[String] = None
-		if (documentation != null) {
-			if (documentation.getValue != null && !documentation.getValue.isBlank) {
-				documentationText = Some(documentation.getValue.trim)
-			} else if (documentation.getImport != null) {
-				var documentationBytes: Option[Array[Byte]] = None
-				if (StringUtils.isBlank(documentation.getFrom) || documentation.getFrom.equals(testSuiteId)) {
-					// Look up from current test suite.
-					var referencedEntry = testSuiteArchive.getEntry(documentation.getImport)
-					if (referencedEntry == null) {
-						// It might be prefixed with the testSuiteId.
-						val testSuiteIdPath = testSuiteId+"/"
-						if (documentation.getImport.startsWith(testSuiteIdPath) && documentation.getImport.length() > testSuiteIdPath.length()) {
-							referencedEntry = testSuiteArchive.getEntry(documentation.getImport.substring(testSuiteIdPath.length()))
+	private def getDocumentation(testSuiteId: String, documentation: Documentation, testSuiteArchive: ZipFile, specification: Option[Long], domain: Long): Future[Option[String]] = {
+		for {
+			documentationText <- {
+				if (documentation != null) {
+					if (documentation.getValue != null && !documentation.getValue.isBlank) {
+						Future.successful {
+							Some(documentation.getValue.trim)
 						}
+					} else if (documentation.getImport != null) {
+						for {
+							documentationBytes <- {
+								if (StringUtils.isBlank(documentation.getFrom) || documentation.getFrom.equals(testSuiteId)) {
+									// Look up from current test suite.
+									var referencedEntry = testSuiteArchive.getEntry(documentation.getImport)
+									if (referencedEntry == null) {
+										// It might be prefixed with the testSuiteId.
+										val testSuiteIdPath = testSuiteId+"/"
+										if (documentation.getImport.startsWith(testSuiteIdPath) && documentation.getImport.length() > testSuiteIdPath.length()) {
+											referencedEntry = testSuiteArchive.getEntry(documentation.getImport.substring(testSuiteIdPath.length()))
+										}
+									}
+									if (referencedEntry != null) {
+										Future.successful {
+											Some(IOUtils.toByteArray(testSuiteArchive.getInputStream(referencedEntry)))
+										}
+									} else {
+										Future.successful(None)
+									}
+								} else if (documentation.getFrom != null) {
+									// Look up from another test suite in the domain.
+									findTestSuiteByIdentifier(documentation.getFrom, domain, specification).map { testSuite =>
+										if (testSuite.isDefined) {
+											var filePathToLookup = documentation.getImport
+											var filePathToAlsoCheck: Option[String] = null
+											if (!documentation.getImport.startsWith(testSuite.get.identifier) && !documentation.getImport.startsWith("/"+testSuite.get.identifier)) {
+												filePathToLookup = testSuite.get.filename + "/" + filePathToLookup
+												filePathToAlsoCheck = None
+											} else {
+												filePathToAlsoCheck = Some(testSuite.get.filename + "/" + filePathToLookup)
+												filePathToLookup = StringUtils.replaceOnce(filePathToLookup, testSuite.get.identifier, testSuite.get.filename)
+											}
+											val testSuiteFolder = getTestSuitesResource(domain, testSuite.get.filename, None)
+											val file = getTestSuitesResource(domain, filePathToLookup, filePathToAlsoCheck)
+											if (file.exists() && file.toPath.normalize().startsWith(testSuiteFolder.toPath.normalize())) {
+												Some(FileUtils.readFileToByteArray(file))
+											} else {
+												None
+											}
+										} else {
+											None
+										}
+									}
+								} else {
+									Future.successful(None)
+								}
+							}
+							documentationText <- {
+								if (documentationBytes.isEmpty) {
+									logger.warn("Documentation import resource ["+documentation.getImport+"] was not found.")
+									Future.successful(None)
+								} else {
+									var encoding = Charset.defaultCharset()
+									if (documentation.getEncoding != null && !documentation.getEncoding.isBlank) {
+										encoding = Charset.forName(documentation.getEncoding)
+									}
+									Future.successful {
+										Some(new String(documentationBytes.get, encoding))
+									}
+								}
+							}
+						} yield documentationText
+					} else {
+						Future.successful(None)
 					}
-					if (referencedEntry != null) {
-						documentationBytes = Some(IOUtils.toByteArray(testSuiteArchive.getInputStream(referencedEntry)))
-					}
-				} else if (documentation.getFrom != null) {
-					// Look up from another test suite in the domain.
-					val testSuite = findTestSuiteByIdentifier(documentation.getFrom, domain, specification)
-					if (testSuite.isDefined) {
-						var filePathToLookup = documentation.getImport
-						var filePathToAlsoCheck: Option[String] = null
-						if (!documentation.getImport.startsWith(testSuite.get.identifier) && !documentation.getImport.startsWith("/"+testSuite.get.identifier)) {
-							filePathToLookup = testSuite.get.filename + "/" + filePathToLookup
-							filePathToAlsoCheck = None
-						} else {
-							filePathToAlsoCheck = Some(testSuite.get.filename + "/" + filePathToLookup)
-							filePathToLookup = StringUtils.replaceOnce(filePathToLookup, testSuite.get.identifier, testSuite.get.filename)
-						}
-						val testSuiteFolder = getTestSuitesResource(domain, testSuite.get.filename, None)
-						val file = getTestSuitesResource(domain, filePathToLookup, filePathToAlsoCheck)
-						if (file.exists() && file.toPath.normalize().startsWith(testSuiteFolder.toPath.normalize())) {
-							documentationBytes = Some(FileUtils.readFileToByteArray(file))
-						}
-					}
-				}
-				if (documentationBytes.isEmpty) {
-					logger.warn("Documentation import resource ["+documentation.getImport+"] was not found.")
 				} else {
-					var encoding = Charset.defaultCharset()
-					if (documentation.getEncoding != null && !documentation.getEncoding.isBlank) {
-						encoding = Charset.forName(documentation.getEncoding)
-					}
-					documentationText = Some(new String(documentationBytes.get, encoding))
+					Future.successful(None)
 				}
 			}
-		}
-		if (documentationText.isDefined) {
-			Some(HtmlUtil.sanitizeEditorContent(documentationText.get))
-		} else {
-			None
-		}
+			documentationText <- {
+				Future.successful {
+					documentationText.map(HtmlUtil.sanitizeEditorContent)
+				}
+			}
+		} yield documentationText
 	}
 
-	def getTestSuiteFromZip(domain: Long, specification: Option[Long], file: File): Option[TestSuite] = {
+	def getTestSuiteFromZip(domain: Long, specification: Option[Long], file: File): Future[Option[TestSuite]] = {
 		getTestSuiteFromZip(domain, specification, file, completeParse = true)
 	}
 
@@ -722,170 +757,219 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 		actors
 	}
 
-	def getTestSuiteFromZip(domainId :Long, specificationId: Option[Long], file: File, completeParse: Boolean): Option[TestSuite] = {
-		var result: Option[TestSuite] = None
-		if (file.exists) {
-			var zip: ZipFile = null
-			try {
-				zip = new ZipFile(file)
-				val testSuiteEntries = zip.entries().asScala.filter(isTestSuite(zip, _))
-				if(testSuiteEntries.hasNext) {
-					val tdlTestCases = zip.entries().asScala.filter(isTestCase(zip, _)).map(getTestCase(zip, _)).toList
-					val testSuiteEntry = testSuiteEntries.next()
-					val testSuite = {
-						val tdlTestSuite: com.gitb.tdl.TestSuite = getTestSuite(zip, testSuiteEntry)
-						val identifier: String = tdlTestSuite.getId
-						val name: String = tdlTestSuite.getMetadata.getName
-						val version: String = tdlTestSuite.getMetadata.getVersion
-						val authors: String = tdlTestSuite.getMetadata.getAuthors
-						val originalDate: String = tdlTestSuite.getMetadata.getPublished
-						val modificationDate: String = tdlTestSuite.getMetadata.getLastModified
-						val description: String = tdlTestSuite.getMetadata.getDescription
-						val tdlTestCaseEntries = tdlTestSuite.getTestcase.asScala
-						val folderName = generateTestSuiteFileName()
-						var documentation: Option[String] = None
-						val specificationInfo = Option(tdlTestSuite.getMetadata.getSpecification)
-						if (completeParse && tdlTestSuite.getMetadata.getDocumentation != null) {
-							documentation = getDocumentation(tdlTestSuite.getId, tdlTestSuite.getMetadata.getDocumentation, zip, specificationId, domainId)
+	def getTestSuiteFromZip(domainId :Long, specificationId: Option[Long], file: File, completeParse: Boolean): Future[Option[TestSuite]] = {
+		if (file.exists()) {
+			val zip = new ZipFile(file)
+			val parseTask = for {
+				tdlTestSuite <- {
+					val testSuiteEntries = zip.entries().asScala.filter(isTestSuite(zip, _))
+					if (testSuiteEntries.hasNext) {
+						val testSuiteEntry = testSuiteEntries.next()
+						Future.successful {
+							Some(getTestSuite(zip, testSuiteEntry))
 						}
-						val caseObject = TestSuites(0L, name, name, Option(version).getOrElse(""), Option(authors), Option(originalDate), Option(modificationDate), Option(description), None,
-							folderName, documentation.isDefined, documentation, identifier, tdlTestCaseEntries.isEmpty, shared = false, domainId, None,
-							specificationInfo.flatMap(x => Option(x.getReference)),
-							specificationInfo.flatMap(x => Option(x.getDescription)),
-							specificationInfo.flatMap(x => Option(x.getLink))
-						)
-						var testCases: Option[List[TestCases]] = None
-						var testCaseGroups: Option[List[TestCaseGroup]] = None
-						var testCaseUpdateApproach: Option[Map[String, Update]] = None
-						if (completeParse) {
-							val testCaseUpdateApproachTemp = new mutable.HashMap[String, Update]()
-							/*
-							 * Process test case groupings
-							 */
-							// Map groups to test case indexes
-							val groupMap = new mutable.HashMap[String, (TestCaseGroup, ListBuffer[Int])]() // Group identifier to group data and list of test case indexes.
-							if (tdlTestSuite.getGroups != null && !tdlTestSuite.getGroups.getGroup.isEmpty) {
-								val definedGroups = new mutable.HashMap[String, TestCaseGroup]()
-								var counter = 0
-								tdlTestSuite.getGroups.getGroup.forEach { tdlGroup =>
-									definedGroups += (tdlGroup.getId -> TestCaseGroup(counter, tdlGroup.getId, Option(tdlGroup.getName), Option(tdlGroup.getDesc), 0L))
-									counter += 1
-								}
-								counter = 0
-								tdlTestCaseEntries.foreach { testCase =>
-									if (testCase.getGroup != null && !testCase.getGroup.isBlank && definedGroups.contains(testCase.getGroup)) {
-										val indexes = if (!groupMap.contains(testCase.getGroup)) {
-											val buffer = new ListBuffer[Int]
-											groupMap += testCase.getGroup -> (definedGroups(testCase.getGroup), buffer)
-											buffer
-										} else {
-											groupMap(testCase.getGroup)._2
-										}
-										indexes += counter
-									}
-									counter += 1
+					} else {
+						Future.successful(None)
+					}
+				}
+				testSuiteCase <- {
+					if (tdlTestSuite.isDefined) {
+						val identifier: String = tdlTestSuite.get.getId
+						val name: String = tdlTestSuite.get.getMetadata.getName
+						val version: String = tdlTestSuite.get.getMetadata.getVersion
+						val authors: String = tdlTestSuite.get.getMetadata.getAuthors
+						val originalDate: String = tdlTestSuite.get.getMetadata.getPublished
+						val modificationDate: String = tdlTestSuite.get.getMetadata.getLastModified
+						val description: String = tdlTestSuite.get.getMetadata.getDescription
+						val tdlTestCaseEntries = tdlTestSuite.get.getTestcase.asScala
+						val folderName = generateTestSuiteFileName()
+						val specificationInfo = Option(tdlTestSuite.get.getMetadata.getSpecification)
+						for {
+							testSuiteDocumentation <- {
+								if (completeParse && tdlTestSuite.get.getMetadata.getDocumentation != null) {
+									getDocumentation(tdlTestSuite.get.getId, tdlTestSuite.get.getMetadata.getDocumentation, zip, specificationId, domainId)
+								}	else {
+									Future.successful(None)
 								}
 							}
-							// Read test cases and order them considering their groups
-							val orderedTestCases = new util.LinkedList[TestCaseEntry]()
-							val processedTestCases = new mutable.HashSet[String]()
-							tdlTestCaseEntries.foreach { entry =>
-								if (!processedTestCases.contains(entry.getId)) {
-									if (entry.getGroup != null && !entry.getGroup.isBlank) {
-										if (groupMap.contains(entry.getGroup)) {
-											var processed = false
-											groupMap(entry.getGroup)._2.foreach { testCaseIndex =>
-												if (testCaseIndex < tdlTestCaseEntries.length) {
-													val testCaseAtIndex = tdlTestCaseEntries(testCaseIndex)
-													if (!processedTestCases.contains(testCaseAtIndex.getId)) {
-														processed = true
-														orderedTestCases.addLast(testCaseAtIndex)
-														processedTestCases.add(testCaseAtIndex.getId)
-													}
+							testSuiteCase <- {
+								Future.successful {
+									Some(
+										TestSuites(0L, name, name, Option(version).getOrElse(""), Option(authors), Option(originalDate), Option(modificationDate), Option(description), None,
+											folderName, testSuiteDocumentation.isDefined, testSuiteDocumentation, identifier, tdlTestCaseEntries.isEmpty, shared = false, domainId, None,
+											specificationInfo.flatMap(x => Option(x.getReference)),
+											specificationInfo.flatMap(x => Option(x.getDescription)),
+											specificationInfo.flatMap(x => Option(x.getLink))
+										)
+									)
+								}
+							}
+						} yield testSuiteCase
+					} else {
+						Future.successful(None)
+					}
+				}
+				testCaseInfo <- {
+					if (tdlTestSuite.isDefined && testSuiteCase.isDefined && completeParse) {
+						val tdlTestCases = zip.entries().asScala.filter(isTestCase(zip, _)).map(getTestCase(zip, _)).toList
+						val tdlTestCaseEntries = tdlTestSuite.get.getTestcase.asScala
+						/*
+             * Process test case groupings
+             */
+						// Map groups to test case indexes
+						val groupMap = new mutable.HashMap[String, (TestCaseGroup, ListBuffer[Int])]() // Group identifier to group data and list of test case indexes.
+						if (tdlTestSuite.get.getGroups != null && !tdlTestSuite.get.getGroups.getGroup.isEmpty) {
+							val definedGroups = new mutable.HashMap[String, TestCaseGroup]()
+							var counter = 0
+							tdlTestSuite.get.getGroups.getGroup.forEach { tdlGroup =>
+								definedGroups += (tdlGroup.getId -> TestCaseGroup(counter, tdlGroup.getId, Option(tdlGroup.getName), Option(tdlGroup.getDesc), 0L))
+								counter += 1
+							}
+							counter = 0
+							tdlTestCaseEntries.foreach { testCase =>
+								if (testCase.getGroup != null && !testCase.getGroup.isBlank && definedGroups.contains(testCase.getGroup)) {
+									val indexes = if (!groupMap.contains(testCase.getGroup)) {
+										val buffer = new ListBuffer[Int]
+										groupMap += testCase.getGroup -> (definedGroups(testCase.getGroup), buffer)
+										buffer
+									} else {
+										groupMap(testCase.getGroup)._2
+									}
+									indexes += counter
+								}
+								counter += 1
+							}
+						}
+						// Read test cases and order them considering their groups
+						val orderedTestCases = new util.LinkedList[TestCaseEntry]()
+						val processedTestCases = new mutable.HashSet[String]()
+						tdlTestCaseEntries.foreach { entry =>
+							if (!processedTestCases.contains(entry.getId)) {
+								if (entry.getGroup != null && !entry.getGroup.isBlank) {
+									if (groupMap.contains(entry.getGroup)) {
+										var processed = false
+										groupMap(entry.getGroup)._2.foreach { testCaseIndex =>
+											if (testCaseIndex < tdlTestCaseEntries.length) {
+												val testCaseAtIndex = tdlTestCaseEntries(testCaseIndex)
+												if (!processedTestCases.contains(testCaseAtIndex.getId)) {
+													processed = true
+													orderedTestCases.addLast(testCaseAtIndex)
+													processedTestCases.add(testCaseAtIndex.getId)
 												}
 											}
-											if (!processed) {
-												// We should normally never reach this case
-												orderedTestCases.addLast(entry)
-												processedTestCases.add(entry.getId)
-											}
-										} else {
+										}
+										if (!processed) {
 											// We should normally never reach this case
 											orderedTestCases.addLast(entry)
 											processedTestCases.add(entry.getId)
 										}
 									} else {
+										// We should normally never reach this case
 										orderedTestCases.addLast(entry)
 										processedTestCases.add(entry.getId)
 									}
+								} else {
+									orderedTestCases.addLast(entry)
+									processedTestCases.add(entry.getId)
 								}
 							}
-							/*
-							 * Process test cases
-							 */
-							var testCaseCounter = 0
-							val testCaseBuffer = new ListBuffer[TestCases]
-							orderedTestCases.forEach { entry =>
-								testCaseCounter += 1
-								val tdlTestCase = tdlTestCases.find(_.getId == entry.getId).get
-								val actorString = new StringBuilder
-								tdlTestCase.getActors.getActor.asScala.foreach(role => {
-									actorString.append(role.getId)
-									if (role.getRole == TestRoleEnumeration.SUT) {
-										actorString.append("[SUT]")
+						}
+						/*
+             * Process test cases
+             */
+						val testCaseTask = for {
+							testCases <- {
+								var testCaseCounter = 0
+								Future.sequence {
+									orderedTestCases.asScala.map { entry =>
+										testCaseCounter += 1
+										val tdlTestCase = tdlTestCases.find(_.getId == entry.getId).get
+										val actorString = new StringBuilder
+										tdlTestCase.getActors.getActor.asScala.foreach(role => {
+											actorString.append(role.getId)
+											if (role.getRole == TestRoleEnumeration.SUT) {
+												actorString.append("[SUT]")
+											}
+											actorString.append(',')
+										})
+										actorString.deleteCharAt(actorString.length - 1)
+
+										val testCaseType = Option(tdlTestCase.getMetadata.getType).getOrElse(TestCaseType.CONFORMANCE)
+										val updateApproach = Option(tdlTestCase.getMetadata.getUpdate)
+										val testCaseSpecificationInfo = Option(tdlTestCase.getMetadata.getSpecification)
+
+										val documentationTask = if (tdlTestCase.getMetadata.getDocumentation != null) {
+											getDocumentation(tdlTestSuite.get.getId, tdlTestCase.getMetadata.getDocumentation, zip, specificationId, domainId)
+										} else {
+											Future.successful(None)
+										}
+										documentationTask.map { documentation =>
+											(
+												TestCases(
+													0L, tdlTestCase.getMetadata.getName, tdlTestCase.getMetadata.getName, Option(tdlTestCase.getMetadata.getVersion).getOrElse(""),
+													Option(tdlTestCase.getMetadata.getAuthors), Option(tdlTestCase.getMetadata.getPublished),
+													Option(tdlTestCase.getMetadata.getLastModified), Option(tdlTestCase.getMetadata.getDescription),
+													None, testCaseType.ordinal().toShort, null, Some(actorString.toString()), None,
+													testCaseCounter.toShort, documentation.isDefined, documentation, tdlTestCase.getId, tdlTestCase.isOptional, tdlTestCase.isDisabled, getTagsStr(tdlTestCase),
+													testCaseSpecificationInfo.flatMap(x => Option(x.getReference)),
+													testCaseSpecificationInfo.flatMap(x => Option(x.getDescription)),
+													testCaseSpecificationInfo.flatMap(x => Option(x.getLink)),
+													Option(entry.getGroup).filter(groupMap.get(_).exists(_._2.nonEmpty)).map(groupMap(_)._1.id)),
+												updateApproach
+											)
+										}
 									}
-									actorString.append(',')
-								})
-								actorString.deleteCharAt(actorString.length - 1)
-								var testCaseType = TestCaseType.CONFORMANCE
-								if (Option(tdlTestCase.getMetadata.getType).isDefined) {
-									testCaseType = tdlTestCase.getMetadata.getType
+								}.map { testCases =>
+									testCases.toList
 								}
-								var documentation: Option[String] = None
-								if (tdlTestCase.getMetadata.getDocumentation != null) {
-									documentation = getDocumentation(tdlTestSuite.getId, tdlTestCase.getMetadata.getDocumentation, zip, specificationId, domainId)
-								}
-								if (tdlTestCase.getMetadata.getUpdate != null) {
-									testCaseUpdateApproachTemp += (tdlTestCase.getId -> tdlTestCase.getMetadata.getUpdate)
-								}
-								val testCaseSpecificationInfo = Option(tdlTestCase.getMetadata.getSpecification)
-								testCaseBuffer += TestCases(
-									0L, tdlTestCase.getMetadata.getName, tdlTestCase.getMetadata.getName, Option(tdlTestCase.getMetadata.getVersion).getOrElse(""),
-									Option(tdlTestCase.getMetadata.getAuthors), Option(tdlTestCase.getMetadata.getPublished),
-									Option(tdlTestCase.getMetadata.getLastModified), Option(tdlTestCase.getMetadata.getDescription),
-									None, testCaseType.ordinal().toShort, null, Some(actorString.toString()), None,
-									testCaseCounter.toShort, documentation.isDefined, documentation, tdlTestCase.getId, tdlTestCase.isOptional, tdlTestCase.isDisabled, getTagsStr(tdlTestCase),
-									testCaseSpecificationInfo.flatMap(x => Option(x.getReference)),
-									testCaseSpecificationInfo.flatMap(x => Option(x.getDescription)),
-									testCaseSpecificationInfo.flatMap(x => Option(x.getLink)),
-									Option(entry.getGroup).filter(groupMap.get(_).exists(_._2.nonEmpty)).map(groupMap(_)._1.id)
-								)
 							}
-							testCases = Some(testCaseBuffer.toList)
-							testCaseGroups = if (groupMap.nonEmpty) {
+						} yield testCases
+						testCaseTask.map { testCaseInfo =>
+							val testCaseGroups = if (groupMap.nonEmpty) {
 								Some(groupMap.filter(_._2._2.nonEmpty).map { entry =>
 									entry._2._1
 								}.toList)
 							} else {
 								None
 							}
-							testCaseUpdateApproach = Some(testCaseUpdateApproachTemp.toMap)
+							val testCaseUpdateApproachTemp = new mutable.HashMap[String, Update]()
+							testCaseInfo.foreach { info =>
+								if (info._2.isDefined) {
+									testCaseUpdateApproachTemp += (info._1.identifier -> info._2.get)
+								}
+							}
+							TestCaseInfo(Some(testCaseInfo.map(_._1)), testCaseGroups, Some(testCaseUpdateApproachTemp.toMap))
 						}
-						val testSuite = new TestSuite(caseObject, Some(testSuiteActorInfo(tdlTestSuite)), testCases, testCaseGroups)
-						testSuite.updateApproach = Option(tdlTestSuite.getMetadata.getUpdate)
-						testSuite.testCaseUpdateApproach = testCaseUpdateApproach
-						testSuite
+					} else {
+						Future.successful(TestCaseInfo(None, None, None))
 					}
-					result = Some(testSuite)
 				}
-			} finally {
+				testSuite <- {
+					if (testSuiteCase.isDefined && tdlTestSuite.isDefined) {
+						val testSuite = new TestSuite(
+							testSuiteCase.get,
+							Some(testSuiteActorInfo(tdlTestSuite.get)),
+							testCaseInfo.testCases,
+							testCaseInfo.testCaseGroups
+						)
+						testSuite.updateApproach = Option(tdlTestSuite.get.getMetadata.getUpdate)
+						testSuite.testCaseUpdateApproach = testCaseInfo.testCaseUpdateApproach
+						Future.successful {
+							Some(testSuite)
+						}
+					} else {
+						Future.successful(None)
+					}
+				}
+			} yield testSuite
+			parseTask.andThen { _ =>
 				if (zip != null) {
 					zip.close()
 				}
 			}
-
+		} else {
+			Future.successful(None)
 		}
-		result
 	}
 
 	private def getTagsStr(testCase: com.gitb.tdl.TestCase): Option[String] = {
@@ -990,8 +1074,8 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 		FileUtils.deleteDirectory(targetFolder)
 	}
 
-	def findTestSuiteByIdentifier(identifier: String, domain: Long, specificationToPrioritise: Option[Long]): Option[TestSuites] = {
-		val result: Option[TestSuites] = exec(
+	def findTestSuiteByIdentifier(identifier: String, domain: Long, specificationToPrioritise: Option[Long]): Future[Option[TestSuites]] = {
+		DB.run(
 			for {
 				testSuites <- PersistenceSchema.testSuites
 					.filter(_.identifier === identifier)
@@ -1028,7 +1112,6 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 				}
 			} yield testSuite
 		)
-		result
 	}
 
 	def getPathForTestSessionData(folderInfo: SessionFolderInfo, tempData: Boolean): Path = {
@@ -1043,17 +1126,18 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 		}
 	}
 
-	def getPathForTestSessionWrapper(sessionId: String, isExpected: Boolean): SessionFolderInfo = {
+	def getPathForTestSessionWrapper(sessionId: String, isExpected: Boolean): Future[SessionFolderInfo] = {
 		getPathForTestSession(sessionId, isExpected)
 	}
 
-	def getPathForTestSession(sessionId: String, isExpected: Boolean): SessionFolderInfo = {
-		val testResult = exec(PersistenceSchema.testResults.filter(_.testSessionId === sessionId).result.headOption)
-		var startTime: Option[Timestamp] = None
-		if (testResult.isDefined) {
-			startTime = Some(testResult.get.startTime)
+	def getPathForTestSession(sessionId: String, isExpected: Boolean): Future[SessionFolderInfo] = {
+		DB.run(PersistenceSchema.testResults.filter(_.testSessionId === sessionId).result.headOption).map { testResult =>
+			var startTime: Option[Timestamp] = None
+			if (testResult.isDefined) {
+				startTime = Some(testResult.get.startTime)
+			}
+			getPathForTestSessionObj(sessionId, startTime, isExpected)
 		}
-		getPathForTestSessionObj(sessionId, startTime, isExpected)
 	}
 
 	def getPathForTestSessionObj(sessionId: String, sessionStartTime: Option[Timestamp], isExpected: Boolean): SessionFolderInfo = {

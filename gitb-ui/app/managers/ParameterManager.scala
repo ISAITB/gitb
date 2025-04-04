@@ -11,35 +11,36 @@ import utils.{JsonUtil, RepositoryUtils}
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class ParameterManager @Inject() (repositoryUtils: RepositoryUtils,
                                   automationApiHelper: AutomationApiHelper,
-                                  dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+                                  dbConfigProvider: DatabaseConfigProvider)
+                                 (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
-  def checkParameterExistsForEndpoint(parameterKey: String, endpointId: Long, otherThanId: Option[Long]): Boolean = {
+  def checkParameterExistsForEndpoint(parameterKey: String, endpointId: Long, otherThanId: Option[Long]): Future[Boolean] = {
     var parameterQuery = PersistenceSchema.parameters
       .filter(_.testKey === parameterKey)
       .filter(_.endpoint === endpointId)
     if (otherThanId.isDefined) {
       parameterQuery = parameterQuery.filter(_.id =!= otherThanId.get)
     }
-    exec(parameterQuery.result.headOption).isDefined
+    DB.run(parameterQuery.exists.result)
   }
 
-  def createParameterAndEndpoint(parameter: models.Parameters, actorId: Long): (Long, Long) = {
+  def createParameterAndEndpoint(parameter: models.Parameters, actorId: Long): Future[(Long, Long)] = {
     val dbAction = for {
       endpointId <- PersistenceSchema.endpoints.returning(PersistenceSchema.endpoints.map(_.id)) += Endpoints(0L, "config", None, actorId)
       parameterId <- createParameter(parameter.withEndpoint(endpointId, None))
     } yield (endpointId, parameterId)
-    exec(dbAction.transactionally)
+    DB.run(dbAction.transactionally)
   }
 
-  def createParameterWrapper(parameter: models.Parameters): Long = {
-    exec(createParameter(parameter).transactionally)
+  def createParameterWrapper(parameter: models.Parameters): Future[Long] = {
+    DB.run(createParameter(parameter).transactionally)
   }
 
   private def checkParameterExistence(endpointId: Option[Long], parameterKey: String, expectedToExist: Boolean, parameterIdToIgnore: Option[Long]): DBIO[Option[models.Parameters]] = {
@@ -87,7 +88,7 @@ class ParameterManager @Inject() (repositoryUtils: RepositoryUtils,
     }
   }
 
-  def createParameterDefinitionThroughAutomationApi(communityApiKey: String, actorApiKey: String, input: CustomPropertyInfo): Unit = {
+  def createParameterDefinitionThroughAutomationApi(communityApiKey: String, actorApiKey: String, input: CustomPropertyInfo): Future[Unit] = {
     val dbAction = for {
       // Load community IDs.
       communityIds <- automationApiHelper.getCommunityIdsByCommunityApiKey(communityApiKey)
@@ -128,10 +129,10 @@ class ParameterManager @Inject() (repositoryUtils: RepositoryUtils,
         ))
       }
     } yield ()
-    exec(dbAction.transactionally)
+    DB.run(dbAction.transactionally)
   }
 
-  def updateParameterDefinitionThroughAutomationApi(communityApiKey: String, actorApiKey: String, input: CustomPropertyInfo): Unit = {
+  def updateParameterDefinitionThroughAutomationApi(communityApiKey: String, actorApiKey: String, input: CustomPropertyInfo): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = for {
       // Load community IDs.
@@ -167,10 +168,10 @@ class ParameterManager @Inject() (repositoryUtils: RepositoryUtils,
         )
       }
     } yield ()
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction.transactionally))
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction.transactionally))
   }
 
-  def deleteParameterDefinitionThroughAutomationApi(communityApiKey: String, actorApiKey: String, parameterApiKey: String): Unit = {
+  def deleteParameterDefinitionThroughAutomationApi(communityApiKey: String, actorApiKey: String, parameterApiKey: String): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = for {
       // Load community IDs.
@@ -184,7 +185,7 @@ class ParameterManager @Inject() (repositoryUtils: RepositoryUtils,
         delete(parameter.get.id, onSuccessCalls)
       }
     } yield ()
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
   }
 
   def createParameter(parameter: models.Parameters): DBIO[Long] = {
@@ -199,81 +200,84 @@ class ParameterManager @Inject() (repositoryUtils: RepositoryUtils,
     action
   }
 
-  def deleteParameter(parameterId: Long): Unit = {
+  def deleteParameter(parameterId: Long): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = delete(parameterId, onSuccessCalls)
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally).map(_ => ())
   }
 
   def delete(parameterId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
-    onSuccessCalls += (() => repositoryUtils.deleteStatementParametersFolder(parameterId))
-    PersistenceSchema.configs.filter(_.parameter === parameterId).delete andThen
-        (for {
-          existingParameterData <- PersistenceSchema.parameters
+    for {
+      _ <- PersistenceSchema.configs.filter(_.parameter === parameterId).delete
+      existingParameterData <- PersistenceSchema.parameters
+        .join(PersistenceSchema.endpoints).on(_.endpoint === _.id)
+        .join(PersistenceSchema.actors).on(_._2.actor === _.id)
+        .filter(_._1._1.id === parameterId)
+        .map(x => (x._1._1.endpoint, x._1._1.testKey, x._1._1.kind, x._2.domain)) // Endpoint ID, Parameter key, Parameter kind, Domain ID
+        .result.head
+      _ <- {
+        if ("SIMPLE".equals(existingParameterData._3)) {
+          setParameterPrerequisitesForKey(existingParameterData._1, existingParameterData._2, None)
+        } else {
+          DBIO.successful(())
+        }
+      }
+      triggerDataItemsReferringToParameter <- PersistenceSchema.triggerData
+        .filter(_.dataId === parameterId)
+        .filter(_.dataType === TriggerDataType.StatementParameter.id.toShort)
+        .result
+        .headOption
+      replacementParameterId <- {
+        // See if there is a parameter linked to the same domain with the same name.
+        // If yes, set the parameter reference in the trigger data items to that.
+        // If no, just delete the trigger data items.
+        if (triggerDataItemsReferringToParameter.isDefined) {
+          PersistenceSchema.parameters
             .join(PersistenceSchema.endpoints).on(_.endpoint === _.id)
             .join(PersistenceSchema.actors).on(_._2.actor === _.id)
-            .filter(_._1._1.id === parameterId)
-            .map(x => (x._1._1.endpoint, x._1._1.testKey, x._1._1.kind, x._2.domain)) // Endpoint ID, Parameter key, Parameter kind, Domain ID
-            .result.head
-          _ <- {
-            if ("SIMPLE".equals(existingParameterData._3)) {
-              setParameterPrerequisitesForKey(existingParameterData._1, existingParameterData._2, None)
-            } else {
-              DBIO.successful(())
-            }
-          }
-          triggerDataItemsReferringToParameter <- PersistenceSchema.triggerData
+            .filter(_._2.domain === existingParameterData._4)
+            .filter(_._1._1.testKey === existingParameterData._2)
+            .filter(_._1._1.id =!= parameterId)
+            .map(_._1._1.id)
+            .result.headOption
+        } else {
+          DBIO.successful(None)
+        }
+      }
+      _ <- {
+        val dbActions = ListBuffer[DBIO[_]]()
+        if (replacementParameterId.isDefined && triggerDataItemsReferringToParameter.isDefined) {
+          // Replace the parameter ID reference in the trigger data items.
+          dbActions += PersistenceSchema.triggerData
             .filter(_.dataId === parameterId)
             .filter(_.dataType === TriggerDataType.StatementParameter.id.toShort)
-            .result
-            .headOption
-          replacementParameterId <- {
-            // See if there is a parameter linked to the same domain with the same name.
-            // If yes, set the parameter reference in the trigger data items to that.
-            // If no, just delete the trigger data items.
-            if (triggerDataItemsReferringToParameter.isDefined) {
-              PersistenceSchema.parameters
-                .join(PersistenceSchema.endpoints).on(_.endpoint === _.id)
-                .join(PersistenceSchema.actors).on(_._2.actor === _.id)
-                .filter(_._2.domain === existingParameterData._4)
-                .filter(_._1._1.testKey === existingParameterData._2)
-                .filter(_._1._1.id =!= parameterId)
-                .map(_._1._1.id)
-                .result.headOption
-            } else {
-              DBIO.successful(None)
-            }
-          }
-          _ <- {
-            val dbActions = ListBuffer[DBIO[_]]()
-            if (replacementParameterId.isDefined && triggerDataItemsReferringToParameter.isDefined) {
-              // Replace the parameter ID reference in the trigger data items.
-              dbActions += PersistenceSchema.triggerData
-                .filter(_.dataId === parameterId)
-                .filter(_.dataType === TriggerDataType.StatementParameter.id.toShort)
-                .map(_.dataId)
-                .update(replacementParameterId.get)
-            } else if (triggerDataItemsReferringToParameter.isDefined) {
-              // Delete the trigger data items.
-              dbActions += PersistenceSchema.triggerData
-                .filter(_.dataId === parameterId)
-                .filter(_.dataType === TriggerDataType.StatementParameter.id.toShort)
-                .delete
-            }
-            toDBIO(dbActions)
-          }
-        } yield ()) andThen
-      PersistenceSchema.parameters.filter(_.id === parameterId).delete
+            .map(_.dataId)
+            .update(replacementParameterId.get)
+        } else if (triggerDataItemsReferringToParameter.isDefined) {
+          // Delete the trigger data items.
+          dbActions += PersistenceSchema.triggerData
+            .filter(_.dataId === parameterId)
+            .filter(_.dataType === TriggerDataType.StatementParameter.id.toShort)
+            .delete
+        }
+        toDBIO(dbActions)
+      }
+      _ <- PersistenceSchema.parameters.filter(_.id === parameterId).delete
+      _ <- {
+        onSuccessCalls += (() => repositoryUtils.deleteStatementParametersFolder(parameterId))
+        DBIO.successful(())
+      }
+    } yield ()
   }
 
-  def updateParameterWrapper(parameterId: Long, name: String, testKey: String, description: Option[String], use: String, kind: String, adminOnly: Boolean, notForTests: Boolean, hidden: Boolean, allowedValues: Option[String], dependsOn: Option[String], dependsOnValue: Option[String], defaultValue: Option[String]): Unit = {
+  def updateParameterWrapper(parameterId: Long, name: String, testKey: String, description: Option[String], use: String, kind: String, adminOnly: Boolean, notForTests: Boolean, hidden: Boolean, allowedValues: Option[String], dependsOn: Option[String], dependsOnValue: Option[String], defaultValue: Option[String]): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = updateParameter(parameterId, name, testKey, description, use, kind, adminOnly, notForTests, hidden, allowedValues, dependsOn, dependsOnValue, defaultValue, None, onSuccessCalls)
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally).map(_ => ())
   }
 
-  def getParameterById(parameterId: Long): Option[models.Parameters] = {
-    exec(PersistenceSchema.parameters.filter(_.id === parameterId).result.headOption)
+  def getParameterById(parameterId: Long): Future[Option[models.Parameters]] = {
+    DB.run(PersistenceSchema.parameters.filter(_.id === parameterId).result.headOption)
   }
 
   private def setParameterPrerequisitesForKey(endpointId: Long, testKey: String, newTestKey: Option[String]): DBIO[_] = {
@@ -324,7 +328,7 @@ class ParameterManager @Inject() (repositoryUtils: RepositoryUtils,
     } yield ()
   }
 
-  def orderParameters(endpointId: Long, orderedIds: List[Long]): Unit = {
+  def orderParameters(endpointId: Long, orderedIds: List[Long]): Future[Unit] = {
     val dbActions = ListBuffer[DBIO[_]]()
     var counter = 0
     orderedIds.foreach { id =>
@@ -332,16 +336,7 @@ class ParameterManager @Inject() (repositoryUtils: RepositoryUtils,
       val q = for { p <- PersistenceSchema.parameters.filter(_.endpoint === endpointId).filter(_.id === id) } yield p.displayOrder
       dbActions += q.update(counter.toShort)
     }
-    exec(toDBIO(dbActions).transactionally)
-  }
-
-  def getEndpointParameters(endpointId: Long): List[models.Parameters] = {
-    exec(
-      PersistenceSchema.parameters.filter(_.endpoint === endpointId)
-        .sortBy(x => (x.displayOrder.asc, x.name.asc))
-        .result
-        .map(_.toList)
-    )
+    DB.run(toDBIO(dbActions).transactionally).map(_ => ())
   }
 
 }

@@ -29,8 +29,7 @@ object Configurations {
   var REDIS_HOST:String = ""
   var REDIS_PORT = 0
 
-  //General configurations
-  var SERVER_REQUEST_TIMEOUT_IN_SECONDS=0
+  // General configurations
   var AUTHENTICATION_SESSION_MAX_IDLE_TIME = 0
   var AUTHENTICATION_SESSION_MAX_TOTAL_TIME = 0
   var TOKEN_LENGTH = 0
@@ -190,7 +189,6 @@ object Configurations {
       AUTHENTICATION_SESSION_MAX_IDLE_TIME = fromEnv("AUTHENTICATION_SESSION_MAX_IDLE_TIME", conf.getString("authentication.session.maxIdleTime")).toInt
       AUTHENTICATION_SESSION_MAX_TOTAL_TIME = fromEnv("AUTHENTICATION_SESSION_MAX_TOTAL_TIME", conf.getString("authentication.session.maxTotalTime")).toInt
       TOKEN_LENGTH = conf.getInt("token.length")
-      SERVER_REQUEST_TIMEOUT_IN_SECONDS = fromEnv("SERVER_REQUEST_TIMEOUT_IN_SECONDS", conf.getString("server.request.timeout.seconds")).toInt
       TESTBED_SERVICE_URL = conf.getString("testbed.service.url")
       TESTBED_CLIENT_URL  = conf.getString("testbed.client.url")
       TESTBED_CLIENT_URL_INTERNAL = fromEnv("TESTBED_CLIENT_URL_INTERNAL", TESTBED_CLIENT_URL)

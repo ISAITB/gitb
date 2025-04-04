@@ -64,7 +64,7 @@ export class Constants {
 		1 : "Administrator",
 		2 : "User",
 		3 : "Domain user",
-		4 : "Test bed administrator",
+		4 : "Test Bed administrator",
 		5 : "Community administrator"
 	}
 

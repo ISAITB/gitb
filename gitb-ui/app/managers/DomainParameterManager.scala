@@ -1,6 +1,7 @@
 package managers
 
 import exceptions.{AutomationApiException, ErrorCodes}
+import managers.triggers.TriggerHelper
 import models.DomainParameter
 import models.Enums.TriggerDataType
 import models.automation.DomainParameterInfo
@@ -12,13 +13,14 @@ import java.io.File
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
                                        triggerHelper: TriggerHelper,
                                        automationApiHelper: AutomationApiHelper,
-                                       dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+                                       dbConfigProvider: DatabaseConfigProvider)
+                                      (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -34,16 +36,16 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
     } yield id
   }
 
-  def createDomainParameter(parameter: DomainParameter, fileToStore: Option[File]): Long = {
+  def createDomainParameter(parameter: DomainParameter, fileToStore: Option[File]): Future[Long] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = createDomainParameterInternal(parameter, fileToStore, onSuccessCalls)
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
   }
 
-  def updateDomainParameter(domainId: Long, parameterId: Long, name: String, description: Option[String], kind: String, value: Option[String], inTests: Boolean, contentType: Option[String], fileToStore: Option[File]): Unit = {
+  def updateDomainParameter(domainId: Long, parameterId: Long, name: String, description: Option[String], kind: String, value: Option[String], inTests: Boolean, contentType: Option[String], fileToStore: Option[File]): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = updateDomainParameterInternal(domainId, parameterId, name, description, kind, value, inTests, contentType, fileToStore, onSuccessCalls)
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally).map(_ => ())
   }
 
   def updateDomainParameterInternal(domainId: Long, parameterId: Long, name: String, description: Option[String], kind: String, value: Option[String], inTests: Boolean, contentType: Option[String], fileToStore: Option[File], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
@@ -72,20 +74,22 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
     }
   }
 
-  def deleteDomainParameterWrapper(domainId: Long, domainParameter: Long): Unit = {
+  def deleteDomainParameterWrapper(domainId: Long, domainParameter: Long): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = deleteDomainParameter(domainId, domainParameter, onSuccessCalls)
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally).map(_ => ())
   }
 
   def deleteDomainParameter(domainId: Long, domainParameter: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
     onSuccessCalls += (() => repositoryUtils.deleteDomainParameterFile(domainId, domainParameter))
-    triggerHelper.deleteTriggerDataByDataType(domainParameter, TriggerDataType.DomainParameter) andThen
-      PersistenceSchema.domainParameters.filter(_.id === domainParameter).delete
+    for {
+      _ <- triggerHelper.deleteTriggerDataByDataType(domainParameter, TriggerDataType.DomainParameter)
+      _ <- PersistenceSchema.domainParameters.filter(_.id === domainParameter).delete
+    } yield ()
   }
 
-  def getDomainParameter(domainParameterId: Long): DomainParameter = {
-    exec(PersistenceSchema.domainParameters.filter(_.id === domainParameterId).result.head)
+  def getDomainParameter(domainParameterId: Long): Future[DomainParameter] = {
+    DB.run(PersistenceSchema.domainParameters.filter(_.id === domainParameterId).result.head)
   }
 
   def getDomainParametersByCommunityIdInternal(communityId: Long, onlySimple: Boolean, loadValues: Boolean): DBIO[Seq[DomainParameter]] = {
@@ -115,36 +119,39 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
     } yield domainParameters
   }
 
-  def getDomainParametersByCommunityId(communityId: Long, onlySimple: Boolean, loadValues: Boolean): List[DomainParameter] = {
-    exec(getDomainParametersByCommunityIdInternal(communityId, onlySimple, loadValues)).toList
+  def getDomainParametersByCommunityId(communityId: Long, onlySimple: Boolean, loadValues: Boolean): Future[List[DomainParameter]] = {
+    DB.run(getDomainParametersByCommunityIdInternal(communityId, onlySimple, loadValues)).map(_.toList)
   }
 
-  def getDomainParameters(domainId: Long, loadValues: Boolean, onlyForTests: Option[Boolean], onlySimple: Boolean): List[DomainParameter] = {
+  def getDomainParameters(domainId: Long, loadValues: Boolean, onlyForTests: Option[Boolean], onlySimple: Boolean): Future[List[DomainParameter]] = {
     val query = PersistenceSchema.domainParameters.filter(_.domain === domainId)
       .filterOpt(onlyForTests)((table, filterValue) => table.inTests === filterValue)
       .filterIf(onlySimple)(_.kind === "SIMPLE")
       .sortBy(_.name.asc)
     if (loadValues) {
-      exec(
+      DB.run(
         query
           .result
           .map(_.toList)
       )
     } else {
-      exec(
+      DB.run(
         query
           .map(x => (x.id, x.name, x.desc, x.kind, x.inTests, x.contentType))
           .result
-      ).map(x => DomainParameter(x._1, x._2, x._3, x._4, None, x._5, x._6, domainId)).toList
+
+      ).map { results =>
+        results.map(x => DomainParameter(x._1, x._2, x._3, x._4, None, x._5, x._6, domainId)).toList
+      }
     }
   }
 
-  def getDomainParameters(domainId: Long): List[DomainParameter] = {
+  def getDomainParameters(domainId: Long): Future[List[DomainParameter]] = {
     getDomainParameters(domainId, loadValues = true, None, onlySimple = false)
   }
 
-  def getDomainParameterByDomainAndName(domainId: Long, name: String): Option[DomainParameter] = {
-    exec(
+  def getDomainParameterByDomainAndName(domainId: Long, name: String): Future[Option[DomainParameter]] = {
+    DB.run(
       PersistenceSchema.domainParameters
         .filter(_.domain === domainId)
         .filter(_.name === name)
@@ -160,7 +167,7 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
     } yield ()
   }
 
-  def deleteDomainParameterThroughAutomationApi(communityApiKey: String, parameter: DomainParameterInfo): Unit = {
+  def deleteDomainParameterThroughAutomationApi(communityApiKey: String, parameter: DomainParameterInfo): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = for {
       // Load domain ID.
@@ -172,7 +179,7 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
         deleteDomainParameter(domainId, domainParameter.get.id, onSuccessCalls)
       }
     } yield ()
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
   }
 
   private def checkDomainParameterExistence(domainId: Long, parameterName: String, expectedToExist: Boolean): DBIO[Option[DomainParameter]] = {
@@ -194,7 +201,7 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
     } yield parameter
   }
 
-  def createDomainParameterThroughAutomationApi(communityApiKey: String, parameter: DomainParameterInfo): Unit = {
+  def createDomainParameterThroughAutomationApi(communityApiKey: String, parameter: DomainParameterInfo): Future[Unit] = {
     if (parameter.parameterInfo.value.isEmpty) {
       throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "No value provided for property")
     }
@@ -214,10 +221,10 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
         ), None, onSuccessCalls)
       }
     } yield ()
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
   }
 
-  def updateDomainParameterThroughAutomationApi(communityApiKey: String, update: DomainParameterInfo): Unit = {
+  def updateDomainParameterThroughAutomationApi(communityApiKey: String, update: DomainParameterInfo): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = for {
       // Load domain ID.
@@ -242,7 +249,7 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
         }
       }
     } yield ()
-    exec(dbAction.transactionally)
+    DB.run(dbAction.transactionally)
   }
 
   def updateDomainParametersViaApiInternal(domainId: Option[Long], updates: List[DomainParameterInfo], warnings: ListBuffer[String]): DBIO[_] = {

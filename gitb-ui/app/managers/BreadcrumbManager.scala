@@ -6,15 +6,16 @@ import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class BreadcrumbManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class BreadcrumbManager @Inject() (dbConfigProvider: DatabaseConfigProvider)
+                                  (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
-  def getLabels(ids: BreadcrumbLabelRequest): BreadcrumbLabelResponse = {
-    exec(for {
+  def getLabels(ids: BreadcrumbLabelRequest): Future[BreadcrumbLabelResponse] = {
+    DB.run(for {
       // User info to apply restrictions.
       userInfo <- PersistenceSchema.users.filter(_.id === ids.userId)
         .join(PersistenceSchema.organizations).on(_.organization === _.id)
