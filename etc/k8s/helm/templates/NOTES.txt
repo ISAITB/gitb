@@ -11,7 +11,7 @@ The Interoperability Test Bed (ITB) is now deployed on your cluster (release {{ 
 To access the ITB's user interface from outside your cluster you must ensure an ingress controller is available
 (e.g. https://kubernetes.github.io/ingress-nginx/). With an ingress in place the ITB is available at:
 
-  {{ .Values.ui.env.TESTBED_HOME_LINK }}
+  {{ include "ui.homeLink" . }}
 
 In case this is a new ITB installation, you will find the credentials of
 the default administrator account (admin@itb) logged in the output of the
@@ -25,7 +25,8 @@ To find out more and see how to use your new ITB instance please refer to:
 
 For questions and support please open a ticket on GitHub ({{ with index .Chart.Sources 0 }}{{ . }}{{ end }}), 
 or send an email to DIGIT-ITB@ec.europa.eu.
-{{ if ne .Values.ui.env.TESTBED_MODE "PRODUCTION" }}
+{{- if or (not .Values.ui.env) (ne .Values.ui.env.TESTBED_MODE "PRODUCTION") }}
+
 IMPORTANT: Your ITB instance is configured as a development instance. 
 To define an instance suitable for production please refer to the ITB's
 production installation guide:

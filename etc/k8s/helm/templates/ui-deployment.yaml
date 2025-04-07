@@ -19,17 +19,29 @@ spec:
           name: {{ include "ui.name" . }}
           env:
             - name: TESTBED_SERVICE_URL
-              value: "http://{{ include "srv.serviceName" . }}:{{ include "srv.servicePort" . }}/itbsrv/TestbedService"
+              value: "http://{{ include "srv.serviceName" . }}:{{ include "srv.servicePort" . }}{{ include "srv.contextRoot" . }}/TestbedService"
             - name: TESTBED_CLIENT_URL_INTERNAL
-              value: "http://0.0.0.0:{{ include "ui.callbackPort" . }}/TestbedClient"
+              value: "http://0.0.0.0:{{ include "ui.callbackPort" . }}{{ include "ui.contextRoot" . }}/TestbedClient"
             - name: TESTBED_CLIENT_URL
-              value: "http://{{ include "ui.serviceName" . }}:{{ include "ui.serviceCallbackPort" . }}/TestbedClient"
+              value: "http://{{ include "ui.serviceName" . }}:{{ include "ui.serviceCallbackPort" . }}{{ include "ui.contextRoot" . }}/TestbedClient"
             - name: DB_DEFAULT_URL
               value: "jdbc:mysql://{{ include "mysql.serviceName" . }}:{{ include "mysql.servicePort" . }}/gitb?characterEncoding=UTF-8&useUnicode=true&autoReconnect=true&useSSL=false&verifyServerCertificate=false&allowPublicKeyRetrieval=true"
             - name: DB_DEFAULT_ROOTURL
               value: "jdbc:mysql://{{ include "mysql.serviceName" . }}:{{ include "mysql.servicePort" . }}/"
             - name: REDIS_HOST
               value: {{ include "redis.serviceName" . | quote }}
+          {{- if or (not .Values.ui.env) (not .Values.ui.env.WEB_CONTEXT_ROOT) }}
+            - name: WEB_CONTEXT_ROOT
+              value: {{ include "ui.contextRoot" . | quote }}
+          {{- end }}
+          {{- if or (not .Values.ui.env) (not .Values.ui.env.AUTHENTICATION_COOKIE_PATH) }}
+            - name: AUTHENTICATION_COOKIE_PATH
+              value: {{ include "ui.authenticationCookiePath" . | quote }}
+          {{- end }}
+          {{- if or (not .Values.ui.env) (not .Values.ui.env.TESTBED_HOME_LINK) }}
+            - name: TESTBED_HOME_LINK
+              value: {{ include "ui.homeLink" . | quote }}
+          {{- end }}
           {{- if .Values.ui.env }}
           {{- range $key, $value := .Values.ui.env }}
             - name: {{ $key }}

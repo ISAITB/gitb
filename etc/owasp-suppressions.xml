@@ -91,4 +91,11 @@
         <packageUrl regex="true">^pkg:maven/ch\.qos\.logback/logback-.*@.*$</packageUrl>
         <vulnerabilityName>CVE-2024-12801</vulnerabilityName>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: tomcat-embed-core-10.1.34.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/tomcat-embed-.*@.*$</packageUrl>
+        <cve>CVE-2025-24813</cve>
+    </suppress>  
 </suppressions>
