@@ -17,10 +17,20 @@ spec:
         - image: {{ .Values.srv.image | quote }}
           imagePullPolicy: {{ .Values.srv.imagePullPolicy | default "IfNotPresent" | quote }}
           name: {{ include "srv.name" . }}
-          {{- if .Values.srv.env }}
           env:
+          {{- if or (not .Values.srv.env) (not (index .Values.srv.env "server.servlet.context-path")) }}
+            - name: server.servlet.context-path
+              value: {{ include "srv.contextRoot" . | quote }}
+          {{- end }}
+          {{- if or (not .Values.srv.env) (not .Values.srv.env.CALLBACK_ROOT_URL) }}
+            - name: CALLBACK_ROOT_URL
+              value: {{ include "srv.callbackRoot" . | quote }}
+          {{- end }}
+          {{- if or (not .Values.srv.env) (not .Values.srv.env.REPOSITORY_ROOT_URL) }}
             - name: REPOSITORY_ROOT_URL
               value: "http://{{ include "ui.serviceName" . }}:{{ include "ui.servicePort" . }}{{ include "ui.contextRoot" . }}"
+          {{- end }}
+          {{- if .Values.srv.env }}
           {{- range $key, $value := .Values.srv.env }}
             - name: {{ $key }}
               value: {{ $value | quote }}

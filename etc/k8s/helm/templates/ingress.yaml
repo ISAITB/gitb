@@ -12,7 +12,7 @@ spec:
   {{- if .Values.ingress.class }}
   ingressClassName: {{ .Values.ingress.class }}
   {{- end }}
-  {{- if and .Values.ingress.tls.host .Values.ingress.tls.secretName }}
+  {{- if and .Values.ingress.tls .Values.ingress.tls.host .Values.ingress.tls.secretName }}
   tls:
     - hosts:
         - {{ .Values.ingress.tls.host }}
@@ -21,14 +21,14 @@ spec:
   rules:
     - http:
         paths:
-          - path: {{ .Values.ingress.path.srv }}
+          - path: {{ include "ingress.srvPath" . | quote }}
             pathType: Prefix
             backend:
               service:
                 name: {{ include "srv.serviceName" . }}
                 port:
                   number: {{ include "srv.servicePort" . }}
-          - path: {{ .Values.ingress.path.ui }}
+          - path: {{ include "ingress.uiPath" . | quote }}
             pathType: Prefix
             backend:
               service:

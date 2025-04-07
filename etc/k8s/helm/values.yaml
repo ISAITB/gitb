@@ -125,8 +125,12 @@ srv:
     #
     # Environment variables (listed with their defaults).
     #
-    # srv.env.CALLBACK_ROOT_URL is the root URL for callbacks originating from external test services or built-in messaging handlers.
-    CALLBACK_ROOT_URL: https://localhost/itbsrv
+    ## srv.env.CALLBACK_ROOT_URL is the root URL for callbacks originating from external test services or built-in messaging handlers.
+    ## By default, this is set to SCHEME://HOST/PATH where
+    ## - SCHEME is "https" if ingress.tls.host and ingress.tls.secretName are set, or "http" otherwise.
+    ## - HOST matches ingress.tls.host if set, or "localhost" otherwise.
+    ## - /PATH matches ingress.srv.path.
+    # CALLBACK_ROOT_URL: https://localhost/itbsrv
     #
     ## srv.env.HMAC_KEY is the key to use to secure exchanges between itb-ui and itb-srv.
     ## The value set here must match the value set for "ui.env.HMAC_KEY".
@@ -177,17 +181,26 @@ ui:
     #
     # Environment variables (listed with their defaults).
     #
-    # ui.env.TESTBED_HOME_LINK is the external root URL at which the user interface can be accessed by external users.
-    TESTBED_HOME_LINK: https://localhost/itb
+    ## ui.env.TESTBED_HOME_LINK is the external root URL at which the user interface can be accessed by external users.
+    ## The value of this variable would need to be adapted depending on your ingress configuration, unless you use a
+    ## separate reverse proxy to publicly expose the itb-ui component. If this is not the case, this value would be
+    ## affected by the ingress TLS configuration (ingress.lts.host) and path mapping (ingress.path.ui).
+    ## By default, this is set to SCHEME://HOST/PATH where:
+    ## - SCHEME is "https" if ingress.tls.host and ingress.tls.secretName are set, or "http" otherwise.
+    ## - HOST matches ingress.tls.host if set, or "localhost" otherwise.
+    ## - /PATH matches ingress.ui.path.
+    # TESTBED_HOME_LINK: https://localhost/itb
     #
-    # ui.env.AUTHENTICATION_COOKIE_PATH is the path to which user cookies should be bound, matching the public access path following the host name and port.
-    # In case via ingress or another proxy, the interface is accessible at e.g. https://localhost/itb, you must set ui.env.AUTHENTICATION_COOKIE_PATH to the defined path (e.g. "/itb").
-    AUTHENTICATION_COOKIE_PATH: /itb
+    ## ui.env.AUTHENTICATION_COOKIE_PATH is the path to which user cookies should be bound, matching the public access path following the host name and port.
+    ## In case via ingress or another proxy, the interface is accessible at e.g. https://localhost/itb, you must set ui.env.AUTHENTICATION_COOKIE_PATH to the defined path (e.g. "/itb").
+    ## Note that if you publicly access the itb-ui component based on the ingress' path mapping (set via ingress.path.ui), this variable would need to be set with the same value.
+    ## By default, this is set to the value of ingress.path.ui.
+    # AUTHENTICATION_COOKIE_PATH: /itb
     #
-    # ui.env.WEB_CONTEXT_ROOT is the web application context root at which the itb-ui application will be bound to. This could
-    # differ from ui.env.AUTHENTICATION_COOKIE_PATH (the public path), but in practice k8s ingress configuration is simplified
-    # if they match.
-    WEB_CONTEXT_ROOT: /itb
+    ## ui.env.WEB_CONTEXT_ROOT is the web application context root at which the itb-ui application will be bound to. This could
+    ## differ from ui.env.AUTHENTICATION_COOKIE_PATH (the public path), but in practice k8s ingress configuration is simplified
+    ## if they match. By default, this is set to the value of ingress.path.ui.
+    # WEB_CONTEXT_ROOT: /itb
     #
     ## ui.env.TESTBED_MODE is the mode ("production" or "development") in which the ITB is running. 
     ## When switching to "production" you will need to set sensitive values as described in https://www.itb.ec.europa.eu/docs/guides/latest/installingTheTestBedProduction/index.html#step-3-prepare-basic-configuration
@@ -225,22 +238,52 @@ ingress:
   # ingress.name is the name of the ITB ingress resource defined in the cluster.
   name: itb-ingress
   #
-  ## ingress.class is the name of the ingress controller class. You can view your cluster's available ingress
-  ## classes (and the names used to refer to them) by issuing "kubectl get ingressclass". You may also omit
-  ## this if you have a default ingress class configured.
-  ## The default class considered is "nginx" (see https://kubernetes.github.io/ingress-nginx/) but this
-  ## can be replaced for different ingress implementations.
+  # ingress.class is the name of the ingress controller class. You can view your cluster's available ingress
+  # classes (and the names used to refer to them) by issuing "kubectl get ingressclass". You may also omit
+  # this if you have a default ingress class configured.
+  # The default class considered is "nginx" (see https://kubernetes.github.io/ingress-nginx/) but this
+  # can be replaced for different ingress implementations.
   class: nginx
   #
   # Configuration specific to TLS settings.
   #
+  # To expose your Test Bed instance via HTTP (e.g. for development purposes), you can set ingress.tls as empty in your
+  # override value file:
+  #
+  # ingress:
+  #    tls:
+  #
+  # If set as such, the itb-ui and itb-srv components will be accessible over HTTP, with this being automatically reflected
+  # in related configuration properties such as ui.env.TESTBED_HOME_LINK and srv.env.CALLBACK_ROOT_URL.
   tls:
     #
-    ## ingress.tls.host is the complete host name to use by the ingress when generating a server certificate for TLS.
+    # ingress.tls.host is the complete host name to use by the ingress when generating a server certificate for TLS.
     host: localhost
     #
-    ## ingress.tls.secretName is the name of the secret corresponding to the server certificate to use for TLS.
+    # ingress.tls.secretName is the name of the secret corresponding to the server certificate to use for TLS.
     secretName: itb-tls-secret
+  #
+  # Ingress path mappings.
+  #
+  path:
+    #
+    # ingress.path.ui is the path at which the ingress will expose access to the itb-ui service from outside the cluster.
+    # In case this ingress path represents how users would publicly access the itb-ui frontend, you will need to also
+    # ensure that the environment variables AUTHENTICATION_COOKIE_PATH (set via ui.env.AUTHENTICATION_COOKIE_PATH) and
+    # TESTBED_HOME_LINK (set via ui.env.TESTBED_HOME_LINK) are set accordingly. These are both set by default to consider
+    # the value of ingress.path.ui, but may differ if for example you have a separate reverse proxy that forward requests
+    # to the ingress but exposes the Test Bed's components at different paths.
+    # Note also that the web context root of itb-ui, set via ui.env.WEB_CONTEXT_ROOT, is also set by default to the value
+    # of ingress.path.ui as the ingress configuration is simpler when public and internal path mappings match. Such a
+    # match is however, not mandatory but would require a corresponding change in the ingress configuration (in ingress.yaml).
+    ui: "/itb"
+    #
+    # ingress.path.srv is the path at which the ingress will expose access to the itb-srv service from outside the cluster.
+    # In case this ingress path represents how test services and systems-under-test access the test engine publicly,
+    # ensure that environment variable CALLBACK_ROOT_URL (set via srv.env.CALLBACK_ROOT_URL) is set accordingly. This
+    # considers by default the value of ingress.path.srv, but may differ if for example you have a separate reverse proxy
+    # that forward requests to the ingress but exposes the Test Bed's components at different paths.
+    srv: "/itbsrv"
   #
   # Ingress annotations.
   #
