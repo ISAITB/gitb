@@ -139,8 +139,82 @@ Return the name to use for the file repository persistent volume.
 {{- end }}
 
 {{/*
+Return the ingress path to use for itb-ui.
+*/}}
+{{- define "ingress.uiPath" }}
+{{- .Values.ingress.path.ui | default "/itb" -}}
+{{- end }}
+
+{{/*
+Return the ingress path to use for itb-srv.
+*/}}
+{{- define "ingress.srvPath" }}
+{{- .Values.ingress.path.srv | default "/itbsrv" -}}
+{{- end }}
+
+{{/*
 Return the context path to use for itb-ui.
 */}}
 {{- define "ui.contextRoot" }}
-{{- .Values.ui.env.WEB_CONTEXT_ROOT | default "/" -}}
+{{- $path := include "ingress.uiPath" . -}}
+{{- if and .Values.ui .Values.ui.env }}
+  {{- .Values.ui.env.WEB_CONTEXT_ROOT | default (include "ingress.uiPath" .) -}}
+{{- end }}
+{{- $path -}}
+{{- end }}
+
+{{/*
+Return the context path to use for itb-srv.
+*/}}
+{{- define "srv.contextRoot" }}
+{{- $path := include "ingress.srvPath" . -}}
+{{- if and .Values.srv .Values.srv.env }}
+  {{- $path = index .Values.srv.env "server.servlet.context-path" | default (include "ingress.srvPath" .) }}
+{{- end }}
+{{- $path -}}
+{{- end }}
+
+{{/*
+Return the authentication cookie path to use for itb-ui.
+*/}}
+{{- define "ui.authenticationCookiePath" }}
+{{- include "ingress.uiPath" . -}}
+{{- end }}
+
+{{/*
+Return the home link to use for itb-ui.
+*/}}
+{{- define "ui.homeLink" -}}
+{{- $tlsHost := "" -}}
+{{- $tlsSecret := "" -}}
+{{- if .Values.ingress.tls }}
+  {{- $tlsHost = .Values.ingress.tls.host | default "" -}}
+  {{- $tlsSecret = .Values.ingress.tls.secretName | default "" -}}
+{{- end }}
+{{- $scheme := "http" -}}
+{{- if and $tlsHost $tlsSecret }}
+  {{- $scheme = "https" }}
+{{- end }}
+{{- $host := $tlsHost | default "localhost" -}}
+{{- $path := (include "ingress.uiPath" .) -}}
+{{- printf "%s://%s%s" $scheme $host $path -}}
+{{- end }}
+
+{{/*
+Return the callback root URL to use for itb-srv.
+*/}}
+{{- define "srv.callbackRoot" -}}
+{{- $tlsHost := "" -}}
+{{- $tlsSecret := "" -}}
+{{- if .Values.ingress.tls }}
+  {{- $tlsHost = .Values.ingress.tls.host | default "" -}}
+  {{- $tlsSecret = .Values.ingress.tls.secretName | default "" -}}
+{{- end }}
+{{- $scheme := "http" -}}
+{{- if and $tlsHost $tlsSecret }}
+  {{- $scheme = "https" }}
+{{- end }}
+{{- $host := $tlsHost | default "localhost" -}}
+{{- $path := (include "ingress.srvPath" .) -}}
+{{- printf "%s://%s%s" $scheme $host $path -}}
 {{- end }}
