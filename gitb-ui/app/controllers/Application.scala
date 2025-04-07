@@ -55,7 +55,7 @@ class Application @Inject() (cc: ControllerComponents,
           Configurations.RELEASE_INFO_ADDRESS,
           Configurations.WELCOME_MESSAGE,
           Configurations.WEB_CONTEXT_ROOT_WITH_SLASH,
-          Configurations.restApiLink()
+          Configurations.restApiSwaggerLink()
         )))
     }
   }
@@ -66,6 +66,22 @@ class Application @Inject() (cc: ControllerComponents,
 
   def app(): Action[AnyContent] = defaultAction.async {
     handleAppLoad()
+  }
+
+  def swagger(): Action[AnyContent] = defaultAction.async {
+    Future.successful {
+      if (Configurations.AUTOMATION_API_ENABLED) {
+        Ok(
+          views.html.swagger(
+            Configurations.PUBLIC_CONTEXT_ROOT_WITH_SLASH,
+            versionInfo(),
+            Configurations.restApiJsonLink().get
+          )
+        )
+      } else {
+        NotFound
+      }
+    }
   }
 
   def appWithRequestedPath(path: String): Action[AnyContent] = defaultAction.async { request =>

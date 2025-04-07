@@ -402,6 +402,8 @@ POST    /api/initdata                                           @controllers.Rep
 GET     /api/healthcheck                                         @controllers.Application.healthCheck()
 
 GET     /api/rest                                                @controllers.Application.restApiInfo()
+GET     /api/rest/swagger                                        @controllers.Application.swagger()
+GET     /api/rest/swagger/                                       @controllers.Application.swagger()
 POST    /api/rest/tests/start                                    @controllers.rest.TestAutomationService.start()
 POST    /api/rest/tests/stop                                     @controllers.rest.TestAutomationService.stop()
 GET     /api/rest/tests/status                                   @controllers.rest.TestAutomationService.status()

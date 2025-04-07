@@ -142,7 +142,9 @@ class AuthenticationFilter @Inject() (router: Router)
 
   def isPublicAutomationAccessAllowed(request:RequestHeader): Boolean = {
     request.path.equals("%s/rest".formatted(API_ROOT)) ||
-    request.path.equals("%s/rest/".formatted(API_ROOT))
+    request.path.equals("%s/rest/".formatted(API_ROOT)) ||
+    request.path.equals("%s/rest/swagger".formatted(API_ROOT)) ||
+    request.path.equals("%s/rest/swagger/".formatted(API_ROOT))
   }
 
   def isHmacAuthenticationAllowed(request:RequestHeader):Boolean = {

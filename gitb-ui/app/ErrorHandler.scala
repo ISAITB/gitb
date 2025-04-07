@@ -57,7 +57,7 @@ class ErrorHandler @Inject() (legalNoticeManager: LegalNoticeManager)
             Configurations.RELEASE_INFO_ENABLED,
             Configurations.RELEASE_INFO_ADDRESS,
             Configurations.PUBLIC_CONTEXT_ROOT_WITH_SLASH,
-            Configurations.restApiLink()
+            Configurations.restApiSwaggerLink()
           ))
         )
       }.recover {

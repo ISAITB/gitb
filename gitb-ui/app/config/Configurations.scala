@@ -358,7 +358,15 @@ object Configurations {
     sys.env.getOrElse(propertyName, default)
   }
 
-  def restApiLink(): Option[String] = {
+  def restApiSwaggerLink(): Option[String] = {
+    if (Configurations.AUTOMATION_API_ENABLED) {
+      Some(Configurations.API_PREFIX + "/rest/swagger")
+    } else {
+      None
+    }
+  }
+
+  def restApiJsonLink(): Option[String] = {
     if (Configurations.AUTOMATION_API_ENABLED) {
       Some(Configurations.API_PREFIX + "/rest")
     } else {
