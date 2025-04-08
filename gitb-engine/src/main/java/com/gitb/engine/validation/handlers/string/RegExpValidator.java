@@ -15,6 +15,7 @@ import com.gitb.types.DataType;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 /**
@@ -35,6 +36,8 @@ public class RegExpValidator extends AbstractValidator {
     public TestStepReportType validate(List<Configuration> configurations, Map<String, DataType> inputs) {
         String input = (String)inputs.get(INPUT_ARGUMENT_NAME).convertTo(DataType.STRING_DATA_TYPE).getValue();
         String expression = (String)inputs.get(EXPRESSION_ARGUMENT_NAME).convertTo(DataType.STRING_DATA_TYPE).getValue();
+        Objects.requireNonNull(input, "No input provided.");
+        Objects.requireNonNull(input, "No expression provided.");
         // Process expression.
         BooleanType result = new BooleanType(Pattern.matches(expression, input));
         // Return report.
