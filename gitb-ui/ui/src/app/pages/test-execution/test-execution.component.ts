@@ -42,6 +42,8 @@ import { ConformanceTestCase } from '../organisation/conformance-statement/confo
 })
 export class TestExecutionComponent implements OnInit, OnDestroy {
 
+  updateTick = 20
+
   testsToExecute: ConformanceTestCase[] = []
   actorId!: number
   systemId!: number
@@ -462,7 +464,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
       })
     }
     if (this.messageProcessing == undefined) {
-      this.messageProcessing = timer(1, 100).subscribe(() => {
+      this.messageProcessing = timer(1, this.updateTick).subscribe(() => {
         this.processNextMessage()
       })
     }
@@ -485,18 +487,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
       // Process log messages immediately
       if (response.report?.context?.value != undefined) {
         const logMessage = response.report.context.value
-        this.logMessages[this.currentTest!.id].push(logMessage)
-        this.logMessageEventEmitters[this.currentTest!.id].emit(logMessage)
-        if (this.currentTest!.id != this.testCaseWithOpenLogView) {
-          const messageLevel = this.dataService.logMessageLevel(logMessage, LogLevel.DEBUG)
-          if (messageLevel == LogLevel.ERROR) {
-            this.unreadLogErrors[this.currentTest!.id] = true
-          } else if (messageLevel == LogLevel.WARN) {
-            this.unreadLogWarnings[this.currentTest!.id] = true
-          } else {
-            this.unreadLogMessages[this.currentTest!.id] = true
-          }
-        }
+        this.processLogMessage(logMessage)
       }
     } else if (response.configs != undefined) {
       if (response.errorCode != undefined) {
@@ -512,10 +503,33 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     }
   }
 
+  flushPendingMessages() {
+    if (this.messagesToProcess != undefined) {
+      this.messagesToProcess.forEach((message) => {
+        this.processMessage(message)
+      })
+    }
+  }
+
   processNextMessage() {
     if (this.messagesToProcess != undefined && this.messagesToProcess.length > 0) {
       const msg = this.messagesToProcess.shift()
       this.processMessage(msg!)
+    }
+  }
+
+  private processLogMessage(logMessage: string) {
+    this.logMessages[this.currentTest!.id].push(logMessage)
+    this.logMessageEventEmitters[this.currentTest!.id].emit(logMessage)
+    if (this.currentTest!.id != this.testCaseWithOpenLogView) {
+      const messageLevel = this.dataService.logMessageLevel(logMessage, LogLevel.DEBUG)
+      if (messageLevel == LogLevel.ERROR) {
+        this.unreadLogErrors[this.currentTest!.id] = true
+      } else if (messageLevel == LogLevel.WARN) {
+        this.unreadLogWarnings[this.currentTest!.id] = true
+      } else {
+        this.unreadLogMessages[this.currentTest!.id] = true
+      }
     }
   }
 
@@ -1044,6 +1058,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     }
     if (signalStop) {
       this.testService.stop(session).subscribe(() => {
+        this.flushPendingMessages()
         this.closeWebSocket()
         this.session = undefined
         this.testCaseFinished()
