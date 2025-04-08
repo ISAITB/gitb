@@ -56,20 +56,20 @@ public abstract class AbstractIterationStepActor<T> extends AbstractTestStepActo
 		} else if (status == StepStatus.WARNING) {
 			childrenHasWarning = true;
 		}
-		if (status == StepStatus.ERROR || status == StepStatus.WARNING || status == StepStatus.COMPLETED) {
-			if (scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPING && scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPED) {
-				boolean shouldContinue = status != StepStatus.ERROR || !(step instanceof TestConstruct construct) || !Boolean.TRUE.equals(construct.isStopOnError());
-				if (shouldContinue) {
-					shouldContinue = handleStatusEventInternal(event);
-				}
-				if (!shouldContinue) {
-					if (childrenHasError) {
-						childrenHasError();
-					} else if (childrenHasWarning) {
-						childrenHasWarning();
-					} else {
-						completed();
-					}
+		if (status == StepStatus.ERROR || status == StepStatus.WARNING || status == StepStatus.COMPLETED || status == StepStatus.SKIPPED) {
+			// Final state for the step.
+			boolean stopping = scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPING && scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPED;
+			boolean shouldContinue = !stopping && status != StepStatus.ERROR || !(step instanceof TestConstruct construct) || !Boolean.TRUE.equals(construct.isStopOnError());
+			if (shouldContinue) {
+				shouldContinue = handleStatusEventInternal(event);
+			}
+			if (!shouldContinue) {
+				if (childrenHasError) {
+					childrenHasError();
+				} else if (childrenHasWarning) {
+					childrenHasWarning();
+				} else {
+					completed();
 				}
 			}
 		}
