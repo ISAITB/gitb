@@ -2,12 +2,12 @@
   <div class="any-content-view" [class.no-margin]="noMargin" [class.no-border]="noBorder" [class.hovering]="hoveringTitle && withItems">
     @if (withName || withValue) {
       <div class="any-content-view-container">
-        <div class="any-content-view-texts" [class.break-texts]="breakText" (click)="containerClicked();$event.stopPropagation()">
+        <div class="any-content-view-texts" (click)="containerClicked();$event.stopPropagation()">
           @if (withName) {
-            <div class="content-name" [class.with-items]="withItems" (mouseover)="hoverUpdate(true)" (mouseout)="hoverUpdate(false)"><app-collapsing-icon [hidden]="!withItems" [isCollapsed]="collapsed"></app-collapsing-icon>{{name}}</div>
+            <div class="content-name" [class.with-items]="withItems" [class.break-texts]="breakNameText" (mouseover)="hoverUpdate(true)" (mouseout)="hoverUpdate(false)"><app-collapsing-icon [hidden]="!withItems" [isCollapsed]="collapsed"></app-collapsing-icon>{{name}}</div>
           }
           @if (withValue && showValueInline) {
-            <div class="content-value" [class.with-name]="withName">{{value}}</div>
+            <div class="content-value" [class.with-name]="withName" [class.break-texts]="breakValueText">{{value}}</div>
           }
         </div>
         @if (withValue) {

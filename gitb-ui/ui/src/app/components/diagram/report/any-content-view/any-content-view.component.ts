@@ -41,9 +41,10 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
   withName = false
   withValue = false
   hoveringTitle = false
-  breakText = true
+  breakNameText = true
+  breakValueText = true
   showName = false
-  collapsed = true  
+  collapsed = true
 
   constructor(
     private testService: TestService,
@@ -76,13 +77,14 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
       this.name = undefined
       this.withName = false
       this.withValue = true
-    }    
-    this.showValueInline = this.withValue 
+    }
+    this.showValueInline = this.withValue
       && (!this.isFileReference(this.context) && (this.value!.length <= 100 || this.forceDisplay))
       && !(this.context.embeddingMethod == 'BASE64' && this.textProvided(this.context.valueToUse))
     if (this.showValueInline) {
-      this.breakText = this.value!.indexOf(" ") < 0
+      this.breakValueText = this.value!.indexOf(" ") < 0
     }
+    this.breakNameText = this.name != undefined && this.name.indexOf(" ") < 0
   }
 
   open(lineNumber?: number) {
