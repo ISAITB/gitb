@@ -2369,7 +2369,8 @@ object JsonUtil {
       "mode" -> config.get("mode"),
       "automationApiEnabled" -> config.get("automationApi.enabled").toBoolean,
       "versionNumber" -> config.get("versionNumber"),
-      "hasDefaultLegalNotice" -> config.get("hasDefaultLegalNotice").toBoolean
+      "hasDefaultLegalNotice" -> config.get("hasDefaultLegalNotice").toBoolean,
+      "conformanceStatementReportMaxTestCases" -> config.get("conformanceStatementReportMaxTestCases").toInt
     )
     json
   }

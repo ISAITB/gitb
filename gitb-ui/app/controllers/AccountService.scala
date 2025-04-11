@@ -191,6 +191,7 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction,
         configProperties.put("automationApi.enabled", String.valueOf(Configurations.AUTOMATION_API_ENABLED))
         configProperties.put("versionNumber", Configurations.versionInfo())
         configProperties.put("hasDefaultLegalNotice", legalNotice.exists(notice => StringUtils.isNotBlank(notice.content)).toString)
+        configProperties.put("conformanceStatementReportMaxTestCases", String.valueOf(Configurations.CONFORMANCE_STATEMENT_REPORT_MAX_TEST_CASES))
         val json = JsonUtil.serializeConfigurationProperties(configProperties)
         ResponseConstructor.constructJsonResponse(json.toString())
       }

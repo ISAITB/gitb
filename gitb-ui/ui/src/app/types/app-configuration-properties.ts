@@ -25,5 +25,6 @@ export interface AppConfigurationProperties {
     automationApiEnabled: boolean
     versionNumber: string
     hasDefaultLegalNotice: boolean
-    
+    conformanceStatementReportMaxTestCases: number
+
 }

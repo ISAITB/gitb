@@ -118,6 +118,8 @@ object Configurations {
   // 5120 KB default (5 MBs)
   var SAVED_FILE_MAX_SIZE: Long = 5120
 
+  var CONFORMANCE_STATEMENT_REPORT_MAX_TEST_CASES: Int = 100
+
   var INPUT_SANITIZER__ENABLED = true
   var INPUT_SANITIZER__METHODS_TO_CHECK:Set[String] = _
   var INPUT_SANITIZER__DEFAULT_BLACKLIST_EXPRESSION:Regex = _
@@ -350,6 +352,8 @@ object Configurations {
       }
       // Session cookie
       SESSION_COOKIE_SECURE = fromEnv("SESSION_SECURE", conf.getString("play.http.session.secure")).toBoolean
+      // Max test cases to include in detailed conformance statement reports.
+      CONFORMANCE_STATEMENT_REPORT_MAX_TEST_CASES = fromEnv("CONFORMANCE_STATEMENT_REPORT_MAX_TEST_CASES", "100").toInt
       _IS_LOADED = true
     }
   }

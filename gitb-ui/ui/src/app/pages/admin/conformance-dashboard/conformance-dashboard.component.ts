@@ -342,6 +342,20 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     })
   }
 
+  private countTestCases(item: ConformanceStatementItem): number {
+    if (item.results) {
+      return item.results.completed + item.results.failed + item.results.undefined
+    } else if (item.items) {
+      let total = 0
+      item.items.forEach(item => {
+        total += this.countTestCases(item)
+      })
+      return total
+    } else {
+      return 0
+    }
+  }
+
   onExportConformanceItem(event: ExportReportEvent) {
     if (event.format == 'xml') {
       event.item.exportXmlPending = true
@@ -350,7 +364,8 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     }
     let reportObservable: Observable<any>
     if (event.statementReport) {
-      reportObservable = this.reportSupportService.handleConformanceStatementReport(this.selectedCommunityId!, event.actorId!, this.selectedSystemId!, this.activeConformanceSnapshot?.id, event.format, true)
+      const testCaseCount = this.countTestCases(event.item)
+      reportObservable = this.reportSupportService.handleConformanceStatementReport(this.selectedCommunityId!, event.actorId!, this.selectedSystemId!, this.activeConformanceSnapshot?.id, event.format, true, testCaseCount)
     } else {
       let reportLevel: 'all'|'domain'|'specification'|'group'
       if (event.item.itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.DOMAIN) {
@@ -381,7 +396,8 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     } else {
       statement.exportPdfPending = true
     }
-    this.reportSupportService.handleConformanceStatementReport(statement.communityId, statement.actorId, statement.systemId, this.activeConformanceSnapshot?.id, format, true)
+    const testCaseCount = statement.completed + statement.failed + statement.undefined
+    this.reportSupportService.handleConformanceStatementReport(statement.communityId, statement.actorId, statement.systemId, this.activeConformanceSnapshot?.id, format, true, testCaseCount)
     .subscribe(() => {
       // Do nothing further
     })

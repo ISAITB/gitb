@@ -633,7 +633,11 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
 
   onExportConformanceStatement(format: 'xml'|'pdf') {
     this.exportPending = true
-    this.reportSupportService.handleConformanceStatementReport(this.communityIdOfStatement, this.actorId, this.systemId, this.snapshotId, format, false)
+    let testCaseCount = 0
+    if (this.statusCounters) {
+      testCaseCount = this.statusCounters.completed + this.statusCounters.failed + this.statusCounters.other
+    }
+    this.reportSupportService.handleConformanceStatementReport(this.communityIdOfStatement, this.actorId, this.systemId, this.snapshotId, format, false, testCaseCount)
     .subscribe(() => {
       this.exportPending = false
     })
