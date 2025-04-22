@@ -9,7 +9,8 @@ spec:
         - localhost
       secretName: itb-tls-secret
   rules:
-    - http:
+    - host: localhost
+      http:
         paths:
           - path: /itbsrv
             pathType: Prefix

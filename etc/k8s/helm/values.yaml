@@ -245,6 +245,11 @@ ingress:
   # can be replaced for different ingress implementations.
   class: nginx
   #
+  ## ingress.host is the host mapping for the ingress to be used in its rules section. If omitted, this is set to match
+  ## the value of ingress.tls.host, with "*" being the global default.
+  #
+  # host: *
+  #
   # Configuration specific to TLS settings.
   #
   # To expose your Test Bed instance via HTTP (e.g. for development purposes), you can set ingress.tls as empty in your

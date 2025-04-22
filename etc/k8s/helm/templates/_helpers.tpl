@@ -158,7 +158,7 @@ Return the context path to use for itb-ui.
 {{- define "ui.contextRoot" }}
 {{- $path := include "ingress.uiPath" . -}}
 {{- if and .Values.ui .Values.ui.env }}
-  {{- .Values.ui.env.WEB_CONTEXT_ROOT | default (include "ingress.uiPath" .) -}}
+  {{- $path = .Values.ui.env.WEB_CONTEXT_ROOT | default (include "ingress.uiPath" .) -}}
 {{- end }}
 {{- $path -}}
 {{- end }}
@@ -217,4 +217,21 @@ Return the callback root URL to use for itb-srv.
 {{- $host := $tlsHost | default "localhost" -}}
 {{- $path := (include "ingress.srvPath" .) -}}
 {{- printf "%s://%s%s" $scheme $host $path -}}
+{{- end }}
+
+{{/*
+Returns the ingress host:
+- ingress.host if set
+- fallback to ingress.tls.host
+- fallback to "*"
+*/}}
+{{- define "ingress.host" -}}
+{{- $host := "*" -}}
+{{- if .Values.ingress }}
+  {{- $host = .Values.ingress.host | default "*" }}
+  {{- if and .Values.ingress.tls .Values.ingress.tls.host }}
+    {{- $host = .Values.ingress.tls.host }}
+  {{- end }}
+{{- end }}
+{{- $host -}}
 {{- end }}
