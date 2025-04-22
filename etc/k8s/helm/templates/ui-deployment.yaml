@@ -24,10 +24,16 @@ spec:
               value: "http://0.0.0.0:{{ include "ui.callbackPort" . }}{{ include "ui.contextRoot" . }}/TestbedClient"
             - name: TESTBED_CLIENT_URL
               value: "http://{{ include "ui.serviceName" . }}:{{ include "ui.serviceCallbackPort" . }}{{ include "ui.contextRoot" . }}/TestbedClient"
+          {{- if or (not .Values.ui.env) (not .Values.ui.env.DB_DEFAULT_URL) }}
             - name: DB_DEFAULT_URL
-              value: "jdbc:mysql://{{ include "mysql.serviceName" . }}:{{ include "mysql.servicePort" . }}/gitb?characterEncoding=UTF-8&useUnicode=true&autoReconnect=true&useSSL=false&verifyServerCertificate=false&allowPublicKeyRetrieval=true"
+              value: "jdbc:mysql://{{ include "mysql.serviceName" . }}:{{ include "mysql.servicePort" . }}/{{ include "mysql.dbName" . }}?characterEncoding=UTF-8&useUnicode=true&autoReconnect=true&useSSL=false&verifyServerCertificate=false&allowPublicKeyRetrieval=true"
+          {{- end }}
             - name: DB_DEFAULT_ROOTURL
               value: "jdbc:mysql://{{ include "mysql.serviceName" . }}:{{ include "mysql.servicePort" . }}/"
+          {{- if or (not .Values.ui.env) (not .Values.ui.env.DB_DEFAULT_NAME) }}
+            - name: DB_DEFAULT_NAME
+              value: {{ include "mysql.dbName" . | quote }}
+          {{- end }}
             - name: REDIS_HOST
               value: {{ include "redis.serviceName" . | quote }}
           {{- if or (not .Values.ui.env) (not .Values.ui.env.WEB_CONTEXT_ROOT) }}

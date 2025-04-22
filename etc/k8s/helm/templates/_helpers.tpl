@@ -55,6 +55,17 @@ Return the port to use for the mysql service.
 {{- end }}
 
 {{/*
+Return the DB name to use for the MySQL database.
+*/}}
+{{- define "mysql.dbName" }}
+{{- $dbName := "gitb" -}}
+{{- if and .Values.mysql .Values.mysql.env }}
+  {{- $dbName = .Values.mysql.env.MYSQL_DATABASE | default "gitb" -}}
+{{- end }}
+{{- $dbName -}}
+{{- end }}
+
+{{/*
 Return the name to use for the itb-srv deployment.
 */}}
 {{- define "srv.name" }}
