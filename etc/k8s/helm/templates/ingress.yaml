@@ -19,7 +19,8 @@ spec:
       secretName: {{ .Values.ingress.tls.secretName }}
   {{- end }}
   rules:
-    - http:
+    - host: {{ include "ingress.host" . | quote }}
+      http:
         paths:
           - path: {{ include "ingress.srvPath" . | quote }}
             pathType: Prefix
