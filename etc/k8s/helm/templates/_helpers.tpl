@@ -158,7 +158,7 @@ Return the context path to use for itb-ui.
 {{- define "ui.contextRoot" }}
 {{- $path := include "ingress.uiPath" . -}}
 {{- if and .Values.ui .Values.ui.env }}
-  {{- .Values.ui.env.WEB_CONTEXT_ROOT | default (include "ingress.uiPath" .) -}}
+  {{- $path = .Values.ui.env.WEB_CONTEXT_ROOT | default (include "ingress.uiPath" .) -}}
 {{- end }}
 {{- $path -}}
 {{- end }}
