@@ -37,7 +37,7 @@
         <version.bouncycastle>1.80</version.bouncycastle>
         <version.helgerSchematron>8.0.6</version.helgerSchematron>
         <version.metaInfServices>1.9</version.metaInfServices>
-        <version.cxf>4.1.0</version.cxf>
+        <version.cxf>4.1.1</version.cxf>
         <version.httpComponents>4.5.13</version.httpComponents>
         <version.commonsCodec>1.17.1</version.commonsCodec>
         <version.reflections>0.10.2</version.reflections>
@@ -52,7 +52,7 @@
         <version.jwsApi>3.0.0</version.jwsApi>
         <version.activation>2.1.2</version.activation>
         <version.commonsConfiguration>2.11.0</version.commonsConfiguration>
-        <version.commonsText>1.13.0</version.commonsText>
+        <version.commonsText>1.13.1</version.commonsText>
         <version.pekko>1.1.3</version.pekko>
         <version.rgxgen>1.4</version.rgxgen>
         <version.saajImpl>3.0.4</version.saajImpl>
