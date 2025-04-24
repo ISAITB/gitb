@@ -88,9 +88,6 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit {
     this.moveSelectionConfig = {
       name: "specification",
       textField: "sname",
-      clearItems: new EventEmitter<void>(),
-      replaceItems: new EventEmitter<Specification[]>(),
-      replaceSelectedItems: new EventEmitter<Specification[]>(),
       singleSelection: true,
       supportPending: true,
       filterLabel: 'Move to ' + this.dataService.labelSpecificationLower(),

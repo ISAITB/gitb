@@ -66,7 +66,9 @@
 				<div class="btn-toolbar">
 					<button (click)="saveChanges()" type="submit" class="btn btn-secondary" [disable]="!loaded || downloadPending || deletePending || movePending || saveDisabled()" [pending]="savePending">Save changes</button>
 					<button (click)="download()" type="button" class="btn btn-secondary" [disable]="!loaded || savePending || deletePending || movePending" [pending]="downloadPending">Download</button>
-                    <app-multi-select-filter [config]="moveSelectionConfig" (apply)="moveSelectionChanged($event)" [pending]="movePending" [disable]="!loaded || savePending || deletePending || downloadPending"></app-multi-select-filter>
+                    @if (!testSuite.shared) {
+                        <app-multi-select-filter [config]="moveSelectionConfig" (apply)="moveSelectionChanged($event)" [pending]="movePending" [disable]="!loaded || savePending || deletePending || downloadPending"></app-multi-select-filter>
+                    }
 					<button (click)="back()" type="button" class="btn btn-secondary">Back</button>
 				</div>
 				<div class="btn-toolbar btn-toolbar-delete">
