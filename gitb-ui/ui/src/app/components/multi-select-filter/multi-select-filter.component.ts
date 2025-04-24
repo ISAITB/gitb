@@ -18,6 +18,8 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
 
   @Input() config!: MultiSelectConfig<T>
   @Input() typeahead = true
+  @Input() pending = false
+  @Input() disable = false
   @Output() apply = new EventEmitter<FilterUpdate<any>>()
   @ViewChild('filterText') filterTextElement?: ElementRef
 
@@ -33,6 +35,8 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
   openToLeft = false
   loadPending = false
   textValue = ''
+  noItemsMessage!: string
+  searchPlaceholder!: string
 
   replaceItemsSubscription?: Subscription
   replaceSelectedItemsSubscription?: Subscription
@@ -58,6 +62,16 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
     if (this.config.filterLabel) {
       this.filterLabel = this.config.filterLabel
       this.defaultFilterLabel = this.config.filterLabel
+    }
+    if (this.config.noItemsMessage) {
+      this.noItemsMessage = this.config.noItemsMessage
+    } else {
+      this.noItemsMessage = "No items found"
+    }
+    if (this.config.searchPlaceholder) {
+      this.searchPlaceholder = this.config.searchPlaceholder
+    } else {
+      this.searchPlaceholder = "Search items..."
     }
     if (this.config.clearItems) {
       this.clearItemsSubscription = this.config.clearItems.subscribe(() => {

@@ -2,6 +2,7 @@ package managers
 
 import com.gitb.core.TestCaseType
 import com.gitb.tr.{TAR, TestResultType}
+import exceptions.{ErrorCodes, UserException}
 import managers.TestSuiteManager.{TestCaseForTestSuite, TestCasesForTestSuiteWithActorCount, TestSuiteSharedInfo}
 import managers.testsuite.{TestSuitePaths, TestSuiteSaveResult}
 import models.Enums.TestSuiteReplacementChoice.{PROCEED, TestSuiteReplacementChoice}
@@ -78,9 +79,29 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 	private final val logger: Logger = LoggerFactory.getLogger("TestSuiteManager")
 
 	def getById(testSuiteId: Long): Future[Option[TestSuites]] = {
-		DB.run(PersistenceSchema.testSuites.filter(_.id === testSuiteId).map(TestSuiteManager.withoutDocumentation).result.headOption).map { result =>
-			result.map(TestSuiteManager.tupleToTestSuite)
-		}
+		DB.run(getByIdInternal(testSuiteId))
+	}
+
+	def getByIdInternal(testSuiteId: Long): DBIO[Option[TestSuites]] = {
+		PersistenceSchema.testSuites
+			.filter(_.id === testSuiteId)
+			.map(TestSuiteManager.withoutDocumentation)
+			.result
+			.headOption
+			.map { x =>
+				x.map(TestSuiteManager.tupleToTestSuite)
+			}
+	}
+
+	def getTestSuiteDomain(testSuiteId: Long): Future[Long] = {
+		DB.run(
+			PersistenceSchema.specificationHasTestSuites
+				.join(PersistenceSchema.specifications).on(_.specId === _.id)
+				.filter(_._1.testSuiteId === testSuiteId)
+				.map(_._2.domain)
+				.result
+				.head
+		)
 	}
 
 	def getTestSuiteInfoByApiKeys(communityApiKey: String, specificationApiKey: Option[String], testSuiteIdentifier: String): Future[Option[(Long, Long, Boolean)]] = { // Test suite ID, domain ID and shared flag
@@ -2008,6 +2029,182 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 			}
 			_ <- PersistenceSchema.testSuites.filter(_.id === testSuiteId).delete
 		} yield ()
+	}
+
+	def moveTestSuiteToSpecification(testSuiteId: Long, targetSpecificationId: Long): Future[Unit] = {
+		val onSuccessCalls = mutable.ListBuffer[() => _]()
+		val query = for {
+			// Load and check test suite.
+			testSuite <- getByIdInternal(testSuiteId).map { x =>
+				if (x.isEmpty) {
+					// Test suite was not found.
+					throw UserException(ErrorCodes.INVALID_REQUEST , "Test suite not found.")
+				} else if (x.get.shared) {
+					// Test suite must not be shared.
+					throw UserException(ErrorCodes.INVALID_REQUEST, "The test suite to move cannot be a shared test suite.")
+				}
+				x.get
+			}
+			// Get and check target specification.
+			currentSpecificationId <- PersistenceSchema.specificationHasTestSuites
+				.filter(_.testSuiteId === testSuiteId)
+				.map(_.specId)
+				.result
+				.head
+				.map { x =>
+					if (targetSpecificationId == x) {
+						// The current and target specification IDs must not be the same.
+						throw UserException(ErrorCodes.INVALID_REQUEST, "Test suite is already defined in the target specification.")
+					}
+					x
+				}
+			// Check the target specification for an already defined test suite with the same ID.
+			_ <- PersistenceSchema.specificationHasTestSuites
+				.join(PersistenceSchema.testSuites).on(_.testSuiteId === _.id)
+				.filter(_._1.specId === targetSpecificationId)
+				.filter(_._2.identifier === testSuite.identifier)
+				.map(x => x._2.shared)
+				.result
+				.headOption
+				.map { x =>
+					if (x.isDefined) {
+						if (x.get) {
+							throw UserException(ErrorCodes.SHARED_TEST_SUITE_EXISTS, "A shared test suite with the same identifier already exists.")
+						} else {
+							throw UserException(ErrorCodes.TEST_SUITE_EXISTS, "A suite with the same identifier already exists.")
+						}
+					}
+				}
+			/*
+			 * All ok - proceed with the updates.
+			 */
+			// Load a map of the current specification actors (identifier to actor).
+			currentSpecificationActors <- PersistenceSchema.testSuiteHasActors
+				.join(PersistenceSchema.actors).on(_.actor === _.id)
+				.filter(_._1.testsuite === testSuiteId)
+				.map(_._2)
+				.result
+				.map { actors =>
+					actors.map(actor => actor.actorId -> actor).toMap
+				}
+			// Check to see which (if any) of the current actors are not found in the target specification.
+			missingTargetActorIdentifiers <- PersistenceSchema.specificationHasActors
+				.join(PersistenceSchema.actors).on(_.actorId === _.id)
+				.filter(_._1.specId === targetSpecificationId)
+				.map(_._2.actorId)
+				.result
+				.map { targetIdentifiers =>
+					currentSpecificationActors.keySet.removedAll(targetIdentifiers.toSet)
+				}
+			// Add missing actors to target based on source definitions.
+			_ <- {
+				DBIO.sequence(
+					missingTargetActorIdentifiers.toList.map { missingIdentifier =>
+						val missingActor = currentSpecificationActors(missingIdentifier).copy(
+							id = 0L,
+							apiKey = CryptoUtil.generateApiKey()
+						)
+						actorManager.createActor(missingActor, targetSpecificationId, checkApiKeyUniqueness = false, None, onSuccessCalls)
+					}
+				)
+			}
+			// Load a map of the target specification actors (identifier to actor).
+			targetSpecificationActors <- PersistenceSchema.specificationHasActors
+				.join(PersistenceSchema.actors).on(_.actorId === _.id)
+				.filter(_._1.specId === targetSpecificationId)
+				.map(_._2)
+				.result
+				.map { actors =>
+					actors.map(actor => actor.actorId -> actor).toMap
+				}
+			// Get the test case IDs.
+			testCaseIds <- PersistenceSchema.testSuiteHasTestCases
+				.filter(_.testsuite === testSuiteId)
+				.map(_.testcase)
+				.result
+			// Get the systems that have conformance statements for the target actors (map of actor ID to system IDs).
+			conformanceStatementsToUpdate <- PersistenceSchema.systemImplementsActors
+				.filter(_.specId === targetSpecificationId)
+				.filter(_.actorId inSet targetSpecificationActors.values.map(_.id))
+				.map(x => (x.systemId, x.actorId))
+				.result
+				.map { results =>
+					val actorMap = mutable.HashMap[Long, mutable.HashSet[Long]]()
+					results.foreach { mapping =>
+						actorMap.getOrElseUpdate(mapping._2, mutable.HashSet[Long]()).add(mapping._1)
+					}
+					actorMap.view.mapValues(_.toSet).toMap
+				}
+			// Update specification and actor mappings.
+			_ <- {
+				val actions = new ListBuffer[DBIO[_]]()
+				val currentActorIdToActorMap = currentSpecificationActors.values.map(actor => actor.id -> actor).toMap
+				currentActorIdToActorMap.foreach { currentActorEntry =>
+					val currentActorId = currentActorEntry._1
+					val targetActor = targetSpecificationActors(currentActorEntry._2.actorId)
+					val targetActorId = targetActor.id
+					// Update specification to test suite mapping
+					actions += PersistenceSchema.specificationHasTestSuites
+						.filter(_.specId === currentSpecificationId)
+						.filter(_.testSuiteId === testSuiteId)
+						.map(_.specId)
+						.update(targetSpecificationId)
+					// Update test suite to actor mapping.
+					actions += PersistenceSchema.testSuiteHasActors
+						.filter(_.actor === currentActorId)
+						.filter(_.testsuite === testSuiteId)
+						.map(_.actor)
+						.update(targetActorId)
+					// Update test case to actor mapping.
+					actions += PersistenceSchema.testCaseHasActors
+						.filter(_.testcase inSet testCaseIds)
+						.filter(_.actor === currentActorId)
+						.map(x => (x.actor, x.specification))
+						.update((targetActorId, targetSpecificationId))
+					// Update test results (we don't update the names of the specifications and actors as these are snapshots in time).
+					actions += PersistenceSchema.testResults
+						.filter(_.actorId === currentActorId)
+						.filter(_.testSuiteId === testSuiteId)
+						.map(x => (x.specificationId, x.actorId))
+						.update((Some(targetSpecificationId), Some(targetActorId)))
+					// Update conformance results for systems conforming to the target actors.
+					if (conformanceStatementsToUpdate.contains(targetActorId)) {
+						conformanceStatementsToUpdate(targetActorId).foreach { systemId =>
+							// System that has a conformance statement for the target actor. Update to reflect the additional results.
+							actions += PersistenceSchema.conformanceResults
+								.filter(_.testcase inSet testCaseIds)
+								.filter(_.actor === currentActorId)
+								.filter(_.sut === systemId)
+								.map(x => (x.actor, x.spec))
+								.update((targetActorId, targetSpecificationId))
+						}
+					}
+					// Remove conformance results for the previous actors (the ones to retain have been updated above).
+					actions += PersistenceSchema.conformanceResults
+						.filter(_.testcase inSet testCaseIds)
+						.filter(_.actor === currentActorId)
+						.delete
+				}
+				toDBIO(actions)
+			}
+			// Clean up any conformance statements that no longer have related conformance results.
+			_ <- {
+				for {
+					// Get the systems for which we still have conformance results for the previous actors.
+					systemsWithConformanceResultsForPreviousActors <- PersistenceSchema.conformanceResults
+						.filter(_.actor inSet currentSpecificationActors.values.map(_.id))
+						.map(_.sut)
+						.distinct
+						.result
+					// Delete the conformance statements for the previous actors for the systems that no longer have conformance results.
+					_ <- PersistenceSchema.systemImplementsActors
+						.filter(_.actorId inSet currentSpecificationActors.values.map(_.id))
+						.filterNot(_.systemId inSet systemsWithConformanceResultsForPreviousActors)
+						.delete
+				} yield ()
+			}
+		} yield ()
+		DB.run(dbActionFinalisation(Some(onSuccessCalls), None, query).transactionally)
 	}
 
 }

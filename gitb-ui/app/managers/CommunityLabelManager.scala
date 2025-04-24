@@ -47,7 +47,11 @@ class CommunityLabelManager @Inject() (dbConfigProvider: DatabaseConfigProvider)
   }
 
   def getLabelsByUserId(userId: Long): Future[Map[Short, CommunityLabels]]  = {
-    DB.run(for {
+    DB.run(getLabelsByUserIdInternal(userId))
+  }
+
+  private def getLabelsByUserIdInternal(userId: Long): DBIO[Map[Short, CommunityLabels]]  = {
+    for {
       communityId <- PersistenceSchema.users
         .join(PersistenceSchema.organizations).on(_.organization === _.id)
         .filter(_._1.id === userId)
@@ -55,7 +59,7 @@ class CommunityLabelManager @Inject() (dbConfigProvider: DatabaseConfigProvider)
         .result
         .head
       labels <- getLabelsInternal(communityId)
-    } yield labels)
+    } yield labels
   }
 
   def getLabelsInternal(communityId: Long): DBIO[Map[Short, CommunityLabels]] = {

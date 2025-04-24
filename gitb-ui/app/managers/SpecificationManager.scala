@@ -675,6 +675,34 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
     )
   }
 
+  def getSpecificationsForTestSuiteMove(testSuiteId: Long): Future[Seq[Specifications]] = {
+    DB.run(
+      for {
+        testSuiteInfo <- PersistenceSchema.testSuites
+          .filter(_.id === testSuiteId)
+          .map(x => (x.identifier, x.domain))
+          .result
+          .head
+        // Get the specifications linked to the domain.
+        domainSpecifications <- PersistenceSchema.specifications
+          .filter(_.domain === testSuiteInfo._2)
+          .map(_.id)
+          .result
+        // Get the specification IDs that include a test suite with the provided one's identifier.
+        specificationsLinkedToTestSuiteIdentifier <- PersistenceSchema.specificationHasTestSuites
+          .join(PersistenceSchema.testSuites).on(_.testSuiteId === _.id)
+          .filter(_._2.identifier === testSuiteInfo._1)
+          .map(_._1.specId)
+          .result
+        // For the specifications not including the test suite's identifier, load their data.
+        specifications <- {
+          val specificationIds = domainSpecifications.toSet.removedAll(specificationsLinkedToTestSuiteIdentifier)
+          getSpecificationsInternal(Some(specificationIds), None, withGroups = true)
+        }
+      } yield specifications
+    )
+  }
+
   def createSpecificationsInternal(specification: Specifications, checkApiKeyUniqueness: Boolean, badges: BadgeInfo, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Long] = {
     for {
       replaceApiKey <- if (checkApiKeyUniqueness) {

@@ -1,4 +1,4 @@
-import { AfterViewInit, Directive, ElementRef, Input, Renderer2 } from '@angular/core';
+import {AfterViewInit, Directive, ElementRef, Input, Renderer2} from '@angular/core';
 
 @Directive({
     selector: 'button[pending]',
@@ -23,6 +23,7 @@ export class PendingButtonDirective implements AfterViewInit {
     this.rendered = true
     // Wrap the original content
     this.originalContent = this.renderer.createElement('span')
+    this.renderer.addClass(this.originalContent, 'w-100')
     this.originalContent.innerHTML = this.elementRef.nativeElement.innerHTML
     // Clear original content
     this.elementRef.nativeElement.innerHTML = ''

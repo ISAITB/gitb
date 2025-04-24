@@ -19,7 +19,7 @@ abstract class BaseManager @Inject() (dbConfigProvider: DatabaseConfigProvider)
 	val dbConfig = dbConfigProvider.get[JdbcProfile]
 	val DB: dbConfig.profile.backend.JdbcDatabaseDef = dbConfig.db
 
-	protected def toDBIO(actions: ListBuffer[DBIO[_]]): DBIO[_] = {
+	protected def toDBIO(actions: Iterable[DBIO[_]]): DBIO[_] = {
 		if (actions.nonEmpty) {
 			DBIO.seq(actions.toList.map(a => a): _*)
 		} else {

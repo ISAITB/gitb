@@ -1,7 +1,9 @@
 package controllers
 
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
+import exceptions.{ErrorCodes, UserException}
 import managers._
+import models.Enums.LabelType
 import org.apache.commons.io.FileUtils
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
 import utils.{HtmlUtil, JsonUtil, RepositoryUtils}
@@ -9,7 +11,7 @@ import utils.{HtmlUtil, JsonUtil, RepositoryUtils}
 import java.nio.file.Paths
 import java.util.UUID
 import javax.inject.Inject
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 class TestSuiteService @Inject() (authorizedAction: AuthorizedAction,
 																	cc: ControllerComponents,
@@ -17,6 +19,7 @@ class TestSuiteService @Inject() (authorizedAction: AuthorizedAction,
 																	repositoryUtils: RepositoryUtils,
 																	reportManager: ReportManager,
 																	communityManager: CommunityManager,
+																	communityLabelManager: CommunityLabelManager,
 																	testSuiteManager: TestSuiteManager,
 																	testCaseManager: TestCaseManager,
 																	authorizationManager: AuthorizationManager)
@@ -171,6 +174,37 @@ class TestSuiteService @Inject() (authorizedAction: AuthorizedAction,
 	def getLinkedSpecifications(testSuiteId: Long): Action[AnyContent] = authorizedAction.async { request =>
 		authorizationManager.canManageTestSuite(request, testSuiteId).flatMap { _ =>
 			specificationManager.getSpecificationsLinkedToTestSuite(testSuiteId).map { specs =>
+				val json = JsonUtil.jsSpecifications(specs).toString()
+				ResponseConstructor.constructJsonResponse(json)
+			}
+		}
+	}
+
+	def moveTestSuiteToSpecification(testSuiteId: Long): Action[AnyContent] = authorizedAction.async { request =>
+		val specificationId = ParameterExtractor.requiredBodyParameter(request, Parameters.SPECIFICATION_ID).toLong
+		authorizationManager.canMoveTestSuite(request, testSuiteId, specificationId).flatMap { _ =>
+			testSuiteManager.moveTestSuiteToSpecification(testSuiteId, specificationId).map { _ =>
+				ResponseConstructor.constructEmptyResponse
+			}.recoverWith {
+				case e: UserException =>
+					e.errorCode match {
+						case ErrorCodes.TEST_SUITE_EXISTS => communityLabelManager.getLabel(request, LabelType.Specification, single = true, lowercase = true).map { specLabel =>
+							ResponseConstructor.constructErrorResponse(e.errorCode, "A suite with the same identifier already exists in the target %s.".formatted(specLabel))
+						}
+						case ErrorCodes.SHARED_TEST_SUITE_EXISTS => communityLabelManager.getLabel(request, LabelType.Specification, single = true, lowercase = true).map { specLabel =>
+							ResponseConstructor.constructErrorResponse(e.errorCode, "A shared suite with the same identifier already exists in the target %s.".formatted(specLabel))
+						}
+						case _ => Future.successful {
+							ResponseConstructor.constructErrorResponse(e.errorCode, e.message)
+						}
+					}
+			}
+		}
+	}
+
+	def getAvailableSpecificationsForMove(testSuiteId: Long): Action[AnyContent] = authorizedAction.async { request =>
+		authorizationManager.canManageTestSuite(request, testSuiteId).flatMap { _ =>
+			specificationManager.getSpecificationsForTestSuiteMove(testSuiteId).map { specs =>
 				val json = JsonUtil.jsSpecifications(specs).toString()
 				ResponseConstructor.constructJsonResponse(json)
 			}

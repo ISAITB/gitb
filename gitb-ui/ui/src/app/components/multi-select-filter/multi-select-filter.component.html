@@ -1,10 +1,24 @@
 <div class="filterContainer">
-    <button (click)="controlClicked()" type="button" class="btn btn-secondary filterControl"><div>{{filterLabel}}</div><div class="caret withMargin"></div></button>
+    @if (config.supportPending) {
+        <button (click)="controlClicked()" type="button" class="btn btn-secondary filterControl" [pending]="pending" [disable]="disable">
+            <div class="button-label w-100 align-items-center">
+                <div class="button-label-text">{{filterLabel}}</div>
+                <div class="caret withMargin"></div>
+            </div>
+        </button>
+    } @else {
+        <button (click)="controlClicked()" type="button" class="btn btn-secondary filterControl">
+            <div class="button-label w-100 align-items-center">
+                <div class="button-label-text">{{filterLabel}}</div>
+                <div class="caret withMargin"></div>
+            </div>
+        </button>
+    }
     @if (formVisible) {
         <div class="filterForm" [ngClass]="{'leftForm': openToLeft, 'rightForm': !openToLeft}">
             @if (typeahead && availableItems.length > 0) {
                 <div class="formSearch">
-                    <div class="inputDiv"><input #filterText type="text" class="form-control" placeholder="Search items..." [(ngModel)]="textValue" (ngModelChange)="searchApplied()"/></div>
+                    <div class="inputDiv"><input #filterText type="text" class="form-control" [placeholder]="searchPlaceholder" [(ngModel)]="textValue" (ngModelChange)="searchApplied()"/></div>
                     <div class="iconDiv"><span><i class="fa fa-search" aria-hidden="true"></i></span></div>
                 </div>
             }
@@ -25,7 +39,7 @@
                     <div class="loadingDiv"><app-pending-block></app-pending-block></div>
                 } @else {
                     @if (selectedItems.length == 0 && visibleAvailableItems.length == 0) {
-                        <div class="noItems">No items found</div>
+                        <div class="noItems">{{ this.noItemsMessage }}</div>
                     } @else {
                         @for (item of visibleAvailableItems; track item.id) {
                             <div class="itemContainer" (click)="availableItemClicked(item)">

@@ -5,6 +5,8 @@ import { TestCase } from '../types/test-case';
 import { TestSuiteWithTestCases } from '../types/test-suite-with-test-cases';
 import { RestService } from './rest.service';
 import { TestCaseTag } from '../types/test-case-tag';
+import {TestSuiteUploadResult} from '../modals/test-suite-upload-modal/test-suite-upload-result';
+import {ErrorDescription} from '../types/error-description';
 
 @Injectable({
   providedIn: 'root'
@@ -67,7 +69,7 @@ export class TestSuiteService {
 		return this.restService.get<Specification[]>({
 			path: ROUTES.controllers.TestSuiteService.getLinkedSpecifications(testSuiteId).url,
 			authenticate: true
-	    })
+    })
 	}
 
 	downloadTestSuite(testSuiteId: number) {
@@ -126,4 +128,21 @@ export class TestSuiteService {
 		})
 	}
 
+  getAvailableSpecificationsForMove(testSuiteId: number) {
+    return this.restService.get<Specification[]>({
+      path: ROUTES.controllers.TestSuiteService.getAvailableSpecificationsForMove(testSuiteId).url,
+      authenticate: true
+    })
+  }
+
+  moveTestSuiteToSpecification(testSuiteId: number, specificationId: number) {
+    const data: any = {
+      spec_id: specificationId
+    }
+    return this.restService.post<ErrorDescription|void>({
+      path: ROUTES.controllers.TestSuiteService.moveTestSuiteToSpecification(testSuiteId).url,
+      authenticate: true,
+      data: data
+    })
+  }
 }

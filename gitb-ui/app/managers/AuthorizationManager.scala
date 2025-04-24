@@ -508,6 +508,31 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     canViewAllTestResources(request)
   }
 
+  def canMoveTestSuite(request: RequestWithAttributes[_], testSuiteId: Long, specificationId: Long): Future[Boolean] = {
+    val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
+      if (isTestBedAdmin(userInfo)) {
+        // Test Bed admin can do anything.
+        Future.successful(true)
+      } else if (isCommunityAdmin(userInfo)) {
+        for {
+          domainIdFromTestSuiteLookup <- testSuiteManager.getTestSuiteDomain(testSuiteId)
+          domainIdFromSpecificationLookup <- domainManager.getDomainOfSpecification(specificationId).map(_.id)
+          result <- {
+            if (domainIdFromTestSuiteLookup == domainIdFromSpecificationLookup) {
+              // For a community admin the test suite's domain must match the target specification's domain, and the domain must be manageable by the community admin.
+              canManageDomain(request, domainIdFromTestSuiteLookup)
+            } else {
+              Future.successful(false)
+            }
+          }
+        } yield result
+      } else {
+        Future.successful(false)
+      }
+    }
+    check.map(setAuthResult(request, _, "User cannot move the requested test suite to the target specification"))
+  }
+
   def canManageTestSuite(request: RequestWithAttributes[_], testSuiteId: Long): Future[Boolean] = {
     val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
       if (isTestBedAdmin(userInfo)) {
