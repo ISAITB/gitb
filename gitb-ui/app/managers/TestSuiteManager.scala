@@ -95,10 +95,9 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 
 	def getTestSuiteDomain(testSuiteId: Long): Future[Long] = {
 		DB.run(
-			PersistenceSchema.specificationHasTestSuites
-				.join(PersistenceSchema.specifications).on(_.specId === _.id)
-				.filter(_._1.testSuiteId === testSuiteId)
-				.map(_._2.domain)
+			PersistenceSchema.testSuites
+				.filter(_.id === testSuiteId)
+				.map(_.domain)
 				.result
 				.head
 		)
