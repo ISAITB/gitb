@@ -15,26 +15,26 @@
         </button>
     }
     @if (formVisible) {
-        <div class="filterForm" [ngClass]="{'leftForm': openToLeft, 'rightForm': !openToLeft}">
+        <div class="filterForm" [ngClass]="{'leftForm': openToLeft, 'rightForm': !openToLeft}" [class.multiSelection]="!config.singleSelection">
             @if (typeahead && availableItems.length > 0) {
                 <div class="formSearch">
-                    <div class="inputDiv"><input #filterText type="text" class="form-control" [placeholder]="searchPlaceholder" [(ngModel)]="textValue" (ngModelChange)="searchApplied()"/></div>
+                    <div class="inputDiv"><input #filterText type="text" class="form-control" [placeholder]="searchPlaceholder" [(ngModel)]="textValue" (ngModelChange)="searchApplied()" (focus)="filterTextFocused()"/></div>
                     <div class="iconDiv"><span><i class="fa fa-search" aria-hidden="true"></i></span></div>
                 </div>
             }
             @if (!config.singleSelection && selectedItems.length > 0) {
-                <div class="itemsContainer">
+                <div class="itemsContainer" tabIndex="-1">
                     @for (item of selectedItems; track item.id) {
-                        <div class="itemContainer" (click)="selectedItemClicked(item)">
+                        <div class="itemContainer" [class]="'selected-item-'+$index" [class.focused]="$index == focusedSelectedItemIndex" (click)="selectedItemClicked(item)">
                             <div class="d-flex">
-                                <input class="form-check-input" type="checkbox" [attr.id]="'item-'+$index" [attr.name]="'item-'+$index" [(ngModel)]="selectedSelectedItems[item.id].selected" (ngModelChange)="updateCheckFlag()">
+                                <input class="form-check-input" type="checkbox" tabIndex="-1" [attr.id]="'item-'+$index" [attr.name]="'item-'+$index" [(ngModel)]="selectedSelectedItems[item.id].selected" (ngModelChange)="updateCheckFlag()" (focus)="selectedItemCheckFocused($event)">
                                 <label class="form-check-label disable-select mx-2" (click)="$event.stopPropagation()" [attr.for]="'item-'+$index">{{item[config.textField]}}</label>
                             </div>
                         </div>
                     }
                 </div>
             }
-            <div class="itemsContainer availableItems">
+            <div class="itemsContainer availableItems" tabIndex="-1">
                 @if (loadPending) {
                     <div class="loadingDiv"><app-pending-block></app-pending-block></div>
                 } @else {
@@ -42,12 +42,12 @@
                         <div class="noItems">{{ this.noItemsMessage }}</div>
                     } @else {
                         @for (item of visibleAvailableItems; track item.id) {
-                            <div class="itemContainer" (click)="availableItemClicked(item)">
+                            <div class="itemContainer" [class]="'available-item-'+$index" [class.focused]="$index == focusedAvailableItemIndex" (click)="availableItemClicked(item)">
                                 @if (config.singleSelection) {
                                     <div>{{item[config.textField]}}</div>
                                 } @else {
                                     <div class="d-flex">
-                                        <input class="form-check-input" [attr.id]="'a_item-'+$index" [attr.name]="'a_item-'+$index" type="checkbox" [(ngModel)]="selectedAvailableItems[item.id].selected" (ngModelChange)="updateCheckFlag()">
+                                        <input class="form-check-input" tabIndex="-1" [attr.id]="'a_item-'+$index" [attr.name]="'a_item-'+$index" type="checkbox" [(ngModel)]="selectedAvailableItems[item.id].selected" (ngModelChange)="updateCheckFlag()" (focus)="availableItemCheckFocused($event)">
                                         <label class="form-check-label disable-select mx-2" (click)="$event.stopPropagation()" [attr.for]="'a_item-'+$index">{{item[config.textField]}}</label>
                                     </div>
                                 }

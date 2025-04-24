@@ -42,6 +42,9 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
   replaceSelectedItemsSubscription?: Subscription
   clearItemsSubscription?: Subscription
 
+  focusedSelectedItemIndex?: number
+  focusedAvailableItemIndex?: number
+
   /*
    * ID of the displayed item to array of the hidden items.
    * The 'applicable' flag is used to cover the case of items with the same name that
@@ -59,16 +62,16 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
     if (this.config.singleSelection == undefined) {
       this.config.singleSelection = false
     }
-    if (this.config.filterLabel) {
+    if (this.config.filterLabel != undefined) {
       this.filterLabel = this.config.filterLabel
       this.defaultFilterLabel = this.config.filterLabel
     }
-    if (this.config.noItemsMessage) {
+    if (this.config.noItemsMessage != undefined) {
       this.noItemsMessage = this.config.noItemsMessage
     } else {
       this.noItemsMessage = "No items found"
     }
-    if (this.config.searchPlaceholder) {
+    if (this.config.searchPlaceholder != undefined) {
       this.searchPlaceholder = this.config.searchPlaceholder
     } else {
       this.searchPlaceholder = "Search items..."
@@ -155,26 +158,121 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
     }
   }
 
-  @HostListener('document:keyup.escape', ['$event'])
-  escapeRegistered(event: KeyboardEvent) {
-    if (this.formVisible && this.typeahead) {
-      if (this.textValue == '') {
-        this.close()
-      } else {
-        this.textValue = ''
-      }
-      this.searchApplied()
-    }
+  filterTextFocused() {
+    this.focusedSelectedItemIndex = undefined
+    this.focusedAvailableItemIndex = undefined
   }
 
-  @HostListener('document:keyup.enter', ['$event'])
-  enterRegistered(event: KeyboardEvent) {
-    if (this.formVisible && this.typeahead) {
-      if (this.visibleAvailableItems?.length == 1) {
-        this.availableItemClicked(this.visibleAvailableItems[0])
-      }
-      if (this.hasCheckedSelectedItem) {
-        this.applyItems()
+  @HostListener('document:keydown', ['$event'])
+  keyUpRegistered(event: KeyboardEvent) {
+    if (this.formVisible) {
+      switch (event.key) {
+        case 'Escape': {
+          if (this.focusedSelectedItemIndex != undefined || this.focusedAvailableItemIndex != undefined) {
+            this.focusedSelectedItemIndex = undefined
+            this.focusedAvailableItemIndex = undefined
+            if (this.filterTextElement) {
+              this.filterTextElement.nativeElement.focus()
+            }
+          } else {
+            if (this.typeahead) {
+              if (this.textValue == '') {
+                this.close()
+              } else {
+                this.textValue = ''
+              }
+              this.searchApplied()
+            } else {
+              this.close()
+            }
+          }
+          break;
+        }
+        case 'Enter': {
+          if (this.config.singleSelection) {
+            if (this.focusedAvailableItemIndex != undefined) {
+              const item = this.visibleAvailableItems[this.focusedAvailableItemIndex]
+              this.selectAvailableItem(item)
+            } else if (this.focusedSelectedItemIndex != undefined) {
+              const item = this.selectedItems[this.focusedSelectedItemIndex]
+              this.selectSelectedItem(item)
+            } else if (this.visibleAvailableItems.length == 1) {
+              this.selectAvailableItem(this.visibleAvailableItems[0])
+            }
+          } else {
+            if (this.visibleAvailableItems.length == 1 && this.selectedItems.length == 0) {
+              this.selectAvailableItem(this.visibleAvailableItems[0])
+            }
+            this.applyItems()
+            setTimeout(() => {
+              this.close()
+            })
+          }
+          break;
+        }
+        case 'ArrowDown': {
+          event.preventDefault()
+          if (this.selectedItems.length > 0 || this.visibleAvailableItems.length > 0) {
+            if (this.filterTextElement) {
+              this.filterTextElement.nativeElement.blur()
+            }
+            if (this.focusedSelectedItemIndex != undefined) {
+              if (this.focusedSelectedItemIndex + 1 < this.selectedItems.length) {
+                this.focusedSelectedItemIndex += 1
+              } else if (this.visibleAvailableItems.length > 0) {
+                this.focusedSelectedItemIndex = undefined
+                this.focusedAvailableItemIndex = 0
+              }
+            } else if (this.focusedAvailableItemIndex != undefined) {
+              if (this.focusedAvailableItemIndex + 1 < this.visibleAvailableItems.length) {
+                this.focusedAvailableItemIndex += 1
+              }
+            } else if (!this.config.singleSelection && this.selectedItems.length > 0) {
+              this.focusedSelectedItemIndex = 0
+            } else if (this.visibleAvailableItems.length > 0) {
+              this.focusedAvailableItemIndex = 0
+            }
+            this.ensureFocusedItemIsVisible()
+          }
+          break;
+        }
+        case 'ArrowUp': {
+          event.preventDefault()
+          if (this.focusedSelectedItemIndex != undefined) {
+            if (this.focusedSelectedItemIndex > 0) {
+              this.focusedSelectedItemIndex -= 1
+            } else {
+              this.focusedSelectedItemIndex = undefined
+              if (this.filterTextElement) {
+                this.filterTextElement.nativeElement.focus()
+              }
+            }
+          } else if (this.focusedAvailableItemIndex != undefined) {
+            if (this.focusedAvailableItemIndex > 0) {
+              this.focusedAvailableItemIndex -= 1
+            } else if (!this.config.singleSelection && this.selectedItems.length > 0) {
+              this.focusedSelectedItemIndex = this.selectedItems.length - 1
+              this.focusedAvailableItemIndex = undefined
+            } else {
+              this.focusedAvailableItemIndex = undefined
+              if (this.filterTextElement) {
+                this.filterTextElement.nativeElement.focus()
+              }
+            }
+          }
+          this.ensureFocusedItemIsVisible()
+        }
+        break;
+        case ' ': {
+          if (this.focusedSelectedItemIndex != undefined) {
+            event.preventDefault()
+            this.selectSelectedItem(this.selectedItems[this.focusedSelectedItemIndex])
+          } else if (this.focusedAvailableItemIndex != undefined) {
+            event.preventDefault()
+            this.selectAvailableItem(this.visibleAvailableItems[this.focusedAvailableItemIndex])
+          }
+          break;
+        }
       }
     }
   }
@@ -203,6 +301,8 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
   }
 
   controlClicked() {
+    this.focusedSelectedItemIndex = undefined
+    this.focusedAvailableItemIndex = undefined
     if (this.formVisible) {
       this.close()
     } else {
@@ -323,6 +423,12 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
   }
 
   availableItemClicked(item: T) {
+    this.focusedSelectedItemIndex = undefined
+    this.focusedAvailableItemIndex = undefined
+    this.selectAvailableItem(item)
+  }
+
+  selectAvailableItem(item: T) {
     if (this.config.singleSelection) {
       this.selectedItems = [item]
       const itemToReport: FilterValues<T> = { active: [], other: [] }
@@ -336,6 +442,12 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
   }
 
   selectedItemClicked(item: T) {
+    this.focusedSelectedItemIndex = undefined
+    this.focusedAvailableItemIndex = undefined
+    this.selectSelectedItem(item)
+  }
+
+  selectSelectedItem(item: T) {
     this.itemClicked(this.selectedSelectedItems, item)
   }
 
@@ -403,6 +515,8 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
   }
 
   clearSelectedItems() {
+    this.focusedSelectedItemIndex = undefined
+    this.focusedAvailableItemIndex = undefined
     this.clearSelectedItemMap(this.selectedSelectedItems)
     this.clearSelectedItemMap(this.selectedAvailableItems)
     this.updateCheckFlag()
@@ -424,6 +538,8 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
 
   close() {
     this.formVisible = false
+    this.focusedSelectedItemIndex = undefined
+    this.focusedAvailableItemIndex = undefined
     this.textValue = ''
     // Make sure that previously selected items that have been unchecked but not applied are undone.
     for (let itemId in this.selectedSelectedItems) {
@@ -431,4 +547,23 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
     }
   }
 
+  selectedItemCheckFocused(event: FocusEvent) {
+    (event.target as HTMLElement).blur();
+  }
+
+  availableItemCheckFocused(event: FocusEvent) {
+    (event.target as HTMLElement).blur();
+  }
+
+  private ensureFocusedItemIsVisible() {
+    let element: HTMLElement|null = null
+    if (this.focusedSelectedItemIndex != undefined) {
+      element = document.querySelector('.itemContainer.selected-item-'+this.focusedSelectedItemIndex)
+    } else if (this.focusedAvailableItemIndex != undefined) {
+      element = document.querySelector('.itemContainer.available-item-'+this.focusedAvailableItemIndex)
+    }
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
 }

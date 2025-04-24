@@ -13,6 +13,7 @@
 .filterContainer {
     position: relative;
     display: flex;
+    min-height: 35px;
 }
 .filterControl {
     display: flex;
@@ -33,10 +34,10 @@
     position: absolute;
     top: 35px;
     &.leftForm {
-        right: 0px;
+        right: 0;
     }
     &.rightForm {
-        left: 0px;
+        left: 0;
     }
     z-index: 10;
     background: @white;
@@ -57,13 +58,21 @@
         border-top: 1px solid @gray-light-2;
         padding: 8px;
     }
+    &.multiSelection .itemsContainer .itemContainer:last-child {
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+    }
     .itemsContainer {
         border-top: 1px solid @gray-light-2;
         .loadingDiv {
             padding: 6px 12px;
         }
         .itemContainer {
+            @focus-background: #e0eaf3;
             padding: 8px;
+            &.focused {
+                background-color: @focus-background;
+            }
             &:last-child {
                 border-bottom-left-radius: @border-radius;
                 border-bottom-right-radius: @border-radius;
@@ -71,6 +80,9 @@
             &:hover {
                 background: @bs-background-highlight;
                 cursor: pointer;
+                &.focused {
+                    background-color: @focus-background;
+                }
             }
             input {
                 cursor: pointer;
