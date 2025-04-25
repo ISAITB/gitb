@@ -32,6 +32,8 @@ export class MissingConfigurationModalComponent implements OnInit {
   showStatementProperties = false
   somethingIsVisible = false
   requiredPropertiesAreHidden = false
+  requiredPropertiesIncludeEditable = false
+  requiredPropertiesIncludeNonEditable = false
 
   constructor(
     private modalRef: BsModalRef,
@@ -47,6 +49,8 @@ export class MissingConfigurationModalComponent implements OnInit {
     this.showStatementProperties = this.statementPropertyVisibility.hasVisibleMissingRequiredProperties
     this.somethingIsVisible = this.showOrganisationProperties || this.showSystemProperties || this.showStatementProperties
     this.requiredPropertiesAreHidden = this.organisationPropertyVisibility.hasNonVisibleMissingRequiredProperties || this.systemPropertyVisibility.hasNonVisibleMissingRequiredProperties || this.statementPropertyVisibility.hasNonVisibleMissingRequiredProperties
+    this.requiredPropertiesIncludeEditable = this.organisationPropertyVisibility.hasVisibleMissingRequiredEditableProperties || this.systemPropertyVisibility.hasVisibleMissingRequiredEditableProperties || this.statementPropertyVisibility.hasVisibleMissingRequiredEditableProperties
+    this.requiredPropertiesIncludeNonEditable = this.organisationPropertyVisibility.hasVisibleMissingRequiredNonEditableProperties || this.systemPropertyVisibility.hasVisibleMissingRequiredNonEditableProperties || this.statementPropertyVisibility.hasVisibleMissingRequiredNonEditableProperties
   }
 
   view() {

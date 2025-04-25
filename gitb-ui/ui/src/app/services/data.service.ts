@@ -953,7 +953,9 @@ export class DataService {
 			hasVisibleMissingRequiredProperties: false,
 			hasVisibleMissingOptionalProperties: false,
 			hasNonVisibleMissingRequiredProperties: false,
-			hasNonVisibleMissingOptionalProperties: false
+			hasNonVisibleMissingOptionalProperties: false,
+      hasVisibleMissingRequiredEditableProperties: false,
+      hasVisibleMissingRequiredNonEditableProperties: false
 		}
 		if (properties != undefined && properties.length > 0) {
 			results.hasProperties = true
@@ -982,6 +984,13 @@ export class DataService {
 							results.hasVisibleMissingOptionalProperties = true
             } else {
 							results.hasVisibleMissingRequiredProperties = true
+            }
+            if (prop.use == 'R') {
+              if (prop.adminOnly) {
+                results.hasVisibleMissingRequiredNonEditableProperties = true
+              } else {
+                results.hasVisibleMissingRequiredEditableProperties = true
+              }
             }
           }
         }
