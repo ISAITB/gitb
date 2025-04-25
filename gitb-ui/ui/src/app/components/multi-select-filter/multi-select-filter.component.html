@@ -1,19 +1,13 @@
 <div class="filterContainer">
-    @if (config.supportPending) {
-        <button (click)="controlClicked()" type="button" class="btn btn-secondary filterControl" [pending]="pending" [disable]="disable">
-            <div class="button-label w-100 align-items-center">
-                <div class="button-label-text">{{filterLabel}}</div>
-                <div class="caret withMargin"></div>
-            </div>
-        </button>
-    } @else {
-        <button (click)="controlClicked()" type="button" class="btn btn-secondary filterControl">
-            <div class="button-label w-100 align-items-center">
-                <div class="button-label-text">{{filterLabel}}</div>
-                <div class="caret withMargin"></div>
-            </div>
-        </button>
-    }
+    <button [attr.id]="id" (click)="controlClicked()" type="button" class="btn btn-secondary filterControl" [disabled]="pending || disable">
+        <div class="button-label w-100 align-items-center">
+            @if (pending) {
+                <app-pending-block></app-pending-block>
+            }
+            <div class="button-label-text">{{filterLabel}}</div>
+            <div class="caret withMargin"></div>
+        </div>
+    </button>
     @if (formVisible) {
         <div class="filterForm" [ngClass]="{'leftForm': openToLeft, 'rightForm': !openToLeft}" [class.multiSelection]="!config.singleSelection">
             @if (typeahead && availableItems.length > 0) {

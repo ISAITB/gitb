@@ -44,13 +44,9 @@
 							<label class="col-3 col-form-label text-end" for="domain">* {{dataService.labelDomain()}}:</label>
 							<div class="col-6">
 								@if (dataService.isSystemAdmin || (dataService.isCommunityAdmin && dataService.community?.domainId == undefined)) {
-									<select [disabled]="domains.length == 0" class="form-select" id="domain" name="domainSelect" [(ngModel)]="domain">
-										@for (domain of domains; track domain.id) {
-											<option [ngValue]="domain">{{domain.fname}}</option>
-										}
-									</select>
+                                    <app-multi-select-filter [config]="domainSelectionConfig" (apply)="domainSelected($event)" [disable]="domains.length == 0"></app-multi-select-filter>
 								} @else if (dataService.isCommunityAdmin && domain != undefined) {
-									<input class="form-control" id="domain" name="domain" [(ngModel)]="domain.fname" readonly="true"/>
+									<input class="form-control" id="domain" name="domain" [(ngModel)]="domain.fname" readonly="readonly"/>
 								}
 							</div>
 							<div app-tooltip class="col-auto" [tbTooltip]="'The '+dataService.labelDomainLower()+' to export.'"></div>
@@ -60,14 +56,10 @@
 							<label class="col-3 col-form-label text-end" for="community">* Community:</label>
 							<div class="col-6">
 								@if (dataService.isSystemAdmin) {
-									<select [disabled]="communities.length == 0" class="form-select" id="community" [(ngModel)]="community" name="communitySelect">
-										@for (c of communities; track c.id) {
-											<option [ngValue]="c">{{c.fname}}</option>
-										}
-									</select>
+                                    <app-multi-select-filter [config]="communitySelectionConfig" (apply)="communitySelected($event)" [disable]="communities.length == 0"></app-multi-select-filter>
 								}
 								@if (dataService.isCommunityAdmin) {
-									<input class="form-control" id="community" name="community" [(ngModel)]="community!.fname" readonly="true"/>
+									<input class="form-control" id="community" name="community" [(ngModel)]="community!.fname" readonly="readonly"/>
 								}
 							</div>
 							<div app-tooltip class="col-auto" tbTooltip="The community to export."></div>
@@ -90,7 +82,7 @@
 												<th class="first-column">
 													<div>
 														<div>Include</div>
-														<div app-tooltip class="col-auto d-inline-flex" container="body" [inline]="true" tbTooltip="The types of data to include in the export."></div>
+														<div app-tooltip class="col-auto d-inline-flex" [inline]="true" tbTooltip="The types of data to include in the export."></div>
 													</div>
 												</th>
 												<th class="td-centered second-column"><span>All</span></th>

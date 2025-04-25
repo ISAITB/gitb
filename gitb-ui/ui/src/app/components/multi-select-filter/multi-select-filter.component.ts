@@ -21,6 +21,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
   @Input() pending = false
   @Input() disable = false
   @Output() apply = new EventEmitter<FilterUpdate<any>>()
+  @Output() ready = new EventEmitter<string>()
   @ViewChild('filterText') filterTextElement?: ElementRef
 
   selectedItems: T[] = []
@@ -37,6 +38,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
   textValue = ''
   noItemsMessage!: string
   searchPlaceholder!: string
+  id!: string
 
   replaceItemsSubscription?: Subscription
   replaceSelectedItemsSubscription?: Subscription
@@ -76,12 +78,17 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
     } else {
       this.searchPlaceholder = "Search items..."
     }
+    if (this.config.id != undefined) {
+      this.id = this.config.id
+    } else {
+      this.id = this.config.name
+    }
     if (this.config.clearItems) {
       this.clearItemsSubscription = this.config.clearItems.subscribe(() => {
         this.selectedSelectedItems = {}
+        this.selectedItems = []
         this.updateCheckFlag(false)
         this.updateLabel()
-        this.selectedItems = []
       })
     }
     if (this.config.replaceItems) {
@@ -96,53 +103,68 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
     }
     if (this.config.replaceSelectedItems) {
       this.replaceSelectedItemsSubscription = this.config.replaceSelectedItems.subscribe((newItems) => {
-        if (this.config.singleSelection == true) {
-          for (let item of newItems) {
-            this.selectedSelectedItems[item.id] = { selected: true, item: item }
-          }
-        } else {
-          const allowedIdSet = this.dataService.asIdSet(newItems)
-          const previousIdSet = this.selectedSelectedItems
-          for (let id in previousIdSet) {
-            if (this.itemsWithSameValue[id]) {
-              // We have other items with the same text value - mark as applicable only the ones we are supposed to keep.
-              // The other values are maintained to allow switching upstream values (e.g. the specification of a test suite).
-              for (let similarItem of this.itemsWithSameValue[id]) {
-                similarItem.applicable = allowedIdSet[similarItem.item.id] != undefined
-              }
-            }
-            if (!allowedIdSet[id] && this.selectedSelectedItems[id]) {
-              // The currently selected item no longer applies.
-              const previouslySelectedItem = this.selectedSelectedItems[id].item
-              if (this.itemsWithSameValue[id]) {
-                // Other similarly valued items exist.
-                let otherApplicableItemWithSameTextValue = find(this.itemsWithSameValue[id], (entry) => { return entry.applicable })
-                if (otherApplicableItemWithSameTextValue != undefined) {
-                  const newSelectedItemId = otherApplicableItemWithSameTextValue.item.id
-                  // A previously hidden similarly valued item still applies - replace the visible one with it.
-                  const otherHiddenItems = filter(this.itemsWithSameValue[id], (entry) => { return entry.item.id != newSelectedItemId })
-                  // Add the previously selected item as a hidden, non-applicable one and the remaining ones.
-                  this.itemsWithSameValue[newSelectedItemId] = [{applicable: false, item: previouslySelectedItem}].concat(otherHiddenItems)
-                  this.selectedSelectedItems[newSelectedItemId] = { selected: true, item: otherApplicableItemWithSameTextValue.item }
-                }
-                delete this.itemsWithSameValue[id]
-              }
-              delete this.selectedSelectedItems[id]
-            }
-          }
-        }
-        const newItemsToSet: T[] = []
-        for (let key in this.selectedSelectedItems) {
-          if (this.selectedSelectedItems[key].selected) {
-            newItemsToSet.push(this.selectedSelectedItems[key].item)
-          }
-        }
-        this.selectedItems = this.sortItems(newItemsToSet)
-        this.updateCheckFlag()
-        this.updateLabel()
-        this.applyItems(true)
+        this.replaceSelectedItems(newItems)
       })
     }
+    if (this.config.initialValues != undefined) {
+      this.replaceSelectedItems(this.config.initialValues)
+    }
+    this.ready.emit(this.config.name)
+  }
+
+  private replaceSelectedItems(newItems: T[]) {
+    if (this.config.singleSelection == true) {
+      for (let item of newItems) {
+        this.selectedSelectedItems[item.id] = { selected: true, item: item }
+      }
+    } else {
+      const allowedIdSet = this.dataService.asIdSet(newItems)
+      const previousIdSet = this.selectedSelectedItems
+      let hasPrevious = false
+      for (let id in previousIdSet) {
+        hasPrevious = true
+        if (this.itemsWithSameValue[id]) {
+          // We have other items with the same text value - mark as applicable only the ones we are supposed to keep.
+          // The other values are maintained to allow switching upstream values (e.g. the specification of a test suite).
+          for (let similarItem of this.itemsWithSameValue[id]) {
+            similarItem.applicable = allowedIdSet[similarItem.item.id] != undefined
+          }
+        }
+        if (!allowedIdSet[id] && this.selectedSelectedItems[id]) {
+          // The currently selected item no longer applies.
+          const previouslySelectedItem = this.selectedSelectedItems[id].item
+          if (this.itemsWithSameValue[id]) {
+            // Other similarly valued items exist.
+            let otherApplicableItemWithSameTextValue = find(this.itemsWithSameValue[id], (entry) => { return entry.applicable })
+            if (otherApplicableItemWithSameTextValue != undefined) {
+              const newSelectedItemId = otherApplicableItemWithSameTextValue.item.id
+              // A previously hidden similarly valued item still applies - replace the visible one with it.
+              const otherHiddenItems = filter(this.itemsWithSameValue[id], (entry) => { return entry.item.id != newSelectedItemId })
+              // Add the previously selected item as a hidden, non-applicable one and the remaining ones.
+              this.itemsWithSameValue[newSelectedItemId] = [{applicable: false, item: previouslySelectedItem}].concat(otherHiddenItems)
+              this.selectedSelectedItems[newSelectedItemId] = { selected: true, item: otherApplicableItemWithSameTextValue.item }
+            }
+            delete this.itemsWithSameValue[id]
+          }
+          delete this.selectedSelectedItems[id]
+        }
+      }
+      if (!hasPrevious) {
+        for (let item of newItems) {
+          this.selectedSelectedItems[item.id] = { selected: true, item: item }
+        }
+      }
+    }
+    const newItemsToSet: T[] = []
+    for (let key in this.selectedSelectedItems) {
+      if (this.selectedSelectedItems[key].selected) {
+        newItemsToSet.push(this.selectedSelectedItems[key].item)
+      }
+    }
+    this.selectedItems = this.sortItems(newItemsToSet)
+    this.updateCheckFlag()
+    this.updateLabel()
+    this.applyItems(true)
   }
 
   ngOnDestroy(): void {
@@ -163,6 +185,10 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
     this.focusedAvailableItemIndex = undefined
   }
 
+  private textFieldVisible(): boolean {
+    return this.typeahead && this.availableItems.length > 0 && this.filterTextElement != undefined
+  }
+
   @HostListener('document:keydown', ['$event'])
   keyUpRegistered(event: KeyboardEvent) {
     if (this.formVisible) {
@@ -171,8 +197,8 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
           if (this.focusedSelectedItemIndex != undefined || this.focusedAvailableItemIndex != undefined) {
             this.focusedSelectedItemIndex = undefined
             this.focusedAvailableItemIndex = undefined
-            if (this.filterTextElement) {
-              this.filterTextElement.nativeElement.focus()
+            if (this.textFieldVisible()) {
+              this.filterTextElement!.nativeElement.focus()
             }
           } else {
             if (this.typeahead) {
@@ -213,8 +239,8 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
         case 'ArrowDown': {
           event.preventDefault()
           if (this.selectedItems.length > 0 || this.visibleAvailableItems.length > 0) {
-            if (this.filterTextElement) {
-              this.filterTextElement.nativeElement.blur()
+            if (this.textFieldVisible()) {
+              this.filterTextElement!.nativeElement.blur()
             }
             if (this.focusedSelectedItemIndex != undefined) {
               if (this.focusedSelectedItemIndex + 1 < this.selectedItems.length) {
@@ -242,9 +268,9 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
             if (this.focusedSelectedItemIndex > 0) {
               this.focusedSelectedItemIndex -= 1
             } else {
-              this.focusedSelectedItemIndex = undefined
-              if (this.filterTextElement) {
-                this.filterTextElement.nativeElement.focus()
+              if (this.textFieldVisible()) {
+                this.focusedSelectedItemIndex = undefined
+                this.filterTextElement!.nativeElement.focus()
               }
             }
           } else if (this.focusedAvailableItemIndex != undefined) {
@@ -255,8 +281,8 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
               this.focusedAvailableItemIndex = undefined
             } else {
               this.focusedAvailableItemIndex = undefined
-              if (this.filterTextElement) {
-                this.filterTextElement.nativeElement.focus()
+              if (this.textFieldVisible()) {
+                this.filterTextElement!.nativeElement.focus()
               }
             }
           }
@@ -433,7 +459,9 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
       this.selectedItems = [item]
       const itemToReport: FilterValues<T> = { active: [], other: [] }
       itemToReport.active = this.getItemsToSignalForItem(item)
-      this.apply.emit({ values: itemToReport, applyFilters: false })
+      if (this.config.eventsDisabled != true) {
+        this.apply.emit({ values: itemToReport, applyFilters: false })
+      }
       this.updateLabel()
       this.close()
     } else {
@@ -511,7 +539,9 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
     this.selectedItems = this.sortItems(newSelectedItems)
     this.updateCheckFlag()
     this.updateLabel()
-    this.apply.emit({ values: selectedItemsToReport, applyFilters: skipRefresh == undefined || !skipRefresh })
+    if (this.config.eventsDisabled != true) {
+      this.apply.emit({ values: selectedItemsToReport, applyFilters: skipRefresh == undefined || !skipRefresh })
+    }
   }
 
   clearSelectedItems() {

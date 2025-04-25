@@ -17,6 +17,8 @@ import { ImportItemStateGroup } from './import-item-state-group';
 import { RoutingService } from 'src/app/services/routing.service';
 import { ValidationState } from 'src/app/types/validation-state';
 import { ErrorDescription } from 'src/app/types/error-description';
+import {MultiSelectConfig} from '../../../components/multi-select-filter/multi-select-config';
+import {FilterUpdate} from '../../../components/test-filter/filter-update';
 
 @Component({
     selector: 'app-import',
@@ -51,6 +53,9 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
   validation = new ValidationState()
   resetEmitter = new EventEmitter<void>()
 
+  domainSelectionConfig!: MultiSelectConfig<Domain>
+  communitySelectionConfig!: MultiSelectConfig<Community>
+
   constructor(
     private communityService: CommunityService,
     private conformanceService: ConformanceService,
@@ -61,6 +66,23 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
 
   ngOnInit(): void {
     this.resetSettings(true)
+    // Initialise selection configs
+    this.domainSelectionConfig = {
+      name: "domain",
+      textField: "fname",
+      singleSelection: true,
+      singleSelectionPersistent: true,
+      filterLabel: `Select ${this.dataService.labelDomainLower()}...`,
+      loader: () => of(this.domains)
+    }
+    this.communitySelectionConfig = {
+      name: "community",
+      textField: "fname",
+      singleSelection: true,
+      singleSelectionPersistent: true,
+      filterLabel: `Select community...`,
+      loader: () => of(this.communities)
+    }
     // Get communities and domains
     let communities$: Observable<Community[]>
     if (this.dataService.isSystemAdmin) {
@@ -133,6 +155,14 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
     setTimeout(() => {
       this.formCollapsed = this.exportType == undefined
     })
+  }
+
+  domainSelected(event: FilterUpdate<Domain>) {
+    this.domain = event.values.active[0]
+  }
+
+  communitySelected(event: FilterUpdate<Community>) {
+    this.community = event.values.active[0]
   }
 
   uploadArchive(file: FileData) {

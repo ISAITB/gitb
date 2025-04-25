@@ -4,6 +4,7 @@ import { EntityWithId } from "../../types/entity-with-id";
 
 export interface MultiSelectConfig<T extends EntityWithId> {
 
+  id?: string
   name: string
   textField: string
   loader?: () => Observable<T[]>
@@ -13,8 +14,9 @@ export interface MultiSelectConfig<T extends EntityWithId> {
   singleSelection?: boolean
   singleSelectionPersistent?: boolean
   filterLabel?: string
-  supportPending?: boolean
   noItemsMessage?: string
   searchPlaceholder?: string
+  eventsDisabled?: boolean
+  initialValues?: T[]
 
 }

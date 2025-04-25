@@ -1,4 +1,4 @@
-import { Component, NgZone, OnInit } from '@angular/core';
+import {Component, EventEmitter, NgZone, OnInit} from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Constants } from 'src/app/common/constants';
 import { DataService } from 'src/app/services/data.service';
@@ -14,6 +14,8 @@ import { ExportReportEvent } from 'src/app/types/export-report-event';
 import { ReportSupportService } from 'src/app/services/report-support.service';
 import { BaseConformanceItemDisplayComponent } from 'src/app/components/base-conformance-item-display/base-conformance-item-display.component';
 import { ConformanceSnapshotList } from 'src/app/types/conformance-snapshot-list';
+import {MultiSelectConfig} from '../../../components/multi-select-filter/multi-select-config';
+import {FilterUpdate} from '../../../components/test-filter/filter-update';
 
 @Component({
     selector: 'app-conformance-statements',
@@ -43,6 +45,7 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
   conformanceSnapshots?: ConformanceSnapshot[]
   snapshotButtonLabel?: string
   currentlySelectedSnapshot?: ConformanceSnapshot
+  systemSelectionConfig!: MultiSelectConfig<System>
 
   constructor(
     dataService: DataService,
@@ -73,6 +76,17 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
     this.showCreateSystem = this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || this.dataService.isVendorAdmin
     this.showDomain = this.dataService.isSystemAdmin || this.dataService.community?.domainId == undefined
     this.columnCount = this.showDomain?6:5
+    this.systemSelectionConfig = {
+      name: "system",
+      textField: "fname",
+      singleSelection: true,
+      singleSelectionPersistent: true,
+      filterLabel: 'Select ' + this.dataService.labelSystemLower()+ '...',
+      noItemsMessage: 'No ' + this.dataService.labelSystemsLower() + ' available.',
+      searchPlaceholder: 'Search ' + this.dataService.labelSystemsLower() + "...",
+      replaceSelectedItems: new EventEmitter(),
+      replaceItems: new EventEmitter()
+    }
     const systemsLoaded = this.systemService.getSystemsByOrganisation(this.organisationId, snapshotId)
     let snapshotsLoaded: Observable<ConformanceSnapshotList>
     if (isOwnConformanceStatements && (this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin)) {
@@ -101,27 +115,31 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
         this.snapshotButtonLabel = this.latestSnapshotButtonLabel
       }
       // Systems - this will also load statements and update breadcrumbs.
-      this.systemsLoaded(results[0], false)
+      this.systemsLoaded(results[0])
     }).add(() => {
       this.systemStatus.status = Constants.STATUS.FINISHED
     })
   }
 
-  private systemsLoaded(systems: System[], updateRoutePath: boolean) {
+  private systemsLoaded(systems: System[]) {
     this.systems = systems
-    if (this.systems.length == 1) {
-      this.system = systems[0]
-    } else if (this.route.snapshot.queryParamMap.has(Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID)) {
-      const systemId = Number(this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID))
-      this.system = find(this.systems, (sys) => {
-        return sys.id == systemId
-      })
-    }
-    if (this.system) {
-      this.systemChanged(updateRoutePath)
-    } else {
-      this.updateBreadcrumbs()
-    }
+    setTimeout(() => {
+      this.systemSelectionConfig.replaceItems!.emit(this.systems)
+      let systemToSelect: System|undefined
+      if (this.systems.length == 1) {
+        systemToSelect = systems[0]
+      } else if (this.route.snapshot.queryParamMap.has(Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID)) {
+        const systemId = Number(this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID))
+        systemToSelect = find(this.systems, (sys) => {
+          return sys.id == systemId
+        })
+      }
+      if (systemToSelect) {
+        this.systemSelectionConfig.replaceSelectedItems!.emit([systemToSelect])
+      } else {
+        this.updateBreadcrumbs()
+      }
+    })
   }
 
   private updateBreadcrumbs() {
@@ -132,12 +150,11 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
     }
   }
 
-  systemChanged(updateRoutePath: boolean) {
+  systemSelectionChanged(event: FilterUpdate<System>): void {
+    this.system = event.values.active[0]
     this.updateBreadcrumbs()
     this.getConformanceStatements()
-    if (updateRoutePath) {
-      this.updateRouting()
-    }
+    this.updateRouting()
   }
 
   getConformanceStatements() {
@@ -198,7 +215,7 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
       this.snapshotButtonLabel = (snapshot == undefined)?this.latestSnapshotButtonLabel:snapshot.label
       this.systemStatus.status = Constants.STATUS.PENDING
       systemsLoaded.subscribe((data) => {
-        this.systemsLoaded(data, false)
+        this.systemsLoaded(data)
       }).add(() => {
         // Update the routing path (to avoid loss of state on refresh).
         this.updateRouting()

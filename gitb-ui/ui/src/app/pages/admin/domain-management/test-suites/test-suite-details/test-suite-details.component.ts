@@ -89,10 +89,9 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit {
       name: "specification",
       textField: "sname",
       singleSelection: true,
-      supportPending: true,
       filterLabel: 'Move to ' + this.dataService.labelSpecificationLower(),
       noItemsMessage: 'No target ' + this.dataService.labelSpecificationsLower() + ' available.',
-      searchPlaceholder: 'Search ' + this.dataService.labelSpecificationsLower() + "...",
+      searchPlaceholder: 'Search ' + this.dataService.labelSpecificationsLower() + '...',
       loader: () => this.loadAvailableSpecificationsForMove()
     }
     this.loadTestCases()

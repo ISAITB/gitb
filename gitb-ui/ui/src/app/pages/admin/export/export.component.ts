@@ -76,6 +76,8 @@ export class ExportComponent extends BaseComponent implements OnInit {
     systemAdministrators: false,
     systemConfigurations: false
   }
+  domainSelectionConfig!: MultiSelectConfig<Domain>
+  communitySelectionConfig!: MultiSelectConfig<Community>
   domainsToDeleteConfig?: MultiSelectConfig<Domain>
   communitiesToDeleteConfig?: MultiSelectConfig<Community>
   Constants = Constants
@@ -107,6 +109,22 @@ export class ExportComponent extends BaseComponent implements OnInit {
             return of(data.domains)
           })
         )
+    }
+    this.domainSelectionConfig = {
+      name: "domain",
+      textField: "fname",
+      singleSelection: true,
+      singleSelectionPersistent: true,
+      filterLabel: `Select ${this.dataService.labelDomainLower()}...`,
+      loader: () => of(this.domains)
+    }
+    this.communitySelectionConfig = {
+      name: "community",
+      textField: "fname",
+      singleSelection: true,
+      singleSelectionPersistent: true,
+      filterLabel: `Select community...`,
+      loader: () => of(this.communities)
     }
     forkJoin([communities$, domains$]).subscribe((data) => {
       this.communities = data[0]
@@ -208,6 +226,14 @@ export class ExportComponent extends BaseComponent implements OnInit {
     setTimeout(() => {
       this.formCollapsed = this.exportType == undefined
     })
+  }
+
+  domainSelected(event: FilterUpdate<Domain>) {
+    this.domain = event.values.active[0]
+  }
+
+  communitySelected(event: FilterUpdate<Community>) {
+    this.community = event.values.active[0]
   }
 
   allCommunityDataChanged() {
