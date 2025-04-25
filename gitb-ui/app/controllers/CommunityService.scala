@@ -125,6 +125,7 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
       if (Configurations.AUTOMATION_API_ENABLED) {
         allowAutomationApi = Some(requiredBodyParameter(request, Parameters.ALLOW_AUTOMATION_API).toBoolean)
       }
+      val allowCommunityView = requiredBodyParameter(request, Parameters.ALLOW_COMMUNITY_VIEW).toBoolean
       val interactionNotification = requiredBodyParameter(request, Parameters.COMMUNITY_INTERACTION_NOTIFICATION).toBoolean
       var selfRegType: Short = SelfRegistrationType.NotSupported.id.toShort
       var selfRegRestriction: Short = SelfRegistrationRestriction.NoRestriction.id.toShort
@@ -167,7 +168,7 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
         communityId, shortName, fullName, email, selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification,
         interactionNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties,
         allowCertificateDownload, allowStatementManagement, allowSystemManagement,
-        allowPostTestOrganisationUpdate, allowPostTestSystemUpdate, allowPostTestStatementUpdate, allowAutomationApi,
+        allowPostTestOrganisationUpdate, allowPostTestSystemUpdate, allowPostTestStatementUpdate, allowAutomationApi, allowCommunityView,
         domainId
       ).map { _ =>
         ResponseConstructor.constructEmptyResponse
@@ -460,21 +461,41 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def getOrganisationParameters(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
-    authorizationManager.canManageCommunity(request, communityId).flatMap { _ =>
-      val forFiltering = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.FILTERING)
-      communityManager.getOrganisationParameters(communityId, forFiltering).map { parameters =>
-        ResponseConstructor.constructJsonResponse(JsonUtil.jsOrganisationParameters(parameters).toString)
+    val onlyPublic = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.PUBLIC).getOrElse(false)
+    for {
+      _ <- {
+        if (onlyPublic) {
+          authorizationManager.canViewCommunityBasic(request, communityId)
+        } else {
+          authorizationManager.canManageCommunity(request, communityId)
+        }
       }
-    }
+      result <- {
+        val forFiltering = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.FILTERING)
+        communityManager.getOrganisationParameters(communityId, forFiltering, onlyPublic).map { parameters =>
+          ResponseConstructor.constructJsonResponse(JsonUtil.jsOrganisationParameters(parameters).toString)
+        }
+      }
+    } yield result
   }
 
   def getSystemParameters(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
-    authorizationManager.canViewCommunityBasic(request, communityId).flatMap { _ =>
-      val forFiltering = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.FILTERING)
-      communityManager.getSystemParameters(communityId, forFiltering).map { params =>
-        ResponseConstructor.constructJsonResponse(JsonUtil.jsSystemParameters(params).toString)
+    val onlyPublic = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.PUBLIC).getOrElse(false)
+    for {
+      _ <- {
+        if (onlyPublic) {
+          authorizationManager.canViewCommunityBasic(request, communityId)
+        } else {
+          authorizationManager.canManageCommunity(request, communityId)
+        }
       }
-    }
+      result <- {
+        val forFiltering = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.FILTERING)
+        communityManager.getSystemParameters(communityId, forFiltering, onlyPublic).map { parameters =>
+          ResponseConstructor.constructJsonResponse(JsonUtil.jsSystemParameters(parameters).toString)
+        }
+      }
+    } yield result
   }
 
   def getCommunityLabels(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>

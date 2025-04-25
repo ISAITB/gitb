@@ -789,6 +789,7 @@ object JsonUtil {
       "allowPostTestSystemUpdates" -> community.allowPostTestSystemUpdates,
       "allowPostTestStatementUpdates" -> community.allowPostTestStatementUpdates,
       "allowAutomationApi" -> community.allowAutomationApi,
+      "allowCommunityView" -> community.allowCommunityView,
       "domainId" -> community.domain
     )
     if (includeAdminInfo) {

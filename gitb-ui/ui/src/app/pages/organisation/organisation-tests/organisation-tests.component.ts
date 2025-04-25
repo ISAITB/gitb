@@ -1,23 +1,24 @@
-import { Component, EventEmitter, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { map } from 'lodash';
-import { Constants } from 'src/app/common/constants';
-import { DiagramLoaderService } from 'src/app/components/diagram/test-session-presentation/diagram-loader.service';
-import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
-import { ConformanceService } from 'src/app/services/conformance.service';
-import { DataService } from 'src/app/services/data.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { ReportService } from 'src/app/services/report.service';
-import { TestService } from 'src/app/services/test.service';
-import { FilterState } from 'src/app/types/filter-state';
-import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
-import { TestResultReport } from 'src/app/types/test-result-report';
-import { TestResultSearchCriteria } from 'src/app/types/test-result-search-criteria';
-import { TestResultForDisplay } from '../../../types/test-result-for-display';
-import { saveAs } from 'file-saver'
-import { mergeMap, share, of } from 'rxjs';
-import { RoutingService } from 'src/app/services/routing.service';
-import { FieldInfo } from 'src/app/types/field-info';
+import {Component, OnInit} from '@angular/core';
+import {ActivatedRoute} from '@angular/router';
+import {map} from 'lodash';
+import {Constants} from 'src/app/common/constants';
+import {DiagramLoaderService} from 'src/app/components/diagram/test-session-presentation/diagram-loader.service';
+import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
+import {ConformanceService} from 'src/app/services/conformance.service';
+import {DataService} from 'src/app/services/data.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {ReportService} from 'src/app/services/report.service';
+import {TestService} from 'src/app/services/test.service';
+import {FilterState} from 'src/app/types/filter-state';
+import {TableColumnDefinition} from 'src/app/types/table-column-definition.type';
+import {TestResultReport} from 'src/app/types/test-result-report';
+import {TestResultSearchCriteria} from 'src/app/types/test-result-search-criteria';
+import {TestResultForDisplay} from '../../../types/test-result-for-display';
+import {saveAs} from 'file-saver';
+import {mergeMap, of, share} from 'rxjs';
+import {RoutingService} from 'src/app/services/routing.service';
+import {FieldInfo} from 'src/app/types/field-info';
+import {BaseSessionDashboardSupportComponent} from '../base-session-dashboard-support.component';
 
 @Component({
     selector: 'app-organisation-tests',
@@ -25,13 +26,13 @@ import { FieldInfo } from 'src/app/types/field-info';
     styles: [],
     standalone: false
 })
-export class OrganisationTestsComponent implements OnInit {
+export class OrganisationTestsComponent extends BaseSessionDashboardSupportComponent implements OnInit {
 
   exportActivePending = false
   exportCompletedPending = false
   activeExpandedCounter = {count: 0}
   completedExpandedCounter = {count: 0}
-  activeStatus = {status: Constants.STATUS.PENDING} 
+  activeStatus = {status: Constants.STATUS.PENDING}
   completedStatus = {status: Constants.STATUS.PENDING}
   organisationId!: number
   domainId?: number
@@ -45,18 +46,8 @@ export class OrganisationTestsComponent implements OnInit {
     filters: [ Constants.FILTER_TYPE.SYSTEM, Constants.FILTER_TYPE.SPECIFICATION, Constants.FILTER_TYPE.SPECIFICATION_GROUP, Constants.FILTER_TYPE.ACTOR, Constants.FILTER_TYPE.TEST_SUITE, Constants.FILTER_TYPE.TEST_CASE, Constants.FILTER_TYPE.RESULT, Constants.FILTER_TYPE.START_TIME, Constants.FILTER_TYPE.END_TIME, Constants.FILTER_TYPE.SESSION ],
     updatePending: false
   }
-  currentPage = 1
-  completedTestsTotalCount = 0
-  activeSortOrder = "asc"
-  activeSortColumn = "startTime"
-  completedSortOrder = "desc"
-  completedSortColumn = "endTime"
-  isPreviousPageDisabled = false
-  isNextPageDisabled = false
   deletePending = false
   stopAllPending = false
-  sessionIdToShow?: string
-  sessionRefreshCompleteEmitter = new EventEmitter<TestResultReport|undefined>()
   activeSessionsCollapsed = false
   activeSessionsCollapsedFinished = false
   completedSessionsCollapsed = false
@@ -67,12 +58,12 @@ export class OrganisationTestsComponent implements OnInit {
     private reportService: ReportService,
     private conformanceService: ConformanceService,
     public dataService: DataService,
-    private confirmationDialogService: ConfirmationDialogService,
-    private testService: TestService,
-    private popupService: PopupService,
-    private diagramLoaderService: DiagramLoaderService,
+    confirmationDialogService: ConfirmationDialogService,
+    testService: TestService,
+    popupService: PopupService,
+    diagramLoaderService: DiagramLoaderService,
     private routingService: RoutingService
-  ) { }
+  ) { super(testService, confirmationDialogService, popupService, diagramLoaderService) }
 
   ngOnInit(): void {
     this.organisationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID))
@@ -134,19 +125,6 @@ export class OrganisationTestsComponent implements OnInit {
   goLastPage() {
     this.currentPage = Math.ceil(this.completedTestsTotalCount / Constants.TABLE_PAGE_SIZE)
     this.queryDatabase()
-  }
-
-  updatePagination() {
-    if (this.currentPage == 1) {
-      this.isNextPageDisabled = this.completedTestsTotalCount <= Constants.TABLE_PAGE_SIZE
-      this.isPreviousPageDisabled = true
-    } else if (this.currentPage == Math.ceil(this.completedTestsTotalCount / Constants.TABLE_PAGE_SIZE)) {
-      this.isNextPageDisabled = true
-      this.isPreviousPageDisabled = false
-    } else {
-      this.isNextPageDisabled = false
-      this.isPreviousPageDisabled = false
-    }
   }
 
   rowStyle(row: TestResultForDisplay) {
@@ -216,39 +194,14 @@ export class OrganisationTestsComponent implements OnInit {
       searchCriteria.specIds = filterData[Constants.FILTER_TYPE.SPECIFICATION]
       searchCriteria.specGroupIds = filterData[Constants.FILTER_TYPE.SPECIFICATION_GROUP]
       searchCriteria.actorIds = filterData[Constants.FILTER_TYPE.ACTOR]
-      searchCriteria.testSuiteIds = filterData[Constants.FILTER_TYPE.TEST_SUITE]
-      searchCriteria.testCaseIds = filterData[Constants.FILTER_TYPE.TEST_CASE]
       if (this.domainId != undefined) {
         searchCriteria.domainIds = [this.domainId]
       } else {
         searchCriteria.domainIds = filterData[Constants.FILTER_TYPE.DOMAIN]
       }
-      searchCriteria.results = filterData[Constants.FILTER_TYPE.RESULT]
-      searchCriteria.startTimeBeginStr = filterData.startTimeBeginStr
-      searchCriteria.startTimeEndStr = filterData.startTimeEndStr
-      searchCriteria.endTimeBeginStr = filterData.endTimeBeginStr
-      searchCriteria.endTimeEndStr = filterData.endTimeEndStr
-      searchCriteria.sessionId = filterData.sessionId
     }
-    if (this.sessionIdToShow != undefined) {
-      searchCriteria.sessionId = this.sessionIdToShow
-    }
-    searchCriteria.activeSortColumn = this.activeSortColumn
-    searchCriteria.activeSortOrder = this.activeSortOrder
-    searchCriteria.completedSortColumn = this.completedSortColumn
-    searchCriteria.completedSortOrder = this.completedSortOrder
-    searchCriteria.currentPage = this.currentPage
+    this.addSessionDashboardCriteriaToTestResultSearchCriteria(searchCriteria, filterData)
     return searchCriteria
-  }
-
-  private applyCompletedDataToTestSession(displayedResult: TestResultForDisplay, loadedResult: TestResultReport) {
-    displayedResult.endTime = loadedResult.result.endTime
-    displayedResult.result = loadedResult.result.result
-    displayedResult.obsolete = loadedResult.result.obsolete
-    if (displayedResult.diagramState && loadedResult.result.outputMessage) {
-      displayedResult.diagramState.outputMessage = loadedResult.result.outputMessage
-      displayedResult.diagramState.outputMessageType = this.diagramLoaderService.determineOutputMessageType(loadedResult.result.result)
-    }
   }
 
   private newTestResult(testResult: TestResultReport, completed: boolean): TestResultForDisplay {
@@ -299,7 +252,7 @@ export class OrganisationTestsComponent implements OnInit {
     }).add(() => {
       this.refreshActivePending = false
       this.setFilterRefreshState()
-      this.activeStatus.status = Constants.STATUS.FINISHED      
+      this.activeStatus.status = Constants.STATUS.FINISHED
     })
   }
 
@@ -314,7 +267,7 @@ export class OrganisationTestsComponent implements OnInit {
       this.completedTests = map(data.data, (testResult) => {
         return this.newTestResultForDisplay(testResult, true)
       })
-      this.updatePagination()      
+      this.updatePagination()
     }).add(() => {
       this.refreshCompletedPending = false
       this.setFilterRefreshState()
@@ -416,20 +369,6 @@ export class OrganisationTestsComponent implements OnInit {
       })
     })
   }
-  
-  stopSession(session: TestResultForDisplay) {
-    this.confirmationDialogService.confirmedDangerous('Confirm termination', 'Are you certain you want to terminate this session?', 'Terminate', 'Cancel')
-    .subscribe(() => {
-      session.deletePending = true
-      this.testService.stop(session.session)
-      .subscribe(() => {
-        this.queryDatabase()
-        this.popupService.success('Test session terminated.')
-      }).add(() => {
-        session.deletePending = false
-      })
-    })
-  }
 
   deleteObsolete() {
     this.confirmationDialogService.confirmedDangerous('Confirm delete', 'Are you sure you want to delete all obsolete test results?', 'Delete', 'Cancel')
@@ -453,18 +392,7 @@ export class OrganisationTestsComponent implements OnInit {
         this.goFirstPage()
         this.sessionRefreshCompleteEmitter.emit(result)
       } else {
-        this.diagramLoaderService.loadTestStepResults(session.session)
-        .subscribe((data) => {
-          const currentState = session.diagramState!
-          if (result.result.endTime) {
-            // Session completed
-            this.popupService.info("The test session has completed.")
-            this.applyCompletedDataToTestSession(session, result)
-          }
-          this.diagramLoaderService.updateStatusOfSteps(session, currentState.stepsOfTests[session.session], data)
-        }).add(() => {
-          this.sessionRefreshCompleteEmitter.emit(result)
-        })
+        this.refreshSessionDiagram(session, result)
       }
     })
   }
@@ -479,6 +407,6 @@ export class OrganisationTestsComponent implements OnInit {
     setTimeout(() => {
       this.completedSessionsCollapsedFinished = value
     }, 1)
-  }  
+  }
 
 }

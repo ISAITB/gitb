@@ -394,8 +394,32 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     canViewDomains(request, Some(List(domainId)))
   }
 
+  private def canViewCommunityContent(request: RequestWithAttributes[_], communityId: Long): Future[Boolean] = {
+    getUser(getRequestUserId(request)).flatMap { userInfo =>
+      if (isTestBedAdmin(userInfo) || isCommunityAdmin(userInfo)) {
+        canManageCommunity(request, userInfo, communityId)
+      } else {
+        // Organisation users can view all systems in the community if enabled as a permission.
+        organisationUserCanViewCommunityContent(request, userInfo, communityId)
+      }
+    }
+  }
+
+  private def organisationUserCanViewCommunityContent(request: RequestWithAttributes[_], userInfo: User, communityId: Long): Future[Boolean] = {
+    val check = if (userInfo.organization.get.community == communityId) {
+      // Requested community ID matches the community of the user.
+      communityManager.getById(communityId).map { community =>
+        // The comm
+        community.isDefined && community.get.allowCommunityView
+      }
+    } else {
+      Future.successful(false)
+    }
+    check.map(setAuthResult(request, _, "User cannot view the requested community"))
+  }
+
   def canViewSystemsByCommunityId(request: RequestWithAttributes[AnyContent], communityId: Long): Future[Boolean] = {
-    canManageCommunity(request, communityId)
+    canViewCommunityContent(request, communityId)
   }
 
   def canDeleteOrganisationUser(request: RequestWithAttributes[_], userId: Long): Future[Boolean] = {
@@ -557,7 +581,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
   }
 
   def canExecuteTestSession(request: RequestWithAttributes[_], sessionId: String, requireAdmin: Boolean = false): Future[Boolean] = {
-    canManageTestSession(request, sessionId, requireAdmin)
+    canManageTestSession(request, sessionId, requireAdmin, requireOwnTestSessionIfNotAdmin = true)
   }
 
   def canExecuteTestCase(request: RequestWithAttributes[_], test_id: String): Future[Boolean] = {
@@ -1106,7 +1130,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     }
   }
 
-  def canManageTestSession(request: RequestWithAttributes[_], sessionId: String, requireAdmin: Boolean): Future[Boolean] = {
+  def canManageTestSession(request: RequestWithAttributes[_], sessionId: String, requireAdmin: Boolean, requireOwnTestSessionIfNotAdmin: Boolean): Future[Boolean] = {
     val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
       if (isTestBedAdmin(userInfo)) {
         Future.successful(true)
@@ -1133,24 +1157,28 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
           }
         }
       } else {
-        // Own test session.
-        if (requireAdmin) {
+        // Organisation user.
+        if (requireAdmin || userInfo.organization.isEmpty) {
           Future.successful(false)
         } else {
-          testResultManager.getOrganisationIdForTestSession(sessionId).flatMap { result =>
+          testResultManager.getOrganisationIdsForTestSession(sessionId).flatMap { result =>
             if (result.isDefined) {
-              if (result.get._2.isDefined) {
-                // There is an organisation ID defined. This needs to match the user's organisation ID.
-                Future.successful(userInfo.organization.isDefined && result.get._2.get == userInfo.organization.get.id)
+              val organisationIdForSession = result.get._2
+              val communityIdForSession = result.get._3
+              if (organisationIdForSession.isDefined && communityIdForSession.isDefined) {
+                if (requireOwnTestSessionIfNotAdmin) {
+                  // The session must belong to the user's organisation.
+                  Future.successful(userInfo.organization.get.id == organisationIdForSession.get)
+                } else {
+                  // The session must belong to the user's community.
+                  organisationUserCanViewCommunityContent(request, userInfo, communityIdForSession.get)
+                }
               } else {
-                // No organisation ID. This is an obsolete session no longer visible to the user.
+                // This is an obsolete session no longer visible to the user.
                 Future.successful(false)
               }
             } else {
-              /*
-              There is no test session recorded for this session ID. This could be because the test session is currently
-              being configured.
-               */
+              // There is no test session recorded for this session ID. This could be because the test session is currently being configured.
               Future.successful(true)
             }
           }
@@ -1161,10 +1189,34 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
   }
 
   def canViewTestResultForSession(request: RequestWithAttributes[_], sessionId: String): Future[Boolean] = {
-    canManageTestSession(request, sessionId, requireAdmin = false)
+    canManageTestSession(request, sessionId, requireAdmin = false, requireOwnTestSessionIfNotAdmin = false)
   }
 
-  def canViewTestResultsForCommunity(request: RequestWithAttributes[_], communityIds: Option[List[Long]]):Future[Boolean] = {
+  def canViewCommunityTests(request: RequestWithAttributes[_], communityIds: Option[List[Long]]): Future[Boolean] = {
+    val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
+      if (isTestBedAdmin(userInfo)) {
+        Future.successful(true)
+      } else {
+        if (communityIds.isDefined && communityIds.get.size == 1) {
+          // There should be only a single community requested.
+          val communityId = communityIds.get.head
+          if (isCommunityAdmin(userInfo)) {
+            canManageCommunity(request, userInfo, communityId)
+          } else {
+            // The community must have enabled the option to view testing of other organisations.
+            communityManager.getById(communityId).map { community =>
+              community.isDefined && userInfo.organization.isDefined && community.get.id == userInfo.organization.get.community && community.get.allowCommunityView
+            }
+          }
+        } else {
+          Future.successful(false)
+        }
+      }
+    }
+    check.map(setAuthResult(request, _, "User cannot view the requested community"))
+  }
+
+  def canViewActiveTestsForCommunity(request: RequestWithAttributes[_], communityIds: Option[List[Long]]): Future[Boolean] = {
     canViewCommunities(request, communityIds)
   }
 
@@ -1285,7 +1337,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
   }
 
   def canViewOrganisationsByCommunity(request: RequestWithAttributes[_], communityId: Long): Future[Boolean] = {
-    canManageCommunity(request, communityId)
+    canViewCommunityContent(request, communityId)
   }
 
   def canViewOrganisation(request: RequestWithAttributes[_], userInfo: User, orgId: Long): Future[Boolean] = {

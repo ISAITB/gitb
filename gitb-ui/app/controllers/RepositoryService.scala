@@ -109,13 +109,13 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
 	}
 
   def getTestResult(sessionId: String): Action[AnyContent] = authorizedAction.async { request =>
-    authorizationManager.canManageTestSession(request, sessionId, requireAdmin = false).flatMap { _ =>
+    authorizationManager.canManageTestSession(request, sessionId, requireAdmin = false, requireOwnTestSessionIfNotAdmin = false).flatMap { _ =>
       getTestResultInternal(sessionId, isAdmin = false)
     }
   }
 
   def getTestResultAdmin(sessionId: String): Action[AnyContent] = authorizedAction.async { request =>
-    authorizationManager.canManageTestSession(request, sessionId, requireAdmin = true).flatMap { _ =>
+    authorizationManager.canManageTestSession(request, sessionId, requireAdmin = true, requireOwnTestSessionIfNotAdmin = false).flatMap { _ =>
       getTestResultInternal(sessionId, isAdmin = true)
     }
   }
@@ -151,7 +151,7 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def getPendingTestSessionInteractionsAdmin(session: String): Action[AnyContent] = authorizedAction.async { request =>
-    authorizationManager.canManageTestSession(request, session, requireAdmin = true).flatMap { _ =>
+    authorizationManager.canManageTestSession(request, session, requireAdmin = true, requireOwnTestSessionIfNotAdmin = false).flatMap { _ =>
       testResultManager.getTestInteractions(session, None).map { results =>
         ResponseConstructor.constructJsonResponse(JsonUtil.jsTestInteractions(results).toString())
       }
@@ -159,7 +159,7 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def getPendingTestSessionInteractions(session: String): Action[AnyContent] = authorizedAction.async { request =>
-    authorizationManager.canManageTestSession(request, session, requireAdmin = false).flatMap { _ =>
+    authorizationManager.canManageTestSession(request, session, requireAdmin = false, requireOwnTestSessionIfNotAdmin = true).flatMap { _ =>
       testResultManager.getTestInteractions(session, Some(false)).map { results =>
         ResponseConstructor.constructJsonResponse(JsonUtil.jsTestInteractions(results).toString())
       }

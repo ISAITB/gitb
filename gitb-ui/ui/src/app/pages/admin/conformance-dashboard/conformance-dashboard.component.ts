@@ -9,7 +9,6 @@ import {ConformanceCertificateSettings} from 'src/app/types/conformance-certific
 import {ConformanceResultFull} from 'src/app/types/conformance-result-full';
 import {ConformanceResultFullList} from 'src/app/types/conformance-result-full-list';
 import {ConformanceResultFullWithTestSuites} from 'src/app/types/conformance-result-full-with-test-suites';
-import {ConformanceStatusItem} from 'src/app/types/conformance-status-item';
 import {FilterState} from 'src/app/types/filter-state';
 import {TestResultSearchCriteria} from 'src/app/types/test-result-search-criteria';
 import {ConformanceSnapshot} from 'src/app/types/conformance-snapshot';
@@ -174,17 +173,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
       filterData = this.filterState.filterData()
     }
     if (filterData) {
-      if (this.dataService.isCommunityAdmin) {
-        if (this.dataService.community!.domain == undefined) {
-          searchCriteria.domainIds = filterData[Constants.FILTER_TYPE.DOMAIN]
-        }
-      } else {
-        searchCriteria.communityIds = filterData[Constants.FILTER_TYPE.COMMUNITY]
-        searchCriteria.domainIds = filterData[Constants.FILTER_TYPE.DOMAIN]
-      }
-      searchCriteria.specIds = filterData[Constants.FILTER_TYPE.SPECIFICATION]
-      searchCriteria.specGroupIds = filterData[Constants.FILTER_TYPE.SPECIFICATION_GROUP]
-      searchCriteria.actorIds = filterData[Constants.FILTER_TYPE.ACTOR]
+      this.dataService.addAdminCriteriaToTestResultSearchCriteria(searchCriteria, filterData)
       searchCriteria.organisationIds = filterData[Constants.FILTER_TYPE.ORGANISATION]
       searchCriteria.systemIds = filterData[Constants.FILTER_TYPE.SYSTEM]
       searchCriteria.results = filterData[Constants.FILTER_TYPE.RESULT]
@@ -254,7 +243,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
   testSuiteLoader() {
     return ((item: ConformanceStatementItem) => {
       return this.conformanceService.getConformanceStatus(item.id, this.selectedSystemId!, this.activeConformanceSnapshot?.id)
-    }).bind(this)
+    })
   }
 
 	onExpand(statement: ConformanceResultFull) {
@@ -298,10 +287,6 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
 
 	onCollapseAll() {
 		this.expandedStatements = { count: 0 }
-  }
-
-	showExportTestCase(testCase: Partial<ConformanceStatusItem>) {
-		return testCase.sessionId != undefined && testCase.sessionId != ""
   }
 
 	onExportConformanceStatementsAsCsv() {
@@ -367,16 +352,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
       const testCaseCount = this.countTestCases(event.item)
       reportObservable = this.reportSupportService.handleConformanceStatementReport(this.selectedCommunityId!, event.actorId!, this.selectedSystemId!, this.activeConformanceSnapshot?.id, event.format, true, testCaseCount)
     } else {
-      let reportLevel: 'all'|'domain'|'specification'|'group'
-      if (event.item.itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.DOMAIN) {
-        reportLevel = "domain"
-      } else if (event.item.itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION_GROUP) {
-        reportLevel = "group"
-      } else if (event.item.itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION) {
-        reportLevel = "specification"
-      } else {
-        reportLevel = "all"
-      }
+      const reportLevel = this.determineReportLevel(event)
       reportObservable = this.reportSupportService.handleConformanceOverviewReport(this.selectedCommunityId!, this.selectedSystemId!, event.item.id, reportLevel, this.activeConformanceSnapshot?.id, event.format, this.dataService.conformanceStatusForConformanceItem(event.item))
     }
     reportObservable.subscribe(() => {
@@ -590,7 +566,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     if (community && community.values.active.length > 0) {
       this.selectedCommunityId = community.values.active[0].id
     }
-    if (fromSnapshotChange == false) {
+    if (!fromSnapshotChange) {
       this.activeConformanceSnapshot = undefined
     }
     let loadObservable: Observable<Organisation[]>

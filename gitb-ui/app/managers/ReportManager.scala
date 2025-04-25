@@ -1662,7 +1662,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     if (message.contains(Constants.PlaceholderOrganisation+"{")) {
       // We are referring to organisation parameters.
       if (isDemo) {
-        communityManager.getOrganisationParameters(communityId, Some(true)).map { params =>
+        communityManager.getOrganisationParameters(communityId, Some(true), onlyPublic = false).map { params =>
           var messageToUse = message
           params.foreach { param =>
             messageToUse = messageToUse.replace(Constants.PlaceholderOrganisation+"{"+param.testKey+"}", param.testKey)
@@ -1699,7 +1699,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     if (message.contains(Constants.PlaceholderSystem+"{")) {
       // We are referring to system parameters.
       if (isDemo) {
-        communityManager.getSystemParameters(communityId, Some(true)).map { params =>
+        communityManager.getSystemParameters(communityId, Some(true), onlyPublic = false).map { params =>
           var messageToUse = message
           params.foreach { param =>
             messageToUse = messageToUse.replace(Constants.PlaceholderSystem+"{"+param.testKey+"}", param.testKey)

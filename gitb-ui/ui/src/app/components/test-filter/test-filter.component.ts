@@ -186,7 +186,7 @@ export class TestFilterComponent implements OnInit {
           return this.specificationService.getSpecificationGroups(this.dataService.community!.domainId)
         }
       }).bind(this)
-    }    
+    }
     if (this.filterDefined(Constants.FILTER_TYPE.ACTOR) && this.loadActorsFn == undefined) {
       this.loadActorsFn = (() => {
         if (this.dataService.isSystemAdmin || this.dataService.community!.domainId == undefined) {
@@ -222,10 +222,10 @@ export class TestFilterComponent implements OnInit {
     }
     if (this.filterDefined(Constants.FILTER_TYPE.ORGANISATION) && this.loadOrganisationsFn == undefined) {
       this.loadOrganisationsFn = (() => {
-        if (this.dataService.isCommunityAdmin) {
-          return this.organisationService.getOrganisationsByCommunity(this.dataService.community!.id)
-        } else {
+        if (this.dataService.isSystemAdmin) {
           return this.organisationService.searchOrganizations(this.filterValue(Constants.FILTER_TYPE.COMMUNITY))
+        } else {
+          return this.organisationService.getOrganisationsByCommunity(this.dataService.community!.id)
         }
       }).bind(this)
     }
@@ -242,14 +242,16 @@ export class TestFilterComponent implements OnInit {
         }
       }).bind(this)
     }
+    // Custom properties
+    const onlyPublicProperties = !this.dataService.isSystemAdmin && !this.dataService.isCommunityAdmin
     if (this.filterDefined(Constants.FILTER_TYPE.ORGANISATION_PROPERTY) && this.loadOrganisationPropertiesFn == undefined) {
       this.loadOrganisationPropertiesFn = (() => {
-        return this.communityService.getOrganisationParameters(this.applicableCommunityId!, true)
+        return this.communityService.getOrganisationParameters(this.applicableCommunityId!, true, onlyPublicProperties)
       }).bind(this)
     }
     if (this.filterDefined(Constants.FILTER_TYPE.SYSTEM_PROPERTY) && this.loadSystemPropertiesFn == undefined) {
       this.loadSystemPropertiesFn = (() => {
-        return this.communityService.getSystemParameters(this.applicableCommunityId!, true)
+        return this.communityService.getSystemParameters(this.applicableCommunityId!, true, onlyPublicProperties)
       }).bind(this)
     }
   }
@@ -310,23 +312,23 @@ export class TestFilterComponent implements OnInit {
     this.filterValues[Constants.FILTER_TYPE.SPECIFICATION] = update.values
     if ((update.values.active.length > 0 || update.values.other.length > 0) && (this.filterDefined(Constants.FILTER_TYPE.ACTOR) || this.filterDefined(Constants.FILTER_TYPE.TEST_SUITE))) {
       const ids = this.dataService.asIdSet(update.values.active)
-      const otherIds = this.dataService.asIdSet(update.values.other)      
+      const otherIds = this.dataService.asIdSet(update.values.other)
       if (this.filterDefined(Constants.FILTER_TYPE.ACTOR)) {
         const remaining = this.getRemainingFilterValues(this.filterValues[Constants.FILTER_TYPE.ACTOR] as FilterValues<Actor>, (a) => { return ids[a.specification] }, (a) => { return otherIds[a.specification] })
         this.filterDropdownSettings[Constants.FILTER_TYPE.ACTOR].replaceSelectedItems!.emit(this.squashFilterValues(remaining))
       }
       if (this.filterDefined(Constants.FILTER_TYPE.TEST_SUITE)) {
-        const remaining = this.getRemainingFilterValues(this.filterValues[Constants.FILTER_TYPE.TEST_SUITE] as FilterValues<TestSuiteWithTestCases>, 
+        const remaining = this.getRemainingFilterValues(this.filterValues[Constants.FILTER_TYPE.TEST_SUITE] as FilterValues<TestSuiteWithTestCases>,
           // One of the test suite's specifications must be in the set of selected IDs.
-          (ts) => { 
+          (ts) => {
             for (let tsSpecification of ts.specifications!) {
               if (ids[tsSpecification]) {
                 return true
               }
             }
             return false
-          }, 
-          (ts) => { 
+          },
+          (ts) => {
             for (let tsSpecification of ts.specifications!) {
               if (otherIds[tsSpecification]) {
                 return true
@@ -596,8 +598,8 @@ export class TestFilterComponent implements OnInit {
         })
       )
     } else {
-      this.showOrganisationProperties = false      
-      this.showSystemProperties = false      
+      this.showOrganisationProperties = false
+      this.showSystemProperties = false
       return of(false)
     }
   }

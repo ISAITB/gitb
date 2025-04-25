@@ -1273,6 +1273,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
         communityData.setAllowPostTestSystemUpdates(community.get.allowPostTestSystemUpdates)
         communityData.setAllowPostTestStatementUpdates(community.get.allowPostTestStatementUpdates)
         communityData.setAllowAutomationApi(community.get.allowAutomationApi)
+        communityData.setAllowCommunityView(community.get.allowCommunityView)
         communityData.setInteractionNotification(community.get.interactionNotification)
         // Self registration information.
         communityData.setSelfRegistrationSettings(new SelfRegistrationSettings)

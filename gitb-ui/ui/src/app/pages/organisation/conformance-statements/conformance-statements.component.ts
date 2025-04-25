@@ -1,19 +1,21 @@
 import {Component, EventEmitter, NgZone, OnInit} from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { Constants } from 'src/app/common/constants';
-import { DataService } from 'src/app/services/data.service';
-import { SystemService } from 'src/app/services/system.service';
-import { find } from 'lodash'
-import { RoutingService } from 'src/app/services/routing.service';
-import { System } from 'src/app/types/system';
-import { ConformanceStatementItem } from 'src/app/types/conformance-statement-item';
-import { ConformanceService } from 'src/app/services/conformance.service';
-import { ConformanceSnapshot } from 'src/app/types/conformance-snapshot';
-import { Observable, forkJoin, of } from 'rxjs';
-import { ExportReportEvent } from 'src/app/types/export-report-event';
-import { ReportSupportService } from 'src/app/services/report-support.service';
-import { BaseConformanceItemDisplayComponent } from 'src/app/components/base-conformance-item-display/base-conformance-item-display.component';
-import { ConformanceSnapshotList } from 'src/app/types/conformance-snapshot-list';
+import {ActivatedRoute} from '@angular/router';
+import {Constants} from 'src/app/common/constants';
+import {DataService} from 'src/app/services/data.service';
+import {SystemService} from 'src/app/services/system.service';
+import {find} from 'lodash';
+import {RoutingService} from 'src/app/services/routing.service';
+import {System} from 'src/app/types/system';
+import {ConformanceStatementItem} from 'src/app/types/conformance-statement-item';
+import {ConformanceService} from 'src/app/services/conformance.service';
+import {ConformanceSnapshot} from 'src/app/types/conformance-snapshot';
+import {forkJoin, Observable, of} from 'rxjs';
+import {ExportReportEvent} from 'src/app/types/export-report-event';
+import {ReportSupportService} from 'src/app/services/report-support.service';
+import {
+  BaseConformanceItemDisplayComponent
+} from 'src/app/components/base-conformance-item-display/base-conformance-item-display.component';
+import {ConformanceSnapshotList} from 'src/app/types/conformance-snapshot-list';
 import {MultiSelectConfig} from '../../../components/multi-select-filter/multi-select-config';
 import {FilterUpdate} from '../../../components/test-filter/filter-update';
 
@@ -230,16 +232,7 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
     } else {
       event.item.exportPdfPending = true
     }
-    let reportLevel: 'all'|'domain'|'specification'|'group'
-    if (event.item.itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.DOMAIN) {
-      reportLevel = "domain"
-    } else if (event.item.itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION_GROUP) {
-      reportLevel = "group"
-    } else if (event.item.itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION) {
-      reportLevel = "specification"
-    } else {
-      reportLevel = "all"
-    }
+    const reportLevel = this.determineReportLevel(event)
     this.reportSupportService.handleConformanceOverviewReport(this.communityIdForSnapshots, this.system!.id, event.item.id, reportLevel, this.currentlySelectedSnapshot?.id, event.format, this.dataService.conformanceStatusForConformanceItem(event.item))
     .subscribe(() => {
       // Do nothing further.

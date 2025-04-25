@@ -81,6 +81,8 @@ export class RoutingService {
       this.dataService.changePage({ menuItem: MenuItem.myConformanceStatements })
     } else if (url.startsWith('/organisation')) {
       this.dataService.changePage({ menuItem: MenuItem.myOrganisation })
+    } else if (url.startsWith('/community/sessions')) {
+      this.dataService.changePage({ menuItem: MenuItem.communitySessionDashboard })
     }
   }
 
@@ -467,6 +469,10 @@ export class RoutingService {
     }
   }
 
+  toCommunitySessionDashboard() {
+    return this.navigate(MenuItem.communitySessionDashboard, ['community', 'sessions'])
+  }
+
   toConformanceDashboard() {
     return this.navigate(MenuItem.conformanceDashboard, ['admin', 'conformance'])
   }
@@ -754,6 +760,12 @@ export class RoutingService {
 
   sessionDashboardBreadcrumbs(): BreadcrumbItem[] {
     const crumbs = [{ type: BreadcrumbType.sessionDashboard, label: 'Session dashboard', action: (() => this.toSessionDashboard()).bind(this) }]
+    this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    return crumbs
+  }
+
+  communitySessionsBreadcrumbs(): BreadcrumbItem[] {
+    const crumbs = [{ type: BreadcrumbType.communitySessions, label: 'Community test sessions', action: (() => this.toCommunitySessionDashboard()).bind(this) }]
     this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
     return crumbs
   }

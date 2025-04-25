@@ -343,6 +343,7 @@ object ParameterExtractor {
     if (Configurations.AUTOMATION_API_ENABLED) {
       allowAutomationApi = requiredBodyParameter(request, Parameters.ALLOW_AUTOMATION_API).toBoolean
     }
+    val allowCommunityView = requiredBodyParameter(request, Parameters.ALLOW_COMMUNITY_VIEW).toBoolean
     val interactionNotification = requiredBodyParameter(request, Parameters.COMMUNITY_INTERACTION_NOTIFICATION).toBoolean
     var selfRegType: Short = SelfRegistrationType.NotSupported.id.toShort
     var selfRegRestriction: Short = SelfRegistrationRestriction.NoRestriction.id.toShort
@@ -388,7 +389,7 @@ object ParameterExtractor {
       0L, sname, fname, email, selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification, interactionNotification, description,
       selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties,
       allowCertificateDownload, allowStatementManagement, allowSystemManagement,
-      allowPostTestOrganisationUpdate, allowPostTestSystemUpdate, allowPostTestStatementUpdate, allowAutomationApi,
+      allowPostTestOrganisationUpdate, allowPostTestSystemUpdate, allowPostTestStatementUpdate, allowAutomationApi, allowCommunityView,
       CryptoUtil.generateApiKey(), None, domainId
     )
   }

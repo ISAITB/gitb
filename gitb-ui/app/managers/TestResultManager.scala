@@ -131,8 +131,14 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
     )
   }
 
-  def getOrganisationIdForTestSession(sessionId: String): Future[Option[(String, Option[Long])]] = {
-    DB.run(PersistenceSchema.testResults.filter(_.testSessionId === sessionId).map(r => (r.testSessionId, r.organizationId)).result.headOption)
+  def getOrganisationIdsForTestSession(sessionId: String): Future[Option[(String, Option[Long], Option[Long])]] = {
+    DB.run(
+      PersistenceSchema.testResults
+        .filter(_.testSessionId === sessionId)
+        .map(r => (r.testSessionId, r.organizationId, r.communityId))
+        .result
+        .headOption
+    )
   }
 
   def getTestResultForSession(sessionId: String): DBIO[Option[(TestResult, String)]] = {

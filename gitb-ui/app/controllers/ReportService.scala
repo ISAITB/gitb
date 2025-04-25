@@ -79,7 +79,7 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction,
     val organizationIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.ORG_IDS)
     val systemIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.SYSTEM_IDS)
     for {
-      _ <- authorizationManager.canViewTestResultsForCommunity(request, communityIds)
+      _ <- authorizationManager.canViewActiveTestsForCommunity(request, communityIds)
       testResultReports <- {
         val domainIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.DOMAIN_IDS)
         val specIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.SPEC_IDS)
@@ -118,7 +118,7 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction,
     val organizationIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.ORG_IDS)
     val systemIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.SYSTEM_IDS)
     for {
-      _ <- authorizationManager.canViewTestResultsForCommunity(request, communityIds)
+      _ <- authorizationManager.canViewCommunityTests(request, communityIds)
       results <- {
         val page = getPageOrDefault(ParameterExtractor.optionalBodyParameter(request, Parameters.PAGE))
         val limit = getLimitOrDefault(ParameterExtractor.optionalBodyParameter(request, Parameters.LIMIT))

@@ -203,6 +203,7 @@ import { TriggerFireExpressionModalComponent } from './pages/admin/user-manageme
 import { OutputMessageDisplayComponent } from './components/output-message-display/output-message-display.component';
 import { AccountCardComponent } from './components/account-card/account-card.component';
 import { ResourceManagementTabComponent } from './components/resource-management-tab/resource-management-tab.component';
+import { CommunitySessionDashboardComponent } from './pages/organisation/community-session-dashboard/community-session-dashboard.component';
 
 @NgModule({ declarations: [
         AppComponent,
@@ -389,7 +390,8 @@ import { ResourceManagementTabComponent } from './components/resource-management
         TriggerFireExpressionModalComponent,
         OutputMessageDisplayComponent,
         AccountCardComponent,
-        ResourceManagementTabComponent
+        ResourceManagementTabComponent,
+        CommunitySessionDashboardComponent
     ],
     bootstrap: [AppComponent], imports: [ColorPickerModule,
         BrowserModule,

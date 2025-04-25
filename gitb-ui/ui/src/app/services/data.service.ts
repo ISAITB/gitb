@@ -37,6 +37,7 @@ import { CookieOptions, CookieService } from 'ngx-cookie-service';
 import { LocationData } from '../types/location-data';
 import {TestCaseTag} from '../types/test-case-tag';
 import {ConformanceTestCaseGroup} from '../pages/organisation/conformance-statement/conformance-test-case-group';
+import {TestResultSearchCriteria} from '../types/test-result-search-criteria';
 
 @Injectable({
   providedIn: 'root'
@@ -59,6 +60,7 @@ export class DataService {
   public showNavigationControls = false
   public showCommunityAdminMenu = false
   public showSystemAdminMenu = false
+  public showCommunityViewMenu = false
   private tests?: ConformanceTestCase[]
   public currentLandingPageContent?: string
   private apiRoot?: string
@@ -170,6 +172,7 @@ export class DataService {
     setTimeout(() => {
       this.showCommunityAdminMenu = this.isCommunityAdmin
       this.showSystemAdminMenu = this.isSystemAdmin
+      this.showCommunityViewMenu = !this.isCommunityAdmin && !this.isSystemAdmin && this.community?.allowCommunityView == true
       this.showNavigationControls = true
     })
   }
@@ -243,6 +246,9 @@ export class DataService {
       this.setupLabels(community.labels)
       delete community.labels
     }
+    setTimeout(() => {
+      this.showCommunityViewMenu = !this.isCommunityAdmin && !this.isSystemAdmin && community.allowCommunityView
+    })
   }
 
   createLabels(customLabels?: TypedLabelConfig[]): {[key: number]: TypedLabelConfig} {
@@ -1924,6 +1930,20 @@ export class DataService {
     if (this.isSystemAdmin && communityId != undefined) {
       this.setCookie("implicitCommunity", communityId.toString())
     }
+  }
+
+  addAdminCriteriaToTestResultSearchCriteria(searchCriteria: TestResultSearchCriteria, filterData:{[key: string]: any}) {
+    if (this.isSystemAdmin) {
+      searchCriteria.communityIds = filterData[Constants.FILTER_TYPE.COMMUNITY]
+      searchCriteria.domainIds = filterData[Constants.FILTER_TYPE.DOMAIN]
+    } else {
+      if (this.community!.domain == undefined) {
+        searchCriteria.domainIds = filterData[Constants.FILTER_TYPE.DOMAIN]
+      }
+    }
+    searchCriteria.specIds = filterData[Constants.FILTER_TYPE.SPECIFICATION]
+    searchCriteria.specGroupIds = filterData[Constants.FILTER_TYPE.SPECIFICATION_GROUP]
+    searchCriteria.actorIds = filterData[Constants.FILTER_TYPE.ACTOR]
   }
 
 }

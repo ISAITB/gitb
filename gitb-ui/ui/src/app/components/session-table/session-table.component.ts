@@ -32,6 +32,7 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
   @Input() refreshComplete?: EventEmitter<TestResultReport|undefined>
   @Input() copyForOtherRoleOption = false
   @Input() showCheckbox?: EventEmitter<boolean>
+  @Input() showNavigationControls = true
   @Output() onRefresh = new EventEmitter<TestResultForDisplay>()
 
   Constants = Constants

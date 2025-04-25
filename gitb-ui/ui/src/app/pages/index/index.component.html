@@ -63,6 +63,12 @@
                                                icon="fa-solid fa-gear" [expanded]="menuExpanded"></app-menu-item>
                             }
                         }
+                        @if (dataService.showCommunityViewMenu) {
+                            <app-menu-group label="Community" [expanded]="menuExpanded"></app-menu-group>
+                            <app-menu-item (click)="routingService.toCommunitySessionDashboard()"
+                                           [type]="MenuItem.communitySessionDashboard" label="Community test sessions"
+                                           icon="fa-solid fa-rectangle-list" [expanded]="menuExpanded"></app-menu-item>
+                        }
                         <app-menu-group label="My tests" [expanded]="menuExpanded"></app-menu-group>
                         <app-menu-item (click)="routingService.toOwnConformanceStatements(dataService.vendor!.id)"
                                        [type]="MenuItem.myConformanceStatements" label="My conformance statements"

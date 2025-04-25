@@ -310,7 +310,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
           selfRegForceTemplateSelection = false, selfRegForceRequiredProperties = false, allowCertificateDownload = false,
           allowStatementManagement = true, allowSystemManagement = true, allowPostTestOrganisationUpdates = true,
           allowPostTestSystemUpdates = true, allowPostTestStatementUpdates = true,
-          allowAutomationApi = true, apiKeyToUse, None, domainId
+          allowAutomationApi = true, allowCommunityView = false, apiKeyToUse, None, domainId
         ))
       }
     } yield apiKeyToUse
@@ -416,7 +416,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
                                                 selfRegType: Short, selfRegToken: Option[String], selfRegTokenHelpText: Option[String], selfRegNotification: Boolean, interactionNotification: Boolean,
                                                 description: Option[String], selfRegRestriction: Short, selfRegForceTemplateSelection: Boolean, selfRegForceRequiredProperties: Boolean,
                                                 allowCertificateDownload: Boolean, allowStatementManagement: Boolean, allowSystemManagement: Boolean,
-                                                allowPostTestOrganisationUpdates: Boolean, allowPostTestSystemUpdates: Boolean, allowPostTestStatementUpdates: Boolean, allowAutomationApi: Option[Boolean],
+                                                allowPostTestOrganisationUpdates: Boolean, allowPostTestSystemUpdates: Boolean, allowPostTestStatementUpdates: Boolean, allowAutomationApi: Option[Boolean], allowCommunityView: Boolean,
                                                 apiKey: Option[String], domainId: Option[Long], checkApiKeyUniqueness: Boolean, onSuccess: mutable.ListBuffer[() => _]) = {
     for {
       // Update short name.
@@ -445,10 +445,10 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
         .filter(_.id === community.id)
         .map(c => (
           c.supportEmail, c.domain, c.description, c.allowCertificateDownload, c.allowStatementManagement, c.allowSystemManagement,
-          c.allowPostTestOrganisationUpdates, c.allowPostTestSystemUpdates, c.allowPostTestStatementUpdates, c.interactionNotification
+          c.allowPostTestOrganisationUpdates, c.allowPostTestSystemUpdates, c.allowPostTestStatementUpdates, c.allowCommunityView, c.interactionNotification
         ))
         .update(supportEmail, domainId, description, allowCertificateDownload, allowStatementManagement, allowSystemManagement,
-          allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, interactionNotification
+          allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, allowCommunityView, interactionNotification
         )
       // Update self-registration properties.
       _ <- {
@@ -566,7 +566,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
           community.selfRegRestriction, community.selfRegForceTemplateSelection, community.selfRegForceRequiredProperties,
           community.allowCertificateDownload, community.allowStatementManagement, community.allowSystemManagement,
           community.allowPostTestOrganisationUpdates, community.allowPostTestSystemUpdates, community.allowPostTestStatementUpdates,
-          Some(community.allowAutomationApi), None, domainIdToUse, checkApiKeyUniqueness = false, onSuccess
+          Some(community.allowAutomationApi), community.allowCommunityView, None, domainIdToUse, checkApiKeyUniqueness = false, onSuccess
         )
       }
     } yield ()
@@ -582,7 +582,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
                       selfRegForceTemplateSelection: Boolean, selfRegForceRequiredProperties: Boolean,
                       allowCertificateDownload: Boolean, allowStatementManagement: Boolean, allowSystemManagement: Boolean,
                       allowPostTestOrganisationUpdates: Boolean, allowPostTestSystemUpdates: Boolean,
-                      allowPostTestStatementUpdates: Boolean, allowAutomationApi: Option[Boolean],
+                      allowPostTestStatementUpdates: Boolean, allowAutomationApi: Option[Boolean], allowCommunityView: Boolean,
                       domainId: Option[Long]): Future[Unit] = {
 
     val onSuccess = ListBuffer[() => _]()
@@ -594,7 +594,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
             community.get, shortName, fullName, supportEmail, selfRegType, selfRegToken, selfRegTokenHelpText,
             selfRegNotification, interactionNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties,
             allowCertificateDownload, allowStatementManagement, allowSystemManagement,
-            allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, allowAutomationApi, None,
+            allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, allowAutomationApi, allowCommunityView, None,
             domainId, checkApiKeyUniqueness = false, onSuccess
           )
         } else {
@@ -1023,10 +1023,10 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
   }
 
   def getOrganisationParameters(communityId: Long): Future[List[OrganisationParameters]] = {
-    getOrganisationParameters(communityId, None)
+    getOrganisationParameters(communityId, None, onlyPublic = false)
   }
 
-  def getOrganisationParameters(communityId: Long, forFiltering: Option[Boolean]): Future[List[OrganisationParameters]] = {
+  def getOrganisationParameters(communityId: Long, forFiltering: Option[Boolean], onlyPublic: Boolean): Future[List[OrganisationParameters]] = {
     var typeToCheck: Option[String] = None
     if (forFiltering.isDefined && forFiltering.get) {
       typeToCheck = Some("SIMPLE")
@@ -1034,6 +1034,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
     DB.run(PersistenceSchema.organisationParameters
       .filter(_.community === communityId)
       .filterOpt(typeToCheck)((table, propertyType)=> table.kind === propertyType)
+      .filterIf(onlyPublic)(_.hidden === false)
       .sortBy(x => (x.displayOrder.asc, x.name.asc))
       .result).map(_.toList)
   }
@@ -1073,10 +1074,10 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
   }
 
   def getSystemParameters(communityId: Long): Future[List[SystemParameters]] = {
-    getSystemParameters(communityId, None)
+    getSystemParameters(communityId, None, onlyPublic = false)
   }
 
-  def getSystemParameters(communityId: Long, forFiltering: Option[Boolean]): Future[List[SystemParameters]] = {
+  def getSystemParameters(communityId: Long, forFiltering: Option[Boolean], onlyPublic: Boolean): Future[List[SystemParameters]] = {
     var typeToCheck: Option[String] = None
     if (forFiltering.isDefined && forFiltering.get) {
       typeToCheck = Some("SIMPLE")
@@ -1084,6 +1085,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
     DB.run(PersistenceSchema.systemParameters
       .filter(_.community === communityId)
       .filterOpt(typeToCheck)((table, propertyType)=> table.kind === propertyType)
+      .filterIf(onlyPublic)(_.hidden === false)
       .sortBy(x => (x.displayOrder.asc, x.name.asc))
       .result).map(_.toList)
   }

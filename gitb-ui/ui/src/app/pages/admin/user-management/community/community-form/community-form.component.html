@@ -193,6 +193,12 @@
                              <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' users to update the configuration parameters for a conformance statement once tests have been recorded.'"></div>
                         </label>
                     </div>
+                    <div class="form-check pb-2">
+                        <input class="form-check-input" type="checkbox" id="allowCommunityView" name="allowCommunityView" [(ngModel)]="community.allowCommunityView">
+                        <label class="form-check-label" for="allowCommunityView">View community test history
+                            <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' users to have a readonly view of the testing history of other '+dataService.labelOrganisationsLower()+'.'"></div>
+                        </label>
+                    </div>
                     @if (dataService.configuration.automationApiEnabled) {
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="allowAutomationApi" name="allowAutomationApi" [(ngModel)]="community.allowAutomationApi">

@@ -68,6 +68,7 @@ import { CommunityReportsComponent } from './pages/admin/user-management/communi
 import { AdminViewGuard } from './resolvers/admin-view-guard';
 import { SystemAdminViewGuard } from './resolvers/system-admin-view-guard';
 import {ImplicitCommunityResolver} from './resolvers/implicit-community-resolver';
+import {CommunitySessionDashboardComponent} from './pages/organisation/community-session-dashboard/community-session-dashboard.component';
 
 const themeResolver: ResolveFn<Theme> = (route: ActivatedRouteSnapshot, state: RouterStateSnapshot) => {
   return inject(SystemConfigurationService).getTheme(Number(route.paramMap.get(Constants.NAVIGATION_PATH_PARAM.THEME_ID)!))
@@ -163,6 +164,10 @@ const routes: Routes = [
             { path: 'themes/:'+Constants.NAVIGATION_PATH_PARAM.THEME_ID, component: ThemeDetailsComponent, resolve: { theme: themeResolver } },
           ]}
         ]
+      },
+      // Community session dashboard
+      {
+        path: 'community/sessions', resolve: { profile: ProfileResolver }, component: CommunitySessionDashboardComponent
       },
       // My tests
       { path: 'organisation', resolve: { profile: ProfileResolver }, children: [

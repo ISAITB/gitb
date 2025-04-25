@@ -35,10 +35,11 @@ object PersistenceSchema {
     def allowPostTestSystemUpdates = column[Boolean]("allow_post_test_sys_updates")
     def allowPostTestStatementUpdates = column[Boolean]("allow_post_test_stm_updates")
     def allowAutomationApi = column[Boolean]("allow_automation_api")
+    def allowCommunityView = column[Boolean]("allow_community_view")
     def apiKey = column[String]("api_key")
     def latestStatusLabel = column[Option[String]]("latest_status_label")
     def domain = column[Option[Long]] ("domain")
-    def * = (id :: shortname :: fullname :: supportEmail :: selfRegType :: selfRegToken :: selfRegTokenHelpText :: selfRegNotification :: interactionNotification :: description :: selfRegRestriction :: selfRegForceTemplateSelection :: selfRegForceRequiredProperties :: allowCertificateDownload :: allowStatementManagement :: allowSystemManagement :: allowPostTestOrganisationUpdates :: allowPostTestSystemUpdates :: allowPostTestStatementUpdates :: allowAutomationApi :: apiKey :: latestStatusLabel :: domain :: HNil).mapTo[Communities]
+    def * = (id :: shortname :: fullname :: supportEmail :: selfRegType :: selfRegToken :: selfRegTokenHelpText :: selfRegNotification :: interactionNotification :: description :: selfRegRestriction :: selfRegForceTemplateSelection :: selfRegForceRequiredProperties :: allowCertificateDownload :: allowStatementManagement :: allowSystemManagement :: allowPostTestOrganisationUpdates :: allowPostTestSystemUpdates :: allowPostTestStatementUpdates :: allowAutomationApi :: allowCommunityView :: apiKey :: latestStatusLabel :: domain :: HNil).mapTo[Communities]
   }
   val communities = TableQuery[CommunitiesTable]
   val insertCommunity = communities returning communities.map(_.id)

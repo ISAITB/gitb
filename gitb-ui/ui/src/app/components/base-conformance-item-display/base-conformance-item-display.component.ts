@@ -5,6 +5,7 @@ import { DataService } from 'src/app/services/data.service';
 import { find } from 'lodash';
 import { Constants } from 'src/app/common/constants';
 import { CheckboxOptionState } from '../checkbox-option-panel/checkbox-option-state';
+import {ExportReportEvent} from '../../types/export-report-event';
 
 @Component({
     template: '',
@@ -202,6 +203,20 @@ export abstract class BaseConformanceItemDisplayComponent implements AfterViewIn
     if (this.selectorControls && this.searchControls) {
       this.searchControlsWrapped = this.statements.length > 0 && this.selectorControls.nativeElement.getBoundingClientRect().top != this.searchControls.nativeElement.getBoundingClientRect().top
     }
+  }
+
+  protected determineReportLevel(event: ExportReportEvent) {
+    let reportLevel: 'all'|'domain'|'specification'|'group'
+    if (event.item.itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.DOMAIN) {
+      reportLevel = "domain"
+    } else if (event.item.itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION_GROUP) {
+      reportLevel = "group"
+    } else if (event.item.itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION) {
+      reportLevel = "specification"
+    } else {
+      reportLevel = "all"
+    }
+    return reportLevel
   }
 
 }

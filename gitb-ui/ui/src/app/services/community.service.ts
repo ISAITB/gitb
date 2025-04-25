@@ -90,10 +90,13 @@ export class CommunityService {
     })
   }
 
-  getOrganisationParameters(communityId: number, forFiltering?: boolean) {
+  getOrganisationParameters(communityId: number, forFiltering?: boolean, onlyPublic?: boolean) {
     let params: any = {}
     if (forFiltering !== undefined) {
       params.filtering = forFiltering
+    }
+    if (onlyPublic !== undefined) {
+      params.public = onlyPublic
     }
     return this.restService.get<OrganisationParameter[]>({
       path: ROUTES.controllers.CommunityService.getOrganisationParameters(communityId).url,
@@ -109,10 +112,13 @@ export class CommunityService {
     })
   }
 
-  getSystemParameters(communityId: number, forFiltering?: boolean) {
+  getSystemParameters(communityId: number, forFiltering?: boolean, onlyPublic?: boolean) {
     let params: any = {}
     if (forFiltering !== undefined) {
       params.filtering = forFiltering
+    }
+    if (onlyPublic !== undefined) {
+      params.public = onlyPublic
     }
     return this.restService.get<SystemParameter[]>({
       path: ROUTES.controllers.CommunityService.getSystemParameters(communityId).url,
@@ -125,7 +131,7 @@ export class CommunityService {
     selfRegType: number, selfRegRestriction: number, selfRegToken: string|undefined, selfRegTokenHelpText: string|undefined, selfRegNotification: boolean|undefined,
     interactionNotification: boolean, description: string|undefined, selfRegForceTemplate: boolean|undefined, selfRegForceProperties: boolean|undefined,
     allowCertificateDownload: boolean, allowStatementManagement: boolean, allowSystemManagement: boolean, allowPostTestOrganisationUpdate: boolean,
-    allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, allowAutomationApi: boolean|undefined,
+    allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, allowAutomationApi: boolean|undefined, allowCommunityView: boolean,
     domainId: number|undefined) {
     const data: any = {
       community_sname: shortName,
@@ -138,6 +144,7 @@ export class CommunityService {
       allow_post_test_org_update: allowPostTestOrganisationUpdate,
       allow_post_test_sys_update: allowPostTestSystemUpdate,
       allow_post_test_stm_update: allowPostTestStatementUpdate,
+      allow_community_view: allowCommunityView,
       interaction_notification: interactionNotification
     }
     if (this.dataService.configuration.registrationEnabled) {
@@ -170,7 +177,7 @@ export class CommunityService {
     selfRegType: number, selfRegRestriction: number, selfRegToken: string|undefined, selfRegTokenHelpText: string|undefined, selfRegNotification: boolean|undefined,
     interactionNotification: boolean, description: string|undefined, selfRegForceTemplate: boolean|undefined, selfRegForceProperties: boolean|undefined,
     allowCertificateDownload: boolean, allowStatementManagement: boolean, allowSystemManagement: boolean, allowPostTestOrganisationUpdate: boolean,
-    allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, allowAutomationApi: boolean|undefined,
+    allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, allowAutomationApi: boolean|undefined, allowCommunityView: boolean,
     domainId: number|undefined) {
     const data: any = {
       community_sname: shortName,
@@ -183,6 +190,7 @@ export class CommunityService {
       allow_post_test_org_update: allowPostTestOrganisationUpdate,
       allow_post_test_sys_update: allowPostTestSystemUpdate,
       allow_post_test_stm_update: allowPostTestStatementUpdate,
+      allow_community_view: allowCommunityView,
       interaction_notification: interactionNotification
     }
     if (this.dataService.configuration.registrationEnabled) {

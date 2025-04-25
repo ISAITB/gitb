@@ -2259,8 +2259,8 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                     data.getSelfRegistrationSettings.isNotifications, data.isInteractionNotification, Option(data.getDescription), selfRegistrationRestrictionToModel(data.getSelfRegistrationSettings.getRestriction),
                     data.getSelfRegistrationSettings.isForceTemplateSelection, data.getSelfRegistrationSettings.isForceRequiredProperties,
                     data.isAllowCertificateDownload, data.isAllowStatementManagement, data.isAllowSystemManagement,
-                    data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates, data.isAllowAutomationApi, apiKey, None,
-                    domainId
+                    data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates, data.isAllowAutomationApi, data.isAllowCommunityView,
+                    apiKey, None, domainId
                   ), checkApiKeyUniqueness = true)
                 },
                 (data: com.gitb.xml.export.Community, targetKey: String, item: ImportItem) => {
@@ -2271,7 +2271,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                     data.isInteractionNotification, Option(data.getDescription), selfRegistrationRestrictionToModel(data.getSelfRegistrationSettings.getRestriction),
                     data.getSelfRegistrationSettings.isForceTemplateSelection, data.getSelfRegistrationSettings.isForceRequiredProperties,
                     data.isAllowCertificateDownload, data.isAllowStatementManagement, data.isAllowSystemManagement,
-                    data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates, Some(data.isAllowAutomationApi), Some(apiKey),
+                    data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates, Some(data.isAllowAutomationApi), data.isAllowCommunityView, Some(apiKey),
                     domainId, checkApiKeyUniqueness = true, ctx.onSuccessCalls
                   )
                 },
