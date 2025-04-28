@@ -233,33 +233,32 @@ public class TestCaseContext {
      * @return Simulated actor configurations for each (actorId, endpointName) tuple
      */
     public List<SUTConfiguration> configure(List<ActorConfiguration> configurations, ActorConfiguration domainConfiguration, ActorConfiguration organisationConfiguration, ActorConfiguration systemConfiguration){
-
 		addSpecialConfiguration(DOMAIN_MAP, domainConfiguration);
 		addSpecialConfiguration(ORGANISATION_MAP, organisationConfiguration);
 		addSpecialConfiguration(SYSTEM_MAP, systemConfiguration);
 		addSessionMetadata();
-
-		for(ActorConfiguration actorConfiguration : configurations) {
+		for (ActorConfiguration actorConfiguration : configurations) {
 		    Tuple<String> actorIdEndpointTupleKey = new Tuple<>(new String[] {actorConfiguration.getActor(), actorConfiguration.getEndpoint()});
 		    sutConfigurations.put(actorIdEndpointTupleKey, actorConfiguration);
 		    sutHandlerConfigurations.put(actorIdEndpointTupleKey, new CopyOnWriteArrayList<>());
 	    }
-
-	    List<SUTConfiguration> sutConfigurations = configureSimulatedActorsForSUTs(configurations);
-
-	    // set the configuration parameters given in the test case definition if they are not set already
-	    for(TestRole role : testCase.getActors().getActor()) {
-		    for(Endpoint endpoint : role.getEndpoint()) {
-			    for(Parameter parameter : endpoint.getConfig()) {
-				    setSUTConfigurationParameter(sutConfigurations, role.getId(), endpoint.getName(), parameter);
-			    }
-		    }
-	    }
-
-	    bindActorConfigurationsToScope();
-
-	    return sutConfigurations;
+		List<SUTConfiguration> sutConfigurations = configureDynamicActorProperties(testCase, configurations);
+		bindActorConfigurationsToScope();
+        return sutConfigurations;
     }
+
+	protected List<SUTConfiguration> configureDynamicActorProperties(TestCase testCase, List<ActorConfiguration> configurations) {
+		List<SUTConfiguration> sutConfigurations = configureSimulatedActorsForSUTs(configurations);
+		// Set the configuration parameters given in the test case definition if they are not set already
+		for (TestRole role : testCase.getActors().getActor()) {
+			for(Endpoint endpoint : role.getEndpoint()) {
+				for(Parameter parameter : endpoint.getConfig()) {
+					setSUTConfigurationParameter(sutConfigurations, role.getId(), endpoint.getName(), parameter);
+				}
+			}
+		}
+		return sutConfigurations;
+	}
 
 	private void addSessionMetadata() {
 		DataTypeFactory factory = DataTypeFactory.getInstance();

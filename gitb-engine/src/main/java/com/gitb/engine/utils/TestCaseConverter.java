@@ -6,18 +6,18 @@ import com.gitb.core.ErrorCode;
 import com.gitb.engine.ModuleManager;
 import com.gitb.engine.SessionConfigurationData;
 import com.gitb.engine.expr.StaticExpressionHandler;
-import com.gitb.engine.testcase.TestCaseContext;
+import com.gitb.engine.testcase.StaticTestCaseContext;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.repository.ITestCaseRepository;
+import com.gitb.tdl.*;
 import com.gitb.tdl.Instruction;
 import com.gitb.tdl.Process;
 import com.gitb.tdl.UserRequest;
-import com.gitb.tdl.*;
+import com.gitb.tpl.*;
 import com.gitb.tpl.Sequence;
 import com.gitb.tpl.TestCase;
 import com.gitb.tpl.TestStep;
-import com.gitb.tpl.*;
 import com.gitb.utils.ErrorUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -57,7 +57,7 @@ public class TestCaseConverter {
     }
 
     private static TestCaseScope createScope(com.gitb.tdl.TestCase testCase, List<ActorConfiguration> configs) {
-        var context = new TestCaseContext(testCase, testCase.getId(), "");
+        var context = new StaticTestCaseContext(testCase);
         var configData = new SessionConfigurationData(configs);
         context.configure(configData.getActorConfigurations(), configData.getDomainConfiguration(), configData.getOrganisationConfiguration(), configData.getSystemConfiguration());
         return context.getScope();
