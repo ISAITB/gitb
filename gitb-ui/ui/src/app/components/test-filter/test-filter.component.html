@@ -134,7 +134,7 @@
           <div class="filterCell">
             <div class="filterName"><span>{{names[Constants.FILTER_TYPE.ORGANISATION_PROPERTY]}}</span></div>
             <div class="filterValue">
-              <div class="property-filters-container">
+              <div class="property-filters-container custom-properties">
                 @for (propFilter of organisationProperties; track propFilter.id) {
                   <div class="property-filter">
                     <app-custom-property-filter
@@ -161,7 +161,7 @@
           <div class="filterCell">
             <div class="filterName"><span>{{names[Constants.FILTER_TYPE.SYSTEM_PROPERTY]}}</span></div>
             <div class="filterValue">
-              <div class="property-filters-container">
+              <div class="property-filters-container custom-properties">
                 @for (propFilter of systemProperties; track propFilter.id) {
                   <div class="property-filter">
                     <app-custom-property-filter
@@ -173,11 +173,11 @@
                     </app-custom-property-filter>
                   </div>
                 }
-                <div class="property-filters-control" [ngClass]="{'padded': systemProperties && systemProperties.length > 0}">
+              <div class="property-filters-control" [ngClass]="{'padded': systemProperties && systemProperties.length > 0}">
                   @if (!addingSystemProperty || loadingSystemProperties) {
-                    <button [disable]="applicableCommunityId == undefined" [pending]="loadingSystemProperties" class="btn btn-secondary" (click)="addSystemProperty()">Add</button>
+                      <button [disable]="applicableCommunityId == undefined" [pending]="loadingSystemProperties" class="btn btn-secondary" (click)="addSystemProperty()">Add</button>
                   }
-                </div>
+              </div>
               </div>
             </div>
           </div>

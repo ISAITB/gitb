@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import {Component, EventEmitter, HostListener, Input, OnInit, Output} from '@angular/core';
 import { Constants } from 'src/app/common/constants';
 import { CustomPropertyPresetValue } from 'src/app/types/custom-property-preset-value.type';
 import { CustomProperty } from './custom-property';
@@ -6,7 +6,7 @@ import { CustomProperty } from './custom-property';
 @Component({
     selector: 'app-custom-property-filter',
     templateUrl: './custom-property-filter.component.html',
-    styles: [],
+    styleUrls: ['./custom-property-filter.component.less'],
     standalone: false
 })
 export class CustomPropertyFilterComponent implements OnInit {
@@ -33,6 +33,22 @@ export class CustomPropertyFilterComponent implements OnInit {
   constructor() { }
 
   ngOnInit(): void {
+  }
+
+  @HostListener('document:keydown', ['$event'])
+  keyDownRegistered(event: KeyboardEvent) {
+    if (!this.applied) {
+      switch (event.key) {
+        case 'Escape': {
+          this.cancel()
+          break
+        }
+        case 'Enter': {
+          this.apply()
+          break;
+        }
+      }
+    }
   }
 
   propertyChanged() {
@@ -62,7 +78,7 @@ export class CustomPropertyFilterComponent implements OnInit {
   clear() {
     this.onClear.emit(this.propertyFilter)
   }
-  
+
   cancel() {
     this.onCancel.emit(this.propertyFilter)
   }

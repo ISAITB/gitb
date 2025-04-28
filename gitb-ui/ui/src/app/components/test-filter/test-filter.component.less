@@ -36,7 +36,7 @@
         &.filler {
             flex-grow: 1;
             & .filterName, .filterValue {
-                padding: 0px;
+                padding: 0;
             }
         }
     }
@@ -48,4 +48,20 @@
     .session-filter {
         border-bottom: 2px solid @gray-dark-1;
     }
+}
+.property-filters-container {
+    display: flex;
+    flex-wrap: wrap;
+    &.custom-properties {
+        margin-top: -8px;
+    }
+    .property-filter {
+        margin-right: 5px;
+        margin-top: 8px;
+        display: inline-flex;
+    }
+}
+.property-filters-control {
+    display: inline-flex;
+    margin-top: 8px;
 }
