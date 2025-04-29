@@ -1,4 +1,4 @@
-import {Component, EventEmitter, Input, OnInit} from '@angular/core';
+import {AfterViewInit, Component, EventEmitter, Input, ViewChild} from '@angular/core';
 import {Constants} from '../../common/constants';
 import {ResourceActions} from './resource-actions';
 import {CommunityResource} from '../../types/community-resource';
@@ -14,6 +14,8 @@ import {ConfirmationDialogService} from '../../services/confirmation-dialog.serv
 import {PopupService} from '../../services/popup.service';
 import {TableColumnDefinition} from '../../types/table-column-definition.type';
 import {DataService} from '../../services/data.service';
+import {TableComponent} from '../table/table.component';
+import {PagingEvent} from '../paging-controls/paging-event';
 
 @Component({
   selector: 'app-resource-management-tab',
@@ -21,23 +23,20 @@ import {DataService} from '../../services/data.service';
   templateUrl: './resource-management-tab.component.html',
   styleUrl: './resource-management-tab.component.less'
 })
-export class ResourceManagementTabComponent implements OnInit {
+export class ResourceManagementTabComponent implements AfterViewInit {
 
   @Input() actions!: ResourceActions
   @Input() deferredActivation?: EventEmitter<void>
+  @ViewChild("resourcesTable") resourcesTable?: TableComponent
 
   downloadAllResourcesPending = false
   deleteResourcesPending = false
   selectingForDeleteResources = false
   resourcesRefreshing = false
   resourceFilter?: string
-  currentResourcesPage = 1
   resourcesStatus = {status: Constants.STATUS.NONE}
   clearResourceSelections = new EventEmitter<void>()
   resources: CommunityResource[] = []
-  resourcesCount = 0
-  isNextPageResourcesDisabled = false
-  isPreviousPageResourcesDisabled = false
 
   resourceColumns: TableColumnDefinition[] = [
     { field: 'name', title: 'Name' },
@@ -53,56 +52,41 @@ export class ResourceManagementTabComponent implements OnInit {
   ) {
   }
 
-  ngOnInit(): void {
+  ngAfterViewInit(): void {
     if (this.deferredActivation) {
       this.deferredActivation.subscribe(() => {
         if (this.resourcesStatus.status == Constants.STATUS.NONE) {
-          this.goFirstPageResources()
+          this.refreshResources()
         }
       })
     } else {
-      this.goFirstPageResources()
+      this.refreshResources()
     }
   }
 
   applyResourceFilter() {
-    this.goFirstPageResources()
+    this.refreshResources()
   }
 
-  goFirstPageResources() {
-    this.currentResourcesPage = 1
-    this.queryResources()
-  }
-
-  queryResources() {
+  queryResources(pagingInfo: PagingEvent) {
     if (this.resourcesStatus.status == Constants.STATUS.FINISHED) {
       this.resourcesRefreshing = true
     } else {
       this.resourcesStatus.status = Constants.STATUS.PENDING
     }
     this.clearResourceSelections.emit()
-    this.actions.searchResources(this.resourceFilter, this.currentResourcesPage, Constants.TABLE_PAGE_SIZE)
+    this.actions.searchResources(this.resourceFilter, pagingInfo.targetPage, pagingInfo.targetPageSize)
       .subscribe((data) => {
         this.resources = data.data
-        this.resourcesCount = data.count!
-        this.updateResourcesPagination()
+        this.updateResourcesPagination(pagingInfo.targetPage, data.count!)
       }).add(() => {
       this.resourcesRefreshing = false
       this.resourcesStatus.status = Constants.STATUS.FINISHED
     })
   }
 
-  private updateResourcesPagination() {
-    if (this.currentResourcesPage == 1) {
-      this.isNextPageResourcesDisabled = this.resourcesCount <= Constants.TABLE_PAGE_SIZE
-      this.isPreviousPageResourcesDisabled = true
-    } else if (this.currentResourcesPage == Math.ceil(this.resourcesCount / Constants.TABLE_PAGE_SIZE)) {
-      this.isNextPageResourcesDisabled = true
-      this.isPreviousPageResourcesDisabled = false
-    } else {
-      this.isNextPageResourcesDisabled = false
-      this.isPreviousPageResourcesDisabled = false
-    }
+  private updateResourcesPagination(page: number, count: number) {
+    this.resourcesTable?.pagingControls?.updateStatus(page, count)
   }
 
   uploadResource() {
@@ -118,7 +102,7 @@ export class ResourceManagementTabComponent implements OnInit {
     })
     modal.content!.resourcesUpdated.subscribe((updateMade) => {
       if (updateMade) {
-        this.queryResources()
+        this.refreshResources()
       }
     })
   }
@@ -133,7 +117,7 @@ export class ResourceManagementTabComponent implements OnInit {
     })
     modal.content!.resourceUpdated.subscribe((updateMade) => {
       if (updateMade) {
-        this.queryResources()
+        this.refreshResources()
       }
     })
     modal.onHide!.subscribe(() => {
@@ -179,7 +163,7 @@ export class ResourceManagementTabComponent implements OnInit {
       }).add(() => {
         this.deleteResourcesPending = false
         this.selectingForDeleteResources = false
-        this.goFirstPageResources()
+        this.refreshResources()
       })
     })
   }
@@ -235,26 +219,19 @@ export class ResourceManagementTabComponent implements OnInit {
       resource.deletePending = true
       this.actions.deleteResource(resource.id).subscribe(() => {
         this.popupService.success("Resource deleted.")
-        this.queryResources()
+        this.refreshResources()
       }).add(() => {
         resource.deletePending = false
       })
     })
   }
 
-  goNextPageResources() {
-    this.currentResourcesPage += 1
-    this.queryResources()
+  doPageNavigation(event: PagingEvent) {
+    this.queryResources(event)
   }
 
-  goLastPageResources() {
-    this.currentResourcesPage = Math.ceil(this.resourcesCount / Constants.TABLE_PAGE_SIZE)
-    this.queryResources()
-  }
-
-  goPreviousPageResources() {
-    this.currentResourcesPage -= 1
-    this.queryResources()
+  refreshResources() {
+    this.queryResources({ targetPage: 1, targetPageSize: this.resourcesTable?.pagingControls?.getCurrentStatus().pageSize!})
   }
 
 }

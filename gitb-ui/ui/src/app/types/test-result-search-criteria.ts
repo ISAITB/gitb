@@ -22,8 +22,6 @@ export interface TestResultSearchCriteria {
   activeSortColumn?: string,
   activeSortOrder?: string,
   completedSortColumn?: string,
-  completedSortOrder?: string,
-  currentPage?: number
-  currentPageActive?: number
+  completedSortOrder?: string
 
 }

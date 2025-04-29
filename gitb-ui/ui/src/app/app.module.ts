@@ -204,6 +204,7 @@ import { OutputMessageDisplayComponent } from './components/output-message-displ
 import { AccountCardComponent } from './components/account-card/account-card.component';
 import { ResourceManagementTabComponent } from './components/resource-management-tab/resource-management-tab.component';
 import { CommunitySessionDashboardComponent } from './pages/organisation/community-session-dashboard/community-session-dashboard.component';
+import { PagingControlsComponent } from './components/paging-controls/paging-controls.component';
 
 @NgModule({ declarations: [
         AppComponent,
@@ -391,7 +392,8 @@ import { CommunitySessionDashboardComponent } from './pages/organisation/communi
         OutputMessageDisplayComponent,
         AccountCardComponent,
         ResourceManagementTabComponent,
-        CommunitySessionDashboardComponent
+        CommunitySessionDashboardComponent,
+        PagingControlsComponent
     ],
     bootstrap: [AppComponent], imports: [ColorPickerModule,
         BrowserModule,

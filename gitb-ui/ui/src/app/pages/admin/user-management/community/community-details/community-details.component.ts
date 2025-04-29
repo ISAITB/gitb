@@ -31,6 +31,8 @@ import {Observable, of} from 'rxjs';
 import {ResourceActions} from '../../../../../components/resource-management-tab/resource-actions';
 import {FileData} from '../../../../../types/file-data.type';
 import {CommunityResourceService} from '../../../../../services/community-resource.service';
+import {TableComponent} from '../../../../../components/table/table.component';
+import {PagingEvent} from '../../../../../components/paging-controls/paging-event';
 
 @Component({
     selector: 'app-community-details',
@@ -39,6 +41,8 @@ import {CommunityResourceService} from '../../../../../services/community-resour
     standalone: false
 })
 export class CommunityDetailsComponent extends BaseComponent implements OnInit, AfterViewInit {
+
+  @ViewChild("organisationTable") organisationTable?: TableComponent
 
   community!: Community
   adminStatus = {status: Constants.STATUS.NONE}
@@ -94,12 +98,8 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   @ViewChild('tabs', { static: false }) tabs?: TabsetComponent;
 
   organisationFilter?: string
-  currentOrganisationsPage = 1
-  organisationCount = 0
   organisationSortOrder = 'asc'
   organisationSortColumn = 'shortname'
-  isNextPageOrganisationsDisabled = false
-  isPreviousPageOrganisationsDisabled = false
 
   sortByCreationOrderNone = "none"
   sortByCreationOrderAsc = "asc"
@@ -141,12 +141,6 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
     }
   }
 
-  ngAfterViewInit(): void {
-    setTimeout(() => {
-      this.triggerTab(this.tabToShow)
-    })
-  }
-
   ngOnInit(): void {
     this.community = this.route.snapshot.data['community']
     this.communityId = this.community.id
@@ -180,6 +174,12 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
     })
   }
 
+  ngAfterViewInit(): void {
+    setTimeout(() => {
+      this.triggerTab(this.tabToShow)
+    })
+  }
+
   private setupTabs() {
     const temp: Partial<Record<CommunityTab, {index: number, loader: () => any}>> = {}
     temp[CommunityTab.organisations] = {index: 0, loader: () => {this.showOrganisations()}}
@@ -200,21 +200,20 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
 
   showOrganisations() {
     if (this.organisationStatus.status == Constants.STATUS.NONE) {
-      this.goFirstPageOrganisations()
+      this.refreshOrganisations()
     }
   }
 
-  private queryOrganisations() {
+  private queryOrganisations(pagingInfo: PagingEvent) {
     if (this.organisationStatus.status == Constants.STATUS.FINISHED) {
       this.organisationsRefreshing = true
     } else {
       this.organisationStatus.status = Constants.STATUS.PENDING
     }
-    this.organisationService.searchOrganisationsByCommunity(this.communityId, this.organisationFilter, this.organisationSortOrder, this.organisationSortColumn, this.currentOrganisationsPage, Constants.TABLE_PAGE_SIZE, this.sortByCreationOrder)
+    this.organisationService.searchOrganisationsByCommunity(this.communityId, this.organisationFilter, this.organisationSortOrder, this.organisationSortColumn, pagingInfo.targetPage, pagingInfo.targetPageSize, this.sortByCreationOrder)
     .subscribe((data) => {
         this.organizations = data.data
-        this.organisationCount = data.count!
-        this.updateOrganisationPagination()
+        this.updateOrganisationPagination(pagingInfo.targetPage, data.count!)
     })
     .add(() => {
       this.organisationsRefreshing = false
@@ -454,37 +453,16 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
     this.routingService.toCreateOrganisation(this.communityId)
   }
 
-  goPreviousPageOrganisations() {
-    this.currentOrganisationsPage -= 1
-    this.queryOrganisations()
+  doOrganisationPaging(event: PagingEvent) {
+    this.queryOrganisations(event)
   }
 
-  goNextPageOrganisations() {
-    this.currentOrganisationsPage += 1
-    this.queryOrganisations()
+  refreshOrganisations() {
+    this.queryOrganisations({ targetPage: 1, targetPageSize: this.organisationTable?.pagingControls?.getCurrentStatus().pageSize! })
   }
 
-  goFirstPageOrganisations() {
-    this.currentOrganisationsPage = 1
-    this.queryOrganisations()
-  }
-
-  goLastPageOrganisations() {
-    this.currentOrganisationsPage = Math.ceil(this.organisationCount / Constants.TABLE_PAGE_SIZE)
-    this.queryOrganisations()
-  }
-
-  private updateOrganisationPagination() {
-    if (this.currentOrganisationsPage == 1) {
-      this.isNextPageOrganisationsDisabled = this.organisationCount <= Constants.TABLE_PAGE_SIZE
-      this.isPreviousPageOrganisationsDisabled = true
-    } else if (this.currentOrganisationsPage == Math.ceil(this.organisationCount / Constants.TABLE_PAGE_SIZE)) {
-      this.isNextPageOrganisationsDisabled = true
-      this.isPreviousPageOrganisationsDisabled = false
-    } else {
-      this.isNextPageOrganisationsDisabled = false
-      this.isPreviousPageOrganisationsDisabled = false
-    }
+  private updateOrganisationPagination(page: number, count: number) {
+    this.organisationTable?.pagingControls?.updateStatus(page, count)
   }
 
   sortOrganisations(column: TableColumnDefinition) {
@@ -496,11 +474,11 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
       this.organisationSortColumn = 'template'
     }
     this.organisationSortOrder = column.order!
-    this.goFirstPageOrganisations()
+    this.refreshOrganisations()
   }
 
   applyOrganisationFilter() {
-    this.goFirstPageOrganisations()
+    this.refreshOrganisations()
   }
 
   applyCreationOrderSort(type: string, label: string) {

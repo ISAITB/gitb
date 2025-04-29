@@ -1,0 +1,24 @@
+<div #pagingContainer class="table-paging-controls" [class.hidden]="status.totalCount < status.pageSize">
+    <div #pageControlsContainer class="paging-controls">
+        <button type="button" class="btn btn-sm btn-secondary" [disabled]="status.previousDisabled || refreshing" (click)="doFirstPage()"><i class="fa-solid fa-chevron-left"></i><i class="fa-solid fa-chevron-left me-2"></i> First</button>
+        <button type="button" class="btn btn-sm btn-secondary" [disabled]="status.previousDisabled || refreshing" (click)="doPrevPage()"><i class="fa-solid fa-chevron-left me-2"></i> Previous</button>
+        @if (pageLinks.length > 0 && !controlsWrapped) {
+            <div class="page-link-container" [class.disabled-paging]="refreshing">
+                @for (pageLink of pageLinks; track $index) {
+                    <div class="page-link" (click)="navigateToPage(pageLink)" [class.navigable]="pageLink != undefined && pageLink != this.status.currentPage" [class.current-page]="pageLink == this.status.currentPage">
+                        @if (pageLink != undefined) {
+                            {{ pageLink }}
+                        } @else {
+                            ...
+                        }
+                    </div>
+                }
+            </div>
+        }
+        <button type="button" class="btn btn-sm btn-secondary" [disabled]="status.nextDisabled || refreshing" (click)="doNextPage()">Next <i class="fa-solid fa-chevron-right ms-2"></i></button>
+        <button #lastButton type="button" class="btn btn-sm btn-secondary" [disabled]="status.nextDisabled || refreshing" (click)="doLastPage()">Last <i class="fa-solid fa-chevron-right ms-2"></i><i class="fa-solid fa-chevron-right"></i></button>
+    </div>
+    @if (!controlsWrapped) {
+        <div class="summary">{{ this.summaryMessage }}</div>
+    }
+</div>

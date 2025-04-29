@@ -100,7 +100,7 @@ a.scroll-to-top {
 	-webkit-transition: all 0.3s;
 	background: @gray-dark;
 	border-radius: 7px 7px 0 0;
-	bottom: 0px;
+	bottom: 0;
 	color: @white;
 	display: block;
 	height: 9px;
@@ -154,29 +154,16 @@ a.scroll-to-top.visible {
 	border-top:1px solid @gray-light;
 }
 
-.table-paging-controls {
-	border-top: 2px solid @gray-dark-1;
-	display: flex;
-	justify-content: center;
-	padding: 8px;
-	.btn {
-		font-size: 12px;
-	}
-}
-
 .session-table-title {
-	padding: 0px 15px;
+	padding: 0 15px;
 	display: flex;
 	.session-table-title-part {
 		display: inline-flex;
 		border-left: 1px solid @gray-dark-1;
-		padding-left: 10px;
-		padding-right: 10px;
-		padding-top: 10px;
-		padding-bottom: 10px;
-		&:first-child {
-			border-left: 0px;
-			padding-left: 0px;
+        padding: 10px;
+        &:first-child {
+			border-left: 0;
+			padding-left: 0;
 		}
 		.session-table-title-label {
 			display: inline-flex;
@@ -204,7 +191,7 @@ table.padded-table tbody tr {
 
 table.table-directive {
 	div.btn-toolbar {
-		margin: 0px;
+		margin: 0;
 	}
 }
 .no-wrap {
@@ -251,18 +238,12 @@ table.table-directive {
 	}
 }
 #system-tests-table, #dashboard-table, #conformanceDashboardPageTable {
-	th.tb-result {
-		.th-min-centered
-	}
 	td.tb-result {
 		.td-min-centered
 	}
 }
 
 #conformance-statements-table {
-	th.tb-status {
-		.th-min-centered
-	}
 	td.tb-status {
 		.td-min-centered
 	}
@@ -284,7 +265,7 @@ table.expandable-table {
 		background-color: @gray-light-1;
 	}
 	.card {
-		margin-bottom: 0px;
+		margin-bottom: 0;
 		.card-header {
 			background-color: @white;
 			&.session-table-title.clickable:hover {
@@ -309,7 +290,7 @@ table tbody tr.expandable-table-row-collapsed {
 	}
 	td {
 		border-top-width: 1px;
-		border-bottom-width: 0px;
+		border-bottom-width: 0;
 		cursor: pointer;
 	}
 	td:last-child {
@@ -320,22 +301,22 @@ table tbody tr.expandable-table-row-collapsed {
 
 table tbody tr.expandable-table-row-expanded {
 	& > td {
-		border-top-width: 0px;
+		border-top-width: 0;
 		border-bottom-width: 1px;
-		padding-top: 0px;
-		padding-bottom: 0px;
+		padding-top: 0;
+		padding-bottom: 0;
 		&.expandable-table-expandable-cell {
-			padding: 0px;
+			padding: 0;
 			> div {
 				.btn-toolbar {
-					margin: 0px;
+					margin: 0;
 					align-items: flex-start;
 				}
 			}
 		}
 	}
 	& > td {
-		border-top: 0px solid @gray-dark-1;
+		border-top: 0 solid @gray-dark-1;
 	}
 }
 
@@ -392,7 +373,7 @@ bs-tooltip-container {
 	.modal-title {
 		font-size: 1.125rem;
 		font-weight: 500;
-		margin: 4px 0px;
+		margin: 4px 0;
 		color: var(--itb-modal-title-color);
 	}
 }
@@ -425,9 +406,9 @@ bs-tooltip-container {
 				display: flex;
 				border: 1px solid transparent;
 				border-radius: @border-radius;
-				box-shadow: 2px 2px 5px 0px rgba(0,0,0,0.50);
-				-webkit-box-shadow: 2px 2px 5px 0px rgba(0,0,0,0.50);
-				-moz-box-shadow: 2px 2px 5px 0px rgba(0,0,0,0.50);
+				box-shadow: 2px 2px 5px 0 rgba(0,0,0,0.50);
+				-webkit-box-shadow: 2px 2px 5px 0 rgba(0,0,0,0.50);
+				-moz-box-shadow: 2px 2px 5px 0 rgba(0,0,0,0.50);
 				div:first-of-type {
 					display: inline-flex;
 					align-items: center;
@@ -511,7 +492,7 @@ bs-tooltip-container {
 ng-multiselect-dropdown {
 	&.left-side {
 		div.dropdown-list {
-			right: 0px;
+			right: 0;
 		}
 	}
 	div.multiselect-dropdown {
@@ -655,7 +636,7 @@ div.non-padded-alert div.alert {
                 padding-left: 5px;
             }
             display: inline-flex;
-            margin: 5px 0px 5px 5px;
+            margin: 5px 0 5px 5px;
             span, a, a:visited {
                 text-decoration: underline;
                 color: var(--itb-footer-text-color);
@@ -692,7 +673,7 @@ div.non-padded-alert div.alert {
 	}
 	&:not(.active) {
 		.nav-link {
-			border-radius: @border-radius @border-radius 0px 0px;
+			border-radius: @border-radius @border-radius 0 0;
 			border-top: 1px solid @gray-dark-1;
 			border-left: 1px solid @gray-dark-1;
 			border-right: 1px solid @gray-dark-1;
@@ -770,7 +751,7 @@ span.mini-tab, div.mini-tab {
 		width: 1170px;
 	}
 	.modal-body {
-		padding: 0px;
+		padding: 0;
 	}
 }
 .col-centered{

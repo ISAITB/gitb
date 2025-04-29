@@ -1,13 +1,13 @@
-import { IdLabel } from '../types/id-label'
-import { LabelConfig } from '../types/label-config.type'
+import {IdLabel} from '../types/id-label';
+import {LabelConfig} from '../types/label-config.type';
 
 export class Constants {
 
 	public static THEME_CSS_LINK_ID = "themeCssLink"
 	public static THEME_FAVICON_LINK_ID = "themeFaviconLink"
 
-    public static TABLE_PAGE_SIZE = 10
-    public static DEFAULT_LOGO = '/assets/images/gitb.png'
+  public static TABLE_PAGE_SIZE = 10
+  public static DEFAULT_LOGO = '/assets/images/gitb.png'
 	public static DEFAULT_COMMUNITY_ID = 0
 	public static TOOLTIP_DELAY = 500
 

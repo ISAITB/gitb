@@ -1,4 +1,4 @@
-import {Component, EventEmitter, OnInit} from '@angular/core';
+import {AfterViewInit, Component, EventEmitter, OnInit, ViewChild} from '@angular/core';
 import {Constants} from '../../common/constants';
 import {TableColumnDefinition} from '../../types/table-column-definition.type';
 import {TestResultForDisplay} from '../../types/test-result-for-display';
@@ -20,12 +20,14 @@ import {TestResultForExport} from '../admin/session-dashboard/test-result-for-ex
 import {saveAs} from 'file-saver';
 import {FieldInfo} from '../../types/field-info';
 import {TestResultData} from '../../types/test-result-data';
+import {SessionTableComponent} from '../../components/session-table/session-table.component';
+import {PagingEvent} from '../../components/paging-controls/paging-event';
 
 @Component({
   template: '',
   standalone: false
 })
-export abstract class BaseSessionDashboardComponent implements OnInit {
+export abstract class BaseSessionDashboardComponent implements OnInit, AfterViewInit {
 
   showActiveSessions = false
   showSessionNavigationControls = false
@@ -63,14 +65,6 @@ export abstract class BaseSessionDashboardComponent implements OnInit {
   activeSessionsCollapsedFinished = false
   completedSessionsCollapsed = false
   completedSessionsCollapsedFinished = false
-  currentPage = 1
-  isNextPageDisabled = false
-  completedTestsTotalCount = 0
-  isPreviousPageDisabled = false
-  currentPageActive = 1
-  isNextPageDisabledActive = false
-  activeTestsTotalCount = 0
-  isPreviousPageDisabledActive = false
   sessionRefreshCompleteEmitter = new EventEmitter<TestResultReport|undefined>()
   sessionIdToShow?: string
   activeSortOrder = "asc"
@@ -78,6 +72,9 @@ export abstract class BaseSessionDashboardComponent implements OnInit {
   completedSortOrder = "desc"
   completedSortColumn = "endTime"
   copyForOtherRoleOption = false
+
+  @ViewChild("completedSessions") completedSessionsTable?: SessionTableComponent
+  @ViewChild("activeSessions") activeSessionsTable?: SessionTableComponent
 
   constructor(
     public dataService: DataService,
@@ -114,8 +111,13 @@ export abstract class BaseSessionDashboardComponent implements OnInit {
     }
     this.showDeleteObsoleteControl = !this.dataService.isVendorUser
     this.setBreadcrumbs()
-    this.filterState.updatePending = true
-    this.applyFilters()
+  }
+
+  ngAfterViewInit(): void {
+    setTimeout(() => {
+      this.filterState.updatePending = true
+      this.applyFilters()
+    })
   }
 
   protected showCopyForOtherRoleOption(): boolean {
@@ -155,10 +157,12 @@ export abstract class BaseSessionDashboardComponent implements OnInit {
   }
 
   setFilterRefreshState() {
-    this.filterState.updateDisabled = this.refreshActivePending || this.refreshCompletedPending
-    if (!this.filterState.updateDisabled) {
-      this.filterState.updatePending = false
-    }
+    setTimeout(() => {
+      this.filterState.updateDisabled = this.refreshActivePending || this.refreshCompletedPending
+      if (!this.filterState.updateDisabled) {
+        this.filterState.updatePending = false
+      }
+    })
   }
 
   getCurrentSearchCriteria() {
@@ -187,8 +191,6 @@ export abstract class BaseSessionDashboardComponent implements OnInit {
     searchCriteria.activeSortOrder = this.activeSortOrder
     searchCriteria.completedSortColumn = this.completedSortColumn
     searchCriteria.completedSortOrder = this.completedSortOrder
-    searchCriteria.currentPage = this.currentPage
-    searchCriteria.currentPageActive = this.currentPageActive
     this.addExtraSearchCriteria(searchCriteria, filterData)
     return searchCriteria
   }
@@ -215,17 +217,16 @@ export abstract class BaseSessionDashboardComponent implements OnInit {
     }
   }
 
-  getActiveTests() {
+  getActiveTests(pagingInfo: PagingEvent) {
     const params = this.getCurrentSearchCriteria()
     this.refreshActivePending = true
     this.activeExpandedCounter.count = 0
     this.setFilterRefreshState()
-    this.loadActiveTests(params.currentPageActive!, Constants.TABLE_PAGE_SIZE, params).subscribe((data) => {
-      this.activeTestsTotalCount = data.count!
+    this.loadActiveTests(pagingInfo.targetPage, pagingInfo.targetPageSize, params).subscribe((data) => {
       this.activeTests = map(data.data, (testResult) => {
         return this.newTestResultForDisplay(testResult, false)
       })
-      this.updatePagination()
+      this.activeSessionsTable!.pagingControls!.updateStatus(pagingInfo.targetPage, data.count)
     }).add(() => {
       this.interactionLoadPending = false
       this.refreshActivePending = false
@@ -238,20 +239,19 @@ export abstract class BaseSessionDashboardComponent implements OnInit {
     return this.reportService.getActiveTestResults(page, pageSize, params, this.pendingAdminInteraction, forExport)
   }
 
-  getCompletedTests() {
+  getCompletedTests(pagingInfo: PagingEvent) {
     this.completedTestsCheckboxEmitter.emit(false)
     this.completedExpandedCounter.count = 0
     this.selectingForDelete = false
     const params = this.getCurrentSearchCriteria()
     this.refreshCompletedPending = true
     this.setFilterRefreshState()
-    this.loadCompletedTests(params.currentPage!, Constants.TABLE_PAGE_SIZE, params)
+    this.loadCompletedTests(pagingInfo.targetPage, pagingInfo.targetPageSize, params)
     .subscribe((data) => {
-      this.completedTestsTotalCount = data.count!
       this.completedTests = map(data.data, (testResult) => {
         return this.newTestResultForDisplay(testResult, true)
       })
-      this.updatePagination()
+      this.completedSessionsTable!.pagingControls!.updateStatus(pagingInfo.targetPage, data.count)
     }).add(() => {
       this.refreshCompletedPending = false
       this.setFilterRefreshState()
@@ -302,13 +302,13 @@ export abstract class BaseSessionDashboardComponent implements OnInit {
   sortActiveSessions(column: TableColumnDefinition) {
     this.activeSortColumn = column.field
     this.activeSortOrder = column.order!
-    this.getActiveTests()
+    this.getActiveTests(this.currentActivePagingInfo())
   }
 
   sortCompletedSessions(column: TableColumnDefinition) {
     this.completedSortColumn = column.field
     this.completedSortOrder = column.order!
-    this.getCompletedTests()
+    this.getCompletedTests(this.currentCompletedPagingInfo())
   }
 
   stopAll() {
@@ -331,62 +331,27 @@ export abstract class BaseSessionDashboardComponent implements OnInit {
     }
   }
 
-  queryDatabase(onlyCompleted?: boolean) {
-    if (this.showActiveSessions && onlyCompleted != false) {
-      this.getActiveTests()
+  queryDatabase(reset?: boolean) {
+    if (this.showActiveSessions) {
+      this.getActiveTests(this.currentActivePagingInfo(reset))
     }
-    this.getCompletedTests()
+    this.getCompletedTests(this.currentCompletedPagingInfo(reset))
   }
 
   filterControlApplied() {
-    // this.sessionIdToShow = undefined
     this.applyFilters()
   }
 
   applyFilters() {
-    this.currentPage = 1
-    this.currentPageActive = 1
-    this.queryDatabase()
+    this.queryDatabase(true)
   }
 
-  goFirstPage() {
-    this.currentPage = 1
-    this.getCompletedTests()
+  doCompletedPageNavigation(event: PagingEvent) {
+    this.getCompletedTests(event)
   }
 
-  goFirstPageActive() {
-    this.currentPageActive = 1
-    this.getActiveTests()
-  }
-
-  goPreviousPage() {
-    this.currentPage -= 1
-    this.getCompletedTests()
-  }
-
-  goPreviousPageActive() {
-    this.currentPageActive -= 1
-    this.getActiveTests()
-  }
-
-  goNextPage() {
-    this.currentPage += 1
-    this.getCompletedTests()
-  }
-
-  goNextPageActive() {
-    this.currentPageActive += 1
-    this.getActiveTests()
-  }
-
-  goLastPage() {
-    this.currentPage = Math.ceil(this.completedTestsTotalCount / Constants.TABLE_PAGE_SIZE)
-    this.getCompletedTests()
-  }
-
-  goLastPageActive() {
-    this.currentPageActive = Math.ceil(this.activeTestsTotalCount / Constants.TABLE_PAGE_SIZE)
-    this.getActiveTests()
+  doActivePageNavigation(event: PagingEvent) {
+    this.getActiveTests(event)
   }
 
   exportVisible(session: TestResultForDisplay) {
@@ -428,7 +393,7 @@ export abstract class BaseSessionDashboardComponent implements OnInit {
   exportCompletedSessionsToCsv() {
     this.exportCompletedPending = true
     const params = this.getCurrentSearchCriteria()
-    this.loadCompletedTests(1, 1000000, params, true).subscribe((data) => {
+    this.loadCompletedTests(1, 100000000, params, true).subscribe((data) => {
       const fields = this.getExportFieldInfoForCompletedTests()
       this.addExtraExportData(data, fields)
       const tests = map(data.data, (testResult) => {
@@ -483,7 +448,7 @@ export abstract class BaseSessionDashboardComponent implements OnInit {
   exportActiveSessionsToCsv() {
     this.exportActivePending = true
     const params = this.getCurrentSearchCriteria()
-    this.loadActiveTests(1, 1000000, params, true).subscribe((data) => {
+    this.loadActiveTests(1, 100000000, params, true).subscribe((data) => {
       const fields = this.getExportFieldInfoForActiveTests()
       this.addExtraExportData(data, fields)
       const tests = map(data.data, (testResult) => {
@@ -532,11 +497,25 @@ export abstract class BaseSessionDashboardComponent implements OnInit {
     }
   }
 
+  private currentCompletedPagingInfo(reset?: boolean): PagingEvent {
+    return {
+      targetPage: (reset == true)?1:this.completedSessionsTable?.pagingControls?.getCurrentStatus().currentPage!,
+      targetPageSize: this.completedSessionsTable?.pagingControls?.getCurrentStatus().pageSize!
+    }
+  }
+
+  private currentActivePagingInfo(reset?: boolean): PagingEvent {
+    return {
+      targetPage: (reset == true)?1:this.activeSessionsTable?.pagingControls?.getCurrentStatus().currentPage!,
+      targetPageSize: this.activeSessionsTable?.pagingControls?.getCurrentStatus().pageSize!
+    }
+  }
+
   deleteObsolete() {
     this.confirmationDialogService.confirmedDangerous('Confirm delete', 'Are you sure you want to delete all obsolete test results?', 'Delete', 'Cancel').subscribe(() => {
       this.deletePending = true
       this.deleteObsoleteOperation().subscribe(() => {
-        this.getCompletedTests()
+        this.getCompletedTests(this.currentCompletedPagingInfo())
         this.popupService.success('Obsolete test results deleted.')
       }).add(() => {
         this.deletePending = false
@@ -598,7 +577,7 @@ export abstract class BaseSessionDashboardComponent implements OnInit {
         this.conformanceService.deleteTestResults(testsToDelete)
           .subscribe(() => {
             this.popupService.success('Test results deleted.')
-            this.getCompletedTests()
+            this.getCompletedTests(this.currentCompletedPagingInfo())
           }).add(() => {
           this.deleteSessionsPending = false
           this.cancelDeleteSessions()
@@ -638,7 +617,7 @@ export abstract class BaseSessionDashboardComponent implements OnInit {
 
   togglePendingAdminInteraction() {
     this.interactionLoadPending = true
-    this.getActiveTests()
+    this.getActiveTests(this.currentActivePagingInfo())
   }
 
   toggleActiveSessionsCollapsedFinished(value: boolean) {
@@ -657,35 +636,12 @@ export abstract class BaseSessionDashboardComponent implements OnInit {
     this.confirmationDialogService.confirmedDangerous('Confirm termination', 'Are you certain you want to terminate this session?', 'Terminate', 'Cancel').subscribe(() => {
       session.deletePending = true
       this.testService.stop(session.session).subscribe(() => {
-        this.queryDatabase()
+        this.applyFilters()
         this.popupService.success('Test session terminated.')
       }).add(() => {
         session.deletePending = false
       })
     })
-  }
-
-  private updatePagination() {
-    if (this.currentPage == 1) {
-      this.isNextPageDisabled = this.completedTestsTotalCount <= Constants.TABLE_PAGE_SIZE
-      this.isPreviousPageDisabled = true
-    } else if (this.currentPage == Math.ceil(this.completedTestsTotalCount / Constants.TABLE_PAGE_SIZE)) {
-      this.isNextPageDisabled = true
-      this.isPreviousPageDisabled = false
-    } else {
-      this.isNextPageDisabled = false
-      this.isPreviousPageDisabled = false
-    }
-    if (this.currentPageActive == 1) {
-      this.isNextPageDisabledActive = this.activeTestsTotalCount <= Constants.TABLE_PAGE_SIZE
-      this.isPreviousPageDisabledActive = true
-    } else if (this.currentPageActive == Math.ceil(this.activeTestsTotalCount / Constants.TABLE_PAGE_SIZE)) {
-      this.isNextPageDisabledActive = true
-      this.isPreviousPageDisabledActive = false
-    } else {
-      this.isNextPageDisabledActive = false
-      this.isPreviousPageDisabledActive = false
-    }
   }
 
   private applyCompletedDataToTestSession(displayedResult: TestResultForDisplay, loadedResult: TestResultReport) {

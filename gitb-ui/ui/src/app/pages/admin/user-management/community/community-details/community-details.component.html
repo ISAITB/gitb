@@ -47,21 +47,17 @@
                         </div>
                     </div>
                     <div class="card">
-                        <div table-directive
+                        <div #organisationTable table-directive
                             [columns]="organizationColumns"
                             [data]="organizations"
                             [noDataMessage]="'No '+dataService.labelOrganisationsLower()+' found'"
                             [loadingStatus]="organisationStatus"
                             [contentRefreshing]="organisationsRefreshing"
                             [allowSelect]="true"
-                            [nextDisabled]="isNextPageOrganisationsDisabled"
-                            [prevDisabled]="isPreviousPageOrganisationsDisabled"
-                            (nextPage)="goNextPageOrganisations()"
-                            (lastPage)="goLastPageOrganisations()"
-                            (firstPage)="goFirstPageOrganisations()"
-                            (prevPage)="goPreviousPageOrganisations()"
+                            (pageNavigation)="doOrganisationPaging($event)"
                             (onSort)="sortOrganisations($event)"
-                            (onSelect)="organisationSelect($event)">
+                            (onSelect)="organisationSelect($event)"
+                            [supportPaging]="true">
                         </div>
                     </div>
                 </div>

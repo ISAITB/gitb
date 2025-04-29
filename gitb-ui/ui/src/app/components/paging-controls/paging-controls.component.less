@@ -1,0 +1,53 @@
+@import "../../../styles/less/_common.less";
+
+.table-paging-controls {
+    border-top: 2px solid @gray-dark-1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.5rem;
+    flex-wrap: wrap;
+    .paging-controls {
+        display: flex;
+        margin: 0 auto;
+        flex-wrap: wrap;
+        button {
+            white-space: nowrap;
+            margin: 0 0.2rem;
+        }
+        .page-link-container {
+            display: flex;
+            margin: 0 0.25rem;
+            &.disabled-paging {
+                pointer-events: none;
+            }
+            .page-link {
+                &:first-child {
+                    margin-left: 0;
+                }
+                &:last-child {
+                    margin-right: 0;
+                }
+                display: flex;
+                align-items: center;
+                margin: 0 0.1rem;
+                padding: 0.25rem 0.75rem;
+                border-radius: @border-radius;
+                font-weight: bold;
+                font-size: 0.765625rem;
+                &.current-page {
+                    background-color: @gray-light;
+                }
+                &.navigable:hover {
+                    background-color: @gray-light;
+                    cursor: pointer;
+                }
+            }
+        }
+    }
+    .summary {
+        font-size: 0.765625rem;
+        opacity: 0.8;
+        margin: 0.25rem;
+    }
+}

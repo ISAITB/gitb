@@ -1,6 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import {Component, OnInit, ViewChild} from '@angular/core';
 import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
 import { BaseTableComponent } from '../base-table/base-table.component';
+import {PagingControlsComponent} from '../paging-controls/paging-controls.component';
 
 @Component({
     selector: '[table-directive]',
@@ -12,6 +13,7 @@ export class TableComponent extends BaseTableComponent implements OnInit {
 
   columnCount = 0
   allChecked = false
+  @ViewChild("pagingControls") pagingControls?: PagingControlsComponent
 
   constructor() { super() }
 
@@ -110,5 +112,5 @@ export class TableComponent extends BaseTableComponent implements OnInit {
       return ''
     }
   }
-  
-} 
+
+}

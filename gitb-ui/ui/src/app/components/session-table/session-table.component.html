@@ -156,8 +156,8 @@
                                                     @if (showToOrganisation(row)) {
                                                         <div class="btn-group" dropdown>
                                                             <button type="button" class="btn btn-secondary" (click)="toOrganisation(row)">View {{dataService.labelOrganisationLower()}}</button>
-                                                            <button id="button-system" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
-                                                            <ul id="dropdown-system" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-system">
+                                                            <button id="button-organisation" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
+                                                            <ul id="dropdown-organisation" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-organisation">
                                                                 <li role="menuitem"><a class="dropdown-item" href (click)="toCommunity(row);$event.preventDefault();">View community</a></li>
                                                             </ul>
                                                         </div>
@@ -183,8 +183,8 @@
                                                     @if (showToActor(row)) {
                                                         <div class="btn-group" dropdown>
                                                             <button type="button" class="btn btn-secondary" (click)="toActor(row)">View {{dataService.labelActorLower()}}</button>
-                                                            <button id="button-spec" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
-                                                            <ul id="dropdown-spec" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-spec">
+                                                            <button id="button-actor" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
+                                                            <ul id="dropdown-actor" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-actor">
                                                                 <li role="menuitem"><a class="dropdown-item" href (click)="toDomain(row);$event.preventDefault();">View {{dataService.labelDomainLower()}}</a></li>
                                                             </ul>
                                                         </div>
@@ -250,14 +250,5 @@
             }
         </tbody>
     </table>
-    @if ((!prevDisabled || !nextDisabled) && data && data.length > 0) {
-        <div class="text-center table-paging-controls">
-            <div class="btn-group" role="group" [class.disable-events]="contentRefreshing">
-                <button type="button" class="btn btn-sm btn-secondary" [disabled]="prevDisabled" (click)="doFirstPage()">First</button>
-                <button type="button" class="btn btn-sm btn-secondary" [disabled]="prevDisabled" (click)="doPrevPage()">Previous</button>
-                <button type="button" class="btn btn-sm btn-secondary" [disabled]="nextDisabled" (click)="doNextPage()">Next</button>
-                <button type="button" class="btn btn-sm btn-secondary" [disabled]="nextDisabled" (click)="doLastPage()">Last</button>
-            </div>
-        </div>
-    }
+    <app-paging-controls #pagingControls (navigation)="doPageNavigation($event)" [refreshing]="contentRefreshing"></app-paging-controls>
 </div>

@@ -251,16 +251,7 @@
                         </tbody>
                     }
                 </table>
-                @if ((!prevDisabled || !nextDisabled) && conformanceStatements && conformanceStatements.length > 0) {
-                    <div class="text-center table-paging-controls">
-                        <div class="btn-group" role="group" [class.disable-events]="filterState.updatePending">
-                            <button type="button" class="btn btn-sm btn-secondary" [disabled]="prevDisabled" (click)="doFirstPage()">First</button>
-                            <button type="button" class="btn btn-sm btn-secondary" [disabled]="prevDisabled" (click)="doPrevPage()">Previous</button>
-                            <button type="button" class="btn btn-sm btn-secondary" [disabled]="nextDisabled" (click)="doNextPage()">Next</button>
-                            <button type="button" class="btn btn-sm btn-secondary" [disabled]="nextDisabled" (click)="doLastPage()">Last</button>
-                        </div>
-                    </div>
-                }
+                <app-paging-controls #pagingControls [refreshing]="filterState.updatePending" (navigation)="doPageNavigation($event)"></app-paging-controls>
             </div>
         }
     </div>

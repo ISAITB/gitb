@@ -22,7 +22,7 @@
         </div>
     </div>
     <div class="card">
-        <div table-directive
+        <div #resourcesTable table-directive
              [columns]="resourceColumns"
              [data]="resources"
              noDataMessage="No resources found"
@@ -39,17 +39,13 @@
              [clearSelection]="clearResourceSelections"
              [deletePendingProperty]="'deletePending'"
              [exportPendingProperty]="'downloadPending'"
-             [nextDisabled]="isNextPageResourcesDisabled"
-             [prevDisabled]="isPreviousPageResourcesDisabled"
              [checkboxEnabled]="selectingForDeleteResources"
              (onSelect)="selectResource($event)"
              (onAction)="copyResourceReference($event)"
              (onExport)="downloadResource($event)"
              (onDelete)="deleteResource($event)"
-             (nextPage)="goNextPageResources()"
-             (lastPage)="goLastPageResources()"
-             (firstPage)="goFirstPageResources()"
-             (prevPage)="goPreviousPageResources()">
+             (pageNavigation)="doPageNavigation($event)"
+             [supportPaging]="true">
         </div>
     </div>
 </div>

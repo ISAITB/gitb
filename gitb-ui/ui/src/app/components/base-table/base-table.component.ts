@@ -1,7 +1,8 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { BaseComponent } from 'src/app/pages/base-component.component';
-import { LoadingStatus } from 'src/app/types/loading-status.type';
-import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
+import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {BaseComponent} from 'src/app/pages/base-component.component';
+import {LoadingStatus} from 'src/app/types/loading-status.type';
+import {TableColumnDefinition} from 'src/app/types/table-column-definition.type';
+import {PagingEvent} from '../paging-controls/paging-event';
 
 @Component({
     template: '',
@@ -29,8 +30,6 @@ export abstract class BaseTableComponent extends BaseComponent {
 	@Input() exportPendingProperty = 'exportPending'
 	@Input() checkboxEnabled = false
 	@Input() tableCaption?: string
-	@Input() nextDisabled = true
-  @Input() prevDisabled = true
   @Input() allowSelect = false
   @Input() allowMultiSelect = false
   @Input() actionTooltip = ''
@@ -40,6 +39,7 @@ export abstract class BaseTableComponent extends BaseComponent {
   @Input() expandableRowProperty?: string
   @Input() clearSelection?: EventEmitter<void>
   @Input() refreshRows?: EventEmitter<void>
+  @Input() supportPaging = false
 
   @Output() onSelect: EventEmitter<any> = new EventEmitter()
   @Output() onDeselect: EventEmitter<any> = new EventEmitter()
@@ -47,10 +47,7 @@ export abstract class BaseTableComponent extends BaseComponent {
   @Output() onExport: EventEmitter<any> = new EventEmitter()
   @Output() onCheck: EventEmitter<any> = new EventEmitter()
   @Output() onDelete: EventEmitter<any> = new EventEmitter()
-  @Output() firstPage: EventEmitter<void> = new EventEmitter()
-  @Output() prevPage: EventEmitter<void> = new EventEmitter()
-  @Output() nextPage: EventEmitter<void> = new EventEmitter()
-  @Output() lastPage: EventEmitter<void> = new EventEmitter()
+  @Output() pageNavigation: EventEmitter<PagingEvent> = new EventEmitter()
   @Output() onSort: EventEmitter<TableColumnDefinition> = new EventEmitter()
 
   tableCaptionVisible = false
@@ -104,28 +101,8 @@ export abstract class BaseTableComponent extends BaseComponent {
     this.onCheck.emit(row)
   }
 
-  doFirstPage() {
-    if (!this.prevDisabled) {
-      this.firstPage.emit()
-    }
-  }
-
-  doPrevPage() {
-    if (!this.prevDisabled) {
-      this.prevPage.emit()
-    }
-  }
-
-  doNextPage() {
-    if (!this.nextDisabled) {
-      this.nextPage.emit()
-    }
-  }
-
-  doLastPage() {
-    if (!this.nextDisabled) {
-      this.lastPage.emit()
-    }
+  doPageNavigation(event: PagingEvent) {
+    this.pageNavigation.emit(event)
   }
 
 }
