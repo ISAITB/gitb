@@ -4,8 +4,8 @@
         <div class="card-title"><app-collapsing-icon [isCollapsed]="!showFiltering || !initialised"></app-collapsing-icon>Filters</div>
         <div class="btn-toolbar">
           <div class="pending-icon"><app-pending-block [pending]="showFiltering && !initialised"></app-pending-block></div>
-          <button type="button" class="btn btn-secondary" (click)="applyFilters(); $event.stopPropagation()" [pending]="filterState.updatePending">Refresh</button>
-          <button type="button" class="btn btn-secondary" (click)="clearFilters(); $event.stopPropagation()" [disabled]="filterState.updatePending">Clear filters</button>
+          <button type="button" class="btn btn-secondary" (click)="applyFilters(); $event.stopPropagation()" [pending]="filterState.updatePending" [disable]="filterState.updatePending || filterState.updateDisabled">Refresh</button>
+          <button type="button" class="btn btn-secondary" (click)="clearFilters(); $event.stopPropagation()" [disabled]="filterState.updatePending || filterState.updateDisabled">Clear filters</button>
         </div>
     </div>
   }

@@ -1698,14 +1698,6 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     canManageCommunity(request, communityId)
   }
 
-  def canCheckPendingTestSessionInteractions(request: RequestWithAttributes[_], communityId: Option[Long]): Future[Boolean] = {
-    if (communityId.isEmpty) {
-      checkTestBedAdmin(request)
-    } else {
-      canManageCommunity(request, communityId.get)
-    }
-  }
-
   def canManageCommunity(request: RequestWithAttributes[_], userInfo: User, communityId: Long): Future[Boolean] = {
     val check = Future.successful(isTestBedAdmin(userInfo) || (isCommunityAdmin(userInfo) && userInfo.organization.isDefined && userInfo.organization.get.community == communityId))
     check.map(setAuthResult(request, _, "User cannot manage the requested community"))

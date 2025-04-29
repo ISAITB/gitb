@@ -25,6 +25,8 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction,
     val organisationId = ParameterExtractor.requiredBodyParameter(request, Parameters.ORGANIZATION_ID).toLong
 
     authorizationManager.canViewTestResultsForOrganisation(request, organisationId).flatMap { _ =>
+      val page = getPageOrDefault(ParameterExtractor.optionalBodyParameter(request, Parameters.PAGE))
+      val limit = getLimitOrDefault(ParameterExtractor.optionalBodyParameter(request, Parameters.LIMIT))
       val systemIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.SYSTEM_IDS)
       val domainIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.DOMAIN_IDS)
       val specIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.SPEC_IDS)
@@ -38,8 +40,8 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction,
       val sortColumn = ParameterExtractor.optionalBodyParameter(request, Parameters.SORT_COLUMN)
       val sortOrder = ParameterExtractor.optionalBodyParameter(request, Parameters.SORT_ORDER)
 
-      testResultManager.getOrganisationActiveTestResults(organisationId, systemIds, domainIds, specIds, specGroupIds, actorIds, testSuiteIds, testCaseIds, startTimeBegin, startTimeEnd, sessionId, sortColumn, sortOrder).map { testResultReports =>
-        val json = JsonUtil.jsTestResultReports(testResultReports, None).toString()
+      testResultManager.getOrganisationActiveTestResults(page, limit, organisationId, systemIds, domainIds, specIds, specGroupIds, actorIds, testSuiteIds, testCaseIds, startTimeBegin, startTimeEnd, sessionId, sortColumn, sortOrder).map { output =>
+        val json = JsonUtil.jsTestResultReports(output._1, Some(output._2)).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
     }
@@ -80,7 +82,9 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction,
     val systemIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.SYSTEM_IDS)
     for {
       _ <- authorizationManager.canViewActiveTestsForCommunity(request, communityIds)
-      testResultReports <- {
+      results <- {
+        val page = getPageOrDefault(ParameterExtractor.optionalBodyParameter(request, Parameters.PAGE))
+        val limit = getLimitOrDefault(ParameterExtractor.optionalBodyParameter(request, Parameters.LIMIT))
         val domainIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.DOMAIN_IDS)
         val specIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.SPEC_IDS)
         val specGroupIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.GROUP_IDS)
@@ -94,7 +98,8 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction,
         val sortOrder = ParameterExtractor.optionalBodyParameter(request, Parameters.SORT_ORDER)
         val orgParameters = JsonUtil.parseJsIdToValuesMap(ParameterExtractor.optionalBodyParameter(request, Parameters.ORGANISATION_PARAMETERS))
         val sysParameters = JsonUtil.parseJsIdToValuesMap(ParameterExtractor.optionalBodyParameter(request, Parameters.SYSTEM_PARAMETERS))
-        testResultManager.getActiveTestResults(communityIds, domainIds, specIds, specGroupIds, actorIds, testSuiteIds, testCaseIds, organizationIds, systemIds, startTimeBegin, startTimeEnd, sessionId, orgParameters, sysParameters, sortColumn, sortOrder)
+        val pendingAdminInteraction = ParameterExtractor.optionalBodyParameter(request, Parameters.PENDING_ADMIN_INTERACTION).exists(_.toBoolean)
+        testResultManager.getActiveTestResults(page, limit, communityIds, domainIds, specIds, specGroupIds, actorIds, testSuiteIds, testCaseIds, organizationIds, systemIds, startTimeBegin, startTimeEnd, sessionId, orgParameters, sysParameters, sortColumn, sortOrder, pendingAdminInteraction)
       }
       parameterInfo <- {
         val forExport = ParameterExtractor.optionalBodyParameter(request, Parameters.EXPORT).getOrElse("false").toBoolean
@@ -105,7 +110,7 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction,
         }
       }
       result <- {
-        val json = JsonUtil.jsTestResultSessionReports(testResultReports, parameterInfo, None).toString()
+        val json = JsonUtil.jsTestResultSessionReports(results._1, parameterInfo, Some(results._2)).toString()
         Future.successful {
           ResponseConstructor.constructJsonResponse(json)
         }

@@ -571,28 +571,6 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
     DB.run((PersistenceSchema.testInteractions += interaction).transactionally).map(_ => ())
   }
 
-  def getPendingTestSessionsForAdminInteraction(communityId: Option[Long]): Future[Seq[String]] = {
-    if (communityId.isEmpty) {
-      DB.run(
-        PersistenceSchema.testInteractions
-          .filter(_.admin === true)
-          .map(_.testSessionId)
-          .distinct
-          .result
-      )
-    } else {
-      DB.run(
-        PersistenceSchema.testInteractions
-          .join(PersistenceSchema.testResults).on(_.testSessionId === _.testSessionId)
-          .filter(_._1.admin === true)
-          .filter(_._2.communityId === communityId)
-          .map(_._1.testSessionId)
-          .distinct
-          .result
-      )
-    }
-  }
-
   def getTestInteractions(sessionId: String, adminInteractions: Option[Boolean]): Future[List[TestInteraction]] = {
     DB.run(
       PersistenceSchema.testInteractions
@@ -711,7 +689,9 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
     }
   }
 
-  def getOrganisationActiveTestResults(organisationId: Long,
+  def getOrganisationActiveTestResults(page: Long,
+                                       limit: Long,
+                                       organisationId: Long,
                                        systemIds: Option[List[Long]],
                                        domainIds: Option[List[Long]],
                                        specIds: Option[List[Long]],
@@ -723,12 +703,14 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
                                        startTimeEnd: Option[String],
                                        sessionId: Option[String],
                                        sortColumn: Option[String],
-                                       sortOrder: Option[String]): Future[List[TestResult]] = {
+                                       sortOrder: Option[String]): Future[(Iterable[TestResult], Int)] = {
     getSpecIdsCriterionToUse(specIds, specGroupIds).flatMap { specIds =>
+      val query = getTestResultsQuery(None, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, Some(List(organisationId)), systemIds, None, startTimeBegin, startTimeEnd, None, None, sessionId, Some(false), sortColumn, sortOrder, pendingAdministratorInteraction = false)
       DB.run(
-        getTestResultsQuery(None, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, Some(List(organisationId)), systemIds, None, startTimeBegin, startTimeEnd, None, None, sessionId, Some(false), sortColumn, sortOrder)
-          .result.
-          map(_.toList)
+        for {
+          results <- query.drop((page - 1) * limit).take(limit).result
+          resultCount <- query.size.result
+        } yield (results, resultCount)
       )
     }
   }
@@ -753,7 +735,7 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
                      sortOrder: Option[String]): Future[(Iterable[TestResult], Int)] = {
 
     getSpecIdsCriterionToUse(specIds, specGroupIds).flatMap { specIds =>
-      val query = getTestResultsQuery(None, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, Some(List(organisationId)), systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder)
+      val query = getTestResultsQuery(None, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, Some(List(organisationId)), systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder, pendingAdministratorInteraction = false)
       DB.run(
         for {
           results <- query.drop((page - 1) * limit).take(limit).result
@@ -763,7 +745,9 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
     }
   }
 
-  def getActiveTestResults(communityIds: Option[List[Long]],
+  def getActiveTestResults(page: Long,
+                           limit: Long,
+                           communityIds: Option[List[Long]],
                            domainIds: Option[List[Long]],
                            specIds: Option[List[Long]],
                            specGroupIds: Option[List[Long]],
@@ -778,17 +762,22 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
                            orgParameters: Option[Map[Long, Set[String]]],
                            sysParameters: Option[Map[Long, Set[String]]],
                            sortColumn: Option[String],
-                           sortOrder: Option[String]): Future[List[TestResult]] = {
+                           sortOrder: Option[String],
+                           pendingAdminInteraction: Boolean): Future[(Iterable[TestResult], Int)] = {
     communityHelper.memberIdsToUse(organisationIds, systemIds, orgParameters, sysParameters).zip(
       getSpecIdsCriterionToUse(specIds, specGroupIds)
     ).flatMap { data =>
       val memberIds = data._1
       val specIds = data._2
+      val query = getTestResultsQuery(communityIds, domainIds, specIds, actorIds, testSuiteIds, testCaseIds,
+        memberIds.organisationIds, memberIds.systemIds, None,
+        startTimeBegin, startTimeEnd, None, None, sessionId, Some(false), sortColumn, sortOrder, pendingAdminInteraction
+      )
       DB.run(
-        getTestResultsQuery(communityIds, domainIds, specIds, actorIds, testSuiteIds, testCaseIds,
-          memberIds.organisationIds, memberIds.systemIds, None,
-          startTimeBegin, startTimeEnd, None, None, sessionId, Some(false), sortColumn, sortOrder
-        ).result.map(_.toList)
+        for {
+          results <- query.drop((page - 1) * limit).take(limit).result
+          resultCount <- query.size.result
+        } yield (results, resultCount)
       )
     }
   }
@@ -821,7 +810,7 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
       val specsIds = data._2
       val query = getTestResultsQuery(communityIds, domainIds, specIds,
         actorIds, testSuiteIds, testCaseIds, memberIds.organisationIds, memberIds.systemIds,
-        results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder
+        results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder, pendingAdministratorInteraction = false
       )
       DB.run(
         for {
@@ -833,7 +822,7 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
   }
 
   def getTestResult(sessionId: String): Future[Option[TestResult]] = {
-    val query = getTestResultsQuery(None, None, None, None, None, None, None, None, None, None, None, None, None, Some(sessionId), None, None, None)
+    val query = getTestResultsQuery(None, None, None, None, None, None, None, None, None, None, None, None, None, Some(sessionId), None, None, None, pendingAdministratorInteraction = false)
     DB.run(query.result.headOption)
   }
 
@@ -865,23 +854,47 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
                                   sessionId: Option[String],
                                   completedStatus: Option[Boolean],
                                   sortColumn: Option[String],
-                                  sortOrder: Option[String]) = {
-    var query = PersistenceSchema.testResults
-      .filterOpt(communityIds)((table, ids) => table.communityId inSet ids)
-      .filterOpt(domainIds)((table, ids) => table.domainId inSet ids)
-      .filterOpt(specIds)((table, ids) => table.specificationId inSet ids)
-      .filterOpt(actorIds)((table, ids) => table.actorId inSet ids)
-      .filterOpt(testCaseIds)((table, ids) => table.testCaseId inSet ids)
-      .filterOpt(organizationIds)((table, ids) => table.organizationId inSet ids)
-      .filterOpt(systemIds)((table, ids) => table.sutId inSet ids)
-      .filterOpt(results)((table, results) => table.result inSet results)
-      .filterOpt(testSuiteIds)((table, ids) => table.testSuiteId inSet ids)
-      .filterOpt(startTimeBegin)((table, timeStr) => table.startTime >= TimeUtil.parseTimestamp(timeStr))
-      .filterOpt(startTimeEnd)((table, timeStr) => table.startTime <= TimeUtil.parseTimestamp(timeStr))
-      .filterOpt(endTimeBegin)((table, timeStr) => table.endTime >= TimeUtil.parseTimestamp(timeStr))
-      .filterOpt(endTimeEnd)((table, timeStr) => table.endTime <= TimeUtil.parseTimestamp(timeStr))
-      .filterOpt(sessionId)((table, id) => table.testSessionId === id)
-      .filterOpt(completedStatus)((table, completed) => if (completed) table.endTime.isDefined else table.endTime.isEmpty)
+                                  sortOrder: Option[String],
+                                  pendingAdministratorInteraction: Boolean) = {
+    var query = if (pendingAdministratorInteraction) {
+      PersistenceSchema.testResults
+        .join(PersistenceSchema.testInteractions).on(_.testSessionId === _.testSessionId)
+        .filter(_._2.admin === true)
+        .filterOpt(communityIds)((table, ids) => table._1.communityId inSet ids)
+        .filterOpt(domainIds)((table, ids) => table._1.domainId inSet ids)
+        .filterOpt(specIds)((table, ids) => table._1.specificationId inSet ids)
+        .filterOpt(actorIds)((table, ids) => table._1.actorId inSet ids)
+        .filterOpt(testCaseIds)((table, ids) => table._1.testCaseId inSet ids)
+        .filterOpt(organizationIds)((table, ids) => table._1.organizationId inSet ids)
+        .filterOpt(systemIds)((table, ids) => table._1.sutId inSet ids)
+        .filterOpt(results)((table, results) => table._1.result inSet results)
+        .filterOpt(testSuiteIds)((table, ids) => table._1.testSuiteId inSet ids)
+        .filterOpt(startTimeBegin)((table, timeStr) => table._1.startTime >= TimeUtil.parseTimestamp(timeStr))
+        .filterOpt(startTimeEnd)((table, timeStr) => table._1.startTime <= TimeUtil.parseTimestamp(timeStr))
+        .filterOpt(endTimeBegin)((table, timeStr) => table._1.endTime >= TimeUtil.parseTimestamp(timeStr))
+        .filterOpt(endTimeEnd)((table, timeStr) => table._1.endTime <= TimeUtil.parseTimestamp(timeStr))
+        .filterOpt(sessionId)((table, id) => table._1.testSessionId === id)
+        .filterOpt(completedStatus)((table, completed) => if (completed) table._1.endTime.isDefined else table._1.endTime.isEmpty)
+        .map(_._1)
+        .distinct
+    } else {
+      PersistenceSchema.testResults
+        .filterOpt(communityIds)((table, ids) => table.communityId inSet ids)
+        .filterOpt(domainIds)((table, ids) => table.domainId inSet ids)
+        .filterOpt(specIds)((table, ids) => table.specificationId inSet ids)
+        .filterOpt(actorIds)((table, ids) => table.actorId inSet ids)
+        .filterOpt(testCaseIds)((table, ids) => table.testCaseId inSet ids)
+        .filterOpt(organizationIds)((table, ids) => table.organizationId inSet ids)
+        .filterOpt(systemIds)((table, ids) => table.sutId inSet ids)
+        .filterOpt(results)((table, results) => table.result inSet results)
+        .filterOpt(testSuiteIds)((table, ids) => table.testSuiteId inSet ids)
+        .filterOpt(startTimeBegin)((table, timeStr) => table.startTime >= TimeUtil.parseTimestamp(timeStr))
+        .filterOpt(startTimeEnd)((table, timeStr) => table.startTime <= TimeUtil.parseTimestamp(timeStr))
+        .filterOpt(endTimeBegin)((table, timeStr) => table.endTime >= TimeUtil.parseTimestamp(timeStr))
+        .filterOpt(endTimeEnd)((table, timeStr) => table.endTime <= TimeUtil.parseTimestamp(timeStr))
+        .filterOpt(sessionId)((table, id) => table.testSessionId === id)
+        .filterOpt(completedStatus)((table, completed) => if (completed) table.endTime.isDefined else table.endTime.isEmpty)
+    }
     // Apply sorting
     if (sortColumn.isDefined && sortOrder.isDefined) {
       if (sortOrder.get == "asc") {

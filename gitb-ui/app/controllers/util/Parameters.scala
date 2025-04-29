@@ -247,4 +247,5 @@ object Parameters {
   val SECONDARY_BUTTON_LABEL_COLOR = "secondaryButtonLabelColor"
   val SECONDARY_BUTTON_HOVER_COLOR = "secondaryButtonHoverColor"
   val SECONDARY_BUTTON_ACTIVE_COLOR = "secondaryButtonActiveColor"
+  val PENDING_ADMIN_INTERACTION = "pending_admin_interaction"
 }

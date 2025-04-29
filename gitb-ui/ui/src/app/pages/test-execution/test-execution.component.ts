@@ -1185,10 +1185,10 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
       const pendingTestIds = lmap(pendingTests, (test) => { return test.id } )
       if (pendingTestIds.length > 0) {
         this.testService.startHeadlessTestSessions(pendingTestIds, this.specificationId!, this.systemId, this.actorId, false).subscribe(() => {})
-        this.popupService.success('Continuing execution in background. Check <b>Test Sessions</b> for progress.')
+        this.popupService.success('Continuing test execution in background.')
       } else {
         if (this.testCaseStatus[this.currentTest!.id] == Constants.TEST_CASE_STATUS.PROCESSING) {
-          this.popupService.success('Continuing execution in background. Check <b>Test Sessions</b> for progress.')
+          this.popupService.success('Continuing test execution in background.')
         }
       }
     } else {

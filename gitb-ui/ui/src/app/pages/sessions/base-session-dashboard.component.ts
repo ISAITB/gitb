@@ -1,5 +1,4 @@
 import {Component, EventEmitter, OnInit} from '@angular/core';
-import {BaseSessionDashboardSupportComponent} from '../organisation/base-session-dashboard-support.component';
 import {Constants} from '../../common/constants';
 import {TableColumnDefinition} from '../../types/table-column-definition.type';
 import {TestResultForDisplay} from '../../types/test-result-for-display';
@@ -15,38 +14,38 @@ import {DiagramLoaderService} from '../../components/diagram/test-session-presen
 import {RoutingService} from '../../services/routing.service';
 import {TestResultSearchCriteria} from '../../types/test-result-search-criteria';
 import {mergeMap, Observable, of, share} from 'rxjs';
-import {filter, map} from 'lodash';
+import {map} from 'lodash';
 import {TestResultReport} from '../../types/test-result-report';
 import {TestResultForExport} from '../admin/session-dashboard/test-result-for-export';
 import {saveAs} from 'file-saver';
 import {FieldInfo} from '../../types/field-info';
 import {TestResultData} from '../../types/test-result-data';
-import {SessionData} from '../../components/diagram/test-session-presentation/session-data';
 
 @Component({
   template: '',
   standalone: false
 })
-export abstract class BaseSessionDashboardComponent extends BaseSessionDashboardSupportComponent implements OnInit {
+export abstract class BaseSessionDashboardComponent implements OnInit {
 
   showActiveSessions = false
   showSessionNavigationControls = false
   showDeleteControls = false
+  showDeleteObsoleteControl = false
+  showTogglePendingAdminInteraction = false
   exportActivePending = false
   exportCompletedPending = false
   interactionLoadPending = false
   pendingAdminInteraction = false
-  sessionsPendingAdminInteraction: Set<string>|undefined
   selectingForDelete = false
   activeExpandedCounter = {count: 0}
   completedExpandedCounter = {count: 0}
   activeStatus = {status: Constants.STATUS.PENDING}
   completedStatus = {status: Constants.STATUS.PENDING}
   communityId?: number
+  organisationId?: number
   activeTestsColumns!: TableColumnDefinition[]
   completedTestsColumns!: TableColumnDefinition[]
   activeTests: TestResultForDisplay[] = []
-  activeTestsToDisplay: TestResultForDisplay[] = []
   completedTests: TestResultForDisplay[] = []
   completedTestsCheckboxEmitter = new EventEmitter<boolean>()
   action = false
@@ -54,7 +53,8 @@ export abstract class BaseSessionDashboardComponent extends BaseSessionDashboard
   refreshCompletedPending = false
   filterState: FilterState = {
     filters: [ Constants.FILTER_TYPE.SPECIFICATION, Constants.FILTER_TYPE.SPECIFICATION_GROUP, Constants.FILTER_TYPE.ACTOR, Constants.FILTER_TYPE.TEST_SUITE, Constants.FILTER_TYPE.TEST_CASE, Constants.FILTER_TYPE.ORGANISATION, Constants.FILTER_TYPE.SYSTEM, Constants.FILTER_TYPE.RESULT, Constants.FILTER_TYPE.START_TIME, Constants.FILTER_TYPE.END_TIME, Constants.FILTER_TYPE.SESSION, Constants.FILTER_TYPE.ORGANISATION_PROPERTY, Constants.FILTER_TYPE.SYSTEM_PROPERTY ],
-    updatePending: false
+    updatePending: false,
+    updateDisabled: false
   }
   deletePending = false
   deleteSessionsPending = false
@@ -63,23 +63,40 @@ export abstract class BaseSessionDashboardComponent extends BaseSessionDashboard
   activeSessionsCollapsedFinished = false
   completedSessionsCollapsed = false
   completedSessionsCollapsedFinished = false
+  currentPage = 1
+  isNextPageDisabled = false
+  completedTestsTotalCount = 0
+  isPreviousPageDisabled = false
+  currentPageActive = 1
+  isNextPageDisabledActive = false
+  activeTestsTotalCount = 0
+  isPreviousPageDisabledActive = false
+  sessionRefreshCompleteEmitter = new EventEmitter<TestResultReport|undefined>()
+  sessionIdToShow?: string
+  activeSortOrder = "asc"
+  activeSortColumn = "startTime"
+  completedSortOrder = "desc"
+  completedSortColumn = "endTime"
+  copyForOtherRoleOption = false
 
   constructor(
     public dataService: DataService,
-    private conformanceService: ConformanceService,
-    private reportService: ReportService,
-    confirmationDialogService: ConfirmationDialogService,
-    testService: TestService,
-    popupService: PopupService,
-    private route: ActivatedRoute,
-    diagramLoaderService: DiagramLoaderService,
+    protected conformanceService: ConformanceService,
+    protected reportService: ReportService,
+    private confirmationDialogService: ConfirmationDialogService,
+    protected testService: TestService,
+    private popupService: PopupService,
+    protected route: ActivatedRoute,
+    private diagramLoaderService: DiagramLoaderService,
     protected routingService: RoutingService
-  ) { super(testService, confirmationDialogService, popupService, diagramLoaderService) }
+  ) { }
 
   ngOnInit(): void {
     this.showActiveSessions = this.showActiveTestSessions()
     this.showSessionNavigationControls = this.showTestSessionNavigationControls()
     this.showDeleteControls = this.showTestSessionDeleteControls()
+    this.showTogglePendingAdminInteraction = this.showTogglePendingAdminInteractionControl()
+    this.copyForOtherRoleOption = this.showCopyForOtherRoleOption()
     const sessionIdValue = this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.TEST_SESSION_ID)
     if (sessionIdValue != undefined) {
       this.sessionIdToShow = sessionIdValue
@@ -87,7 +104,30 @@ export abstract class BaseSessionDashboardComponent extends BaseSessionDashboard
     if (!this.dataService.isSystemAdmin) {
       this.communityId = this.dataService.community!.id
     }
-    this.activeTestsColumns = [
+    this.activeTestsColumns = this.getActiveTestsColumns()
+    this.completedTestsColumns = this.getCompletedTestsColumns()
+    if (this.dataService.isSystemAdmin || (this.dataService.isCommunityAdmin && this.dataService.community!.domain == undefined)) {
+      this.filterState.filters.push(Constants.FILTER_TYPE.DOMAIN)
+    }
+    if (this.dataService.isSystemAdmin) {
+      this.filterState.filters.push(Constants.FILTER_TYPE.COMMUNITY)
+    }
+    this.showDeleteObsoleteControl = !this.dataService.isVendorUser
+    this.setBreadcrumbs()
+    this.filterState.updatePending = true
+    this.applyFilters()
+  }
+
+  protected showCopyForOtherRoleOption(): boolean {
+    return true
+  }
+
+  protected showTogglePendingAdminInteractionControl(): boolean {
+    return true
+  }
+
+  protected getActiveTestsColumns(): TableColumnDefinition[] {
+    return [
       { field: 'specification', title: this.dataService.labelSpecification(), sortable: true },
       { field: 'actor', title: this.dataService.labelActor(), sortable: true },
       { field: 'testCase', title: 'Test case', sortable: true },
@@ -95,7 +135,10 @@ export abstract class BaseSessionDashboardComponent extends BaseSessionDashboard
       { field: 'organization', title: this.dataService.labelOrganisation(), sortable: true },
       { field: 'system', title: this.dataService.labelSystem(), sortable: true }
     ]
-    this.completedTestsColumns = [
+  }
+
+  protected getCompletedTestsColumns(): TableColumnDefinition[] {
+    return [
       { field: 'specification', title: this.dataService.labelSpecification(), sortable: true },
       { field: 'actor', title: this.dataService.labelActor(), sortable: true },
       { field: 'testCase', title: 'Test case', sortable: true },
@@ -105,14 +148,6 @@ export abstract class BaseSessionDashboardComponent extends BaseSessionDashboard
       { field: 'system', title: this.dataService.labelSystem(), sortable: true },
       { field: 'result', title: 'Result', sortable: true, iconFn: this.dataService.iconForTestResult, iconTooltipFn: this.dataService.tooltipForTestResult }
     ]
-    if (this.dataService.isSystemAdmin || (this.dataService.isCommunityAdmin && this.dataService.community!.domain == undefined)) {
-      this.filterState.filters.push(Constants.FILTER_TYPE.DOMAIN)
-    }
-    if (this.dataService.isSystemAdmin) {
-      this.filterState.filters.push(Constants.FILTER_TYPE.COMMUNITY)
-    }
-    this.setBreadcrumbs()
-    this.applyFilters()
   }
 
   protected setBreadcrumbs() {
@@ -120,30 +155,64 @@ export abstract class BaseSessionDashboardComponent extends BaseSessionDashboard
   }
 
   setFilterRefreshState() {
-    this.filterState.updatePending = this.refreshActivePending || this.refreshCompletedPending
+    this.filterState.updateDisabled = this.refreshActivePending || this.refreshCompletedPending
+    if (!this.filterState.updateDisabled) {
+      this.filterState.updatePending = false
+    }
   }
 
   getCurrentSearchCriteria() {
     let searchCriteria: TestResultSearchCriteria = {}
+    let filterData:{[key: string]: any}|undefined = undefined
+    if (this.filterState?.filterData) {
+      filterData = this.filterState.filterData()
+    }
+    if (filterData) {
+      searchCriteria.systemIds = filterData[Constants.FILTER_TYPE.SYSTEM]
+      searchCriteria.specIds = filterData[Constants.FILTER_TYPE.SPECIFICATION]
+      searchCriteria.specGroupIds = filterData[Constants.FILTER_TYPE.SPECIFICATION_GROUP]
+      searchCriteria.actorIds = filterData[Constants.FILTER_TYPE.ACTOR]
+      searchCriteria.testSuiteIds = filterData[Constants.FILTER_TYPE.TEST_SUITE]
+      searchCriteria.testCaseIds = filterData[Constants.FILTER_TYPE.TEST_CASE]
+      searchCriteria.results = filterData[Constants.FILTER_TYPE.RESULT]
+      searchCriteria.startTimeBeginStr = filterData.startTimeBeginStr
+      searchCriteria.startTimeEndStr = filterData.startTimeEndStr
+      searchCriteria.endTimeBeginStr = filterData.endTimeBeginStr
+      searchCriteria.endTimeEndStr = filterData.endTimeEndStr
+      searchCriteria.sessionId = filterData.sessionId
+    } else if (this.sessionIdToShow != undefined) {
+      searchCriteria.sessionId = this.sessionIdToShow
+    }
+    searchCriteria.activeSortColumn = this.activeSortColumn
+    searchCriteria.activeSortOrder = this.activeSortOrder
+    searchCriteria.completedSortColumn = this.completedSortColumn
+    searchCriteria.completedSortOrder = this.completedSortOrder
+    searchCriteria.currentPage = this.currentPage
+    searchCriteria.currentPageActive = this.currentPageActive
+    this.addExtraSearchCriteria(searchCriteria, filterData)
+    return searchCriteria
+  }
+
+  protected addExtraSearchCriteria(searchCriteria: TestResultSearchCriteria, filterData:{[key: string]: any}|undefined): void {
     if (!this.dataService.isSystemAdmin) {
       searchCriteria.communityIds = [this.dataService.community!.id]
       if (this.dataService.community?.domain != undefined) {
         searchCriteria.domainIds = [this.dataService.community.domain.id]
       }
     }
-    let filterData:{[key: string]: any}|undefined = undefined
-    if (this.filterState?.filterData) {
-      filterData = this.filterState.filterData()
-    }
     if (filterData) {
-      this.dataService.addAdminCriteriaToTestResultSearchCriteria(searchCriteria, filterData)
+      if (this.dataService.isSystemAdmin) {
+        searchCriteria.communityIds = filterData[Constants.FILTER_TYPE.COMMUNITY]
+        searchCriteria.domainIds = filterData[Constants.FILTER_TYPE.DOMAIN]
+      } else {
+        if (this.dataService.community!.domain == undefined) {
+          searchCriteria.domainIds = filterData[Constants.FILTER_TYPE.DOMAIN]
+        }
+      }
       searchCriteria.organisationIds = filterData[Constants.FILTER_TYPE.ORGANISATION]
-      searchCriteria.systemIds = filterData[Constants.FILTER_TYPE.SYSTEM]
       searchCriteria.organisationProperties = filterData.organisationProperties
       searchCriteria.systemProperties = filterData.systemProperties
     }
-    this.addSessionDashboardCriteriaToTestResultSearchCriteria(searchCriteria, filterData)
-    return searchCriteria
   }
 
   getActiveTests() {
@@ -151,25 +220,22 @@ export abstract class BaseSessionDashboardComponent extends BaseSessionDashboard
     this.refreshActivePending = true
     this.activeExpandedCounter.count = 0
     this.setFilterRefreshState()
-    this.reportService.getActiveTestResults(params)
-      .pipe(
-        mergeMap((data) => {
-          this.activeTests = map(data.data, (testResult) => {
-            return this.newTestResultForDisplay(testResult, false)
-          })
-          this.sessionsPendingAdminInteraction = undefined
-          return this.filterActiveTests(this.activeTests, false)
-        })
-      )
-      .subscribe((tests) => {
-        this.activeTestsToDisplay = tests
+    this.loadActiveTests(params.currentPageActive!, Constants.TABLE_PAGE_SIZE, params).subscribe((data) => {
+      this.activeTestsTotalCount = data.count!
+      this.activeTests = map(data.data, (testResult) => {
+        return this.newTestResultForDisplay(testResult, false)
       })
-      .add(() => {
-        this.interactionLoadPending = false
-        this.refreshActivePending = false
-        this.setFilterRefreshState()
-        this.activeStatus.status = Constants.STATUS.FINISHED
-      })
+      this.updatePagination()
+    }).add(() => {
+      this.interactionLoadPending = false
+      this.refreshActivePending = false
+      this.setFilterRefreshState()
+      this.activeStatus.status = Constants.STATUS.FINISHED
+    })
+  }
+
+  protected loadActiveTests(page: number, pageSize: number, params: TestResultSearchCriteria, forExport?: boolean): Observable<TestResultData> {
+    return this.reportService.getActiveTestResults(page, pageSize, params, this.pendingAdminInteraction, forExport)
   }
 
   getCompletedTests() {
@@ -179,18 +245,22 @@ export abstract class BaseSessionDashboardComponent extends BaseSessionDashboard
     const params = this.getCurrentSearchCriteria()
     this.refreshCompletedPending = true
     this.setFilterRefreshState()
-    this.reportService.getCompletedTestResults(params.currentPage!, Constants.TABLE_PAGE_SIZE, params)
-      .subscribe((data) => {
-        this.completedTestsTotalCount = data.count!
-        this.completedTests = map(data.data, (testResult) => {
-          return this.newTestResultForDisplay(testResult, true)
-        })
-        this.updatePagination()
-      }).add(() => {
+    this.loadCompletedTests(params.currentPage!, Constants.TABLE_PAGE_SIZE, params)
+    .subscribe((data) => {
+      this.completedTestsTotalCount = data.count!
+      this.completedTests = map(data.data, (testResult) => {
+        return this.newTestResultForDisplay(testResult, true)
+      })
+      this.updatePagination()
+    }).add(() => {
       this.refreshCompletedPending = false
       this.setFilterRefreshState()
       this.completedStatus.status = Constants.STATUS.FINISHED
     })
+  }
+
+  protected loadCompletedTests(page: number, pageSize: number, params: TestResultSearchCriteria, forExport?: boolean): Observable<TestResultData> {
+    return this.reportService.getCompletedTestResults(page, pageSize, params, forExport)
   }
 
   private newTestResult(testResult: TestResultReport, completed: boolean): TestResultForDisplay {
@@ -217,25 +287,6 @@ export abstract class BaseSessionDashboardComponent extends BaseSessionDashboard
     return result as TestResultForDisplay
   }
 
-  private newTestResultForExport(testResult: TestResultReport, completed: boolean, orgParameters?: string[], sysParameters?: string[]) {
-    const result: TestResultForExport = this.newTestResult(testResult, completed)
-    if (orgParameters !== undefined) {
-      for (let param of orgParameters) {
-        if (testResult.organization && testResult.organization.parameters) {
-          result['organization_'+param] = testResult.organization.parameters[param]
-        }
-      }
-    }
-    if (sysParameters !== undefined) {
-      for (let param of sysParameters) {
-        if (testResult.system && testResult.system.parameters) {
-          result['system_'+param] = testResult.system.parameters[param]
-        }
-      }
-    }
-    return result
-  }
-
   private newTestResultForDisplay(testResult: TestResultReport, completed: boolean) {
     const result: TestResultForDisplay = this.newTestResult(testResult, completed)
     result.testSuiteId = testResult.testSuite?.id
@@ -243,7 +294,7 @@ export abstract class BaseSessionDashboardComponent extends BaseSessionDashboard
     if (this.sessionIdToShow != undefined && this.sessionIdToShow == testResult.result.sessionId) {
       // We have been asked to open a session. Set it as expand and keep it once.
       result.expanded = true
-      delete this.sessionIdToShow
+      this.sessionIdToShow = undefined
     }
     return result
   }
@@ -261,22 +312,23 @@ export abstract class BaseSessionDashboardComponent extends BaseSessionDashboard
   }
 
   stopAll() {
-    this.confirmationDialogService.confirmedDangerous('Confirm termination', 'Are you certain you want to terminate all active sessions?', 'Terminate', 'Cancel')
-      .subscribe(() => {
-        let result: Observable<void>
-        if (this.dataService.isSystemAdmin) {
-          result = this.testService.stopAll()
-        } else {
-          result = this.testService.stopAllCommunitySessions(this.communityId!)
-        }
-        this.stopAllPending = true
-        result.subscribe(() => {
-          this.queryDatabase()
-          this.popupService.success('Test sessions terminated.')
-        }).add(() => {
-          this.stopAllPending = false
-        })
+    this.confirmationDialogService.confirmedDangerous('Confirm termination', 'Are you certain you want to terminate all active sessions?', 'Terminate', 'Cancel').subscribe(() => {
+      this.stopAllPending = true
+      this.stopAllOperation().subscribe(() => {
+        this.applyFilters()
+        this.popupService.success('Test sessions terminated.')
+      }).add(() => {
+        this.stopAllPending = false
       })
+    })
+  }
+
+  protected stopAllOperation(): Observable<void> {
+    if (this.dataService.isSystemAdmin) {
+      return this.testService.stopAll()
+    } else {
+      return this.testService.stopAllCommunitySessions(this.communityId!)
+    }
   }
 
   queryDatabase(onlyCompleted?: boolean) {
@@ -287,33 +339,54 @@ export abstract class BaseSessionDashboardComponent extends BaseSessionDashboard
   }
 
   filterControlApplied() {
-    this.sessionIdToShow = undefined
+    // this.sessionIdToShow = undefined
     this.applyFilters()
   }
 
   applyFilters() {
     this.currentPage = 1
+    this.currentPageActive = 1
     this.queryDatabase()
   }
 
   goFirstPage() {
     this.currentPage = 1
-    this.queryDatabase(true)
+    this.getCompletedTests()
+  }
+
+  goFirstPageActive() {
+    this.currentPageActive = 1
+    this.getActiveTests()
   }
 
   goPreviousPage() {
     this.currentPage -= 1
-    this.queryDatabase(true)
+    this.getCompletedTests()
+  }
+
+  goPreviousPageActive() {
+    this.currentPageActive -= 1
+    this.getActiveTests()
   }
 
   goNextPage() {
     this.currentPage += 1
-    this.queryDatabase(true)
+    this.getCompletedTests()
+  }
+
+  goNextPageActive() {
+    this.currentPageActive += 1
+    this.getActiveTests()
   }
 
   goLastPage() {
     this.currentPage = Math.ceil(this.completedTestsTotalCount / Constants.TABLE_PAGE_SIZE)
-    this.queryDatabase(true)
+    this.getCompletedTests()
+  }
+
+  goLastPageActive() {
+    this.currentPageActive = Math.ceil(this.activeTestsTotalCount / Constants.TABLE_PAGE_SIZE)
+    this.getActiveTests()
   }
 
   exportVisible(session: TestResultForDisplay) {
@@ -355,66 +428,87 @@ export abstract class BaseSessionDashboardComponent extends BaseSessionDashboard
   exportCompletedSessionsToCsv() {
     this.exportCompletedPending = true
     const params = this.getCurrentSearchCriteria()
-    this.reportService.getCompletedTestResults(1, 1000000, params, true)
-      .subscribe((data) => {
-        const fields: FieldInfo[] = [
-          { header: 'Session', field: 'session' },
-          { header: this.dataService.labelDomain(), field: 'domain' },
-          { header: this.dataService.labelSpecification(), field: 'specification' },
-          { header: this.dataService.labelActor(), field: 'actor' },
-          { header: 'Test suite', field: 'testSuite' },
-          { header: 'Test case', field: 'testCase' },
-          { header: this.dataService.labelOrganisation(), field: 'organization' },
-          { header: this.dataService.labelSystem(), field: 'system' },
-          { header: 'Start time', field: 'startTime' },
-          { header: 'End time', field: 'endTime' },
-          { header: 'Result', field: 'result' },
-          { header: 'Obsolete', field: 'obsolete' }
-        ]
-        this.addCustomPropertiesToExportFields(data, fields)
-        const tests = map(data.data, (testResult) => {
-          return this.newTestResultForExport(testResult, true, data.orgParameters, data.sysParameters)
-        })
-        this.dataService.exportAllAsCsv(fields, tests)
-      }).add(() => {
+    this.loadCompletedTests(1, 1000000, params, true).subscribe((data) => {
+      const fields = this.getExportFieldInfoForCompletedTests()
+      this.addExtraExportData(data, fields)
+      const tests = map(data.data, (testResult) => {
+        const resultForExport = this.newTestResult(testResult, true)
+        this.mapExtraDataToResult(resultForExport, testResult, data)
+        return resultForExport
+      })
+      this.dataService.exportAllAsCsv(fields, tests)
+    }).add(() => {
       this.exportCompletedPending = false
     })
+  }
+
+  protected addExtraExportData(data: TestResultData, fields: FieldInfo[]) {
+    this.addCustomPropertiesToExportFields(data, fields)
+  }
+
+  protected mapExtraDataToResult(result: TestResultForExport, originalResult: TestResultReport, data: TestResultData) {
+    if (data.orgParameters !== undefined) {
+      for (let param of data.orgParameters) {
+        if (originalResult.organization && originalResult.organization.parameters) {
+          result['organization_'+param] = originalResult.organization.parameters[param]
+        }
+      }
+    }
+    if (data.sysParameters !== undefined) {
+      for (let param of data.sysParameters) {
+        if (originalResult.system && originalResult.system.parameters) {
+          result['system_'+param] = originalResult.system.parameters[param]
+        }
+      }
+    }
+  }
+
+  protected getExportFieldInfoForCompletedTests(): FieldInfo[] {
+    return [
+      { header: 'Session', field: 'session' },
+      { header: this.dataService.labelDomain(), field: 'domain' },
+      { header: this.dataService.labelSpecification(), field: 'specification' },
+      { header: this.dataService.labelActor(), field: 'actor' },
+      { header: 'Test suite', field: 'testSuite' },
+      { header: 'Test case', field: 'testCase' },
+      { header: this.dataService.labelOrganisation(), field: 'organization' },
+      { header: this.dataService.labelSystem(), field: 'system' },
+      { header: 'Start time', field: 'startTime' },
+      { header: 'End time', field: 'endTime' },
+      { header: 'Result', field: 'result' },
+      { header: 'Obsolete', field: 'obsolete' }
+    ]
   }
 
   exportActiveSessionsToCsv() {
     this.exportActivePending = true
     const params = this.getCurrentSearchCriteria()
-    this.reportService.getActiveTestResults(params, true)
-      .pipe(
-        mergeMap((data) => {
-          const fields: FieldInfo[] = [
-            { header: 'Session', field: 'session' },
-            { header: this.dataService.labelDomain(), field: 'domain' },
-            { header: this.dataService.labelSpecification(), field: 'specification' },
-            { header: this.dataService.labelActor(), field: 'actor' },
-            { header: 'Test suite', field: 'testSuite' },
-            { header: 'Test case', field: 'testCase' },
-            { header: this.dataService.labelOrganisation(), field: 'organization' },
-            { header: this.dataService.labelSystem(), field: 'system' },
-            { header: 'Start time', field: 'startTime' }
-          ]
-          this.addCustomPropertiesToExportFields(data, fields)
-          const tests = map(data.data, (testResult) => {
-            return this.newTestResultForExport(testResult, false, data.orgParameters, data.sysParameters)
-          })
-          return this.filterActiveTests(tests, false).pipe(
-            mergeMap((testsToExport) => {
-              return of({fields: fields, tests: testsToExport})
-            })
-          )
-        })
-      )
-      .subscribe((exportData) => {
-        this.dataService.exportAllAsCsv(exportData.fields, exportData.tests)
+    this.loadActiveTests(1, 1000000, params, true).subscribe((data) => {
+      const fields = this.getExportFieldInfoForActiveTests()
+      this.addExtraExportData(data, fields)
+      const tests = map(data.data, (testResult) => {
+        const resultForExport = this.newTestResult(testResult, true)
+        this.mapExtraDataToResult(resultForExport, testResult, data)
+        return resultForExport
       })
-      .add(() => {
-        this.exportActivePending = false
-      })
+      this.dataService.exportAllAsCsv(fields, tests)
+    }).add(() => {
+      this.exportActivePending = false
+    })
+  }
+
+  protected getExportFieldInfoForActiveTests(): FieldInfo[] {
+    return [
+      { header: 'Session', field: 'session' },
+      { header: this.dataService.labelDomain(), field: 'domain' },
+      { header: this.dataService.labelSpecification(), field: 'specification' },
+      { header: this.dataService.labelActor(), field: 'actor' },
+      { header: 'Test suite', field: 'testSuite' },
+      { header: 'Test case', field: 'testCase' },
+      { header: this.dataService.labelOrganisation(), field: 'organization' },
+      { header: this.dataService.labelSystem(), field: 'system' },
+      { header: 'Start time', field: 'startTime' }
+    ]
   }
 
   private addCustomPropertiesToExportFields(data: TestResultData, fields: FieldInfo[]) {
@@ -439,22 +533,23 @@ export abstract class BaseSessionDashboardComponent extends BaseSessionDashboard
   }
 
   deleteObsolete() {
-    this.confirmationDialogService.confirmedDangerous('Confirm delete', 'Are you sure you want to delete all obsolete test results?', 'Delete', 'Cancel')
-      .subscribe(() => {
-        this.deletePending = true
-        let result: Observable<any>
-        if (this.dataService.isCommunityAdmin && this.dataService.community?.id !== undefined) {
-          result = this.conformanceService.deleteObsoleteTestResultsForCommunity(this.dataService.community.id)
-        } else {
-          result = this.conformanceService.deleteObsoleteTestResults()
-        }
-        result.subscribe(() => {
-          this.getCompletedTests()
-          this.popupService.success('Obsolete test results deleted.')
-        }).add(() => {
-          this.deletePending = false
-        })
+    this.confirmationDialogService.confirmedDangerous('Confirm delete', 'Are you sure you want to delete all obsolete test results?', 'Delete', 'Cancel').subscribe(() => {
+      this.deletePending = true
+      this.deleteObsoleteOperation().subscribe(() => {
+        this.getCompletedTests()
+        this.popupService.success('Obsolete test results deleted.')
+      }).add(() => {
+        this.deletePending = false
       })
+    })
+  }
+
+  protected deleteObsoleteOperation(): Observable<void> {
+    if (this.dataService.isCommunityAdmin && this.dataService.community?.id !== undefined) {
+      return this.conformanceService.deleteObsoleteTestResultsForCommunity(this.dataService.community.id)
+    } else {
+      return this.conformanceService.deleteObsoleteTestResults()
+    }
   }
 
   showCollapseAll() {
@@ -541,52 +636,9 @@ export abstract class BaseSessionDashboardComponent extends BaseSessionDashboard
     })
   }
 
-  private filterActiveTests<Type extends SessionData>(tests: Type[], showToggleAsBusy: boolean): Observable<Type[]> {
-    if (this.pendingAdminInteraction) {
-      return this.getPendingSessionsForAdminInput(showToggleAsBusy)
-        .pipe(
-          mergeMap((sessionIds) => {
-            if (sessionIds.size == 0) {
-              return of([])
-            } else {
-              return of(filter(tests, (test) => this.sessionsPendingAdminInteraction!.has(test.session)))
-            }
-          })
-        )
-    } else {
-      return of(tests)
-    }
-  }
-
-  private getPendingSessionsForAdminInput(showToggleAsBusy: boolean): Observable<Set<string>> {
-    if (this.sessionsPendingAdminInteraction) {
-      return of(this.sessionsPendingAdminInteraction)
-    } else {
-      if (showToggleAsBusy) {
-        this.interactionLoadPending = true
-      }
-      return this.reportService.getPendingTestSessionsForAdminInteraction(this.communityId)
-        .pipe(
-          mergeMap((data) => {
-            const sessionIds = new Set<string>()
-            for (let sessionId of data) {
-              sessionIds.add(sessionId)
-            }
-            this.sessionsPendingAdminInteraction = sessionIds
-            return of(sessionIds)
-          })
-        )
-    }
-  }
-
   togglePendingAdminInteraction() {
-    this.filterActiveTests(this.activeTests, true)
-      .subscribe((filteredTests) => {
-        this.activeTestsToDisplay = filteredTests
-      })
-      .add(() => {
-        this.interactionLoadPending = false
-      })
+    this.interactionLoadPending = true
+    this.getActiveTests()
   }
 
   toggleActiveSessionsCollapsedFinished(value: boolean) {
@@ -599,6 +651,66 @@ export abstract class BaseSessionDashboardComponent extends BaseSessionDashboard
     setTimeout(() => {
       this.completedSessionsCollapsedFinished = value
     }, 1)
+  }
+
+  stopSession(session: TestResultForDisplay) {
+    this.confirmationDialogService.confirmedDangerous('Confirm termination', 'Are you certain you want to terminate this session?', 'Terminate', 'Cancel').subscribe(() => {
+      session.deletePending = true
+      this.testService.stop(session.session).subscribe(() => {
+        this.queryDatabase()
+        this.popupService.success('Test session terminated.')
+      }).add(() => {
+        session.deletePending = false
+      })
+    })
+  }
+
+  private updatePagination() {
+    if (this.currentPage == 1) {
+      this.isNextPageDisabled = this.completedTestsTotalCount <= Constants.TABLE_PAGE_SIZE
+      this.isPreviousPageDisabled = true
+    } else if (this.currentPage == Math.ceil(this.completedTestsTotalCount / Constants.TABLE_PAGE_SIZE)) {
+      this.isNextPageDisabled = true
+      this.isPreviousPageDisabled = false
+    } else {
+      this.isNextPageDisabled = false
+      this.isPreviousPageDisabled = false
+    }
+    if (this.currentPageActive == 1) {
+      this.isNextPageDisabledActive = this.activeTestsTotalCount <= Constants.TABLE_PAGE_SIZE
+      this.isPreviousPageDisabledActive = true
+    } else if (this.currentPageActive == Math.ceil(this.activeTestsTotalCount / Constants.TABLE_PAGE_SIZE)) {
+      this.isNextPageDisabledActive = true
+      this.isPreviousPageDisabledActive = false
+    } else {
+      this.isNextPageDisabledActive = false
+      this.isPreviousPageDisabledActive = false
+    }
+  }
+
+  private applyCompletedDataToTestSession(displayedResult: TestResultForDisplay, loadedResult: TestResultReport) {
+    displayedResult.endTime = loadedResult.result.endTime
+    displayedResult.result = loadedResult.result.result
+    displayedResult.obsolete = loadedResult.result.obsolete
+    if (displayedResult.diagramState && loadedResult.result.outputMessage) {
+      displayedResult.diagramState.outputMessage = loadedResult.result.outputMessage
+      displayedResult.diagramState.outputMessageType = this.diagramLoaderService.determineOutputMessageType(loadedResult.result.result)
+    }
+  }
+
+  private refreshSessionDiagram(session: TestResultForDisplay, result: TestResultReport) {
+    this.diagramLoaderService.loadTestStepResults(session.session)
+      .subscribe((data) => {
+        const currentState = session.diagramState!
+        if (result.result.endTime) {
+          // Session completed
+          this.popupService.info("The test session has completed.")
+          this.applyCompletedDataToTestSession(session, result)
+        }
+        this.diagramLoaderService.updateStatusOfSteps(session, currentState.stepsOfTests[session.session], data)
+      }).add(() => {
+      this.sessionRefreshCompleteEmitter.emit(result)
+    })
   }
 
   protected showActiveTestSessions() {

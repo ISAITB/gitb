@@ -356,7 +356,6 @@ GET     /api/repository/reports/testdataurl/:session_id/:data_id @controllers.Re
 GET     /api/repository/reports/logs/:session_id                 @controllers.RepositoryService.getTestSessionLog(session_id: String)
 GET     /api/repository/tests/:session_id/interactions           @controllers.RepositoryService.getPendingTestSessionInteractions(session_id: String)
 GET     /api/repository/tests/:session_id/admininteractions      @controllers.RepositoryService.getPendingTestSessionInteractionsAdmin(session_id: String)
-GET     /api/repository/admininteractions                        @controllers.RepositoryService.getPendingTestSessionsForAdminInteraction()
 GET     /api/repository/export/testcase                          @controllers.RepositoryService.exportTestCaseReport()
 GET     /api/repository/export/teststep/:session_id/*path        @controllers.RepositoryService.exportTestStepReport(session_id: String, path)
 POST    /api/repository/export/conformance                       @controllers.RepositoryService.exportConformanceStatementReport()

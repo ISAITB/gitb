@@ -41,7 +41,8 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
   dataStatus = {status: Constants.STATUS.PENDING}
   filterState: FilterState = {
     filters: [ Constants.FILTER_TYPE.SPECIFICATION, Constants.FILTER_TYPE.SPECIFICATION_GROUP, Constants.FILTER_TYPE.ACTOR, Constants.FILTER_TYPE.ORGANISATION, Constants.FILTER_TYPE.SYSTEM, Constants.FILTER_TYPE.ORGANISATION_PROPERTY, Constants.FILTER_TYPE.SYSTEM_PROPERTY, Constants.FILTER_TYPE.RESULT, Constants.FILTER_TYPE.END_TIME ],
-    updatePending: false
+    updatePending: false,
+    updateDisabled: false
   }
   communityId?: number
   selectedCommunityId?: number
@@ -173,7 +174,17 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
       filterData = this.filterState.filterData()
     }
     if (filterData) {
-      this.dataService.addAdminCriteriaToTestResultSearchCriteria(searchCriteria, filterData)
+      if (this.dataService.isSystemAdmin) {
+        searchCriteria.communityIds = filterData[Constants.FILTER_TYPE.COMMUNITY]
+        searchCriteria.domainIds = filterData[Constants.FILTER_TYPE.DOMAIN]
+      } else {
+        if (this.dataService.community!.domain == undefined) {
+          searchCriteria.domainIds = filterData[Constants.FILTER_TYPE.DOMAIN]
+        }
+      }
+      searchCriteria.specIds = filterData[Constants.FILTER_TYPE.SPECIFICATION]
+      searchCriteria.specGroupIds = filterData[Constants.FILTER_TYPE.SPECIFICATION_GROUP]
+      searchCriteria.actorIds = filterData[Constants.FILTER_TYPE.ACTOR]
       searchCriteria.organisationIds = filterData[Constants.FILTER_TYPE.ORGANISATION]
       searchCriteria.systemIds = filterData[Constants.FILTER_TYPE.SYSTEM]
       searchCriteria.results = filterData[Constants.FILTER_TYPE.RESULT]

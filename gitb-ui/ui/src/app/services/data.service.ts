@@ -1,43 +1,42 @@
-import { Injectable } from '@angular/core';
-import { Observable, Subject, mergeMap, of } from 'rxjs';
-import { Constants } from '../common/constants'
-import { ObjectWithId } from '../components/test-filter/object-with-id';
-import { ConformanceTestCase } from '../pages/organisation/conformance-statement/conformance-test-case';
-import { ActualUserInfo } from '../types/actual-user-info';
-import { AppConfigurationProperties } from '../types/app-configuration-properties';
-import { Community } from '../types/community';
-import { ConfigurationPropertyVisibility } from '../types/configuration-property-visibility';
-import { CustomPropertySubmissionInfo } from '../types/custom-property-submission-info.type';
-import { CustomProperty } from '../types/custom-property.type';
-import { FileParam } from '../types/file-param.type';
-import { IdLabel } from '../types/id-label';
-import { NumberSet } from '../types/number-set';
-import { Organisation } from '../types/organisation.type';
-import { Parameter } from '../types/parameter';
-import { SystemConfigurationEndpoint } from '../types/system-configuration-endpoint';
-import { TypedLabelConfig } from '../types/typed-label-config.type'
-import { UserAccount } from '../types/user-account';
-import { User } from '../types/user.type';
-import { saveAs } from 'file-saver'
-import { LogLevel } from '../types/log-level';
-import { SpecificationGroup } from '../types/specification-group';
-import { Specification } from '../types/specification';
-import { DomainSpecification } from '../types/domain-specification';
-import {find, sortBy} from 'lodash';
-import { PageChange } from '../types/page-change';
-import { BadgesInfo } from '../components/manage-badges/badges-info';
-import { BreadcrumbChange } from '../types/breadcrumb-change';
-import { FieldInfo } from '../types/field-info';
-import { HttpResponse } from '@angular/common/http';
-import { EntityWithId } from '../types/entity-with-id';
-import { ConformanceTestSuite } from '../pages/organisation/conformance-statement/conformance-test-suite';
-import { ConformanceStatementItem } from '../types/conformance-statement-item';
-import { EndpointParameter } from '../types/endpoint-parameter';
-import { CookieOptions, CookieService } from 'ngx-cookie-service';
-import { LocationData } from '../types/location-data';
+import {Injectable} from '@angular/core';
+import {mergeMap, Observable, of, Subject} from 'rxjs';
+import {Constants} from '../common/constants';
+import {ObjectWithId} from '../components/test-filter/object-with-id';
+import {ConformanceTestCase} from '../pages/organisation/conformance-statement/conformance-test-case';
+import {ActualUserInfo} from '../types/actual-user-info';
+import {AppConfigurationProperties} from '../types/app-configuration-properties';
+import {Community} from '../types/community';
+import {ConfigurationPropertyVisibility} from '../types/configuration-property-visibility';
+import {CustomPropertySubmissionInfo} from '../types/custom-property-submission-info.type';
+import {CustomProperty} from '../types/custom-property.type';
+import {FileParam} from '../types/file-param.type';
+import {IdLabel} from '../types/id-label';
+import {NumberSet} from '../types/number-set';
+import {Organisation} from '../types/organisation.type';
+import {Parameter} from '../types/parameter';
+import {SystemConfigurationEndpoint} from '../types/system-configuration-endpoint';
+import {TypedLabelConfig} from '../types/typed-label-config.type';
+import {UserAccount} from '../types/user-account';
+import {User} from '../types/user.type';
+import {saveAs} from 'file-saver';
+import {LogLevel} from '../types/log-level';
+import {SpecificationGroup} from '../types/specification-group';
+import {Specification} from '../types/specification';
+import {DomainSpecification} from '../types/domain-specification';
+import {find} from 'lodash';
+import {PageChange} from '../types/page-change';
+import {BadgesInfo} from '../components/manage-badges/badges-info';
+import {BreadcrumbChange} from '../types/breadcrumb-change';
+import {FieldInfo} from '../types/field-info';
+import {HttpResponse} from '@angular/common/http';
+import {EntityWithId} from '../types/entity-with-id';
+import {ConformanceTestSuite} from '../pages/organisation/conformance-statement/conformance-test-suite';
+import {ConformanceStatementItem} from '../types/conformance-statement-item';
+import {EndpointParameter} from '../types/endpoint-parameter';
+import {CookieOptions, CookieService} from 'ngx-cookie-service';
+import {LocationData} from '../types/location-data';
 import {TestCaseTag} from '../types/test-case-tag';
 import {ConformanceTestCaseGroup} from '../pages/organisation/conformance-statement/conformance-test-case-group';
-import {TestResultSearchCriteria} from '../types/test-result-search-criteria';
 
 @Injectable({
   providedIn: 'root'
@@ -1930,20 +1929,6 @@ export class DataService {
     if (this.isSystemAdmin && communityId != undefined) {
       this.setCookie("implicitCommunity", communityId.toString())
     }
-  }
-
-  addAdminCriteriaToTestResultSearchCriteria(searchCriteria: TestResultSearchCriteria, filterData:{[key: string]: any}) {
-    if (this.isSystemAdmin) {
-      searchCriteria.communityIds = filterData[Constants.FILTER_TYPE.COMMUNITY]
-      searchCriteria.domainIds = filterData[Constants.FILTER_TYPE.DOMAIN]
-    } else {
-      if (this.community!.domain == undefined) {
-        searchCriteria.domainIds = filterData[Constants.FILTER_TYPE.DOMAIN]
-      }
-    }
-    searchCriteria.specIds = filterData[Constants.FILTER_TYPE.SPECIFICATION]
-    searchCriteria.specGroupIds = filterData[Constants.FILTER_TYPE.SPECIFICATION_GROUP]
-    searchCriteria.actorIds = filterData[Constants.FILTER_TYPE.ACTOR]
   }
 
 }

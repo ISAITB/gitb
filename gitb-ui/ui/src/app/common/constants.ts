@@ -398,7 +398,8 @@ export class Constants {
 	public static FILTER_COMMAND = {
 		TOGGLE: 1,
 		CLEAR: 2,
-		REFRESH: 3
+		REFRESH: 3,
+    HIDE_PENDING_INDICATOR: 4
 	}
 
 	public static PASSWORD_REGEX = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[\!\@\#\&\(\)\[\{\}\]\:\;\'\"\,\?\/\\\*\~\$\^\+\=\<\>\_\-]).{8,}$/

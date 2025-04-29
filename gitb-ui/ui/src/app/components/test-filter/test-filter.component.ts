@@ -46,6 +46,7 @@ export class TestFilterComponent implements OnInit {
   @Input() organisationId?: number
   @Input() embedded = false
   @Input() commands?: EventEmitter<number>
+  @Input() initialSessionId?: string
 
   @Input() loadDomainsFn?: () => Observable<Domain[]>
   @Input() loadSpecificationsFn?: () => Observable<Specification[]>
@@ -151,6 +152,7 @@ export class TestFilterComponent implements OnInit {
       })
     }
     this.filterCollapsedFinished = !this.showFiltering || !this.initialised
+    this.sessionId = this.initialSessionId
   }
 
   private handleCommand(command: number) {
@@ -532,6 +534,7 @@ export class TestFilterComponent implements OnInit {
   }
 
   applyFilters() {
+    this.filterState.updatePending = true
     this.onApply.emit(this.currentFilters())
   }
 
