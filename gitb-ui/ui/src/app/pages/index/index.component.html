@@ -64,7 +64,7 @@
                             }
                         }
                         @if (dataService.showCommunityViewMenu) {
-                            <app-menu-group label="Community" [expanded]="menuExpanded"></app-menu-group>
+                            <app-menu-group label="My community" [expanded]="menuExpanded"></app-menu-group>
                             <app-menu-item (click)="routingService.toCommunitySessionDashboard()"
                                            [type]="MenuItem.communitySessionDashboard" label="Community test sessions"
                                            icon="fa-solid fa-rectangle-list" [expanded]="menuExpanded"></app-menu-item>
