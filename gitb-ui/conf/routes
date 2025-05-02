@@ -153,6 +153,8 @@ GET     /api/fulltestcases/:test_case_id                            @controllers
 POST    /api/fulltestcases/:test_case_id                            @controllers.TestSuiteService.updateTestCaseMetadata(test_case_id: Long)
 GET     /api/communities/:community_id/statementParameters          @controllers.ConformanceService.getStatementParametersOfCommunity(community_id : Long)
 POST    /api/testsuites/:id/move                                    @controllers.TestSuiteService.moveTestSuiteToSpecification(id: Long)
+POST    /api/testsuites/:id/convert/shared                          @controllers.TestSuiteService.convertNonSharedTestSuiteToShared(id: Long)
+POST    /api/testsuites/:id/convert/specific                        @controllers.TestSuiteService.convertSharedTestSuiteToNonShared(id: Long)
 GET     /api/testsuites/:id/move/specs                              @controllers.TestSuiteService.getAvailableSpecificationsForMove(id: Long)
 
 DELETE  /api/testresults/obsolete/all           @controllers.ConformanceService.deleteAllObsoleteTestResults()

@@ -60,6 +60,7 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit {
 
   movePending = false
   moveSelectionConfig!: MultiSelectConfig<Specification>
+  convertPending = false
 
   constructor(
     public dataService: DataService,
@@ -220,6 +221,7 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit {
   }
 
   linkSpecifications() {
+    this.clearAlerts()
     this.linkPending = true
     const modalRef = this.modalService.show(LinkSharedTestSuiteModalComponent, {
       class: 'modal-lg',
@@ -252,6 +254,7 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit {
   }
 
   selectUnlinkSpecifications() {
+    this.clearAlerts()
     this.selectingForUnlink = true
   }
 
@@ -324,6 +327,36 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit {
       }
     }).add(() => {
       this.movePending = false
+    })
+  }
+
+  convertToShared() {
+    this.clearAlerts()
+    this.convertPending = true
+    this.testSuiteService.convertNonSharedTestSuiteToShared(this.testSuiteId).subscribe((result) => {
+      if (this.isErrorDescription(result)) {
+        this.addAlertError(result.error_description)
+      } else {
+        this.popupService.success('Test suite converted successfully.')
+        this.routingService.toSharedTestSuite(this.domainId, this.testSuiteId)
+      }
+    }).add(() => {
+      this.convertPending = false
+    })
+  }
+
+  convertToNonShared() {
+    this.clearAlerts()
+    this.convertPending = true
+    this.testSuiteService.convertSharedTestSuiteToNonShared(this.testSuiteId).subscribe((result) => {
+      if (this.isErrorDescription(result)) {
+        this.addAlertError(result.error_description)
+      } else {
+        this.popupService.success('Test suite converted successfully.')
+        this.routingService.toTestSuite(this.domainId, result.id, this.testSuiteId)
+      }
+    }).add(() => {
+      this.convertPending = false
     })
   }
 }

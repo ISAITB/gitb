@@ -202,6 +202,45 @@ class TestSuiteService @Inject() (authorizedAction: AuthorizedAction,
 		}
 	}
 
+	def convertNonSharedTestSuiteToShared(testSuiteId: Long): Action[AnyContent] = authorizedAction.async { request =>
+		authorizationManager.canManageTestSuite(request, testSuiteId).flatMap { _ =>
+			testSuiteManager.convertNonSharedTestSuiteToShared(testSuiteId).map { _ =>
+				ResponseConstructor.constructEmptyResponse
+			}.recoverWith {
+				case e: UserException =>
+					e.errorCode match {
+						case ErrorCodes.SHARED_TEST_SUITE_EXISTS => communityLabelManager.getLabel(request, LabelType.Domain, single = true, lowercase = true).map { domainLabel =>
+							ResponseConstructor.constructErrorResponse(e.errorCode, "A shared suite with the same identifier already exists in the target %s.".formatted(domainLabel))
+						}
+						case _ => Future.successful {
+							ResponseConstructor.constructErrorResponse(e.errorCode, e.message)
+						}
+					}
+			}
+		}
+	}
+
+	def convertSharedTestSuiteToNonShared(testSuiteId: Long): Action[AnyContent] = authorizedAction.async { request =>
+		authorizationManager.canManageTestSuite(request, testSuiteId).flatMap { _ =>
+			testSuiteManager.convertSharedTestSuiteToNonShared(testSuiteId).map { linkedSpecification =>
+				ResponseConstructor.constructJsonResponse(JsonUtil.jsId(linkedSpecification).toString())
+			}.recoverWith {
+				case e: UserException =>
+					e.errorCode match {
+						case ErrorCodes.SHARED_TEST_SUITE_LINKED_TO_NO_SPECIFICATIONS => communityLabelManager.getLabel(request, LabelType.Specification, single = true, lowercase = true).map { specLabel =>
+							ResponseConstructor.constructErrorResponse(e.errorCode, "The test suite to convert must be linked to the target %s.".formatted(specLabel))
+						}
+						case ErrorCodes.SHARED_TEST_SUITE_LINKED_TO_MULTIPLE_SPECIFICATIONS => communityLabelManager.getLabel(request, LabelType.Specification, single = true, lowercase = true).map { specLabel =>
+							ResponseConstructor.constructErrorResponse(e.errorCode, "The test suite to convert must be linked to a single target %s.".formatted(specLabel))
+						}
+						case _ => Future.successful {
+							ResponseConstructor.constructErrorResponse(e.errorCode, e.message)
+						}
+					}
+			}
+		}
+	}
+
 	def getAvailableSpecificationsForMove(testSuiteId: Long): Action[AnyContent] = authorizedAction.async { request =>
 		authorizationManager.canManageTestSuite(request, testSuiteId).flatMap { _ =>
 			specificationManager.getSpecificationsForTestSuiteMove(testSuiteId).map { specs =>

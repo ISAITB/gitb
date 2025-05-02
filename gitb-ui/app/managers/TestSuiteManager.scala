@@ -2034,15 +2034,16 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 		val onSuccessCalls = mutable.ListBuffer[() => _]()
 		val query = for {
 			// Load and check test suite.
-			testSuite <- getByIdInternal(testSuiteId).map { x =>
+			testSuite <- getByIdInternal(testSuiteId).flatMap { x =>
 				if (x.isEmpty) {
 					// Test suite was not found.
-					throw UserException(ErrorCodes.INVALID_REQUEST , "Test suite not found.")
+					DBIO.failed(UserException(ErrorCodes.INVALID_REQUEST , "Test suite not found."))
 				} else if (x.get.shared) {
 					// Test suite must not be shared.
-					throw UserException(ErrorCodes.INVALID_REQUEST, "The test suite to move cannot be a shared test suite.")
+					DBIO.failed(UserException(ErrorCodes.INVALID_REQUEST, "The test suite to move cannot be a shared test suite."))
+				} else {
+					DBIO.successful(x.get)
 				}
-				x.get
 			}
 			// Get and check target specification.
 			currentSpecificationId <- PersistenceSchema.specificationHasTestSuites
@@ -2050,12 +2051,13 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 				.map(_.specId)
 				.result
 				.head
-				.map { x =>
+				.flatMap { x =>
 					if (targetSpecificationId == x) {
 						// The current and target specification IDs must not be the same.
-						throw UserException(ErrorCodes.INVALID_REQUEST, "Test suite is already defined in the target specification.")
+						DBIO.failed(UserException(ErrorCodes.INVALID_REQUEST, "Test suite is already defined in the target specification."))
+					} else {
+						DBIO.successful(x)
 					}
-					x
 				}
 			// Check the target specification for an already defined test suite with the same ID.
 			_ <- PersistenceSchema.specificationHasTestSuites
@@ -2065,13 +2067,15 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 				.map(x => x._2.shared)
 				.result
 				.headOption
-				.map { x =>
+				.flatMap { x =>
 					if (x.isDefined) {
 						if (x.get) {
-							throw UserException(ErrorCodes.SHARED_TEST_SUITE_EXISTS, "A shared test suite with the same identifier already exists.")
+							DBIO.failed(UserException(ErrorCodes.SHARED_TEST_SUITE_EXISTS, "A shared test suite with the same identifier already exists."))
 						} else {
-							throw UserException(ErrorCodes.TEST_SUITE_EXISTS, "A suite with the same identifier already exists.")
+							DBIO.failed(UserException(ErrorCodes.TEST_SUITE_EXISTS, "A suite with the same identifier already exists."))
 						}
+					} else {
+						DBIO.successful(())
 					}
 				}
 			/*
@@ -2204,6 +2208,89 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 			}
 		} yield ()
 		DB.run(dbActionFinalisation(Some(onSuccessCalls), None, query).transactionally)
+	}
+
+	def convertNonSharedTestSuiteToShared(testSuiteId: Long): Future[Unit] = {
+		DB.run(
+			for {
+				// Load target test suite.
+				testSuiteInfo <- PersistenceSchema.testSuites
+					.filter(_.id === testSuiteId)
+					.map(x => (x.identifier, x.shared, x.domain))
+					.result
+					.headOption
+					.flatMap { result =>
+						if (result.isEmpty) {
+							DBIO.failed(UserException(ErrorCodes.INVALID_REQUEST , "Test suite not found."))
+						} else if (result.exists(_._2)) {
+							DBIO.failed(UserException(ErrorCodes.INVALID_REQUEST , "The test suite to convert must not be already a shared one."))
+						} else {
+							DBIO.successful((result.get._1, result.get._3)) // (Test suite identifier, Domain ID)
+						}
+					}
+				// Make sure that there is no shared test suite with the same identifier in the same domain.
+				_testSuiteExists <- PersistenceSchema.testSuites
+					.filter(_.identifier === testSuiteInfo._1)
+					.filter(_.domain === testSuiteInfo._2)
+					.filter(_.shared === true)
+					.exists
+					.result
+					.flatMap { testSuiteExists =>
+						if (testSuiteExists) {
+							DBIO.failed(UserException(ErrorCodes.SHARED_TEST_SUITE_EXISTS, "A test suite with the same identifier already exists in the same domain."))
+						} else {
+							DBIO.successful(())
+						}
+					}
+				// All ok - update the shared flag.
+				_ <- PersistenceSchema.testSuites
+					.filter(_.id === testSuiteId)
+					.map(_.shared)
+					.update(true)
+			} yield ()
+		)
+	}
+
+	def convertSharedTestSuiteToNonShared(testSuiteId: Long): Future[Long] = {
+		DB.run {
+			for {
+				// Load and check the target test suite.
+				_testSuiteInfo <- PersistenceSchema.testSuites
+					.filter(_.id === testSuiteId)
+					.map(x => (x.identifier, x.shared))
+					.result
+					.headOption
+					.flatMap { result =>
+						if (result.isEmpty) {
+							DBIO.failed(UserException(ErrorCodes.INVALID_REQUEST , "Test suite not found."))
+						} else if (!result.get._2) {
+							DBIO.failed(UserException(ErrorCodes.INVALID_REQUEST , "The test suite to convert must be a shared one."))
+						} else {
+							DBIO.successful(())
+						}
+					}
+				// Load the currently linked specifications.
+				linkedSpecification <- PersistenceSchema.specificationHasTestSuites
+					.filter(_.testSuiteId === testSuiteId)
+					.map(_.specId)
+					.result
+					.flatMap { linkedSpecifications =>
+						val specificationCount = linkedSpecifications.size
+						if (specificationCount == 0) {
+							DBIO.failed(UserException(ErrorCodes.SHARED_TEST_SUITE_LINKED_TO_NO_SPECIFICATIONS, "The test suite to convert must be linked to the target specification."))
+						} else if (specificationCount > 1) {
+							DBIO.failed(UserException(ErrorCodes.SHARED_TEST_SUITE_LINKED_TO_MULTIPLE_SPECIFICATIONS, "The test suite to convert must be linked to a single target specification."))
+						} else {
+							DBIO.successful(linkedSpecifications.head)
+						}
+					}
+				// Proceed.
+				_ <- PersistenceSchema.testSuites
+					.filter(_.id === testSuiteId)
+					.map(_.shared)
+					.update(false)
+			} yield linkedSpecification
+		}
 	}
 
 }
