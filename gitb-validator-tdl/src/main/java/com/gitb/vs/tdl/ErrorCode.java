@@ -145,6 +145,8 @@ public enum ErrorCode {
     TEST_CASE_GROUP_NOT_USED(                           "TDL-124", "The test suite defines a test case group [%s] that is not referenced by any test cases. The group will be ignored.", WARNING),
     TEST_CASE_GROUP_WITH_SINGLE_TEST_CASE(              "TDL-125", "The test suite defines a test case group [%s] that is referenced by a single test case.", WARNING),
     TEST_CASE_GROUP_WITH_TEST_CASES_FOR_DIFFERENT_SUTS( "TDL-126", "The test suite defines a test case group [%s] that includes test cases for different SUTs.", ERROR),
+    MISSING_ACTOR_REFERENCE(                            "TDL-127", "Test case [%s] defines a %s step without referencing the '%s' actor. This is allowed only when the test case defines a single simulated actor.", ERROR, false),
+    ACTOR_REFERENCES_IN_SCRIPTLET_MISSING(              "TDL-128", "Scriptlets define messaging steps without 'from' or 'to' actor references, which default to a simulated (non-SUT) actor. Ensure these scriptlets are used in test cases that define a single simulated actor besides the SUT actor.", INFO)
     ;
 
     private final String code;

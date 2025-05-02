@@ -95,6 +95,10 @@ public class TestCaseContext {
      * Roles defined in the TestCase
      */
     private final Map<String, TestRole> actorRoles;
+	private final Optional<TestRole> sutActor;
+	private final Optional<TestRole> nonSutActor;
+	private final boolean hasMultipleNonSutActors;
+	private boolean hasMultipleNonSutActorsLogged = false;
 
     /**
      * Corresponding simulated actor configurations for each SUT (key: actor name & actor endpoint of SUT)
@@ -187,12 +191,29 @@ public class TestCaseContext {
         addStepStatus();
         processVariables();
 
+		// Parse actor role information.
         actorRoles = new HashMap<>();
-
-        // Initialize configuration lists for SutHandlerConfigurations
-        for(TestRole role : this.testCase.getActors().getActor()) {
+		TestRole detectedSut = null;
+		TestRole detectedNonSut = null;
+		int nonSutActors = 0;
+        for (TestRole role : this.testCase.getActors().getActor()) {
 			actorRoles.put(role.getId(), role);
+			if (role.getRole() == TestRoleEnumeration.SUT) {
+				detectedSut = role;
+			} else if (role.getRole() == TestRoleEnumeration.SIMULATED) {
+				if (detectedNonSut == null) {
+					detectedNonSut = role;
+				}
+				nonSutActors += 1;
+			}
 		}
+		sutActor = Optional.ofNullable(detectedSut);
+		if (detectedNonSut == null) {
+			nonSutActor = sutActor;
+		} else {
+			nonSutActor = Optional.of(detectedNonSut);
+		}
+		hasMultipleNonSutActors = nonSutActors > 1;
 	}
 
 	public Path getDataFolder() {
@@ -488,14 +509,23 @@ public class TestCaseContext {
      */
     private List<TransactionInfo> createTransactionInfo(Sequence sequence, String testSuiteContext, VariableResolver resolver, LinkedList<Pair<CallStep, Scriptlet>> scriptletCallStack) {
         List<TransactionInfo> transactions = new ArrayList<>();
-        for(Object step : sequence.getSteps()) {
+        for (Object step : sequence.getSteps()) {
             if(step instanceof Sequence) {
                 transactions.addAll(createTransactionInfo((Sequence) step, testSuiteContext, resolver, scriptletCallStack));
             } else if(step instanceof BeginTransaction beginTransactionStep) {
                 transactions.add(buildTransactionInfo(beginTransactionStep.getFrom(), beginTransactionStep.getTo(), beginTransactionStep.getHandler(), beginTransactionStep.getProperty(), resolver, scriptletCallStack));
 			} else if (step instanceof MessagingStep messagingStep) {
                 if (StringUtils.isBlank(messagingStep.getTxnId()) && StringUtils.isNotBlank(messagingStep.getHandler())) {
-					transactions.add(buildTransactionInfo(messagingStep.getFrom(), messagingStep.getTo(), messagingStep.getHandler(), messagingStep.getProperty(), resolver, scriptletCallStack));
+					String fromActor;
+					String toActor;
+					if (step instanceof ReceiveOrListen) {
+						fromActor = Objects.requireNonNullElseGet(messagingStep.getFrom(), this::getDefaultSutActor);
+						toActor = Objects.requireNonNullElseGet(messagingStep.getTo(), this::getDefaultNonSutActor);
+					} else {
+						fromActor = Objects.requireNonNullElseGet(messagingStep.getFrom(), this::getDefaultNonSutActor);
+						toActor = Objects.requireNonNullElseGet(messagingStep.getTo(), this::getDefaultSutActor);
+					}
+					transactions.add(buildTransactionInfo(fromActor, toActor, messagingStep.getHandler(), messagingStep.getProperty(), resolver, scriptletCallStack));
 				}
             } else if (step instanceof IfStep) {
 	            transactions.addAll(createTransactionInfo(((IfStep) step).getThen(), testSuiteContext, resolver, scriptletCallStack));
@@ -525,6 +555,22 @@ public class TestCaseContext {
         }
         return transactions;
     }
+
+	public String getDefaultSutActor() {
+		return sutActor.map(TestRole::getId).orElseThrow(() -> new IllegalStateException("Unable to determine default SUT actor."));
+	}
+
+	public String getDefaultNonSutActor() {
+		return getDefaultNonSutActor(false);
+	}
+
+	public String getDefaultNonSutActor(boolean skipLog) {
+		if (!skipLog && !hasMultipleNonSutActorsLogged && hasMultipleNonSutActors) {
+			hasMultipleNonSutActorsLogged = true;
+			logger.warn(MarkerFactory.getDetachedMarker(getSessionId()), "A missing actor reference was encountered that normally defaults to the test case's single, simulated (non-SUT) actor. The current test case however, defines multiple such actors resulting in the first one being arbitrarily used. Make sure you either remove the additional actor(s) from the test case, or reference the specific one that you expect.");
+		}
+		return nonSutActor.map(TestRole::getId).orElseThrow(() -> new IllegalStateException("Unable to determine default simulated actor."));
+	}
 
     public Scriptlet getScriptlet(String testSuiteContext, String path, boolean required) {
     	return scriptletCache.getScriptlet(testSuiteContext, path, testCase, required);

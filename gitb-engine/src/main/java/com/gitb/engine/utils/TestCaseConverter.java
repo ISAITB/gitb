@@ -7,7 +7,7 @@ import com.gitb.engine.ModuleManager;
 import com.gitb.engine.SessionConfigurationData;
 import com.gitb.engine.expr.StaticExpressionHandler;
 import com.gitb.engine.testcase.StaticTestCaseContext;
-import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.repository.ITestCaseRepository;
 import com.gitb.tdl.*;
@@ -44,6 +44,7 @@ public class TestCaseConverter {
     private final com.gitb.tdl.TestCase testCase;
     private final ScriptletCache scriptletCache;
     private final StaticExpressionHandler expressionHandler;
+    private final TestCaseContext testCaseContext;
     private Set<String> actorIds = null;
 
     public TestCaseConverter(com.gitb.tdl.TestCase testCase, List<ActorConfiguration> configs) {
@@ -53,14 +54,15 @@ public class TestCaseConverter {
     public TestCaseConverter(com.gitb.tdl.TestCase testCase, ScriptletCache scriptletCache, List<ActorConfiguration> configs) {
         this.testCase = testCase;
         this.scriptletCache = Objects.requireNonNullElseGet(scriptletCache, ScriptletCache::new);
-        this.expressionHandler = new StaticExpressionHandler(createScope(testCase, configs));
+        testCaseContext = createTestCaseContext(testCase, configs);
+        expressionHandler = new StaticExpressionHandler(testCaseContext.getScope());
     }
 
-    private static TestCaseScope createScope(com.gitb.tdl.TestCase testCase, List<ActorConfiguration> configs) {
+    private TestCaseContext createTestCaseContext(com.gitb.tdl.TestCase testCase, List<ActorConfiguration> configs) {
         var context = new StaticTestCaseContext(testCase);
         var configData = new SessionConfigurationData(configs);
         context.configure(configData.getActorConfigurations(), configData.getDomainConfiguration(), configData.getOrganisationConfiguration(), configData.getSystemConfiguration());
-        return context.getScope();
+        return context;
     }
 
     public TestCase convertTestCase(String testCaseId) {
@@ -228,15 +230,24 @@ public class TestCaseConverter {
         return process;
     }
 
-    private com.gitb.tpl.MessagingStep convertMessagingStep(String testCaseId, String id, com.gitb.tdl.MessagingStep description) {
+    private com.gitb.tpl.MessagingStep convertMessagingStep(String testCaseId, String id, com.gitb.tdl.MessagingStep step) {
         com.gitb.tpl.MessagingStep messaging = new com.gitb.tpl.MessagingStep();
         messaging.setId(id);
-        messaging.setDesc(fixedOrVariableValueAsString(description.getDesc()));
-        messaging.setFrom(fixedOrVariableValueForActor(description.getFrom()));
-        messaging.setTo(fixedOrVariableValueForActor(description.getTo()));
-        messaging.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
-        messaging.setHidden(hiddenValueToUse(description.getHidden(), false));
-        messaging.setReply(fixedOrVariableValueAsBoolean(description.getReply(), false));
+        messaging.setDesc(fixedOrVariableValueAsString(step.getDesc()));
+        String fromActor;
+        String toActor;
+        if (step instanceof ReceiveOrListen) {
+            fromActor = Objects.requireNonNullElseGet(step.getFrom(), testCaseContext::getDefaultSutActor);
+            toActor = Objects.requireNonNullElseGet(step.getTo(), () -> testCaseContext.getDefaultNonSutActor(true));
+        } else {
+            fromActor = Objects.requireNonNullElseGet(step.getFrom(), () -> testCaseContext.getDefaultNonSutActor(true));
+            toActor = Objects.requireNonNullElseGet(step.getTo(), testCaseContext::getDefaultSutActor);
+        }
+        messaging.setFrom(fixedOrVariableValueForActor(fromActor));
+        messaging.setTo(fixedOrVariableValueForActor(toActor));
+        messaging.setDocumentation(getDocumentation(testCaseId, step.getDocumentation()));
+        messaging.setHidden(hiddenValueToUse(step.getHidden(), false));
+        messaging.setReply(fixedOrVariableValueAsBoolean(step.getReply(), false));
         return messaging;
     }
 

@@ -213,8 +213,8 @@ public abstract class AbstractMessagingStepProcessorActor<T extends MessagingSte
                                 messagingContext.get().getSessionId(),
                                 txIdToUse,
                                 step.getId(),
-                                step.getFrom(),
-                                step.getTo(),
+                                getFrom(),
+                                getTo(),
                                 step.getConfig()
                         );
                     }
@@ -227,6 +227,14 @@ public abstract class AbstractMessagingStepProcessorActor<T extends MessagingSte
         } else {
             throw new IllegalStateException("Unable to determine the messaging context for a messaging step");
         }
+    }
+
+    protected String getFrom() {
+        return step.getFrom();
+    }
+
+    protected String getTo() {
+        return step.getTo();
     }
 
     protected OnSuccess<TestStepReportType> handleSuccess(Promise<TestStepReportType> promise) {

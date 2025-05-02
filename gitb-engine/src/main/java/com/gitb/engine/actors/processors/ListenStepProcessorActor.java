@@ -27,6 +27,8 @@ import org.apache.pekko.dispatch.OnSuccess;
 import scala.concurrent.Future;
 import scala.concurrent.Promise;
 
+import java.util.Objects;
+
 /**
  * Created by serbay.
  *
@@ -104,8 +106,8 @@ public class ListenStepProcessorActor extends AbstractMessagingStepProcessorActo
                 }
 
                 Message inputMessage = getMessageFromBindings(step.getInput());
-                var from = VariableResolver.isVariableReference(step.getFrom())?(String) resolver.resolveVariableAsString(step.getFrom()).getValue():step.getFrom();
-                var to = VariableResolver.isVariableReference(step.getTo())?(String) resolver.resolveVariableAsString(step.getTo()).getValue():step.getTo();
+                var from = VariableResolver.isVariableReference(getFrom())?(String) resolver.resolveVariableAsString(getFrom()).getValue():getFrom();
+                var to = VariableResolver.isVariableReference(getTo())?(String) resolver.resolveVariableAsString(getTo()).getValue():getTo();
                 MessagingReport report =
                         messagingHandler
                                 .listenMessage(
@@ -170,4 +172,15 @@ public class ListenStepProcessorActor extends AbstractMessagingStepProcessorActo
     public static ActorRef create(ActorContext context, Listen step, TestCaseScope scope, String stepId, StepContext stepContext) throws Exception {
         return context.actorOf(props(ListenStepProcessorActor.class, step, scope, stepId, stepContext).withDispatcher(ActorSystem.BLOCKING_DISPATCHER), getName(NAME));
     }
+
+    @Override
+    protected String getFrom() {
+        return Objects.requireNonNullElseGet(super.getFrom(), () -> scope.getContext().getDefaultSutActor());
+    }
+
+    @Override
+    protected String getTo() {
+        return Objects.requireNonNullElseGet(super.getTo(), () -> scope.getContext().getDefaultNonSutActor());
+    }
+
 }

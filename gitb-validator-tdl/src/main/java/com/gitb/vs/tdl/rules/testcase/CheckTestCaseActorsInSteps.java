@@ -2,10 +2,7 @@ package com.gitb.vs.tdl.rules.testcase;
 
 import com.gitb.core.TestRole;
 import com.gitb.core.TestRoleEnumeration;
-import com.gitb.tdl.BeginTransaction;
-import com.gitb.tdl.InstructionOrRequest;
-import com.gitb.tdl.MessagingStep;
-import com.gitb.tdl.UserInteraction;
+import com.gitb.tdl.*;
 import com.gitb.vs.tdl.Context;
 import com.gitb.vs.tdl.ErrorCode;
 import com.gitb.vs.tdl.ValidationReport;
@@ -18,6 +15,8 @@ public class CheckTestCaseActorsInSteps extends AbstractTestCaseObserver {
 
     private Set<String> actorsInScriptlets;
     private Set<String> actorsReferencesInScriptlets;
+    private boolean scriptletsWithMissingActorReferences = false;
+    private Long simulatorActorCount = null;
 
     @Override
     public void initialise(Context context, ValidationReport report) {
@@ -30,8 +29,7 @@ public class CheckTestCaseActorsInSteps extends AbstractTestCaseObserver {
     public void handleStep(Object step) {
         super.handleStep(step);
         // Only make these tests for test cases, not standalone scriptlets.
-        if (currentStep instanceof UserInteraction) {
-            UserInteraction interaction = (UserInteraction)currentStep;
+        if (currentStep instanceof UserInteraction interaction) {
             validateActorReference(interaction.getWith(), TestRoleEnumeration.SUT, currentStep);
             if (interaction.getInstructOrRequest() != null) {
                 for (InstructionOrRequest ir: interaction.getInstructOrRequest()) {
@@ -41,10 +39,36 @@ public class CheckTestCaseActorsInSteps extends AbstractTestCaseObserver {
         } else if (currentStep instanceof BeginTransaction) {
             validateActorReference(((BeginTransaction)currentStep).getFrom(), null, currentStep);
             validateActorReference(((BeginTransaction)currentStep).getTo(), null, currentStep);
-        } else if (currentStep instanceof MessagingStep) {
-            validateActorReference(((MessagingStep)currentStep).getFrom(), null, currentStep);
-            validateActorReference(((MessagingStep)currentStep).getTo(), null, currentStep);
+        } else if (currentStep instanceof MessagingStep messagingStep) {
+            String fromValue = messagingStep.getFrom();
+            String toValue = messagingStep.getTo();
+            validateActorReference(fromValue, null, currentStep);
+            validateActorReference(toValue, null, currentStep);
+            if (toValue == null && messagingStep instanceof ReceiveOrListen) {
+                if (testCaseIsWrappedScriptlet) {
+                    scriptletsWithMissingActorReferences = true;
+                } else if (countSimulatedActors() != 1) {
+                    // We have a missing actor reference that should be to a simulated actor.
+                    addReportItem(ErrorCode.MISSING_ACTOR_REFERENCE, currentTestCase.getId(), Utils.getStepName(currentStep), "to");
+                }
+            } else if (fromValue == null && messagingStep instanceof Send) {
+                if (testCaseIsWrappedScriptlet) {
+                    scriptletsWithMissingActorReferences = true;
+                } else if (countSimulatedActors() != 1) {
+                    // We have a missing actor reference that should be to a simulated actor.
+                    addReportItem(ErrorCode.MISSING_ACTOR_REFERENCE, currentTestCase.getId(), Utils.getStepName(currentStep), "from");
+                }
+            }
         }
+    }
+
+    private long countSimulatedActors() {
+        if (simulatorActorCount == null) {
+            simulatorActorCount = currentTestCase.getActors().getActor().stream()
+                    .filter(role -> role.getRole() == null || role.getRole() == TestRoleEnumeration.SIMULATED)
+                    .count();
+        }
+        return simulatorActorCount;
     }
 
     private void validateActorReference(String actorId, TestRoleEnumeration expectedRole, Object currentStep) {
@@ -81,6 +105,9 @@ public class CheckTestCaseActorsInSteps extends AbstractTestCaseObserver {
                 addReportItem(ErrorCode.ACTOR_REFERENCES_IN_SCRIPTLET_VALUES, "["+String.join(", ", actorsInScriptlets)+"]");
             } else if (!actorsReferencesInScriptlets.isEmpty()) {
                 addReportItem(ErrorCode.ACTOR_REFERENCES_IN_SCRIPTLET_REFS, "["+String.join(", ", actorsReferencesInScriptlets)+"]");
+            }
+            if (scriptletsWithMissingActorReferences) {
+                addReportItem(ErrorCode.ACTOR_REFERENCES_IN_SCRIPTLET_MISSING);
             }
         }
     }
