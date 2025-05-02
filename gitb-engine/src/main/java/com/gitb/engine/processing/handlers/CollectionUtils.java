@@ -26,6 +26,7 @@ public class CollectionUtils extends AbstractProcessingHandler {
     private static final String OPERATION__RANDOM_VALUE = "randomValue";
     private static final String OPERATION__REMOVE = "remove";
     private static final String OPERATION__APPEND = "append";
+    private static final String OPERATION__FIND = "find";
     private static final String INPUT__LIST = "list";
     private static final String INPUT__MAP = "map";
     private static final String INPUT__VALUE = "value";
@@ -34,6 +35,7 @@ public class CollectionUtils extends AbstractProcessingHandler {
     private static final String INPUT__FROM_LIST = "fromList";
     private static final String INPUT__TO_MAP = "toMap";
     private static final String INPUT__FROM_MAP = "fromMap";
+    private static final String INPUT__CASE_INSENSITIVE = "ignoreCase";
     private static final String OUTPUT__OUTPUT = "output";
 
     @Override
@@ -64,7 +66,8 @@ public class CollectionUtils extends AbstractProcessingHandler {
                 List.of(
                         createParameter(INPUT__LIST, "list", UsageEnumeration.O, ConfigurationType.SIMPLE, "The list to consider (if the collection is expected to be a list)."),
                         createParameter(INPUT__MAP, "map", UsageEnumeration.O, ConfigurationType.SIMPLE, "The map to consider (if the collection is expected to be a map)."),
-                        createParameter(INPUT__VALUE, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, "The value to look for (as an item for a list or as a key for a map).")
+                        createParameter(INPUT__VALUE, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, "The value to look for (as an item for a list or as a key for a map)."),
+                        createParameter(INPUT__CASE_INSENSITIVE, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, "Whether or not the lookup should ignore casing (default is false).")
                 ),
                 Collections.emptyList()
         ));
@@ -103,6 +106,17 @@ public class CollectionUtils extends AbstractProcessingHandler {
                 ),
                 Collections.emptyList()
         ));
+        module.getOperation().add(createProcessingOperation(OPERATION__FIND,
+                List.of(
+                        createParameter(INPUT__LIST, "list", UsageEnumeration.O, ConfigurationType.SIMPLE, "The list to consider (if the collection is expected to be a list)."),
+                        createParameter(INPUT__MAP, "map", UsageEnumeration.O, ConfigurationType.SIMPLE, "The map to consider (if the collection is expected to be a map)."),
+                        createParameter(INPUT__VALUE, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, "The value to look for (as an item for a list or as a key for a map)."),
+                        createParameter(INPUT__CASE_INSENSITIVE, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, "Whether or not the lookup should ignore casing (default is false).")
+                ),
+                List.of(
+                        createParameter(OUTPUT__OUTPUT, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, "The located entry (if found).")
+                )
+        ));
         return module;
     }
 
@@ -130,28 +144,54 @@ public class CollectionUtils extends AbstractProcessingHandler {
             } else {
                 ((ListType) inputCollection).clear();
             }
-        } else if (OPERATION__CONTAINS.equalsIgnoreCase(operation)) {
+        } else if (OPERATION__CONTAINS.equalsIgnoreCase(operation) || OPERATION__FIND.equalsIgnoreCase(operation)) {
             if (!input.getData().containsKey(INPUT__VALUE)) {
                 throw new IllegalArgumentException("The value to check for must be provided");
             }
             var value = input.getData().get(INPUT__VALUE);
-            var contains = false;
+            var ignoreCaseInput = input.getData().get(INPUT__CASE_INSENSITIVE);
+            boolean ignoreCase = false;
+            if (ignoreCaseInput != null) {
+                ignoreCase = (Boolean) ignoreCaseInput.convertTo(DataType.BOOLEAN_DATA_TYPE).getValue();
+            }
+            Optional<DataType> locatedValue = Optional.empty();
             DataType inputCollection = getInputCollection(input);
             if (inputCollection instanceof MapType) {
-                var valueToCheck = value.convertTo(DataType.STRING_DATA_TYPE);
-                var locatedItem = ((MapType) inputCollection).getItem((String) valueToCheck.getValue());
-                contains = locatedItem != null;
+                var valueToCheck = (String) value.convertTo(DataType.STRING_DATA_TYPE).getValue();
+                locatedValue = Optional.ofNullable(((MapType) inputCollection).getItem(valueToCheck));
+                if (locatedValue.isEmpty() && ignoreCase) {
+                    // We do a case-insensitive scan after the direct lookup so that we can find it fast if possible.
+                    var items = ((MapType) inputCollection).getItems();
+                    locatedValue = items.keySet().stream()
+                            .filter(key -> key != null && key.equalsIgnoreCase(valueToCheck))
+                            .findFirst()
+                            .map(items::get);
+                }
             } else {
                 var iterator = ((ListType) inputCollection).iterator();
-                while (iterator.hasNext() && !contains) {
+                String convertedLookupValue = null;
+                while (iterator.hasNext() && locatedValue.isEmpty()) {
                     var item = iterator.next();
                     var valueToCheck = value.convertTo(item.getType());
                     if (Objects.equals(item.getValue(), valueToCheck.getValue())) {
-                        contains = true;
+                        locatedValue = Optional.of(item);
+                    } else if (ignoreCase) {
+                        var currentItemAsString = (String) item.convertTo(DataType.STRING_DATA_TYPE).getValue();
+                        if (convertedLookupValue == null) {
+                            convertedLookupValue = (String)valueToCheck.convertTo(DataType.STRING_DATA_TYPE).getValue();
+                        }
+                        if (currentItemAsString.equalsIgnoreCase(convertedLookupValue)) {
+                            locatedValue = Optional.of(item);
+                        }
                     }
                 }
             }
-            data.getData().put(OUTPUT__OUTPUT, new BooleanType(contains));
+            var valueFound = locatedValue.isPresent();
+            if (OPERATION__CONTAINS.equalsIgnoreCase(operation)) {
+                data.getData().put(OUTPUT__OUTPUT, new BooleanType(valueFound));
+            } else if (valueFound) {
+                data.getData().put(OUTPUT__OUTPUT, locatedValue.get());
+            }
         } else if (OPERATION__RANDOM_KEY.equalsIgnoreCase(operation) || OPERATION__RANDOM_VALUE.equalsIgnoreCase(operation)) {
             List<DataType> valueList;
             DataType inputCollection = getInputCollection(input);
