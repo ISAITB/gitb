@@ -299,6 +299,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
             checkConstantReferenceInScriptlet(userInteractionStep.getDesc(), ATTRIBUTE_DESC);
             checkConstantReferenceInScriptlet(userInteractionStep.getWith(), ATTRIBUTE_WITH);
             checkToken(userInteractionStep.getInputTitle(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+            checkToken(userInteractionStep.getBlocking(), TokenType.STRING_OR_VARIABLE_REFERENCE);
             if (userInteractionStep.getInstructOrRequest() != null) {
                 for (InstructionOrRequest ir: userInteractionStep.getInstructOrRequest()) {
                     checkConstantReferenceInScriptlet(ir.getDesc(), ATTRIBUTE_DESC);

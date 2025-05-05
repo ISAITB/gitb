@@ -1,11 +1,11 @@
-import { AfterViewInit, Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren } from '@angular/core';
-import { CodemirrorComponent } from '@ctrl/ngx-codemirror';
-import { BsModalRef } from 'ngx-bootstrap/modal';
-import { AnyContent } from 'src/app/components/diagram/any-content';
-import { DataService } from 'src/app/services/data.service';
-import { FileData } from 'src/app/types/file-data.type';
-import { UserInteraction } from 'src/app/types/user-interaction';
-import { UserInteractionInput } from 'src/app/types/user-interaction-input';
+import {AfterViewInit, Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
+import {CodemirrorComponent} from '@ctrl/ngx-codemirror';
+import {BsModalRef} from 'ngx-bootstrap/modal';
+import {AnyContent} from 'src/app/components/diagram/any-content';
+import {DataService} from 'src/app/services/data.service';
+import {FileData} from 'src/app/types/file-data.type';
+import {UserInteraction} from 'src/app/types/user-interaction';
+import {UserInteractionInput} from 'src/app/types/user-interaction-input';
 
 @Component({
     selector: 'app-provide-input-modal',
@@ -62,7 +62,7 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
           this.editorFocus['input-'+i] = false
           if (this.firstCodeIndex == undefined) {
             this.firstCodeIndex = i
-          }          
+          }
           interaction.data = ''
         } else if (interaction.inputType == 'UPLOAD') {
           interaction.reset = new EventEmitter<void>()
@@ -98,14 +98,13 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
   }
 
   instructionAsAnyContent(instruction: UserInteraction): AnyContent {
-    const content: AnyContent = {
+    return {
       name: instruction.desc,
       value: instruction.value,
       valueToUse: instruction.value,
-      embeddingMethod: (instruction.variableType == 'binary' || instruction.variableType == 'schema' || instruction.variableType == 'object')?'BASE64': 'STRING',
+      embeddingMethod: (instruction.variableType == 'binary' || instruction.variableType == 'schema' || instruction.variableType == 'object') ? 'BASE64' : 'STRING',
       mimeType: instruction.mimeType
     }
-    return content
   }
 
   private codeEditorForName(editorName: string) {
@@ -143,12 +142,12 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
 
   minimise() {
     this.result.emit(undefined)
-    this.modalRef.hide()    
+    this.modalRef.hide()
   }
 
   close() {
     this.result.emit([])
-    this.modalRef.hide()    
+    this.modalRef.hide()
   }
 
   submit() {

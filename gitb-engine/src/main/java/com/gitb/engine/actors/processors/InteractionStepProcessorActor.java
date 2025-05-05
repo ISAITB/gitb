@@ -147,6 +147,8 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
             }
             // Process the instructions and request the interaction from TestbedClient
             try {
+                boolean hasInstructions = false;
+                boolean hasRequests = false;
                 List<InstructionOrRequest> instructionAndRequests = step.getInstructOrRequest();
                 var withValue = fixedValueOrVariable(step.getWith(), variableResolver, getSUTActor().getId());
                 int childStepId = 1;
@@ -197,12 +199,14 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                     }
                     //If it is an instruction
                     if (instructionOrRequest instanceof com.gitb.tdl.Instruction instruction) {
+                        hasInstructions = true;
                         // If no expression is specified consider it an empty expression.
                         if (StringUtils.isBlank(instruction.getValue())) {
                             instructionOrRequest.setValue("''");
                         }
                         userInteractionRequest.getInstructionOrRequest().add(processInstruction(instruction, "" + childStepId, withValue, variableResolver));
                     } else if (instructionOrRequest instanceof UserRequest request) { // If it is a request
+                        hasRequests = true;
                         userInteractionRequest.getInstructionOrRequest().add(processRequest(request, "" + childStepId, withValue, variableResolver));
                     } else {
                         throw new IllegalStateException("Unsupported interaction type ["+instructionOrRequest+"]");
@@ -211,6 +215,11 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                 }
                 logger.debug(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), String.format("Triggering user interaction - step [%s] - ID [%s]", TestCaseUtils.extractStepDescription(step, scope), stepId));
                 TestbedService.interactWithUsers(scope.getContext().getSessionId(), stepId, userInteractionRequest);
+
+                if (hasInstructions && !hasRequests && isNonBlocking(variableResolver)) {
+                    // The step is a non-blocking interaction containing only instructions. Notify immediately for its completion.
+                    self().tell(new InputEvent(scope.getContext().getSessionId(), stepId, Collections.emptyList(), step.isAdmin()), self());
+                }
                 return null;
             } catch (Exception e) {
                 logger.error(addMarker(), "Error in interaction step", e);
@@ -225,6 +234,20 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
             }
         }, context.dispatcher());
         waiting();
+    }
+
+    private boolean isNonBlocking(VariableResolver resolver) {
+        boolean blocking;
+        if (step.getBlocking() == null) {
+          blocking = true;
+        } else {
+            if (VariableResolver.isVariableReference(step.getBlocking())) {
+                blocking = (Boolean) resolver.resolveVariableAsBoolean(step.getBlocking()).getValue();
+            } else {
+                blocking = step.getBlocking() != null && Boolean.parseBoolean(step.getBlocking());
+            }
+        }
+        return !blocking;
     }
 
     /**

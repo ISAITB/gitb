@@ -13,12 +13,12 @@ public class CheckUserInteractionOptions extends AbstractTestCaseObserver {
     @Override
     public void handleStep(Object step) {
         super.handleStep(step);
-        if (currentStep instanceof UserInteraction) {
-            UserInteraction interaction = (UserInteraction)currentStep;
+        if (currentStep instanceof UserInteraction interaction) {
             if (interaction.getInstructOrRequest() != null) {
+                boolean hasInputRequests = false;
                 for (InstructionOrRequest ir : ((UserInteraction) step).getInstructOrRequest()) {
-                    if (ir instanceof UserRequest) {
-                        UserRequest ur = (UserRequest)ir;
+                    if (ir instanceof UserRequest ur) {
+                        hasInputRequests = true;
                         if (StringUtils.isBlank(ur.getOptions())) {
                             if (StringUtils.isNotBlank(ur.getOptionLabels())) {
                                 addReportItem(ErrorCode.MISSING_INTERACTION_OPTIONS, currentTestCase.getId(), "optionLabels", "optionLabels");
@@ -48,6 +48,13 @@ public class CheckUserInteractionOptions extends AbstractTestCaseObserver {
                                 }
                             }
                         }
+                    }
+                }
+                if (hasInputRequests && interaction.getBlocking() != null && !interaction.getBlocking().equalsIgnoreCase("true")) {
+                    if (Utils.isVariableExpression(interaction.getBlocking())) {
+                        addReportItem(ErrorCode.INTERACTION_WITH_INPUTS_MIGHT_BE_NON_BLOCKING, currentTestCase.getId());
+                    } else {
+                        addReportItem(ErrorCode.INTERACTION_WITH_INPUTS_IS_NON_BLOCKING, currentTestCase.getId());
                     }
                 }
             }
