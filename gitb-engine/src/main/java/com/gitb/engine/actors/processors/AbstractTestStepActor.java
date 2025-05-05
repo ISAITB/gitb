@@ -15,11 +15,14 @@ import com.gitb.engine.events.model.ErrorStatusEvent;
 import com.gitb.engine.events.model.InputEvent;
 import com.gitb.engine.events.model.StatusEvent;
 import com.gitb.engine.events.model.TestStepStatusEvent;
+import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.engine.utils.StepContext;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
+import com.gitb.tdl.Assign;
 import com.gitb.tdl.IfStep;
+import com.gitb.tdl.Log;
 import com.gitb.tdl.TestConstruct;
 import com.gitb.tr.*;
 import com.gitb.types.MapType;
@@ -156,7 +159,11 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 			} else if (message instanceof InputEvent) {
 				handleInputEvent((InputEvent) message);
 			} else if (message instanceof StartCommand) {
-				start();
+				if (skipStep()) {
+					skipped();
+				} else {
+					start();
+				}
 			} else if (message instanceof StopCommand) {
 				stop();
 			} else if (message instanceof PrepareForStopCommand) {
@@ -170,6 +177,27 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 			}
 		} catch (Exception e) {
 			error(e);
+		}
+	}
+
+	protected boolean skipStep() {
+		String flagToCheck = null;
+		if (step instanceof TestConstruct testConstruct) {
+			flagToCheck = testConstruct.getSkipped();
+		} else if (step instanceof Assign assignStep) {
+			flagToCheck = assignStep.getSkipped();
+		} else if (step instanceof Log logStep) {
+			flagToCheck = logStep.getSkipped();
+		}
+		if (flagToCheck == null || flagToCheck.equalsIgnoreCase("false")) {
+			return false;
+		} else if (flagToCheck.equalsIgnoreCase("true")) {
+			return true;
+		} else if (VariableResolver.isVariableReference(flagToCheck)) {
+			var resolver = new VariableResolver(scope);
+			return (boolean)resolver.resolveVariableAsBoolean(flagToCheck).getValue();
+		} else {
+			return false;
 		}
 	}
 
@@ -187,6 +215,10 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 
 	protected void processing(TestStepReportType testStepReport) {
 		updateTestStepStatus(StepStatus.PROCESSING, testStepReport);
+	}
+
+	protected void skipped() {
+		updateTestStepStatus(StepStatus.SKIPPED, null);
 	}
 
 	protected void completed() {

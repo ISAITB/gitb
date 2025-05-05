@@ -65,14 +65,16 @@ public class FlowStepProcessorActor extends AbstractTestStepActor<FlowStep> {
 			childrenHasWarning = true;
 		}
         if (status == ERROR || status == WARNING || status == COMPLETED) {
-			childMap.remove(event.getSender().path().uid());
-			if (childMap.isEmpty()) {
-				if (childrenHasError) {
-					childrenHasError();
-				} else if (childrenHasWarning) {
-					childrenHasWarning();
-				} else {
-					completed();
+			if (event.getSender() != null) {
+				childMap.remove(event.getSender().path().uid());
+				if (childMap.isEmpty()) {
+					if (childrenHasError) {
+						childrenHasError();
+					} else if (childrenHasWarning) {
+						childrenHasWarning();
+					} else {
+						completed();
+					}
 				}
 			}
 		}

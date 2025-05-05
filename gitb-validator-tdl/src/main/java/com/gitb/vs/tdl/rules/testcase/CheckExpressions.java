@@ -184,8 +184,11 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
     @Override
     public void handleStep(Object step) {
         super.handleStep(step);
-        if (step instanceof TestConstruct testConstructStep && testConstructStep.getId() != null) {
-            recordVariable(testConstructStep.getId(), true);
+        if (step instanceof TestConstruct testConstructStep) {
+            checkToken(testConstructStep.getSkipped(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+            if (testConstructStep.getId() != null) {
+                recordVariable(testConstructStep.getId(), true);
+            }
         }
         if (step instanceof TestStep testStep) {
             checkConstantReferenceInScriptlet(testStep.getDesc(), ATTRIBUTE_DESC);
@@ -274,10 +277,12 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
             }
             checkToken(assignStep.getSource(), TokenType.VARIABLE_REFERENCE);
             checkToken(assignStep.getValue(), TokenType.EXPRESSION);
+            checkToken(assignStep.getSkipped(), TokenType.STRING_OR_VARIABLE_REFERENCE);
         } else if (step instanceof Log logStep) {
             checkToken(logStep.getSource(), TokenType.VARIABLE_REFERENCE);
             checkToken(logStep.getValue(), TokenType.EXPRESSION);
             checkToken(logStep.getLevel(), TokenType.LOG_LEVEL_OR_VARIABLE_REFERENCE);
+            checkToken(logStep.getSkipped(), TokenType.STRING_OR_VARIABLE_REFERENCE);
         } else if (step instanceof Verify verifyStep) {
             checkToken(verifyStep.getHandler(), TokenType.STRING_OR_VARIABLE_REFERENCE);
             checkToken(verifyStep.getLevel(), TokenType.ERROR_LEVEL_OR_VARIABLE_REFERENCE);
