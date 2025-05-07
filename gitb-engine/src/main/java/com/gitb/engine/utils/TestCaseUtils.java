@@ -513,9 +513,17 @@ public class TestCaseUtils {
                 // Failed report but with step at warning level - mark as success and convert reported error items to warnings
                 convertErrorItemsToWarnings(report);
             }
-            // Complete the report's counters.
-            if (report instanceof TAR) {
-                completeReportCounters((TAR)report);
+            if (report instanceof TAR tarReport) {
+                // Complete the report's counters.
+                completeReportCounters(tarReport);
+                // Ensure the report date is present.
+                if (tarReport.getDate() == null) {
+                    try {
+                        tarReport.setDate(XMLDateTimeUtils.getXMLGregorianCalendarDateTime());
+                    } catch (DatatypeConfigurationException e) {
+                        throw new IllegalStateException(e);
+                    }
+                }
             }
         }
     }
