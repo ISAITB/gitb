@@ -29,43 +29,13 @@
                     }
                 }
                 @if (showOrganisationProperties) {
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="table-title">Organisation properties</div>
-                        </div>
-                        <app-parameter-display
-                            [parameters]="organisationProperties"
-                            [onlyMissing]="true"
-                            [onlyRequired]="true"
-                            [showValues]="false"
-                            [editable]="false"></app-parameter-display>
-                    </div>
+                    <app-parameter-display [parameters]="organisationProperties" [title]="dataService.labelOrganisation() + ' properties'" [noMargin]="!showSystemProperties && !showStatementProperties"></app-parameter-display>
                 }
                 @if (showSystemProperties) {
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="table-title">System properties</div>
-                        </div>
-                        <app-parameter-display
-                            [parameters]="systemProperties"
-                            [onlyMissing]="true"
-                            [onlyRequired]="true"
-                            [showValues]="false"
-                            [editable]="false"></app-parameter-display>
-                    </div>
+                    <app-parameter-display [parameters]="systemProperties" [title]="dataService.labelSystem() + ' properties'" [noMargin]="!showStatementProperties"></app-parameter-display>
                 }
                 @if (showStatementProperties) {
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="table-title">Conformance statement parameters</div>
-                        </div>
-                        <app-parameter-display
-                            [parameters]="statementProperties"
-                            [onlyMissing]="true"
-                            [onlyRequired]="true"
-                            [showValues]="false"
-                            [editable]="false"></app-parameter-display>
-                    </div>
+                    <app-parameter-display [parameters]="statementProperties" [title]="'Conformance statement properties'" [noMargin]="true"></app-parameter-display>
                 }
             </div>
         } @else {

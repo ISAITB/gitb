@@ -1,61 +1,17 @@
-<div class="table-container rounded">
+<div class="property-container" [class.mb-0]="noMargin">
+    <div class="property-container-title" (click)="collapsed = !collapsed" (mouseenter)="hovering = true" (mouseleave)="hovering = false" [class.hovering]="hovering">
+        <app-collapsing-icon [isCollapsed]="collapsed"></app-collapsing-icon>{{title}}
+    </div>
     @if (parameters && parameters.length > 0) {
-        <table class="table table-directive" [ngClass]="{'expandable-table': styleAsNestedTable}">
-            <thead>
-                <tr>
-                    @if (!onlyMissing) {
-                        <th style="width:1%; padding-right:30px;">Set?</th>
-                    }
-                    <th style="width:20%">{{parameterLabel}}</th>
-                    @if (showValues) {
-                        <th>Configured value</th>
-                    }
-                    <th>Description</th>
-                    @if (showActions) {
-                        <th class="th-min-centered"></th>
-                    }
-                </tr>
-            </thead>
-            <tbody>
+        <div [collapse]="collapsed" [isAnimated]="true">
+            <div class="property-list-container" [class.hovering]="hovering">
                 @for (parameter of parameters; track parameter.id) {
-                    <tr>
-                        @if (!onlyMissing) {
-                            <td style="text-align: center;padding-right:30px;"><i class="fa" [ngClass]="{'fa-check': parameter.configured, 'fa-times': !parameter.configured}"></i></td>
-                        }
-                        @if (isRequired(parameter)) {
-                            <td style="font-weight: bold;">*&nbsp;{{parameter.name}}</td>
-                        }
-                        @if (!isRequired(parameter)) {
-                            <td>{{parameter.name}}</td>
-                        }
-                        @if (showValues) {
-                            @if (parameter.kind == 'BINARY') {
-                                <td>
-                                    @if (parameter.value != undefined) {
-                                        <a href (click)="downloadBinaryParameter(parameter);$event.preventDefault()">{{parameter.fileName}}</a>
-                                    }
-                                </td>
-                            } @else {
-                                <td>
-                                    @if (parameter.valueToShow != undefined) {
-                                        <span>{{parameter.valueToShow}}</span>
-                                    } @else {
-                                        <span>{{parameter.value}}</span>
-                                    }
-                                </td>
-                            }
-                        }
-                        <td>{{parameter.desc}}</td>
-                        @if (showActions) {
-                            <td class="td-min-centered">
-                                @if (canEdit!(parameter)) {
-                                    <button type="button" class="btn btn-secondary" (click)="onEdit(parameter)" containerClass="shortTooltip" tooltip="Edit" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-pencil"></i></button>
-                                }
-                            </td>
-                        }
-                    </tr>
+                    <div class="property">
+                        <div class="property-name">{{ parameter.name }}</div>
+                        <div class="property-description">{{ parameter.desc }}</div>
+                    </div>
                 }
-            </tbody>
-        </table>
+            </div>
+        </div>
     }
 </div>

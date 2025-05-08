@@ -10,7 +10,6 @@ import { EndpointParameter } from 'src/app/types/endpoint-parameter';
 @Component({
     selector: 'app-missing-configuration-modal',
     templateUrl: './missing-configuration-modal.component.html',
-    styleUrls: ['./missing-configuration-modal.component.less'],
     standalone: false
 })
 export class MissingConfigurationModalComponent implements OnInit {
@@ -37,7 +36,7 @@ export class MissingConfigurationModalComponent implements OnInit {
 
   constructor(
     private modalRef: BsModalRef,
-    private dataService: DataService
+    public dataService: DataService
   ) { }
 
   ngOnInit(): void {
