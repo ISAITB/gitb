@@ -1169,7 +1169,8 @@ object JsonUtil {
     testCaseActions.foreach { action =>
       testCaseMap.put(action.identifier, action)
     }
-    (TestSuiteDeployRequest(specification, ignoreWarnings, replaceTestHistory, updateSpecification, testCaseMap, sharedTestSuite), testSuite)
+    val showIdentifiers = (jsonConfig \ "showIdentifiers").asOpt[Boolean].getOrElse(true)
+    (TestSuiteDeployRequest(specification, ignoreWarnings, replaceTestHistory, updateSpecification, testCaseMap, sharedTestSuite, showIdentifiers), testSuite)
   }
 
   def parseJsTestSuiteUndeployRequest(jsonConfig: JsValue, sharedTestSuite: Boolean): TestSuiteUndeployRequest = {
@@ -2768,7 +2769,7 @@ object JsonUtil {
     testCaseArray
   }
 
-  def jsTestSuiteDeployInfo(resultWithKeys: TestSuiteUploadResultWithApiKeys):JsObject = {
+  def jsTestSuiteDeployInfo(resultWithKeys: TestSuiteUploadResultWithApiKeys, showIdentifiers: Boolean):JsObject = {
     var errors = Json.arr()
     var warnings = Json.arr()
     var messages = Json.arr()
@@ -2804,7 +2805,7 @@ object JsonUtil {
       json = json.+("messages", messages)
     }
     // API key identifiers.
-    if (resultWithKeys.testSuiteIdentifier.isDefined) {
+    if (showIdentifiers && resultWithKeys.testSuiteIdentifier.isDefined) {
       var identifiers = Json.obj(
         "testSuite" -> resultWithKeys.testSuiteIdentifier.get
       )

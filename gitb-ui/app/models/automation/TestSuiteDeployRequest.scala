@@ -10,11 +10,12 @@ case class TestSuiteDeployRequest(
    replaceTestHistory: Option[Boolean],
    updateSpecification: Option[Boolean],
    testCaseUpdates: mutable.HashMap[String, TestCaseDeploymentAction],
-   sharedTestSuite: Boolean
+   sharedTestSuite: Boolean,
+   showIdentifiers: Boolean
 ) {
 
   def withTestSuiteUpdateMetadata(replaceTestHistory: Boolean, updateSpecification: Boolean): TestSuiteDeployRequest = {
-    TestSuiteDeployRequest(this.specification, this.ignoreWarnings, Some(replaceTestHistory), Some(updateSpecification), this.testCaseUpdates, this.sharedTestSuite)
+    copy(replaceTestHistory = Some(replaceTestHistory), updateSpecification = Some(updateSpecification))
   }
 
 }

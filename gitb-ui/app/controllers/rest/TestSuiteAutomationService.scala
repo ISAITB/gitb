@@ -51,7 +51,7 @@ class TestSuiteAutomationService @Inject() (authorizedAction: AuthorizedAction,
         }
         if (response == null) {
           testSuiteManager.deployTestSuiteFromApi(ids.get._1, ids.get._2, input, testSuiteArchive).map { result =>
-            ResponseConstructor.constructJsonResponse(JsonUtil.jsTestSuiteDeployInfo(result).toString)
+            ResponseConstructor.constructJsonResponse(JsonUtil.jsTestSuiteDeployInfo(result, input.showIdentifiers).toString)
           }
         } else {
           Future.successful(response)
@@ -71,6 +71,7 @@ class TestSuiteAutomationService @Inject() (authorizedAction: AuthorizedAction,
           val params = Some(request.body.asMultipartFormData.get.dataParts)
           val defaultReplaceTestHistory = ParameterExtractor.optionalBodyParameter(params, "replaceTestHistory").map(_.toBoolean)
           val defaultUpdateSpecification = ParameterExtractor.optionalBodyParameter(params, "updateSpecification").map(_.toBoolean)
+          val showIdentifiers = ParameterExtractor.optionalBodyParameter(params, "showIdentifiers").forall(_.toBoolean)
           val testCaseActions = mutable.HashMap[String, TestCaseDeploymentAction]()
           // Set update specification flags.
           ParameterExtractor.optionalArrayBodyParameter(params, "testCaseWithSpecificationUpdate").getOrElse(List.empty).foreach { identifier =>
@@ -108,7 +109,8 @@ class TestSuiteAutomationService @Inject() (authorizedAction: AuthorizedAction,
             defaultReplaceTestHistory,
             defaultUpdateSpecification,
             testCaseActions,
-            sharedTestSuite
+            sharedTestSuite,
+            showIdentifiers
           )
           val uploadedFile = request.body.asMultipartFormData.get.file("testSuite")
           if (uploadedFile.isDefined) {
