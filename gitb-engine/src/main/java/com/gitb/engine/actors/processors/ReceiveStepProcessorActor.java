@@ -43,6 +43,8 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import static com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils.getMessageFromBindings;
+
 /**
  * Receive step executor actor
  */
@@ -113,7 +115,7 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 				if (moduleDefinition != null && moduleDefinition.getReceiveConfigs() != null) {
 					checkRequiredConfigsAndSetDefaultValues(moduleDefinition.getReceiveConfigs().getParam(), step.getConfig());
 				}
-				Message inputMessage = getMessageFromBindings(step.getInput());
+				Message inputMessage = getMessageFromBindings(messagingHandler, step.getInput(), expressionHandler);
 				String callId = UUID.randomUUID().toString();
 				CallbackManager.getInstance().registerForNotification(self(), messagingContext.getSessionId(), callId);
 				if (!StringUtils.isBlank(step.getTimeout())) {

@@ -29,6 +29,8 @@ import scala.concurrent.Promise;
 
 import java.util.Objects;
 
+import static com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils.getMessageFromBindings;
+
 /**
  * Created by serbay.
  *
@@ -105,7 +107,7 @@ public class ListenStepProcessorActor extends AbstractMessagingStepProcessorActo
                     checkRequiredConfigsAndSetDefaultValues(moduleDefinition.getReceiveConfigs().getParam(), step.getConfig());
                 }
 
-                Message inputMessage = getMessageFromBindings(step.getInput());
+                Message inputMessage = getMessageFromBindings(messagingHandler, step.getInput(), expressionHandler);
                 var from = VariableResolver.isVariableReference(getFrom())?(String) resolver.resolveVariableAsString(getFrom()).getValue():getFrom();
                 var to = VariableResolver.isVariableReference(getTo())?(String) resolver.resolveVariableAsString(getTo()).getValue():getTo();
                 MessagingReport report =

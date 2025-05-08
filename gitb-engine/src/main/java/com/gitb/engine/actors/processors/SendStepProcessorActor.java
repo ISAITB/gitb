@@ -31,6 +31,8 @@ import scala.concurrent.Promise;
 
 import java.util.Objects;
 
+import static com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils.getMessageFromBindings;
+
 /**
  * Created by serbay on 9/30/14.
  *
@@ -94,7 +96,7 @@ public class SendStepProcessorActor extends AbstractMessagingStepProcessorActor<
 					}
 				}
 
-				Message message = getMessageFromBindings(step.getInput());
+				Message message = getMessageFromBindings(messagingHandler, step.getInput(), expressionHandler);
 
 				MessagingReport report =
 						messagingHandler

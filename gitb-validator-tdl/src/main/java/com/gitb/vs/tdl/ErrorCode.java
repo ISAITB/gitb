@@ -148,7 +148,11 @@ public enum ErrorCode {
     MISSING_ACTOR_REFERENCE(                            "TDL-127", "Test case [%s] defines a %s step without referencing the '%s' actor. This is allowed only when the test case defines a single simulated actor.", ERROR, false),
     ACTOR_REFERENCES_IN_SCRIPTLET_MISSING(              "TDL-128", "Scriptlets define messaging steps without 'from' or 'to' actor references, which default to a simulated (non-SUT) actor. Ensure these scriptlets are used in test cases that define a single simulated actor besides the SUT actor.", INFO),
     INTERACTION_WITH_INPUTS_IS_NON_BLOCKING(            "TDL-129", "%s [%s] defines a non-blocking user interaction step that includes request elements for user inputs. The interaction will be considered as blocking.", WARNING, true),
-    INTERACTION_WITH_INPUTS_MIGHT_BE_NON_BLOCKING(      "TDL-129", "%s [%s] defines a potentially non-blocking user interaction step that includes request elements for user inputs. The interaction will be considered as blocking.", WARNING, true)
+    INTERACTION_WITH_INPUTS_MIGHT_BE_NON_BLOCKING(      "TDL-129", "%s [%s] defines a potentially non-blocking user interaction step that includes request elements for user inputs. The interaction will be considered as blocking.", WARNING, true),
+    INTERACTION_WITH_NON_CUSTOM_HANDLER(                "TDL-130", "%s [%s] defines an interact step with a specific handler that is not an external, custom one. Only external custom handlers can be used as interact step handlers.", ERROR, true),
+    INTERACTION_WITH_UNEXPECTED_HANDLER_INPUTS(         "TDL-131", "%s [%s] defines an interact step with a handler configuration, which however never delegates to a handler. The handler configuration will be ignored.", WARNING, true),
+    INTERACTION_WITHOUT_EXPECTED_HANDLER(               "TDL-132", "%s [%s] defines an interact step that delegates to a handler but that does not define the handler reference.", ERROR, true),
+    INTERACTION_WITH_UNEXPECTED_HANDLER(                "TDL-133", "%s [%s] defines an interact step with a handler reference but that never enables it. The handler reference will be ignored.", WARNING, true),
     ;
 
     private final String code;

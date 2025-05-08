@@ -515,7 +515,7 @@ public class TestCaseContext {
             } else if(step instanceof BeginTransaction beginTransactionStep) {
                 transactions.add(buildTransactionInfo(beginTransactionStep.getFrom(), beginTransactionStep.getTo(), beginTransactionStep.getHandler(), beginTransactionStep.getProperty(), resolver, scriptletCallStack));
 			} else if (step instanceof MessagingStep messagingStep) {
-                if (StringUtils.isBlank(messagingStep.getTxnId()) && StringUtils.isNotBlank(messagingStep.getHandler())) {
+				if (StringUtils.isBlank(messagingStep.getTxnId()) && StringUtils.isNotBlank(messagingStep.getHandler())) {
 					String fromActor;
 					String toActor;
 					if (step instanceof ReceiveOrListen) {
@@ -526,6 +526,13 @@ public class TestCaseContext {
 						toActor = Objects.requireNonNullElseGet(messagingStep.getTo(), this::getDefaultSutActor);
 					}
 					transactions.add(buildTransactionInfo(fromActor, toActor, messagingStep.getHandler(), messagingStep.getProperty(), resolver, scriptletCallStack));
+				}
+			} else if (step instanceof UserInteraction interactionStep) {
+				if (!StringUtils.equalsIgnoreCase(interactionStep.getHandlerEnabled(), "false") && interactionStep.getHandler() != null) {
+					// We have an interaction step that may delegate processing to a custom handler.
+					String interactionActor = getDefaultSutActor();
+					List<Configuration> stepProperties = Optional.ofNullable(interactionStep.getHandlerConfig()).map(HandlerConfiguration::getProperty).orElseGet(Collections::emptyList);
+					transactions.add(buildTransactionInfo(interactionActor, interactionActor, interactionStep.getHandler(), stepProperties, resolver, scriptletCallStack));
 				}
             } else if (step instanceof IfStep) {
 	            transactions.addAll(createTransactionInfo(((IfStep) step).getThen(), testSuiteContext, resolver, scriptletCallStack));

@@ -201,6 +201,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
             checkConfigurations(beginTransactionStep.getProperty());
             checkConfigurations(beginTransactionStep.getConfig());
         } else if (step instanceof MessagingStep messagingStep) {
+            checkToken(messagingStep.getHandler(), TokenType.STRING_OR_VARIABLE_REFERENCE);
             checkConstantReferenceInScriptlet(messagingStep.getFrom(), ATTRIBUTE_FROM);
             checkConstantReferenceInScriptlet(messagingStep.getTo(), ATTRIBUTE_TO);
             checkConstantReferenceInScriptlet(messagingStep.getReply(), ATTRIBUTE_REPLY);
@@ -217,6 +218,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
             checkConfigurations(beginProcessingTransactionStep.getProperty());
             checkConfigurations(beginProcessingTransactionStep.getConfig());
         } else if (step instanceof Process processStep) {
+            checkToken(processStep.getHandler(), TokenType.STRING_OR_VARIABLE_REFERENCE);
             checkBindings(processStep.getInput());
             checkToken(processStep.getInputAttribute(), TokenType.STRING_OR_VARIABLE_REFERENCE);
             checkToken(processStep.getLevel(), TokenType.ERROR_LEVEL_OR_VARIABLE_REFERENCE);
@@ -305,6 +307,8 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
             checkConstantReferenceInScriptlet(userInteractionStep.getWith(), ATTRIBUTE_WITH);
             checkToken(userInteractionStep.getInputTitle(), TokenType.STRING_OR_VARIABLE_REFERENCE);
             checkToken(userInteractionStep.getBlocking(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+            checkToken(userInteractionStep.getHandlerEnabled(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+            checkToken(userInteractionStep.getHandler(), TokenType.STRING_OR_VARIABLE_REFERENCE);
             if (userInteractionStep.getInstructOrRequest() != null) {
                 for (InstructionOrRequest ir: userInteractionStep.getInstructOrRequest()) {
                     checkConstantReferenceInScriptlet(ir.getDesc(), ATTRIBUTE_DESC);
@@ -319,6 +323,10 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
                         checkExpression(ir);
                     }
                 }
+            }
+            if (userInteractionStep.getHandlerConfig() != null) {
+                checkConfigurations(userInteractionStep.getHandlerConfig().getProperty());
+                checkBindings(userInteractionStep.getHandlerConfig().getInput());
             }
         } else if (step instanceof Group groupStep) {
             checkConstantReferenceInScriptlet(groupStep.getDesc(), ATTRIBUTE_DESC);

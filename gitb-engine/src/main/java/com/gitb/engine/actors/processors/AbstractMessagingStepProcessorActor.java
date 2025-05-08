@@ -16,9 +16,7 @@ import com.gitb.tdl.MessagingStep;
 import com.gitb.tr.TestResultType;
 import com.gitb.tr.TestStepReportType;
 import com.gitb.types.DataType;
-import com.gitb.types.DataTypeFactory;
 import com.gitb.types.MapType;
-import com.gitb.utils.BindingUtils;
 import com.gitb.utils.ConfigurationUtils;
 import com.gitb.utils.ErrorUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -27,7 +25,10 @@ import org.apache.pekko.dispatch.OnFailure;
 import org.apache.pekko.dispatch.OnSuccess;
 import scala.concurrent.Promise;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * Created by serbay.
@@ -37,11 +38,10 @@ import java.util.*;
  */
 public abstract class AbstractMessagingStepProcessorActor<T extends MessagingStep> extends AbstractTestStepActor<T> {
 
-    private final ExpressionHandler expressionHandler;
+    final ExpressionHandler expressionHandler;
 
     public AbstractMessagingStepProcessorActor(T step, TestCaseScope scope, String stepId, StepContext stepContext) {
         super(step, scope, stepId, stepContext);
-
         expressionHandler = new ExpressionHandler(scope);
     }
 
@@ -108,76 +108,6 @@ public abstract class AbstractMessagingStepProcessorActor<T extends MessagingSte
         }
 
         return map;
-    }
-
-    private void setInputWithModuleDefinition(Message message, List<Binding> input, List<TypedParameter> expectedParameters) {
-        Iterator<TypedParameter> expectedParamsIterator = expectedParameters.iterator();
-        Iterator<Binding> inputsIterator = input.iterator();
-        while (expectedParamsIterator.hasNext() && inputsIterator.hasNext()) {
-            TypedParameter expectedParam = expectedParamsIterator.next();
-            Binding inputExpression = inputsIterator.next();
-            DataType result = expressionHandler.processExpression(inputExpression, expectedParam.getType());
-            message.addInput(expectedParam.getName(), result);
-        }
-        checkRequiredParameters(message, expectedParameters);
-    }
-
-    private void setInputWithNameBinding(Message message, List<Binding> input, List<TypedParameter> expectedParameters) {
-        for (Binding binding : input) {
-            TypedParameter parameter = getTypedParameterByName(expectedParameters, binding.getName());
-            DataType data;
-            if (parameter == null) {
-                data = expressionHandler.processExpression(binding);
-            } else {
-                data = expressionHandler.processExpression(binding, parameter.getType());
-            }
-            message.addInput(binding.getName(), data);
-        }
-        checkRequiredParameters(message, expectedParameters);
-    }
-
-    private TypedParameter getTypedParameterByName(List<TypedParameter> parameters, String name) {
-        for(TypedParameter parameter : parameters) {
-            if(parameter.getName().equals(name)) {
-                return parameter;
-            }
-        }
-
-        return null;
-    }
-
-    private void checkRequiredParameters(Message message, List<TypedParameter> expectedParameters) {
-        for (TypedParameter expectedParameter : expectedParameters) {
-            if (expectedParameter.getUse() == UsageEnumeration.R && !message.hasInput(expectedParameter.getName())) {
-                if (expectedParameter.getValue() == null) {
-                    throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Missing input parameter ["+expectedParameter.getName()+"]"));
-                } else { // set the default value
-                    DataType defaultValue = DataTypeFactory.getInstance().create(expectedParameter.getValue().getBytes(), expectedParameter.getType());
-                    message.getFragments().put(expectedParameter.getName(), defaultValue);
-                }
-            }
-        }
-    }
-
-    private List<TypedParameter> getExpectedInputs(IMessagingHandler messagingHandler) {
-        List<TypedParameter> expectedInputs = new ArrayList<>();
-        var definition = messagingHandler.getModuleDefinition();
-        if (definition != null && definition.getInputs() != null) {
-            expectedInputs.addAll(definition.getInputs().getParam());
-        }
-        return expectedInputs;
-    }
-
-    protected Message getMessageFromBindings(List<Binding> bindings) {
-        final IMessagingHandler messagingHandler = getMessagingContext().getHandler();
-        Message message = new Message();
-        boolean isNameBinding = BindingUtils.isNameBinding(bindings);
-        if (isNameBinding) {
-            setInputWithNameBinding(message, bindings, getExpectedInputs(messagingHandler));
-        } else {
-            setInputWithModuleDefinition(message, bindings, getExpectedInputs(messagingHandler));
-        }
-        return message;
     }
 
     protected Pair<MessagingContext, TransactionContext> determineMessagingContexts(VariableResolver resolver) {

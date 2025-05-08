@@ -1,18 +1,19 @@
 package com.gitb.engine.messaging.handlers.utils;
 
-import com.gitb.core.AnyContent;
-import com.gitb.core.MessagingModule;
+import com.gitb.core.*;
+import com.gitb.engine.expr.ExpressionHandler;
 import com.gitb.engine.messaging.handlers.layer.AbstractMessagingHandler;
 import com.gitb.engine.messaging.handlers.layer.application.soap.AttachmentInfo;
 import com.gitb.engine.messaging.handlers.layer.application.soap.SoapVersion;
 import com.gitb.exceptions.GITBEngineInternalError;
+import com.gitb.messaging.IMessagingHandler;
 import com.gitb.messaging.Message;
 import com.gitb.messaging.MessagingReport;
+import com.gitb.tdl.Binding;
 import com.gitb.tr.*;
+import com.gitb.tr.ObjectFactory;
 import com.gitb.types.*;
-import com.gitb.utils.DataTypeUtils;
-import com.gitb.utils.XMLDateTimeUtils;
-import com.gitb.utils.XMLUtils;
+import com.gitb.utils.*;
 import jakarta.activation.DataHandler;
 import jakarta.mail.util.ByteArrayDataSource;
 import jakarta.xml.soap.*;
@@ -500,4 +501,75 @@ public class MessagingHandlerUtils {
 						.map(value -> SoapVersion.VERSION_1_2))
 				.orElse(SoapVersion.VERSION_1_1);
 	}
+
+	public static Message getMessageFromBindings(IMessagingHandler messagingHandler, List<Binding> bindings, ExpressionHandler expressionHandler) {
+		Message message = new Message();
+		boolean isNameBinding = BindingUtils.isNameBinding(bindings);
+		if (isNameBinding) {
+			setInputWithNameBinding(message, bindings, getExpectedInputs(messagingHandler), expressionHandler);
+		} else {
+			setInputWithModuleDefinition(message, bindings, getExpectedInputs(messagingHandler), expressionHandler);
+		}
+		return message;
+	}
+
+	private static List<TypedParameter> getExpectedInputs(IMessagingHandler messagingHandler) {
+		List<TypedParameter> expectedInputs = new ArrayList<>();
+		var definition = messagingHandler.getModuleDefinition();
+		if (definition != null && definition.getInputs() != null) {
+			expectedInputs.addAll(definition.getInputs().getParam());
+		}
+		return expectedInputs;
+	}
+
+	private static void setInputWithModuleDefinition(Message message, List<Binding> input, List<TypedParameter> expectedParameters, ExpressionHandler expressionHandler) {
+		Iterator<TypedParameter> expectedParamsIterator = expectedParameters.iterator();
+		Iterator<Binding> inputsIterator = input.iterator();
+		while (expectedParamsIterator.hasNext() && inputsIterator.hasNext()) {
+			TypedParameter expectedParam = expectedParamsIterator.next();
+			Binding inputExpression = inputsIterator.next();
+			DataType result = expressionHandler.processExpression(inputExpression, expectedParam.getType());
+			message.addInput(expectedParam.getName(), result);
+		}
+		checkRequiredParameters(message, expectedParameters);
+	}
+
+	private static void setInputWithNameBinding(Message message, List<Binding> input, List<TypedParameter> expectedParameters, ExpressionHandler expressionHandler) {
+		for (Binding binding : input) {
+			TypedParameter parameter = getTypedParameterByName(expectedParameters, binding.getName());
+			DataType data;
+			if (parameter == null) {
+				data = expressionHandler.processExpression(binding);
+			} else {
+				data = expressionHandler.processExpression(binding, parameter.getType());
+			}
+			message.addInput(binding.getName(), data);
+		}
+		checkRequiredParameters(message, expectedParameters);
+	}
+
+	private static TypedParameter getTypedParameterByName(List<TypedParameter> parameters, String name) {
+		for(TypedParameter parameter : parameters) {
+			if(parameter.getName().equals(name)) {
+				return parameter;
+			}
+		}
+
+		return null;
+	}
+
+	private static void checkRequiredParameters(Message message, List<TypedParameter> expectedParameters) {
+		for (TypedParameter expectedParameter : expectedParameters) {
+			if (expectedParameter.getUse() == UsageEnumeration.R && !message.hasInput(expectedParameter.getName())) {
+				if (expectedParameter.getValue() == null) {
+					throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Missing input parameter ["+expectedParameter.getName()+"]"));
+				} else { // set the default value
+					DataType defaultValue = DataTypeFactory.getInstance().create(expectedParameter.getValue().getBytes(), expectedParameter.getType());
+					message.getFragments().put(expectedParameter.getName(), defaultValue);
+				}
+			}
+		}
+	}
+
+
 }

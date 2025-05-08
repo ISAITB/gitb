@@ -58,6 +58,20 @@ public class CheckUserInteractionOptions extends AbstractTestCaseObserver {
                     }
                 }
             }
+            if (StringUtils.equalsIgnoreCase("false", interaction.getHandlerEnabled())) {
+                // We know we never delegate to a handler.
+                if (interaction.getHandler() != null) {
+                    addReportItem(ErrorCode.INTERACTION_WITH_UNEXPECTED_HANDLER, currentTestCase.getId());
+                }
+                if (interaction.getHandlerConfig() != null) {
+                    addReportItem(ErrorCode.INTERACTION_WITH_UNEXPECTED_HANDLER_INPUTS, currentTestCase.getId());
+                }
+            } else {
+                // We may delegate to a handler.
+                if (interaction.getHandler() == null) {
+                    addReportItem(ErrorCode.INTERACTION_WITHOUT_EXPECTED_HANDLER, currentTestCase.getId());
+                }
+            }
         }
     }
 

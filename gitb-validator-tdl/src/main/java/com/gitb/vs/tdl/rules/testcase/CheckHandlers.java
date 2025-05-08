@@ -1,8 +1,8 @@
 package com.gitb.vs.tdl.rules.testcase;
 
 import com.gitb.core.Configuration;
-import com.gitb.tdl.Process;
 import com.gitb.tdl.*;
+import com.gitb.tdl.Process;
 import com.gitb.vs.tdl.ErrorCode;
 import com.gitb.vs.tdl.ExternalConfiguration;
 import com.gitb.vs.tdl.util.Utils;
@@ -25,36 +25,36 @@ public class CheckHandlers extends AbstractTestCaseObserver {
     @Override
     public void handleStep(Object stepObj) {
         super.handleStep(stepObj);
-        if (stepObj instanceof BeginTransaction) {
-            String handler = ((BeginTransaction) stepObj).getHandler();
+        if (stepObj instanceof BeginTransaction transactionStep) {
+            String handler = transactionStep.getHandler();
             if (checkHandlerBeforeInputValidations(handler, context.getExternalConfiguration().getEmbeddedMessagingHandlers().keySet(), ErrorCode.INVALID_EMBEDDED_MESSAGING_HANDLER_REFERENCE)) {
                 // Check deprecation.
                 checkDeprecation(handler, context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler));
                 // Check configs.
                 checkConfigs(
-                        ((BeginTransaction)stepObj).getConfig(),
+                        transactionStep.getConfig(),
                         context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler).getRequiredTxConfigs(),
                         context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler).getOptionalTxConfigs(),
                         handler
                 );
-                messagingTxToHandler.put(((BeginTransaction) stepObj).getTxnId(), handler);
+                messagingTxToHandler.put(transactionStep.getTxnId(), handler);
             }
-        } else if (stepObj instanceof EndTransaction) {
-            messagingTxToHandler.remove(((EndTransaction) stepObj).getTxnId());
-        } else if (stepObj instanceof Send) {
+        } else if (stepObj instanceof EndTransaction transactionStep) {
+            messagingTxToHandler.remove(transactionStep.getTxnId());
+        } else if (stepObj instanceof Send messagingStep) {
             String handler;
             // Checking that the handler is defined once and is correct is none in CheckTransactions.
-            if (((Send) stepObj).getTxnId() != null) {
-                handler = messagingTxToHandler.get(((Send) stepObj).getTxnId());
+            if (messagingStep.getTxnId() != null) {
+                handler = messagingTxToHandler.get(messagingStep.getTxnId());
             } else {
-                handler = ((Send) stepObj).getHandler();
+                handler = messagingStep.getHandler();
             }
             if (checkHandlerBeforeInputValidations(handler, context.getExternalConfiguration().getEmbeddedMessagingHandlers().keySet(), ErrorCode.INVALID_EMBEDDED_MESSAGING_HANDLER_REFERENCE)) {
                 // Check deprecation.
                 checkDeprecation(handler, context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler));
                 // Check inputs and configs.
                 checkConfigs(
-                        ((Send) stepObj).getConfig(),
+                        messagingStep.getConfig(),
                         context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler).getRequiredSendConfigs(),
                         context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler).getOptionalSendConfigs(),
                         handler
@@ -64,26 +64,26 @@ public class CheckHandlers extends AbstractTestCaseObserver {
                 Set<String> optionalInputs = new HashSet<>(context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler).getOptionalInputs());
                 optionalInputs.addAll(context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler).getOptionalSendInputs());
                 checkInputs(
-                        ((Send) stepObj).getInput(),
+                        messagingStep.getInput(),
                         requiredInputs,
                         optionalInputs,
                         handler
                 );
             }
-        } else if (stepObj instanceof ReceiveOrListen) {
+        } else if (stepObj instanceof ReceiveOrListen messagingStep) {
             String handler;
             // Checking that the handler is defined once and is correct is none in CheckTransactions.
-            if (((ReceiveOrListen) stepObj).getTxnId() != null) {
-                handler = messagingTxToHandler.get(((ReceiveOrListen) stepObj).getTxnId());
+            if (messagingStep.getTxnId() != null) {
+                handler = messagingTxToHandler.get(messagingStep.getTxnId());
             } else {
-                handler = ((ReceiveOrListen) stepObj).getHandler();
+                handler = messagingStep.getHandler();
             }
             if (checkHandlerBeforeInputValidations(handler, context.getExternalConfiguration().getEmbeddedMessagingHandlers().keySet(), ErrorCode.INVALID_EMBEDDED_MESSAGING_HANDLER_REFERENCE)) {
                 // Check deprecation.
                 checkDeprecation(handler, context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler));
                 // Check inputs and configs.
                 checkConfigs(
-                        ((ReceiveOrListen) stepObj).getConfig(),
+                        messagingStep.getConfig(),
                         context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler).getRequiredReceiveConfigs(),
                         context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler).getOptionalReceiveConfigs(),
                         handler
@@ -93,46 +93,46 @@ public class CheckHandlers extends AbstractTestCaseObserver {
                 Set<String> optionalInputs = new HashSet<>(context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler).getOptionalInputs());
                 optionalInputs.addAll(context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler).getOptionalReceiveInputs());
                 checkInputs(
-                        ((ReceiveOrListen) stepObj).getInput(),
+                        messagingStep.getInput(),
                         requiredInputs,
                         optionalInputs,
                         handler
                 );
             }
-        } else if (stepObj instanceof BeginProcessingTransaction) {
-            String handler = ((BeginProcessingTransaction) stepObj).getHandler();
+        } else if (stepObj instanceof BeginProcessingTransaction transactionStep) {
+            String handler = transactionStep.getHandler();
             if (checkHandlerBeforeInputValidations(handler, context.getExternalConfiguration().getEmbeddedProcessingHandlers().keySet(), ErrorCode.INVALID_EMBEDDED_PROCESSING_HANDLER_REFERENCE)) {
                 // Check deprecation.
                 checkDeprecation(handler, context.getExternalConfiguration().getEmbeddedProcessingHandlers().get(handler));
                 // Check configs.
                 checkConfigs(
-                        ((BeginProcessingTransaction)stepObj).getConfig(),
+                        transactionStep.getConfig(),
                         context.getExternalConfiguration().getEmbeddedProcessingHandlers().get(handler).getRequiredConfigs(),
                         context.getExternalConfiguration().getEmbeddedProcessingHandlers().get(handler).getOptionalConfigs(),
                         handler
                 );
-                processingTxToHandler.put(((BeginProcessingTransaction)stepObj).getTxnId(), handler);
+                processingTxToHandler.put(transactionStep.getTxnId(), handler);
             }
-        } else if (stepObj instanceof Process) {
-            if (((Process) stepObj).getOperation() != null && ((Process) stepObj).getOperationAttribute() != null) {
-                addReportItem(ErrorCode.DOUBLE_PROCESSING_OPERATION, currentTestCase.getId(), ((Process) stepObj).getOperationAttribute(), ((Process) stepObj).getOperation());
+        } else if (stepObj instanceof Process processStep) {
+            if (processStep.getOperation() != null && processStep.getOperationAttribute() != null) {
+                addReportItem(ErrorCode.DOUBLE_PROCESSING_OPERATION, currentTestCase.getId(), processStep.getOperationAttribute(), processStep.getOperation());
             }
-            if (!((Process) stepObj).getInput().isEmpty() && ((Process) stepObj).getInputAttribute() != null) {
-                addReportItem(ErrorCode.DOUBLE_PROCESSING_INPUTS, currentTestCase.getId(), ((Process) stepObj).getOperationAttribute());
+            if (!processStep.getInput().isEmpty() && processStep.getInputAttribute() != null) {
+                addReportItem(ErrorCode.DOUBLE_PROCESSING_INPUTS, currentTestCase.getId(), processStep.getOperationAttribute());
             }
             String handler;
-            if (((Process) stepObj).getTxnId() != null && processingTxToHandler.containsKey(((Process) stepObj).getTxnId())) {
-                handler = processingTxToHandler.get(((Process) stepObj).getTxnId());
+            if (processStep.getTxnId() != null && processingTxToHandler.containsKey(processStep.getTxnId())) {
+                handler = processingTxToHandler.get(processStep.getTxnId());
             } else {
-                handler = ((Process) stepObj).getHandler();
+                handler = processStep.getHandler();
             }
             if (checkHandlerBeforeInputValidations(handler, context.getExternalConfiguration().getEmbeddedProcessingHandlers().keySet(), ErrorCode.INVALID_EMBEDDED_PROCESSING_HANDLER_REFERENCE)) {
                 // Check deprecation.
                 checkDeprecation(handler, context.getExternalConfiguration().getEmbeddedProcessingHandlers().get(handler));
                 // Check operation.
-                String operation = ((Process) stepObj).getOperation();
+                String operation = processStep.getOperation();
                 if (operation == null) {
-                    operation = ((Process) stepObj).getOperationAttribute();
+                    operation = processStep.getOperationAttribute();
                 }
                 if (operation == null) {
                     if (context.getExternalConfiguration().getEmbeddedProcessingHandlers().get(handler).getOperations().size() > 1) {
@@ -148,7 +148,7 @@ public class CheckHandlers extends AbstractTestCaseObserver {
                     // Check operation-specific config.
                     if (context.getExternalConfiguration().getEmbeddedProcessingHandlers().get(handler).getOperations().containsKey(operation)) {
                         checkInputs(
-                                getInputs((Process) stepObj),
+                                getInputs(processStep),
                                 context.getExternalConfiguration().getEmbeddedProcessingHandlers().get(handler).getOperations().get(operation).getRequiredInputs(),
                                 context.getExternalConfiguration().getEmbeddedProcessingHandlers().get(handler).getOperations().get(operation).getOptionalInputs(),
                                 handler
@@ -160,24 +160,29 @@ public class CheckHandlers extends AbstractTestCaseObserver {
             }
         } else if (stepObj instanceof EndProcessingTransaction) {
             processingTxToHandler.remove(((EndProcessingTransaction)stepObj).getTxnId());
-        } else if (stepObj instanceof Verify) {
-            String handler = ((Verify) stepObj).getHandler();
+        } else if (stepObj instanceof Verify verifyStep) {
+            String handler = verifyStep.getHandler();
             if (checkHandlerBeforeInputValidations(handler, context.getExternalConfiguration().getEmbeddedValidationHandlers().keySet(), ErrorCode.INVALID_EMBEDDED_VALIDATION_HANDLER_REFERENCE)) {
                 // Check deprecation.
                 checkDeprecation(handler, context.getExternalConfiguration().getEmbeddedValidationHandlers().get(handler));
                 // Check inputs and configs.
                 checkConfigs(
-                        ((Verify) stepObj).getConfig(),
+                        verifyStep.getConfig(),
                         context.getExternalConfiguration().getEmbeddedValidationHandlers().get(handler).getRequiredConfigs(),
                         context.getExternalConfiguration().getEmbeddedValidationHandlers().get(handler).getOptionalConfigs(),
                         handler
                 );
                 checkInputs(
-                        ((Verify) stepObj).getInput(),
+                        verifyStep.getInput(),
                         context.getExternalConfiguration().getEmbeddedValidationHandlers().get(handler).getRequiredInputs(),
                         context.getExternalConfiguration().getEmbeddedValidationHandlers().get(handler).getOptionalInputs(),
                         handler
                 );
+            }
+        } else if (stepObj instanceof UserInteraction interactStep) {
+            String handler = interactStep.getHandler();
+            if (handler != null && !Utils.isVariableExpression(handler) && !Utils.isURL(handler)) {
+                addReportItem(ErrorCode.INTERACTION_WITH_NON_CUSTOM_HANDLER, currentTestCase.getId());
             }
         }
     }

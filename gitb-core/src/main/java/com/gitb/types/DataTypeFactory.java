@@ -72,43 +72,47 @@ public class DataTypeFactory {
      */
     public DataType create(String type){
         DataType data;
-        switch (type) {
-            case DataType.BOOLEAN_DATA_TYPE:
-                data = new BooleanType();
-                break;
-            case DataType.BINARY_DATA_TYPE:
-                data = new BinaryType();
-                break;
-            case DataType.NUMBER_DATA_TYPE:
-                data = new NumberType();
-                break;
-            case DataType.STRING_DATA_TYPE:
-                data = new StringType();
-                break;
-            case DataType.MAP_DATA_TYPE:
-                data = new MapType();
-                break;
-            case DataType.OBJECT_DATA_TYPE:
-                data = new ObjectType();
-                break;
-            case DataType.SCHEMA_DATA_TYPE:
-                data = new SchemaType();
-                break;
-            default:
-                if(isContainerType(type)){
-                    String containerType = parseContainerType(type);
-                    String containedType = parseContainedType(type);
-                    if (DataType.LIST_DATA_TYPE.equals(containerType)) {
-                        if (containedType == null) {
-                            containedType = DataType.STRING_DATA_TYPE;
+        if (type == null) {
+            data = new StringType();
+        } else {
+            switch (type) {
+                case DataType.BOOLEAN_DATA_TYPE:
+                    data = new BooleanType();
+                    break;
+                case DataType.BINARY_DATA_TYPE:
+                    data = new BinaryType();
+                    break;
+                case DataType.NUMBER_DATA_TYPE:
+                    data = new NumberType();
+                    break;
+                case DataType.STRING_DATA_TYPE:
+                    data = new StringType();
+                    break;
+                case DataType.MAP_DATA_TYPE:
+                    data = new MapType();
+                    break;
+                case DataType.OBJECT_DATA_TYPE:
+                    data = new ObjectType();
+                    break;
+                case DataType.SCHEMA_DATA_TYPE:
+                    data = new SchemaType();
+                    break;
+                default:
+                    if(isContainerType(type)){
+                        String containerType = parseContainerType(type);
+                        String containedType = parseContainedType(type);
+                        if (DataType.LIST_DATA_TYPE.equals(containerType)) {
+                            if (containedType == null) {
+                                containedType = DataType.STRING_DATA_TYPE;
+                            }
+                            data = new ListType(containedType);
+                        } else {
+                            throw new IllegalStateException("Unsupported container type ["+containerType+"]");
                         }
-                        data = new ListType(containedType);
                     } else {
-                        throw new IllegalStateException("Unsupported container type ["+containerType+"]");
+                        throw new IllegalStateException("Unknown data type ["+type+"]");
                     }
-                } else {
-                    throw new IllegalStateException("Unknown data type ["+type+"]");
-                }
+            }
         }
         return data;
     }

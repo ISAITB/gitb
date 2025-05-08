@@ -4,21 +4,32 @@ import com.gitb.core.AnyContent;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.InputRequestInputType;
 import com.gitb.core.ValueEmbeddingEnumeration;
+import com.gitb.engine.CallbackManager;
+import com.gitb.engine.PropertyConstants;
 import com.gitb.engine.TestbedService;
+import com.gitb.engine.commands.messaging.NotificationReceived;
 import com.gitb.engine.commands.messaging.TimeoutExpired;
 import com.gitb.engine.events.TestStepInputEventBus;
 import com.gitb.engine.events.model.InputEvent;
 import com.gitb.engine.expr.ExpressionHandler;
 import com.gitb.engine.expr.resolvers.VariableResolver;
+import com.gitb.engine.messaging.MessagingContext;
+import com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.engine.utils.StepContext;
 import com.gitb.engine.utils.TemplateUtils;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
+import com.gitb.messaging.DeferredMessagingReport;
+import com.gitb.messaging.IMessagingHandler;
+import com.gitb.messaging.Message;
+import com.gitb.messaging.MessagingReport;
+import com.gitb.messaging.callback.SessionCallbackData;
 import com.gitb.tbs.InputRequest;
 import com.gitb.tbs.Instruction;
 import com.gitb.tbs.UserInput;
 import com.gitb.tbs.UserInteractionRequest;
+import com.gitb.tdl.HandlerConfiguration;
 import com.gitb.tdl.InstructionOrRequest;
 import com.gitb.tdl.UserInteraction;
 import com.gitb.tdl.UserRequest;
@@ -33,6 +44,7 @@ import com.gitb.utils.DataTypeUtils;
 import com.gitb.utils.ErrorUtils;
 import com.gitb.utils.XMLDateTimeUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.pekko.actor.ActorRef;
 import org.apache.pekko.dispatch.Futures;
 import org.apache.pekko.dispatch.OnFailure;
@@ -44,13 +56,12 @@ import scala.concurrent.Future;
 import scala.concurrent.Promise;
 
 import javax.xml.datatype.DatatypeConfigurationException;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
  * Created by tuncay on 9/24/14.
- *
+ * <p/>
  * User interaction step executor actor
  */
 public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInteraction> {
@@ -66,7 +77,20 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
 
     @Override
     public void onReceive(Object message) {
-        if (message instanceof TimeoutExpired) {
+        if (message instanceof NotificationReceived notificationMessage) {
+            /*
+             * This case occurs if we have an asynchronous response delivered by a messaging handler in case the
+             * interaction step was set to be handled by a handler (rather than via the UI).
+             */
+            if (promise != null && !promise.isCompleted()) {
+                if (notificationMessage.getError() != null) {
+                    promise.tryFailure(notificationMessage.getError());
+                } else {
+                    logger.debug(addMarker(), "Received notification");
+                    this.handleInputEvent(convertToInputEvent(notificationMessage.getReport()));
+                }
+            }
+        } else if (message instanceof TimeoutExpired) {
             if (!promise.isCompleted()) {
                 logger.debug(addMarker(), "Timeout expired while waiting to receive input");
                 var inputEvent = new InputEvent(scope.getContext().getSessionId(), step.getId(), Collections.emptyList(), step.isAdmin());
@@ -122,7 +146,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         // Set the default content type based on the type.
         //If it is an instruction
         // If no expression is specified consider it an empty expression.
-        VariableResolver variableResolver = new VariableResolver(scope);
+        ExpressionHandler expressionHandler = new ExpressionHandler(scope);
         final ActorContext context = getContext();
         //If it is a request
         Future<TestStepReportType> future = Futures.future(() -> {
@@ -130,7 +154,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
             long timeout = 0;
             if (!StringUtils.isBlank(step.getTimeout())) {
                 if (VariableResolver.isVariableReference(step.getTimeout())) {
-                    timeout = variableResolver.resolveVariableAsNumber(step.getTimeout()).longValue();
+                    timeout = expressionHandler.getVariableResolver().resolveVariableAsNumber(step.getTimeout()).longValue();
                 } else {
                     timeout = Double.valueOf(step.getTimeout()).longValue();
                 }
@@ -147,78 +171,10 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
             }
             // Process the instructions and request the interaction from TestbedClient
             try {
-                boolean hasInstructions = false;
-                boolean hasRequests = false;
-                List<InstructionOrRequest> instructionAndRequests = step.getInstructOrRequest();
-                var withValue = fixedValueOrVariable(step.getWith(), variableResolver, getSUTActor().getId());
-                int childStepId = 1;
-                // Prepare the message to send to the frontend.
-                UserInteractionRequest userInteractionRequest = new UserInteractionRequest();
-                userInteractionRequest.setInputTitle(fixedValueOrVariable(step.getInputTitle(), variableResolver, "User interaction"));
-                userInteractionRequest.setWith(withValue);
-                userInteractionRequest.setAdmin(step.isAdmin());
-                userInteractionRequest.setDesc(step.getDesc());
-                userInteractionRequest.setHasTimeout(timeout > 0);
-                for (InstructionOrRequest instructionOrRequest : instructionAndRequests) {
-                    // Set the type in case this is missing.
-                    if (StringUtils.isBlank(instructionOrRequest.getType())) {
-                        if (instructionOrRequest.getContentType() == ValueEmbeddingEnumeration.BASE_64 || (instructionOrRequest instanceof UserRequest && ((UserRequest)instructionOrRequest).getInputType() == InputRequestInputType.UPLOAD)) {
-                            // if the contentType is set to BASE64 or the inputType is UPLOAD this will be a file.
-                            instructionOrRequest.setType(DataType.BINARY_DATA_TYPE);
-                        } else {
-                            if (VariableResolver.isVariableReference(instructionOrRequest.getValue())) {
-                                // If a target variable is referenced we can use this to determine the type.
-                                DataType targetVariable = variableResolver.resolveVariable(instructionOrRequest.getValue());
-                                if (targetVariable == null) {
-                                    throw new GITBEngineInternalError("No variable could be found based on expression [" + instructionOrRequest.getValue() + "]");
-                                }
-                                instructionOrRequest.setType(targetVariable.getType());
-                            } else {
-                                // Set "string" if no other type can be determined.
-                                instructionOrRequest.setType(DataType.STRING_DATA_TYPE);
-                            }
-                        }
-                    }
-                    // Ensure consistency and complete information for contentType and inputType.
-                    if (DataType.isFileType(instructionOrRequest.getType())) {
-                        instructionOrRequest.setContentType(ValueEmbeddingEnumeration.BASE_64);
-                        if (instructionOrRequest instanceof UserRequest) {
-                            ((UserRequest) instructionOrRequest).setInputType(InputRequestInputType.UPLOAD);
-                        }
-                    } else {
-                        instructionOrRequest.setContentType(ValueEmbeddingEnumeration.STRING);
-                        if (instructionOrRequest instanceof UserRequest request) {
-                            if (request.getInputType() == null || request.getInputType() == InputRequestInputType.UPLOAD) {
-                                if (request.getOptions() != null) {
-                                    request.setInputType(InputRequestInputType.SELECT_SINGLE);
-                                } else {
-                                    request.setInputType(InputRequestInputType.TEXT);
-                                }
-                            }
-                        }
-                    }
-                    //If it is an instruction
-                    if (instructionOrRequest instanceof com.gitb.tdl.Instruction instruction) {
-                        hasInstructions = true;
-                        // If no expression is specified consider it an empty expression.
-                        if (StringUtils.isBlank(instruction.getValue())) {
-                            instructionOrRequest.setValue("''");
-                        }
-                        userInteractionRequest.getInstructionOrRequest().add(processInstruction(instruction, "" + childStepId, withValue, variableResolver));
-                    } else if (instructionOrRequest instanceof UserRequest request) { // If it is a request
-                        hasRequests = true;
-                        userInteractionRequest.getInstructionOrRequest().add(processRequest(request, "" + childStepId, withValue, variableResolver));
-                    } else {
-                        throw new IllegalStateException("Unsupported interaction type ["+instructionOrRequest+"]");
-                    }
-                    childStepId++;
-                }
-                logger.debug(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), String.format("Triggering user interaction - step [%s] - ID [%s]", TestCaseUtils.extractStepDescription(step, scope), stepId));
-                TestbedService.interactWithUsers(scope.getContext().getSessionId(), stepId, userInteractionRequest);
-
-                if (hasInstructions && !hasRequests && isNonBlocking(variableResolver)) {
-                    // The step is a non-blocking interaction containing only instructions. Notify immediately for its completion.
-                    self().tell(new InputEvent(scope.getContext().getSessionId(), stepId, Collections.emptyList(), step.isAdmin()), self());
+                if (isHandlerEnabled(expressionHandler.getVariableResolver())) {
+                    processAsHandlerInteraction(expressionHandler);
+                } else {
+                    processAsUserInterfaceInteraction(timeout, expressionHandler);
                 }
                 return null;
             } catch (Exception e) {
@@ -234,6 +190,207 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
             }
         }, context.dispatcher());
         waiting();
+    }
+
+    private void processAsHandlerInteraction(ExpressionHandler expressionHandler) {
+        String handler = VariableResolver.isVariableReference(step.getHandler())?expressionHandler.getVariableResolver().resolveVariableAsString(step.getHandler()).toString():step.getHandler();
+        MessagingContext messagingContext = scope.getContext().getMessagingContexts().stream()
+                .filter(ctx -> handler.equals(ctx.getHandlerIdentifier()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Unable to determine the handler messaging context for an interact step"));
+        IMessagingHandler messagingHandler = messagingContext.getHandler();
+        if (messagingHandler.isRemote()) {
+            Message inputMessage = MessagingHandlerUtils.getMessageFromBindings(
+                    messagingHandler,
+                    Optional.ofNullable(step.getHandlerConfig()).map(HandlerConfiguration::getInput).orElseGet(Collections::emptyList),
+                    new ExpressionHandler(scope)
+            );
+            String callId = UUID.randomUUID().toString();
+            CallbackManager.getInstance().registerForNotification(self(), messagingContext.getSessionId(), callId);
+            MessagingReport report = messagingHandler
+                    .receiveMessage(
+                            messagingContext.getSessionId(),
+                            null, // No need for a transaction ID - it's never used by remote handlers.
+                            callId,
+                            createDummyReceiveStep(),
+                            inputMessage,
+                            messagingContext.getMessagingThreads()
+                    );
+            if (report instanceof DeferredMessagingReport deferredReport) {
+                // This means that we should not resolve this step but rather wait for a message to be delivered to the actor.
+                if (deferredReport.getCallbackData() != null) {
+                    // Register the data needed to respond when receiving a call.
+                    CallbackManager.getInstance().registerCallbackData(new SessionCallbackData(
+                            messagingContext.getSessionId(),
+                            callId,
+                            ((MapType) scope.getVariable(PropertyConstants.SYSTEM_MAP).getValue()).getItem(PropertyConstants.SYSTEM_MAP__API_KEY).toString(),
+                            deferredReport.getCallbackData())
+                    );
+                }
+            } else {
+                throw new IllegalStateException("Only custom messaging handlers can be used for interact steps");
+            }
+        } else {
+            throw new IllegalStateException("Only custom messaging handlers can be used for interact steps");
+        }
+    }
+
+    private InputEvent convertToInputEvent(MessagingReport report) {
+        List<UserInput> userInputs = new ArrayList<>();
+        if (report != null && report.getReport() != null && report.getReport().getContext() != null) {
+            List<AnyContent> items = report.getReport().getContext().getItem();
+            if (!items.isEmpty()) {
+                List<Pair<String, UserRequest>> requestElementsToProcess = new ArrayList<>();
+                int idIndex = 0;
+                for (var interaction: step.getInstructOrRequest()) {
+                    idIndex += 1;
+                    if (interaction instanceof UserRequest request) {
+                        if (request.getName() != null) {
+                            var matchingItem = findFirstByName(request.getName(), items);
+                            if (matchingItem != null) {
+                                userInputs.add(toUserInput(matchingItem.getValue(), String.valueOf(idIndex)));
+                                items.remove(matchingItem.getKey().intValue());
+                            } else {
+                                requestElementsToProcess.add(Pair.of(String.valueOf(idIndex), request));
+                            }
+                        } else {
+                            requestElementsToProcess.add(Pair.of(String.valueOf(idIndex), request));
+                        }
+                    }
+                }
+                // At this point we have processed all named elements that were matched. Process the remaining ones by simple position matching.
+                for (var requestInfo: requestElementsToProcess) {
+                    if (!items.isEmpty()) {
+                        userInputs.add(toUserInput(items.removeFirst(), requestInfo.getKey()));
+                    }
+                }
+            }
+        }
+        return new InputEvent(scope.getContext().getSessionId(), step.getId(), userInputs, step.isAdmin());
+    }
+
+    private static UserInput toUserInput(AnyContent item, String idValue) {
+        var userInput = new UserInput();
+        userInput.setId(idValue);
+        userInput.setEncoding(item.getEncoding());
+        userInput.setName(item.getName());
+        userInput.setValue(item.getValue());
+        userInput.setType(item.getType());
+        userInput.setEmbeddingMethod(item.getEmbeddingMethod());
+        userInput.setForContext(item.isForContext());
+        userInput.setForDisplay(item.isForDisplay());
+        userInput.setMimeType(item.getMimeType());
+        return userInput;
+    }
+
+    private Pair<Integer, AnyContent> findFirstByName(String name, List<AnyContent> items) {
+        int i = -1;
+        for (var item: items) {
+            i += 1;
+            if (name.equals(item.getName())) {
+                return Pair.of(i, item);
+            }
+        }
+        return null;
+    }
+
+    private com.gitb.tdl.Receive createDummyReceiveStep() {
+        com.gitb.tdl.Receive receiveStep = new com.gitb.tdl.Receive();
+        receiveStep.setId(step.getId());
+        return receiveStep;
+    }
+
+    private boolean isHandlerEnabled(VariableResolver variableResolver) {
+        if (StringUtils.isNotBlank(step.getHandler())) {
+            String flagValue = step.getHandlerEnabled();
+            if (flagValue.equalsIgnoreCase("false")) {
+                return false;
+            } else if (flagValue.equalsIgnoreCase("true")) {
+                return true;
+            } else if (VariableResolver.isVariableReference(flagValue)) {
+                return (boolean) variableResolver.resolveVariableAsBoolean(flagValue).getValue();
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+
+    private void processAsUserInterfaceInteraction(long timeout, ExpressionHandler expressionHandler) {
+        boolean hasInstructions = false;
+        boolean hasRequests = false;
+        List<InstructionOrRequest> instructionAndRequests = step.getInstructOrRequest();
+        var withValue = fixedValueOrVariable(step.getWith(), expressionHandler.getVariableResolver(), getSUTActor().getId());
+        int childStepId = 1;
+        // Prepare the message to send to the frontend.
+        UserInteractionRequest userInteractionRequest = new UserInteractionRequest();
+        userInteractionRequest.setInputTitle(fixedValueOrVariable(step.getInputTitle(), expressionHandler.getVariableResolver(), "User interaction"));
+        userInteractionRequest.setWith(withValue);
+        userInteractionRequest.setAdmin(step.isAdmin());
+        userInteractionRequest.setDesc(step.getDesc());
+        userInteractionRequest.setHasTimeout(timeout > 0);
+        for (InstructionOrRequest instructionOrRequest : instructionAndRequests) {
+            // Set the type in case this is missing.
+            if (StringUtils.isBlank(instructionOrRequest.getType())) {
+                if (instructionOrRequest.getContentType() == ValueEmbeddingEnumeration.BASE_64 || (instructionOrRequest instanceof UserRequest && ((UserRequest)instructionOrRequest).getInputType() == InputRequestInputType.UPLOAD)) {
+                    // if the contentType is set to BASE64 or the inputType is UPLOAD this will be a file.
+                    instructionOrRequest.setType(DataType.BINARY_DATA_TYPE);
+                } else {
+                    if (VariableResolver.isVariableReference(instructionOrRequest.getValue())) {
+                        // If a target variable is referenced we can use this to determine the type.
+                        DataType targetVariable = expressionHandler.getVariableResolver().resolveVariable(instructionOrRequest.getValue());
+                        if (targetVariable == null) {
+                            throw new GITBEngineInternalError("No variable could be found based on expression [" + instructionOrRequest.getValue() + "]");
+                        }
+                        instructionOrRequest.setType(targetVariable.getType());
+                    } else {
+                        // Set "string" if no other type can be determined.
+                        instructionOrRequest.setType(DataType.STRING_DATA_TYPE);
+                    }
+                }
+            }
+            // Ensure consistency and complete information for contentType and inputType.
+            if (DataType.isFileType(instructionOrRequest.getType())) {
+                instructionOrRequest.setContentType(ValueEmbeddingEnumeration.BASE_64);
+                if (instructionOrRequest instanceof UserRequest) {
+                    ((UserRequest) instructionOrRequest).setInputType(InputRequestInputType.UPLOAD);
+                }
+            } else {
+                instructionOrRequest.setContentType(ValueEmbeddingEnumeration.STRING);
+                if (instructionOrRequest instanceof UserRequest request) {
+                    if (request.getInputType() == null || request.getInputType() == InputRequestInputType.UPLOAD) {
+                        if (request.getOptions() != null) {
+                            request.setInputType(InputRequestInputType.SELECT_SINGLE);
+                        } else {
+                            request.setInputType(InputRequestInputType.TEXT);
+                        }
+                    }
+                }
+            }
+            //If it is an instruction
+            if (instructionOrRequest instanceof com.gitb.tdl.Instruction instruction) {
+                hasInstructions = true;
+                // If no expression is specified consider it an empty expression.
+                if (StringUtils.isBlank(instruction.getValue())) {
+                    instructionOrRequest.setValue("''");
+                }
+                userInteractionRequest.getInstructionOrRequest().add(processInstruction(instruction, "" + childStepId, withValue, expressionHandler));
+            } else if (instructionOrRequest instanceof UserRequest request) { // If it is a request
+                hasRequests = true;
+                userInteractionRequest.getInstructionOrRequest().add(processRequest(request, "" + childStepId, withValue, expressionHandler.getVariableResolver()));
+            } else {
+                throw new IllegalStateException("Unsupported interaction type ["+instructionOrRequest+"]");
+            }
+            childStepId++;
+        }
+        logger.debug(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), String.format("Triggering user interaction - step [%s] - ID [%s]", TestCaseUtils.extractStepDescription(step, scope), stepId));
+        TestbedService.interactWithUsers(scope.getContext().getSessionId(), stepId, userInteractionRequest);
+
+        if (hasInstructions && !hasRequests && isNonBlocking(expressionHandler.getVariableResolver())) {
+            // The step is a non-blocking interaction containing only instructions. Notify immediately for its completion.
+            self().tell(new InputEvent(scope.getContext().getSessionId(), stepId, Collections.emptyList(), step.isAdmin()), self());
+        }
     }
 
     private boolean isNonBlocking(VariableResolver resolver) {
@@ -257,14 +414,14 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
      * @param stepId step id
      * @return instruction
      */
-    private Instruction processInstruction(com.gitb.tdl.Instruction instructionCommand, String stepId, String withValue, VariableResolver variableResolver) {
+    private Instruction processInstruction(com.gitb.tdl.Instruction instructionCommand, String stepId, String withValue, ExpressionHandler expressionHandler) {
         Instruction instruction = new Instruction();
         instruction.setWith(withValue);
-        instruction.setDesc(fixedValueOrVariable(instructionCommand.getDesc(), variableResolver, null));
+        instruction.setDesc(fixedValueOrVariable(instructionCommand.getDesc(), expressionHandler.getVariableResolver(), null));
         instruction.setId(stepId);
         instruction.setName(instructionCommand.getName());
         instruction.setEncoding(instructionCommand.getEncoding());
-        instruction.setMimeType(fixedValueOrVariable(instructionCommand.getMimeType(), variableResolver, null));
+        instruction.setMimeType(fixedValueOrVariable(instructionCommand.getMimeType(), expressionHandler.getVariableResolver(), null));
         instruction.setForceDisplay(instructionCommand.isForceDisplay());
 
         ExpressionHandler exprHandler = new ExpressionHandler(this.scope);
