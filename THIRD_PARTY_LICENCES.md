@@ -18,6 +18,10 @@ Library licences are organised in three sections:
 | :----------- | :--- | :--------- | :------ | :--- |
 | Eclipse Public License - v1.0, GNU Lesser General Public License (LGPL), Version 2.1 | Logback Classic Module | ch.qos.logback:logback-classic | 1.5.18 | http://logback.qos.ch/logback-classic |
 | Eclipse Public License - v1.0, GNU Lesser General Public License (LGPL), Version 2.1 | Logback Core Module | ch.qos.logback:logback-core | 1.5.18 | http://logback.qos.ch/logback-core |
+| Apache License, Version 2.0 | Titanium JCS | com.apicatalog:titanium-jcs | 1.0.0 | https://github.com/filip26/titanium-jcs |
+| Apache License, Version 2.0 | Titanium JSON-LD 1.1 (JRE11) | com.apicatalog:titanium-json-ld | 1.6.0 | https://github.com/filip26/titanium-json-ld |
+| Apache License, Version 2.0 | Titanium RDF API | com.apicatalog:titanium-rdf-api | 1.0.0 | https://github.com/filip26/titanium-rdf-api |
+| Apache License, Version 2.0 | Titanium RDF N-QUADS | com.apicatalog:titanium-rdf-n-quads | 1.0.0 | https://github.com/filip26/titanium-rdf-n-quads |
 | Apache License, Version 2.0 | ClassMate | com.fasterxml:classmate | 1.7.0 | https://github.com/FasterXML/java-classmate |
 | Apache License, Version 2.0 | Jackson-annotations | com.fasterxml.jackson.core:jackson-annotations | 2.18.3 | https://github.com/FasterXML/jackson |
 | Apache License, Version 2.0 | Jackson-core | com.fasterxml.jackson.core:jackson-core | 2.18.3 | https://github.com/FasterXML/jackson-core |
@@ -26,8 +30,13 @@ Library licences are organised in three sections:
 | Apache License, Version 2.0 | Jackson datatype: JSR310 | com.fasterxml.jackson.datatype:jackson-datatype-jsr310 | 2.18.3 | https://github.com/FasterXML/jackson-modules-java8/jackson-datatype-jsr310 |
 | Apache License, Version 2.0 | Jackson-module-parameter-names | com.fasterxml.jackson.module:jackson-module-parameter-names | 2.18.3 | https://github.com/FasterXML/jackson-modules-java8/jackson-module-parameter-names |
 | Apache License, Version 2.0 | Woodstox | com.fasterxml.woodstox:woodstox-core | 7.1.0 | https://github.com/FasterXML/woodstox |
+| MIT License | dexx | com.github.andrewoma.dexx:collection | 0.7 | https://github.com/andrewoma/dexx |
+| Apache License, Version 2.0 | Caffeine cache | com.github.ben-manes.caffeine:caffeine | 3.1.8 | https://github.com/ben-manes/caffeine |
 | Apache License, Version 2.0 | RgxGen | com.github.curious-odd-man:rgxgen | 1.4 | https://github.com/curious-odd-man/RgxGen |
 | Apache License, Version 2.0 | FindBugs-jsr305 | com.google.code.findbugs:jsr305 | 3.0.2 | http://findbugs.sourceforge.net/ |
+| Apache License, Version 2.0 | Gson | com.google.code.gson:gson | 2.11.0 | https://github.com/google/gson |
+| Apache License, Version 2.0 | error-prone annotations | com.google.errorprone:error_prone_annotations | 2.27.0 | https://errorprone.info/error_prone_annotations |
+| The 3-Clause BSD License | Protocol Buffers [Core] | com.google.protobuf:protobuf-java | 4.30.2 | https://developers.google.com/protocol-buffers/protobuf-java/ |
 | Apache License, Version 2.0 | ph-commons | com.helger.commons:ph-commons | 11.1.6 | https://github.com/phax/ph-commons/ph-commons |
 | Apache License, Version 2.0 | ph-jaxb | com.helger.commons:ph-jaxb | 11.1.6 | https://github.com/phax/ph-commons/ph-jaxb |
 | Apache License, Version 2.0 | ph-xml | com.helger.commons:ph-xml | 11.1.6 | https://github.com/phax/ph-commons/ph-xml |
@@ -65,7 +74,9 @@ Library licences are organised in three sections:
 | Eclipse Distribution License - v1.0 | Jakarta XML Web Services API | jakarta.xml.ws:jakarta.xml.ws-api | 4.0.2 | https://github.com/jakartaee/jax-ws-api |
 | Mozilla Public License Version 2.0 | Saxon-HE | net.sf.saxon:Saxon-HE | 12.4 | http://www.saxonica.com/ |
 | Apache License, Version 2.0 | Apache Commons Collections | org.apache.commons:commons-collections4 | 4.4 | https://commons.apache.org/proper/commons-collections/ |
+| Apache License, Version 2.0 | Apache Commons Compress | org.apache.commons:commons-compress | 1.27.1 | https://commons.apache.org/proper/commons-compress/ |
 | Apache License, Version 2.0 | Apache Commons Configuration | org.apache.commons:commons-configuration2 | 2.11.0 | https://commons.apache.org/proper/commons-configuration/ |
+| Apache License, Version 2.0 | Apache Commons CSV | org.apache.commons:commons-csv | 1.14.0 | https://commons.apache.org/proper/commons-csv/ |
 | Apache License, Version 2.0 | Apache Commons Lang | org.apache.commons:commons-lang3 | 3.17.0 | https://commons.apache.org/proper/commons-lang/ |
 | Apache License, Version 2.0 | Apache Commons Text | org.apache.commons:commons-text | 1.13.1 | https://commons.apache.org/proper/commons-text |
 | Apache License, Version 2.0 | Apache CXF Core | org.apache.cxf:cxf-core | 4.1.1 | https://cxf.apache.org |
@@ -87,6 +98,12 @@ Library licences are organised in three sections:
 | Apache License, Version 2.0 | Apache HttpClient | org.apache.httpcomponents.client5:httpclient5 | 5.4.4 | https://hc.apache.org/httpcomponents-client-5.4.x/5.4.4/httpclient5/ |
 | Apache License, Version 2.0 | Apache HttpComponents Core HTTP/1.1 | org.apache.httpcomponents.core5:httpcore5 | 5.3.4 | https://hc.apache.org/httpcomponents-core-5.3.x/5.3.4/httpcore5/ |
 | Apache License, Version 2.0 | Apache HttpComponents Core HTTP/2 | org.apache.httpcomponents.core5:httpcore5-h2 | 5.3.4 | https://hc.apache.org/httpcomponents-core-5.3.x/5.3.4/httpcore5-h2/ |
+| Apache License, Version 2.0 | Apache Jena - ARQ | org.apache.jena:jena-arq | 5.4.0 | https://jena.apache.org/jena-arq/ |
+| Apache License, Version 2.0 | Apache Jena - Base | org.apache.jena:jena-base | 5.4.0 | https://jena.apache.org/jena-base/ |
+| Apache License, Version 2.0 | Apache Jena - Core | org.apache.jena:jena-core | 5.4.0 | https://jena.apache.org/jena-core/ |
+| Apache License, Version 2.0 | Apache Jena - IRI | org.apache.jena:jena-iri | 5.4.0 | https://jena.apache.org/jena-iri/ |
+| Apache License, Version 2.0 | Apache Jena - IRI3986 | org.apache.jena:jena-iri3986 | 5.4.0 | https://jena.apache.org/jena-iri3986/ |
+| Apache License, Version 2.0 | Apache Jena - Language tags | org.apache.jena:jena-langtag | 5.4.0 | https://jena.apache.org/jena-langtag/ |
 | Apache License, Version 2.0 | Apache Log4j API | org.apache.logging.log4j:log4j-api | 2.24.3 | https://logging.apache.org/log4j/2.x/log4j/log4j-api/ |
 | Apache License, Version 2.0 | Log4j API to SLF4J Adapter | org.apache.logging.log4j:log4j-to-slf4j | 2.24.3 | https://logging.apache.org/log4j/2.x/log4j/log4j-to-slf4j/ |
 | Apache License, Version 2.0 | Apache Neethi | org.apache.neethi:neethi | 3.2.1 | https://ws.apache.org/neethi/ |
@@ -94,6 +111,7 @@ Library licences are organised in three sections:
 | Apache License, Version 2.0 | Apache PDFBox | org.apache.pdfbox:pdfbox | 2.0.31 | https://www.apache.org/pdfbox-parent/pdfbox/ |
 | Apache License, Version 2.0 | Apache XmpBox | org.apache.pdfbox:xmpbox | 2.0.24 | https://www.apache.org/pdfbox-parent/xmpbox/ |
 | Apache License, Version 2.0 | Apache Pekko Actor | org.apache.pekko:pekko-actor_3 | 1.1.3 | https://pekko.apache.org/ |
+| Apache License, Version 2.0 | Apache Thrift | org.apache.thrift:libthrift | 0.21.0 | http://thrift.apache.org |
 | Apache License, Version 2.0 | Apache Tika core | org.apache.tika:tika-core | 3.1.0 | https://tika.apache.org/ |
 | Apache License, Version 2.0 | tomcat-embed-core | org.apache.tomcat.embed:tomcat-embed-core | 10.1.40 | https://tomcat.apache.org/ |
 | Apache License, Version 2.0 | tomcat-embed-el | org.apache.tomcat.embed:tomcat-embed-el | 10.1.40 | https://tomcat.apache.org/ |
@@ -122,6 +140,7 @@ Library licences are organised in three sections:
 | Eclipse Distribution License - v1.0 | Angus Activation Registries | org.eclipse.angus:angus-activation | 2.0.2 | https://github.com/eclipse-ee4j/angus-activation/angus-activation |
 | Eclipse Distribution License - v1.0, Eclipse Public License - v2.0, GNU General Public License (GPL), Version 2 (with Classpath Exception) | Angus Mail Provider | org.eclipse.angus:angus-mail | 2.0.3 | http://eclipse-ee4j.github.io/angus-mail/angus-mail |
 | Apache License, Version 2.0 | Apache FreeMarker | org.freemarker:freemarker | 2.3.34 | https://freemarker.apache.org/ |
+| Eclipse Public License - v2.0, GNU General Public License (GPL), Version 2 (with Classpath Exception) | JSON-P Default Provider | org.glassfish:jakarta.json | 2.0.1 | https://github.com/eclipse-ee4j/jsonp |
 | Eclipse Distribution License - v1.0 | JAXB Core | org.glassfish.jaxb:jaxb-core | 4.0.5 | https://eclipse-ee4j.github.io/jaxb-ri/ |
 | Eclipse Distribution License - v1.0 | JAXB Runtime | org.glassfish.jaxb:jaxb-runtime | 4.0.5 | https://eclipse-ee4j.github.io/jaxb-ri/ |
 | Eclipse Distribution License - v1.0 | TXW2 Runtime | org.glassfish.jaxb:txw2 | 4.0.5 | https://eclipse-ee4j.github.io/jaxb-ri/ |
@@ -132,8 +151,10 @@ Library licences are organised in three sections:
 | Eclipse Distribution License - v1.0 | Extended StAX API | org.jvnet.staxex:stax-ex | 2.1.0 | https://projects.eclipse.org/projects/ee4j/stax-ex |
 | The 3-Clause BSD License | asm | org.ow2.asm:asm | 9.7.1 | http://asm.ow2.io/ |
 | Apache License, Version 2.0, WTFPL | Reflections | org.reflections:reflections | 0.10.2 | http://github.com/ronmamo/reflections |
+| Apache License, Version 2.0 | org.roaringbitmap:RoaringBitmap | org.roaringbitmap:RoaringBitmap | 1.3.0 | https://github.com/RoaringBitmap/RoaringBitmap |
 | Apache License, Version 2.0 | Scala Library | org.scala-lang:scala-library | 2.13.14 | https://www.scala-lang.org/ |
 | Apache License, Version 2.0 | scala3-library-bootstrapped | org.scala-lang:scala3-library_3 | 3.3.4 | https://github.com/scala/scala3 |
+| Apache License, Version 2.0 | JCL 1.2 implemented over SLF4J | org.slf4j:jcl-over-slf4j | 2.0.17 | http://www.slf4j.org |
 | MIT License | JUL to SLF4J bridge | org.slf4j:jul-to-slf4j | 2.0.17 | http://www.slf4j.org |
 | MIT License | SLF4J API Module | org.slf4j:slf4j-api | 2.0.17 | http://www.slf4j.org |
 | Apache License, Version 2.0 | Spring AOP | org.springframework:spring-aop | 6.2.6 | https://github.com/spring-projects/spring-framework |
