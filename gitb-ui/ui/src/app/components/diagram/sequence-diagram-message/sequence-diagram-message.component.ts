@@ -26,11 +26,12 @@ export class SequenceDiagramMessageComponent implements OnInit, OnDestroy {
   depth!: number
   currentIterationIndex: number = -1
   classForMessageFixed!: string
-  classForWrapper!: string 
+  classForWrapper!: string
   classForReverseOffset!: string
   eventSubscription?: Subscription
   expanded = true
   hoveringTitle = false
+  hoveringReport = false
 
   constructor(
     private reportService: ReportService,

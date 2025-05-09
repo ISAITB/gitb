@@ -2,6 +2,7 @@
 
 @actor-width: 240px+1;
 @line-color: @gray;
+@report-icon-highlight-color: @gray-dark;
 @line-height: 16px;
 @macro-limit: 10;
 @step-status-width: 4px;
@@ -291,6 +292,9 @@
                             color: @line-color !important;
                             display: block;
                             font-size: 28px;
+                            &.hovering {
+                                color: @report-icon-highlight-color !important;
+                            }
                         }
 
                         &.processing-icon,
