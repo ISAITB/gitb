@@ -18,10 +18,7 @@ Library licences are organised in three sections:
 | :----------- | :--- | :--------- | :------ | :--- |
 | Eclipse Public License - v1.0, GNU Lesser General Public License (LGPL), Version 2.1 | Logback Classic Module | ch.qos.logback:logback-classic | 1.5.18 | http://logback.qos.ch/logback-classic |
 | Eclipse Public License - v1.0, GNU Lesser General Public License (LGPL), Version 2.1 | Logback Core Module | ch.qos.logback:logback-core | 1.5.18 | http://logback.qos.ch/logback-core |
-| Apache License, Version 2.0 | Titanium JCS | com.apicatalog:titanium-jcs | 1.0.0 | https://github.com/filip26/titanium-jcs |
-| Apache License, Version 2.0 | Titanium JSON-LD 1.1 (JRE11) | com.apicatalog:titanium-json-ld | 1.6.0 | https://github.com/filip26/titanium-json-ld |
-| Apache License, Version 2.0 | Titanium RDF API | com.apicatalog:titanium-rdf-api | 1.0.0 | https://github.com/filip26/titanium-rdf-api |
-| Apache License, Version 2.0 | Titanium RDF N-QUADS | com.apicatalog:titanium-rdf-n-quads | 1.0.0 | https://github.com/filip26/titanium-rdf-n-quads |
+| Apache License, Version 2.0 | Titanium JSON-LD 1.1 (JRE11) | com.apicatalog:titanium-json-ld | 1.4.1 | https://github.com/filip26/titanium-json-ld |
 | Apache License, Version 2.0 | ClassMate | com.fasterxml:classmate | 1.7.0 | https://github.com/FasterXML/java-classmate |
 | Apache License, Version 2.0 | Jackson-annotations | com.fasterxml.jackson.core:jackson-annotations | 2.18.3 | https://github.com/FasterXML/jackson |
 | Apache License, Version 2.0 | Jackson-core | com.fasterxml.jackson.core:jackson-core | 2.18.3 | https://github.com/FasterXML/jackson-core |
@@ -36,7 +33,7 @@ Library licences are organised in three sections:
 | Apache License, Version 2.0 | FindBugs-jsr305 | com.google.code.findbugs:jsr305 | 3.0.2 | http://findbugs.sourceforge.net/ |
 | Apache License, Version 2.0 | Gson | com.google.code.gson:gson | 2.11.0 | https://github.com/google/gson |
 | Apache License, Version 2.0 | error-prone annotations | com.google.errorprone:error_prone_annotations | 2.27.0 | https://errorprone.info/error_prone_annotations |
-| The 3-Clause BSD License | Protocol Buffers [Core] | com.google.protobuf:protobuf-java | 4.30.2 | https://developers.google.com/protocol-buffers/protobuf-java/ |
+| The 3-Clause BSD License | Protocol Buffers [Core] | com.google.protobuf:protobuf-java | 4.28.2 | https://developers.google.com/protocol-buffers/protobuf-java/ |
 | Apache License, Version 2.0 | ph-commons | com.helger.commons:ph-commons | 11.1.6 | https://github.com/phax/ph-commons/ph-commons |
 | Apache License, Version 2.0 | ph-jaxb | com.helger.commons:ph-jaxb | 11.1.6 | https://github.com/phax/ph-commons/ph-jaxb |
 | Apache License, Version 2.0 | ph-xml | com.helger.commons:ph-xml | 11.1.6 | https://github.com/phax/ph-commons/ph-xml |
@@ -76,7 +73,7 @@ Library licences are organised in three sections:
 | Apache License, Version 2.0 | Apache Commons Collections | org.apache.commons:commons-collections4 | 4.4 | https://commons.apache.org/proper/commons-collections/ |
 | Apache License, Version 2.0 | Apache Commons Compress | org.apache.commons:commons-compress | 1.27.1 | https://commons.apache.org/proper/commons-compress/ |
 | Apache License, Version 2.0 | Apache Commons Configuration | org.apache.commons:commons-configuration2 | 2.11.0 | https://commons.apache.org/proper/commons-configuration/ |
-| Apache License, Version 2.0 | Apache Commons CSV | org.apache.commons:commons-csv | 1.14.0 | https://commons.apache.org/proper/commons-csv/ |
+| Apache License, Version 2.0 | Apache Commons CSV | org.apache.commons:commons-csv | 1.12.0 | https://commons.apache.org/proper/commons-csv/ |
 | Apache License, Version 2.0 | Apache Commons Lang | org.apache.commons:commons-lang3 | 3.17.0 | https://commons.apache.org/proper/commons-lang/ |
 | Apache License, Version 2.0 | Apache Commons Text | org.apache.commons:commons-text | 1.13.1 | https://commons.apache.org/proper/commons-text |
 | Apache License, Version 2.0 | Apache CXF Core | org.apache.cxf:cxf-core | 4.1.1 | https://cxf.apache.org |
@@ -98,12 +95,10 @@ Library licences are organised in three sections:
 | Apache License, Version 2.0 | Apache HttpClient | org.apache.httpcomponents.client5:httpclient5 | 5.4.4 | https://hc.apache.org/httpcomponents-client-5.4.x/5.4.4/httpclient5/ |
 | Apache License, Version 2.0 | Apache HttpComponents Core HTTP/1.1 | org.apache.httpcomponents.core5:httpcore5 | 5.3.4 | https://hc.apache.org/httpcomponents-core-5.3.x/5.3.4/httpcore5/ |
 | Apache License, Version 2.0 | Apache HttpComponents Core HTTP/2 | org.apache.httpcomponents.core5:httpcore5-h2 | 5.3.4 | https://hc.apache.org/httpcomponents-core-5.3.x/5.3.4/httpcore5-h2/ |
-| Apache License, Version 2.0 | Apache Jena - ARQ | org.apache.jena:jena-arq | 5.4.0 | https://jena.apache.org/jena-arq/ |
-| Apache License, Version 2.0 | Apache Jena - Base | org.apache.jena:jena-base | 5.4.0 | https://jena.apache.org/jena-base/ |
-| Apache License, Version 2.0 | Apache Jena - Core | org.apache.jena:jena-core | 5.4.0 | https://jena.apache.org/jena-core/ |
-| Apache License, Version 2.0 | Apache Jena - IRI | org.apache.jena:jena-iri | 5.4.0 | https://jena.apache.org/jena-iri/ |
-| Apache License, Version 2.0 | Apache Jena - IRI3986 | org.apache.jena:jena-iri3986 | 5.4.0 | https://jena.apache.org/jena-iri3986/ |
-| Apache License, Version 2.0 | Apache Jena - Language tags | org.apache.jena:jena-langtag | 5.4.0 | https://jena.apache.org/jena-langtag/ |
+| Apache License, Version 2.0 | Apache Jena - ARQ | org.apache.jena:jena-arq | 5.2.0 | https://jena.apache.org/jena-arq/ |
+| Apache License, Version 2.0 | Apache Jena - Base | org.apache.jena:jena-base | 5.2.0 | https://jena.apache.org/jena-base/ |
+| Apache License, Version 2.0 | Apache Jena - Core | org.apache.jena:jena-core | 5.2.0 | https://jena.apache.org/jena-core/ |
+| Apache License, Version 2.0 | Apache Jena - IRI | org.apache.jena:jena-iri | 5.2.0 | https://jena.apache.org/jena-iri/ |
 | Apache License, Version 2.0 | Apache Log4j API | org.apache.logging.log4j:log4j-api | 2.24.3 | https://logging.apache.org/log4j/2.x/log4j/log4j-api/ |
 | Apache License, Version 2.0 | Log4j API to SLF4J Adapter | org.apache.logging.log4j:log4j-to-slf4j | 2.24.3 | https://logging.apache.org/log4j/2.x/log4j/log4j-to-slf4j/ |
 | Apache License, Version 2.0 | Apache Neethi | org.apache.neethi:neethi | 3.2.1 | https://ws.apache.org/neethi/ |
@@ -173,6 +168,7 @@ Library licences are organised in three sections:
 | Apache License, Version 2.0 | spring-boot-starter-tomcat | org.springframework.boot:spring-boot-starter-tomcat | 3.4.5 | https://spring.io/projects/spring-boot |
 | Apache License, Version 2.0 | spring-boot-starter-validation | org.springframework.boot:spring-boot-starter-validation | 3.4.5 | https://spring.io/projects/spring-boot |
 | Apache License, Version 2.0 | spring-boot-starter-web | org.springframework.boot:spring-boot-starter-web | 3.4.5 | https://spring.io/projects/spring-boot |
+| Apache License, Version 2.0 | TopBraid SHACL API | org.topbraid:shacl | 1.4.4 | http://topbraid.org/shacl/api |
 | Apache License, Version 2.0 | XML Resolver | org.xmlresolver:xmlresolver | 5.2.2 | https://github.com/xmlresolver/xmlresolver |
 | Apache License, Version 2.0 | org.xmlunit:xmlunit-core | org.xmlunit:xmlunit-core | 2.10.0 | https://www.xmlunit.org/ |
 | Apache License, Version 2.0 | SnakeYAML | org.yaml:snakeyaml | 2.3 | https://bitbucket.org/snakeyaml/snakeyaml |

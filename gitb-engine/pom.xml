@@ -131,5 +131,9 @@
 			<groupId>org.apache.jena</groupId>
 			<artifactId>jena-arq</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>org.topbraid</groupId>
+			<artifactId>shacl</artifactId>
+		</dependency>
 	</dependencies>
 </project>
