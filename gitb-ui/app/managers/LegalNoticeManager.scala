@@ -53,7 +53,7 @@ class LegalNoticeManager @Inject() (dbConfigProvider: DatabaseConfigProvider)
         .filter(_.name === name)
         .exists
         .result
-    )
+    ).map(!_)
   }
 
   /**
@@ -67,7 +67,7 @@ class LegalNoticeManager @Inject() (dbConfigProvider: DatabaseConfigProvider)
         .filter(_.name === name)
         .exists
         .result
-    )
+    ).map(!_)
   }
 
   /**

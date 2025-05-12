@@ -54,7 +54,7 @@ class LandingPageManager @Inject() (dbConfigProvider: DatabaseConfigProvider)
         .filter(_.name === name)
         .exists
         .result
-    )
+    ).map(!_)
   }
 
   /**
@@ -105,7 +105,7 @@ class LandingPageManager @Inject() (dbConfigProvider: DatabaseConfigProvider)
         .filter(_.name === name)
         .exists
         .result
-    )
+    ).map(!_)
   }
 
   /**

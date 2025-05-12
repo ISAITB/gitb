@@ -51,7 +51,7 @@ class ErrorTemplateManager @Inject() (dbConfigProvider: DatabaseConfigProvider)
         .filter(_.name === name)
         .exists
         .result
-    )
+    ).map(!_)
   }
 
   /**
@@ -65,7 +65,7 @@ class ErrorTemplateManager @Inject() (dbConfigProvider: DatabaseConfigProvider)
         .filter(_.name === name)
         .exists
         .result
-    )
+    ).map(!_)
   }
 
   /**
