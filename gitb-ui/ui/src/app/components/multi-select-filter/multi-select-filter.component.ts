@@ -334,6 +334,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
     } else {
       this.formVisible = true
       this.openToLeft = this.shouldOpenToLeft()
+      this.updateCheckFlag()
       this.loadData().subscribe(() => {
         if (this.typeahead) {
           setTimeout(() => {
@@ -574,6 +575,9 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
     // Make sure that previously selected items that have been unchecked but not applied are undone.
     for (let itemId in this.selectedSelectedItems) {
       this.selectedSelectedItems[itemId].selected = true
+    }
+    for (let itemId in this.selectedAvailableItems) {
+      this.selectedAvailableItems[itemId].selected = false
     }
   }
 
