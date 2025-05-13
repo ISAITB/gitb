@@ -23,7 +23,7 @@
                     }
                 }
                 <div class="btn-group" dropdown [isDisabled]="selectedCommunityId == undefined">
-                    <button id="button-snapshot" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-snapshot">{{snapshotButtonLabel}}<span class="caret withMargin"></span></button>
+                    <button id="button-snapshot" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-snapshot"><span class="me-2">{{snapshotButtonLabel}}</span></button>
                     <ul id="dropdown-snapshot" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-snapshot">
                       <li role="menuitem"><a class="dropdown-item" href (click)="viewLatestConformanceSnapshot();$event.preventDefault()">{{latestSnapshotButtonLabel}}</a></li>
                       <li class="divider dropdown-divider"></li>

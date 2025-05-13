@@ -299,7 +299,7 @@
                 }
             } @else {
                 <div class="btn-group" dropdown [isDisabled]="updatePending">
-                    <button id="button-preview" dropdownToggle type="button" [disable]="updatePending || !previewEnabled()" [pending]="exportPending" aria-controls="dropdown-preview" class="btn btn-secondary dropdown-toggle">Generate preview<span class="caret withMargin"></span></button>
+                    <button id="button-preview" dropdownToggle type="button" [disable]="updatePending || !previewEnabled()" [pending]="exportPending" aria-controls="dropdown-preview" class="btn btn-secondary dropdown-toggle"><span class="me-2">Generate preview</span></button>
                     <ul id="dropdown-preview" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-preview">
                         @if (settings.enableAllLevel) {
                             <li role="menuitem"><a class="dropdown-item" href (click)="preview('all');$event.preventDefault();">Aggregate level</a></li>

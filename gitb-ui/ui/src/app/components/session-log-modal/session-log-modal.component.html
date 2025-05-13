@@ -1,5 +1,5 @@
 <div class="modal-header">
-	<div class="modal-title">Test session log</div>	
+	<div class="modal-title">Test session log</div>
 </div>
 <div class="modal-body">
 	<div class="editor editor-normal">
@@ -13,7 +13,7 @@
 		<button type="button" class="btn btn-secondary" (click)="close()">Close</button>
 		@if (messageEmitter != undefined) {
 			<div class="btn-group" dropdown>
-				<button id="button-tail" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-tail">{{tailLabel}}<span class="caret withMargin"></span></button>
+                <button id="button-tail" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-tail"><span class="me-2">{{tailLabel}}</span></button>
 				<ul id="dropdown-tail" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-tail">
 					<li role="menuitem"><a class="dropdown-item" href (click)="tail = false; tailLabel = tailLabelNo; $event.preventDefault()">{{tailLabelNo}}</a></li>
 					<li role="menuitem"><a class="dropdown-item" href (click)="tail = true; tailLabel = tailLabelYes; scrollToLast(); $event.preventDefault()">{{tailLabelYes}}</a></li>
@@ -21,7 +21,7 @@
 			</div>
 		}
 		<div class="btn-group" dropdown>
-			<button id="button-level" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-level">{{levelFilterLabel}}<span class="caret withMargin"></span></button>
+            <button id="button-level" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-level"><span class="me-2">{{levelFilterLabel}}</span></button>
 			<ul id="dropdown-level" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-level">
 			  <li role="menuitem"><a class="dropdown-item" href (click)="applyMinimumLogLevel(LogLevel.DEBUG); $event.preventDefault()">{{levelFilterLabelDebug}}</a></li>
 			  <li class="divider dropdown-divider"></li>

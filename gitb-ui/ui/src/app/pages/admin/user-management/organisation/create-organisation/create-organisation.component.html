@@ -5,7 +5,7 @@
         </div>
         <form>
             <div class="card-body" [pending]="!loaded" focus="sname">
-                <app-organisation-form
+                <app-organisation-form #form
                     [organisation]="organisation"
                     [communityId]="communityId"
                     [propertyData]="propertyData"
@@ -13,7 +13,6 @@
                     [landingPages]="landingPages"
                     [legalNotices]="legalNotices"
                     [errorTemplates]="errorTemplates"
-                    [otherOrganisations]="otherOrganisations"
                 ></app-organisation-form>
             </div>
             <div class="card-footer">

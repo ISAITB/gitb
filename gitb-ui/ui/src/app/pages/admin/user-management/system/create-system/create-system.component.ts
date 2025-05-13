@@ -1,16 +1,15 @@
-import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { OptionalCustomPropertyFormData } from 'src/app/components/optional-custom-property-form/optional-custom-property-form-data.type';
-import { BaseComponent } from 'src/app/pages/base-component.component';
-import { DataService } from 'src/app/services/data.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { RoutingService } from 'src/app/services/routing.service';
-import { SystemService } from 'src/app/services/system.service';
-import { System } from 'src/app/types/system';
-import { OrganisationTab } from '../../organisation/organisation-details/OrganisationTab';
-import { Constants } from 'src/app/common/constants';
-import { CommunityService } from 'src/app/services/community.service';
-import { forkJoin } from 'rxjs';
+import {Component, OnInit} from '@angular/core';
+import {ActivatedRoute} from '@angular/router';
+import {OptionalCustomPropertyFormData} from 'src/app/components/optional-custom-property-form/optional-custom-property-form-data.type';
+import {BaseComponent} from 'src/app/pages/base-component.component';
+import {DataService} from 'src/app/services/data.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {RoutingService} from 'src/app/services/routing.service';
+import {SystemService} from 'src/app/services/system.service';
+import {System} from 'src/app/types/system';
+import {OrganisationTab} from '../../organisation/organisation-details/OrganisationTab';
+import {Constants} from 'src/app/common/constants';
+import {CommunityService} from 'src/app/services/community.service';
 
 @Component({
     selector: 'app-create-system',
@@ -29,7 +28,6 @@ export class CreateSystemComponent extends BaseComponent implements OnInit {
     edit: false,
     propertyType: 'system'
   }
-  otherSystems: System[] = []
   savePending = false
   loaded = false
 
@@ -51,11 +49,8 @@ export class CreateSystemComponent extends BaseComponent implements OnInit {
       this.organisationId = this.dataService.vendor!.id
       this.communityId = this.dataService.community!.id
     }
-    const loadProperties$ = this.communityService.getSystemParameters(this.communityId)
-    const otherSystems$ = this.systemService.getSystemsByOrganisation(this.organisationId)
-    forkJoin([loadProperties$, otherSystems$]).subscribe((data) => {
-      this.propertyData.properties = data[0]
-      this.otherSystems = data[1]
+    this.communityService.getSystemParameters(this.communityId).subscribe((data) => {
+      this.propertyData.properties = data
     }).add(() => {
       this.loaded = true
     })

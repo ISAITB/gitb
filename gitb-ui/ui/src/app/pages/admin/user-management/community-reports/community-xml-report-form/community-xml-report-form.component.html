@@ -71,7 +71,7 @@
             <button class="btn btn-secondary" type="submit" (click)="update()" [disable]="previewPending || !updateEnabled()" [pending]="updatePending">Update</button>
             @if (config.previewOptions.length > 0) {
                 <div class="btn-group" dropdown [isDisabled]="updatePending || !updateEnabled()">
-                    <button id="button-preview" dropdownToggle type="button" [disable]="updatePending || !updateEnabled()" [pending]="previewPending" aria-controls="dropdown-preview" class="btn btn-secondary dropdown-toggle">Generate preview<span class="caret withMargin"></span></button>
+                    <button id="button-preview" dropdownToggle type="button" [disable]="updatePending || !updateEnabled()" [pending]="previewPending" aria-controls="dropdown-preview" class="btn btn-secondary dropdown-toggle"><span class="me-2">Generate preview</span></button>
                     <ul id="dropdown-preview" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-preview">
                         @for (optionGroup of config.previewOptions; track $index) {
                             @for (option of optionGroup; track $index) {

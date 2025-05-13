@@ -115,6 +115,7 @@ export class ExportComponent extends BaseComponent implements OnInit {
       textField: "fname",
       singleSelection: true,
       singleSelectionPersistent: true,
+      showAsFormControl: true,
       filterLabel: `Select ${this.dataService.labelDomainLower()}...`,
       loader: () => of(this.domains)
     }
@@ -123,6 +124,7 @@ export class ExportComponent extends BaseComponent implements OnInit {
       textField: "fname",
       singleSelection: true,
       singleSelectionPersistent: true,
+      showAsFormControl: true,
       filterLabel: `Select community...`,
       loader: () => of(this.communities)
     }
@@ -135,6 +137,7 @@ export class ExportComponent extends BaseComponent implements OnInit {
         clearItems: new EventEmitter<void>(),
         replaceItems: new EventEmitter<Domain[]>(),
         replaceSelectedItems: new EventEmitter<Domain[]>(),
+        showAsFormControl: true,
         filterLabel: `Select ${this.dataService.labelDomainsLower()}...`,
         loader: () => of(this.domains)
       }
@@ -144,6 +147,7 @@ export class ExportComponent extends BaseComponent implements OnInit {
         clearItems: new EventEmitter<void>(),
         replaceItems: new EventEmitter<Community[]>(),
         replaceSelectedItems: new EventEmitter<Community[]>(),
+        showAsFormControl: true,
         filterLabel: `Select communities...`,
         loader: () => of(this.communities)
       }

@@ -1,11 +1,10 @@
 <div class="filterContainer">
-    <button #filterControl [attr.id]="id" (click)="controlClicked()" type="button" class="btn btn-secondary filterControl" [disabled]="pending || disable">
+    <button #filterControl [attr.id]="id" (mousedown)="controlMouseDown($event)" (click)="controlClicked()" type="button" [ngClass]="config.showAsFormControl == true?['form-select']:['btn', 'btn-secondary', 'dropdown-toggle']" class="filterControl" [disabled]="pending || disable">
         <div class="button-label w-100 align-items-center">
             @if (pending) {
                 <app-pending-block></app-pending-block>
             }
             <div class="button-label-text">{{filterLabel}}</div>
-            <div class="caret withMargin"></div>
         </div>
     </button>
     @if (formVisible) {
@@ -31,7 +30,7 @@
                     }
                 </div>
             }
-            <div class="itemsContainer availableItems" [style.max-height.px]="availableItemsHeight" tabIndex="-1">
+            <div class="itemsContainer availableItems" [class.hideBorder]="!config.singleSelection && selectedItems.length > 0 && visibleAvailableItems.length == 0" [style.max-height.px]="availableItemsHeight" tabIndex="-1">
                 @if (loadPending) {
                     <div class="loadingDiv"><app-pending-block></app-pending-block></div>
                 } @else {

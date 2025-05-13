@@ -1,15 +1,6 @@
 @import '../../../styles/less/_common.less';
 
 
-.caret {
-    display: inline-block;
-    width: 0;
-    height: 0;
-    vertical-align: middle;
-    border-top: 4px dashed;
-    border-right: 4px solid var(--bs-secondary-color);
-    border-left: 4px solid var(--bs-secondary-color);
-}
 .filterContainer {
     position: relative;
     display: flex;
@@ -24,6 +15,7 @@
         .button-label-text {
             flex-grow: 1;
             text-align: start;
+            margin-right: 0.5rem;
         }
     }
 }
@@ -32,6 +24,7 @@
     border: var(--bs-border-width) solid var(--bs-border-color-translucent);
     position: absolute;
     top: 35px;
+    box-shadow: 2px 2px 5px 0 rgba(0,0,0,0.50);
     &.leftForm {
         right: 0;
     }
@@ -78,6 +71,7 @@
     }
     .itemsContainer {
         border-top: 1px solid @gray-light-2;
+        margin-bottom: 3px; // To avoid overflow scrollbar disrupting the border radius
         .loadingDiv {
             padding: 6px 12px;
         }
@@ -92,7 +86,7 @@
                 border-bottom-right-radius: @border-radius;
             }
             &:hover {
-                background: @bs-background-highlight;
+                background-color: @bs-background-highlight;
                 cursor: pointer;
                 &.focused {
                     background-color: @focus-background;
@@ -107,6 +101,9 @@
         }
         &.availableItems {
             overflow-y: auto;
+            &.hideBorder {
+                border-top-width: 0;
+            }
         }
     }
 }

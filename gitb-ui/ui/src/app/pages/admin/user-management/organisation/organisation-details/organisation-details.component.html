@@ -5,18 +5,17 @@
         </div>
         <form>
             <div class="card-body" [pending]="!loaded" focus="sname">
-                <app-organisation-form
-                    [organisation]="organisation"
-                    [communityId]="communityId"
-                    [propertyData]="propertyData"
-                    [showAdminInfo]="showAdminInfo"
-                    [showLandingPage]="showLandingPage"
-                    [readonly]="readonly"
-                    [validation]="validation"
-                    [landingPages]="landingPages"
-                    [legalNotices]="legalNotices"
-                    [errorTemplates]="errorTemplates"
-                    [otherOrganisations]="otherOrganisations"
+                <app-organisation-form #form
+                                       [organisation]="organisation"
+                                       [communityId]="communityId"
+                                       [propertyData]="propertyData"
+                                       [showAdminInfo]="showAdminInfo"
+                                       [showLandingPage]="showLandingPage"
+                                       [readonly]="readonly"
+                                       [validation]="validation"
+                                       [landingPages]="landingPages"
+                                       [legalNotices]="legalNotices"
+                                       [errorTemplates]="errorTemplates"
                 ></app-organisation-form>
             </div>
             @if (organisation.id) {

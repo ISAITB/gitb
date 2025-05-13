@@ -7,7 +7,7 @@
 .popup-panel {
     border: 1px solid @gray-light;
     border-radius: @border-radius;
-    box-shadow: 0 1px 5px @gray-shadow;
+    box-shadow: 2px 2px 5px 0 rgba(0,0,0,0.50);
     position: absolute;
     background: @white;
     z-index: 3;
@@ -24,12 +24,12 @@
             &.optional {
                 margin-top: 5px;
             }
-        }        
+        }
         .ratio-title, .ratio-container {
             display: inline-flex;
         }
         .ratio-title {
-            margin-left: auto;            
+            margin-left: auto;
             align-self: center;
             padding: 0px 10px;
             font-weight: bold;
@@ -42,7 +42,7 @@
             align-self: flex-start;
             justify-content: center;
             cursor: pointer;
-        }        
+        }
     }
     &.defaultPopup {
         padding: 8px;
@@ -75,12 +75,12 @@
 }
 .expand-icon {
     display: flex;
-    justify-content: center;    
+    justify-content: center;
     position: absolute;
     color: @white;
     right: 5px;
     top: 5px;
-    padding: 0px 4px;    
+    padding: 0px 4px;
     z-index: 2;
     cursor: pointer;
 }
@@ -97,7 +97,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 32px;    
+    height: 32px;
     &.completed {
         background: @green-success;
     }

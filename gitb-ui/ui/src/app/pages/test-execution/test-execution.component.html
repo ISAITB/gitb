@@ -15,7 +15,7 @@
                     <div class="btn-toolbar actionButtonDiv">
                         @if (testsToExecute.length > 1) {
                             <div class="btn-group" dropdown [isDisabled]="!firstTestStarted || reload">
-                                <button id="button-stop" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-stop">Stop<span class="caret withMargin"></span></button>
+                                <button id="button-stop" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-stop"><span class="me-2">Stop</span></button>
                                 <ul id="dropdown-stopType" *dropdownMenu class="dropdown-menu dropdown-menu" role="menu" aria-labelledby="button-stop">
                                     <li role="menuitem" [class.disabled]="!started || stopped"><a class="dropdown-item" href (click)="stop(session!); $event.preventDefault()">Stop current test</a></li>
                                     <li role="menuitem"><a class="dropdown-item" href (click)="stopAll(); $event.preventDefault()">Stop all tests</a></li>
@@ -102,7 +102,7 @@
                                                                         <button type="button" class="btn btn-secondary" (click)="displayPendingInteraction()">View pending interaction</button>
                                                                     } @else {
                                                                         <div class="btn-group" dropdown>
-                                                                            <button id="button-interactions" dropdownToggle class="btn btn-secondary dropdown-toggle" type="button" aria-controls="dropdown-interactions">View pending interaction<span class="caret withMargin"></span></button>
+                                                                            <button id="button-interactions" dropdownToggle class="btn btn-secondary dropdown-toggle" type="button" aria-controls="dropdown-interactions"><span class="me-2">View pending interaction</span></button>
                                                                             <ul id="dropdown-interactions" *dropdownMenu class="dropdown-menu" aria-labelledby="button-interactions">
                                                                                 @for (interaction of interactionStepsOfTests[testCase.id]; track interaction.stepId; let index = $index) {
                                                                                     <li>

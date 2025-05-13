@@ -26,12 +26,7 @@
                 <div class="row mt-3">
                     <label class="col-3 col-form-label text-end" for="landingPage">Landing page:</label>
                     <div class="col-7">
-                        <select id="landingPage" class="form-select" name="landingPage" [(ngModel)]="organisation.landingPage">
-                            <option [ngValue]="undefined">--Default Page--</option>
-                            @for (page of landingPages; track page.id) {
-                                <option [ngValue]="page.id">{{page.name}}</option>
-                            }
-                        </select>
+                        <app-multi-select-filter [disable]="landingPages == undefined || landingPages.length == 0" [config]="landingPageSelectionConfig" (apply)="landingPageSelected($event)"></app-multi-select-filter>
                     </div>
                     <div app-tooltip class="col-auto" [tbTooltip]="'You can provide a specific landing page for the '+dataService.labelOrganisationLower()+' with custom information. If unspecified the community default applies.'"></div>
                 </div>
@@ -39,41 +34,24 @@
                     <div class="row mt-3">
                         <label class="col-3 col-form-label text-end" for="legalNotice">Legal notice:</label>
                         <div class="col-7">
-                            <select id="legalNotice" class="form-select" name="legalNotice" [(ngModel)]="organisation.legalNotice">
-                                <option [ngValue]="undefined">--Default Legal Notice--</option>
-                                @for (notice of legalNotices; track notice.id) {
-                                    <option [ngValue]="notice.id">{{notice.name}}</option>
-                                }
-                            </select>
+                            <app-multi-select-filter [disable]="legalNotices == undefined || legalNotices.length == 0" [config]="legalNoticeSelectionConfig" (apply)="legalNoticeSelected($event)"></app-multi-select-filter>
                         </div>
                         <div app-tooltip class="col-auto" [tbTooltip]="'You can provide a specific legal notice for the '+dataService.labelOrganisationLower()+' with custom information. If unspecified the community default applies.'"></div>
                     </div>
                     <div class="row mt-3">
                         <label class="col-3 col-form-label text-end" for="template">Error template:</label>
                         <div class="col-7">
-                            <select class="form-select" name="errorTemplate" [(ngModel)]="organisation.errorTemplate">
-                                <option [ngValue]="undefined">--Default Error Template--</option>
-                                @for (template of errorTemplates; track template.id) {
-                                    <option [ngValue]="template.id">{{template.name}}</option>
-                                }
-                            </select>
+                            <app-multi-select-filter [disable]="errorTemplates == undefined || errorTemplates.length == 0" [config]="errorTemplateSelectionConfig" (apply)="errorTemplateSelected($event)"></app-multi-select-filter>
                         </div>
                         <div app-tooltip class="col-auto" [tbTooltip]="'You can provide a specific error template for the '+dataService.labelOrganisationLower()+' with custom information. If unspecified the community default applies.'"></div>
                     </div>
-                    @if (otherOrganisations.length) {
-                        <div class="row mt-3">
-                            <label class="col-3 col-form-label text-end" for="otherOrganisation">Copy test setup from:</label>
-                            <div class="col-7">
-                                <select id="otherOrganisation" (change)="copyChanged()" class="form-select" name="otherOrganisation" [(ngModel)]="organisation.otherOrganisations">
-                                    <option [ngValue]="undefined"></option>
-                                    @for (organisation of otherOrganisations; track organisation.id) {
-                                        <option [ngValue]="organisation.id">{{organisation.sname}}</option>
-                                    }
-                                </select>
-                            </div>
-                            <div app-tooltip class="col-auto" [tbTooltip]="'Select another '+dataService.labelOrganisationLower()+' to serve as a template for this one. The configuration from the selected '+dataService.labelOrganisationLower()+' will be copied to the current one.'"></div>
+                    <div class="row mt-3">
+                        <label class="col-3 col-form-label text-end" for="otherOrganisation">Copy test setup from:</label>
+                        <div class="col-7">
+                            <app-multi-select-filter [config]="copySelectionConfig" (apply)="otherOrganisationSelected($event)"></app-multi-select-filter>
                         </div>
-                    }
+                        <div app-tooltip class="col-auto" [tbTooltip]="'Select another '+dataService.labelOrganisationLower()+' to serve as a template for this one. The configuration from the selected '+dataService.labelOrganisationLower()+' will be copied to the current one.'"></div>
+                    </div>
                     <div [collapse]="!organisation.otherOrganisations" [isAnimated]="true">
                         <div class="row mt-3 pt-1">
                             <legend class="col-3 col-form-label text-end pt-0">Copy also:</legend>
@@ -101,7 +79,7 @@
                                     <div class="form-check">
                                         <input class="form-check-input" id="template" id="asTemplate" name="asTemplate" [(ngModel)]="organisation.template" type="checkbox">
                                         <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [tbTooltip]="'You can define the configuration of this '+dataService.labelOrganisationLower()+' as a template that will be presented to users self-registering for the community (if self-registration is enabled). Do this to offer new users preconfigured '+dataService.labelSystemsLower()+' and conformance statements.'"></div>
-                                    </div>                            
+                                    </div>
                                 </div>
                             </div>
                             <div [collapse]="!organisation.template" [isAnimated]="true" (expanded)="templateChoiceChanged()">

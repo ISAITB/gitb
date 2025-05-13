@@ -347,6 +347,13 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
     return false
   }
 
+  controlMouseDown(event: MouseEvent) {
+    if (!this.formVisible) {
+      // Prevent the focus when clicking the mouse
+      event.preventDefault()
+    }
+  }
+
   controlClicked() {
     this.focusedSelectedItemIndex = undefined
     this.focusedAvailableItemIndex = undefined
@@ -364,7 +371,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
             if (this.filterTextElement) {
               this.filterTextElement.nativeElement.focus()
             }
-          }, 1)
+          })
         }
       })
     }

@@ -136,16 +136,16 @@ export class TestFilterComponent implements OnInit {
       this.definedFilters[filterType] = true
     }
     this.setupDefaultLoadFunctions()
-    this.initialiseIfDefined(Constants.FILTER_TYPE.DOMAIN, { name: Constants.FILTER_TYPE.DOMAIN, textField: 'sname', loader: this.loadDomainsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
-    this.initialiseIfDefined(Constants.FILTER_TYPE.SPECIFICATION, { name: Constants.FILTER_TYPE.SPECIFICATION, textField: 'sname', loader: this.loadSpecificationsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
-    this.initialiseIfDefined(Constants.FILTER_TYPE.SPECIFICATION_GROUP, { name: Constants.FILTER_TYPE.SPECIFICATION_GROUP, textField: 'sname', loader: this.loadSpecificationGroupsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
-    this.initialiseIfDefined(Constants.FILTER_TYPE.ACTOR, { name: Constants.FILTER_TYPE.ACTOR, textField: 'name', loader: this.loadActorsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
-    this.initialiseIfDefined(Constants.FILTER_TYPE.TEST_SUITE, { name: Constants.FILTER_TYPE.TEST_SUITE, textField: 'sname', loader: this.loadTestSuitesFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
-    this.initialiseIfDefined(Constants.FILTER_TYPE.TEST_CASE, { name: Constants.FILTER_TYPE.TEST_CASE, textField: 'sname', loader: this.loadTestCasesFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
-    this.initialiseIfDefined(Constants.FILTER_TYPE.COMMUNITY, { name: Constants.FILTER_TYPE.COMMUNITY, textField: 'sname', loader: this.loadCommunitiesFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
-    this.initialiseIfDefined(Constants.FILTER_TYPE.ORGANISATION, { name: Constants.FILTER_TYPE.ORGANISATION, textField: 'sname', loader: this.loadOrganisationsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
-    this.initialiseIfDefined(Constants.FILTER_TYPE.SYSTEM, { name: Constants.FILTER_TYPE.SYSTEM, textField: 'sname', loader: this.loadSystemsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
-    this.initialiseIfDefined(Constants.FILTER_TYPE.RESULT, { name: Constants.FILTER_TYPE.RESULT, textField: 'label', loader: this.loadTestResults.bind(this), clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() } )
+    this.initialiseIfDefined(Constants.FILTER_TYPE.DOMAIN, { name: Constants.FILTER_TYPE.DOMAIN, textField: 'sname', loader: this.loadDomainsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter(), showAsFormControl: true })
+    this.initialiseIfDefined(Constants.FILTER_TYPE.SPECIFICATION, { name: Constants.FILTER_TYPE.SPECIFICATION, textField: 'sname', loader: this.loadSpecificationsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter(), showAsFormControl: true })
+    this.initialiseIfDefined(Constants.FILTER_TYPE.SPECIFICATION_GROUP, { name: Constants.FILTER_TYPE.SPECIFICATION_GROUP, textField: 'sname', loader: this.loadSpecificationGroupsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter(), showAsFormControl: true })
+    this.initialiseIfDefined(Constants.FILTER_TYPE.ACTOR, { name: Constants.FILTER_TYPE.ACTOR, textField: 'name', loader: this.loadActorsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter(), showAsFormControl: true })
+    this.initialiseIfDefined(Constants.FILTER_TYPE.TEST_SUITE, { name: Constants.FILTER_TYPE.TEST_SUITE, textField: 'sname', loader: this.loadTestSuitesFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter(), showAsFormControl: true })
+    this.initialiseIfDefined(Constants.FILTER_TYPE.TEST_CASE, { name: Constants.FILTER_TYPE.TEST_CASE, textField: 'sname', loader: this.loadTestCasesFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter(), showAsFormControl: true })
+    this.initialiseIfDefined(Constants.FILTER_TYPE.COMMUNITY, { name: Constants.FILTER_TYPE.COMMUNITY, textField: 'sname', loader: this.loadCommunitiesFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter(), showAsFormControl: true })
+    this.initialiseIfDefined(Constants.FILTER_TYPE.ORGANISATION, { name: Constants.FILTER_TYPE.ORGANISATION, textField: 'sname', loader: this.loadOrganisationsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter(), showAsFormControl: true })
+    this.initialiseIfDefined(Constants.FILTER_TYPE.SYSTEM, { name: Constants.FILTER_TYPE.SYSTEM, textField: 'sname', loader: this.loadSystemsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter(), showAsFormControl: true })
+    this.initialiseIfDefined(Constants.FILTER_TYPE.RESULT, { name: Constants.FILTER_TYPE.RESULT, textField: 'label', loader: this.loadTestResults.bind(this), clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter(), showAsFormControl: true } )
     if (this.commands) {
       this.commands.subscribe((command) => {
         this.handleCommand(command)

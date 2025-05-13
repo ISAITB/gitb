@@ -72,6 +72,7 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
       textField: "fname",
       singleSelection: true,
       singleSelectionPersistent: true,
+      showAsFormControl: true,
       filterLabel: `Select ${this.dataService.labelDomainLower()}...`,
       loader: () => of(this.domains)
     }
@@ -80,6 +81,7 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
       textField: "fname",
       singleSelection: true,
       singleSelectionPersistent: true,
+      showAsFormControl: true,
       filterLabel: `Select community...`,
       loader: () => of(this.communities)
     }

@@ -14,6 +14,7 @@ export interface MultiSelectConfig<T extends EntityWithId> {
   singleSelection?: boolean
   singleSelectionPersistent?: boolean
   singleSelectionClearable?: boolean
+  showAsFormControl?: boolean
   filterLabel?: string
   noItemsMessage?: string
   searchPlaceholder?: string

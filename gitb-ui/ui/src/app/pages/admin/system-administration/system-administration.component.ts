@@ -263,6 +263,7 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
           name: 'emailSslProtocols',
           textField: 'label',
           initialValues: this.parseSslProtocols(this.emailSettings.sslProtocols),
+          showAsFormControl: true,
           filterLabel: 'Select protocols...',
           loader: () => of(this.emailSslProtocols)
         }
@@ -270,6 +271,7 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
           name: 'emailAttachmentTypes',
           textField: 'label',
           initialValues: this.parseAttachmentTypes(this.emailSettings.allowedAttachmentTypes),
+          showAsFormControl: true,
           filterLabel: 'Select attachment types...',
           loader: () => of(this.emailAttachmentTypes)
         }
