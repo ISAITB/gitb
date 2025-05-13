@@ -1,12 +1,13 @@
-import { Component, ElementRef, EventEmitter, HostListener, Input, OnDestroy, OnInit, Output, ViewChild } from '@angular/core';
-import { DataService } from 'src/app/services/data.service';
-import { ItemMap } from './item-map';
-import { MultiSelectConfig } from './multi-select-config';
-import { EntityWithId } from '../../types/entity-with-id';
-import { filter, find } from 'lodash';
-import { FilterValues } from '../test-filter/filter-values';
-import { FilterUpdate } from '../test-filter/filter-update';
-import { Observable, Subscription, map, of, share } from 'rxjs';
+import {Component, ElementRef, EventEmitter, HostListener, Input, OnDestroy, OnInit, Output, ViewChild} from '@angular/core';
+import {DataService} from 'src/app/services/data.service';
+import {ItemMap} from './item-map';
+import {MultiSelectConfig} from './multi-select-config';
+import {EntityWithId} from '../../types/entity-with-id';
+import {filter, find} from 'lodash';
+import {FilterValues} from '../test-filter/filter-values';
+import {FilterUpdate} from '../test-filter/filter-update';
+import {map, Observable, of, share, Subscription} from 'rxjs';
+import {Constants} from '../../common/constants';
 
 @Component({
     selector: 'app-multi-select-filter',
@@ -23,6 +24,8 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
   @Output() apply = new EventEmitter<FilterUpdate<any>>()
   @Output() ready = new EventEmitter<string>()
   @ViewChild('filterText') filterTextElement?: ElementRef
+  @ViewChild('filterControl') filterControlElement?: ElementRef
+  @ViewChild('filterForm') filterFormElement?: ElementRef
 
   selectedItems: T[] = []
   availableItems: T[] = []
@@ -31,6 +34,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
   selectedSelectedItems: ItemMap<T> = {}
   formVisible = false
   hasCheckedSelectedItem = false
+  showClearIcon = false
   defaultFilterLabel = 'All'
   filterLabel = 'All'
   openToLeft = false
@@ -39,6 +43,9 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
   noItemsMessage!: string
   searchPlaceholder!: string
   id!: string
+  formWidth!: number
+  formTop!: number
+  availableItemsHeight!: number
 
   replaceItemsSubscription?: Subscription
   replaceSelectedItemsSubscription?: Subscription
@@ -171,6 +178,20 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
     if (this.replaceItemsSubscription) this.replaceItemsSubscription.unsubscribe()
     if (this.replaceSelectedItemsSubscription) this.replaceSelectedItemsSubscription.unsubscribe()
     if (this.clearItemsSubscription) this.clearItemsSubscription.unsubscribe()
+  }
+
+  @HostListener('window:resize', ['$event'])
+  onWindowResize(event: any) {
+    if (this.formVisible) {
+      this.calculateSizeAndPosition()
+    }
+  }
+
+  @HostListener('window:scroll', ['$event'])
+  onWindowScroll(event: any) {
+    if (this.formVisible) {
+      this.calculateSizeAndPosition()
+    }
   }
 
   @HostListener('document:click', ['$event'])
@@ -333,9 +354,11 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
       this.close()
     } else {
       this.formVisible = true
-      this.openToLeft = this.shouldOpenToLeft()
+      this.calculateSizeAndPosition()
       this.updateCheckFlag()
+      this.updateSingleSelectionClearFlag()
       this.loadData().subscribe(() => {
+        this.calculateSizeAndPosition()
         if (this.typeahead) {
           setTimeout(() => {
             if (this.filterTextElement) {
@@ -345,6 +368,83 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
         }
       })
     }
+  }
+
+  private calculateSizeAndPosition() {
+    this.openToLeft = this.shouldOpenToLeft()
+    const buffer = 20;
+    const minWidth = 400;
+    if (this.filterControlElement) {
+      // Width calculation
+      const triggerRect = this.filterControlElement.nativeElement.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      let availableWidth: number;
+      if (this.openToLeft) {
+        availableWidth = triggerRect.right - buffer;
+      } else {
+        availableWidth = viewportWidth - triggerRect.left - buffer;
+      }
+      // Start with element's natural width
+      let desiredWidth = this.filterControlElement.nativeElement.offsetWidth;
+      // Clamp to min width
+      if (desiredWidth < minWidth) {
+        desiredWidth = minWidth;
+      }
+      // Clamp to available space
+      this.formWidth = Math.min(desiredWidth, availableWidth);
+      // Height calculation
+    } else {
+      this.formWidth = minWidth;
+    }
+    this.adjustHeight(300)
+  }
+
+  private adjustHeight(minHeight: number) {
+    this.availableItemsHeight = minHeight;
+    setTimeout(() => {
+      if (this.filterFormElement && this.filterControlElement) {
+        let fitsBottom: boolean
+        let fitsTop: boolean
+        let formHeight = this.filterFormElement.nativeElement.offsetHeight
+        const coords = this.filterControlElement.nativeElement.getBoundingClientRect()
+        const controlHeight = this.filterControlElement.nativeElement.innerHeight
+        let controlBottom: number|undefined
+        if (coords.bottom != undefined) {
+          controlBottom = coords.bottom
+        } else if (coords.y != undefined) {
+          controlBottom = coords.y
+        } else {
+          controlBottom = 0
+        }
+        let controlTop: number
+        if (coords.top != undefined) {
+          controlTop = coords.top
+        } else if (coords.y != undefined) {
+          controlTop = coords.y - controlHeight
+        } else {
+          controlTop = 0
+        }
+        const maxHeight = window.innerHeight
+        const formBottom = controlBottom + formHeight
+        const formTop = controlTop - formHeight
+        fitsBottom = formBottom <= maxHeight
+        fitsTop = formTop > 0
+        if (fitsBottom) {
+          this.formTop = controlHeight
+        } else if (fitsTop) {
+          this.formTop = formHeight * -1
+        } else {
+          if (minHeight > 80) {
+            this.availableItemsHeight = minHeight - 20
+            this.adjustHeight(minHeight - 20)
+          }
+        }
+      }
+    })
+  }
+
+  private updateSingleSelectionClearFlag() {
+    this.showClearIcon = this.config.singleSelection === true && this.config.singleSelectionClearable === true && this.selectedItems.length > 0
   }
 
   private shouldOpenToLeft() {
@@ -545,6 +645,11 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
     }
   }
 
+  clearSingleSelection() {
+    this.clearSelectedItems()
+    this.applyItems()
+  }
+
   clearSelectedItems() {
     this.focusedSelectedItemIndex = undefined
     this.focusedAvailableItemIndex = undefined
@@ -600,4 +705,6 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
       element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
   }
+
+  protected readonly Constants = Constants;
 }

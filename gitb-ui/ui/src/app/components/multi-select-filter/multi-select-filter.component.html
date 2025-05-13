@@ -1,5 +1,5 @@
 <div class="filterContainer">
-    <button [attr.id]="id" (click)="controlClicked()" type="button" class="btn btn-secondary filterControl" [disabled]="pending || disable">
+    <button #filterControl [attr.id]="id" (click)="controlClicked()" type="button" class="btn btn-secondary filterControl" [disabled]="pending || disable">
         <div class="button-label w-100 align-items-center">
             @if (pending) {
                 <app-pending-block></app-pending-block>
@@ -9,11 +9,14 @@
         </div>
     </button>
     @if (formVisible) {
-        <div class="filterForm" [ngClass]="{'leftForm': openToLeft, 'rightForm': !openToLeft}" [class.multiSelection]="!config.singleSelection">
+        <div #filterForm [style.top.px]="formTop" [style.width.px]="formWidth" class="filterForm" [ngClass]="{'leftForm': openToLeft, 'rightForm': !openToLeft}" [class.multiSelection]="!config.singleSelection">
             @if (typeahead && availableItems.length > 0) {
                 <div class="formSearch">
-                    <div class="inputDiv"><input #filterText type="text" class="form-control" [placeholder]="searchPlaceholder" [(ngModel)]="textValue" (ngModelChange)="searchApplied()" (focus)="filterTextFocused()"/></div>
-                    <div class="iconDiv"><span><i class="fa fa-search" aria-hidden="true"></i></span></div>
+                    <div class="inputDiv" [class.withClear]="showClearIcon"><input #filterText type="text" class="form-control" [placeholder]="searchPlaceholder" [(ngModel)]="textValue" (ngModelChange)="searchApplied()" (focus)="filterTextFocused()"/></div>
+                    <div class="iconDiv" [class.withClear]="showClearIcon"><span><i class="fa fa-search" aria-hidden="true"></i></span></div>
+                    @if (showClearIcon) {
+                        <div class="clearDiv" (click)="clearSingleSelection()" containerClass="shortTooltip" container="body" tooltip="Clear selected item" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa fa-times" aria-hidden="true"></i></span></div>
+                    }
                 </div>
             }
             @if (!config.singleSelection && selectedItems.length > 0) {
@@ -28,7 +31,7 @@
                     }
                 </div>
             }
-            <div class="itemsContainer availableItems" tabIndex="-1">
+            <div class="itemsContainer availableItems" [style.max-height.px]="availableItemsHeight" tabIndex="-1">
                 @if (loadPending) {
                     <div class="loadingDiv"><app-pending-block></app-pending-block></div>
                 } @else {

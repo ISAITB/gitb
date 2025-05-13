@@ -29,7 +29,6 @@
 }
 .filterForm {
     border-radius: @border-radius;
-    width: 400px;
     border: var(--bs-border-width) solid var(--bs-border-color-translucent);
     position: absolute;
     top: 35px;
@@ -39,19 +38,34 @@
     &.rightForm {
         left: 0;
     }
-    z-index: 10;
+    z-index: 300;
     background: @white;
     .formSearch {
         margin: 8px;
         display: flex;
         align-items: center;
         position: relative;
+        .clearDiv {
+            margin-left: -8px;
+            padding: 4px 10px;
+            cursor: pointer;
+            border-radius: @border-radius;
+            &:hover {
+                background-color: @gray-light;
+            }
+        }
         .inputDiv {
             flex-grow: 1;
+            &.withClear {
+                margin-right: 16px;
+            }
         }
         .iconDiv {
             position: absolute;
             right: 10px;
+            &.withClear {
+                right: 48px;
+            }
         }
     }
     .formButtons {
@@ -93,7 +107,6 @@
         }
         &.availableItems {
             overflow-y: auto;
-            max-height: 300px;
         }
     }
 }

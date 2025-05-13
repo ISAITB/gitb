@@ -13,6 +13,7 @@ export interface MultiSelectConfig<T extends EntityWithId> {
   replaceSelectedItems?: EventEmitter<T[]>
   singleSelection?: boolean
   singleSelectionPersistent?: boolean
+  singleSelectionClearable?: boolean
   filterLabel?: string
   noItemsMessage?: string
   searchPlaceholder?: string
