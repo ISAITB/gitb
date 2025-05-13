@@ -181,14 +181,14 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
   }
 
   @HostListener('window:resize', ['$event'])
-  onWindowResize(event: any) {
+  onWindowResize() {
     if (this.formVisible) {
       this.calculateSizeAndPosition()
     }
   }
 
   @HostListener('window:scroll', ['$event'])
-  onWindowScroll(event: any) {
+  onWindowScroll() {
     if (this.formVisible) {
       this.calculateSizeAndPosition()
     }
