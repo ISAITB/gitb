@@ -55,6 +55,7 @@ public class ShaclValidator extends AbstractValidator {
     private static final String SORT_BY_SEVERITY_ARGUMENT_NAME = "sortBySeverity";
     private static final String SHOW_REPORT_ARGUMENT_NAME = "showReport";
     private static final String LOAD_IMPORTS_ARGUMENT_NAME = "loadImports";
+    private static final String MERGE_MODELS_BEFORE_VALIDATION = "mergeModelsBeforeValidation";
 
     private static final String NS_SHACL = "http://www.w3.org/ns/shacl#";
     private static final String RESULT_URI = NS_SHACL+"result";
@@ -123,6 +124,9 @@ public class ShaclValidator extends AbstractValidator {
         boolean loadImports = Optional.ofNullable(getAndConvert(inputs, LOAD_IMPORTS_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class))
                 .map(value -> (Boolean) value.getValue())
                 .orElse(false);
+        boolean mergeModelsBeforeValidation = Optional.ofNullable(getAndConvert(inputs, MERGE_MODELS_BEFORE_VALIDATION, DataType.BOOLEAN_DATA_TYPE, BooleanType.class))
+                .map(value -> (Boolean) value.getValue())
+                .orElse(true);
         // Proceed with validation.
         Model inputModel;
         Model shapesModel;
@@ -134,7 +138,7 @@ public class ShaclValidator extends AbstractValidator {
             inputModel = readModel(modelContent, modelLanguage);
         } else {
             shapesModel = getShapesModel(shapes);
-            inputModel = getInputModel(new ContentInfo(modelContent, modelLanguage), shapesModel, loadImports);
+            inputModel = getInputModel(new ContentInfo(modelContent, modelLanguage), shapesModel, loadImports, mergeModelsBeforeValidation);
             reportModel = ValidationUtil.validateModel(inputModel, shapesModel, false).getModel();
         }
         reportModel.setNsPrefix("sh", NS_SHACL);
@@ -153,10 +157,13 @@ public class ShaclValidator extends AbstractValidator {
         ));
     }
 
-    private Model getInputModel(ContentInfo input, Model shapesModel, boolean loadImports) {
+    private Model getInputModel(ContentInfo input, Model shapesModel, boolean loadImports, boolean mergeModelsBeforeValidation) {
         Model model = readModel(input.content(), input.language(), shapesModel.getNsPrefixMap());
         if (loadImports) {
             loadImportsForModel(model);
+        }
+        if (mergeModelsBeforeValidation) {
+            model.add(shapesModel);
         }
         return model;
     }
