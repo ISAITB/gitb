@@ -60,7 +60,7 @@
                                     <form>
                                         <div class="card mb-0">
                                             <div class="card-header">
-                                                <div class="card-title">{{loginOption == Constants.LOGIN_OPTION.REGISTER && dataService.configuration.registrationEnabled?'Registration':(onetimePassword?'Change password':'Login')}}</div>
+                                                <div class="card-title">{{loginOption == Constants.LOGIN_OPTION.REGISTER && dataService.configuration.registrationEnabled?'Registration':(onetimePassword?'Change password':'Account login')}}</div>
                                             </div>
                                             <div class="card-body">
                                                 <app-alert-display [alerts]="alerts" [innerClass]="(loginOption == Constants.LOGIN_OPTION.REGISTER)?'col-12':'col-10 offset-1'"></app-alert-display>
