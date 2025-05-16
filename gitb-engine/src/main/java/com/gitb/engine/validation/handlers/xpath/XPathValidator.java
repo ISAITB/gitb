@@ -4,7 +4,7 @@ import com.gitb.core.Configuration;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.utils.HandlerUtils;
 import com.gitb.engine.validation.ValidationHandler;
-import com.gitb.engine.validation.handlers.common.AbstractValidator;
+import com.gitb.engine.validation.handlers.common.SimpleValidator;
 import com.gitb.tr.TestStepReportType;
 import com.gitb.types.*;
 
@@ -16,7 +16,7 @@ import java.util.Map;
  * Created by root on 19.02.2015.
  */
 @ValidationHandler(name="XPathValidator")
-public class XPathValidator extends AbstractValidator {
+public class XPathValidator extends SimpleValidator {
 
     private static final String CONTENT_ARGUMENT_NAME = "xmldocument";
     private static final String XPATH_ARGUMENT_NAME = "xpathexpression";
@@ -38,7 +38,6 @@ public class XPathValidator extends AbstractValidator {
         // Process expression
         BooleanType result = (BooleanType) contentToProcess.processXPath(xPathExpr, DataType.BOOLEAN_DATA_TYPE);
         // Return report
-        XPathReportHandler handler = new XPathReportHandler(contentToProcess, expression, result);
-        return handler.createReport();
+        return createReport(inputs, () -> new XPathReportHandler(contentToProcess, expression, result).createReport());
     }
 }

@@ -2,7 +2,7 @@ package com.gitb.engine.validation.handlers.number;
 
 import com.gitb.core.Configuration;
 import com.gitb.engine.validation.ValidationHandler;
-import com.gitb.engine.validation.handlers.common.AbstractValidator;
+import com.gitb.engine.validation.handlers.common.SimpleValidator;
 import com.gitb.tr.TestStepReportType;
 import com.gitb.types.BooleanType;
 import com.gitb.types.DataType;
@@ -15,7 +15,7 @@ import java.util.Map;
  * Created by Roch Bertucat
  */
 @ValidationHandler(name="NumberValidator")
-public class NumberValidator extends AbstractValidator {
+public class NumberValidator extends SimpleValidator {
 
     private final static String ACTUAL_NUMBER_ARGUMENT_NAME = "actualnumber";
     private final static String EXPECTED_NUMBER_ARGUMENT_NAME = "expectednumber";
@@ -33,8 +33,6 @@ public class NumberValidator extends AbstractValidator {
         // process xpath
         BooleanType result = new BooleanType(actualnumber.doubleValue() == expectednumber.doubleValue());
 
-        // return report
-        NumberReportHandler handler = new NumberReportHandler(actualnumber, expectednumber, result);
-        return handler.createReport();
+        return createReport(inputs, () -> new NumberReportHandler(actualnumber, expectednumber, result).createReport());
     }
 }
