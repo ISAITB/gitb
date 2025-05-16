@@ -163,15 +163,15 @@
                                     (settings.enableSpecificationLevel && !(settings.enableAllLevel || settings.enableDomainLevel || settings.enableGroupLevel)) ||
                                     (!settings.enableAllLevel && !settings.enableDomainLevel && !settings.enableGroupLevel && !settings.enableSpecificationLevel)) {
                                     @if (settings.enableAllLevel) {
-                                        <input type="text" value="Aggregate status" readonly="true" class="form-control" type="text">
+                                        <input type="text" value="Aggregate status" readonly="readonly" class="form-control">
                                     } @else if (settings.enableDomainLevel) {
-                                        <input type="text" [value]="dataService.labelDomain()" readonly="true" class="form-control" type="text">
+                                        <input type="text" [value]="dataService.labelDomain()" readonly="readonly" class="form-control">
                                     } @else if (settings.enableGroupLevel) {
-                                        <input type="text" [value]="dataService.labelSpecificationGroup()" readonly="true" class="form-control" type="text">
+                                        <input type="text" [value]="dataService.labelSpecificationGroup()" readonly="readonly" class="form-control">
                                     } @else if (settings.enableSpecificationLevel) {
-                                        <input type="text" [value]="dataService.labelSpecification()" readonly="true" class="form-control" type="text">
+                                        <input type="text" [value]="dataService.labelSpecification()" readonly="readonly" class="form-control">
                                     } @else {
-                                        <input type="text" value="" readonly="true" class="form-control" type="text">
+                                        <input type="text" value="" readonly="readonly" class="form-control">
                                     }
                                 } @else {
                                     <select id="messageLevel" class="form-select" name="messageLevel" (change)="messageLevelChanged()" [(ngModel)]="messageLevel">
@@ -200,7 +200,7 @@
                                             <option [ngValue]="true">Specific message</option>
                                         </select>
                                     } @else {
-                                        <input type="text" value="Default message" readonly="true" class="form-control" type="text">
+                                        <input type="text" value="Default message" readonly="readonly" class="form-control">
                                     }
                                 </div>
                             }
@@ -217,7 +217,7 @@
                                                 }
                                             </select>
                                         } @else if (domains.length == 1) {
-                                            <input type="text" [value]="domains[0].fname" readonly="true" class="form-control" type="text">
+                                            <input type="text" [value]="domains[0].fname" readonly="readonly" class="form-control">
                                         }
                                     </div>
                                 </div>
@@ -236,7 +236,7 @@
                                                 }
                                             </select>
                                         } @else if (groups.length == 1) {
-                                            <input type="text" [value]="groups[0].fname" readonly="true" class="form-control" type="text">
+                                            <input type="text" [value]="groups[0].fname" readonly="readonly" class="form-control">
                                         }
                                     </div>
                                 </div>
@@ -256,7 +256,7 @@
                                                 }
                                             </select>
                                         } @else if (specifications.length == 1) {
-                                            <input type="text" [value]="specifications[0].fname" readonly="true" class="form-control" type="text">
+                                            <input type="text" [value]="specifications[0].fname" readonly="readonly" class="form-control">
                                         }
                                     </div>
                                 </div>
@@ -295,7 +295,7 @@
                 } @else if (settings.enableSpecificationLevel) {
                     <button class="btn btn-secondary" type="button" (click)="preview('specification')" [disable]="exportPending || !previewEnabled()" [pending]="exportPending">Generate preview</button>
                 } @else {
-                    <button class="btn btn-secondary" type="button" disabled="true">Generate preview</button>
+                    <button class="btn btn-secondary" type="button" disabled="disabled">Generate preview</button>
                 }
             } @else {
                 <div class="btn-group" dropdown [isDisabled]="updatePending">
