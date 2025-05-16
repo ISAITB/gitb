@@ -1,4 +1,4 @@
-import {Component, ElementRef, EventEmitter, HostListener, Input, OnDestroy, OnInit, Output, ViewChild} from '@angular/core';
+import {Component, ElementRef, EventEmitter, forwardRef, HostListener, Input, OnDestroy, OnInit, Output, ViewChild} from '@angular/core';
 import {DataService} from 'src/app/services/data.service';
 import {ItemMap} from './item-map';
 import {MultiSelectConfig} from './multi-select-config';
@@ -8,14 +8,22 @@ import {FilterValues} from '../test-filter/filter-values';
 import {FilterUpdate} from '../test-filter/filter-update';
 import {map, Observable, of, share, Subscription} from 'rxjs';
 import {Constants} from '../../common/constants';
+import {ControlValueAccessor, NG_VALUE_ACCESSOR} from '@angular/forms';
 
 @Component({
-    selector: 'app-multi-select-filter',
-    templateUrl: './multi-select-filter.component.html',
-    styleUrls: ['./multi-select-filter.component.less'],
+  selector: 'app-multi-select-filter',
+  templateUrl: './multi-select-filter.component.html',
+  styleUrls: ['./multi-select-filter.component.less'],
+  providers: [
+    {
+      provide: NG_VALUE_ACCESSOR,
+      useExisting: forwardRef(() => MultiSelectFilterComponent),
+      multi: true
+    }
+  ],
     standalone: false
 })
-export class MultiSelectFilterComponent<T extends EntityWithId> implements OnInit, OnDestroy {
+export class MultiSelectFilterComponent<T extends EntityWithId> implements OnInit, OnDestroy, ControlValueAccessor {
 
   @Input() config!: MultiSelectConfig<T>
   @Input() typeahead = true
@@ -53,6 +61,9 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
 
   focusedSelectedItemIndex?: number
   focusedAvailableItemIndex?: number
+  onChange = (_: any) => {}
+  onTouched = () => {}
+  _value: T|T[]|undefined
 
   /*
    * ID of the displayed item to array of the hidden items.
@@ -117,6 +128,42 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
       this.replaceSelectedItems(this.config.initialValues)
     }
     this.ready.emit(this.config.name)
+  }
+
+  writeValue(v: T|T[]|undefined): void {
+    if (this.config.singleSelection) {
+      if (v == undefined) {
+      } else if (Array.isArray(v)) {
+        if (v.length == 0) {
+          this.clearSingleSelection()
+        } else {
+          this.selectAvailableItem(v[0])
+        }
+      } else {
+        this.selectAvailableItem(v)
+      }
+    } else {
+      if (v == undefined) {
+        this.replaceSelectedItems([])
+      } else if (Array.isArray(v)) {
+        this.replaceSelectedItems(v)
+      } else {
+        this.replaceSelectedItems([v])
+      }
+    }
+  }
+
+  registerOnChange(fn: any): void {
+    this.onChange = fn
+  }
+
+  registerOnTouched(fn: any): void {
+    this.onTouched = fn
+  }
+
+  emitChanges() {
+    this.onChange(this._value)
+    this.onTouched()
   }
 
   private replaceSelectedItems(newItems: T[]) {
@@ -567,6 +614,8 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
       this.selectedItems = [item]
       const itemToReport: FilterValues<T> = { active: [], other: [] }
       itemToReport.active = this.getItemsToSignalForItem(item)
+      this._value = item
+      this.emitChanges()
       if (this.config.eventsDisabled != true) {
         this.apply.emit({ values: itemToReport, applyFilters: false })
       }
@@ -647,6 +696,16 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
     this.selectedItems = this.sortItems(newSelectedItems)
     this.updateCheckFlag()
     this.updateLabel()
+    if (this.config.singleSelection) {
+      if (selectedItemsToReport.active.length == 0) {
+        this._value = undefined
+      } else {
+        this._value = selectedItemsToReport.active[0]
+      }
+    } else {
+      this._value = selectedItemsToReport.active
+    }
+    this.emitChanges()
     if (this.config.eventsDisabled != true) {
       this.apply.emit({ values: selectedItemsToReport, applyFilters: skipRefresh == undefined || !skipRefresh })
     }

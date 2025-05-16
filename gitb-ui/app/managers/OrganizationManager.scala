@@ -2,6 +2,7 @@ package managers
 
 import actors.events.OrganisationUpdatedEvent
 import exceptions.{AutomationApiException, ErrorCodes}
+import managers.OrganizationManager.{SpecificationApiKeyInfo, TestSuiteApiKeyInfo}
 import managers.triggers.TriggerHelper
 import models.Enums.{OrganizationType, UserRole}
 import models._
@@ -14,6 +15,13 @@ import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, Future}
+
+object OrganizationManager {
+
+  case class TestSuiteApiKeyInfo(testSuiteInfo: ApiKeyTestSuiteInfo, testCaseInfo: mutable.TreeMap[String, ApiKeyTestCaseInfo])
+  case class SpecificationApiKeyInfo(specificationName: String, actorInfo: mutable.TreeMap[String, ApiKeyActorInfo], testSuiteInfo: mutable.TreeMap[String, TestSuiteApiKeyInfo], specificationGroupName: Option[String])
+
+}
 
 /**
  * Created by VWYNGAET on 26/10/2016.
@@ -745,7 +753,10 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
                 x._1._2.shortname, // Test case name [6]
                 x._1._2.identifier, // Test case identifier [7]
                 x._1._1._1._1._2.id, // Specification ID [8]
-                x._2.map(_.shortname) // Specification group name [9]
+                x._2.map(_.shortname), // Specification group name [9]
+                x._1._1._1._2.id, // Actor ID [10]
+                x._1._1._2.id, // Test suite ID [11]
+                x._1._2.id // Test case ID [12]
               ))
           } else {
             PersistenceSchema.conformanceSnapshotResults
@@ -764,7 +775,10 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
                 x._1._2.shortname, // Test case name [6]
                 x._1._2.identifier, // Test case identifier [7]
                 x._1._1._1._1._2.id, // Specification ID [8]
-                x._2.map(_.shortname) // Specification group name [9]
+                x._2.map(_.shortname) ,// Specification group name [9]
+                x._1._1._1._2.id, // Actor ID [10]
+                x._1._1._2.id, // Test suite ID [11]
+                x._1._2.id // Test case ID [12]
               ))
           }
           query.distinct.sortBy(x => (x._9.asc, x._1.asc, x._2.asc, x._4.asc, x._6.asc)).result
@@ -774,58 +788,35 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
       }
     } yield (organisationApiKey, systemApiKeys, domainApiKeys)).map { results =>
       // Process results from DB
-      type testSuiteMapTuple = (String, mutable.TreeMap[String, String]) // Test suite name, Test case identifier, Test case name
-      type specificationMapTuple = (String, mutable.TreeMap[String, String], mutable.TreeMap[String, testSuiteMapTuple], Option[String]) // Specification name, Actor API key, Actor name, Test suite identifier, Test suite info, Specification group name
       // Organise results into a tree hierarchy
-      val specificationMap = new mutable.LinkedHashMap[Long, specificationMapTuple]()
+      val specificationMap = new mutable.LinkedHashMap[Long, SpecificationApiKeyInfo]()
       results._3.foreach { result =>
-        var spec = specificationMap.get(result._8)
         // Spec info.
-        if (spec.isEmpty) {
-          spec = Some((result._1, new mutable.TreeMap[String, String](), new mutable.TreeMap[String, testSuiteMapTuple](), result._9))
-          specificationMap += (result._8 -> spec.get)
-        }
+        val spec = specificationMap.getOrElseUpdate(result._8, SpecificationApiKeyInfo(result._1, new mutable.TreeMap(), new mutable.TreeMap(), result._9))
         // Actor info.
-        if (!spec.get._2.contains(result._3)) {
-          spec.get._2 += (result._3 -> result._2)
+        if (!spec.actorInfo.contains(result._3)) {
+          spec.actorInfo += (result._3 -> ApiKeyActorInfo(result._10, result._2, result._3))
         }
         // Test suite info.
-        var testSuite = spec.get._3.get(result._5)
-        if (testSuite.isEmpty) {
-          testSuite = Some((result._4, new mutable.TreeMap[String, String]()))
-          spec.get._3 += (result._5 -> testSuite.get)
-        }
+        val testSuite = spec.testSuiteInfo.getOrElseUpdate(result._5, TestSuiteApiKeyInfo(ApiKeyTestSuiteInfo(result._11, result._4, result._5, List()), new mutable.TreeMap()))
         // Test case info.
-        if (!testSuite.get._2.contains(result._7)) {
-          testSuite.get._2 += (result._7 -> result._6)
+        if (!testSuite.testCaseInfo.contains(result._7)) {
+          testSuite.testCaseInfo += (result._7 -> ApiKeyTestCaseInfo(result._12, result._6, result._7))
         }
       }
       // Map the tree hierarchies to the types to return.
       val specifications = specificationMap.map { spec =>
-        val specName = if (spec._2._4.isDefined) {
-          spec._2._4.get + " - " + spec._2._1
+        val specName = if (spec._2.specificationGroupName.isDefined) {
+          spec._2.specificationGroupName.get + " - " + spec._2.specificationName
         } else {
-          spec._2._1
+          spec._2.specificationName
         }
         ApiKeySpecificationInfo(
+          spec._1,
           specName,
-          spec._2._2.map { actor =>
-            val actorKey = actor._1
-            val actorName = actor._2
-            ApiKeyActorInfo(actorName, actorKey)
-          }.toList,
-          spec._2._3.map { testSuite =>
-            val testSuiteIdentifier = testSuite._1
-            val testSuiteName = testSuite._2._1
-            ApiKeyTestSuiteInfo(
-              testSuiteName,
-              testSuiteIdentifier,
-              testSuite._2._2.map { testCase =>
-                val testCaseName = testCase._2
-                val testCaseIdentifier = testCase._1
-                ApiKeyTestCaseInfo(testCaseName, testCaseIdentifier)
-              }.toList
-            )
+          spec._2.actorInfo.values.toList,
+          spec._2.testSuiteInfo.map { testSuite =>
+            testSuite._2.testSuiteInfo.copy(testcases = testSuite._2.testCaseInfo.values.toList)
           }.toList
         )
       }.toList

@@ -1,3 +1,3 @@
 package models.automation
 
-case class ApiKeyActorInfo(name: String, key: String) {}
+case class ApiKeyActorInfo(id: Long, name: String, key: String) {}

@@ -130,6 +130,7 @@ object JsonUtil {
     var json = Json.arr()
     specifications.foreach { specification =>
       json = json.append(Json.obj(
+        "id" -> specification.id,
         "name" -> specification.name,
         "actors" -> jsApiKeyActorsInfo(specification.actors),
         "testSuites" -> jsApiKeyTestSuiteInfo(specification.testSuites)
@@ -142,6 +143,7 @@ object JsonUtil {
     var json = Json.arr()
     actors.foreach { actor =>
       json = json.append(Json.obj(
+        "id" -> actor.id,
         "name" -> actor.name,
         "key" -> actor.key
       ))
@@ -153,6 +155,7 @@ object JsonUtil {
     var json = Json.arr()
     testSuites.foreach { testSuite =>
       json = json.append(Json.obj(
+        "id" -> testSuite.id,
         "name" -> testSuite.name,
         "key" -> testSuite.key,
         "testCases" -> jsApiKeyTestCaseInfo(testSuite.testcases)
@@ -165,6 +168,7 @@ object JsonUtil {
     var json = Json.arr()
     testCases.foreach { testCase =>
       json = json.append(Json.obj(
+        "id" -> testCase.id,
         "name" -> testCase.name,
         "key" -> testCase.key
       ))

@@ -1,27 +1,25 @@
 @import '../../../styles/less/_common.less';
 
-table {
-    .typeName {
-        width: 30%;
-    }
-    .typeKey {
-        width: 50%;
-    }
-    tr.with-top-border {
-        td {
-            border-top-width: var(--bs-border-width);
-        }
-    }
+.api-grid-table {
+    display: grid;
+    grid-template-columns: 20% 30% 50%;
+    width: 100%;
+    background-color: @white;
+    border-radius: @border-radius;
 }
-.api-keys-container {
-    position: relative;
-    .api-keys-pending {
-        position: absolute;
-        display: flex;
-        justify-content: center;
-        top: 90px;
-        width: 100%;
-        z-index: 1;     
-        font-size: x-large;   
+
+.api-cell {
+    padding: 0.5rem 0.5rem;
+    border-bottom: 1px solid @gray-light;
+    &:nth-last-child(-n+3) {
+        border-bottom-width: 0;
+    }
+    align-content: center;
+    &.colspan {
+        grid-column: span 3;
+    }
+    &.api-header {
+        border-bottom: 2px solid @gray-dark-1;
+        font-weight: bold;
     }
 }

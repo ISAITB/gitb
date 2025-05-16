@@ -1,179 +1,117 @@
-<div class="card table-container rounded">
-    <table class="table table-directive">
-        <thead>
-            <tr>
-                <th>API key type</th>
-                <th>Name</th>
-                <th>API key</th>
-            </tr>
-        </thead>
-        <tbody>
-            @if (dataStatus && dataStatus.status != Constants.STATUS.FINISHED) {
-                <tr>
-                    <td [attr.colspan]="3" class="td-data-loading"><app-pending-block></app-pending-block></td>
-                </tr>
+<div class="card rounded">
+    <div class="api-grid-table">
+        <div class="api-cell api-header">API key type</div>
+        <div class="api-cell api-header">Name</div>
+        <div class="api-cell api-header">API key</div>
+        @if (dataStatus && dataStatus.status != Constants.STATUS.FINISHED) {
+            <div class="api-cell colspan"><app-pending-block></app-pending-block></div>
+        }
+        @if (apiInfo) {
+            <div class="api-cell">{{dataService.labelOrganisation()}}</div>
+            <div class="api-cell"><input type="text" name="organisationName" [(ngModel)]="organisationName" readonly="readonly" class="form-control"/></div>
+            <div class="api-cell">
+                @if (apiInfo.organisation != undefined) {
+                    <app-api-key-text idName="organisation" name="organisation"
+                                      [key]="apiInfo.organisation"
+                                      [supportUpdate]="canUpdate"
+                                      [supportDelete]="canUpdate"
+                                      [updatePending]="organisationUpdatePending"
+                                      [deletePending]="organisationDeletePending"
+                                      (delete)="deleteOrganisationKey()"
+                                      (update)="updateOrganisationKey()"></app-api-key-text>
+                } @else if (canUpdate) {
+                    <button class="btn btn-secondary" (click)="newOrganisationKey()" [pending]="organisationUpdatePending">Generate API key</button>
+                }
+            </div>
+            @if (conformanceSnapshots != undefined && conformanceSnapshots.length > 0) {
+                <div class="api-cell">Conformance snapshot</div>
+                <div class="api-cell">
+                    <app-multi-select-filter [(ngModel)]="selectedSnapshot" [config]="snapshotSelectionConfig" (apply)="snapshotChanged()"></app-multi-select-filter>
+                </div>
+                <div class="api-cell">
+                    @if (selectedSnapshot && selectedSnapshot.apiKey) {
+                        <app-api-key-text idName="snapshot" name="snapshot" [key]="selectedSnapshot.apiKey"></app-api-key-text>
+                    }
+                </div>
             }
-            @if (apiInfo) {
-                <tr>
-                    <td class="typeLabel">{{dataService.labelOrganisation()}}</td>
-                    <td class="typeName">
-                        <input type="text" name="organisationName" [(ngModel)]="organisationName" readonly="readonly" class="form-control"/>
-                    </td>
-                    <td class="typeKey">
-                        @if (apiInfo.organisation != undefined) {
-                            <app-api-key-text idName="organisation" name="organisation"
-                                [key]="apiInfo.organisation" 
-                                [supportUpdate]="canUpdate"
-                                [supportDelete]="canUpdate"
-                                [updatePending]="organisationUpdatePending"
-                                [deletePending]="organisationDeletePending"
-                                (delete)="deleteOrganisationKey()"
-                                (update)="updateOrganisationKey()"></app-api-key-text>
-                        } @else if (canUpdate) {
-                            <button class="btn btn-secondary" (click)="newOrganisationKey()" [pending]="organisationUpdatePending">Generate API key</button>
+            @if (selectedSystem) {
+                <div class="api-cell" [class.disable-events]="snapshotKeysLoading">{{dataService.labelSystem()}}</div>
+                <div class="api-cell" [class.disable-events]="snapshotKeysLoading">
+                    @if (apiInfo.systems.length == 1) {
+                        <input type="text" name="selectedSystem" [(ngModel)]="selectedSystem.name" readonly="readonly" class="form-control"/>
+                    } @else {
+                        <app-multi-select-filter [(ngModel)]="selectedSystem" [config]="systemSelectionConfig"></app-multi-select-filter>
+                    }
+                </div>
+                <div class="api-cell" [class.disable-events]="snapshotKeysLoading">
+                    @if (selectedSystem.key != undefined) {
+                        <app-api-key-text idName="system" name="system"
+                                          [key]="selectedSystem.key"
+                                          [supportUpdate]="canUpdate"
+                                          [supportDelete]="false"
+                                          [updatePending]="systemUpdatePending[selectedSystem.id]"
+                                          (update)="updateSystemKey(selectedSystem!.id)"></app-api-key-text>
+                    } @else if (canUpdate && selectedSnapshot == undefined) {
+                        <button class="btn btn-secondary" (click)="newSystemKey(selectedSystem!.id)" [pending]="systemUpdatePending[selectedSystem.id]">Generate API key</button>
+                    }
+                </div>
+                @if (apiInfo.specifications.length > 0) {
+                    <div class="api-cell" [class.disable-events]="snapshotKeysLoading">{{dataService.labelSpecification()}}</div>
+                    <div class="api-cell" [class.disable-events]="snapshotKeysLoading">
+                        @if (apiInfo.specifications.length == 1) {
+                            <input type="text" name="selectedSpecification" [(ngModel)]="selectedSpecification!.name" readonly="readonly" class="form-control"/>
+                        } @else {
+                            <app-multi-select-filter [(ngModel)]="selectedSpecification" [config]="specificationSelectionConfig" (apply)="specificationChanged()"></app-multi-select-filter>
                         }
-                    </td>
-                </tr>
-                @if (conformanceSnapshots != undefined && conformanceSnapshots.length > 0) {
-                    <tr>
-                        <td class="typeLabel">Conformance snapshot</td>
-                        <td class="typeName">
-                            <select name="selectedSnapshot" [(ngModel)]="selectedSnapshot" (change)="snapshotChanged()" class="form-select">
-                                <option [ngValue]="undefined">{{latestSnapshotLabel}}</option>
-                                @for (snapshot of conformanceSnapshots; track snapshot.id) {
-                                    <option [ngValue]="snapshot">{{snapshot.label}}</option>
-                                }
-                            </select>
-                        </td>
-                        <td class="typeKey">
-                            @if (selectedSnapshot && selectedSnapshot.apiKey) {
-                                <app-api-key-text idName="snapshot" name="snapshot" [key]="selectedSnapshot.apiKey"></app-api-key-text>
+                    </div>
+                    <div class="api-cell" [class.disable-events]="snapshotKeysLoading">
+                        @if (apiInfo.specifications.length == 1) {
+                            <div app-tooltip class="col-auto" [tbTooltip]="'The following '+dataService.labelActorLower()+', test suite and test case API keys are relevant to this '+dataService.labelSpecificationLower()+'.'"></div>
+                        } @else {
+                            <div app-tooltip class="col-auto" [tbTooltip]="'Select the '+dataService.labelSpecificationLower()+' to view the API keys for its '+dataService.labelActorsLower()+', test suites and test cases.'"></div>
+                        }
+                    </div>
+                    @if (selectedSpecification && selectedActor) {
+                        <div class="api-cell" [class.disable-events]="snapshotKeysLoading">{{dataService.labelActor()}}</div>
+                        <div class="api-cell" [class.disable-events]="snapshotKeysLoading">
+                            @if (selectedSpecification.actors.length == 1) {
+                                <input type="text" name="selectedActor" [(ngModel)]="selectedActor.name" readonly="readonly" class="form-control"/>
+                            } @else {
+                                <app-multi-select-filter [(ngModel)]="selectedActor" [config]="actorSelectionConfig"></app-multi-select-filter>
                             }
-                        </td>                        
-                    </tr>
+                        </div>
+                        <div class="api-cell" [class.disable-events]="snapshotKeysLoading">
+                            <app-api-key-text [key]="selectedActor.key" idName="actor" name="actor"></app-api-key-text>
+                        </div>
+                    }
+                    @if (selectedSpecification && selectedTestSuite) {
+                        <div class="api-cell" [class.disable-events]="snapshotKeysLoading">Test suite</div>
+                        <div class="api-cell" [class.disable-events]="snapshotKeysLoading">
+                            @if (selectedSpecification.testSuites.length == 1) {
+                                <input type="text" name="selectedTestSuite" [(ngModel)]="selectedTestSuite.name" readonly="readonly" class="form-control"/>
+                            } @else {
+                                <app-multi-select-filter [(ngModel)]="selectedTestSuite" [config]="testSuiteSelectionConfig" (apply)="testSuiteChanged()"></app-multi-select-filter>
+                            }
+                        </div>
+                        <div class="api-cell" [class.disable-events]="snapshotKeysLoading">
+                            <app-api-key-text [key]="selectedTestSuite.key" idName="testSuite" name="testSuite"></app-api-key-text>
+                        </div>
+                    }
+                    @if (selectedTestSuite && selectedTestCase) {
+                        <div class="api-cell" [class.disable-events]="snapshotKeysLoading">Test case</div>
+                        <div class="api-cell" [class.disable-events]="snapshotKeysLoading">
+                            @if (selectedTestSuite.testCases.length == 1) {
+                                <input type="text" name="selectedTestCase" [(ngModel)]="selectedTestCase.name" readonly="readonly" class="form-control"/>
+                            } @else {
+                                <app-multi-select-filter [(ngModel)]="selectedTestCase" [config]="testCaseSelectionConfig"></app-multi-select-filter>
+                            }
+                        </div>
+                        <div class="api-cell" [class.disable-events]="snapshotKeysLoading">
+                            <app-api-key-text [key]="selectedTestCase.key" idName="testCase" name="testCase"></app-api-key-text>
+                        </div>
+                    }
                 }
             }
-        </tbody>
-    </table>
-    @if (apiInfo) {
-        <div class="api-keys-container">
-            @if (snapshotKeysLoading) {
-                <div class="api-keys-pending"><app-pending-block/></div>
-            }
-            <div [class.disable-events]="snapshotKeysLoading">
-                <table class="table table-directive">
-                    <tbody>
-                        @if (selectedSystem) {
-                            <tr class="with-top-border">
-                                <td class="typeLabel">{{dataService.labelSystem()}}</td>
-                                <td class="typeName">
-                                    @if (apiInfo.systems.length == 1) {
-                                        <input type="text" name="selectedSystem" [(ngModel)]="selectedSystem.name" readonly="readonly" class="form-control"/>
-                                    } @else {
-                                        <select name="selectedSystem" [(ngModel)]="selectedSystem" (change)="systemChanged()" class="form-select">
-                                            @for (system of apiInfo.systems; track system.id) {
-                                                <option [ngValue]="system">{{system.name}}</option>
-                                            }
-                                        </select>
-                                    }
-                                </td>
-                                <td class="typeKey">
-                                    @if (selectedSystem.key != undefined) {
-                                        <app-api-key-text idName="system" name="system"
-                                            [key]="selectedSystem.key"
-                                            [supportUpdate]="canUpdate"
-                                            [supportDelete]="false"
-                                            [updatePending]="systemUpdatePending[selectedSystem.id]"
-                                            (update)="updateSystemKey(selectedSystem.id)"></app-api-key-text>
-                                    } @else if (canUpdate && selectedSnapshot == undefined) {
-                                        <button class="btn btn-secondary" (click)="newSystemKey(selectedSystem.id)" [pending]="systemUpdatePending[selectedSystem.id]">Generate API key</button>
-                                    }
-                                </td>
-                            </tr>
-                        }
-                        @if (apiInfo.specifications.length > 0) {
-                            <tr>
-                                <td class="typeLabel">{{dataService.labelSpecification()}}</td>
-                                <td class="typeName">
-                                    @if (apiInfo.specifications.length == 1) {
-                                        <input type="text" name="selectedSpecification" [(ngModel)]="selectedSpecification!.name" readonly="readonly" class="form-control"/>
-                                    } @else {
-                                        <select name="selectedSpecification" [(ngModel)]="selectedSpecification" (change)="specificationChanged()" class="form-select">
-                                            @for (specification of apiInfo.specifications; track $index) {
-                                                <option [ngValue]="specification">{{specification.name}}</option>
-                                            }
-                                        </select>
-                                    }
-                                </td>
-                                <td>
-                                    @if (apiInfo.specifications.length == 1) {
-                                        <div app-tooltip class="col-auto" [tbTooltip]="'The following '+dataService.labelActorLower()+', test suite and test case API keys are relevant to this '+dataService.labelSpecificationLower()+'.'"></div>
-                                    } @else {
-                                        <div app-tooltip class="col-auto" [tbTooltip]="'Select the '+dataService.labelSpecificationLower()+' to view the API keys for its '+dataService.labelActorsLower()+', test suites and test cases.'"></div>
-                                    }
-                                </td>
-                            </tr>
-                        }
-                        @if (selectedSpecification && selectedActor) {
-                            <tr>
-                                <td class="typeLabel">{{dataService.labelActor()}}</td>
-                                <td class="typeName">
-                                    @if (selectedSpecification.actors.length == 1) {
-                                        <input type="text" name="selectedActor" [(ngModel)]="selectedActor.name" readonly="readonly" class="form-control"/>
-                                    } @else {
-                                        <select name="selectedActor" [(ngModel)]="selectedActor" (change)="actorChanged()" class="form-select">
-                                            @for (actor of selectedSpecification.actors; track actor.key) {
-                                                <option [ngValue]="actor">{{actor.name}}</option>
-                                            }
-                                        </select>                        
-                                    }
-                                </td>
-                                <td class="typeKey">
-                                    <app-api-key-text [key]="selectedActor.key" idName="actor" name="actor"></app-api-key-text>
-                                </td>
-                            </tr>
-                        }
-                        @if (selectedSpecification && selectedTestSuite) {
-                            <tr>
-                                <td class="typeLabel">Test suite</td>
-                                <td class="typeName">
-                                    @if (selectedSpecification.testSuites.length == 1) {
-                                        <input type="text" name="selectedTestSuite" [(ngModel)]="selectedTestSuite.name" readonly="readonly" class="form-control"/>
-                                    } @else {
-                                        <select name="selectedTestSuite" [(ngModel)]="selectedTestSuite" (change)="testSuiteChanged()" class="form-select">
-                                            @for (testSuite of selectedSpecification.testSuites; track testSuite.key) {
-                                                <option [ngValue]="testSuite">{{testSuite.name}}</option>
-                                            }
-                                        </select>
-                                    }
-                                </td>
-                                <td class="typeKey">
-                                    <app-api-key-text [key]="selectedTestSuite.key" idName="testSuite" name="testSuite"></app-api-key-text>
-                                </td>
-                            </tr>
-                        }
-                        @if (selectedTestSuite && selectedTestCase) {
-                            <tr>
-                                <td class="typeLabel">Test case</td>
-                                <td class="typeName">
-                                    @if (selectedTestSuite.testCases.length == 1) {
-                                        <input type="text" name="selectedTestCase" [(ngModel)]="selectedTestCase.name" readonly="readonly" class="form-control"/>
-                                    } @else {
-                                        <select name="selectedTestCase" [(ngModel)]="selectedTestCase" (change)="testCaseChanged()" class="form-select">
-                                            @for (testCase of selectedTestSuite.testCases; track testCase.key) {
-                                                <option [ngValue]="testCase">{{testCase.name}}</option>
-                                            }
-                                        </select>
-                                    }
-                                </td>
-                                <td class="typeKey">
-                                    <app-api-key-text [key]="selectedTestCase.key" idName="testCase" name="testCase"></app-api-key-text>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>    
-            </div>
-        </div>
-    }
+        }
+    </div>
 </div>
