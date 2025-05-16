@@ -16,6 +16,7 @@ export interface Specification extends EntityWithId {
     badges?: BadgesInfo
 
     checked?: boolean
+    groupObject?: SpecificationGroup
     groups?: SpecificationGroup[]
 
 }

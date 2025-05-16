@@ -122,6 +122,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
         if (!this.specification.group) {
           // Set to undefined to make sure the "undefined" option in the group select is pre-selected.
           this.specification.group = undefined
+          this.specification.groupObject = undefined
         }
         if (this.specification.badges) {
           this.specification.badges.specificationId = this.specificationId
@@ -137,6 +138,9 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
     )
     forkJoin([groupObservable, specObservable]).subscribe((data) => {
       this.specification.groups = data[0]
+      if (this.specification.groups && this.specification.groups.length > 0 && this.specification.group != undefined) {
+        this.specification.groupObject = this.specification.groups.find(x => x.id == this.specification.group)
+      }
       this.routingService.specificationBreadcrumbs(this.domainId, this.specificationId, this.breadcrumbLabel())
     }).add(() => {
       this.loaded = true

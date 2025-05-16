@@ -4,12 +4,7 @@
             <div class="row">
                 <label class="col-3 col-form-label text-end" for="groupChoice">{{dataService.labelSpecificationGroup()}}:</label>
                 <div class="col-7">
-                    <select id="groupChoice" class="form-select" name="group" [(ngModel)]="specification.group">
-                        <option [ngValue]="undefined">--Optional--</option>
-                        @for (group of specification.groups; track group.id) {
-                            <option [ngValue]="group.id">{{group.sname}}</option>
-                        }
-                    </select>
+                    <app-multi-select-filter [(ngModel)]="specification.groupObject" [config]="groupSelectionConfig" (apply)="groupChanged($event)"></app-multi-select-filter>
                 </div>
                 <div app-tooltip class="col-auto" [tbTooltip]="'If selected, this is the '+dataService.labelSpecificationGroupLower()+' that will contain this '+dataService.labelSpecificationLower()+'.'"></div>
             </div>
