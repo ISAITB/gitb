@@ -461,7 +461,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
         let fitsTop: boolean
         let formHeight = this.filterFormElement.nativeElement.offsetHeight
         const coords = this.filterControlElement.nativeElement.getBoundingClientRect()
-        const controlHeight = this.filterControlElement.nativeElement.innerHeight
+        const controlHeight = this.filterControlElement.nativeElement.offsetHeight
         let controlBottom: number|undefined
         if (coords.bottom != undefined) {
           controlBottom = coords.bottom
