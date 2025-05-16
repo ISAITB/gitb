@@ -211,30 +211,19 @@
                                     <label class="col-3 col-form-label text-end" for="domainMessage">{{dataService.labelDomain()}}:</label>
                                     <div class="col-7">
                                         @if (domains.length > 1) {
-                                            <select id="domainMessage" class="form-select" name="domainMessage" (change)="domainChanged()" [(ngModel)]="domainId">
-                                                @for (domain of domains; track domain.id) {
-                                                    <option [ngValue]="domain.id">{{domain.fname}}</option>
-                                                }
-                                            </select>
+                                            <app-multi-select-filter name="selectedDomain" [(ngModel)]="selectedDomain" [config]="domainSelectionConfig" (apply)="domainChanged()"></app-multi-select-filter>
                                         } @else if (domains.length == 1) {
                                             <input type="text" [value]="domains[0].fname" readonly="readonly" class="form-control">
                                         }
                                     </div>
                                 </div>
                             }
-                            @if (domainId && groups && (messageLevel == "group" || (messageLevel == "specification" && groups.length > 0)) && groups) {
+                            @if (selectedDomain != undefined && groups && (messageLevel == "group" || (messageLevel == "specification" && groups.length > 0)) && groups) {
                                 <div class="row mt-3">
                                     <label class="col-3 col-form-label text-end" for="groupMessage">{{dataService.labelSpecificationGroup()}}:</label>
                                     <div class="col-7">
-                                        @if (groups.length > 1 || (messageLevel == "specification" && groups.length == 1 && specsPerDomain.has(domainId))) {
-                                            <select id="groupMessage" class="form-select" name="groupMessage" (change)="groupChanged()" [(ngModel)]="groupId">
-                                                @if (messageLevel == "specification" && specsPerDomain.has(domainId)) {
-                                                    <option [ngValue]="noGroup">None</option>
-                                                }
-                                                @for (group of groups; track group.id) {
-                                                    <option [ngValue]="group.id">{{group.fname}}</option>
-                                                }
-                                            </select>
+                                        @if (groups.length > 1 || (messageLevel == "specification" && groups.length == 1 && specsPerDomain.has(selectedDomain.id))) {
+                                            <app-multi-select-filter name="selectedGroup" [(ngModel)]="selectedGroup" [config]="groupSelectionConfig" (apply)="groupChanged()"></app-multi-select-filter>
                                         } @else if (groups.length == 1) {
                                             <input type="text" [value]="groups[0].fname" readonly="readonly" class="form-control">
                                         }
@@ -243,18 +232,14 @@
                             }
                             @if (messageLevel == "specification" && specifications) {
                                 <div class="row mt-3">
-                                    @if (groupId == undefined || groupId == noGroup) {
+                                    @if (selectedGroup == undefined || selectedGroup.id == noGroupEntry.id) {
                                         <label class="col-3 col-form-label text-end" for="specMessage">{{dataService.labelSpecification()}}:</label>
                                     } @else {
                                         <label class="col-3 col-form-label text-end" for="specMessage">{{dataService.labelSpecificationInGroup()}}:</label>
                                     }
                                     <div class="col-7">
                                         @if (specifications.length > 1) {
-                                            <select id="specMessage" class="form-select" name="specMessage" (change)="specificationChanged()" [(ngModel)]="specificationId">
-                                                @for (specification of specifications; track specification.id) {
-                                                    <option [ngValue]="specification.id">{{specification.fname}}</option>
-                                                }
-                                            </select>
+                                            <app-multi-select-filter name="selectedSpecification" [(ngModel)]="selectedSpecification" [config]="specificationSelectionConfig" (apply)="specificationChanged()"></app-multi-select-filter>
                                         } @else if (specifications.length == 1) {
                                             <input type="text" [value]="specifications[0].fname" readonly="readonly" class="form-control">
                                         }
@@ -264,7 +249,7 @@
                         }
                         <div class="row mt-3">
                             <div class="col-auto pe-0">
-                                <app-placeholder-selector [placeholders]="placeholders" [domainParameters]="true" [domainChanged]="domainChangedEmitter" [organisationParameters]="true" [systemParameters]="true" [resources]="true" [systemResources]="dataService.isSystemAdmin" [community]="communityId" [domainId]="domainId"></app-placeholder-selector>
+                                <app-placeholder-selector [placeholders]="placeholders" [domainParameters]="true" [domainChanged]="domainChangedEmitter" [organisationParameters]="true" [systemParameters]="true" [resources]="true" [systemResources]="dataService.isSystemAdmin" [community]="communityId" [domainId]="selectedDomain?.id"></app-placeholder-selector>
                             </div>
                             <div class="col-auto ps-0">
                                 <button class="btn btn-secondary" type="button" (click)="clearCurrentMessage()" [disabled]="!textProvided(currentMessageContent)">Remove message</button>
