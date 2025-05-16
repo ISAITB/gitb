@@ -88,7 +88,7 @@ export class CreateCommunityComponent extends BaseComponent implements OnInit {
         this.community.interactionNotification!, descriptionToUse, this.community.selfRegForceTemplateSelection, this.community.selfRegForceRequiredProperties,
         this.community.allowCertificateDownload!, this.community.allowStatementManagement!, this.community.allowSystemManagement!, this.community.allowPostTestOrganisationUpdates!,
         this.community.allowPostTestSystemUpdates!, this.community.allowPostTestStatementUpdates!, this.community.allowAutomationApi, this.community.allowCommunityView!,
-        this.community.domainId)
+        this.community.domain?.id)
       .subscribe(() => {
         this.cancelCreateCommunity()
         this.popupService.success('Community created.')

@@ -169,6 +169,9 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
     }
     domains$.subscribe((data) => {
       this.domains = data
+      if (this.community.domain == undefined && this.community.domainId != undefined) {
+        this.community.domain = this.domains.find(x => x.id == this.community.domainId)
+      }
     }).add(() => {
       this.loaded = true
     })
@@ -333,9 +336,9 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
       this.community.interactionNotification, descriptionToUse, this.community.selfRegForceTemplateSelection, this.community.selfRegForceRequiredProperties,
       this.community.allowCertificateDownload!, this.community.allowStatementManagement!, this.community.allowSystemManagement!, this.community.allowPostTestOrganisationUpdates!,
       this.community.allowPostTestSystemUpdates!, this.community.allowPostTestStatementUpdates!, this.community.allowAutomationApi, this.community.allowCommunityView,
-      this.community.domainId)
+      this.community.domain?.id)
     .subscribe(() => {
-      this.originalDomainId = this.community.domainId
+      this.originalDomainId = this.community.domain?.id
       this.popupService.success('Community updated.')
       this.dataService.breadcrumbUpdate({id: this.communityId, type: BreadcrumbType.community, label: this.community.sname!})
     }).add(() => {
@@ -358,7 +361,7 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
       if (!this.community.sameDescriptionAsDomain) {
         descriptionToUse = this.community.activeDescription
       }
-      if ((this.originalDomainId == undefined && this.community.domainId != undefined) || (this.originalDomainId != undefined && this.community.domainId != undefined && this.originalDomainId != this.community.domainId)) {
+      if ((this.originalDomainId == undefined && this.community.domain?.id != undefined) || (this.originalDomainId != undefined && this.community.domain?.id != undefined && this.originalDomainId != this.community.domain?.id)) {
         let confirmationMessage: string
         if (this.originalDomainId == undefined) {
           confirmationMessage = "Setting the "+this.dataService.labelDomainLower()+" will remove existing conformance statements linked to other "+this.dataService.labelDomainsLower()+". Are you sure you want to proceed?"

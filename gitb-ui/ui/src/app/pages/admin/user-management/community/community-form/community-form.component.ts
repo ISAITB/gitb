@@ -1,13 +1,14 @@
-import { Component, Input, OnInit } from '@angular/core';
-import { Constants } from 'src/app/common/constants';
-import { BaseComponent } from 'src/app/pages/base-component.component';
-import { DataService } from 'src/app/services/data.service';
-import { Community } from 'src/app/types/community';
-import { Domain } from 'src/app/types/domain';
-import { IdLabel } from 'src/app/types/id-label';
-import { find } from 'lodash';
-import { RoutingService } from 'src/app/services/routing.service';
-import { ValidationState } from 'src/app/types/validation-state';
+import {Component, Input, OnInit} from '@angular/core';
+import {Constants} from 'src/app/common/constants';
+import {BaseComponent} from 'src/app/pages/base-component.component';
+import {DataService} from 'src/app/services/data.service';
+import {Community} from 'src/app/types/community';
+import {Domain} from 'src/app/types/domain';
+import {IdLabel} from 'src/app/types/id-label';
+import {RoutingService} from 'src/app/services/routing.service';
+import {ValidationState} from 'src/app/types/validation-state';
+import {MultiSelectConfig} from '../../../../../components/multi-select-filter/multi-select-config';
+import {of} from 'rxjs';
 
 @Component({
     selector: 'app-community-form',
@@ -25,14 +26,25 @@ export class CommunityFormComponent extends BaseComponent implements OnInit {
   ssoEnabled = false
   emailEnabled = false
   selfRegTypes: IdLabel[] = [
-    {id: Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED, label: 'Not supported'}, 
-    {id: Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING, label: 'Select from public communities'}, 
-    {id: Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN, label: 'Select from public communities and provide token'} 
+    {id: Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED, label: 'Not supported'},
+    {id: Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING, label: 'Select from public communities'},
+    {id: Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN, label: 'Select from public communities and provide token'}
   ]
   selfRegRestrictions: IdLabel[] = []
   selfRegOptionsVisible = false
   selfRegOptionsCollapsed = false
   userPermissionsCollapsed = false
+
+  domainSelectionConfig: MultiSelectConfig<Domain> = {
+    name: "domainChoice",
+    singleSelection: true,
+    singleSelectionClearable: true,
+    singleSelectionPersistent: true,
+    showAsFormControl: true,
+    textField: "fname",
+    filterLabel: "-- Optional --",
+    loader: () => of((this.domains as Domain[]))
+  }
 
   constructor(
     public dataService: DataService,
@@ -54,9 +66,9 @@ export class CommunityFormComponent extends BaseComponent implements OnInit {
     this.emailEnabled = this.dataService.configuration.emailEnabled
     if (this.ssoEnabled) {
       this.selfRegRestrictions = [
-        {id: Constants.SELF_REGISTRATION_RESTRICTION.NO_RESTRICTION, label: 'No restrictions'}, 
-        {id: Constants.SELF_REGISTRATION_RESTRICTION.USER_EMAIL, label: 'One registration allowed per user'}, 
-        {id: Constants.SELF_REGISTRATION_RESTRICTION.USER_EMAIL_DOMAIN, label: 'One registration allowed per user email domain'} 
+        {id: Constants.SELF_REGISTRATION_RESTRICTION.NO_RESTRICTION, label: 'No restrictions'},
+        {id: Constants.SELF_REGISTRATION_RESTRICTION.USER_EMAIL, label: 'One registration allowed per user'},
+        {id: Constants.SELF_REGISTRATION_RESTRICTION.USER_EMAIL_DOMAIN, label: 'One registration allowed per user email domain'}
       ]
     }
     this.selfRegOptionsVisible = this.community.selfRegType != Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED
@@ -67,7 +79,7 @@ export class CommunityFormComponent extends BaseComponent implements OnInit {
       this.community.activeDescription = this.community.description
     }
   }
-    
+
   selfRegTypeChanged(newValue: number) {
     if (newValue != this.community.selfRegType) {
       if (this.community.selfRegType == Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED) {
@@ -88,18 +100,10 @@ export class CommunityFormComponent extends BaseComponent implements OnInit {
     }
   }
 
-  identifyDomain(index: number, item: Partial<Domain>) {
-    return item?.id
-  }
-
-  private domainDescription(domainId: number) {
-    return find(this.domains, (d) => { return d.id === domainId })!.description
-  }
-
   domainChanged() {
     if (this.community.domainId != undefined) {
       if (this.community.sameDescriptionAsDomain) {
-        this.community.activeDescription = this.domainDescription(this.community.domainId!)
+        this.community.activeDescription = this.community.domain?.description
       }
     } else {
       if (this.community.sameDescriptionAsDomain) {
@@ -111,20 +115,20 @@ export class CommunityFormComponent extends BaseComponent implements OnInit {
 
   descriptionCheckChanged() {
     if (this.community.sameDescriptionAsDomain) {
-      this.community.activeDescription = this.domainDescription(this.community.domainId!)
+      this.community.activeDescription = this.community.domain?.description
     }
   }
 
   setSameDescription() {
     this.community.sameDescriptionAsDomain = this.community.domainId != undefined && !(this.textProvided(this.community.activeDescription))
     if (this.community.sameDescriptionAsDomain) {
-      this.community.activeDescription = this.domainDescription(this.community.domainId!)
+      this.community.activeDescription = this.community.domain?.description
     }
   }
 
   viewDomain() {
-    if (this.community.domainId) {
-      this.routingService.toDomain(this.community.domainId)
+    if (this.community.domain?.id != undefined) {
+      this.routingService.toDomain(this.community.domain.id)
     }
   }
 

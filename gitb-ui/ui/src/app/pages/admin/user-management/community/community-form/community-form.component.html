@@ -16,12 +16,7 @@
                 <div class="col-7">
                     <div class="row gx-3">
                         <div class="col-auto d-flex flex-grow-1">
-                            <select id="domainChoice" class="form-select" name="domain" (change)="domainChanged()" [(ngModel)]="community.domainId">
-                                <option [ngValue]="undefined">--Optional--</option>
-                                @for (domain of domains; track domain.id) {
-                                    <option [ngValue]="domain.id">{{domain.sname}}</option>
-                                }
-                            </select>
+                            <app-multi-select-filter class="flex-grow-1" [(ngModel)]="community.domain" [config]="domainSelectionConfig" (apply)="domainChanged()"></app-multi-select-filter>
                         </div>
                         <div class="col-auto">
                             <button type="button" class="btn btn-secondary" [disabled]="community.domainId == undefined" (click)="viewDomain()">View</button>
