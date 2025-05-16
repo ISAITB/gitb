@@ -1155,10 +1155,12 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
               dbActions += processFromArchive(ImportItemType.Theme, theme, theme.getId, ctx,
                 ImportCallbacks.set(
                   (data: com.gitb.xml.export.Theme, item: ImportItem) => {
-                    systemConfigurationManager.createThemeInternal(None, toModelTheme(None, data), toModelThemeFiles(data, ctx), ctx.onSuccessCalls)
+                    // Only allow the active theme to be changed if this is a sandbox import
+                    systemConfigurationManager.createThemeInternal(None, toModelTheme(None, data), toModelThemeFiles(data, ctx), canActivateTheme = ctx.importSettings.sandboxImport, ctx.onSuccessCalls)
                   },
                   (data: com.gitb.xml.export.Theme, targetKey: String, item: ImportItem) => {
-                    systemConfigurationManager.updateThemeInternal(toModelTheme(Some(targetKey.toLong), data), toModelThemeFiles(data, ctx), ctx.onSuccessCalls)
+                    // Only allow the active theme to be changed if this is a sandbox import
+                    systemConfigurationManager.updateThemeInternal(toModelTheme(Some(targetKey.toLong), data), toModelThemeFiles(data, ctx), canActivateTheme = ctx.importSettings.sandboxImport, ctx.onSuccessCalls)
                   }
                 )
               )
@@ -3136,9 +3138,9 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
           Future.successful(resultWithHash._1.get)
         } else {
           logger.info("Processing data archive [" + archive.getName + "]")
-          // TODO test this - ensure we don't have a problem with the importSettings properties being vars.
           val importSettings = new ImportSettings()
           importSettings.encryptionKey = Some(archiveKey)
+          importSettings.sandboxImport = true
           importPreviewManager.prepareImportPreview(archive, importSettings, requireDomain = false, requireCommunity = false, requireSettings = false, requireDeletions = false).flatMap { preparationResult =>
             val task = if (preparationResult._1.isDefined) {
               logger.warn("Unable to process data archive ["+archive.getName+"]: " + preparationResult._1.get._2)

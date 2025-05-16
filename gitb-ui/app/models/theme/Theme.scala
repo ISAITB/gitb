@@ -34,17 +34,11 @@ case class Theme(
                 ) {
 
   def withImagePaths(headerLogoPath: String, footerLogoPath: String, faviconPath: String): Theme = {
-    Theme(this.id, this.key, this.description, this.active, this.custom, this.separatorTitleColor, this.modalTitleColor, this.tableTitleColor, this.cardTitleColor, this.pageTitleColor, this.headingColor, this.tabLinkColor,
-      this.footerTextColor, this.headerBackgroundColor, this.headerBorderColor, this.headerSeparatorColor, headerLogoPath, this.footerBackgroundColor, this.footerBorderColor, footerLogoPath,
-      this.footerLogoDisplay, faviconPath, primaryButtonColor, primaryButtonLabelColor, primaryButtonHoverColor, primaryButtonActiveColor,
-      secondaryButtonColor, secondaryButtonLabelColor, secondaryButtonHoverColor, secondaryButtonActiveColor)
+    this.copy(headerLogoPath = headerLogoPath, footerLogoPath = footerLogoPath, faviconPath = faviconPath)
   }
 
   def withId(id: Long): Theme = {
-    Theme(id, this.key, this.description, this.active, this.custom, this.separatorTitleColor, this.modalTitleColor, this.tableTitleColor, this.cardTitleColor, this.pageTitleColor, this.headingColor, this.tabLinkColor,
-      this.footerTextColor, this.headerBackgroundColor, this.headerBorderColor, this.headerSeparatorColor, this.headerLogoPath, this.footerBackgroundColor, this.footerBorderColor, this.footerLogoPath,
-      this.footerLogoDisplay, this.faviconPath, primaryButtonColor, primaryButtonLabelColor, primaryButtonHoverColor, primaryButtonActiveColor,
-      secondaryButtonColor, secondaryButtonLabelColor, secondaryButtonHoverColor, secondaryButtonActiveColor)
+    this.copy(id = id)
   }
 
 }

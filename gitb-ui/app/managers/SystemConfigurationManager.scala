@@ -1,6 +1,7 @@
 package managers
 
 import config.Configurations
+import managers.SystemConfigurationManager.ThemeStatus
 import models.Enums.UserRole
 import models._
 import models.theme.{Theme, ThemeFiles}
@@ -10,7 +11,7 @@ import org.slf4j.{Logger, LoggerFactory}
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import slick.collection.heterogeneous.HNil
-import utils.{CryptoUtil, EmailUtil, JsonUtil, MimeUtil, RepositoryUtils}
+import utils._
 
 import java.io.File
 import java.sql.Timestamp
@@ -18,8 +19,14 @@ import java.util.{Calendar, UUID}
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future, Promise}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
+
+object SystemConfigurationManager {
+
+  case class ThemeStatus(activeTheme: Option[Theme], environmentTheme: Option[Theme], defaultTheme: Option[Theme])
+
+}
 
 @Singleton
 class SystemConfigurationManager @Inject() (testResultManager: TestResultManager,
@@ -58,7 +65,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
     }
   }
 
-  private def getOrSetActiveTheme(): DBIO[(Option[Theme], Option[Theme], Option[Theme])] = {
+  private [managers] def getOrSetActiveTheme(): DBIO[ThemeStatus] = {
     for {
       activeTheme <- PersistenceSchema.themes
         .filter(_.active === true)
@@ -95,51 +102,54 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
           DBIO.successful(())
         }
       }
-    } yield (activeTheme, environmentTheme, defaultTheme)
+    } yield ThemeStatus(activeTheme, environmentTheme, defaultTheme)
+  }
+
+  private [managers] def reloadThemeCssInternal(themeData: ThemeStatus): DBIO[Unit] = {
+    val themeToUse = if (themeData.activeTheme.isDefined) {
+      logger.info(s"Loaded theme [${themeData.activeTheme.get.key}] marked as active.")
+      themeData.activeTheme.get
+    } else if (themeData.environmentTheme.isDefined) {
+      logger.info(s"Loaded theme [${themeData.environmentTheme.get.key}] selected via environment variable.")
+      themeData.environmentTheme.get
+    } else {
+      logger.info("Loaded default theme.")
+      themeData.defaultTheme.get
+    }
+    val cssContent = ":root {" +
+      "  --itb-separator-title-color: " + themeToUse.separatorTitleColor + ";\n" +
+      "  --itb-modal-title-color: " + themeToUse.modalTitleColor + ";\n" +
+      "  --itb-table-title-color: " + themeToUse.tableTitleColor + ";\n" +
+      "  --itb-card-title-color: " + themeToUse.cardTitleColor + ";\n" +
+      "  --itb-page-title-color: " + themeToUse.pageTitleColor + ";\n" +
+      "  --itb-heading-color: " + themeToUse.headingColor + ";\n" +
+      "  --itb-tab-link-color: " + themeToUse.tabLinkColor + ";\n" +
+      "  --itb-footer-text-color: " + themeToUse.footerTextColor + ";\n" +
+      "  --itb-header-background-color: " + themeToUse.headerBackgroundColor + ";\n" +
+      "  --itb-header-border-color: " + themeToUse.headerBorderColor + ";\n" +
+      "  --itb-header-separator-color: " + themeToUse.headerSeparatorColor + ";\n" +
+      "  --itb-header-logo-path: " + constructLogoPath(themeToUse.id, themeToUse.headerLogoPath) + ";\n" +
+      "  --itb-footer-background-color: " + themeToUse.footerBackgroundColor + ";\n" +
+      "  --itb-footer-border-color: " + themeToUse.footerBorderColor + ";\n" +
+      "  --itb-footer-logo-path: " + constructLogoPath(themeToUse.id, themeToUse.footerLogoPath) + ";\n" +
+      "  --itb-footer-logo-display: " + themeToUse.footerLogoDisplay + ";\n" +
+      "  --itb-btn-primary-color: " + themeToUse.primaryButtonColor + ";\n" +
+      "  --itb-btn-primary-label-color: " + themeToUse.primaryButtonLabelColor + ";\n" +
+      "  --itb-btn-primary-hover-color: " + themeToUse.primaryButtonHoverColor + ";\n" +
+      "  --itb-btn-primary-active-color: " + themeToUse.primaryButtonActiveColor + ";\n" +
+      "  --itb-btn-secondary-color: " + themeToUse.secondaryButtonColor + ";\n" +
+      "  --itb-btn-secondary-label-color: " + themeToUse.secondaryButtonLabelColor + ";\n" +
+      "  --itb-btn-secondary-hover-color: " + themeToUse.secondaryButtonHoverColor + ";\n" +
+      "  --itb-btn-secondary-active-color: " + themeToUse.secondaryButtonActiveColor + ";\n" +
+      "}"
+    activeThemeCss = Some(cssContent)
+    activeThemeFavicon = Some(themeToUse.faviconPath)
+    activeThemeId = Some(themeToUse.id)
+    DBIO.successful(())
   }
 
   def reloadThemeCss(): Future[Unit] = {
-    DB.run(getOrSetActiveTheme().transactionally).map { themeData =>
-      val themeToUse = if (themeData._1.isDefined) {
-        logger.info(s"Loaded theme [${themeData._1.get.key}] marked as active.")
-        themeData._1.get
-      } else if (themeData._2.isDefined) {
-        logger.info(s"Loaded theme [${themeData._2.get.key}] selected via environment variable.")
-        themeData._2.get
-      } else {
-        logger.info("Loaded default theme.")
-        themeData._3.get
-      }
-      val cssContent = ":root {" +
-        "  --itb-separator-title-color: " + themeToUse.separatorTitleColor + ";\n" +
-        "  --itb-modal-title-color: " + themeToUse.modalTitleColor + ";\n" +
-        "  --itb-table-title-color: " + themeToUse.tableTitleColor + ";\n" +
-        "  --itb-card-title-color: " + themeToUse.cardTitleColor + ";\n" +
-        "  --itb-page-title-color: " + themeToUse.pageTitleColor + ";\n" +
-        "  --itb-heading-color: " + themeToUse.headingColor + ";\n" +
-        "  --itb-tab-link-color: " + themeToUse.tabLinkColor + ";\n" +
-        "  --itb-footer-text-color: " + themeToUse.footerTextColor + ";\n" +
-        "  --itb-header-background-color: " + themeToUse.headerBackgroundColor + ";\n" +
-        "  --itb-header-border-color: " + themeToUse.headerBorderColor + ";\n" +
-        "  --itb-header-separator-color: " + themeToUse.headerSeparatorColor + ";\n" +
-        "  --itb-header-logo-path: " + constructLogoPath(themeToUse.id, themeToUse.headerLogoPath) + ";\n" +
-        "  --itb-footer-background-color: " + themeToUse.footerBackgroundColor + ";\n" +
-        "  --itb-footer-border-color: " + themeToUse.footerBorderColor + ";\n" +
-        "  --itb-footer-logo-path: " + constructLogoPath(themeToUse.id, themeToUse.footerLogoPath) + ";\n" +
-        "  --itb-footer-logo-display: " + themeToUse.footerLogoDisplay + ";\n" +
-        "  --itb-btn-primary-color: " + themeToUse.primaryButtonColor + ";\n" +
-        "  --itb-btn-primary-label-color: " + themeToUse.primaryButtonLabelColor + ";\n" +
-        "  --itb-btn-primary-hover-color: " + themeToUse.primaryButtonHoverColor + ";\n" +
-        "  --itb-btn-primary-active-color: " + themeToUse.primaryButtonActiveColor + ";\n" +
-        "  --itb-btn-secondary-color: " + themeToUse.secondaryButtonColor + ";\n" +
-        "  --itb-btn-secondary-label-color: " + themeToUse.secondaryButtonLabelColor + ";\n" +
-        "  --itb-btn-secondary-hover-color: " + themeToUse.secondaryButtonHoverColor + ";\n" +
-        "  --itb-btn-secondary-active-color: " + themeToUse.secondaryButtonActiveColor + ";\n" +
-        "}"
-      activeThemeCss = Some(cssContent)
-      activeThemeFavicon = Some(themeToUse.faviconPath)
-      activeThemeId = Some(themeToUse.id)
-    }
+    DB.run(getOrSetActiveTheme().flatMap(reloadThemeCssInternal).transactionally)
   }
 
   def getActiveThemeId(): Future[Long] = {
@@ -458,7 +468,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
 
   def createTheme(referenceThemeId: Long, theme: Theme, themeFiles: ThemeFiles): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
-    val dbAction = createThemeInternal(Some(referenceThemeId), theme, themeFiles, onSuccessCalls)
+    val dbAction = createThemeInternal(Some(referenceThemeId), theme, themeFiles, canActivateTheme = true, onSuccessCalls)
     DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally).flatMap { reloadNeeded =>
       if (reloadNeeded) {
         reloadThemeCss()
@@ -479,8 +489,17 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
     }
   }
 
-  def createThemeInternal(referenceThemeId: Option[Long], theme: Theme, themeFiles: ThemeFiles, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Boolean] = {
+  def createThemeInternal(referenceThemeId: Option[Long], theme: Theme, themeFiles: ThemeFiles, canActivateTheme: Boolean, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Boolean] = {
     for {
+      // Active status to set.
+      themeToUse <- {
+        if (theme.active && !canActivateTheme) {
+          // Ensure the new theme is not set as active.
+          DBIO.successful(theme.copy(active = false))
+        } else {
+          DBIO.successful(theme)
+        }
+      }
       // Check to see that no other theme has the same key.
       referencedThemeFiles <- {
         if (referenceThemeId.isDefined && (themeFiles.headerLogo.isEmpty || themeFiles.footerLogo.isEmpty || themeFiles.faviconFile.isEmpty)) {
@@ -492,15 +511,15 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
       // Save the theme in the DB.
       savedTheme <- {
         val headerPathToSet = getThemeResourcePathToSave(themeFiles.headerLogo,
-          determineReferencePath(referenceThemeId.isDefined, theme.headerLogoPath, referencedThemeFiles.map(_._1)),
+          determineReferencePath(referenceThemeId.isDefined, themeToUse.headerLogoPath, referencedThemeFiles.map(_._1)),
           isUpdate = false)
         val footerPathToSet = getThemeResourcePathToSave(themeFiles.footerLogo,
-          determineReferencePath(referenceThemeId.isDefined, theme.footerLogoPath, referencedThemeFiles.map(_._2)),
+          determineReferencePath(referenceThemeId.isDefined, themeToUse.footerLogoPath, referencedThemeFiles.map(_._2)),
           isUpdate = false)
         val faviconPathToSet = getThemeResourcePathToSave(themeFiles.faviconFile,
-          determineReferencePath(referenceThemeId.isDefined, theme.faviconPath, referencedThemeFiles.map(_._3)),
+          determineReferencePath(referenceThemeId.isDefined, themeToUse.faviconPath, referencedThemeFiles.map(_._3)),
           isUpdate = false)
-        val themeToSave = theme.withImagePaths(headerPathToSet, footerPathToSet, faviconPathToSet)
+        val themeToSave = themeToUse.withImagePaths(headerPathToSet, footerPathToSet, faviconPathToSet)
         (PersistenceSchema.insertTheme += themeToSave).map(id => themeToSave.withId(id))
       }
       // Deactivate the other active theme if this was active.
@@ -572,7 +591,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
 
   def updateTheme(theme: Theme, themeFiles: ThemeFiles): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
-    val dbAction = updateThemeInternal(theme, themeFiles, onSuccessCalls)
+    val dbAction = updateThemeInternal(theme, themeFiles, canActivateTheme = true, onSuccessCalls)
     DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally).flatMap { reloadNeeded =>
       if (reloadNeeded) {
         reloadThemeCss()
@@ -582,10 +601,19 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
     }
   }
 
-  def updateThemeInternal(theme: Theme, themeFiles: ThemeFiles, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Boolean] = {
+  def updateThemeInternal(theme: Theme, themeFiles: ThemeFiles, canActivateTheme: Boolean, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Boolean] = {
     for {
       // Look up the existing data for the theme.
       existingTheme <- PersistenceSchema.themes.filter(_.id === theme.id).filter(_.custom === true).result.headOption
+      // Active status to set.
+      newActiveStatus <- {
+        if (canActivateTheme) {
+          DBIO.successful(theme.active)
+        } else {
+          // Ensure there is no change to the theme's active status.
+          DBIO.successful(existingTheme.exists(_.active))
+        }
+      }
       // Update the DB.
       resourcePathsToUse <- {
         if (existingTheme.isDefined) {
@@ -600,7 +628,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
             x.primaryButtonColor :: x.primaryButtonLabelColor :: x.primaryButtonHoverColor :: x.primaryButtonActiveColor ::
             x.secondaryButtonColor :: x.secondaryButtonLabelColor :: x.secondaryButtonHoverColor :: x.secondaryButtonActiveColor :: HNil
           ).update(
-            theme.key :: theme.description :: theme.active :: theme.separatorTitleColor :: theme.modalTitleColor :: theme.tableTitleColor :: theme.cardTitleColor ::
+            theme.key :: theme.description :: newActiveStatus :: theme.separatorTitleColor :: theme.modalTitleColor :: theme.tableTitleColor :: theme.cardTitleColor ::
             theme.pageTitleColor :: theme.headingColor :: theme.tabLinkColor :: theme.footerTextColor :: theme.headerBackgroundColor ::
             theme.headerBorderColor :: theme.headerSeparatorColor :: headerPathToUse :: theme.footerBackgroundColor ::
             theme.footerBorderColor :: footerPathToUse :: theme.footerLogoDisplay :: faviconPathToUse ::
@@ -614,13 +642,13 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
       // Ensure we have a single active theme.
       reloadNeeded <- {
         if (existingTheme.isDefined) {
-          if (existingTheme.get.active && theme.active) {
-            // Update to the currently active theme.
+          if (existingTheme.get.active && newActiveStatus) {
+            // Update the currently active theme.
             getOrSetActiveTheme().map(_ => true)
-          } else if (existingTheme.get.active && !theme.active) {
+          } else if (existingTheme.get.active && !newActiveStatus) {
             // The currently active theme was deactivated.
             getOrSetActiveTheme().map(_ => true)
-          } else if (!existingTheme.get.active && theme.active) {
+          } else if (!existingTheme.get.active && newActiveStatus) {
             // The theme was activated. Deactivate the previously active theme and refresh.
             for {
               _ <- PersistenceSchema.themes.filter(_.id =!= theme.id).filter(_.active === true).map(_.active).update(false)
