@@ -58,7 +58,12 @@ export class EditorComponent implements OnInit, ControlValueAccessor {
       content_css: 'assets/build/styles.css,api/theme/css',
       body_class: 'editor-body',
       suffix: '.min',
-      convert_unsafe_embeds: true
+      convert_unsafe_embeds: true,
+      link_default_target: '_blank',
+      link_target_list: [
+        { text: 'New window', value: '_blank' },
+        { text: 'Current window', value: '' }
+      ]
     }
     if (this.type == 'normal') {
       config.plugins = 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table code'
