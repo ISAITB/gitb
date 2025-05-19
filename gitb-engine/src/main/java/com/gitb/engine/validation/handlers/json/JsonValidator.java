@@ -51,7 +51,7 @@ public class JsonValidator extends AbstractValidator {
     @Override
     public TestStepReportType validate(List<Configuration> configurations, Map<String, DataType> inputs) {
         // Retrieve and check inputs.
-        String content = (String) Objects.requireNonNull(getAndConvert(inputs, JSON_ARGUMENT_NAME, DataType.STRING_DATA_TYPE, StringType.class), "Input [%s] must be provided".formatted(JSON_ARGUMENT_NAME)).getValue();
+        String content = (String) Objects.requireNonNull(getAndConvert(inputs, getInputArgumentName(), DataType.STRING_DATA_TYPE, StringType.class), "Input [%s] must be provided".formatted(getInputArgumentName())).getValue();
         List<MapType> schemas = Optional.ofNullable(getAndConvert(inputs, SCHEMA_ARGUMENT_NAME, DataType.LIST_DATA_TYPE, ListType.class))
                 .map(list -> list.getElements().stream()
                         .map(schemaData -> {
@@ -74,9 +74,7 @@ public class JsonValidator extends AbstractValidator {
         boolean showSchemas = Optional.ofNullable(getAndConvert(inputs, SHOW_SCHEMA_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class))
                 .map(value -> (Boolean) value.getValue())
                 .orElse(true);
-        boolean supportYaml = Optional.ofNullable(getAndConvert(inputs, SUPPORT_YAML_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class))
-                .map(value -> (Boolean) value.getValue())
-                .orElse(false);
+        boolean supportYaml = supportsYaml(inputs);
         SchemaCombinationApproach schemaCombinationApproach = Optional.ofNullable(getAndConvert(inputs, SCHEMA_COMBINATION_APPROACH_ARGUMENT_NAME, DataType.STRING_DATA_TYPE, StringType.class))
                 .map(value -> SchemaCombinationApproach.byName((String) value.getValue()))
                 .orElse(SchemaCombinationApproach.ALL);
@@ -86,6 +84,16 @@ public class JsonValidator extends AbstractValidator {
         InputInfo inputInfo = prepareInput(content, supportYaml);
         List<Message> messages = validateAgainstSetOfSchemas(inputInfo, schemas, schemaCombinationApproach, testCaseId, sessionId);
         return createReport(new ReportSpecs(messages, inputInfo, schemas, showSchemas));
+    }
+
+    protected String getInputArgumentName() {
+        return JSON_ARGUMENT_NAME;
+    }
+
+    protected boolean supportsYaml(Map<String, DataType> inputs) {
+        return Optional.ofNullable(getAndConvert(inputs, SUPPORT_YAML_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class))
+                .map(value -> (Boolean) value.getValue())
+                .orElse(false);
     }
 
     private InputInfo prepareInput(String input, boolean supportYaml) {
@@ -114,7 +122,7 @@ public class JsonValidator extends AbstractValidator {
         }
     }
 
-    private boolean isYaml(String input) {
+    protected boolean isYaml(String input) {
         try (var reader = new BufferedReader(new StringReader(input))) {
             String firstLine = reader.readLine();
             return firstLine != null && !(firstLine.startsWith("{") || firstLine.startsWith("["));
@@ -191,7 +199,7 @@ public class JsonValidator extends AbstractValidator {
             if (nodeLocation != null && nodeLocation.getLineNr() > 0) {
                 lineNumber = nodeLocation.getLineNr();
             }
-            return "%s:%s:0".formatted(JSON_ARGUMENT_NAME, lineNumber);
+            return "%s:%s:0".formatted(getInputArgumentName(), lineNumber);
         };
     }
 
@@ -263,7 +271,7 @@ public class JsonValidator extends AbstractValidator {
         var context = new AnyContent();
         report.setContext(context);
         // Input.
-        context.getItem().add(toAnyContent(reportSpecs.inputInfo().content(), Optional.of(JSON_ARGUMENT_NAME), Optional.of(reportSpecs.getInputMimeType())));
+        context.getItem().add(toAnyContent(reportSpecs.inputInfo().content(), Optional.of(getInputArgumentName()), Optional.of(reportSpecs.getInputMimeType())));
         // Schema(s).
         if (reportSpecs.showSchema() && !reportSpecs.schemas().isEmpty()) {
             if (reportSpecs.schemas().size() == 1) {
