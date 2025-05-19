@@ -75,13 +75,14 @@ public class JsonValidator extends AbstractValidator {
                 .map(value -> (Boolean) value.getValue())
                 .orElse(true);
         boolean supportYaml = supportsYaml(inputs);
+        boolean supportJson = supportsJson(inputs);
         SchemaCombinationApproach schemaCombinationApproach = Optional.ofNullable(getAndConvert(inputs, SCHEMA_COMBINATION_APPROACH_ARGUMENT_NAME, DataType.STRING_DATA_TYPE, StringType.class))
                 .map(value -> SchemaCombinationApproach.byName((String) value.getValue()))
                 .orElse(SchemaCombinationApproach.ALL);
         String testCaseId = getTestCaseId(inputs);
         String sessionId = (String) inputs.get(HandlerUtils.SESSION_INPUT).getValue();
         // Proceed with validation.
-        InputInfo inputInfo = prepareInput(content, supportYaml);
+        InputInfo inputInfo = prepareInput(content, supportYaml, supportJson);
         List<Message> messages = validateAgainstSetOfSchemas(inputInfo, schemas, schemaCombinationApproach, testCaseId, sessionId);
         return createReport(new ReportSpecs(messages, inputInfo, schemas, showSchemas));
     }
@@ -96,16 +97,23 @@ public class JsonValidator extends AbstractValidator {
                 .orElse(false);
     }
 
-    private InputInfo prepareInput(String input, boolean supportYaml) {
-        if (supportYaml) {
-            if (isYaml(input)) {
+    protected boolean supportsJson(Map<String, DataType> inputs) {
+        return true;
+    }
+
+    private InputInfo prepareInput(String input, boolean supportYaml, boolean supportJson) {
+        boolean isYaml = isYaml(input);
+        if (isYaml && !supportYaml) {
+            throw new IllegalArgumentException("Input [%s] must be provided in JSON format".formatted(getInputArgumentName()));
+        } else if (!isYaml && !supportJson) {
+            throw new IllegalArgumentException("Input [%s] must be provided in YAML format".formatted(getInputArgumentName()));
+        } else {
+            if (isYaml) {
                 // No need to pretty-print YAML
                 return new InputInfo(input, true);
             } else {
                 return new InputInfo(prettyPrintJson(input), false);
             }
-        } else {
-            return new InputInfo(prettyPrintJson(input), false);
         }
     }
 
