@@ -107,28 +107,26 @@ public class RemoteTestCaseRepository implements ITestCaseRepository {
 		return retrieveRemoteTestResource(locationKey, uri);
 	}
 
-	private InputStream retrieveRemoteTestResource(String resourceId, String uri) throws IOException, EncoderException {
+	private InputStream retrieveRemoteTestResource(String resourceId, String uri) throws IOException {
 		InputStream stream = null;
 
-		CloseableHttpClient httpClient = HttpClients.createDefault();
-
-		logger.debug("Requesting test resource definition ["+uri+"]");
-
-		HttpGet request = new HttpGet(uri);
-		HmacUtils.TokenData tokenData = HmacUtils.getTokenData(resourceId);
-		request.addHeader(HmacUtils.HMAC_HEADER_TOKEN, tokenData.getTokenValue());
-		request.addHeader(HmacUtils.HMAC_HEADER_TIMESTAMP, tokenData.getTokenTimestamp());
-		try (CloseableHttpResponse httpResponse = httpClient.execute(request)) {
-			if (httpResponse.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-				HttpEntity entity = httpResponse.getEntity();
-				byte[] content = IOUtils.toByteArray(entity.getContent());
-				stream = new ByteArrayInputStream(content);
+		try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
+			logger.debug("Requesting test resource definition ["+uri+"]");
+			HttpGet request = new HttpGet(uri);
+			HmacUtils.TokenData tokenData = HmacUtils.getTokenData(resourceId);
+			request.addHeader(HmacUtils.HMAC_HEADER_TOKEN, tokenData.getTokenValue());
+			request.addHeader(HmacUtils.HMAC_HEADER_TIMESTAMP, tokenData.getTokenTimestamp());
+			try (CloseableHttpResponse httpResponse = httpClient.execute(request)) {
+				if (httpResponse.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+					HttpEntity entity = httpResponse.getEntity();
+					byte[] content = IOUtils.toByteArray(entity.getContent());
+					stream = new ByteArrayInputStream(content);
+				}
+			} catch (Exception e) {
+				logger.debug("Test case definition retrieval failed", e);
+				throw new GITBEngineInternalError(e);
 			}
-		} catch (Exception e) {
-			logger.debug("Test case definition retrieval failed", e);
-			throw new GITBEngineInternalError(e);
 		}
-
 		return stream;
 
 	}

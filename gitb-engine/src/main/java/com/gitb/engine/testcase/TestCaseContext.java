@@ -42,6 +42,7 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Supplier;
 
 import static com.gitb.engine.PropertyConstants.*;
 import static com.gitb.engine.utils.TestCaseUtils.TEST_ENGINE_VERSION;
@@ -156,6 +157,9 @@ public class TestCaseContext {
 		STOPPING
     }
 
+	private final Map<String, ResourceInfo> resourceCache = new ConcurrentHashMap<>();
+	private boolean resourceCacheLoaded = false;
+
 	private com.gitb.core.LogLevel logLevelToSignal = LogLevel.INFO;
 	private boolean logLevelIsExpression = false;
 	private boolean reportedInvalidLogLevel = false;
@@ -222,6 +226,21 @@ public class TestCaseContext {
 
 	public ScriptletCache getScriptletCache() {
     	return this.scriptletCache;
+	}
+
+	public Optional<ResourceInfo> getCachedResource(String uri, Supplier<Map<String, ResourceInfo>> cacheLoader) {
+		if (uri != null) {
+			if (!resourceCacheLoaded) {
+				Map<String, ResourceInfo> resources = cacheLoader.get();
+				if (resources != null) {
+                    resourceCache.putAll(resources);
+				}
+				resourceCacheLoaded = true;
+			}
+			return Optional.ofNullable(resourceCache.get(uri));
+		} else {
+			return Optional.empty();
+		}
 	}
 
 	private void addStepStatus() {

@@ -135,5 +135,9 @@
 			<groupId>org.topbraid</groupId>
 			<artifactId>shacl</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>com.networknt</groupId>
+			<artifactId>json-schema-validator</artifactId>
+		</dependency>
 	</dependencies>
 </project>

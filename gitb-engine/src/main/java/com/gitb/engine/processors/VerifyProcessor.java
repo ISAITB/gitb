@@ -6,8 +6,8 @@ import com.gitb.engine.expr.ExpressionHandler;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.remote.validation.RemoteValidationModuleClient;
 import com.gitb.engine.testcase.TestCaseScope;
-import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.engine.utils.HandlerUtils;
+import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.engine.validation.handlers.common.AbstractValidator;
 import com.gitb.engine.validation.handlers.xmlunit.XmlMatchValidator;
 import com.gitb.engine.validation.handlers.xpath.XPathValidator;
@@ -115,10 +115,10 @@ public class VerifyProcessor implements IProcessor {
 		// Add validator-specific inputs
 		if (validator instanceof AbstractValidator) {
 			inputs.put(AbstractValidator.TEST_CASE_ID_INPUT, new StringType(scope.getContext().getTestCase().getId()));
+			inputs.put(HandlerUtils.SESSION_INPUT, new StringType(scope.getContext().getSessionId()));
 			if (validator instanceof XPathValidator || validator instanceof XmlMatchValidator) {
-				inputs.put(HandlerUtils.SESSION_INPUT, new StringType(scope.getContext().getSessionId()));
 				inputs.put(HandlerUtils.NAMESPACE_MAP_INPUT, MapType.fromMap(scope.getNamespaceDefinitions()));
-			}
+ 			}
 		}
 
 		// Validate content with given configurations and inputs; and return the report
