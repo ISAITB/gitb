@@ -1,14 +1,27 @@
 @import '../../../styles/less/_common.less';
 
 .provide-input-body ::ng-deep .CodeMirror {
-	border: 1px solid @gray-button; 
-	border-radius: @border-radius; 
+	border: 1px solid @gray-button;
+	border-radius: @border-radius;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 }
-.provide-input-body ::ng-deep .focused .CodeMirror {
-    border-color: @bs-input-focus-highlight;
-    outline: 0;
-    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);	
+.provide-input-body ::ng-deep {
+    .is-invalid {
+        &.focused .CodeMirror {
+            border-color: @bs-input-focus-highlight-invalid;
+            box-shadow: 0 0 0 @bs-input-focus-box-shadow-size @bs-input-focus-box-shadow-color-invalid;
+        }
+        .CodeMirror {
+            border-color: @bs-input-border-color-invalid;
+        }
+    }
+    .focused .CodeMirror {
+        border-color: @bs-input-focus-highlight;
+        outline: 0;
+        box-shadow: 0 0 0 @bs-input-focus-box-shadow-size @bs-input-focus-box-shadow-color;
+        clip-path: none !important;
+    }
 }
-textarea { 
-	resize: vertical; 
+textarea {
+	resize: vertical;
 }

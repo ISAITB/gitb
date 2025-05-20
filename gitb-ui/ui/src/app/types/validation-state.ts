@@ -72,4 +72,14 @@ export class ValidationState {
         return allEmitted
     }
 
+    public apply(identifier: string, feedback: string): boolean {
+      const emitter = this.get(identifier)
+      if (emitter) {
+        emitter.next({invalid: true, feedback: feedback})
+        return true
+      } else {
+        return false
+      }
+    }
+
 }
