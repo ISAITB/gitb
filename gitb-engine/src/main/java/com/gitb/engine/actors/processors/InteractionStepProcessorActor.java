@@ -58,6 +58,8 @@ import scala.concurrent.Promise;
 import javax.xml.datatype.DatatypeConfigurationException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Created by tuncay on 9/24/14.
@@ -235,6 +237,10 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         }
     }
 
+    private boolean isRequired(UserRequest request, VariableResolver variableResolver) {
+        return TestCaseUtils.resolveBooleanFlag(request.getRequired(), false, () -> variableResolver);
+    }
+
     private InputEvent convertToInputEvent(MessagingReport report) {
         List<UserInput> userInputs = new ArrayList<>();
         if (report != null && report.getReport() != null && report.getReport().getContext() != null) {
@@ -302,16 +308,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
 
     private boolean isHandlerEnabled(VariableResolver variableResolver) {
         if (StringUtils.isNotBlank(step.getHandler())) {
-            String flagValue = step.getHandlerEnabled();
-            if (flagValue.equalsIgnoreCase("false")) {
-                return false;
-            } else if (flagValue.equalsIgnoreCase("true")) {
-                return true;
-            } else if (VariableResolver.isVariableReference(flagValue)) {
-                return (boolean) variableResolver.resolveVariableAsBoolean(flagValue).getValue();
-            } else {
-                return false;
-            }
+            return TestCaseUtils.resolveBooleanFlag(step.getHandlerEnabled(), false, () -> variableResolver);
         } else {
             return false;
         }
@@ -435,35 +432,36 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
     /**
      * Process TDL InputRequest command and convert it to TBS InputRequest object
      *
-     * @param instructionCommand request
+     * @param request request
      * @param stepId step id
      * @return input request
      */
-    private InputRequest processRequest(UserRequest instructionCommand, String stepId, String withValue, VariableResolver variableResolver) {
+    private InputRequest processRequest(UserRequest request, String stepId, String withValue, VariableResolver variableResolver) {
         InputRequest inputRequest = new InputRequest();
         inputRequest.setWith(withValue);
-        inputRequest.setDesc(fixedValueOrVariable(instructionCommand.getDesc(), variableResolver, null));
-        inputRequest.setName(instructionCommand.getValue()); //name is provided from value node
-        inputRequest.setContentType(instructionCommand.getContentType());
-        inputRequest.setType(instructionCommand.getType());
-        inputRequest.setEncoding(instructionCommand.getEncoding());
+        inputRequest.setDesc(fixedValueOrVariable(request.getDesc(), variableResolver, null));
+        inputRequest.setName(request.getValue()); //name is provided from value node
+        inputRequest.setContentType(request.getContentType());
+        inputRequest.setType(request.getType());
+        inputRequest.setEncoding(request.getEncoding());
         inputRequest.setId(stepId);
-        inputRequest.setInputType(instructionCommand.getInputType());
-        inputRequest.setMimeType(fixedValueOrVariable(instructionCommand.getMimeType(), variableResolver, null));
+        inputRequest.setInputType(request.getInputType());
+        inputRequest.setMimeType(fixedValueOrVariable(request.getMimeType(), variableResolver, null));
+        inputRequest.setRequired(TestCaseUtils.resolveBooleanFlag(request.getRequired(), false, () -> variableResolver));
         // Handle text inputs.
-        if (instructionCommand.getInputType() != InputRequestInputType.UPLOAD) {
+        if (request.getInputType() != InputRequestInputType.UPLOAD) {
             // Select options.
-            if (instructionCommand.getOptions() != null) {
-                String options = instructionCommand.getOptions();
+            if (request.getOptions() != null) {
+                String options = request.getOptions();
                 if (VariableResolver.isVariableReference(options)) {
                     options = resolveTokenValues(variableResolver, options);
                 }
                 inputRequest.setOptions(options);
-                if (instructionCommand.getOptionLabels() == null) {
+                if (request.getOptionLabels() == null) {
                     // The options are the labels themselves.
                     inputRequest.setOptionLabels(inputRequest.getOptions());
                 } else {
-                    String labels = instructionCommand.getOptionLabels();
+                    String labels = request.getOptionLabels();
                     if (VariableResolver.isVariableReference(labels)) {
                         labels = resolveTokenValues(variableResolver, labels);
                     }
@@ -476,15 +474,15 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                     throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "The number of options ("+optionCount+") doesn't match the number of option labels ("+labelCount+")"));
                 }
                 inputRequest.setMultiple(Boolean.FALSE);
-                if (instructionCommand.getMultiple() == null) {
+                if (request.getMultiple() == null) {
                     if (inputRequest.getInputType() == InputRequestInputType.SELECT_MULTIPLE) {
                         inputRequest.setMultiple(Boolean.TRUE);
                     }
                 } else {
-                    if (VariableResolver.isVariableReference(instructionCommand.getMultiple())) {
-                        inputRequest.setMultiple((Boolean)(variableResolver.resolveVariableAsBoolean(instructionCommand.getMultiple()).getValue()));
+                    if (VariableResolver.isVariableReference(request.getMultiple())) {
+                        inputRequest.setMultiple((Boolean)(variableResolver.resolveVariableAsBoolean(request.getMultiple()).getValue()));
                     } else {
-                        inputRequest.setMultiple(Boolean.parseBoolean(instructionCommand.getMultiple()));
+                        inputRequest.setMultiple(Boolean.parseBoolean(request.getMultiple()));
                     }
                     if (inputRequest.isMultiple()) {
                         inputRequest.setInputType(InputRequestInputType.SELECT_MULTIPLE);
@@ -497,7 +495,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                 inputRequest.setInputType(InputRequestInputType.TEXT);
             }
             // Set this on the original object as we have now resolved any option-related expressions as well.
-            instructionCommand.setInputType(inputRequest.getInputType());
+            request.setInputType(inputRequest.getInputType());
         }
         return inputRequest;
     }
@@ -544,67 +542,81 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
             } catch (DatatypeConfigurationException e) {
                 throw new IllegalStateException(e);
             }
-            if (!userInputs.isEmpty()) {
+            if (!step.getInstructOrRequest().isEmpty()) {
                 VariableResolver variableResolver = new VariableResolver(scope);
-                report.setContext(new AnyContent());
-                report.getContext().setType("list");
-                //Assign the content for each input to either given variable or to the Interaction Map (with the given name as key)
-                for (UserInput userInput : userInputs) {
-                    int stepIndex = Integer.parseInt(userInput.getId());
-                    InstructionOrRequest targetRequest = step.getInstructOrRequest().get(stepIndex - 1);
-                    if (targetRequest instanceof UserRequest requestInfo && userInput.getValue() != null && !userInput.getValue().isEmpty() && requestInfo.isReport()) {
-                        // Construct the value to return for the step's report.
-                        var reportItem = new AnyContent();
-                        if (requestInfo.getInputType() == InputRequestInputType.SECRET) {
-                            reportItem.setValue("**********");
-                        } else {
-                            reportItem.setValue(userInput.getValue());
-                        }
-                        reportItem.setName(requestInfo.getDesc());
-                        if (reportItem.getName() == null) {
-                            reportItem.setName(requestInfo.getName());
-                        }
-                        reportItem.setEmbeddingMethod(userInput.getEmbeddingMethod());
-                        reportItem.setMimeType(requestInfo.getMimeType());
-                        report.getContext().getItem().add(reportItem);
-                    }
-                    if (StringUtils.isNotBlank(targetRequest.getValue())) {
-                        //Find the variable that the given input content is assigned(bound) to
-                        String assignedVariableExpression = targetRequest.getValue();
-                        DataType assignedVariable = variableResolver.resolveVariable(assignedVariableExpression);
-                        if (targetRequest.isAsTemplate()) {
-                            DataTypeUtils.setDataTypeValueWithAnyContent(assignedVariable, userInput, (dataType) -> {
-                                DataType dataTypeAfterAppliedTemplate = TemplateUtils.generateDataTypeFromTemplate(scope, dataType, dataType.getType());
-                                dataType.copyFrom(dataTypeAfterAppliedTemplate);
-                            });
-                        } else {
-                            DataTypeUtils.setDataTypeValueWithAnyContent(assignedVariable, userInput);
-                        }
-                    } else {
-                        //Create an empty value
-                        DataType assignedValue = dataTypeFactory.create(targetRequest.getType());
-                        if (targetRequest.isAsTemplate()) {
-                            DataTypeUtils.setDataTypeValueWithAnyContent(assignedValue, userInput, (dataType) -> {
-                                DataType dataTypeAfterAppliedTemplate = TemplateUtils.generateDataTypeFromTemplate(scope, dataType, dataType.getType());
-                                dataType.copyFrom(dataTypeAfterAppliedTemplate);
-                            });
-                        } else {
-                            DataTypeUtils.setDataTypeValueWithAnyContent(assignedValue, userInput);
-                        }
-                        //Put it to the Interaction Result map
-                        if (targetRequest.getName() != null) {
-                            interactionResult.addItem(targetRequest.getName(), assignedValue);
-                        }
-                        if (targetRequest instanceof UserRequest userRequest && StringUtils.isNotBlank(userRequest.getFileName()) && StringUtils.isNotBlank(userInput.getFileName())) {
-                            // Record the file name under the provided variable
-                            String variableName;
-                            if (VariableResolver.isVariableReference(userRequest.getFileName())) {
-                                variableName = variableResolver.resolveVariableAsString(userRequest.getFileName()).toString();
-                            } else {
-                                variableName = userRequest.getFileName().trim();
+                // Determine the required request elements for which we expect inputs.
+                Set<Integer> requiredInputIndexes = IntStream.range(0, step.getInstructOrRequest().size())
+                        .filter(i -> step.getInstructOrRequest().get(i) instanceof UserRequest userRequest && isRequired(userRequest, variableResolver))
+                        .boxed()
+                        .collect(Collectors.toSet());
+                if (!userInputs.isEmpty()) {
+                    report.setContext(new AnyContent());
+                    report.getContext().setType("list");
+                    //Assign the content for each input to either given variable or to the Interaction Map (with the given name as key)
+                    for (UserInput userInput : userInputs) {
+                        int stepIndex = Integer.parseInt(userInput.getId());
+                        InstructionOrRequest targetRequest = step.getInstructOrRequest().get(stepIndex - 1);
+                        if (targetRequest instanceof UserRequest requestInfo && userInput.getValue() != null && !userInput.getValue().isEmpty()) {
+                            requiredInputIndexes.remove(stepIndex - 1);
+                            if (requestInfo.isReport()) {
+                                // Construct the value to return for the step's report.
+                                var reportItem = new AnyContent();
+                                if (requestInfo.getInputType() == InputRequestInputType.SECRET) {
+                                    reportItem.setValue("**********");
+                                } else {
+                                    reportItem.setValue(userInput.getValue());
+                                }
+                                reportItem.setName(requestInfo.getDesc());
+                                if (reportItem.getName() == null) {
+                                    reportItem.setName(requestInfo.getName());
+                                }
+                                reportItem.setEmbeddingMethod(userInput.getEmbeddingMethod());
+                                reportItem.setMimeType(requestInfo.getMimeType());
+                                report.getContext().getItem().add(reportItem);
                             }
-                            interactionResult.addItem(variableName, new StringType(userInput.getFileName()));
                         }
+                        if (StringUtils.isNotBlank(targetRequest.getValue())) {
+                            //Find the variable that the given input content is assigned(bound) to
+                            String assignedVariableExpression = targetRequest.getValue();
+                            DataType assignedVariable = variableResolver.resolveVariable(assignedVariableExpression);
+                            if (targetRequest.isAsTemplate()) {
+                                DataTypeUtils.setDataTypeValueWithAnyContent(assignedVariable, userInput, (dataType) -> {
+                                    DataType dataTypeAfterAppliedTemplate = TemplateUtils.generateDataTypeFromTemplate(scope, dataType, dataType.getType());
+                                    dataType.copyFrom(dataTypeAfterAppliedTemplate);
+                                });
+                            } else {
+                                DataTypeUtils.setDataTypeValueWithAnyContent(assignedVariable, userInput);
+                            }
+                        } else {
+                            //Create an empty value
+                            DataType assignedValue = dataTypeFactory.create(targetRequest.getType());
+                            if (targetRequest.isAsTemplate()) {
+                                DataTypeUtils.setDataTypeValueWithAnyContent(assignedValue, userInput, (dataType) -> {
+                                    DataType dataTypeAfterAppliedTemplate = TemplateUtils.generateDataTypeFromTemplate(scope, dataType, dataType.getType());
+                                    dataType.copyFrom(dataTypeAfterAppliedTemplate);
+                                });
+                            } else {
+                                DataTypeUtils.setDataTypeValueWithAnyContent(assignedValue, userInput);
+                            }
+                            //Put it to the Interaction Result map
+                            if (targetRequest.getName() != null) {
+                                interactionResult.addItem(targetRequest.getName(), assignedValue);
+                            }
+                            if (targetRequest instanceof UserRequest userRequest && StringUtils.isNotBlank(userRequest.getFileName()) && StringUtils.isNotBlank(userInput.getFileName())) {
+                                // Record the file name under the provided variable
+                                String variableName;
+                                if (VariableResolver.isVariableReference(userRequest.getFileName())) {
+                                    variableName = variableResolver.resolveVariableAsString(userRequest.getFileName()).toString();
+                                } else {
+                                    variableName = userRequest.getFileName().trim();
+                                }
+                                interactionResult.addItem(variableName, new StringType(userInput.getFileName()));
+                            }
+                        }
+                    }
+                    if (!requiredInputIndexes.isEmpty()) {
+                        // Not all required inputs were provided with inputs - fail.
+                        throw new GITBEngineInternalError("Required request elements were found that were not provided with corresponding inputs");
                     }
                 }
             }

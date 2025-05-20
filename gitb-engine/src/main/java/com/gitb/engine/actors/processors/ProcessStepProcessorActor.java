@@ -169,14 +169,7 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
             }
         }
         if (step.getHidden() != null && !handler.isRemote()) {
-            var isHidden = true;
-            if (VariableResolver.isVariableReference(step.getHidden())) {
-                resolver = Optional.of(new VariableResolver(scope));
-                var hiddenVariable = resolver.get().resolveVariable(step.getHidden());
-                isHidden = hiddenVariable != null && Boolean.TRUE.equals(hiddenVariable.convertTo(DataType.BOOLEAN_DATA_TYPE).getValue());
-            } else {
-                isHidden = Boolean.parseBoolean(step.getHidden());
-            }
+            var isHidden = TestCaseUtils.resolveBooleanFlag(step.getHidden(), true, () -> new VariableResolver(scope));
             if (!isHidden) {
                 // We only add to the report's context the created data if this is visible and
                 // if the handler is not a custom one (for custom ones you can return anything

@@ -189,16 +189,7 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 		} else if (step instanceof Log logStep) {
 			flagToCheck = logStep.getSkipped();
 		}
-		if (flagToCheck == null || flagToCheck.equalsIgnoreCase("false")) {
-			return false;
-		} else if (flagToCheck.equalsIgnoreCase("true")) {
-			return true;
-		} else if (VariableResolver.isVariableReference(flagToCheck)) {
-			var resolver = new VariableResolver(scope);
-			return (boolean)resolver.resolveVariableAsBoolean(flagToCheck).getValue();
-		} else {
-			return false;
-		}
+		return TestCaseUtils.resolveBooleanFlag(flagToCheck, false, () -> new VariableResolver(scope));
 	}
 
 	protected void waiting() {

@@ -631,5 +631,17 @@ public class TestCaseUtils {
         }
     }
 
+    public static boolean resolveBooleanFlag(String flagValue, boolean defaultIfEmpty, Supplier<VariableResolver> variableResolverSupplier) {
+        if ("false".equalsIgnoreCase(flagValue)) {
+            return false;
+        } else if ("true".equalsIgnoreCase(flagValue)) {
+            return true;
+        } else if (VariableResolver.isVariableReference(flagValue)) {
+            return (boolean) variableResolverSupplier.get().resolveVariableAsBoolean(flagValue).getValue();
+        } else {
+            return defaultIfEmpty;
+        }
+    }
+
 }
 

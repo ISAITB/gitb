@@ -226,6 +226,9 @@ public class JacksonUtil {
                     if (inputRequest.getMimeType() != null) {
                         json.writeStringField("mimeType", inputRequest.getMimeType());
                     }
+                    if (inputRequest.isRequired()) {
+                        json.writeBooleanField("required", inputRequest.isRequired());
+                    }
                     json.writeEndObject();
                 } else if (ior instanceof com.gitb.tbs.Instruction instruction) {
                     json.writeStartObject();
