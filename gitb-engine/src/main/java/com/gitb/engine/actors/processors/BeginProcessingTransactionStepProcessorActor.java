@@ -30,12 +30,8 @@ public class BeginProcessingTransactionStepProcessorActor extends AbstractTestSt
     protected void start() throws Exception {
         processing();
 
-        String handlerIdentifier = step.getHandler();
         VariableResolver resolver = new VariableResolver(scope);
-
-        if (VariableResolver.isVariableReference(handlerIdentifier)) {
-            handlerIdentifier = resolver.resolveVariableAsString(handlerIdentifier).toString();
-        }
+        String handlerIdentifier = resolveProcessingHandler(step.getHandler(), () -> resolver);
         if (step.getConfig() != null) {
             for (Configuration config: step.getConfig()) {
                 if (VariableResolver.isVariableReference(config.getValue())) {

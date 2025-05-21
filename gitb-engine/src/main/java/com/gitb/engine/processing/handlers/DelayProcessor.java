@@ -23,7 +23,7 @@ public class DelayProcessor extends AbstractProcessingHandler {
     private static final String INPUT__DURATION = "duration";
 
     @Override
-    public ProcessingModule getModuleDefinition() {
+    public ProcessingModule createProcessingModule() {
         ProcessingModule module = new ProcessingModule();
         module.setId("DelayProcessor");
         module.setMetadata(new Metadata());

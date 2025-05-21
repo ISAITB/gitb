@@ -8,7 +8,6 @@ import com.apicatalog.jsonld.loader.HttpLoader;
 import com.apicatalog.jsonld.loader.SchemeRouter;
 import com.gitb.core.AnyContent;
 import com.gitb.core.Configuration;
-import com.gitb.core.ValidationModule;
 import com.gitb.core.ValueEmbeddingEnumeration;
 import com.gitb.engine.utils.ReportItemComparator;
 import com.gitb.engine.utils.TestCaseUtils;
@@ -46,6 +45,7 @@ public class ShaclValidator extends AbstractValidator {
 
     private static final Logger LOG = LoggerFactory.getLogger(ShaclValidator.class);
     private static final ObjectFactory OBJECT_FACTORY = new ObjectFactory();
+    private final static String MODULE_DEFINITION_XML = "/validation/shacl-validator-definition.xml";
 
     private static final String MODEL_ARGUMENT_NAME = "model";
     private static final String CONTENT_TYPE_ARGUMENT_NAME = "contentType";
@@ -84,9 +84,8 @@ public class ShaclValidator extends AbstractValidator {
             RDFLanguages.JSONLD, APPLICATION_JSON.getContentTypeStr()
     );
 
-    @Override
-    public ValidationModule getModuleDefinition() {
-        return new ValidationModule();
+    public ShaclValidator() {
+        this.validatorDefinition = readModuleDefinition(MODULE_DEFINITION_XML);
     }
 
     @Override

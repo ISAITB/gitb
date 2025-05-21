@@ -7,7 +7,7 @@
         <version>1.0</version>
     </metadata>
     <inputs>
-        <param type="object" use="R" name="xml" desc="The XML document to be validated" />
+        <param type="object" name="xml" desc="The XML document to be validated" />
         <param type="schema" use="O" name="xsd" desc="XSD to validate with"/>
         <param type="list" use="O" name="schematron" desc="Schematron Document(s)"/>
         <param type="string" use="O" name="schematronType" desc="The Schematron Document's type to consider ('sch' for pure Schematron, 'xslt' for XSLT). If not provided this is attempted to be determined from the file's type and defaulting to pure Schematron." />

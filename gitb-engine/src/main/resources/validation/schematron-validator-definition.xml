@@ -7,8 +7,8 @@
         <version>1.0</version>
     </metadata>
     <inputs>
-        <param type="schema" use="R" name="schematron" desc="Schematron Document" />
-        <param type="object" use="R" name="xmldocument" desc="XML Document to be validated" />
+        <param type="schema" name="schematron" desc="Schematron Document" />
+        <param type="object" name="xml" desc="XML Document to be validated" />
         <param type="string" use="O" name="type" desc="The Schematron Document's type to consider ('sch' for pure Schematron, 'xslt' for XSLT). If not provided this is attempted to be determined from the file's type and defaulting to pure Schematron." />
         <param type="boolean" use="O" name="sortBySeverity" desc="Whether sorting of findings should be done by severity or by location (the default)."/>
         <param type="boolean" use="O" name="showValidationArtefacts" desc="Whether or not to display the validation artefact(s) used in the resulting report (default is yes)."/>

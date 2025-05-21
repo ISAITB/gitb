@@ -1,6 +1,8 @@
 <div class="value-container" [class.hovering]="hovering" (click)="copy();$event.stopPropagation()">
-    <div class="value-container-inner">
-        <div class="value"><span>{{value}}</span></div>
-        <div class="icon"><i class="fa-solid fa-clipboard" aria-hidden="true"></i></div>
-    </div>
+    @if (value != undefined && value.length > 0) {
+        <div class="value-container-inner">
+            <div class="value"><span>{{value}}</span></div>
+            <div class="icon"><i class="fa-solid fa-clipboard" aria-hidden="true"></i></div>
+        </div>
+    }
 </div>

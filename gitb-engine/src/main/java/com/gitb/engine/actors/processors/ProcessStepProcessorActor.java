@@ -88,11 +88,8 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
             if (step.getHandler() == null) {
                 throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Test step [" + stepId + "] is a process step with no transaction reference and no handler definition."));
             }
-            String handlerIdentifier = step.getHandler();
             VariableResolver resolver = new VariableResolver(scope);
-            if (VariableResolver.isVariableReference(handlerIdentifier)) {
-                handlerIdentifier = resolver.resolveVariableAsString(handlerIdentifier).toString();
-            }
+            String handlerIdentifier = resolveProcessingHandler(step.getHandler(), () -> resolver);
             context = new ProcessingContext(handlerIdentifier, TestCaseUtils.getStepProperties(step.getProperty(), resolver), scope.getContext().getSessionId());
         } else {
             // A processing transaction is referenced.
@@ -169,7 +166,7 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
             }
         }
         if (step.getHidden() != null && !handler.isRemote()) {
-            var isHidden = TestCaseUtils.resolveBooleanFlag(step.getHidden(), true, () -> new VariableResolver(scope));
+            boolean isHidden = TestCaseUtils.resolveBooleanFlag(step.getHidden(), true, () -> new VariableResolver(scope));
             if (!isHidden) {
                 // We only add to the report's context the created data if this is visible and
                 // if the handler is not a custom one (for custom ones you can return anything

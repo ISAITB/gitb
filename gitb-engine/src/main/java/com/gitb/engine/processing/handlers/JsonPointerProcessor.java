@@ -20,8 +20,8 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
 
-@ProcessingHandler(name="JSONPointerProcessor")
-public class JSONPointerProcessor extends AbstractProcessingHandler {
+@ProcessingHandler(name="JsonPointerProcessor")
+public class JsonPointerProcessor extends AbstractProcessingHandler {
 
     private static final String OPERATION__PROCESS = "process";
     private static final String INPUT__CONTENT = "content";
@@ -29,9 +29,9 @@ public class JSONPointerProcessor extends AbstractProcessingHandler {
     private static final String OUTPUT__OUTPUT = "output";
 
     @Override
-    public ProcessingModule getModuleDefinition() {
+    public ProcessingModule createProcessingModule() {
         ProcessingModule module = new ProcessingModule();
-        module.setId("JSONPointerProcessor");
+        module.setId("JsonPointerProcessor");
         module.setMetadata(new Metadata());
         module.getMetadata().setName(module.getId());
         module.getMetadata().setVersion("1.0");

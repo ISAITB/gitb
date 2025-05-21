@@ -5,6 +5,7 @@ import com.gitb.engine.AbstractHandler;
 import com.gitb.processing.IProcessingHandler;
 import com.gitb.processing.ProcessingData;
 import com.gitb.processing.ProcessingReport;
+import com.gitb.ps.ProcessingModule;
 import com.gitb.ps.ProcessingOperation;
 import com.gitb.tr.TAR;
 import com.gitb.tr.TestResultType;
@@ -17,6 +18,17 @@ import java.util.GregorianCalendar;
 import java.util.List;
 
 public abstract class AbstractProcessingHandler extends AbstractHandler implements IProcessingHandler {
+
+    private final ProcessingModule moduleDefinition;
+
+    public AbstractProcessingHandler() {
+        this.moduleDefinition = createProcessingModule();
+    }
+
+    @Override
+    public ProcessingModule getModuleDefinition() {
+        return moduleDefinition;
+    }
 
     @Override
     public String beginTransaction(String stepId, List<Configuration> config) {
@@ -33,6 +45,8 @@ public abstract class AbstractProcessingHandler extends AbstractHandler implemen
     public ProcessingReport process(String session, String stepId, String operation, ProcessingData input) {
         return process(session, operation, input);
     }
+
+    protected abstract ProcessingModule createProcessingModule();
 
     ProcessingOperation createProcessingOperation(String name, List<TypedParameter> input, List<TypedParameter> output) {
         ProcessingOperation operation = new ProcessingOperation();

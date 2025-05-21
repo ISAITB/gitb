@@ -17,8 +17,8 @@ import java.util.Map;
 @ValidationHandler(name="NumberValidator")
 public class NumberValidator extends SimpleValidator {
 
-    private final static String ACTUAL_NUMBER_ARGUMENT_NAME = "actualnumber";
-    private final static String EXPECTED_NUMBER_ARGUMENT_NAME = "expectednumber";
+    private final static String ACTUAL_NUMBER_ARGUMENT_NAME = "actual";
+    private final static String EXPECTED_NUMBER_ARGUMENT_NAME = "expected";
     private final static String MODULE_DEFINITION_XML = "/validation/number-validator-definition.xml";
 
     public NumberValidator() {
@@ -27,12 +27,12 @@ public class NumberValidator extends SimpleValidator {
 
     @Override
     public TestStepReportType validate(List<Configuration> configurations, Map<String, DataType> inputs) {
-        NumberType actualnumber = (NumberType) inputs.get(ACTUAL_NUMBER_ARGUMENT_NAME);
-        NumberType expectednumber = (NumberType) inputs.get(EXPECTED_NUMBER_ARGUMENT_NAME);
+        NumberType actual = getAndConvert(inputs, ACTUAL_NUMBER_ARGUMENT_NAME, DataType.NUMBER_DATA_TYPE, NumberType.class);
+        NumberType expected = getAndConvert(inputs, EXPECTED_NUMBER_ARGUMENT_NAME, DataType.NUMBER_DATA_TYPE, NumberType.class);
 
         // process xpath
-        BooleanType result = new BooleanType(actualnumber.doubleValue() == expectednumber.doubleValue());
+        BooleanType result = new BooleanType(actual.doubleValue() == expected.doubleValue());
 
-        return createReport(inputs, () -> new NumberReportHandler(actualnumber, expectednumber, result).createReport());
+        return createReport(inputs, () -> new NumberReportHandler(actual, expected, result).createReport());
     }
 }

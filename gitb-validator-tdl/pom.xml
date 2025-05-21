@@ -13,6 +13,10 @@
 
     <dependencies>
         <dependency>
+            <groupId>com.gitb</groupId>
+            <artifactId>gitb-common</artifactId>
+        </dependency>
+        <dependency>
             <groupId>eu.europa.ec.itb</groupId>
             <artifactId>gitb-types-jakarta</artifactId>
         </dependency>

@@ -39,7 +39,7 @@ public class CollectionUtils extends AbstractProcessingHandler {
     private static final String OUTPUT__OUTPUT = "output";
 
     @Override
-    public ProcessingModule getModuleDefinition() {
+    public ProcessingModule createProcessingModule() {
         ProcessingModule module = new ProcessingModule();
         module.setId("CollectionUtils");
         module.setMetadata(new Metadata());

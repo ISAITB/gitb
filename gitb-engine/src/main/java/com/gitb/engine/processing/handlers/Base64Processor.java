@@ -29,7 +29,7 @@ public class Base64Processor extends AbstractProcessingHandler {
     private static final String OUTPUT__OUTPUT = "output";
 
     @Override
-    public ProcessingModule getModuleDefinition() {
+    protected ProcessingModule createProcessingModule() {
         ProcessingModule module = new ProcessingModule();
         module.setId("Base64Processor");
         module.setMetadata(new Metadata());
@@ -37,21 +37,21 @@ public class Base64Processor extends AbstractProcessingHandler {
         module.getMetadata().setVersion("1.0");
         module.setConfigs(new ConfigurationParameters());
         module.getOperation().add(createProcessingOperation(OPERATION__ENCODE,
-            Arrays.asList(
-                createParameter(INPUT__INPUT, "binary", UsageEnumeration.R, ConfigurationType.SIMPLE, "The bytes to encode."),
-                createParameter(INPUT__DATA_URL, "boolean", UsageEnumeration.O, ConfigurationType.SIMPLE, "Whether or not to produce output as a data URL (default is false).")
-            ),
-            Collections.singletonList(
-                createParameter(OUTPUT__OUTPUT, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The Base-64 encoded string.")
-            )
+                Arrays.asList(
+                        createParameter(INPUT__INPUT, "binary", UsageEnumeration.R, ConfigurationType.SIMPLE, "The bytes to encode."),
+                        createParameter(INPUT__DATA_URL, "boolean", UsageEnumeration.O, ConfigurationType.SIMPLE, "Whether or not to produce output as a data URL (default is false).")
+                ),
+                Collections.singletonList(
+                        createParameter(OUTPUT__OUTPUT, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The Base-64 encoded string.")
+                )
         ));
         module.getOperation().add(createProcessingOperation(OPERATION__DECODE,
-            Collections.singletonList(
-                createParameter(INPUT__INPUT, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The Base-64 encoded string (can also be provided as a data URL).")
-            ),
-            Collections.singletonList(
-                createParameter(OUTPUT__OUTPUT, "binary", UsageEnumeration.R, ConfigurationType.SIMPLE, "The decoded bytes.")
-            )
+                Collections.singletonList(
+                        createParameter(INPUT__INPUT, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The Base-64 encoded string (can also be provided as a data URL).")
+                ),
+                Collections.singletonList(
+                        createParameter(OUTPUT__OUTPUT, "binary", UsageEnumeration.R, ConfigurationType.SIMPLE, "The decoded bytes.")
+                )
         ));
         return module;
     }

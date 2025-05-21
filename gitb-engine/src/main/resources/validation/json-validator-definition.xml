@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<module xmlns="http://www.gitb.com/core/v1/"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        id="JsonValidator" uri="urn:com:gitb:validation:JsonValidator" xsi:type="ValidationModule">
+    <metadata>
+        <name>JSON Validator</name>
+        <version>1.0</version>
+    </metadata>
+    <inputs>
+        <param type="string" name="json" desc="The JSON content to be validated"/>
+        <param type="list" use="O" name="schema" desc="The JSON schemas to use"/>
+        <param type="boolean" use="O" name="showSchema" desc="Whether the applied JSON schemas should be added to the report"/>
+        <param type="boolean" use="O" name="schemaCombinationApproach" desc="How should multiple provided schemas be treated"/>
+        <param type="boolean" use="O" name="supportYaml" desc="Whether YAML can also be provided to the validator as the input to validate"/>
+    </inputs>
+</module>

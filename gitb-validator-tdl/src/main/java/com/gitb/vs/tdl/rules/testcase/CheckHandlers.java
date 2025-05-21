@@ -1,5 +1,6 @@
 package com.gitb.vs.tdl.rules.testcase;
 
+import com.gitb.common.AliasManager;
 import com.gitb.core.Configuration;
 import com.gitb.tdl.*;
 import com.gitb.tdl.Process;
@@ -9,6 +10,7 @@ import com.gitb.vs.tdl.util.Utils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;
+import java.util.function.Function;
 
 public class CheckHandlers extends AbstractTestCaseObserver {
 
@@ -67,7 +69,8 @@ public class CheckHandlers extends AbstractTestCaseObserver {
                         messagingStep.getInput(),
                         requiredInputs,
                         optionalInputs,
-                        handler
+                        handler,
+                        (inputName) -> inputName
                 );
             }
         } else if (stepObj instanceof ReceiveOrListen messagingStep) {
@@ -96,11 +99,12 @@ public class CheckHandlers extends AbstractTestCaseObserver {
                         messagingStep.getInput(),
                         requiredInputs,
                         optionalInputs,
-                        handler
+                        handler,
+                        (inputName) -> inputName
                 );
             }
         } else if (stepObj instanceof BeginProcessingTransaction transactionStep) {
-            String handler = transactionStep.getHandler();
+            String handler = AliasManager.getInstance().resolveProcessingHandler(transactionStep.getHandler());
             if (checkHandlerBeforeInputValidations(handler, context.getExternalConfiguration().getEmbeddedProcessingHandlers().keySet(), ErrorCode.INVALID_EMBEDDED_PROCESSING_HANDLER_REFERENCE)) {
                 // Check deprecation.
                 checkDeprecation(handler, context.getExternalConfiguration().getEmbeddedProcessingHandlers().get(handler));
@@ -124,7 +128,7 @@ public class CheckHandlers extends AbstractTestCaseObserver {
             if (processStep.getTxnId() != null && processingTxToHandler.containsKey(processStep.getTxnId())) {
                 handler = processingTxToHandler.get(processStep.getTxnId());
             } else {
-                handler = processStep.getHandler();
+                handler = AliasManager.getInstance().resolveProcessingHandler(processStep.getHandler());
             }
             if (checkHandlerBeforeInputValidations(handler, context.getExternalConfiguration().getEmbeddedProcessingHandlers().keySet(), ErrorCode.INVALID_EMBEDDED_PROCESSING_HANDLER_REFERENCE)) {
                 // Check deprecation.
@@ -151,7 +155,9 @@ public class CheckHandlers extends AbstractTestCaseObserver {
                                 getInputs(processStep),
                                 context.getExternalConfiguration().getEmbeddedProcessingHandlers().get(handler).getOperations().get(operation).getRequiredInputs(),
                                 context.getExternalConfiguration().getEmbeddedProcessingHandlers().get(handler).getOperations().get(operation).getOptionalInputs(),
-                                handler
+                                handler,
+                                (inputName) -> AliasManager.getInstance().resolveProcessingHandlerInput(handler, inputName)
+
                         );
                     } else {
                         addReportItem(ErrorCode.INVALID_PROCESSING_HANDLER_OPERATION, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentStep, currentScriptlet), operation, StringUtils.join(context.getExternalConfiguration().getEmbeddedProcessingHandlers().get(handler).getOperations().keySet(), ','));
@@ -161,7 +167,7 @@ public class CheckHandlers extends AbstractTestCaseObserver {
         } else if (stepObj instanceof EndProcessingTransaction) {
             processingTxToHandler.remove(((EndProcessingTransaction)stepObj).getTxnId());
         } else if (stepObj instanceof Verify verifyStep) {
-            String handler = verifyStep.getHandler();
+            String handler = AliasManager.getInstance().resolveValidationHandler(verifyStep.getHandler());
             if (checkHandlerBeforeInputValidations(handler, context.getExternalConfiguration().getEmbeddedValidationHandlers().keySet(), ErrorCode.INVALID_EMBEDDED_VALIDATION_HANDLER_REFERENCE)) {
                 // Check deprecation.
                 checkDeprecation(handler, context.getExternalConfiguration().getEmbeddedValidationHandlers().get(handler));
@@ -176,7 +182,8 @@ public class CheckHandlers extends AbstractTestCaseObserver {
                         verifyStep.getInput(),
                         context.getExternalConfiguration().getEmbeddedValidationHandlers().get(handler).getRequiredInputs(),
                         context.getExternalConfiguration().getEmbeddedValidationHandlers().get(handler).getOptionalInputs(),
-                        handler
+                        handler,
+                        (inputName) -> AliasManager.getInstance().resolveValidationHandlerInput(handler, inputName)
                 );
             }
         } else if (stepObj instanceof UserInteraction interactStep) {
@@ -232,7 +239,7 @@ public class CheckHandlers extends AbstractTestCaseObserver {
         }
     }
 
-    private void checkInputs(List<Binding> inputs, Set<String> expectedRequiredInputs, Set<String> expectedOptionalInputs, String handlerName) {
+    private void checkInputs(List<Binding> inputs, Set<String> expectedRequiredInputs, Set<String> expectedOptionalInputs, String handlerName, Function<String, String> aliasSupplier) {
         if (inputs != null) {
             var namedInputCount = inputs.stream().filter(input -> input.getName() != null).count();
             if (namedInputCount == 0) {
@@ -249,10 +256,11 @@ public class CheckHandlers extends AbstractTestCaseObserver {
                 Set<String> remainingRequiredInputs = new HashSet<>(expectedRequiredInputs);
                 for (Binding input: inputs) {
                     if (input.getName() != null) {
-                        if (!expectedRequiredInputs.contains(input.getName()) && !expectedOptionalInputs.contains(input.getName())) {
-                            addReportItem(ErrorCode.UNEXPECTED_HANDLER_INPUT, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentStep, currentScriptlet), handlerName, input.getName());
+                        String inputName = aliasSupplier.apply(input.getName());
+                        if (!expectedRequiredInputs.contains(inputName) && !expectedOptionalInputs.contains(inputName)) {
+                            addReportItem(ErrorCode.UNEXPECTED_HANDLER_INPUT, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentStep, currentScriptlet), handlerName, inputName);
                         } else {
-                            remainingRequiredInputs.remove(input.getName());
+                            remainingRequiredInputs.remove(inputName);
                         }
                     }
                 }

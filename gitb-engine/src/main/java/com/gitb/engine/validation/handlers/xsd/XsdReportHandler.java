@@ -16,12 +16,12 @@ import jakarta.xml.bind.JAXBElement;
 /**
  * Created by senan on 10/10/14.
  */
-public class XSDReportHandler extends AbstractReportHandler implements ErrorHandler {
+public class XsdReportHandler extends AbstractReportHandler implements ErrorHandler {
 
 	public static final String XML_ITEM_NAME = "xml";
 	public static final String XSD_ITEM_NAME = "xsd";
 
-    protected XSDReportHandler(ObjectType xml, SchemaType xsd) {
+    protected XsdReportHandler(ObjectType xml, SchemaType xsd) {
         super();
 
 	    AnyContent attachment = new AnyContent();

@@ -17,8 +17,8 @@ import java.util.Map;
 @ValidationHandler(name="StringValidator")
 public class StringValidator extends SimpleValidator {
 
-    private static final String ACTUAL_STRING_ARGUMENT_NAME   = "actualstring";
-    private static final String EXPECTED_STRING_ARGUMENT_NAME = "expectedstring";
+    private static final String ACTUAL_ARGUMENT_NAME = "actual";
+    private static final String EXPECTED_ARGUMENT_NAME = "expected";
     private static final String MODULE_DEFINITION_XML = "/validation/string-validator-definition.xml";
 
     public StringValidator() {
@@ -27,8 +27,8 @@ public class StringValidator extends SimpleValidator {
 
     @Override
     public TestStepReportType validate(List<Configuration> configurations, Map<String, DataType> inputs) {
-        StringType actualString    = (StringType)(inputs.get(ACTUAL_STRING_ARGUMENT_NAME)).convertTo(DataType.STRING_DATA_TYPE);
-        StringType expectedString  = (StringType)(inputs.get(EXPECTED_STRING_ARGUMENT_NAME)).convertTo(DataType.STRING_DATA_TYPE);
+        StringType actualString    = getAndConvert(inputs, ACTUAL_ARGUMENT_NAME, DataType.STRING_DATA_TYPE, StringType.class);
+        StringType expectedString  = getAndConvert(inputs, EXPECTED_ARGUMENT_NAME, DataType.STRING_DATA_TYPE, StringType.class);
 
         String actualStringValue   = (String) actualString.getValue();
         String expectedStringValue = (String) expectedString.getValue();

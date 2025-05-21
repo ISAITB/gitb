@@ -1,5 +1,6 @@
 package com.gitb.engine.actors.processors;
 
+import com.gitb.common.AliasManager;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.TypedParameter;
 import com.gitb.core.TypedParameters;
@@ -21,6 +22,7 @@ import com.gitb.utils.BindingUtils;
 import com.gitb.utils.ErrorUtils;
 
 import java.util.*;
+import java.util.function.Function;
 
 public abstract class AbstractProcessingStepProcessorActor<T extends Process> extends AbstractTestStepActor<T> {
 
@@ -42,7 +44,7 @@ public abstract class AbstractProcessingStepProcessorActor<T extends Process> ex
         } else {
             boolean isNameBinding = BindingUtils.isNameBinding(bindings);
             if (isNameBinding) {
-                setInputWithNameBinding(data, bindings, params);
+                setInputWithNameBinding(data, bindings, params, (inputName) -> AliasManager.getInstance().resolveProcessingHandlerInput(handler.getModuleDefinition().getId(), inputName));
             } else {
                 setInputWithModuleDefinition(data, bindings, params);
             }
@@ -81,16 +83,17 @@ public abstract class AbstractProcessingStepProcessorActor<T extends Process> ex
         }
     }
 
-    private void setInputWithNameBinding(ProcessingData processingData, List<Binding> input, List<TypedParameter> params) {
+    private void setInputWithNameBinding(ProcessingData processingData, List<Binding> input, List<TypedParameter> params, Function<String, String> inputResolver) {
         for (Binding binding : input) {
-            TypedParameter parameter = getParam(params, binding.getName());
+            String inputName = inputResolver.apply(binding.getName());
+            TypedParameter parameter = getParam(params, inputName);
             DataType data;
             if (parameter == null) {
                 data = expressionHandler.processExpression(binding);
             } else {
                 data = expressionHandler.processExpression(binding, parameter.getType());
             }
-            processingData.addInput(binding.getName(), data);
+            processingData.addInput(inputName, data);
         }
     }
 

@@ -18,8 +18,8 @@ import java.util.Map;
 @ValidationHandler(name="XPathValidator")
 public class XPathValidator extends SimpleValidator {
 
-    private static final String CONTENT_ARGUMENT_NAME = "xmldocument";
-    private static final String XPATH_ARGUMENT_NAME = "xpathexpression";
+    private static final String XML_ARGUMENT_NAME = "xml";
+    private static final String EXPRESSION_ARGUMENT_NAME = "expression";
     private static final String MODULE_DEFINITION_XML = "/validation/xpath-validator-definition.xml";
 
     public XPathValidator() {
@@ -28,10 +28,10 @@ public class XPathValidator extends SimpleValidator {
 
     @Override
     public TestStepReportType validate(List<Configuration> configurations, Map<String, DataType> inputs) {
-        ObjectType contentToProcess = (ObjectType)inputs.get(CONTENT_ARGUMENT_NAME).convertTo(DataType.OBJECT_DATA_TYPE);
-        StringType expression = (StringType) inputs.get(XPATH_ARGUMENT_NAME).convertTo(DataType.STRING_DATA_TYPE);
-        MapType namespaces = (MapType) inputs.get(HandlerUtils.NAMESPACE_MAP_INPUT);
-        String sessionId = (String) inputs.get(HandlerUtils.SESSION_INPUT).getValue();
+        ObjectType contentToProcess = getAndConvert(inputs, XML_ARGUMENT_NAME, DataType.OBJECT_DATA_TYPE, ObjectType.class);
+        StringType expression = getAndConvert(inputs, EXPRESSION_ARGUMENT_NAME, DataType.STRING_DATA_TYPE, StringType.class);
+        MapType namespaces = getAndConvert(inputs, HandlerUtils.NAMESPACE_MAP_INPUT, DataType.MAP_DATA_TYPE, MapType.class);
+        String sessionId = (String) getAndConvert(inputs, HandlerUtils.SESSION_INPUT, DataType.STRING_DATA_TYPE, StringType.class).getValue();
 
         // Compile expression
         XPathExpression xPathExpr = HandlerUtils.compileXPathExpression(namespaces, expression, new VariableResolver(getScope(sessionId)));

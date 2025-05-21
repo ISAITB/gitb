@@ -44,7 +44,7 @@ public class TokenGenerator extends AbstractProcessingHandler {
     private static final String OUTPUT__VALUE = "value";
 
     @Override
-    public ProcessingModule getModuleDefinition() {
+    public ProcessingModule createProcessingModule() {
         ProcessingModule module = new ProcessingModule();
         module.setId("TokenGenerator");
         module.setMetadata(new Metadata());

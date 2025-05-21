@@ -1,5 +1,6 @@
 package com.gitb.engine.actors.processors;
 
+import com.gitb.common.AliasManager;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.StepStatus;
 import com.gitb.core.TestRole;
@@ -43,6 +44,7 @@ import javax.xml.datatype.DatatypeConfigurationException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * Created by serbay on 9/11/14.
@@ -406,11 +408,11 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 	}
 
 	public static String getName(String actorName) {
-		return actorName + "-" + RandomStringUtils.random(5, true, true);
+		return actorName + "-" + RandomStringUtils.secure().next(5, true, true);
 	}
 
 	TestRole getSUTActor() {
-		return getSUTActors().get(0);
+		return getSUTActors().getFirst();
 	}
 
 	List<TestRole> getSUTActors() {
@@ -433,6 +435,14 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 			// Unexpected error.
 			updateTestStepStatus(getContext(), new ErrorStatusEvent(failure, scope, self()), null, true, true);
 		}
+	}
+
+	protected String resolveProcessingHandler(String handler, Supplier<VariableResolver> variableResolverSupplier) {
+		String handlerIdentifier = handler;
+		if (VariableResolver.isVariableReference(handlerIdentifier)) {
+			handlerIdentifier = variableResolverSupplier.get().resolveVariableAsString(handlerIdentifier).toString();
+		}
+		return AliasManager.getInstance().resolveProcessingHandler(handlerIdentifier);
 	}
 
 }

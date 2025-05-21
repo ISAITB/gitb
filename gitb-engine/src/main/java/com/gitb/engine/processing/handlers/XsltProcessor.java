@@ -23,8 +23,8 @@ import java.io.StringWriter;
 import java.util.List;
 import java.util.Objects;
 
-@ProcessingHandler(name="XSLTProcessor")
-public class XSLTProcessor extends AbstractProcessingHandler {
+@ProcessingHandler(name="XsltProcessor")
+public class XsltProcessor extends AbstractProcessingHandler {
 
     private static final String OPERATION__PROCESS = "process";
     private static final String INPUT__XML = "xml";
@@ -32,9 +32,9 @@ public class XSLTProcessor extends AbstractProcessingHandler {
     private static final String OUTPUT__OUTPUT = "output";
 
     @Override
-    public ProcessingModule getModuleDefinition() {
+    public ProcessingModule createProcessingModule() {
         ProcessingModule module = new ProcessingModule();
-        module.setId("XSLTProcessor");
+        module.setId("XsltProcessor");
         module.setMetadata(new Metadata());
         module.getMetadata().setName(module.getId());
         module.getMetadata().setVersion("1.0");

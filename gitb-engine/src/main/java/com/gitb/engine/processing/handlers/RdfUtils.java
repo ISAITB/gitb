@@ -1,5 +1,9 @@
 package com.gitb.engine.processing.handlers;
 
+import com.gitb.core.ConfigurationParameters;
+import com.gitb.core.ConfigurationType;
+import com.gitb.core.Metadata;
+import com.gitb.core.UsageEnumeration;
 import com.gitb.engine.processing.ProcessingHandler;
 import com.gitb.processing.ProcessingData;
 import com.gitb.processing.ProcessingReport;
@@ -21,10 +25,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
@@ -60,8 +61,65 @@ public class RdfUtils extends AbstractProcessingHandler {
     );
 
     @Override
-    public ProcessingModule getModuleDefinition() {
-        return new ProcessingModule();
+    public ProcessingModule createProcessingModule() {
+        ProcessingModule module = new ProcessingModule();
+        module.setId("RdfUtils");
+        module.setMetadata(new Metadata());
+        module.getMetadata().setName(module.getId());
+        module.getMetadata().setVersion("1.0");
+        module.setConfigs(new ConfigurationParameters());
+        module.getOperation().add(createProcessingOperation(OPERATION__CONVERT,
+                List.of(
+                        createParameter(INPUT__MODEL, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The RDF model to process."),
+                        createParameter(INPUT__INPUT_CONTENT_TYPE, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The content type of the input model."),
+                        createParameter(INPUT__OUTPUT_CONTENT_TYPE, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The content type of the output model.")
+                ),
+                List.of(
+                        createParameter(OUTPUT__OUTPUT, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The converted model.")
+                )
+        ));
+        module.getOperation().add(createProcessingOperation(OPERATION__MERGE,
+                List.of(
+                        createParameter(INPUT__MODELS, "list", UsageEnumeration.R, ConfigurationType.SIMPLE, "The list of models to merge."),
+                        createParameter(INPUT__INPUT_CONTENT_TYPES, "list", UsageEnumeration.O, ConfigurationType.SIMPLE, "The content types of the provided models.")
+                ),
+                List.of(
+                        createParameter(OUTPUT__OUTPUT, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The merged model.")
+                )
+        ));
+        module.getOperation().add(createProcessingOperation(OPERATION__ASK,
+                List.of(
+                        createParameter(INPUT__MODEL, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The model to query."),
+                        createParameter(INPUT__QUERY, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The SPARQL query."),
+                        createParameter(INPUT__INPUT_CONTENT_TYPE, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The model's content type.")
+                ),
+                List.of(
+                        createParameter(OUTPUT__OUTPUT, "boolean", UsageEnumeration.R, ConfigurationType.SIMPLE, "The query result.")
+                )
+        ));
+        module.getOperation().add(createProcessingOperation(OPERATION__CONSTRUCT,
+                List.of(
+                        createParameter(INPUT__MODEL, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The model to query."),
+                        createParameter(INPUT__QUERY, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The SPARQL query."),
+                        createParameter(INPUT__INPUT_CONTENT_TYPE, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The model's content type."),
+                        createParameter(INPUT__OUTPUT_CONTENT_TYPE, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, "The content type of the constructed model.")
+                ),
+                List.of(
+                        createParameter(OUTPUT__OUTPUT, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The output result set.")
+                )
+        ));
+        module.getOperation().add(createProcessingOperation(OPERATION__SELECT,
+                List.of(
+                        createParameter(INPUT__MODEL, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The model to query."),
+                        createParameter(INPUT__QUERY, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The SPARQL query."),
+                        createParameter(INPUT__INPUT_CONTENT_TYPE, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The model's content type."),
+                        createParameter(INPUT__OUTPUT_CONTENT_TYPE, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, "The content type of the result set.")
+                ),
+                List.of(
+                        createParameter(OUTPUT__OUTPUT, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The output result set.")
+                )
+        ));
+        return module;
     }
 
 

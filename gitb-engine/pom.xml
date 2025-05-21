@@ -25,6 +25,10 @@
     <dependencies>
 		<dependency>
 			<groupId>com.gitb</groupId>
+			<artifactId>gitb-common</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.gitb</groupId>
 			<artifactId>gitb-core</artifactId>
 		</dependency>
         <dependency>

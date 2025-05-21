@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gitb.core.AnyContent;
 import com.gitb.core.Configuration;
-import com.gitb.core.ValidationModule;
 import com.gitb.core.ValueEmbeddingEnumeration;
 import com.gitb.engine.utils.HandlerUtils;
 import com.gitb.engine.utils.TestCaseUtils;
@@ -35,6 +34,8 @@ import java.util.stream.Collectors;
 @ValidationHandler(name="JsonValidator")
 public class JsonValidator extends AbstractValidator {
 
+    private final static String MODULE_DEFINITION_XML = "/validation/json-validator-definition.xml";
+
     private static final String JSON_ARGUMENT_NAME = "json";
     private static final String SCHEMA_ARGUMENT_NAME = "schema";
     private static final String SHOW_SCHEMA_ARGUMENT_NAME = "showSchema";
@@ -43,9 +44,12 @@ public class JsonValidator extends AbstractValidator {
 
     private final ObjectMapper objectMapper = new ObjectMapper(); // ObjectMapper is thread-safe.
 
-    @Override
-    public ValidationModule getModuleDefinition() {
-        return new ValidationModule();
+    public JsonValidator() {
+        this(MODULE_DEFINITION_XML);
+    }
+
+    public JsonValidator(String moduleDefinitionPath) {
+        this.validatorDefinition = readModuleDefinition(moduleDefinitionPath);
     }
 
     @Override

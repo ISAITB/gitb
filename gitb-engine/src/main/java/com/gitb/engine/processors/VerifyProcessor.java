@@ -1,5 +1,6 @@
 package com.gitb.engine.processors;
 
+import com.gitb.common.AliasManager;
 import com.gitb.core.*;
 import com.gitb.engine.ModuleManager;
 import com.gitb.engine.expr.ExpressionHandler;
@@ -66,6 +67,7 @@ public class VerifyProcessor implements IProcessor {
 			validator = getRemoteValidator(handlerIdentifier, TestCaseUtils.getStepProperties(verify.getProperty(), resolver), scope.getContext().getSessionId());
 		} else {
 			// This is a local validator.
+			handlerIdentifier = AliasManager.getInstance().resolveValidationHandler(handlerIdentifier);
 			validator = ModuleManager.getInstance().getValidationHandler(handlerIdentifier);
 		}
 		if (validator == null) {
@@ -84,7 +86,8 @@ public class VerifyProcessor implements IProcessor {
 			Map<String, TypedParameter> expectedParamsMap = constructExpectedParameterMap(validatorDefinition);
 			//Evaluate each expression to supply the inputs
 			for (Binding inputExpression : inputExpressions) {
-				TypedParameter expectedParam = expectedParamsMap.get(inputExpression.getName());
+				String inputName = AliasManager.getInstance().resolveValidationHandlerInput(handlerIdentifier, inputExpression.getName());
+				TypedParameter expectedParam = expectedParamsMap.get(inputName);
 				DataType result;
 				if (expectedParam == null) {
 					result = exprHandler.processExpression(inputExpression);
@@ -92,7 +95,7 @@ public class VerifyProcessor implements IProcessor {
 					result = exprHandler.processExpression(inputExpression, expectedParam.getType());
 				}
 				//Add result to the input map
-				inputs.put(inputExpression.getName(), result);
+				inputs.put(inputName, result);
 			}
 		} else {
 			List<TypedParameter> expectedParams = new ArrayList<>();

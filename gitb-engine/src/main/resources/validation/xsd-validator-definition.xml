@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <module xmlns="http://www.gitb.com/core/v1/"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        id="XSDValidator" uri="urn:com:gitb:validation:XSDValidator" xsi:type="ValidationModule">
+        id="XsdValidator" uri="urn:com:gitb:validation:XSDValidator" xsi:type="ValidationModule">
     <metadata>
         <name>XSD Validator</name>
         <version>1.0</version>
     </metadata>
     <inputs>
-        <param type="schema" use="R" name="xsddocument" desc="XSD Document" />
-        <param type="object" use="R" name="xmldocument" desc="XML Document to be validated" />
+        <param type="schema" name="xsd" desc="XSD Document" />
+        <param type="object" name="xml" desc="XML Document to be validated" />
         <param type="boolean" use="O" name="showValidationArtefacts" desc="Whether or not to display the validation artefact(s) used in the resulting report (default is yes)."/>
         <param type="boolean" use="O" name="sortBySeverity" desc="Whether sorting of findings should be done by severity or by location (the default)."/>
     </inputs>
