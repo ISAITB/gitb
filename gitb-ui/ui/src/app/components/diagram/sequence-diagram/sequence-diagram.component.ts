@@ -1,9 +1,9 @@
-import { Component, Input, OnInit } from '@angular/core';
-import { ActorInfo } from '../actor-info';
-import { StepData } from '../step-data';
-import { filter, find, map, flatten, uniq, forEach, indexOf, minBy, maxBy, sortBy } from 'lodash'
-import { Constants } from 'src/app/common/constants';
-import { DiagramEvents } from '../diagram-events';
+import {Component, Input, OnInit} from '@angular/core';
+import {ActorInfo} from '../actor-info';
+import {StepData} from '../step-data';
+import {filter, find, flatten, forEach, indexOf, map, maxBy, minBy, sortBy, uniq} from 'lodash';
+import {Constants} from 'src/app/common/constants';
+import {DiagramEvents} from '../diagram-events';
 
 @Component({
     selector: 'app-sequence-diagram',
@@ -27,11 +27,11 @@ export class SequenceDiagramComponent implements OnInit {
   constructor() { }
 
   ngOnInit(): void {
-    this.events.subscribeToTestLoad(((event: { testId: number }) => {
+    this.events.subscribeToTestLoad((event: { testId: number }) => {
       if (event.testId+'' == this.test) {
         this.updateState()
       }
-    }).bind(this))
+    })
     this.updateState()
   }
 
@@ -48,7 +48,7 @@ export class SequenceDiagramComponent implements OnInit {
       {id: Constants.ADMINISTRATOR_ACTOR_ID, name: Constants.ADMINISTRATOR_ACTOR_NAME}
     ])
     if (steps != undefined) {
-      this.messages = this.extractSteps(steps, this.actorInfo)
+      this.messages = this.extractSteps(steps, this.actorInfo, 0)
       this.actors = this.extractActors(this.messages, this.actorInfo)
       this.setStepIndexes(this.messages)
     }
@@ -66,28 +66,28 @@ export class SequenceDiagramComponent implements OnInit {
       (step.type == 'flow' && (filter(step.threads, ((thread) => (filter(thread, this.stepFilter.bind(this))).length > 0))).length > 0)
   }
 
-  processStep(step: StepData, actorInfo: ActorInfo[]) {
-    step.level = (step.id.split('.')).length
+  processStep(step: StepData, actorInfo: ActorInfo[], currentLevel: number) {
+    step.level = currentLevel
     if (step.type == 'verify' || step.type == 'process' || step.type == 'exit') {
       step.from = Constants.TEST_ENGINE_ACTOR_ID
       step.to = Constants.TEST_ENGINE_ACTOR_ID
     } else if (step.type == 'group') {
-      step.steps = this.extractSteps(step.steps, actorInfo)
+      step.steps = this.extractSteps(step.steps, actorInfo, currentLevel)
     } else if (step.type == 'loop') {
-      step.steps = this.extractSteps(step.steps, actorInfo)
+      step.steps = this.extractSteps(step.steps, actorInfo, currentLevel)
       if (step.sequences != undefined) {
         for (let sequence of step.sequences) {
-          this.processStep(sequence, actorInfo)
+          this.processStep(sequence, actorInfo, currentLevel + 1)
         }
       }
     } else if (step.type == 'decision') {
-      step.then = this.extractSteps(step.then, actorInfo)
+      step.then = this.extractSteps(step.then, actorInfo, currentLevel)
       if (step.else) {
-        step.else = this.extractSteps(step.else, actorInfo)
+        step.else = this.extractSteps(step.else, actorInfo, currentLevel)
       }
     } else if (step.type == 'flow') {
       for (let thread of step.threads!) {
-        this.extractSteps(thread, actorInfo)
+        this.extractSteps(thread, actorInfo, currentLevel)
       }
     } else if (step.type == 'interact') {
       const hasRequests = this.hasRequests(step.interactions)
@@ -119,12 +119,12 @@ export class SequenceDiagramComponent implements OnInit {
     return false
   }
 
-  extractSteps(s: StepData[]|undefined, actorInfo: ActorInfo[]) {
+  extractSteps(s: StepData[]|undefined, actorInfo: ActorInfo[], currentLevel: number) {
     let results: StepData[] = []
     if (s != undefined) {
       let steps = filter(s, this.stepFilter.bind(this))
       for (let step of steps) {
-        results = results.concat(this.processStep(step, actorInfo))
+        results = results.concat(this.processStep(step, actorInfo, currentLevel + 1))
       }
     }
     return results
@@ -207,8 +207,7 @@ export class SequenceDiagramComponent implements OnInit {
           return []
         }
       })
-      let flattened = uniq(flatten(collection))
-      return flattened
+      return uniq(flatten(collection))
     }
   }
 

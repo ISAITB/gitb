@@ -103,9 +103,6 @@ export class SequenceDiagramMessageComponent implements OnInit, OnDestroy {
   }
 
   calculateDepth(message: StepData): number {
-    // if (message.level == undefined) {
-    //   message.level = (message.id.split('.')).length
-    // }
     if (message.type == 'loop') {
       let childDepths = map(message.steps, this.calculateDepth.bind(this))
       return (max(childDepths)!) + 1
