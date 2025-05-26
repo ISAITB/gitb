@@ -67,7 +67,7 @@
         <version.org.jsoup>1.15.4</version.org.jsoup>
         <version.jena>5.2.0</version.jena>
         <version.topbraid>1.4.4</version.topbraid>
-        <version.json-schema-validator>1.5.6</version.json-schema-validator>
+        <version.json-schema-validator>1.5.7</version.json-schema-validator>
         <!-- Other version overrides - START -->
         <version.pdfbox>2.0.31</version.pdfbox>
         <version.batik>1.17</version.batik>
