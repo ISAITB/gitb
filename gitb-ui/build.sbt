@@ -147,12 +147,25 @@ licenseReportTitle := "THIRD_PARTY_LICENCES"
  */
 
 /*
- * Dependency checking is disabled given that the sbt-dependency-check is not updated for the NVP 9+ API.
- * To run the dependency check the simplest and fastest approach is to do a sbt dist and then extract the
- * libraries from the produced archive and pass them to the ODC CLI. The settings to include for a ODC run
- * with the sbt-dependency-check would be as follows.
+ * Dependency check - START
  *
- *   .settings(dependencyCheckOSSIndexWarnOnlyOnRemoteErrors := Some(true))
- *   .settings(dependencyCheckFailBuildOnCVSS := 0)
- *   .settings(dependencyCheckSuppressionFile := Some(file("project/owasp-suppressions.xml")))
+ * Dependency checking via the sbt-dependency-check plugin is disabled as it is not updated for the NVP 9+ API.
+ * To run the dependency check the simplest and fastest approach is to produce the list of dependency JARs and
+ * use the ODC command line tool.
+ */
+
+// Task to copy all project dependencies to the target/dependency-jars folder.
+TaskKey[Unit]("copyDependencies") := {
+  val outputDir = target.value / "dependency-jars"
+  IO.createDirectory(outputDir)
+  val cp = (Compile / dependencyClasspath).value
+  cp.foreach { attributed =>
+    val jar = attributed.data
+    if (jar.isFile && jar.getName.endsWith(".jar")) {
+      IO.copyFile(jar, outputDir / jar.getName)
+    }
+  }
+}
+/*
+ * Dependency check - END
  */
