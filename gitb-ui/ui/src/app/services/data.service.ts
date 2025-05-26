@@ -1242,15 +1242,7 @@ export class DataService {
       /*
        * Append the public context root to the resource lookup URL.
        */
-      if (path.startsWith('/')) {
-        if (publicContextPath == '/') {
-          return path
-        } else {
-          return publicContextPath + path.substring(1)
-        }
-      } else {
-        return publicContextPath + path
-      }
+      return this.joinWithSlash(publicContextPath, path)
     } else {
       /*
        * This is an API call path. These routes contain by default the application's internal context path.
@@ -1258,10 +1250,28 @@ export class DataService {
        */
       const internalContextPath = this.elementValueOrDefault('ctx-int-div', '/')
       if (publicContextPath != internalContextPath) {
-        return publicContextPath + path.substring(internalContextPath.length)
+        return this.joinWithSlash(publicContextPath, path.substring(internalContextPath.length))
       } else {
         return path
       }
+    }
+  }
+
+  private joinWithSlash(left: string, right: string): string {
+    let leftEndsWithSlash = false
+    if (left.length > 0 && left.charAt(left.length - 1) == '/') {
+      leftEndsWithSlash = true
+    }
+    let rightStartsWithSlash = false
+    if (right.length > 0 && right.charAt(0) == '/') {
+      rightStartsWithSlash = true
+    }
+    if (leftEndsWithSlash && !rightStartsWithSlash || !leftEndsWithSlash && rightStartsWithSlash) {
+      return left + right
+    } else if (leftEndsWithSlash && rightStartsWithSlash) {
+      return left + right.substring(1)
+    } else {
+      return left + "/" + right
     }
   }
 

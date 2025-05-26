@@ -164,10 +164,11 @@ class Application @Inject() (cc: ControllerComponents,
   }
 
   private def removePublicRootPath(pathWithoutProtocol: String): String = {
+    val pathWithoutTrailingSlash = StringUtils.removeEnd(pathWithoutProtocol, "/")
     if (Configurations.PUBLIC_CONTEXT_ROOT == "/") {
-      StringUtils.removeEnd(pathWithoutProtocol, "/")
+      pathWithoutTrailingSlash
     } else {
-      StringUtils.removeEnd(StringUtils.removeEnd(pathWithoutProtocol, Configurations.PUBLIC_CONTEXT_ROOT), "/")
+      StringUtils.removeEnd(pathWithoutTrailingSlash, Configurations.PUBLIC_CONTEXT_ROOT)
     }
   }
 
