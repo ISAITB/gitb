@@ -43,12 +43,13 @@ public class TestCaseScope {
 	private final String testSuiteContext;
 	private final String scopeId;
 	private String qualifiedScopeId;
+	private final boolean isolated;
 
 	public TestCaseScope(TestCaseContext context, Imports imports, Namespaces namespaces) {
-		this(null, context, imports, namespaces, null);
+		this(null, context, imports, namespaces, null, false);
 	}
 
-	private TestCaseScope(String scopeId, TestCaseContext context, Imports imports, Namespaces namespaces, String testSuiteContext) {
+	private TestCaseScope(String scopeId, TestCaseContext context, Imports imports, Namespaces namespaces, String testSuiteContext, boolean isolated) {
 		this.scopeId = scopeId;
 		this.context   = context;
 		this.scopeImports = imports;
@@ -57,6 +58,7 @@ public class TestCaseScope {
 		this.resolvedArtifacts   = new ConcurrentHashMap<>();
 		this.children  = new CopyOnWriteArrayList<>();
 		this.testSuiteContext = testSuiteContext;
+		this.isolated = isolated;
 	}
 
 	public TestCaseScope getParent() {
@@ -90,14 +92,14 @@ public class TestCaseScope {
 	}
 
 	public TestCaseScope createChildScope() {
-		return createChildScope(this.scopeId, this.scopeImports, this.scopeNamespaces, this.testSuiteContext);
+		return createChildScope(this.scopeId, this.scopeImports, this.scopeNamespaces, this.testSuiteContext, false);
 	}
 
-	public TestCaseScope createChildScope(String scopeId, Imports imports, Namespaces namespaces, String testSuiteContext) {
+	public TestCaseScope createChildScope(String scopeId, Imports imports, Namespaces namespaces, String testSuiteContext, boolean isolated) {
 		if (testSuiteContext == null && this.testSuiteContext != null) {
 			testSuiteContext = this.testSuiteContext;
 		}
-		TestCaseScope child = new TestCaseScope(scopeId, context, imports, namespaces, testSuiteContext);
+		TestCaseScope child = new TestCaseScope(scopeId, context, imports, namespaces, testSuiteContext, isolated);
 		child.parent = this;
 		children.add(child);
 		return child;
@@ -148,15 +150,16 @@ public class TestCaseScope {
 	}
 
 	public ScopedVariable getVariable(String name) {
-		/*
-		 * Up to release 1.25.2 and since the introduction of using shared scriptlets from other test suites, the searching of
-		 * ancestor scopes was not made in case of a remotely loaded scriptlet (established by checking if testSuiteContext
-		 * was not null). The only exception was in case within a remote scriptlet we would be looking up a built-in property
-		 * (see isBuiltInProperty()). There no longer seems however to be a need for a restriction that does not allow
-		 * remotely loaded scriptlets to simply continue looking up the variable in question in the parent scope (if not
-		 * found locally).
-		 */
 		return getVariable(name, true);
+	}
+
+	public ScopedVariable getVariableWhileRespectingIsolation(String name) {
+		/*
+		 * If this scope is isolated, variable lookups that would lead to assignments should not look into parent scopes.
+		 * The purpose of this is to avoid mutating unwillingly the state of a parent scope if an assignment is made to
+		 * a variable with the same name.
+		 */
+		return getVariable(name, !isolated);
 	}
 
 	public Map<String, String> getNamespaceDefinitions() {

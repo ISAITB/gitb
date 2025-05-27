@@ -139,13 +139,22 @@ public class VariableResolver implements XPathVariableResolver{
     }
 
     public Optional<DataType> resolveVariable(String variableExpression, boolean tolerateMissing) {
+        return resolveVariable(variableExpression, tolerateMissing, false);
+    }
+
+    public Optional<DataType> resolveVariable(String variableExpression, boolean tolerateMissing, boolean respectScopeIsolation) {
         Optional<DataType> result = Optional.empty();
         var variableName = extractVariableNameFromExpression(variableExpression);
         try {
             String containerVariableName = variableName.getLeft();
             //The remaining part
             String indexOrKeyExpression = variableName.getRight();
-            TestCaseScope.ScopedVariable scopeVariable = scope.getVariable(containerVariableName);
+            TestCaseScope.ScopedVariable scopeVariable;
+            if (respectScopeIsolation) {
+                scopeVariable = scope.getVariableWhileRespectingIsolation(containerVariableName);
+            } else {
+                scopeVariable = scope.getVariable(containerVariableName);
+            }
             if (scopeVariable == null || !scopeVariable.isDefined()) {
                 // No variable could be matched.
                 if (keepMissingExpressions) {

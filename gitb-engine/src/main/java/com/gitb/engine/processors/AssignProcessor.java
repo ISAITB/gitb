@@ -31,8 +31,11 @@ public class AssignProcessor implements IProcessor {
     public TestStepReportType process(Object object) throws Exception {
 	    Assign assign = (Assign) object;
 		String toExpression = assign.getTo();
+		boolean respectScopeIsolation = false;
 		if (!toExpression.startsWith("$")) {
 			toExpression = "$" + toExpression;
+			// When defined without a "$" prefix this may lead to a new variable. In this case we must respect scope isolation (in case of scriptlets).
+			respectScopeIsolation = true;
 		}
 	    Matcher matcher = MAP_APPEND_EXPRESSION_PATTERN.matcher(toExpression);
 	    VariableResolver variableResolver = new VariableResolver(scope);
@@ -42,7 +45,7 @@ public class AssignProcessor implements IProcessor {
 		    String containerVariableExpression = matcher.group(1);
 		    //The remaining part
 		    String keyExpression = matcher.group(2);
-			DataType lValue = variableResolver.resolveVariable(containerVariableExpression, true).orElse(null);
+			DataType lValue = variableResolver.resolveVariable(containerVariableExpression, true, respectScopeIsolation).orElse(null);
 			if (lValue == null) {
 				// New variable
 				lValue = createIntermediateMaps(variableResolver, containerVariableExpression);
@@ -97,7 +100,7 @@ public class AssignProcessor implements IProcessor {
 	    } else {
 	    	// Regular assignment.
 			String expectedReturnType = assign.getType();
-			DataType lValue = variableResolver.resolveVariable(toExpression, true).orElse(null);
+			DataType lValue = variableResolver.resolveVariable(toExpression, true, respectScopeIsolation).orElse(null);
 			if (lValue != null) {
 				// Existing variable
 				if (lValue instanceof ListType && assign.isAppend()) {

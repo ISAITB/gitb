@@ -12,6 +12,7 @@ import com.gitb.engine.messaging.handlers.layer.AbstractMessagingHandler;
 import com.gitb.engine.processing.ProcessingContext;
 import com.gitb.engine.remote.messaging.RemoteMessagingModuleClient;
 import com.gitb.engine.utils.ScriptletCache;
+import com.gitb.engine.utils.ScriptletInfo;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.IMessagingHandler;
@@ -573,7 +574,7 @@ public class TestCaseContext {
             	if (testSuiteContextToUse == null && testSuiteContext != null) {
 					testSuiteContextToUse = testSuiteContext;
 				}
-	            Scriptlet scriptlet = getScriptlet(testSuiteContextToUse, ((CallStep) step).getPath(), true);
+	            Scriptlet scriptlet = getScriptlet(testSuiteContextToUse, ((CallStep) step).getPath(), true).scriptlet();
 				scriptletCallStack.addLast(Pair.of((CallStep) step, scriptlet));
 				transactions.addAll(createTransactionInfo(scriptlet.getSteps(), testSuiteContextToUse, resolver, scriptletCallStack));
 				scriptletCallStack.removeLast();
@@ -598,7 +599,7 @@ public class TestCaseContext {
 		return nonSutActor.map(TestRole::getId).orElseThrow(() -> new IllegalStateException("Unable to determine default simulated actor."));
 	}
 
-    public Scriptlet getScriptlet(String testSuiteContext, String path, boolean required) {
+    public ScriptletInfo getScriptlet(String testSuiteContext, String path, boolean required) {
     	return scriptletCache.getScriptlet(testSuiteContext, path, testCase, required);
 	}
 

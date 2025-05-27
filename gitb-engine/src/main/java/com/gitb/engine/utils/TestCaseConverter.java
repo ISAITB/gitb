@@ -384,7 +384,7 @@ public class TestCaseConverter {
         } else {
             scriptletCallStack.push(callKey);
         }
-        Scriptlet scriptlet = scriptletCache.getScriptlet(testSuiteContext, callStep.getPath(), testCase, true);
+        Scriptlet scriptlet = scriptletCache.getScriptlet(testSuiteContext, callStep.getPath(), testCase, true).scriptlet();
         scriptletStepStack.addLast(Pair.of(callStep, scriptlet));
         scriptletStepHiddenAttributeStack.addLast(hiddenValueToUse(callStep.getHidden(), false));
         Sequence sequence = convertSequence(testCaseId, id, scriptlet.getSteps());

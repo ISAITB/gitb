@@ -107,8 +107,9 @@ public class TestCaseUtils {
         return repository.getScriptlet(from, testCaseId, scriptletPath);
     }
 
-    public static Scriptlet lookupScriptlet(String from, String path, com.gitb.tdl.TestCase testCase, boolean required) {
+    public static ScriptletInfo lookupScriptlet(String from, String path, com.gitb.tdl.TestCase testCase, boolean required) {
         Scriptlet foundScriptlet = null;
+        boolean standalone = true;
         if (StringUtils.isBlank(path)) {
             throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "No scriptlet path was provided."));
         }
@@ -122,6 +123,7 @@ public class TestCaseUtils {
                 for (Scriptlet scriptlet: testCase.getScriptlets().getScriptlet()) {
                     if (scriptlet.getId().equals(scriptletPath)) {
                         foundScriptlet = scriptlet;
+                        standalone = false;
                         break;
                     }
                 }
@@ -140,7 +142,7 @@ public class TestCaseUtils {
                 }
             }
         }
-        return foundScriptlet;
+        return new ScriptletInfo(foundScriptlet, standalone);
     }
 
     public static void applyStopOnErrorSemantics(TestCaseSteps steps) {
