@@ -259,10 +259,24 @@ public class CollectionUtils extends AbstractProcessingHandler {
                 if (onlyMissing) {
                     if (caseInsensitive) {
                         Set<String> toListValues = toList.stream().map(value -> ((String) value.convertTo(DataType.STRING_DATA_TYPE).getValue()).toLowerCase()).collect(Collectors.toSet());
-                        addCheck = (item) -> !toListValues.contains(((String) item.convertTo(DataType.STRING_DATA_TYPE).getValue()).toLowerCase());
+                        addCheck = (item) -> {
+                            String itemValue = ((String) item.convertTo(DataType.STRING_DATA_TYPE).getValue()).toLowerCase();
+                            boolean shouldAdd = !toListValues.contains(itemValue);
+                            if (shouldAdd) {
+                                toListValues.add(itemValue); // Make sure we don't add duplicates coming from the fromList.
+                            }
+                            return shouldAdd;
+                        };
                     } else {
                         Set<String> toListValues = toList.stream().map(value -> (String) value.convertTo(DataType.STRING_DATA_TYPE).getValue()).collect(Collectors.toSet());
-                        addCheck = (item) -> !toListValues.contains((String) item.convertTo(DataType.STRING_DATA_TYPE).getValue());
+                        addCheck = (item) -> {
+                            String itemValue = (String) item.convertTo(DataType.STRING_DATA_TYPE).getValue();
+                            boolean shouldAdd = !toListValues.contains(itemValue);
+                            if (shouldAdd) {
+                                toListValues.add(itemValue); // Make sure we don't add duplicates coming from the fromList.
+                            }
+                            return shouldAdd;
+                        };
                     }
                 } else {
                     addCheck = (item) -> true;
@@ -278,10 +292,24 @@ public class CollectionUtils extends AbstractProcessingHandler {
                 if (onlyMissing) {
                     if (caseInsensitive) {
                         // Create string representation of toMap's keys
-                        Set<String> lowerCaseKeys = toMap.keySet().stream().map(String::toLowerCase).collect(Collectors.toSet());
-                        addCheck = (itemKey) -> !lowerCaseKeys.contains(itemKey.toLowerCase());
+                        Set<String> toKeys = toMap.keySet().stream().map(String::toLowerCase).collect(Collectors.toSet());
+                        addCheck = (itemKey) -> {
+                            String itemKeyValue = itemKey.toLowerCase();
+                            boolean shouldAdd = !toKeys.contains(itemKeyValue);
+                            if (shouldAdd) {
+                                toKeys.add(itemKeyValue);
+                            }
+                            return shouldAdd;
+                        };
                     } else {
-                        addCheck = (itemKey) -> !toMap.containsKey(itemKey);
+                        Set<String> toKeys = new HashSet<>(toMap.keySet());
+                        addCheck = (itemKey) -> {
+                            boolean shouldAdd = !toKeys.contains(itemKey);
+                            if (shouldAdd) {
+                                toKeys.add(itemKey);
+                            }
+                            return shouldAdd;
+                        };
                     }
                 } else {
                     addCheck = (itemKey) -> true;
