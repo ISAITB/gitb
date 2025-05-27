@@ -1166,12 +1166,17 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
               val organisationIdForSession = result.get._2
               val communityIdForSession = result.get._3
               if (organisationIdForSession.isDefined && communityIdForSession.isDefined) {
-                if (requireOwnTestSessionIfNotAdmin) {
-                  // The session must belong to the user's organisation.
-                  Future.successful(userInfo.organization.get.id == organisationIdForSession.get)
+                if (userInfo.organization.get.id == organisationIdForSession.get) {
+                  // The session belongs to the user's organisation.
+                  Future.successful(true)
                 } else {
-                  // The session must belong to the user's community.
-                  organisationUserCanViewCommunityContent(request, userInfo, communityIdForSession.get)
+                  if (requireOwnTestSessionIfNotAdmin) {
+                    // The session must belong to the user's organisation.
+                    Future.successful(false)
+                  } else {
+                    // The session must belong to the user's community.
+                    organisationUserCanViewCommunityContent(request, userInfo, communityIdForSession.get)
+                  }
                 }
               } else {
                 // This is an obsolete session no longer visible to the user.
