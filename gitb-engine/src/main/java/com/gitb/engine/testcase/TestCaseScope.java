@@ -148,10 +148,15 @@ public class TestCaseScope {
 	}
 
 	public ScopedVariable getVariable(String name) {
-		// When we have a scope from another test suite (i.e. a scriptlet) we should not propagate variable searches to parent scopes.
-		// The only exception are the built-in maps defined in the parent context.
-		boolean searchAncestors = testSuiteContext == null || isBuiltInProperty(name);
-		return getVariable(name, searchAncestors);
+		/*
+		 * Up to release 1.25.2 and since the introduction of using shared scriptlets from other test suites, the searching of
+		 * ancestor scopes was not made in case of a remotely loaded scriptlet (established by checking if testSuiteContext
+		 * was not null). The only exception was in case within a remote scriptlet we would be looking up a built-in property
+		 * (see isBuiltInProperty()). There no longer seems however to be a need for a restriction that does not allow
+		 * remotely loaded scriptlets to simply continue looking up the variable in question in the parent scope (if not
+		 * found locally).
+		 */
+		return getVariable(name, true);
 	}
 
 	public Map<String, String> getNamespaceDefinitions() {
