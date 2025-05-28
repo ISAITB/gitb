@@ -21,8 +21,7 @@
                                     <li role="menuitem"><a class="dropdown-item" href (click)="stopAll(); $event.preventDefault()">Stop all tests</a></li>
                                 </ul>
                             </div>
-                        }
-                        @if (testsToExecute.length == 1) {
+                        } @else if (testsToExecute.length == 1) {
                             <button type="button" class="btn btn-secondary" [disabled]="!firstTestStarted || stopped || reload" (click)="stop(session!)">Stop</button>
                         }
                         <button type="button" class="btn btn-secondary" [disabled]="!firstTestStarted" (click)="reinitialise()">Reset</button>

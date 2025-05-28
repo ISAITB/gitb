@@ -1074,15 +1074,12 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   }
 
   stop(session: string, force?: boolean) {
-    let signalStop = force == true
-    if (this.started && !this.stopped) {
-      this.stopped = true
-      if (this.testsToExecute.length == 1) {
-        this.allStopped = true
-      }
-      this.started = false
-      signalStop = true
+    let signalStop = force == true || (this.started && !this.stopped)
+    this.stopped = true
+    if (this.testsToExecute.length == 1) {
+      this.allStopped = true
     }
+    this.started = false
     if (signalStop) {
       this.testService.stop(session).subscribe(() => {
         this.flushPendingMessages()
