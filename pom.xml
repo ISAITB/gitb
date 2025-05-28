@@ -59,7 +59,7 @@
         <version.commonsCollections>4.4</version.commonsCollections>
         <version.xmlUnit>2.10.0</version.xmlUnit>
         <version.jerseyClient>1.19.4</version.jerseyClient>
-        <version.beanUtils>1.9.4</version.beanUtils>
+        <version.beanUtils>1.11.0</version.beanUtils>
         <version.freeMarker>2.3.32</version.freeMarker>
         <version.com.openhtmltopdf>1.0.10</version.com.openhtmltopdf>
         <version.org.jsoup>1.15.4</version.org.jsoup>
