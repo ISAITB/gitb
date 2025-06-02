@@ -53,9 +53,7 @@ Library licences are organised in three sections:
 | Eclipse Distribution License - v1.0 | Old JAXB Runtime | com.sun.xml.bind:jaxb-impl | 4.0.4 | https://eclipse-ee4j.github.io/jaxb-ri/ |
 | Eclipse Distribution License - v1.0 | Jakarta SOAP Implementation | com.sun.xml.messaging.saaj:saaj-impl | 3.0.4 | https://projects.eclipse.org/projects/ee4j/metro-saaj/saaj-impl |
 | Apache License, Version 2.0 | config | com.typesafe:config | 1.4.3 | https://github.com/lightbend/config |
-| Apache License, Version 2.0 | Apache Commons BeanUtils | commons-beanutils:commons-beanutils | 1.9.4 | https://commons.apache.org/proper/commons-beanutils/ |
 | Apache License, Version 2.0 | Apache Commons Codec | commons-codec:commons-codec | 1.17.1 | https://commons.apache.org/proper/commons-codec/ |
-| Apache License, Version 2.0 | Apache Commons Collections | commons-collections:commons-collections | 3.2.2 | http://commons.apache.org/collections/ |
 | Apache License, Version 2.0 | Apache Commons FileUpload | commons-fileupload:commons-fileupload | 1.5 | https://commons.apache.org/proper/commons-fileupload/ |
 | Apache License, Version 2.0 | Apache Commons IO | commons-io:commons-io | 2.17.0 | https://commons.apache.org/proper/commons-io/ |
 | Apache License, Version 2.0 | Apache Commons Logging | commons-logging:commons-logging | 1.2 | http://commons.apache.org/proper/commons-logging/ |
@@ -467,9 +465,11 @@ Library licences are organised in three sections:
 | MIT                             | codemirror                        | 5.65.18           | git+https://github.com/codemirror/CodeMirror.git            |
 | MIT                             | file-saver                        | 2.0.5             | git+https://github.com/eligrey/FileSaver.js.git             |
 | MIT                             | lodash                            | 4.17.21           | git+https://github.com/lodash/lodash.git                    |
+| MIT                             | marked                            | 15.0.12           | git://github.com/markedjs/marked.git                        |
 | MIT                             | ngx-bootstrap                     | 19.0.2            | git+ssh://git@github.com/valor-software/ngx-bootstrap.git   |
 | MIT                             | ngx-color-picker                  | 17.0.0            | git+https://github.com/zefoy/ngx-color-picker.git           |
 | MIT                             | ngx-cookie-service                | 19.1.0            | git+https://github.com/stevermeister/ngx-cookie-service.git |
+| MIT                             | ngx-markdown                      | 19.1.1            | git+https://github.com/jfcere/ngx-markdown.git              |
 | Apache-2.0                      | rxjs                              | 7.8.1             | git+https://github.com/reactivex/rxjs.git                   |
 | MIT                             | tinymce                           | 6.8.4             | git+https://github.com/tinymce/tinymce.git                  |
 | MIT                             | zone.js                           | 0.15.0            | git://github.com/angular/angular.git                        |
