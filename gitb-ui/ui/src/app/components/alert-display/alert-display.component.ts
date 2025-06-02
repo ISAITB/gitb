@@ -12,6 +12,7 @@ export class AlertDisplayComponent {
   @Input() alerts?: Alert[]
   @Input() outerClass = 'row'
   @Input() innerClass = ''
+  @Input() dismissible = true
 
   constructor() { }
 

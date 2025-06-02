@@ -1,0 +1,24 @@
+<div class="page">
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">
+                Core services
+            </div>
+        </div>
+        @if (overviewMessage != undefined) {
+            <div class="status-container">
+                <div class="alert alert-info mb-0" [ngClass]="{'alert-success': overviewHealth === HealthStatus.OK, 'alert-danger': overviewHealth === HealthStatus.ERROR, 'alert-warning': overviewHealth === HealthStatus.WARNING, 'alert-info': overviewHealth === HealthStatus.INFO }">
+                    {{ overviewMessage }}
+                </div>
+            </div>
+        }
+        <div class="checks-container">
+            @for (card of cards; track card.type) {
+                <app-service-health-card #serviceCard [info]="card" (updated)="cardUpdated()"></app-service-health-card>
+            }
+        </div>
+        <div class="card-footer button-container">
+            <button class="btn btn-secondary" type="button" (click)="checkAllServices()" [pending]="checkAllPending">Check all</button>
+        </div>
+    </div>
+</div>

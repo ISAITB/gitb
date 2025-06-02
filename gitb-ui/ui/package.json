@@ -32,9 +32,11 @@
     "codemirror": "^5.65.9",
     "file-saver": "^2.0.5",
     "lodash": "^4.17.21",
+    "marked": "^15.0.0",
     "ngx-bootstrap": "19.0.2",
     "ngx-color-picker": "17.0.0",
     "ngx-cookie-service": "19.1.0",
+    "ngx-markdown": "^19.1.1",
     "rxjs": "7.8.1",
     "tinymce": "6.8.4",
     "zone.js": "0.15.0"

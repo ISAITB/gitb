@@ -385,6 +385,7 @@ POST    /api/repository/export/settings                          @controllers.Re
 GET     /api/repository/export/stylesheet                        @controllers.RepositoryService.getReportStylesheet(community_id: Long)
 
 GET     /api/repository/resource/:test_id/*file                 @controllers.RepositoryService.getTestSuiteResource(test_id: String, file: String)
+GET     /api/repository/healthCheck                             @controllers.RepositoryService.healthCheck()
 
 POST    /api/communities/export/:id                             @controllers.RepositoryService.exportCommunity(id: Long)
 POST    /api/communities/export/admin/:id                       @controllers.RepositoryService.exportCommunityAndSettings(id: Long)
@@ -483,6 +484,16 @@ DELETE  /api/themes/:themeId                                     @controllers.Sy
 POST    /api/themes/:themeId/activate                            @controllers.SystemConfigurationService.activateTheme(themeId: Long)
 GET     /api/themes/resource/preview                             @controllers.SystemConfigurationService.previewThemeResource()
 POST    /api/system/configs/testEmail                            @controllers.SystemConfigurationService.testEmailSettings()
+
+# Service health check API
+GET     /api/health/antivirus                                    @controllers.HealthCheckService.checkAntivirusService()
+GET     /api/health/email                                        @controllers.HealthCheckService.checkEmailService()
+GET     /api/health/tsa                                          @controllers.HealthCheckService.checkTrustedTimestampService()
+GET     /api/health/ws                                           @controllers.HealthCheckService.checkUserInterfaceCommunication
+GET     /api/health/ws/error                                     @controllers.HealthCheckService.checkUserInterfaceCommunicationErrorDetails()
+GET     /api/health/ws/ok                                        @controllers.HealthCheckService.checkUserInterfaceCommunicationSuccessDetails()
+GET     /api/health/engine                                       @controllers.HealthCheckService.checkTestEngineCommunication()
+GET     /api/health/callbacks                                    @controllers.HealthCheckService.checkTestEngineCallbacks()
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)

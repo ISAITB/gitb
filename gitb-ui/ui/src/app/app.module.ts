@@ -2,6 +2,7 @@ import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { NgModule } from '@angular/core';
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { MarkdownModule } from 'ngx-markdown';
 import { CookieService } from 'ngx-cookie-service';
 import { ColorPickerModule } from 'ngx-color-picker';
 import { AppRoutingModule } from './app-routing.module';
@@ -205,6 +206,10 @@ import { AccountCardComponent } from './components/account-card/account-card.com
 import { ResourceManagementTabComponent } from './components/resource-management-tab/resource-management-tab.component';
 import { CommunitySessionDashboardComponent } from './pages/organisation/community-session-dashboard/community-session-dashboard.component';
 import { PagingControlsComponent } from './components/paging-controls/paging-controls.component';
+import { ServiceHealthDashboardComponent } from './pages/service-health-dashboard/service-health-dashboard.component';
+import { ServiceHealthCardComponent } from './components/service-health-card/service-health-card.component';
+import { ServiceHealthModalComponent } from './modals/service-health-modal/service-health-modal.component';
+import { ServiceHealthIconComponent } from './components/service-health-icon/service-health-icon.component';
 
 @NgModule({ declarations: [
         AppComponent,
@@ -393,25 +398,31 @@ import { PagingControlsComponent } from './components/paging-controls/paging-con
         AccountCardComponent,
         ResourceManagementTabComponent,
         CommunitySessionDashboardComponent,
-        PagingControlsComponent
+        PagingControlsComponent,
+        ServiceHealthDashboardComponent,
+        ServiceHealthCardComponent,
+        ServiceHealthModalComponent,
+        ServiceHealthIconComponent
     ],
     bootstrap: [AppComponent], imports: [ColorPickerModule,
-        BrowserModule,
-        BrowserAnimationsModule,
-        EditorModule,
-        FormsModule,
-        AppRoutingModule,
-        DragDropModule,
-        SimpleNotificationsModule.forRoot(),
-        ModalModule.forRoot(),
-        TooltipModule.forRoot(),
-        AlertModule.forRoot(),
-        CollapseModule.forRoot(),
-        BsDatepickerModule.forRoot(),
-        CodemirrorModule,
-        BsDropdownModule.forRoot(),
-        PopoverModule.forRoot(),
-        TabsModule.forRoot()], providers: [
+    BrowserModule,
+    BrowserAnimationsModule,
+    EditorModule,
+    FormsModule,
+    AppRoutingModule,
+    DragDropModule,
+    SimpleNotificationsModule.forRoot(),
+    ModalModule.forRoot(),
+    TooltipModule.forRoot(),
+    AlertModule.forRoot(),
+    CollapseModule.forRoot(),
+    BsDatepickerModule.forRoot(),
+    CodemirrorModule,
+    BsDropdownModule.forRoot(),
+    PopoverModule.forRoot(),
+    TabsModule.forRoot(),
+    MarkdownModule.forRoot()
+  ], providers: [
         CookieService,
         { provide: TINYMCE_SCRIPT_SRC, useValue: 'tinymce/tinymce.min.js' },
         provideHttpClient(withInterceptorsFromDi())

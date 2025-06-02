@@ -117,4 +117,12 @@ class TestbedBackendClient @Inject() (implicit ec: ExecutionContext) {
     }
   }
 
+  def healthCheck(healthCheckType: String): Future[String] = {
+    val request = new GetActorDefinitionRequest()
+    request.setActorId(healthCheckType)
+    Future {
+      service().getActorDefinition(request).getActor.getDesc
+    }
+  }
+
 }

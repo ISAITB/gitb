@@ -46,5 +46,6 @@ export enum BreadcrumbType {
     theme,
     conformanceSnapshot,
     communitySessions,
+    serviceHealthDashboard,
 
 }

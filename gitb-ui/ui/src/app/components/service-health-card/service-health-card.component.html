@@ -1,0 +1,5 @@
+<div class="health-card-container" [class.hovering]="hovering" (mouseenter)="hovering = (info.info != undefined)" (mouseleave)="hovering = false" [class.actionable]="info.info != undefined" (click)="showDetails()">
+    <div class="health-card-title">{{info.title}}</div>
+    <div class="health-card-status"><app-service-health-icon [status]="info.info?.status"></app-service-health-icon></div>
+    <div class="health-card-action"><div><i class="fa-solid fa-magnifying-glass"></i></div></div>
+</div>

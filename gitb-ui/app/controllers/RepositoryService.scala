@@ -108,6 +108,12 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
     }
 	}
 
+  def healthCheck(): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canViewTestSuiteResource(request, "test").map { _ =>
+      Ok("OK")
+    }
+  }
+
   def getTestResult(sessionId: String): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canManageTestSession(request, sessionId, requireAdmin = false, requireOwnTestSessionIfNotAdmin = false).flatMap { _ =>
       getTestResultInternal(sessionId, isAdmin = false)

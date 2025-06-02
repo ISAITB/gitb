@@ -2204,6 +2204,21 @@ object JsonUtil {
     json
   }
 
+  def jsServiceHealthInfo(info: ServiceHealthInfo): JsObject = {
+    val statusValue = info.status match {
+      case ServiceHealthStatusType.Ok => "ok"
+      case ServiceHealthStatusType.Warning => "warning"
+      case ServiceHealthStatusType.Error => "error"
+      case ServiceHealthStatusType.Unknown => "unknown"
+      case ServiceHealthStatusType.Info => "info"
+    }
+    Json.obj(
+      "status" -> statusValue,
+      "summary" -> info.summary,
+      "details" -> info.details
+    )
+  }
+
   def jsTestInteractions(interactions: List[TestInteraction]): JsArray = {
     var array = Json.arr()
     interactions.foreach{ interaction =>
@@ -3442,6 +3457,25 @@ object JsonUtil {
       obj = obj.+("error_hint" -> JsString(errorHint.get))
     }
     obj
+  }
+
+  def parseJsTestEngineHealthCheckResponse(json: String): TestEngineHealthCheckResponse = {
+    val value = Json.parse(json)
+    TestEngineHealthCheckResponse(
+      parseJsTestEngineHealthCheckResponseItem((value \ "items").as[JsArray]),
+      (value \ "repositoryUrl").as[String],
+      (value \ "hmacHash").as[String]
+    )
+  }
+
+  private def parseJsTestEngineHealthCheckResponseItem(jsonArray: JsArray): List[TestEngineHealthCheckResponseItem] = {
+    jsonArray.value.map { value =>
+      TestEngineHealthCheckResponseItem(
+        (value \ "name").as[String],
+        (value \ "status").as[Boolean],
+        (value \ "message").asOpt[String].flatMap(Option(_))
+      )
+    }.toList
   }
 
 }

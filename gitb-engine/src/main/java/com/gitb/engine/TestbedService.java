@@ -1,5 +1,9 @@
 package com.gitb.engine;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.gitb.core.ActorConfiguration;
 import com.gitb.core.AnyContent;
 import com.gitb.core.ErrorCode;
@@ -8,9 +12,12 @@ import com.gitb.engine.commands.session.CreateCommand;
 import com.gitb.engine.events.TestStepInputEventBus;
 import com.gitb.engine.events.model.InputEvent;
 import com.gitb.exceptions.GITBEngineInternalError;
+import com.gitb.repository.ITestCaseRepository;
 import com.gitb.tbs.*;
 import com.gitb.utils.ErrorUtils;
+import com.gitb.utils.HmacUtils;
 import org.apache.pekko.actor.ActorRef;
+import org.apache.tika.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
@@ -222,6 +229,86 @@ public class TestbedService {
 		request.setStepId(stepId);
 		request.setInteraction(interaction);
 		sendToClient(sessionId, (client) -> client.interactWithUsers(request));
+	}
+
+	public static String healthCheck(Consumer<TestStepStatus> healthCheckSender) {
+		// 1. Call the GITB Test Bed Client
+		HealthCheckResult tbsResult;
+		TestStepStatus messageToSend = new TestStepStatus();
+		messageToSend.setTcInstanceId("com.gitb.HEALTH_CHECK");
+		messageToSend.setStepId(PropertyConstants.LOG_EVENT_STEP_ID);
+		try {
+			healthCheckSender.accept(messageToSend);
+			tbsResult = HealthCheckResult.success("tbs");
+		} catch (Exception e) {
+			tbsResult = HealthCheckResult.failure("tbs", serialiseThrowable(e));
+		}
+		// 2. Call the test case repository.
+		HealthCheckResult repoResult;
+		ITestCaseRepository repository = ModuleManager.getInstance().getTestCaseRepository();
+        try {
+            String result = repository.healthCheck("test");
+			if (Objects.equals(result, "OK")) {
+				repoResult = HealthCheckResult.success("repo");
+			} else {
+				repoResult = HealthCheckResult.failure("repo", "The healthcheck ping to gitb-ui did not return the expected result");
+			}
+        } catch (Exception e) {
+			repoResult = HealthCheckResult.failure("repo", serialiseThrowable(e));
+        }
+		// Create result.
+		ObjectMapper mapper = new ObjectMapper();
+		ObjectNode root = mapper.createObjectNode();
+		ArrayNode resultArray = mapper.createArrayNode();
+		resultArray.add(mapper.valueToTree(tbsResult));
+		resultArray.add(mapper.valueToTree(repoResult));
+		root.set("items", resultArray);
+		root.put("repositoryUrl", TestEngineConfiguration.REPOSITORY_ROOT_URL);
+		root.put("hmacHash", HmacUtils.getHashedKey());
+        try {
+            return mapper.writeValueAsString(root);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Unexpected error while serialising health check status", e);
+        }
+    }
+
+	private static String serialiseThrowable(Throwable error) {
+		var messages = new ArrayList<String>();
+		var handledErrors = new ArrayList<Throwable>();
+		extractFailureDetailsInternal(error, handledErrors, messages);
+		var errorLines = messages.stream().filter(Objects::nonNull).toList();
+		// Construct string.
+		var buffer = new StringBuilder();
+		var lineNumber = -1;
+		for (var line: errorLines) {
+			lineNumber += 1;
+			if (!buffer.isEmpty()) {
+				var padding = StringUtils.leftPad("", lineNumber-1, "   ");
+				buffer.append('\n').append(padding).append("└─ ");
+			}
+			buffer.append(line);
+		}
+		return buffer.toString();
+    }
+
+	private static void extractFailureDetailsInternal(Throwable error, List<Throwable> handledErrors, List<String> messages) {
+		if (error != null && !handledErrors.contains(error)) {
+			handledErrors.add(error);
+			messages.add(error.getMessage());
+			extractFailureDetailsInternal(error.getCause(), handledErrors, messages);
+		}
+	}
+
+	private record HealthCheckResult(String name, boolean status, String message) {
+
+		private static HealthCheckResult success(String name) {
+			return new HealthCheckResult(name, true, "");
+		}
+
+		private static HealthCheckResult failure(String name, String message) {
+			return new HealthCheckResult(name, false, message);
+		}
+
 	}
 
 }

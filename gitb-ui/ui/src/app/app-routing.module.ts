@@ -69,6 +69,7 @@ import { AdminViewGuard } from './resolvers/admin-view-guard';
 import { SystemAdminViewGuard } from './resolvers/system-admin-view-guard';
 import {ImplicitCommunityResolver} from './resolvers/implicit-community-resolver';
 import {CommunitySessionDashboardComponent} from './pages/organisation/community-session-dashboard/community-session-dashboard.component';
+import {ServiceHealthDashboardComponent} from './pages/service-health-dashboard/service-health-dashboard.component';
 
 const themeResolver: ResolveFn<Theme> = (route: ActivatedRouteSnapshot, state: RouterStateSnapshot) => {
   return inject(SystemConfigurationService).getTheme(Number(route.paramMap.get(Constants.NAVIGATION_PATH_PARAM.THEME_ID)!))
@@ -98,6 +99,8 @@ const routes: Routes = [
       },
       // Administration
       { path: 'admin', resolve: { profile: ProfileResolver }, canActivate: [AdminViewGuard], children: [
+          // Session dashboard
+          { path: 'health', component: ServiceHealthDashboardComponent },
           // Session dashboard
           { path: 'sessions', component: SessionDashboardComponent },
           // Conformance dashboard

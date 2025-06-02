@@ -137,7 +137,7 @@ public class TestEngineConfiguration {
 				TEST_RESOURCE_REPOSITORY_URL = config.getString(ENV_REPOSITORY_TEST_RESOURCE_URL);
 			}
 			REPOSITORY_HEALTHCHECK_URL = StringUtils.removeEnd(TEST_RESOURCE_REPOSITORY_URL, "/resource/:test_id/:resource_id") + "/healthCheck";
-			REPOSITORY_ROOT_URL = StringUtils.remove(StringUtils.getCommonPrefix(REPOSITORY_HEALTHCHECK_URL, TEST_CASE_REPOSITORY_URL, TEST_RESOURCE_REPOSITORY_URL), '/');
+			REPOSITORY_ROOT_URL = StringUtils.removeEnd(StringUtils.removeEnd(StringUtils.getCommonPrefix(REPOSITORY_HEALTHCHECK_URL, TEST_CASE_REPOSITORY_URL, TEST_RESOURCE_REPOSITORY_URL), "/"), "/api/repository");
 			TEST_ID_PARAMETER = System.getenv().getOrDefault("remote.testcase.test-id.parameter", config.getString("remote.testcase.test-id.parameter"));
 			RESOURCE_ID_PARAMETER = System.getenv().getOrDefault("remote.testcase.resource-id.parameter", config.getString("remote.testcase.resource-id.parameter"));
 			// Configure also the HMAC information used to authorize remote calls.

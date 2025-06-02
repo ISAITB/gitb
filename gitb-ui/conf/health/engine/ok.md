@@ -1,0 +1,2 @@
+Test engine communications are **working correctly**. This means that the `gitb-ui` and `gitb-srv` components can 
+successfully communicate between themselves, thus allowing the execution of test sessions.

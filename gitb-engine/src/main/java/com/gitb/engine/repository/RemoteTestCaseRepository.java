@@ -20,9 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.xml.transform.stream.StreamSource;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 
 /**
  * Created by serbay on 10/20/14.
@@ -55,6 +53,13 @@ public class RemoteTestCaseRepository implements ITestCaseRepository {
 			return getTestResource(toLocationKey(from, testCaseId), artifactPath);
 		} catch (Exception e) {
 			throw new GITBEngineInternalError(e);
+		}
+	}
+
+	@Override
+	public String healthCheck(String message) throws Exception {
+		try (InputStream stream = retrieveRemoteTestResource(message, TestEngineConfiguration.REPOSITORY_HEALTHCHECK_URL)) {
+			return new String(IOUtils.toByteArray(stream));
 		}
 	}
 
@@ -108,10 +113,9 @@ public class RemoteTestCaseRepository implements ITestCaseRepository {
 	}
 
 	private InputStream retrieveRemoteTestResource(String resourceId, String uri) throws IOException {
-		InputStream stream = null;
-
+		InputStream stream;
 		try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
-			logger.debug("Requesting test resource definition ["+uri+"]");
+			logger.debug("Requesting test resource definition [{}]", uri);
 			HttpGet request = new HttpGet(uri);
 			HmacUtils.TokenData tokenData = HmacUtils.getTokenData(resourceId);
 			request.addHeader(HmacUtils.HMAC_HEADER_TOKEN, tokenData.getTokenValue());
@@ -121,10 +125,12 @@ public class RemoteTestCaseRepository implements ITestCaseRepository {
 					HttpEntity entity = httpResponse.getEntity();
 					byte[] content = IOUtils.toByteArray(entity.getContent());
 					stream = new ByteArrayInputStream(content);
+				} else {
+					throw new GITBEngineInternalError("Unexpected response returned while looking up resource: %s".formatted(httpResponse.getStatusLine().getStatusCode()));
 				}
 			} catch (Exception e) {
-				logger.debug("Test case definition retrieval failed", e);
-				throw new GITBEngineInternalError(e);
+				logger.debug("Resource lookup retrieval failure", e);
+				throw new GITBEngineInternalError("Resource lookup retrieval failure", e);
 			}
 		}
 		return stream;

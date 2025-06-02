@@ -14,6 +14,7 @@ export enum MenuItem {
   myTestSessions,
   myOrganisation,
   systemAdministration,
-  communitySessionDashboard
+  communitySessionDashboard,
+  serviceHealthDashboard,
 
 }

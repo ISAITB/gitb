@@ -1,0 +1,18 @@
+<div class="modal-header">
+    <div class="modal-title">
+        <div class="title">{{serviceInfo.title}}</div>
+        <div class="icon"><app-service-health-icon [status]="serviceInfo.info?.status"></app-service-health-icon></div>
+    </div>
+</div>
+<div class="modal-body pb-0">
+    <app-alert-display [alerts]="alerts" [dismissible]="false"></app-alert-display>
+    @if (serviceInfo.info) {
+        <markdown [data]="serviceInfo.info.details"></markdown>
+    }
+</div>
+<div class="modal-footer button-container">
+    <div class="btn-toolbar">
+        <button class="btn btn-secondary" type="button" (click)="close()">Close</button>
+        <button class="btn btn-secondary" type="button" (click)="checkStatus()" [pending]="checkPending">Check status</button>
+    </div>
+</div>

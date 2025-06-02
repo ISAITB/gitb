@@ -145,4 +145,9 @@ object Enums {
     val TestCaseIdentifier, TestSuiteIdentifier, ActorIdentifier, SpecificationName, SystemName, OrganisationName = Value
   }
 
+  object ServiceHealthStatusType extends Enumeration(1) {
+    type ServiceHealthStatusType = Value
+    val Ok, Warning, Error, Info, Unknown = Value
+  }
+
 }

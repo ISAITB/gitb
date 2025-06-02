@@ -15,4 +15,5 @@ public interface ITestCaseRepository {
 	TestCase getTestCase(String testCaseId);
 	Scriptlet getScriptlet(String from, String testCaseId, String scriptletPath);
 	InputStream getTestArtifact(String from, String testCaseId, String artifactPath);
+	String healthCheck(String message) throws Exception;
 }

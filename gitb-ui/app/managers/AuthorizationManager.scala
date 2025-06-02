@@ -12,7 +12,7 @@ import org.pac4j.play.PlayWebContext
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.Files
-import play.api.mvc.{AnyContent, MultipartFormData}
+import play.api.mvc.{AnyContent, MultipartFormData, RequestHeader}
 import utils.RepositoryUtils
 
 import javax.inject.{Inject, Singleton}
@@ -45,6 +45,10 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
                                     (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[AuthorizationManager])
+
+  def canCheckCoreServiceHealth(request: RequestWithAttributes[_]): Future[Boolean] = {
+    checkTestBedAdmin(request)
+  }
 
   def canViewOrganisationAutomationKeys(request: RequestWithAttributes[_], organisationId: Long): Future[Boolean] = {
     val check = if (Configurations.AUTOMATION_API_ENABLED) {
@@ -2024,6 +2028,11 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     check.map(setAuthResult(request, _, "Only test bed administrators can perform this operation"))
   }
 
+  def checkTestBedAdmin(request: RequestHeader): Future[Boolean] = {
+    val check = isTestBedAdmin(getRequestUserId(request))
+    check.map(checkAuthResult(_, "Only test bed administrators can perform this operation"))
+  }
+
   def canCreateDomainAsync(request: RequestWithAttributes[_]): Future[Boolean] = {
     checkTestBedAdmin(request)
   }
@@ -2206,7 +2215,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     request.headers.get(HmacUtils.HMAC_HEADER_TOKEN).isDefined && request.headers.get(HmacUtils.HMAC_HEADER_TIMESTAMP).isDefined
   }
 
-  private def getRequestUserId(request: RequestWithAttributes[_]): Long = {
+  private def getRequestUserId(request: RequestHeader): Long = {
     val userId = ParameterExtractor.extractOptionalUserId(request)
     if (userId.isEmpty) {
       throwError("User is not authenticated.")
@@ -2228,14 +2237,18 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     throw error
   }
 
-  private def setAuthResult(request: RequestWithAttributes[_], ok: Boolean, message: String): Boolean = {
-    if (!request.authorised) {
-      request.authorised = true
-    }
+  private def checkAuthResult(ok: Boolean, message: String): Boolean = {
     if (!ok) {
       throwError(message)
     }
     ok
+  }
+
+  private def setAuthResult(request: RequestWithAttributes[_], ok: Boolean, message: String): Boolean = {
+    if (!request.authorised) {
+      request.authorised = true
+    }
+    checkAuthResult(ok, message)
   }
 
   def getAccountInfo(request: RequestWithAttributes[_]): Future[ActualUserInfo] = {

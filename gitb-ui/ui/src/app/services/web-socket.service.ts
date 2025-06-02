@@ -1,8 +1,8 @@
-import { Injectable } from '@angular/core';
-import { NextObserver } from 'rxjs';
-import { webSocket } from 'rxjs/webSocket';
-import { ROUTES } from '../common/global';
-import { Utils } from '../common/utils';
+import {Injectable} from '@angular/core';
+import {NextObserver} from 'rxjs';
+import {webSocket} from 'rxjs/webSocket';
+import {ROUTES} from '../common/global';
+import {Utils} from '../common/utils';
 import {DataService} from './data.service';
 
 @Injectable({
@@ -12,8 +12,7 @@ export class WebSocketService {
 
   constructor(private dataService: DataService) { }
 
-  connect(openObserver: NextObserver<Event>, closeObserver: NextObserver<CloseEvent>) {
-    const webSocketRoute = ROUTES.controllers.WebSocketService.socket("session")
+  prepareWebSocket<T>(webSocketRoute: any, openObserver: NextObserver<Event>, closeObserver: NextObserver<CloseEvent>) {
     const internalAddressWithServerPart = webSocketRoute.webSocketURL()
     const pathPart = webSocketRoute.url
     const serverPart = internalAddressWithServerPart.substring(0, internalAddressWithServerPart.length - pathPart.length)
@@ -23,5 +22,9 @@ export class WebSocketService {
       openObserver: openObserver,
       closeObserver: closeObserver
     })
+  }
+
+  connect(openObserver: NextObserver<Event>, closeObserver: NextObserver<CloseEvent>) {
+    return this.prepareWebSocket(ROUTES.controllers.WebSocketService.socket("session"), openObserver, closeObserver)
   }
 }
