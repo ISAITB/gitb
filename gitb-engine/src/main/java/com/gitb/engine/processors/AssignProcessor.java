@@ -70,11 +70,11 @@ public class AssignProcessor implements IProcessor {
 				if (assign.isAppend()) {
 					// This is the first item of a list being assigned to a key in the map.
 					var list = new ListType(result.getType());
-					list.append(result);
+					addToList(assign, list, result);
 					((MapType)lValue).addItem(mapKey, list);
 				} else {
 					// Map the result to the map.
-					((MapType)lValue).addItem(mapKey, result);
+					addToMap(assign, (MapType) lValue, mapKey, result);
 				}
 			} else {
 				if (assign.isAppend()) {
@@ -82,19 +82,19 @@ public class AssignProcessor implements IProcessor {
 						// Appending to an existing list.
 						String containedType = ((ListType)existingValue).getContainedType();
 						if (containedType != null) {
-							((ListType)existingValue).append(result.convertTo(containedType));
+							addToList(assign, (ListType) existingValue, result.convertTo(containedType));
 						} else {
-							((ListType)existingValue).append(result);
+							addToList(assign, (ListType) existingValue, result);
 						}
 					} else {
 						// Append to an existing non-list value - convert existing value to list.
 						var list = new ListType(existingValue.getType());
 						list.append(existingValue);
-						list.append(result.convertTo(existingValue.getType()));
+						addToList(assign, list, result.convertTo(existingValue.getType()));
 					}
 				} else {
 					// Replace the key mapping of the map.
-					((MapType)lValue).addItem(mapKey, result);
+					addToMap(assign, (MapType) lValue, mapKey, result);
 				}
 			}
 	    } else {
@@ -103,8 +103,8 @@ public class AssignProcessor implements IProcessor {
 			DataType lValue = variableResolver.resolveVariable(toExpression, true, respectScopeIsolation).orElse(null);
 			if (lValue != null) {
 				// Existing variable
-				if (lValue instanceof ListType && assign.isAppend()) {
-					expectedReturnType = ((ListType) lValue).getContainedType();
+				if (lValue instanceof ListType lValueList && assign.isAppend()) {
+					expectedReturnType = lValueList.getContainedType();
 				} else {
 					expectedReturnType = lValue.getType();
 				}
@@ -141,21 +141,21 @@ public class AssignProcessor implements IProcessor {
 				}
 			}
 			if (lValue != null) {
-				if (lValue instanceof ListType) {
+				if (lValue instanceof ListType lValueList) {
 					if (assign.isAppend()) {
-						String containedType = ((ListType) lValue).getContainedType();
+						String containedType = lValueList.getContainedType();
 						if (result != null) {
 							if (containedType != null) {
-								((ListType) lValue).append(result.convertTo(containedType));
+								addToList(assign, lValueList, result.convertTo(containedType));
 							} else {
-								((ListType) lValue).append(result);
+								addToList(assign, lValueList, result);
 							}
 						} else {
 							// We are told to append so we will add an item to the list.
 							if (containedType == null) {
-								throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Unable to append an item to list for expression [" + toExpression + "] becuase it was not possible to determine its contained type"));
+								throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Unable to append an item to list for expression [" + toExpression + "] because it was not possible to determine its contained type"));
 							} else {
-								((ListType) lValue).append(DataTypeFactory.getInstance().create(containedType));
+								lValueList.append(DataTypeFactory.getInstance().create(containedType));
 							}
 						}
 					} else {
@@ -175,6 +175,26 @@ public class AssignProcessor implements IProcessor {
         return null;
     }
 
+	private void addToList(Assign assign, ListType targetList, DataType value) {
+		if (assign.isByValue()) {
+			DataType newValue = DataTypeFactory.getInstance().create(value.getType());
+			newValue.copyFrom(value);
+			targetList.append(newValue);
+		} else {
+			targetList.append(value);
+		}
+	}
+
+	private void addToMap(Assign assign, MapType targetMap, String key, DataType value) {
+		if (assign.isByValue()) {
+			DataType newValue = DataTypeFactory.getInstance().create(value.getType());
+			newValue.copyFrom(value);
+			targetMap.addItem(key, newValue);
+		} else {
+			targetMap.addItem(key, value);
+		}
+	}
+
 	private DataType createIntermediateMaps(VariableResolver variableResolver, String expression) {
 		DataType resultingMap = null;
 		expression = addExpressionStart(expression);
@@ -191,9 +211,9 @@ public class AssignProcessor implements IProcessor {
 					String containerVariableExpression = matcher.group(1);
 					String keyExpression = matcher.group(2);
 					resultingMap = createIntermediateMaps(variableResolver, containerVariableExpression);
-					if (resultingMap instanceof MapType) {
+					if (resultingMap instanceof MapType resultingMapType) {
 						DataType childMap = new MapType();
-						((MapType) resultingMap).addItem(keyExpression, childMap);
+						resultingMapType.addItem(keyExpression, childMap);
 						resultingMap = childMap;
 					} else {
 						throw new IllegalStateException("Variable ["+containerVariableExpression+"] was expected to be of type [map] but was of type ["+(resultingMap == null?"null":resultingMap.getType())+"]");
