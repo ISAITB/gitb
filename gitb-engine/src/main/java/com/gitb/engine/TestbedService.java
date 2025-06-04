@@ -248,11 +248,10 @@ public class TestbedService {
 		ITestCaseRepository repository = ModuleManager.getInstance().getTestCaseRepository();
         try {
             String result = repository.healthCheck("test");
-			if (Objects.equals(result, "OK")) {
-				repoResult = HealthCheckResult.success("repo");
-			} else {
-				repoResult = HealthCheckResult.failure("repo", "The healthcheck ping to gitb-ui did not return the expected result");
+			if (logger.isInfoEnabled()) {
+				logger.info("Health check ping returned [{}]", result);
 			}
+			repoResult = HealthCheckResult.success("repo");
         } catch (Exception e) {
 			repoResult = HealthCheckResult.failure("repo", serialiseThrowable(e));
         }

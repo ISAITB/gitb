@@ -27,7 +27,7 @@ object HealthCheckService {
   case class TestEngineCheckResult(success: Boolean, message: String, error: Option[String] = None) {
 
     def errorToUse(): String = {
-      error.flatMap(x => if (StringUtils.isBlank(x)) None else Some(x)).getOrElse("N/A")
+      error.flatMap(x => if (StringUtils.isBlank(x)) None else Some(x)).getOrElse("No error to report.")
     }
 
   }

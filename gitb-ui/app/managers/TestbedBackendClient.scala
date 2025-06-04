@@ -8,6 +8,7 @@ import models.SessionConfigurationData
 import org.slf4j.{Logger, LoggerFactory}
 
 import java.net.URI
+import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -21,15 +22,22 @@ class TestbedBackendClient @Inject() (implicit ec: ExecutionContext) {
   private def service():TestbedService = {
     if (portInternal == null) {
       logger.info("Creating TestbedService client")
-      val backendURL: java.net.URL = URI.create(Configurations.TESTBED_SERVICE_URL+"?wsdl").toURL
-      val service: TestbedService_Service = new TestbedService_Service(backendURL)
-      //add header handler resolver to add custom header element for TestbedClient service address
-      val handlerResolver = new HeaderHandlerResolver()
-      service.setHandlerResolver(handlerResolver)
-      val port = service.getTestbedServicePort()
-      portInternal = port
+      portInternal = createClient()
     }
     portInternal
+  }
+
+  private def createClient(noCache: Boolean = false): TestbedService = {
+    var wsdlUrl = Configurations.TESTBED_SERVICE_URL+"?wsdl"
+    if (noCache) {
+      wsdlUrl += "&nocache="+UUID.randomUUID().toString
+    }
+    val backendURL: java.net.URL = URI.create(wsdlUrl).toURL
+    val service: TestbedService_Service = new TestbedService_Service(backendURL)
+    //add header handler resolver to add custom header element for TestbedClient service address
+    val handlerResolver = new HeaderHandlerResolver()
+    service.setHandlerResolver(handlerResolver)
+    service.getTestbedServicePort()
   }
 
   def initiate(testCaseId: Long, sessionId: Option[String]): Future[String] = {
@@ -121,7 +129,7 @@ class TestbedBackendClient @Inject() (implicit ec: ExecutionContext) {
     val request = new GetActorDefinitionRequest()
     request.setActorId(healthCheckType)
     Future {
-      service().getActorDefinition(request).getActor.getDesc
+      createClient(noCache = true).getActorDefinition(request).getActor.getDesc
     }
   }
 
