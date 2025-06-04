@@ -32,6 +32,7 @@
         <version.plugin.antrun-plugin>3.1.0</version.plugin.antrun-plugin>
         <version.plugin.versions-maven-plugin>2.18.0</version.plugin.versions-maven-plugin>
         <!-- Dependency versions -->
+        <version.gitbTypes>1.26.0</version.gitbTypes>
         <version.springBoot>3.4.5</version.springBoot>
         <version.bouncycastle>1.80</version.bouncycastle>
         <version.helgerSchematron>8.0.6</version.helgerSchematron>
@@ -233,12 +234,12 @@
             <dependency>
                 <groupId>eu.europa.ec.itb</groupId>
                 <artifactId>gitb-types-jakarta</artifactId>
-                <version>${project.version}</version>
+                <version>${version.gitbTypes}</version>
             </dependency>
             <dependency>
                 <groupId>eu.europa.ec.itb</groupId>
                 <artifactId>gitb-types-specs</artifactId>
-                <version>${project.version}</version>
+                <version>${version.gitbTypes}</version>
             </dependency>
             <dependency>
                 <groupId>com.gitb</groupId>
