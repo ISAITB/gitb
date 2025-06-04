@@ -4,6 +4,7 @@ scalaVersion := "2.13.14"
 val pekkoVersion = "1.1.3"
 val jacksonVersion = "2.18.3"
 val cxfVersion = "4.1.1"
+val gitbCommonsVersion = "1.26.0-SNAPSHOT"
 val gitbTypesVersion = "1.26.0"
 val bouncyCastleVersion = "1.80"
 val commonsTextVersion = "1.13.1"
@@ -27,11 +28,11 @@ libraryDependencies ++= Seq(
   ws,
   "eu.europa.ec.itb" % "gitb-types-jakarta" % gitbTypesVersion,
   "eu.europa.ec.itb" % "gitb-types-specs" % gitbTypesVersion,
-  "com.gitb" % "gitb-core" % gitbTypesVersion exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
-  "com.gitb" % "gitb-lib" % gitbTypesVersion exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
-  "com.gitb" % "gitb-reports" % gitbTypesVersion exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
-  "com.gitb" % "gitb-validator-tdl" % gitbTypesVersion exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
-  "com.gitb" % "gitb-xml-resources" % gitbTypesVersion exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
+  "com.gitb" % "gitb-core" % gitbCommonsVersion exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
+  "com.gitb" % "gitb-lib" % gitbCommonsVersion exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
+  "com.gitb" % "gitb-reports" % gitbCommonsVersion exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
+  "com.gitb" % "gitb-validator-tdl" % gitbCommonsVersion exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
+  "com.gitb" % "gitb-xml-resources" % gitbCommonsVersion exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
   "com.mysql" % "mysql-connector-j" % "9.2.0" exclude("com.google.protobuf", "protobuf-java"), // Exclude protobuf as we don't need the X DevAPI.
   "org.apache.pekko" %% "pekko-actor" % pekkoVersion,
   "org.apache.pekko" %% "pekko-actor-typed" % pekkoVersion,
