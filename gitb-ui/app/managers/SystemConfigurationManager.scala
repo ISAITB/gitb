@@ -46,7 +46,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
   private var activeThemeId: Option[Long] = None
   private var activeThemeCss: Option[String] = None
   private var activeThemeFavicon: Option[String] = None
-  private var defaultEmailSettings: EmailSettings = _
+  private var defaultEmailSettings: Option[EmailSettings] = None
 
   private def constructLogoPath(themeId: Long, partialLogoPath: String): String = {
     // We go up two levels as URLs are relative to the CSS defining them which here is under "/api/theme/
@@ -345,7 +345,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
                 SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.EmailSettings, Some(JsonUtil.jsEmailSettings(EmailSettings.fromEnvironment()).toString()), None), defaultSetting = false, environmentSetting = false)
               ))
             } else {
-              defaultEmailSettings.toEnvironment()
+              defaultEmailSettings.foreach(_.toEnvironment())
               testResultManager.schedulePendingTestInteractionNotifications()
               DBIO.successful(Some(
                 SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.EmailSettings, Some(JsonUtil.jsEmailSettings(EmailSettings.fromEnvironment()).toString()), None), defaultSetting = true, environmentSetting = sys.env.contains("EMAIL_ENABLED"))
@@ -799,8 +799,8 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
 
   def recordDefaultEmailSettings(): EmailSettings = {
     // This is called before we adapt the settings based on stored values.
-    defaultEmailSettings = EmailSettings.fromEnvironment()
-    defaultEmailSettings
+    defaultEmailSettings = Some(EmailSettings.fromEnvironment())
+    defaultEmailSettings.get
   }
 
 }
