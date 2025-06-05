@@ -81,7 +81,9 @@ public class RdfUtils extends AbstractProcessingHandler {
         module.getOperation().add(createProcessingOperation(OPERATION__MERGE,
                 List.of(
                         createParameter(INPUT__MODELS, "list", UsageEnumeration.R, ConfigurationType.SIMPLE, "The list of models to merge."),
-                        createParameter(INPUT__INPUT_CONTENT_TYPES, "list", UsageEnumeration.O, ConfigurationType.SIMPLE, "The content types of the provided models.")
+                        createParameter(INPUT__INPUT_CONTENT_TYPE, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, "The content type to consider for all provided models."),
+                        createParameter(INPUT__INPUT_CONTENT_TYPES, "list", UsageEnumeration.O, ConfigurationType.SIMPLE, "The content types of the provided models."),
+                        createParameter(INPUT__OUTPUT_CONTENT_TYPE, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, "The content type of the output model.")
                 ),
                 List.of(
                         createParameter(OUTPUT__OUTPUT, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The merged model.")
