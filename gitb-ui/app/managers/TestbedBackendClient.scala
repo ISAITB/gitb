@@ -5,11 +5,13 @@ import com.gitb.tbs._
 import config.Configurations
 import jaxws.HeaderHandlerResolver
 import models.SessionConfigurationData
+import org.apache.cxf.BusFactory
+import org.apache.cxf.wsdl11.WSDLManagerImpl
 import org.slf4j.{Logger, LoggerFactory}
 
 import java.net.URI
-import java.util.UUID
 import javax.inject.{Inject, Singleton}
+import javax.wsdl.Definition
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
@@ -27,11 +29,32 @@ class TestbedBackendClient @Inject() (implicit ec: ExecutionContext) {
     portInternal
   }
 
-  private def createClient(noCache: Boolean = false): TestbedService = {
-    var wsdlUrl = Configurations.TESTBED_SERVICE_URL+"?wsdl"
-    if (noCache) {
-      wsdlUrl += "&nocache="+UUID.randomUUID().toString
+  private def createClientWithoutCaching(): TestbedService = {
+    // Create a custom CXF bus that will avoid WSDL caching.
+    val customBus = BusFactory.newInstance.createBus()
+    // Caching is avoided through a custom WSDL manager that will always reload the WSDL.
+    val wsdlManager = new WSDLManagerImpl() {
+      override def getDefinition(url: String): Definition = {
+        // Skip the cache checks.
+        loadDefinition(url)
+      }
     }
+    wsdlManager.setBus(customBus)
+    // Keep a reference to the original bus.
+    val originalBus = BusFactory.getThreadDefaultBus()
+    try {
+      // Replace the bus with the non-caching one for the current thread.
+      BusFactory.setThreadDefaultBus(customBus)
+      // Create the client using the non-caching bus.
+      createClient()
+    } finally {
+      // Once complete restore the original bus.
+      BusFactory.setThreadDefaultBus(originalBus)
+    }
+  }
+
+  private def createClient(): TestbedService = {
+    val wsdlUrl = Configurations.TESTBED_SERVICE_URL+"?wsdl"
     val backendURL: java.net.URL = URI.create(wsdlUrl).toURL
     val service: TestbedService_Service = new TestbedService_Service(backendURL)
     //add header handler resolver to add custom header element for TestbedClient service address
@@ -129,7 +152,7 @@ class TestbedBackendClient @Inject() (implicit ec: ExecutionContext) {
     val request = new GetActorDefinitionRequest()
     request.setActorId(healthCheckType)
     Future {
-      createClient(noCache = true).getActorDefinition(request).getActor.getDesc
+      createClientWithoutCaching().getActorDefinition(request).getActor.getDesc
     }
   }
 

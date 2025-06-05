@@ -93,6 +93,7 @@ export class ServiceHealthDashboardComponent implements OnInit, AfterViewInit {
     let warningCount = 0
     let infoCount = 0
     let okCount = 0
+    let unknownCount = 0
     this.cards.forEach(card => {
       if (card.info) {
         switch (card.info.status) {
@@ -100,6 +101,7 @@ export class ServiceHealthDashboardComponent implements OnInit, AfterViewInit {
           case HealthStatus.WARNING: warningCount += 1; break;
           case HealthStatus.INFO: infoCount += 1; break;
           case HealthStatus.OK: okCount += 1; break;
+          default: unknownCount += 1; break;
         }
       }
     })
@@ -112,9 +114,12 @@ export class ServiceHealthDashboardComponent implements OnInit, AfterViewInit {
     } else if (infoCount > 0) {
       this.overviewMessage = "All services are working correctly with additional information available. Click the relevant cards for more details."
       this.overviewHealth = HealthStatus.INFO
-    } else {
-      this.overviewMessage = "All service are working correctly. Click the relevant cards for more details."
+    } else if (okCount == this.cards.length) {
+      this.overviewMessage = "All services are working correctly. Click the relevant cards for more details."
       this.overviewHealth = HealthStatus.OK
+    } else {
+      this.overviewMessage = "It was not possible to determine the status of internal services."
+      this.overviewHealth = HealthStatus.INFO
     }
 
   }
