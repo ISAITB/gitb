@@ -151,11 +151,12 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
     private TAR produceReport(ProcessingReport report, IProcessingHandler handler) {
         Optional<VariableResolver> resolver = Optional.empty();
         if (report.getData() != null && (step.getId() != null || step.getOutput() != null)) {
-            if (step.getOutput() != null) {
-                if (report.getData().getData() != null && report.getData().getData().size() == 1) {
+            if (step.getOutput() != null && report.getData().getData() != null) {
+                int outputCount = report.getData().getData().size();
+                if (outputCount == 1) {
                     // Single output - set as direct result.
                     scope.createVariable(step.getOutput()).setValue(report.getData().getData().values().iterator().next());
-                } else {
+                } else if (outputCount > 1) {
                     // Multiple outputs - set as map result.
                     scope.createVariable(step.getOutput()).setValue(getValue(report.getData()));
                 }
