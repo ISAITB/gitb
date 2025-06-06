@@ -131,7 +131,7 @@ CREATE TABLE `communities` (
   CONSTRAINT `com_fk_dom` FOREIGN KEY (`domain`) REFERENCES `domains` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-INSERT INTO `communities` VALUES (0,'Default community','Default community',NULL,NULL,1,NULL,0,NULL,1,NULL,0,0,0,1,1,1,1,1,0,'225D4900X6DA6X4479X9BBFX32B50FB1B916',0,NULL);
+INSERT INTO `communities` VALUES (0,'Default community','Default community',NULL,NULL,1,NULL,0,NULL,1,NULL,0,0,0,1,1,1,1,1,0,0,'225D4900X6DA6X4479X9BBFX32B50FB1B916',0,NULL);
 UPDATE `communities` SET `id` = 0;
 
 --
