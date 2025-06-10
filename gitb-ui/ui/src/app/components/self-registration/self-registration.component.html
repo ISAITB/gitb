@@ -21,9 +21,9 @@
             </div>
             <app-form-section sectionTitle="Community">
                 <div>
-                    <div table-directive
+                    <div #communityTable table-directive
                         class="self-reg-option-table mt-3"
-                        [rowStyle]="optionRowStyle" 
+                        [rowStyle]="optionRowStyle"
                         [columns]="communityColumns"
                         [data]="selfRegOptions"
                         [allowSelect]="true"

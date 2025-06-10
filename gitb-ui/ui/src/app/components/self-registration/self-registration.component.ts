@@ -1,13 +1,14 @@
-import { Component, EventEmitter, Input, OnInit } from '@angular/core';
-import { Constants } from 'src/app/common/constants';
-import { BaseComponent } from 'src/app/pages/base-component.component';
-import { CommunityService } from 'src/app/services/community.service';
-import { DataService } from 'src/app/services/data.service';
-import { CustomProperty } from 'src/app/types/custom-property.type';
-import { SelfRegistrationModel } from 'src/app/types/self-registration-model.type';
-import { SelfRegistrationOption } from 'src/app/types/self-registration-option.type';
-import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
-import { ValidationState } from 'src/app/types/validation-state';
+import {AfterViewInit, Component, EventEmitter, Input, OnInit, ViewChild} from '@angular/core';
+import {Constants} from 'src/app/common/constants';
+import {BaseComponent} from 'src/app/pages/base-component.component';
+import {CommunityService} from 'src/app/services/community.service';
+import {DataService} from 'src/app/services/data.service';
+import {CustomProperty} from 'src/app/types/custom-property.type';
+import {SelfRegistrationModel} from 'src/app/types/self-registration-model.type';
+import {SelfRegistrationOption} from 'src/app/types/self-registration-option.type';
+import {TableColumnDefinition} from 'src/app/types/table-column-definition.type';
+import {ValidationState} from 'src/app/types/validation-state';
+import {TableComponent} from '../table/table.component';
 
 @Component({
     selector: 'app-self-registration',
@@ -17,11 +18,13 @@ import { ValidationState } from 'src/app/types/validation-state';
     ],
     standalone: false
 })
-export class SelfRegistrationComponent extends BaseComponent implements OnInit {
+export class SelfRegistrationComponent extends BaseComponent implements OnInit, AfterViewInit {
 
   @Input() model: SelfRegistrationModel = {}
   @Input() selfRegOptions?: SelfRegistrationOption[]
   @Input() validation?: ValidationState
+  @ViewChild('communityTable') communityTable?: TableComponent;
+
   sso: boolean = false
   templateReadonly = false
   communityColumns: TableColumnDefinition[] = [
@@ -35,6 +38,8 @@ export class SelfRegistrationComponent extends BaseComponent implements OnInit {
     }
   ]
   refreshSignal = new EventEmitter<{props?: CustomProperty[], asterisks: boolean}>()
+  private viewReady = false
+  private dataReady = false
 
   constructor(
     public dataService: DataService,
@@ -47,14 +52,27 @@ export class SelfRegistrationComponent extends BaseComponent implements OnInit {
     if (this.selfRegOptions === undefined) {
       this.communityService.getSelfRegistrationOptions().subscribe((data) => {
         this.selfRegOptions = data
-        if (data.length == 1) {
-          this.communitySelected(data[0])
-        }
+        this.dataReady = true
+        this.tryToSelectCommunity()
       })
     } else {
-      if (this.selfRegOptions.length == 1) {
-        this.communitySelected(this.selfRegOptions[0])
-      }
+      this.dataReady = true
+      this.tryToSelectCommunity()
+    }
+  }
+
+  ngAfterViewInit() {
+    this.viewReady = true
+    this.tryToSelectCommunity()
+  }
+
+  tryToSelectCommunity() {
+    if (this.dataReady && this.viewReady && this.selfRegOptions != undefined && this.selfRegOptions.length == 1) {
+      setTimeout(() => {
+        if (this.communityTable) {
+          this.communityTable.select(0)
+        }
+      })
     }
   }
 
@@ -97,7 +115,7 @@ export class SelfRegistrationComponent extends BaseComponent implements OnInit {
     if (this.selfRegOptions === undefined || this.selfRegOptions.length > 1) {
       return ""
     } else {
-      return "selected"  
+      return "selected"
     }
   }
 
