@@ -223,7 +223,7 @@ export class DataService {
     }
     let description = ''
     if (role == Constants.USER_ROLE.SYSTEM_ADMIN) {
-      description = 'Test bed administrator'
+      description = 'Test Bed administrator'
     } else if (role == Constants.USER_ROLE.COMMUNITY_ADMIN) {
       description = 'Community administrator (' + community + ')'
     } else if (role == Constants.USER_ROLE.VENDOR_ADMIN) {
