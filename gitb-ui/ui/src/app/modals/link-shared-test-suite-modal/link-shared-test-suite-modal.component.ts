@@ -35,7 +35,7 @@ export class LinkSharedTestSuiteModalComponent extends BaseComponent implements 
   skipCount = 0
   hasChoicesToComplete = false
   selectConfig!: MultiSelectConfig<Specification>
-  
+
   constructor(
     public dataService: DataService,
     private modalInstance: BsModalRef,
@@ -53,6 +53,7 @@ export class LinkSharedTestSuiteModalComponent extends BaseComponent implements 
       clearItems: new EventEmitter<void>(),
       replaceItems: new EventEmitter<Specification[]>(),
       replaceSelectedItems: new EventEmitter<Specification[]>(),
+      showAsFormControl: true,
       filterLabel: `Select ${this.dataService.labelSpecificationsLower()}...`,
       loader: () => of(this.availableSpecifications)
     }

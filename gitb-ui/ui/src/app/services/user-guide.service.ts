@@ -109,6 +109,7 @@ export class UserGuideService {
     this.paths['/admin/system/themes/create'] = this.setPath('', '', '', 'systemAdministration/index.html#create-theme')
     this.paths['/admin/system/themes/create/:'+Constants.NAVIGATION_PATH_PARAM.THEME_ID] = this.setPath('', '', '', 'systemAdministration/index.html#create-theme')
     this.paths['/admin/system/themes/:'+Constants.NAVIGATION_PATH_PARAM.THEME_ID] = this.setPath('', '', '', 'systemAdministration/index.html#edit-theme')
+    this.paths['/community/sessions'] = this.setPath('communityTests/index.html')
     this.paths['/organisation/conformance/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID] = this.setPath('manageConformanceStatements/index.html#view-your-conformance-statements', '', 'validateTestSetup/index.html#view-your-conformance-statements')
     this.paths['/organisation/conformance/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID+'/system/:'+Constants.NAVIGATION_PATH_PARAM.SYSTEM_ID+'/create'] = this.setPath('', 'manageConformanceStatements/index.html#create-a-conformance-statement', 'validateTestSetup/index.html#create-a-conformance-statement')
     this.paths['/organisation/conformance/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID+'/system/:'+Constants.NAVIGATION_PATH_PARAM.SYSTEM_ID+'/actor/:'+Constants.NAVIGATION_PATH_PARAM.ACTOR_ID] = this.setPath('manageConformanceStatements/index.html#view-a-conformance-statement-s-details', '', 'validateTestSetup/index.html#view-a-conformance-statement-s-details')
