@@ -11,9 +11,9 @@
                 <div class="card-header clickable" (click)="organisationPropertiesCollapsed = !organisationPropertiesCollapsed" [class.collapsed]="organisationPropertiesCollapseFinished">
                     <div class="table-title"><app-collapsing-icon [isCollapsed]="organisationPropertiesCollapsed"></app-collapsing-icon>{{dataService.labelOrganisation()}} level properties</div>
                     <div class="btn-toolbar">
-                        <button type="button" class="btn btn-secondary" (click)="previewOrganisationParameters()">Preview</button>
-                        <button type="button" class="btn btn-secondary" [disable]="orderOrganisationParametersDisabled" [pending]="orderOrganisationParametersPending" (click)="orderOrganisationParameters()">Save property order</button>
-                        <button type="button" class="btn btn-secondary" (click)="addOrganisationParameter()">Create property</button>
+                        <button type="button" class="btn btn-secondary" (click)="previewOrganisationParameters();$event.stopPropagation()">Preview</button>
+                        <button type="button" class="btn btn-secondary" [disable]="orderOrganisationParametersDisabled" [pending]="orderOrganisationParametersPending" (click)="orderOrganisationParameters();$event.stopPropagation()">Save property order</button>
+                        <button type="button" class="btn btn-secondary" (click)="addOrganisationParameter();$event.stopPropagation()">Create property</button>
                     </div>
                 </div>
                 <div [collapse]="organisationPropertiesCollapsed" [isAnimated]="true" (collapsed)="toggleOrganisationPropertiesCollapsed(true)" (expands)="toggleOrganisationPropertiesCollapsed(false)">
@@ -83,9 +83,9 @@
                 <div class="card-header clickable" (click)="systemPropertiesCollapsed = !systemPropertiesCollapsed" [class.collapsed]="systemPropertiesCollapseFinished">
                     <div class="table-title"><app-collapsing-icon [isCollapsed]="systemPropertiesCollapsed"></app-collapsing-icon>{{dataService.labelSystem()}} level properties</div>
                     <div class="btn-toolbar">
-                        <button type="button" class="btn btn-secondary" (click)="previewSystemParameters()">Preview</button>
-                        <button type="button" class="btn btn-secondary" [disable]="orderSystemParametersDisabled" [pending]="orderSystemParametersPending" (click)="orderSystemParameters()">Save property order</button>
-                        <button type="button" class="btn btn-secondary" (click)="addSystemParameter()">Create property</button>
+                        <button type="button" class="btn btn-secondary" (click)="previewSystemParameters();$event.stopPropagation()">Preview</button>
+                        <button type="button" class="btn btn-secondary" [disable]="orderSystemParametersDisabled" [pending]="orderSystemParametersPending" (click)="orderSystemParameters();$event.stopPropagation()">Save property order</button>
+                        <button type="button" class="btn btn-secondary" (click)="addSystemParameter();$event.stopPropagation()">Create property</button>
                     </div>
                 </div>
                 <div [collapse]="systemPropertiesCollapsed" [isAnimated]="true" (collapsed)="toggleSystemPropertiesCollapsed(true)" (expands)="toggleSystemPropertiesCollapsed(false)">
