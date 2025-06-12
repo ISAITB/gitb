@@ -6,7 +6,7 @@ When switching to **production mode**, enabling emails can be desired especially
 
 #### How to enable the service?
 
-To view, manage and test your email settings go to the [system administration](/#/admin/system) screen.
+To view, manage and test your email settings go to the [system administration screen](https://www.itb.ec.europa.eu/docs/itb-ta/latest/systemAdministration/index.html#manage-configuration-settings).
 
 Alternatively you can also set email settings through environment variables set on the `gitb-ui` component as follows:
 

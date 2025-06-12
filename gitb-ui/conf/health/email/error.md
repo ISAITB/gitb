@@ -13,6 +13,6 @@ cases where this may cause issues:
 
 #### How to fix this?
 
-Go to the [system administration](/#/admin/system) screen and correct the current email settings. Emails can also
+Go to the [system administration screen](https://www.itb.ec.europa.eu/docs/itb-ta/latest/systemAdministration/index.html#manage-configuration-settings) and correct the current email settings. Emails can also
 be disabled as a temporary fix. In doing so, notifications will not be sent and users will no longer see the 
 **contact support** link.
