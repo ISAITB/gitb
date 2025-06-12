@@ -1,16 +1,21 @@
 package managers
 
-import com.gitb.core.{ActorConfiguration, AnyContent}
+import com.gitb.core.AnyContent
 import com.gitb.tbs._
 import config.Configurations
 import jaxws.HeaderHandlerResolver
+import models.SessionConfigurationData
+import org.apache.cxf.BusFactory
+import org.apache.cxf.wsdl11.WSDLManagerImpl
 import org.slf4j.{Logger, LoggerFactory}
 
 import java.net.URI
-import javax.inject.Singleton
+import javax.inject.{Inject, Singleton}
+import javax.wsdl.Definition
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class TestbedBackendClient {
+class TestbedBackendClient @Inject() (implicit ec: ExecutionContext) {
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[TestbedBackendClient])
 
@@ -19,87 +24,136 @@ class TestbedBackendClient {
   private def service():TestbedService = {
     if (portInternal == null) {
       logger.info("Creating TestbedService client")
-      val backendURL: java.net.URL = URI.create(Configurations.TESTBED_SERVICE_URL+"?wsdl").toURL
-      val service: TestbedService_Service = new TestbedService_Service(backendURL)
-      //add header handler resolver to add custom header element for TestbedClient service address
-      val handlerResolver = new HeaderHandlerResolver()
-      service.setHandlerResolver(handlerResolver)
-      val port = service.getTestbedServicePort()
-      portInternal = port
+      portInternal = createClient()
     }
     portInternal
   }
 
-  def initiate(testCaseId: Long, sessionId: Option[String]): String = {
-    val requestData: InitiateRequest = new InitiateRequest
-    requestData.setTcId(testCaseId.toString)
-    if (sessionId.isDefined) {
-      requestData.setTcInstanceId(sessionId.get)
+  private def createClientWithoutCaching(): TestbedService = {
+    // Create a custom CXF bus that will avoid WSDL caching.
+    val customBus = BusFactory.newInstance.createBus()
+    // Caching is avoided through a custom WSDL manager that will always reload the WSDL.
+    val wsdlManager = new WSDLManagerImpl() {
+      override def getDefinition(url: String): Definition = {
+        // Skip the cache checks.
+        loadDefinition(url)
+      }
     }
-    val response = service().initiate(requestData)
-    response.getTcInstanceId
-  }
-
-  def configure(sessionId: String, statementParameters: List[ActorConfiguration], domainParameters: Option[ActorConfiguration], organisationParameters: ActorConfiguration, systemParameters: ActorConfiguration, inputs: Option[List[AnyContent]]): Unit = {
-    val cRequest: ConfigureRequest = new ConfigureRequest
-    cRequest.setTcInstanceId(sessionId)
-    import scala.jdk.CollectionConverters._
-    cRequest.getConfigs.addAll(statementParameters.asJava)
-    if (domainParameters.nonEmpty) {
-      cRequest.getConfigs.add(domainParameters.get)
+    wsdlManager.setBus(customBus)
+    // Keep a reference to the original bus.
+    val originalBus = BusFactory.getThreadDefaultBus()
+    try {
+      // Replace the bus with the non-caching one for the current thread.
+      BusFactory.setThreadDefaultBus(customBus)
+      // Create the client using the non-caching bus.
+      createClient()
+    } finally {
+      // Once complete restore the original bus.
+      BusFactory.setThreadDefaultBus(originalBus)
     }
-    cRequest.getConfigs.add(organisationParameters)
-    cRequest.getConfigs.add(systemParameters)
-    if (inputs.isDefined) {
-      cRequest.getInputs.addAll(inputs.get.asJava)
+  }
+
+  private def createClient(): TestbedService = {
+    val wsdlUrl = Configurations.TESTBED_SERVICE_URL+"?wsdl"
+    val backendURL: java.net.URL = URI.create(wsdlUrl).toURL
+    val service: TestbedService_Service = new TestbedService_Service(backendURL)
+    //add header handler resolver to add custom header element for TestbedClient service address
+    val handlerResolver = new HeaderHandlerResolver()
+    service.setHandlerResolver(handlerResolver)
+    service.getTestbedServicePort()
+  }
+
+  def initiate(testCaseId: Long, sessionId: Option[String]): Future[String] = {
+    Future {
+      val requestData: InitiateRequest = new InitiateRequest
+      requestData.setTcId(testCaseId.toString)
+      if (sessionId.isDefined) {
+        requestData.setTcInstanceId(sessionId.get)
+      }
+      val response = service().initiate(requestData)
+      response.getTcInstanceId
     }
-    service().configure(cRequest)
   }
 
-  def restart(sessionId: String): Unit = {
-    val bRequest: BasicCommand = new BasicCommand
-    bRequest.setTcInstanceId(sessionId)
-    service().restart(bRequest)
-  }
-
-  def stop(sessionId: String): Unit = {
-    val request: BasicCommand = new BasicCommand
-    request.setTcInstanceId(sessionId)
-    service().stop(request)
-  }
-
-  def start(sessionId: String): Unit = {
-    val bRequest: BasicCommand = new BasicCommand
-    bRequest.setTcInstanceId(sessionId)
-    service().start(bRequest)
-  }
-
-  def provideInput(sessionId: String, stepId: String, userInputs: Option[List[UserInput]], isAdmin: Boolean): Unit = {
-    val pRequest: ProvideInputRequest = new ProvideInputRequest
-    pRequest.setTcInstanceId(sessionId)
-    pRequest.setStepId(stepId)
-    pRequest.setAdmin(isAdmin)
-    if (userInputs.nonEmpty) {
-      // User inputs are empty when this is a headless session
-      import scala.jdk.CollectionConverters._
-      pRequest.getInput.addAll(userInputs.get.asJava)
+  def configure(sessionId: String, configuration: SessionConfigurationData, inputs: Option[List[AnyContent]]): Future[Unit] = {
+    Future {
+      val cRequest: ConfigureRequest = new ConfigureRequest
+      cRequest.setTcInstanceId(sessionId)
+      configuration.apply(cRequest.getConfigs)
+      if (inputs.isDefined) {
+        import scala.jdk.CollectionConverters._
+        cRequest.getInputs.addAll(inputs.get.asJava)
+      }
+      service().configure(cRequest)
     }
-    service().provideInput(pRequest)
   }
 
-  def getTestCaseDefinition(testId:String, sessionId: Option[String]): GetTestCaseDefinitionResponse = {
-    val request = new GetTestCaseDefinitionRequest
-    request.setTcId(testId)
-    if (sessionId.isDefined) {
-      request.setTcInstanceId(sessionId.get)
+  def restart(sessionId: String): Future[Unit] = {
+    Future {
+      val bRequest: BasicCommand = new BasicCommand
+      bRequest.setTcInstanceId(sessionId)
+      service().restart(bRequest)
     }
-    service().getTestCaseDefinition(request)
   }
 
-  def initiatePreliminary(sessionId: String): Unit = {
-    val bRequest:BasicCommand = new BasicCommand
-    bRequest.setTcInstanceId(sessionId)
-    service().initiatePreliminary(bRequest)
+  def stop(sessionId: String): Future[Unit] = {
+    Future {
+      val request: BasicCommand = new BasicCommand
+      request.setTcInstanceId(sessionId)
+      service().stop(request)
+    }
+  }
+
+  def start(sessionId: String): Future[Unit] = {
+    logger.info("Starting test session [{}]", sessionId)
+    Future {
+      val bRequest: BasicCommand = new BasicCommand
+      bRequest.setTcInstanceId(sessionId)
+      service().start(bRequest)
+    }
+  }
+
+  def provideInput(sessionId: String, stepId: String, userInputs: Option[List[UserInput]], isAdmin: Boolean): Future[Unit] = {
+    Future {
+      val pRequest: ProvideInputRequest = new ProvideInputRequest
+      pRequest.setTcInstanceId(sessionId)
+      pRequest.setStepId(stepId)
+      pRequest.setAdmin(isAdmin)
+      if (userInputs.nonEmpty) {
+        // User inputs are empty when this is a headless session
+        import scala.jdk.CollectionConverters._
+        pRequest.getInput.addAll(userInputs.get.asJava)
+      }
+      service().provideInput(pRequest)
+    }
+  }
+
+  def getTestCaseDefinition(testId:String, sessionId: Option[String], configuration: SessionConfigurationData): Future[GetTestCaseDefinitionResponse] = {
+    Future {
+      val request = new GetTestCaseDefinitionRequest
+      request.setTcId(testId)
+      if (sessionId.isDefined) {
+        request.setTcInstanceId(sessionId.get)
+      }
+      configuration.apply(request.getConfigs)
+      service().getTestCaseDefinition(request)
+    }
+  }
+
+  def initiatePreliminary(sessionId: String): Future[Unit] = {
+    Future {
+      val bRequest:BasicCommand = new BasicCommand
+      bRequest.setTcInstanceId(sessionId)
+      service().initiatePreliminary(bRequest)
+    }
+  }
+
+  def healthCheck(healthCheckType: String): Future[String] = {
+    val request = new GetActorDefinitionRequest()
+    request.setActorId(healthCheckType)
+    Future {
+      createClientWithoutCaching().getActorDefinition(request).getActor.getDesc
+    }
   }
 
 }

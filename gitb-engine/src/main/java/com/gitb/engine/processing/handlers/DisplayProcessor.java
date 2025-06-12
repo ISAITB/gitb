@@ -31,7 +31,7 @@ public class DisplayProcessor extends AbstractProcessingHandler {
     private static final String INPUT__RESULT = "result";
 
     @Override
-    public ProcessingModule getModuleDefinition() {
+    public ProcessingModule createProcessingModule() {
         ProcessingModule module = new ProcessingModule();
         module.setId("DisplayProcessor");
         module.setMetadata(new Metadata());

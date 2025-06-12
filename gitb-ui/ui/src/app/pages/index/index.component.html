@@ -61,7 +61,16 @@
                                 <app-menu-item (click)="routingService.toSystemAdministration()"
                                                [type]="MenuItem.systemAdministration" label="System administration"
                                                icon="fa-solid fa-gear" [expanded]="menuExpanded"></app-menu-item>
+                                <app-menu-item (click)="routingService.toServiceHealthDashboard()"
+                                               [type]="MenuItem.serviceHealthDashboard" label="Service health"
+                                               icon="fa-solid fa-heart-pulse" [expanded]="menuExpanded"></app-menu-item>
                             }
+                        }
+                        @if (dataService.showCommunityViewMenu) {
+                            <app-menu-group label="My community" [expanded]="menuExpanded"></app-menu-group>
+                            <app-menu-item (click)="routingService.toCommunitySessionDashboard()"
+                                           [type]="MenuItem.communitySessionDashboard" label="Community test sessions"
+                                           icon="fa-solid fa-rectangle-list" [expanded]="menuExpanded"></app-menu-item>
                         }
                         <app-menu-group label="My tests" [expanded]="menuExpanded"></app-menu-group>
                         <app-menu-item (click)="routingService.toOwnConformanceStatements(dataService.vendor!.id)"
@@ -111,7 +120,7 @@
                         <div class="footer-link"><a href (click)="userGuideLink();$event.preventDefault()" target="blank">User guide</a></div>
                     }
                     @if (showRestApi()) {
-                        <div class="footer-link"><a href="api/rest" target="blank">REST API</a></div>
+                        <div class="footer-link"><a href="api/rest/swagger" target="blank">REST API</a></div>
                     }
                     @if (showProvideFeedback()) {
                         <div class="footer-link"><a [href]="provideFeedbackLink()" target="blank">Provide feedback</a></div>

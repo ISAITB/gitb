@@ -4,9 +4,10 @@ import {DataService} from '../../../../../services/data.service';
 import {Constants} from '../../../../../common/constants';
 
 @Component({
-  selector: 'app-trigger-fire-expression-control',
-  templateUrl: './trigger-fire-expression-control.component.html',
-  styleUrl: './trigger-fire-expression-control.component.less'
+    selector: 'app-trigger-fire-expression-control',
+    templateUrl: './trigger-fire-expression-control.component.html',
+    styleUrl: './trigger-fire-expression-control.component.less',
+    standalone: false
 })
 export class TriggerFireExpressionControlComponent implements OnInit {
 

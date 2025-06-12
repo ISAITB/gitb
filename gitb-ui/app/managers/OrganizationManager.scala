@@ -2,6 +2,8 @@ package managers
 
 import actors.events.OrganisationUpdatedEvent
 import exceptions.{AutomationApiException, ErrorCodes}
+import managers.OrganizationManager.{SpecificationApiKeyInfo, TestSuiteApiKeyInfo}
+import managers.triggers.TriggerHelper
 import models.Enums.{OrganizationType, UserRole}
 import models._
 import models.automation._
@@ -12,7 +14,14 @@ import utils.{CryptoUtil, MimeUtil, RepositoryUtils}
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ExecutionContext, Future}
+
+object OrganizationManager {
+
+  case class TestSuiteApiKeyInfo(testSuiteInfo: ApiKeyTestSuiteInfo, testCaseInfo: mutable.TreeMap[String, ApiKeyTestCaseInfo])
+  case class SpecificationApiKeyInfo(specificationName: String, actorInfo: mutable.TreeMap[String, ApiKeyActorInfo], testSuiteInfo: mutable.TreeMap[String, TestSuiteApiKeyInfo], specificationGroupName: Option[String])
+
+}
 
 /**
  * Created by VWYNGAET on 26/10/2016.
@@ -23,31 +32,32 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
                                      testResultManager: TestResultManager,
                                      triggerHelper: TriggerHelper,
                                      automationApiHelper: AutomationApiHelper,
-                                     dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+                                     dbConfigProvider: DatabaseConfigProvider)
+                                    (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
-  /**
-    * Checks if organization exists (ignoring the default)
-    */
-  def checkOrganizationExists(orgId: Long): Boolean = {
-    val firstOption = exec(PersistenceSchema.organizations.filter(_.id =!= Constants.DefaultOrganizationId).filter(_.id === orgId).result.headOption)
-    firstOption.isDefined
+  def checkOrganizationExistsInternal(orgId: Long): DBIO[Boolean] = {
+    PersistenceSchema.organizations
+      .filter(_.id =!= Constants.DefaultOrganizationId)
+      .filter(_.id === orgId)
+      .exists
+      .result
   }
 
   /**
     * Gets all organizations
     */
-  def getOrganizations(): List[Organizations] = {
-    //1) Get all organizations except the default organization for system administrators
-    val organizations = exec(PersistenceSchema.organizations
-      .sortBy(_.shortname.asc)
-      .result.map(_.toList))
-    organizations
+  def getOrganizations(): Future[List[Organizations]] = {
+    DB.run(
+      PersistenceSchema.organizations
+        .sortBy(_.shortname.asc)
+        .result.map(_.toList)
+    )
   }
 
-  def searchOrganizations(communityIds: Option[List[Long]]): List[Organizations] = {
-    exec(
+  def searchOrganizations(communityIds: Option[List[Long]]): Future[List[Organizations]] = {
+    DB.run(
       PersistenceSchema.organizations
         .filterOpt(communityIds)((q, ids) => q.community inSet ids)
         .sortBy(_.shortname.asc)
@@ -56,25 +66,12 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
     )
   }
 
-  def getOrganisationTemplates(communityId: Long): Option[List[SelfRegTemplate]] = {
-    val result = exec(PersistenceSchema.organizations
-      .filter(_.community === communityId)
-      .filter(_.template === true)
-      .sortBy(_.templateName).result
-    ).map(x => new SelfRegTemplate(x.id, x.templateName.get)).toList
-    if (result.isEmpty) {
-      None
-    } else {
-      Some(result)
-    }
-  }
-
   /**
     * Gets organizations with specified community
     */
-  def getOrganizationsByCommunity(communityId: Long, includeAdmin: Boolean = false, snapshotId: Option[Long]): List[Organizations] = {
+  def getOrganizationsByCommunity(communityId: Long, includeAdmin: Boolean = false, snapshotId: Option[Long]): Future[List[Organizations]] = {
     val organizations = if (snapshotId.isDefined) {
-      exec(
+      DB.run(
         PersistenceSchema.conformanceSnapshotOrganisations
           .join(PersistenceSchema.conformanceSnapshots).on(_.snapshotId === _.id)
           .filter(_._2.community === communityId)
@@ -82,9 +79,11 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
           .sortBy(_._1.fullname.asc)
           .map(_._1)
           .result
-      ).map(x => Organizations(x.id, x.shortname, x.fullname, OrganizationType.Vendor.id.toShort, adminOrganization = false, None, None, None, template = false, None, x.apiKey, communityId)).toList
+      ).map { results =>
+        results.map(x => Organizations(x.id, x.shortname, x.fullname, OrganizationType.Vendor.id.toShort, adminOrganization = false, None, None, None, template = false, None, x.apiKey, communityId)).toList
+      }
     } else {
-      exec(
+      DB.run(
         PersistenceSchema.organizations
           .filterIf(!includeAdmin)(_.adminOrganization === false)
           .filter(_.community === communityId)
@@ -95,7 +94,7 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
     organizations
   }
 
-  def searchOrganizationsByCommunity(communityId: Long, page: Long, limit: Long, filter: Option[String], sortOrder: Option[String], sortColumn: Option[String], creationOrderSort: Option[String]): (Iterable[Organizations], Int) = {
+  def searchOrganizationsByCommunity(communityId: Long, page: Long, limit: Long, filter: Option[String], sortOrder: Option[String], sortColumn: Option[String], creationOrderSort: Option[String]): Future[(Iterable[Organizations], Int)] = {
     var query = PersistenceSchema.organizations
       .filter(_.adminOrganization === false)
       .filter(_.community === communityId)
@@ -124,7 +123,7 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
         }
       }
     }
-    exec(
+    DB.run(
       for {
         results <- query.drop((page - 1) * limit).take(limit).result
         resultCount <- query.size.result
@@ -132,27 +131,29 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
     )
   }
 
-  def getById(id: Long): Option[Organizations] = {
-    exec(PersistenceSchema.organizations.filter(_.id === id).result.headOption)
+  def getById(id: Long): Future[Option[Organizations]] = {
+    DB.run(PersistenceSchema.organizations.filter(_.id === id).result.headOption)
   }
 
-  def getByApiKey(apiKey: String): Option[Organizations] = {
-    exec(PersistenceSchema.organizations.filter(_.apiKey === apiKey).result.headOption)
+  def getByApiKey(apiKey: String): Future[Option[Organizations]] = {
+    DB.run(PersistenceSchema.organizations.filter(_.apiKey === apiKey).result.headOption)
   }
 
   /**
     * Gets organization with specified id
     */
-  def getOrganizationById(orgId: Long): Organizations = {
-    exec(PersistenceSchema.organizations.filter(_.id === orgId).result.head)
+  def getOrganizationById(orgId: Long): Future[Organizations] = {
+    DB.run(PersistenceSchema.organizations.filter(_.id === orgId).result.head)
   }
 
-  def getOrganizationBySystemId(systemId: Long): Organizations = {
-    exec(PersistenceSchema.organizations
+  def getOrganizationBySystemId(systemId: Long): Future[Organizations] = {
+    DB.run(
+      PersistenceSchema.organizations
       .join(PersistenceSchema.systems).on(_.id === _.owner)
       .filter(_._2.id === systemId)
       .map(x => x._1)
-      .result.head)
+      .result.head
+    )
   }
 
   private def copyTestSetup(fromOrganisation: Long, toOrganisation: Long, copyOrganisationParameters: Boolean, copySystemParameters: Boolean, copyStatementParameters: Boolean, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Option[List[SystemCreationDbInfo]]] = {
@@ -185,7 +186,7 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
       _ <- {
         val actions = new ListBuffer[DBIO[_]]()
         if (copyOrganisationParameters) {
-          actions += deleteOrganizationParameterValues(toOrganisation, onSuccessCalls) andThen DBIO.successful(None)
+          actions += deleteOrganizationParameterValues(toOrganisation, onSuccessCalls).map(_ => None)
           actions += (for {
             otherValues <- PersistenceSchema.organisationParameterValues.filter(_.organisation === fromOrganisation).result.map(_.toList)
             _ <- {
@@ -286,15 +287,16 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
   /**
     * Creates new organization
     */
-  def createOrganization(organization: Organizations, otherOrganisationId: Option[Long], propertyValues: Option[List[OrganisationParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copyOrganisationParameters: Boolean, copySystemParameters: Boolean, copyStatementParameters: Boolean): Long = {
+  def createOrganization(organization: Organizations, otherOrganisationId: Option[Long], propertyValues: Option[List[OrganisationParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copyOrganisationParameters: Boolean, copySystemParameters: Boolean, copyStatementParameters: Boolean): Future[Long] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = createOrganizationWithRelatedData(organization, otherOrganisationId, propertyValues, propertyFiles, copyOrganisationParameters, copySystemParameters, copyStatementParameters, checkApiKeyUniqueness = false, setDefaultPropertyValues = true, onSuccessCalls)
-    val orgInfo = exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
-    triggerHelper.triggersFor(organization.community, orgInfo)
-    orgInfo.organisationId
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally).map { orgInfo =>
+      triggerHelper.triggersFor(organization.community, orgInfo)
+      orgInfo.organisationId
+    }
   }
 
-  def createOrganisationThroughAutomationApi(input: CreateOrganisationRequest): String = {
+  def createOrganisationThroughAutomationApi(input: CreateOrganisationRequest): Future[String] = {
     val action = for {
       communityId <- automationApiHelper.getCommunityByCommunityApiKey(input.communityApiKey)
       apiKeyToUse <- {
@@ -316,26 +318,27 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
         Some(apiKeyToUse), communityId
       ))
     } yield (communityId, apiKeyToUse, new OrganisationCreationDbInfo(createdOrganisationId, None))
-    val result = exec(action.transactionally)
-    // Call triggers (separate transaction).
-    triggerHelper.triggersFor(result._1, result._3)
-    // Return assigned API key.
-    result._2
-  }
-
-  def isTemplateNameUnique(templateName: String, communityId: Long, organisationIdToIgnore: Option[Long]): Boolean = {
-    var q = PersistenceSchema.organizations
-      .filter(_.community === communityId)
-      .filter(_.template === true)
-      .filter(_.templateName === templateName)
-    if (organisationIdToIgnore.isDefined) {
-      q = q.filter(_.id =!= organisationIdToIgnore.get)
+    DB.run(action.transactionally).map { result =>
+      // Call triggers (separate transaction).
+      triggerHelper.triggersFor(result._1, result._3)
+      // Return assigned API key.
+      result._2
     }
-    val result = exec(q.result.headOption)
-    result.isEmpty
   }
 
-  def updateOwnOrganization(userId: Long, shortName: String, fullName: String, propertyValues: Option[List[OrganisationParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], landingPageId: Option[Option[Long]]): Unit = {
+  def isTemplateNameUnique(templateName: String, communityId: Long, organisationIdToIgnore: Option[Long]): Future[Boolean] = {
+    DB.run(
+      PersistenceSchema.organizations
+        .filter(_.community === communityId)
+        .filter(_.template === true)
+        .filter(_.templateName === templateName)
+        .filterOpt(organisationIdToIgnore)((q, idToIgnore) => q.id =!= idToIgnore)
+        .exists
+        .result
+    ).map(!_)
+  }
+
+  def updateOwnOrganization(userId: Long, shortName: String, fullName: String, propertyValues: Option[List[OrganisationParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], landingPageId: Option[Option[Long]]): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = for {
       userInfo <- PersistenceSchema.users.filter(_.id === userId).map(x => (x.organization, x.role)).result.head
@@ -361,8 +364,9 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
         }
       }
     } yield (communityId, userInfo._1)
-    val results = exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
-    triggerHelper.publishTriggerEvent(new OrganisationUpdatedEvent(results._1, results._2))
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally).map { results =>
+      triggerHelper.publishTriggerEvent(new OrganisationUpdatedEvent(results._1, results._2))
+    }
   }
 
   def updateOrganizationInternal(orgId: Long, shortName: String, fullName: String, landingPageId: Option[Long], legalNoticeId: Option[Long], errorTemplateId: Option[Long], otherOrganisation: Option[Long], template: Boolean, templateName: Option[String], apiKey: Option[Option[String]], propertyValues: Option[List[OrganisationParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copyOrganisationParameters: Boolean, copySystemParameters: Boolean, copyStatementParameters: Boolean, checkApiKeyUniqueness: Boolean, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Option[List[SystemCreationDbInfo]]] = {
@@ -428,7 +432,7 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
     PersistenceSchema.organizations.filter(_.id === organisationId).map(x => x.community).result.head
   }
 
-  def updateOrganisationThroughAutomationApi(updateRequest: UpdateOrganisationRequest): Unit = {
+  def updateOrganisationThroughAutomationApi(updateRequest: UpdateOrganisationRequest): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val action = for {
       communityId <- automationApiHelper.getCommunityByCommunityApiKey(updateRequest.communityApiKey)
@@ -457,34 +461,36 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
         checkApiKeyUniqueness = false, onSuccessCalls
       )
     } yield (communityId, organisation.id, creationInfo)
-    val result = exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
-    // Call triggers in separate transactions.
-    triggerHelper.publishTriggerEvent(new OrganisationUpdatedEvent(result._1, result._2))
-    triggerHelper.triggersFor(result._1, result._3)
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally).map { result =>
+      // Call triggers in separate transactions.
+      triggerHelper.publishTriggerEvent(new OrganisationUpdatedEvent(result._1, result._2))
+      triggerHelper.triggersFor(result._1, result._3)
+    }
   }
 
-  def updateOrganization(orgId: Long, shortName: String, fullName: String, landingPageId: Option[Long], legalNoticeId: Option[Long], errorTemplateId: Option[Long], otherOrganisation: Option[Long], template: Boolean, templateName: Option[String], propertyValues: Option[List[OrganisationParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copyOrganisationParameters: Boolean, copySystemParameters: Boolean, copyStatementParameters: Boolean): Unit = {
+  def updateOrganization(orgId: Long, shortName: String, fullName: String, landingPageId: Option[Long], legalNoticeId: Option[Long], errorTemplateId: Option[Long], otherOrganisation: Option[Long], template: Boolean, templateName: Option[String], propertyValues: Option[List[OrganisationParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copyOrganisationParameters: Boolean, copySystemParameters: Boolean, copyStatementParameters: Boolean): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = for {
       communityId <- getCommunityIdByOrganisationId(orgId)
       createdSystemInfo <- updateOrganizationInternal(orgId, shortName, fullName, landingPageId, legalNoticeId, errorTemplateId, otherOrganisation, template, templateName, None, propertyValues, propertyFiles, copyOrganisationParameters, copySystemParameters, copyStatementParameters, checkApiKeyUniqueness = false, onSuccessCalls)
     } yield (communityId, createdSystemInfo)
-    val result = exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
-    triggerHelper.publishTriggerEvent(new OrganisationUpdatedEvent(result._1, orgId))
-    triggerHelper.triggersFor(result._1, result._2)
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally).map { result =>
+      triggerHelper.publishTriggerEvent(new OrganisationUpdatedEvent(result._1, orgId))
+      triggerHelper.triggersFor(result._1, result._2)
+    }
   }
 
   /**
     * Deletes organization by community
     */
   def deleteOrganizationByCommunity(communityId: Long, onSuccess: mutable.ListBuffer[() => _]): DBIO[_] = {
-    testResultManager.updateForDeletedOrganisationByCommunityId(communityId) andThen
-      (for {
+      for {
+        _ <- testResultManager.updateForDeletedOrganisationByCommunityId(communityId)
         list <- PersistenceSchema.organizations.filter(_.community === communityId).result
         _ <- DBIO.seq(list.map { org =>
           deleteOrganization(org.id, onSuccess)
         }: _*)
-      } yield ())
+      } yield ()
   }
 
   private def deleteOrganizationParameterValues(orgId: Long, onSuccess: mutable.ListBuffer[() => _]) = {
@@ -499,7 +505,7 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
     } yield ()
   }
 
-  def deleteOrganisationThroughAutomationApi(organisationApiKey: String, communityApiKey: String): Unit = {
+  def deleteOrganisationThroughAutomationApi(organisationApiKey: String, communityApiKey: String): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val action = for {
       communityId <- automationApiHelper.getCommunityByCommunityApiKey(communityApiKey)
@@ -517,28 +523,29 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
         }
       }
     } yield ()
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
   }
 
   def deleteOrganization(orgId: Long, onSuccess: mutable.ListBuffer[() => _]): DBIO[_] = {
-    testResultManager.updateForDeletedOrganisation(orgId) andThen
-      deleteUserByOrganization(orgId) andThen
-      systemManager.deleteSystemByOrganization(orgId, onSuccess) andThen
-      deleteOrganizationParameterValues(orgId, onSuccess) andThen
-      PersistenceSchema.conformanceSnapshotResults.filter(_.organisationId === orgId).map(_.organisationId).update(orgId * -1) andThen
-      PersistenceSchema.conformanceSnapshotOrganisations.filter(_.id === orgId).map(_.id).update(orgId * -1) andThen
-      PersistenceSchema.conformanceSnapshotOrganisationProperties.filter(_.organisationId === orgId).map(_.organisationId).update(orgId * -1) andThen
-      PersistenceSchema.organizations.filter(_.id === orgId).delete andThen
-      DBIO.successful(())
+    for {
+      _ <- testResultManager.updateForDeletedOrganisation(orgId)
+      _ <- deleteUserByOrganization(orgId)
+      _ <- systemManager.deleteSystemByOrganization(orgId, onSuccess)
+      _ <- deleteOrganizationParameterValues(orgId, onSuccess)
+      _ <- PersistenceSchema.conformanceSnapshotResults.filter(_.organisationId === orgId).map(_.organisationId).update(orgId * -1)
+      _ <- PersistenceSchema.conformanceSnapshotOrganisations.filter(_.id === orgId).map(_.id).update(orgId * -1)
+      _ <- PersistenceSchema.conformanceSnapshotOrganisationProperties.filter(_.organisationId === orgId).map(_.organisationId).update(orgId * -1)
+      _ <- PersistenceSchema.organizations.filter(_.id === orgId).delete
+    } yield ()
   }
 
   /**
     * Deletes organization with specified id
     */
-  def deleteOrganizationWrapper(orgId: Long): Unit = {
+  def deleteOrganizationWrapper(orgId: Long): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = deleteOrganization(orgId, onSuccessCalls)
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally).map(_ => ())
   }
 
   /**
@@ -548,21 +555,28 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
     PersistenceSchema.users.filter(_.organization === orgId).delete
   }
 
-  def getOrganisationParameterValues(orgId: Long, onlySimple: Option[Boolean] = None, forExports: Option[Boolean] = None): List[OrganisationParametersWithValue] = {
-    var typeToCheck: Option[String] = None
-    if (onlySimple.isDefined && onlySimple.get) {
-      typeToCheck = Some("SIMPLE")
-    }
-    val communityId = getById(orgId).get.community
-    exec(PersistenceSchema.organisationParameters
-      .joinLeft(PersistenceSchema.organisationParameterValues).on((p, v) => p.id === v.parameter && v.organisation === orgId)
-      .filter(_._1.community === communityId)
-      .filterOpt(forExports)((q, flag) => q._1.inExports === flag)
-      .filterOpt(typeToCheck)((table, propertyType)=> table._1.kind === propertyType)
-      .sortBy(x => (x._1.displayOrder.asc, x._1.name.asc))
-      .map(x => (x._1, x._2))
-      .result
-    ).toList.map(r => new OrganisationParametersWithValue(r._1, r._2))
+  def getOrganisationParameterValues(orgId: Long, onlySimple: Option[Boolean] = None, forExports: Option[Boolean] = None): Future[List[OrganisationParametersWithValue]] = {
+    for {
+      communityId <- getById(orgId).map(_.get.community)
+      result <- {
+        val typeToCheck = if (onlySimple.isDefined && onlySimple.get) {
+          Some("SIMPLE")
+        } else {
+          None
+        }
+        DB.run(PersistenceSchema.organisationParameters
+          .joinLeft(PersistenceSchema.organisationParameterValues).on((p, v) => p.id === v.parameter && v.organisation === orgId)
+          .filter(_._1.community === communityId)
+          .filterOpt(forExports)((q, flag) => q._1.inExports === flag)
+          .filterOpt(typeToCheck)((table, propertyType)=> table._1.kind === propertyType)
+          .sortBy(x => (x._1.displayOrder.asc, x._1.name.asc))
+          .map(x => (x._1, x._2))
+          .result
+        ).map { results =>
+          results.toList.map(r => new OrganisationParametersWithValue(r._1, r._2))
+        }
+      }
+    } yield result
   }
 
   private def prerequisitesSatisfied(isAdmin: Boolean, parameterToCheck: OrganisationParameters, statusMap: mutable.Map[Long, Boolean], definitionMap: Map[String, OrganisationParameters], providedValueMap: Map[Long, OrganisationParameterValues], existingValueMap: Option[Map[Long, OrganisationParameterValues]], checkedParameters: mutable.Set[Long]): Boolean = {
@@ -675,31 +689,39 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
     } yield()
   }
 
-  def saveOrganisationParameterValuesWrapper(userId: Long, orgId: Long, values: List[OrganisationParameterValues], propertyFiles: Map[Long, FileInfo]): Unit = {
-    val userRole: Short = exec(PersistenceSchema.users.filter(_.id === userId).map(x => x.role).result).head
-    val isAdmin: Boolean = userRole == UserRole.CommunityAdmin.id.toShort || userRole == UserRole.SystemAdmin.id.toShort
-    val organisation = getById(orgId)
+  def saveOrganisationParameterValuesWrapper(userId: Long, orgId: Long, values: List[OrganisationParameterValues], propertyFiles: Map[Long, FileInfo]): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
-    val dbAction = saveOrganisationParameterValues(orgId, organisation.get.community, isAdmin, values, propertyFiles, onSuccessCalls)
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+    val dbAction = for {
+      isAdmin <- PersistenceSchema.users.filter(_.id === userId).map(x => x.role).result.head.map { userRole =>
+        userRole == UserRole.CommunityAdmin.id.toShort || userRole == UserRole.SystemAdmin.id.toShort
+      }
+      communityId <- PersistenceSchema.organizations
+        .filter(_.id === orgId)
+        .map(_.community)
+        .result
+        .head
+      _ <- saveOrganisationParameterValues(orgId, communityId, isAdmin, values, propertyFiles, onSuccessCalls)
+    } yield ()
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally).map(_ => ())
   }
 
-  def updateOrganisationApiKey(organisationId: Long): String = {
+  def updateOrganisationApiKey(organisationId: Long): Future[String] = {
     val newApiKey = CryptoUtil.generateApiKey()
-    updateOrganisationApiKeyInternal(organisationId, Some(newApiKey))
-    newApiKey
+    updateOrganisationApiKeyInternal(organisationId, Some(newApiKey)).map { _ =>
+      newApiKey
+    }
   }
 
-  def deleteOrganisationApiKey(organisationId: Long): Unit = {
+  def deleteOrganisationApiKey(organisationId: Long): Future[Unit] = {
     updateOrganisationApiKeyInternal(organisationId, None)
   }
 
-  private def updateOrganisationApiKeyInternal(organisationId: Long, apiKey: Option[String]): Unit = {
-    exec(PersistenceSchema.organizations.filter(_.id === organisationId).map(_.apiKey).update(apiKey).transactionally)
+  private def updateOrganisationApiKeyInternal(organisationId: Long, apiKey: Option[String]): Future[Unit] = {
+    DB.run(PersistenceSchema.organizations.filter(_.id === organisationId).map(_.apiKey).update(apiKey).transactionally).map(_ => ())
   }
 
-  def getAutomationKeysForOrganisation(organisationId: Long, snapshotId: Option[Long]): ApiKeyInfo = {
-    val results = exec(for {
+  def getAutomationKeysForOrganisation(organisationId: Long, snapshotId: Option[Long]): Future[ApiKeyInfo] = {
+    DB.run(for {
       organisationApiKey <- PersistenceSchema.organizations.filter(_.id === organisationId).map(_.apiKey).result.head
       systemApiKeys <- if (snapshotId.isEmpty) {
         PersistenceSchema.systems.filter(_.owner === organisationId).map(x => (x.id, x.fullname, x.apiKey)).sortBy(_._2.asc).result
@@ -731,7 +753,10 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
                 x._1._2.shortname, // Test case name [6]
                 x._1._2.identifier, // Test case identifier [7]
                 x._1._1._1._1._2.id, // Specification ID [8]
-                x._2.map(_.shortname) // Specification group name [9]
+                x._2.map(_.shortname), // Specification group name [9]
+                x._1._1._1._2.id, // Actor ID [10]
+                x._1._1._2.id, // Test suite ID [11]
+                x._1._2.id // Test case ID [12]
               ))
           } else {
             PersistenceSchema.conformanceSnapshotResults
@@ -750,7 +775,10 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
                 x._1._2.shortname, // Test case name [6]
                 x._1._2.identifier, // Test case identifier [7]
                 x._1._1._1._1._2.id, // Specification ID [8]
-                x._2.map(_.shortname) // Specification group name [9]
+                x._2.map(_.shortname) ,// Specification group name [9]
+                x._1._1._1._2.id, // Actor ID [10]
+                x._1._1._2.id, // Test suite ID [11]
+                x._1._2.id // Test case ID [12]
               ))
           }
           query.distinct.sortBy(x => (x._9.asc, x._1.asc, x._2.asc, x._4.asc, x._6.asc)).result
@@ -758,73 +786,51 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
           DBIO.successful(List.empty)
         }
       }
-    } yield (organisationApiKey, systemApiKeys, domainApiKeys))
-    // Process results from DB
-    type testSuiteMapTuple = (String, mutable.TreeMap[String, String]) // Test suite name, Test case identifier, Test case name
-    type specificationMapTuple = (String, mutable.TreeMap[String, String], mutable.TreeMap[String, testSuiteMapTuple], Option[String]) // Specification name, Actor API key, Actor name, Test suite identifier, Test suite info, Specification group name
-    // Organise results into a tree hierarchy
-    val specificationMap = new mutable.LinkedHashMap[Long, specificationMapTuple]()
-    results._3.foreach { result =>
-      var spec = specificationMap.get(result._8)
-      // Spec info.
-      if (spec.isEmpty) {
-        spec = Some((result._1, new mutable.TreeMap[String, String](), new mutable.TreeMap[String, testSuiteMapTuple](), result._9))
-        specificationMap += (result._8 -> spec.get)
+    } yield (organisationApiKey, systemApiKeys, domainApiKeys)).map { results =>
+      // Process results from DB
+      // Organise results into a tree hierarchy
+      val specificationMap = new mutable.LinkedHashMap[Long, SpecificationApiKeyInfo]()
+      results._3.foreach { result =>
+        // Spec info.
+        val spec = specificationMap.getOrElseUpdate(result._8, SpecificationApiKeyInfo(result._1, new mutable.TreeMap(), new mutable.TreeMap(), result._9))
+        // Actor info.
+        if (!spec.actorInfo.contains(result._3)) {
+          spec.actorInfo += (result._3 -> ApiKeyActorInfo(result._10, result._2, result._3))
+        }
+        // Test suite info.
+        val testSuite = spec.testSuiteInfo.getOrElseUpdate(result._5, TestSuiteApiKeyInfo(ApiKeyTestSuiteInfo(result._11, result._4, result._5, List()), new mutable.TreeMap()))
+        // Test case info.
+        if (!testSuite.testCaseInfo.contains(result._7)) {
+          testSuite.testCaseInfo += (result._7 -> ApiKeyTestCaseInfo(result._12, result._6, result._7))
+        }
       }
-      // Actor info.
-      if (!spec.get._2.contains(result._3)) {
-        spec.get._2 += (result._3 -> result._2)
-      }
-      // Test suite info.
-      var testSuite = spec.get._3.get(result._5)
-      if (testSuite.isEmpty) {
-        testSuite = Some((result._4, new mutable.TreeMap[String, String]()))
-        spec.get._3 += (result._5 -> testSuite.get)
-      }
-      // Test case info.
-      if (!testSuite.get._2.contains(result._7)) {
-        testSuite.get._2 += (result._7 -> result._6)
-      }
-    }
-    // Map the tree hierarchies to the types to return.
-    val specifications = specificationMap.map { spec =>
-      val specName = if (spec._2._4.isDefined) {
-        spec._2._4.get + " - " + spec._2._1
-      } else {
-        spec._2._1
-      }
-      ApiKeySpecificationInfo(
-        specName,
-        spec._2._2.map { actor =>
-          val actorKey = actor._1
-          val actorName = actor._2
-          ApiKeyActorInfo(actorName, actorKey)
+      // Map the tree hierarchies to the types to return.
+      val specifications = specificationMap.map { spec =>
+        val specName = if (spec._2.specificationGroupName.isDefined) {
+          spec._2.specificationGroupName.get + " - " + spec._2.specificationName
+        } else {
+          spec._2.specificationName
+        }
+        ApiKeySpecificationInfo(
+          spec._1,
+          specName,
+          spec._2.actorInfo.values.toList,
+          spec._2.testSuiteInfo.map { testSuite =>
+            testSuite._2.testSuiteInfo.copy(testcases = testSuite._2.testCaseInfo.values.toList)
+          }.toList
+        )
+      }.toList
+      // Return final aggregate object.
+      ApiKeyInfo(
+        results._1,
+        results._2.map { system =>
+          val id = system._1
+          val name = system._2
+          val apiKey = system._3
+          ApiKeySystemInfo(id, name, apiKey)
         }.toList,
-        spec._2._3.map { testSuite =>
-          val testSuiteIdentifier = testSuite._1
-          val testSuiteName = testSuite._2._1
-          ApiKeyTestSuiteInfo(
-            testSuiteName,
-            testSuiteIdentifier,
-            testSuite._2._2.map { testCase =>
-              val testCaseName = testCase._2
-              val testCaseIdentifier = testCase._1
-              ApiKeyTestCaseInfo(testCaseName, testCaseIdentifier)
-            }.toList
-          )
-        }.toList
+        specifications
       )
-    }.toList
-    // Return final aggregate object.
-    ApiKeyInfo(
-      results._1,
-      results._2.map { system =>
-        val id = system._1
-        val name = system._2
-        val apiKey = system._3
-        ApiKeySystemInfo(id, name, apiKey)
-      }.toList,
-      specifications
-    )
+    }
   }
 }

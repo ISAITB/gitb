@@ -4,99 +4,129 @@ import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, Respo
 import exceptions.ErrorCodes
 import managers.{AuthorizationManager, LegalNoticeManager}
 import models.Constants
-import play.api.mvc.{AbstractController, ControllerComponents}
+import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
 import utils.{HtmlUtil, JsonUtil}
 
 import javax.inject.Inject
+import scala.concurrent.{ExecutionContext, Future}
 
-class LegalNoticeService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, legalNoticeManager: LegalNoticeManager, authorizationManager: AuthorizationManager) extends AbstractController(cc) {
+class LegalNoticeService @Inject() (authorizedAction: AuthorizedAction,
+                                    cc: ControllerComponents,
+                                    legalNoticeManager: LegalNoticeManager,
+                                    authorizationManager: AuthorizationManager)
+                                   (implicit ec: ExecutionContext) extends AbstractController(cc) {
 
   /**
    * Gets all legal notices for the specified community
    */
-  def getLegalNoticesByCommunity(communityId: Long) = authorizedAction { request =>
-    authorizationManager.canManageLegalNotices(request, communityId)
-    val list = legalNoticeManager.getLegalNoticesByCommunityWithoutContent(communityId)
-    val json: String = JsonUtil.jsLegalNotices(list).toString
-    ResponseConstructor.constructJsonResponse(json)
+  def getLegalNoticesByCommunity(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageLegalNotices(request, communityId).flatMap { _ =>
+      legalNoticeManager.getLegalNoticesByCommunityWithoutContent(communityId).map { list =>
+        val json: String = JsonUtil.jsLegalNotices(list).toString
+        ResponseConstructor.constructJsonResponse(json)
+      }
+    }
   }
 
   /**
    * Creates new legal notice
    */
-  def createLegalNotice() = authorizedAction { request =>
+  def createLegalNotice(): Action[AnyContent] = authorizedAction.async { request =>
     val legalNotice = ParameterExtractor.extractLegalNoticeInfo(request)
-    authorizationManager.canManageLegalNotices(request, legalNotice.community)
-    val uniqueName = legalNoticeManager.checkUniqueName(legalNotice.name, legalNotice.community)
-    if (uniqueName) {
-      legalNoticeManager.createLegalNotice(legalNotice)
-      ResponseConstructor.constructEmptyResponse
-    } else {
-      ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "A legal notice with this name already exists.", Some("name"))
+    authorizationManager.canManageLegalNotices(request, legalNotice.community).flatMap { _ =>
+      legalNoticeManager.checkUniqueName(legalNotice.name, legalNotice.community).flatMap { uniqueName =>
+        if (uniqueName) {
+          legalNoticeManager.createLegalNotice(legalNotice).map { _ =>
+            ResponseConstructor.constructEmptyResponse
+          }
+        } else {
+          Future.successful {
+            ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "A legal notice with this name already exists.", Some("name"))
+          }
+        }
+      }
     }
   }
 
   /**
    * Gets the legal notice with specified id
    */
-  def getLegalNoticeById(noticeId: Long) = authorizedAction { request =>
-    authorizationManager.canManageLegalNotice(request, noticeId)
-    val ln = legalNoticeManager.getLegalNoticeById(noticeId)
-    val json: String = JsonUtil.serializeLegalNotice(ln)
-    ResponseConstructor.constructJsonResponse(json)
+  def getLegalNoticeById(noticeId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageLegalNotice(request, noticeId).flatMap { _ =>
+      legalNoticeManager.getLegalNoticeById(noticeId).map { notice =>
+        val json: String = JsonUtil.serializeLegalNotice(notice)
+        ResponseConstructor.constructJsonResponse(json)
+      }
+    }
   }
 
   /**
    * Updates legal notice
    */
-  def updateLegalNotice(noticeId: Long) = authorizedAction { request =>
-    authorizationManager.canManageLegalNotice(request, noticeId)
-    val name = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
-    val description = ParameterExtractor.optionalBodyParameter(request, Parameters.DESCRIPTION)
-    val content = HtmlUtil.sanitizeEditorContent(ParameterExtractor.requiredBodyParameter(request, Parameters.CONTENT))
-    val default = ParameterExtractor.requiredBodyParameter(request, Parameters.DEFAULT).toBoolean
-    val communityId = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
-
-    val uniqueName = legalNoticeManager.checkUniqueName(noticeId, name, communityId)
-    if (uniqueName) {
-      legalNoticeManager.updateLegalNotice(noticeId, name, description, content, default, communityId)
-      ResponseConstructor.constructEmptyResponse
-    } else {
-      ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "A legal notice with this name already exists.", Some("name"))
+  def updateLegalNotice(noticeId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageLegalNotice(request, noticeId).flatMap { _ =>
+      val name = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
+      val description = ParameterExtractor.optionalBodyParameter(request, Parameters.DESCRIPTION)
+      val content = HtmlUtil.sanitizeEditorContent(ParameterExtractor.requiredBodyParameter(request, Parameters.CONTENT))
+      val default = ParameterExtractor.requiredBodyParameter(request, Parameters.DEFAULT).toBoolean
+      val communityId = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
+      legalNoticeManager.checkUniqueName(noticeId, name, communityId).flatMap { uniqueName =>
+        if (uniqueName) {
+          legalNoticeManager.updateLegalNotice(noticeId, name, description, content, default, communityId).map { _ =>
+            ResponseConstructor.constructEmptyResponse
+          }
+        } else {
+          Future.successful {
+            ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "A legal notice with this name already exists.", Some("name"))
+          }
+        }
+      }
     }
   }
 
   /**
    * Deletes legal notice with specified id
    */
-  def deleteLegalNotice(noticeId: Long) = authorizedAction { request =>
-    authorizationManager.canManageLegalNotice(request, noticeId)
-    legalNoticeManager.deleteLegalNotice(noticeId)
-    ResponseConstructor.constructEmptyResponse
+  def deleteLegalNotice(noticeId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageLegalNotice(request, noticeId).flatMap { _ =>
+      legalNoticeManager.deleteLegalNotice(noticeId).map { _ =>
+        ResponseConstructor.constructEmptyResponse
+      }
+    }
   }
 
   /**
     * Gets the default landing page for given community
     */
-  def getCommunityDefaultLegalNotice() = authorizedAction { request =>
+  def getCommunityDefaultLegalNotice(): Action[AnyContent] = authorizedAction.async { request =>
     val communityId = ParameterExtractor.requiredQueryParameter(request, Parameters.COMMUNITY_ID).toLong
-    authorizationManager.canViewDefaultLegalNotice(request, communityId)
-    var legalNotice = legalNoticeManager.getCommunityDefaultLegalNotice(communityId)
-    if (legalNotice.isEmpty) {
-      legalNotice = legalNoticeManager.getCommunityDefaultLegalNotice(Constants.DefaultCommunityId)
-    }
-    val json: String = JsonUtil.serializeLegalNotice(legalNotice)
-    ResponseConstructor.constructJsonResponse(json)
+    for {
+      _ <- authorizationManager.canViewDefaultLegalNotice(request, communityId)
+      communityNotice <- legalNoticeManager.getCommunityDefaultLegalNotice(communityId)
+      noticeToUse <- {
+        if (communityNotice.isDefined) {
+          Future.successful(communityNotice)
+        } else {
+          legalNoticeManager.getCommunityDefaultLegalNotice(Constants.DefaultCommunityId)
+        }
+      }
+      result <- {
+        val json: String = JsonUtil.serializeLegalNotice(noticeToUse)
+        Future.successful(ResponseConstructor.constructJsonResponse(json))
+      }
+    } yield result
   }
 
   /**
     * Gets the default landing page for the test bed.
     */
-  def getTestBedDefaultLegalNotice() = authorizedAction { request =>
-    authorizationManager.canViewTestBedDefaultLegalNotice(request)
-    val legalNotice = legalNoticeManager.getCommunityDefaultLegalNotice(Constants.DefaultCommunityId)
-    val json: String = JsonUtil.serializeLegalNotice(legalNotice)
-    ResponseConstructor.constructJsonResponse(json)
+  def getTestBedDefaultLegalNotice(): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canViewTestBedDefaultLegalNotice(request).flatMap { _ =>
+      legalNoticeManager.getCommunityDefaultLegalNotice(Constants.DefaultCommunityId).map { legalNotice =>
+        val json: String = JsonUtil.serializeLegalNotice(legalNotice)
+        ResponseConstructor.constructJsonResponse(json)
+      }
+    }
   }
 
 }

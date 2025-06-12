@@ -2,9 +2,10 @@ import { AfterViewInit, Component, Input } from '@angular/core';
 import { DataService } from 'src/app/services/data.service';
 
 @Component({
-  selector: 'div[pending]',
-  templateUrl: './pending-div.component.html',
-  styleUrls: ['./pending-div.component.less']
+    selector: 'div[pending]',
+    templateUrl: './pending-div.component.html',
+    styleUrls: ['./pending-div.component.less'],
+    standalone: false
 })
 export class PendingDivComponent implements AfterViewInit {
 

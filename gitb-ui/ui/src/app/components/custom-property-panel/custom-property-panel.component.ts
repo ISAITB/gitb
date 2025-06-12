@@ -3,9 +3,10 @@ import { CustomProperty } from 'src/app/types/custom-property.type';
 import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
-  selector: 'app-custom-property-panel',
-  templateUrl: './custom-property-panel.component.html',
-  styleUrl: './custom-property-panel.component.less'
+    selector: 'app-custom-property-panel',
+    templateUrl: './custom-property-panel.component.html',
+    styleUrl: './custom-property-panel.component.less',
+    standalone: false
 })
 export class CustomPropertyPanelComponent {
 

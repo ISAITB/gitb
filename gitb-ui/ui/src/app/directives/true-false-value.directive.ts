@@ -2,14 +2,15 @@ import { Directive, ElementRef, forwardRef, HostListener, Input, Renderer2 } fro
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 @Directive({
-  selector: 'input[type=checkbox][appTrueFalseValue]',
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => TrueFalseValueDirective),
-      multi: true
-    }
-  ]
+    selector: 'input[type=checkbox][appTrueFalseValue]',
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => TrueFalseValueDirective),
+            multi: true
+        }
+    ],
+    standalone: false
 })
 export class TrueFalseValueDirective implements ControlValueAccessor {
 

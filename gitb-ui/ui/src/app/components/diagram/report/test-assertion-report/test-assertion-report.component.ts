@@ -2,9 +2,10 @@ import { Component, Input, OnInit } from '@angular/core';
 import { AssertionReport } from '../../assertion-report';
 
 @Component({
-  selector: 'app-test-assertion-report',
-  templateUrl: './test-assertion-report.component.html',
-  styleUrls: [ './test-assertion-report.component.less' ]
+    selector: 'app-test-assertion-report',
+    templateUrl: './test-assertion-report.component.html',
+    styleUrls: ['./test-assertion-report.component.less'],
+    standalone: false
 })
 export class TestAssertionReportComponent implements OnInit {
 

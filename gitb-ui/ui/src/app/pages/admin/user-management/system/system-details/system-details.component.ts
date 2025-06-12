@@ -1,24 +1,23 @@
-import { Component, OnInit } from '@angular/core';
-import { SystemFormData } from '../system-form/system-form-data';
-import { OptionalCustomPropertyFormData } from 'src/app/components/optional-custom-property-form/optional-custom-property-form-data.type';
-import { ActivatedRoute } from '@angular/router';
-import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
-import { DataService } from 'src/app/services/data.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { RoutingService } from 'src/app/services/routing.service';
-import { BaseComponent } from 'src/app/pages/base-component.component';
-import { SystemService } from 'src/app/services/system.service';
-import { OrganisationTab } from '../../organisation/organisation-details/OrganisationTab';
-import { Constants } from 'src/app/common/constants';
-import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
-import { forkJoin, Observable, of } from 'rxjs';
-import { System } from 'src/app/types/system';
+import {Component, OnInit} from '@angular/core';
+import {SystemFormData} from '../system-form/system-form-data';
+import {OptionalCustomPropertyFormData} from 'src/app/components/optional-custom-property-form/optional-custom-property-form-data.type';
+import {ActivatedRoute} from '@angular/router';
+import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
+import {DataService} from 'src/app/services/data.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {RoutingService} from 'src/app/services/routing.service';
+import {BaseComponent} from 'src/app/pages/base-component.component';
+import {SystemService} from 'src/app/services/system.service';
+import {OrganisationTab} from '../../organisation/organisation-details/OrganisationTab';
+import {Constants} from 'src/app/common/constants';
+import {BreadcrumbType} from 'src/app/types/breadcrumb-type';
+import {forkJoin} from 'rxjs';
 
 @Component({
-  selector: 'app-system-details',
-  templateUrl: './system-details.component.html',
-  styles: [
-  ]
+    selector: 'app-system-details',
+    templateUrl: './system-details.component.html',
+    styles: [],
+    standalone: false
 })
 export class SystemDetailsComponent extends BaseComponent implements OnInit {
 
@@ -31,7 +30,6 @@ export class SystemDetailsComponent extends BaseComponent implements OnInit {
     edit: false,
     propertyType: 'system'
   }
-  otherSystems: System[] = []
   savePending = false
   deletePending = false
   fromCommunityManagement!: boolean
@@ -68,13 +66,7 @@ export class SystemDetailsComponent extends BaseComponent implements OnInit {
     this.propertyData.owner = this.system.id
     const loadSystem$ = this.systemService.getSystemById(this.systemId)
     const loadProperties$ = this.systemService.getSystemParameterValues(this.system.id)
-    let otherSystems$: Observable<System[]>
-    if (this.fromCommunityManagement) {
-      otherSystems$ = this.systemService.getSystemsByOrganisation(this.organisationId)
-    } else {
-      otherSystems$ = of([])
-    }
-    forkJoin([loadSystem$, loadProperties$, otherSystems$]).subscribe((data) => {
+    forkJoin([loadSystem$, loadProperties$]).subscribe((data) => {
       this.system = data[0]
       if (this.system.owner == this.dataService.vendor?.id) {
         this.routingService.ownSystemBreadcrumbs(this.systemId, this.system.sname!)
@@ -82,11 +74,6 @@ export class SystemDetailsComponent extends BaseComponent implements OnInit {
         this.routingService.systemBreadcrumbs(this.communityId, this.organisationId, undefined, this.systemId, this.system.sname!)
       }
       this.propertyData.properties = data[1]
-      for (let system of data[2]) {
-        if (this.system.id == undefined || Number(system.id) != Number(this.system.id)) {
-          this.otherSystems.push(system)
-        }
-      }
     }).add(() => {
       this.loaded = true
     })
@@ -107,7 +94,7 @@ export class SystemDetailsComponent extends BaseComponent implements OnInit {
           this.dataService.breadcrumbUpdate({ id: this.system.id!, type: BreadcrumbType.ownSystem, label: this.system.sname })
         } else {
           this.dataService.breadcrumbUpdate({ id: this.system.id!, type: BreadcrumbType.system, label: this.system.sname })
-        }        
+        }
       }).add(() => {
         this.savePending = false
       })

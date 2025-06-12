@@ -7,10 +7,10 @@ import { Domain } from 'src/app/types/domain';
 import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
 
 @Component({
-  selector: 'app-domain-management',
-  templateUrl: './domain-management.component.html',
-  styles: [
-  ]
+    selector: 'app-domain-management',
+    templateUrl: './domain-management.component.html',
+    styles: [],
+    standalone: false
 })
 export class DomainManagementComponent implements OnInit {
 

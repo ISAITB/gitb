@@ -1,41 +1,49 @@
-import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
-import { TabsetComponent } from 'ngx-bootstrap/tabs';
-import { SystemAdministrationTab } from './system-administration-tab.enum';
-import { BaseComponent } from '../../base-component.component';
-import { Router } from '@angular/router';
-import { Constants } from 'src/app/common/constants';
-import { UserService } from 'src/app/services/user.service';
-import { DataService } from 'src/app/services/data.service';
-import { User } from 'src/app/types/user.type';
-import { RoutingService } from 'src/app/services/routing.service';
-import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
-import { LandingPage } from 'src/app/types/landing-page';
-import { LegalNotice } from 'src/app/types/legal-notice';
-import { ErrorTemplate } from 'src/app/types/error-template';
-import { LandingPageService } from 'src/app/services/landing-page.service';
-import { LegalNoticeService } from 'src/app/services/legal-notice.service';
-import { ErrorTemplateService } from 'src/app/services/error-template.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { SystemConfigurationService } from 'src/app/services/system-configuration.service';
-import { find } from 'lodash';
-import { Community } from 'src/app/types/community';
-import { CommunityService } from 'src/app/services/community.service';
-import { OrganisationService } from 'src/app/services/organisation.service';
-import { Organisation } from 'src/app/types/organisation.type';
-import { EntityWithId } from 'src/app/types/entity-with-id';
-import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
-import { ConfigStatus } from './config-status';
-import { forkJoin, map, mergeMap, of, share } from 'rxjs';
-import { Theme } from 'src/app/types/theme';
-import { EmailSettings } from 'src/app/types/email-settings';
-import { CodeEditorModalComponent } from 'src/app/components/code-editor-modal/code-editor-modal.component';
-import { BsModalService } from 'ngx-bootstrap/modal';
-import { SystemConfiguration } from 'src/app/types/system-configuration';
+import {AfterViewInit, Component, EventEmitter, OnInit, ViewChild} from '@angular/core';
+import {TabsetComponent} from 'ngx-bootstrap/tabs';
+import {SystemAdministrationTab} from './system-administration-tab.enum';
+import {BaseComponent} from '../../base-component.component';
+import {Router} from '@angular/router';
+import {Constants} from 'src/app/common/constants';
+import {UserService} from 'src/app/services/user.service';
+import {DataService} from 'src/app/services/data.service';
+import {User} from 'src/app/types/user.type';
+import {RoutingService} from 'src/app/services/routing.service';
+import {TableColumnDefinition} from 'src/app/types/table-column-definition.type';
+import {LandingPage} from 'src/app/types/landing-page';
+import {LegalNotice} from 'src/app/types/legal-notice';
+import {ErrorTemplate} from 'src/app/types/error-template';
+import {LandingPageService} from 'src/app/services/landing-page.service';
+import {LegalNoticeService} from 'src/app/services/legal-notice.service';
+import {ErrorTemplateService} from 'src/app/services/error-template.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {SystemConfigurationService} from 'src/app/services/system-configuration.service';
+import {find} from 'lodash';
+import {Community} from 'src/app/types/community';
+import {CommunityService} from 'src/app/services/community.service';
+import {OrganisationService} from 'src/app/services/organisation.service';
+import {Organisation} from 'src/app/types/organisation.type';
+import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
+import {ConfigStatus} from './config-status';
+import {forkJoin, map, mergeMap, Observable, of, share, tap} from 'rxjs';
+import {Theme} from 'src/app/types/theme';
+import {EmailSettings} from 'src/app/types/email-settings';
+import {CodeEditorModalComponent} from 'src/app/components/code-editor-modal/code-editor-modal.component';
+import {BsModalService} from 'ngx-bootstrap/modal';
+import {SystemConfiguration} from 'src/app/types/system-configuration';
+import {ResourceActions} from '../../../components/resource-management-tab/resource-actions';
+import {FileData} from '../../../types/file-data.type';
+import {CommunityResourceService} from '../../../services/community-resource.service';
+import {MultiSelectConfig} from '../../../components/multi-select-filter/multi-select-config';
+import {UserBasic} from '../../../types/user-basic.type';
+import {FilterUpdate} from '../../../components/test-filter/filter-update';
+import {SslProtocol} from '../../../types/ssl-protocol';
+import {MimeType} from '../../../types/mime-type';
 
 @Component({
-  selector: 'app-system-administration',
-  templateUrl: './system-administration.component.html',
-  styleUrls: [ './system-administration.component.less' ]
+    selector: 'app-system-administration',
+    templateUrl: './system-administration.component.html',
+    styleUrls: ['./system-administration.component.less'],
+    standalone: false
 })
 export class SystemAdministrationComponent extends BaseComponent implements OnInit, AfterViewInit {
 
@@ -105,14 +113,17 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
   demoAccountStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
   demoAccountEnabled = false
   communities: Community[] = []
-  selectedCommunity?: Community
   organisations: Organisation[] = []
+  users: UserBasic[] = []
+  selectedCommunity?: Community
   selectedOrganisation?: Organisation
-  users: User[] = []
+  demoAccount?: UserBasic
   loadCommunitiesPending = false
   loadOrganisationsPending = false
   loadUsersPending = false
-  demoAccount?: User
+  communitySelectConfig!: MultiSelectConfig<Community>
+  organisationSelectConfig!: MultiSelectConfig<Organisation>
+  userSelectConfig!: MultiSelectConfig<UserBasic>
 
   // Welcome page
   welcomePageStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
@@ -126,6 +137,29 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
   emailTestPending = false
   emailTestToAddress?: string
   emailSettings: EmailSettings = { enabled: false }
+  emailSslProtocols: SslProtocol[] = [
+    { id: 1, value: 'SSLv2Hello', label: 'SSL v2' },
+    { id: 2, value: 'SSLv3', label: 'SSL v3' },
+    { id: 3, value: 'TLSv1', label: 'TLS v1' },
+    { id: 4, value: 'TLSv1.1', label: 'TLS v1.1' },
+    { id: 5, value: 'TLSv1.2', label: 'TLS v1.2' },
+    { id: 6, value: 'TLSv1.3', label: 'TLS v1.3' }
+  ]
+  emailAttachmentTypes: MimeType[] = [
+    { id: 1, value: 'text/plain', label: 'Text (text/plain)' },
+    { id: 2, value: 'image/gif', label: 'GIF (image/gif)' },
+    { id: 3, value: 'image/png', label: 'PNG (image/png)' },
+    { id: 4, value: 'image/jpeg', label: 'JPEG (image/jpeg)' },
+    { id: 5, value: 'application/pdf', label: 'PDF (application/pdf)' },
+    { id: 6, value: 'application/xml', label: 'XML (application/xml)' },
+    { id: 7, value: 'text/xml', label: 'XML (text/xml)' }
+  ]
+  emailSslProtocolsSelectConfig!: MultiSelectConfig<SslProtocol>
+  emailAttachmentTypeSelectConfig!: MultiSelectConfig<MimeType>
+
+  // Resources
+  resourceActions!: ResourceActions
+  resourceEmitter = new EventEmitter<void>()
 
   constructor(
     router: Router,
@@ -138,6 +172,7 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
     private popupService: PopupService,
     private systemConfigurationService: SystemConfigurationService,
     private communityService: CommunityService,
+    private communityResourceService: CommunityResourceService,
     private organisationService: OrganisationService,
     private confirmationDialogService: ConfirmationDialogService,
     private modalService: BsModalService
@@ -163,6 +198,7 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
       this.adminColumns.push({ field: 'email', title: 'Username' })
     }
     this.adminColumns.push({ field: 'ssoStatusText', title: 'Status', cellClass: 'td-nowrap' })
+    this.resourceActions = this.createResourceActions()
     this.loadCommunitiesPending = true
     const communityObs = this.communityService.getUserCommunities()
     .pipe(
@@ -223,7 +259,60 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
         // Email settings.
         const emailSettingsConfig = find(data, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.EMAIL_SETTINGS)
         this.initialiseEmailSettings(emailSettingsConfig)
+        this.emailSslProtocolsSelectConfig = {
+          name: 'emailSslProtocols',
+          textField: 'label',
+          initialValues: this.parseSslProtocols(this.emailSettings.sslProtocols),
+          showAsFormControl: true,
+          filterLabel: 'Select protocols...',
+          loader: () => of(this.emailSslProtocols)
+        }
+        this.emailAttachmentTypeSelectConfig = {
+          name: 'emailAttachmentTypes',
+          textField: 'label',
+          initialValues: this.parseAttachmentTypes(this.emailSettings.allowedAttachmentTypes),
+          showAsFormControl: true,
+          filterLabel: 'Select attachment types...',
+          loader: () => of(this.emailAttachmentTypes)
+        }
         // Demo account.
+        this.communitySelectConfig = {
+          name: 'demoCommunity',
+          textField: 'fname',
+          singleSelection: true,
+          singleSelectionPersistent: true,
+          clearItems: new EventEmitter(),
+          replaceItems: new EventEmitter(),
+          replaceSelectedItems: new EventEmitter(),
+          filterLabel: 'Select community...',
+          noItemsMessage: 'No communities available.',
+          searchPlaceholder: 'Search community...',
+          loader: () => of(this.communities)
+        }
+        this.organisationSelectConfig = {
+          name: 'demoOrganisation',
+          textField: 'fname',
+          singleSelection: true,
+          singleSelectionPersistent: true,
+          replaceItems: new EventEmitter(),
+          replaceSelectedItems: new EventEmitter(),
+          filterLabel: 'Select organisation...',
+          noItemsMessage: 'No organisations available.',
+          searchPlaceholder: 'Search organisation...',
+          loader: () => of(this.organisations)
+        }
+        this.userSelectConfig = {
+          name: 'demoUser',
+          textField: 'email',
+          singleSelection: true,
+          singleSelectionPersistent: true,
+          replaceItems: new EventEmitter(),
+          replaceSelectedItems: new EventEmitter(),
+          filterLabel: 'Select user...',
+          noItemsMessage: 'No valid users available.',
+          searchPlaceholder: 'Search users...',
+          loader: () => of(this.users)
+        }
         const demoAccountConfig = find(data, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.DEMO_ACCOUNT)
         if (demoAccountConfig) {
           this.demoAccountEnabled = demoAccountConfig.parameter != undefined
@@ -235,7 +324,10 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
             .pipe(
               map((user) => {
                 if (user) {
-                  this.demoAccount = user
+                  this.demoAccount = {
+                    id: user.id!,
+                    email: user.email!,
+                  }
                   this.selectedOrganisation = user.organization
                 } else {
                   this.demoAccountEnabled = false
@@ -264,6 +356,34 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
     this.routingService.systemConfigurationBreadcrumbs()
   }
 
+  private parseSslProtocols(values: string[]|undefined): SslProtocol[]|undefined {
+    if (values != undefined && values.length > 0) {
+      return this.emailSslProtocols.filter(protocol => {
+        return values.find((value) => value == protocol.value)
+      })
+    } else {
+      return undefined
+    }
+  }
+
+  private parseAttachmentTypes(values: string[]|undefined): MimeType[]|undefined {
+    if (values != undefined && values.length > 0) {
+      return this.emailAttachmentTypes.filter(mimeType => {
+        return values.find((value) => value == mimeType.value)
+      })
+    } else {
+      return undefined
+    }
+  }
+
+  selectEmailSslProtocols(event: FilterUpdate<SslProtocol>) {
+    this.emailSettings.sslProtocols = event.values.active.map((value) => value.value)
+  }
+
+  selectEmailAttachmentTypes(event: FilterUpdate<MimeType>) {
+    this.emailSettings.allowedAttachmentTypes = event.values.active.map((value) => value.value)
+  }
+
   private initialiseEmailSettings(emailSettingsConfig: SystemConfiguration|undefined) {
     if (emailSettingsConfig?.parameter) {
       this.emailSettings = JSON.parse(emailSettingsConfig.parameter)
@@ -274,69 +394,121 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
         this.emailSettings.defaultSupportMailbox = this.emailSettings.to[0]
       }
       this.emailSettings.newPassword = undefined
-      if (this.emailSettings.password == undefined) {
-        this.emailSettings.updatePassword = true
-      } else {
-        this.emailSettings.updatePassword = false
-      }
+      this.emailSettings.updatePassword = this.emailSettings.password == undefined;
     }
   }
 
   applyDemoCommunity() {
     if (this.selectedOrganisation && this.communities && this.communities.length > 0) {
       this.selectedCommunity = find(this.communities, (community) => community.id == this.selectedOrganisation?.community)
-      this.loadCommunityOrganisations()
+      this.loadCommunityOrganisations().subscribe(() => {
+        this.communitySelectConfig.eventsDisabled = true
+        this.organisationSelectConfig.eventsDisabled = true
+        this.userSelectConfig.eventsDisabled = true
+        setTimeout(() => {
+          this.communitySelectConfig.replaceSelectedItems?.emit([this.selectedCommunity!])
+          this.organisationSelectConfig.replaceSelectedItems?.emit([this.selectedOrganisation!])
+          this.userSelectConfig.replaceSelectedItems?.emit([this.demoAccount!])
+          this.communitySelectConfig.eventsDisabled = false
+          this.organisationSelectConfig.eventsDisabled = false
+          this.userSelectConfig.eventsDisabled = false
+        })
+      })
     }
   }
 
-  selectCommunity() {
-    this.selectedOrganisation = undefined
-    this.demoAccount = undefined
-    this.organisations = []
-    this.loadCommunityOrganisations()
+  selectCommunity(event: FilterUpdate<Community>) {
+    setTimeout(() => {
+      this.selectedCommunity = event.values.active[0]
+      this.selectedOrganisation = undefined
+      this.demoAccount = undefined
+      this.organisations = []
+      this.loadCommunityOrganisations().subscribe(() => {
+        if (this.selectedOrganisation) {
+          this.organisationSelectConfig.eventsDisabled = true
+          setTimeout(() => {
+            this.organisationSelectConfig.replaceSelectedItems?.emit([this.selectedOrganisation!])
+            this.organisationSelectConfig.eventsDisabled = false
+            if (this.demoAccount) {
+              this.userSelectConfig.eventsDisabled = true
+              this.userSelectConfig.replaceSelectedItems?.emit([this.demoAccount])
+              this.userSelectConfig.eventsDisabled = false
+            }
+          })
+        }
+      })
+    })
   }
 
-  selectCommunityOrganisation() {
-    this.demoAccount = undefined
-    this.users = []
-    this.loadOrganisationUsers()
+  selectCommunityOrganisation(event: FilterUpdate<Organisation>) {
+    setTimeout(() => {
+      this.selectedOrganisation = event.values.active[0]
+      this.demoAccount = undefined
+      this.users = []
+      this.loadOrganisationUsers().subscribe(() => {
+        if (this.demoAccount) {
+          this.userSelectConfig.eventsDisabled = true
+          setTimeout(() => {
+            this.userSelectConfig.replaceSelectedItems?.emit([this.demoAccount!])
+            this.userSelectConfig.eventsDisabled = false
+          })
+        }
+      })
+    })
   }
 
-  private loadCommunityOrganisations() {
+  private loadCommunityOrganisations(): Observable<boolean> {
     if (this.selectedCommunity) {
       this.loadOrganisationsPending = true
       this.loadUsersPending = true
-      this.organisationService.getOrganisationsByCommunity(this.selectedCommunity.id)
-      .subscribe((data) => {
-        this.organisations = data
-        if (this.selectedOrganisation == undefined) {
-          if (this.organisations.length == 1) {
-            this.selectedOrganisation = this.organisations[0]
+      return this.organisationService.getOrganisationsByCommunity(this.selectedCommunity.id).pipe(
+        mergeMap((data) => {
+          this.organisations = data
+          this.organisationSelectConfig.replaceItems!.emit(this.organisations)
+          if (this.selectedOrganisation == undefined) {
+            if (this.organisations.length == 1) {
+              this.selectedOrganisation = this.organisations[0]
+            }
           }
-        }
-        if (this.selectedOrganisation) {
-          this.loadOrganisationUsers()
-        }
-      }).add(() => {
-        this.loadOrganisationsPending = false
-      })
+          if (this.selectedOrganisation) {
+            return this.loadOrganisationUsers()
+          } else {
+            return of(true)
+          }
+        }),
+        tap(() => {
+          this.loadOrganisationsPending = false
+        })
+      )
+    } else {
+      return of(false)
     }
   }
 
-  private loadOrganisationUsers() {
+  private loadOrganisationUsers(): Observable<boolean> {
     if (this.selectedOrganisation) {
       this.loadUsersPending = true
-      this.userService.getBasicUsersByOrganization(this.selectedOrganisation.id)
-      .subscribe((data) => {
-        this.users = data
-        if (this.demoAccount == undefined) {
-          if (this.users.length == 1) {
-            this.demoAccount = this.users[0]
+      return this.userService.getBasicUsersByOrganization(this.selectedOrganisation.id).pipe(
+        map((data) => {
+          this.users = data.map((user) => {
+            return {
+              id: user.id!,
+              email: user.email!
+            }
+          })
+          if (this.demoAccount == undefined) {
+            if (this.users.length == 1) {
+              this.demoAccount = this.users[0]
+            }
           }
-        }
-      }).add(() => {
-        this.loadUsersPending = false
-      })
+          return true
+        }),
+        tap(() => {
+          this.loadUsersPending = false
+        })
+      )
+    } else {
+      return of(false)
     }
   }
 
@@ -428,6 +600,10 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
     }
   }
 
+  showResources() {
+    this.resourceEmitter.emit()
+  }
+
   createLandingPage() {
     this.routingService.toCreateLandingPage()
   }
@@ -473,7 +649,7 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
     if (!this.accountRetentionPeriodEnabled) {
       this.accountRetentionPeriodValue = undefined
     }
-  }  
+  }
 
   saveTTL() {
     this.ttlStatus.pending = true
@@ -622,6 +798,9 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
         this.dataService.configuration.demosEnabled = false
         this.dataService.configuration.demosAccount = -1
         this.popupService.success('Disabled demo account.')
+        setTimeout(() => {
+          this.communitySelectConfig.clearItems?.emit()
+        })
       }).add(() => {
         this.demoAccountStatus.pending = false
       })
@@ -664,23 +843,19 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
     })
   }
 
-  sameId(a: EntityWithId, b: EntityWithId) {
-    return a == undefined && b == undefined || a != undefined && b != undefined && a.id == b.id
-  }
-
   emailSettingsOk() {
     return !this.emailSettings.enabled ||
       (
-        this.textProvided(this.emailSettings.host) && 
+        this.textProvided(this.emailSettings.host) &&
         this.numberProvided(this.emailSettings.port, 1) &&
         (!this.emailSettings.authenticate || (
-          this.textProvided(this.emailSettings.username) && 
+          this.textProvided(this.emailSettings.username) &&
           ((!this.emailSettings.updatePassword && this.textProvided(this.emailSettings.password)) || (this.emailSettings.updatePassword && this.textProvided(this.emailSettings.newPassword)))
         )) &&
-        this.textProvided(this.emailSettings.from) && 
+        this.textProvided(this.emailSettings.from) &&
         (!this.emailSettings.contactFormEnabled || (
-          this.textProvided(this.emailSettings.defaultSupportMailbox) && 
-          this.numberProvided(this.emailSettings.maxAttachmentCount, 0) && 
+          this.textProvided(this.emailSettings.defaultSupportMailbox) &&
+          this.numberProvided(this.emailSettings.maxAttachmentCount, 0) &&
           this.numberProvided(this.emailSettings.maxAttachmentSize, 1)
         )) &&
         this.numberProvided(this.emailSettings.testInteractionReminder, 1)
@@ -790,6 +965,36 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
       }).add(() => {
         this.emailTestPending = false
       })
+    }
+  }
+
+  createResourceActions(): ResourceActions {
+    return {
+      searchResources: (filter: string|undefined, page: number|undefined, limit: number|undefined) => {
+        return this.communityResourceService.searchSystemResources(filter, page, limit)
+      },
+      downloadResources: (filter: string|undefined) => {
+        return this.communityResourceService.downloadSystemResources(filter)
+      },
+      downloadResource: (resourceId: number) => {
+        return this.communityResourceService.downloadSystemResourceById(resourceId)
+      },
+      deleteResources: (resourceIds: number[]) => {
+        return this.communityResourceService.deleteSystemResources(resourceIds)
+      },
+      deleteResource: (resourceId: number) => {
+        return this.communityResourceService.deleteSystemResource(resourceId)
+      },
+      createResource: (name: string, description: string|undefined, file: FileData) => {
+        return this.communityResourceService.createSystemResource(name, description, file)
+      },
+      updateResource: (resourceId: number, name: string, description: string|undefined, file?: FileData) => {
+        return this.communityResourceService.updateSystemResource(resourceId, name, description, file)
+      },
+      uploadBulk: (file: FileData, updateMatching?: boolean) => {
+        return this.communityResourceService.uploadSystemResourcesInBulk(file, updateMatching)
+      },
+      systemScope: true
     }
   }
 

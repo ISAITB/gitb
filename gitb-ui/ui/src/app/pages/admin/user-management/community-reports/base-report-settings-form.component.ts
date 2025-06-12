@@ -12,7 +12,10 @@ import { FileData } from 'src/app/types/file-data.type';
 import { saveAs } from 'file-saver'
 import { ErrorService } from 'src/app/services/error.service';
 
-@Component({ template: '' })
+@Component({
+    template: '',
+    standalone: false
+})
 export abstract class BaseReportSettingsFormComponent extends BaseComponent implements OnInit {
 
   @ViewChild("serviceField") serviceField?: ElementRef;

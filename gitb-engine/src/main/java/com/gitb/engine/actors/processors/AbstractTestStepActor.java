@@ -1,5 +1,6 @@
 package com.gitb.engine.actors.processors;
 
+import com.gitb.common.AliasManager;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.StepStatus;
 import com.gitb.core.TestRole;
@@ -15,11 +16,14 @@ import com.gitb.engine.events.model.ErrorStatusEvent;
 import com.gitb.engine.events.model.InputEvent;
 import com.gitb.engine.events.model.StatusEvent;
 import com.gitb.engine.events.model.TestStepStatusEvent;
+import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.engine.utils.StepContext;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
+import com.gitb.tdl.Assign;
 import com.gitb.tdl.IfStep;
+import com.gitb.tdl.Log;
 import com.gitb.tdl.TestConstruct;
 import com.gitb.tr.*;
 import com.gitb.types.MapType;
@@ -40,6 +44,7 @@ import javax.xml.datatype.DatatypeConfigurationException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * Created by serbay on 9/11/14.
@@ -156,7 +161,11 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 			} else if (message instanceof InputEvent) {
 				handleInputEvent((InputEvent) message);
 			} else if (message instanceof StartCommand) {
-				start();
+				if (skipStep()) {
+					skipped();
+				} else {
+					start();
+				}
 			} else if (message instanceof StopCommand) {
 				stop();
 			} else if (message instanceof PrepareForStopCommand) {
@@ -173,6 +182,18 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 		}
 	}
 
+	protected boolean skipStep() {
+		String flagToCheck = null;
+		if (step instanceof TestConstruct testConstruct) {
+			flagToCheck = testConstruct.getSkipped();
+		} else if (step instanceof Assign assignStep) {
+			flagToCheck = assignStep.getSkipped();
+		} else if (step instanceof Log logStep) {
+			flagToCheck = logStep.getSkipped();
+		}
+		return TestCaseUtils.resolveBooleanFlag(flagToCheck, false, () -> new VariableResolver(scope));
+	}
+
 	protected void waiting() {
 		waiting(null);
 	}
@@ -187,6 +208,10 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 
 	protected void processing(TestStepReportType testStepReport) {
 		updateTestStepStatus(StepStatus.PROCESSING, testStepReport);
+	}
+
+	protected void skipped() {
+		updateTestStepStatus(StepStatus.SKIPPED, null);
 	}
 
 	protected void completed() {
@@ -383,11 +408,11 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 	}
 
 	public static String getName(String actorName) {
-		return actorName + "-" + RandomStringUtils.random(5, true, true);
+		return actorName + "-" + RandomStringUtils.secure().next(5, true, true);
 	}
 
 	TestRole getSUTActor() {
-		return getSUTActors().get(0);
+		return getSUTActors().getFirst();
 	}
 
 	List<TestRole> getSUTActors() {
@@ -410,6 +435,14 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 			// Unexpected error.
 			updateTestStepStatus(getContext(), new ErrorStatusEvent(failure, scope, self()), null, true, true);
 		}
+	}
+
+	protected String resolveProcessingHandler(String handler, Supplier<VariableResolver> variableResolverSupplier) {
+		String handlerIdentifier = handler;
+		if (VariableResolver.isVariableReference(handlerIdentifier)) {
+			handlerIdentifier = variableResolverSupplier.get().resolveVariableAsString(handlerIdentifier).toString();
+		}
+		return AliasManager.getInstance().resolveProcessingHandler(handlerIdentifier);
 	}
 
 }

@@ -38,6 +38,10 @@ public class HmacUtils {
         return HmacUtils.hmacSecretKey;
     }
 
+    public static String getHashedKey() {
+        return DigestUtils.sha3_512Hex(HmacUtils.hmacSecretKey);
+    }
+
     private static TokenData getTokenDataInternal(String textToSign, String timestamp) {
         Mac mac = org.apache.commons.codec.digest.HmacUtils.getInitializedMac(HmacAlgorithms.HMAC_SHA_256, hmacSecretKey.getBytes(StandardCharsets.UTF_8));
         String content = DigestUtils.md5Hex(textToSign).toUpperCase() + '\n' + timestamp;

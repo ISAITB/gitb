@@ -184,8 +184,11 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
     @Override
     public void handleStep(Object step) {
         super.handleStep(step);
-        if (step instanceof TestConstruct testConstructStep && testConstructStep.getId() != null) {
-            recordVariable(testConstructStep.getId(), true);
+        if (step instanceof TestConstruct testConstructStep) {
+            checkToken(testConstructStep.getSkipped(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+            if (testConstructStep.getId() != null) {
+                recordVariable(testConstructStep.getId(), true);
+            }
         }
         if (step instanceof TestStep testStep) {
             checkConstantReferenceInScriptlet(testStep.getDesc(), ATTRIBUTE_DESC);
@@ -198,6 +201,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
             checkConfigurations(beginTransactionStep.getProperty());
             checkConfigurations(beginTransactionStep.getConfig());
         } else if (step instanceof MessagingStep messagingStep) {
+            checkToken(messagingStep.getHandler(), TokenType.STRING_OR_VARIABLE_REFERENCE);
             checkConstantReferenceInScriptlet(messagingStep.getFrom(), ATTRIBUTE_FROM);
             checkConstantReferenceInScriptlet(messagingStep.getTo(), ATTRIBUTE_TO);
             checkConstantReferenceInScriptlet(messagingStep.getReply(), ATTRIBUTE_REPLY);
@@ -214,6 +218,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
             checkConfigurations(beginProcessingTransactionStep.getProperty());
             checkConfigurations(beginProcessingTransactionStep.getConfig());
         } else if (step instanceof Process processStep) {
+            checkToken(processStep.getHandler(), TokenType.STRING_OR_VARIABLE_REFERENCE);
             checkBindings(processStep.getInput());
             checkToken(processStep.getInputAttribute(), TokenType.STRING_OR_VARIABLE_REFERENCE);
             checkToken(processStep.getLevel(), TokenType.ERROR_LEVEL_OR_VARIABLE_REFERENCE);
@@ -274,10 +279,12 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
             }
             checkToken(assignStep.getSource(), TokenType.VARIABLE_REFERENCE);
             checkToken(assignStep.getValue(), TokenType.EXPRESSION);
+            checkToken(assignStep.getSkipped(), TokenType.STRING_OR_VARIABLE_REFERENCE);
         } else if (step instanceof Log logStep) {
             checkToken(logStep.getSource(), TokenType.VARIABLE_REFERENCE);
             checkToken(logStep.getValue(), TokenType.EXPRESSION);
             checkToken(logStep.getLevel(), TokenType.LOG_LEVEL_OR_VARIABLE_REFERENCE);
+            checkToken(logStep.getSkipped(), TokenType.STRING_OR_VARIABLE_REFERENCE);
         } else if (step instanceof Verify verifyStep) {
             checkToken(verifyStep.getHandler(), TokenType.STRING_OR_VARIABLE_REFERENCE);
             checkToken(verifyStep.getLevel(), TokenType.ERROR_LEVEL_OR_VARIABLE_REFERENCE);
@@ -299,6 +306,9 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
             checkConstantReferenceInScriptlet(userInteractionStep.getDesc(), ATTRIBUTE_DESC);
             checkConstantReferenceInScriptlet(userInteractionStep.getWith(), ATTRIBUTE_WITH);
             checkToken(userInteractionStep.getInputTitle(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+            checkToken(userInteractionStep.getBlocking(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+            checkToken(userInteractionStep.getHandlerEnabled(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+            checkToken(userInteractionStep.getHandler(), TokenType.STRING_OR_VARIABLE_REFERENCE);
             if (userInteractionStep.getInstructOrRequest() != null) {
                 for (InstructionOrRequest ir: userInteractionStep.getInstructOrRequest()) {
                     checkConstantReferenceInScriptlet(ir.getDesc(), ATTRIBUTE_DESC);
@@ -309,10 +319,15 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
                         checkToken(userRequest.getOptionLabels(), TokenType.STRING_OR_VARIABLE_REFERENCE);
                         checkToken(userRequest.getMultiple(), TokenType.STRING_OR_VARIABLE_REFERENCE);
                         checkToken(userRequest.getFileName(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+                        checkToken(userRequest.getRequired(), TokenType.STRING_OR_VARIABLE_REFERENCE);
                     } else {
                         checkExpression(ir);
                     }
                 }
+            }
+            if (userInteractionStep.getHandlerConfig() != null) {
+                checkConfigurations(userInteractionStep.getHandlerConfig().getProperty());
+                checkBindings(userInteractionStep.getHandlerConfig().getInput());
             }
         } else if (step instanceof Group groupStep) {
             checkConstantReferenceInScriptlet(groupStep.getDesc(), ATTRIBUTE_DESC);

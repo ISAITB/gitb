@@ -3,8 +3,9 @@ import { NotificationAnimationType, Options } from 'angular2-notifications';
 import { setTheme } from 'ngx-bootstrap/utils';
 
 @Component({
-  selector: 'app-root',
-  templateUrl: './app.component.html'
+    selector: 'app-root',
+    templateUrl: './app.component.html',
+    standalone: false
 })
 export class AppComponent implements OnInit {
 

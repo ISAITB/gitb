@@ -2,75 +2,56 @@
     <div class="modal-title">Prerequisite information missing</div>
 </div>
 <div class="modal-body">
-	<div class="panel-configuration">
-		@if (somethingIsVisible) {
-			<div>
-				@if (requiredPropertiesAreHidden) {
-					 <!-- Something is not visible -->
-					<div class="alert alert-info rounded">
-						<p>Required information is needed before tests can be launched. Please review this below.</p>
-						<span><b>Note: </b></span><span>Certain additional configuration must be completed for you by an administrator before starting tests.</span>
-					</div>
-				 } @else {
-					<!-- Everything is visible -->
-					<div class="alert alert-info rounded">
-						<span>Required information is needed before tests can be launched. Please review this below.</span>
-					</div>
-				 }
-				 @if (showOrganisationProperties) {
-					 <div class="card">
-						 <div class="card-header">
-							 <div class="table-title">Organisation properties</div>
-						 </div>
-						 <app-parameter-display 
-							 [parameters]="organisationProperties" 
-							 [onlyMissing]="true" 
-							 [onlyRequired]="true" 
-							 [showValues]="false" 
-							 [editable]="false"></app-parameter-display>
-					 </div>
-				 }
-				 @if (showSystemProperties) {
-					 <div class="card">
-						 <div class="card-header">
-							 <div class="table-title">System properties</div>
-						 </div>
-						 <app-parameter-display 
-							 [parameters]="systemProperties" 
-							 [onlyMissing]="true" 
-							 [onlyRequired]="true" 
-							 [showValues]="false" 
-							 [editable]="false"></app-parameter-display>
-					 </div>
-				 }
-				 @if (showStatementProperties) {
-					 <div class="card">
-						 <div class="card-header">
-							 <div class="table-title">Conformance statement parameters</div>
-						 </div>
-						 <app-parameter-display 
-							 [parameters]="statementProperties" 
-							 [onlyMissing]="true" 
-							 [onlyRequired]="true" 
-							 [showValues]="false" 
-							 [editable]="false"></app-parameter-display>
-					 </div>
-				 }
-			</div>
-		} @else {
-			<div>
-				<div class="alert alert-info rounded mb-0">
-					<span>Certain configuration must be completed for you by an administrator before you can proceed with testing.</span>
-				</div>                    
-			</div>
-		}
-	</div>
+    <div class="panel-configuration">
+        @if (somethingIsVisible) {
+            <div>
+                @if (requiredPropertiesAreHidden) {
+                    <!-- Something is not visible -->
+                    <div class="alert alert-info rounded">
+                        <p>Required information is needed before tests can be launched. Please review this below.</p>
+                        <span><b>Note: </b></span><span>Certain additional configuration must be completed by an administrator before starting tests.</span>
+                    </div>
+                } @else {
+                    <!-- Everything is visible -->
+                    @if (requiredPropertiesIncludeEditable && requiredPropertiesIncludeNonEditable) {
+                        <div class="alert alert-info rounded">
+                            <p>Required information is needed before tests can be launched. Please review this below.</p>
+                            <span><b>Note: </b></span><span>Certain configuration must be completed by an administrator before starting tests.</span>
+                        </div>
+                    } @else if (!requiredPropertiesIncludeEditable && requiredPropertiesIncludeNonEditable) {
+                        <div class="alert alert-info rounded">
+                            <span>Certain configuration must be completed by an administrator before starting tests. You can review this below.</span>
+                        </div>
+                    } @else {
+                        <div class="alert alert-info rounded">
+                            <span>Required information is needed before tests can be launched. Please review this below.</span>
+                        </div>
+                    }
+                }
+                @if (showOrganisationProperties) {
+                    <app-parameter-display [parameters]="organisationProperties" [title]="dataService.labelOrganisation() + ' properties'" [noMargin]="!showSystemProperties && !showStatementProperties"></app-parameter-display>
+                }
+                @if (showSystemProperties) {
+                    <app-parameter-display [parameters]="systemProperties" [title]="dataService.labelSystem() + ' properties'" [noMargin]="!showStatementProperties"></app-parameter-display>
+                }
+                @if (showStatementProperties) {
+                    <app-parameter-display [parameters]="statementProperties" [title]="'Conformance statement properties'" [noMargin]="true"></app-parameter-display>
+                }
+            </div>
+        } @else {
+            <div>
+                <div class="alert alert-info rounded mb-0">
+                    <span>Certain configuration must be completed for you by an administrator before you can proceed with testing.</span>
+                </div>
+            </div>
+        }
+    </div>
 </div>
 <div class="modal-footer">
-	<div class="btn-toolbar">
-		<button type="button" class="btn btn-secondary" (click)="close()">Close</button>
-		@if (somethingIsVisible) {
-			<button type="button" class="btn btn-secondary" (click)="view()">View missing configuration</button>
-		}
-	</div>
+    <div class="btn-toolbar">
+        <button type="button" class="btn btn-secondary" (click)="close()">Close</button>
+        @if (somethingIsVisible) {
+            <button type="button" class="btn btn-secondary" (click)="view()">View missing configuration</button>
+        }
+    </div>
 </div>

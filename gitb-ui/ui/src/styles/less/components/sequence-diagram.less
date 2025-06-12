@@ -2,6 +2,7 @@
 
 @actor-width: 240px+1;
 @line-color: @gray;
+@report-icon-highlight-color: @gray-dark;
 @line-height: 16px;
 @macro-limit: 10;
 @step-status-width: 4px;
@@ -205,8 +206,9 @@
                             background-color: @line-color;
                             border-radius: 0 0 3px 3px;
                             font-size: @font-size;
-                            padding: 0px;
-                            overflow-y: hidden;
+                            padding: 0;
+                            max-height: 90px;
+                            overflow-y: auto;
 
                             .add-hover-effect(@color) {
                                 &:hover {
@@ -225,12 +227,16 @@
                                     background-color: @color;
                                 }
                             }
+                            li:first-of-type .dropdown-item {
+                                border-top-width: 0;
+                            }
 
                             .dropdown-item {
                                 padding: 2px 8px;
                                 border-top: 1px solid white;
                                 position: relative;
                                 color: white;
+                                height: 22px;
                                 .add-hover-effect(@line-color);
 
                                 &.processing {
@@ -286,6 +292,9 @@
                             color: @line-color !important;
                             display: block;
                             font-size: 28px;
+                            &.hovering {
+                                color: @report-icon-highlight-color !important;
+                            }
                         }
 
                         &.processing-icon,

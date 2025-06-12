@@ -12,11 +12,13 @@ import { PlaceholderInfo } from './placeholder-info';
 import { OrganisationParameter } from 'src/app/types/organisation-parameter';
 import { SystemParameter } from 'src/app/types/system-parameter';
 import { Constants } from 'src/app/common/constants';
+import {CommunityResourceService} from '../../services/community-resource.service';
 
 @Component({
-  selector: 'app-placeholder-selector',
-  templateUrl: './placeholder-selector.component.html',
-  styleUrls: [ './placeholder-selector.component.less' ]
+    selector: 'app-placeholder-selector',
+    templateUrl: './placeholder-selector.component.html',
+    styleUrls: ['./placeholder-selector.component.less'],
+    standalone: false
 })
 export class PlaceholderSelectorComponent implements OnInit {
 
@@ -26,6 +28,7 @@ export class PlaceholderSelectorComponent implements OnInit {
   @Input() organisationParameters: boolean = false
   @Input() systemParameters: boolean = false
   @Input() resources: boolean = false
+  @Input() systemResources: boolean = false
   @Input() community?: number
   @Input() domainChanged?: EventEmitter<number>
 
@@ -33,14 +36,15 @@ export class PlaceholderSelectorComponent implements OnInit {
   domainParameterPlaceholders?: KeyValue[]
   organisationParameterPlaceholders?: KeyValue[]
   systemParameterPlaceholders?: KeyValue[]
-  communityResources?: CommunityResource[]
   communityResourceConfig?: MultiSelectConfig<CommunityResource>
+  systemResourceConfig?: MultiSelectConfig<CommunityResource>
 
   constructor(
     private dataService: DataService,
     private popupService: PopupService,
     private conformanceService: ConformanceService,
-    private communityService: CommunityService
+    private communityService: CommunityService,
+    private communityResourceService: CommunityResourceService
   ) { }
 
   ngOnInit(): void {
@@ -50,7 +54,7 @@ export class PlaceholderSelectorComponent implements OnInit {
       communityIdToUse = this.dataService.community?.id
     } else {
       communityIdToUse = this.community
-    }    
+    }
     // Domain parameters
     const domainParameterObservable = this.updateDomainParameters(this.domainId)
     // Organisation properties
@@ -104,9 +108,21 @@ export class PlaceholderSelectorComponent implements OnInit {
           textField: 'name',
           filterLabel: 'Copy resource reference',
           singleSelection: true,
-          loader: (() => {
-            return this.communityService.getCommunityResources(communityIdToUse!)
-          }).bind(this)
+          loader: () => {
+            return this.communityResourceService.getCommunityResources(communityIdToUse!)
+          }
+        }
+      }
+    }
+    // System resources
+    if (this.systemResources) {
+      this.systemResourceConfig = {
+        name: 'systemResources',
+        textField: 'name',
+        filterLabel: 'Copy system-wide resource reference',
+        singleSelection: true,
+        loader: () => {
+          return this.communityResourceService.getSystemResources()
         }
       }
     }
@@ -171,6 +187,12 @@ export class PlaceholderSelectorComponent implements OnInit {
   }
 
   resourceSelected(update: FilterUpdate<CommunityResource>) {
+    if (update.values.active.length > 0) {
+      this.copyValue(update.values.active[0].reference, 'Resource reference copied to clipboard.')
+    }
+  }
+
+  systemResourceSelected(update: FilterUpdate<CommunityResource>) {
     if (update.values.active.length > 0) {
       this.copyValue(update.values.active[0].reference, 'Resource reference copied to clipboard.')
     }

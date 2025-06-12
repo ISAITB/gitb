@@ -69,11 +69,12 @@ public class TestSessionAppender extends AppenderBase<ILoggingEvent> {
     private LogLevel toLogLevel(Level level) {
         var logLevel = LogLevel.DEBUG;
         if (level != null) {
-            switch (level.levelInt) {
-                case Level.ERROR_INT: logLevel = LogLevel.ERROR; break;
-                case Level.WARN_INT: logLevel = LogLevel.WARNING; break;
-                case Level.INFO_INT: logLevel = LogLevel.INFO; break;
-            }
+            logLevel = switch (level.levelInt) {
+                case Level.ERROR_INT -> LogLevel.ERROR;
+                case Level.WARN_INT -> LogLevel.WARNING;
+                case Level.INFO_INT -> LogLevel.INFO;
+                default -> logLevel;
+            };
         }
         return logLevel;
     }

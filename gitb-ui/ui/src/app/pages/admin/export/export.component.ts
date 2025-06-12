@@ -15,9 +15,10 @@ import { FilterUpdate } from 'src/app/components/test-filter/filter-update';
 import { Constants } from 'src/app/common/constants';
 
 @Component({
-  selector: 'app-export',
-  templateUrl: './export.component.html',
-  styleUrls: [ './export.component.less' ]
+    selector: 'app-export',
+    templateUrl: './export.component.html',
+    styleUrls: ['./export.component.less'],
+    standalone: false
 })
 export class ExportComponent extends BaseComponent implements OnInit {
 
@@ -67,6 +68,7 @@ export class ExportComponent extends BaseComponent implements OnInit {
     testSuites: false,
     communityAdministrators: false,
     organisationUsers: false,
+    systemResources: false,
     themes: false,
     defaultLandingPages: false,
     defaultLegalNotices: false,
@@ -74,6 +76,8 @@ export class ExportComponent extends BaseComponent implements OnInit {
     systemAdministrators: false,
     systemConfigurations: false
   }
+  domainSelectionConfig!: MultiSelectConfig<Domain>
+  communitySelectionConfig!: MultiSelectConfig<Community>
   domainsToDeleteConfig?: MultiSelectConfig<Domain>
   communitiesToDeleteConfig?: MultiSelectConfig<Community>
   Constants = Constants
@@ -106,6 +110,24 @@ export class ExportComponent extends BaseComponent implements OnInit {
           })
         )
     }
+    this.domainSelectionConfig = {
+      name: "domain",
+      textField: "fname",
+      singleSelection: true,
+      singleSelectionPersistent: true,
+      showAsFormControl: true,
+      filterLabel: `Select ${this.dataService.labelDomainLower()}...`,
+      loader: () => of(this.domains)
+    }
+    this.communitySelectionConfig = {
+      name: "community",
+      textField: "fname",
+      singleSelection: true,
+      singleSelectionPersistent: true,
+      showAsFormControl: true,
+      filterLabel: `Select community...`,
+      loader: () => of(this.communities)
+    }
     forkJoin([communities$, domains$]).subscribe((data) => {
       this.communities = data[0]
       this.domains = data[1]
@@ -115,6 +137,7 @@ export class ExportComponent extends BaseComponent implements OnInit {
         clearItems: new EventEmitter<void>(),
         replaceItems: new EventEmitter<Domain[]>(),
         replaceSelectedItems: new EventEmitter<Domain[]>(),
+        showAsFormControl: true,
         filterLabel: `Select ${this.dataService.labelDomainsLower()}...`,
         loader: () => of(this.domains)
       }
@@ -124,6 +147,7 @@ export class ExportComponent extends BaseComponent implements OnInit {
         clearItems: new EventEmitter<void>(),
         replaceItems: new EventEmitter<Community[]>(),
         replaceSelectedItems: new EventEmitter<Community[]>(),
+        showAsFormControl: true,
         filterLabel: `Select communities...`,
         loader: () => of(this.communities)
       }
@@ -161,6 +185,7 @@ export class ExportComponent extends BaseComponent implements OnInit {
       testSuites: false,
       communityAdministrators: false,
       organisationUsers: false,
+      systemResources: false,
       themes: false,
       defaultLandingPages: false,
       defaultLegalNotices: false,
@@ -175,7 +200,7 @@ export class ExportComponent extends BaseComponent implements OnInit {
   resetSettings(full?:boolean) {
     this.resetIncludes()
     this.settings.encryptionKey = undefined
-    if (this.dataService.isSystemAdmin) { 
+    if (this.dataService.isSystemAdmin) {
       this.domain = undefined
       this.community = undefined
       this.showSystemSettingsOption = true
@@ -205,6 +230,14 @@ export class ExportComponent extends BaseComponent implements OnInit {
     setTimeout(() => {
       this.formCollapsed = this.exportType == undefined
     })
+  }
+
+  domainSelected(event: FilterUpdate<Domain>) {
+    this.domain = event.values.active[0]
+  }
+
+  communitySelected(event: FilterUpdate<Community>) {
+    this.community = event.values.active[0]
   }
 
   allCommunityDataChanged() {
@@ -251,6 +284,7 @@ export class ExportComponent extends BaseComponent implements OnInit {
 
   allSystemSettingDataChanged() {
     if (this.allSystemSettingData && this.showSystemSettingsOption) {
+      this.settings.systemResources = this.allSystemSettingData
       this.settings.themes = this.allSystemSettingData
       this.settings.defaultLandingPages = this.allSystemSettingData
       this.settings.defaultLegalNotices = this.allSystemSettingData
@@ -422,6 +456,7 @@ export class ExportComponent extends BaseComponent implements OnInit {
       this.settings.testSuites ||
       this.settings.communityAdministrators ||
       this.settings.organisationUsers ||
+      this.settings.systemResources ||
       this.settings.themes ||
       this.settings.defaultLandingPages ||
       this.settings.defaultLegalNotices ||
@@ -433,10 +468,10 @@ export class ExportComponent extends BaseComponent implements OnInit {
 
   exportDisabled() {
     return !(
-      this.textProvided(this.settings.encryptionKey) && 
+      this.textProvided(this.settings.encryptionKey) &&
         (
-          (this.exportType == 'domain' && this.domain != undefined) || 
-          (this.exportType == 'community' && this.community != undefined) || 
+          (this.exportType == 'domain' && this.domain != undefined) ||
+          (this.exportType == 'community' && this.community != undefined) ||
           this.exportType == 'settings' ||
           (this.exportType == 'deletions' && (this.domainsForDeletion.length > 0 || this.communitiesForDeletion.length > 0 || (this.addExtraDomainsForDeletion && this.extraDomainsForDeletion.length > 0) || (this.addExtraCommunitiesForDeletion && this.extraCommunitiesForDeletion.length > 0)))
         )
@@ -504,11 +539,11 @@ export class ExportComponent extends BaseComponent implements OnInit {
   }
 
   deleteExtraDomainKey(index: number) {
-    this.extraDomainsForDeletion.splice(index, 1)    
+    this.extraDomainsForDeletion.splice(index, 1)
   }
 
   deleteExtraCommunityKey(index: number) {
-    this.extraCommunitiesForDeletion.splice(index, 1)    
+    this.extraCommunitiesForDeletion.splice(index, 1)
   }
 
 }

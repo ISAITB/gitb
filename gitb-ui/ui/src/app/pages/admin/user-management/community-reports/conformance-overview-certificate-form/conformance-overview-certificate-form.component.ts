@@ -1,7 +1,7 @@
 import { Component, EventEmitter } from '@angular/core';
 import { BaseCertificateSettingsFormComponent } from '../base-certificate-settings-form.component';
 import { ConformanceOverviewCertificateSettings } from 'src/app/types/conformance-overview-certificate-settings';
-import { Observable, forkJoin, map, mergeMap, share } from 'rxjs';
+import {Observable, forkJoin, map, mergeMap, share, of} from 'rxjs';
 import { PlaceholderInfo } from 'src/app/components/placeholder-selector/placeholder-info';
 import { Constants } from 'src/app/common/constants';
 import { ConformanceService } from 'src/app/services/conformance.service';
@@ -17,10 +17,12 @@ import { ConformanceOverviewMessage } from '../conformance-overview-message';
 import { ReportService } from 'src/app/services/report.service';
 import { HttpResponse } from '@angular/common/http';
 import { ErrorService } from 'src/app/services/error.service';
+import {MultiSelectConfig} from '../../../../../components/multi-select-filter/multi-select-config';
 
 @Component({
-  selector: 'app-conformance-overview-certificate-form',
-  templateUrl: './conformance-overview-certificate-form.component.html'
+    selector: 'app-conformance-overview-certificate-form',
+    templateUrl: './conformance-overview-certificate-form.component.html',
+    standalone: false
 })
 export class ConformanceOverviewCertificateFormComponent extends BaseCertificateSettingsFormComponent<ConformanceOverviewCertificateSettings> {
 
@@ -39,9 +41,10 @@ export class ConformanceOverviewCertificateFormComponent extends BaseCertificate
   domains?: Domain[]
   groups?: SpecificationGroup[]
   specifications?: Specification[]
-  domainId?: number
-  groupId?: number
-  specificationId?: number
+  selectedDomain?: Domain
+  selectedGroup?: SpecificationGroup
+  selectedSpecification?: Specification
+  noGroupEntry: Partial<SpecificationGroup> = { id: -1, fname: "None" }
 
   allDomains?: Domain[]
   communityDomainId?: number
@@ -51,7 +54,6 @@ export class ConformanceOverviewCertificateFormComponent extends BaseCertificate
   specsPerDomain = new Map<number, Specification[]>()
   specsPerGroup = new Map<number, Specification[]>()
   specificationSelectLabel?: string
-  noGroup = -1
   domainChangedEmitter = new EventEmitter<number>()
 
   aggregateMessage?: ConformanceOverviewMessage
@@ -64,6 +66,41 @@ export class ConformanceOverviewCertificateFormComponent extends BaseCertificate
 
   currentMessageKey?: ConformanceOverviewMessage
   currentMessageContent?: string
+
+  domainSelectionConfig: MultiSelectConfig<Domain> = {
+    name: "domainMessage",
+    singleSelection: true,
+    singleSelectionPersistent: true,
+    singleSelectionClearable: false,
+    showAsFormControl: true,
+    textField: "fname",
+    loader: () => of(this.domains!)
+  }
+  groupSelectionConfig: MultiSelectConfig<SpecificationGroup> = {
+    name: "groupMessage",
+    singleSelection: true,
+    singleSelectionPersistent: true,
+    singleSelectionClearable: false,
+    showAsFormControl: true,
+    textField: "fname",
+    loader: () => {
+      if (this.messageLevel == "specification" && this.specsPerDomain.has(this.selectedDomain!.id)) {
+        return of([(this.noGroupEntry as SpecificationGroup), ...this.groups!])
+      } else {
+        return of(this.groups!)
+      }
+    }
+  }
+  specificationSelectionConfig: MultiSelectConfig<Specification> = {
+    name: "specMessage",
+    singleSelection: true,
+    singleSelectionPersistent: true,
+    singleSelectionClearable: false,
+    showAsFormControl: true,
+    textField: "fname",
+    loader: () => of(this.specifications!)
+  }
+
 
   constructor(
     reportService: ReportService,
@@ -214,7 +251,7 @@ export class ConformanceOverviewCertificateFormComponent extends BaseCertificate
         placeholders.push(this.placeholderForSpecificationGroupOption())
       } else {
         // Specific specification.
-        if (this.groupId == this.noGroup || this.groupId == undefined) {
+        if (this.selectedGroup == undefined || this.selectedGroup.id == this.noGroupEntry.id) {
           // Specification without a group.
           placeholders.push(this.placeholderForSpecification())
         } else {
@@ -326,7 +363,7 @@ export class ConformanceOverviewCertificateFormComponent extends BaseCertificate
         }
         this.domains = this.allDomains
         if (this.domains && this.domains.length > 0) {
-          this.domainId = this.domains[0].id
+          this.selectedDomain = this.domains[0]
           this.domainChanged()
         }
       })
@@ -337,18 +374,18 @@ export class ConformanceOverviewCertificateFormComponent extends BaseCertificate
     setTimeout(() => {
       if (this.messageLevel == "domain") {
         this.domains = this.allDomains
-        this.groupId = undefined
-        this.specificationId = undefined
+        this.selectedGroup = undefined
+        this.selectedSpecification = undefined
       } else if (this.messageLevel == "group") {
         this.domains = filter(this.allDomains, (domain) => this.groupsPerDomain.has(domain.id))
-        this.specificationId = undefined
+        this.selectedSpecification = undefined
       } else if (this.messageLevel == "specification") {
         this.domains = filter(this.allDomains, (domain) => this.groupsPerDomain.has(domain.id) || this.specsPerDomain.has(domain.id))
       } else {
         this.domains = []
-        this.domainId = undefined
-        this.groupId = undefined
-        this.specificationId = undefined
+        this.selectedDomain = undefined
+        this.selectedGroup = undefined
+        this.selectedSpecification = undefined
       }
       this.specificMessageSetting = false
       this.toggleSpecificMessageSetting()
@@ -357,56 +394,47 @@ export class ConformanceOverviewCertificateFormComponent extends BaseCertificate
 
   toggleSpecificMessageSetting() {
     if (this.specificMessageSetting && this.domains && this.domains.length > 0) {
-      if (this.domainId != undefined) {
-        const found = find(this.domains, (domain) => domain.id == this.domainId)
-        if (!found) {
-          this.domainId = undefined
-        }
+      if (this.selectedDomain != undefined) {
+        this.selectedDomain = find(this.domains, (domain) => domain.id == this.selectedDomain!.id)
       }
-      if (this.domainId == undefined) {
-        this.domainId = this.domains[0].id
+      if (this.selectedDomain == undefined) {
+        this.selectedDomain = this.domains[0]
       }
     } else {
-      this.domainId = undefined
+      this.selectedDomain = undefined
     }
     this.domainChanged()
   }
 
   domainChanged() {
-    if (this.domainId != undefined) {
-      if (this.groupsPerDomain.has(this.domainId)) {
+    if (this.selectedDomain != undefined) {
+      if (this.groupsPerDomain.has(this.selectedDomain.id)) {
         // The selected domain has groups.
         if (this.messageLevel == "group") {
-          this.groups = this.groupsPerDomain.get(this.domainId)
-          if (this.groupId != undefined) {
-            const found = find(this.groups, (group) => group.id == this.groupId)
-            if (!found) {
-              this.groupId = undefined
-            }
+          this.groups = this.groupsPerDomain.get(this.selectedDomain.id)
+          if (this.selectedGroup != undefined) {
+            this.selectedGroup = find(this.groups, (group) => group.id == this.selectedGroup!.id)
           }
-          if (this.groupId == undefined && this.groups!.length > 0) {
-            this.groupId = this.groups![0].id
+          if (this.selectedGroup == undefined && this.groups!.length > 0) {
+            this.selectedGroup = this.groups![0]
           }
         } else if (this.messageLevel == "specification") {
-          this.groups = filter(this.groupsPerDomain.get(this.domainId), (group) => this.specsPerGroup.has(group.id))
-          if (this.groupId != undefined) {
-            const found = find(this.groups, (group) => group.id == this.groupId)
-            if (!found) {
-              this.groupId = undefined
-            }
+          this.groups = filter(this.groupsPerDomain.get(this.selectedDomain.id), (group) => this.specsPerGroup.has(group.id))
+          if (this.selectedGroup != undefined) {
+            this.selectedGroup = find(this.groups, (group) => group.id == this.selectedGroup!.id)
           }
-          if (this.groupId == undefined) {
-            if (this.specsPerDomain.has(this.domainId)) {
-              this.groupId = this.noGroup
+          if (this.selectedGroup == undefined) {
+            if (this.specsPerDomain.has(this.selectedDomain.id)) {
+              this.selectedGroup = (this.noGroupEntry as SpecificationGroup)
             } else if (this.groups.length > 0) {
-                this.groupId = this.groups[0].id
+                this.selectedGroup = this.groups[0]
             }
           }
         }
-      } else if (this.specsPerDomain.has(this.domainId)) {
+      } else if (this.specsPerDomain.has(this.selectedDomain.id)) {
         // The selected domain has specifications.
         this.groups = []
-        this.groupId = this.noGroup
+        this.selectedGroup = (this.noGroupEntry as SpecificationGroup)
       }
     }
     if (this.communityDomainId != undefined) {
@@ -415,7 +443,7 @@ export class ConformanceOverviewCertificateFormComponent extends BaseCertificate
       if (this.messageLevel == "all" || this.messageLevel == "domain" && !this.specificMessageSetting) {
         this.domainChangedEmitter.emit(undefined)
       } else {
-        this.domainChangedEmitter.emit(this.domainId)
+        this.domainChangedEmitter.emit(this.selectedDomain?.id)
       }
     }
     this.groupChanged(true)
@@ -423,20 +451,20 @@ export class ConformanceOverviewCertificateFormComponent extends BaseCertificate
   }
 
   groupChanged(skipMessageUpdate?: boolean) {
-    if (this.groupId != undefined && this.messageLevel == "specification") {
-      if (this.groupId == this.noGroup) {
-        if (this.domainId != undefined) {
-          this.specifications = this.specsPerDomain.get(this.domainId)
+    if (this.selectedGroup != undefined && this.messageLevel == "specification") {
+      if (this.selectedGroup.id == this.noGroupEntry.id) {
+        if (this.selectedDomain != undefined) {
+          this.specifications = this.specsPerDomain.get(this.selectedDomain.id)
           this.specificationSelectLabel = this.dataService.labelSpecification()+":"
         }
       } else {
-        if (this.specsPerGroup.has(this.groupId)) {
-          this.specifications = this.specsPerGroup.get(this.groupId)
+        if (this.specsPerGroup.has(this.selectedGroup.id)) {
+          this.specifications = this.specsPerGroup.get(this.selectedGroup.id)
           this.specificationSelectLabel = this.dataService.labelSpecificationInGroup()+":"
         }
       }
       if (this.specifications && this.specifications.length > 0) {
-        this.specificationId = this.specifications[0].id
+        this.selectedSpecification = this.specifications[0]
         this.specificationChanged(true)
       }
     }
@@ -513,21 +541,21 @@ export class ConformanceOverviewCertificateFormComponent extends BaseCertificate
     } else if (this.messageLevel == "domain" && !this.specificMessageSetting) {
       this.currentMessageContent = this.defaultDomainMessage?.message
       this.currentMessageKey = { level: "domain" }
-    } else if (this.messageLevel == "domain" && this.domainId != undefined) {
-      this.currentMessageContent = this.specificDomainMessages.get(this.domainId)?.message
-      this.currentMessageKey = { level: "domain", identifier: this.domainId }
+    } else if (this.messageLevel == "domain" && this.selectedDomain != undefined) {
+      this.currentMessageContent = this.specificDomainMessages.get(this.selectedDomain.id)?.message
+      this.currentMessageKey = { level: "domain", identifier: this.selectedDomain.id }
     } else if (this.messageLevel == "group" && !this.specificMessageSetting) {
       this.currentMessageContent = this.defaultGroupMessage?.message
       this.currentMessageKey = { level: "group" }
-    } else if (this.messageLevel == "group" && this.groupId != undefined) {
-      this.currentMessageContent = this.specificGroupMessages.get(this.groupId)?.message
-      this.currentMessageKey = { level: "group", identifier: this.groupId }
+    } else if (this.messageLevel == "group" && this.selectedGroup != undefined) {
+      this.currentMessageContent = this.specificGroupMessages.get(this.selectedGroup.id)?.message
+      this.currentMessageKey = { level: "group", identifier: this.selectedGroup.id }
     } else if (this.messageLevel == "specification" && !this.specificMessageSetting) {
       this.currentMessageContent = this.defaultSpecificationMessage?.message
       this.currentMessageKey = { level: "specification" }
-    } else if (this.messageLevel == "specification" && this.specificationId != undefined) {
-      this.currentMessageContent = this.specificSpecificationMessages.get(this.specificationId)?.message
-      this.currentMessageKey = { level: "specification", identifier: this.specificationId }
+    } else if (this.messageLevel == "specification" && this.selectedSpecification != undefined) {
+      this.currentMessageContent = this.specificSpecificationMessages.get(this.selectedSpecification.id)?.message
+      this.currentMessageKey = { level: "specification", identifier: this.selectedSpecification.id }
     } else {
       this.currentMessageKey = undefined
       this.currentMessageContent = undefined

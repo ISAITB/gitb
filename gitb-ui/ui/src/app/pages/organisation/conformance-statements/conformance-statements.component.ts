@@ -1,24 +1,29 @@
-import { Component, NgZone, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { Constants } from 'src/app/common/constants';
-import { DataService } from 'src/app/services/data.service';
-import { SystemService } from 'src/app/services/system.service';
-import { find } from 'lodash'
-import { RoutingService } from 'src/app/services/routing.service';
-import { System } from 'src/app/types/system';
-import { ConformanceStatementItem } from 'src/app/types/conformance-statement-item';
-import { ConformanceService } from 'src/app/services/conformance.service';
-import { ConformanceSnapshot } from 'src/app/types/conformance-snapshot';
-import { Observable, forkJoin, of } from 'rxjs';
-import { ExportReportEvent } from 'src/app/types/export-report-event';
-import { ReportSupportService } from 'src/app/services/report-support.service';
-import { BaseConformanceItemDisplayComponent } from 'src/app/components/base-conformance-item-display/base-conformance-item-display.component';
-import { ConformanceSnapshotList } from 'src/app/types/conformance-snapshot-list';
+import {Component, EventEmitter, NgZone, OnInit} from '@angular/core';
+import {ActivatedRoute} from '@angular/router';
+import {Constants} from 'src/app/common/constants';
+import {DataService} from 'src/app/services/data.service';
+import {SystemService} from 'src/app/services/system.service';
+import {find} from 'lodash';
+import {RoutingService} from 'src/app/services/routing.service';
+import {System} from 'src/app/types/system';
+import {ConformanceStatementItem} from 'src/app/types/conformance-statement-item';
+import {ConformanceService} from 'src/app/services/conformance.service';
+import {ConformanceSnapshot} from 'src/app/types/conformance-snapshot';
+import {forkJoin, Observable, of} from 'rxjs';
+import {ExportReportEvent} from 'src/app/types/export-report-event';
+import {ReportSupportService} from 'src/app/services/report-support.service';
+import {
+  BaseConformanceItemDisplayComponent
+} from 'src/app/components/base-conformance-item-display/base-conformance-item-display.component';
+import {ConformanceSnapshotList} from 'src/app/types/conformance-snapshot-list';
+import {MultiSelectConfig} from '../../../components/multi-select-filter/multi-select-config';
+import {FilterUpdate} from '../../../components/test-filter/filter-update';
 
 @Component({
-  selector: 'app-conformance-statements',
-  templateUrl: './conformance-statements.component.html',
-  styleUrls: [ './conformance-statements.component.less' ]
+    selector: 'app-conformance-statements',
+    templateUrl: './conformance-statements.component.html',
+    styleUrls: ['./conformance-statements.component.less'],
+    standalone: false
 })
 export class ConformanceStatementsComponent extends BaseConformanceItemDisplayComponent implements OnInit {
 
@@ -42,6 +47,7 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
   conformanceSnapshots?: ConformanceSnapshot[]
   snapshotButtonLabel?: string
   currentlySelectedSnapshot?: ConformanceSnapshot
+  systemSelectionConfig!: MultiSelectConfig<System>
 
   constructor(
     dataService: DataService,
@@ -72,6 +78,17 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
     this.showCreateSystem = this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || this.dataService.isVendorAdmin
     this.showDomain = this.dataService.isSystemAdmin || this.dataService.community?.domainId == undefined
     this.columnCount = this.showDomain?6:5
+    this.systemSelectionConfig = {
+      name: "system",
+      textField: "fname",
+      singleSelection: true,
+      singleSelectionPersistent: true,
+      filterLabel: 'Select ' + this.dataService.labelSystemLower()+ '...',
+      noItemsMessage: 'No ' + this.dataService.labelSystemsLower() + ' available.',
+      searchPlaceholder: 'Search ' + this.dataService.labelSystemsLower() + "...",
+      replaceSelectedItems: new EventEmitter(),
+      replaceItems: new EventEmitter()
+    }
     const systemsLoaded = this.systemService.getSystemsByOrganisation(this.organisationId, snapshotId)
     let snapshotsLoaded: Observable<ConformanceSnapshotList>
     if (isOwnConformanceStatements && (this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin)) {
@@ -100,27 +117,31 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
         this.snapshotButtonLabel = this.latestSnapshotButtonLabel
       }
       // Systems - this will also load statements and update breadcrumbs.
-      this.systemsLoaded(results[0], false)
+      this.systemsLoaded(results[0])
     }).add(() => {
       this.systemStatus.status = Constants.STATUS.FINISHED
     })
   }
 
-  private systemsLoaded(systems: System[], updateRoutePath: boolean) {
+  private systemsLoaded(systems: System[]) {
     this.systems = systems
-    if (this.systems.length == 1) {
-      this.system = systems[0]
-    } else if (this.route.snapshot.queryParamMap.has(Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID)) {
-      const systemId = Number(this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID))
-      this.system = find(this.systems, (sys) => {
-        return sys.id == systemId
-      })
-    }
-    if (this.system) {
-      this.systemChanged(updateRoutePath)
-    } else {
-      this.updateBreadcrumbs()
-    }
+    setTimeout(() => {
+      this.systemSelectionConfig.replaceItems!.emit(this.systems)
+      let systemToSelect: System|undefined
+      if (this.systems.length == 1) {
+        systemToSelect = systems[0]
+      } else if (this.route.snapshot.queryParamMap.has(Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID)) {
+        const systemId = Number(this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID))
+        systemToSelect = find(this.systems, (sys) => {
+          return sys.id == systemId
+        })
+      }
+      if (systemToSelect) {
+        this.systemSelectionConfig.replaceSelectedItems!.emit([systemToSelect])
+      } else {
+        this.updateBreadcrumbs()
+      }
+    })
   }
 
   private updateBreadcrumbs() {
@@ -131,12 +152,11 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
     }
   }
 
-  systemChanged(updateRoutePath: boolean) {
+  systemSelectionChanged(event: FilterUpdate<System>): void {
+    this.system = event.values.active[0]
     this.updateBreadcrumbs()
     this.getConformanceStatements()
-    if (updateRoutePath) {
-      this.updateRouting()
-    }
+    this.updateRouting()
   }
 
   getConformanceStatements() {
@@ -197,7 +217,7 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
       this.snapshotButtonLabel = (snapshot == undefined)?this.latestSnapshotButtonLabel:snapshot.label
       this.systemStatus.status = Constants.STATUS.PENDING
       systemsLoaded.subscribe((data) => {
-        this.systemsLoaded(data, false)
+        this.systemsLoaded(data)
       }).add(() => {
         // Update the routing path (to avoid loss of state on refresh).
         this.updateRouting()
@@ -212,16 +232,7 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
     } else {
       event.item.exportPdfPending = true
     }
-    let reportLevel: 'all'|'domain'|'specification'|'group'
-    if (event.item.itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.DOMAIN) {
-      reportLevel = "domain"
-    } else if (event.item.itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION_GROUP) {
-      reportLevel = "group"
-    } else if (event.item.itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION) {
-      reportLevel = "specification"
-    } else {
-      reportLevel = "all"
-    }
+    const reportLevel = this.determineReportLevel(event)
     this.reportSupportService.handleConformanceOverviewReport(this.communityIdForSnapshots, this.system!.id, event.item.id, reportLevel, this.currentlySelectedSnapshot?.id, event.format, this.dataService.conformanceStatusForConformanceItem(event.item))
     .subscribe(() => {
       // Do nothing further.

@@ -1,9 +1,10 @@
 import { Component, Input, OnInit } from '@angular/core';
 
 @Component({
-  selector: 'app-tab-title',
-  templateUrl: './tab-title.component.html',
-  styleUrls: [ './tab-title.component.less' ]
+    selector: 'app-tab-title',
+    templateUrl: './tab-title.component.html',
+    styleUrls: ['./tab-title.component.less'],
+    standalone: false
 })
 export class TabTitleComponent implements OnInit {
 

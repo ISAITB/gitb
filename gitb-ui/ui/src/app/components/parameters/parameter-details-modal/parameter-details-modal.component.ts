@@ -7,10 +7,10 @@ import { BsModalRef } from 'ngx-bootstrap/modal';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 
 @Component({
-  selector: 'app-parameter-details-modal',
-  templateUrl: './parameter-details-modal.component.html',
-  styles: [
-  ]
+    selector: 'app-parameter-details-modal',
+    templateUrl: './parameter-details-modal.component.html',
+    styles: [],
+    standalone: false
 })
 export class ParameterDetailsModalComponent extends BaseParameterModalComponent implements OnInit {
 

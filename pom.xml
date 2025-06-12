@@ -7,11 +7,11 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.4.2</version>
+        <version>3.5.0</version>
     </parent>
     <groupId>com.gitb</groupId>
     <artifactId>GITB</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.26.0</version>
     <name>GITB</name>
     <packaging>pom</packaging>
 
@@ -24,23 +24,26 @@
              mvn versions:display-dependency-updates -N -N
         -->
         <!-- Plugin versions -->
-        <version.plugin.dependency-check-maven>12.1.0</version.plugin.dependency-check-maven>
+        <version.plugin.dependency-check-maven>12.1.3</version.plugin.dependency-check-maven>
         <version.plugin.maven-deploy-plugin>3.1.1</version.plugin.maven-deploy-plugin>
         <version.plugin.maven-compiler-plugin>3.11.0</version.plugin.maven-compiler-plugin>
-        <version.jaxb2-maven-plugin>3.1.0</version.jaxb2-maven-plugin>
+        <version.plugin.jaxb2-maven-plugin>3.1.0</version.plugin.jaxb2-maven-plugin>
+        <version.plugin.license-maven-plugin>2.5.0</version.plugin.license-maven-plugin>
+        <version.plugin.antrun-plugin>3.1.0</version.plugin.antrun-plugin>
+        <version.plugin.versions-maven-plugin>2.18.0</version.plugin.versions-maven-plugin>
         <!-- Dependency versions -->
-        <version.springBoot>3.4.2</version.springBoot>
-        <version.gitbTypes>1.25.2</version.gitbTypes>
-        <version.bouncycastle>1.78.1</version.bouncycastle>
-        <version.helgerSchematron>8.0.5</version.helgerSchematron>
+        <version.gitbTypes>1.26.0</version.gitbTypes>
+        <version.springBoot>3.4.5</version.springBoot>
+        <version.bouncycastle>1.80</version.bouncycastle>
+        <version.helgerSchematron>8.0.6</version.helgerSchematron>
         <version.metaInfServices>1.9</version.metaInfServices>
-        <version.cxf>4.1.0</version.cxf>
+        <version.cxf>4.1.1</version.cxf>
         <version.httpComponents>4.5.13</version.httpComponents>
         <version.commonsCodec>1.17.1</version.commonsCodec>
         <version.reflections>0.10.2</version.reflections>
         <version.commonsIo>2.17.0</version.commonsIo>
         <version.commonsLang3>3.17.0</version.commonsLang3>
-        <version.tika>2.9.2</version.tika>
+        <version.tika>3.1.0</version.tika>
         <version.xerces>2.12.2</version.xerces>
         <version.jaxbApi>4.0.2</version.jaxbApi>
         <version.jaxbRuntime>4.0.4</version.jaxbRuntime>
@@ -49,8 +52,8 @@
         <version.jwsApi>3.0.0</version.jwsApi>
         <version.activation>2.1.2</version.activation>
         <version.commonsConfiguration>2.11.0</version.commonsConfiguration>
-        <version.commonsText>1.12.0</version.commonsText>
-        <version.pekko>1.0.2</version.pekko>
+        <version.commonsText>1.13.1</version.commonsText>
+        <version.pekko>1.1.3</version.pekko>
         <version.rgxgen>1.4</version.rgxgen>
         <version.saajImpl>3.0.4</version.saajImpl>
         <version.helgerCommons>11.1.6</version.helgerCommons>
@@ -59,17 +62,21 @@
         <version.commonsCollections>4.4</version.commonsCollections>
         <version.xmlUnit>2.10.0</version.xmlUnit>
         <version.jerseyClient>1.19.4</version.jerseyClient>
-        <version.beanUtils>1.9.4</version.beanUtils>
-        <version.freeMarker>2.3.32</version.freeMarker>
+        <version.freeMarker>2.3.34</version.freeMarker>
         <version.com.openhtmltopdf>1.0.10</version.com.openhtmltopdf>
         <version.org.jsoup>1.15.4</version.org.jsoup>
+        <version.jena>5.2.0</version.jena>
+        <version.topbraid>1.4.4</version.topbraid>
+        <version.json-schema-validator>1.5.7</version.json-schema-validator>
         <!-- Other version overrides - START -->
         <version.pdfbox>2.0.31</version.pdfbox>
         <version.batik>1.17</version.batik>
         <!-- Other version overrides - END -->
+        <!-- Override the transitive httpclient5 version to resolve CVE-2025-27820 -->
+        <version.httpclient5>5.4.4</version.httpclient5>
         <!-- Properties used for filtering replacements -->
         <timestamp>${maven.build.timestamp}</timestamp>
-        <engineVersion>${version.gitbTypes}</engineVersion>
+        <engineVersion>${project.version}</engineVersion>
     </properties>
 
     <repositories>
@@ -134,7 +141,84 @@
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>jaxb2-maven-plugin</artifactId>
-                    <version>${version.jaxb2-maven-plugin}</version>
+                    <version>${version.plugin.jaxb2-maven-plugin}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>license-maven-plugin</artifactId>
+                    <version>${version.plugin.license-maven-plugin}</version>
+                    <configuration>
+                        <fileTemplate>${project.basedir}/etc/licence/third-party-licence-template.ftl</fileTemplate>
+                        <outputDirectory>${project.build.directory}/generated-sources/license/temp</outputDirectory>
+                        <thirdPartyFilename>THIRD_PARTY_LICENCES-gitb-srv.md</thirdPartyFilename>
+                        <excludedGroups>com.gitb|eu.europa.ec.itb</excludedGroups>
+                        <excludedScopes>test</excludedScopes>
+                        <failOnMissing>true</failOnMissing>
+                        <failOnBlacklist>true</failOnBlacklist>
+                        <licenseMerges>
+                            <licenseMerge>Apache License, Version 2.0|The Apache Software License, Version 2.0|Apache-2.0|Apache License 2.0|Apache 2|The Apache License, Version 2.0|Apache License|Apache License version 2.0|Apache 2.0|Apache License v2.0|Apache License Version 2.0</licenseMerge>
+                            <licenseMerge>MIT License|The MIT License|MIT</licenseMerge>
+                            <licenseMerge>Eclipse Distribution License - v1.0|EDL 1.0|Eclipse Distribution License - v 1.0</licenseMerge>
+                            <licenseMerge>Eclipse Public License - v1.0|Eclipse Public License - v 1.0</licenseMerge>
+                            <licenseMerge>Eclipse Public License - v2.0|EPL 2.0|Eclipse Public License 2.0</licenseMerge>
+                            <licenseMerge>GNU General Public License (GPL), Version 2 (with Classpath Exception)|GPL2 w/ CPE|GNU General Public License, version 2 with the GNU Classpath Exception</licenseMerge>
+                            <licenseMerge>GNU Lesser General Public License (LGPL), Version 2.1|GNU Lesser General Public License (LGPL), version 2.1 or later|LGPL 2.1|GNU Lesser General Public License</licenseMerge>
+                            <licenseMerge>The 3-Clause BSD License|BSD-3-Clause</licenseMerge>
+                            <licenseMerge>The 2-Clause BSD License|The BSD 2-Clause License</licenseMerge>
+                            <licenseMerge>Common Public License 1.0|CPL</licenseMerge>
+                            <licenseMerge>Mozilla Public License Version 1.1|MPL 1.1</licenseMerge>
+                        </licenseMerges>
+                        <includedLicenses>
+                            <includedLicense>Apache License, Version 2.0</includedLicense>
+                            <includedLicense>MIT License</includedLicense>
+                            <includedLicense>Eclipse Distribution License - v1.0</includedLicense>
+                            <includedLicense>Eclipse Public License - v1.0</includedLicense>
+                            <includedLicense>Eclipse Public License - v2.0</includedLicense>
+                            <includedLicense>GNU General Public License (GPL), Version 2 (with Classpath Exception)</includedLicense>
+                            <includedLicense>GNU Lesser General Public License (LGPL), Version 2.1</includedLicense>
+                            <includedLicense>The 3-Clause BSD License</includedLicense>
+                            <includedLicense>The 2-Clause BSD License</includedLicense>
+                            <includedLicense>Mozilla Public License Version 2.0</includedLicense>
+                            <includedLicense>Common Public License 1.0</includedLicense>
+                        </includedLicenses>
+                    </configuration>
+                    <!--
+                        To check and generate the third party licence report for gitb-srv issue: `mvn license:aggregate-add-third-party`
+                        To generate the aggregate third party licence report for all modules issue: `mvn antrun:run -pl .`
+
+                        In case specific licences and attributions need to be included, these need to be added to etc/licence/third-party-licence-template.ftl
+                        Once added, repeat the report generation command (see above).
+                    -->
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-antrun-plugin</artifactId>
+                    <version>${version.plugin.antrun-plugin}</version>
+                    <configuration>
+                        <target>
+                            <ant antfile="etc/build.xml" dir=".">
+                                <target name="licence-report"/>
+                            </ant>
+                        </target>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>versions-maven-plugin</artifactId>
+                    <version>${version.plugin.versions-maven-plugin}</version>
+                    <configuration>
+                        <generateBackupPoms>false</generateBackupPoms>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <phase>none</phase>
+                            <!--
+                                Run manually with `mvn versions:set -DnewVersion=1.26.0`
+                                For a new development cycle run `mvn versions:set -DnewVersion=1.27.0-SNAPSHOT`
+                                The version number should be aligned with the gitb-types-jakarta dependency.
+                            -->
+                        </execution>
+                    </executions>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -156,6 +240,11 @@
                 <groupId>eu.europa.ec.itb</groupId>
                 <artifactId>gitb-types-specs</artifactId>
                 <version>${version.gitbTypes}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.gitb</groupId>
+                <artifactId>gitb-common</artifactId>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.gitb</groupId>
@@ -280,7 +369,7 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.pekko</groupId>
-                <artifactId>pekko-actor_2.13</artifactId>
+                <artifactId>pekko-actor_3</artifactId>
                 <version>${version.pekko}</version>
             </dependency>
             <dependency>
@@ -354,11 +443,6 @@
                 <version>${version.xmlUnit}</version>
             </dependency>
             <dependency>
-                <groupId>commons-beanutils</groupId>
-                <artifactId>commons-beanutils</artifactId>
-                <version>${version.beanUtils}</version>
-            </dependency>
-            <dependency>
                 <groupId>com.openhtmltopdf</groupId>
                 <artifactId>openhtmltopdf-core</artifactId>
                 <version>${version.com.openhtmltopdf}</version>
@@ -383,6 +467,21 @@
                 <artifactId>jsoup</artifactId>
                 <version>${version.org.jsoup}</version>
             </dependency>
+            <dependency>
+                <groupId>org.apache.jena</groupId>
+                <artifactId>jena-arq</artifactId>
+                <version>${version.jena}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.topbraid</groupId>
+                <artifactId>shacl</artifactId>
+                <version>${version.topbraid}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.networknt</groupId>
+                <artifactId>json-schema-validator</artifactId>
+                <version>${version.json-schema-validator}</version>
+            </dependency>
             <!-- Override for Batik in openhtmltopdf-svg-support - START -->
             <dependency>
                 <groupId>org.apache.xmlgraphics</groupId>
@@ -400,6 +499,12 @@
                 <version>${version.batik}</version>
             </dependency>
             <!-- END -->
+            <!-- Force the version of org.apache.httpcomponents.client5:httpclient5 to resolve CVE-2025-27820 (from Saxon-HE:12.4)  -->
+            <dependency>
+                <groupId>org.apache.httpcomponents.client5</groupId>
+                <artifactId>httpclient5</artifactId>
+                <version>${version.httpclient5}</version>
+            </dependency>
             <dependency>
                 <!-- Used to override the pdfbox version of openhtmltopdf-pdfbox. -->
                 <groupId>org.apache.pdfbox</groupId>
@@ -415,6 +520,7 @@
     </dependencyManagement>
 
     <modules>
+        <module>gitb-common</module>
         <module>gitb-core</module>
         <module>gitb-engine</module>
         <module>gitb-lib</module>

@@ -12,15 +12,11 @@ import org.pac4j.play.PlayWebContext
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.Files
-import play.api.mvc.{AnyContent, MultipartFormData}
+import play.api.mvc.{AnyContent, MultipartFormData, RequestHeader}
 import utils.RepositoryUtils
 
 import javax.inject.{Inject, Singleton}
-import scala.collection.mutable
-
-object AuthorizationManager {
-  val AUTHORIZATION_CHECKED = "AUTH_CHECKED"
-}
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
@@ -45,499 +41,577 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
                                      systemConfigurationManager: SystemConfigurationManager,
                                      domainManager: DomainManager,
                                      repositoryUtils: RepositoryUtils,
-                                     playSessionStore: SessionStore
-                                    ) extends BaseManager(dbConfigProvider) {
+                                     playSessionStore: SessionStore)
+                                    (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[AuthorizationManager])
 
-  def canViewOrganisationAutomationKeys(request: RequestWithAttributes[_], organisationId: Long): Boolean = {
-    val ok = canViewOrganisation(request, organisationId) && Configurations.AUTOMATION_API_ENABLED
-    setAuthResult(request, ok, "User not allowed to view the organisation's automation keys")
+  def canCheckCoreServiceHealth(request: RequestWithAttributes[_]): Future[Boolean] = {
+    checkTestBedAdmin(request)
   }
 
-  def canViewOrganisationAutomationKeysInSnapshot(request: RequestWithAttributes[_], organisationId: Long, snapshotId: Long): Boolean = {
-    val userInfo = getUser(getRequestUserId(request))
-    val ok = canViewOrganisation(request, userInfo, organisationId) && canViewConformanceSnapshot(request, userInfo, snapshotId)
-    setAuthResult(request, ok, "User not allowed to view the organisation's automation keys")
+  def canViewOrganisationAutomationKeys(request: RequestWithAttributes[_], organisationId: Long): Future[Boolean] = {
+    val check = if (Configurations.AUTOMATION_API_ENABLED) {
+      canViewOrganisation(request, organisationId)
+    } else {
+      Future.successful(false)
+    }
+    check.map(setAuthResult(request, _, "User not allowed to view the organisation's automation keys"))
   }
 
-  def canLookupConformanceBadge(request: RequestWithAttributes[_]): Boolean = {
-    setAuthResult(request, ok = true, "User not allowed to lookup conformance badges")
-  }
-
-  private def checkApiKeyUpdateForOrganisation(request: RequestWithAttributes[_], organisation: Option[Organizations]): Boolean = {
-    var ok = false
-    if (Configurations.AUTOMATION_API_ENABLED) {
-      val userId = getRequestUserId(request)
-      val userInfo = getUser(userId)
-      if (isTestBedAdmin(userInfo)) {
-        // Anything goes for the Test Bed admin.
-        ok = true
-      } else if (userInfo.organization.isDefined) {
-        if (organisation.isDefined) {
-          if (isCommunityAdmin(userInfo)) {
-            // The community admin can edit any settings within her community even if API usage is currently
-            // not allowed for community members.
-            if (organisation.get.community == userInfo.organization.get.community) {
-              ok = true
-            }
-          } else if (isOrganisationAdmin(userInfo)
-            && userInfo.organization.get.id == organisation.get.id
-            && communityManager.checkCommunityAllowsAutomationApi(userInfo.organization.get.community)) {
-            // The organisation admin needs to be updating her own organisation and be part of a community that allows
-            // the automation API.
-            ok = true
-          }
-        }
+  def canViewOrganisationAutomationKeysInSnapshot(request: RequestWithAttributes[_], organisationId: Long, snapshotId: Long): Future[Boolean] = {
+    val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
+      canViewOrganisation(request, userInfo, organisationId).flatMap { _ =>
+        canViewConformanceSnapshot(request, userInfo, snapshotId)
       }
     }
-    ok
+    check.map(setAuthResult(request, _, "User not allowed to view the organisation's automation keys"))
   }
 
-  def canUpdateSystemApiKey(request: RequestWithAttributes[_], systemId: Long): Boolean = {
-    val organisation = organizationManager.getOrganizationBySystemId(systemId)
-    val ok = checkApiKeyUpdateForOrganisation(request, Some(organisation))
-    setAuthResult(request, ok, "User not allowed to update system API key")
+  def canLookupConformanceBadge(request: RequestWithAttributes[_]): Future[Boolean] = {
+    val check = Future.successful(true)
+    check.map(setAuthResult(request, _, "User not allowed to lookup conformance badges"))
   }
 
-  def canUpdateOrganisationApiKey(request: RequestWithAttributes[_], organisationId: Long): Boolean = {
-    val organisation = organizationManager.getById(organisationId)
-    val ok = checkApiKeyUpdateForOrganisation(request, organisation)
-    setAuthResult(request, ok, "User not allowed to update organisation API key")
-  }
-
-  def canOrganisationUseAutomationApi(request: RequestWithAttributes[_]): Boolean = {
-    var ok = false
+  private def checkApiKeyUpdateForOrganisation(request: RequestWithAttributes[_], organisation: Option[Organizations]): Future[Boolean] = {
     if (Configurations.AUTOMATION_API_ENABLED) {
+      getUser(getRequestUserId(request)).flatMap { userInfo =>
+        if (isTestBedAdmin(userInfo)) {
+          // Anything goes for the Test Bed admin.
+          Future.successful(true)
+        } else if (userInfo.organization.isDefined) {
+          if (organisation.isDefined) {
+            if (isCommunityAdmin(userInfo)) {
+              // The community admin can edit any settings within her community even if API usage is currently
+              // not allowed for community members.
+              Future.successful(organisation.get.community == userInfo.organization.get.community)
+            } else if (isOrganisationAdmin(userInfo) && userInfo.organization.get.id == organisation.get.id) {
+              // The organisation admin needs to be updating her own organisation and be part of a community that allows
+              // the automation API.
+              communityManager.checkCommunityAllowsAutomationApi(userInfo.organization.get.community)
+            } else {
+              Future.successful(false)
+            }
+          } else {
+            Future.successful(false)
+          }
+        } else {
+          Future.successful(false)
+        }
+      }
+    } else {
+      Future.successful(false)
+    }
+  }
+
+  def canUpdateSystemApiKey(request: RequestWithAttributes[_], systemId: Long): Future[Boolean] = {
+    val check = organizationManager.getOrganizationBySystemId(systemId).flatMap { organisation =>
+      checkApiKeyUpdateForOrganisation(request, Some(organisation))
+    }
+    check.map(setAuthResult(request, _, "User not allowed to update system API key"))
+  }
+
+  def canUpdateOrganisationApiKey(request: RequestWithAttributes[_], organisationId: Long): Future[Boolean] = {
+    val check = organizationManager.getById(organisationId).flatMap { organisation =>
+      checkApiKeyUpdateForOrganisation(request, organisation)
+    }
+    check.map(setAuthResult(request, _, "User not allowed to update organisation API key"))
+  }
+
+  def canOrganisationUseAutomationApi(request: RequestWithAttributes[_]): Future[Boolean] = {
+    val check = if (Configurations.AUTOMATION_API_ENABLED) {
       val apiKey = request.headers.get(Constants.AutomationHeader)
       if (apiKey.isDefined) {
-        // Check to see that the api key identifies an organisation in a community that allows API usage.
-        val organisation = organizationManager.getByApiKey(apiKey.get)
-        if (organisation.isDefined) {
-          val community = communityManager.getById(organisation.get.community)
-          if (community.isDefined && community.get.allowAutomationApi) {
-            ok = true
+        organizationManager.getByApiKey(apiKey.get).flatMap { organisation =>
+          if (organisation.isDefined) {
+            communityManager.getById(organisation.get.community).map { community =>
+              community.isDefined && community.get.allowAutomationApi
+            }
+          } else {
+            Future.successful(false)
           }
         }
+      } else {
+        Future.successful(false)
       }
+    } else {
+      Future.successful(false)
     }
-    setAuthResult(request, ok, "You are not allowed to manage test sessions through the automation API")
+    check.map(setAuthResult(request, _, "You are not allowed to manage test sessions through the automation API"))
   }
 
-  def canManageConfigurationThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
-    val ok = restApiEnabledAndValidCommunityKeyDefined(request)
-    setAuthResult(request, ok, "You are not allowed to manage configuration properties through the automation API")
+  def canManageConfigurationThroughAutomationApi(request: RequestWithAttributes[_]): Future[Boolean] = {
+    val check = restApiEnabledAndValidCommunityKeyDefined(request)
+    check.map(setAuthResult(request, _, "You are not allowed to manage configuration properties through the automation API"))
   }
 
-  private def restApiEnabledAndValidCommunityKeyDefined(request: RequestWithAttributes[_]): Boolean = {
-    var ok = false
+  private def restApiEnabledAndValidCommunityKeyDefined(request: RequestWithAttributes[_]): Future[Boolean] = {
     if (Configurations.AUTOMATION_API_ENABLED) {
       val apiKey = request.headers.get(Constants.AutomationHeader)
       if (apiKey.isDefined) {
         // Validate the community API key.
-        val community = communityManager.getByApiKey(apiKey.get)
-        if (community.isDefined) {
-          ok = true
+        communityManager.getByApiKey(apiKey.get).map { community =>
+          community.isDefined
         }
+      } else {
+        Future.successful(false)
       }
+    } else {
+      Future.successful(false)
     }
-    ok
   }
 
-  private def restApiEnabledAndValidMasterKeyDefined(request: RequestWithAttributes[_]): Boolean = {
-    var ok = false
+  private def restApiEnabledAndValidMasterKeyDefined(request: RequestWithAttributes[_]): Future[Boolean] = {
     if (Configurations.AUTOMATION_API_ENABLED) {
       val apiKey = request.headers.get(Constants.AutomationHeader)
       if (apiKey.isDefined) {
         // Check to see that the API key is the master API key.
-        val masterApiKey = systemConfigurationManager.getSystemConfiguration(Constants.RestApiAdminKey)
-        if (masterApiKey.flatMap(_.parameter).isDefined && masterApiKey.get.parameter.get == apiKey.get) {
-          ok = true
+        systemConfigurationManager.getSystemConfigurationAsync(Constants.RestApiAdminKey).map { masterApiKey =>
+          masterApiKey.flatMap(_.parameter).isDefined && masterApiKey.get.parameter.get == apiKey.get
         }
+      } else {
+        Future.successful(false)
       }
+    } else {
+      Future.successful(false)
     }
-    ok
   }
 
-  def canManageActorThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
-    val ok = restApiEnabledAndValidCommunityKeyDefined(request)
-    setAuthResult(request, ok, "You are not allowed to manage actors through the automation API")
+  def canManageActorThroughAutomationApi(request: RequestWithAttributes[_]): Future[Boolean] = {
+    val check = restApiEnabledAndValidCommunityKeyDefined(request)
+    check.map(setAuthResult(request, _, "You are not allowed to manage actors through the automation API"))
   }
 
-  def canManageSpecificationThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
-    val ok = restApiEnabledAndValidCommunityKeyDefined(request)
-    setAuthResult(request, ok, "You are not allowed to manage specifications through the automation API")
+  def canManageSpecificationThroughAutomationApi(request: RequestWithAttributes[_]): Future[Boolean] = {
+    val check = restApiEnabledAndValidCommunityKeyDefined(request)
+    check.map(setAuthResult(request, _, "You are not allowed to manage specifications through the automation API"))
   }
 
-  def canManageSpecificationGroupThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
-    val ok = restApiEnabledAndValidCommunityKeyDefined(request)
-    setAuthResult(request, ok, "You are not allowed to manage specification groups through the automation API")
+  def canManageSpecificationGroupThroughAutomationApi(request: RequestWithAttributes[_]): Future[Boolean] = {
+    val check = restApiEnabledAndValidCommunityKeyDefined(request)
+    check.map(setAuthResult(request, _, "You are not allowed to manage specification groups through the automation API"))
   }
 
-  def canManageOrganisationThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
-    val ok = restApiEnabledAndValidCommunityKeyDefined(request)
-    setAuthResult(request, ok, "You are not allowed to manage organisations through the automation API")
+  def canManageOrganisationThroughAutomationApi(request: RequestWithAttributes[_]): Future[Boolean] = {
+    val check = restApiEnabledAndValidCommunityKeyDefined(request)
+    check.map(setAuthResult(request, _, "You are not allowed to manage organisations through the automation API"))
   }
 
-  def canManageSystemThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
-    val ok = restApiEnabledAndValidCommunityKeyDefined(request)
-    setAuthResult(request, ok, "You are not allowed to manage systems through the automation API")
+  def canManageSystemThroughAutomationApi(request: RequestWithAttributes[_]): Future[Boolean] = {
+    val check = restApiEnabledAndValidCommunityKeyDefined(request)
+    check.map(setAuthResult(request, _, "You are not allowed to manage systems through the automation API"))
   }
 
-  def canManageAnyCommunityThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
-    val ok = restApiEnabledAndValidMasterKeyDefined(request)
-    setAuthResult(request, ok, "You are not allowed to perform system-level operations through the automation API")
+  def canManageAnyCommunityThroughAutomationApi(request: RequestWithAttributes[_]): Future[Boolean] = {
+    val check = restApiEnabledAndValidMasterKeyDefined(request)
+    check.map(setAuthResult(request, _, "You are not allowed to perform system-level operations through the automation API"))
   }
 
-  def canManageCommunityThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
-    val ok = restApiEnabledAndValidCommunityKeyDefined(request)
-    setAuthResult(request, ok, "You are not allowed to manage communities through the automation API")
+  def canManageCommunityThroughAutomationApi(request: RequestWithAttributes[_]): Future[Boolean] = {
+    val check = restApiEnabledAndValidCommunityKeyDefined(request)
+    check.map(setAuthResult(request, _, "You are not allowed to manage communities through the automation API"))
   }
 
-  def canCreateDomainThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
-    val ok = restApiEnabledAndValidMasterKeyDefined(request)
-    setAuthResult(request, ok, "You are not allowed to perform system-level operations through the automation API")
+  def canCreateDomainThroughAutomationApi(request: RequestWithAttributes[_]): Future[Boolean] = {
+    val check = restApiEnabledAndValidMasterKeyDefined(request)
+    check.map(setAuthResult(request, _, "You are not allowed to perform system-level operations through the automation API"))
   }
 
-  def canCreateCommunityThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
-    val ok = restApiEnabledAndValidMasterKeyDefined(request)
-    setAuthResult(request, ok, "You are not allowed to perform system-level operations through the automation API")
+  def canCreateCommunityThroughAutomationApi(request: RequestWithAttributes[_]): Future[Boolean] = {
+    val check = restApiEnabledAndValidMasterKeyDefined(request)
+    check.map(setAuthResult(request, _, "You are not allowed to perform system-level operations through the automation API"))
   }
 
-  def canDeleteDomainThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
+  def canDeleteDomainThroughAutomationApi(request: RequestWithAttributes[_]): Future[Boolean] = {
     canCreateDomainThroughAutomationApi(request)
   }
 
-  def canDeleteCommunityThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
+  def canDeleteCommunityThroughAutomationApi(request: RequestWithAttributes[_]): Future[Boolean] = {
     canCreateCommunityThroughAutomationApi(request)
   }
 
-  def canUpdateDomainThroughAutomationApi(request: RequestWithAttributes[_], domainKey: Option[String]): Boolean = {
-    var ok = false
-    if (Configurations.AUTOMATION_API_ENABLED) {
+  def canUpdateDomainThroughAutomationApi(request: RequestWithAttributes[_], domainKey: Option[String]): Future[Boolean] = {
+    val check = if (Configurations.AUTOMATION_API_ENABLED) {
       val apiKey = request.headers.get(Constants.AutomationHeader)
       if (apiKey.isDefined) {
-        val masterApiKey = systemConfigurationManager.getSystemConfiguration(Constants.RestApiAdminKey)
-        if (masterApiKey.flatMap(_.parameter).isDefined && masterApiKey.get.parameter.get == apiKey.get) {
-          // The API key matches the master API key.
-          ok = true
-        } else {
-          // The API key must match a community.
-          val community = communityManager.getByApiKey(apiKey.get)
-          if (community.isDefined) {
-            if (community.get.domain.isDefined) {
-              // We can only update the domain linked to the community.
-              if (domainKey.isDefined) {
-                // The provided domain key must match the key of the community's domain.
-                val domain = domainManager.getDomainById(community.get.domain.get)
-                ok = domainKey.get == domain.apiKey
+        systemConfigurationManager.getSystemConfigurationAsync(Constants.RestApiAdminKey).flatMap { masterApiKey =>
+          if (masterApiKey.flatMap(_.parameter).isDefined && masterApiKey.get.parameter.get == apiKey.get) {
+            // The API key matches the master API key.
+            Future.successful(true)
+          } else {
+            // The API key must match a community.
+            communityManager.getByApiKey(apiKey.get).flatMap { community =>
+              if (community.isDefined) {
+                if (community.get.domain.isDefined) {
+                  // We can only update the domain linked to the community.
+                  if (domainKey.isDefined) {
+                    // The provided domain key must match the key of the community's domain.
+                    domainManager.getDomainByIdAsync(community.get.domain.get).map { domain =>
+                      domainKey.get == domain.apiKey
+                    }
+                  } else {
+                    // We implicitly match the community's domain.
+                    Future.successful(true)
+                  }
+                } else {
+                  // We can update any domain.
+                  Future.successful(true)
+                }
               } else {
-                // We implicitly match the community's domain.
-                ok = true
+                Future.successful(false)
+              }
+            }
+          }
+        }
+      } else {
+        Future.successful(false)
+      }
+    } else {
+      Future.successful(false)
+    }
+    check.map(setAuthResult(request, _, "You are not allowed to update this domain through the automation API"))
+  }
+
+  def canManageTestSuitesThroughAutomationApi(request: RequestWithAttributes[_]): Future[Boolean] = {
+    val check = restApiEnabledAndValidCommunityKeyDefined(request)
+    check.map(setAuthResult(request, _, "You are not allowed to manage test suites through the automation API"))
+  }
+
+  def canSelfRegister(request: RequestWithAttributes[_], organisation: Organizations, selfRegToken: Option[String], templateId: Option[Long]): Future[Boolean] = {
+    val check = checkHasPrincipal(request, skipForNonSSO = true).flatMap { hasPrincipal =>
+      if (Configurations.REGISTRATION_ENABLED && hasPrincipal) {
+        communityManager.getById(organisation.community).flatMap { targetCommunity =>
+          if (targetCommunity.isDefined) {
+            var communityOk = false
+            if (targetCommunity.get.selfRegType == SelfRegistrationType.PublicListing.id.toShort) {
+              communityOk = true
+            } else if (targetCommunity.get.selfRegType == SelfRegistrationType.PublicListingWithToken.id.toShort) {
+              if (selfRegToken.isDefined) {
+                communityOk = true
+              }
+            }
+            if (communityOk) {
+              if (templateId.isDefined) {
+                organizationManager.getById(templateId.get).map { targetTemplate =>
+                  targetTemplate.isDefined && targetTemplate.get.community == targetCommunity.get.id && targetTemplate.get.template
+                }
+              } else {
+                Future.successful(true)
               }
             } else {
-              // We can update any domain.
-              ok = true
-            }
-          }
-        }
-      }
-    }
-    setAuthResult(request, ok, "You are not allowed to update this domain through the automation API")
-  }
-
-  def canManageTestSuitesThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
-    val ok = restApiEnabledAndValidCommunityKeyDefined(request)
-    setAuthResult(request, ok, "You are not allowed to manage test suites through the automation API")
-  }
-
-  def canSelfRegister(request: RequestWithAttributes[_], organisation: Organizations, organisationAdmin: Users, selfRegToken: Option[String], templateId: Option[Long]): Boolean = {
-    var ok = false
-    if (Configurations.REGISTRATION_ENABLED && checkHasPrincipal(request, skipForNonSSO = true)) {
-      val targetCommunity = communityManager.getById(organisation.community)
-      if (targetCommunity.isDefined) {
-        var communityOk = false
-        if (targetCommunity.get.selfRegType == SelfRegistrationType.PublicListing.id.toShort) {
-          communityOk = true
-        } else if (targetCommunity.get.selfRegType == SelfRegistrationType.PublicListingWithToken.id.toShort) {
-          if (selfRegToken.isDefined) {
-            communityOk = true
-          }
-        }
-        if (communityOk) {
-          if (templateId.isDefined) {
-            val targetTemplate = organizationManager.getById(templateId.get)
-            if (targetTemplate.isDefined && targetTemplate.get.community == targetCommunity.get.id && targetTemplate.get.template) {
-              ok = true
+              Future.successful(false)
             }
           } else {
-            ok = true
+            Future.successful(false)
           }
         }
-      }
-      setAuthResult(request, ok, "User not allowed to self-register with the provided configuration")
-    }
-    ok
-  }
-
-  def canViewBreadcrumbLabels(request: RequestWithAttributes[_]): Boolean = {
-    val ok = checkIsAuthenticated(request)
-    setAuthResult(request, ok, "User not allowed to view breadcrumbs")
-  }
-
-  def canViewSelfRegistrationOptions(request: RequestWithAttributes[_]): Boolean = {
-    val ok = Configurations.REGISTRATION_ENABLED
-    setAuthResult(request, ok, "User not allowed to view self-registration options")
-  }
-
-  def canMigrateAccount(request: RequestWithAttributes[AnyContent]) = {
-    var ok = checkHasPrincipal(request, false)
-    if (Configurations.AUTHENTICATION_SSO_IN_MIGRATION_PERIOD) {
-      ok = true
-    }
-    setAuthResult(request, ok, "Account migration not allowed")
-  }
-
-  def canLinkFunctionalAccount(request: RequestWithAttributes[_], userId: Long): Boolean = {
-    var ok = false
-    val principal = getPrincipal(request)
-    if (principal != null) {
-      val user = userManager.getUserById(userId)
-      if (user.isDefined) {
-        ok = user.get.ssoEmail.isDefined && user.get.ssoEmail.get.toLowerCase == principal.email.toLowerCase
+      } else {
+        Future.successful(false)
       }
     }
-    setAuthResult(request, ok, "You cannot access the requested account")
+    check.map(setAuthResult(request, _, "User not allowed to self-register with the provided configuration"))
   }
 
-  def canDisconnectFunctionalAccount(request: RequestWithAttributes[AnyContent]): Boolean = {
+  def canViewBreadcrumbLabels(request: RequestWithAttributes[_]): Future[Boolean] = {
+    val check = checkIsAuthenticated(request)
+    check.map(setAuthResult(request, _, "User not allowed to view breadcrumbs"))
+  }
+
+  def canViewSelfRegistrationOptions(request: RequestWithAttributes[_]): Future[Boolean] = {
+    val check = Future.successful(Configurations.REGISTRATION_ENABLED)
+    check.map(setAuthResult(request, _, "User not allowed to view self-registration options"))
+  }
+
+  def canMigrateAccount(request: RequestWithAttributes[AnyContent]): Future[Boolean] = {
+    val check = checkHasPrincipal(request, skipForNonSSO = false).map { hasPrincipal =>
+      hasPrincipal && Configurations.AUTHENTICATION_SSO_IN_MIGRATION_PERIOD
+    }
+    check.map(setAuthResult(request, _, "Account migration not allowed"))
+  }
+
+  def canLinkFunctionalAccount(request: RequestWithAttributes[_], userId: Long): Future[Boolean] = {
+    val check = getPrincipal(request).flatMap { principal =>
+      if (principal != null) {
+        userManager.getUserByIdAsync(userId).map { user =>
+          user.isDefined && user.get.ssoEmail.isDefined && user.get.ssoEmail.get.toLowerCase == principal.email.toLowerCase
+        }
+      } else {
+        Future.successful(false)
+      }
+    }
+    check.map(setAuthResult(request, _, "You cannot access the requested account"))
+  }
+
+  def canDisconnectFunctionalAccount(request: RequestWithAttributes[AnyContent]): Future[Boolean] = {
     canSelectFunctionalAccount(request, getRequestUserId(request))
   }
 
-  def canViewUserFunctionalAccounts(request: RequestWithAttributes[AnyContent]): Boolean = {
-    checkHasPrincipal(request, false)
+  def canViewUserFunctionalAccounts(request: RequestWithAttributes[AnyContent]): Future[Boolean] = {
+    checkHasPrincipal(request, skipForNonSSO = false)
   }
 
-  def canSelectFunctionalAccount(request: RequestWithAttributes[AnyContent], id: Long): Boolean = {
-    var ok = false
-    if (Configurations.DEMOS_ENABLED && Configurations.DEMOS_ACCOUNT == id) {
-      ok = true
+  def canSelectFunctionalAccount(request: RequestWithAttributes[AnyContent], id: Long): Future[Boolean] = {
+    val check = if (Configurations.DEMOS_ENABLED && Configurations.DEMOS_ACCOUNT == id) {
+      Future.successful(true)
     } else {
-      val principal = getPrincipal(request)
-      if (principal != null) {
-        val user = userManager.getUserById(id)
-        if (user.isDefined) {
-          ok = user.get.ssoUid.isDefined && user.get.ssoUid.get == principal.uid
-        }
-      }
-    }
-    setAuthResult(request, ok, "You cannot access the requested account")
-  }
-
-  def canViewActors(request: RequestWithAttributes[AnyContent], ids: Option[List[Long]]): Boolean = {
-    var ok = false
-    val userInfo = getUser(getRequestUserId(request))
-    if (isTestBedAdmin(userInfo)) {
-      ok = true
-    } else {
-      if (ids.isDefined) {
-        val domainLinkedToUser = getVisibleDomainForUser(userInfo)
-        if (domainLinkedToUser.isDefined) {
-          var domainIds: Set[Long] = Set()
-          ids.get.foreach { actorId =>
-            val actor = actorManager.getById(actorId)
-            if (actor.isDefined) {
-              domainIds += actor.get.domain
-            }
-          }
-          if (domainIds.nonEmpty) {
-            if (domainIds.size == 1) {
-              ok = domainIds.head == domainLinkedToUser.get
-            } else {
-              ok = false
-            }
-          } else {
-            ok = true
+      getPrincipal(request).flatMap { principal =>
+        if (principal != null) {
+          userManager.getUserByIdAsync(id).map { user =>
+            user.isDefined && user.get.ssoUid.isDefined && user.get.ssoUid.get == principal.uid
           }
         } else {
-          ok = true
+          Future.successful(false)
         }
-      } else {
-        ok = true
       }
     }
-    setAuthResult(request, ok, "User cannot view the requested actor")
+    check.map(setAuthResult(request, _, "You cannot access the requested account"))
   }
 
-  def canViewDomainsBySystemId(request: RequestWithAttributes[AnyContent], systemId: Long): Boolean = {
-    canViewSystem(request, systemId)
+  def canViewActors(request: RequestWithAttributes[AnyContent], ids: Option[List[Long]]): Future[Boolean] = {
+    val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
+      if (isTestBedAdmin(userInfo)) {
+        Future.successful(true)
+      } else {
+        if (ids.isDefined) {
+          getVisibleDomainForUser(userInfo).flatMap { domainLinkedToUser =>
+            if (domainLinkedToUser.isDefined) {
+              actorManager.getActorDomainIds(ids.get).map { domainIds =>
+                if (domainIds.nonEmpty) {
+                  domainIds.size == 1 && domainIds.head == domainLinkedToUser.get
+                } else {
+                  true
+                }
+              }
+            } else {
+              Future.successful(true)
+            }
+          }
+        } else {
+          Future.successful(true)
+        }
+      }
+    }
+    check.map(setAuthResult(request, _, "User cannot view the requested actor"))
   }
 
-  def canViewSpecificationsBySystemId(request: RequestWithAttributes[AnyContent], systemId: Long): Boolean = {
-    canViewSystem(request, systemId)
-  }
-
-  def canViewActorsBySystemId(request: RequestWithAttributes[AnyContent], systemId: Long): Boolean = {
-    canViewSystem(request, systemId)
-  }
-
-  def canViewActorsByDomainId(request: RequestWithAttributes[AnyContent], domainId: Long): Boolean = {
+  def canViewActorsByDomainId(request: RequestWithAttributes[AnyContent], domainId: Long): Future[Boolean] = {
     canViewDomains(request, Some(List(domainId)))
   }
 
-  def canViewSystemsByCommunityId(request: RequestWithAttributes[AnyContent], communityId: Long):Boolean = {
-    canManageCommunity(request, communityId)
-  }
-
-  def canViewTestCasesByCommunityId(request: RequestWithAttributes[AnyContent], communityId: Long): Boolean = {
-    canManageCommunity(request, communityId)
-  }
-
-  def canViewTestCasesBySystemId(request: RequestWithAttributes[AnyContent], systemId: Long): Boolean = {
-    canViewSystem(request, systemId)
-  }
-
-  def canViewTestSuitesBySystemId(request: RequestWithAttributes[AnyContent], systemId: Long): Boolean = {
-    canViewSystem(request, systemId)
-  }
-
-  def canViewTestSuitesByCommunityId(request: RequestWithAttributes[AnyContent], communityId: Long): Boolean = {
-    canManageCommunity(request, communityId)
-  }
-
-  def canDeleteOrganisationUser(request: RequestWithAttributes[_], userId: Long):Boolean = {
-    canUpdateOrganisationUser(request, userId)
-  }
-
-  def canDeleteAdministrator(request: RequestWithAttributes[_], userId: Long):Boolean = {
-    var ok = false
-    val userInfo = getUser(getRequestUserId(request))
-    if (isTestBedAdmin(userInfo)) {
-      ok = true
-    } else if (isCommunityAdmin(userInfo)) {
-      val targetUserOrganisation = getUserOrganisation(userId).get
-      ok = targetUserOrganisation.community == userInfo.organization.get.community
-    }
-    setAuthResult(request, ok, "User cannot delete the requested administrator")
-  }
-
-  def canUpdateOrganisationUser(request: RequestWithAttributes[_], userId: Long):Boolean = {
-    var ok = false
-    val userInfo = getUser(getRequestUserId(request))
-    if (isTestBedAdmin(userInfo)) {
-      ok = true
-    } else if (isCommunityAdmin(userInfo)) {
-      val user = userManager.getById(userId)
-      ok = canManageOrganisationFull(request, userInfo, user.organization)
-    } else if (isOrganisationAdmin(userInfo)) {
-      if (!Configurations.DEMOS_ENABLED || Configurations.DEMOS_ACCOUNT != userInfo.id) {
-        val user = userManager.getById(userId)
-        if (userInfo.organization.isDefined && user.organization == userInfo.organization.get.id) {
-          ok = canUpdateOwnOrganisation(request, ignoreExistingTests = true)
-        }
+  private def canViewCommunityContent(request: RequestWithAttributes[_], communityId: Long): Future[Boolean] = {
+    getUser(getRequestUserId(request)).flatMap { userInfo =>
+      if (isTestBedAdmin(userInfo) || isCommunityAdmin(userInfo)) {
+        canManageCommunity(request, userInfo, communityId)
+      } else {
+        // Organisation users can view all systems in the community if enabled as a permission.
+        organisationUserCanViewCommunityContent(request, userInfo, communityId)
       }
     }
-    setAuthResult(request, ok, "User cannot manage the requested user")
   }
 
-  def canUpdateCommunityAdministrator(request: RequestWithAttributes[_], userId: Long):Boolean = {
-    var ok = false
-    val userInfo = getUser(getRequestUserId(request))
-    if (isTestBedAdmin(userInfo)) {
-      ok = true
-    } else if (isCommunityAdmin(userInfo)) {
-      // The target admin will be in the same organisation
-      val user = userManager.getById(userId)
-      ok = userInfo.organization.isDefined && user.organization == userInfo.organization.get.id
+  private def organisationUserCanViewCommunityContent(request: RequestWithAttributes[_], userInfo: User, communityId: Long): Future[Boolean] = {
+    val check = if (userInfo.organization.get.community == communityId) {
+      // Requested community ID matches the community of the user.
+      communityManager.getById(communityId).map { community =>
+        // The comm
+        community.isDefined && community.get.allowCommunityView
+      }
+    } else {
+      Future.successful(false)
     }
-    setAuthResult(request, ok, "User cannot manage the requested administrator")
+    check.map(setAuthResult(request, _, "User cannot view the requested community"))
   }
 
-  def canUpdateTestBedAdministrator(request: RequestWithAttributes[_]):Boolean = {
-    checkTestBedAdmin(request)
+  def canViewSystemsByCommunityId(request: RequestWithAttributes[AnyContent], communityId: Long): Future[Boolean] = {
+    canViewCommunityContent(request, communityId)
   }
 
-  def canCreateOrganisationUser(request: RequestWithAttributes[_], orgId: Long):Boolean = {
-    canManageOrganisationFull(request, getUser(getRequestUserId(request)), orgId)
-  }
-
-  def canCreateCommunityAdministrator(request: RequestWithAttributes[_], communityId: Long):Boolean = {
-    canManageCommunity(request, communityId)
-  }
-
-  def canCreateTestBedAdministrator(request: RequestWithAttributes[_]):Boolean = {
-    checkTestBedAdmin(request)
-  }
-
-  def canViewUser(request: RequestWithAttributes[_], userId: Long):Boolean = {
+  def canDeleteOrganisationUser(request: RequestWithAttributes[_], userId: Long): Future[Boolean] = {
     canUpdateOrganisationUser(request, userId)
   }
 
-  def canViewOwnOrganisationUser(request: RequestWithAttributes[_], userId: Long): Boolean = {
+  def canDeleteAdministrator(request: RequestWithAttributes[_], userId: Long): Future[Boolean] = {
+    val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
+      if (isTestBedAdmin(userInfo)) {
+        Future.successful(true)
+      } else if (isCommunityAdmin(userInfo)) {
+        getUserOrganisation(userId).map { targetUserOrganisation =>
+          targetUserOrganisation.exists(_.community == userInfo.organization.get.community)
+        }
+      } else {
+        Future.successful(false)
+      }
+    }
+    check.map(setAuthResult(request, _, "User cannot delete the requested administrator"))
+  }
+
+  def canUpdateOrganisationUser(request: RequestWithAttributes[_], userId: Long): Future[Boolean] = {
+    val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
+      if (isTestBedAdmin(userInfo)) {
+        Future.successful(true)
+      } else if (isCommunityAdmin(userInfo)) {
+        userManager.getById(userId).flatMap { user =>
+          canManageOrganisationFull(request, userInfo, user.organization)
+        }
+      } else if (isOrganisationAdmin(userInfo)) {
+        if (!Configurations.DEMOS_ENABLED || Configurations.DEMOS_ACCOUNT != userInfo.id) {
+          userManager.getById(userId).flatMap { user =>
+            if (userInfo.organization.isDefined && user.organization == userInfo.organization.get.id) {
+              canUpdateOwnOrganisation(request, ignoreExistingTests = true)
+            } else {
+              Future.successful(false)
+            }
+          }
+        } else {
+          Future.successful(false)
+        }
+      } else {
+        Future.successful(false)
+      }
+    }
+    check.map(setAuthResult(request, _, "User cannot manage the requested user"))
+  }
+
+  def canUpdateCommunityAdministrator(request: RequestWithAttributes[_], userId: Long): Future[Boolean] = {
+    val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
+      if (isTestBedAdmin(userInfo)) {
+        Future.successful(true)
+      } else if (isCommunityAdmin(userInfo)) {
+        // The target admin will be in the same organisation
+        userManager.getById(userId).map { user =>
+          userInfo.organization.isDefined && user.organization == userInfo.organization.get.id
+        }
+      } else {
+        Future.successful(false)
+      }
+    }
+    check.map(setAuthResult(request, _, "User cannot manage the requested administrator"))
+  }
+
+  def canUpdateTestBedAdministrator(request: RequestWithAttributes[_]): Future[Boolean] = {
+    checkTestBedAdmin(request)
+  }
+
+  def canCreateOrganisationUser(request: RequestWithAttributes[_], orgId: Long): Future[Boolean] = {
+    getUser(getRequestUserId(request)).flatMap { userInfo =>
+      canManageOrganisationFull(request, userInfo, orgId)
+    }
+  }
+
+  def canCreateCommunityAdministrator(request: RequestWithAttributes[_], communityId: Long): Future[Boolean] = {
+    canManageCommunity(request, communityId)
+  }
+
+  def canCreateTestBedAdministrator(request: RequestWithAttributes[_]): Future[Boolean] = {
+    checkTestBedAdmin(request)
+  }
+
+  def canViewUser(request: RequestWithAttributes[_], userId: Long): Future[Boolean] = {
+    canUpdateOrganisationUser(request, userId)
+  }
+
+  def canViewOwnOrganisationUser(request: RequestWithAttributes[_], userId: Long): Future[Boolean] = {
     checkIsAuthenticated(request)
   }
 
-  def canViewOrganisationUsers(request: RequestWithAttributes[_], orgId: Long):Boolean = {
-    canManageOrganisationFull(request, getUser(getRequestUserId(request)), orgId)
+  def canViewOrganisationUsers(request: RequestWithAttributes[_], orgId: Long): Future[Boolean] = {
+    getUser(getRequestUserId(request)).flatMap { userInfo =>
+      canManageOrganisationFull(request, userInfo, orgId)
+    }
   }
 
-  def canViewCommunityAdministrators(request: RequestWithAttributes[_], communityId: Long):Boolean = {
+  def canViewCommunityAdministrators(request: RequestWithAttributes[_], communityId: Long): Future[Boolean] = {
     canManageCommunity(request, communityId)
   }
 
-  def canViewTestBedAdministrators(request: RequestWithAttributes[_]):Boolean = {
+  def canViewTestBedAdministrators(request: RequestWithAttributes[_]): Future[Boolean] = {
     checkTestBedAdmin(request)
   }
 
-  def canDownloadTestSuite(request: RequestWithAttributes[_], testSuiteId: Long):Boolean = {
+  def canDownloadTestSuite(request: RequestWithAttributes[_], testSuiteId: Long): Future[Boolean] = {
     canManageTestSuite(request, testSuiteId)
   }
 
-  def canViewAllTestSuites(request: RequestWithAttributes[_]): Boolean = {
+  def canViewAllTestSuites(request: RequestWithAttributes[_]): Future[Boolean] = {
     canViewAllTestResources(request)
   }
 
-  def canManageTestSuite(request: RequestWithAttributes[_], testSuiteId: Long):Boolean = {
-    var ok = false
-    val userInfo = getUser(getRequestUserId(request))
-    if (isTestBedAdmin(userInfo)) {
-      ok = true
-    } else if (isCommunityAdmin(userInfo)) {
-      val testSuite = testSuiteManager.getById(testSuiteId)
-      if (testSuite.isDefined) {
-        ok = canManageDomain(request, userInfo, testSuite.get.domain)
+  def canMoveTestSuite(request: RequestWithAttributes[_], testSuiteId: Long, specificationId: Long): Future[Boolean] = {
+    val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
+      if (isTestBedAdmin(userInfo)) {
+        // Test Bed admin can do anything.
+        Future.successful(true)
+      } else if (isCommunityAdmin(userInfo)) {
+        for {
+          domainIdFromTestSuiteLookup <- testSuiteManager.getTestSuiteDomain(testSuiteId)
+          domainIdFromSpecificationLookup <- domainManager.getDomainOfSpecification(specificationId).map(_.id)
+          result <- {
+            if (domainIdFromTestSuiteLookup == domainIdFromSpecificationLookup) {
+              // For a community admin the test suite's domain must match the target specification's domain, and the domain must be manageable by the community admin.
+              canManageDomain(request, domainIdFromTestSuiteLookup)
+            } else {
+              Future.successful(false)
+            }
+          }
+        } yield result
+      } else {
+        Future.successful(false)
       }
     }
-    setAuthResult(request, ok, "User cannot manage the requested test suite")
+    check.map(setAuthResult(request, _, "User cannot move the requested test suite to the target specification"))
   }
 
-  def canDeleteTestSuite(request: RequestWithAttributes[_], testSuiteId: Long):Boolean = {
+  def canManageTestSuite(request: RequestWithAttributes[_], testSuiteId: Long): Future[Boolean] = {
+    val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
+      if (isTestBedAdmin(userInfo)) {
+        Future.successful(true)
+      } else if (isCommunityAdmin(userInfo)) {
+        testSuiteManager.getById(testSuiteId).flatMap { testSuite =>
+          if (testSuite.isDefined) {
+            canManageDomain(request, userInfo, testSuite.get.domain)
+          } else {
+            Future.successful(false)
+          }
+        }
+      } else {
+        Future.successful(false)
+      }
+    }
+    check.map(setAuthResult(request, _, "User cannot manage the requested test suite"))
+  }
+
+  def canDeleteTestSuite(request: RequestWithAttributes[_], testSuiteId: Long): Future[Boolean] = {
     canManageTestSuite(request, testSuiteId)
   }
 
-  def canExecuteTestSession(request: RequestWithAttributes[_], sessionId: String, requireAdmin: Boolean = false):Boolean = {
-    canManageTestSession(request, sessionId, requireAdmin)
+  def canExecuteTestSession(request: RequestWithAttributes[_], sessionId: String, requireAdmin: Boolean = false): Future[Boolean] = {
+    canManageTestSession(request, sessionId, requireAdmin, requireOwnTestSessionIfNotAdmin = true)
   }
 
-  def canExecuteTestCase(request: RequestWithAttributes[_], test_id: String):Boolean = {
+  def canExecuteTestCase(request: RequestWithAttributes[_], test_id: String): Future[Boolean] = {
     canViewTestCase(request, test_id)
   }
 
-  def canExecuteTestCases(request: RequestWithAttributes[AnyContent], testCaseIds: List[Long], specId: Long, systemId: Long, actorId: Long): Boolean = {
-    var ok = false
-    val userInfo = getUser(getRequestUserId(request))
-    if (isTestBedAdmin(userInfo)) {
-      ok = true
-    } else {
-      val specIds = testCaseManager.getSpecificationsOfTestCases(testCaseIds)
-      if (specIds.nonEmpty && specIds.contains(specId)) {
-        ok = canViewSpecifications(request, userInfo, Some(specIds.toList)) && canViewSystemsById(request, userInfo, Some(List(systemId)))
+  def canExecuteTestCases(request: RequestWithAttributes[AnyContent], testCaseIds: List[Long], specId: Long, systemId: Long, actorId: Long): Future[Boolean] = {
+    val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
+      if (isTestBedAdmin(userInfo)) {
+        Future.successful(true)
+      } else {
+        testCaseManager.getSpecificationsOfTestCases(testCaseIds).flatMap { specIds =>
+          if (specIds.nonEmpty && specIds.contains(specId)) {
+            canViewSpecifications(request, userInfo, Some(specIds.toList)).flatMap { _ =>
+              canViewSystemsById(request, userInfo, Some(List(systemId)))
+            }
+          } else {
+            Future.successful(false)
+          }
+        }
       }
     }
-    setAuthResult(request, ok, "Cannot view the requested test case(s)")
+    check.map(setAuthResult(request, _, "Cannot view the requested test case(s)"))
   }
 
-  def canGetBinaryFileMetadata(request: RequestWithAttributes[_]):Boolean = {
+  def canGetBinaryFileMetadata(request: RequestWithAttributes[_]): Future[Boolean] = {
     checkIsAuthenticated(request)
   }
 
@@ -550,138 +624,166 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     true
   }
 
-  def canViewSystemsById(request: RequestWithAttributes[_], userInfo: User, systemIds: Option[List[Long]]):Boolean = {
-    var ok = false
-    if (isTestBedAdmin(userInfo)) {
-      ok = true
+  def canViewSystemsById(request: RequestWithAttributes[_], userInfo: User, systemIds: Option[List[Long]]): Future[Boolean] = {
+    val check = if (isTestBedAdmin(userInfo)) {
+      Future.successful(true)
     } else {
-      if (systemIds.isDefined) {
+      if (systemIds.isDefined && userInfo.organization.isDefined) {
         if (isCommunityAdmin(userInfo)) {
           // All the system's should be in organisations in the user's community.
-          val systems = systemManager.getSystems(systemIds)
-          systems.foreach(system => {
-            ok = canViewOrganisation(request, userInfo, system.owner)
-          })
+          systemManager.getCommunityIdsOfSystems(systemIds.get).map { communityIds =>
+            communityIds.size == 1 && userInfo.organization.exists(x => x.community == communityIds.head)
+          }
         } else {
           // The systems should be in the user's organisation.
-          if (userInfo.organization.isDefined) {
-            val orgSystemIds = systemManager.getSystemIdsForOrganization(userInfo.organization.get.id)
-            ok = containsAll(systemIds.get, orgSystemIds)
+          systemManager.getSystemIdsForOrganization(userInfo.organization.get.id).map { orgSystemIds =>
+            containsAll(systemIds.get, orgSystemIds)
           }
         }
+      } else {
+        Future.successful(false)
       }
     }
-    setAuthResult(request, ok, "User can't view the requested system(s)")
+    check.map(setAuthResult(request, _, "User can't view the requested system(s)"))
   }
 
-  def canViewSystemsById(request: RequestWithAttributes[_], systemIds: Option[List[Long]]):Boolean = {
-    canViewSystemsById(request, getUser(getRequestUserId(request)), systemIds)
+  def canViewSystemsById(request: RequestWithAttributes[_], systemIds: Option[List[Long]]): Future[Boolean] = {
+    getUser(getRequestUserId(request)).flatMap { userInfo =>
+      canViewSystemsById(request, userInfo, systemIds)
+    }
   }
 
-  def canViewSystems(request: RequestWithAttributes[_], userInfo: User, orgId: Long):Boolean = {
+  def canViewSystems(request: RequestWithAttributes[_], userInfo: User, orgId: Long): Future[Boolean] = {
     canViewOrganisation(request, userInfo, orgId)
   }
 
-  def canViewSystems(request: RequestWithAttributes[_], orgId: Long, snapshotId: Option[Long] = None):Boolean = {
-    var ok = false
-    if (orgId >= 0) {
-      ok = canViewSystems(request, getUser(getRequestUserId(request)), orgId)
-    } else if (snapshotId.isDefined) {
-      // Deleted organisation present in a snapshot
-      ok = canManageConformanceSnapshot(request, snapshotId.get)
+  def canViewSystems(request: RequestWithAttributes[_], orgId: Long, snapshotId: Option[Long] = None): Future[Boolean] = {
+    val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
+      if (orgId >= 0) {
+        canViewSystems(request, userInfo, orgId)
+      } else if (snapshotId.isDefined) {
+        // Deleted organisation present in a snapshot
+        canManageConformanceSnapshot(request, snapshotId.get)
+      } else {
+        Future.successful(false)
+      }
     }
-    setAuthResult(request, ok, "User cannot view the systems of this organisation")
+    check.map(setAuthResult(request, _, "User cannot view the systems of this organisation"))
   }
 
-  def canViewEndpointConfigurationsForSystem(request: RequestWithAttributes[_], system: Long):Boolean = {
+  def canViewEndpointConfigurationsForSystem(request: RequestWithAttributes[_], system: Long): Future[Boolean] = {
     canViewSystem(request, system)
   }
 
-  def canManageSystemButCanAlsoEditParameter(request: RequestWithAttributes[_], userInfo: User, parameterId: Long): Boolean = {
-    var ok = false
-    if (isCommunityAdmin(userInfo) || isTestBedAdmin(userInfo)) {
-      ok = true
-    } else {
-      val parameter = parameterManager.getParameterById(parameterId)
-      ok = parameter.isDefined && !parameter.get.adminOnly
-    }
-    setAuthResult(request, ok, "User cannot edit this parameter")
-  }
-
-  def canManageStatementConfiguration(request: RequestWithAttributes[_], systemId: Long, actorId: Long, organisationUpdates: Boolean, systemUpdates: Boolean, statementUpdates: Boolean): Boolean = {
-    var ok = false
-    val userInfo = getUser(getRequestUserId(request))
-    if (isTestBedAdmin(userInfo)) {
-      ok = true
-    } else {
-      val system = systemManager.getSystemById(systemId)
-      if (system.isDefined) {
-        if (isCommunityAdmin(userInfo)) {
-          ok = isOwnSystem(userInfo, system) || canManageOrganisationFull(request, userInfo, system.get.owner)
-        } else if (isOrganisationAdmin(userInfo)) {
-          if (isOwnSystem(userInfo, system)) {
-            if (!organisationUpdates && !systemUpdates && !statementUpdates) {
-              // No changes to properties.
-              ok = true
-            } else {
-              val community = communityManager.getById(userInfo.organization.get.community)
-              if (community.isDefined) {
-                if (community.get.allowPostTestOrganisationUpdates && community.get.allowPostTestSystemUpdates && community.get.allowPostTestStatementUpdates) {
-                  // The community allows changes post-testing.
-                  ok = true
+  def canManageStatementConfiguration(request: RequestWithAttributes[_], systemId: Long, actorId: Long, organisationUpdates: Boolean, systemUpdates: Boolean, statementUpdates: Boolean): Future[Boolean] = {
+    val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
+      if (isTestBedAdmin(userInfo)) {
+        Future.successful(true)
+      } else {
+        systemManager.getSystemById(systemId).flatMap { system =>
+          if (system.isDefined) {
+            if (isCommunityAdmin(userInfo)) {
+              if (isOwnSystem(userInfo, system)) {
+                Future.successful(true)
+              } else {
+                canManageOrganisationFull(request, userInfo, system.get.owner)
+              }
+            } else if (isOrganisationAdmin(userInfo)) {
+              if (isOwnSystem(userInfo, system)) {
+                if (!organisationUpdates && !systemUpdates && !statementUpdates) {
+                  // No changes to properties.
+                  Future.successful(true)
                 } else {
-                  val testsExist = testResultManager.testSessionsExistForSystemAndActors(systemId, List(actorId))
-                  if (!testsExist) {
-                    // No tests exist.
-                    ok = true
-                  } else {
-                    // Check permissions and incoming updates.
-                    ok = (community.get.allowPostTestOrganisationUpdates || !organisationUpdates) &&
-                      (community.get.allowPostTestSystemUpdates || !systemUpdates) &&
-                      (community.get.allowPostTestStatementUpdates || !statementUpdates)
+                  communityManager.getById(userInfo.organization.get.community).flatMap { community =>
+                    if (community.isDefined) {
+                      if (community.get.allowPostTestOrganisationUpdates && community.get.allowPostTestSystemUpdates && community.get.allowPostTestStatementUpdates) {
+                        // The community allows changes post-testing.
+                        Future.successful(true)
+                      } else {
+                        testResultManager.testSessionsExistForSystemAndActors(systemId, List(actorId)).flatMap { testsExist =>
+                          if (!testsExist) {
+                            // No tests exist.
+                            Future.successful(true)
+                          } else {
+                            // Check permissions and incoming updates.
+                            Future.successful {
+                              (community.get.allowPostTestOrganisationUpdates || !organisationUpdates) &&
+                                (community.get.allowPostTestSystemUpdates || !systemUpdates) &&
+                                (community.get.allowPostTestStatementUpdates || !statementUpdates)
+                            }
+                          }
+                        }
+                      }
+                    } else {
+                      Future.successful(false)
+                    }
                   }
                 }
+              } else {
+                Future.successful(false)
+              }
+            } else {
+              Future.successful(false)
+            }
+          } else {
+            Future.successful(false)
+          }
+        }
+      }
+    }
+    check.map(setAuthResult(request, _, "User cannot manage statement configuration"))
+  }
+
+  def canDeleteConformanceStatement(request: RequestWithAttributes[_], systemId: Long, actorIds: Option[List[Long]]): Future[Boolean] = {
+    val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
+      if (isTestBedAdmin(userInfo)) {
+        Future.successful(true)
+      } else if (isCommunityAdmin(userInfo)) {
+        // Own system or within community.
+        systemManager.getSystemById(systemId).flatMap { system =>
+          if (system.isDefined) {
+            if (isOwnSystem(userInfo, system)) {
+              Future.successful(true)
+            } else {
+              canManageOrganisationFull(request, userInfo, system.get.owner)
+            }
+          } else {
+            Future.successful(false)
+          }
+        }
+      } else if (isOrganisationAdmin(userInfo)) {
+        communityManager.getById(userInfo.organization.get.community).flatMap { community =>
+          if (community.isDefined && community.get.allowStatementManagement) {
+            isOwnSystem(userInfo, systemId).flatMap { ownSystem =>
+              // Has to be own system.
+              if (ownSystem) {
+                if (community.get.allowPostTestStatementUpdates) {
+                  Future.successful(true)
+                } else {
+                  if (actorIds.isDefined && actorIds.get.nonEmpty) {
+                    testResultManager.testSessionsExistForSystemAndActors(systemId, actorIds.get).map { exists =>
+                      !exists
+                    }
+                  } else {
+                    Future.successful(true)
+                  }
+                }
+              } else {
+                Future.successful(false)
               }
             }
-          }
-        }
-      }
-    }
-    setAuthResult(request, ok, "User cannot manage statement configuration")
-  }
-
-  def canDeleteConformanceStatement(request: RequestWithAttributes[_], systemId: Long, actorIds: Option[List[Long]]):Boolean = {
-    var ok = false
-    val userInfo = getUser(getRequestUserId(request))
-    if (isTestBedAdmin(userInfo)) {
-      ok = true
-    } else if (isCommunityAdmin(userInfo)) {
-      // Own system or within community.
-      val system = systemManager.getSystemById(systemId)
-      if (system.isDefined) {
-        ok = isOwnSystem(userInfo, system) || canManageOrganisationFull(request, userInfo, system.get.owner)
-      }
-    } else if (isOrganisationAdmin(userInfo)) {
-      val community = communityManager.getById(userInfo.organization.get.community)
-      if (community.isDefined && community.get.allowStatementManagement) {
-        // Has to be own system.
-        if (isOwnSystem(userInfo, systemId)) {
-          if (community.get.allowPostTestStatementUpdates) {
-            ok = true
           } else {
-            if (actorIds.isDefined && actorIds.get.nonEmpty) {
-              ok = !testResultManager.testSessionsExistForSystemAndActors(systemId, actorIds.get)
-            } else {
-              ok = true
-            }
+            Future.successful(false)
           }
         }
+      } else {
+        Future.successful(false)
       }
     }
-    setAuthResult(request, ok, "User cannot delete the requested statement")
+    check.map(setAuthResult(request, _, "User cannot delete the requested statement"))
   }
 
-  def canViewConformanceStatements(request: RequestWithAttributes[_], systemId: Long, snapshotId: Option[Long]):Boolean = {
+  def canViewConformanceStatements(request: RequestWithAttributes[_], systemId: Long, snapshotId: Option[Long]): Future[Boolean] = {
     if (snapshotId.isEmpty) {
       canViewSystem(request, systemId)
     } else {
@@ -689,231 +791,294 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     }
   }
 
-  def canCreateConformanceStatement(request: RequestWithAttributes[_], sut_id: Long):Boolean = {
-    var ok = false
-    val userInfo = getUser(getRequestUserId(request))
-    if (isTestBedAdmin(userInfo)) {
-      ok = true
-    } else if (isCommunityAdmin(userInfo)) {
-      // Own system or within community.
-      val system = systemManager.getSystemById(sut_id)
-      if (system.isDefined) {
-        ok = isOwnSystem(userInfo, system) || canManageOrganisationFull(request, userInfo, system.get.owner)
-      }
-    } else {
-      val community = communityManager.getById(userInfo.organization.get.community)
-      if (isOrganisationAdmin(userInfo) && community.isDefined && community.get.allowStatementManagement) {
-        // Has to be own system.
-        ok = isOwnSystem(userInfo, sut_id)
-      }
-    }
-    setAuthResult(request, ok, "User cannot manage the requested statement")
-  }
-
-  def canViewSystem(request: RequestWithAttributes[_], sut_id: Long):Boolean = {
-    var ok = false
-    val userInfo = getUser(getRequestUserId(request))
-    if (isTestBedAdmin(userInfo)) {
-      ok = true
-    } else if (isCommunityAdmin(userInfo)) {
-      // Own system or within community.
-      val system = systemManager.getSystemById(sut_id)
-      if (system.isDefined) {
-        ok = isOwnSystem(userInfo, system) || canManageOrganisationFull(request, userInfo, system.get.owner)
-      }
-    } else {
-      // Has to be own system.
-      ok = isOwnSystem(userInfo, sut_id)
-    }
-    setAuthResult(request, ok, "User cannot view the requested system")
-  }
-
-  def canViewSystemInSnapshot(request: RequestWithAttributes[_], systemId: Long, snapshotId: Long): Boolean = {
-    var ok = false
-    val userInfo = getUser(getRequestUserId(request))
-    if (isTestBedAdmin(userInfo)) {
-      ok = true
-    } else {
-      if (userInfo.organization.isDefined) {
-        if (isCommunityAdmin(userInfo)) {
-          // This is a snapshot of the user's own community.
-          val snapshot = conformanceManager.getConformanceSnapshot(snapshotId)
-          ok = snapshot.community == userInfo.organization.get.community
-        } else {
-          // The requested system ID and the user's own organisation ID must exist as results in the specified snapshot.
-          ok = conformanceManager.existsInConformanceSnapshot(snapshotId, systemId, userInfo.organization.get.id)
-        }
-      }
-    }
-    setAuthResult(request, ok, "User cannot view the requested system in the given conformance snapshot")
-  }
-
-  def canUpdateSystem(request: RequestWithAttributes[_], systemId: Long, isDelete: Boolean = false):Boolean = {
-    var ok = false
-    val userInfo = getUser(getRequestUserId(request))
-    if (isTestBedAdmin(userInfo)) {
-      ok = true
-    } else if (isCommunityAdmin(userInfo)) {
-      // Own system or within community.
-      val system = systemManager.getSystemById(systemId)
-      if (system.isDefined) {
-        ok = isOwnSystem(userInfo, system) || canManageOrganisationFull(request, userInfo, system.get.owner)
-      }
-    } else if (isOrganisationAdmin(userInfo) && userInfo.organization.isDefined) {
-      // Has to be own system.
-      if (isOwnSystem(userInfo, systemId)) {
-        // Check to see if special permissions are in place.
-        val community = communityManager.getById(userInfo.organization.get.community)
-        if (community.isDefined) {
-          if (!isDelete || community.get.allowSystemManagement) {
-            if (community.get.allowPostTestSystemUpdates) {
-              ok = true
+  def canCreateConformanceStatement(request: RequestWithAttributes[_], sut_id: Long): Future[Boolean] = {
+    val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
+      if (isTestBedAdmin(userInfo)) {
+        Future.successful(true)
+      } else if (isCommunityAdmin(userInfo)) {
+        // Own system or within community.
+        systemManager.getSystemById(sut_id).flatMap { system =>
+          if (system.isDefined) {
+            if (isOwnSystem(userInfo, system)) {
+              Future.successful(true)
             } else {
-              ok = !testResultManager.testSessionsExistForSystem(systemId)
+              canManageOrganisationFull(request, userInfo, system.get.owner)
             }
+          } else {
+            Future.successful(false)
+          }
+        }
+      } else {
+        communityManager.getById(userInfo.organization.get.community).flatMap { community =>
+          if (isOrganisationAdmin(userInfo) && community.isDefined && community.get.allowStatementManagement) {
+            // Has to be own system.
+            isOwnSystem(userInfo, sut_id)
+          } else {
+            Future.successful(false)
           }
         }
       }
     }
-    setAuthResult(request, ok, "User cannot update the requested system")
+    check.map(setAuthResult(request, _, "User cannot manage the requested statement"))
+  }
+
+  def canViewSystem(request: RequestWithAttributes[_], sut_id: Long): Future[Boolean] = {
+    val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
+      if (isTestBedAdmin(userInfo)) {
+        Future.successful(true)
+      } else if (isCommunityAdmin(userInfo)) {
+        // Own system or within community.
+        systemManager.getSystemById(sut_id).flatMap { system =>
+          if (system.isDefined) {
+            if (isOwnSystem(userInfo, system)) {
+              Future.successful(true)
+            } else {
+              canManageOrganisationFull(request, userInfo, system.get.owner)
+            }
+          } else {
+            Future.successful(false)
+          }
+        }
+      } else {
+        // Has to be own system.
+        isOwnSystem(userInfo, sut_id)
+      }
+    }
+    check.map(setAuthResult(request, _, "User cannot view the requested system"))
+  }
+
+  def canViewSystemInSnapshot(request: RequestWithAttributes[_], systemId: Long, snapshotId: Long): Future[Boolean] = {
+    val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
+      if (isTestBedAdmin(userInfo)) {
+        Future.successful(true)
+      } else {
+        if (userInfo.organization.isDefined) {
+          if (isCommunityAdmin(userInfo)) {
+            // This is a snapshot of the user's own community.
+            conformanceManager.getConformanceSnapshot(snapshotId).map { snapshot =>
+              snapshot.community == userInfo.organization.get.community
+            }
+          } else {
+            // The requested system ID and the user's own organisation ID must exist as results in the specified snapshot.
+            conformanceManager.existsInConformanceSnapshot(snapshotId, systemId, userInfo.organization.get.id)
+          }
+        } else {
+          Future.successful(false)
+        }
+      }
+    }
+    check.map(setAuthResult(request, _, "User cannot view the requested system in the given conformance snapshot"))
+  }
+
+  def canUpdateSystem(request: RequestWithAttributes[_], systemId: Long, isDelete: Boolean = false): Future[Boolean] = {
+    val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
+      if (isTestBedAdmin(userInfo)) {
+        Future.successful(true)
+      } else if (isCommunityAdmin(userInfo)) {
+        // Own system or within community.
+        systemManager.getSystemById(systemId).flatMap { system =>
+          if (system.isDefined) {
+            if (isOwnSystem(userInfo, system)) {
+              Future.successful(true)
+            } else {
+              canManageOrganisationFull(request, userInfo, system.get.owner)
+            }
+          } else {
+            Future.successful(false)
+          }
+        }
+      } else if (isOrganisationAdmin(userInfo) && userInfo.organization.isDefined) {
+        // Has to be own system.
+        isOwnSystem(userInfo, systemId).flatMap { ownSystem =>
+          if (ownSystem) {
+            // Check to see if special permissions are in place.
+            communityManager.getById(userInfo.organization.get.community).flatMap { community =>
+              if (community.isDefined) {
+                if (!isDelete || community.get.allowSystemManagement) {
+                  if (community.get.allowPostTestSystemUpdates) {
+                    Future.successful(true)
+                  } else {
+                    testResultManager.testSessionsExistForSystem(systemId).map { exists =>
+                      !exists
+                    }
+                  }
+                } else {
+                  Future.successful(false)
+                }
+              } else {
+                Future.successful(false)
+              }
+            }
+          } else {
+            Future.successful(false)
+          }
+        }
+      } else {
+        Future.successful(false)
+      }
+    }
+    check.map(setAuthResult(request, _, "User cannot update the requested system"))
   }
 
   private def isOwnSystem(userInfo: User, system: Option[Systems]): Boolean = {
     system.isDefined && userInfo.organization.isDefined && system.get.owner == userInfo.organization.get.id
   }
 
-  private def isOwnSystem(userInfo: User, systemId: Long): Boolean = {
-    isOwnSystem(userInfo, systemManager.getSystemById(systemId))
+  private def isOwnSystem(userInfo: User, systemId: Long): Future[Boolean] = {
+    systemManager.getSystemById(systemId).map { system =>
+      isOwnSystem(userInfo, system)
+    }
   }
 
-  def canManageSystem(request: RequestWithAttributes[_], systemId: Long): Boolean = {
-    canManageSystem(request, getUser(getRequestUserId(request)), systemId)
+  def canManageSystem(request: RequestWithAttributes[_], systemId: Long): Future[Boolean] = {
+    getUser(getRequestUserId(request)).flatMap { userInfo =>
+      canManageSystem(request, userInfo, systemId)
+    }
   }
 
-  def canManageSystem(request: RequestWithAttributes[_], userInfo: User, sut_id: Long): Boolean = {
-    var ok = false
-    if (isTestBedAdmin(userInfo)) {
-      ok = true
+  def canManageSystem(request: RequestWithAttributes[_], userInfo: User, sut_id: Long): Future[Boolean] = {
+    val check = if (isTestBedAdmin(userInfo)) {
+      Future.successful(true)
     } else if (isCommunityAdmin(userInfo)) {
       // Own system or within community.
-      val system = systemManager.getSystemById(sut_id)
-      if (system.isDefined) {
-        ok = isOwnSystem(userInfo, system) || canManageOrganisationFull(request, userInfo, system.get.owner)
+      systemManager.getSystemById(sut_id).flatMap { system =>
+        if (system.isDefined) {
+          if (isOwnSystem(userInfo, system)) {
+            Future.successful(true)
+          } else {
+            canManageOrganisationFull(request, userInfo, system.get.owner)
+          }
+        } else {
+          Future.successful(false)
+        }
       }
     } else if (isOrganisationAdmin(userInfo)) {
       // Has to be own system.
-      ok = isOwnSystem(userInfo, sut_id)
-    }
-    setAuthResult(request, ok, "User cannot manage the requested system")
-  }
-
-  def canCreateSystem(request: RequestWithAttributes[_], orgId: Long):Boolean = {
-    var ok = false
-    val userInfo = getUser(getRequestUserId(request))
-    if (isTestBedAdmin(userInfo)) {
-      ok = true
-    } else if (isCommunityAdmin(userInfo)) {
-      ok = userInfo.organization.isDefined && userInfo.organization.get.id == orgId
-      if (!ok) {
-        val org = organizationManager.getById(orgId)
-        ok = org.isDefined && userInfo.organization.isDefined && org.get.community == userInfo.organization.get.community
-      }
+      isOwnSystem(userInfo, sut_id)
     } else {
-      val community = communityManager.getById(userInfo.organization.get.community)
-      if (isOrganisationAdmin(userInfo) && community.isDefined && community.get.allowSystemManagement) {
-        ok = userInfo.organization.isDefined && userInfo.organization.get.id == orgId
-      }
+      Future.successful(false)
     }
-    setAuthResult(request, ok, "User cannot manage the requested organisation")
+    check.map(setAuthResult(request, _, "User cannot manage the requested system"))
   }
 
-  def canDeleteSystem(request: RequestWithAttributes[_], systemId: Long):Boolean = {
-    canUpdateSystem(request, systemId, isDelete = true)
-  }
-
-  def canManageThemes(request: RequestWithAttributes[_]): Boolean = {
-    checkTestBedAdmin(request)
-  }
-
-  def canAccessThemeData(request: RequestWithAttributes[_]):Boolean = {
-    val ok = true
-    setAuthResult(request, ok, "User cannot access theme")
-  }
-
-  def canUpdateSystemConfigurationValues(request: RequestWithAttributes[_]): Boolean = {
-    checkTestBedAdmin(request)
-  }
-
-  def canManageSystemSettings(request: RequestWithAttributes[_]): Boolean = {
-    checkTestBedAdmin(request)
-  }
-
-  def canViewSystemConfigurationValues(request: RequestWithAttributes[_]): Boolean = {
-    checkTestBedAdmin(request)
-  }
-
-  def canManageAnyTestSession(request: RequestWithAttributes[_]):Boolean = {
-    checkTestBedAdmin(request)
-  }
-
-  def canUpdateSpecification(request: RequestWithAttributes[_], specId: Long):Boolean = {
-    canManageSpecification(request, specId)
-  }
-
-  def canDeleteSpecification(request: RequestWithAttributes[_], specId: Long):Boolean = {
-    canManageSpecification(request, specId)
-  }
-
-  def canViewAllTestCases(request: RequestWithAttributes[_]):Boolean = {
-    canViewAllTestResources(request)
-  }
-
-  def canViewAllTestResources(request: RequestWithAttributes[_]): Boolean = {
-    var ok = false
-    val userInfo = getUser(getRequestUserId(request))
-    if (isTestBedAdmin(userInfo)) {
-      ok = true
-    } else if (userInfo.organization.isDefined) {
-      val communityInfo = communityManager.getById(userInfo.organization.get.community)
-      ok = communityInfo.isDefined && communityInfo.get.domain.isEmpty
-    }
-    setAuthResult(request, ok, "User not allowed to view all test resources")
-  }
-
-  def canViewTestSuiteResource(request: RequestWithAttributes[_], testId: String):Boolean = {
-    var ok = false
-    if (isTestEngineCall(request)) {
-      ok = checkValidTestEngineCall(request, testId)
-    }
-    setAuthResult(request, ok, "Not allowed to access requested resource")
-  }
-
-  def canViewTestCase(request: RequestWithAttributes[_], testId: String): Boolean = {
-    var ok = false
-    if (isTestEngineCall(request)) {
-      ok = checkValidTestEngineCall(request, testId)
-    } else {
-      val userInfo = getUser(getRequestUserId(request))
+  def canCreateSystem(request: RequestWithAttributes[_], orgId: Long): Future[Boolean] = {
+    val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
       if (isTestBedAdmin(userInfo)) {
-        ok = true
+        Future.successful(true)
       } else if (isCommunityAdmin(userInfo)) {
-        val testSuite = testSuiteManager.getTestSuiteOfTestCase(testId.toLong)
-        ok = canManageDomain(request, userInfo, testSuite.domain)
+        if (userInfo.organization.isDefined && userInfo.organization.get.id == orgId) {
+          Future.successful(true)
+        } else {
+          organizationManager.getById(orgId).map { org =>
+            org.isDefined && userInfo.organization.isDefined && org.get.community == userInfo.organization.get.community
+          }
+        }
       } else {
-        val specId = conformanceManager.getSpecificationIdForTestCaseFromConformanceStatements(testId.toLong)
-        if (specId.isDefined) {
-          ok = canViewSpecifications(request, userInfo, Some(List(specId.get)))
+        communityManager.getById(userInfo.organization.get.community).map { community =>
+          isOrganisationAdmin(userInfo) && community.isDefined && community.get.allowSystemManagement && userInfo.organization.isDefined && userInfo.organization.get.id == orgId
         }
       }
     }
-    setAuthResult(request, ok, "Cannot view requested test case")
+    check.map(setAuthResult(request, _, "User cannot manage the requested organisation"))
   }
 
-  def canPreviewConformanceCertificateReport(request: RequestWithAttributes[_], communityId: Long):Boolean = {
+  def canDeleteSystem(request: RequestWithAttributes[_], systemId: Long): Future[Boolean] = {
+    canUpdateSystem(request, systemId, isDelete = true)
+  }
+
+  def canManageThemes(request: RequestWithAttributes[_]): Future[Boolean] = {
+    checkTestBedAdmin(request)
+  }
+
+  def canAccessThemeData(request: RequestWithAttributes[_]): Future[Boolean] = {
+    val check = Future.successful(true)
+    check.map(setAuthResult(request, _, "User cannot access theme"))
+  }
+
+  def canUpdateSystemConfigurationValues(request: RequestWithAttributes[_]): Future[Boolean] = {
+    checkTestBedAdmin(request)
+  }
+
+  def canManageSystemSettings(request: RequestWithAttributes[_]): Future[Boolean] = {
+    checkTestBedAdmin(request)
+  }
+
+  def canViewSystemConfigurationValues(request: RequestWithAttributes[_]): Future[Boolean] = {
+    checkTestBedAdmin(request)
+  }
+
+  def canManageAnyTestSession(request: RequestWithAttributes[_]): Future[Boolean] = {
+    checkTestBedAdmin(request)
+  }
+
+  def canUpdateSpecification(request: RequestWithAttributes[_], specId: Long): Future[Boolean] = {
+    canManageSpecification(request, specId)
+  }
+
+  def canDeleteSpecification(request: RequestWithAttributes[_], specId: Long): Future[Boolean] = {
+    canManageSpecification(request, specId)
+  }
+
+  def canViewAllTestCases(request: RequestWithAttributes[_]): Future[Boolean] = {
+    canViewAllTestResources(request)
+  }
+
+  private def canViewAllTestResources(request: RequestWithAttributes[_]): Future[Boolean] = {
+    val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
+      if (isTestBedAdmin(userInfo)) {
+        Future.successful(true)
+      } else if (userInfo.organization.isDefined) {
+        communityManager.getById(userInfo.organization.get.community).map { communityInfo =>
+          communityInfo.isDefined && communityInfo.get.domain.isEmpty
+        }
+      } else {
+        Future.successful(false)
+      }
+    }
+    check.map(setAuthResult(request, _, "User not allowed to view all test resources"))
+  }
+
+  def canViewTestSuiteResource(request: RequestWithAttributes[_], testId: String): Future[Boolean] = {
+    val check = if (isTestEngineCall(request)) {
+      Future.successful(checkValidTestEngineCall(request, testId))
+    } else {
+      Future.successful(false)
+    }
+    check.map(setAuthResult(request, _, "Not allowed to access requested resource"))
+  }
+
+  def canViewTestCase(request: RequestWithAttributes[_], testId: String): Future[Boolean] = {
+    val check = if (isTestEngineCall(request)) {
+      Future.successful {
+        checkValidTestEngineCall(request, testId)
+      }
+    } else {
+      getUser(getRequestUserId(request)).flatMap { userInfo =>
+        if (isTestBedAdmin(userInfo)) {
+          Future.successful(true)
+        } else if (isCommunityAdmin(userInfo)) {
+          testSuiteManager.getTestSuiteOfTestCase(testId.toLong).flatMap { testSuite =>
+            canManageDomain(request, userInfo, testSuite.domain)
+          }
+        } else {
+          conformanceManager.getSpecificationIdForTestCaseFromConformanceStatements(testId.toLong).flatMap { specId =>
+            if (specId.isDefined) {
+              canViewSpecifications(request, userInfo, Some(List(specId.get)))
+            } else {
+              Future.successful(false)
+            }
+          }
+        }
+      }
+    }
+    check.map(setAuthResult(request, _, "Cannot view requested test case"))
+  }
+
+  def canPreviewConformanceCertificateReport(request: RequestWithAttributes[_], communityId: Long): Future[Boolean] = {
     canManageCommunity(request, communityId)
   }
 
-  def canViewConformanceCertificateReport(request: RequestWithAttributes[_], communityId: Long, snapshotId: Option[Long] = None):Boolean = {
+  def canViewConformanceCertificateReport(request: RequestWithAttributes[_], communityId: Long, snapshotId: Option[Long] = None): Future[Boolean] = {
     if (snapshotId.isDefined) {
       canManageConformanceSnapshot(request, snapshotId.get)
     } else {
@@ -921,39 +1086,47 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     }
   }
 
-  def canViewOwnConformanceCertificateReport(request: RequestWithAttributes[_], systemId: Long, snapshotId: Option[Long] = None):Boolean = {
-    var ok = false
-    val userInfo = getUser(getRequestUserId(request))
-    if (isTestBedAdmin(userInfo)) {
-      ok = true
-    } else {
-      if (isCommunityAdmin(userInfo)) {
-        val communityIdOfSystem = systemManager.getCommunityIdOfSystem(systemId)
-        if (userInfo.organization.isDefined && userInfo.organization.get.community == communityIdOfSystem) {
-          ok = true
-        }
+  def canViewOwnConformanceCertificateReport(request: RequestWithAttributes[_], systemId: Long, snapshotId: Option[Long] = None): Future[Boolean] = {
+    val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
+      if (isTestBedAdmin(userInfo)) {
+        Future.successful(true)
       } else {
-        // Organisation user.
-        if (userInfo.organization.isDefined) {
-          val community = communityManager.getById(userInfo.organization.get.community)
-          if (community.isDefined && community.get.allowCertificateDownload) {
-            val system = systemManager.getSystemById(systemId)
-            if (system.isDefined && userInfo.organization.get.id == system.get.owner) {
-              if (snapshotId.isDefined) {
-                val snapshot = conformanceManager.getConformanceSnapshot(snapshotId.get)
-                ok = snapshot.community == community.get.id && snapshot.isPublic
+        if (isCommunityAdmin(userInfo)) {
+          systemManager.getCommunityIdOfSystem(systemId).map { communityIdOfSystem =>
+            userInfo.organization.isDefined && userInfo.organization.get.community == communityIdOfSystem
+          }
+        } else {
+          // Organisation user.
+          if (userInfo.organization.isDefined) {
+            communityManager.getById(userInfo.organization.get.community).flatMap { community =>
+              if (community.isDefined && community.get.allowCertificateDownload) {
+                systemManager.getSystemById(systemId).flatMap { system =>
+                  if (system.isDefined && userInfo.organization.get.id == system.get.owner) {
+                    if (snapshotId.isDefined) {
+                      conformanceManager.getConformanceSnapshot(snapshotId.get).map { snapshot =>
+                        snapshot.community == community.get.id && snapshot.isPublic
+                      }
+                    } else {
+                      Future.successful(true)
+                    }
+                  } else {
+                    Future.successful(false)
+                  }
+                }
               } else {
-                ok = true
+                Future.successful(false)
               }
             }
+          } else {
+            Future.successful(false)
           }
         }
       }
     }
-    setAuthResult(request, ok, "User cannot download this conformance certificate")
+    check.map(setAuthResult(request, _, "User cannot download this conformance certificate"))
   }
 
-  def canViewConformanceStatementReport(request: RequestWithAttributes[_], systemId: Long, snapshotId: Option[Long] = None):Boolean = {
+  def canViewConformanceStatementReport(request: RequestWithAttributes[_], systemId: Long, snapshotId: Option[Long] = None): Future[Boolean] = {
     if (snapshotId.isDefined) {
       canViewSystemInSnapshot(request, systemId, snapshotId.get)
     } else {
@@ -961,526 +1134,663 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     }
   }
 
-  def canManageTestSession(request: RequestWithAttributes[_], sessionId: String, requireAdmin: Boolean): Boolean = {
-    var ok = false
-    val userInfo = getUser(getRequestUserId(request))
-    if (isTestBedAdmin(userInfo)) {
-      ok = true
-    } else if (isCommunityAdmin(userInfo)) {
-      // Within community.
-      val result = testResultManager.getCommunityIdForTestSession(sessionId)
-      if (result.isDefined) {
-        if (result.get._2.isDefined) {
-          // There is a community ID defined. This would mean an executing or completed session.
-          ok = canManageCommunity(request, userInfo, result.get._2.get)
-        } else {
-          /*
-           Existing session but without a community ID. This can only come up if the community has been deleted.
-           In such a case only the test bed admin should be able to see this.
-            */
-          ok = false
+  def canManageTestSession(request: RequestWithAttributes[_], sessionId: String, requireAdmin: Boolean, requireOwnTestSessionIfNotAdmin: Boolean): Future[Boolean] = {
+    val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
+      if (isTestBedAdmin(userInfo)) {
+        Future.successful(true)
+      } else if (isCommunityAdmin(userInfo)) {
+        // Within community.
+        testResultManager.getCommunityIdForTestSession(sessionId).flatMap { result =>
+          if (result.isDefined) {
+            if (result.get._2.isDefined) {
+              // There is a community ID defined. This would mean an executing or completed session.
+              canManageCommunity(request, userInfo, result.get._2.get)
+            } else {
+              /*
+               Existing session but without a community ID. This can only come up if the community has been deleted.
+               In such a case only the test bed admin should be able to see this.
+               */
+              Future.successful(false)
+            }
+          } else {
+            /*
+            There is no test session recorded for this session ID. This could be because the test session is currently
+            being configured.
+             */
+            Future.successful(true)
+          }
         }
       } else {
-          /*
-          There is no test session recorded for this session ID. This could be because the test session is currently
-          being configured.
-           */
-        ok = true
-      }
-    } else {
-      // Own test session.
-      if (requireAdmin) {
-        ok = false
-      } else {
-        val result = testResultManager.getOrganisationIdForTestSession(sessionId)
-        if (result.isDefined) {
-          if (result.get._2.isDefined) {
-            // There is an organisation ID defined. This needs to match the user's organisation ID.
-            ok = userInfo.organization.isDefined && result.get._2.get == userInfo.organization.get.id
-          } else {
-            // No organisation ID. This is an obsolete session no longer visible to the user.
-            ok = false
-          }
+        // Organisation user.
+        if (requireAdmin || userInfo.organization.isEmpty) {
+          Future.successful(false)
         } else {
-          /*
-          There is no test session recorded for this session ID. This could be because the test session is currently
-          being configured.
-           */
-          ok = true
+          testResultManager.getOrganisationIdsForTestSession(sessionId).flatMap { result =>
+            if (result.isDefined) {
+              val organisationIdForSession = result.get._2
+              val communityIdForSession = result.get._3
+              if (organisationIdForSession.isDefined && communityIdForSession.isDefined) {
+                if (userInfo.organization.get.id == organisationIdForSession.get) {
+                  // The session belongs to the user's organisation.
+                  Future.successful(true)
+                } else {
+                  if (requireOwnTestSessionIfNotAdmin) {
+                    // The session must belong to the user's organisation.
+                    Future.successful(false)
+                  } else {
+                    // The session must belong to the user's community.
+                    organisationUserCanViewCommunityContent(request, userInfo, communityIdForSession.get)
+                  }
+                }
+              } else {
+                // This is an obsolete session no longer visible to the user.
+                Future.successful(false)
+              }
+            } else {
+              // There is no test session recorded for this session ID. This could be because the test session is currently being configured.
+              Future.successful(true)
+            }
+          }
         }
       }
     }
-    setAuthResult(request, ok, "User cannot manage requested session")
+    check.map(setAuthResult(request, _, "User cannot manage requested session"))
   }
 
-  def canViewTestResultForSession(request: RequestWithAttributes[_], sessionId: String):Boolean = {
-    canManageTestSession(request, sessionId, requireAdmin = false)
+  def canViewTestResultForSession(request: RequestWithAttributes[_], sessionId: String): Future[Boolean] = {
+    canManageTestSession(request, sessionId, requireAdmin = false, requireOwnTestSessionIfNotAdmin = false)
   }
 
-  def canViewTestResultsForCommunity(request: RequestWithAttributes[_], communityIds: Option[List[Long]]):Boolean = {
+  def canViewCommunityTests(request: RequestWithAttributes[_], communityIds: Option[List[Long]]): Future[Boolean] = {
+    val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
+      if (isTestBedAdmin(userInfo)) {
+        Future.successful(true)
+      } else {
+        if (communityIds.isDefined && communityIds.get.size == 1) {
+          // There should be only a single community requested.
+          val communityId = communityIds.get.head
+          if (isCommunityAdmin(userInfo)) {
+            canManageCommunity(request, userInfo, communityId)
+          } else {
+            // The community must have enabled the option to view testing of other organisations.
+            communityManager.getById(communityId).map { community =>
+              community.isDefined && userInfo.organization.isDefined && community.get.id == userInfo.organization.get.community && community.get.allowCommunityView
+            }
+          }
+        } else {
+          Future.successful(false)
+        }
+      }
+    }
+    check.map(setAuthResult(request, _, "User cannot view the requested community"))
+  }
+
+  def canViewActiveTestsForCommunity(request: RequestWithAttributes[_], communityIds: Option[List[Long]]): Future[Boolean] = {
     canViewCommunities(request, communityIds)
   }
 
-  def canViewTestResultsForOrganisation(request: RequestWithAttributes[_], organisationId: Long):Boolean = {
+  def canViewTestResultsForOrganisation(request: RequestWithAttributes[_], organisationId: Long): Future[Boolean] = {
     canViewOrganisation(request, organisationId)
   }
 
-  def canUpdateParameter(request: RequestWithAttributes[_], parameterId: Long):Boolean = {
+  def canUpdateParameter(request: RequestWithAttributes[_], parameterId: Long): Future[Boolean] = {
     canManageParameter(request, parameterId)
   }
 
-  def canManageParameter(request: RequestWithAttributes[_], parameterId: Long):Boolean = {
-    var ok = false
-    val userInfo = getUser(getRequestUserId(request))
-    if (isTestBedAdmin(userInfo)) {
-      ok = true
-    } else if (isCommunityAdmin(userInfo)) {
-      val parameter = parameterManager.getParameterById(parameterId)
-      if (parameter.isDefined) {
-        ok = canManageEndpoint(request, userInfo, parameter.get.endpoint)
+  private def canManageParameter(request: RequestWithAttributes[_], parameterId: Long): Future[Boolean] = {
+    val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
+      if (isTestBedAdmin(userInfo)) {
+        Future.successful(true)
+      } else if (isCommunityAdmin(userInfo)) {
+        parameterManager.getParameterById(parameterId).flatMap { parameter =>
+          if (parameter.isDefined) {
+            canManageEndpoint(request, userInfo, parameter.get.endpoint)
+          } else {
+            Future.successful(false)
+          }
+        }
+      } else {
+        Future.successful(false)
       }
     }
-    setAuthResult(request, ok, "User cannot manage parameter")
+    check.map(setAuthResult(request, _, "User cannot manage parameter"))
   }
 
-  def canDeleteParameter(request: RequestWithAttributes[_], parameterId: Long):Boolean = {
+  def canDeleteParameter(request: RequestWithAttributes[_], parameterId: Long): Future[Boolean] = {
     canManageParameter(request, parameterId)
   }
 
-  def canDeleteOrganisation(request: RequestWithAttributes[_], orgId: Long):Boolean = {
-    var ok = false
-    val userInfo = getUser(getRequestUserId(request))
-    if (isTestBedAdmin(userInfo) || isCommunityAdmin(userInfo)) {
-      ok = canManageOrganisationFull(request, userInfo, orgId)
+  def canDeleteOrganisation(request: RequestWithAttributes[_], orgId: Long): Future[Boolean] = {
+    val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
+      if (isTestBedAdmin(userInfo) || isCommunityAdmin(userInfo)) {
+        canManageOrganisationFull(request, userInfo, orgId)
+      } else {
+        Future.successful(false)
+      }
     }
-    setAuthResult(request, ok, "User cannot delete the requested organisation")
+    check.map(setAuthResult(request, _, "User cannot delete the requested organisation"))
   }
 
-  def canUpdateOrganisation(request: RequestWithAttributes[_], orgId: Long):Boolean = {
-    canManageOrganisationFull(request, getUser(getRequestUserId(request)), orgId)
+  def canUpdateOrganisation(request: RequestWithAttributes[_], orgId: Long): Future[Boolean] = {
+    getUser(getRequestUserId(request)).flatMap { userInfo =>
+      canManageOrganisationFull(request, userInfo, orgId)
+    }
   }
 
-  def canManageOrganisationBasic(request: RequestWithAttributes[_], orgId: Long):Boolean = {
-    canManageOrganisationBasic(request, getUser(getRequestUserId(request)), orgId)
+  def canManageOrganisationBasic(request: RequestWithAttributes[_], orgId: Long): Future[Boolean] = {
+    getUser(getRequestUserId(request)).flatMap { userInfo =>
+      canManageOrganisationBasic(request, userInfo, orgId)
+    }
   }
 
-  def canManageOrganisationBasic(request: RequestWithAttributes[_], userInfo: User, orgId: Long):Boolean = {
-    var ok = false
-    if (isTestBedAdmin(userInfo)) {
-      ok = true
+  def canManageOrganisationBasic(request: RequestWithAttributes[_], userInfo: User, orgId: Long): Future[Boolean] = {
+    val check = if (isTestBedAdmin(userInfo)) {
+      Future.successful(true)
     } else if (isCommunityAdmin(userInfo)) {
-      ok = userInfo.organization.isDefined && userInfo.organization.get.id == orgId
-      if (!ok) {
-        val org = organizationManager.getById(orgId)
-        ok = org.isDefined && userInfo.organization.isDefined && org.get.community == userInfo.organization.get.community
+      if (userInfo.organization.isDefined && userInfo.organization.get.id == orgId) {
+        Future.successful(true)
+      } else {
+        organizationManager.getById(orgId).map { org =>
+          org.isDefined && userInfo.organization.isDefined && org.get.community == userInfo.organization.get.community
+        }
       }
     } else if (isOrganisationAdmin(userInfo)) {
-      ok = userInfo.organization.isDefined && userInfo.organization.get.id == orgId
-    }
-    setAuthResult(request, ok, "User cannot manage the requested organisation")
-  }
-
-  def canManageOrganisationFull(request: RequestWithAttributes[_], userInfo: User, orgId: Long):Boolean = {
-    var ok = false
-    if (isTestBedAdmin(userInfo)) {
-      ok = true
-    } else if (isCommunityAdmin(userInfo)) {
-      ok = userInfo.organization.isDefined && userInfo.organization.get.id == orgId
-      if (!ok) {
-        val org = organizationManager.getById(orgId)
-        ok = org.isDefined && userInfo.organization.isDefined && org.get.community == userInfo.organization.get.community
-      }
-    }
-    setAuthResult(request, ok, "User cannot manage the requested organisation")
-  }
-
-  def canCreateOrganisation(request: RequestWithAttributes[_], organisation: Organizations, otherOrganisation: Option[Long]):Boolean = {
-    var ok = false
-    val userInfo = getUser(getRequestUserId(request))
-    if (isTestBedAdmin(userInfo)) {
-      ok = true
-    } else if (isCommunityAdmin(userInfo)) {
-      // Check we can manage the community of the organisation as well as the template organisation.
-      ok = canManageCommunity(request, userInfo, organisation.community)
-      if (ok && otherOrganisation.isDefined) {
-        val other = organizationManager.getById(otherOrganisation.get)
-        ok = other.isDefined && other.get.community == organisation.community
-      }
-    }
-    setAuthResult(request, ok, "User cannot create the provided organisation")
-  }
-
-  def canViewOrganisationsByCommunity(request: RequestWithAttributes[_], communityId: Long):Boolean = {
-    canManageCommunity(request, communityId)
-  }
-
-  def canViewOrganisation(request: RequestWithAttributes[_], userInfo: User, orgId: Long):Boolean = {
-    var ok = false
-    if (isTestBedAdmin(userInfo)) {
-      ok = true
+      Future.successful(userInfo.organization.isDefined && userInfo.organization.get.id == orgId)
     } else {
-      ok = userInfo.organization.isDefined && userInfo.organization.get.id == orgId
-      if (!ok && isCommunityAdmin(userInfo)) {
-        ok = canManageOrganisationFull(request, userInfo, orgId)
+      Future.successful(false)
+    }
+    check.map(setAuthResult(request, _, "User cannot manage the requested organisation"))
+  }
+
+  private def canManageOrganisationFull(request: RequestWithAttributes[_], userInfo: User, orgId: Long): Future[Boolean] = {
+    val check = if (isTestBedAdmin(userInfo)) {
+      Future.successful(true)
+    } else if (isCommunityAdmin(userInfo)) {
+      if (userInfo.organization.isDefined && userInfo.organization.get.id == orgId) {
+        Future.successful(true)
+      } else {
+        organizationManager.getById(orgId).map { org =>
+          org.isDefined && userInfo.organization.isDefined && org.get.community == userInfo.organization.get.community
+        }
+      }
+    } else {
+      Future.successful(false)
+    }
+    check.map(setAuthResult(request, _, "User cannot manage the requested organisation"))
+  }
+
+  def canCreateOrganisation(request: RequestWithAttributes[_], organisation: Organizations, otherOrganisation: Option[Long]): Future[Boolean] = {
+    val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
+      if (isTestBedAdmin(userInfo)) {
+        Future.successful(true)
+      } else if (isCommunityAdmin(userInfo)) {
+        // Check we can manage the community of the organisation as well as the template organisation.
+        canManageCommunity(request, userInfo, organisation.community).flatMap { ok =>
+          if (ok) {
+            if (otherOrganisation.isDefined) {
+              organizationManager.getById(otherOrganisation.get).map { other =>
+                other.isDefined && other.get.community == organisation.community
+              }
+            } else {
+              Future.successful(true)
+            }
+          } else {
+            Future.successful(false)
+          }
+        }
+      } else {
+        Future.successful(false)
       }
     }
-    setAuthResult(request, ok, "User cannot view the requested organisation")
+    check.map(setAuthResult(request, _, "User cannot create the provided organisation"))
   }
 
-  def canViewOrganisation(request: RequestWithAttributes[_], orgId: Long):Boolean = {
-    canViewOrganisation(request, getUser(getRequestUserId(request)), orgId)
+  def canViewOrganisationsByCommunity(request: RequestWithAttributes[_], communityId: Long): Future[Boolean] = {
+    canViewCommunityContent(request, communityId)
   }
 
-  def canViewAllOrganisations(request: RequestWithAttributes[_]):Boolean = {
+  def canViewOrganisation(request: RequestWithAttributes[_], userInfo: User, orgId: Long): Future[Boolean] = {
+    val check = if (isTestBedAdmin(userInfo)) {
+      Future.successful(true)
+    } else {
+      if (userInfo.organization.isDefined && userInfo.organization.get.id == orgId) {
+        Future.successful(true)
+      } else if (isCommunityAdmin(userInfo)) {
+        canManageOrganisationFull(request, userInfo, orgId)
+      } else {
+        Future.successful(false)
+      }
+    }
+    check.map(setAuthResult(request, _, "User cannot view the requested organisation"))
+  }
+
+  def canViewOrganisation(request: RequestWithAttributes[_], orgId: Long): Future[Boolean] = {
+    getUser(getRequestUserId(request)).flatMap { userInfo =>
+      canViewOrganisation(request, userInfo, orgId)
+    }
+  }
+
+  def canViewAllOrganisations(request: RequestWithAttributes[_]): Future[Boolean] = {
     checkTestBedAdmin(request)
   }
 
-  def canViewTestBedDefaultLegalNotice(request: RequestWithAttributes[_]):Boolean = {
-    val ok = true
-    setAuthResult(request, ok, "User cannot view the default landing page")
+  def canViewTestBedDefaultLegalNotice(request: RequestWithAttributes[_]): Future[Boolean] = {
+    val check = Future.successful(true)
+    check.map(setAuthResult(request, _, "User cannot view the default landing page"))
   }
 
-  def canViewDefaultLegalNotice(request: RequestWithAttributes[_], communityId: Long):Boolean = {
+  def canViewSystemResource(request: RequestWithAttributes[_]): Future[Boolean] = {
+    val check = Future.successful(true)
+    check.map(setAuthResult(request, _, "User cannot view the requested resource"))
+  }
+
+  def canViewDefaultLegalNotice(request: RequestWithAttributes[_], communityId: Long): Future[Boolean] = {
     canViewCommunityBasic(request, communityId)
   }
 
-  def canManageLegalNotice(request: RequestWithAttributes[_], noticeId: Long):Boolean = {
-    val load = () => {legalNoticeManager.getCommunityId(noticeId)}
-    canManageCommunityArtifact(request, getUser(getRequestUserId(request)), load)
-  }
-
-  def canManageLegalNotices(request: RequestWithAttributes[_], communityId: Long):Boolean = {
-    canManageCommunity(request, communityId)
-  }
-
-  def canViewDefaultLandingPage(request: RequestWithAttributes[_], communityId: Long):Boolean = {
-    canViewCommunityBasic(request, communityId)
-  }
-
-  def canManageLandingPage(request: RequestWithAttributes[_], pageId: Long):Boolean = {
-    val load = () => {landingPageManager.getCommunityId(pageId)}
-    canManageCommunityArtifact(request, getUser(getRequestUserId(request)), load)
-  }
-
-  def canManageLandingPages(request: RequestWithAttributes[_], communityId: Long):Boolean = {
-    canManageCommunity(request, communityId)
-  }
-
-  def canManageTrigger(request: RequestWithAttributes[_], triggerId: Long):Boolean = {
-    val load = () => {triggerManager.getCommunityId(triggerId)}
-    canManageCommunityArtifact(request, getUser(getRequestUserId(request)), load)
-  }
-
-  def canManageTriggers(request: RequestWithAttributes[_], communityId: Long):Boolean = {
-    canManageCommunity(request, communityId)
-  }
-
-  def canManageCommunityResource(request: RequestWithAttributes[_], resourceId: Long): Boolean = {
-    val load = () => {
-      communityResourceManager.getCommunityId(resourceId)
+  def canManageLegalNotice(request: RequestWithAttributes[_], noticeId: Long): Future[Boolean] = {
+    getUser(getRequestUserId(request)).flatMap { userInfo =>
+      val load = () => { legalNoticeManager.getCommunityId(noticeId) }
+      canManageCommunityArtifact(request, userInfo, load)
     }
-    canManageCommunityArtifact(request, getUser(getRequestUserId(request)), load)
   }
 
-  def canViewDefaultErrorTemplate(request: RequestWithAttributes[_], communityId: Long):Boolean = {
+  def canManageLegalNotices(request: RequestWithAttributes[_], communityId: Long): Future[Boolean] = {
+    canManageCommunity(request, communityId)
+  }
+
+  def canViewDefaultLandingPage(request: RequestWithAttributes[_], communityId: Long): Future[Boolean] = {
     canViewCommunityBasic(request, communityId)
   }
 
-  def canManageErrorTemplate(request: RequestWithAttributes[_], templateId: Long):Boolean = {
-    val load = () => {errorTemplateManager.getCommunityId(templateId)}
-    canManageCommunityArtifact(request, getUser(getRequestUserId(request)), load)
+  def canManageLandingPage(request: RequestWithAttributes[_], pageId: Long): Future[Boolean] = {
+    val load = () => landingPageManager.getCommunityId(pageId)
+    getUser(getRequestUserId(request)).flatMap { userInfo =>
+      canManageCommunityArtifactAsync(request, userInfo, load)
+    }
   }
 
-  def canManageCommunityArtifact(request: RequestWithAttributes[_], userInfo: User, loadFunction: () => Long): Boolean = {
-    var ok = false
-    if (isTestBedAdmin(userInfo)) {
-      ok = true
+  def canManageLandingPages(request: RequestWithAttributes[_], communityId: Long): Future[Boolean] = {
+    canManageCommunity(request, communityId)
+  }
+
+  def canManageTrigger(request: RequestWithAttributes[_], triggerId: Long): Future[Boolean] = {
+    getUser(getRequestUserId(request)).flatMap { userInfo =>
+      val load = () => { triggerManager.getCommunityId(triggerId) }
+      canManageCommunityArtifact(request, userInfo, load)
+    }
+  }
+
+  def canManageTriggers(request: RequestWithAttributes[_], communityId: Long): Future[Boolean] = {
+    canManageCommunity(request, communityId)
+  }
+
+  def canManageCommunityResource(request: RequestWithAttributes[_], resourceId: Long): Future[Boolean] = {
+    getUser(getRequestUserId(request)).flatMap { userInfo =>
+      val load = () => {
+        communityResourceManager.getCommunityId(resourceId)
+      }
+      canManageCommunityArtifact(request, userInfo, load)
+    }
+  }
+
+  def canViewDefaultErrorTemplate(request: RequestWithAttributes[_], communityId: Long): Future[Boolean] = {
+    canViewCommunityBasic(request, communityId)
+  }
+
+  def canManageErrorTemplate(request: RequestWithAttributes[_], templateId: Long): Future[Boolean] = {
+    getUser(getRequestUserId(request)).flatMap { userInfo =>
+      val load = () => { errorTemplateManager.getCommunityId(templateId) }
+      canManageCommunityArtifact(request, userInfo, load)
+    }
+  }
+
+  private def canManageCommunityArtifact(request: RequestWithAttributes[_], userInfo: User, loadFunction: () => Future[Long]): Future[Boolean] = {
+    val check = if (isTestBedAdmin(userInfo)) {
+      Future.successful(true)
     } else if (isCommunityAdmin(userInfo)) {
-      ok = canManageCommunity(request, userInfo, loadFunction.apply())
+      loadFunction.apply().flatMap { id =>
+        canManageCommunity(request, userInfo, id)
+      }
+    } else {
+      Future.successful(false)
     }
-    setAuthResult(request, ok, "User cannot manage the requested community")
+    check.map(setAuthResult(request, _, "User cannot manage the requested community"))
   }
 
-  def canManageErrorTemplates(request: RequestWithAttributes[_], communityId: Long):Boolean = {
+  private def canManageCommunityArtifactAsync(request: RequestWithAttributes[_], userInfo: User, loadFunction: () => Future[Long]): Future[Boolean] = {
+    val check = if (isTestBedAdmin(userInfo)) {
+      Future.successful(true)
+    } else if (isCommunityAdmin(userInfo)) {
+      loadFunction.apply().flatMap { communityId =>
+        canManageCommunity(request, userInfo, communityId)
+      }
+    } else {
+      Future.successful(false)
+    }
+    check.map(setAuthResult(request, _, "User cannot manage the requested community"))
+  }
+
+  def canManageErrorTemplates(request: RequestWithAttributes[_], communityId: Long): Future[Boolean] = {
     canManageCommunity(request, communityId)
   }
 
-  def canManageEndpoints(request: RequestWithAttributes[_], userInfo: User, ids: Option[List[Long]]):Boolean = {
-    var ok = false
-    val userInfo = getUser(getRequestUserId(request))
-    if (isTestBedAdmin(userInfo)) {
-      ok = true
+  private def canManageEndpoints(request: RequestWithAttributes[_], userInfo: User, ids: Option[List[Long]]): Future[Boolean] = {
+    val check = if (isTestBedAdmin(userInfo)) {
+      Future.successful(true)
     } else if (isCommunityAdmin(userInfo)) {
       if (ids.isDefined) {
-        ids.get.foreach( endpointId => {
-          val endpoint = endpointManager.getById(endpointId)
-          ok = canManageActor(request, userInfo, endpoint.actor)
-        })
+        endpointManager.getDomainIdsOfEndpoints(ids.get).flatMap { domainIds =>
+          canManageDomains(request, userInfo, domainIds.toSet)
+        }
+      } else {
+        Future.successful(false)
       }
+    } else {
+      Future.successful(false)
     }
-    setAuthResult(request, ok, "User cannot manage requested endpoint")
+    check.map(setAuthResult(request, _, "User cannot manage requested endpoint"))
   }
 
-  def canManageEndpoint(request: RequestWithAttributes[_], userInfo: User, endPointId: Long):Boolean = {
+  private def canManageEndpoint(request: RequestWithAttributes[_], userInfo: User, endPointId: Long): Future[Boolean] = {
     canManageEndpoints(request, userInfo, Some(List(endPointId)))
   }
 
-  def canUpdateEndpoint(request: RequestWithAttributes[_], endPointId: Long):Boolean = {
-    canManageEndpoint(request, getUser(getRequestUserId(request)), endPointId)
+  def canUpdateEndpoint(request: RequestWithAttributes[_], endPointId: Long): Future[Boolean] = {
+    getUser(getRequestUserId(request)).flatMap { userInfo =>
+      canManageEndpoint(request, userInfo, endPointId)
+    }
   }
 
-  def canDeleteEndpoint(request: RequestWithAttributes[_], endPointId: Long):Boolean = {
-    canManageEndpoint(request, getUser(getRequestUserId(request)), endPointId)
+  def canDeleteEndpoint(request: RequestWithAttributes[_], endPointId: Long): Future[Boolean] = {
+    getUser(getRequestUserId(request)).flatMap { userInfo =>
+      canManageEndpoint(request, userInfo, endPointId)
+    }
   }
 
-  def canViewOwnCommunity(request: RequestWithAttributes[_]):Boolean = {
+  def canViewOwnCommunity(request: RequestWithAttributes[_]): Future[Boolean] = {
     checkIsAuthenticated(request)
   }
 
-  def canDeleteCommunity(request: RequestWithAttributes[_], communityId: Long):Boolean = {
+  def canDeleteCommunity(request: RequestWithAttributes[_], communityId: Long): Future[Boolean] = {
     checkTestBedAdmin(request)
   }
 
-  def canUpdateCommunity(request: RequestWithAttributes[_], communityId: Long):Boolean = {
-    canManageCommunity(request, getUser(getRequestUserId(request)), communityId)
+  def canUpdateCommunity(request: RequestWithAttributes[_], communityId: Long): Future[Boolean] = {
+    getUser(getRequestUserId(request)).flatMap { userInfo =>
+      canManageCommunity(request, userInfo, communityId)
+    }
   }
 
-  def canViewCommunityBasic(request: RequestWithAttributes[_], communityId: Long):Boolean = {
-    var ok = false
-    val userInfo = getUser(getRequestUserId(request))
-    if (isTestBedAdmin(userInfo)) {
-      ok = true
-    } else if (isCommunityAdmin(userInfo)) {
-      ok = isOwnCommunity(userInfo, communityId) || communityId == Constants.DefaultCommunityId
-    } else {
-      ok = isOwnCommunity(userInfo, communityId)
+  def canViewCommunityBasic(request: RequestWithAttributes[_], communityId: Long): Future[Boolean] = {
+    val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
+      if (isTestBedAdmin(userInfo)) {
+        Future.successful(true)
+      } else if (isCommunityAdmin(userInfo)) {
+        Future.successful(isOwnCommunity(userInfo, communityId) || communityId == Constants.DefaultCommunityId)
+      } else {
+        Future.successful(isOwnCommunity(userInfo, communityId))
+      }
     }
-    setAuthResult(request, ok, "User cannot view the requested community")
+    check.map(setAuthResult(request, _, "User cannot view the requested community"))
   }
 
   private def isOwnCommunity(userInfo: User, communityId: Long): Boolean = {
     userInfo.organization.isDefined && userInfo.organization.get.community == communityId
   }
 
-  def canViewCommunityFull(request: RequestWithAttributes[_], communityId: Long):Boolean = {
+  def canViewCommunityFull(request: RequestWithAttributes[_], communityId: Long): Future[Boolean] = {
     canManageCommunity(request, communityId)
   }
 
-  def canCreateCommunity(request: RequestWithAttributes[_]):Boolean = {
+  def canCreateCommunity(request: RequestWithAttributes[_]): Future[Boolean] = {
     checkTestBedAdmin(request)
   }
 
-  def canViewCommunities(request: RequestWithAttributes[_], communityIds: Option[List[Long]]):Boolean = {
-    var ok = false
-    val userInfo = getUser(getRequestUserId(request))
-    if (isTestBedAdmin(userInfo)) {
-      ok = true
-    } else if (isCommunityAdmin(userInfo)) {
-      // There should be only a single community requested.
-      if (communityIds.isDefined && communityIds.get.size == 1) {
-        ok = canManageCommunity(request, userInfo, communityIds.get.head)
+  def canViewCommunities(request: RequestWithAttributes[_], communityIds: Option[List[Long]]): Future[Boolean] = {
+    val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
+      if (isTestBedAdmin(userInfo)) {
+        Future.successful(true)
+      } else if (isCommunityAdmin(userInfo)) {
+        // There should be only a single community requested.
+        if (communityIds.isDefined && communityIds.get.size == 1) {
+          canManageCommunity(request, userInfo, communityIds.get.head)
+        } else {
+          Future.successful(false)
+        }
+      } else {
+        Future.successful(false)
       }
     }
-    setAuthResult(request, ok, "User cannot view the requested community")
+    check.map(setAuthResult(request, _, "User cannot view the requested community"))
   }
 
-  def canLogout(request: RequestWithAttributes[_]):Boolean = {
-    val ok = true
-    setAuthResult(request, ok, "User cannot logout")
+  def canLogout(request: RequestWithAttributes[_]): Future[Boolean] = {
+    val check = Future.successful(true)
+    check.map(setAuthResult(request, _, "User cannot logout"))
   }
 
-  def canCheckAnyUserEmail(request: RequestWithAttributes[_]):Boolean = {
-    val userInfo = getUser(getRequestUserId(request))
-    setAuthResult(request, isTestBedAdmin(userInfo) || isCommunityAdmin(userInfo) || isOrganisationAdmin((userInfo)), "User cannot check verify user data")
+  def canCheckAnyUserEmail(request: RequestWithAttributes[_]): Future[Boolean] = {
+    val check = getUser(getRequestUserId(request)).map { userInfo =>
+      isTestBedAdmin(userInfo) || isCommunityAdmin(userInfo) || isOrganisationAdmin(userInfo)
+    }
+    check.map(setAuthResult(request, _, "User cannot check user data"))
   }
 
-  def canCheckUserEmail(request: RequestWithAttributes[_], organisationId: Long):Boolean = {
-    val userInfo = getUser(getRequestUserId(request))
-    val ok = isAnyAdminType(userInfo) && userInfo.organization.isDefined && userInfo.organization.get.id == organisationId
-    setAuthResult(request, ok, "User cannot manage own organisation")
+  def canCheckUserEmail(request: RequestWithAttributes[_], organisationId: Long): Future[Boolean] = {
+    val check = getUser(getRequestUserId(request)).map { userInfo =>
+      isAnyAdminType(userInfo) && userInfo.organization.isDefined && userInfo.organization.get.id == organisationId
+    }
+    check.map(setAuthResult(request, _, "User cannot manage own organisation"))
   }
 
-  def canCheckSystemAdminEmail(request: RequestWithAttributes[AnyContent]):Boolean = {
+  def canCheckSystemAdminEmail(request: RequestWithAttributes[AnyContent]): Future[Boolean] = {
     checkTestBedAdmin(request)
   }
 
-  def canCheckCommunityAdminEmail(request: RequestWithAttributes[AnyContent], communityId: Long):Boolean = {
+  def canCheckCommunityAdminEmail(request: RequestWithAttributes[AnyContent], communityId: Long): Future[Boolean] = {
     canManageCommunity(request, communityId)
   }
 
-  def canCheckOrganisationUserEmail(request: RequestWithAttributes[AnyContent], organisationId: Long):Boolean = {
-    canManageOrganisationFull(request, getUser(getRequestUserId(request)), organisationId)
-  }
-
-  def canLogin(request: RequestWithAttributes[_]):Boolean = {
-    val ok = true
-    setAuthResult(request, ok, "User not allowed to login")
-  }
-
-  def canUpdateActor(request: RequestWithAttributes[_], actorId: Long):Boolean = {
-    canManageActor(request, actorId)
-  }
-
-  def canDeleteActor(request: RequestWithAttributes[_], actorId: Long):Boolean = {
-    canManageActor(request, actorId)
-  }
-
-  def canSubmitFeedback(request: RequestWithAttributes[_]):Boolean = {
-    val ok = true
-    setAuthResult(request, ok, "User not allowed to submit feedback")
-  }
-
-  def canViewConfiguration(request: RequestWithAttributes[_]):Boolean = {
-    val ok = true
-    setAuthResult(request, ok, "User not allowed to view configuration")
-  }
-
-  def canUpdateOwnProfile(request: RequestWithAttributes[_]):Boolean = {
-    var ok = checkIsAuthenticated(request)
-    if (ok) {
-      val userId = getRequestUserId(request)
-      ok = !Configurations.AUTHENTICATION_SSO_ENABLED &&
-        (!Configurations.DEMOS_ENABLED || userId != Configurations.DEMOS_ACCOUNT)
+  def canCheckOrganisationUserEmail(request: RequestWithAttributes[AnyContent], organisationId: Long): Future[Boolean] = {
+    getUser(getRequestUserId(request)).flatMap { userInfo =>
+      canManageOrganisationFull(request, userInfo, organisationId)
     }
-    setAuthResult(request, ok, "User cannot edit own profile")
   }
 
-  def canViewOwnProfile(request: RequestWithAttributes[_]):Boolean = {
+  def canLogin(request: RequestWithAttributes[_]): Future[Boolean] = {
+    val check = Future.successful(true)
+    check.map(setAuthResult(request, _, "User not allowed to login"))
+  }
+
+  def canUpdateActor(request: RequestWithAttributes[_], actorId: Long): Future[Boolean] = {
+    canManageActor(request, actorId)
+  }
+
+  def canDeleteActor(request: RequestWithAttributes[_], actorId: Long): Future[Boolean] = {
+    canManageActor(request, actorId)
+  }
+
+  def canSubmitFeedback(request: RequestWithAttributes[_]): Future[Boolean] = {
+    val check = Future.successful(true)
+    check.map(setAuthResult(request, _, "User not allowed to submit feedback"))
+  }
+
+  def canViewConfiguration(request: RequestWithAttributes[_]): Future[Boolean] = {
+    val check = Future.successful(true)
+    check.map(setAuthResult(request, _, "User not allowed to view configuration"))
+  }
+
+  def canUpdateOwnProfile(request: RequestWithAttributes[_]): Future[Boolean] = {
+    val check = checkIsAuthenticated(request).flatMap { authenticated =>
+      if (authenticated) {
+        val userId = getRequestUserId(request)
+        Future.successful {
+          !Configurations.AUTHENTICATION_SSO_ENABLED && (!Configurations.DEMOS_ENABLED || userId != Configurations.DEMOS_ACCOUNT)
+        }
+      } else {
+        Future.successful(false)
+      }
+    }
+    check.map(setAuthResult(request, _, "User cannot edit own profile"))
+  }
+
+  def canViewOwnProfile(request: RequestWithAttributes[_]): Future[Boolean] = {
     checkIsAuthenticated(request)
   }
 
-  def canCreateUserInOwnOrganisation(request: RequestWithAttributes[_]):Boolean = {
+  def canCreateUserInOwnOrganisation(request: RequestWithAttributes[_]): Future[Boolean] = {
     canUpdateOwnOrganisation(request, ignoreExistingTests = true)
   }
 
-  def canViewOwnOrganisationnUsers(request: RequestWithAttributes[_]):Boolean = {
+  def canViewOwnOrganisationUsers(request: RequestWithAttributes[_]): Future[Boolean] = {
     checkIsAuthenticated(request)
   }
 
-  def canUpdateOwnOrganisationAndLandingPage(request: RequestWithAttributes[_], landingPageId: Option[Long]):Boolean = {
-    canUpdateOwnOrganisation(request, ignoreExistingTests = false) && (landingPageId.isEmpty || landingPageId.get == -1 || canManageLandingPage(request, landingPageId.get))
-  }
-
-  def canUpdateOwnOrganisation(request: RequestWithAttributes[_], ignoreExistingTests: Boolean):Boolean = {
-    var ok = false
-    val userId = getRequestUserId(request)
-    if (!Configurations.DEMOS_ENABLED || userId != Configurations.DEMOS_ACCOUNT) {
-      val userInfo = getUser(userId)
-      if (isTestBedAdmin(userInfo) || isCommunityAdmin(userInfo)) {
-        ok = true
-      } else if (isOrganisationAdmin(userInfo) && userInfo.organization.isDefined) {
-        if (ignoreExistingTests) {
-          ok = true
+  def canUpdateOwnOrganisationAndLandingPage(request: RequestWithAttributes[_], landingPageId: Option[Long]): Future[Boolean] = {
+    canUpdateOwnOrganisation(request, ignoreExistingTests = false).flatMap { check =>
+      if (check) {
+        Future.successful(true)
+      } else {
+        if (landingPageId.isEmpty || landingPageId.get == -1) {
+          Future.successful(true)
         } else {
-          val community = communityManager.getById(userInfo.organization.get.community)
-          if (community.isDefined) {
-            if (community.get.allowPostTestOrganisationUpdates) {
-              ok = true
-            } else {
-              ok = !testResultManager.testSessionsExistForOrganisation(userInfo.organization.get.id)
-            }
-          }
+          canManageLandingPage(request, landingPageId.get)
         }
       }
     }
-    setAuthResult(request, ok, "User cannot manage own organisation")
   }
 
-  def canViewOwnOrganisation(request: RequestWithAttributes[_]):Boolean = {
+  def canUpdateOwnOrganisation(request: RequestWithAttributes[_], ignoreExistingTests: Boolean): Future[Boolean] = {
+    val userId = getRequestUserId(request)
+    val check = if (!Configurations.DEMOS_ENABLED || userId != Configurations.DEMOS_ACCOUNT) {
+      getUser(userId).flatMap { userInfo =>
+        if (isTestBedAdmin(userInfo) || isCommunityAdmin(userInfo)) {
+          Future.successful(true)
+        } else if (isOrganisationAdmin(userInfo) && userInfo.organization.isDefined) {
+          if (ignoreExistingTests) {
+            Future.successful(true)
+          } else {
+            communityManager.getById(userInfo.organization.get.community).flatMap { community =>
+              if (community.isDefined) {
+                if (community.get.allowPostTestOrganisationUpdates) {
+                  Future.successful(true)
+                } else {
+                  testResultManager.testSessionsExistForOrganisation(userInfo.organization.get.id).map { exists =>
+                    !exists
+                  }
+                }
+              } else {
+                Future.successful(false)
+              }
+            }
+          }
+        } else {
+          Future.successful(false)
+        }
+      }
+    } else {
+      Future.successful(false)
+    }
+    check.map(setAuthResult(request, _, "User cannot manage own organisation"))
+  }
+
+  def canViewOwnOrganisation(request: RequestWithAttributes[_]): Future[Boolean] = {
     checkIsAuthenticated(request)
   }
 
-  def canUpdateConformanceCertificateSettings(request: RequestWithAttributes[_], communityId: Long):Boolean = {
+  def canUpdateConformanceCertificateSettings(request: RequestWithAttributes[_], communityId: Long): Future[Boolean] = {
     canManageCommunity(request, communityId)
   }
 
-  def canViewConformanceCertificateSettings(request: RequestWithAttributes[_], communityId: Long):Boolean = {
+  def canViewConformanceCertificateSettings(request: RequestWithAttributes[_], communityId: Long): Future[Boolean] = {
     canManageCommunity(request, communityId)
   }
 
-  def canCheckPendingTestSessionInteractions(request: RequestWithAttributes[_], communityId: Option[Long]): Boolean = {
-    if (communityId.isEmpty) {
-      checkTestBedAdmin(request)
-    } else {
-      canManageCommunity(request, communityId.get)
+  def canManageCommunity(request: RequestWithAttributes[_], userInfo: User, communityId: Long): Future[Boolean] = {
+    val check = Future.successful(isTestBedAdmin(userInfo) || (isCommunityAdmin(userInfo) && userInfo.organization.isDefined && userInfo.organization.get.community == communityId))
+    check.map(setAuthResult(request, _, "User cannot manage the requested community"))
+  }
+
+  def canViewConformanceSnapshot(request: RequestWithAttributes[_], snapshotId: Long): Future[Boolean] = {
+    getUser(getRequestUserId(request)).flatMap { userInfo =>
+      canViewConformanceSnapshot(request, userInfo, snapshotId)
     }
   }
 
-  def canManageCommunity(request: RequestWithAttributes[_], userInfo: User, communityId: Long): Boolean = {
-    var ok = false
-    if (isTestBedAdmin(userInfo)) {
-      ok = true
-    } else if (isCommunityAdmin(userInfo) && userInfo.organization.isDefined && userInfo.organization.get.community == communityId) {
-      ok = true
-    }
-    setAuthResult(request, ok, "User cannot manage the requested community")
-  }
-
-  def canViewConformanceSnapshot(request: RequestWithAttributes[_], snapshotId: Long): Boolean = {
-    canViewConformanceSnapshot(request, getUser(getRequestUserId(request)), snapshotId)
-  }
-
-  def canViewConformanceSnapshot(request: RequestWithAttributes[_], userInfo: User, snapshotId: Long): Boolean = {
-    var ok = false
-    if (isTestBedAdmin(userInfo)) {
-      ok = true
+  def canViewConformanceSnapshot(request: RequestWithAttributes[_], userInfo: User, snapshotId: Long): Future[Boolean] = {
+    val check = if (isTestBedAdmin(userInfo)) {
+      Future.successful(true)
     } else if (userInfo.organization.isDefined) {
-      val snapshot = conformanceManager.getConformanceSnapshot(snapshotId)
-      if (isCommunityAdmin(userInfo)) {
-        ok = snapshot.community == userInfo.organization.get.community
+      conformanceManager.getConformanceSnapshot(snapshotId).map { snapshot =>
+        if (isCommunityAdmin(userInfo)) {
+          snapshot.community == userInfo.organization.get.community
+        } else {
+          snapshot.community == userInfo.organization.get.community && snapshot.isPublic
+        }
+      }
+    } else {
+      Future.successful(false)
+    }
+    check.map(setAuthResult(request, _, "User cannot view the requested conformance snapshot"))
+  }
+
+  def canManageConformanceSnapshot(request: RequestWithAttributes[_], snapshotId: Long): Future[Boolean] = {
+    getUser(getRequestUserId(request)).flatMap { userInfo =>
+      canManageConformanceSnapshot(request, userInfo, snapshotId)
+    }
+  }
+
+  private def canManageConformanceSnapshot(request: RequestWithAttributes[_], userInfo: User, snapshotId: Long): Future[Boolean] = {
+    val check = if (isTestBedAdmin(userInfo)) {
+      Future.successful(true)
+    } else if (isCommunityAdmin(userInfo) && userInfo.organization.isDefined) {
+      conformanceManager.getConformanceSnapshot(snapshotId).map { snapshot =>
+        snapshot.community == userInfo.organization.get.community
+      }
+    } else {
+      Future.successful(false)
+    }
+    check.map(setAuthResult(request, _, "User cannot manage the requested conformance snapshot"))
+  }
+
+  def canManageCommunity(request: RequestWithAttributes[_], communityId: Long): Future[Boolean] = {
+    getUser(getRequestUserId(request)).flatMap { userInfo =>
+      canManageCommunity(request, userInfo, communityId)
+    }
+  }
+
+  def canManageOrganisationParameter(request: RequestWithAttributes[_], parameterId: Long): Future[Boolean] = {
+    val check = communityManager.getOrganisationParameterById(parameterId).flatMap { parameter =>
+      if (parameter.isDefined) {
+        canManageCommunity(request, parameter.get.community)
       } else {
-        ok = snapshot.community == userInfo.organization.get.community && snapshot.isPublic
+        Future.successful(false)
       }
     }
-    setAuthResult(request, ok, "User cannot view the requested conformance snapshot")
+    check.map(setAuthResult(request, _, "User cannot manage the requested parameter"))
   }
 
-  def canManageConformanceSnapshot(request: RequestWithAttributes[_], snapshotId: Long): Boolean = {
-    canManageConformanceSnapshot(request, getUser(getRequestUserId(request)), snapshotId)
-  }
-
-  private def canManageConformanceSnapshot(request: RequestWithAttributes[_], userInfo: User, snapshotId: Long): Boolean = {
-    var ok = false
-    if (isTestBedAdmin(userInfo)) {
-      ok = true
-    } else if (isCommunityAdmin(userInfo) && userInfo.organization.isDefined) {
-      val snapshot = conformanceManager.getConformanceSnapshot(snapshotId)
-      ok = snapshot.community == userInfo.organization.get.community
+  def canManageSystemParameter(request: RequestWithAttributes[_], parameterId: Long): Future[Boolean] = {
+    val check = communityManager.getSystemParameterById(parameterId).flatMap { parameter =>
+      if (parameter.isDefined) {
+        canManageCommunity(request, parameter.get.community)
+      } else {
+        Future.successful(false)
+      }
     }
-    setAuthResult(request, ok, "User cannot manage the requested conformance snapshot")
+    check.map(setAuthResult(request, _, "User cannot manage the requested parameter"))
   }
 
-  def canManageCommunity(request: RequestWithAttributes[_], communityId: Long): Boolean = {
-    canManageCommunity(request, getUser(getRequestUserId(request)), communityId)
-  }
-
-  def canManageOrganisationParameter(request: RequestWithAttributes[_], parameterId: Long): Boolean = {
-    val parameter = communityManager.getOrganisationParameterById(parameterId)
-    var ok = false
-    if (parameter.isDefined) {
-      ok = canManageCommunity(request, parameter.get.community)
-    }
-    setAuthResult(request, ok, "User cannot manage the requested parameter")
-  }
-
-  def canManageSystemParameter(request: RequestWithAttributes[_], parameterId: Long): Boolean = {
-    val parameter = communityManager.getSystemParameterById(parameterId)
-    var ok = false
-    if (parameter.isDefined) {
-      ok = canManageCommunity(request, parameter.get.community)
-    }
-    setAuthResult(request, ok, "User cannot manage the requested parameter")
-  }
-
-  def canDeleteObsoleteTestResultsForCommunity(request: RequestWithAttributes[_], communityId: Long):Boolean = {
+  def canDeleteObsoleteTestResultsForCommunity(request: RequestWithAttributes[_], communityId: Long): Future[Boolean] = {
     canManageCommunity(request, communityId)
   }
 
-  def canDeleteObsoleteTestResultsForOrganisation(request: RequestWithAttributes[_], organisationId: Long):Boolean = {
+  def canDeleteObsoleteTestResultsForOrganisation(request: RequestWithAttributes[_], organisationId: Long): Future[Boolean] = {
     canManageOrganisationBasic(request, organisationId)
   }
 
-  def canDeleteTestResults(request: RequestWithAttributes[_], communityId: Option[Long]):Boolean = {
+  def canDeleteTestResults(request: RequestWithAttributes[_], communityId: Option[Long]): Future[Boolean] = {
     if (communityId.isDefined) {
       canManageCommunity(request, communityId.get)
     } else {
@@ -1488,11 +1798,11 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     }
   }
 
-  def canDeleteAllObsoleteTestResults(request: RequestWithAttributes[_]):Boolean = {
+  def canDeleteAllObsoleteTestResults(request: RequestWithAttributes[_]): Future[Boolean] = {
     checkTestBedAdmin(request)
   }
 
-  def canViewConformanceOverview(request: RequestWithAttributes[_], communityIds: Option[List[Long]], snapshotId: Option[Long] = None):Boolean = {
+  def canViewConformanceOverview(request: RequestWithAttributes[_], communityIds: Option[List[Long]], snapshotId: Option[Long] = None): Future[Boolean] = {
     if (communityIds.isEmpty || (communityIds.isDefined && communityIds.get.size > 1)) {
       checkTestBedAdmin(request)
     } else {
@@ -1505,179 +1815,192 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     }
   }
 
-  def canManageDomainParameters(request: RequestWithAttributes[_], domainId: Long):Boolean = {
+  def canManageDomainParameters(request: RequestWithAttributes[_], domainId: Long): Future[Boolean] = {
     canManageDomain(request, domainId)
   }
 
-  def canViewDomainParametersForCommunity(request: RequestWithAttributes[_], communityId: Long):Boolean = {
+  def canViewDomainParametersForCommunity(request: RequestWithAttributes[_], communityId: Long): Future[Boolean] = {
     canManageCommunity(request, communityId)
   }
 
-  def canViewTestSuiteByTestCaseId(request: RequestWithAttributes[_], testCaseId: Long):Boolean = {
-    var ok = false
-    val userInfo = getUser(getRequestUserId(request))
-    if (isTestBedAdmin(userInfo)) {
-      ok = true
-    } else if (isCommunityAdmin(userInfo)) {
-      val testSuite = testSuiteManager.getTestSuiteOfTestCase(testCaseId)
-      ok = canManageDomain(request, userInfo, testSuite.domain)
-    } else {
-      // There must be a conformance statement for this.
-      val specId = conformanceManager.getSpecificationIdForTestCaseFromConformanceStatements(testCaseId)
-      if (specId.isDefined) {
-        ok = canViewSpecifications(request, userInfo, Some(List(specId.get)))
-      }
-    }
-    setAuthResult(request, ok, "User cannot view the requested test suite")
-  }
-
-  def canViewTestSuite(request: RequestWithAttributes[_], testSuiteId: Long):Boolean = {
-    var ok = false
-    val userInfo = getUser(getRequestUserId(request))
-    if (isTestBedAdmin(userInfo)) {
-      ok = true
-    } else if (isCommunityAdmin(userInfo)) {
-      val testSuite = testSuiteManager.getById(testSuiteId)
-      if (testSuite.isDefined) {
-        ok = canManageDomain(request, userInfo, testSuite.get.domain)
-      }
-    } else {
-      // There must be a conformance statement for this.
-      val specId = conformanceManager.getSpecificationIdForTestSuiteFromConformanceStatements(testSuiteId)
-      if (specId.isDefined) {
-        ok = canViewSpecifications(request, userInfo, Some(List(specId.get)))
-      }
-    }
-    setAuthResult(request, ok, "User doesn't have access to the requested test suite")
-  }
-
-  def canViewConformanceStatus(request: RequestWithAttributes[_], actorId: Long, sutId: Long, snapshotId: Option[Long] = None):Boolean = {
-    var ok = false
-    val userInfo = getUser(getRequestUserId(request))
-    if (isTestBedAdmin(userInfo)) {
-      ok = true
-    } else {
-      if (snapshotId.isDefined) {
-        ok = canManageConformanceSnapshot(request, userInfo, snapshotId.get)
+  def canViewTestSuiteByTestCaseId(request: RequestWithAttributes[_], testCaseId: Long): Future[Boolean] = {
+    val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
+      if (isTestBedAdmin(userInfo)) {
+        Future.successful(true)
+      } else if (isCommunityAdmin(userInfo)) {
+        testSuiteManager.getTestSuiteOfTestCase(testCaseId).flatMap { testSuite =>
+          canManageDomain(request, userInfo, testSuite.domain)
+        }
       } else {
-        ok = canViewSystemsById(request, userInfo, Some(List(sutId)))
+        // There must be a conformance statement for this.
+        conformanceManager.getSpecificationIdForTestCaseFromConformanceStatements(testCaseId).flatMap { specId =>
+          if (specId.isDefined) {
+            canViewSpecifications(request, userInfo, Some(List(specId.get)))
+          } else {
+            Future.successful(false)
+          }
+        }
       }
     }
-    setAuthResult(request, ok, "User cannot view the requested conformance status")
+    check.map(setAuthResult(request, _, "User cannot view the requested test suite"))
   }
 
-  def canEditTestSuitesMulti(request: RequestWithAttributes[MultipartFormData[Files.TemporaryFile]], specification_id: Long):Boolean = {
-    canManageSpecification(request, specification_id)
+  def canViewTestSuite(request: RequestWithAttributes[_], testSuiteId: Long): Future[Boolean] = {
+    val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
+      if (isTestBedAdmin(userInfo)) {
+        Future.successful(true)
+      } else if (isCommunityAdmin(userInfo)) {
+        testSuiteManager.getById(testSuiteId).flatMap { testSuite =>
+          if (testSuite.isDefined) {
+            canManageDomain(request, userInfo, testSuite.get.domain)
+          } else {
+            Future.successful(false)
+          }
+        }
+      } else {
+        // There must be a conformance statement for this.
+        conformanceManager.getSpecificationIdForTestSuiteFromConformanceStatements(testSuiteId).flatMap { specId =>
+          if (specId.isDefined) {
+            canViewSpecifications(request, userInfo, Some(List(specId.get)))
+          } else {
+            Future.successful(false)
+          }
+        }
+      }
+    }
+    check.map(setAuthResult(request, _, "User doesn't have access to the requested test suite"))
   }
 
-  def canEditTestSuite(request: RequestWithAttributes[AnyContent], testSuiteId: Long):Boolean = {
-    val testSuite = testSuiteManager.getById(testSuiteId)
-    canManageDomain(request, testSuite.get.domain)
+  def canViewConformanceStatus(request: RequestWithAttributes[_], actorId: Long, sutId: Long, snapshotId: Option[Long] = None): Future[Boolean] = {
+    val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
+      if (isTestBedAdmin(userInfo)) {
+        Future.successful(true)
+      } else {
+        if (snapshotId.isDefined) {
+          canManageConformanceSnapshot(request, userInfo, snapshotId.get)
+        } else {
+          canViewSystemsById(request, userInfo, Some(List(sutId)))
+        }
+      }
+    }
+    check.map(setAuthResult(request, _, "User cannot view the requested conformance status"))
   }
 
-  def canEditTestCase(request: RequestWithAttributes[AnyContent], testCaseId: Long):Boolean = {
-    val testSuite = testSuiteManager.getTestSuiteOfTestCase(testCaseId)
-    canManageDomain(request, testSuite.domain)
+  def canEditTestSuite(request: RequestWithAttributes[AnyContent], testSuiteId: Long): Future[Boolean] = {
+    testSuiteManager.getById(testSuiteId).flatMap { testSuite =>
+      canManageDomain(request, testSuite.get.domain)
+    }
   }
 
-  def canEditTestSuites(request: RequestWithAttributes[_], specification_id: Long):Boolean = {
-    canManageSpecification(request, specification_id)
+  def canEditTestCase(request: RequestWithAttributes[AnyContent], testCaseId: Long): Future[Boolean] = {
+    testSuiteManager.getTestSuiteOfTestCase(testCaseId).flatMap { testSuite =>
+      canManageDomain(request, testSuite.domain)
+    }
   }
 
-  def canDeleteDomain(request: RequestWithAttributes[_], domain_id: Long):Boolean = {
+  def canDeleteDomain(request: RequestWithAttributes[_], domain_id: Long): Future[Boolean] = {
     checkTestBedAdmin(request)
   }
 
-  def canViewEndpointsById(request: RequestWithAttributes[_], ids: Option[List[Long]]):Boolean = {
-    canManageEndpoints(request, getUser(getRequestUserId(request)), ids)
+  def canViewEndpointsById(request: RequestWithAttributes[_], ids: Option[List[Long]]): Future[Boolean] = {
+    getUser(getRequestUserId(request)).flatMap { userInfo =>
+      canManageEndpoints(request, userInfo, ids)
+    }
   }
 
-  def canViewEndpoints(request: RequestWithAttributes[_], actorId: Long):Boolean = {
+  def canViewEndpoints(request: RequestWithAttributes[_], actorId: Long): Future[Boolean] = {
     canViewActor(request, actorId)
   }
 
-  def canCreateSpecification(request: RequestWithAttributes[_], domain: Long):Boolean = {
+  def canCreateSpecification(request: RequestWithAttributes[_], domain: Long): Future[Boolean] = {
     canUpdateDomain(request, domain)
   }
 
-  def canCreateParameter(request: RequestWithAttributes[_], endpointId: Long):Boolean = {
-    val endpoint = endpointManager.getById(endpointId)
-    canCreateEndpoint(request, endpoint.actor)
+  def canManageActor(request: RequestWithAttributes[_], userInfo: User, actor: Long): Future[Boolean] = {
+    specificationManager.getSpecificationOfActor(actor).flatMap { spec =>
+      canManageDomain(request, userInfo, spec.domain)
+    }
   }
 
-  def canManageActor(request: RequestWithAttributes[_], userInfo: User, actor: Long):Boolean = {
-    val spec = specificationManager.getSpecificationOfActor(actor)
-    canManageDomain(request, userInfo, spec.domain)
+  def canManageActor(request: RequestWithAttributes[_], actor: Long): Future[Boolean] = {
+    getUser(getRequestUserId(request)).flatMap { userInfo =>
+      canManageActor(request, userInfo, actor)
+    }
   }
 
-  def canManageActor(request: RequestWithAttributes[_], actor: Long):Boolean = {
-    canManageActor(request, getUser(getRequestUserId(request)), actor)
-  }
-
-  def canCreateEndpoint(request: RequestWithAttributes[_], actor: Long):Boolean = {
+  def canCreateEndpoint(request: RequestWithAttributes[_], actor: Long): Future[Boolean] = {
     canManageActor(request, actor)
   }
 
-  def canManageSpecification(request: RequestWithAttributes[_], userInfo: User, specificationId: Long): Boolean = {
-    val spec = specificationManager.getSpecificationById(specificationId)
-    canManageDomain(request, userInfo, spec.domain)
+  def canManageSpecification(request: RequestWithAttributes[_], specificationId: Long): Future[Boolean] = {
+    specificationManager.getSpecificationById(specificationId).flatMap { spec =>
+      canManageDomain(request, spec.domain)
+    }
   }
 
-  def canManageSpecification(request: RequestWithAttributes[_], specificationId: Long): Boolean = {
-    val spec = specificationManager.getSpecificationById(specificationId)
-    canManageDomain(request, spec.domain)
+  def canManageSpecificationGroup(request: RequestWithAttributes[_], groupId: Long): Future[Boolean] = {
+    specificationManager.getSpecificationGroupById(groupId).flatMap { group =>
+      canManageDomain(request, group.domain)
+    }
   }
 
-  def canManageSpecificationGroup(request: RequestWithAttributes[_], groupId: Long): Boolean = {
-    val group = specificationManager.getSpecificationGroupById(groupId)
-    canManageDomain(request, group.domain)
-  }
-
-  def canManageSpecifications(request: RequestWithAttributes[_], specIds: List[Long]): Boolean = {
-    val userInfo = getUser(getRequestUserId(request))
-    var ok = false
-    if (isTestBedAdmin(userInfo)) {
-      ok = true
-    } else {
-      if (isCommunityAdmin(userInfo)) {
-        val specDomainIds = mutable.Set[Long]()
-        val specs = specificationManager.getSpecificationsById(specIds)
-        specs.foreach(spec => specDomainIds += spec.domain)
-        specDomainIds.foreach{ domainId =>
-          canManageDomain(request, userInfo, domainId)
+  def canManageSpecifications(request: RequestWithAttributes[_], specIds: List[Long]): Future[Boolean] = {
+    val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
+      if (isTestBedAdmin(userInfo)) {
+        Future.successful(true)
+      } else if (isCommunityAdmin(userInfo)) {
+        specificationManager.getSpecificationsById(specIds).flatMap { specs =>
+          canManageDomains(request, userInfo, specs.map(_.domain).toSet)
         }
-        ok = true
+      } else {
+        Future.successful(false)
       }
     }
-    setAuthResult(request, ok, "User cannot manage the requested specifications")
+    check.map(setAuthResult(request, _, "User cannot manage the requested specifications"))
   }
 
 
-  def canCreateActor(request: RequestWithAttributes[_], specificationId: Long):Boolean = {
+  def canCreateActor(request: RequestWithAttributes[_], specificationId: Long): Future[Boolean] = {
     canManageSpecification(request, specificationId)
   }
 
-  def canManageDomain(request: RequestWithAttributes[_], userInfo: User, domainId: Long):Boolean = {
-    var ok = false
-    if (isTestBedAdmin(userInfo)) {
-      ok = true
-    } else {
-      if (isCommunityAdmin(userInfo) && userInfo.organization.isDefined) {
-        val communityDomain = getCommunityDomain(userInfo.organization.get.community)
-        if (communityDomain.isEmpty || communityDomain.get == domainId) {
-          ok = true
-        }
+  def canManageDomain(request: RequestWithAttributes[_], userInfo: User, domainId: Long): Future[Boolean] = {
+    val check = if (isTestBedAdmin(userInfo)) {
+      Future.successful(true)
+    } else if (isCommunityAdmin(userInfo) && userInfo.organization.isDefined) {
+      getCommunityDomain(userInfo.organization.get.community).map { communityDomain =>
+        communityDomain.isEmpty || communityDomain.get == domainId
       }
+    } else {
+      Future.successful(false)
     }
-    setAuthResult(request, ok, "User cannot manage the requested domain")
+    check.map(setAuthResult(request, _, "User cannot manage the requested domain"))
   }
 
-  def canManageDomain(request: RequestWithAttributes[_], domainId: Long):Boolean = {
-    canManageDomain(request, getUser(getRequestUserId(request)), domainId)
+  private def canManageDomains(request: RequestWithAttributes[_], userInfo: User, domainIds: Set[Long]): Future[Boolean] = {
+    val check = if (isTestBedAdmin(userInfo)) {
+      Future.successful(true)
+    } else if (isCommunityAdmin(userInfo) && userInfo.organization.isDefined) {
+      getCommunityDomain(userInfo.organization.get.community).map { communityDomain =>
+        communityDomain.isEmpty || domainIds.isEmpty || (domainIds.size == 1 && domainIds.head == communityDomain.get)
+      }
+    } else {
+      Future.successful(false)
+    }
+    check.map(setAuthResult(request, _, "User cannot manage the requested domain"))
   }
 
-  def canApplySandboxDataMulti(request: RequestWithAttributes[MultipartFormData[Files.TemporaryFile]]): Boolean = {
-    setAuthResult(request, Configurations.DATA_WEB_INIT_ENABLED && !repositoryUtils.getDataLockFile().exists(), "Web-based data initialisation is not enabled")
+  def canManageDomain(request: RequestWithAttributes[_], domainId: Long): Future[Boolean] = {
+    getUser(getRequestUserId(request)).flatMap { userInfo =>
+      canManageDomain(request, userInfo, domainId)
+    }
+  }
+
+  def canApplySandboxDataMulti(request: RequestWithAttributes[MultipartFormData[Files.TemporaryFile]]): Future[Boolean] = {
+    val check = Future.successful {
+      Configurations.DATA_WEB_INIT_ENABLED && !repositoryUtils.getDataLockFile().exists()
+    }
+    check.map(setAuthResult(request, _, "Web-based data initialisation is not enabled"))
   }
 
   private def isCommunityAdmin(userInfo: User): Boolean = {
@@ -1696,33 +2019,43 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     isTestBedAdmin(userInfo) || isCommunityAdmin(userInfo) || isOrganisationAdmin(userInfo)
   }
 
-  def canUpdateDomain(request: RequestWithAttributes[_], domainId: Long):Boolean = {
+  def canUpdateDomain(request: RequestWithAttributes[_], domainId: Long): Future[Boolean] = {
     canManageDomain(request, domainId)
   }
 
-  def checkTestBedAdmin(request: RequestWithAttributes[_]): Boolean = {
-    val ok = isTestBedAdmin(getRequestUserId(request))
-    setAuthResult(request, ok, "Only test bed administrators can perform this operation")
+  def checkTestBedAdmin(request: RequestWithAttributes[_]): Future[Boolean] = {
+    val check = isTestBedAdmin(getRequestUserId(request))
+    check.map(setAuthResult(request, _, "Only test bed administrators can perform this operation"))
   }
 
-  def canCreateDomain(request: RequestWithAttributes[_]):Boolean = {
+  def checkTestBedAdmin(request: RequestHeader): Future[Boolean] = {
+    val check = isTestBedAdmin(getRequestUserId(request))
+    check.map(checkAuthResult(_, "Only test bed administrators can perform this operation"))
+  }
+
+  def canCreateDomainAsync(request: RequestWithAttributes[_]): Future[Boolean] = {
     checkTestBedAdmin(request)
   }
 
-  def canDeleteAnyDomain(request: RequestWithAttributes[_]):Boolean = {
+  def canCreateDomain(request: RequestWithAttributes[_]): Future[Boolean] = {
     checkTestBedAdmin(request)
   }
 
-  def canViewActor(request: RequestWithAttributes[_], actor_id: Long): Boolean = {
-    val specId = specificationManager.getSpecificationIdOfActor(actor_id)
-    canViewSpecifications(request, Some(List(specId)))
+  def canDeleteAnyDomain(request: RequestWithAttributes[_]): Future[Boolean] = {
+    checkTestBedAdmin(request)
   }
 
-  def canViewActorsBySpecificationId(request: RequestWithAttributes[_], spec_id: Long):Boolean = {
+  def canViewActor(request: RequestWithAttributes[_], actor_id: Long): Future[Boolean] = {
+    specificationManager.getSpecificationIdOfActor(actor_id).flatMap { specId =>
+      canViewSpecifications(request, Some(List(specId)))
+    }
+  }
+
+  def canViewActorsBySpecificationId(request: RequestWithAttributes[_], spec_id: Long): Future[Boolean] = {
     canViewSpecifications(request, Some(List(spec_id)))
   }
 
-  def canViewSpecificationsByDomainId(request: RequestWithAttributes[_], domain_id: Long):Boolean = {
+  def canViewSpecificationsByDomainId(request: RequestWithAttributes[_], domain_id: Long): Future[Boolean] = {
     canViewDomains(request, Some(List(domain_id)))
   }
 
@@ -1735,135 +2068,141 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     true
   }
 
-  def canViewSpecifications(request: RequestWithAttributes[_], userInfo: User, ids: Option[List[Long]]):Boolean = {
-    var ok = false
-    if (isTestBedAdmin(userInfo)) {
-      ok = true
+  def canViewSpecifications(request: RequestWithAttributes[_], userInfo: User, ids: Option[List[Long]]): Future[Boolean] = {
+    val check = if (isTestBedAdmin(userInfo)) {
+      Future.successful(true)
     } else {
-      val userDomain = getVisibleDomainForUser(userInfo)
-      if (userDomain.isDefined) {
-        if (ids.isDefined && ids.get.nonEmpty) {
-          val specs = specificationManager.getSpecifications(ids)
-          ok = specificationsMatchDomain(specs, userDomain.get)
+      getVisibleDomainForUser(userInfo).flatMap { userDomain =>
+        if (userDomain.isDefined) {
+          if (ids.isDefined && ids.get.nonEmpty) {
+            specificationManager.getSpecifications(ids).map { specs =>
+              specificationsMatchDomain(specs, userDomain.get)
+            }
+          } else {
+            Future.successful(false)
+          }
+        } else {
+          Future.successful(true)
+        }
+      }
+    }
+    check.map(setAuthResult(request, _, "User doesn't have access to the requested specification(s)"))
+  }
+
+  def canViewSpecifications(request: RequestWithAttributes[_], ids: Option[List[Long]]): Future[Boolean] = {
+    getUser(getRequestUserId(request)).flatMap { userInfo =>
+      canViewSpecifications(request, userInfo, ids)
+    }
+  }
+
+  def canViewDomainByCommunityId(request: RequestWithAttributes[_], communityId: Long): Future[Boolean] = {
+    val userId = getRequestUserId(request)
+    val check = isTestBedAdmin(userId).flatMap { isAdmin =>
+      if (!isAdmin) {
+        getUserOrganisation(userId).map { userInfo =>
+          userInfo.isDefined && userInfo.get.community == communityId
         }
       } else {
-        ok = true
+        Future.successful(true)
       }
     }
-    setAuthResult(request, ok, "User doesn't have access to the requested specification(s)")
+    check.map(setAuthResult(request, _, "User doesn't have access to the requested domain(s)"))
   }
 
-  def canViewSpecifications(request: RequestWithAttributes[_], ids: Option[List[Long]]):Boolean = {
-    canViewSpecifications(request, getUser(getRequestUserId(request)), ids)
-  }
-
-  def canViewDomainByCommunityId(request: RequestWithAttributes[_], communityId: Long):Boolean = {
-    var ok = false
+  def canViewDomainBySpecificationId(request: RequestWithAttributes[_], specId: Long): Future[Boolean] = {
     val userId = getRequestUserId(request)
-    if (isTestBedAdmin(userId)) {
-      ok = true
-    } else {
-      val userInfo = getUserOrganisation(userId)
-      if (userInfo.isDefined && userInfo.get.community == communityId) {
-        ok = true
-      }
-    }
-    setAuthResult(request, ok, "User doesn't have access to the requested domain(s)")
-  }
-
-  def canViewDomainBySpecificationId(request: RequestWithAttributes[_], specId: Long):Boolean = {
-    var ok = false
-    val userId = getRequestUserId(request)
-    if (isTestBedAdmin(userId)) {
-      ok = true
-    } else {
-      val userDomain = getVisibleDomainForUser(userId)
-      if (userDomain.isDefined) {
-        val spec = specificationManager.getSpecificationById(specId)
-        if (spec.domain == userDomain.get) {
-          ok = true
-        }
+    val check = isTestBedAdmin(userId).flatMap { isAdmin =>
+      if (isAdmin) {
+        Future.successful(true)
       } else {
-        ok = true
+        getVisibleDomainForUser(userId).flatMap { userDomain =>
+          if (userDomain.isDefined) {
+            specificationManager.getSpecificationById(specId).map { spec =>
+              spec.domain == userDomain.get
+            }
+          } else {
+            Future.successful(true)
+          }
+        }
       }
     }
-    setAuthResult(request, ok, "User doesn't have access to the requested domain(s)")
+    check.map(setAuthResult(request, _, "User doesn't have access to the requested domain(s)"))
   }
 
-  def canViewDomains(request: RequestWithAttributes[_], userInfo: User, ids: Option[List[Long]]):Boolean = {
-    var ok = false
-    if (isTestBedAdmin(userInfo)) {
-      ok = true
+  def canViewDomains(request: RequestWithAttributes[_], userInfo: User, ids: Option[List[Long]]): Future[Boolean] = {
+    val check = if (isTestBedAdmin(userInfo)) {
+      Future.successful(true)
     } else {
       // Users are either linked to a community or not (in which case they view all domains).
-      val domainLinkedToUser = getVisibleDomainForUser(userInfo)
-      if (domainLinkedToUser.isDefined) {
-        // The list of domains should include only the user's domain.
-        if (ids.isDefined && ids.get.size == 1 && ids.get.head == domainLinkedToUser.get) {
-          ok = true
+      getVisibleDomainForUser(userInfo).flatMap { domainLinkedToUser =>
+        if (domainLinkedToUser.isDefined) {
+          // The list of domains should include only the user's domain.
+          Future.successful(ids.isDefined && ids.get.size == 1 && ids.get.head == domainLinkedToUser.get)
+        } else {
+          Future.successful(true)
         }
-      } else {
-        ok = true
       }
     }
-    setAuthResult(request, ok, "User doesn't have access to the requested domain(s)")
+    check.map(setAuthResult(request, _, "User doesn't have access to the requested domain(s)"))
   }
 
-  def canViewDomains(request: RequestWithAttributes[_], ids: Option[List[Long]]):Boolean = {
-    canViewDomains(request, getUser(getRequestUserId(request)), ids)
+  def canViewDomains(request: RequestWithAttributes[_], ids: Option[List[Long]]): Future[Boolean] = {
+    getUser(getRequestUserId(request)).flatMap { userInfo =>
+      canViewDomains(request, userInfo, ids)
+    }
   }
 
-  def canPreviewDocumentation(request: RequestWithAttributes[_]):Boolean = {
+  def canPreviewDocumentation(request: RequestWithAttributes[_]): Future[Boolean] = {
     checkIsAuthenticated(request)
   }
 
-  private def getUser(userId: Long): User = {
-    val user = userManager.getUserById(userId)
-    if (user.isEmpty) {
-      throw UnauthorizedAccessException("User not found")
-    } else {
-      user.get
+  private def getUser(userId: Long): Future[User] = {
+    userManager.getUserByIdAsync(userId).map { user =>
+      if (user.isEmpty) {
+        throw UnauthorizedAccessException("User not found")
+      } else {
+        user.get
+      }
     }
   }
 
-  private def getUserOrganisation(userId: Long): Option[Organizations] = {
-    getUser(userId).organization
-  }
-
-  private def getCommunityDomain(communityId: Long): Option[Long] = {
-    val community = communityManager.getById(communityId)
-    if (community.isDefined) {
-      community.get.domain
-    } else {
-      None
+  private def getUserOrganisation(userId: Long): Future[Option[Organizations]] = {
+    getUser(userId).map { user =>
+      user.organization
     }
   }
 
-  private def getVisibleDomainForUser(userInfo: User): Option[Long] = {
-    var userDomain: Option[Long] = null
+  private def getCommunityDomain(communityId: Long): Future[Option[Long]] = {
+    communityManager.getById(communityId).map { community =>
+      if (community.isDefined) {
+        community.get.domain
+      } else {
+        None
+      }
+    }
+  }
+
+  private def getVisibleDomainForUser(userInfo: User): Future[Option[Long]] = {
     if (userInfo.organization.isDefined) {
-      userDomain = getCommunityDomain(userInfo.organization.get.community)
+      getCommunityDomain(userInfo.organization.get.community)
     } else {
-      userDomain = None
+      Future.successful(None)
     }
-    userDomain
   }
 
-  private def getVisibleDomainForUser(userId: Long): Option[Long] = {
-    getVisibleDomainForUser(getUser(userId))
+  private def getVisibleDomainForUser(userId: Long): Future[Option[Long]] = {
+    getUser(userId).flatMap { userInfo =>
+      getVisibleDomainForUser(userInfo)
+    }
   }
 
-  private def checkIsAuthenticated(request: RequestWithAttributes[_]): Boolean = {
+  private def checkIsAuthenticated(request: RequestWithAttributes[_]): Future[Boolean] = {
     getRequestUserId(request)
-    var ok = false
-    if (checkHasPrincipal(request, skipForNonSSO = true)) {
-      ok = true
-      setAuthResult(request, ok, "User is not authenticated")
-    }
-    ok
+    val check = checkHasPrincipal(request, skipForNonSSO = true)
+    check.map(setAuthResult(request, _, "User is not authenticated"))
   }
 
-  private def isTestBedAdmin(userId: Long): Boolean = {
+  private def isTestBedAdmin(userId: Long): Future[Boolean] = {
     accountManager.isSystemAdmin(userId)
   }
 
@@ -1876,7 +2215,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     request.headers.get(HmacUtils.HMAC_HEADER_TOKEN).isDefined && request.headers.get(HmacUtils.HMAC_HEADER_TIMESTAMP).isDefined
   }
 
-  def getRequestUserId(request: RequestWithAttributes[_]): Long = {
+  private def getRequestUserId(request: RequestHeader): Long = {
     val userId = ParameterExtractor.extractOptionalUserId(request)
     if (userId.isEmpty) {
       throwError("User is not authenticated.")
@@ -1886,71 +2225,78 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     }
   }
 
+  def getUserIdFromRequest(request: RequestWithAttributes[_]): Future[Long] = {
+    Future.successful {
+      getRequestUserId(request)
+    }
+  }
+
   private def throwError(message: String): Unit = {
     val error = UnauthorizedAccessException(message)
     logger.warn("Unauthorised access detected ["+message+"]", error)
     throw error
   }
 
-  private def setAuthResult(request: RequestWithAttributes[_], ok: Boolean, message: String): Boolean = {
-    if (!request.attributes.contains(AuthorizationManager.AUTHORIZATION_CHECKED)) {
-      request.attributes += (AuthorizationManager.AUTHORIZATION_CHECKED -> "")
-    }
+  private def checkAuthResult(ok: Boolean, message: String): Boolean = {
     if (!ok) {
       throwError(message)
     }
     ok
   }
 
-  def getAccountInfo(request: RequestWithAttributes[_]): ActualUserInfo = {
-    val accountInfo = getPrincipal(request)
-    val userAccounts = accountManager.getUserAccountsForUid(accountInfo.uid)
-    val userInfo = new ActualUserInfo(accountInfo.uid, accountInfo.email, accountInfo.firstName, accountInfo.lastName, userAccounts)
-    userInfo
+  private def setAuthResult(request: RequestWithAttributes[_], ok: Boolean, message: String): Boolean = {
+    if (!request.authorised) {
+      request.authorised = true
+    }
+    checkAuthResult(ok, message)
   }
 
-  def getPrincipal(request: RequestWithAttributes[_]): ActualUserInfo = {
-    var userInfo: ActualUserInfo = null
-    val webContext = new PlayWebContext(request)
-    val profileManager = new ProfileManager(webContext, playSessionStore)
-    val profile = profileManager.getProfile()
-    if (profile.isEmpty) {
-      logger.error("Lookup for a real user's data failed due to a missing profile.")
-    } else {
-      val uid = profile.get().getId
-      val userAttributes = profile.get().getAttributes
-      var email: String = null
-      var firstName: String = null
-      var lastName: String = null
-      if (userAttributes != null) {
-        email = userAttributes.get(Constants.UserAttributeEmail).asInstanceOf[String]
-        firstName = userAttributes.get(Constants.UserAttributeFirstName).asInstanceOf[String]
-        lastName = userAttributes.get(Constants.UserAttributeLastName).asInstanceOf[String]
-      }
-      if (uid == null || email == null || firstName == null || lastName == null) {
-        logger.error("User profile did not contain expected information [" + uid + "][" + email + "][" + firstName + "][" + lastName + "]")
-      } else {
-        userInfo = new ActualUserInfo(uid, email, firstName, lastName)
+  def getAccountInfo(request: RequestWithAttributes[_]): Future[ActualUserInfo] = {
+    getPrincipal(request).flatMap { accountInfo =>
+      accountManager.getUserAccountsForUid(accountInfo.uid).map { userAccounts =>
+        new ActualUserInfo(accountInfo.uid, accountInfo.email, accountInfo.firstName, accountInfo.lastName, userAccounts)
       }
     }
-    userInfo
   }
 
-  private def checkHasPrincipal(request: RequestWithAttributes[_], skipForNonSSO: Boolean): Boolean = {
-    var ok = false
-    if (Configurations.AUTHENTICATION_SSO_ENABLED) {
-      val principal = getPrincipal(request)
-      if (principal != null) {
-        ok = true
+  def getPrincipal(request: RequestWithAttributes[_]): Future[ActualUserInfo] = {
+    Future.successful {
+      var userInfo: ActualUserInfo = null
+      val webContext = new PlayWebContext(request)
+      val profileManager = new ProfileManager(webContext, playSessionStore)
+      val profile = profileManager.getProfile()
+      if (profile.isEmpty) {
+        logger.error("Lookup for a real user's data failed due to a missing profile.")
+      } else {
+        val uid = profile.get().getId
+        val userAttributes = profile.get().getAttributes
+        var email: String = null
+        var firstName: String = null
+        var lastName: String = null
+        if (userAttributes != null) {
+          email = userAttributes.get(Constants.UserAttributeEmail).asInstanceOf[String]
+          firstName = userAttributes.get(Constants.UserAttributeFirstName).asInstanceOf[String]
+          lastName = userAttributes.get(Constants.UserAttributeLastName).asInstanceOf[String]
+        }
+        if (uid == null || email == null || firstName == null || lastName == null) {
+          logger.error("User profile did not contain expected information [" + uid + "][" + email + "][" + firstName + "][" + lastName + "]")
+        } else {
+          userInfo = new ActualUserInfo(uid, email, firstName, lastName)
+        }
+      }
+      userInfo
+    }
+  }
+
+  private def checkHasPrincipal(request: RequestWithAttributes[_], skipForNonSSO: Boolean): Future[Boolean] = {
+    val check = if (Configurations.AUTHENTICATION_SSO_ENABLED) {
+      getPrincipal(request).map { principal =>
+        principal != null
       }
     } else {
-      if (skipForNonSSO) {
-        ok = true
-      } else {
-        ok = false
-      }
+      Future.successful(skipForNonSSO)
     }
-    setAuthResult(request, ok, "User is not authenticated")
+    check.map(setAuthResult(request, _, "User is not authenticated"))
   }
 
 }

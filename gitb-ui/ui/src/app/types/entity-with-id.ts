@@ -1,6 +1,7 @@
-export interface EntityWithId {
+import {Id} from './id';
 
-    id: number,
+export interface EntityWithId extends Id {
+
     [key: string]: any
 
 }

@@ -2,7 +2,7 @@ package com.gitb.engine.validation.handlers.number;
 
 import com.gitb.core.Configuration;
 import com.gitb.engine.validation.ValidationHandler;
-import com.gitb.engine.validation.handlers.common.AbstractValidator;
+import com.gitb.engine.validation.handlers.common.SimpleValidator;
 import com.gitb.tr.TestStepReportType;
 import com.gitb.types.BooleanType;
 import com.gitb.types.DataType;
@@ -15,10 +15,10 @@ import java.util.Map;
  * Created by Roch Bertucat
  */
 @ValidationHandler(name="NumberValidator")
-public class NumberValidator extends AbstractValidator {
+public class NumberValidator extends SimpleValidator {
 
-    private final static String ACTUAL_NUMBER_ARGUMENT_NAME = "actualnumber";
-    private final static String EXPECTED_NUMBER_ARGUMENT_NAME = "expectednumber";
+    private final static String ACTUAL_NUMBER_ARGUMENT_NAME = "actual";
+    private final static String EXPECTED_NUMBER_ARGUMENT_NAME = "expected";
     private final static String MODULE_DEFINITION_XML = "/validation/number-validator-definition.xml";
 
     public NumberValidator() {
@@ -27,14 +27,12 @@ public class NumberValidator extends AbstractValidator {
 
     @Override
     public TestStepReportType validate(List<Configuration> configurations, Map<String, DataType> inputs) {
-        NumberType actualnumber = (NumberType) inputs.get(ACTUAL_NUMBER_ARGUMENT_NAME);
-        NumberType expectednumber = (NumberType) inputs.get(EXPECTED_NUMBER_ARGUMENT_NAME);
+        NumberType actual = getAndConvert(inputs, ACTUAL_NUMBER_ARGUMENT_NAME, DataType.NUMBER_DATA_TYPE, NumberType.class);
+        NumberType expected = getAndConvert(inputs, EXPECTED_NUMBER_ARGUMENT_NAME, DataType.NUMBER_DATA_TYPE, NumberType.class);
 
         // process xpath
-        BooleanType result = new BooleanType(actualnumber.doubleValue() == expectednumber.doubleValue());
+        BooleanType result = new BooleanType(actual.doubleValue() == expected.doubleValue());
 
-        // return report
-        NumberReportHandler handler = new NumberReportHandler(actualnumber, expectednumber, result);
-        return handler.createReport();
+        return createReport(inputs, () -> new NumberReportHandler(actual, expected, result).createReport());
     }
 }

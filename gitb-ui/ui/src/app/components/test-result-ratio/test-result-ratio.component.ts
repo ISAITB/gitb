@@ -2,9 +2,10 @@ import {Component, ElementRef, HostListener, Input, OnInit} from '@angular/core'
 import {TestStatusBase} from '../test-status-base/test-status-base';
 
 @Component({
-  selector: 'app-test-result-ratio',
-  templateUrl: './test-result-ratio.component.html',
-  styleUrls: [ './test-result-ratio.component.less' ]
+    selector: 'app-test-result-ratio',
+    templateUrl: './test-result-ratio.component.html',
+    styleUrls: ['./test-result-ratio.component.less'],
+    standalone: false
 })
 export class TestResultRatioComponent extends TestStatusBase implements OnInit {
 

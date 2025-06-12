@@ -9,7 +9,10 @@ import { BsModalRef } from 'ngx-bootstrap/modal';
 import { Component, Input } from '@angular/core';
 import { ValidationState } from 'src/app/types/validation-state';
 
-@Component({ template: '' })
+@Component({
+    template: '',
+    standalone: false
+})
 export abstract class BaseParameterModalComponent extends BaseComponent {
 
   @Input() parameter!: Partial<Parameter>

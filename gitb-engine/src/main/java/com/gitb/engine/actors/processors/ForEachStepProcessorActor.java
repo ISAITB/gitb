@@ -37,7 +37,7 @@ public class ForEachStepProcessorActor extends AbstractIterationStepActor<ForEac
 	protected void start() throws Exception {
 		processing();
 		if(!loop()) {
-			completed(); // TODO send test step report
+			completed();
 		}
 	}
 

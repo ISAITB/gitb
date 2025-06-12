@@ -20,8 +20,9 @@ import { RoutingService } from 'src/app/services/routing.service';
 import { CdkDragDrop } from '@angular/cdk/drag-drop';
 
 @Component({
-  selector: 'app-community-properties',
-  templateUrl: './community-properties.component.html'
+    selector: 'app-community-properties',
+    templateUrl: './community-properties.component.html',
+    standalone: false
 })
 export class CommunityPropertiesComponent implements OnInit {
 
@@ -31,7 +32,7 @@ export class CommunityPropertiesComponent implements OnInit {
   orderOrganisationParametersDisabled = true
   orderSystemParametersDisabled = true
   organisationReservedKeys = ['fullName', 'shortName']
-  systemReservedKeys = ['fullName', 'shortName', 'version']  
+  systemReservedKeys = ['fullName', 'shortName', 'version']
   organisationParameters: OrganisationParameter[] = []
   organisationParameterValues: ParameterReference[] = []
   systemParameters: SystemParameter[] = []
@@ -40,6 +41,11 @@ export class CommunityPropertiesComponent implements OnInit {
   orderSystemParametersPending = false
   draggingOrganisationParameter = false
   draggingSystemParameter = false
+
+  organisationPropertiesCollapsed = false
+  organisationPropertiesCollapseFinished = false
+  systemPropertiesCollapsed = false
+  systemPropertiesCollapseFinished = false
 
   Constants = Constants
 
@@ -80,7 +86,7 @@ export class CommunityPropertiesComponent implements OnInit {
       this.organisationParameters = data
       this.organisationParameterValues = this.extractParameterReferences(data)
     }).add(() => {
-      this.organisationParameterStatus.status = Constants.STATUS.FINISHED      
+      this.organisationParameterStatus.status = Constants.STATUS.FINISHED
     })
   }
 
@@ -92,7 +98,7 @@ export class CommunityPropertiesComponent implements OnInit {
       this.systemParameters = data
       this.systemParameterValues = this.extractParameterReferences(data)
     }).add(() => {
-      this.systemParameterStatus.status = Constants.STATUS.FINISHED      
+      this.systemParameterStatus.status = Constants.STATUS.FINISHED
     })
   }
 
@@ -103,7 +109,7 @@ export class CommunityPropertiesComponent implements OnInit {
       return 'Binary'
     } else {
       return 'Secret'
-    }    
+    }
   }
 
   extractParameterReferences<T extends CustomProperty>(properties: T[]): ParameterReference[] {
@@ -236,7 +242,7 @@ export class CommunityPropertiesComponent implements OnInit {
           modalTitle: propertyLabel + ' property details',
           confirmMessage: 'Are you sure you want to delete this property?',
           existingValues: existingValues,
-          reservedKeys: reservedKeys          
+          reservedKeys: reservedKeys
         }
       }
     })
@@ -279,6 +285,18 @@ export class CommunityPropertiesComponent implements OnInit {
       this.systemParameters.splice(event.currentIndex, 0, this.systemParameters.splice(event.previousIndex, 1)[0]);
       this.orderSystemParametersDisabled = false
     }
+  }
+
+  toggleOrganisationPropertiesCollapsed(value: boolean) {
+    setTimeout(() => {
+      this.organisationPropertiesCollapseFinished = value
+    }, 1)
+  }
+
+  toggleSystemPropertiesCollapsed(value: boolean) {
+    setTimeout(() => {
+      this.systemPropertiesCollapseFinished = value
+    }, 1)
   }
 
 }

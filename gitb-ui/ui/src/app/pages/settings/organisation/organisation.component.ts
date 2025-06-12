@@ -16,8 +16,9 @@ import { LegalNoticeService } from 'src/app/services/legal-notice.service';
 import { ErrorTemplateService } from 'src/app/services/error-template.service';
 
 @Component({
-  selector: 'app-organisation',
-  templateUrl: './../../admin/user-management/organisation/organisation-details/organisation-details.component.html'
+    selector: 'app-organisation',
+    templateUrl: './../../admin/user-management/organisation/organisation-details/organisation-details.component.html',
+    standalone: false
 })
 export class OrganisationComponent extends OrganisationDetailsComponent implements OnInit {
 

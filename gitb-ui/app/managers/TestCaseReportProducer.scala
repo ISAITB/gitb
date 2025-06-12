@@ -5,9 +5,10 @@ import com.gitb.reports.dto.TestCaseOverview
 import com.gitb.reports.{ReportGenerator, ReportSpecs}
 import com.gitb.tbs.TestStepStatus
 import com.gitb.tpl._
-import com.gitb.tr.{TAR, TestCaseOverviewReportType, TestCaseStepReportType, TestCaseStepsType, TestResultType}
+import com.gitb.tr._
 import com.gitb.utils.{XMLDateTimeUtils, XMLUtils}
-import models.{CommunityLabels, Constants, SessionFolderInfo}
+import managers.TestCaseReportProducer.ReportGenerationInput
+import models.{CommunityLabels, Constants, SessionReportPath}
 import org.apache.commons.codec.net.URLCodec
 import org.apache.commons.lang3.StringUtils
 import org.slf4j.{Logger, LoggerFactory}
@@ -18,184 +19,278 @@ import utils.RepositoryUtils
 import java.io.{File, StringReader}
 import java.nio.file.{Files, Path, Paths}
 import java.text.SimpleDateFormat
+import java.util
 import java.util.{Date, UUID}
 import javax.inject.{Inject, Singleton}
 import javax.xml.transform.stream.StreamSource
 import scala.collection.mutable.ListBuffer
+import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters.SeqHasAsJava
 import scala.util.Using
 
+object TestCaseReportProducer {
+
+  case class ReportGenerationInput(stepReports: List[TitledTestStepReportType], exportedReportPath: File, testCase: Option[models.TestCase], sessionId: String)
+
+}
+
 @Singleton
-class TestCaseReportProducer @Inject() (reportHelper: ReportHelper, testResultManager: TestResultManager, testCaseManager: TestCaseManager, communityLabelManager: CommunityLabelManager, repositoryUtils: RepositoryUtils, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class TestCaseReportProducer @Inject() (reportHelper: ReportHelper,
+                                        testResultManager: TestResultManager,
+                                        testCaseManager: TestCaseManager,
+                                        communityLabelManager: CommunityLabelManager,
+                                        repositoryUtils: RepositoryUtils,
+                                        dbConfigProvider: DatabaseConfigProvider)
+                                       (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
   val logger: Logger = LoggerFactory.getLogger("TestCaseReportProducer")
   private val codec = new URLCodec()
   import dbConfig.profile.api._
 
-  def generateDetailedTestCaseReport(sessionId: String, contentType: Option[String], labelSupplier: Option[() => Map[Short, CommunityLabels]], reportSpecSupplier: Option[() => ReportSpecs] = None): (Option[Path], SessionFolderInfo) = {
-    var report: Option[Path] = None
-    val sessionFolderInfo = repositoryUtils.getPathForTestSession(codec.decode(sessionId), isExpected = true)
-    if (logger.isDebugEnabled) {
-      logger.debug("Reading test case report [{}] from the file [{}]", codec.decode(sessionId), sessionFolderInfo)
-    }
-    val testResult = testResultManager.getTestResultForSessionWrapper(sessionId)
-    if (testResult.isDefined) {
-      val reportData = contentType match {
-        case Some(Constants.MimeTypePDF) => (".report.pdf", (list: ListBuffer[TitledTestStepReportType], exportedReportPath: File, testCase: Option[models.TestCase], session: String) => {
-          generateDetailedTestCaseReportPdf(list, exportedReportPath.getAbsolutePath, testCase, session, labelSupplier.getOrElse(() => Map.empty[Short, CommunityLabels]).apply(), reportSpecSupplier.getOrElse(() => reportHelper.createReportSpecs()).apply())
-        })
-        case _ => (".report.v2.xml", (list: ListBuffer[TitledTestStepReportType], exportedReportPath: File, testCase: Option[models.TestCase], session: String) => {
-          generateDetailedTestCaseReportXml(list, exportedReportPath.getAbsolutePath, testCase, session)
-        })
+  def generateDetailedTestCaseReport(sessionId: String, contentType: Option[String], labelSupplier: Option[() => Future[Map[Short, CommunityLabels]]], reportSpecSupplier: Option[() => ReportSpecs] = None): Future[SessionReportPath] = {
+    for {
+      // Load test session folder
+      sessionFolderInfo <- {
+        repositoryUtils.getPathForTestSession(codec.decode(sessionId), isExpected = true).map { sessionFolderInfo =>
+          if (logger.isDebugEnabled) {
+            logger.debug("Reading test case report [{}] from the file [{}]", codec.decode(sessionId), sessionFolderInfo)
+          }
+          sessionFolderInfo
+        }
       }
-      val exportedReport = if (testResult.get._1.endTime.isEmpty || contentType.contains(Constants.MimeTypePDF)) {
-        // This name will be unique to ensure that a report generated for a pending session never gets cached. Also PDF reports are never cached.
-        new File(sessionFolderInfo.path.toFile, UUID.randomUUID().toString + reportData._1)
-      } else {
-        // XML reports for completed test sessions are cached as they will never change.
-        new File(sessionFolderInfo.path.toFile, "report" + reportData._1)
+      // Load test result
+      testResult <- testResultManager.getTestResultForSessionWrapper(sessionId)
+      // Generate the report
+      exportedReport <- {
+        if (testResult.isDefined) {
+          val reportData = contentType match {
+            case Some(Constants.MimeTypePDF) => (".report.pdf", (input: ReportGenerationInput) => {
+              generateDetailedTestCaseReportPdf(input, labelSupplier.getOrElse(() => Future.successful(Map.empty[Short, CommunityLabels])).apply(), reportSpecSupplier.getOrElse(() => reportHelper.createReportSpecs()).apply())
+            })
+            case _ => (".report.v2.xml", (input: ReportGenerationInput) => {
+              generateDetailedTestCaseReportXml(input)
+            })
+          }
+          val exportedReport = if (testResult.get._1.endTime.isEmpty || contentType.contains(Constants.MimeTypePDF)) {
+            // This name will be unique to ensure that a report generated for a pending session never gets cached. Also, PDF reports are never cached.
+            new File(sessionFolderInfo.path.toFile, UUID.randomUUID().toString + reportData._1)
+          } else {
+            // XML reports for completed test sessions are cached as they will never change.
+            new File(sessionFolderInfo.path.toFile, "report" + reportData._1)
+          }
+          if (!exportedReport.exists() && testResult.get._1.testCaseId.isDefined) {
+            testCaseManager.getTestCase(testResult.get._1.testCaseId.get.toString).flatMap { testCase =>
+              val testcasePresentation = XMLUtils.unmarshal(classOf[TestCase], new StreamSource(new StringReader(testResult.get._2)))
+              val list = getListOfTestSteps(testcasePresentation, sessionFolderInfo.path.toFile)
+              reportData._2.apply(ReportGenerationInput(list, exportedReport, testCase, sessionId)).map { _ =>
+                Some(exportedReport)
+              }
+            }
+          } else {
+            Future.successful(Some(exportedReport))
+          }
+        } else {
+          Future.successful(None)
+        }
       }
-      if (!exportedReport.exists() && testResult.get._1.testCaseId.isDefined) {
-        val testCase = testCaseManager.getTestCase(testResult.get._1.testCaseId.get.toString)
-        val testcasePresentation = XMLUtils.unmarshal(classOf[TestCase], new StreamSource(new StringReader(testResult.get._2)))
-        val list = getListOfTestSteps(testcasePresentation, sessionFolderInfo.path.toFile)
-        reportData._2.apply(list, exportedReport, testCase, sessionId)
+      // Finalise the response
+      result <- {
+        if (exportedReport.exists(_.exists())) {
+          Future.successful {
+            SessionReportPath(Some(exportedReport.get.toPath), sessionFolderInfo)
+          }
+        } else {
+          Future.successful {
+            SessionReportPath(None, sessionFolderInfo)
+          }
+        }
       }
-      if (exportedReport.exists()) {
-        report = Some(exportedReport.toPath)
-      }
-    }
-    (report, sessionFolderInfo)
+    } yield result
   }
 
-  private def generateDetailedTestCaseReportXml(list: ListBuffer[TitledTestStepReportType], path: String, testCase: Option[models.TestCase], sessionId: String): Path = {
-    val reportPath = Paths.get(path)
-    val overview = new TestCaseOverviewReportType()
-    val testResult = exec(PersistenceSchema.testResults.filter(_.testSessionId === sessionId).result.head)
-    overview.setResult(TestResultType.fromValue(testResult.result))
-    overview.setMessage(testResult.outputMessage.orNull)
-    overview.setStartTime(XMLDateTimeUtils.getXMLGregorianCalendarDateTime(testResult.startTime))
-    if (testResult.endTime.isDefined) {
-      overview.setEndTime(XMLDateTimeUtils.getXMLGregorianCalendarDateTime(testResult.endTime.get))
-    }
-    if (testCase.isDefined) {
-      overview.setId(testCase.get.identifier)
-      overview.setMetadata(new Metadata())
-      overview.getMetadata.setName(testCase.get.fullname)
-      overview.getMetadata.setDescription(testCase.get.description.orNull)
-      overview.getMetadata.setVersion(StringUtils.trimToNull(testCase.get.version))
-    }
-    if (list.nonEmpty) {
-      overview.setSteps(new TestCaseStepsType())
-      list.foreach { stepReport =>
-        val report = new TestCaseStepReportType()
-        report.setId(stepReport.getWrapped.getId)
-        report.setDescription(stepReport.getTitle)
-        report.setReport(stepReport.getWrapped)
-        overview.getSteps.getStep.add(report)
+  private def generateDetailedTestCaseReportXml(input: ReportGenerationInput): Future[Path] = {
+    val reportPath = Paths.get(input.exportedReportPath.getAbsolutePath)
+    for {
+      overview <- {
+        DB.run(PersistenceSchema.testResults.filter(_.testSessionId === input.sessionId).result.head).map { testResult =>
+          val overview = new TestCaseOverviewReportType()
+          overview.setResult(TestResultType.fromValue(testResult.result))
+          testResult.outputMessage.foreach { msgs =>
+            msgs.split('\n').foreach { msg =>
+              overview.getMessage.add(msg)
+            }
+          }
+          overview.setStartTime(XMLDateTimeUtils.getXMLGregorianCalendarDateTime(testResult.startTime))
+          if (testResult.endTime.isDefined) {
+            overview.setEndTime(XMLDateTimeUtils.getXMLGregorianCalendarDateTime(testResult.endTime.get))
+          }
+          if (input.testCase.isDefined) {
+            overview.setId(input.testCase.get.identifier)
+            overview.setMetadata(new Metadata())
+            overview.getMetadata.setName(input.testCase.get.fullname)
+            overview.getMetadata.setDescription(input.testCase.get.description.orNull)
+            overview.getMetadata.setVersion(StringUtils.trimToNull(input.testCase.get.version))
+          }
+          if (input.stepReports.nonEmpty) {
+            overview.setSteps(new TestCaseStepsType())
+            input.stepReports.foreach { stepReport =>
+              val report = new TestCaseStepReportType()
+              report.setId(stepReport.getWrapped.getId)
+              report.setDescription(stepReport.getTitle)
+              report.setReport(stepReport.getWrapped)
+              overview.getSteps.getStep.add(report)
+            }
+          }
+          overview
+        }
       }
-    }
-    Files.createDirectories(reportPath.getParent)
-    Using.resource(Files.newOutputStream(reportPath)) { fos =>
-      ReportGenerator.getInstance().writeTestCaseOverviewXmlReport(overview, fos)
-      fos.flush()
-    }
-    reportPath
+      reportPath <- {
+        Files.createDirectories(reportPath.getParent)
+        Using.resource(Files.newOutputStream(reportPath)) { fos =>
+          ReportGenerator.getInstance().writeTestCaseOverviewXmlReport(overview, fos)
+          fos.flush()
+        }
+        Future.successful(reportPath)
+      }
+    } yield reportPath
   }
 
-  private def generateDetailedTestCaseReportPdf(list: ListBuffer[TitledTestStepReportType], path: String, testCase: Option[models.TestCase], sessionId: String, labels: Map[Short, CommunityLabels], specs: ReportSpecs): Path = {
-    val reportPath = Paths.get(path)
+  private def generateDetailedTestCaseReportPdf(input: ReportGenerationInput, labels: Future[Map[Short, CommunityLabels]], specs: ReportSpecs): Future[Path] = {
+    val reportPath = Paths.get(input.exportedReportPath.getAbsolutePath)
     val sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss")
-    val overview = new TestCaseOverview()
-    overview.setTitle("Test Case Report")
-    // Labels
-    overview.setLabelDomain(communityLabelManager.getLabel(labels, models.Enums.LabelType.Domain))
-    overview.setLabelSpecification(communityLabelManager.getLabel(labels, models.Enums.LabelType.Specification))
-    overview.setLabelActor(communityLabelManager.getLabel(labels, models.Enums.LabelType.Actor))
-    overview.setLabelOrganisation(communityLabelManager.getLabel(labels, models.Enums.LabelType.Organisation))
-    overview.setLabelSystem(communityLabelManager.getLabel(labels, models.Enums.LabelType.System))
-    // Result
-    val testResult = exec(PersistenceSchema.testResults.filter(_.testSessionId === sessionId).result.head)
-    overview.setReportResult(testResult.result)
-    overview.setOutputMessage(testResult.outputMessage.orNull)
-    // Start time
-    val start = testResult.startTime
-    overview.setStartTime(sdf.format(new Date(start.getTime)))
-    // End time
-    if (testResult.endTime.isDefined) {
-      val end = testResult.endTime.get
-      overview.setEndTime(sdf.format(new Date(end.getTime)))
-    }
-    if (testResult.testCase.isDefined) {
-      overview.setTestName(testResult.testCase.get)
-    } else {
-      overview.setTestName("-")
-    }
-    if (testResult.system.isDefined) {
-      overview.setSystem(testResult.system.get)
-    } else {
-      overview.setSystem("-")
-    }
-    if (testResult.organization.isDefined) {
-      overview.setOrganisation(testResult.organization.get)
-    } else {
-      overview.setOrganisation("-")
-    }
-    if (testResult.actor.isDefined) {
-      overview.setTestActor(testResult.actor.get)
-    } else {
-      overview.setTestActor("-")
-    }
-    if (testResult.specification.isDefined) {
-      overview.setTestSpecification(testResult.specification.get)
-    } else {
-      overview.setTestSpecification("-")
-    }
-    if (testResult.domain.isDefined) {
-      overview.setTestDomain(testResult.domain.get)
-    } else {
-      overview.setTestDomain("-")
-    }
-    if (testCase.isDefined) {
-      if (testCase.get.description.isDefined) {
-        overview.setTestDescription(testCase.get.description.get)
-      }
-      if (specs.isIncludeDocumentation) {
-        val documentation = testCaseManager.getTestCaseDocumentation(testCase.get.id)
-        if (documentation.isDefined) {
-          overview.setDocumentation(documentation.get)
+    for {
+      // Overview
+      overview <- {
+        val overview = new TestCaseOverview()
+        overview.setTitle("Test Case Report")
+        // Labels
+        labels.map { labels =>
+          overview.setLabelDomain(communityLabelManager.getLabel(labels, models.Enums.LabelType.Domain))
+          overview.setLabelSpecification(communityLabelManager.getLabel(labels, models.Enums.LabelType.Specification))
+          overview.setLabelActor(communityLabelManager.getLabel(labels, models.Enums.LabelType.Actor))
+          overview.setLabelOrganisation(communityLabelManager.getLabel(labels, models.Enums.LabelType.Organisation))
+          overview.setLabelSystem(communityLabelManager.getLabel(labels, models.Enums.LabelType.System))
+          overview
         }
       }
-      if (specs.isIncludeLogs) {
-        val logContents = testResultManager.getTestSessionLog(sessionId, isExpected = true)
-        if (logContents.isDefined && logContents.get.nonEmpty) {
-          overview.setLogMessages(logContents.get.asJava)
+      // Result
+      overview <- {
+        DB.run(PersistenceSchema.testResults.filter(_.testSessionId === input.sessionId).result.head).map { testResult =>
+          // Test results
+          overview.setReportResult(testResult.result)
+          testResult.outputMessage.foreach { msgs =>
+            overview.setOutputMessages(new util.ArrayList())
+            msgs.split('\n').foreach { msg =>
+              overview.getOutputMessages.add(msg)
+            }
+          }
+          // Start time
+          val start = testResult.startTime
+          overview.setStartTime(sdf.format(new Date(start.getTime)))
+          // End time
+          if (testResult.endTime.isDefined) {
+            val end = testResult.endTime.get
+            overview.setEndTime(sdf.format(new Date(end.getTime)))
+          }
+          if (testResult.testCase.isDefined) {
+            overview.setTestName(testResult.testCase.get)
+          } else {
+            overview.setTestName("-")
+          }
+          if (testResult.system.isDefined) {
+            overview.setSystem(testResult.system.get)
+          } else {
+            overview.setSystem("-")
+          }
+          if (testResult.organization.isDefined) {
+            overview.setOrganisation(testResult.organization.get)
+          } else {
+            overview.setOrganisation("-")
+          }
+          if (testResult.actor.isDefined) {
+            overview.setTestActor(testResult.actor.get)
+          } else {
+            overview.setTestActor("-")
+          }
+          if (testResult.specification.isDefined) {
+            overview.setTestSpecification(testResult.specification.get)
+          } else {
+            overview.setTestSpecification("-")
+          }
+          if (testResult.domain.isDefined) {
+            overview.setTestDomain(testResult.domain.get)
+          } else {
+            overview.setTestDomain("-")
+          }
+          if (input.testCase.isDefined) {
+            if (input.testCase.get.description.isDefined) {
+              overview.setTestDescription(input.testCase.get.description.get)
+            }
+            overview.setSpecReference(input.testCase.get.specReference.orNull)
+            overview.setSpecDescription(input.testCase.get.specDescription.orNull)
+            overview.setSpecLink(input.testCase.get.specLink.orNull)
+          } else {
+            // This is a deleted test case - get data as possible from TestResult
+            overview.setTestDescription("-")
+          }
+          for (stepReport <- input.stepReports) {
+            overview.getSteps.add(ReportGenerator.getInstance().fromTestStepReportType(stepReport.getWrapped, stepReport.getTitle, specs))
+          }
+          if (overview.getSteps.isEmpty) {
+            overview.setSteps(null)
+          }
+          overview
         }
       }
-      overview.setSpecReference(testCase.get.specReference.orNull)
-      overview.setSpecDescription(testCase.get.specDescription.orNull)
-      overview.setSpecLink(testCase.get.specLink.orNull)
-    } else {
-      // This is a deleted test case - get data as possible from TestResult
-      overview.setTestDescription("-")
-    }
-    for (stepReport <- list) {
-      overview.getSteps.add(ReportGenerator.getInstance().fromTestStepReportType(stepReport.getWrapped, stepReport.getTitle, specs))
-    }
-    if (overview.getSteps.isEmpty) {
-      overview.setSteps(null)
-    }
-    // Needed if no reports have been received.
-    Files.createDirectories(reportPath.getParent)
-    Using.resource(Files.newOutputStream(reportPath)) { fos =>
-      try {
-        ReportGenerator.getInstance().writeTestCaseOverviewReport(overview, fos, specs)
-      } catch {
-        case e: Exception =>
-          throw new IllegalStateException("Unable to generate PDF report", e)
+      // Documentation and logs
+      overview <- {
+        if (input.testCase.isDefined) {
+          for {
+            // Documentation
+            overview <- {
+              if (specs.isIncludeDocumentation) {
+                testCaseManager.getTestCaseDocumentation(input.testCase.get.id).map { documentation =>
+                  if (documentation.isDefined) {
+                    overview.setDocumentation(documentation.get)
+                  }
+                  overview
+                }
+              } else {
+                Future.successful(overview)
+              }
+            }
+            // Logs
+            overview <- {
+              if (specs.isIncludeLogs) {
+                testResultManager.getTestSessionLog(input.sessionId, isExpected = true).map { logContents =>
+                  if (logContents.isDefined && logContents.get.nonEmpty) {
+                    overview.setLogMessages(logContents.get.asJava)
+                  }
+                  overview
+                }
+              } else {
+                Future.successful(overview)
+              }
+            }
+          } yield overview
+        } else {
+          Future.successful(overview)
+        }
       }
-    }
-    reportPath
+      reportPath <- {
+        // Needed if no reports have been received.
+        Files.createDirectories(reportPath.getParent)
+        Using.resource(Files.newOutputStream(reportPath)) { fos =>
+          try {
+            ReportGenerator.getInstance().writeTestCaseOverviewReport(overview, fos, specs)
+          } catch {
+            case e: Exception =>
+              throw new IllegalStateException("Unable to generate PDF report", e)
+          }
+        }
+        Future.successful(reportPath)
+      }
+    } yield reportPath
   }
 
   private def collectStepReports(testStep: TestStep, collectedSteps: ListBuffer[TitledTestStepReportType], folder: File): Unit = {
@@ -301,10 +396,10 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper, testResultMa
     }
   }
 
-  def getListOfTestSteps(testPresentation: TestCase, folder: File): ListBuffer[TitledTestStepReportType] = {
-    val list = ListBuffer[TitledTestStepReportType]()
-    collectStepReportsForSequence(testPresentation.getSteps, list, folder)
-    list
+  def getListOfTestSteps(testPresentation: TestCase, folder: File): List[TitledTestStepReportType] = {
+    val buffer = ListBuffer[TitledTestStepReportType]()
+    collectStepReportsForSequence(testPresentation.getSteps, buffer, folder)
+    buffer.toList
   }
 
 }

@@ -12,10 +12,10 @@ import { SystemAdministrationTab } from '../../../system-administration/system-a
 import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
-  selector: 'app-create-admin',
-  templateUrl: './create-admin.component.html',
-  styles: [
-  ]
+    selector: 'app-create-admin',
+    templateUrl: './create-admin.component.html',
+    styles: [],
+    standalone: false
 })
 export class CreateAdminComponent extends BaseComponent implements OnInit, AfterViewInit {
 

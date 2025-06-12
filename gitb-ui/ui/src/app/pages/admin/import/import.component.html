@@ -57,21 +57,13 @@
                                                         </div>
                                                     </div>
                                                     <div class="flex-grow-1">
-                                                        <select class="form-select" id="domain" name="domain" [(ngModel)]="domain" [disabled]="newTarget || domains.length == 0">
-                                                            @for (domain of domains; track domain.id) {
-                                                                <option [ngValue]="domain">{{domain.fname}}</option>
-                                                            }
-                                                        </select>
+                                                        <app-multi-select-filter [config]="domainSelectionConfig" (apply)="domainSelected($event)" [disable]="newTarget || domains.length == 0"></app-multi-select-filter>
                                                     </div>
                                                 </div>
                                             } @else if (dataService.isCommunityAdmin && dataService.community?.domainId == undefined) {
-                                                <select class="form-select" id="domain" name="domain" [(ngModel)]="domain" [disabled]="newTarget || domains.length == 0">
-                                                    @for (domain of domains; track domain.id) {
-                                                        <option [ngValue]="domain">{{domain.fname}}</option>
-                                                    }
-                                                </select>
+                                                <app-multi-select-filter [config]="domainSelectionConfig" (apply)="domainSelected($event)" [disable]="newTarget || domains.length == 0"></app-multi-select-filter>
                                             } @else if (dataService.isCommunityAdmin && domain != undefined) {
-                                                <input name="domain" class="form-control" id="domain" [(ngModel)]="domain.fname" readonly="true"/>
+                                                <input name="domain" class="form-control" id="domain" [(ngModel)]="domain.fname" readonly="readonly"/>
                                             }
                                         </div>
                                         <div app-tooltip class="col-auto" [tbTooltip]="'The '+dataService.labelDomainLower()+' for which data will be imported.'"></div>
@@ -89,15 +81,11 @@
                                                         </div>
                                                     </div>
                                                     <div class="flex-grow-1">
-                                                        <select class="form-select" id="community" name="community" [(ngModel)]="community" [disabled]="newTarget || communities.length == 0">
-                                                            @for (c of communities; track c.id) {
-                                                                <option [ngValue]="c">{{c.fname}}</option>
-                                                            }
-                                                        </select>
+                                                        <app-multi-select-filter [config]="communitySelectionConfig" (apply)="communitySelected($event)" [disable]="newTarget || communities.length == 0"></app-multi-select-filter>
                                                     </div>
                                                 </div>
                                             } @else if (dataService.isCommunityAdmin && community != undefined) {
-                                                <input name="community" class="form-control" id="community" [(ngModel)]="community.fname" readonly="true"/>
+                                                <input name="community" class="form-control" id="community" [(ngModel)]="community.fname" readonly="readonly"/>
                                             }
                                         </div>
                                         <div app-tooltip class="col-auto" tbTooltip="The community for which data will be imported."></div>
@@ -136,9 +124,9 @@
                                 <div class="row mt-3">
                                     <label class="col-3 col-form-label text-end">* Data archive:</label>
                                     <div class="col-6">
-                                        <app-file-select 
+                                        <app-file-select
                                             (onUpload)="uploadArchive($event)"
-                                            [accepts]="['application/zip']" 
+                                            [accepts]="['application/zip']"
                                             [placeholder]="'Drop or browse for data archive ...'"
                                             [fileName]="archiveData?.name"
                                             [maxSize]="52428800"
@@ -198,7 +186,7 @@
                                     <div app-import-item-group-preview class="import-item-root-item" [importType]="exportType!" [ngClass]="{'padded': !last, 'import-item-root-item': true}" [tbImportItemGroup]="group">
                                     </div>
                                 }
-                            </div>                    
+                            </div>
                         }
                     </div>
                 }

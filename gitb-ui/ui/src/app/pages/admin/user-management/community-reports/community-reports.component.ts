@@ -5,9 +5,10 @@ import { RoutingService } from 'src/app/services/routing.service';
 import { ReportSettings } from './report-settings';
 
 @Component({
-  selector: 'app-community-reports',
-  templateUrl: './community-reports.component.html',
-  styleUrl: './community-reports.component.less'
+    selector: 'app-community-reports',
+    templateUrl: './community-reports.component.html',
+    styleUrl: './community-reports.component.less',
+    standalone: false
 })
 export class CommunityReportsComponent implements OnInit {
 

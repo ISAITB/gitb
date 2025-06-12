@@ -17,12 +17,14 @@ import { ImportItemStateGroup } from './import-item-state-group';
 import { RoutingService } from 'src/app/services/routing.service';
 import { ValidationState } from 'src/app/types/validation-state';
 import { ErrorDescription } from 'src/app/types/error-description';
+import {MultiSelectConfig} from '../../../components/multi-select-filter/multi-select-config';
+import {FilterUpdate} from '../../../components/test-filter/filter-update';
 
 @Component({
-  selector: 'app-import',
-  templateUrl: './import.component.html',
-  styles: [
-  ]
+    selector: 'app-import',
+    templateUrl: './import.component.html',
+    styles: [],
+    standalone: false
 })
 export class ImportComponent extends BaseComponent implements OnInit, OnDestroy {
 
@@ -51,6 +53,9 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
   validation = new ValidationState()
   resetEmitter = new EventEmitter<void>()
 
+  domainSelectionConfig!: MultiSelectConfig<Domain>
+  communitySelectionConfig!: MultiSelectConfig<Community>
+
   constructor(
     private communityService: CommunityService,
     private conformanceService: ConformanceService,
@@ -61,6 +66,25 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
 
   ngOnInit(): void {
     this.resetSettings(true)
+    // Initialise selection configs
+    this.domainSelectionConfig = {
+      name: "domain",
+      textField: "fname",
+      singleSelection: true,
+      singleSelectionPersistent: true,
+      showAsFormControl: true,
+      filterLabel: `Select ${this.dataService.labelDomainLower()}...`,
+      loader: () => of(this.domains)
+    }
+    this.communitySelectionConfig = {
+      name: "community",
+      textField: "fname",
+      singleSelection: true,
+      singleSelectionPersistent: true,
+      showAsFormControl: true,
+      filterLabel: `Select community...`,
+      loader: () => of(this.communities)
+    }
     // Get communities and domains
     let communities$: Observable<Community[]>
     if (this.dataService.isSystemAdmin) {
@@ -135,6 +159,14 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
     })
   }
 
+  domainSelected(event: FilterUpdate<Domain>) {
+    this.domain = event.values.active[0]
+  }
+
+  communitySelected(event: FilterUpdate<Community>) {
+    this.community = event.values.active[0]
+  }
+
   uploadArchive(file: FileData) {
     this.archiveData = file
   }
@@ -171,6 +203,7 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.STATEMENT] = 'Conformance statements'
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.STATEMENT_CONFIGURATION] = 'Conformance statement configurations'
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.SYSTEM_SETTINGS] = 'System settings'
+    this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.SYSTEM_RESOURCE] = 'Resources'
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.THEME] = 'Themes'
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.DEFAULT_LANDING_PAGE] = 'Default landing pages'
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.DEFAULT_LEGAL_NOTICE] = 'Default legal notices'
@@ -206,18 +239,18 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
 
   importDisabled() {
     return this.importStep1 && !(
-      this.archiveData?.file != undefined 
-        && this.textProvided(this.settings.encryptionKey) 
+      this.archiveData?.file != undefined
+        && this.textProvided(this.settings.encryptionKey)
         && (
           this.exportType == 'domain' && (
-              (this.newTarget && (!this.replaceName || (this.textProvided(this.settings.shortNameReplacement) && this.textProvided(this.settings.fullNameReplacement)))) 
+              (this.newTarget && (!this.replaceName || (this.textProvided(this.settings.shortNameReplacement) && this.textProvided(this.settings.fullNameReplacement))))
               || (!this.newTarget && this.domain != undefined)
-          ) || 
+          ) ||
           this.exportType == 'community' && (
-              (this.newTarget && (!this.replaceName || (this.textProvided(this.settings.shortNameReplacement) && this.textProvided(this.settings.fullNameReplacement)))) 
+              (this.newTarget && (!this.replaceName || (this.textProvided(this.settings.shortNameReplacement) && this.textProvided(this.settings.fullNameReplacement))))
               || (!this.newTarget && this.community != undefined)
-          ) || 
-          this.exportType == 'settings' || 
+          ) ||
+          this.exportType == 'settings' ||
           this.exportType == 'deletions'
         )
     )
@@ -278,7 +311,7 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
               importItemStates.push(groupMap[item.type])
             }
             groupMap[item.type].items.push(state)
-      
+
             importItemStates.push()
           }
         }

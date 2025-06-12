@@ -35,6 +35,10 @@ public class ExpressionHandler {
         this.namespaceContext = namespaceContext;
     }
 
+    public VariableResolver getVariableResolver() {
+        return variableResolver;
+    }
+
     public DataType processExpression(Expression expression) {
         return processExpression(expression, null);
     }

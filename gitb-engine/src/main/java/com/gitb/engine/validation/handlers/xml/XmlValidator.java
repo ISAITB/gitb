@@ -8,8 +8,8 @@ import com.gitb.engine.validation.ValidationHandler;
 import com.gitb.engine.validation.handlers.common.AbstractValidator;
 import com.gitb.engine.validation.handlers.schematron.SchematronReportHandler;
 import com.gitb.engine.validation.handlers.schematron.SchematronValidator;
-import com.gitb.engine.validation.handlers.xsd.XSDReportHandler;
-import com.gitb.engine.validation.handlers.xsd.XSDValidator;
+import com.gitb.engine.validation.handlers.xsd.XsdReportHandler;
+import com.gitb.engine.validation.handlers.xsd.XsdValidator;
 import com.gitb.tr.TAR;
 import com.gitb.tr.TestResultType;
 import com.gitb.tr.TestStepReportType;
@@ -50,12 +50,12 @@ public class XmlValidator extends AbstractValidator {
         List<TAR> allReports = new ArrayList<>();
         if (xsd != null) {
             var map = new HashMap<>(Map.of(
-                    XSDValidator.CONTENT_ARGUMENT_NAME, xml,
-                    XSDValidator.SCHEMA_ARGUMENT_NAME, xsd,
+                    XsdValidator.XML_ARGUMENT_NAME, xml,
+                    XsdValidator.XSD_ARGUMENT_NAME, xsd,
                     TEST_CASE_ID_INPUT, testCaseId
             ));
-            putIfNotNull(map, XSDValidator.SHOW_SCHEMA_ARGUMENT_NAME, showArtefacts);
-            xsdReport = (TAR)new XSDValidator().validate(configurations, map);
+            putIfNotNull(map, XsdValidator.SHOW_SCHEMA_ARGUMENT_NAME, showArtefacts);
+            xsdReport = (TAR)new XsdValidator().validate(configurations, map);
             allReports.add(xsdReport);
         }
         /*
@@ -82,12 +82,12 @@ public class XmlValidator extends AbstractValidator {
         if (!allReports.isEmpty()) {
             report = TestCaseUtils.mergeReports(allReports);
             var context = new AnyContent();
-            context.getItem().add(TestCaseUtils.getInputFor(report.getContext().getItem(), XSDReportHandler.XML_ITEM_NAME).get(0));
+            context.getItem().add(TestCaseUtils.getInputFor(report.getContext().getItem(), XsdReportHandler.XML_ITEM_NAME).get(0));
             // Add validation artefacts.
             if (showArtefacts == null || ((Boolean) showArtefacts.getValue())) {
                 // Add XSD.
                 if (xsdReport != null) {
-                    context.getItem().add(TestCaseUtils.getInputFor(xsdReport.getContext().getItem(), XSDReportHandler.XSD_ITEM_NAME).get(0));
+                    context.getItem().add(TestCaseUtils.getInputFor(xsdReport.getContext().getItem(), XsdReportHandler.XSD_ITEM_NAME).get(0));
                 }
                 // Add schematrons.
                 if (!schematronReports.isEmpty()) {

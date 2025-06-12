@@ -7,9 +7,10 @@ import { DataService } from 'src/app/services/data.service';
 import { HtmlService } from 'src/app/services/html.service';
 
 @Component({
-  selector: 'app-test-suite-display',
-  templateUrl: './test-suite-display.component.html',
-  styleUrls: [ './test-suite-display.component.less' ]
+    selector: 'app-test-suite-display',
+    templateUrl: './test-suite-display.component.html',
+    styleUrls: ['./test-suite-display.component.less'],
+    standalone: false
 })
 export class TestSuiteDisplayComponent implements OnInit {
 

@@ -29,6 +29,10 @@ import org.apache.pekko.dispatch.OnSuccess;
 import scala.concurrent.Future;
 import scala.concurrent.Promise;
 
+import java.util.Objects;
+
+import static com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils.getMessageFromBindings;
+
 /**
  * Created by serbay on 9/30/14.
  *
@@ -92,7 +96,7 @@ public class SendStepProcessorActor extends AbstractMessagingStepProcessorActor<
 					}
 				}
 
-				Message message = getMessageFromBindings(step.getInput());
+				Message message = getMessageFromBindings(messagingHandler, step.getInput(), expressionHandler);
 
 				MessagingReport report =
 						messagingHandler
@@ -177,4 +181,15 @@ public class SendStepProcessorActor extends AbstractMessagingStepProcessorActor<
 	public static ActorRef create(ActorContext context, Send step, TestCaseScope scope, String stepId, StepContext stepContext) throws Exception {
 		return context.actorOf(props(SendStepProcessorActor.class, step, scope, stepId, stepContext).withDispatcher(ActorSystem.BLOCKING_DISPATCHER), getName(NAME));
 	}
+
+	@Override
+	protected String getFrom() {
+		return Objects.requireNonNullElseGet(super.getFrom(), () -> scope.getContext().getDefaultNonSutActor());
+	}
+
+	@Override
+	protected String getTo() {
+		return Objects.requireNonNullElseGet(super.getTo(), () -> scope.getContext().getDefaultSutActor());
+	}
+
 }

@@ -25,9 +25,10 @@ import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 import { CdkDragDrop } from '@angular/cdk/drag-drop';
 
 @Component({
-  selector: 'app-domain-details',
-  templateUrl: './domain-details.component.html',
-  styleUrls: [ './domain-details.component.less' ]
+    selector: 'app-domain-details',
+    templateUrl: './domain-details.component.html',
+    styleUrls: ['./domain-details.component.less'],
+    standalone: false
 })
 export class DomainDetailsComponent extends BaseTabbedComponent implements OnInit, AfterViewInit {
 

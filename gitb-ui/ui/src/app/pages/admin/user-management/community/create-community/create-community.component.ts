@@ -11,10 +11,10 @@ import { Domain } from 'src/app/types/domain';
 import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
-  selector: 'app-create-community',
-  templateUrl: './create-community.component.html',
-  styles: [
-  ]
+    selector: 'app-create-community',
+    templateUrl: './create-community.component.html',
+    styles: [],
+    standalone: false
 })
 export class CreateCommunityComponent extends BaseComponent implements OnInit {
 
@@ -28,6 +28,7 @@ export class CreateCommunityComponent extends BaseComponent implements OnInit {
     allowPostTestSystemUpdates: true,
     allowPostTestStatementUpdates: true,
     allowAutomationApi: false,
+    allowCommunityView: false,
     interactionNotification: false
   }
   domains: Domain[] = []
@@ -54,10 +55,10 @@ export class CreateCommunityComponent extends BaseComponent implements OnInit {
 
   saveDisabled() {
     return !(this.textProvided(this.community.sname) && this.textProvided(this.community.fname) &&
-      (!this.dataService.configuration.registrationEnabled || 
-        (this.community.selfRegType == Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED || 
+      (!this.dataService.configuration.registrationEnabled ||
+        (this.community.selfRegType == Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED ||
           (
-            (this.community.selfRegType == Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING || this.textProvided(this.community.selfRegToken)) && 
+            (this.community.selfRegType == Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING || this.textProvided(this.community.selfRegToken)) &&
             (!this.dataService.configuration.emailEnabled || (!this.community.selfRegNotification || this.textProvided(this.community.email)))
           )
         )
@@ -82,7 +83,12 @@ export class CreateCommunityComponent extends BaseComponent implements OnInit {
         descriptionToUse = this.community.activeDescription
       }
       this.savePending = true
-      this.communityService.createCommunity(this.community.sname!, this.community.fname!, this.community.email, this.community.selfRegType!, this.community.selfRegRestriction!, this.community.selfRegToken, this.community.selfRegTokenHelpText, this.community.selfRegNotification, this.community.interactionNotification!, descriptionToUse, this.community.selfRegForceTemplateSelection, this.community.selfRegForceRequiredProperties, this.community.allowCertificateDownload!, this.community.allowStatementManagement!, this.community.allowSystemManagement!, this.community.allowPostTestOrganisationUpdates!, this.community.allowPostTestSystemUpdates!, this.community.allowPostTestStatementUpdates!, this.community.allowAutomationApi, this.community.domainId)
+      this.communityService.createCommunity(this.community.sname!, this.community.fname!, this.community.email,
+        this.community.selfRegType!, this.community.selfRegRestriction!, this.community.selfRegToken, this.community.selfRegTokenHelpText, this.community.selfRegNotification,
+        this.community.interactionNotification!, descriptionToUse, this.community.selfRegForceTemplateSelection, this.community.selfRegForceRequiredProperties,
+        this.community.allowCertificateDownload!, this.community.allowStatementManagement!, this.community.allowSystemManagement!, this.community.allowPostTestOrganisationUpdates!,
+        this.community.allowPostTestSystemUpdates!, this.community.allowPostTestStatementUpdates!, this.community.allowAutomationApi, this.community.allowCommunityView!,
+        this.community.domain?.id)
       .subscribe(() => {
         this.cancelCreateCommunity()
         this.popupService.success('Community created.')

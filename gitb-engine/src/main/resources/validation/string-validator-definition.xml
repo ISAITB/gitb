@@ -7,7 +7,9 @@
         <version>1.0</version>
     </metadata>
     <inputs>
-        <param type="string" use="R" name="actualstring"   desc="String to verify" />
-        <param type="string" use="R" name="expectedstring" desc="String expected to have" />
+        <param type="string" name="actual" desc="String to verify" />
+        <param type="string" name="expected" desc="String expected to have" />
+        <param type="string" use="O" name="successMessage" desc="A custom message to display in case of success" />
+        <param type="string" use="O" name="failureMessage" desc="A custom message to display in case of failure" />
     </inputs>
 </module>

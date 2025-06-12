@@ -17,8 +17,9 @@ import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
-  selector: 'app-error-template-details',
-  templateUrl: './error-template-details.component.html'
+    selector: 'app-error-template-details',
+    templateUrl: './error-template-details.component.html',
+    standalone: false
 })
 export class ErrorTemplateDetailsComponent extends BaseComponent implements OnInit {
 

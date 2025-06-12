@@ -13,6 +13,7 @@ export interface UserInteraction {
     optionData?: ValueLabel[]
     data?: string
     selectedOption?: ValueLabel
+    selectedOptions?: ValueLabel[]
     file?: FileData
     name?: string
     variableType?: string
@@ -22,6 +23,7 @@ export interface UserInteraction {
     inputType: "TEXT"|"MULTILINE_TEXT"|"SECRET"|"CODE"|"SELECT_SINGLE"|"SELECT_MULTIPLE"|"UPLOAD"
     mimeType?: string
     forceDisplay?: boolean
+    required?: boolean
 
     reset?: EventEmitter<void>
 

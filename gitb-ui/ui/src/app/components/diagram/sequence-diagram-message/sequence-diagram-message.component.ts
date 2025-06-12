@@ -12,8 +12,9 @@ import { Subscription } from 'rxjs';
 import { StepReport } from '../report/step-report';
 
 @Component({
-  selector: 'app-sequence-diagram-message',
-  templateUrl: './sequence-diagram-message.component.html'
+    selector: 'app-sequence-diagram-message',
+    templateUrl: './sequence-diagram-message.component.html',
+    standalone: false
 })
 export class SequenceDiagramMessageComponent implements OnInit, OnDestroy {
 
@@ -25,11 +26,12 @@ export class SequenceDiagramMessageComponent implements OnInit, OnDestroy {
   depth!: number
   currentIterationIndex: number = -1
   classForMessageFixed!: string
-  classForWrapper!: string 
+  classForWrapper!: string
   classForReverseOffset!: string
   eventSubscription?: Subscription
   expanded = true
   hoveringTitle = false
+  hoveringReport = false
 
   constructor(
     private reportService: ReportService,
@@ -45,13 +47,13 @@ export class SequenceDiagramMessageComponent implements OnInit, OnDestroy {
     this.classForReverseOffset = 'reverse-offset-'+this.message.fromIndex
     if (this.message.type == 'loop') {
       this.onSequenceChange(false)
-      this.eventSubscription = this.events.subscribeToLoopSequenceUpdate(((event: {stepId: string}) => {
+      this.eventSubscription = this.events.subscribeToLoopSequenceUpdate((event: {stepId: string}) => {
         if (this.message.sequences != undefined && this.message.id == event.stepId) {
           this.onSequenceChange(true)
         }
-      }).bind(this))
+      })
     }
-    if (this.message.title == undefined || this.message.title == null) {
+    if (this.message?.title == undefined) {
       this.message.title = this.message.type
     }
   }
@@ -101,9 +103,6 @@ export class SequenceDiagramMessageComponent implements OnInit, OnDestroy {
   }
 
   calculateDepth(message: StepData): number {
-    // if (message.level == undefined) {
-    //   message.level = (message.id.split('.')).length
-    // }
     if (message.type == 'loop') {
       let childDepths = map(message.steps, this.calculateDepth.bind(this))
       return (max(childDepths)!) + 1
@@ -156,7 +155,7 @@ export class SequenceDiagramMessageComponent implements OnInit, OnDestroy {
   }
 
   showTestStepReportModal(report: StepReport) {
-    const modalRef = this.modalService.show(TestStepReportModalComponent, {
+    this.modalService.show(TestStepReportModalComponent, {
       class: 'modal-lg',
       initialState: {
         step: this.message,

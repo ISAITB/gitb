@@ -7,16 +7,25 @@
             <legend class="col-3 col-form-label text-end pt-0">* Report type:</legend>
             <div class="col-8">
                 <div class="form-check pb-2">
-                    <input class="form-check-input" type="radio" [(ngModel)]="choice" name="choice" id="choice_report" [value]="Constants.REPORT_OPTION_CHOICE.REPORT">
+                    <input #reportOption class="form-check-input" type="radio" [(ngModel)]="choice" name="choice" id="choice_report" [value]="Constants.REPORT_OPTION_CHOICE.REPORT" (change)="choiceChanged($event)">
                     <label class="form-check-label" for="choice_report">Conformance statement report</label>
                 </div>
-                <div class="form-check pb-2">
-                    <input class="form-check-input" type="radio" [(ngModel)]="choice" name="choice" id="choice_detailed" [value]="Constants.REPORT_OPTION_CHOICE.DETAILED_REPORT">
-                    <label class="form-check-label" for="choice_detailed">Conformance statement report (with test case results)</label>
+                <div class="form-check pb-2" [class.disabled-option]="statementReportDisabled">
+                    @if (statementReportDisabled) {
+                        <input class="form-check-input" type="radio" [(ngModel)]="choice" aria-disabled="true" tabindex="-1" name="choice" id="choice_detailed" [value]="Constants.REPORT_OPTION_CHOICE.DETAILED_REPORT" (change)="choiceChanged($event)">
+                    } @else {
+                        <input class="form-check-input" type="radio" [(ngModel)]="choice" name="choice" id="choice_detailed" [value]="Constants.REPORT_OPTION_CHOICE.DETAILED_REPORT" (change)="choiceChanged($event)">
+                    }
+                    <label class="form-check-label" for="choice_detailed">
+                        <span>Conformance statement report (with test case results)</span>
+                        @if (statementReportDisabled) {
+                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="The number of test cases included in the conformance statement exceeds the limit for a report with test case results."></div>
+                        }
+                    </label>
                 </div>
                 @if (format == 'pdf' && certificateEnabled) {
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" [(ngModel)]="choice" name="choice" id="choice_cert" [value]="Constants.REPORT_OPTION_CHOICE.CERTIFICATE" (change)="choiceChanged()">
+                        <input #certificateOption class="form-check-input" type="radio" [(ngModel)]="choice" name="choice" id="choice_cert" [value]="Constants.REPORT_OPTION_CHOICE.CERTIFICATE" (change)="choiceChanged($event)" [disabled]="false">
                         <label class="form-check-label" for="choice_cert">Conformance certificate
                             @if (messagePending) {
                                 <app-pending-block [pending]="true"></app-pending-block>

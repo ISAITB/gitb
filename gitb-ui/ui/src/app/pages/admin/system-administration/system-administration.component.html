@@ -19,7 +19,10 @@
                             [(status)]="welcomePageStatus"
                         >
                             <form>
-                                <app-editor id="welcomePageMessage" name="welcomePageMessage" [(ngModel)]="welcomePageMessage" type="normal" [height]="200"></app-editor>
+                                <app-placeholder-selector [systemResources]="true"></app-placeholder-selector>
+                                <div class="mt-3">
+                                    <app-editor id="welcomePageMessage" name="welcomePageMessage" [(ngModel)]="welcomePageMessage" type="normal" [height]="200"></app-editor>
+                                </div>
                                 <div class="btn-toolbar mt-3">
                                     <button type="submit" class="btn btn-secondary" [disable]="welcomePageResetPending || !textProvided(welcomePageMessage)" [pending]="welcomePageStatus.pending" (click)="saveWelcomePage()">Save</button>
                                     <button type="button" class="btn btn-secondary" [disable]="welcomePageStatus.fromDefault || welcomePageStatus.fromEnv || welcomePageStatus.pending" [pending]="welcomePageResetPending" (click)="resetWelcomePage()">Reset to default</button>
@@ -49,11 +52,7 @@
                                             @if (communities.length == 0) {
                                                 <div class="no-data-container">No communities available</div>
                                             } @else {
-                                                <select name="selectedCommunity" [disabled]="!demoAccountEnabled || loadCommunitiesPending || communities.length == 0" [(ngModel)]="selectedCommunity" [compareWith]="dataService.sameId" (change)="selectCommunity()" class="form-select demoSelect">
-                                                    @for (community of communities; track community.id) {
-                                                        <option [ngValue]="community">{{community.fname}}</option>
-                                                    }
-                                                </select>
+                                                <app-multi-select-filter [config]="communitySelectConfig" [disable]="!demoAccountEnabled || loadCommunitiesPending || communities.length == 0" (apply)="selectCommunity($event)"></app-multi-select-filter>
                                             }
                                         }
                                     </div>
@@ -65,11 +64,7 @@
                                                 @if (organisations.length == 0) {
                                                     <div class="no-data-container">No organisations available</div>
                                                 } @else {
-                                                    <select name="selectedOrganisation" [disabled]="!demoAccountEnabled || loadOrganisationsPending || organisations.length == 0" [(ngModel)]="selectedOrganisation" [compareWith]="dataService.sameId" (change)="selectCommunityOrganisation()" class="form-select demoSelect">
-                                                        @for (organisation of organisations; track organisation.id) {
-                                                            <option [ngValue]="organisation">{{organisation.fname}}</option>
-                                                        }
-                                                    </select>
+                                                    <app-multi-select-filter [config]="organisationSelectConfig" [disable]="!demoAccountEnabled || loadOrganisationsPending || organisations.length == 0" (apply)="selectCommunityOrganisation($event)"></app-multi-select-filter>
                                                 }
                                             }
                                         </div>
@@ -82,11 +77,7 @@
                                                 @if (users.length == 0) {
                                                     <div class="no-data-container">No non-administrator users available</div>
                                                 } @else {
-                                                    <select name="demoAccount" [disabled]="!demoAccountEnabled || loadUsersPending || users.length == 0" [(ngModel)]="demoAccount" [compareWith]="dataService.sameId" class="form-select demoSelect">
-                                                        @for (user of users; track user.id) {
-                                                            <option [ngValue]="user">{{user.name}}</option>
-                                                        }
-                                                    </select>
+                                                    <app-multi-select-filter [config]="userSelectConfig" [disable]="!demoAccountEnabled || loadUsersPending || users.length == 0" (apply)="demoAccount = $event.values.active[0]"></app-multi-select-filter>
                                                 }
                                             }
                                         </div>
@@ -147,14 +138,7 @@
                                                     <div class="row mt-3">
                                                         <label class="col-3 col-form-label text-end" for="emailSslProtocols">SSL protocols:</label>
                                                         <div class="col-4 minimum-width-text">
-                                                            <select id="emailSslProtocols" size="6" name="emailSslProtocols" class="form-select" multiple="true" [(ngModel)]="emailSettings.sslProtocols">
-                                                                <option value="SSLv2Hello">SSL v2</option>
-                                                                <option value="SSLv3">SSL v3</option>
-                                                                <option value="TLSv1">TLS v1</option>
-                                                                <option value="TLSv1.1">TLS v1.1</option>
-                                                                <option value="TLSv1.2">TLS v1.2</option>
-                                                                <option value="TLSv1.3">TLS v1.3</option>
-                                                            </select>
+                                                            <app-multi-select-filter [config]="emailSslProtocolsSelectConfig" (apply)="selectEmailSslProtocols($event)"></app-multi-select-filter>
                                                         </div>
                                                         <div class="col-auto" app-tooltip tbTooltip="Specify one or more SSL protocols to signal as acceptable for creating the SSL channel. You may need to adapt these if you experience SSL handshake rejections from the SMTP server."></div>
                                                     </div>
@@ -184,13 +168,13 @@
                                                                 <div class="row row-cols-auto align-items-center gx-3">
                                                                     <div class="col-auto">
                                                                         <div class="form-check">
-                                                                            <input class="form-check-input" type="checkbox" id="updatePassword" name="updatePassword" [(ngModel)]="emailSettings.updatePassword">
-                                                                            <label class="form-check-label" for="updatePassword">Update</label>
+                                                                            <input class="form-check-input" type="checkbox" id="updatePasswordCheck" name="updatePasswordCheck" [(ngModel)]="emailSettings.updatePassword">
+                                                                            <label class="form-check-label" for="updatePasswordCheck">Update</label>
                                                                         </div>
                                                                     </div>
                                                                     <div class="col-auto flex-grow-1">
                                                                         @if (emailSettings.updatePassword) {
-                                                                            <app-secret-input id="emailPassword" name="emailPassword" [(ngModel)]="emailSettings.newPassword"></app-secret-input>
+                                                                            <app-secret-input id="updatePassword" name="updatePassword" [(ngModel)]="emailSettings.newPassword"></app-secret-input>
                                                                         }
                                                                     </div>
                                                                 </div>
@@ -275,15 +259,7 @@
                                                     <div class="row mt-3">
                                                         <label class="col-3 col-form-label text-end" for="emailAllowedAttachmentTypes">Allowed attachment types:</label>
                                                         <div class="col-4 minimum-width-text">
-                                                            <select id="emailAllowedAttachmentTypes" size="7" name="emailAllowedAttachmentTypes" class="form-select" multiple="true" [(ngModel)]="emailSettings.allowedAttachmentTypes">
-                                                                <option value="text/plain">Text (text/plain)</option>
-                                                                <option value="image/gif">GIF (image/gif)</option>
-                                                                <option value="image/png">PNG (image/png)</option>
-                                                                <option value="image/jpeg">JPEG (image/jpeg)</option>
-                                                                <option value="application/pdf">PDF (application/pdf)</option>
-                                                                <option value="application/xml">XML (application/xml)</option>
-                                                                <option value="text/xml">XML (text/xml)</option>
-                                                            </select>
+                                                            <app-multi-select-filter [config]="emailAttachmentTypeSelectConfig" (apply)="selectEmailAttachmentTypes($event)"></app-multi-select-filter>
                                                         </div>
                                                         <div class="col-auto" app-tooltip tbTooltip="The attachment types that are allowed to be included in support requests."></div>
                                                     </div>
@@ -541,6 +517,11 @@
                         </div>
                     </div>
                 </div>
+            </tab>
+            <tab (selectTab)="showResources()" customClass="tabClass">
+                <ng-template tabHeading><app-tab-title icon="fa-solid fa-image" text="Resources"></app-tab-title></ng-template>
+                <!-- System-wide resources -->
+                <app-resource-management-tab [actions]="resourceActions" [deferredActivation]="resourceEmitter"></app-resource-management-tab>
             </tab>
         </tabset>
     </div>

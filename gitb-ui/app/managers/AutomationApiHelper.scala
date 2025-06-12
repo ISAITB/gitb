@@ -8,10 +8,11 @@ import play.api.db.slick.DatabaseConfigProvider
 import utils.JsonUtil
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext
 
 @Singleton
-class AutomationApiHelper @Inject()(dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class AutomationApiHelper @Inject()(dbConfigProvider: DatabaseConfigProvider)
+                                   (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 

@@ -18,7 +18,8 @@ import play.mvc.Http.HeaderNames._
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
-class AuthenticationFilter @Inject() (implicit ec: ExecutionContext, implicit val mat: Materializer, router: Router) extends Filter {
+class AuthenticationFilter @Inject() (router: Router)
+                                     (implicit ec: ExecutionContext, implicit val mat: Materializer) extends Filter {
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[AuthenticationFilter])
 
@@ -40,7 +41,7 @@ class AuthenticationFilter @Inject() (implicit ec: ExecutionContext, implicit va
         next(requestHeader)
       } else {
         // If this is an unknown route stop any further processing and return a 404.
-        Future {
+        Future.successful {
           logger.debug("Received request for non-existent path [{}]", requestHeader.path)
           NotFound("")
         }
@@ -78,7 +79,7 @@ class AuthenticationFilter @Inject() (implicit ec: ExecutionContext, implicit va
             if (sessionCookie.isDefined) {
               next(downstreamHeaderFromAccessToken(sessionCookie.get.value, requestHeader))
             } else {
-              Future { Unauthorized }
+              Future.successful { Unauthorized }
             }
           } else if (isPublicWithOptionalAuthentication(requestHeader)) {
             // No authentication token but not a problem.
@@ -91,7 +92,7 @@ class AuthenticationFilter @Inject() (implicit ec: ExecutionContext, implicit va
               } else {
                 //Requires authorization to execute this service
                 logger.warn("Request blocked due to missing user or HMAC authentication token [" + requestHeader.path + "]")
-                Future {
+                Future.successful {
                   ResponseConstructor.constructUnauthorizedResponse(ErrorCodes.AUTHORIZATION_REQUIRED, "Needs authorization header")
                 }
               }
@@ -106,14 +107,14 @@ class AuthenticationFilter @Inject() (implicit ec: ExecutionContext, implicit va
                   } else {
                     //Requires authorization to execute this service
                     logger.warn("Request blocked due to missing API key header [" + requestHeader.path + "]")
-                    Future {
+                    Future.successful {
                       ResponseConstructor.constructUnauthorizedResponse(ErrorCodes.AUTHORIZATION_REQUIRED, "Needs API key header")
                     }
                   }
                 }
               } else {
                 logger.warn("Request blocked because the Test Bed's automation API is disabled [" + requestHeader.path + "]")
-                Future {
+                Future.successful {
                   ResponseConstructor.constructUnauthorizedResponse(ErrorCodes.UNAUTHORIZED_ACCESS, "Automation API not enabled")
                 }
               }
@@ -141,7 +142,9 @@ class AuthenticationFilter @Inject() (implicit ec: ExecutionContext, implicit va
 
   def isPublicAutomationAccessAllowed(request:RequestHeader): Boolean = {
     request.path.equals("%s/rest".formatted(API_ROOT)) ||
-    request.path.equals("%s/rest/".formatted(API_ROOT))
+    request.path.equals("%s/rest/".formatted(API_ROOT)) ||
+    request.path.equals("%s/rest/swagger".formatted(API_ROOT)) ||
+    request.path.equals("%s/rest/swagger/".formatted(API_ROOT))
   }
 
   def isHmacAuthenticationAllowed(request:RequestHeader):Boolean = {
@@ -169,6 +172,7 @@ class AuthenticationFilter @Inject() (implicit ec: ExecutionContext, implicit va
       request.path.equals("%s/initdata".formatted(API_ROOT)) ||
       request.path.equals("%s/healthcheck".formatted(API_ROOT)) ||
       request.path.startsWith("%sbadge/".formatted(WEB_CONTEXT_ROOT_WITH_SLASH)) ||
+      request.path.startsWith("%ssystemResources/".formatted(WEB_CONTEXT_ROOT_WITH_SLASH)) ||
       //public assets
       request.path.startsWith("%sassets/".formatted(WEB_CONTEXT_ROOT_WITH_SLASH)) ||
       request.path.startsWith("%swebjars/".formatted(WEB_CONTEXT_ROOT_WITH_SLASH)) ||

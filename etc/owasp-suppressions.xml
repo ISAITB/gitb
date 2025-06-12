@@ -97,5 +97,12 @@
    ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/tomcat-embed-.*@.*$</packageUrl>
         <cve>CVE-2025-24813</cve>
-    </suppress>  
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: spring-context-6.2.6.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework/spring-.*@.*$</packageUrl>
+        <vulnerabilityName>CVE-2025-22233</vulnerabilityName>
+    </suppress>
 </suppressions>

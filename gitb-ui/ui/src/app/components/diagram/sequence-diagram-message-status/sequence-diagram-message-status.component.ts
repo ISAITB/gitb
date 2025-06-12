@@ -4,10 +4,10 @@ import { DiagramEvents } from '../diagram-events';
 import { StepData } from '../step-data';
 
 @Component({
-  selector: 'app-sequence-diagram-message-status',
-  templateUrl: './sequence-diagram-message-status.component.html',
-  styles: [
-  ]
+    selector: 'app-sequence-diagram-message-status',
+    templateUrl: './sequence-diagram-message-status.component.html',
+    styles: [],
+    standalone: false
 })
 export class SequenceDiagramMessageStatusComponent implements OnInit {
 

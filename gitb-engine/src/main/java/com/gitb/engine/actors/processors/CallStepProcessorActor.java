@@ -8,6 +8,7 @@ import com.gitb.engine.expr.ExpressionHandler;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.engine.utils.ScriptletInfo;
 import com.gitb.engine.utils.StepContext;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
@@ -34,6 +35,7 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 	private static final Logger LOG = LoggerFactory.getLogger(CallStepProcessorActor.class);
 
 	private Scriptlet scriptlet;
+	private boolean standaloneScriptlet;
 	private TestCaseScope childScope;
 
 	public CallStepProcessorActor(CallStep step, TestCaseScope scope, String stepId, StepContext stepContext) {
@@ -42,7 +44,9 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 
 	@Override
 	protected void init() throws Exception {
-		scriptlet = findScriptlet();
+		ScriptletInfo scriptletInfo = findScriptlet();
+		scriptlet = scriptletInfo.scriptlet();
+		standaloneScriptlet = scriptletInfo.isStandalone();
 	}
 
 	@Override
@@ -147,7 +151,7 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 		return outputs;
 	}
 
-	private Scriptlet findScriptlet() {
+	private ScriptletInfo findScriptlet() {
 		String testSuiteContext = step.getFrom();
 		if (testSuiteContext == null && scope.getTestSuiteContext() != null) {
 			testSuiteContext = scope.getTestSuiteContext();
@@ -156,7 +160,14 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 	}
 
 	private TestCaseScope createChildScope() {
-		TestCaseScope childScope = scope.createChildScope(step.getId(), scriptlet.getImports(), scriptlet.getNamespaces(), step.getFrom());
+		/*
+		 * A standalone scriptlet (one that is not internal to a test case) should have scope isolation. Scope isolation
+		 * means that:
+		 * - Values can still be looked up from parent scopes.
+		 * - Automatic variable assignments will never affect the parent scope (referring to the 'to' of assign steps. These
+		 *   should be created in the current (child) scope.
+		 */
+		TestCaseScope childScope = scope.createChildScope(step.getId(), scriptlet.getImports(), scriptlet.getNamespaces(), step.getFrom(), standaloneScriptlet);
 		createScriptletVariables(childScope);
 		return childScope;
 	}

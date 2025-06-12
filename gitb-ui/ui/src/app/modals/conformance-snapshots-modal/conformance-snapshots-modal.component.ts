@@ -12,9 +12,10 @@ import { ConformanceSnapshot } from 'src/app/types/conformance-snapshot';
 import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
 
 @Component({
-  selector: 'app-conformance-snapshots-modal',
-  templateUrl: './conformance-snapshots-modal.component.html',
-  styleUrls: [ './conformance-snapshots-modal.component.less' ]
+    selector: 'app-conformance-snapshots-modal',
+    templateUrl: './conformance-snapshots-modal.component.html',
+    styleUrls: ['./conformance-snapshots-modal.component.less'],
+    standalone: false
 })
 export class ConformanceSnapshotsModalComponent extends BaseComponent implements OnInit {
 

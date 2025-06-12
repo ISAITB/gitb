@@ -22,9 +22,10 @@ import { CreateEditTagComponent } from 'src/app/modals/create-edit-tag/create-ed
 import { TestCaseTag } from 'src/app/types/test-case-tag';
 
 @Component({
-  selector: 'app-test-case-details',
-  templateUrl: './test-case-details.component.html',
-  styleUrls: [ './test-case-details.component.less' ]
+    selector: 'app-test-case-details',
+    templateUrl: './test-case-details.component.html',
+    styleUrls: ['./test-case-details.component.less'],
+    standalone: false
 })
 export class TestCaseDetailsComponent extends BaseComponent implements OnInit {
 
@@ -151,7 +152,7 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit {
   }
 
   getTestCaseDefinition(testCaseToLookup: number): Observable<void> {
-    return this.testService.getTestCaseDefinition(testCaseToLookup).pipe(
+    return this.testService.getTestCaseDefinitionByDomain(testCaseToLookup, this.domainId).pipe(
       mergeMap((testCase) => {
         return this.testService.prepareTestCaseDisplayActors(testCase, this.specificationId).pipe(
           map((actorData) => {

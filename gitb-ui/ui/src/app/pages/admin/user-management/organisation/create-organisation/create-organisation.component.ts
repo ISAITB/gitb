@@ -1,32 +1,32 @@
-import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { OptionalCustomPropertyFormData } from 'src/app/components/optional-custom-property-form/optional-custom-property-form-data.type';
-import { BaseComponent } from 'src/app/pages/base-component.component';
-import { DataService } from 'src/app/services/data.service';
-import { OrganisationService } from 'src/app/services/organisation.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { RoutingService } from 'src/app/services/routing.service';
-import { CommunityTab } from '../../community/community-details/community-tab.enum';
-import { OrganisationFormData } from '../organisation-form/organisation-form-data';
-import { Constants } from 'src/app/common/constants';
-import { ValidationState } from 'src/app/types/validation-state';
-import { forkJoin, Observable, of } from 'rxjs';
-import { LandingPage } from 'src/app/types/landing-page';
-import { LegalNotice } from 'src/app/types/legal-notice';
-import { ErrorTemplate } from 'src/app/types/error-template';
-import { LandingPageService } from 'src/app/services/landing-page.service';
-import { LegalNoticeService } from 'src/app/services/legal-notice.service';
-import { ErrorTemplateService } from 'src/app/services/error-template.service';
-import { CommunityService } from 'src/app/services/community.service';
-import { Organisation } from 'src/app/types/organisation.type';
+import {AfterViewInit, Component, OnInit, ViewChild} from '@angular/core';
+import {ActivatedRoute} from '@angular/router';
+import {OptionalCustomPropertyFormData} from 'src/app/components/optional-custom-property-form/optional-custom-property-form-data.type';
+import {BaseComponent} from 'src/app/pages/base-component.component';
+import {DataService} from 'src/app/services/data.service';
+import {OrganisationService} from 'src/app/services/organisation.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {RoutingService} from 'src/app/services/routing.service';
+import {CommunityTab} from '../../community/community-details/community-tab.enum';
+import {OrganisationFormData} from '../organisation-form/organisation-form-data';
+import {Constants} from 'src/app/common/constants';
+import {ValidationState} from 'src/app/types/validation-state';
+import {forkJoin} from 'rxjs';
+import {LandingPage} from 'src/app/types/landing-page';
+import {LegalNotice} from 'src/app/types/legal-notice';
+import {ErrorTemplate} from 'src/app/types/error-template';
+import {LandingPageService} from 'src/app/services/landing-page.service';
+import {LegalNoticeService} from 'src/app/services/legal-notice.service';
+import {ErrorTemplateService} from 'src/app/services/error-template.service';
+import {CommunityService} from 'src/app/services/community.service';
+import {OrganisationFormComponent} from '../organisation-form/organisation-form.component';
 
 @Component({
-  selector: 'app-create-organisation',
-  templateUrl: './create-organisation.component.html',
-  styles: [
-  ]
+    selector: 'app-create-organisation',
+    templateUrl: './create-organisation.component.html',
+    styles: [],
+    standalone: false
 })
-export class CreateOrganisationComponent extends BaseComponent implements OnInit {
+export class CreateOrganisationComponent extends BaseComponent implements OnInit, AfterViewInit {
 
   communityId!: number
   organisation: Partial<OrganisationFormData> = {}
@@ -38,10 +38,12 @@ export class CreateOrganisationComponent extends BaseComponent implements OnInit
   landingPages: LandingPage[] = []
   legalNotices: LegalNotice[] = []
   errorTemplates: ErrorTemplate[] = []
-  otherOrganisations: Organisation[] = []
   loaded = false
   savePending = false
   validation = new ValidationState()
+  @ViewChild('form') form?: OrganisationFormComponent
+  formDataLoaded = false
+  formDataUpdated = false
 
   constructor(
     public dataService: DataService,
@@ -58,19 +60,30 @@ export class CreateOrganisationComponent extends BaseComponent implements OnInit
   ngOnInit(): void {
     this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
     const properties$ = this.communityService.getOrganisationParameters(this.communityId)
-    const otherOrganisations$ = this.organisationService.getOrganisationsByCommunity(this.communityId)
     const landingPages$ = this.landingPageService.getLandingPagesByCommunity(this.communityId)
     const legalNotices$ = this.legalNoticeService.getLegalNoticesByCommunity(this.communityId)
     const errorTemplates$ = this.errorTemplateService.getErrorTemplatesByCommunity(this.communityId)
-    forkJoin([properties$, otherOrganisations$, landingPages$, legalNotices$, errorTemplates$]).subscribe((data) => {
+    forkJoin([properties$, landingPages$, legalNotices$, errorTemplates$]).subscribe((data) => {
       this.propertyData.properties = data[0]
-      this.otherOrganisations = data[1]
-      this.landingPages = data[2]
-      this.legalNotices = data[3]
-      this.errorTemplates = data[4]
+      this.landingPages = data[1]
+      this.legalNotices = data[2]
+      this.errorTemplates = data[3]
+      this.formDataLoaded = true
+      this.updateFormData()
     }).add(() => {
       this.loaded = true
     })
+  }
+
+  ngAfterViewInit(): void {
+    this.updateFormData()
+  }
+
+  private updateFormData() {
+    if (this.form && this.formDataLoaded && !this.formDataUpdated) {
+      this.formDataUpdated = true
+      this.form.dataLoaded()
+    }
   }
 
   saveDisabled() {

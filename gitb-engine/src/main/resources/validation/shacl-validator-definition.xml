@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<module xmlns="http://www.gitb.com/core/v1/"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        id="ShaclValidator" uri="urn:com:gitb:validation:ShaclValidator" xsi:type="ValidationModule">
+    <metadata>
+        <name>SHACL Validator</name>
+        <version>1.0</version>
+    </metadata>
+    <inputs>
+        <param type="string" name="model" desc="The model to be validated"/>
+        <param type="string" name="contentType" desc="The model's content type"/>
+        <param type="list" use="O" name="shapes" desc="The SHACL shapes to use"/>
+        <param type="string" use="O" name="reportContentType" desc="The report's content type"/>
+        <param type="boolean" use="O" name="showShapes" desc="Whether the applied shapes should be added to the report"/>
+        <param type="boolean" use="O" name="sortBySeverity" desc="Whether the report's items should be sorted based on severity"/>
+        <param type="boolean" use="O" name="showReport" desc="Whether the SHACL validation report should be included in the step's report"/>
+        <param type="boolean" use="O" name="loadImports" desc="Whether the OWL imports should be honoured when reading the input model"/>
+        <param type="boolean" use="O" name="mergeModelsBeforeValidation" desc="Whether the shape model should be merged with the input model before validation takes place"/>
+    </inputs>
+</module>

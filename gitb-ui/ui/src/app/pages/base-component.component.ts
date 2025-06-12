@@ -59,6 +59,10 @@ export abstract class BaseComponent {
         return valid
     }
 
+    addAlertInfo(message: string):void {
+      this.addAlert({type:'info', msg: message})
+    }
+
     addAlertError(message: string = 'An error occurred'):void {
         this.addAlert({type:'danger', msg: message})
     }

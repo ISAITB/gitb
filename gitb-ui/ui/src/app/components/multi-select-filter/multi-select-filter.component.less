@@ -1,74 +1,97 @@
 @import '../../../styles/less/_common.less';
 
 
-.caret {
-    display: inline-block;
-    width: 0;
-    height: 0;
-    vertical-align: middle;
-    border-top: 4px dashed;
-    border-top: 4px solid\9;
-    border-right: 4px solid var(--bs-secondary-color);
-    border-left: 4px solid var(--bs-secondary-color);
-}
 .filterContainer {
     position: relative;
     display: flex;
+    min-height: 35px;
 }
 .filterControl {
     display: flex;
     flex-grow: 1;
     align-items: center;
-    & :first-child {
-        flex-grow: 1;
-        display: flex;        
+    & .button-label {
+        display: flex;
+        .button-label-text {
+            flex-grow: 1;
+            text-align: start;
+            margin-right: 0.5rem;
+        }
     }
 }
 .filterForm {
     border-radius: @border-radius;
-    width: 400px;
     border: var(--bs-border-width) solid var(--bs-border-color-translucent);
     position: absolute;
     top: 35px;
+    box-shadow: 2px 2px 5px 0 rgba(0,0,0,0.50);
     &.leftForm {
-        right: 0px;
+        right: 0;
     }
     &.rightForm {
-        left: 0px;
+        left: 0;
     }
-    z-index: 10;
+    z-index: 300;
     background: @white;
     .formSearch {
         margin: 8px;
         display: flex;
         align-items: center;
         position: relative;
+        .clearDiv {
+            margin-left: -8px;
+            padding: 4px 10px;
+            cursor: pointer;
+            border-radius: @border-radius;
+            transition: background-color 0.2s ease;
+            &:hover {
+                background-color: @gray-light;
+            }
+        }
         .inputDiv {
             flex-grow: 1;
+            &.withClear {
+                margin-right: 16px;
+            }
         }
         .iconDiv {
             position: absolute;
-            right: 10px;            
+            right: 10px;
+            &.withClear {
+                right: 48px;
+            }
         }
     }
     .formButtons {
         border-top: 1px solid @gray-light-2;
         padding: 8px;
     }
+    &.multiSelection .itemsContainer .itemContainer:last-child {
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+    }
     .itemsContainer {
         border-top: 1px solid @gray-light-2;
+        margin-bottom: 3px; // To avoid overflow scrollbar disrupting the border radius
         .loadingDiv {
-            padding: 5px 5px;
+            padding: 6px 12px;
         }
         .itemContainer {
+            @focus-background: @gray-highlight;
             padding: 8px;
+            &.focused {
+                background-color: @focus-background;
+            }
             &:last-child {
                 border-bottom-left-radius: @border-radius;
                 border-bottom-right-radius: @border-radius;
             }
             &:hover {
-                background: @bs-background-highlight;
+                background-color: @bs-background-highlight;
                 cursor: pointer;
+                &.focused {
+                    background-color: @focus-background;
+                }
             }
             input {
                 cursor: pointer;
@@ -79,7 +102,9 @@
         }
         &.availableItems {
             overflow-y: auto;
-            max-height: 300px;
+            &.hideBorder {
+                border-top-width: 0;
+            }
         }
     }
 }

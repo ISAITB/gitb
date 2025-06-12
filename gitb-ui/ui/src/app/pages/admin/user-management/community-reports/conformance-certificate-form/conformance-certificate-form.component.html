@@ -119,7 +119,7 @@
                     <div class="row mt-3">
                         <div class="col-12">
                             <div>
-                                <app-placeholder-selector [placeholders]="placeholders" [domainParameters]="true" [domainChanged]="domainChangedEmitter" [organisationParameters]="true" [systemParameters]="true" [resources]="true" [community]="communityId" [domainId]="domainId"></app-placeholder-selector>
+                                <app-placeholder-selector [placeholders]="placeholders" [domainParameters]="true" [domainChanged]="domainChangedEmitter" [organisationParameters]="true" [systemParameters]="true" [resources]="true" [systemResources]="dataService.isSystemAdmin" [community]="communityId" [domainId]="domainId"></app-placeholder-selector>
                             </div>
                             <div class="mt-3">
                                 <app-editor name="message" [(ngModel)]="settings.message" [type]="'pdf'"></app-editor>

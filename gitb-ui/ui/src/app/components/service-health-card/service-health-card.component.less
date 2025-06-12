@@ -1,0 +1,52 @@
+@import '../../../styles/less/_common.less';
+
+.health-card-container {
+    min-width: 200px;
+    height: 150px;
+    display: flex;
+    flex-direction: column;
+    border-radius: @border-radius;
+    border: 1px solid @gray-dark-1;
+    background-color: @gray-light-1;
+    padding: 10px;
+    position: relative;
+    transition: background-color 0.2s;
+    &.actionable:hover {
+        cursor: pointer;
+        background-color: @gray-highlight;
+    }
+    .health-card-title, .health-card-status {
+        display: flex;
+        justify-content: center;
+    }
+    .health-card-title {
+        font-size: large;
+        font-weight: bold;
+        align-items: center;
+        text-align: center;
+        flex: 1;
+    }
+    &.hovering {
+        .health-card-action {
+            transform: scale(1.05);
+            border: 1px solid @gray-dark-1;
+            div {
+                transform: scale(1.2);
+            }
+        }
+    }
+    .health-card-action {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        padding: 10px 15px;
+        border-left: 1px solid @gray-dark-1;
+        border-top: 1px solid @gray-dark-1;
+        border-top-left-radius: @border-radius;
+        border-bottom-right-radius: @border-radius;
+        background-color: @gray-highlight;
+        div {
+            transition: transform 0.2s ease;
+        }
+    }
+}

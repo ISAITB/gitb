@@ -5,8 +5,9 @@ import { DataService } from 'src/app/services/data.service';
 import { TestCaseTag } from 'src/app/types/test-case-tag';
 
 @Component({
-  selector: 'app-create-edit-tag',
-  templateUrl: './create-edit-tag.component.html'
+    selector: 'app-create-edit-tag',
+    templateUrl: './create-edit-tag.component.html',
+    standalone: false
 })
 export class CreateEditTagComponent extends BaseComponent implements OnInit, AfterViewInit {
 

@@ -10,9 +10,10 @@ import { HtmlService } from 'src/app/services/html.service';
 import { DataService } from 'src/app/services/data.service';
 
 @Component({
-  selector: '[app-test-step-report-tar]',
-  templateUrl: './test-step-report-tar.component.html',
-  styleUrls: ['./test-step-report-tar.component.less']
+    selector: '[app-test-step-report-tar]',
+    templateUrl: './test-step-report-tar.component.html',
+    styleUrls: ['./test-step-report-tar.component.less'],
+    standalone: false
 })
 export class TestStepReportTARComponent extends ReportSupport implements OnInit {
 

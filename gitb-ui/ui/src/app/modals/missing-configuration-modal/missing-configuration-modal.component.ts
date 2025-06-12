@@ -8,9 +8,9 @@ import { DataService } from 'src/app/services/data.service';
 import { EndpointParameter } from 'src/app/types/endpoint-parameter';
 
 @Component({
-  selector: 'app-missing-configuration-modal',
-  templateUrl: './missing-configuration-modal.component.html',
-  styleUrls: [ './missing-configuration-modal.component.less']
+    selector: 'app-missing-configuration-modal',
+    templateUrl: './missing-configuration-modal.component.html',
+    standalone: false
 })
 export class MissingConfigurationModalComponent implements OnInit {
 
@@ -31,10 +31,12 @@ export class MissingConfigurationModalComponent implements OnInit {
   showStatementProperties = false
   somethingIsVisible = false
   requiredPropertiesAreHidden = false
+  requiredPropertiesIncludeEditable = false
+  requiredPropertiesIncludeNonEditable = false
 
   constructor(
     private modalRef: BsModalRef,
-    private dataService: DataService
+    public dataService: DataService
   ) { }
 
   ngOnInit(): void {
@@ -46,6 +48,8 @@ export class MissingConfigurationModalComponent implements OnInit {
     this.showStatementProperties = this.statementPropertyVisibility.hasVisibleMissingRequiredProperties
     this.somethingIsVisible = this.showOrganisationProperties || this.showSystemProperties || this.showStatementProperties
     this.requiredPropertiesAreHidden = this.organisationPropertyVisibility.hasNonVisibleMissingRequiredProperties || this.systemPropertyVisibility.hasNonVisibleMissingRequiredProperties || this.statementPropertyVisibility.hasNonVisibleMissingRequiredProperties
+    this.requiredPropertiesIncludeEditable = this.organisationPropertyVisibility.hasVisibleMissingRequiredEditableProperties || this.systemPropertyVisibility.hasVisibleMissingRequiredEditableProperties || this.statementPropertyVisibility.hasVisibleMissingRequiredEditableProperties
+    this.requiredPropertiesIncludeNonEditable = this.organisationPropertyVisibility.hasVisibleMissingRequiredNonEditableProperties || this.systemPropertyVisibility.hasVisibleMissingRequiredNonEditableProperties || this.statementPropertyVisibility.hasVisibleMissingRequiredNonEditableProperties
   }
 
   view() {

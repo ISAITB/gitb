@@ -10,11 +10,16 @@
 						<!-- request interaction: server asks operator to send inputs -->
 						 @if (interaction.type == 'request') {
 							 <div>
-								 <label [attr.for]="'input-'+index" class="form-label">{{interaction.desc}}</label>
+								 <label [attr.for]="'input-'+index" class="form-label">
+                                     @if (interaction.required) {
+                                         <span class="me-1 fw-bold">*</span>
+                                     }
+                                     {{interaction.desc}}
+                                 </label>
 								 @switch (interaction.inputType) {
 									@case ("SELECT_SINGLE") {
 										<!-- Select single. -->
-										<select [name]="'input-'+index" [attr.id]="'input-'+index" class="form-select" [(ngModel)]="interaction.selectedOption">
+										<select [name]="'input-'+index" [attr.id]="'input-'+index" class="form-select" [(ngModel)]="interaction.selectedOption" [invalid]="validation.get('input_'+index)" [compareWith]="compareValueLabels">
 											<option value=""></option>
 											@for (option of interaction.optionData; track $index) {
 												<option [ngValue]="option">{{option.label}}</option>
@@ -23,7 +28,7 @@
 									}
 									@case ("SELECT_MULTIPLE") {
 										<!-- Select multiple -->
-										<select [name]="'input-'+index" [attr.id]="'input-'+index" multiple="true" class="form-select" [(ngModel)]="interaction.selectedOption">
+										<select [name]="'input-'+index" [attr.id]="'input-'+index" multiple="multiple" class="form-select" [(ngModel)]="interaction.selectedOptions" [invalid]="validation.get('input_'+index)" [compareWith]="compareValueLabels">
 											@for (option of interaction.optionData; track $index) {
 												<option [ngValue]="option">{{option.label}}</option>
 											}
@@ -32,24 +37,24 @@
 									@case ("UPLOAD") {
 										 <!-- Upload -->
 										<div>
-											<app-file-select [fileName]="interaction.file?.name" [reset]="interaction.reset" (onUpload)="onFileSelect(interaction, $event)"></app-file-select>
+											<app-file-select [fileName]="interaction.file?.name" [reset]="interaction.reset" (onUpload)="onFileSelect(interaction, $event)" [validation]="validation.get('input_'+index)"></app-file-select>
 										</div>
 									}
 									@case ("CODE") {
 										<!-- Code editor -->
-										<ngx-codemirror #codeMirror (focusChange)="codeEditorFocus($event, 'input-'+index)" [name]="'input-'+index" [attr.id]="'input-'+index" [(ngModel)]="interaction.data" [options]="{lineNumbers:true, smartIndent: false, electricChars: false, mode: interaction.mimeType}" [ngClass]="{'focused': editorFocus['input-'+index]}"></ngx-codemirror>
+										<ngx-codemirror #codeMirror (focusChange)="codeEditorFocus($event, 'input-'+index)" [name]="'input-'+index" [attr.id]="'input-'+index" [(ngModel)]="interaction.data" [options]="{lineNumbers:true, smartIndent: false, electricChars: false, mode: interaction.mimeType}" [ngClass]="{'focused': editorFocus['input-'+index]}"  [invalid]="validation.get('input_'+index)"></ngx-codemirror>
 									}
 									@case ("MULTILINE_TEXT") {
 										<!-- Text area -->
-										<textarea [name]="'input-'+index" [attr.id]="'input-'+index" class="form-control" [(ngModel)]="interaction.data"></textarea>
+										<textarea [name]="'input-'+index" [attr.id]="'input-'+index" class="form-control" [(ngModel)]="interaction.data" [invalid]="validation.get('input_'+index)"></textarea>
 									}
 									@case ("SECRET") {
 										<!-- Secret -->
-										<app-secret-input [name]="'input-'+index" [id]="'input-'+index" [(ngModel)]="interaction.data"></app-secret-input>
+										<app-secret-input [name]="'input-'+index" [id]="'input-'+index" [(ngModel)]="interaction.data" [validation]="validation.get('input_'+index)"></app-secret-input>
 									}
 									@default {
 										<!-- Text field -->
-										<input [name]="'input-'+index" [attr.id]="'input-'+index" type="text" class="form-control" [(ngModel)]="interaction.data"/>
+										<input [name]="'input-'+index" [attr.id]="'input-'+index" type="text" class="form-control" [(ngModel)]="interaction.data" [invalid]="validation.get('input_'+index)"/>
 									}
 								 }
 							 </div>

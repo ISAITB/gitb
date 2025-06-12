@@ -31,7 +31,7 @@ import java.util.Optional;
 @ValidationHandler(name="SchematronValidator")
 public class SchematronValidator extends AbstractValidator {
 
-    public final static String CONTENT_ARGUMENT_NAME     = "xmldocument";
+    public final static String CONTENT_ARGUMENT_NAME     = "xml";
     public final static String SCHEMATRON_ARGUMENT_NAME  = "schematron";
     public final static String SCHEMATRON_TYPE_ARGUMENT_NAME = "type";
     public final static String SHOW_SCHEMATRON_ARGUMENT_NAME = "showSchematron";

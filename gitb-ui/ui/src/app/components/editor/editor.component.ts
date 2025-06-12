@@ -4,15 +4,16 @@ import { DataService } from 'src/app/services/data.service';
 import { EditorComponent as TinyMceEditorComponent } from '@tinymce/tinymce-angular';
 
 @Component({
-  selector: 'app-editor',
-  template: '<editor #editor [init]="editorConfig" [(ngModel)]="editorValue"></editor>',
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => EditorComponent),
-      multi: true
-    }
-  ]
+    selector: 'app-editor',
+    template: '<editor #editor [init]="editorConfig" [(ngModel)]="editorValue"></editor>',
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => EditorComponent),
+            multi: true
+        }
+    ],
+    standalone: false
 })
 export class EditorComponent implements OnInit, ControlValueAccessor {
 
@@ -57,7 +58,12 @@ export class EditorComponent implements OnInit, ControlValueAccessor {
       content_css: 'assets/build/styles.css,api/theme/css',
       body_class: 'editor-body',
       suffix: '.min',
-      convert_unsafe_embeds: true
+      convert_unsafe_embeds: true,
+      link_default_target: '_blank',
+      link_target_list: [
+        { text: 'New window', value: '_blank' },
+        { text: 'Current window', value: '' }
+      ]
     }
     if (this.type == 'normal') {
       config.plugins = 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table code'

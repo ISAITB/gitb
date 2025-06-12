@@ -1,11 +1,20 @@
 package models.automation
 
+import com.gitb.tr.TAR
 import models.TestSuiteUploadResult
 
-class TestSuiteUploadResultWithApiKeys extends TestSuiteUploadResult {
+object TestSuiteUploadResultWithApiKeys {
 
-  var testSuiteIdentifier: Option[String] = None
-  var testCaseIdentifiers: Option[List[String]] = None
-  var specifications: Option[List[SpecificationActorApiKeys]] = None
+//  def confirm(): TestSuiteUploadResultWithApiKeys = {
+//  }
+
+//  def confirm(report: TAR): TestSuiteUploadResultWithApiKeys = {
+//    TestSuiteUploadResultWithApiKeys(result = TestSuiteUploadResult(needsConfirmation = true, validationReport = Some(report)))
+//  }
 
 }
+
+case class TestSuiteUploadResultWithApiKeys(testSuiteIdentifier: Option[String] = None,
+                                            testCaseIdentifiers: Option[List[String]] = None,
+                                            specifications: Option[List[SpecificationActorApiKeys]] = None,
+                                            result: TestSuiteUploadResult)

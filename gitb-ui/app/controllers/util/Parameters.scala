@@ -96,6 +96,7 @@ object Parameters {
   val STATEMENT_PARAMETERS = "stm_params"
 
   //System Service parameters
+  val SYSTEM    = "system"
   val SYSTEM_ID    = "system_id"
   val SYSTEM_SNAME = "system_sname"
   val SYSTEM_FNAME = "system_fname"
@@ -116,6 +117,7 @@ object Parameters {
 	val FULL_NAME = "fname"
 	val DESC  = "description"
   val METADATA  = "metadata"
+  val DOMAIN = "domain"
   val DOMAIN_ID = "domain_id"
   val GROUP_ID = "group_id"
   val GROUP_IDS = "group_ids"
@@ -149,6 +151,7 @@ object Parameters {
   val ALLOW_POST_TEST_SYS_UPDATE = "allow_post_test_sys_update"
   val ALLOW_POST_TEST_STM_UPDATE = "allow_post_test_stm_update"
   val ALLOW_AUTOMATION_API = "allow_automation_api"
+  val ALLOW_COMMUNITY_VIEW = "allow_community_view"
   //TestService parameters
   val ACTOR_ID   = "actor_id"
   val ACTOR_DEFAULT   = "default"
@@ -244,4 +247,5 @@ object Parameters {
   val SECONDARY_BUTTON_LABEL_COLOR = "secondaryButtonLabelColor"
   val SECONDARY_BUTTON_HOVER_COLOR = "secondaryButtonHoverColor"
   val SECONDARY_BUTTON_ACTIVE_COLOR = "secondaryButtonActiveColor"
+  val PENDING_ADMIN_INTERACTION = "pending_admin_interaction"
 }

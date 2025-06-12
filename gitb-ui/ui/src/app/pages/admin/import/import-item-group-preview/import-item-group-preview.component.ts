@@ -4,10 +4,10 @@ import { ImportItemState } from '../import-item-state';
 import { ImportItemStateGroup } from '../import-item-state-group';
 
 @Component({
-  selector: '[app-import-item-group-preview]',
-  templateUrl: './import-item-group-preview.component.html',
-  styles: [
-  ]
+    selector: '[app-import-item-group-preview]',
+    templateUrl: './import-item-group-preview.component.html',
+    styles: [],
+    standalone: false
 })
 export class ImportItemGroupPreviewComponent implements OnInit {
 

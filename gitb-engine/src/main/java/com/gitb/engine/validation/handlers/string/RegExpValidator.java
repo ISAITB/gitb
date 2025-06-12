@@ -5,7 +5,7 @@ import com.gitb.core.Configuration;
 import com.gitb.core.ValueEmbeddingEnumeration;
 import com.gitb.engine.validation.ValidationHandler;
 import com.gitb.engine.validation.handlers.common.AbstractReportHandler;
-import com.gitb.engine.validation.handlers.common.AbstractValidator;
+import com.gitb.engine.validation.handlers.common.SimpleValidator;
 import com.gitb.tr.TAR;
 import com.gitb.tr.TestAssertionGroupReportsType;
 import com.gitb.tr.TestResultType;
@@ -15,13 +15,14 @@ import com.gitb.types.DataType;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 /**
  * Created by simatosc
  */
 @ValidationHandler(name="RegExpValidator")
-public class RegExpValidator extends AbstractValidator {
+public class RegExpValidator extends SimpleValidator {
 
     private static final String INPUT_ARGUMENT_NAME   = "input";
     private static final String EXPRESSION_ARGUMENT_NAME = "expression";
@@ -35,11 +36,12 @@ public class RegExpValidator extends AbstractValidator {
     public TestStepReportType validate(List<Configuration> configurations, Map<String, DataType> inputs) {
         String input = (String)inputs.get(INPUT_ARGUMENT_NAME).convertTo(DataType.STRING_DATA_TYPE).getValue();
         String expression = (String)inputs.get(EXPRESSION_ARGUMENT_NAME).convertTo(DataType.STRING_DATA_TYPE).getValue();
+        Objects.requireNonNull(input, "No input provided.");
+        Objects.requireNonNull(input, "No expression provided.");
         // Process expression.
         BooleanType result = new BooleanType(Pattern.matches(expression, input));
         // Return report.
-        RegExpReportHandler handler = new RegExpReportHandler(input, expression, result);
-        return handler.createReport();
+        return createReport(inputs, () -> new RegExpReportHandler(input, expression, result).createReport());
     }
 
     static class RegExpReportHandler extends AbstractReportHandler {

@@ -3,9 +3,10 @@ import { CheckboxOptionState } from './checkbox-option-state';
 import { CheckboxOption } from './checkbox-option';
 
 @Component({
-  selector: 'app-checkbox-option-panel',
-  templateUrl: './checkbox-option-panel.component.html',
-  styleUrls: [ './checkbox-option-panel.component.less' ]
+    selector: 'app-checkbox-option-panel',
+    templateUrl: './checkbox-option-panel.component.html',
+    styleUrls: ['./checkbox-option-panel.component.less'],
+    standalone: false
 })
 export class CheckboxOptionPanelComponent implements OnInit {
 

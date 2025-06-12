@@ -23,7 +23,7 @@
                     }
                 }
                 <div class="btn-group" dropdown [isDisabled]="selectedCommunityId == undefined">
-                    <button id="button-snapshot" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-snapshot">{{snapshotButtonLabel}}<span class="caret withMargin"></span></button>
+                    <button id="button-snapshot" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-snapshot"><span class="me-2">{{snapshotButtonLabel}}</span></button>
                     <ul id="dropdown-snapshot" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-snapshot">
                       <li role="menuitem"><a class="dropdown-item" href (click)="viewLatestConformanceSnapshot();$event.preventDefault()">{{latestSnapshotButtonLabel}}</a></li>
                       <li class="divider dropdown-divider"></li>
@@ -251,16 +251,7 @@
                         </tbody>
                     }
                 </table>
-                @if ((!prevDisabled || !nextDisabled) && conformanceStatements && conformanceStatements.length > 0) {
-                    <div class="text-center table-paging-controls">
-                        <div class="btn-group" role="group" [class.disable-events]="filterState.updatePending">
-                            <button type="button" class="btn btn-sm btn-secondary" [disabled]="prevDisabled" (click)="doFirstPage()">First</button>
-                            <button type="button" class="btn btn-sm btn-secondary" [disabled]="prevDisabled" (click)="doPrevPage()">Previous</button>
-                            <button type="button" class="btn btn-sm btn-secondary" [disabled]="nextDisabled" (click)="doNextPage()">Next</button>
-                            <button type="button" class="btn btn-sm btn-secondary" [disabled]="nextDisabled" (click)="doLastPage()">Last</button>
-                        </div>
-                    </div>
-                }
+                <app-paging-controls #pagingControls [refreshing]="filterState.updatePending" (navigation)="doPageNavigation($event)"></app-paging-controls>
             </div>
         }
     </div>

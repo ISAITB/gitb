@@ -88,11 +88,8 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
             if (step.getHandler() == null) {
                 throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Test step [" + stepId + "] is a process step with no transaction reference and no handler definition."));
             }
-            String handlerIdentifier = step.getHandler();
             VariableResolver resolver = new VariableResolver(scope);
-            if (VariableResolver.isVariableReference(handlerIdentifier)) {
-                handlerIdentifier = resolver.resolveVariableAsString(handlerIdentifier).toString();
-            }
+            String handlerIdentifier = resolveProcessingHandler(step.getHandler(), () -> resolver);
             context = new ProcessingContext(handlerIdentifier, TestCaseUtils.getStepProperties(step.getProperty(), resolver), scope.getContext().getSessionId());
         } else {
             // A processing transaction is referenced.
@@ -154,11 +151,12 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
     private TAR produceReport(ProcessingReport report, IProcessingHandler handler) {
         Optional<VariableResolver> resolver = Optional.empty();
         if (report.getData() != null && (step.getId() != null || step.getOutput() != null)) {
-            if (step.getOutput() != null) {
-                if (report.getData().getData() != null && report.getData().getData().size() == 1) {
+            if (step.getOutput() != null && report.getData().getData() != null) {
+                int outputCount = report.getData().getData().size();
+                if (outputCount == 1) {
                     // Single output - set as direct result.
                     scope.createVariable(step.getOutput()).setValue(report.getData().getData().values().iterator().next());
-                } else {
+                } else if (outputCount > 1) {
                     // Multiple outputs - set as map result.
                     scope.createVariable(step.getOutput()).setValue(getValue(report.getData()));
                 }
@@ -169,14 +167,7 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
             }
         }
         if (step.getHidden() != null && !handler.isRemote()) {
-            var isHidden = true;
-            if (VariableResolver.isVariableReference(step.getHidden())) {
-                resolver = Optional.of(new VariableResolver(scope));
-                var hiddenVariable = resolver.get().resolveVariable(step.getHidden());
-                isHidden = hiddenVariable != null && Boolean.TRUE.equals(hiddenVariable.convertTo(DataType.BOOLEAN_DATA_TYPE).getValue());
-            } else {
-                isHidden = Boolean.parseBoolean(step.getHidden());
-            }
+            boolean isHidden = TestCaseUtils.resolveBooleanFlag(step.getHidden(), true, () -> new VariableResolver(scope));
             if (!isHidden) {
                 // We only add to the report's context the created data if this is visible and
                 // if the handler is not a custom one (for custom ones you can return anything

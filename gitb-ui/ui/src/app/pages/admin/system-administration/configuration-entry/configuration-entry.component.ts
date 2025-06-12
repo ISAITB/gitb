@@ -3,9 +3,10 @@ import { Constants } from 'src/app/common/constants';
 import { ConfigStatus } from '../config-status';
 
 @Component({
-  selector: 'app-configuration-entry',
-  templateUrl: './configuration-entry.component.html',
-  styleUrls: [ './configuration-entry.component.less' ]
+    selector: 'app-configuration-entry',
+    templateUrl: './configuration-entry.component.html',
+    styleUrls: ['./configuration-entry.component.less'],
+    standalone: false
 })
 export class ConfigurationEntryComponent implements OnInit {
 

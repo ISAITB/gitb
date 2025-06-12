@@ -1,12 +1,12 @@
 <div class="custom-property-filter">
     @if (applied) {
-      <div class="custom-property-filter-container applied">
-        <div class="property-id">{{appliedName}}</div>
-        <div class="property-value">{{appliedValueLabel}}</div>
-        <div class="property-controls">
-          <button class="btn btn-secondary" (click)="clear()" containerClass="shortTooltip" tooltip="Remove" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-times"></i></button>
+        <div class="custom-property-filter-container applied">
+            <div class="property-id">{{appliedName}}</div>
+            <div class="property-value">{{appliedValueLabel}}</div>
+            <div class="property-controls">
+                <div (click)="clear()" containerClass="shortTooltip" tooltip="Remove" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-times"></i></div>
+            </div>
         </div>
-      </div>
     } @else {
       <div class="custom-property-filter-container non-applied">
         <div class="property-id">

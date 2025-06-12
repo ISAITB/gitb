@@ -9,8 +9,9 @@ import { PreviewConfig } from '../community-xml-report-form/preview-config';
 import { ErrorService } from 'src/app/services/error.service';
 
 @Component({
-  selector: 'app-test-case-report-form',
-  templateUrl: './../community-xml-report-form/community-xml-report-form.component.html'
+    selector: 'app-test-case-report-form',
+    templateUrl: './../community-xml-report-form/community-xml-report-form.component.html',
+    standalone: false
 })
 export class TestCaseReportFormComponent extends CommunityXmlReportFormComponent {
 

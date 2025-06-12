@@ -191,7 +191,7 @@ public class Utils {
         return isContainer;
     }
 
-    private static String getStepName(Object stepObj) {
+    public static String getStepName(Object stepObj) {
         String step;
         if (stepObj instanceof Send) {
             step = "send";

@@ -64,11 +64,9 @@
                 <app-form-section sectionTitle="Documentation" [collapsed]="true" [marginBefore]="true">
 					<div class="row mb-3 mt-3">
 						<div class="offset-1 col-10">
-							@if (communityId != undefined) {
-								<div class="mb-3">
-									<app-placeholder-selector [resources]="true" [community]="communityId"></app-placeholder-selector>
-								</div>
-							}
+                            <div class="mb-3">
+                                <app-placeholder-selector [resources]="communityId != undefined" [systemResources]="dataService.isSystemAdmin" [community]="communityId"></app-placeholder-selector>
+                            </div>
 							<div class="editorContainer">
 								<app-editor id="documentation" name="documentation" [(ngModel)]="testCase.documentation"></app-editor>
 								<div app-tooltip class="col-auto" tbTooltip="Extended documentation on the test case that users can click to view before and during test execution. Use this to provide detailed information, prerequisites, steps to follow and references to external resources." [withMargin]="true"></div>

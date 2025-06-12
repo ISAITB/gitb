@@ -5,7 +5,7 @@
     <parent>
         <artifactId>GITB</artifactId>
         <groupId>com.gitb</groupId>
-        <version>1.0-SNAPSHOT</version>
+        <version>1.26.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -25,6 +25,10 @@
     <dependencies>
 		<dependency>
 			<groupId>com.gitb</groupId>
+			<artifactId>gitb-common</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.gitb</groupId>
 			<artifactId>gitb-core</artifactId>
 		</dependency>
         <dependency>
@@ -37,15 +41,11 @@
 		</dependency>
 		<dependency>
 			<groupId>org.apache.pekko</groupId>
-			<artifactId>pekko-actor_2.13</artifactId>
+			<artifactId>pekko-actor_3</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-configuration2</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>commons-beanutils</groupId>
-			<artifactId>commons-beanutils</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
@@ -126,6 +126,18 @@
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-collections4</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.jena</groupId>
+			<artifactId>jena-arq</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.topbraid</groupId>
+			<artifactId>shacl</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.networknt</groupId>
+			<artifactId>json-schema-validator</artifactId>
 		</dependency>
 	</dependencies>
 </project>

@@ -5,7 +5,6 @@ import com.gitb.utils.HmacUtils;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.configuration2.EnvironmentConfiguration;
 import org.apache.commons.configuration2.SystemConfiguration;
-import org.apache.commons.configuration2.builder.fluent.Configurations;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.lang3.StringUtils;
 
@@ -13,6 +12,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
+
+import static com.gitb.utils.ConfigUtils.getPropertiesConfiguration;
 
 /**
  * Created by serbay on 9/8/14.
@@ -35,6 +36,8 @@ public class TestEngineConfiguration {
 	public static Long TEMP_STORAGE_XML_THRESHOLD_BYTES;
 	public static String TEST_CASE_REPOSITORY_URL;
 	public static String TEST_RESOURCE_REPOSITORY_URL;
+	public static String REPOSITORY_HEALTHCHECK_URL;
+	public static String REPOSITORY_ROOT_URL;
 	public static String TEST_ID_PARAMETER;
 	public static String RESOURCE_ID_PARAMETER;
 	public static Configuration DEFAULT_MESSAGING_CONFIGURATION;
@@ -57,8 +60,7 @@ public class TestEngineConfiguration {
 			CompositeConfiguration config = new CompositeConfiguration();
 			config.addConfiguration(new SystemConfiguration());
 			config.addConfiguration(new EnvironmentConfiguration());
-			config.addConfiguration(new Configurations().properties("engine-module.properties"));
-
+			config.addConfiguration(getPropertiesConfiguration("engine-module.properties"));
 			ITERATION_LIMIT = config.getInt("gitb.engine.iteration-limit", 1000);
 			// Determine callback URLs - start.
 			var rootCallbackUrl = config.getString(ENV_CALLBACK_ROOT_URL, "");
@@ -134,6 +136,8 @@ public class TestEngineConfiguration {
 			} else {
 				TEST_RESOURCE_REPOSITORY_URL = config.getString(ENV_REPOSITORY_TEST_RESOURCE_URL);
 			}
+			REPOSITORY_HEALTHCHECK_URL = StringUtils.removeEnd(TEST_RESOURCE_REPOSITORY_URL, "/resource/:test_id/:resource_id") + "/healthCheck";
+			REPOSITORY_ROOT_URL = StringUtils.removeEnd(StringUtils.removeEnd(StringUtils.getCommonPrefix(REPOSITORY_HEALTHCHECK_URL, TEST_CASE_REPOSITORY_URL, TEST_RESOURCE_REPOSITORY_URL), "/"), "/api/repository");
 			TEST_ID_PARAMETER = System.getenv().getOrDefault("remote.testcase.test-id.parameter", config.getString("remote.testcase.test-id.parameter"));
 			RESOURCE_ID_PARAMETER = System.getenv().getOrDefault("remote.testcase.resource-id.parameter", config.getString("remote.testcase.resource-id.parameter"));
 			// Configure also the HMAC information used to authorize remote calls.
@@ -144,7 +148,7 @@ public class TestEngineConfiguration {
 			// Embedded messaging handler configuration - start.
 			DEFAULT_MESSAGING_CONFIGURATION = loadDefaultMessagingHandlerConfiguration(config);
 			// Embedded messaging handler configuration - end.
-		} catch (ConfigurationException e) {
+		} catch (ConfigurationException | IOException e) {
 			throw new IllegalStateException("Error loading configuration", e);
 		}
 	}

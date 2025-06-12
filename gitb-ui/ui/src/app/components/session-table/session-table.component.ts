@@ -1,27 +1,28 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { BsModalService } from 'ngx-bootstrap/modal';
-import { Constants } from 'src/app/common/constants';
-import { DataService } from 'src/app/services/data.service';
-import { ReportService } from 'src/app/services/report.service';
-import { RoutingService } from 'src/app/services/routing.service';
-import { TestResultForDisplay } from 'src/app/types/test-result-for-display';
-import { BaseTableComponent } from '../base-table/base-table.component';
-import { SessionData } from '../diagram/test-session-presentation/session-data';
-import { SessionPresentationData } from '../diagram/test-session-presentation/session-presentation-data';
-import { SessionLogModalComponent } from '../session-log-modal/session-log-modal.component';
-import { Observable, mergeMap, of } from 'rxjs';
-import { ProvideInputModalComponent } from 'src/app/modals/provide-input-modal/provide-input-modal.component';
-import { TestService } from 'src/app/services/test.service';
-import { TestResultReport } from 'src/app/types/test-result-report';
-import { LogLevel } from 'src/app/types/log-level';
-import { TestInteractionData } from 'src/app/types/test-interaction-data';
-import { filter, find } from 'lodash';
-import { PopupService } from 'src/app/services/popup.service';
+import {Component, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
+import {BsModalService} from 'ngx-bootstrap/modal';
+import {Constants} from 'src/app/common/constants';
+import {DataService} from 'src/app/services/data.service';
+import {ReportService} from 'src/app/services/report.service';
+import {RoutingService} from 'src/app/services/routing.service';
+import {TestResultForDisplay} from 'src/app/types/test-result-for-display';
+import {BaseTableComponent} from '../base-table/base-table.component';
+import {SessionData} from '../diagram/test-session-presentation/session-data';
+import {SessionLogModalComponent} from '../session-log-modal/session-log-modal.component';
+import {mergeMap, Observable, of} from 'rxjs';
+import {ProvideInputModalComponent} from 'src/app/modals/provide-input-modal/provide-input-modal.component';
+import {TestService} from 'src/app/services/test.service';
+import {TestResultReport} from 'src/app/types/test-result-report';
+import {LogLevel} from 'src/app/types/log-level';
+import {TestInteractionData} from 'src/app/types/test-interaction-data';
+import {filter, find} from 'lodash';
+import {PopupService} from 'src/app/services/popup.service';
+import {PagingControlsComponent} from '../paging-controls/paging-controls.component';
 
 @Component({
-  selector: '[app-session-table]',
-  templateUrl: './session-table.component.html',
-  styleUrls: [ './session-table.component.less' ]
+    selector: '[app-session-table]',
+    templateUrl: './session-table.component.html',
+    styleUrls: ['./session-table.component.less'],
+    standalone: false
 })
 export class SessionTableComponent extends BaseTableComponent implements OnInit {
 
@@ -31,16 +32,16 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
   @Input() refreshComplete?: EventEmitter<TestResultReport|undefined>
   @Input() copyForOtherRoleOption = false
   @Input() showCheckbox?: EventEmitter<boolean>
+  @Input() showNavigationControls = true
   @Output() onRefresh = new EventEmitter<TestResultForDisplay>()
+  @ViewChild("pagingControls") pagingControls?: PagingControlsComponent
 
   Constants = Constants
   columnCount = 0
   diagramCollapsed: {[key: string]: boolean} = {}
   diagramCollapsedFinished: {[key: string]: boolean} = {}
   viewLogPending: {[key: string]: boolean} = {}
-  stateEmitters: {[key: string]: EventEmitter<void>} = {}
   sessionBeingRefreshed?: TestResultForDisplay
-  diagramStateForSessionBeingRefreshed?: SessionPresentationData
 
   constructor(
     private reportService: ReportService,
@@ -371,4 +372,5 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
       }
     })
   }
+
 }

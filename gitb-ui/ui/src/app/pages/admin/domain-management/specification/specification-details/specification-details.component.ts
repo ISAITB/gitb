@@ -1,8 +1,8 @@
-import { AfterViewInit, Component, OnInit } from '@angular/core';
+import {AfterViewInit, Component, EventEmitter, OnInit} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { filter, find } from 'lodash';
 import { BsModalService } from 'ngx-bootstrap/modal';
-import { forkJoin, map, mergeMap, of, share } from 'rxjs';
+import {forkJoin, map, mergeMap, Observable, of, share, tap} from 'rxjs';
 import { Constants } from 'src/app/common/constants';
 import { LinkSharedTestSuiteModalComponent } from 'src/app/modals/link-shared-test-suite-modal/link-shared-test-suite-modal.component';
 import { TestSuiteUploadModalComponent } from 'src/app/modals/test-suite-upload-modal/test-suite-upload-modal.component';
@@ -19,10 +19,13 @@ import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 import { Specification } from 'src/app/types/specification';
 import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
 import { TestSuite } from 'src/app/types/test-suite';
+import {FilterUpdate} from '../../../../../components/test-filter/filter-update';
+import {MultiSelectConfig} from '../../../../../components/multi-select-filter/multi-select-config';
 
 @Component({
-  selector: 'app-specification-details',
-  templateUrl: './specification-details.component.html'
+    selector: 'app-specification-details',
+    templateUrl: './specification-details.component.html',
+    standalone: false
 })
 export class SpecificationDetailsComponent extends BaseTabbedComponent implements OnInit, AfterViewInit {
 
@@ -31,7 +34,6 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
   actors: Actor[] = []
   testSuites: TestSuite[] = []
   sharedTestSuites: TestSuite[] = []
-  availableSharedTestSuites: TestSuite[] = []
   availableSharedTestSuitesLoaded = false
   domainId!: number
   specificationId!: number
@@ -56,6 +58,9 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
   linkPending = false
   unlinkPending = false
   loaded = false
+
+  linkSharedSelectionConfig!: MultiSelectConfig<TestSuite>
+  unlinkSharedSelectionConfig!: MultiSelectConfig<TestSuite>
 
   constructor(
     public dataService: DataService,
@@ -84,6 +89,25 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
   ngOnInit(): void {
     this.domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
     this.specificationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID))
+    this.linkSharedSelectionConfig = {
+      name: 'sharedTestSuitesAvailable',
+      textField: 'identifier',
+      singleSelection: true,
+      filterLabel: 'Link shared test suite',
+      noItemsMessage: 'No shared test suites available to link.',
+      searchPlaceholder: 'Search test suite...',
+      clearItems: new EventEmitter(),
+      loader: () => this.loadAvailableSharedTestSuites()
+    }
+    this.unlinkSharedSelectionConfig = {
+      name: 'sharedTestSuitesLinked',
+      textField: 'identifier',
+      singleSelection: true,
+      filterLabel: 'Unlink shared test suite',
+      searchPlaceholder: 'Search test suite...',
+      clearItems: new EventEmitter(),
+      loader: () => this.loadLinkedSharedTestSuites()
+    }
     const groupObservable = this.specificationService.getDomainSpecificationGroups(this.domainId)
     .pipe(
       mergeMap((data) => {
@@ -98,6 +122,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
         if (!this.specification.group) {
           // Set to undefined to make sure the "undefined" option in the group select is pre-selected.
           this.specification.group = undefined
+          this.specification.groupObject = undefined
         }
         if (this.specification.badges) {
           this.specification.badges.specificationId = this.specificationId
@@ -113,6 +138,9 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
     )
     forkJoin([groupObservable, specObservable]).subscribe((data) => {
       this.specification.groups = data[0]
+      if (this.specification.groups && this.specification.groups.length > 0 && this.specification.group != undefined) {
+        this.specification.groupObject = this.specification.groups.find(x => x.id == this.specification.group)
+      }
       this.routingService.specificationBreadcrumbs(this.domainId, this.specificationId, this.breadcrumbLabel())
     }).add(() => {
       this.loaded = true
@@ -142,17 +170,35 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
   }
 
   loadTestSuites(forceLoad?: boolean) {
+    this.linkSharedSelectionConfig.clearItems?.emit()
+    this.unlinkSharedSelectionConfig.clearItems?.emit()
+    this.loadTestSuitesInternal(forceLoad).subscribe(() => {})
+  }
+
+  loadTestSuitesInternal(forceLoad?: boolean): Observable<{all: TestSuite[], shared: TestSuite[]}> {
     if (this.testSuiteStatus.status == Constants.STATUS.NONE || forceLoad) {
       this.testSuiteStatus.status = Constants.STATUS.PENDING
       this.testSuites = []
       this.sharedTestSuites = []
-      this.conformanceService.getTestSuites(this.specificationId)
-      .subscribe((data) => {
-        this.testSuites = data
-        this.sharedTestSuites = filter(this.testSuites, (ts) => ts.shared)
-      }).add(() => {
-        this.availableSharedTestSuitesLoaded = false
-        this.testSuiteStatus.status = Constants.STATUS.FINISHED
+      return this.conformanceService.getTestSuites(this.specificationId).pipe(
+        mergeMap((data) => {
+          this.testSuites = data
+          this.sharedTestSuites = filter(this.testSuites, (ts) => ts.shared)
+          return of({
+            all: this.testSuites,
+            shared: this.sharedTestSuites
+          })
+        }),
+        tap(() => {
+          this.availableSharedTestSuitesLoaded = false
+          this.testSuiteStatus.status = Constants.STATUS.FINISHED
+        }),
+        share()
+      )
+    } else {
+      return of({
+        all: this.testSuites,
+        shared: this.sharedTestSuites
       })
     }
   }
@@ -180,23 +226,33 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
     })
   }
 
-  loadAvailableSharedTestSuites() {
-    if (!this.availableSharedTestSuitesLoaded) {
-      this.conformanceService.getSharedTestSuites(this.domainId)
-      .subscribe((data) => {
-        this.availableSharedTestSuites = filter(data, (testSuite) => {
-          const foundTestSuite = find(this.sharedTestSuites, (linkedTestSuite) => {
+  loadLinkedSharedTestSuites(): Observable<TestSuite[]> {
+    return this.loadTestSuitesInternal().pipe(
+      map((data) => {
+        return data.shared
+      })
+    )
+  }
+
+  loadAvailableSharedTestSuites(): Observable<TestSuite[]> {
+    const sharedTestSuitesInDomain$ = this.conformanceService.getSharedTestSuites(this.domainId)
+    const specificationTestSuites$ = this.loadTestSuitesInternal()
+    return forkJoin([sharedTestSuitesInDomain$, specificationTestSuites$]).pipe(
+      map((results) => {
+        const sharedTestSuitesInDomain = results[0]
+        const sharedTestSuitesInSpecification = results[1].shared
+        return filter(sharedTestSuitesInDomain, (testSuite) => {
+          const foundTestSuite = find(sharedTestSuitesInSpecification, (linkedTestSuite) => {
             return linkedTestSuite.id == testSuite.id
           })
           return foundTestSuite == undefined
         })
-      }).add(() => {
-        this.availableSharedTestSuitesLoaded = true
       })
-    }
+    )
   }
 
-  linkTestSuite(testSuite: TestSuite) {
+  linkTestSuite(event: FilterUpdate<TestSuite>) {
+    const testSuite = event.values.active[0]
     this.linkPending = true
     this.clearAlerts()
     this.conformanceService.linkSharedTestSuite(testSuite.id, [this.specificationId]).pipe(
@@ -250,7 +306,8 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
     this.addAlertError(msg)
   }
 
-  unlinkTestSuite(testSuite: TestSuite) {
+  unlinkTestSuite(event: FilterUpdate<TestSuite>) {
+    const testSuite = event.values.active[0]
     this.unlinkPending = true
     this.conformanceService.unlinkSharedTestSuite(testSuite.id, [this.specificationId]).subscribe(() => {
       this.popupService.success('Test suite unlinked from '+this.dataService.labelSpecificationLower()+'.')
@@ -295,7 +352,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
 
 	saveDisabled() {
     return !(
-      this.textProvided(this.specification?.sname) && 
+      this.textProvided(this.specification?.sname) &&
       this.textProvided(this.specification?.fname) &&
       this.dataService.badgesValid(this.specification?.badges)
     )

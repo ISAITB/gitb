@@ -1,17 +1,20 @@
-import { Component, Input, OnInit } from '@angular/core';
-import { SystemFormData } from './system-form-data';
-import { OptionalCustomPropertyFormData } from 'src/app/components/optional-custom-property-form/optional-custom-property-form-data.type';
-import { DataService } from 'src/app/services/data.service';
-import { SystemService } from 'src/app/services/system.service';
-import { System } from 'src/app/types/system';
-import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
-import { PopupService } from 'src/app/services/popup.service';
+import {Component, Input, OnInit} from '@angular/core';
+import {SystemFormData} from './system-form-data';
+import {OptionalCustomPropertyFormData} from 'src/app/components/optional-custom-property-form/optional-custom-property-form-data.type';
+import {DataService} from 'src/app/services/data.service';
+import {SystemService} from 'src/app/services/system.service';
+import {System} from 'src/app/types/system';
+import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {MultiSelectConfig} from '../../../../../components/multi-select-filter/multi-select-config';
+import {map, Observable, of} from 'rxjs';
+import {FilterUpdate} from '../../../../../components/test-filter/filter-update';
 
 @Component({
-  selector: 'app-system-form',
-  templateUrl: './system-form.component.html',
-  styles: [
-  ]
+    selector: 'app-system-form',
+    templateUrl: './system-form.component.html',
+    styles: [],
+    standalone: false
 })
 export class SystemFormComponent implements OnInit {
 
@@ -21,9 +24,10 @@ export class SystemFormComponent implements OnInit {
   @Input() propertyData!: OptionalCustomPropertyFormData
   @Input() showAdminInfo = true
   @Input() readonly = false
-  @Input() otherSystems: System[] = []
 
+  otherSystems?: System[]
   apiKeyUpdatePending = false
+  copySelectionConfig!: MultiSelectConfig<System>
 
   constructor(
     public dataService: DataService,
@@ -35,6 +39,46 @@ export class SystemFormComponent implements OnInit {
   ngOnInit(): void {
     this.system.copySystemParameters = false
     this.system.copyStatementParameters = false
+    this.copySelectionConfig = {
+      name: "otherSystem",
+      textField: "fname",
+      singleSelection: true,
+      singleSelectionPersistent: true,
+      singleSelectionClearable: true,
+      showAsFormControl: true,
+      filterLabel: "Select source " + this.dataService.labelSystemLower() + "...",
+      loader: () => this.loadOtherSystems()
+    }
+  }
+
+  private loadOtherSystems(): Observable<System[]> {
+    if (this.otherSystems == undefined) {
+      return this.systemService.getSystemsByOrganisation(this.organisationId).pipe(
+        map((data) => {
+          let sources: System[]
+          if (this.system.id != undefined) {
+            sources = data
+          } else {
+            sources = data.filter(x => Number(x.id) != Number(this.system.id))
+          }
+          this.otherSystems = sources
+          return sources
+        })
+      )
+    } else {
+      return of(this.otherSystems)
+    }
+  }
+
+  otherSystemSelected(event: FilterUpdate<System>) {
+    if (this.system) {
+      if (event.values.active.length != 0) {
+        this.system.otherSystems = event.values.active[0].id
+      } else {
+        this.system.otherSystems = undefined
+      }
+      this.copyChanged()
+    }
   }
 
   copyChanged() {

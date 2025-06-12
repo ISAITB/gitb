@@ -3,16 +3,17 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { Constants } from 'src/app/common/constants';
 
 @Component({
-  selector: 'app-text-filter',
-  templateUrl: './text-filter.component.html',
-  styleUrls: [ './text-filter.component.less' ],
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => TextFilterComponent),
-      multi: true
-    }
-  ],
+    selector: 'app-text-filter',
+    templateUrl: './text-filter.component.html',
+    styleUrls: ['./text-filter.component.less'],
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => TextFilterComponent),
+            multi: true
+        }
+    ],
+    standalone: false
 })
 export class TextFilterComponent implements OnInit, ControlValueAccessor {
 

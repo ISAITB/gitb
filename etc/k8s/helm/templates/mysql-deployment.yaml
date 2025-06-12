@@ -19,13 +19,17 @@ spec:
         - image: {{ .Values.mysql.image | quote }}
           imagePullPolicy: {{ .Values.mysql.imagePullPolicy | default "IfNotPresent" | quote }}
           name: {{ include "mysql.name" . }}
-          {{- if .Values.mysql.env }}
           env:
+          {{- if or (not .Values.mysql.env) (not .Values.mysql.env.MYSQL_DATABASE) }}
+            - name: MYSQL_DATABASE
+              value: {{ include "mysql.dbName" . | quote }}
+          {{- end }}
+          {{- if .Values.mysql.env }}
           {{- range $key, $value := .Values.mysql.env }}
             - name: {{ $key }}
               value: {{ $value | quote }}
           {{- end }}
-          {{- end }}        
+          {{- end }}
           livenessProbe:
             exec:
               command:

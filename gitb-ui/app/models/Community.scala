@@ -21,17 +21,13 @@ case class Communities(
                         allowPostTestSystemUpdates: Boolean,
                         allowPostTestStatementUpdates : Boolean,
                         allowAutomationApi : Boolean,
+                        allowCommunityView : Boolean,
                         apiKey: String,
                         latestStatusLabel: Option[String],
                         domain: Option[Long]) {
 
   def withApiKey(apiKey: String): Communities = {
-    Communities(this.id, this.shortname, this.fullname, this.supportEmail, this.selfRegType, this.selfRegToken,
-      this.selfRegTokenHelpText, this.selfRegNotification, this.interactionNotification, this.description, this.selfRegRestriction,
-      this.selfRegForceTemplateSelection, this.selfRegForceRequiredProperties, this.allowCertificateDownload,
-      this.allowStatementManagement, this.allowSystemManagement, this.allowPostTestOrganisationUpdates,
-      this.allowPostTestSystemUpdates, this.allowPostTestStatementUpdates, this.allowAutomationApi,
-      apiKey, this.latestStatusLabel, this.domain)
+    copy(apiKey = apiKey)
   }
 
 }
@@ -57,6 +53,7 @@ class Community(
                  _allowPostTestSystemUpdates: Boolean,
                  _allowPostTestStatementUpdates : Boolean,
                  _allowAutomationApi: Boolean,
+                 _allowCommunityView: Boolean,
                  _apiKey: String,
                  _domain:Option[Domain]) {
   var id:Long = _id
@@ -77,8 +74,9 @@ class Community(
   var allowSystemManagement: Boolean = _allowSystemManagement
   var allowPostTestOrganisationUpdates: Boolean = _allowPostTestOrganisationUpdates
   var allowPostTestSystemUpdates: Boolean = _allowPostTestSystemUpdates
-  var allowPostTestStatementUpdates : Boolean = _allowPostTestStatementUpdates
-  var allowAutomationApi: Boolean  = _allowAutomationApi
+  var allowPostTestStatementUpdates: Boolean = _allowPostTestStatementUpdates
+  var allowAutomationApi: Boolean = _allowAutomationApi
+  var allowCommunityView: Boolean = _allowCommunityView
   var apiKey: String  = _apiKey
   var domain:Option[Domain] = _domain
 
@@ -104,6 +102,7 @@ class Community(
       _case.allowPostTestSystemUpdates,
       _case.allowPostTestStatementUpdates,
       _case.allowAutomationApi,
+      _case.allowCommunityView,
       _case.apiKey,
       _domain
     )
@@ -134,6 +133,7 @@ class Community(
       allowPostTestSystemUpdates,
       allowPostTestStatementUpdates,
       allowAutomationApi,
+      allowCommunityView,
       apiKey,
       None,
       d

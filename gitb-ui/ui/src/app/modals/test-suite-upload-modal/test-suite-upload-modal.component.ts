@@ -23,9 +23,10 @@ import { MultiSelectConfig } from 'src/app/components/multi-select-filter/multi-
 import { FilterUpdate } from 'src/app/components/test-filter/filter-update';
 
 @Component({
-  selector: 'app-test-suite-upload-modal',
-  templateUrl: './test-suite-upload-modal.component.html',
-  styleUrls: ['./test-suite-upload-modal.component.less']
+    selector: 'app-test-suite-upload-modal',
+    templateUrl: './test-suite-upload-modal.component.html',
+    styleUrls: ['./test-suite-upload-modal.component.less'],
+    standalone: false
 })
 export class TestSuiteUploadModalComponent extends BaseComponent implements OnInit {
 
@@ -82,6 +83,7 @@ export class TestSuiteUploadModalComponent extends BaseComponent implements OnIn
       clearItems: new EventEmitter<void>(),
       replaceItems: new EventEmitter<Specification[]>(),
       replaceSelectedItems: new EventEmitter<Specification[]>(),
+      showAsFormControl: true,
       filterLabel: `Select ${this.dataService.labelSpecificationsLower()}...`,
       loader: () => of(this.availableSpecifications)
     }
@@ -142,7 +144,7 @@ export class TestSuiteUploadModalComponent extends BaseComponent implements OnIn
       for (let existSpec of this.uploadResult.existsForSpecs) {
         existsMap[existSpec.id] = existSpec
         this.hasMatchingTestSuite = true
-      }    
+      }
     }
     // Shared test suite choices.
     if (this.sharedTestSuite) {
@@ -186,7 +188,7 @@ export class TestSuiteUploadModalComponent extends BaseComponent implements OnIn
             testCasesInDB: []
           }
           this.specificationChoices.push(specData)
-          this.specificationChoiceMap[spec.id] = specData        
+          this.specificationChoiceMap[spec.id] = specData
         }
       }
       this.updateTestSuiteMetadata = this.uploadResult!.updateMetadata
@@ -324,7 +326,7 @@ export class TestSuiteUploadModalComponent extends BaseComponent implements OnIn
             updateActors: choice.updateActors,
             updateTestSuite: false,
             sharedTestSuite: true,
-            testCaseUpdates: []          
+            testCaseUpdates: []
           }
           actions.push(action as PendingTestSuiteUploadChoice)
         }

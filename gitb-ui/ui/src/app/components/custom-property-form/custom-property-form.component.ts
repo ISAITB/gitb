@@ -10,9 +10,10 @@ import { Constants } from 'src/app/common/constants';
 import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
-  selector: 'app-custom-property-form',
-  templateUrl: './custom-property-form.component.html',
-  styleUrls: [ './custom-property-form.component.less' ]
+    selector: 'app-custom-property-form',
+    templateUrl: './custom-property-form.component.html',
+    styleUrls: ['./custom-property-form.component.less'],
+    standalone: false
 })
 export class CustomPropertyFormComponent implements OnInit {
 

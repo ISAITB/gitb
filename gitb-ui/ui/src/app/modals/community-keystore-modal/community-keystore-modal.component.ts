@@ -9,9 +9,10 @@ import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.
 import { PopupService } from 'src/app/services/popup.service';
 
 @Component({
-  selector: 'app-community-keystore-modal',
-  templateUrl: './community-keystore-modal.component.html',
-  styleUrl: './community-keystore-modal.component.less'
+    selector: 'app-community-keystore-modal',
+    templateUrl: './community-keystore-modal.component.html',
+    styleUrl: './community-keystore-modal.component.less',
+    standalone: false
 })
 export class CommunityKeystoreModalComponent extends BaseComponent implements OnInit {
 

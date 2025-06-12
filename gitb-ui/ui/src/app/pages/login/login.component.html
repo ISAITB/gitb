@@ -10,9 +10,9 @@
                                     @if (dataService.actualUser.accounts.length > 0) {
                                         <div class="row">
                                             <div class="col-12">
-                                                <div class="alert alert-info rounded">
+                                                <div class="alert alert-info rounded mb-3">
                                                     <span>Select a role linked to your account.</span>
-                                                </div>                        
+                                                </div>
                                             </div>
                                         </div>
                                     } @else {
@@ -20,25 +20,21 @@
                                             <div class="col-12">
                                                 <div class="alert alert-info rounded mb-0">
                                                     <span>To use the Test Bed you need to first be assigned a role in one or more communities. To link such a role to your account click the button below to view available options.</span>
-                                                </div>                        
-                                            </div>
-                                        </div>
-                                    }
-                                    @for (account of dataService.actualUser.accounts; track account.id; let i=$index) {
-                                        <div class="row">
-                                            <div class="col-12">
-                                                <div [ngClass]="{'div-spaced-small': i > 0, 'account-card-ou': account.role == Constants.USER_ROLE.VENDOR_USER, 'account-card-oa': account.role == Constants.USER_ROLE.VENDOR_ADMIN, 'account-card-ca': account.role == Constants.USER_ROLE.COMMUNITY_ADMIN, 'account-card-ta': account.role == Constants.USER_ROLE.SYSTEM_ADMIN}">
-                                                    <div class="account-card-internal" (click)="loginViaSelection(account.id)">
-                                                        <div class="account-card-text">
-                                                            {{dataService.getRoleDescription(true, account)}}
-                                                        </div>
-                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     }
+                                    @if (dataService.actualUser.accounts.length > 0) {
+                                        <div class="row">
+                                            <div class="col-12">
+                                                @for (account of dataService.actualUser.accounts; track account.id) {
+                                                    <app-account-card [account]="account" [first]="$first" (select)="loginViaSelection($event.id)"></app-account-card>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
                                     @if (dataService.actualUser != undefined) {
-                                        <div class="row mt-4">
+                                        <div class="row mt-3">
                                             <div class="col-auto">
                                                 <button type="button" class="btn btn-secondary" (click)="createAccount()" [pending]="createPending">
                                                     @if (dataService.actualUser.accounts.length > 0) {
@@ -64,7 +60,7 @@
                                     <form>
                                         <div class="card mb-0">
                                             <div class="card-header">
-                                                <div class="card-title">{{loginOption == Constants.LOGIN_OPTION.REGISTER && dataService.configuration.registrationEnabled?'Registration':(onetimePassword?'Change password':'Login')}}</div>
+                                                <div class="card-title">{{loginOption == Constants.LOGIN_OPTION.REGISTER && dataService.configuration.registrationEnabled?'Registration':(onetimePassword?'Change password':'Account login')}}</div>
                                             </div>
                                             <div class="card-body">
                                                 <app-alert-display [alerts]="alerts" [innerClass]="(loginOption == Constants.LOGIN_OPTION.REGISTER)?'col-12':'col-10 offset-1'"></app-alert-display>
@@ -142,7 +138,7 @@
                                     </form>
                                 </div>
                             </div>
-                        </div>    
+                        </div>
                     }
                 </div>
             }

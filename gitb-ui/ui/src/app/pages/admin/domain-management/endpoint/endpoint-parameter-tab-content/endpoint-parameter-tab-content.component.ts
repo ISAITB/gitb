@@ -16,8 +16,9 @@ import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
 
 @Component({
-  selector: 'app-endpoint-parameter-tab-content',
-  templateUrl: './endpoint-parameter-tab-content.component.html'
+    selector: 'app-endpoint-parameter-tab-content',
+    templateUrl: './endpoint-parameter-tab-content.component.html',
+    standalone: false
 })
 export class EndpointParameterTabContentComponent implements OnInit {
 

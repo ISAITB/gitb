@@ -2,10 +2,10 @@ import { Component, Input, OnInit } from '@angular/core';
 import { ActorInfo } from '../actor-info';
 
 @Component({
-  selector: 'app-sequence-diagram-actor',
-  templateUrl: './sequence-diagram-actor.component.html',
-  styles: [
-  ]
+    selector: 'app-sequence-diagram-actor',
+    templateUrl: './sequence-diagram-actor.component.html',
+    styles: [],
+    standalone: false
 })
 export class SequenceDiagramActorComponent implements OnInit {
 

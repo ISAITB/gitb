@@ -5,16 +5,17 @@ import { DataService } from 'src/app/services/data.service';
 import { PopupService } from 'src/app/services/popup.service';
 
 @Component({
-  selector: 'app-color-picker',
-  templateUrl: './color-picker.component.html',
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => ColorPickerComponent),
-      multi: true
-    }
-  ],  
-  styleUrls: [ './color-picker.component.less' ]
+    selector: 'app-color-picker',
+    templateUrl: './color-picker.component.html',
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => ColorPickerComponent),
+            multi: true
+        }
+    ],
+    styleUrls: ['./color-picker.component.less'],
+    standalone: false
 })
 export class ColorPickerComponent {
 

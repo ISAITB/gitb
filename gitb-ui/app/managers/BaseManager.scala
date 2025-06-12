@@ -1,30 +1,25 @@
 package managers
 
-import javax.inject.Inject
 import play.api.db.slick.DatabaseConfigProvider
 import slick.dbio.DBIO
 import slick.jdbc.JdbcProfile
 
+import javax.inject.Inject
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ExecutionContext, Future}
 
 /**
  * Created by serbay on 10/22/14.
  */
-abstract class BaseManager @Inject() (dbConfigProvider: DatabaseConfigProvider) {
+abstract class BaseManager @Inject() (dbConfigProvider: DatabaseConfigProvider)
+																		 (implicit ec: ExecutionContext) {
 
 	val dbConfig = dbConfigProvider.get[JdbcProfile]
-	val DB = dbConfig.db
+	val DB: dbConfig.profile.backend.JdbcDatabaseDef = dbConfig.db
 
-	final protected def exec[R](a: DBIO[R]): R = {
-		Await.result(DB.run(a), Duration.Inf)
-	}
-
-	protected def toDBIO(actions: ListBuffer[DBIO[_]]): DBIO[_] = {
+	protected def toDBIO(actions: Iterable[DBIO[_]]): DBIO[_] = {
 		if (actions.nonEmpty) {
 			DBIO.seq(actions.toList.map(a => a): _*)
 		} else {
@@ -70,5 +65,14 @@ abstract class BaseManager @Inject() (dbConfigProvider: DatabaseConfigProvider) 
 			extractFailureDetailsInternal(error.getCause, handledErrors, messages)
 		}
 	}
+
+	protected def loadIfApplicable[T](applicable: Boolean, loader: () => Future[T]): Future[Option[T]] = {
+		if (applicable) {
+			loader.apply().map(Some(_))
+		} else {
+			Future.successful(None)
+		}
+	}
+
 
 }

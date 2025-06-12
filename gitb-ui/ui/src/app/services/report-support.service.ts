@@ -37,7 +37,7 @@ export class ReportSupportService {
     })
   }
 
-  private showConformanceStatementModal(communityId: number, actorId: number, systemId: number, snapshotId: number|undefined, format: 'xml'|'pdf', settings: ConformanceCertificateSettings|undefined, certificateEnabled: boolean) {
+  private showConformanceStatementModal(communityId: number, actorId: number, systemId: number, snapshotId: number|undefined, format: 'xml'|'pdf', settings: ConformanceCertificateSettings|undefined, certificateEnabled: boolean, testCaseCount: number|undefined) {
     this.modalService.show(ConformanceCertificateModalComponent, {
       class: 'modal-lg',
       initialState: {
@@ -47,14 +47,15 @@ export class ReportSupportService {
         systemId: systemId,
         snapshotId: snapshotId,
         format: format,
-        certificateEnabled: certificateEnabled
+        certificateEnabled: certificateEnabled,
+        testCaseCount: testCaseCount
       }
     })
   }
 
-  handleConformanceStatementReport(communityId: number, actorId: number, systemId: number, snapshotId: number|undefined, format: 'xml'|'pdf', certificateEnabled: boolean): Observable<any> {
+  handleConformanceStatementReport(communityId: number, actorId: number, systemId: number, snapshotId: number|undefined, format: 'xml'|'pdf', certificateEnabled: boolean, testCaseCount: number|undefined): Observable<any> {
     if (format == 'xml') {
-      this.showConformanceStatementModal(communityId, actorId, systemId, snapshotId, 'xml', undefined, false)
+      this.showConformanceStatementModal(communityId, actorId, systemId, snapshotId, 'xml', undefined, false, testCaseCount)
       return of(true)
     } else {
       if (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin) {
@@ -67,12 +68,12 @@ export class ReportSupportService {
               // Don't present settings to override as we're using a custom generation service.
               certificateSettingsToUse = undefined
             }
-            this.showConformanceStatementModal(communityId, actorId, systemId, snapshotId, 'pdf', certificateSettingsToUse, true)
+            this.showConformanceStatementModal(communityId, actorId, systemId, snapshotId, 'pdf', certificateSettingsToUse, true, testCaseCount)
             return of(true)
           })
         )
       } else {
-        this.showConformanceStatementModal(communityId, actorId, systemId, snapshotId, 'pdf', undefined, certificateEnabled)
+        this.showConformanceStatementModal(communityId, actorId, systemId, snapshotId, 'pdf', undefined, certificateEnabled, testCaseCount)
         return of(true)
       }
     }
@@ -88,7 +89,7 @@ export class ReportSupportService {
     if (format == 'xml') {
       let observable: Observable<ArrayBuffer>
       if (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin) {
-        observable = this.reportService.exportConformanceOverviewReportInXML(communityId, systemId, domainId, groupId, specId, snapshotId) 
+        observable = this.reportService.exportConformanceOverviewReportInXML(communityId, systemId, domainId, groupId, specId, snapshotId)
       } else {
         observable = this.reportService.exportOwnConformanceOverviewReportInXML(systemId, domainId, groupId, specId, snapshotId)
       }
@@ -151,7 +152,7 @@ export class ReportSupportService {
                     const blobData = new Blob([data], {type: "application/pdf"})
                     saveAs(blobData, "conformance_overview_report.pdf")
                     return of(true)
-                  }))              
+                  }))
               }
             })
           )
@@ -162,7 +163,7 @@ export class ReportSupportService {
               const blobData = new Blob([data], {type: "application/pdf"})
               saveAs(blobData, "conformance_overview_report.pdf")
               return of(true)
-            }))              
+            }))
         }
       }
     }

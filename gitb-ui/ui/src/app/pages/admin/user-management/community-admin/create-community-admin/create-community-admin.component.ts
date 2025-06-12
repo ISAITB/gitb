@@ -14,10 +14,10 @@ import { Constants } from 'src/app/common/constants';
 import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
-  selector: 'app-create-community-admin',
-  templateUrl: './create-community-admin.component.html',
-  styles: [
-  ]
+    selector: 'app-create-community-admin',
+    templateUrl: './create-community-admin.component.html',
+    styles: [],
+    standalone: false
 })
 export class CreateCommunityAdminComponent extends BaseComponent implements OnInit, AfterViewInit {
 

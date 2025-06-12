@@ -5,12 +5,14 @@ import com.gitb.core.LogLevel;
 import com.gitb.engine.ModuleManager;
 import com.gitb.engine.SessionManager;
 import com.gitb.engine.TestEngineConfiguration;
+import com.gitb.engine.expr.StaticExpressionHandler;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.messaging.MessagingContext;
 import com.gitb.engine.messaging.handlers.layer.AbstractMessagingHandler;
 import com.gitb.engine.processing.ProcessingContext;
 import com.gitb.engine.remote.messaging.RemoteMessagingModuleClient;
 import com.gitb.engine.utils.ScriptletCache;
+import com.gitb.engine.utils.ScriptletInfo;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.IMessagingHandler;
@@ -41,6 +43,7 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Supplier;
 
 import static com.gitb.engine.PropertyConstants.*;
 import static com.gitb.engine.utils.TestCaseUtils.TEST_ENGINE_VERSION;
@@ -94,6 +97,10 @@ public class TestCaseContext {
      * Roles defined in the TestCase
      */
     private final Map<String, TestRole> actorRoles;
+	private final Optional<TestRole> sutActor;
+	private final Optional<TestRole> nonSutActor;
+	private final boolean hasMultipleNonSutActors;
+	private boolean hasMultipleNonSutActorsLogged = false;
 
     /**
      * Corresponding simulated actor configurations for each SUT (key: actor name & actor endpoint of SUT)
@@ -110,6 +117,8 @@ public class TestCaseContext {
      * Current state of the test case execution
      */
     private TestCaseStateEnum currentState;
+
+	private StaticExpressionHandler staticExpressionHandler;
 
 	/**
 	 * Test session state enumeration
@@ -149,6 +158,9 @@ public class TestCaseContext {
 		STOPPING
     }
 
+	private final Map<String, ResourceInfo> resourceCache = new ConcurrentHashMap<>();
+	private boolean resourceCacheLoaded = false;
+
 	private com.gitb.core.LogLevel logLevelToSignal = LogLevel.INFO;
 	private boolean logLevelIsExpression = false;
 	private boolean reportedInvalidLogLevel = false;
@@ -184,12 +196,29 @@ public class TestCaseContext {
         addStepStatus();
         processVariables();
 
+		// Parse actor role information.
         actorRoles = new HashMap<>();
-
-        // Initialize configuration lists for SutHandlerConfigurations
-        for(TestRole role : this.testCase.getActors().getActor()) {
+		TestRole detectedSut = null;
+		TestRole detectedNonSut = null;
+		int nonSutActors = 0;
+        for (TestRole role : this.testCase.getActors().getActor()) {
 			actorRoles.put(role.getId(), role);
+			if (role.getRole() == TestRoleEnumeration.SUT) {
+				detectedSut = role;
+			} else if (role.getRole() == TestRoleEnumeration.SIMULATED) {
+				if (detectedNonSut == null) {
+					detectedNonSut = role;
+				}
+				nonSutActors += 1;
+			}
 		}
+		sutActor = Optional.ofNullable(detectedSut);
+		if (detectedNonSut == null) {
+			nonSutActor = sutActor;
+		} else {
+			nonSutActor = Optional.of(detectedNonSut);
+		}
+		hasMultipleNonSutActors = nonSutActors > 1;
 	}
 
 	public Path getDataFolder() {
@@ -198,6 +227,21 @@ public class TestCaseContext {
 
 	public ScriptletCache getScriptletCache() {
     	return this.scriptletCache;
+	}
+
+	public Optional<ResourceInfo> getCachedResource(String uri, Supplier<Map<String, ResourceInfo>> cacheLoader) {
+		if (uri != null) {
+			if (!resourceCacheLoaded) {
+				Map<String, ResourceInfo> resources = cacheLoader.get();
+				if (resources != null) {
+                    resourceCache.putAll(resources);
+				}
+				resourceCacheLoaded = true;
+			}
+			return Optional.ofNullable(resourceCache.get(uri));
+		} else {
+			return Optional.empty();
+		}
 	}
 
 	private void addStepStatus() {
@@ -230,33 +274,32 @@ public class TestCaseContext {
      * @return Simulated actor configurations for each (actorId, endpointName) tuple
      */
     public List<SUTConfiguration> configure(List<ActorConfiguration> configurations, ActorConfiguration domainConfiguration, ActorConfiguration organisationConfiguration, ActorConfiguration systemConfiguration){
-
 		addSpecialConfiguration(DOMAIN_MAP, domainConfiguration);
 		addSpecialConfiguration(ORGANISATION_MAP, organisationConfiguration);
 		addSpecialConfiguration(SYSTEM_MAP, systemConfiguration);
 		addSessionMetadata();
-
-		for(ActorConfiguration actorConfiguration : configurations) {
+		for (ActorConfiguration actorConfiguration : configurations) {
 		    Tuple<String> actorIdEndpointTupleKey = new Tuple<>(new String[] {actorConfiguration.getActor(), actorConfiguration.getEndpoint()});
 		    sutConfigurations.put(actorIdEndpointTupleKey, actorConfiguration);
 		    sutHandlerConfigurations.put(actorIdEndpointTupleKey, new CopyOnWriteArrayList<>());
 	    }
-
-	    List<SUTConfiguration> sutConfigurations = configureSimulatedActorsForSUTs(configurations);
-
-	    // set the configuration parameters given in the test case definition if they are not set already
-	    for(TestRole role : testCase.getActors().getActor()) {
-		    for(Endpoint endpoint : role.getEndpoint()) {
-			    for(Parameter parameter : endpoint.getConfig()) {
-				    setSUTConfigurationParameter(sutConfigurations, role.getId(), endpoint.getName(), parameter);
-			    }
-		    }
-	    }
-
-	    bindActorConfigurationsToScope();
-
-	    return sutConfigurations;
+		List<SUTConfiguration> sutConfigurations = configureDynamicActorProperties(testCase, configurations);
+		bindActorConfigurationsToScope();
+        return sutConfigurations;
     }
+
+	protected List<SUTConfiguration> configureDynamicActorProperties(TestCase testCase, List<ActorConfiguration> configurations) {
+		List<SUTConfiguration> sutConfigurations = configureSimulatedActorsForSUTs(configurations);
+		// Set the configuration parameters given in the test case definition if they are not set already
+		for (TestRole role : testCase.getActors().getActor()) {
+			for(Endpoint endpoint : role.getEndpoint()) {
+				for(Parameter parameter : endpoint.getConfig()) {
+					setSUTConfigurationParameter(sutConfigurations, role.getId(), endpoint.getName(), parameter);
+				}
+			}
+		}
+		return sutConfigurations;
+	}
 
 	private void addSessionMetadata() {
 		DataTypeFactory factory = DataTypeFactory.getInstance();
@@ -389,7 +432,7 @@ public class TestCaseContext {
 	}
 
 	private List<SUTConfiguration> configureSimulatedActorsForSUTs(List<ActorConfiguration> configurations) {
-		List<TransactionInfo> testCaseTransactions = createTransactionInfo(testCase.getSteps(), null, new VariableResolver(scope), new LinkedList<>());
+		List<TransactionInfo> testCaseTransactions = createTransactionInfo(testCase.getSteps(), null, new VariableResolver(scope, true), new LinkedList<>());
 		Map<String, MessagingContextBuilder> messagingContextBuilders = new HashMap<>();
 
         // collect all transactions needed to configure the messaging handlers
@@ -461,12 +504,19 @@ public class TestCaseContext {
 		return new ArrayList<>(groups.values());
 	}
 
+	private StaticExpressionHandler getStaticExpressionHandler(VariableResolver resolver) {
+		if (staticExpressionHandler == null) {
+			staticExpressionHandler = new StaticExpressionHandler(scope, resolver);
+		}
+		return staticExpressionHandler;
+	}
+
 	private TransactionInfo buildTransactionInfo(String from, String to, String handler, List<Configuration> properties, VariableResolver resolver, LinkedList<Pair<CallStep, Scriptlet>> scriptletCallStack) {
 		return new TransactionInfo(
-				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractActorId(from), String.class, scriptletCallStack),
-				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractEndpointName(from), String.class, scriptletCallStack),
-				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractActorId(to), String.class, scriptletCallStack),
-				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractEndpointName(to), String.class, scriptletCallStack),
+				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractActorId(from), String.class, scriptletCallStack, getStaticExpressionHandler(resolver)),
+				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractEndpointName(from), String.class, scriptletCallStack, getStaticExpressionHandler(resolver)),
+				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractActorId(to), String.class, scriptletCallStack, getStaticExpressionHandler(resolver)),
+				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractEndpointName(to), String.class, scriptletCallStack, getStaticExpressionHandler(resolver)),
 				VariableResolver.isVariableReference(handler)?resolver.resolveVariableAsString(handler).toString():handler,
 				TestCaseUtils.getStepProperties(properties, resolver)
 		);
@@ -479,16 +529,30 @@ public class TestCaseContext {
      */
     private List<TransactionInfo> createTransactionInfo(Sequence sequence, String testSuiteContext, VariableResolver resolver, LinkedList<Pair<CallStep, Scriptlet>> scriptletCallStack) {
         List<TransactionInfo> transactions = new ArrayList<>();
-        for(Object step : sequence.getSteps()) {
+        for (Object step : sequence.getSteps()) {
             if(step instanceof Sequence) {
                 transactions.addAll(createTransactionInfo((Sequence) step, testSuiteContext, resolver, scriptletCallStack));
-            } else if(step instanceof BeginTransaction) {
-				var beginTransactionStep = (BeginTransaction) step;
-				transactions.add(buildTransactionInfo(beginTransactionStep.getFrom(), beginTransactionStep.getTo(), beginTransactionStep.getHandler(), beginTransactionStep.getProperty(), resolver, scriptletCallStack));
-			} else if (step instanceof MessagingStep) {
-				var messagingStep = (MessagingStep) step;
+            } else if(step instanceof BeginTransaction beginTransactionStep) {
+                transactions.add(buildTransactionInfo(beginTransactionStep.getFrom(), beginTransactionStep.getTo(), beginTransactionStep.getHandler(), beginTransactionStep.getProperty(), resolver, scriptletCallStack));
+			} else if (step instanceof MessagingStep messagingStep) {
 				if (StringUtils.isBlank(messagingStep.getTxnId()) && StringUtils.isNotBlank(messagingStep.getHandler())) {
-					transactions.add(buildTransactionInfo(messagingStep.getFrom(), messagingStep.getTo(), messagingStep.getHandler(), messagingStep.getProperty(), resolver, scriptletCallStack));
+					String fromActor;
+					String toActor;
+					if (step instanceof ReceiveOrListen) {
+						fromActor = Objects.requireNonNullElseGet(messagingStep.getFrom(), this::getDefaultSutActor);
+						toActor = Objects.requireNonNullElseGet(messagingStep.getTo(), this::getDefaultNonSutActor);
+					} else {
+						fromActor = Objects.requireNonNullElseGet(messagingStep.getFrom(), this::getDefaultNonSutActor);
+						toActor = Objects.requireNonNullElseGet(messagingStep.getTo(), this::getDefaultSutActor);
+					}
+					transactions.add(buildTransactionInfo(fromActor, toActor, messagingStep.getHandler(), messagingStep.getProperty(), resolver, scriptletCallStack));
+				}
+			} else if (step instanceof UserInteraction interactionStep) {
+				if (!StringUtils.equalsIgnoreCase(interactionStep.getHandlerEnabled(), "false") && interactionStep.getHandler() != null) {
+					// We have an interaction step that may delegate processing to a custom handler.
+					String interactionActor = getDefaultSutActor();
+					List<Configuration> stepProperties = Optional.ofNullable(interactionStep.getHandlerConfig()).map(HandlerConfiguration::getProperty).orElseGet(Collections::emptyList);
+					transactions.add(buildTransactionInfo(interactionActor, interactionActor, interactionStep.getHandler(), stepProperties, resolver, scriptletCallStack));
 				}
             } else if (step instanceof IfStep) {
 	            transactions.addAll(createTransactionInfo(((IfStep) step).getThen(), testSuiteContext, resolver, scriptletCallStack));
@@ -510,7 +574,7 @@ public class TestCaseContext {
             	if (testSuiteContextToUse == null && testSuiteContext != null) {
 					testSuiteContextToUse = testSuiteContext;
 				}
-	            Scriptlet scriptlet = getScriptlet(testSuiteContextToUse, ((CallStep) step).getPath(), true);
+	            Scriptlet scriptlet = getScriptlet(testSuiteContextToUse, ((CallStep) step).getPath(), true).scriptlet();
 				scriptletCallStack.addLast(Pair.of((CallStep) step, scriptlet));
 				transactions.addAll(createTransactionInfo(scriptlet.getSteps(), testSuiteContextToUse, resolver, scriptletCallStack));
 				scriptletCallStack.removeLast();
@@ -519,7 +583,23 @@ public class TestCaseContext {
         return transactions;
     }
 
-    public Scriptlet getScriptlet(String testSuiteContext, String path, boolean required) {
+	public String getDefaultSutActor() {
+		return sutActor.map(TestRole::getId).orElseThrow(() -> new IllegalStateException("Unable to determine default SUT actor."));
+	}
+
+	public String getDefaultNonSutActor() {
+		return getDefaultNonSutActor(false);
+	}
+
+	public String getDefaultNonSutActor(boolean skipLog) {
+		if (!skipLog && !hasMultipleNonSutActorsLogged && hasMultipleNonSutActors) {
+			hasMultipleNonSutActorsLogged = true;
+			logger.warn(MarkerFactory.getDetachedMarker(getSessionId()), "A missing actor reference was encountered that normally defaults to the test case's single, simulated (non-SUT) actor. The current test case however, defines multiple such actors resulting in the first one being arbitrarily used. Make sure you either remove the additional actor(s) from the test case, or reference the specific one that you expect.");
+		}
+		return nonSutActor.map(TestRole::getId).orElseThrow(() -> new IllegalStateException("Unable to determine default simulated actor."));
+	}
+
+    public ScriptletInfo getScriptlet(String testSuiteContext, String path, boolean required) {
     	return scriptletCache.getScriptlet(testSuiteContext, path, testCase, required);
 	}
 

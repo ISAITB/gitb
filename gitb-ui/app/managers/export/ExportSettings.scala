@@ -25,6 +25,7 @@ class ExportSettings {
   var endpoints: Boolean = false
   var testSuites: Boolean = true
   var themes: Boolean = false
+  var systemResources: Boolean = false
   var systemAdministrators: Boolean = false
   var defaultLandingPages: Boolean = false
   var defaultLegalNotices: Boolean = false
@@ -35,7 +36,7 @@ class ExportSettings {
   var domainsToDelete: Option[List[String]] = None
 
   def hasSystemSettings(): Boolean = {
-    themes || systemAdministrators || defaultLandingPages || defaultLegalNotices || defaultErrorTemplates || systemConfigurations
+    systemResources || themes || systemAdministrators || defaultLandingPages || defaultLegalNotices || defaultErrorTemplates || systemConfigurations
   }
 
   def withoutSystemSettings(): ExportSettings = {
@@ -63,6 +64,7 @@ class ExportSettings {
       copy.actors = this.actors
       copy.endpoints = this.endpoints
       copy.testSuites = this.testSuites
+      copy.systemResources = false
       copy.themes = false
       copy.systemAdministrators = false
       copy.defaultLandingPages = false

@@ -1,9 +1,10 @@
 import { Component, Input, OnInit } from '@angular/core';
 
 @Component({
-  selector: 'app-form-section',
-  templateUrl: './form-section.component.html',
-  styleUrl: './form-section.component.less'
+    selector: 'app-form-section',
+    templateUrl: './form-section.component.html',
+    styleUrl: './form-section.component.less',
+    standalone: false
 })
 export class FormSectionComponent implements OnInit {
 

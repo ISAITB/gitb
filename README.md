@@ -259,7 +259,7 @@ feel free to contact the Test Bed team via email at [DIGIT-ITB@ec.europa.eu](mai
 # See also
 
 For general information on all aspects of the Interoperability Test Bed and the GITB software in particular you may refer
-to its [Joinup space](https://joinup.ec.europa.eu/collection/interoperability-test-bed-repository/solution/interoperability-test-bed).
+to its [Interoperable Europe Portal site](https://interoperable-europe.ec.europa.eu/collection/interoperability-test-bed-repository/solution/interoperability-test-bed).
 
 The GITB software is used to realise a complete conformance testing platform. If you are more interested in standalone 
 data validation you may find interesting the Test Bed's validators for [XML](https://github.com/ISAITB/xml-validator),

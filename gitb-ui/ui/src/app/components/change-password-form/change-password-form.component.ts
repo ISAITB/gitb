@@ -3,8 +3,9 @@ import { PasswordChangeData } from './password-change-data.type';
 import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
-  selector: '[app-change-password-form]',
-  templateUrl: './change-password-form.component.html'
+    selector: '[app-change-password-form]',
+    templateUrl: './change-password-form.component.html',
+    standalone: false
 })
 export class ChangePasswordFormComponent implements OnInit {
 

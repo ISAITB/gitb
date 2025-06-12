@@ -4,20 +4,58 @@ import com.gitb.tr.TAR
 
 import java.util
 
-class TestSuiteUploadResult {
+object TestSuiteUploadResult {
 
-  var validationReport: TAR = null
-  var success: Boolean = false
-  var pendingTestSuiteFolderName: String = null
-  var errorInformation: String = null
-  var needsConfirmation: Boolean = false
-  var matchingDataExists: Option[List[Long]] = None
-  var existsForSpecs: Option[List[(Long, Boolean)]] = None
-  val items = new util.ArrayList[TestSuiteUploadItemResult]()
-  var testCases: Option[Map[Long, List[TestSuiteUploadTestCase]]] = None
-  var sharedTestSuiteId: Option[Long] = None
-  var sharedTestCases: Option[List[TestSuiteUploadTestCase]] = None
-  var updateMetadata: Boolean = false
-  var updateSpecification: Boolean = false
+  def success(): TestSuiteUploadResult = {
+    TestSuiteUploadResult(success = true)
+  }
+
+  def success(items: List[TestSuiteUploadItemResult]): TestSuiteUploadResult = {
+    TestSuiteUploadResult(success = true, items = Some(items))
+  }
+
+  def success(items: List[TestSuiteUploadItemResult], validationReport: TAR): TestSuiteUploadResult = {
+    TestSuiteUploadResult(success = true, items = Some(items), validationReport = Some(validationReport))
+  }
+
+  def failure(errorInformation: String): TestSuiteUploadResult = {
+    TestSuiteUploadResult(errorInformation = Some(errorInformation))
+  }
+
+  def confirm(report: TAR): TestSuiteUploadResult = {
+    TestSuiteUploadResult(needsConfirmation = true, validationReport = Some(report))
+  }
+
+  def sharedTestSuiteExists(existsForSpecs: List[(Long, Boolean)], validationReport: TAR): TestSuiteUploadResult = {
+    TestSuiteUploadResult(needsConfirmation = true, existsForSpecs = Some(existsForSpecs), validationReport = Some(validationReport))
+  }
+
+}
+
+case class TestSuiteUploadResult(validationReport: Option[TAR] = None,
+                                 success: Boolean = false,
+                                 pendingTestSuiteFolderName: Option[String] = None,
+                                 errorInformation: Option[String] = None,
+                                 needsConfirmation: Boolean = false,
+                                 matchingDataExists: Option[List[Long]] = None,
+                                 existsForSpecs: Option[List[(Long, Boolean)]] = None,
+                                 items: Option[List[TestSuiteUploadItemResult]] = None,
+                                 testCases: Option[Map[Long, List[TestSuiteUploadTestCase]]] = None,
+                                 sharedTestSuiteId: Option[Long] = None,
+                                 sharedTestCases: Option[List[TestSuiteUploadTestCase]] = None,
+                                 updateMetadata: Boolean = false,
+                                 updateSpecification: Boolean = false,
+                                 testSuite: Option[TestSuite] = None) {
+
+  def withPendingFolder(pendingTestSuiteFolderName: String): TestSuiteUploadResult = {
+    this.copy(pendingTestSuiteFolderName = Some(pendingTestSuiteFolderName))
+  }
+
+  def withItems(items: List[TestSuiteUploadItemResult]): TestSuiteUploadResult = {
+    this.copy(
+      items = Some(items),
+      success = true
+    )
+  }
 
 }

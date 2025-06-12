@@ -14,6 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @ProcessingHandler(name="CollectionUtils")
@@ -26,6 +27,7 @@ public class CollectionUtils extends AbstractProcessingHandler {
     private static final String OPERATION__RANDOM_VALUE = "randomValue";
     private static final String OPERATION__REMOVE = "remove";
     private static final String OPERATION__APPEND = "append";
+    private static final String OPERATION__FIND = "find";
     private static final String INPUT__LIST = "list";
     private static final String INPUT__MAP = "map";
     private static final String INPUT__VALUE = "value";
@@ -34,10 +36,12 @@ public class CollectionUtils extends AbstractProcessingHandler {
     private static final String INPUT__FROM_LIST = "fromList";
     private static final String INPUT__TO_MAP = "toMap";
     private static final String INPUT__FROM_MAP = "fromMap";
+    private static final String INPUT__CASE_INSENSITIVE = "ignoreCase";
+    private static final String INPUT__ONLY_MISSING = "onlyMissing";
     private static final String OUTPUT__OUTPUT = "output";
 
     @Override
-    public ProcessingModule getModuleDefinition() {
+    public ProcessingModule createProcessingModule() {
         ProcessingModule module = new ProcessingModule();
         module.setId("CollectionUtils");
         module.setMetadata(new Metadata());
@@ -64,7 +68,8 @@ public class CollectionUtils extends AbstractProcessingHandler {
                 List.of(
                         createParameter(INPUT__LIST, "list", UsageEnumeration.O, ConfigurationType.SIMPLE, "The list to consider (if the collection is expected to be a list)."),
                         createParameter(INPUT__MAP, "map", UsageEnumeration.O, ConfigurationType.SIMPLE, "The map to consider (if the collection is expected to be a map)."),
-                        createParameter(INPUT__VALUE, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, "The value to look for (as an item for a list or as a key for a map).")
+                        createParameter(INPUT__VALUE, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, "The value to look for (as an item for a list or as a key for a map)."),
+                        createParameter(INPUT__CASE_INSENSITIVE, "boolean", UsageEnumeration.O, ConfigurationType.SIMPLE, "Whether or not the lookup should ignore casing (default is false).")
                 ),
                 Collections.emptyList()
         ));
@@ -99,9 +104,22 @@ public class CollectionUtils extends AbstractProcessingHandler {
                         createParameter(INPUT__TO_LIST, "list", UsageEnumeration.O, ConfigurationType.SIMPLE, "The list to add to."),
                         createParameter(INPUT__TO_MAP, "map", UsageEnumeration.O, ConfigurationType.SIMPLE, "The map to add to."),
                         createParameter(INPUT__FROM_LIST, "list", UsageEnumeration.O, ConfigurationType.SIMPLE, "The list to read the entries from."),
-                        createParameter(INPUT__FROM_MAP, "map", UsageEnumeration.O, ConfigurationType.SIMPLE, "The map to read the entries from.")
+                        createParameter(INPUT__FROM_MAP, "map", UsageEnumeration.O, ConfigurationType.SIMPLE, "The map to read the entries from."),
+                        createParameter(INPUT__ONLY_MISSING, "boolean", UsageEnumeration.O, ConfigurationType.SIMPLE, "Whether or not only missing items should be appended (default is false)."),
+                        createParameter(INPUT__CASE_INSENSITIVE, "boolean", UsageEnumeration.O, ConfigurationType.SIMPLE, "Whether or not the missing item matching should ignore casing (default is false).")
                 ),
                 Collections.emptyList()
+        ));
+        module.getOperation().add(createProcessingOperation(OPERATION__FIND,
+                List.of(
+                        createParameter(INPUT__LIST, "list", UsageEnumeration.O, ConfigurationType.SIMPLE, "The list to consider (if the collection is expected to be a list)."),
+                        createParameter(INPUT__MAP, "map", UsageEnumeration.O, ConfigurationType.SIMPLE, "The map to consider (if the collection is expected to be a map)."),
+                        createParameter(INPUT__VALUE, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, "The value to look for (as an item for a list or as a key for a map)."),
+                        createParameter(INPUT__CASE_INSENSITIVE, "boolean", UsageEnumeration.O, ConfigurationType.SIMPLE, "Whether or not the lookup should ignore casing (default is false).")
+                ),
+                List.of(
+                        createParameter(OUTPUT__OUTPUT, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, "The located entry (if found).")
+                )
         ));
         return module;
     }
@@ -130,28 +148,54 @@ public class CollectionUtils extends AbstractProcessingHandler {
             } else {
                 ((ListType) inputCollection).clear();
             }
-        } else if (OPERATION__CONTAINS.equalsIgnoreCase(operation)) {
+        } else if (OPERATION__CONTAINS.equalsIgnoreCase(operation) || OPERATION__FIND.equalsIgnoreCase(operation)) {
             if (!input.getData().containsKey(INPUT__VALUE)) {
                 throw new IllegalArgumentException("The value to check for must be provided");
             }
             var value = input.getData().get(INPUT__VALUE);
-            var contains = false;
+            var ignoreCaseInput = input.getData().get(INPUT__CASE_INSENSITIVE);
+            boolean ignoreCase = false;
+            if (ignoreCaseInput != null) {
+                ignoreCase = (Boolean) ignoreCaseInput.convertTo(DataType.BOOLEAN_DATA_TYPE).getValue();
+            }
+            Optional<DataType> locatedValue = Optional.empty();
             DataType inputCollection = getInputCollection(input);
             if (inputCollection instanceof MapType) {
-                var valueToCheck = value.convertTo(DataType.STRING_DATA_TYPE);
-                var locatedItem = ((MapType) inputCollection).getItem((String) valueToCheck.getValue());
-                contains = locatedItem != null;
+                var valueToCheck = (String) value.convertTo(DataType.STRING_DATA_TYPE).getValue();
+                locatedValue = Optional.ofNullable(((MapType) inputCollection).getItem(valueToCheck));
+                if (locatedValue.isEmpty() && ignoreCase) {
+                    // We do a case-insensitive scan after the direct lookup so that we can find it fast if possible.
+                    var items = ((MapType) inputCollection).getItems();
+                    locatedValue = items.keySet().stream()
+                            .filter(key -> key != null && key.equalsIgnoreCase(valueToCheck))
+                            .findFirst()
+                            .map(items::get);
+                }
             } else {
                 var iterator = ((ListType) inputCollection).iterator();
-                while (iterator.hasNext() && !contains) {
+                String convertedLookupValue = null;
+                while (iterator.hasNext() && locatedValue.isEmpty()) {
                     var item = iterator.next();
                     var valueToCheck = value.convertTo(item.getType());
                     if (Objects.equals(item.getValue(), valueToCheck.getValue())) {
-                        contains = true;
+                        locatedValue = Optional.of(item);
+                    } else if (ignoreCase) {
+                        var currentItemAsString = (String) item.convertTo(DataType.STRING_DATA_TYPE).getValue();
+                        if (convertedLookupValue == null) {
+                            convertedLookupValue = (String)valueToCheck.convertTo(DataType.STRING_DATA_TYPE).getValue();
+                        }
+                        if (currentItemAsString.equalsIgnoreCase(convertedLookupValue)) {
+                            locatedValue = Optional.of(item);
+                        }
                     }
                 }
             }
-            data.getData().put(OUTPUT__OUTPUT, new BooleanType(contains));
+            var valueFound = locatedValue.isPresent();
+            if (OPERATION__CONTAINS.equalsIgnoreCase(operation)) {
+                data.getData().put(OUTPUT__OUTPUT, new BooleanType(valueFound));
+            } else if (valueFound) {
+                data.getData().put(OUTPUT__OUTPUT, locatedValue.get());
+            }
         } else if (OPERATION__RANDOM_KEY.equalsIgnoreCase(operation) || OPERATION__RANDOM_VALUE.equalsIgnoreCase(operation)) {
             List<DataType> valueList;
             DataType inputCollection = getInputCollection(input);
@@ -203,10 +247,78 @@ public class CollectionUtils extends AbstractProcessingHandler {
             if (listPair == null && mapPair == null) {
                 throw new IllegalArgumentException("You must provide either [%s] and [%s] inputs, or [%s] and [%s] inputs for the [%s] operation".formatted(INPUT__FROM_LIST, INPUT__TO_LIST, INPUT__FROM_MAP, INPUT__TO_MAP, operation));
             }
+            boolean onlyMissing = Optional.ofNullable(getInputForName(input, INPUT__ONLY_MISSING, BooleanType.class))
+                    .map(flag -> (Boolean) flag.getValue())
+                    .orElse(false);
+            boolean caseInsensitive = Optional.ofNullable(getInputForName(input, INPUT__CASE_INSENSITIVE, BooleanType.class))
+                    .map(flag -> (Boolean) flag.getValue())
+                    .orElse(false);
             if (listPair != null) {
-                ((List<DataType>)listPair.getRight().getValue()).addAll(((List<DataType>)listPair.getLeft().getValue()));
+                List<DataType> toList = (List<DataType>) listPair.getRight().getValue();
+                Function<DataType, Boolean> addCheck;
+                if (onlyMissing) {
+                    if (caseInsensitive) {
+                        Set<String> toListValues = toList.stream().map(value -> ((String) value.convertTo(DataType.STRING_DATA_TYPE).getValue()).toLowerCase()).collect(Collectors.toSet());
+                        addCheck = (item) -> {
+                            String itemValue = ((String) item.convertTo(DataType.STRING_DATA_TYPE).getValue()).toLowerCase();
+                            boolean shouldAdd = !toListValues.contains(itemValue);
+                            if (shouldAdd) {
+                                toListValues.add(itemValue); // Make sure we don't add duplicates coming from the fromList.
+                            }
+                            return shouldAdd;
+                        };
+                    } else {
+                        Set<String> toListValues = toList.stream().map(value -> (String) value.convertTo(DataType.STRING_DATA_TYPE).getValue()).collect(Collectors.toSet());
+                        addCheck = (item) -> {
+                            String itemValue = (String) item.convertTo(DataType.STRING_DATA_TYPE).getValue();
+                            boolean shouldAdd = !toListValues.contains(itemValue);
+                            if (shouldAdd) {
+                                toListValues.add(itemValue); // Make sure we don't add duplicates coming from the fromList.
+                            }
+                            return shouldAdd;
+                        };
+                    }
+                } else {
+                    addCheck = (item) -> true;
+                }
+                for (DataType fromItem: (List<DataType>) listPair.getLeft().getValue()) {
+                    if (addCheck.apply(fromItem)) {
+                        toList.add(fromItem);
+                    }
+                }
             } else {
-                ((Map<String, DataType>)mapPair.getRight().getValue()).putAll(((Map<String, DataType>)mapPair.getLeft().getValue()));
+                Map<String, DataType> toMap = (Map<String, DataType>) mapPair.getRight().getValue();
+                Function<String, Boolean> addCheck;
+                if (onlyMissing) {
+                    if (caseInsensitive) {
+                        // Create string representation of toMap's keys
+                        Set<String> toKeys = toMap.keySet().stream().map(String::toLowerCase).collect(Collectors.toSet());
+                        addCheck = (itemKey) -> {
+                            String itemKeyValue = itemKey.toLowerCase();
+                            boolean shouldAdd = !toKeys.contains(itemKeyValue);
+                            if (shouldAdd) {
+                                toKeys.add(itemKeyValue);
+                            }
+                            return shouldAdd;
+                        };
+                    } else {
+                        Set<String> toKeys = new HashSet<>(toMap.keySet());
+                        addCheck = (itemKey) -> {
+                            boolean shouldAdd = !toKeys.contains(itemKey);
+                            if (shouldAdd) {
+                                toKeys.add(itemKey);
+                            }
+                            return shouldAdd;
+                        };
+                    }
+                } else {
+                    addCheck = (itemKey) -> true;
+                }
+                for (Map.Entry<String, DataType> fromEntry: ((Map<String, DataType>) mapPair.getLeft().getValue()).entrySet()) {
+                    if (addCheck.apply(fromEntry.getKey())) {
+                        toMap.put(fromEntry.getKey(), fromEntry.getValue());
+                    }
+                }
             }
         } else {
             throw new IllegalArgumentException("Unknown operation [%s]".formatted(operation));

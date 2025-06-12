@@ -1,0 +1,43 @@
+@import "../../../styles/less/_common.less";
+
+.property-container {
+    border: 1px solid @gray-dark-1;
+    border-radius: @border-radius;
+    margin-bottom: 10px;
+    background-color: @gray-light-1;
+    .property-container-title {
+        padding: 10px;
+        font-weight: bold;
+        cursor: pointer;
+        border-radius: @border-radius @border-radius 0 0;
+        &.hovering {
+            background-color: @gray-highlight;
+        }
+    }
+    .property-list-container {
+        padding: 0 10px 10px 10px;
+        &.hovering {
+            background-color: @gray-highlight;
+        }
+        .property {
+            display: flex;
+            align-items: center;
+            border: 1px solid @gray-dark-1;
+            background-color: @white;
+            border-radius: @border-radius;
+            padding: 10px;
+            margin-top: 5px;
+            &:first-child {
+                margin-top: 0;
+            }
+            .property-name {
+                font-weight: bold;
+            }
+            .property-description {
+                margin-left: 10px;
+                padding-left: 10px;
+                border-left: 1px solid @gray-dark-1;
+            }
+        }
+    }
+}

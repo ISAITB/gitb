@@ -1,7 +1,6 @@
 package filters
 
 import org.apache.pekko.stream.Materializer
-import org.slf4j.{Logger, LoggerFactory}
 import play.api.http.HeaderNames._
 import play.api.mvc._
 
@@ -15,7 +14,6 @@ object CorsFilter {
 }
 
 class CorsFilter @Inject() (implicit ec: ExecutionContext, implicit val mat: Materializer) extends EssentialFilter {
-  private final val logger: Logger = LoggerFactory.getLogger(classOf[CorsFilter])
 
   def apply(next: EssentialAction) = new EssentialAction {
     def apply(requestHeader: RequestHeader) = {

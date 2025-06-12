@@ -13,10 +13,10 @@ import { RoutingService } from 'src/app/services/routing.service';
 import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 
 @Component({
-  selector: 'app-endpoint-details',
-  templateUrl: './endpoint-details.component.html',
-  styles: [
-  ]
+    selector: 'app-endpoint-details',
+    templateUrl: './endpoint-details.component.html',
+    styles: [],
+    standalone: false
 })
 export class EndpointDetailsComponent extends BaseComponent implements OnInit {
 

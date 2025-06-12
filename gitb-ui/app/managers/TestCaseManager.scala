@@ -7,7 +7,7 @@ import slick.lifted.Rep
 
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ExecutionContext, Future}
 
 /**
  * Created by serbay on 10/16/14.
@@ -43,12 +43,14 @@ object TestCaseManager {
 }
 
 @Singleton
-class TestCaseManager @Inject() (testResultManager: TestResultManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class TestCaseManager @Inject() (testResultManager: TestResultManager,
+																 dbConfigProvider: DatabaseConfigProvider)
+																(implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
 	import dbConfig.profile.api._
 
-	def getDomainOfTestCase(testCaseId: Long): Long = {
-		exec(PersistenceSchema.testSuiteHasTestCases
+	def getDomainOfTestCase(testCaseId: Long): Future[Long] = {
+		DB.run(PersistenceSchema.testSuiteHasTestCases
 			.join(PersistenceSchema.testSuites).on(_.testsuite === _.id)
 			.filter(_._1.testcase === testCaseId)
 			.map(_._2.domain)
@@ -56,41 +58,41 @@ class TestCaseManager @Inject() (testResultManager: TestResultManager, dbConfigP
 			.head)
 	}
 
-	def getSpecificationsOfTestCases(testCaseIds: List[Long]): Set[Long] = {
-		exec(PersistenceSchema.testSuiteHasTestCases
+	def getSpecificationsOfTestCases(testCaseIds: List[Long]): Future[Set[Long]] = {
+		DB.run(PersistenceSchema.testSuiteHasTestCases
 			.join(PersistenceSchema.specificationHasTestSuites).on(_.testsuite === _.testSuiteId)
 			.filter(_._1.testcase inSet testCaseIds)
 			.map(_._2.specId)
-			.result).toSet
+			.result).map(_.toSet)
 	}
 
-	def getTestCaseWithDocumentation(testCaseId: Long): TestCases = {
-		exec(PersistenceSchema.testCases.filter(_.id === testCaseId).result.head)
+	def getTestCaseWithDocumentation(testCaseId: Long): Future[TestCases] = {
+		DB.run(PersistenceSchema.testCases.filter(_.id === testCaseId).result.head)
 	}
 
-	def getTestCase(testCaseId:String): Option[TestCase] = {
-		try {
-			val tc = exec(PersistenceSchema.testCases.filter(_.id === testCaseId.toLong).map(x => TestCaseManager.withoutDocumentation(x)).result.head)
-			Some(new TestCase(TestCaseManager.tupleToTestCase(tc)))
-		}
-		catch {
-			case _: Exception => None
+	def getTestCase(testCaseId:String): Future[Option[TestCase]] = {
+		DB.run(
+			PersistenceSchema.testCases.filter(_.id === testCaseId.toLong).map(x => TestCaseManager.withoutDocumentation(x)).result.headOption
+		).map { result =>
+			result.map(x => new TestCase(TestCaseManager.tupleToTestCase(x)))
 		}
 	}
 
-	def updateTestCaseMetadata(testCaseId: Long, name: String, description: Option[String], documentation: Option[String], isOptional: Boolean, isDisabled: Boolean, tags: Option[String], specReference: Option[String], specDescription: Option[String], specLink: Option[String]): Unit = {
+	def updateTestCaseMetadata(testCaseId: Long, name: String, description: Option[String], documentation: Option[String], isOptional: Boolean, isDisabled: Boolean, tags: Option[String], specReference: Option[String], specDescription: Option[String], specLink: Option[String]): Future[Unit] = {
 		var hasDocumentationToSet = false
 		var documentationToSet: Option[String] = None
 		if (documentation.isDefined && !documentation.get.isBlank) {
 			hasDocumentationToSet = true
 			documentationToSet = documentation
 		}
-		val q1 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.shortname, t.fullname, t.description, t.documentation, t.hasDocumentation, t.isOptional, t.isDisabled, t.tags, t.specReference, t.specDescription, t.specLink)
-		exec(
-			q1.update(name, name, description, documentationToSet, hasDocumentationToSet, isOptional, isDisabled, tags, specReference, specDescription, specLink) andThen
-				testResultManager.updateForUpdatedTestCase(testCaseId, name)
-					.transactionally
-		)
+		val q1 = for {
+			_ <- PersistenceSchema.testCases
+				.filter(_.id === testCaseId)
+				.map(t => (t.shortname, t.fullname, t.description, t.documentation, t.hasDocumentation, t.isOptional, t.isDisabled, t.tags, t.specReference, t.specDescription, t.specLink))
+				.update(name, name, description, documentationToSet, hasDocumentationToSet, isOptional, isDisabled, tags, specReference, specDescription, specLink)
+			_ <- testResultManager.updateForUpdatedTestCase(testCaseId, name)
+		} yield ()
+		DB.run(q1.transactionally)
 	}
 
 	def updateTestCaseWithoutMetadata(testCaseId: Long, path: String, testSuiteOrder: Short, targetActors: String): DBIO[_] = {
@@ -99,9 +101,13 @@ class TestCaseManager @Inject() (testResultManager: TestResultManager, dbConfigP
 	}
 
 	def updateTestCase(testCaseId: Long, identifier: String, shortName: String, fullName: String, version: String, authors: Option[String], description: Option[String], keywords: Option[String], testCaseType: Short, path: String, testSuiteOrder: Short, targetActors: String, hasDocumentation: Boolean, documentation: Option[String], isOptional: Boolean, isDisabled: Boolean, tags: Option[String], specReference: Option[String], specDescription: Option[String], specLink: Option[String], group: Option[Long]): DBIO[_] = {
-		val q1 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.identifier, t.shortname, t.fullname, t.version, t.authors, t.description, t.keywords, t.testCaseType, t.path, t.testSuiteOrder, t.targetActors, t.hasDocumentation, t.documentation, t.isOptional, t.isDisabled, t.tags, t.specReference, t.specDescription, t.specLink, t.group)
-		q1.update(identifier, shortName, fullName, version, authors, description, keywords, testCaseType, path, testSuiteOrder, Some(targetActors), hasDocumentation, documentation, isOptional, isDisabled, tags, specReference, specDescription, specLink, group) andThen
-		testResultManager.updateForUpdatedTestCase(testCaseId, shortName)
+		for {
+			_ <- PersistenceSchema.testCases
+				.filter(_.id === testCaseId)
+				.map(t => (t.identifier, t.shortname, t.fullname, t.version, t.authors, t.description, t.keywords, t.testCaseType, t.path, t.testSuiteOrder, t.targetActors, t.hasDocumentation, t.documentation, t.isOptional, t.isDisabled, t.tags, t.specReference, t.specDescription, t.specLink, t.group))
+				.update(identifier, shortName, fullName, version, authors, description, keywords, testCaseType, path, testSuiteOrder, Some(targetActors), hasDocumentation, documentation, isOptional, isDisabled, tags, specReference, specDescription, specLink, group)
+			_ <- testResultManager.updateForUpdatedTestCase(testCaseId, shortName)
+		} yield ()
 	}
 
 	def delete(testCaseId: Long): DBIO[_] = {
@@ -132,17 +138,14 @@ class TestCaseManager @Inject() (testResultManager: TestResultManager, dbConfigP
 			.delete
 	}
 
-	def getTestCaseDocumentation(testCaseId: Long): Option[String] = {
-		val result = exec(PersistenceSchema.testCases.filter(_.id === testCaseId).map(x => x.documentation).result.headOption)
-		if (result.isDefined) {
-			result.get
-		} else {
-			None
+	def getTestCaseDocumentation(testCaseId: Long): Future[Option[String]] = {
+		DB.run(PersistenceSchema.testCases.filter(_.id === testCaseId).map(x => x.documentation).result.headOption).map { result =>
+			result.flatten
 		}
 	}
 
-	def searchTestCases(domainIds: Option[List[Long]], specificationIds: Option[List[Long]], specificationGroupIds: Option[List[Long]], actorIds: Option[List[Long]], testSuiteIds: Option[List[Long]]): List[TestCases] = {
-		val results = exec(
+	def searchTestCases(domainIds: Option[List[Long]], specificationIds: Option[List[Long]], specificationGroupIds: Option[List[Long]], actorIds: Option[List[Long]], testSuiteIds: Option[List[Long]]): Future[List[TestCases]] = {
+		DB.run(
 			for {
 				allowedTestCasesByActor <- {
 					if (actorIds.isDefined) {
@@ -170,6 +173,5 @@ class TestCaseManager @Inject() (testResultManager: TestResultManager, dbConfigP
 				}
 			} yield testCases
 		)
-		results
 	}
 }

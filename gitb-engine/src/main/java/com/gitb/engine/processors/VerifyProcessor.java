@@ -1,13 +1,14 @@
 package com.gitb.engine.processors;
 
+import com.gitb.common.AliasManager;
 import com.gitb.core.*;
 import com.gitb.engine.ModuleManager;
 import com.gitb.engine.expr.ExpressionHandler;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.remote.validation.RemoteValidationModuleClient;
 import com.gitb.engine.testcase.TestCaseScope;
-import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.engine.utils.HandlerUtils;
+import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.engine.validation.handlers.common.AbstractValidator;
 import com.gitb.engine.validation.handlers.xmlunit.XmlMatchValidator;
 import com.gitb.engine.validation.handlers.xpath.XPathValidator;
@@ -66,6 +67,7 @@ public class VerifyProcessor implements IProcessor {
 			validator = getRemoteValidator(handlerIdentifier, TestCaseUtils.getStepProperties(verify.getProperty(), resolver), scope.getContext().getSessionId());
 		} else {
 			// This is a local validator.
+			handlerIdentifier = AliasManager.getInstance().resolveValidationHandler(handlerIdentifier);
 			validator = ModuleManager.getInstance().getValidationHandler(handlerIdentifier);
 		}
 		if (validator == null) {
@@ -84,7 +86,8 @@ public class VerifyProcessor implements IProcessor {
 			Map<String, TypedParameter> expectedParamsMap = constructExpectedParameterMap(validatorDefinition);
 			//Evaluate each expression to supply the inputs
 			for (Binding inputExpression : inputExpressions) {
-				TypedParameter expectedParam = expectedParamsMap.get(inputExpression.getName());
+				String inputName = AliasManager.getInstance().resolveValidationHandlerInput(handlerIdentifier, inputExpression.getName());
+				TypedParameter expectedParam = expectedParamsMap.get(inputName);
 				DataType result;
 				if (expectedParam == null) {
 					result = exprHandler.processExpression(inputExpression);
@@ -92,7 +95,7 @@ public class VerifyProcessor implements IProcessor {
 					result = exprHandler.processExpression(inputExpression, expectedParam.getType());
 				}
 				//Add result to the input map
-				inputs.put(inputExpression.getName(), result);
+				inputs.put(inputName, result);
 			}
 		} else {
 			List<TypedParameter> expectedParams = new ArrayList<>();
@@ -115,10 +118,10 @@ public class VerifyProcessor implements IProcessor {
 		// Add validator-specific inputs
 		if (validator instanceof AbstractValidator) {
 			inputs.put(AbstractValidator.TEST_CASE_ID_INPUT, new StringType(scope.getContext().getTestCase().getId()));
+			inputs.put(HandlerUtils.SESSION_INPUT, new StringType(scope.getContext().getSessionId()));
 			if (validator instanceof XPathValidator || validator instanceof XmlMatchValidator) {
-				inputs.put(HandlerUtils.SESSION_INPUT, new StringType(scope.getContext().getSessionId()));
 				inputs.put(HandlerUtils.NAMESPACE_MAP_INPUT, MapType.fromMap(scope.getNamespaceDefinitions()));
-			}
+ 			}
 		}
 
 		// Validate content with given configurations and inputs; and return the report

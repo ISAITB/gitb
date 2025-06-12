@@ -4,8 +4,9 @@ import { DataService } from 'src/app/services/data.service';
 import { PopupService } from 'src/app/services/popup.service';
 
 @Component({
-  selector: 'app-api-key-text',
-  templateUrl: './api-key-text.component.html'
+    selector: 'app-api-key-text',
+    templateUrl: './api-key-text.component.html',
+    standalone: false
 })
 export class ApiKeyTextComponent implements OnInit {
 

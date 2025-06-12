@@ -1,4 +1,4 @@
-import {Component, EventEmitter, NgZone, OnInit} from '@angular/core';
+import {Component, EventEmitter, NgZone, OnInit, ViewChild} from '@angular/core';
 import {BsModalService} from 'ngx-bootstrap/modal';
 import {Observable, of} from 'rxjs';
 import {Constants} from 'src/app/common/constants';
@@ -9,7 +9,6 @@ import {ConformanceCertificateSettings} from 'src/app/types/conformance-certific
 import {ConformanceResultFull} from 'src/app/types/conformance-result-full';
 import {ConformanceResultFullList} from 'src/app/types/conformance-result-full-list';
 import {ConformanceResultFullWithTestSuites} from 'src/app/types/conformance-result-full-with-test-suites';
-import {ConformanceStatusItem} from 'src/app/types/conformance-status-item';
 import {FilterState} from 'src/app/types/filter-state';
 import {TestResultSearchCriteria} from 'src/app/types/test-result-search-criteria';
 import {ConformanceSnapshot} from 'src/app/types/conformance-snapshot';
@@ -29,19 +28,25 @@ import {FilterUpdate} from 'src/app/components/test-filter/filter-update';
 import {
   BaseConformanceItemDisplayComponent
 } from 'src/app/components/base-conformance-item-display/base-conformance-item-display.component';
+import {PagingControlsComponent} from '../../../components/paging-controls/paging-controls.component';
+import {PagingEvent} from '../../../components/paging-controls/paging-event';
 
 @Component({
-  selector: 'app-conformance-dashboard',
-  templateUrl: './conformance-dashboard.component.html',
-  styleUrls: [ './conformance-dashboard.component.less' ]
+    selector: 'app-conformance-dashboard',
+    templateUrl: './conformance-dashboard.component.html',
+    styleUrls: ['./conformance-dashboard.component.less'],
+    standalone: false
 })
 export class ConformanceDashboardComponent extends BaseConformanceItemDisplayComponent implements OnInit {
+
+  @ViewChild("pagingControls") pagingControls?: PagingControlsComponent
 
   exportPending = false
   dataStatus = {status: Constants.STATUS.PENDING}
   filterState: FilterState = {
     filters: [ Constants.FILTER_TYPE.SPECIFICATION, Constants.FILTER_TYPE.SPECIFICATION_GROUP, Constants.FILTER_TYPE.ACTOR, Constants.FILTER_TYPE.ORGANISATION, Constants.FILTER_TYPE.SYSTEM, Constants.FILTER_TYPE.ORGANISATION_PROPERTY, Constants.FILTER_TYPE.SYSTEM_PROPERTY, Constants.FILTER_TYPE.RESULT, Constants.FILTER_TYPE.END_TIME ],
-    updatePending: false
+    updatePending: false,
+    updateDisabled: false
   }
   communityId?: number
   selectedCommunityId?: number
@@ -56,10 +61,6 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
   Constants = Constants
   filtersVisible = false
 
-  conformanceStatementsTotalCount = 0
-  currentPage = 1
-  prevDisabled = false
-  nextDisabled = false
   sortOrder = Constants.ORDER.ASC
   sortColumn = Constants.FILTER_TYPE.COMMUNITY
 
@@ -143,6 +144,10 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     }
     // Tree view select configs - end
     this.routingService.conformanceDashboardBreadcrumbs()
+  }
+
+  ngAfterViewInit() {
+    super.ngAfterViewInit();
     this.treeViewToggled()
   }
 
@@ -173,13 +178,13 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
       filterData = this.filterState.filterData()
     }
     if (filterData) {
-      if (this.dataService.isCommunityAdmin) {
+      if (this.dataService.isSystemAdmin) {
+        searchCriteria.communityIds = filterData[Constants.FILTER_TYPE.COMMUNITY]
+        searchCriteria.domainIds = filterData[Constants.FILTER_TYPE.DOMAIN]
+      } else {
         if (this.dataService.community!.domain == undefined) {
           searchCriteria.domainIds = filterData[Constants.FILTER_TYPE.DOMAIN]
         }
-      } else {
-        searchCriteria.communityIds = filterData[Constants.FILTER_TYPE.COMMUNITY]
-        searchCriteria.domainIds = filterData[Constants.FILTER_TYPE.DOMAIN]
       }
       searchCriteria.specIds = filterData[Constants.FILTER_TYPE.SPECIFICATION]
       searchCriteria.specGroupIds = filterData[Constants.FILTER_TYPE.SPECIFICATION_GROUP]
@@ -209,16 +214,10 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
 		return searchCriteria
   }
 
-	getConformanceStatementsInternal(fullResults: boolean, forExport: boolean) {
+	private getConformanceStatementsInternal(pagingInfo: PagingEvent, fullResults: boolean, forExport: boolean) {
     return new Observable<ConformanceResultFullList>((subscriber) => {
       let params = this.getCurrentSearchCriteria()
-      let pageToUse = this.currentPage
-      let limitToUse = 10
-      if (forExport) {
-        pageToUse = 1
-        limitToUse = 1000000
-      }
-      this.conformanceService.getConformanceOverview(params, this.activeConformanceSnapshot?.id, fullResults, forExport, this.sortColumn, this.sortOrder, pageToUse, limitToUse)
+      this.conformanceService.getConformanceOverview(params, this.activeConformanceSnapshot?.id, fullResults, forExport, this.sortColumn, this.sortOrder, pagingInfo.targetPage, pagingInfo.targetPageSize)
         .subscribe((data: ConformanceResultFullList) => {
           for (let conformanceStatement of data.data) {
             const completedCountToConsider = Number(conformanceStatement.completedToConsider)
@@ -246,14 +245,13 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
   }
 
 	getConformanceStatements() {
-    this.currentPage = 1
-    this.selectPage()
+    this.selectPage({ targetPage: 1, targetPageSize: this.pagingControls?.getCurrentStatus().pageSize! })
   }
 
   testSuiteLoader() {
     return ((item: ConformanceStatementItem) => {
       return this.conformanceService.getConformanceStatus(item.id, this.selectedSystemId!, this.activeConformanceSnapshot?.id)
-    }).bind(this)
+    })
   }
 
 	onExpand(statement: ConformanceResultFull) {
@@ -299,13 +297,13 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
 		this.expandedStatements = { count: 0 }
   }
 
-	showExportTestCase(testCase: Partial<ConformanceStatusItem>) {
-		return testCase.sessionId != undefined && testCase.sessionId != ""
-  }
-
 	onExportConformanceStatementsAsCsv() {
 		this.exportPending = true
-		this.getConformanceStatementsInternal(true, true)
+    const pagingInfo = {
+      targetPage: 1,
+      targetPageSize: 100000000
+    }
+		this.getConformanceStatementsInternal(pagingInfo, true, true)
 		.subscribe((data) => {
 			let headers: string[] = []
 			let columnMap: string[] = []
@@ -341,6 +339,20 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     })
   }
 
+  private countTestCases(item: ConformanceStatementItem): number {
+    if (item.results) {
+      return item.results.completed + item.results.failed + item.results.undefined
+    } else if (item.items) {
+      let total = 0
+      item.items.forEach(item => {
+        total += this.countTestCases(item)
+      })
+      return total
+    } else {
+      return 0
+    }
+  }
+
   onExportConformanceItem(event: ExportReportEvent) {
     if (event.format == 'xml') {
       event.item.exportXmlPending = true
@@ -349,18 +361,10 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     }
     let reportObservable: Observable<any>
     if (event.statementReport) {
-      reportObservable = this.reportSupportService.handleConformanceStatementReport(this.selectedCommunityId!, event.actorId!, this.selectedSystemId!, this.activeConformanceSnapshot?.id, event.format, true)
+      const testCaseCount = this.countTestCases(event.item)
+      reportObservable = this.reportSupportService.handleConformanceStatementReport(this.selectedCommunityId!, event.actorId!, this.selectedSystemId!, this.activeConformanceSnapshot?.id, event.format, true, testCaseCount)
     } else {
-      let reportLevel: 'all'|'domain'|'specification'|'group'
-      if (event.item.itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.DOMAIN) {
-        reportLevel = "domain"
-      } else if (event.item.itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION_GROUP) {
-        reportLevel = "group"
-      } else if (event.item.itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION) {
-        reportLevel = "specification"
-      } else {
-        reportLevel = "all"
-      }
+      const reportLevel = this.determineReportLevel(event)
       reportObservable = this.reportSupportService.handleConformanceOverviewReport(this.selectedCommunityId!, this.selectedSystemId!, event.item.id, reportLevel, this.activeConformanceSnapshot?.id, event.format, this.dataService.conformanceStatusForConformanceItem(event.item))
     }
     reportObservable.subscribe(() => {
@@ -380,7 +384,8 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     } else {
       statement.exportPdfPending = true
     }
-    this.reportSupportService.handleConformanceStatementReport(statement.communityId, statement.actorId, statement.systemId, this.activeConformanceSnapshot?.id, format, true)
+    const testCaseCount = statement.completed + statement.failed + statement.undefined
+    this.reportSupportService.handleConformanceStatementReport(statement.communityId, statement.actorId, statement.systemId, this.activeConformanceSnapshot?.id, format, true, testCaseCount)
     .subscribe(() => {
       // Do nothing further
     })
@@ -397,58 +402,20 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     this.routingService.toSessionDashboard(sessionId)
   }
 
-  doFirstPage() {
-    if (!this.prevDisabled) {
-      this.currentPage = 1
-      this.selectPage()
-    }
+  doPageNavigation(event: PagingEvent) {
+    this.selectPage(event)
   }
 
-  doPrevPage() {
-    if (!this.prevDisabled) {
-      this.currentPage -= 1
-      this.selectPage()
-    }
-  }
-
-  doNextPage() {
-    if (!this.nextDisabled) {
-      this.currentPage += 1
-      this.selectPage()
-    }
-  }
-
-  doLastPage() {
-    if (!this.nextDisabled) {
-      this.currentPage = Math.ceil(this.conformanceStatementsTotalCount / Constants.TABLE_PAGE_SIZE)
-      this.selectPage()
-    }
-  }
-
-  selectPage() {
+  private selectPage(pagingInfo: PagingEvent) {
     this.filterState.updatePending = true
-    this.getConformanceStatementsInternal(false, false)
+    this.getConformanceStatementsInternal(pagingInfo, false, false)
     .subscribe((data) => {
 			this.conformanceStatements = data.data
-      this.conformanceStatementsTotalCount = data.count
-      this.updatePagination()
+      this.pagingControls?.updateStatus(pagingInfo.targetPage, data.count)
 			this.onCollapseAll()
     }).add(() => {
 			this.filterState.updatePending = false
     })
-  }
-
-  updatePagination() {
-    if (this.currentPage == 1) {
-      this.nextDisabled = this.conformanceStatementsTotalCount <= Constants.TABLE_PAGE_SIZE
-      this.prevDisabled = true
-    } else if (this.currentPage == Math.ceil(this.conformanceStatementsTotalCount / Constants.TABLE_PAGE_SIZE)) {
-      this.nextDisabled = true
-      this.prevDisabled = false
-    } else {
-      this.nextDisabled = false
-      this.prevDisabled = false
-    }
   }
 
   sort(column: string) {
@@ -573,7 +540,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     if (community && community.values.active.length > 0) {
       this.selectedCommunityId = community.values.active[0].id
     }
-    if (fromSnapshotChange == false) {
+    if (!fromSnapshotChange) {
       this.activeConformanceSnapshot = undefined
     }
     let loadObservable: Observable<Organisation[]>

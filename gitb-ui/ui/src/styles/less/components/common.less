@@ -305,7 +305,7 @@ div.import-item {
 			border-top-right-radius: 5px;
 			border-bottom-right-radius: 5px;
 			padding: 10px;
-			align-items: center;			
+			align-items: center;
 			&.with-groups {
 				&:hover {
 					cursor: pointer;
@@ -353,7 +353,7 @@ div.title-icon {
 }
 div.title-action {
 	display: flex;
-    margin-left: auto;	
+    margin-left: auto;
 	.control {
 		padding: 6px 12px;
 		border: 1px solid @gray-button;
@@ -367,7 +367,7 @@ div.title-action {
 }
 div.import-item-group {
 	background-color: @item-color;
-	align-items: center;	
+	align-items: center;
 	padding-bottom: 10px;
 	div.import-item-group-label {
 		min-height: 50px;
@@ -482,102 +482,6 @@ table.table {
 }
 .faded {
 	opacity: 0.5;
-}
-.property-filters-container {
-	display: flex;
-	flex-wrap: wrap;
-	.property-filter {
-		margin-right: 5px;
-		margin-top: 8px;
-		display: inline-flex;
-		.custom-property-filter {
-			display: flex;
-			align-content: center;
-			.custom-property-filter-container {
-				display: flex;
-				align-items: center;
-				&.non-applied {
-					.property-id {
-						display: inline-flex;
-						select {
-							border-top-right-radius: 0px;
-							border-bottom-right-radius: 0px;
-						}
-					}
-					.property-value {
-						display: inline-flex;
-						width: 300px;
-						select, input {
-							border-radius: 0px;
-							border-left:0px;
-							border-right:0px;
-						}
-					}
-					.property-controls {
-						display: inline-flex;
-						button {
-							&:first-child {
-								border-radius: 0px;
-								border-right: 0px;
-							}
-							&:last-child {
-								border-top-left-radius: 0px;
-								border-bottom-left-radius: 0px;
-							}
-						}
-					}
-				}
-				&.applied {
-					.property-id {
-						padding: 6px 12px;
-						border: 1px solid @gray-button;
-						border-top-left-radius: @border-radius;
-						border-bottom-left-radius: @border-radius;
-						text-align: center;
-						font-weight: bold;
-						white-space: nowrap;
-						height: 36px;
-					}
-					.property-value {
-						padding: 6px 12px;
-						border: 1px solid @gray-button;
-						border-left: 0px;
-						border-right: 0px;
-						text-align: center;
-						background-color: @gray-light-1;
-						white-space: nowrap;
-						height: 36px;
-					}
-					.property-controls {
-						button {
-							border-top-left-radius: 0px;
-							border-bottom-left-radius: 0px;
-							height: 36px;
-						}
-					}
-				}
-			}
-		}
-	}
-	.property-filters-control {
-		display: inline-flex;
-		margin-top: 8px;
-		&.padded {
-			margin-left:15px;
-		}
-	}
-}
-
-.test-output-container {
-	margin-top: 32px;
-	margin-bottom: -20px;
-	div.alert {
-		margin: 0px !important;
-	}
-}
-
-.test-session-presentation-div {
-	padding-bottom: 20px;
 }
 
 .card-header {

@@ -38,9 +38,12 @@ import org.slf4j.LoggerFactory;
 import scala.concurrent.Future;
 import scala.concurrent.Promise;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+
+import static com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils.getMessageFromBindings;
 
 /**
  * Receive step executor actor
@@ -112,7 +115,7 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 				if (moduleDefinition != null && moduleDefinition.getReceiveConfigs() != null) {
 					checkRequiredConfigsAndSetDefaultValues(moduleDefinition.getReceiveConfigs().getParam(), step.getConfig());
 				}
-				Message inputMessage = getMessageFromBindings(step.getInput());
+				Message inputMessage = getMessageFromBindings(messagingHandler, step.getInput(), expressionHandler);
 				String callId = UUID.randomUUID().toString();
 				CallbackManager.getInstance().registerForNotification(self(), messagingContext.getSessionId(), callId);
 				if (!StringUtils.isBlank(step.getTimeout())) {
@@ -272,6 +275,16 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 
 	public static ActorRef create(ActorContext context, com.gitb.tdl.Receive step, TestCaseScope scope, String stepId, StepContext stepContext) throws Exception {
 		return context.actorOf(props(ReceiveStepProcessorActor.class, step, scope, stepId, stepContext).withDispatcher(ActorSystem.BLOCKING_DISPATCHER), getName(NAME));
+	}
+
+	@Override
+	protected String getFrom() {
+		return Objects.requireNonNullElseGet(super.getFrom(), () -> scope.getContext().getDefaultSutActor());
+	}
+
+	@Override
+	protected String getTo() {
+		return Objects.requireNonNullElseGet(super.getTo(), () -> scope.getContext().getDefaultNonSutActor());
 	}
 
 }

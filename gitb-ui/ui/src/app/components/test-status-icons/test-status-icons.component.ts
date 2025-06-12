@@ -5,9 +5,10 @@ import {Counters} from './counters';
 import {TestStatusBase} from '../test-status-base/test-status-base';
 
 @Component({
-  selector: 'app-test-status-icons',
-  templateUrl: './test-status-icons.component.html',
-  styleUrls: [ './test-status-icons.component.less' ]
+    selector: 'app-test-status-icons',
+    templateUrl: './test-status-icons.component.html',
+    styleUrls: ['./test-status-icons.component.less'],
+    standalone: false
 })
 export class TestStatusIconsComponent extends TestStatusBase implements OnInit {
 

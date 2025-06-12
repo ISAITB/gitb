@@ -111,7 +111,11 @@ public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStep
     @Override
     protected void start() {
         processing();
-        startTestStepAtIndex(0);
+        var stepReference = startTestStepAtIndex(0);
+        if (stepReference == null) {
+            // Nothing was found to execute
+            completeStep();
+        }
     }
 
     @Override

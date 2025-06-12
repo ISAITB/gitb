@@ -4,9 +4,10 @@ import { DataService } from 'src/app/services/data.service';
 import { MenuItem } from 'src/app/types/menu-item.enum';
 
 @Component({
-  selector: 'app-menu-item',
-  templateUrl: './menu-item.component.html',
-  styleUrls: [ './menu-item.component.less' ]
+    selector: 'app-menu-item',
+    templateUrl: './menu-item.component.html',
+    styleUrls: ['./menu-item.component.less'],
+    standalone: false
 })
 export class MenuItemComponent implements OnInit, OnDestroy {
 

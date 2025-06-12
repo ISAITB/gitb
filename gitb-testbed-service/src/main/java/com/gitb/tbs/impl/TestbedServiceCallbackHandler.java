@@ -3,6 +3,7 @@ package com.gitb.tbs.impl;
 import com.gitb.engine.ITestbedServiceCallbackHandler;
 import com.gitb.tbs.TestbedClient;
 import com.gitb.tbs.TestbedClient_Service;
+import jakarta.xml.ws.WebServiceContext;
 import org.apache.cxf.headers.Header;
 import org.apache.cxf.helpers.CastUtils;
 import org.apache.cxf.jaxws.context.WrappedMessageContext;
@@ -10,9 +11,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
 
-import jakarta.xml.ws.WebServiceContext;
 import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,7 +27,7 @@ public class TestbedServiceCallbackHandler implements ITestbedServiceCallbackHan
     private static final Logger LOG = LoggerFactory.getLogger(TestbedServiceCallbackHandler.class);
 
     private static TestbedServiceCallbackHandler instance = null;
-    private final Map<String, WSAddresingProperties> sessionCallbackMap;
+    private final Map<String, WSAddressingProperties> sessionCallbackMap;
 
     public synchronized static TestbedServiceCallbackHandler getInstance() {
         if(instance == null) {
@@ -47,16 +47,16 @@ public class TestbedServiceCallbackHandler implements ITestbedServiceCallbackHan
      */
     void saveWSAddressingProperties(String sessionId, WebServiceContext wsc){
         //Process SOAP Header to find WS Addressing properties
-        String testbedClientURL = getTestbedClientURL(getHeaders(wsc));
+        String testbedClientURL = getTestbedClientURL(wsc);
         //Put into the map
-        sessionCallbackMap.put(sessionId, new WSAddresingProperties(testbedClientURL));
+        sessionCallbackMap.put(sessionId, new WSAddressingProperties(testbedClientURL));
     }
 
     @Override
     public TestbedClient getTestbedClient(String sessionId){
-        WSAddresingProperties wsAddresingProperties = sessionCallbackMap.get(sessionId);
-        if (wsAddresingProperties != null) {
-            return wsAddresingProperties.getTestbedClient();
+        WSAddressingProperties wsAddressingProperties = sessionCallbackMap.get(sessionId);
+        if (wsAddressingProperties != null) {
+            return wsAddressingProperties.getTestbedClient();
         }
         return null;
     }
@@ -66,7 +66,25 @@ public class TestbedServiceCallbackHandler implements ITestbedServiceCallbackHan
         sessionCallbackMap.remove(sessionId);
     }
 
-    private String getTestbedClientURL(List<Header> headers) {
+    public static String getTestbedClientURL(WebServiceContext wsc) {
+        return getTestbedClientURL(getHeaders(wsc));
+    }
+
+    public static TestbedClient createTestBedClient(WebServiceContext wsc) {
+        return createTestBedClient(getTestbedClientURL(wsc));
+    }
+
+    public static TestbedClient createTestBedClient(String testbedClientURL) {
+        TestbedClient_Service testbedClientService;
+        try {
+            testbedClientService = new TestbedClient_Service(URI.create(testbedClientURL).toURL());
+        } catch (MalformedURLException e) {
+            testbedClientService = new TestbedClient_Service();
+        }
+        return testbedClientService.getTestbedClientPort();
+    }
+
+    private static String getTestbedClientURL(List<Header> headers) {
         if (headers != null) {
             for (Header header: headers) {
                 Element headerElement = ((Element)header.getObject());
@@ -83,24 +101,18 @@ public class TestbedServiceCallbackHandler implements ITestbedServiceCallbackHan
      * Retrieves the headers
      * @return The list of headers
      */
-    private List<Header> getHeaders(WebServiceContext wsc) {
+    private static List<Header> getHeaders(WebServiceContext wsc) {
         if (wsc != null && wsc.getMessageContext() instanceof WrappedMessageContext) {
             return CastUtils.cast((List<?>)((WrappedMessageContext)wsc.getMessageContext()).getWrappedMessage().get(Header.HEADER_LIST));
         }
         throw new IllegalStateException("Headers could not be retrieved from web service call");
     }
 
-    private static class WSAddresingProperties {
+    private static class WSAddressingProperties {
         private final TestbedClient testbedClient;
 
-        private WSAddresingProperties(String testbedClientURL) {
-            TestbedClient_Service testbedClientService;
-            try {
-                testbedClientService = new TestbedClient_Service(new URL(testbedClientURL));
-            } catch (MalformedURLException e) {
-                testbedClientService = new TestbedClient_Service();
-            }
-            this.testbedClient = testbedClientService.getTestbedClientPort();
+        private WSAddressingProperties(String testbedClientURL) {
+            this.testbedClient = createTestBedClient(testbedClientURL);
         }
 
         TestbedClient getTestbedClient() {

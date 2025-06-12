@@ -1,13 +1,13 @@
-import { IdLabel } from '../types/id-label'
-import { LabelConfig } from '../types/label-config.type'
+import {IdLabel} from '../types/id-label';
+import {LabelConfig} from '../types/label-config.type';
 
 export class Constants {
 
 	public static THEME_CSS_LINK_ID = "themeCssLink"
 	public static THEME_FAVICON_LINK_ID = "themeFaviconLink"
 
-    public static TABLE_PAGE_SIZE = 10
-    public static DEFAULT_LOGO = '/assets/images/gitb.png'
+  public static TABLE_PAGE_SIZE = 10
+  public static DEFAULT_LOGO = '/assets/images/gitb.png'
 	public static DEFAULT_COMMUNITY_ID = 0
 	public static TOOLTIP_DELAY = 500
 
@@ -64,7 +64,7 @@ export class Constants {
 		1 : "Administrator",
 		2 : "User",
 		3 : "Domain user",
-		4 : "Test bed administrator",
+		4 : "Test Bed administrator",
 		5 : "Community administrator"
 	}
 
@@ -268,7 +268,8 @@ export class Constants {
 		DEFAULT_LEGAL_NOTICE: 29,
 		DEFAULT_ERROR_TEMPLATE: 30,
 		SYSTEM_ADMINISTRATOR: 31,
-		SYSTEM_CONFIGURATION: 32
+		SYSTEM_CONFIGURATION: 32,
+    SYSTEM_RESOURCE: 33
 	}
 
 	public static IMPORT_ITEM_MATCH = {
@@ -397,7 +398,8 @@ export class Constants {
 	public static FILTER_COMMAND = {
 		TOGGLE: 1,
 		CLEAR: 2,
-		REFRESH: 3
+		REFRESH: 3,
+    HIDE_PENDING_INDICATOR: 4
 	}
 
 	public static PASSWORD_REGEX = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[\!\@\#\&\(\)\[\{\}\]\:\;\'\"\,\?\/\\\*\~\$\^\+\=\<\>\_\-]).{8,}$/

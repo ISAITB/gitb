@@ -2,7 +2,8 @@ import { Directive, HostListener } from '@angular/core';
 import { DragSupportService } from '../services/drag-support.service';
 
 @Directive({
-  selector: '[appFileDropTarget]'
+    selector: '[appFileDropTarget]',
+    standalone: false
 })
 export class FileDropTargetDirective {
 

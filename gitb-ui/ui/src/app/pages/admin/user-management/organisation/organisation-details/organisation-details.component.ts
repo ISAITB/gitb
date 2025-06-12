@@ -1,37 +1,38 @@
-import { AfterViewInit, Component, EventEmitter, OnInit, ViewChild } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
-import { Constants } from 'src/app/common/constants';
-import { OptionalCustomPropertyFormData } from 'src/app/components/optional-custom-property-form/optional-custom-property-form-data.type';
-import { BaseComponent } from 'src/app/pages/base-component.component';
-import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
-import { DataService } from 'src/app/services/data.service';
-import { OrganisationService } from 'src/app/services/organisation.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { RoutingService } from 'src/app/services/routing.service';
-import { UserService } from 'src/app/services/user.service';
-import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
-import { User } from 'src/app/types/user.type';
-import { CommunityTab } from '../../community/community-details/community-tab.enum';
-import { OrganisationFormData } from '../organisation-form/organisation-form-data';
-import { OrganisationTab } from './OrganisationTab';
-import { TabsetComponent } from 'ngx-bootstrap/tabs';
-import { SystemService } from 'src/app/services/system.service';
-import { System } from 'src/app/types/system';
-import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
-import { ValidationState } from 'src/app/types/validation-state';
-import { CommunityService } from 'src/app/services/community.service';
-import { forkJoin, Observable, of } from 'rxjs';
-import { LandingPage } from 'src/app/types/landing-page';
-import { LegalNotice } from 'src/app/types/legal-notice';
-import { ErrorTemplate } from 'src/app/types/error-template';
-import { Organisation } from 'src/app/types/organisation.type';
-import { LandingPageService } from 'src/app/services/landing-page.service';
-import { LegalNoticeService } from 'src/app/services/legal-notice.service';
-import { ErrorTemplateService } from 'src/app/services/error-template.service';
+import {AfterViewInit, Component, EventEmitter, OnInit, ViewChild} from '@angular/core';
+import {ActivatedRoute, Router} from '@angular/router';
+import {Constants} from 'src/app/common/constants';
+import {OptionalCustomPropertyFormData} from 'src/app/components/optional-custom-property-form/optional-custom-property-form-data.type';
+import {BaseComponent} from 'src/app/pages/base-component.component';
+import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
+import {DataService} from 'src/app/services/data.service';
+import {OrganisationService} from 'src/app/services/organisation.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {RoutingService} from 'src/app/services/routing.service';
+import {UserService} from 'src/app/services/user.service';
+import {TableColumnDefinition} from 'src/app/types/table-column-definition.type';
+import {User} from 'src/app/types/user.type';
+import {CommunityTab} from '../../community/community-details/community-tab.enum';
+import {OrganisationFormData} from '../organisation-form/organisation-form-data';
+import {OrganisationTab} from './OrganisationTab';
+import {TabsetComponent} from 'ngx-bootstrap/tabs';
+import {SystemService} from 'src/app/services/system.service';
+import {System} from 'src/app/types/system';
+import {BreadcrumbType} from 'src/app/types/breadcrumb-type';
+import {ValidationState} from 'src/app/types/validation-state';
+import {CommunityService} from 'src/app/services/community.service';
+import {forkJoin, Observable, of} from 'rxjs';
+import {LandingPage} from 'src/app/types/landing-page';
+import {LegalNotice} from 'src/app/types/legal-notice';
+import {ErrorTemplate} from 'src/app/types/error-template';
+import {LandingPageService} from 'src/app/services/landing-page.service';
+import {LegalNoticeService} from 'src/app/services/legal-notice.service';
+import {ErrorTemplateService} from 'src/app/services/error-template.service';
+import {OrganisationFormComponent} from '../organisation-form/organisation-form.component';
 
 @Component({
-  selector: 'app-organisation-details',
-  templateUrl: './organisation-details.component.html'
+    selector: 'app-organisation-details',
+    templateUrl: './organisation-details.component.html',
+    standalone: false
 })
 export class OrganisationDetailsComponent extends BaseComponent implements OnInit, AfterViewInit {
 
@@ -48,7 +49,6 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
   landingPages: LandingPage[] = []
   legalNotices: LegalNotice[] = []
   errorTemplates: ErrorTemplate[] = []
-  otherOrganisations: Organisation[] = []
   usersStatus = {status: Constants.STATUS.NONE}
   systemsStatus = {status: Constants.STATUS.NONE}
   userColumns: TableColumnDefinition[] = []
@@ -64,6 +64,7 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
   tabToShow = OrganisationTab.systems
   tabTriggers!: Record<OrganisationTab, {index: number, loader: () => any}>
   @ViewChild('tabs', { static: false }) tabs?: TabsetComponent;
+  @ViewChild('form') form?: OrganisationFormComponent
   showAdminInfo!: boolean
   showLandingPage!: boolean
   showCreateUser!: boolean
@@ -72,6 +73,8 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
   readonly!: boolean
   apiInfoVisible?: boolean
   fromCommunityManagement?: boolean
+  formDataLoaded = false
+  formDataUpdated = false
   validation = new ValidationState()
 
   loadApiInfo = new EventEmitter<void>()
@@ -96,13 +99,21 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
     const tabParam = router.getCurrentNavigation()?.extras?.state?.tab
     if (tabParam != undefined) {
       this.tabToShow = OrganisationTab[tabParam as keyof typeof OrganisationTab]
-    }    
+    }
   }
 
   ngAfterViewInit(): void {
+    this.updateFormData()
     setTimeout(() => {
       this.triggerTab(this.tabToShow)
-    })  
+    })
+  }
+
+  private updateFormData() {
+    if (this.form && this.formDataLoaded && !this.formDataUpdated) {
+      this.formDataUpdated = true
+      this.form.dataLoaded()
+    }
   }
 
   protected getOrganisationId() {
@@ -175,14 +186,13 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
     if (this.showUserStatus()) {
       this.userColumns.push({ field: 'ssoStatusText', title: 'Status', cellClass: 'td-nowrap' })
     }
-    this.propertyData.owner = this.organisation.id    
+    this.propertyData.owner = this.organisation.id
     this.apiInfoVisible = this.isApiInfoVisible()
     // Setup tab triggers
     this.setupTabs()
     // Load form data
     const organisation$ = this.organisationService.getOrganisationById(this.orgId)
     const properties$ = this.communityService.getOrganisationParameterValues(this.organisation.id)
-    let otherOrganisations$: Observable<Organisation[]> = of([])
     let landingPages$: Observable<LandingPage[]> = of([])
     let legalNotices$: Observable<LegalNotice[]> = of([])
     let errorTemplates$: Observable<ErrorTemplate[]> = of([])
@@ -192,23 +202,19 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
     if (this.showAdminInfo) {
       legalNotices$ = this.legalNoticeService.getLegalNoticesByCommunity(this.communityId)
       errorTemplates$ = this.errorTemplateService.getErrorTemplatesByCommunity(this.communityId)
-      otherOrganisations$ = this.organisationService.getOrganisationsByCommunity(this.communityId)
     }
-    forkJoin([organisation$, properties$, otherOrganisations$, landingPages$, legalNotices$, errorTemplates$]).subscribe((data) => {
+    forkJoin([organisation$, properties$, landingPages$, legalNotices$, errorTemplates$]).subscribe((data) => {
       this.organisation = data[0]
       if (this.organisation.landingPage == null) this.organisation.landingPage = undefined
       if (this.organisation.errorTemplate == null) this.organisation.errorTemplate = undefined
       if (this.organisation.legalNotice == null) this.organisation.legalNotice = undefined
       this.breadcrumbInit()
       this.propertyData.properties = data[1]
-      for (let organisation of data[2]) {
-        if (this.organisation.id == undefined || Number(organisation.id) != Number(this.organisation.id)) {
-          this.otherOrganisations.push(organisation)
-        }
-      }
-      this.landingPages = data[3]
-      this.legalNotices = data[4]
-      this.errorTemplates = data[5]
+      this.landingPages = data[2]
+      this.legalNotices = data[3]
+      this.errorTemplates = data[4]
+      this.formDataLoaded = true
+      this.updateFormData()
     }).add(() => {
       this.loaded = true
     })
@@ -257,7 +263,7 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
         this.systems = data
       }).add(() => {
         this.systemsStatus.status = Constants.STATUS.FINISHED
-      })      
+      })
     }
   }
 

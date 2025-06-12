@@ -19,10 +19,10 @@ class ImportItem(_itemName: Option[String], _itemType: ImportItemType, _itemMatc
   var parentItem: Option[ImportItem] = None
   val childrenItems: ListBuffer[ImportItem] = new ListBuffer[ImportItem]()
 
-  def this(_itemName: Option[String], _itemType: ImportItemType, _itemMatch: ImportItemMatch, _targetKey: Option[String], _sourceKey: Option[String], _parentItem: ImportItem) = {
+  def this(_itemName: Option[String], _itemType: ImportItemType, _itemMatch: ImportItemMatch, _targetKey: Option[String], _sourceKey: Option[String], _parentItem: Option[ImportItem]) = {
     this(_itemName, _itemType, _itemMatch, _targetKey, _sourceKey)
-    if (_parentItem != null) {
-      parentItem = Some(_parentItem)
+    if (_parentItem.isDefined) {
+      parentItem = _parentItem
       parentItem.get.childrenItems += this
     }
   }

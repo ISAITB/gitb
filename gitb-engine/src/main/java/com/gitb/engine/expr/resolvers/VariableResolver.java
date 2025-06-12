@@ -64,11 +64,17 @@ public class VariableResolver implements XPathVariableResolver{
     private static final String DOLLAR_REPLACEMENT = "_com.gitb.DOLLAR_";
 
     private final TestCaseScope scope;
+    private final boolean keepMissingExpressions;
 
     private DocumentBuilder documentBuilder;
 
     public VariableResolver(TestCaseScope scope) {
+        this(scope, false);
+    }
+
+    public VariableResolver(TestCaseScope scope, boolean keepMissingExpressions) {
         this.scope = scope;
+        this.keepMissingExpressions = keepMissingExpressions;
         try {
             documentBuilder = XMLUtils.getSecureDocumentBuilderFactory().newDocumentBuilder();
         } catch (ParserConfigurationException e) {
@@ -91,21 +97,20 @@ public class VariableResolver implements XPathVariableResolver{
     public Object resolveVariable(QName name) {
         String variableExpression = "$"+toTDLExpression(name.getLocalPart());
         DataType value = resolveVariable(variableExpression);
-        if(value instanceof PrimitiveType){
-            if(value instanceof BinaryType){
+        if (value instanceof PrimitiveType){
+            if (value instanceof BinaryType){
                 return value.convertTo(DataType.STRING_DATA_TYPE).getValue();
             }
             return value.getValue();
-        }else if(value instanceof ObjectType){
+        } else if (value instanceof ObjectType){
             return value.getValue();
-        }else if(value instanceof ListType){
-            ListType list = (ListType)value;
+        } else if (value instanceof ListType list){
             var itemValues = new ArrayList<>();
-            for(int i=0;i<list.getSize();i++) {
+            for(int i = 0; i < list.getSize(); i++) {
                 itemValues.add(list.getItem(i).getValue());
             }
             NodeList result;
-            switch(list.getContainedType()){
+            switch (list.getContainedType()){
                 case DataType.NUMBER_DATA_TYPE:
                 case DataType.STRING_DATA_TYPE:
                 case DataType.BOOLEAN_DATA_TYPE:
@@ -134,24 +139,45 @@ public class VariableResolver implements XPathVariableResolver{
     }
 
     public Optional<DataType> resolveVariable(String variableExpression, boolean tolerateMissing) {
+        return resolveVariable(variableExpression, tolerateMissing, false);
+    }
+
+    public Optional<DataType> resolveVariable(String variableExpression, boolean tolerateMissing, boolean respectScopeIsolation) {
         Optional<DataType> result = Optional.empty();
         var variableName = extractVariableNameFromExpression(variableExpression);
         try {
             String containerVariableName = variableName.getLeft();
             //The remaining part
             String indexOrKeyExpression = variableName.getRight();
-            TestCaseScope.ScopedVariable scopeVariable = scope.getVariable(containerVariableName);
+            TestCaseScope.ScopedVariable scopeVariable;
+            if (respectScopeIsolation) {
+                scopeVariable = scope.getVariableWhileRespectingIsolation(containerVariableName);
+            } else {
+                scopeVariable = scope.getVariable(containerVariableName);
+            }
             if (scopeVariable == null || !scopeVariable.isDefined()) {
                 // No variable could be matched.
-                if (!tolerateMissing && scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.OUTPUT) {
-                    logger.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), "No variable could be located in the session context for expression [{}]", variableExpression);
+                if (keepMissingExpressions) {
+                    result = Optional.of(new StringType(variableExpression));
+                } else {
+                    if (!tolerateMissing && scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.OUTPUT) {
+                        if (StringUtils.isBlank(scope.getContext().getSessionId())) {
+                            logger.warn("No variable could be located for expression [{}]", variableExpression);
+                        } else {
+                            logger.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), "No variable could be located in the session context for expression [{}]", variableExpression);
+                        }
+                    }
                 }
             } else {
                 DataType containerVariable = scopeVariable.getValue();
                 result = resolveVariable(containerVariable, indexOrKeyExpression, tolerateMissing);
             }
         } catch (Exception e) {
-            logger.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), "An exception occurred when resolving variable [{}]", variableExpression, e);
+            if (StringUtils.isBlank(scope.getContext().getSessionId())) {
+                logger.warn("An exception occurred when resolving variable [{}]", variableExpression, e);
+            } else {
+                logger.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), "An exception occurred when resolving variable [{}]", variableExpression, e);
+            }
         }
         if (result.isEmpty() && !tolerateMissing) {
             result = Optional.of(new StringType());

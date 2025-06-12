@@ -1,40 +1,40 @@
-import { Injectable } from '@angular/core';
-import { Observable, Subject, mergeMap, of } from 'rxjs';
-import { Constants } from '../common/constants'
-import { ObjectWithId } from '../components/test-filter/object-with-id';
-import { ConformanceTestCase } from '../pages/organisation/conformance-statement/conformance-test-case';
-import { ActualUserInfo } from '../types/actual-user-info';
-import { AppConfigurationProperties } from '../types/app-configuration-properties';
-import { Community } from '../types/community';
-import { ConfigurationPropertyVisibility } from '../types/configuration-property-visibility';
-import { CustomPropertySubmissionInfo } from '../types/custom-property-submission-info.type';
-import { CustomProperty } from '../types/custom-property.type';
-import { FileParam } from '../types/file-param.type';
-import { IdLabel } from '../types/id-label';
-import { NumberSet } from '../types/number-set';
-import { Organisation } from '../types/organisation.type';
-import { Parameter } from '../types/parameter';
-import { SystemConfigurationEndpoint } from '../types/system-configuration-endpoint';
-import { TypedLabelConfig } from '../types/typed-label-config.type'
-import { UserAccount } from '../types/user-account';
-import { User } from '../types/user.type';
-import { saveAs } from 'file-saver'
-import { LogLevel } from '../types/log-level';
-import { SpecificationGroup } from '../types/specification-group';
-import { Specification } from '../types/specification';
-import { DomainSpecification } from '../types/domain-specification';
-import {find, sortBy} from 'lodash';
-import { PageChange } from '../types/page-change';
-import { BadgesInfo } from '../components/manage-badges/badges-info';
-import { BreadcrumbChange } from '../types/breadcrumb-change';
-import { FieldInfo } from '../types/field-info';
-import { HttpResponse } from '@angular/common/http';
-import { EntityWithId } from '../types/entity-with-id';
-import { ConformanceTestSuite } from '../pages/organisation/conformance-statement/conformance-test-suite';
-import { ConformanceStatementItem } from '../types/conformance-statement-item';
-import { EndpointParameter } from '../types/endpoint-parameter';
-import { CookieOptions, CookieService } from 'ngx-cookie-service';
-import { LocationData } from '../types/location-data';
+import {Injectable} from '@angular/core';
+import {mergeMap, Observable, of, Subject} from 'rxjs';
+import {Constants} from '../common/constants';
+import {ObjectWithId} from '../components/test-filter/object-with-id';
+import {ConformanceTestCase} from '../pages/organisation/conformance-statement/conformance-test-case';
+import {ActualUserInfo} from '../types/actual-user-info';
+import {AppConfigurationProperties} from '../types/app-configuration-properties';
+import {Community} from '../types/community';
+import {ConfigurationPropertyVisibility} from '../types/configuration-property-visibility';
+import {CustomPropertySubmissionInfo} from '../types/custom-property-submission-info.type';
+import {CustomProperty} from '../types/custom-property.type';
+import {FileParam} from '../types/file-param.type';
+import {IdLabel} from '../types/id-label';
+import {NumberSet} from '../types/number-set';
+import {Organisation} from '../types/organisation.type';
+import {Parameter} from '../types/parameter';
+import {SystemConfigurationEndpoint} from '../types/system-configuration-endpoint';
+import {TypedLabelConfig} from '../types/typed-label-config.type';
+import {UserAccount} from '../types/user-account';
+import {User} from '../types/user.type';
+import {saveAs} from 'file-saver';
+import {LogLevel} from '../types/log-level';
+import {SpecificationGroup} from '../types/specification-group';
+import {Specification} from '../types/specification';
+import {DomainSpecification} from '../types/domain-specification';
+import {find} from 'lodash';
+import {PageChange} from '../types/page-change';
+import {BadgesInfo} from '../components/manage-badges/badges-info';
+import {BreadcrumbChange} from '../types/breadcrumb-change';
+import {FieldInfo} from '../types/field-info';
+import {HttpResponse} from '@angular/common/http';
+import {EntityWithId} from '../types/entity-with-id';
+import {ConformanceTestSuite} from '../pages/organisation/conformance-statement/conformance-test-suite';
+import {ConformanceStatementItem} from '../types/conformance-statement-item';
+import {EndpointParameter} from '../types/endpoint-parameter';
+import {CookieOptions, CookieService} from 'ngx-cookie-service';
+import {LocationData} from '../types/location-data';
 import {TestCaseTag} from '../types/test-case-tag';
 import {ConformanceTestCaseGroup} from '../pages/organisation/conformance-statement/conformance-test-case-group';
 
@@ -59,6 +59,7 @@ export class DataService {
   public showNavigationControls = false
   public showCommunityAdminMenu = false
   public showSystemAdminMenu = false
+  public showCommunityViewMenu = false
   private tests?: ConformanceTestCase[]
   public currentLandingPageContent?: string
   private apiRoot?: string
@@ -140,7 +141,8 @@ export class DataService {
       mode: (this.configuration?.mode != undefined)?this.configuration!.mode:'development',
       automationApiEnabled: (this.configuration?.automationApiEnabled != undefined)?this.configuration!.automationApiEnabled:false,
       versionNumber: (this.configuration?.versionNumber != undefined)?this.configuration!.versionNumber:'',
-      hasDefaultLegalNotice: (this.configuration?.hasDefaultLegalNotice != undefined)?this.configuration!.hasDefaultLegalNotice:false
+      hasDefaultLegalNotice: (this.configuration?.hasDefaultLegalNotice != undefined)?this.configuration!.hasDefaultLegalNotice:false,
+      conformanceStatementReportMaxTestCases: (this.configuration?.conformanceStatementReportMaxTestCases != undefined)?this.configuration!.conformanceStatementReportMaxTestCases:100
     }
   }
 
@@ -169,6 +171,7 @@ export class DataService {
     setTimeout(() => {
       this.showCommunityAdminMenu = this.isCommunityAdmin
       this.showSystemAdminMenu = this.isSystemAdmin
+      this.showCommunityViewMenu = !this.isCommunityAdmin && !this.isSystemAdmin && this.community?.allowCommunityView == true
       this.showNavigationControls = true
     })
   }
@@ -220,7 +223,7 @@ export class DataService {
     }
     let description = ''
     if (role == Constants.USER_ROLE.SYSTEM_ADMIN) {
-      description = 'Test bed administrator'
+      description = 'Test Bed administrator'
     } else if (role == Constants.USER_ROLE.COMMUNITY_ADMIN) {
       description = 'Community administrator (' + community + ')'
     } else if (role == Constants.USER_ROLE.VENDOR_ADMIN) {
@@ -242,6 +245,9 @@ export class DataService {
       this.setupLabels(community.labels)
       delete community.labels
     }
+    setTimeout(() => {
+      this.showCommunityViewMenu = !this.isCommunityAdmin && !this.isSystemAdmin && community.allowCommunityView
+    })
   }
 
   createLabels(customLabels?: TypedLabelConfig[]): {[key: number]: TypedLabelConfig} {
@@ -952,7 +958,9 @@ export class DataService {
 			hasVisibleMissingRequiredProperties: false,
 			hasVisibleMissingOptionalProperties: false,
 			hasNonVisibleMissingRequiredProperties: false,
-			hasNonVisibleMissingOptionalProperties: false
+			hasNonVisibleMissingOptionalProperties: false,
+      hasVisibleMissingRequiredEditableProperties: false,
+      hasVisibleMissingRequiredNonEditableProperties: false
 		}
 		if (properties != undefined && properties.length > 0) {
 			results.hasProperties = true
@@ -981,6 +989,13 @@ export class DataService {
 							results.hasVisibleMissingOptionalProperties = true
             } else {
 							results.hasVisibleMissingRequiredProperties = true
+            }
+            if (prop.use == 'R') {
+              if (prop.adminOnly) {
+                results.hasVisibleMissingRequiredNonEditableProperties = true
+              } else {
+                results.hasVisibleMissingRequiredEditableProperties = true
+              }
             }
           }
         }
@@ -1227,15 +1242,7 @@ export class DataService {
       /*
        * Append the public context root to the resource lookup URL.
        */
-      if (path.startsWith('/')) {
-        if (publicContextPath == '/') {
-          return path
-        } else {
-          return publicContextPath + path.substring(1)
-        }
-      } else {
-        return publicContextPath + path
-      }
+      return this.joinWithSlash(publicContextPath, path)
     } else {
       /*
        * This is an API call path. These routes contain by default the application's internal context path.
@@ -1243,10 +1250,28 @@ export class DataService {
        */
       const internalContextPath = this.elementValueOrDefault('ctx-int-div', '/')
       if (publicContextPath != internalContextPath) {
-        return publicContextPath + path.substring(internalContextPath.length)
+        return this.joinWithSlash(publicContextPath, path.substring(internalContextPath.length))
       } else {
         return path
       }
+    }
+  }
+
+  private joinWithSlash(left: string, right: string): string {
+    let leftEndsWithSlash = false
+    if (left.length > 0 && left.charAt(left.length - 1) == '/') {
+      leftEndsWithSlash = true
+    }
+    let rightStartsWithSlash = false
+    if (right.length > 0 && right.charAt(0) == '/') {
+      rightStartsWithSlash = true
+    }
+    if (leftEndsWithSlash && !rightStartsWithSlash || !leftEndsWithSlash && rightStartsWithSlash) {
+      return left + right
+    } else if (leftEndsWithSlash && rightStartsWithSlash) {
+      return left + right.substring(1)
+    } else {
+      return left + "/" + right
     }
   }
 

@@ -1,0 +1,103 @@
+<div class="page dashboard">
+    <app-test-filter [filterState]="filterState" [communityId]="communityId" [organisationId]="organisationId" [initialSessionId]="sessionIdToShow" (onApply)="filterControlApplied()"></app-test-filter>
+    @if (showActiveSessions) {
+        <div class="card">
+            <div class="card-header clickable" (click)="activeSessionsCollapsed = !activeSessionsCollapsed" [class.collapsed]="activeSessionsCollapsedFinished">
+                <div class="card-title">
+                    <app-collapsing-icon [isCollapsed]="activeSessionsCollapsed"></app-collapsing-icon>Active test sessions
+                </div>
+                <div class="btn-toolbar" [class.disable-events]="filterState.updatePending">
+                    @if (showTogglePendingAdminInteraction) {
+                        <div class="btn input-switch" (click)="$event.stopPropagation()">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch" id="pendingAdminInteractionSwitch" [(ngModel)]="pendingAdminInteraction" (change)="togglePendingAdminInteraction()">
+                                <label class="form-check-label" for="pendingAdminInteractionSwitch">Pending administrator interaction</label>
+                            </div>
+                            @if (interactionLoadPending) {
+                                <app-pending-block class="ms-3"></app-pending-block>
+                            }
+                        </div>
+                    }
+                    <button type="button" class="btn btn-secondary" (click)="stopAll();$event.stopPropagation()" [pending]="stopAllPending" [disable]="activeTests.length == 0 || exportActivePending">Terminate all</button>
+                    <button type="button" class="btn btn-secondary" (click)="exportActiveSessionsToCsv();$event.stopPropagation()" [pending]="exportActivePending" [disable]="activeTests.length == 0 || stopAllPending">Export CSV</button>
+                    @if (showCollapseAllActive()) {
+                        <button type="button" class="btn btn-secondary" (click)="onCollapseAllActive();$event.stopPropagation()">Collapse all</button>
+                    }
+                </div>
+            </div>
+            <div [collapse]="activeSessionsCollapsed" [isAnimated]="true" (collapsed)="toggleActiveSessionsCollapsedFinished(true)" (expands)="toggleActiveSessionsCollapsedFinished(false)">
+                <div #activeSessions app-session-table
+                     [sessionTableId]="'active-tests'"
+                     [expandedCounter]="activeExpandedCounter"
+                     [columns]="activeTestsColumns"
+                     [data]="activeTests"
+                     [noDataMessage]="'No sessions found'"
+                     [loadingStatus]="activeStatus"
+                     [operationsVisible]="true"
+                     [rowStyle]="rowStyle"
+                     [supportRefresh]="true"
+                     (pageNavigation)="doActivePageNavigation($event)"
+                     (onSort)="sortActiveSessions($event)"
+                     (onDelete)="stopSession($event)"
+                     (onRefresh)="refreshForSession($event)"
+                     [refreshComplete]="sessionRefreshCompleteEmitter"
+                     [contentRefreshing]="refreshActivePending"
+                     [copyForOtherRoleOption]="copyForOtherRoleOption"
+                     [showNavigationControls]="showSessionNavigationControls">
+                </div>
+            </div>
+        </div>
+    }
+    <!-- completed sessions -->
+    <div class="card mb-0">
+        <div class="card-header clickable" (click)="completedSessionsCollapsed = !completedSessionsCollapsed" [class.collapsed]="completedSessionsCollapsedFinished">
+            <div class="card-title"><app-collapsing-icon [isCollapsed]="completedSessionsCollapsed"></app-collapsing-icon>Completed test sessions</div>
+            <div class="btn-toolbar" [class.disable-events]="filterState.updatePending">
+                @if (showDeleteControls) {
+                    @if (!selectingForDelete) {
+                        <button type="button" class="btn btn-secondary" (click)="selectDeleteSessions();$event.stopPropagation()" [disable]="completedTests.length == 0 || deletePending" [pending]="deleteSessionsPending">Delete sessions...</button>
+                    } @else {
+                        <button type="button" class="btn btn-outline-danger" (click)="confirmDeleteSessions();$event.stopPropagation()" [disable]="!testsChecked()" [pending]="deleteSessionsPending">Confirm</button>
+                        <button type="button" class="btn btn-secondary" (click)="cancelDeleteSessions();$event.stopPropagation()" [disabled]="deleteSessionsPending">Cancel</button>
+                    }
+                    @if (showDeleteObsoleteControl) {
+                        <button type="button" class="btn btn-secondary" (click)="deleteObsolete();$event.stopPropagation()" [disable]="selectingForDelete || deleteSessionsPending" [pending]="deletePending">Delete obsolete sessions</button>
+                    }
+                }
+                <button type="button" class="btn btn-secondary" (click)="exportCompletedSessionsToCsv();$event.stopPropagation()" [disable]="completedTests.length == 0 || selectingForDelete || deleteSessionsPending" [pending]="exportCompletedPending">Export CSV</button>
+                @if (showCollapseAll()) {
+                    <button type="button" class="btn btn-secondary" (click)="onCollapseAll();$event.stopPropagation()">Collapse all</button>
+                }
+            </div>
+        </div>
+        <div [collapse]="completedSessionsCollapsed" [isAnimated]="true" (collapsed)="toggleCompletedSessionsCollapsedFinished(true)" (expands)="toggleCompletedSessionsCollapsedFinished(false)">
+            <div #completedSessions app-session-table
+                 [sessionTableId]="'completed-tests'"
+                 [expandedCounter]="completedExpandedCounter"
+                 [columns]="completedTestsColumns"
+                 [data]="completedTests"
+                 [noDataMessage]="'No sessions found'"
+                 [loadingStatus]="completedStatus"
+
+                 [actionVisible]="true"
+                 [actionIcon]="'fa-regular fa-file-lines'"
+                 (onAction)="onReportExportXml($event)"
+                 [actionVisibleForRow]="exportVisible"
+                 [actionTooltip]="'Export (XML)'"
+
+                 [exportVisible]="true"
+                 (onExport)="onReportExportPdf($event)"
+                 [exportVisibleForRow]="exportVisible"
+                 [exportTooltip]="'Export (PDF)'"
+
+                 (pageNavigation)="doCompletedPageNavigation($event)"
+                 (onSort)="sortCompletedSessions($event)"
+                 [rowStyle]="rowStyle"
+                 [showCheckbox]="completedTestsCheckboxEmitter"
+                 [contentRefreshing]="refreshCompletedPending"
+                 [copyForOtherRoleOption]="copyForOtherRoleOption"
+                 [showNavigationControls]="showSessionNavigationControls">
+            </div>
+        </div>
+    </div>
+</div>

@@ -3,26 +3,21 @@
 .value-container {
     position: relative;
     cursor: pointer;
-    &.hovering > .value-container-inner-hover {
-        position: absolute;
-        top: -4px; // padding plus border
-        left: 0px;
-        white-space: nowrap;
-        border: 1px solid @gray-button;
+    display: flex;
+    .value-container-inner {
+        display: flex;
+        align-items: center;
+        margin: -5px;
+        padding: 5px;
         border-radius: @border-radius;
-        padding: 3px;
-        box-shadow: 1px 2px 4px 0px @gray;
-        background-color: @white;
-        & > .value {
-            margin-left: 3px;
+        transition: background-color 0.2s ease;
+        .icon {
+            margin-left: 10px;
+            margin-right: 5px;
         }
     }
-}
-.value {
-    display: inline;
-}
-.icon {
-    display: inline;
-    margin-left: 10px;
-    margin-right: 5px;
+    &.hovering > .value-container-inner {
+        background-color: @gray-light;
+    }
+
 }

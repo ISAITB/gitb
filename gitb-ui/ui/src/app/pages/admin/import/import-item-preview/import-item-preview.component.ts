@@ -4,10 +4,10 @@ import { IdLabel } from 'src/app/types/id-label';
 import { ImportItemState } from '../import-item-state';
 
 @Component({
-  selector: '[app-import-item-preview]',
-  templateUrl: './import-item-preview.component.html',
-  styles: [
-  ]
+    selector: '[app-import-item-preview]',
+    templateUrl: './import-item-preview.component.html',
+    styles: [],
+    standalone: false
 })
 export class ImportItemPreviewComponent implements OnInit {
 

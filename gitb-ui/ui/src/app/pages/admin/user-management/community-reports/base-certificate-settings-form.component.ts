@@ -11,7 +11,10 @@ import { Constants } from 'src/app/common/constants';
 import { HttpResponse } from '@angular/common/http';
 import { ErrorService } from 'src/app/services/error.service';
 
-@Component({ template: '' })
+@Component({
+    template: '',
+    standalone: false
+})
 export abstract class BaseCertificateSettingsFormComponent<T extends CertificateSettings> extends BaseReportSettingsFormComponent {
 
   @ViewChild("titleField") titleField?: ElementRef;

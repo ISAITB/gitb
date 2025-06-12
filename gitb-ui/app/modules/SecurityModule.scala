@@ -143,6 +143,7 @@ class SecurityModule extends AbstractModule {
       .excludeBranch("%s/rest".formatted(API_ROOT))
       .excludePath("%s/healthcheck".formatted(API_ROOT))
       .excludeBranch("%sbadge".formatted(WEB_CONTEXT_ROOT_WITH_SLASH))
+      .excludeBranch("%ssystemResources".formatted(WEB_CONTEXT_ROOT_WITH_SLASH))
     )
     config
   }

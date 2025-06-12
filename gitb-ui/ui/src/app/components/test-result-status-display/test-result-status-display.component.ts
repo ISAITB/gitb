@@ -4,9 +4,10 @@ import {DataService} from 'src/app/services/data.service';
 import {CloseEvent} from './close-event';
 
 @Component({
-  selector: 'app-test-result-status-display',
-  templateUrl: './test-result-status-display.component.html',
-  styleUrls: [ './test-result-status-display.component.less' ]
+    selector: 'app-test-result-status-display',
+    templateUrl: './test-result-status-display.component.html',
+    styleUrls: ['./test-result-status-display.component.less'],
+    standalone: false
 })
 export class TestResultStatusDisplayComponent implements OnInit {
 

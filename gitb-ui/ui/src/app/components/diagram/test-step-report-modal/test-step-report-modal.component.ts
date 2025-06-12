@@ -6,10 +6,10 @@ import { StepData } from '../step-data';
 import { saveAs } from 'file-saver'
 
 @Component({
-  selector: 'app-test-step-report-modal',
-  templateUrl: './test-step-report-modal.component.html',
-  styles: [
-  ]
+    selector: 'app-test-step-report-modal',
+    templateUrl: './test-step-report-modal.component.html',
+    styles: [],
+    standalone: false
 })
 export class TestStepReportModalComponent implements OnInit {
 

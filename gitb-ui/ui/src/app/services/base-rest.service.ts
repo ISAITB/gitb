@@ -43,35 +43,49 @@ export class BaseRestService {
     })
   }
 
-  post<T>(config: HttpRequestConfig): Observable<T> {
+  put<T>(config: HttpRequestConfig): Observable<T> {
     return this.call<T>(config, () => {
-      // Prepare body
-      let body:any
-      if (config.files == undefined || config.files.length == 0) {
-        if (config.asJSON) {
-          body = config.data
-        } else {
-          body = Utils.objectToFormRequest(config.data).toString()
-        }
-      } else {
-        body = new FormData()
-        for (let fileConfig of config.files) {
-          body.append(fileConfig.param, fileConfig.data)
-        }
-        if (config.data != undefined) {
-          for (let key in config.data) {
-            if (config.data[key] != undefined) {
-              body.append(key, config.data[key])
-            }
-          }
-        }
-      }
-      return this.http.post<T>(
+      return this.http.put<T>(
         this.dataService.completePath(config.path),
-        body,
+        this.prepareBody(config),
         this.prepareRequestOptions(config)
       )
     })
+  }
+
+  post<T>(config: HttpRequestConfig): Observable<T> {
+    return this.call<T>(config, () => {
+      return this.http.post<T>(
+        this.dataService.completePath(config.path),
+        this.prepareBody(config),
+        this.prepareRequestOptions(config)
+      )
+    })
+  }
+
+  private prepareBody(config: HttpRequestConfig) {
+    // Prepare body
+    let body:any
+    if (config.files == undefined || config.files.length == 0) {
+      if (config.asJSON) {
+        body = config.data
+      } else {
+        body = Utils.objectToFormRequest(config.data).toString()
+      }
+    } else {
+      body = new FormData()
+      for (let fileConfig of config.files) {
+        body.append(fileConfig.param, fileConfig.data)
+      }
+      if (config.data != undefined) {
+        for (let key in config.data) {
+          if (config.data[key] != undefined) {
+            body.append(key, config.data[key])
+          }
+        }
+      }
+    }
+    return body
   }
 
   private prepareRequestOptions(config?: HttpRequestConfig): {headers: HttpHeaders} {

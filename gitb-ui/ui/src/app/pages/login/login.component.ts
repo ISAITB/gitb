@@ -24,8 +24,9 @@ import { SelfRegistrationOption } from 'src/app/types/self-registration-option.t
 import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
-  selector: 'app-login',
-  templateUrl: './login.component.html'
+    selector: 'app-login',
+    templateUrl: './login.component.html',
+    standalone: false
 })
 export class LoginComponent extends BaseComponent implements OnInit, AfterViewInit {
 

@@ -11,7 +11,10 @@ import { PreviewOption } from './preview-option';
 import { PreviewConfig } from './preview-config';
 import { ErrorService } from 'src/app/services/error.service';
 
-@Component({ template: '' })
+@Component({
+    template: '',
+    standalone: false
+})
 export abstract class CommunityXmlReportFormComponent extends BaseReportSettingsFormComponent {
 
   @ViewChild("serviceField") serviceField?: ElementRef;

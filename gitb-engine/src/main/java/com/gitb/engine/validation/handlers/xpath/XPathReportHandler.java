@@ -10,15 +10,12 @@ import com.gitb.types.BooleanType;
 import com.gitb.types.DataType;
 import com.gitb.types.ObjectType;
 import com.gitb.types.StringType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 
 /**
  * Created by root on 20.02.2015.
  */
 public class XPathReportHandler extends AbstractReportHandler {
-    private static final Logger logger = LoggerFactory.getLogger(XPathReportHandler.class);
 
     public static final String XML_ITEM_NAME    = "xml";
     public static final String XPATH_ITEM_NAME  = "xpath";

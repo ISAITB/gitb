@@ -10,11 +10,11 @@
               @if (iteration != null) {
                 <li role="menuitem">
                   <a class="dropdown-item" [ngClass]="{
-                    'processing': iteration.status == TEST_STATUS.PROCESSING, 
-                    'skipped': iteration.status == TEST_STATUS.SKIPPED, 
-                    'waiting': iteration.status == TEST_STATUS.WAITING, 
-                    'error': iteration.status == TEST_STATUS.ERROR, 
-                    'warning': iteration.status == TEST_STATUS.WARNING, 
+                    'processing': iteration.status == TEST_STATUS.PROCESSING,
+                    'skipped': iteration.status == TEST_STATUS.SKIPPED,
+                    'waiting': iteration.status == TEST_STATUS.WAITING,
+                    'error': iteration.status == TEST_STATUS.ERROR,
+                    'warning': iteration.status == TEST_STATUS.WARNING,
                     'completed': iteration.status == TEST_STATUS.COMPLETED}" (click)="showLoopIteration(i); $event.preventDefault()" href>Iteration {{i+1}}</a>
                 </li>
               }
@@ -49,10 +49,10 @@
     </div>
     <div class="message-body" [collapse]="!expanded" [isAnimated]="false">
       @if (message.report != null) {
-        <div class="message-report">
+        <div class="message-report" (mouseenter)="hoveringReport = true" (mouseleave)="hoveringReport = false">
           <a href class="report-link" (click)="showReport();$event.preventDefault()">
             <span class="fa-stack">
-              <i class="fa-regular fa-file-lines report-icon"></i>
+              <i class="fa-regular fa-file-lines report-icon" [class.hovering]="hoveringReport"></i>
               <i class="fa-solid fa-circle status-background-icon"></i>
               <i class="fa-solid fa-gear processing-icon"></i>
               <i class="fa-solid fa-check completed-icon"></i>

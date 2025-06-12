@@ -8,9 +8,10 @@ import { FileData } from 'src/app/types/file-data.type';
 import { InvalidFormControlConfig } from 'src/app/types/invalid-form-control-config';
 
 @Component({
-  selector: 'app-file-select',
-  templateUrl: './file-select.component.html',
-  styleUrls: [ './file-select.component.less' ]
+    selector: 'app-file-select',
+    templateUrl: './file-select.component.html',
+    styleUrls: ['./file-select.component.less'],
+    standalone: false
 })
 export class FileSelectComponent implements OnInit, OnDestroy {
 

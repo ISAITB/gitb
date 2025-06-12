@@ -107,8 +107,9 @@ public class TestCaseUtils {
         return repository.getScriptlet(from, testCaseId, scriptletPath);
     }
 
-    public static Scriptlet lookupScriptlet(String from, String path, com.gitb.tdl.TestCase testCase, boolean required) {
+    public static ScriptletInfo lookupScriptlet(String from, String path, com.gitb.tdl.TestCase testCase, boolean required) {
         Scriptlet foundScriptlet = null;
+        boolean standalone = true;
         if (StringUtils.isBlank(path)) {
             throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "No scriptlet path was provided."));
         }
@@ -122,6 +123,7 @@ public class TestCaseUtils {
                 for (Scriptlet scriptlet: testCase.getScriptlets().getScriptlet()) {
                     if (scriptlet.getId().equals(scriptletPath)) {
                         foundScriptlet = scriptlet;
+                        standalone = false;
                         break;
                     }
                 }
@@ -140,7 +142,7 @@ public class TestCaseUtils {
                 }
             }
         }
-        return foundScriptlet;
+        return new ScriptletInfo(foundScriptlet, standalone);
     }
 
     public static void applyStopOnErrorSemantics(TestCaseSteps steps) {
@@ -313,7 +315,7 @@ public class TestCaseUtils {
         return description;
     }
 
-    public static <T> T fixedOrVariableValue(String originalValue, Class<T> variableClass, LinkedList<Pair<CallStep, Scriptlet>> scriptletStepStack) {
+    public static <T> T fixedOrVariableValue(String originalValue, Class<T> variableClass, LinkedList<Pair<CallStep, Scriptlet>> scriptletStepStack, StaticExpressionHandler expressionHandler) {
         if (originalValue != null) {
             String dataType;
             Supplier<T> nonVariableValueFn;
@@ -331,7 +333,7 @@ public class TestCaseUtils {
                 return TestCaseUtils.getConstantCallInput(
                         VariableResolver.extractVariableNameFromExpression(originalValue).getLeft(),
                         variableClass,
-                        dataType, scriptletStepStack
+                        dataType, scriptletStepStack, expressionHandler
                 ).orElseGet(nonVariableValueFn);
             }
             return nonVariableValueFn.get();
@@ -340,23 +342,27 @@ public class TestCaseUtils {
         }
     }
 
-    private static <T> Optional<T> getConstantCallInput(String inputName, Class<T> constantClass, String constantDataType, LinkedList<Pair<CallStep, Scriptlet>> scriptletStepStack) {
+    private static <T> Optional<T> getConstantCallInput(String inputName, Class<T> constantClass, String constantDataType, LinkedList<Pair<CallStep, Scriptlet>> scriptletStepStack, StaticExpressionHandler expressionHandler) {
         var originalInputName = inputName;
         DataType dataToUse = null;
         var iterator = scriptletStepStack.descendingIterator();
+        String lastVariableExpression = null;
         while (iterator.hasNext()) {
             var callData = iterator.next();
             var inputToLookFor = inputName;
             var matchedInput = callData.getLeft().getInput().stream().filter(input -> inputToLookFor.equals(input.getName())).findFirst();
             if (matchedInput.isPresent()) {
                 // We found a matching input.
+                lastVariableExpression = null;
                 var inputValueExpression = matchedInput.get().getValue();
                 if (VariableResolver.isVariableReference(inputValueExpression)) {
                     // The input's value is itself a variable reference.
+                    lastVariableExpression = inputValueExpression;
                     inputName = VariableResolver.extractVariableNameFromExpression(inputValueExpression).getLeft();
                     continue;
+                } else {
+                    dataToUse = expressionHandler.processExpression(matchedInput.get(), constantDataType);
                 }
-                dataToUse = new StaticExpressionHandler().processExpression(matchedInput.get(), constantDataType);
             }
             break;
         }
@@ -370,6 +376,12 @@ public class TestCaseUtils {
                     dataToUse = DataTypeFactory.getInstance().create(matchedVariableValue.get());
                 }
             }
+        }
+        if (dataToUse == null && lastVariableExpression != null) {
+            // Still no value found. We stopped processing previously with a variable expression.
+            var variableValue = expressionHandler.getVariableResolver().resolveVariable(lastVariableExpression, true);
+            // If not resolved return the expression itself.
+            dataToUse = variableValue.orElse(new StringType(lastVariableExpression));
         }
         if (dataToUse != null) {
             var valueToUse = dataToUse.convertTo(constantDataType).getValue();
@@ -503,9 +515,17 @@ public class TestCaseUtils {
                 // Failed report but with step at warning level - mark as success and convert reported error items to warnings
                 convertErrorItemsToWarnings(report);
             }
-            // Complete the report's counters.
-            if (report instanceof TAR) {
-                completeReportCounters((TAR)report);
+            if (report instanceof TAR tarReport) {
+                // Complete the report's counters.
+                completeReportCounters(tarReport);
+                // Ensure the report date is present.
+                if (tarReport.getDate() == null) {
+                    try {
+                        tarReport.setDate(XMLDateTimeUtils.getXMLGregorianCalendarDateTime());
+                    } catch (DatatypeConfigurationException e) {
+                        throw new IllegalStateException(e);
+                    }
+                }
             }
         }
     }
@@ -610,6 +630,18 @@ public class TestCaseUtils {
             return version;
         } catch (IOException e) {
             throw new IllegalStateException("Unable to read core properties", e);
+        }
+    }
+
+    public static boolean resolveBooleanFlag(String flagValue, boolean defaultIfEmpty, Supplier<VariableResolver> variableResolverSupplier) {
+        if ("false".equalsIgnoreCase(flagValue)) {
+            return false;
+        } else if ("true".equalsIgnoreCase(flagValue)) {
+            return true;
+        } else if (VariableResolver.isVariableReference(flagValue)) {
+            return (boolean) variableResolverSupplier.get().resolveVariableAsBoolean(flagValue).getValue();
+        } else {
+            return defaultIfEmpty;
         }
     }
 

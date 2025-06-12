@@ -20,18 +20,19 @@ import java.util.Calendar
 import javax.inject.{Inject, Singleton}
 import javax.xml.transform.stream.StreamSource
 import scala.collection.concurrent.TrieMap
+import scala.collection.immutable.ListMap
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.DurationInt
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
+import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 @Singleton
 class TestResultManager @Inject() (actorSystem: ActorSystem,
                                    repositoryUtils: RepositoryUtils,
                                    communityHelper: CommunityHelper,
-                                   dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+                                   dbConfigProvider: DatabaseConfigProvider)
+                                  (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
   private def logger = LoggerFactory.getLogger("TestResultManager")
   private var interactionNotificationFuture: Option[Cancellable] = None
@@ -100,12 +101,28 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
     }
   }
 
-  def getTestResultForSessionWrapper(sessionId: String): Option[(TestResult, String)] = {
-    exec(getTestResultForSession(sessionId))
+  def getTestResultsForSessions(sessionIds: Iterable[String]): Future[Map[String, (TestResult, String)]] = {
+    DB.run(
+      PersistenceSchema.testResults
+        .join(PersistenceSchema.testResultDefinitions).on(_.testSessionId === _.testSessionId)
+        .filter(_._1.testSessionId inSet sessionIds)
+        .map(x => (x._1, x._2.tpl))
+        .result
+    ).map { sessions =>
+      val map = new mutable.LinkedHashMap[String, (TestResult, String)]
+      sessions.foreach { session =>
+        map += (session._1.sessionId -> (session._1, session._2))
+      }
+      ListMap.from(map)
+    }
   }
 
-  def getCommunityIdForTestSession(sessionId: String): Option[(String, Option[Long])] = {
-    exec(
+  def getTestResultForSessionWrapper(sessionId: String): Future[Option[(TestResult, String)]] = {
+    DB.run(getTestResultForSession(sessionId))
+  }
+
+  def getCommunityIdForTestSession(sessionId: String): Future[Option[(String, Option[Long])]] = {
+    DB.run(
       PersistenceSchema.testResults
         .filter(_.testSessionId === sessionId)
         .map(r => (r.testSessionId, r.communityId))
@@ -114,9 +131,14 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
     )
   }
 
-  def getOrganisationIdForTestSession(sessionId: String): Option[(String, Option[Long])] = {
-    val result = exec(PersistenceSchema.testResults.filter(_.testSessionId === sessionId).map(r => (r.testSessionId, r.organizationId)).result.headOption)
-    result
+  def getOrganisationIdsForTestSession(sessionId: String): Future[Option[(String, Option[Long], Option[Long])]] = {
+    DB.run(
+      PersistenceSchema.testResults
+        .filter(_.testSessionId === sessionId)
+        .map(r => (r.testSessionId, r.organizationId, r.communityId))
+        .result
+        .headOption
+    )
   }
 
   def getTestResultForSession(sessionId: String): DBIO[Option[(TestResult, String)]] = {
@@ -138,43 +160,39 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
   /**
    * Gets all running test results
    */
-  def getRunningTestResults: List[TestResult] = {
-    val results = exec(
+  def getRunningTestResults: Future[List[TestResult]] = {
+    DB.run(
       PersistenceSchema.testResults.filter(_.endTime.isEmpty).result.map(_.toList)
     )
-    results
   }
 
-  def getAllRunningSessions(): List[String] = {
-    val results = exec(
+  def getAllRunningSessions(): Future[List[String]] = {
+    DB.run(
       PersistenceSchema.testResults
         .filter(_.endTime.isEmpty)
         .map(x => x.testSessionId)
         .result.map(_.toList)
     )
-    results
   }
 
-  def getRunningSessionsForCommunity(community: Long): List[String] = {
-    val results = exec(
+  def getRunningSessionsForCommunity(community: Long): Future[List[String]] = {
+    DB.run(
       PersistenceSchema.testResults
         .filter(_.communityId === community)
         .filter(_.endTime.isEmpty)
         .map(x => x.testSessionId)
         .result.map(_.toList)
     )
-    results
   }
 
-  def getRunningSessionsForOrganisation(organisation: Long): List[String] = {
-    val results = exec(
+  def getRunningSessionsForOrganisation(organisation: Long): Future[List[String]] = {
+    DB.run(
       PersistenceSchema.testResults
         .filter(_.organizationId === organisation)
         .filter(_.endTime.isEmpty)
         .map(x => x.testSessionId)
         .result.map(_.toList)
     )
-    results
   }
 
   def updateForUpdatedSystem(id: Long, name: String): DBIO[_] = {
@@ -262,16 +280,16 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
     q1.update(None)
   }
 
-  def deleteObsoleteTestResultsForOrganisationWrapper(organisationId: Long): Unit = {
+  def deleteObsoleteTestResultsForOrganisationWrapper(organisationId: Long): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val action = deleteObsoleteTestResultsForOrganisation(organisationId, onSuccessCalls)
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
   }
 
-  def deleteObsoleteTestResultsForCommunityWrapper(communityId: Long): Unit = {
+  def deleteObsoleteTestResultsForCommunityWrapper(communityId: Long): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val action = deleteObsoleteTestResultsForCommunity(communityId, onSuccessCalls)
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
   }
 
   def deleteSessionDataFromFileSystem(testResult: TestResult): Unit = {
@@ -337,7 +355,7 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
           DBIO.successful(())
         }
       }
-      // Delete from conformance snapshot results (where we don't care about updating the overall conformance status.
+      // Delete from conformance snapshot results (where we don't care about updating the overall conformance status).
       _ <- PersistenceSchema.conformanceSnapshotResults.filter(_.testSessionId === testSession.sessionId).map(_.testSessionId).update(None)
       // Delete test result definition
       _ <- PersistenceSchema.testResultDefinitions.filter(_.testSessionId === testSession.sessionId).delete
@@ -350,13 +368,13 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
     } yield ()
   }
 
-  def deleteTestSessions(sessionIds: Iterable[String]): Unit = {
+  def deleteTestSessions(sessionIds: Iterable[String]): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val action = for {
       sessions <- PersistenceSchema.testResults.filter(_.testSessionId inSet sessionIds).result
       _ <- deleteTestSessionsInternal(sessions, onSuccessCalls)
     } yield ()
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
   }
 
   private def deleteTestSessionsInternal(sessions: Iterable[TestResult], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
@@ -367,7 +385,7 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
     toDBIO(actions)
   }
 
-  def deleteObsoleteTestResultsForOrganisation(organisationId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
+  def deleteObsoleteTestResultsForOrganisation(organisationId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Unit] = {
     for  {
       sessions <- PersistenceSchema.testResults
         .filter(x => x.organizationId === organisationId &&
@@ -377,7 +395,7 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
     } yield ()
   }
 
-  def deleteObsoleteTestResultsForCommunity(communityId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
+  def deleteObsoleteTestResultsForCommunity(communityId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Unit] = {
     for {
       sessions <- PersistenceSchema.testResults
         .filter(x => x.communityId === communityId &&
@@ -414,7 +432,7 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
     toDBIO(actions)
   }
 
-  def deleteAllObsoleteTestResults(): Unit = {
+  def deleteAllObsoleteTestResults(): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val action = for {
       sessions <- PersistenceSchema.testResults
@@ -422,64 +440,66 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
         .result
       _ <- deleteObsoleteTestSessions(sessions, onSuccessCalls)
     } yield ()
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
   }
 
-  def testSessionsExistForSystemAndActors(systemId: Long, actorIds: List[Long]): Boolean = {
-    exec(
+  def testSessionsExistForSystemAndActors(systemId: Long, actorIds: List[Long]): Future[Boolean] = {
+    DB.run(
       PersistenceSchema.testResults
         .filter(_.sutId === systemId)
         .filter(_.actorId inSet actorIds)
         .map(x => x.testSessionId)
+        .exists
         .result
-        .headOption
-    ).isDefined
+    )
   }
 
-  def testSessionsExistForSystem(systemId: Long): Boolean = {
-    exec(
+  def testSessionsExistForSystem(systemId: Long): Future[Boolean] = {
+    DB.run(
       PersistenceSchema.testResults
         .filter(_.sutId === systemId)
         .map(x => x.testSessionId)
+        .exists
         .result
-        .headOption
-    ).isDefined
+    )
   }
 
-  def testSessionsExistForOrganisation(organisationId: Long): Boolean = {
-    exec(
+  def testSessionsExistForOrganisation(organisationId: Long): Future[Boolean] = {
+    DB.run(
       PersistenceSchema.testResults
         .filter(_.organizationId === organisationId)
         .map(x => x.testSessionId)
+        .exists
         .result
-        .headOption
-    ).isDefined
+    )
   }
 
-  def testSessionsExistForUserOrganisation(userId: Long): Boolean = {
-    exec(
+  def testSessionsExistForUserOrganisation(userId: Long): Future[Boolean] = {
+    DB.run(
       PersistenceSchema.users
         .join(PersistenceSchema.testResults).on(_.organization === _.organizationId)
         .filter(_._1.id === userId)
         .map(x => x._2.testSessionId)
+        .exists
         .result
-        .headOption
-    ).isDefined
+    )
   }
 
-  def getTestSessionLog(sessionId: String, startTime: Option[Timestamp], isExpected: Boolean): Option[List[String]] = {
-    getTestSessionLog(sessionId, repositoryUtils.getPathForTestSessionObj(sessionId, startTime, isExpected))
+  def getTestSessionLog(sessionId: String, startTime: Timestamp, isExpected: Boolean): Option[List[String]] = {
+    getTestSessionLogSync(sessionId, repositoryUtils.getPathForTestSessionObj(sessionId, Some(startTime), isExpected))
   }
 
-  def getTestSessionLog(sessionId: String, isExpected: Boolean): Option[List[String]] = {
-    getTestSessionLog(sessionId, repositoryUtils.getPathForTestSessionWrapper(sessionId, isExpected))
-  }
-
-  private def getTestSessionLog(sessionId: String, sessionFolderInfo: SessionFolderInfo): Option[List[String]] = {
-    if (!sessionFolderInfo.archived) {
-      flushSessionLogs(sessionId, Some(sessionFolderInfo.path.toFile))
+  def getTestSessionLog(sessionId: String, isExpected: Boolean): Future[Option[List[String]]] = {
+    repositoryUtils.getPathForTestSessionWrapper(sessionId, isExpected).flatMap { path =>
+      getTestSessionLog(sessionId, path)
     }
+  }
+
+  private def getTestSessionLogSync(sessionId: String, sessionFolderInfo: SessionFolderInfo): Option[List[String]] = {
     try {
+      if (!sessionFolderInfo.archived) {
+        flushSessionLogsSync(sessionId, sessionFolderInfo.path.toFile)
+      }
       val file = new File(sessionFolderInfo.path.toFile, "log.txt")
       if (file.exists()) {
         Some(Files.readAllLines(Paths.get(file.getAbsolutePath)).asScala.toList)
@@ -493,57 +513,76 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
     }
   }
 
-  def flushSessionLogs(sessionId: String, sessionFolder: Option[File]): Unit = {
+  private def getTestSessionLog(sessionId: String, sessionFolderInfo: SessionFolderInfo): Future[Option[List[String]]] = {
+    val task = if (!sessionFolderInfo.archived) {
+      flushSessionLogs(sessionId, Some(sessionFolderInfo.path.toFile))
+    } else {
+      Future.successful(())
+    }
+    task.map { _ =>
+      val file = new File(sessionFolderInfo.path.toFile, "log.txt")
+      if (file.exists()) {
+        Some(Files.readAllLines(Paths.get(file.getAbsolutePath)).asScala.toList)
+      } else {
+        None
+      }
+    }.andThen { _ =>
+      if (sessionFolderInfo.archived) {
+        FileUtils.deleteQuietly(sessionFolderInfo.path.toFile)
+      }
+    }
+  }
+
+  def flushSessionLogsSync(sessionId: String, sessionFolder: File): Unit = {
     val messages = consumeSessionLogs(sessionId)
     if (messages.nonEmpty) {
-      val logFilePath = new File(sessionFolder.getOrElse(repositoryUtils.getPathForTestSession(sessionId, isExpected = false).path.toFile), "log.txt")
-      if (!logFilePath.exists()) {
-        logFilePath.getParentFile.mkdirs()
-        logFilePath.createNewFile()
+      flushSessionLogsInternal(messages, sessionFolder)
+    }
+  }
+
+  private def flushSessionLogsInternal(messages: List[String], sessionFolder: File): Unit = {
+    val logFilePath = new File(sessionFolder, "log.txt")
+    if (!logFilePath.exists()) {
+      logFilePath.getParentFile.mkdirs()
+      logFilePath.createNewFile()
+    }
+    import scala.jdk.CollectionConverters._
+    Files.write(logFilePath.toPath, messages.asJava, StandardOpenOption.APPEND)
+  }
+
+  def flushSessionLogs(sessionId: String, sessionFolder: Option[File]): Future[Unit] = {
+    val messages = consumeSessionLogs(sessionId)
+    if (messages.nonEmpty) {
+      if (sessionFolder.isDefined) {
+        Future.successful {
+          flushSessionLogsInternal(messages, sessionFolder.get)
+        }
+      } else {
+        repositoryUtils.getPathForTestSession(sessionId, isExpected = false).map { sessionPath =>
+          flushSessionLogsInternal(messages, sessionPath.path.toFile)
+        }
       }
-      import scala.jdk.CollectionConverters._
-      Files.write(logFilePath.toPath, messages.asJava, StandardOpenOption.APPEND)
-    }
-  }
-
-  def saveTestInteraction(interaction: TestInteraction): Unit = {
-    exec((PersistenceSchema.testInteractions += interaction).transactionally)
-  }
-
-  def getPendingTestSessionsForAdminInteraction(communityId: Option[Long]): Seq[String] = {
-    if (communityId.isEmpty) {
-      exec(
-        PersistenceSchema.testInteractions
-          .filter(_.admin === true)
-          .map(_.testSessionId)
-          .distinct
-          .result
-      )
     } else {
-      exec(
-        PersistenceSchema.testInteractions
-          .join(PersistenceSchema.testResults).on(_.testSessionId === _.testSessionId)
-          .filter(_._1.admin === true)
-          .filter(_._2.communityId === communityId)
-          .map(_._1.testSessionId)
-          .distinct
-          .result
-      )
+      Future.successful(())
     }
   }
 
-  def getTestInteractions(sessionId: String, adminInteractions: Option[Boolean]): List[TestInteraction] = {
-    exec(
+  def saveTestInteraction(interaction: TestInteraction): Future[Unit] = {
+    DB.run((PersistenceSchema.testInteractions += interaction).transactionally).map(_ => ())
+  }
+
+  def getTestInteractions(sessionId: String, adminInteractions: Option[Boolean]): Future[List[TestInteraction]] = {
+    DB.run(
       PersistenceSchema.testInteractions
       .filter(_.testSessionId === sessionId)
       .filterOpt(adminInteractions)((q, flag) => q.admin === flag)
       .sortBy(_.createTime.desc)
       .result
-    ).toList
+    ).map(_.toList)
   }
 
-  def deleteTestInteractionsWrapper(sessionId: String, stepId: Option[String]): Unit = {
-    exec(deleteTestInteractions(sessionId, stepId).transactionally)
+  def deleteTestInteractionsWrapper(sessionId: String, stepId: Option[String]): Future[Unit] = {
+    DB.run(deleteTestInteractions(sessionId, stepId).transactionally).map(_ => ())
   }
 
   def deleteTestInteractions(sessionId: String, stepId: Option[String]): DBIO[_] = {
@@ -569,7 +608,9 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
             // Set the start time to 30 minutes before the current time.
             val cal = Calendar.getInstance()
             cal.add(Calendar.MINUTE, windowMinutes * -1)
-            notifyForPendingTestInteractions(cal)
+            notifyForPendingTestInteractions(cal).recover {
+              case e: Exception => logger.warn("Unexpected error while notifying for pending test interactions", e)
+            }
           }
         }
       })
@@ -581,7 +622,7 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
     }
   }
 
-  private def notifyForPendingTestInteractions(notificationWindowStart: Calendar): Unit = {
+  private def notifyForPendingTestInteractions(notificationWindowStart: Calendar): Future[Unit] = {
     val windowStart = new Timestamp(notificationWindowStart.getTimeInMillis)
     if (Configurations.EMAIL_ENABLED) {
       val query = for {
@@ -606,22 +647,26 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
           }
         }
       } yield (communityIdsToNotify, communitiesSupportingNotifications)
-      val result = exec(query)
-      if (result._1.nonEmpty) {
-        val idSet = result._1.flatten.toSet
-        logger.debug("Sending {} pending test interaction notifications.", idSet.size)
-        result._2.foreach { communityData =>
-          if (idSet.contains(communityData._1)) {
-            sendInteractionNotification(communityData._1, communityData._2, communityData._3)
+      DB.run(query).map { result =>
+        if (result._1.nonEmpty) {
+          val idSet = result._1.flatten.toSet
+          logger.debug("Sending {} pending test interaction notifications.", idSet.size)
+          Future.traverse(result._2) { communityData =>
+            if (idSet.contains(communityData._1)) {
+              sendInteractionNotification(communityData._1, communityData._2, communityData._3)
+            } else {
+              Future.successful(())
+            }
           }
         }
       }
+    } else {
+      Future.successful(())
     }
   }
 
-  private def sendInteractionNotification(communityId: Long, communityName: String, supportEmail: String): Unit = {
-    implicit val executionContext: ExecutionContextExecutor = ExecutionContext.global
-    scala.concurrent.Future {
+  private def sendInteractionNotification(communityId: Long, communityName: String, supportEmail: String): Future[Unit] = {
+    Future {
       val subject = "Test Bed pending test interactions"
       var content = "<h2>You have pending test interactions</h2>"
       content +=
@@ -636,14 +681,17 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
     }
   }
 
-  def getTestResultOfSession(sessionId: String): (TestResult, String) = {
-    val result = getTestResultForSessionWrapper(sessionId)
-    val testcase = XMLUtils.unmarshal(classOf[TestCase], new StreamSource(new StringReader(result.get._2)))
-    val json = JacksonUtil.serializeTestCasePresentation(testcase)
-    (result.get._1, json)
+  def getTestResultOfSession(sessionId: String): Future[(TestResult, String)] = {
+    getTestResultForSessionWrapper(sessionId).map { result =>
+      val testcase = XMLUtils.unmarshal(classOf[TestCase], new StreamSource(new StringReader(result.get._2)))
+      val json = JacksonUtil.serializeTestCasePresentation(testcase)
+      (result.get._1, json)
+    }
   }
 
-  def getOrganisationActiveTestResults(organisationId: Long,
+  def getOrganisationActiveTestResults(page: Long,
+                                       limit: Long,
+                                       organisationId: Long,
                                        systemIds: Option[List[Long]],
                                        domainIds: Option[List[Long]],
                                        specIds: Option[List[Long]],
@@ -655,11 +703,16 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
                                        startTimeEnd: Option[String],
                                        sessionId: Option[String],
                                        sortColumn: Option[String],
-                                       sortOrder: Option[String]): List[TestResult] = {
-    exec(
-      getTestResultsQuery(None, domainIds, getSpecIdsCriterionToUse(specIds, specGroupIds), actorIds, testSuiteIds, testCaseIds, Some(List(organisationId)), systemIds, None, startTimeBegin, startTimeEnd, None, None, sessionId, Some(false), sortColumn, sortOrder)
-        .result.map(_.toList)
-    )
+                                       sortOrder: Option[String]): Future[(Iterable[TestResult], Int)] = {
+    getSpecIdsCriterionToUse(specIds, specGroupIds).flatMap { specIds =>
+      val query = getTestResultsQuery(None, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, Some(List(organisationId)), systemIds, None, startTimeBegin, startTimeEnd, None, None, sessionId, Some(false), sortColumn, sortOrder, pendingAdministratorInteraction = false)
+      DB.run(
+        for {
+          results <- query.drop((page - 1) * limit).take(limit).result
+          resultCount <- query.size.result
+        } yield (results, resultCount)
+      )
+    }
   }
 
   def getTestResults(page: Long,
@@ -679,19 +732,22 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
                      endTimeEnd: Option[String],
                      sessionId: Option[String],
                      sortColumn: Option[String],
-                     sortOrder: Option[String]): (Iterable[TestResult], Int) = {
+                     sortOrder: Option[String]): Future[(Iterable[TestResult], Int)] = {
 
-    val query = getTestResultsQuery(None, domainIds, getSpecIdsCriterionToUse(specIds, specGroupIds), actorIds, testSuiteIds, testCaseIds, Some(List(organisationId)), systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder)
-    val output = exec(
-      for {
-        results <- query.drop((page - 1) * limit).take(limit).result
-        resultCount <- query.size.result
-      } yield (results, resultCount)
-    )
-    output
+    getSpecIdsCriterionToUse(specIds, specGroupIds).flatMap { specIds =>
+      val query = getTestResultsQuery(None, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, Some(List(organisationId)), systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder, pendingAdministratorInteraction = false)
+      DB.run(
+        for {
+          results <- query.drop((page - 1) * limit).take(limit).result
+          resultCount <- query.size.result
+        } yield (results, resultCount)
+      )
+    }
   }
 
-  def getActiveTestResults(communityIds: Option[List[Long]],
+  def getActiveTestResults(page: Long,
+                           limit: Long,
+                           communityIds: Option[List[Long]],
                            domainIds: Option[List[Long]],
                            specIds: Option[List[Long]],
                            specGroupIds: Option[List[Long]],
@@ -706,11 +762,24 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
                            orgParameters: Option[Map[Long, Set[String]]],
                            sysParameters: Option[Map[Long, Set[String]]],
                            sortColumn: Option[String],
-                           sortOrder: Option[String]): List[TestResult] = {
-    exec(
-      getTestResultsQuery(communityIds, domainIds, getSpecIdsCriterionToUse(specIds, specGroupIds), actorIds, testSuiteIds, testCaseIds, communityHelper.organisationIdsToUse(organisationIds, orgParameters), communityHelper.systemIdsToUse(systemIds, sysParameters), None, startTimeBegin, startTimeEnd, None, None, sessionId, Some(false), sortColumn, sortOrder)
-        .result.map(_.toList)
-    )
+                           sortOrder: Option[String],
+                           pendingAdminInteraction: Boolean): Future[(Iterable[TestResult], Int)] = {
+    communityHelper.memberIdsToUse(organisationIds, systemIds, orgParameters, sysParameters).zip(
+      getSpecIdsCriterionToUse(specIds, specGroupIds)
+    ).flatMap { data =>
+      val memberIds = data._1
+      val specIds = data._2
+      val query = getTestResultsQuery(communityIds, domainIds, specIds, actorIds, testSuiteIds, testCaseIds,
+        memberIds.organisationIds, memberIds.systemIds, None,
+        startTimeBegin, startTimeEnd, None, None, sessionId, Some(false), sortColumn, sortOrder, pendingAdminInteraction
+      )
+      DB.run(
+        for {
+          results <- query.drop((page - 1) * limit).take(limit).result
+          resultCount <- query.size.result
+        } yield (results, resultCount)
+      )
+    }
   }
 
   def getFinishedTestResults(page: Long,
@@ -733,30 +802,38 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
                              orgParameters: Option[Map[Long, Set[String]]],
                              sysParameters: Option[Map[Long, Set[String]]],
                              sortColumn: Option[String],
-                             sortOrder: Option[String]): (Iterable[TestResult], Int) = {
-
-    val query = getTestResultsQuery(communityIds, domainIds, getSpecIdsCriterionToUse(specIds, specGroupIds), actorIds, testSuiteIds, testCaseIds, communityHelper.organisationIdsToUse(organisationIds, orgParameters), communityHelper.systemIdsToUse(systemIds, sysParameters), results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder)
-    val output = exec(
-      for {
-        results <- query.drop((page - 1) * limit).take(limit).result
-        resultCount <- query.size.result
-      } yield (results, resultCount)
-    )
-    output
+                             sortOrder: Option[String]): Future[(Iterable[TestResult], Int)] = {
+    communityHelper.memberIdsToUse(organisationIds, systemIds, orgParameters, sysParameters).zip(
+      getSpecIdsCriterionToUse(specIds, specGroupIds)
+    ).flatMap { data =>
+      val memberIds = data._1
+      val specsIds = data._2
+      val query = getTestResultsQuery(communityIds, domainIds, specIds,
+        actorIds, testSuiteIds, testCaseIds, memberIds.organisationIds, memberIds.systemIds,
+        results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder, pendingAdministratorInteraction = false
+      )
+      DB.run(
+        for {
+          results <- query.drop((page - 1) * limit).take(limit).result
+          resultCount <- query.size.result
+        } yield (results, resultCount)
+      )
+    }
   }
 
-  def getTestResult(sessionId: String): Option[TestResult] = {
-    val query = getTestResultsQuery(None, None, None, None, None, None, None, None, None, None, None, None, None, Some(sessionId), None, None, None)
-    exec(query.result.headOption)
+  def getTestResult(sessionId: String): Future[Option[TestResult]] = {
+    val query = getTestResultsQuery(None, None, None, None, None, None, None, None, None, None, None, None, None, Some(sessionId), None, None, None, pendingAdministratorInteraction = false)
+    DB.run(query.result.headOption)
   }
 
-  private def getSpecIdsCriterionToUse(specIds: Option[List[Long]], specGroupIds: Option[List[Long]]): Option[List[Long]] = {
+  private def getSpecIdsCriterionToUse(specIds: Option[List[Long]], specGroupIds: Option[List[Long]]): Future[Option[List[Long]]] = {
     // We use the groups to get the applicable spec IDs. This is because specs can move around in groups, and we shouldn't link
     // test results directly to the groups.
     val specIdsToUse = if (specGroupIds.isDefined && specGroupIds.get.nonEmpty) {
-      exec(PersistenceSchema.specifications.filter(_.group inSet specGroupIds.get).map(_.id).result.map(x => Some(x.toList)))
+      DB.run(PersistenceSchema.specifications.filter(_.group inSet specGroupIds.get).map(_.id).result.map(x => Some(x.toList)))
     } else {
-      specIds
+      Future.successful(specIds)
+
     }
     specIdsToUse
   }
@@ -777,23 +854,47 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
                                   sessionId: Option[String],
                                   completedStatus: Option[Boolean],
                                   sortColumn: Option[String],
-                                  sortOrder: Option[String]) = {
-    var query = PersistenceSchema.testResults
-      .filterOpt(communityIds)((table, ids) => table.communityId inSet ids)
-      .filterOpt(domainIds)((table, ids) => table.domainId inSet ids)
-      .filterOpt(specIds)((table, ids) => table.specificationId inSet ids)
-      .filterOpt(actorIds)((table, ids) => table.actorId inSet ids)
-      .filterOpt(testCaseIds)((table, ids) => table.testCaseId inSet ids)
-      .filterOpt(organizationIds)((table, ids) => table.organizationId inSet ids)
-      .filterOpt(systemIds)((table, ids) => table.sutId inSet ids)
-      .filterOpt(results)((table, results) => table.result inSet results)
-      .filterOpt(testSuiteIds)((table, ids) => table.testSuiteId inSet ids)
-      .filterOpt(startTimeBegin)((table, timeStr) => table.startTime >= TimeUtil.parseTimestamp(timeStr))
-      .filterOpt(startTimeEnd)((table, timeStr) => table.startTime <= TimeUtil.parseTimestamp(timeStr))
-      .filterOpt(endTimeBegin)((table, timeStr) => table.endTime >= TimeUtil.parseTimestamp(timeStr))
-      .filterOpt(endTimeEnd)((table, timeStr) => table.endTime <= TimeUtil.parseTimestamp(timeStr))
-      .filterOpt(sessionId)((table, id) => table.testSessionId === id)
-      .filterOpt(completedStatus)((table, completed) => if (completed) table.endTime.isDefined else table.endTime.isEmpty)
+                                  sortOrder: Option[String],
+                                  pendingAdministratorInteraction: Boolean) = {
+    var query = if (pendingAdministratorInteraction) {
+      PersistenceSchema.testResults
+        .join(PersistenceSchema.testInteractions).on(_.testSessionId === _.testSessionId)
+        .filter(_._2.admin === true)
+        .filterOpt(communityIds)((table, ids) => table._1.communityId inSet ids)
+        .filterOpt(domainIds)((table, ids) => table._1.domainId inSet ids)
+        .filterOpt(specIds)((table, ids) => table._1.specificationId inSet ids)
+        .filterOpt(actorIds)((table, ids) => table._1.actorId inSet ids)
+        .filterOpt(testCaseIds)((table, ids) => table._1.testCaseId inSet ids)
+        .filterOpt(organizationIds)((table, ids) => table._1.organizationId inSet ids)
+        .filterOpt(systemIds)((table, ids) => table._1.sutId inSet ids)
+        .filterOpt(results)((table, results) => table._1.result inSet results)
+        .filterOpt(testSuiteIds)((table, ids) => table._1.testSuiteId inSet ids)
+        .filterOpt(startTimeBegin)((table, timeStr) => table._1.startTime >= TimeUtil.parseTimestamp(timeStr))
+        .filterOpt(startTimeEnd)((table, timeStr) => table._1.startTime <= TimeUtil.parseTimestamp(timeStr))
+        .filterOpt(endTimeBegin)((table, timeStr) => table._1.endTime >= TimeUtil.parseTimestamp(timeStr))
+        .filterOpt(endTimeEnd)((table, timeStr) => table._1.endTime <= TimeUtil.parseTimestamp(timeStr))
+        .filterOpt(sessionId)((table, id) => table._1.testSessionId === id)
+        .filterOpt(completedStatus)((table, completed) => if (completed) table._1.endTime.isDefined else table._1.endTime.isEmpty)
+        .map(_._1)
+        .distinct
+    } else {
+      PersistenceSchema.testResults
+        .filterOpt(communityIds)((table, ids) => table.communityId inSet ids)
+        .filterOpt(domainIds)((table, ids) => table.domainId inSet ids)
+        .filterOpt(specIds)((table, ids) => table.specificationId inSet ids)
+        .filterOpt(actorIds)((table, ids) => table.actorId inSet ids)
+        .filterOpt(testCaseIds)((table, ids) => table.testCaseId inSet ids)
+        .filterOpt(organizationIds)((table, ids) => table.organizationId inSet ids)
+        .filterOpt(systemIds)((table, ids) => table.sutId inSet ids)
+        .filterOpt(results)((table, results) => table.result inSet results)
+        .filterOpt(testSuiteIds)((table, ids) => table.testSuiteId inSet ids)
+        .filterOpt(startTimeBegin)((table, timeStr) => table.startTime >= TimeUtil.parseTimestamp(timeStr))
+        .filterOpt(startTimeEnd)((table, timeStr) => table.startTime <= TimeUtil.parseTimestamp(timeStr))
+        .filterOpt(endTimeBegin)((table, timeStr) => table.endTime >= TimeUtil.parseTimestamp(timeStr))
+        .filterOpt(endTimeEnd)((table, timeStr) => table.endTime <= TimeUtil.parseTimestamp(timeStr))
+        .filterOpt(sessionId)((table, id) => table.testSessionId === id)
+        .filterOpt(completedStatus)((table, completed) => if (completed) table.endTime.isDefined else table.endTime.isEmpty)
+    }
     // Apply sorting
     if (sortColumn.isDefined && sortOrder.isDefined) {
       if (sortOrder.get == "asc") {

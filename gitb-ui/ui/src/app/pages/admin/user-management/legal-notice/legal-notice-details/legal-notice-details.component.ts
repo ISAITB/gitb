@@ -15,8 +15,9 @@ import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
-  selector: 'app-legal-notice-details',
-  templateUrl: './legal-notice-details.component.html'
+    selector: 'app-legal-notice-details',
+    templateUrl: './legal-notice-details.component.html',
+    standalone: false
 })
 export class LegalNoticeDetailsComponent extends BaseComponent implements OnInit {
 

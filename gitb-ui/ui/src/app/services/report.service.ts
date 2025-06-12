@@ -175,9 +175,12 @@ export class ReportService {
     })
   }
 
-  getActiveTestResults(criteria: TestResultSearchCriteria, forExport?: boolean) {
+  getActiveTestResults(page: number, limit: number, criteria: TestResultSearchCriteria, pendingAdminInteraction: boolean, forExport?: boolean) {
     const params = this.criteriaToRequestParams(criteria, true)
+    params.page = page
+    params.limit = limit
     params.export = forExport != undefined && forExport
+    params.pending_admin_interaction = pendingAdminInteraction
     return this.restService.post<TestResultData>({
       path: ROUTES.controllers.ReportService.getActiveTestResults().url,
       authenticate: true,
@@ -185,8 +188,10 @@ export class ReportService {
     })
   }
 
-  getSystemActiveTestResults(organisationId: number, criteria: TestResultSearchCriteria) {
+  getSystemActiveTestResults(page: number, limit: number, organisationId: number, criteria: TestResultSearchCriteria) {
     const params = this.criteriaToRequestParams(criteria, true, organisationId)
+    params.page = page
+    params.limit = limit
     return this.restService.post<TestResultData>({
       path: ROUTES.controllers.ReportService.getSystemActiveTestResults().url,
       authenticate: true,
@@ -282,20 +287,6 @@ export class ReportService {
     })
   }
 
-  getPendingTestSessionsForAdminInteraction(communityId: number|undefined) {
-    let params: any
-    if (communityId != undefined) {
-      params = {
-        community_id: communityId
-      }
-    }
-    return this.restService.get<string[]>({
-      path: ROUTES.controllers.RepositoryService.getPendingTestSessionsForAdminInteraction().url,
-      authenticate: true,
-      params: params
-    })    
-  }
-
   getPendingTestSessionInteractions(session: string) {
     let path: string
     if (this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin) {
@@ -306,7 +297,7 @@ export class ReportService {
     return this.restService.get<TestInteractionData[]>({
       path: path,
       authenticate: true
-    })    
+    })
   }
 
   loadReportSettings(communityId: number, reportType: number) {
@@ -316,7 +307,7 @@ export class ReportService {
       params: {
         type: reportType
       }
-    })    
+    })
   }
 
   getReportStylesheet(communityId: number, reportType: number) {
@@ -355,7 +346,7 @@ export class ReportService {
       authenticate: true,
       files: files,
       data: data
-    })    
+    })
   }
 
   exportDemoReportPdf(communityId: number, reportType: number, reportSettings: CommunityReportSettings, useStyleSheet: boolean, file?: FileData, data?: {[key: string]: any}) {
@@ -387,7 +378,7 @@ export class ReportService {
       data: dataToUse,
       arrayBuffer: true,
       httpResponse: true
-    })     
+    })
   }
 
   exportDemoReportXml(communityId: number, reportType: number, enabled: boolean, file?: FileData, data?: {[key: string]: any}) {
@@ -417,7 +408,7 @@ export class ReportService {
       files: files,
       text: true,
       data: dataToUse
-    })      
+    })
   }
 
   updateConformanceCertificateSettings(communityId: number, reportSettings: CommunityReportSettings, certificateSettings: ConformanceCertificateSettings, stylesheet?: FileData) {
@@ -499,7 +490,7 @@ export class ReportService {
       data: data,
       authenticate: true,
       arrayBuffer: true
-    })    
+    })
   }
 
   exportOwnConformanceCertificateReport(actorId: number, systemId: number, snapshotId?: number) {
@@ -537,7 +528,7 @@ export class ReportService {
         settingsData.messages = settings.messages
       }
       data.settings = JSON.stringify(settingsData)
-    }    
+    }
     if (domainId != undefined) data.domain_id = domainId
     if (groupId != undefined) data.group_id = groupId
     if (specId != undefined) data.spec_id = specId
@@ -633,7 +624,7 @@ export class ReportService {
       data: data,
       authenticate: true,
       arrayBuffer: true
-    })   
+    })
   }
 
   exportOwnConformanceOverviewReportInXML(systemId: number, domainId: number|undefined, groupId: number|undefined, specId: number|undefined, snapshotId: number|undefined) {
@@ -649,7 +640,7 @@ export class ReportService {
       data: data,
       authenticate: true,
       arrayBuffer: true
-    }) 
+    })
   }
 
   exportConformanceStatementReportInXML(actorId: number, systemId: number, communityId: number, includeTests: boolean, snapshotId?: number) {
@@ -665,7 +656,7 @@ export class ReportService {
       data: data,
       authenticate: true,
       arrayBuffer: true
-    })    
+    })
   }
 
   exportOwnConformanceStatementReportInXML(actorId: number, systemId: number, includeTests: boolean, snapshotId: number|undefined) {

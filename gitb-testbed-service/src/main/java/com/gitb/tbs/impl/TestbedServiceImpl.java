@@ -1,22 +1,24 @@
 package com.gitb.tbs.impl;
 
+import com.gitb.core.Actor;
 import com.gitb.core.ErrorCode;
 import com.gitb.engine.TestCaseManager;
+import com.gitb.engine.TestEngineConfiguration;
 import com.gitb.exceptions.GITBEngineInternalError;
+import com.gitb.tbs.*;
 import com.gitb.tbs.Error;
 import com.gitb.tbs.Void;
-import com.gitb.tbs.*;
 import com.gitb.tpl.TestCase;
 import com.gitb.utils.ErrorUtils;
+import jakarta.annotation.Resource;
+import jakarta.xml.ws.WebServiceContext;
+import jakarta.xml.ws.soap.Addressing;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
 import org.springframework.stereotype.Component;
 
-import jakarta.annotation.Resource;
-import jakarta.xml.ws.WebServiceContext;
-import jakarta.xml.ws.soap.Addressing;
 import java.util.List;
 
 /**
@@ -36,9 +38,9 @@ public class TestbedServiceImpl implements TestbedService {
         try {
             TestCase testCase;
             if (parameters.getTcInstanceId() != null) {
-                testCase = TestCaseManager.getTestCasePresentationBySessionId(parameters.getTcInstanceId());
+                testCase = TestCaseManager.getTestCasePresentationBySessionId(parameters.getTcInstanceId(), parameters.getConfigs());
             } else {
-                testCase = TestCaseManager.getTestCasePresentationByTestCaseId(parameters.getTcId());
+                testCase = TestCaseManager.getTestCasePresentationByTestCaseId(parameters.getTcId(), parameters.getConfigs());
             }
             //Construct Response
             GetTestCaseDefinitionResponse response = new GetTestCaseDefinitionResponse();
@@ -54,8 +56,28 @@ public class TestbedServiceImpl implements TestbedService {
     }
 
     @Override
-    public GetActorDefinitionResponse getActorDefinition(GetActorDefinitionRequest parameters) throws Error {
-        throw new IllegalStateException("This call is deprecated");
+    public GetActorDefinitionResponse getActorDefinition(GetActorDefinitionRequest parameters) {
+        /*
+         * The getActorDefinition operation is deprecated for use in test sessions. However, as it is never
+         * called for test sessions we are taking advantage of it to use for a healthcheck ping without needing
+         * to add a separate operation that would modify the published API.
+         *
+         * The healthcheck result is returned as a JSON string as the actor's description.
+         */
+        String result;
+        if ("callbacks".equals(parameters.getActorId())) {
+            result = TestEngineConfiguration.ROOT_CALLBACK_URL;
+        } else {
+            result = com.gitb.engine.TestbedService.healthCheck((msg) -> {
+                TestbedClient client = TestbedServiceCallbackHandler.createTestBedClient(wsc);
+                client.updateStatus(msg);
+            });
+        }
+        // Prepare result
+        GetActorDefinitionResponse response = new GetActorDefinitionResponse();
+        response.setActor(new Actor());
+        response.getActor().setDesc(result);
+        return response;
     }
 
     @Override

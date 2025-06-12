@@ -4,10 +4,10 @@ import { DataService } from 'src/app/services/data.service';
 import { CustomProperty } from 'src/app/types/custom-property.type';
 
 @Component({
-  selector: 'app-preview-parameters-modal',
-  templateUrl: './preview-parameters-modal.component.html',
-  styles: [
-  ]
+    selector: 'app-preview-parameters-modal',
+    templateUrl: './preview-parameters-modal.component.html',
+    styles: [],
+    standalone: false
 })
 export class PreviewParametersModalComponent implements OnInit {
 

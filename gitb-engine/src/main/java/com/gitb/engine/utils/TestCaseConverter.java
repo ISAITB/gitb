@@ -1,18 +1,23 @@
 package com.gitb.engine.utils;
 
+import com.gitb.core.ActorConfiguration;
 import com.gitb.core.Documentation;
 import com.gitb.core.ErrorCode;
 import com.gitb.engine.ModuleManager;
+import com.gitb.engine.SessionConfigurationData;
+import com.gitb.engine.expr.StaticExpressionHandler;
+import com.gitb.engine.testcase.StaticTestCaseContext;
+import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.repository.ITestCaseRepository;
+import com.gitb.tdl.*;
 import com.gitb.tdl.Instruction;
 import com.gitb.tdl.Process;
 import com.gitb.tdl.UserRequest;
-import com.gitb.tdl.*;
+import com.gitb.tpl.*;
 import com.gitb.tpl.Sequence;
 import com.gitb.tpl.TestCase;
 import com.gitb.tpl.TestStep;
-import com.gitb.tpl.*;
 import com.gitb.utils.ErrorUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -38,15 +43,26 @@ public class TestCaseConverter {
     private final LinkedList<Boolean> scriptletStepHiddenAttributeStack = new LinkedList<>();
     private final com.gitb.tdl.TestCase testCase;
     private final ScriptletCache scriptletCache;
+    private final StaticExpressionHandler expressionHandler;
+    private final TestCaseContext testCaseContext;
     private Set<String> actorIds = null;
 
-    public TestCaseConverter(com.gitb.tdl.TestCase testCase) {
-        this(testCase, null);
+    public TestCaseConverter(com.gitb.tdl.TestCase testCase, List<ActorConfiguration> configs) {
+        this(testCase, null, configs);
     }
 
-    public TestCaseConverter(com.gitb.tdl.TestCase testCase, ScriptletCache scriptletCache) {
+    public TestCaseConverter(com.gitb.tdl.TestCase testCase, ScriptletCache scriptletCache, List<ActorConfiguration> configs) {
         this.testCase = testCase;
         this.scriptletCache = Objects.requireNonNullElseGet(scriptletCache, ScriptletCache::new);
+        testCaseContext = createTestCaseContext(testCase, configs);
+        expressionHandler = new StaticExpressionHandler(testCaseContext.getScope());
+    }
+
+    private TestCaseContext createTestCaseContext(com.gitb.tdl.TestCase testCase, List<ActorConfiguration> configs) {
+        var context = new StaticTestCaseContext(testCase);
+        var configData = new SessionConfigurationData(configs);
+        context.configure(configData.getActorConfigurations(), configData.getDomainConfiguration(), configData.getOrganisationConfiguration(), configData.getSystemConfiguration());
+        return context;
     }
 
     public TestCase convertTestCase(String testCaseId) {
@@ -157,16 +173,16 @@ public class TestCaseConverter {
     }
 
     private String fixedOrVariableValueAsString(String originalValue) {
-        return TestCaseUtils.fixedOrVariableValue(originalValue, String.class, scriptletStepStack);
+        return TestCaseUtils.fixedOrVariableValue(originalValue, String.class, scriptletStepStack, expressionHandler);
     }
 
     private Boolean fixedOrVariableValueAsBoolean(String originalValue, boolean defaultIfMissing) {
-        var result = TestCaseUtils.fixedOrVariableValue(originalValue, Boolean.class, scriptletStepStack);
+        var result = TestCaseUtils.fixedOrVariableValue(originalValue, Boolean.class, scriptletStepStack, expressionHandler);
         return Objects.requireNonNullElse(result, defaultIfMissing);
     }
 
     private String fixedOrVariableValueForActor(String originalValue) {
-        var value = TestCaseUtils.fixedOrVariableValue(originalValue, String.class, scriptletStepStack);
+        var value = TestCaseUtils.fixedOrVariableValue(originalValue, String.class, scriptletStepStack, expressionHandler);
         if (actorIds == null) {
             actorIds = new HashSet<>();
             if (testCase.getActors() != null) {
@@ -214,15 +230,24 @@ public class TestCaseConverter {
         return process;
     }
 
-    private com.gitb.tpl.MessagingStep convertMessagingStep(String testCaseId, String id, com.gitb.tdl.MessagingStep description) {
+    private com.gitb.tpl.MessagingStep convertMessagingStep(String testCaseId, String id, com.gitb.tdl.MessagingStep step) {
         com.gitb.tpl.MessagingStep messaging = new com.gitb.tpl.MessagingStep();
         messaging.setId(id);
-        messaging.setDesc(fixedOrVariableValueAsString(description.getDesc()));
-        messaging.setFrom(fixedOrVariableValueForActor(description.getFrom()));
-        messaging.setTo(fixedOrVariableValueForActor(description.getTo()));
-        messaging.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
-        messaging.setHidden(hiddenValueToUse(description.getHidden(), false));
-        messaging.setReply(fixedOrVariableValueAsBoolean(description.getReply(), false));
+        messaging.setDesc(fixedOrVariableValueAsString(step.getDesc()));
+        String fromActor;
+        String toActor;
+        if (step instanceof ReceiveOrListen) {
+            fromActor = Objects.requireNonNullElseGet(step.getFrom(), testCaseContext::getDefaultSutActor);
+            toActor = Objects.requireNonNullElseGet(step.getTo(), () -> testCaseContext.getDefaultNonSutActor(true));
+        } else {
+            fromActor = Objects.requireNonNullElseGet(step.getFrom(), () -> testCaseContext.getDefaultNonSutActor(true));
+            toActor = Objects.requireNonNullElseGet(step.getTo(), testCaseContext::getDefaultSutActor);
+        }
+        messaging.setFrom(fixedOrVariableValueForActor(fromActor));
+        messaging.setTo(fixedOrVariableValueForActor(toActor));
+        messaging.setDocumentation(getDocumentation(testCaseId, step.getDocumentation()));
+        messaging.setHidden(hiddenValueToUse(step.getHidden(), false));
+        messaging.setReply(fixedOrVariableValueAsBoolean(step.getReply(), false));
         return messaging;
     }
 
@@ -359,7 +384,7 @@ public class TestCaseConverter {
         } else {
             scriptletCallStack.push(callKey);
         }
-        Scriptlet scriptlet = scriptletCache.getScriptlet(testSuiteContext, callStep.getPath(), testCase, true);
+        Scriptlet scriptlet = scriptletCache.getScriptlet(testSuiteContext, callStep.getPath(), testCase, true).scriptlet();
         scriptletStepStack.addLast(Pair.of(callStep, scriptlet));
         scriptletStepHiddenAttributeStack.addLast(hiddenValueToUse(callStep.getHidden(), false));
         Sequence sequence = convertSequence(testCaseId, id, scriptlet.getSteps());

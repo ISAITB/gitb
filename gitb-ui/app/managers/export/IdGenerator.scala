@@ -1,6 +1,6 @@
 package managers.`export`
 
-class IdGenerator(initialIdSequenceValue: Int = 0) {
+case class IdGenerator(initialIdSequenceValue: Int = 0) {
 
   private var idSequence: Int = initialIdSequenceValue
 

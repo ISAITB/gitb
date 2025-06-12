@@ -15,7 +15,7 @@
                 }
                 @for (column of columnsLeft; track $index) {
                     <th [ngClass]="classForColumn(column)" [class.sortable]="column.sortable" (click)="headerColumnClicked(column)">
-                        {{column.title}} 
+                        {{column.title}}
                         @if (column.order != undefined) {
                             <i [ngClass]="{'fa-caret-down': column.order == 'desc', 'fa-caret-up': column.order == 'asc'}" class="fa"></i>
                         }
@@ -26,7 +26,7 @@
                 }
                 @for (column of columnsRight; track $index) {
                     <th [ngClass]="classForColumn(column)" [class.sortable]="column.sortable" (click)="headerColumnClicked(column)">
-                        {{column.title}} 
+                        {{column.title}}
                         @if (column.order != undefined) {
                             <i [ngClass]="{'fa-caret-down': column.order == 'desc', 'fa-caret-up': column.order == 'asc'}" class="fa"></i>
                         }
@@ -48,8 +48,8 @@
             }
             @for (row of data; track row; let i = $index) {
                 <tr table-row-directive
-                    class="table-row-directive" 
-                    [ngClass]="rowClass(i)" 
+                    class="table-row-directive"
+                    [ngClass]="rowClass(i)"
                     [class.selected]="row._selected"
                     (click)="select(i)"
                     [data]="row"
@@ -80,14 +80,7 @@
             }
         </tbody>
     </table>
-    @if ((!prevDisabled || !nextDisabled) && data && data.length > 0) {
-        <div class="text-center table-paging-controls">
-            <div class="btn-group" role="group" [class.disable-events]="contentRefreshing">
-                <button type="button" class="btn btn-sm btn-secondary" [disabled]="prevDisabled" (click)="doFirstPage()">First</button>
-                <button type="button" class="btn btn-sm btn-secondary" [disabled]="prevDisabled" (click)="doPrevPage()">Previous</button>
-                <button type="button" class="btn btn-sm btn-secondary" [disabled]="nextDisabled" (click)="doNextPage()">Next</button>
-                <button type="button" class="btn btn-sm btn-secondary" [disabled]="nextDisabled" (click)="doLastPage()">Last</button>
-            </div>
-        </div>
+    @if (supportPaging) {
+        <app-paging-controls #pagingControls [refreshing]="contentRefreshing" (navigation)="doPageNavigation($event)"></app-paging-controls>
     }
 </div>

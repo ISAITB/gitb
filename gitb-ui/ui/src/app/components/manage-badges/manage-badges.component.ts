@@ -3,8 +3,9 @@ import { BadgesInfo } from './badges-info';
 import { Constants } from 'src/app/common/constants';
 
 @Component({
-  selector: 'app-manage-badges',
-  templateUrl: './manage-badges.component.html'
+    selector: 'app-manage-badges',
+    templateUrl: './manage-badges.component.html',
+    standalone: false
 })
 export class ManageBadgesComponent implements OnInit {
 

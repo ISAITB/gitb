@@ -4,8 +4,9 @@ import { AccountService } from 'src/app/services/account.service';
 import { DataService } from 'src/app/services/data.service';
 
 @Component({
-  selector: 'app-home',
-  templateUrl: './home.component.html'
+    selector: 'app-home',
+    templateUrl: './home.component.html',
+    standalone: false
 })
 export class HomeComponent implements OnInit {
 

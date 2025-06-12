@@ -29,8 +29,7 @@ object Configurations {
   var REDIS_HOST:String = ""
   var REDIS_PORT = 0
 
-  //General configurations
-  var SERVER_REQUEST_TIMEOUT_IN_SECONDS=0
+  // General configurations
   var AUTHENTICATION_SESSION_MAX_IDLE_TIME = 0
   var AUTHENTICATION_SESSION_MAX_TOTAL_TIME = 0
   var TOKEN_LENGTH = 0
@@ -119,6 +118,8 @@ object Configurations {
   // 5120 KB default (5 MBs)
   var SAVED_FILE_MAX_SIZE: Long = 5120
 
+  var CONFORMANCE_STATEMENT_REPORT_MAX_TEST_CASES: Int = 100
+
   var INPUT_SANITIZER__ENABLED = true
   var INPUT_SANITIZER__METHODS_TO_CHECK:Set[String] = _
   var INPUT_SANITIZER__DEFAULT_BLACKLIST_EXPRESSION:Regex = _
@@ -190,7 +191,6 @@ object Configurations {
       AUTHENTICATION_SESSION_MAX_IDLE_TIME = fromEnv("AUTHENTICATION_SESSION_MAX_IDLE_TIME", conf.getString("authentication.session.maxIdleTime")).toInt
       AUTHENTICATION_SESSION_MAX_TOTAL_TIME = fromEnv("AUTHENTICATION_SESSION_MAX_TOTAL_TIME", conf.getString("authentication.session.maxTotalTime")).toInt
       TOKEN_LENGTH = conf.getInt("token.length")
-      SERVER_REQUEST_TIMEOUT_IN_SECONDS = fromEnv("SERVER_REQUEST_TIMEOUT_IN_SECONDS", conf.getString("server.request.timeout.seconds")).toInt
       TESTBED_SERVICE_URL = conf.getString("testbed.service.url")
       TESTBED_CLIENT_URL  = conf.getString("testbed.client.url")
       TESTBED_CLIENT_URL_INTERNAL = fromEnv("TESTBED_CLIENT_URL_INTERNAL", TESTBED_CLIENT_URL)
@@ -232,10 +232,10 @@ object Configurations {
       RELEASE_INFO_ENABLED = fromEnv("RELEASE_INFO_ENABLED", conf.getString("releaseinfo.enabled")).toBoolean
       RELEASE_INFO_ADDRESS = fromEnv("RELEASE_INFO_ADDRESS", conf.getString("releaseinfo.address"))
 
-      USERGUIDE_OU = fromEnv("USERGUIDE_OU", conf.getString("userguide.ou"))
-      USERGUIDE_OA = fromEnv("USERGUIDE_OA", conf.getString("userguide.oa"))
-      USERGUIDE_CA = fromEnv("USERGUIDE_CA", conf.getString("userguide.ca"))
-      USERGUIDE_TA = fromEnv("USERGUIDE_TA", conf.getString("userguide.ta"))
+      USERGUIDE_OU = replaceUserGuideRelease(fromEnv("USERGUIDE_OU", conf.getString("userguide.ou")))
+      USERGUIDE_OA = replaceUserGuideRelease(fromEnv("USERGUIDE_OA", conf.getString("userguide.oa")))
+      USERGUIDE_CA = replaceUserGuideRelease(fromEnv("USERGUIDE_CA", conf.getString("userguide.ca")))
+      USERGUIDE_TA = replaceUserGuideRelease(fromEnv("USERGUIDE_TA", conf.getString("userguide.ta")))
 
       ANTIVIRUS_SERVER_ENABLED = fromEnv("ANTIVIRUS_SERVER_ENABLED", conf.getString("antivirus.enabled")).toBoolean
       if (ANTIVIRUS_SERVER_ENABLED) {
@@ -352,6 +352,8 @@ object Configurations {
       }
       // Session cookie
       SESSION_COOKIE_SECURE = fromEnv("SESSION_SECURE", conf.getString("play.http.session.secure")).toBoolean
+      // Max test cases to include in detailed conformance statement reports.
+      CONFORMANCE_STATEMENT_REPORT_MAX_TEST_CASES = fromEnv("CONFORMANCE_STATEMENT_REPORT_MAX_TEST_CASES", "100").toInt
       _IS_LOADED = true
     }
   }
@@ -360,12 +362,29 @@ object Configurations {
     sys.env.getOrElse(propertyName, default)
   }
 
-  def restApiLink(): Option[String] = {
+  def restApiSwaggerLink(): Option[String] = {
+    if (Configurations.AUTOMATION_API_ENABLED) {
+      Some(Configurations.API_PREFIX + "/rest/swagger")
+    } else {
+      None
+    }
+  }
+
+  def restApiJsonLink(): Option[String] = {
     if (Configurations.AUTOMATION_API_ENABLED) {
       Some(Configurations.API_PREFIX + "/rest")
     } else {
       None
     }
+  }
+
+  private def replaceUserGuideRelease(link: String): String = {
+    val versionNumberForDocs = if (Constants.VersionNumber.toLowerCase().contains("snapshot")) {
+      "latest"
+    } else {
+      Constants.VersionNumber
+    }
+    StringUtils.replace(link, "{RELEASE}", versionNumberForDocs)
   }
 
 }

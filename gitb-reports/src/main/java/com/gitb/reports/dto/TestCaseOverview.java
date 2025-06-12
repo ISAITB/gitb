@@ -18,7 +18,7 @@ public class TestCaseOverview {
     private String testName;
     private String testDescription;
     private String reportResult;
-    private String outputMessage;
+    private List<String> outputMessages;
     private String startTime;
     private String endTime;
     private String id;
@@ -68,12 +68,12 @@ public class TestCaseOverview {
         this.specLink = specLink;
     }
 
-    public String getOutputMessage() {
-        return outputMessage;
+    public List<String> getOutputMessages() {
+        return outputMessages;
     }
 
-    public void setOutputMessage(String outputMessage) {
-        this.outputMessage = outputMessage;
+    public void setOutputMessages(List<String> outputMessages) {
+        this.outputMessages = outputMessages;
     }
 
     public String getId() {

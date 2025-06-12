@@ -6,21 +6,22 @@ import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ExecutionContext, Future}
 
 /**
  * Created by VWYNGAET on 25/11/2016.
  */
 @Singleton
-class LandingPageManager @Inject() (dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class LandingPageManager @Inject() (dbConfigProvider: DatabaseConfigProvider)
+                                   (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
   /**
    * Gets all landing pages for the specified community without rich content
    */
-  def getLandingPagesByCommunityWithoutContent(communityId: Long): List[LandingPage] = {
-    exec(
+  def getLandingPagesByCommunityWithoutContent(communityId: Long): Future[List[LandingPage]] = {
+    DB.run(
       PersistenceSchema.landingPages
         .filter(_.community === communityId)
         .map(x => (x.id, x.name, x.description, x.default))
@@ -33,26 +34,34 @@ class LandingPageManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ex
   /**
    * Gets all landing pages for the specified community
    */
-  def getLandingPagesByCommunity(communityId: Long): List[LandingPages] = {
-    val pages = exec(PersistenceSchema.landingPages.filter(_.community === communityId)
+  def getLandingPagesByCommunity(communityId: Long): Future[List[LandingPages]] = {
+    DB.run(
+      PersistenceSchema.landingPages
+        .filter(_.community === communityId)
         .sortBy(_.name.asc)
-      .result.map(_.toList))
-    pages
+        .result
+        .map(_.toList)
+    )
   }
 
   /**
    * Checks if a landing page with given name exists for the given community
    */
-  def checkUniqueName(name: String, communityId: Long): Boolean = {
-    val firstOption = exec(PersistenceSchema.landingPages.filter(_.community === communityId).filter(_.name === name).result.headOption)
-    firstOption.isEmpty
+  def checkUniqueName(name: String, communityId: Long): Future[Boolean] = {
+    DB.run(
+      PersistenceSchema.landingPages
+        .filter(_.community === communityId)
+        .filter(_.name === name)
+        .exists
+        .result
+    ).map(!_)
   }
 
   /**
     * Creates new landing page
     */
-  def createLandingPage(landingPage: LandingPages) = {
-    exec(createLandingPageInternal(landingPage).transactionally)
+  def createLandingPage(landingPage: LandingPages): Future[Long] = {
+    DB.run(createLandingPageInternal(landingPage).transactionally)
   }
 
   def createLandingPageInternal(landingPage: LandingPages): DBIO[Long] = {
@@ -73,41 +82,47 @@ class LandingPageManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ex
   /**
     * Gets landing page with specified id
     */
-  def getLandingPageById(pageId: Long): Option[LandingPages] = {
-    exec(getLandingPageByIdInternal(pageId))
+  def getLandingPageById(pageId: Long): Future[Option[LandingPages]] = {
+    DB.run(getLandingPageByIdInternal(pageId))
   }
 
   def getLandingPageByIdInternal(pageId: Long): DBIO[Option[LandingPages]] = {
     PersistenceSchema.landingPages.filter(_.id === pageId).result.headOption
   }
 
-  def getCommunityId(pageId: Long): Long = {
-    exec(PersistenceSchema.landingPages.filter(_.id === pageId).map(x => x.community).result.head)
+  def getCommunityId(pageId: Long): Future[Long] = {
+    DB.run(PersistenceSchema.landingPages.filter(_.id === pageId).map(x => x.community).result.head)
   }
 
   /**
    * Checks if a landing page with given name exists for the given community
    */
-  def checkUniqueName(pageId: Long, name: String, communityId: Long): Boolean = {
-    val firstOption = exec(PersistenceSchema.landingPages.filter(_.community === communityId).filter(_.id =!= pageId).filter(_.name === name).result.headOption)
-    firstOption.isEmpty
+  def checkUniqueName(pageId: Long, name: String, communityId: Long): Future[Boolean] = {
+    DB.run(
+      PersistenceSchema.landingPages
+        .filter(_.community === communityId)
+        .filter(_.id =!= pageId)
+        .filter(_.name === name)
+        .exists
+        .result
+    ).map(!_)
   }
 
   /**
    * Updates landing page
    */
-  def updateLandingPage(pageId: Long, name: String, description: Option[String], content: String, default: Boolean, communityId: Long) = {
-    exec(updateLandingPageInternal(pageId, name, description, content, default, communityId).transactionally)
+  def updateLandingPage(pageId: Long, name: String, description: Option[String], content: String, default: Boolean, communityId: Long): Future[Unit] = {
+    DB.run(updateLandingPageInternal(pageId, name, description, content, default, communityId).transactionally).map(_ => ())
   }
 
-  def updateLandingPageInternal(pageId: Long, name: String, description: Option[String], content: String, default: Boolean, communityId: Long) = {
+  def updateLandingPageInternal(pageId: Long, name: String, description: Option[String], content: String, default: Boolean, communityId: Long): DBIO[Unit] = {
     for {
       landingPageOption <- PersistenceSchema.landingPages.filter(_.id === pageId).result.headOption
       _ <- {
         val actions = new ListBuffer[DBIO[_]]()
         if (landingPageOption.isDefined) {
           val landingPage = landingPageOption.get
-          if (!name.isEmpty && landingPage.name != name) {
+          if (name.nonEmpty && landingPage.name != name) {
             val q = for {l <- PersistenceSchema.landingPages if l.id === pageId} yield (l.name)
             actions += q.update(name)
           }
@@ -136,8 +151,8 @@ class LandingPageManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ex
   /**
    * Deletes landing page with specified id
    */
-  def deleteLandingPage(pageId: Long) = {
-    exec(deleteLandingPageInternal(pageId).transactionally)
+  def deleteLandingPage(pageId: Long): Future[Unit] = {
+    DB.run(deleteLandingPageInternal(pageId).transactionally).map(_ => ())
   }
 
   def deleteLandingPageInternal(pageId: Long): DBIO[_] = {
@@ -155,8 +170,8 @@ class LandingPageManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ex
   /**
     * Gets the default landing page for given community
     */
-  def getCommunityDefaultLandingPage(communityId: Long): Option[LandingPages] = {
-    exec(getCommunityDefaultLandingPageInternal(communityId))
+  def getCommunityDefaultLandingPage(communityId: Long): Future[Option[LandingPages]] = {
+    DB.run(getCommunityDefaultLandingPageInternal(communityId))
   }
 
   def getCommunityDefaultLandingPageInternal(communityId: Long): DBIO[Option[LandingPages]] = {

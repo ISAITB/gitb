@@ -11,7 +11,7 @@
                 <th class="th-min-centered"></th>
                 @for (column of columnsLeft; track column) {
                     <th [ngClass]="column.headerClass!" (click)="!column.sortable || headerColumnClicked(column)">
-                        {{column.title}} 
+                        {{column.title}}
                         @if (column.order == 'desc') {
                             <i class="fa-solid fa-caret-down"></i>
                         } @else if (column.order == 'asc') {
@@ -44,11 +44,11 @@
                     <td [attr.colspan]="columnCount" class="td-no-data"><span>{{noDataMessage}}</span></td>
                 </tr>
             }
-            @for (row of data; let i = $index; track row) {
+            @for (row of data; let i = $index; track row.session) {
                 <tr table-row-directive
-                    class="table-row-directive expandable-table-row-collapsed session-table-row" 
+                    class="table-row-directive expandable-table-row-collapsed session-table-row"
                     [class.disable-events]="contentRefreshing"
-                    [ngClass]="rowClass(row)" 
+                    [ngClass]="rowClass(row)"
                     (click)="onExpand(row)"
                     [data]="row"
                     [columns]="columns"
@@ -87,13 +87,13 @@
                                         @if (supportRefresh) {
                                             <button type="button" [disabled]="sessionBeingRefreshed?.session == row.session || row.diagramState?.logs == undefined" class="btn btn-secondary position-relative" (click)="showTestSessionLog(row)">
                                                 View log
-                                                <span 
+                                                <span
                                                     [class.badgeLogErrors]="row.hasUnreadErrorLogs"
                                                     [class.badgeLogWarnings]="row.hasUnreadWarningLogs && !row.hasUnreadErrorLogs"
                                                     [class.badgeLogMessages]="row.hasUnreadMessageLogs && !row.hasUnreadErrorLogs && !row.hasUnreadWarningLogs"
-                                                    [class.hidden]="!row.hasUnreadErrorLogs && !row.hasUnreadWarningLogs && !row.hasUnreadMessageLogs" 
+                                                    [class.hidden]="!row.hasUnreadErrorLogs && !row.hasUnreadWarningLogs && !row.hasUnreadMessageLogs"
                                                     class="buttonBadge position-absolute top-0 start-100 translate-middle border border-light rounded-circle">
-                                                </span>                                                   
+                                                </span>
                                             </button>
                                         } @else {
                                             <button type="button" [disable]="!row.diagramLoaded" class="btn btn-secondary position-relative" (click)="showTestSessionLog(row)" [pending]="viewLogPending[row.session]">View log</button>
@@ -103,110 +103,112 @@
                                                 <button type="button" [disabled]="sessionBeingRefreshed?.session == row.session" class="btn btn-secondary" (click)="displayPendingInteraction(row)">View pending interaction</button>
                                             } @else {
                                                 <div class="btn-group" dropdown>
-                                                    <button id="button-interactions" dropdownToggle class="btn btn-secondary dropdown-toggle" type="button" aria-controls="dropdown-interactions">View pending interaction<span class="caret withMargin"></span></button>
+                                                    <button id="button-interactions" dropdownToggle class="btn btn-secondary dropdown-toggle" type="button" aria-controls="dropdown-interactions"><span class="me-2">View pending interaction</span></button>
                                                     <ul id="dropdown-interactions" *dropdownMenu class="dropdown-menu" aria-labelledby="button-interactions">
                                                         @for (interaction of row.diagramState.interactions; let index = $index; track interaction) {
                                                             <li>
                                                                 <a class="dropdown-item" href (click)="displayPendingInteraction(row, interaction.stepId);$event.preventDefault();">{{labelForPendingInteraction(interaction, index)}}</a>
                                                             </li>
                                                         }
-                                                    </ul>                                                                        
+                                                    </ul>
                                                 </div>
                                             }
                                         }
                                     </div>
-                                    <div class="btn-toolbar goto-controls">
-                                        <!-- Copy link -->
-                                        @if (copyForOtherRoleOption) {
-                                            <div class="btn-group" dropdown>
-                                                <button type="button" class="btn btn-secondary" (click)="copyLink(row)">Copy link</button>
-                                                <button id="button-link" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
-                                                <ul id="dropdown-link" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-link">
-                                                    <li role="menuitem"><a class="dropdown-item" href (click)="copyLink(row, true);$event.preventDefault();">
-                                                        @if (dataService.isSystemAdmin || dataService.isCommunityAdmin) {
-                                                            Copy link for {{dataService.labelOrganisationLower()}}
-                                                        } @else {
-                                                            Copy link for administrator
-                                                        }
-                                                    </a></li>
-                                                </ul>
-                                            </div>
-                                        } @else {
-                                            <button type="button" class="btn btn-secondary" (click)="copyLink(row)">Copy link</button>
-                                        }
-                                        <!-- View statement -->
-                                        @if (showToStatement(row)) {
-                                            <button type="button" class="btn btn-secondary" (click)="toStatement(row)">View statement</button>
-                                        }
-                                        <!-- View party -->
-                                        @if (showPartyNavigation(row)) {
-                                            @if (showToSystem(row)) {
+                                    @if (showNavigationControls) {
+                                        <div class="btn-toolbar goto-controls">
+                                            <!-- Copy link -->
+                                            @if (copyForOtherRoleOption) {
                                                 <div class="btn-group" dropdown>
-                                                    <button type="button" class="btn btn-secondary" (click)="toSystem(row)">View {{dataService.labelSystemLower()}}</button>
-                                                    <button id="button-system" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
-                                                    <ul id="dropdown-system" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-system">
-                                                        @if (showToCommunity(row)) {
-                                                            <li role="menuitem"><a class="dropdown-item" href (click)="toCommunity(row);$event.preventDefault();">View community</a></li>
-                                                        }
-                                                        <li role="menuitem"><a class="dropdown-item" href (click)="toOrganisation(row); $event.preventDefault();">View {{dataService.labelOrganisationLower()}}</a></li>
+                                                    <button type="button" class="btn btn-secondary" (click)="copyLink(row)">Copy link</button>
+                                                    <button id="button-link" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
+                                                    <ul id="dropdown-link" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-link">
+                                                        <li role="menuitem"><a class="dropdown-item" href (click)="copyLink(row, true);$event.preventDefault();">
+                                                            @if (dataService.isSystemAdmin || dataService.isCommunityAdmin) {
+                                                                Copy link for {{dataService.labelOrganisationLower()}}
+                                                            } @else {
+                                                                Copy link for administrator
+                                                            }
+                                                        </a></li>
                                                     </ul>
                                                 </div>
                                             } @else {
-                                                @if (showToOrganisation(row)) {
+                                                <button type="button" class="btn btn-secondary" (click)="copyLink(row)">Copy link</button>
+                                            }
+                                            <!-- View statement -->
+                                            @if (showToStatement(row)) {
+                                                <button type="button" class="btn btn-secondary" (click)="toStatement(row)">View statement</button>
+                                            }
+                                            <!-- View party -->
+                                            @if (showPartyNavigation(row)) {
+                                                @if (showToSystem(row)) {
                                                     <div class="btn-group" dropdown>
-                                                        <button type="button" class="btn btn-secondary" (click)="toOrganisation(row)">View {{dataService.labelOrganisationLower()}}</button>
+                                                        <button type="button" class="btn btn-secondary" (click)="toSystem(row)">View {{dataService.labelSystemLower()}}</button>
                                                         <button id="button-system" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
                                                         <ul id="dropdown-system" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-system">
-                                                            <li role="menuitem"><a class="dropdown-item" href (click)="toCommunity(row);$event.preventDefault();">View community</a></li>
+                                                            @if (showToCommunity(row)) {
+                                                                <li role="menuitem"><a class="dropdown-item" href (click)="toCommunity(row);$event.preventDefault();">View community</a></li>
+                                                            }
+                                                            <li role="menuitem"><a class="dropdown-item" href (click)="toOrganisation(row); $event.preventDefault();">View {{dataService.labelOrganisationLower()}}</a></li>
                                                         </ul>
                                                     </div>
                                                 } @else {
-                                                    <button type="button" class="btn btn-secondary" (click)="toCommunity(row)">View community</button>
+                                                    @if (showToOrganisation(row)) {
+                                                        <div class="btn-group" dropdown>
+                                                            <button type="button" class="btn btn-secondary" (click)="toOrganisation(row)">View {{dataService.labelOrganisationLower()}}</button>
+                                                            <button id="button-organisation" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
+                                                            <ul id="dropdown-organisation" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-organisation">
+                                                                <li role="menuitem"><a class="dropdown-item" href (click)="toCommunity(row);$event.preventDefault();">View community</a></li>
+                                                            </ul>
+                                                        </div>
+                                                    } @else {
+                                                        <button type="button" class="btn btn-secondary" (click)="toCommunity(row)">View community</button>
+                                                    }
                                                 }
                                             }
-                                        }
-                                        <!-- View specification -->
-                                        @if (showSpecificationNavigation(row)) {
-                                            @if (showToSpecification(row)) {
-                                                <div class="btn-group" dropdown>
-                                                    <button type="button" class="btn btn-secondary" (click)="toSpecification(row)">View {{dataService.labelSpecificationLower()}}</button>
-                                                    <button id="button-spec" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
-                                                    <ul id="dropdown-spec" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-spec">
-                                                        <li role="menuitem"><a class="dropdown-item" href (click)="toDomain(row);$event.preventDefault();">View {{dataService.labelDomainLower()}}</a></li>
-                                                        @if (showToActor(row)) {
-                                                            <li role="menuitem"><a class="dropdown-item" href (click)="toActor(row); $event.preventDefault();">View {{dataService.labelActorLower()}}</a></li>
-                                                        }
-                                                    </ul>
-                                                </div>
-                                            } @else {
-                                                @if (showToActor(row)) {
+                                            <!-- View specification -->
+                                            @if (showSpecificationNavigation(row)) {
+                                                @if (showToSpecification(row)) {
                                                     <div class="btn-group" dropdown>
-                                                        <button type="button" class="btn btn-secondary" (click)="toActor(row)">View {{dataService.labelActorLower()}}</button>
+                                                        <button type="button" class="btn btn-secondary" (click)="toSpecification(row)">View {{dataService.labelSpecificationLower()}}</button>
                                                         <button id="button-spec" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
                                                         <ul id="dropdown-spec" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-spec">
                                                             <li role="menuitem"><a class="dropdown-item" href (click)="toDomain(row);$event.preventDefault();">View {{dataService.labelDomainLower()}}</a></li>
+                                                            @if (showToActor(row)) {
+                                                                <li role="menuitem"><a class="dropdown-item" href (click)="toActor(row); $event.preventDefault();">View {{dataService.labelActorLower()}}</a></li>
+                                                            }
                                                         </ul>
                                                     </div>
                                                 } @else {
-                                                    <button type="button" class="btn btn-secondary" (click)="toDomain(row)">View {{dataService.labelDomainLower()}}</button>
+                                                    @if (showToActor(row)) {
+                                                        <div class="btn-group" dropdown>
+                                                            <button type="button" class="btn btn-secondary" (click)="toActor(row)">View {{dataService.labelActorLower()}}</button>
+                                                            <button id="button-actor" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
+                                                            <ul id="dropdown-actor" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-actor">
+                                                                <li role="menuitem"><a class="dropdown-item" href (click)="toDomain(row);$event.preventDefault();">View {{dataService.labelDomainLower()}}</a></li>
+                                                            </ul>
+                                                        </div>
+                                                    } @else {
+                                                        <button type="button" class="btn btn-secondary" (click)="toDomain(row)">View {{dataService.labelDomainLower()}}</button>
+                                                    }
                                                 }
                                             }
-                                        }
-                                        <!-- View test case -->
-                                        @if (showToTestSuite(row) || showToTestCase(row)) {
-                                            @if (showToTestCase(row)) {
-                                                <div class="btn-group" dropdown>
-                                                    <button type="button" class="btn btn-secondary" (click)="toTestCase(row)">View test case</button>
-                                                    <button id="button-testcase" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
-                                                    <ul id="dropdown-testcase" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-testcase">
-                                                        <li role="menuitem"><a class="dropdown-item" href (click)="toTestSuite(row);$event.preventDefault();">View test suite</a></li>
-                                                    </ul>
-                                                </div>
-                                            } @else {
-                                                <button type="button" class="btn btn-secondary" (click)="toTestSuite(row)">View test suite</button>
+                                            <!-- View test case -->
+                                            @if (showToTestSuite(row) || showToTestCase(row)) {
+                                                @if (showToTestCase(row)) {
+                                                    <div class="btn-group" dropdown>
+                                                        <button type="button" class="btn btn-secondary" (click)="toTestCase(row)">View test case</button>
+                                                        <button id="button-testcase" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
+                                                        <ul id="dropdown-testcase" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-testcase">
+                                                            <li role="menuitem"><a class="dropdown-item" href (click)="toTestSuite(row);$event.preventDefault();">View test suite</a></li>
+                                                        </ul>
+                                                    </div>
+                                                } @else {
+                                                    <button type="button" class="btn btn-secondary" (click)="toTestSuite(row)">View test suite</button>
+                                                }
                                             }
-                                        }
-                                    </div>
+                                        </div>
+                                    }
                                 </div>
                                 <div class="card">
                                     <div class="card-header session-table-title clickable" (click)="diagramCollapsed[row.session] = !diagramCollapsed[row.session]" [class.collapsed]="diagramCollapsedFinished[row.session]">
@@ -232,14 +234,14 @@
                                                 @if (row.expanded || row.diagramLoaded) {
                                                     <div>
                                                         <app-test-session-presentation
-                                                            [session]="row" 
+                                                            [session]="row"
                                                             (ready)="diagramReady($event)">
                                                         </app-test-session-presentation>
                                                     </div>
                                                 }
                                             </div>
                                         </div>
-                                    </div>                                                
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -248,14 +250,5 @@
             }
         </tbody>
     </table>
-    @if ((!prevDisabled || !nextDisabled) && data && data.length > 0) {
-        <div class="text-center table-paging-controls">
-            <div class="btn-group" role="group" [class.disable-events]="contentRefreshing">
-                <button type="button" class="btn btn-sm btn-secondary" [disabled]="prevDisabled" (click)="doFirstPage()">First</button>
-                <button type="button" class="btn btn-sm btn-secondary" [disabled]="prevDisabled" (click)="doPrevPage()">Previous</button>
-                <button type="button" class="btn btn-sm btn-secondary" [disabled]="nextDisabled" (click)="doNextPage()">Next</button>
-                <button type="button" class="btn btn-sm btn-secondary" [disabled]="nextDisabled" (click)="doLastPage()">Last</button>
-            </div>
-        </div>
-    }
+    <app-paging-controls #pagingControls (navigation)="doPageNavigation($event)" [refreshing]="contentRefreshing"></app-paging-controls>
 </div>

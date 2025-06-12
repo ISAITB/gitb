@@ -35,11 +35,14 @@ import { WebSocketMessage } from 'src/app/types/web-socket-message';
 import { ConformanceTestCase } from '../organisation/conformance-statement/conformance-test-case';
 
 @Component({
-  selector: 'app-test-execution',
-  templateUrl: './test-execution.component.html',
-  styleUrls: ['./test-execution.component.less']
+    selector: 'app-test-execution',
+    templateUrl: './test-execution.component.html',
+    styleUrls: ['./test-execution.component.less'],
+    standalone: false
 })
 export class TestExecutionComponent implements OnInit, OnDestroy {
+
+  updateTick = 20
 
   testsToExecute: ConformanceTestCase[] = []
   actorId!: number
@@ -73,6 +76,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   stepsOfTests: {[key: number]: StepData[]} = {}
   actorInfoOfTests: {[key: string]: ActorInfo[]} = {}
   interactionStepsOfTests: {[key: number]: TestInteractionData[]} = {}
+  interactionsToIgnore: {[key: number]: Set<string>} = {}
   logMessages: {[key: number]: string[]} = {}
   logMessageEventEmitters: {[key: number]: EventEmitter<string>} = {}
   unreadLogMessages: {[key: number]: boolean} = {}
@@ -93,6 +97,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   columnCount = 4
   currentInteractionStepId?: string
   currentInteractionModal?: BsModalRef<ProvideInputModalComponent>
+  testCaseFinishing = false
 
   private ws?: WebSocketSubject<any>
   private heartbeat?: Subscription
@@ -271,7 +276,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   }
 
   getTestCaseDefinition(testCaseToLookup: number): Observable<void> {
-    return this.testService.getTestCaseDefinition(testCaseToLookup).pipe(
+    return this.testService.getTestCaseDefinitionByStatement(testCaseToLookup, this.actorId, this.systemId).pipe(
       mergeMap((testCase) => {
         if (testCase.preliminary != undefined) {
           this.currentTest!.preliminary = testCase.preliminary
@@ -461,7 +466,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
       })
     }
     if (this.messageProcessing == undefined) {
-      this.messageProcessing = timer(1, 100).subscribe(() => {
+      this.messageProcessing = timer(1, this.updateTick).subscribe(() => {
         this.processNextMessage()
       })
     }
@@ -484,18 +489,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
       // Process log messages immediately
       if (response.report?.context?.value != undefined) {
         const logMessage = response.report.context.value
-        this.logMessages[this.currentTest!.id].push(logMessage)
-        this.logMessageEventEmitters[this.currentTest!.id].emit(logMessage)
-        if (this.currentTest!.id != this.testCaseWithOpenLogView) {
-          const messageLevel = this.dataService.logMessageLevel(logMessage, LogLevel.DEBUG)
-          if (messageLevel == LogLevel.ERROR) {
-            this.unreadLogErrors[this.currentTest!.id] = true
-          } else if (messageLevel == LogLevel.WARN) {
-            this.unreadLogWarnings[this.currentTest!.id] = true
-          } else {
-            this.unreadLogMessages[this.currentTest!.id] = true
-          }
-        }
+        this.processLogMessage(logMessage)
       }
     } else if (response.configs != undefined) {
       if (response.errorCode != undefined) {
@@ -511,10 +505,33 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     }
   }
 
+  flushPendingMessages() {
+    if (this.messagesToProcess != undefined) {
+      this.messagesToProcess.forEach((message) => {
+        this.processMessage(message)
+      })
+    }
+  }
+
   processNextMessage() {
     if (this.messagesToProcess != undefined && this.messagesToProcess.length > 0) {
       const msg = this.messagesToProcess.shift()
       this.processMessage(msg!)
+    }
+  }
+
+  private processLogMessage(logMessage: string) {
+    this.logMessages[this.currentTest!.id].push(logMessage)
+    this.logMessageEventEmitters[this.currentTest!.id].emit(logMessage)
+    if (this.currentTest!.id != this.testCaseWithOpenLogView) {
+      const messageLevel = this.dataService.logMessageLevel(logMessage, LogLevel.DEBUG)
+      if (messageLevel == LogLevel.ERROR) {
+        this.unreadLogErrors[this.currentTest!.id] = true
+      } else if (messageLevel == LogLevel.WARN) {
+        this.unreadLogWarnings[this.currentTest!.id] = true
+      } else {
+        this.unreadLogMessages[this.currentTest!.id] = true
+      }
     }
   }
 
@@ -535,6 +552,17 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
 
   private removeInteraction(stepId: string) {
     remove(this.interactionStepsOfTests[this.currentTest!.id], (step) => step.stepId == stepId)
+  }
+
+  private markInteractionAsIgnored(stepId: string) {
+    if (this.interactionsToIgnore[this.currentTest!.id] == undefined) {
+      this.interactionsToIgnore[this.currentTest!.id] = new Set<string>()
+    }
+    this.interactionsToIgnore[this.currentTest!.id].add(stepId)
+  }
+
+  private isIgnoredInteraction(stepId: string) {
+    return this.interactionsToIgnore[this.currentTest!.id] != undefined && this.interactionsToIgnore[this.currentTest!.id].has(stepId)
   }
 
   labelForPendingInteraction(step: TestInteractionData, index: number) {
@@ -579,11 +607,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
       if (response.status == Constants.TEST_STATUS.COMPLETED || response.status == Constants.TEST_STATUS.ERROR || response.status == Constants.TEST_STATUS.WARNING || response.status == Constants.TEST_STATUS.SKIPPED) {
         this.removeInteraction(response.stepId)
         if (this.currentInteractionModal && this.currentInteractionStepId == response.stepId) {
-          this.popupService.closeAll()
-          this.popupService.warning("The interaction step was completed by another user or process.", true)
-          this.currentInteractionModal.hide()
-          this.currentInteractionModal = undefined
-          this.currentInteractionStepId = undefined
+          this.markInteractionAsIgnored(response.stepId)
         }
       }
     }
@@ -609,7 +633,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
           }
         }
         this.started = false
-        this.testCaseFinished(response.status, response?.outputMessage)
+        this.testCaseFinished(false, response.status, response?.outputMessage)
       } else {
         this.handleInteractions(response)
         if (response.stepHistory != undefined) {
@@ -917,14 +941,18 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
         if (result == undefined) {
           this.recordInteraction(stepId, interactions, inputTitle, admin, desc)
         } else {
-          this.testService.provideInput(this.session!, stepId, result, admin)
-          .subscribe(() => {
+          if (this.isIgnoredInteraction(stepId)) {
+            this.interactionsToIgnore[this.currentTest!.id].delete(stepId)
             this.removeInteraction(stepId)
-          })
+          } else {
+            this.testService.provideInput(this.session!, stepId, result, admin).subscribe(() => {
+              this.removeInteraction(stepId)
+            })
+          }
+          if (this.testCaseFinishing && !this.hasPendingInteractions()) {
+            this.testCaseFinalised()
+          }
         }
-      }).add(() => {
-        this.currentInteractionStepId = undefined
-        this.currentInteractionModal = undefined
       })
     }
   }
@@ -951,7 +979,8 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     }
   }
 
-  testCaseFinished(result?: number, outputMessage?: string) {
+  testCaseFinished(forceFinalisation: boolean, result?: number, outputMessage?: string) {
+    this.testCaseFinishing = true
     if (result == Constants.TEST_STATUS.COMPLETED || result == Constants.TEST_STATUS.WARNING) {
       this.updateTestCaseStatus(this.currentTest!.id, Constants.TEST_CASE_STATUS.COMPLETED)
     } else if (result == Constants.TEST_STATUS.ERROR) {
@@ -963,14 +992,27 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
       this.testCaseOutput[this.currentTest!.id] = outputMessage
     }
     // Make sure steps still marked as pending or in progress are set as skipped.
-    this.interactionStepsOfTests = {}
-    if (this.currentInteractionModal) {
+    this.setPendingStepsToSkipped()
+    this.closeWebSocket()
+    if (forceFinalisation || !this.hasPendingInteractions()) {
+      // In case there is an open or pending interaction at test session end, give the user a chance to complete it.
+      this.testCaseFinalised()
+    }
+  }
+
+  private hasPendingInteractions() {
+    return this.currentTest != undefined && (this.currentInteractionModal != undefined || (this.interactionStepsOfTests[this.currentTest.id] != undefined && this.interactionStepsOfTests[this.currentTest.id].length > 0))
+  }
+
+  private testCaseFinalised() {
+    if (this.currentInteractionModal != undefined) {
       this.currentInteractionModal.hide()
     }
     this.currentInteractionModal = undefined
     this.currentInteractionStepId = undefined
-    this.setPendingStepsToSkipped()
-    this.closeWebSocket()
+    this.interactionStepsOfTests = {}
+    this.interactionsToIgnore = {}
+    this.testCaseFinishing = false
     if (!this.allStopped && this.currentTestIndex + 1 < this.testsToExecute.length) {
       timer(1000).subscribe(() => {
         this.prepareNextTest(this.startAutomatically)
@@ -1032,20 +1074,18 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   }
 
   stop(session: string, force?: boolean) {
-    let signalStop = force == true
-    if (this.started && !this.stopped) {
-      this.stopped = true
-      if (this.testsToExecute.length == 1) {
-        this.allStopped = true
-      }
-      this.started = false
-      signalStop = true
+    let signalStop = force == true || (this.started && !this.stopped)
+    this.stopped = true
+    if (this.testsToExecute.length == 1) {
+      this.allStopped = true
     }
+    this.started = false
     if (signalStop) {
       this.testService.stop(session).subscribe(() => {
+        this.flushPendingMessages()
         this.closeWebSocket()
         this.session = undefined
-        this.testCaseFinished()
+        this.testCaseFinished(true)
       })
     }
   }
@@ -1096,39 +1136,6 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     })
   }
 
-  // handleMissingConfigurationAction(action: MissingConfigurationAction) {
-  //   if (action == MissingConfigurationAction.viewOrganisation) {
-  //     if (this.dataService.isVendorUser || this.dataService.isVendorAdmin) {
-  //       this.routingService.toOwnOrganisationDetails(undefined, true)
-  //     } else {
-  //       if (this.dataService.vendor!.id == this.organisationId) {
-  //         this.routingService.toOwnOrganisationDetails(undefined, true)
-  //       } else {
-  //         this.organisationService.getOrganisationBySystemId(this.systemId)
-  //         .subscribe((data) => {
-  //           this.routingService.toOrganisationDetails(data.community, data.id, undefined, true)
-  //         })
-  //       }
-  //     }
-  //   } else if (action == MissingConfigurationAction.viewSystem) {
-  //     if (this.dataService.isVendorUser || this.dataService.isVendorAdmin) {
-  //       this.routingService.toOwnSystemDetails(this.systemId, true)
-  //     } else {
-  //       if (this.dataService.vendor!.id == this.organisationId) {
-  //         this.routingService.toOwnSystemDetails(this.systemId, true)
-  //       } else {
-  //         this.routingService.toSystemDetails(this.communityId!, this.organisationId, this.systemId, true)
-  //       }
-  //     }
-  //   } else { // viewStatement
-  //     if (this.communityId == undefined) {
-  //       this.routingService.toOwnConformanceStatement(this.organisationId, this.systemId, this.actorId, undefined, undefined, ConformanceStatementTab.configuration)
-  //     } else {
-  //       this.routingService.toConformanceStatement(this.organisationId, this.systemId, this.actorId, this.communityId, undefined, undefined, ConformanceStatementTab.configuration)
-  //     }
-  //   }
-  // }
-
   viewLog(test: ConformanceTestCase) {
     this.testCaseWithOpenLogView = test.id
     this.unreadLogMessages[test.id] = false
@@ -1169,10 +1176,10 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
       const pendingTestIds = lmap(pendingTests, (test) => { return test.id } )
       if (pendingTestIds.length > 0) {
         this.testService.startHeadlessTestSessions(pendingTestIds, this.specificationId!, this.systemId, this.actorId, false).subscribe(() => {})
-        this.popupService.success('Continuing execution in background. Check <b>Test Sessions</b> for progress.')
+        this.popupService.success('Continuing test execution in background.')
       } else {
         if (this.testCaseStatus[this.currentTest!.id] == Constants.TEST_CASE_STATUS.PROCESSING) {
-          this.popupService.success('Continuing execution in background. Check <b>Test Sessions</b> for progress.')
+          this.popupService.success('Continuing test execution in background.')
         }
       }
     } else {

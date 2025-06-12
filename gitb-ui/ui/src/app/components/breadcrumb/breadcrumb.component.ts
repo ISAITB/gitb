@@ -10,9 +10,10 @@ import { Subscription } from 'rxjs';
 import { Constants } from 'src/app/common/constants';
 
 @Component({
-  selector: 'app-breadcrumb',
-  templateUrl: './breadcrumb.component.html',
-  styleUrls: [ './breadcrumb.component.less' ]
+    selector: 'app-breadcrumb',
+    templateUrl: './breadcrumb.component.html',
+    styleUrls: ['./breadcrumb.component.less'],
+    standalone: false
 })
 export class BreadcrumbComponent implements OnInit, OnDestroy {
 

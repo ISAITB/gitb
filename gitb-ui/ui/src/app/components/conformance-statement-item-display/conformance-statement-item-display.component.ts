@@ -12,9 +12,10 @@ import { ConformanceStatusSummary } from 'src/app/types/conformance-status-summa
 import { ExportReportEvent } from 'src/app/types/export-report-event';
 
 @Component({
-  selector: 'app-conformance-statement-item-display',
-  templateUrl: './conformance-statement-item-display.component.html',
-  styleUrls: [ './conformance-statement-item-display.component.less' ]
+    selector: 'app-conformance-statement-item-display',
+    templateUrl: './conformance-statement-item-display.component.html',
+    styleUrls: ['./conformance-statement-item-display.component.less'],
+    standalone: false
 })
 export class ConformanceStatementItemDisplayComponent implements OnInit {
 

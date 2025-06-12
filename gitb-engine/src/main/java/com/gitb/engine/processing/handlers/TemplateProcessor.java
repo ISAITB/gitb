@@ -42,7 +42,7 @@ public class TemplateProcessor extends AbstractProcessingHandler {
     private static final String OUTPUT__DATA = "data";
 
     @Override
-    public ProcessingModule getModuleDefinition() {
+    public ProcessingModule createProcessingModule() {
         ProcessingModule module = new ProcessingModule();
         module.setId("TemplateProcessor");
         module.setMetadata(new Metadata());

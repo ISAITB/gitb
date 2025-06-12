@@ -13,11 +13,13 @@ import java.util.{Locale, UUID}
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters.MapHasAsScala
 
 @Singleton
-class CommunityResourceManager @Inject()(repositoryUtils: RepositoryUtils, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class CommunityResourceManager @Inject()(repositoryUtils: RepositoryUtils,
+                                         dbConfigProvider: DatabaseConfigProvider)
+                                        (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -27,12 +29,12 @@ class CommunityResourceManager @Inject()(repositoryUtils: RepositoryUtils, dbCon
     PersistenceSchema.communityResources.filter(_.id === resourceId).map(_.community).result.head
   }
 
-  def getCommunityId(resourceId: Long): Long = {
-    exec(getCommunityIdInternal(resourceId))
+  def getCommunityId(resourceId: Long): Future[Long] = {
+    DB.run(getCommunityIdInternal(resourceId))
   }
 
-  def getCommunityResourceFileById(resourceId: Long): (String, File) = {
-    exec(for {
+  def getCommunityResourceFileById(resourceId: Long): Future[(String, File)] = {
+    DB.run(for {
       resourceInfo <- PersistenceSchema.communityResources.filter(_.id === resourceId).map(x => (x.name, x.community)).result.head
       file <- {
         DBIO.successful(repositoryUtils.getCommunityResource(resourceInfo._2, resourceId))
@@ -40,17 +42,30 @@ class CommunityResourceManager @Inject()(repositoryUtils: RepositoryUtils, dbCon
     } yield (resourceInfo._1, file))
   }
 
-  def getCommunityResourceFileByNameAndCommunity(communityId: Long, resourceName: String): Option[File] = {
-    val resourceId = exec(PersistenceSchema.communityResources.filter(_.name === resourceName).filter(_.community === communityId).map(_.id).result.headOption)
-    if (resourceId.nonEmpty) {
-      Some(repositoryUtils.getCommunityResource(communityId, resourceId.get))
-    } else {
-      None
+  def getCommunityResourceFileByNameAndCommunity(communityId: Long, resourceName: String): Future[Option[File]] = {
+    DB.run(PersistenceSchema.communityResources.filter(_.name === resourceName).filter(_.community === communityId).map(_.id).result.headOption).map { resourceId =>
+      if (resourceId.nonEmpty) {
+        Some(repositoryUtils.getCommunityResource(communityId, resourceId.get))
+      } else {
+        None
+      }
     }
   }
 
-  def getCommunityResourceFileByName(communityId: Option[Long], userId: Long, name: String): Option[File] = {
-    val resourceIds = exec(for {
+  def getSystemResourceFileByName(name: String): Future[Option[File]] = {
+    DB.run(PersistenceSchema.communityResources
+      .filter(_.community === Constants.DefaultCommunityId)
+      .filter(_.name === name)
+      .map(x => (x.id, x.community))
+      .result
+      .headOption
+    ).map { result =>
+      result.map(x => repositoryUtils.getCommunityResource(x._2, x._1))
+    }
+  }
+
+  def getCommunityResourceFileByName(communityId: Option[Long], userId: Long, name: String): Future[Option[File]] = {
+    DB.run(for {
       resourceCommunityId <- {
         if (communityId.isDefined) {
           DBIO.successful(communityId.get)
@@ -85,22 +100,23 @@ class CommunityResourceManager @Inject()(repositoryUtils: RepositoryUtils, dbCon
             .headOption
         }
       }
-    } yield finalResult)
-    if (resourceIds.isDefined) {
-      Some(repositoryUtils.getCommunityResource(resourceIds.get._2, resourceIds.get._1))
-    } else {
-      None
+    } yield finalResult).map { resourceIds =>
+      if (resourceIds.isDefined) {
+        Some(repositoryUtils.getCommunityResource(resourceIds.get._2, resourceIds.get._1))
+      } else {
+        None
+      }
     }
   }
 
-  def getCommunityResources(communityId: Long): List[CommunityResources] = {
-    exec(PersistenceSchema.communityResources
+  def getCommunityResources(communityId: Long): Future[List[CommunityResources]] = {
+    DB.run(PersistenceSchema.communityResources
       .filter(_.community === communityId)
       .sortBy(_.name.asc)
-      .result).toList
+      .result).map(_.toList)
   }
 
-  def searchCommunityResources(communityId: Long, page: Long, limit: Long, filter: Option[String]): (Iterable[CommunityResources], Int) = {
+  def searchCommunityResources(communityId: Long, page: Long, limit: Long, filter: Option[String]): Future[(Iterable[CommunityResources], Int)] = {
     val query = PersistenceSchema.communityResources
       .filter(_.community === communityId)
       .filterOpt(filter)((table, filterValue) => {
@@ -108,7 +124,7 @@ class CommunityResourceManager @Inject()(repositoryUtils: RepositoryUtils, dbCon
         table.name.toLowerCase.like(filterValueToUse) || table.description.toLowerCase.like(filterValueToUse)
       })
       .sortBy(_.name.asc)
-    exec(
+    DB.run(
       for {
         results <- query.drop((page - 1) * limit).take(limit).result
         resultCount <- query.size.result
@@ -116,55 +132,53 @@ class CommunityResourceManager @Inject()(repositoryUtils: RepositoryUtils, dbCon
     )
   }
 
-  def createCommunityResource(resource: CommunityResources, resourceContent: File): Long = {
+  def createCommunityResource(resource: CommunityResources, resourceContent: File): Future[Long] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = createCommunityResourceInternal(resource, resourceContent, onSuccessCalls)
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
   }
 
-  def saveCommunityResourcesInBulk(communityId: Long, archive: File, updateMatching: Boolean): (Int, Int) = {
+  def saveCommunityResourcesInBulk(communityId: Long, archive: File, updateMatching: Boolean): Future[(Int, Int)] = {
     val tempFolder = Path.of(repositoryUtils.getTempFolder().getAbsolutePath, UUID.randomUUID().toString).toFile
-    try {
-      val extractedFiles: Map[String, Path] = new ZipArchiver(archive.toPath, tempFolder.toPath).unzip().asScala.toMap
-      val onSuccessCalls = mutable.ListBuffer[() => _]()
-      val dbAction = for {
-        existingResources <- {
-          if (updateMatching) {
-            PersistenceSchema.communityResources.filter(_.community === communityId).map(x => (x.id, x.name)).result
-          } else {
-            DBIO.successful(Seq.empty[(Long, String)])
-          }
+    val extractedFiles: Map[String, Path] = new ZipArchiver(archive.toPath, tempFolder.toPath).unzip().asScala.toMap
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val dbAction = for {
+      existingResources <- {
+        if (updateMatching) {
+          PersistenceSchema.communityResources.filter(_.community === communityId).map(x => (x.id, x.name)).result
+        } else {
+          DBIO.successful(Seq.empty[(Long, String)])
         }
-        nameToIdMap <- {
-          val nameMap = mutable.HashMap[String, Long]()
-          existingResources.foreach { data =>
-            nameMap += (data._2.toLowerCase(Locale.getDefault) -> data._1)
-          }
-          DBIO.successful(nameMap.toMap)
+      }
+      nameToIdMap <- {
+        val nameMap = mutable.HashMap[String, Long]()
+        existingResources.foreach { data =>
+          nameMap += (data._2.toLowerCase(Locale.getDefault) -> data._1)
         }
-        counts <- {
-          val actions = ListBuffer[DBIO[_]]()
-          var created = 0
-          var updated = 0
-          extractedFiles.foreach { fileInfo =>
-            if (Files.isRegularFile(fileInfo._2) && !Files.isDirectory(fileInfo._2)) {
-              val existingId = nameToIdMap.get(fileInfo._1.toLowerCase(Locale.getDefault))
-              if (existingId.isDefined) {
-                // Update (same name).
-                updated += 1
-                actions += updateCommunityResourceInternal(Some(communityId), existingId.get, None, None, Some(fileInfo._2.toFile), onSuccessCalls)
-              } else {
-                // Insert (different name).
-                created += 1
-                actions += createCommunityResourceInternal(CommunityResources(0L, toUniqueName(fileInfo._1, nameToIdMap.keySet), None, communityId), fileInfo._2.toFile, onSuccessCalls)
-              }
+        DBIO.successful(nameMap.toMap)
+      }
+      counts <- {
+        val actions = ListBuffer[DBIO[_]]()
+        var created = 0
+        var updated = 0
+        extractedFiles.foreach { fileInfo =>
+          if (Files.isRegularFile(fileInfo._2) && !Files.isDirectory(fileInfo._2)) {
+            val existingId = nameToIdMap.get(fileInfo._1.toLowerCase(Locale.getDefault))
+            if (existingId.isDefined) {
+              // Update (same name).
+              updated += 1
+              actions += updateCommunityResourceInternal(Some(communityId), existingId.get, None, None, Some(fileInfo._2.toFile), onSuccessCalls)
+            } else {
+              // Insert (different name).
+              created += 1
+              actions += createCommunityResourceInternal(CommunityResources(0L, toUniqueName(fileInfo._1, nameToIdMap.keySet), None, communityId), fileInfo._2.toFile, onSuccessCalls)
             }
           }
-          toDBIO(actions) andThen DBIO.successful((created, updated))
         }
-      } yield counts
-      exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
-    } finally {
+        toDBIO(actions).map(_ => (created, updated))
+      }
+    } yield counts
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally).andThen { _ =>
       if (tempFolder.exists()) FileUtils.deleteQuietly(tempFolder)
     }
   }
@@ -192,10 +206,10 @@ class CommunityResourceManager @Inject()(repositoryUtils: RepositoryUtils, dbCon
     }
   }
 
-  def updateCommunityResource(resourceId: Long, name: String, description: Option[String], newFile: Option[File]): Unit = {
+  def updateCommunityResource(resourceId: Long, name: String, description: Option[String], newFile: Option[File]): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = updateCommunityResourceInternal(None, resourceId, Some(name), Some(description), newFile, onSuccessCalls)
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally).map(_ => ())
   }
 
   private def updateResourceInDb(communityId: Long, resourceId: Long, name: Option[String], description: Option[Option[String]]): DBIO[_] = {
@@ -244,13 +258,13 @@ class CommunityResourceManager @Inject()(repositoryUtils: RepositoryUtils, dbCon
     } yield resourceId
   }
 
-  def deleteCommunityResource(resourceId: Long): Unit = {
+  def deleteCommunityResource(resourceId: Long): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = deleteCommunityResourceInternal(None, resourceId, onSuccessCalls)
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally).map(_ => ())
   }
 
-  def deleteCommunityResources(communityId: Long, resourceIds: Set[Long]): Unit = {
+  def deleteCommunityResources(communityId: Long, resourceIds: Set[Long]): Future[Unit] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = for {
       _ <- PersistenceSchema.communityResources.filter(_.community === communityId).filter(_.id inSet resourceIds).delete
@@ -261,7 +275,7 @@ class CommunityResourceManager @Inject()(repositoryUtils: RepositoryUtils, dbCon
         DBIO.successful(())
       }
     } yield ()
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
   }
 
   def deleteCommunityResourceInternal(communityId: Option[Long], resourceId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
@@ -294,8 +308,8 @@ class CommunityResourceManager @Inject()(repositoryUtils: RepositoryUtils, dbCon
     } yield ()
   }
 
-  def createCommunityResourceArchive(communityId: Long, filter: Option[String]): Path = {
-    val resources = exec(for {
+  def createCommunityResourceArchive(communityId: Long, filter: Option[String]): Future[Path] = {
+    DB.run(for {
       resources <- PersistenceSchema.communityResources
         .filter(_.community === communityId)
         .filterOpt(filter)((table, filterValue) => {
@@ -304,24 +318,25 @@ class CommunityResourceManager @Inject()(repositoryUtils: RepositoryUtils, dbCon
         })
         .map(x => (x.id, x.name))
         .result
-    } yield resources)
-    // Copy all applicable files to temp folder.
-    val tempFolder = Path.of(repositoryUtils.getTempFolder().getAbsolutePath, UUID.randomUUID().toString)
-    val archive = Path.of(repositoryUtils.getTempFolder().getAbsolutePath, tempFolder.toFile.getName+".zip")
-    try {
-      Files.createDirectories(tempFolder)
-      resources.foreach { resource =>
-        val targetFile = Path.of(tempFolder.toString, resource._2)
-        Files.copy(repositoryUtils.getCommunityResource(communityId, resource._1).toPath, targetFile)
+    } yield resources).map { resources =>
+      // Copy all applicable files to temp folder.
+      val tempFolder = Path.of(repositoryUtils.getTempFolder().getAbsolutePath, UUID.randomUUID().toString)
+      val archive = Path.of(repositoryUtils.getTempFolder().getAbsolutePath, tempFolder.toFile.getName+".zip")
+      try {
+        Files.createDirectories(tempFolder)
+        resources.foreach { resource =>
+          val targetFile = Path.of(tempFolder.toString, resource._2)
+          Files.copy(repositoryUtils.getCommunityResource(communityId, resource._1).toPath, targetFile)
+        }
+        new ZipArchiver(tempFolder, archive).zip()
+      } catch {
+        case e: Exception =>
+          if (tempFolder.toFile.exists()) FileUtils.deleteQuietly(tempFolder.toFile)
+          if (archive.toFile.exists()) FileUtils.deleteQuietly(archive.toFile)
+          throw e
       }
-      new ZipArchiver(tempFolder, archive).zip()
-    } catch {
-      case e: Exception =>
-        if (tempFolder.toFile.exists()) FileUtils.deleteQuietly(tempFolder.toFile)
-        if (archive.toFile.exists()) FileUtils.deleteQuietly(archive.toFile)
-        throw e
+      archive
     }
-    archive
   }
 
 }

@@ -7,10 +7,10 @@ import { Community } from 'src/app/types/community';
 import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
 
 @Component({
-  selector: 'app-user-management',
-  templateUrl: './user-management.component.html',
-  styles: [
-  ]
+    selector: 'app-user-management',
+    templateUrl: './user-management.component.html',
+    styles: [],
+    standalone: false
 })
 export class UserManagementComponent implements OnInit {
 

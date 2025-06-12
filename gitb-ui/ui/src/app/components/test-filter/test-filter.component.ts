@@ -34,9 +34,10 @@ import { FilterUpdate } from './filter-update';
 import { EntityWithId } from 'src/app/types/entity-with-id';
 
 @Component({
-  selector: 'app-test-filter',
-  templateUrl: './test-filter.component.html',
-  styleUrls: [ './test-filter.component.less' ]
+    selector: 'app-test-filter',
+    templateUrl: './test-filter.component.html',
+    styleUrls: ['./test-filter.component.less'],
+    standalone: false
 })
 export class TestFilterComponent implements OnInit {
 
@@ -45,6 +46,7 @@ export class TestFilterComponent implements OnInit {
   @Input() organisationId?: number
   @Input() embedded = false
   @Input() commands?: EventEmitter<number>
+  @Input() initialSessionId?: string
 
   @Input() loadDomainsFn?: () => Observable<Domain[]>
   @Input() loadSpecificationsFn?: () => Observable<Specification[]>
@@ -134,22 +136,23 @@ export class TestFilterComponent implements OnInit {
       this.definedFilters[filterType] = true
     }
     this.setupDefaultLoadFunctions()
-    this.initialiseIfDefined(Constants.FILTER_TYPE.DOMAIN, { name: Constants.FILTER_TYPE.DOMAIN, textField: 'sname', loader: this.loadDomainsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
-    this.initialiseIfDefined(Constants.FILTER_TYPE.SPECIFICATION, { name: Constants.FILTER_TYPE.SPECIFICATION, textField: 'sname', loader: this.loadSpecificationsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
-    this.initialiseIfDefined(Constants.FILTER_TYPE.SPECIFICATION_GROUP, { name: Constants.FILTER_TYPE.SPECIFICATION_GROUP, textField: 'sname', loader: this.loadSpecificationGroupsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
-    this.initialiseIfDefined(Constants.FILTER_TYPE.ACTOR, { name: Constants.FILTER_TYPE.ACTOR, textField: 'name', loader: this.loadActorsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
-    this.initialiseIfDefined(Constants.FILTER_TYPE.TEST_SUITE, { name: Constants.FILTER_TYPE.TEST_SUITE, textField: 'sname', loader: this.loadTestSuitesFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
-    this.initialiseIfDefined(Constants.FILTER_TYPE.TEST_CASE, { name: Constants.FILTER_TYPE.TEST_CASE, textField: 'sname', loader: this.loadTestCasesFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
-    this.initialiseIfDefined(Constants.FILTER_TYPE.COMMUNITY, { name: Constants.FILTER_TYPE.COMMUNITY, textField: 'sname', loader: this.loadCommunitiesFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
-    this.initialiseIfDefined(Constants.FILTER_TYPE.ORGANISATION, { name: Constants.FILTER_TYPE.ORGANISATION, textField: 'sname', loader: this.loadOrganisationsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
-    this.initialiseIfDefined(Constants.FILTER_TYPE.SYSTEM, { name: Constants.FILTER_TYPE.SYSTEM, textField: 'sname', loader: this.loadSystemsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
-    this.initialiseIfDefined(Constants.FILTER_TYPE.RESULT, { name: Constants.FILTER_TYPE.RESULT, textField: 'label', loader: this.loadTestResults.bind(this), clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() } )
+    this.initialiseIfDefined(Constants.FILTER_TYPE.DOMAIN, { name: Constants.FILTER_TYPE.DOMAIN, textField: 'sname', loader: this.loadDomainsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter(), showAsFormControl: true })
+    this.initialiseIfDefined(Constants.FILTER_TYPE.SPECIFICATION, { name: Constants.FILTER_TYPE.SPECIFICATION, textField: 'sname', loader: this.loadSpecificationsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter(), showAsFormControl: true })
+    this.initialiseIfDefined(Constants.FILTER_TYPE.SPECIFICATION_GROUP, { name: Constants.FILTER_TYPE.SPECIFICATION_GROUP, textField: 'sname', loader: this.loadSpecificationGroupsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter(), showAsFormControl: true })
+    this.initialiseIfDefined(Constants.FILTER_TYPE.ACTOR, { name: Constants.FILTER_TYPE.ACTOR, textField: 'name', loader: this.loadActorsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter(), showAsFormControl: true })
+    this.initialiseIfDefined(Constants.FILTER_TYPE.TEST_SUITE, { name: Constants.FILTER_TYPE.TEST_SUITE, textField: 'sname', loader: this.loadTestSuitesFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter(), showAsFormControl: true })
+    this.initialiseIfDefined(Constants.FILTER_TYPE.TEST_CASE, { name: Constants.FILTER_TYPE.TEST_CASE, textField: 'sname', loader: this.loadTestCasesFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter(), showAsFormControl: true })
+    this.initialiseIfDefined(Constants.FILTER_TYPE.COMMUNITY, { name: Constants.FILTER_TYPE.COMMUNITY, textField: 'sname', loader: this.loadCommunitiesFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter(), showAsFormControl: true })
+    this.initialiseIfDefined(Constants.FILTER_TYPE.ORGANISATION, { name: Constants.FILTER_TYPE.ORGANISATION, textField: 'sname', loader: this.loadOrganisationsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter(), showAsFormControl: true })
+    this.initialiseIfDefined(Constants.FILTER_TYPE.SYSTEM, { name: Constants.FILTER_TYPE.SYSTEM, textField: 'sname', loader: this.loadSystemsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter(), showAsFormControl: true })
+    this.initialiseIfDefined(Constants.FILTER_TYPE.RESULT, { name: Constants.FILTER_TYPE.RESULT, textField: 'label', loader: this.loadTestResults.bind(this), clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter(), showAsFormControl: true } )
     if (this.commands) {
       this.commands.subscribe((command) => {
         this.handleCommand(command)
       })
     }
     this.filterCollapsedFinished = !this.showFiltering || !this.initialised
+    this.sessionId = this.initialSessionId
   }
 
   private handleCommand(command: number) {
@@ -185,7 +188,7 @@ export class TestFilterComponent implements OnInit {
           return this.specificationService.getSpecificationGroups(this.dataService.community!.domainId)
         }
       }).bind(this)
-    }    
+    }
     if (this.filterDefined(Constants.FILTER_TYPE.ACTOR) && this.loadActorsFn == undefined) {
       this.loadActorsFn = (() => {
         if (this.dataService.isSystemAdmin || this.dataService.community!.domainId == undefined) {
@@ -221,10 +224,10 @@ export class TestFilterComponent implements OnInit {
     }
     if (this.filterDefined(Constants.FILTER_TYPE.ORGANISATION) && this.loadOrganisationsFn == undefined) {
       this.loadOrganisationsFn = (() => {
-        if (this.dataService.isCommunityAdmin) {
-          return this.organisationService.getOrganisationsByCommunity(this.dataService.community!.id)
-        } else {
+        if (this.dataService.isSystemAdmin) {
           return this.organisationService.searchOrganizations(this.filterValue(Constants.FILTER_TYPE.COMMUNITY))
+        } else {
+          return this.organisationService.getOrganisationsByCommunity(this.dataService.community!.id)
         }
       }).bind(this)
     }
@@ -241,14 +244,16 @@ export class TestFilterComponent implements OnInit {
         }
       }).bind(this)
     }
+    // Custom properties
+    const onlyPublicProperties = !this.dataService.isSystemAdmin && !this.dataService.isCommunityAdmin
     if (this.filterDefined(Constants.FILTER_TYPE.ORGANISATION_PROPERTY) && this.loadOrganisationPropertiesFn == undefined) {
       this.loadOrganisationPropertiesFn = (() => {
-        return this.communityService.getOrganisationParameters(this.applicableCommunityId!, true)
+        return this.communityService.getOrganisationParameters(this.applicableCommunityId!, true, onlyPublicProperties)
       }).bind(this)
     }
     if (this.filterDefined(Constants.FILTER_TYPE.SYSTEM_PROPERTY) && this.loadSystemPropertiesFn == undefined) {
       this.loadSystemPropertiesFn = (() => {
-        return this.communityService.getSystemParameters(this.applicableCommunityId!, true)
+        return this.communityService.getSystemParameters(this.applicableCommunityId!, true, onlyPublicProperties)
       }).bind(this)
     }
   }
@@ -309,23 +314,23 @@ export class TestFilterComponent implements OnInit {
     this.filterValues[Constants.FILTER_TYPE.SPECIFICATION] = update.values
     if ((update.values.active.length > 0 || update.values.other.length > 0) && (this.filterDefined(Constants.FILTER_TYPE.ACTOR) || this.filterDefined(Constants.FILTER_TYPE.TEST_SUITE))) {
       const ids = this.dataService.asIdSet(update.values.active)
-      const otherIds = this.dataService.asIdSet(update.values.other)      
+      const otherIds = this.dataService.asIdSet(update.values.other)
       if (this.filterDefined(Constants.FILTER_TYPE.ACTOR)) {
         const remaining = this.getRemainingFilterValues(this.filterValues[Constants.FILTER_TYPE.ACTOR] as FilterValues<Actor>, (a) => { return ids[a.specification] }, (a) => { return otherIds[a.specification] })
         this.filterDropdownSettings[Constants.FILTER_TYPE.ACTOR].replaceSelectedItems!.emit(this.squashFilterValues(remaining))
       }
       if (this.filterDefined(Constants.FILTER_TYPE.TEST_SUITE)) {
-        const remaining = this.getRemainingFilterValues(this.filterValues[Constants.FILTER_TYPE.TEST_SUITE] as FilterValues<TestSuiteWithTestCases>, 
+        const remaining = this.getRemainingFilterValues(this.filterValues[Constants.FILTER_TYPE.TEST_SUITE] as FilterValues<TestSuiteWithTestCases>,
           // One of the test suite's specifications must be in the set of selected IDs.
-          (ts) => { 
+          (ts) => {
             for (let tsSpecification of ts.specifications!) {
               if (ids[tsSpecification]) {
                 return true
               }
             }
             return false
-          }, 
-          (ts) => { 
+          },
+          (ts) => {
             for (let tsSpecification of ts.specifications!) {
               if (otherIds[tsSpecification]) {
                 return true
@@ -529,6 +534,7 @@ export class TestFilterComponent implements OnInit {
   }
 
   applyFilters() {
+    this.filterState.updatePending = true
     this.onApply.emit(this.currentFilters())
   }
 
@@ -595,8 +601,8 @@ export class TestFilterComponent implements OnInit {
         })
       )
     } else {
-      this.showOrganisationProperties = false      
-      this.showSystemProperties = false      
+      this.showOrganisationProperties = false
+      this.showSystemProperties = false
       return of(false)
     }
   }

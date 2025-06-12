@@ -15,10 +15,10 @@ import com.gitb.engine.validation.handlers.common.AbstractReportHandler;
  */
 public class NumberReportHandler extends AbstractReportHandler {
 
-    public static final String ACTUALNUMBER_ITEM_NAME = "actual";
-    public static final String EXPECTEDNUMBER_ITEM_NAME = "expected";
+    public static final String ACTUAL_ITEM_NAME = "actual";
+    public static final String EXPECTED_ITEM_NAME = "expected";
 
-    protected NumberReportHandler(NumberType actualnumber, NumberType expectednumber, BooleanType result) {
+    protected NumberReportHandler(NumberType actual, NumberType expected, BooleanType result) {
         super();
 
         report.setName("Number Validation");
@@ -27,19 +27,19 @@ public class NumberReportHandler extends AbstractReportHandler {
         AnyContent attachment = new AnyContent();
         attachment.setType(DataType.MAP_DATA_TYPE);
 
-        AnyContent xml = new AnyContent();
-        xml.setName(ACTUALNUMBER_ITEM_NAME);
-        xml.setType(DataType.NUMBER_DATA_TYPE);
-        xml.setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
-        xml.setValue(new String(actualnumber.serializeByDefaultEncoding()));
-        attachment.getItem().add(xml);
+        AnyContent actualItem = new AnyContent();
+        actualItem.setName(ACTUAL_ITEM_NAME);
+        actualItem.setType(DataType.NUMBER_DATA_TYPE);
+        actualItem.setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
+        actualItem.setValue(new String(actual.serializeByDefaultEncoding()));
+        attachment.getItem().add(actualItem);
 
-        AnyContent schema = new AnyContent();
-        schema.setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
-        schema.setType(DataType.NUMBER_DATA_TYPE);
-        schema.setName(EXPECTEDNUMBER_ITEM_NAME);
-        schema.setValue(new String(expectednumber.serializeByDefaultEncoding()));
-        attachment.getItem().add(schema);
+        AnyContent expectedItem = new AnyContent();
+        expectedItem.setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
+        expectedItem.setType(DataType.NUMBER_DATA_TYPE);
+        expectedItem.setName(EXPECTED_ITEM_NAME);
+        expectedItem.setValue(new String(expected.serializeByDefaultEncoding()));
+        attachment.getItem().add(expectedItem);
 
         if ((boolean) result.getValue()) {
             report.setResult(TestResultType.SUCCESS);

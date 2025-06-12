@@ -1,16 +1,19 @@
-import { AfterViewInit, Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren } from '@angular/core';
-import { CodemirrorComponent } from '@ctrl/ngx-codemirror';
-import { BsModalRef } from 'ngx-bootstrap/modal';
-import { AnyContent } from 'src/app/components/diagram/any-content';
-import { DataService } from 'src/app/services/data.service';
-import { FileData } from 'src/app/types/file-data.type';
-import { UserInteraction } from 'src/app/types/user-interaction';
-import { UserInteractionInput } from 'src/app/types/user-interaction-input';
+import {AfterViewInit, Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
+import {CodemirrorComponent} from '@ctrl/ngx-codemirror';
+import {BsModalRef} from 'ngx-bootstrap/modal';
+import {AnyContent} from 'src/app/components/diagram/any-content';
+import {DataService} from 'src/app/services/data.service';
+import {FileData} from 'src/app/types/file-data.type';
+import {UserInteraction} from 'src/app/types/user-interaction';
+import {UserInteractionInput} from 'src/app/types/user-interaction-input';
+import {ValidationState} from '../../types/validation-state';
+import {ValueLabel} from '../../types/value-label';
 
 @Component({
-  selector: 'app-provide-input-modal',
-  templateUrl: './provide-input-modal.component.html',
-  styleUrls: [ './provide-input-modal.component.less' ]
+    selector: 'app-provide-input-modal',
+    templateUrl: './provide-input-modal.component.html',
+    styleUrls: ['./provide-input-modal.component.less'],
+    standalone: false
 })
 export class ProvideInputModalComponent implements OnInit, AfterViewInit {
 
@@ -23,6 +26,7 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
   firstCodeIndex:number|undefined
   firstTextIndex:number|undefined
   editorFocus: {[key: string]: boolean} = {}
+  validation = new ValidationState()
 
   constructor(
     private modalRef: BsModalRef,
@@ -61,8 +65,10 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
           this.editorFocus['input-'+i] = false
           if (this.firstCodeIndex == undefined) {
             this.firstCodeIndex = i
-          }          
-          interaction.data = ''
+          }
+          if (interaction.data == undefined) {
+            interaction.data = ''
+          }
         } else if (interaction.inputType == 'UPLOAD') {
           interaction.reset = new EventEmitter<void>()
         } else {
@@ -76,35 +82,66 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    setTimeout(() => {
-      if (this.codeMirrors) {
-        this.codeMirrors.forEach((codeMirror) => {
-          codeMirror.codeMirror!.refresh()
-        })
+    this.waitUntilControlsAreAvailable()
+  }
+
+  waitUntilControlsAreAvailable(retries = 10) {
+    if (this.codeMirrors) {
+      const ready = this.codeMirrors.toArray().every(codeMirror => codeMirror.codeMirror)
+      if (ready) {
+        this.initialiseControls()
+      } else if (retries > 0) {
+        setTimeout(() => this.waitUntilControlsAreAvailable(retries - 1), 50);
+      } else {
+        console.warn("Unable to initialise editors")
       }
-      if (this.firstCodeIndex != undefined && this.firstTextIndex != undefined) {
-        if (this.firstCodeIndex < this.firstTextIndex) {
-          this.codeEditorForName('input-'+this.firstCodeIndex)?.codeMirror!.focus()
-        } else {
-          this.dataService.focus('input-'+this.firstTextIndex)
+    }
+  }
+
+  private initialiseControls() {
+    if (this.codeMirrors) {
+      // Refresh dimensions.
+      this.codeMirrors.forEach((codeMirror) => {
+        if (codeMirror.codeMirror) {
+          codeMirror.codeMirror.refresh()
         }
-      } else if (this.firstCodeIndex != undefined) {
+      })
+      // Set editor values.
+      this.interactions.forEach((interaction, index) => {
+        if (interaction.type == "request" && interaction.inputType == "CODE" && interaction.data != undefined && interaction.data.length > 0) {
+          const editor = this.codeEditorForName('input-'+index)
+          if (editor && editor.codeMirror) {
+            editor.codeMirror.setValue(interaction.data)
+          }
+        }
+      })
+    }
+    // Focus.
+    if (this.firstCodeIndex != undefined && this.firstTextIndex != undefined) {
+      if (this.firstCodeIndex < this.firstTextIndex) {
         this.codeEditorForName('input-'+this.firstCodeIndex)?.codeMirror!.focus()
-      } else if (this.firstTextIndex != undefined) {
+      } else {
         this.dataService.focus('input-'+this.firstTextIndex)
       }
-    }, 1)
+    } else if (this.firstCodeIndex != undefined) {
+      this.codeEditorForName('input-'+this.firstCodeIndex)?.codeMirror!.focus()
+    } else if (this.firstTextIndex != undefined) {
+      this.dataService.focus('input-'+this.firstTextIndex)
+    }
   }
 
   instructionAsAnyContent(instruction: UserInteraction): AnyContent {
-    const content: AnyContent = {
+    return {
       name: instruction.desc,
       value: instruction.value,
       valueToUse: instruction.value,
-      embeddingMethod: (instruction.variableType == 'binary' || instruction.variableType == 'schema' || instruction.variableType == 'object')?'BASE64': 'STRING',
+      embeddingMethod: (instruction.variableType == 'binary' || instruction.variableType == 'schema' || instruction.variableType == 'object') ? 'BASE64' : 'STRING',
       mimeType: instruction.mimeType
     }
-    return content
+  }
+
+  compareValueLabels(v1: ValueLabel|undefined, v2: ValueLabel|undefined): boolean {
+    return v1?.value === v2?.value;
   }
 
   private codeEditorForName(editorName: string) {
@@ -123,6 +160,7 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
   }
 
   reset() {
+    this.validation.clearErrors()
     let index = 0
     for (let interaction of this.interactions) {
       if (this.editorFocus['input-'+index] == undefined) {
@@ -135,6 +173,7 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
         interaction.reset.emit()
       }
       delete interaction.selectedOption
+      delete interaction.selectedOptions
       delete interaction.file
       index += 1
     }
@@ -142,16 +181,19 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
 
   minimise() {
     this.result.emit(undefined)
-    this.modalRef.hide()    
+    this.modalRef.hide()
   }
 
   close() {
     this.result.emit([])
-    this.modalRef.hide()    
+    this.modalRef.hide()
   }
 
   submit() {
+    this.validation.clearErrors()
     const inputs:UserInteractionInput[] = []
+    let inputsValid = true
+    let index = 0
     for (let interaction of this.interactions) {
       if (interaction.type == "request") {
         const inputData: Partial<UserInteractionInput> = {
@@ -160,14 +202,16 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
           type: interaction.variableType,
           embeddingMethod: interaction.contentType
         }
-        if (interaction.optionData != undefined && interaction.selectedOption != undefined) {
+        if (interaction.optionData != undefined) {
           if (interaction.multiple) {
-            if (Array.isArray(interaction.selectedOption)) {
-              const values = interaction.selectedOption.map((item) => { return item.value })
+            if (interaction.selectedOptions) {
+              const values = interaction.selectedOptions.map((item) => { return item.value })
               inputData.value = values.join()
             }
           } else {
-            inputData.value = interaction.selectedOption!.value
+            if (interaction.selectedOption != undefined) {
+              inputData.value = interaction.selectedOption!.value
+            }
           }
         } else if (interaction.optionData == undefined) {
           if (interaction.data != undefined) {
@@ -176,11 +220,20 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
             inputData.file = interaction.file.file
           }
         }
+        const hasValue = (inputData.value != undefined && inputData.value.length > 0) || inputData.file != undefined
+        const inputValid = !interaction.required || hasValue
+        if (!inputValid) {
+          inputsValid = false
+          this.validation.apply("input_"+index, "Input is required.")
+        }
         inputs.push(inputData as UserInteractionInput)
       }
+      index += 1
     }
-    this.result.emit(inputs)
-    this.modalRef.hide()
+    if (inputsValid) {
+      this.result.emit(inputs)
+      this.modalRef.hide()
+    }
   }
 
   onFileSelect(request: UserInteraction, file: FileData) {

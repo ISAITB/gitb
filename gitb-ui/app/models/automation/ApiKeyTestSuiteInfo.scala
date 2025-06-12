@@ -1,3 +1,3 @@
 package models.automation
 
-case class ApiKeyTestSuiteInfo (name: String, key: String, testcases: List[ApiKeyTestCaseInfo]) {}
+case class ApiKeyTestSuiteInfo(id: Long, name: String, key: String, testcases: List[ApiKeyTestCaseInfo]) {}

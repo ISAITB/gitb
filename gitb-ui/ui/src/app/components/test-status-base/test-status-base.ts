@@ -1,7 +1,10 @@
 import {Component, EventEmitter, Input, OnInit} from '@angular/core';
 import {Counters} from '../test-status-icons/counters';
 
-@Component({ template: '' })
+@Component({
+    template: '',
+    standalone: false
+})
 export abstract class TestStatusBase implements OnInit {
 
   @Input() counters!: Counters

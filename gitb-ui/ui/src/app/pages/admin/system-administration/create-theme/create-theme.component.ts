@@ -12,10 +12,10 @@ import { BaseThemeFormComponent } from '../base-theme-form.component';
 import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
-  selector: 'app-create-theme',
-  templateUrl: './create-theme.component.html',
-  styles: [
-  ]
+    selector: 'app-create-theme',
+    templateUrl: './create-theme.component.html',
+    styles: [],
+    standalone: false
 })
 export class CreateThemeComponent extends BaseThemeFormComponent implements OnInit {
 

@@ -1,26 +1,28 @@
-import { Component, EventEmitter, Input, OnInit } from '@angular/core';
-import { Observable, forkJoin, of } from 'rxjs';
-import { Constants } from 'src/app/common/constants';
-import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
-import { ConformanceService } from 'src/app/services/conformance.service';
-import { DataService } from 'src/app/services/data.service';
-import { OrganisationService } from 'src/app/services/organisation.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { SystemService } from 'src/app/services/system.service';
-import { ApiKeyActorInfo } from 'src/app/types/api-key-actor-info';
+import {Component, EventEmitter, Input, OnInit} from '@angular/core';
+import {forkJoin, Observable, of} from 'rxjs';
+import {Constants} from 'src/app/common/constants';
+import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
+import {ConformanceService} from 'src/app/services/conformance.service';
+import {DataService} from 'src/app/services/data.service';
+import {OrganisationService} from 'src/app/services/organisation.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {SystemService} from 'src/app/services/system.service';
+import {ApiKeyActorInfo} from 'src/app/types/api-key-actor-info';
 
-import { ApiKeyInfo } from 'src/app/types/api-key-info';
-import { ApiKeySpecificationInfo } from 'src/app/types/api-key-specification-info';
-import { ApiKeySystemInfo } from 'src/app/types/api-key-system-info';
-import { ApiKeyTestCaseInfo } from 'src/app/types/api-key-test-case-info';
-import { ApiKeyTestSuiteInfo } from 'src/app/types/api-key-test-suite-info';
-import { ConformanceSnapshot } from 'src/app/types/conformance-snapshot';
-import { ConformanceSnapshotList } from 'src/app/types/conformance-snapshot-list';
+import {ApiKeyInfo} from 'src/app/types/api-key-info';
+import {ApiKeySpecificationInfo} from 'src/app/types/api-key-specification-info';
+import {ApiKeySystemInfo} from 'src/app/types/api-key-system-info';
+import {ApiKeyTestCaseInfo} from 'src/app/types/api-key-test-case-info';
+import {ApiKeyTestSuiteInfo} from 'src/app/types/api-key-test-suite-info';
+import {ConformanceSnapshot} from 'src/app/types/conformance-snapshot';
+import {ConformanceSnapshotList} from 'src/app/types/conformance-snapshot-list';
+import {MultiSelectConfig} from '../multi-select-filter/multi-select-config';
 
 @Component({
-  selector: 'app-api-key-info',
-  templateUrl: './api-key-info.component.html',
-  styleUrls: ['./api-key-info.component.less']
+    selector: 'app-api-key-info',
+    templateUrl: './api-key-info.component.html',
+    styleUrls: ['./api-key-info.component.less'],
+    standalone: false
 })
 export class ApiKeyInfoComponent implements OnInit {
 
@@ -48,6 +50,13 @@ export class ApiKeyInfoComponent implements OnInit {
   canUpdate = false
   Constants = Constants
 
+  snapshotSelectionConfig!: MultiSelectConfig<ConformanceSnapshot>
+  systemSelectionConfig!: MultiSelectConfig<ApiKeySystemInfo>
+  specificationSelectionConfig!: MultiSelectConfig<ApiKeySystemInfo>
+  actorSelectionConfig!: MultiSelectConfig<ApiKeyActorInfo>
+  testSuiteSelectionConfig!: MultiSelectConfig<ApiKeyTestSuiteInfo>
+  testCaseSelectionConfig!: MultiSelectConfig<ApiKeyTestCaseInfo>
+
   constructor(
     private organisationService: OrganisationService,
     private systemService: SystemService,
@@ -58,6 +67,61 @@ export class ApiKeyInfoComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
+    this.snapshotSelectionConfig = {
+      name: "selectedSnapshot",
+      singleSelection: true,
+      singleSelectionPersistent: true,
+      singleSelectionClearable: true,
+      showAsFormControl: true,
+      filterLabel: this.latestSnapshotLabel,
+      textField: "label",
+      loader: () => of(this.conformanceSnapshots!)
+    }
+    this.systemSelectionConfig = {
+      name: "selectedSystem",
+      singleSelection: true,
+      singleSelectionPersistent: true,
+      showAsFormControl: true,
+      filterLabel: `Select ${this.dataService.labelSystemLower()}...`,
+      textField: "name",
+      loader: () => of(this.apiInfo?.systems!)
+    }
+    this.specificationSelectionConfig = {
+      name: "selectedSpecification",
+      singleSelection: true,
+      singleSelectionPersistent: true,
+      showAsFormControl: true,
+      filterLabel: `Select ${this.dataService.labelSpecificationLower()}...`,
+      textField: "name",
+      loader: () => of(this.apiInfo?.specifications!)
+    }
+    this.actorSelectionConfig = {
+      name: "selectedActor",
+      singleSelection: true,
+      singleSelectionPersistent: true,
+      showAsFormControl: true,
+      filterLabel: `Select ${this.dataService.labelActorLower()}...`,
+      textField: "name",
+      loader: () => of(this.selectedSpecification!.actors)
+    }
+    this.testSuiteSelectionConfig = {
+      name: "selectedTestSuite",
+      singleSelection: true,
+      singleSelectionPersistent: true,
+      showAsFormControl: true,
+      filterLabel: `Select test suite...`,
+      textField: "name",
+      loader: () => of(this.selectedSpecification!.testSuites)
+    }
+    this.testCaseSelectionConfig = {
+      name: "selectedTestCase",
+      singleSelection: true,
+      singleSelectionPersistent: true,
+      showAsFormControl: true,
+      filterLabel: `Select test case...`,
+      textField: "name",
+      loader: () => of(this.selectedTestSuite!.testCases)
+    }
     if (this.loadData == undefined) {
       this.loadApiInfo()
     } else {
@@ -94,19 +158,14 @@ export class ApiKeyInfoComponent implements OnInit {
     }
   }
 
-  actorChanged():void {}
-
   testSuiteChanged():void {
     this.selectedTestCase = undefined
     if (this.selectedTestSuite) {
       if (this.selectedTestSuite.testCases.length > 0) {
         this.selectedTestCase = this.selectedTestSuite.testCases[0]
-      } 
+      }
     }
   }
-
-  testCaseChanged():void {}
-  systemChanged():void {}
 
   newOrganisationKey(): void {
     this.organisationUpdatePending = true
@@ -171,7 +230,11 @@ export class ApiKeyInfoComponent implements OnInit {
       const apiKeysLoaded = this.organisationService.getAutomationKeysForOrganisation(this.organisationId)
       forkJoin([snapshotsLoaded, apiKeysLoaded]).subscribe((results) => {
         // Snapshots
-        this.conformanceSnapshots = results[0].snapshots
+        if (results[0].snapshots == undefined) {
+          this.conformanceSnapshots = []
+        } else {
+          this.conformanceSnapshots = results[0].snapshots
+        }
         if (results[0].latest) {
           this.latestSnapshotLabel = results[0].latest
         }

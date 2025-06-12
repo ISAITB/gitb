@@ -6,18 +6,19 @@ import play.api.db.slick.DatabaseConfigProvider
 
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class ErrorTemplateManager @Inject() (dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class ErrorTemplateManager @Inject() (dbConfigProvider: DatabaseConfigProvider)
+                                     (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
   /**
    * Gets all landing pages for the specified community without rich content
    */
-  def getErrorTemplatesByCommunityWithoutContent(communityId: Long): List[ErrorTemplate] = {
-    exec(
+  def getErrorTemplatesByCommunityWithoutContent(communityId: Long): Future[List[ErrorTemplate]] = {
+    DB.run(
       PersistenceSchema.errorTemplates
         .filter(_.community === communityId)
         .map(x => (x.id, x.name, x.description, x.default))
@@ -30,52 +31,66 @@ class ErrorTemplateManager @Inject() (dbConfigProvider: DatabaseConfigProvider) 
   /**
    * Gets all error templates for the specified community
    */
-  def getErrorTemplatesByCommunity(communityId: Long): List[ErrorTemplates] = {
-    val errorTemplates = exec(PersistenceSchema.errorTemplates.filter(_.community === communityId)
+  def getErrorTemplatesByCommunity(communityId: Long): Future[List[ErrorTemplates]] = {
+    DB.run(
+      PersistenceSchema.errorTemplates
+        .filter(_.community === communityId)
         .sortBy(_.name.asc)
-      .result.map(_.toList))
-    errorTemplates
+        .result
+        .map(_.toList)
+    )
   }
 
   /**
    * Checks if name exists
    */
-  def checkUniqueName(name: String, communityId: Long): Boolean = {
-    val firstOption = exec(PersistenceSchema.errorTemplates.filter(_.community === communityId).filter(_.name === name).result.headOption)
-    firstOption.isEmpty
+  def checkUniqueName(name: String, communityId: Long): Future[Boolean] = {
+    DB.run(
+      PersistenceSchema.errorTemplates
+        .filter(_.community === communityId)
+        .filter(_.name === name)
+        .exists
+        .result
+    ).map(!_)
   }
 
   /**
     * Checks if a error template with given name exists for the given community
     */
-  def checkUniqueName(templateId: Long, name: String, communityId: Long): Boolean = {
-    val firstOption = exec(PersistenceSchema.errorTemplates.filter(_.community === communityId).filter(_.id =!= templateId).filter(_.name === name).result.headOption)
-    firstOption.isEmpty
+  def checkUniqueName(templateId: Long, name: String, communityId: Long): Future[Boolean] = {
+    DB.run(
+      PersistenceSchema.errorTemplates
+        .filter(_.community === communityId)
+        .filter(_.id =!= templateId)
+        .filter(_.name === name)
+        .exists
+        .result
+    ).map(!_)
   }
 
   /**
    * Gets error template with specified id
    */
-  def getErrorTemplateById(templateId: Long): Option[ErrorTemplates] = {
-    exec(getErrorTemplateByIdInternal(templateId))
+  def getErrorTemplateById(templateId: Long): Future[Option[ErrorTemplates]] = {
+    DB.run(getErrorTemplateByIdInternal(templateId))
   }
 
   def getErrorTemplateByIdInternal(templateId: Long): DBIO[Option[ErrorTemplates]] = {
     PersistenceSchema.errorTemplates.filter(_.id === templateId).result.headOption
   }
 
-  def getCommunityId(templateId: Long): Long = {
-    exec(PersistenceSchema.errorTemplates.filter(_.id === templateId).map(x => x.community).result.head)
+  def getCommunityId(templateId: Long): Future[Long] = {
+    DB.run(PersistenceSchema.errorTemplates.filter(_.id === templateId).map(x => x.community).result.head)
   }
 
   /**
    * Creates new error template
    */
-  def createErrorTemplate(errorTemplate: ErrorTemplates) = {
-    exec(createErrorTemplateInternal(errorTemplate).transactionally)
+  def createErrorTemplate(errorTemplate: ErrorTemplates): Future[Unit] = {
+    DB.run(createErrorTemplateInternal(errorTemplate).transactionally).map(_ => ())
   }
 
-  def createErrorTemplateInternal(errorTemplate: ErrorTemplates) = {
+  def createErrorTemplateInternal(errorTemplate: ErrorTemplates): DBIO[Long] = {
     for {
       _ <- {
         val actions = new ListBuffer[DBIO[_]]()
@@ -92,11 +107,11 @@ class ErrorTemplateManager @Inject() (dbConfigProvider: DatabaseConfigProvider) 
   /**
    * Updates error template
    */
-  def updateErrorTemplate(templateId: Long, name: String, description: Option[String], content: String, default: Boolean, communityId: Long) = {
-    exec(updateErrorTemplateInternal(templateId, name, description, content, default, communityId).transactionally)
+  def updateErrorTemplate(templateId: Long, name: String, description: Option[String], content: String, default: Boolean, communityId: Long): Future[Unit] = {
+    DB.run(updateErrorTemplateInternal(templateId, name, description, content, default, communityId).transactionally)
   }
 
-  def updateErrorTemplateInternal(templateId: Long, name: String, description: Option[String], content: String, default: Boolean, communityId: Long) = {
+  def updateErrorTemplateInternal(templateId: Long, name: String, description: Option[String], content: String, default: Boolean, communityId: Long): DBIO[Unit] = {
     for {
       errorTemplateOption <- PersistenceSchema.errorTemplates.filter(_.id === templateId).result.headOption
       _ <- {
@@ -133,8 +148,8 @@ class ErrorTemplateManager @Inject() (dbConfigProvider: DatabaseConfigProvider) 
   /**
    * Deletes error template with specified id
    */
-  def deleteErrorTemplate(templateId: Long) = {
-    exec(deleteErrorTemplateInternal(templateId).transactionally)
+  def deleteErrorTemplate(templateId: Long): Future[Unit] = {
+    DB.run(deleteErrorTemplateInternal(templateId).transactionally).map(_ => ())
   }
 
   def deleteErrorTemplateInternal(templateId: Long): DBIO[_] = {
@@ -152,8 +167,8 @@ class ErrorTemplateManager @Inject() (dbConfigProvider: DatabaseConfigProvider) 
   /**
    * Gets the default error template for given community
    */
-  def getCommunityDefaultErrorTemplate(communityId: Long): Option[ErrorTemplates] = {
-    exec(PersistenceSchema.errorTemplates.filter(_.community === communityId).filter(_.default === true).result.headOption)
+  def getCommunityDefaultErrorTemplate(communityId: Long): Future[Option[ErrorTemplates]] = {
+    DB.run(PersistenceSchema.errorTemplates.filter(_.community === communityId).filter(_.default === true).result.headOption)
   }
 
   def deleteErrorTemplateByCommunity(communityId: Long) = {

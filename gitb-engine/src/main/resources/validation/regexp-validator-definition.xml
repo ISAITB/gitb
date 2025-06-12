@@ -7,7 +7,9 @@
         <version>1.0</version>
     </metadata>
     <inputs>
-        <param type="string" use="R" name="input"   desc="String to test" />
-        <param type="string" use="R" name="expression" desc="Expression to match" />
+        <param type="string" name="input" desc="String to test" />
+        <param type="string" name="expression" desc="Expression to match" />
+        <param type="string" use="O" name="successMessage" desc="A custom message to display in case of success" />
+        <param type="string" use="O" name="failureMessage" desc="A custom message to display in case of failure" />
     </inputs>
 </module>

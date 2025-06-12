@@ -3,7 +3,7 @@
         <div class="buttonContainer">
             <div class="button">
                 <div class="btn-group" dropdown>
-                    <button id="button-placeholder" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-placeholder">Copy placeholder text<span class="caret withMargin"></span></button>
+                    <button id="button-placeholder" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-placeholder"><span class="me-2">Copy placeholder text</span></button>
                     <ul id="dropdown-placeholder" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-placeholder">
                         @for (placeholder of placeholders; track placeholder.key) {
                             <li role="menuitem"><a class="dropdown-item" href (click)="selectedPlaceholder(placeholder); $event.preventDefault()"><b>{{placeholder.key}}{{placeholder.value != ''?':':''}}</b> {{placeholder.value}}</a></li>
@@ -40,8 +40,18 @@
                 <app-multi-select-filter [config]="communityResourceConfig" (apply)="resourceSelected($event)"></app-multi-select-filter>
             </div>
             <div class="help">
-                <div app-tooltip class="col-auto d-inline-flex" tbTooltip="Resources defined for the community can be referenced in the content (for example as image sources)." [inline]="true"></div>
-            </div>    
+                <div app-tooltip class="col-auto d-inline-flex" tbTooltip="Resources defined for the community that can be referenced in the content (for example as image sources)." [inline]="true"></div>
+            </div>
+        </div>
+    }
+    @if (systemResourceConfig) {
+        <div class="buttonContainer">
+            <div class="communityResourceControl">
+                <app-multi-select-filter [config]="systemResourceConfig" (apply)="systemResourceSelected($event)"></app-multi-select-filter>
+            </div>
+            <div class="help">
+                <div app-tooltip class="col-auto d-inline-flex" tbTooltip="System-wide resources that can be referenced in the content (for example as image sources)." [inline]="true"></div>
+            </div>
         </div>
     }
 </div>

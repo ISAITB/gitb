@@ -14,10 +14,10 @@ import com.gitb.types.StringType;
  * Created by senan
  */
 public class StringReportHandler extends AbstractReportHandler {
-    public static final String ACTUALSTRING_ITEM_NAME = "actual";
-    public static final String EXPECTEDSTRING_ITEM_NAME = "expected";
+    public static final String ACTUAL_ITEM_NAME = "actual";
+    public static final String EXPECTED_ITEM_NAME = "expected";
 
-    protected StringReportHandler(StringType actualstring, StringType expectedstring, BooleanType result) {
+    protected StringReportHandler(StringType actual, StringType expected, BooleanType result) {
         super();
 
         report.setName("String Validation");
@@ -26,19 +26,19 @@ public class StringReportHandler extends AbstractReportHandler {
         AnyContent attachment = new AnyContent();
         attachment.setType(DataType.MAP_DATA_TYPE);
 
-        AnyContent xml = new AnyContent();
-        xml.setName(ACTUALSTRING_ITEM_NAME);
-        xml.setType(DataType.STRING_DATA_TYPE);
-        xml.setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
-        xml.setValue(new String(actualstring.serializeByDefaultEncoding()));
-        attachment.getItem().add(xml);
+        AnyContent actualItem = new AnyContent();
+        actualItem.setName(ACTUAL_ITEM_NAME);
+        actualItem.setType(DataType.STRING_DATA_TYPE);
+        actualItem.setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
+        actualItem.setValue(new String(actual.serializeByDefaultEncoding()));
+        attachment.getItem().add(actualItem);
 
-        AnyContent schema = new AnyContent();
-        schema.setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
-        schema.setType(DataType.STRING_DATA_TYPE);
-        schema.setName(EXPECTEDSTRING_ITEM_NAME);
-        schema.setValue(new String(expectedstring.serializeByDefaultEncoding()));
-        attachment.getItem().add(schema);
+        AnyContent expectedItem = new AnyContent();
+        expectedItem.setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
+        expectedItem.setType(DataType.STRING_DATA_TYPE);
+        expectedItem.setName(EXPECTED_ITEM_NAME);
+        expectedItem.setValue(new String(expected.serializeByDefaultEncoding()));
+        attachment.getItem().add(expectedItem);
 
         if ((boolean) result.getValue()) {
             report.setResult(TestResultType.SUCCESS);

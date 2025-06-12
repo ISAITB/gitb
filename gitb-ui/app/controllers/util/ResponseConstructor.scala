@@ -33,8 +33,7 @@ object ResponseConstructor extends Results{
 
   def constructTimeoutResponse:Result = {
     GatewayTimeout(constructErrorMessage(ErrorCodes.GATEWAY_TIMEOUT,
-      "An operation could not be completed within " +
-      Configurations.SERVER_REQUEST_TIMEOUT_IN_SECONDS + " seconds", None))
+      "The server was unable to produce a timely response to your request. Please try again later.", None))
   }
 
   private def constructErrorMessage(errorCode: Any, errorDesc:String, errorIdentifier: Option[String], errorHint: Option[String] = None): String = {

@@ -118,6 +118,7 @@ object ImportTargets {
         case ImportItemType.Statement => targets.hasStatements = true
         case ImportItemType.StatementConfiguration => targets.hasStatementConfigurations = true
         case ImportItemType.Settings => targets.hasSettings = true
+        case ImportItemType.SystemResource => targets.hasSystemResources = true
         case ImportItemType.Theme => targets.hasThemes = true
         case ImportItemType.DefaultLandingPage => targets.hasDefaultLandingPages = true
         case ImportItemType.DefaultLegalNotice => targets.hasDefaultLegalNotices = true
@@ -185,6 +186,9 @@ object ImportTargets {
   private def updateForSettings(settings: com.gitb.xml.export.Settings, result: ImportTargets):Unit = {
     if (settings != null) {
       result.hasSettings = true
+      if (settings.getResources != null && !settings.getResources.getResource.isEmpty) {
+        result.hasSystemResources = true
+      }
       if (settings.getThemes != null && !settings.getThemes.getTheme.isEmpty) {
         result.hasThemes = true
       }
@@ -237,6 +241,7 @@ class ImportTargets {
   var hasStatementConfigurations: Boolean = false
 
   var hasSettings: Boolean = false
+  var hasSystemResources: Boolean = false
   var hasThemes: Boolean = false
   var hasDefaultLandingPages: Boolean = false
   var hasDefaultLegalNotices: Boolean = false

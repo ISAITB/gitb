@@ -32,6 +32,12 @@ export class RestService {
     }, config.errorHandler)
   }
 
+  put<T>(config: HttpRequestConfig): Observable<T> {
+    return this.call<T>(() => {
+      return this.baseRestService.put<T>(config)
+    }, config.errorHandler)
+  }
+
   post<T>(config: HttpRequestConfig): Observable<T> {
     return this.call<T>(() => {
       return this.baseRestService.post<T>(config)
@@ -48,7 +54,7 @@ export class RestService {
     /*
      * Due to the sequence of calls on the ProfileResolver, the DataService configuration will already be loaded before we reach this point.
      * The ProfileResolver is evaluated before every route in the application.
-     * 
+     *
      * If we are in SSO mode the authentication is driven server-side. We have two cases here:
      * - Case 1: The expiry was detected after the user did an action in the frontend app. In this case, we are executing a REST call
      *           and catch a 401 error. As we were already in the frontend app we know that this was due to an expiry and can signal it as such.
@@ -62,8 +68,8 @@ export class RestService {
      *           the token. This will take place anyway by signalling a logout, but by detecting this case we avoid showing a session expiry
      *           popup after the user has already done the SSO authentication.
      */
-    return this.dataService.configurationLoaded && this.dataService.configuration.ssoEnabled && 
-      response && response.error && 
+    return this.dataService.configurationLoaded && this.dataService.configuration.ssoEnabled &&
+      response && response.error &&
       response.error.error_code == "203" // INVALID_AUTHORIZATION_HEADER
   }
 
@@ -99,7 +105,7 @@ export class RestService {
           if (shown) {
             this.routingService.toHome()
           }
-          return of(error.error)
+          return throwError(() => error)
         }
       ), share())
     } else {

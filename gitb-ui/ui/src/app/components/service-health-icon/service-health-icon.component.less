@@ -1,0 +1,23 @@
+@import "../../../styles/less/_common.less";
+
+.health-status {
+    font-size: xx-large;
+    &.status-ok {
+        color: @green-success;
+    }
+    &.status-warning {
+        color: @orange-warning;
+    }
+    &.status-error {
+        color: @red-error;
+    }
+    &.status-info {
+        color: @blue-info;
+    }
+    &.status-unknown {
+        color: @gray-incomplete;
+    }
+    &.status-in-progress {
+        color: @gray-incomplete;
+    }
+}

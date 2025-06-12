@@ -3,9 +3,10 @@ import { sortBy } from 'lodash';
 import { TestCaseTag } from 'src/app/types/test-case-tag';
 
 @Component({
-  selector: 'app-tags-display',
-  templateUrl: './tags-display.component.html',
-  styleUrls: [ './tags-display.component.less' ]
+    selector: 'app-tags-display',
+    templateUrl: './tags-display.component.html',
+    styleUrls: ['./tags-display.component.less'],
+    standalone: false
 })
 export class TagsDisplayComponent implements OnInit {
 

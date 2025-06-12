@@ -90,10 +90,13 @@ export class CommunityService {
     })
   }
 
-  getOrganisationParameters(communityId: number, forFiltering?: boolean) {
+  getOrganisationParameters(communityId: number, forFiltering?: boolean, onlyPublic?: boolean) {
     let params: any = {}
     if (forFiltering !== undefined) {
       params.filtering = forFiltering
+    }
+    if (onlyPublic !== undefined) {
+      params.public = onlyPublic
     }
     return this.restService.get<OrganisationParameter[]>({
       path: ROUTES.controllers.CommunityService.getOrganisationParameters(communityId).url,
@@ -109,10 +112,13 @@ export class CommunityService {
     })
   }
 
-  getSystemParameters(communityId: number, forFiltering?: boolean) {
+  getSystemParameters(communityId: number, forFiltering?: boolean, onlyPublic?: boolean) {
     let params: any = {}
     if (forFiltering !== undefined) {
       params.filtering = forFiltering
+    }
+    if (onlyPublic !== undefined) {
+      params.public = onlyPublic
     }
     return this.restService.get<SystemParameter[]>({
       path: ROUTES.controllers.CommunityService.getSystemParameters(communityId).url,
@@ -125,7 +131,7 @@ export class CommunityService {
     selfRegType: number, selfRegRestriction: number, selfRegToken: string|undefined, selfRegTokenHelpText: string|undefined, selfRegNotification: boolean|undefined,
     interactionNotification: boolean, description: string|undefined, selfRegForceTemplate: boolean|undefined, selfRegForceProperties: boolean|undefined,
     allowCertificateDownload: boolean, allowStatementManagement: boolean, allowSystemManagement: boolean, allowPostTestOrganisationUpdate: boolean,
-    allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, allowAutomationApi: boolean|undefined,
+    allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, allowAutomationApi: boolean|undefined, allowCommunityView: boolean,
     domainId: number|undefined) {
     const data: any = {
       community_sname: shortName,
@@ -138,6 +144,7 @@ export class CommunityService {
       allow_post_test_org_update: allowPostTestOrganisationUpdate,
       allow_post_test_sys_update: allowPostTestSystemUpdate,
       allow_post_test_stm_update: allowPostTestStatementUpdate,
+      allow_community_view: allowCommunityView,
       interaction_notification: interactionNotification
     }
     if (this.dataService.configuration.registrationEnabled) {
@@ -170,7 +177,7 @@ export class CommunityService {
     selfRegType: number, selfRegRestriction: number, selfRegToken: string|undefined, selfRegTokenHelpText: string|undefined, selfRegNotification: boolean|undefined,
     interactionNotification: boolean, description: string|undefined, selfRegForceTemplate: boolean|undefined, selfRegForceProperties: boolean|undefined,
     allowCertificateDownload: boolean, allowStatementManagement: boolean, allowSystemManagement: boolean, allowPostTestOrganisationUpdate: boolean,
-    allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, allowAutomationApi: boolean|undefined,
+    allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, allowAutomationApi: boolean|undefined, allowCommunityView: boolean,
     domainId: number|undefined) {
     const data: any = {
       community_sname: shortName,
@@ -183,6 +190,7 @@ export class CommunityService {
       allow_post_test_org_update: allowPostTestOrganisationUpdate,
       allow_post_test_sys_update: allowPostTestSystemUpdate,
       allow_post_test_stm_update: allowPostTestStatementUpdate,
+      allow_community_view: allowCommunityView,
       interaction_notification: interactionNotification
     }
     if (this.dataService.configuration.registrationEnabled) {
@@ -481,108 +489,6 @@ export class CommunityService {
       },
       authenticate: true
     })
-  }
-
-  searchCommunityResources(communityId: number, filter: string|undefined, page: number|undefined, limit: number|undefined) {
-    return this.restService.get<CommunityResourceSearchResult>({
-      path: ROUTES.controllers.CommunityService.searchCommunityResources(communityId).url,
-      params: {
-        filter: filter,
-        page: page,
-        limit: limit,
-      },
-      authenticate: true
-    })
-  }
-
-  getCommunityResources(communityId: number) {
-    return this.restService.get<CommunityResource[]>({
-      path: ROUTES.controllers.CommunityService.getCommunityResources(communityId).url,
-      authenticate: true
-    })
-  }
-
-  downloadCommunityResources(communityId: number, filter: string|undefined) {
-    return this.restService.get<ArrayBuffer>({
-      path: ROUTES.controllers.CommunityService.downloadCommunityResources(communityId).url,
-      params: {
-        filter: filter
-      },
-      authenticate: true,
-      arrayBuffer: true
-    })
-  }
-
-  createCommunityResource(name: string, description: string|undefined, file: FileData, communityId: number) {
-    return this.restService.post<void>({
-      path: ROUTES.controllers.CommunityService.createCommunityResource(communityId).url,
-      authenticate: true,
-      data: {
-        name: name,
-        description: description
-      },
-      files: [{
-          param: "file",
-          data: file.file!
-      }]
-    })
-  }
-
-  uploadCommunityResourcesInBulk(communityId: number, file: FileData, updateMatching?: boolean) {
-    return this.restService.post<CommunityResourceUploadResult>({
-      path: ROUTES.controllers.CommunityService.uploadCommunityResourcesInBulk(communityId).url,
-      authenticate: true,
-      data: {
-        // Update matching resources by default
-        update: (updateMatching == undefined || updateMatching)
-      },
-      files: [{
-          param: "file",
-          data: file.file!
-      }]
-    })
-  }
-
-  updateCommunityResource(resourceId: number, name: string, description: string|undefined, file?: FileData) {
-    const files: FileParam[] = []
-    if (file?.file) {
-      files.push({param: "file", data: file.file!})
-    }
-    return this.restService.post<void>({
-      path: ROUTES.controllers.CommunityService.updateCommunityResource(resourceId).url,
-      authenticate: true,
-      data: {
-        name: name,
-        description: description
-      },
-      files: files
-    })
-  }
-
-  deleteCommunityResource(resourceId: number) {
-    return this.restService.delete<void>({
-      path: ROUTES.controllers.CommunityService.deleteCommunityResource(resourceId).url,
-      authenticate: true
-    })
-  }
-
-  deleteCommunityResources(communityId: number, resourceIds: number[]) {
-    return this.restService.post<void>({
-      path: ROUTES.controllers.CommunityService.deleteCommunityResources(communityId).url,
-      data: {
-        ids: resourceIds.join(',')
-      },
-      authenticate: true
-    })
-  }
-
-  downloadCommunityResourceById(resourceId: number) {
-		return this.restService.get<HttpResponse<ArrayBuffer>>({
-			path: ROUTES.controllers.CommunityService.downloadCommunityResourceById(resourceId).url,
-			authenticate: true,
-			arrayBuffer: true,
-      httpResponse: true
-		})
   }
 
   getCommunityIdOfDomain(domainId: number) {

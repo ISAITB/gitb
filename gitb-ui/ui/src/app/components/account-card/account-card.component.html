@@ -1,0 +1,9 @@
+<div class="row" [class.mt-2]="!first">
+    <div class="col-12">
+        <div class="account-card" [class.selected]="selected" [ngClass]="{'ou': account.role == Constants.USER_ROLE.VENDOR_USER, 'oa': account.role == Constants.USER_ROLE.VENDOR_ADMIN, 'ca': account.role == Constants.USER_ROLE.COMMUNITY_ADMIN, 'ta': account.role == Constants.USER_ROLE.SYSTEM_ADMIN}" (click)="cardClicked()">
+            <div class="account-card-internal">
+                <div class="account-card-text">{{accountDescription}}</div>
+            </div>
+        </div>
+    </div>
+</div>

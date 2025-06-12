@@ -3,9 +3,10 @@ import { Constants } from 'src/app/common/constants';
 import { SpecificationReferenceInfo } from 'src/app/types/specification-reference-info';
 
 @Component({
-  selector: 'app-specification-reference-display',
-  templateUrl: './specification-reference-display.component.html',
-  styleUrl: './specification-reference-display.component.less'
+    selector: 'app-specification-reference-display',
+    templateUrl: './specification-reference-display.component.html',
+    styleUrl: './specification-reference-display.component.less',
+    standalone: false
 })
 export class SpecificationReferenceDisplayComponent {
 

@@ -5,9 +5,10 @@ import { DataService } from 'src/app/services/data.service';
 import { RoutingService } from 'src/app/services/routing.service';
 
 @Component({
-  selector: 'app-header-menu',
-  templateUrl: './header-menu.component.html',
-  styleUrls: [ './header-menu.component.less' ]
+    selector: 'app-header-menu',
+    templateUrl: './header-menu.component.html',
+    styleUrls: ['./header-menu.component.less'],
+    standalone: false
 })
 export class HeaderMenuComponent implements OnInit {
 

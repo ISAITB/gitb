@@ -9,10 +9,10 @@ import { FeedbackType } from './feedback-type.type';
 import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
-  selector: 'app-contact-support',
-  templateUrl: './contact-support.component.html',
-  styles: [
-  ]
+    selector: 'app-contact-support',
+    templateUrl: './contact-support.component.html',
+    styles: [],
+    standalone: false
 })
 export class ContactSupportComponent extends BaseComponent implements OnInit, AfterViewInit {
 

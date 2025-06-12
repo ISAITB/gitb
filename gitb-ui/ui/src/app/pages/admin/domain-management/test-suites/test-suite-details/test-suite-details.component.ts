@@ -20,11 +20,14 @@ import {filter, find} from 'lodash';
 import {forkJoin} from 'rxjs';
 import {ConformanceTestCase} from '../../../../organisation/conformance-statement/conformance-test-case';
 import {ConformanceTestCaseGroup} from '../../../../organisation/conformance-statement/conformance-test-case-group';
+import {FilterUpdate} from '../../../../../components/test-filter/filter-update';
+import {MultiSelectConfig} from '../../../../../components/multi-select-filter/multi-select-config';
 
 @Component({
-  selector: 'app-test-suite-details',
-  templateUrl: './test-suite-details.component.html',
-  styleUrls: [ './test-suite-details.component.less' ]
+    selector: 'app-test-suite-details',
+    templateUrl: './test-suite-details.component.html',
+    styleUrls: ['./test-suite-details.component.less'],
+    standalone: false
 })
 export class TestSuiteDetailsComponent extends BaseComponent implements OnInit {
 
@@ -55,6 +58,10 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit {
   testCaseGroupMap?: Map<number, ConformanceTestCaseGroup>
   communityId?: number
 
+  movePending = false
+  moveSelectionConfig!: MultiSelectConfig<Specification>
+  convertPending = false
+
   constructor(
     public dataService: DataService,
     private routingService: RoutingService,
@@ -79,6 +86,15 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit {
       this.communityId = this.route.snapshot.data[Constants.NAVIGATION_DATA.IMPLICIT_COMMUNITY_ID] as number|undefined
     }
     this.testSuiteId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.TEST_SUITE_ID))
+    this.moveSelectionConfig = {
+      name: "specification",
+      textField: "sname",
+      singleSelection: true,
+      filterLabel: 'Move to ' + this.dataService.labelSpecificationLower(),
+      noItemsMessage: 'No target ' + this.dataService.labelSpecificationsLower() + ' available.',
+      searchPlaceholder: 'Search ' + this.dataService.labelSpecificationsLower() + '...',
+      loader: () => this.loadAvailableSpecificationsForMove()
+    }
     this.loadTestCases()
   }
 
@@ -137,6 +153,7 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit {
   }
 
 	download() {
+    this.clearAlerts()
     this.downloadPending = true
 		this.testSuiteService.downloadTestSuite(this.testSuite.id!)
     .subscribe((data) => {
@@ -148,6 +165,7 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit {
   }
 
 	delete() {
+    this.clearAlerts()
     let message: string
     if (this.testSuite.shared) {
       message = "Deleting this test suite will remove it from all linked " + this.dataService.labelSpecificationsLower() + ". Are you sure you want to proceed?"
@@ -168,6 +186,7 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit {
   }
 
 	saveChanges() {
+    this.clearAlerts()
     this.savePending = true
 		this.testSuiteService.updateTestSuiteMetadata(this.testSuite.id!, this.testSuite.sname!, this.testSuite.description, this.testSuite.documentation, this.testSuite.version!, this.testSuite.specReference, this.testSuite.specDescription, this.testSuite.specLink)
     .subscribe(() => {
@@ -202,6 +221,7 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit {
   }
 
   linkSpecifications() {
+    this.clearAlerts()
     this.linkPending = true
     const modalRef = this.modalService.show(LinkSharedTestSuiteModalComponent, {
       class: 'modal-lg',
@@ -234,6 +254,7 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit {
   }
 
   selectUnlinkSpecifications() {
+    this.clearAlerts()
     this.selectingForUnlink = true
   }
 
@@ -283,5 +304,59 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit {
       })
     })
     return testCaseToReturn;
+  }
+
+  loadAvailableSpecificationsForMove() {
+    return this.testSuiteService.getAvailableSpecificationsForMove(this.testSuiteId)
+  }
+
+  moveSelectionChanged(event: FilterUpdate<Specification>) {
+    this.clearAlerts()
+    const specificationId = event.values.active[0].id
+    this.movePending = true
+    this.testSuiteService.moveTestSuiteToSpecification(this.testSuiteId, specificationId).subscribe((result) => {
+      if (this.isErrorDescription(result)) {
+        this.addAlertError(result.error_description)
+      } else {
+        this.popupService.success('Test suite moved successfully.')
+        this.routingService.toTestSuite(this.domainId, specificationId, this.testSuiteId).then(() => {
+          // Reset breadcrumbs and loaded IDs
+          this.specificationId = specificationId
+          this.routingService.testSuiteBreadcrumbs(this.domainId, this.specificationId, this.testSuiteId, this.testSuite.identifier!)
+        })
+      }
+    }).add(() => {
+      this.movePending = false
+    })
+  }
+
+  convertToShared() {
+    this.clearAlerts()
+    this.convertPending = true
+    this.testSuiteService.convertNonSharedTestSuiteToShared(this.testSuiteId).subscribe((result) => {
+      if (this.isErrorDescription(result)) {
+        this.addAlertError(result.error_description)
+      } else {
+        this.popupService.success('Test suite converted successfully.')
+        this.routingService.toSharedTestSuite(this.domainId, this.testSuiteId)
+      }
+    }).add(() => {
+      this.convertPending = false
+    })
+  }
+
+  convertToNonShared() {
+    this.clearAlerts()
+    this.convertPending = true
+    this.testSuiteService.convertSharedTestSuiteToNonShared(this.testSuiteId).subscribe((result) => {
+      if (this.isErrorDescription(result)) {
+        this.addAlertError(result.error_description)
+      } else {
+        this.popupService.success('Test suite converted successfully.')
+        this.routingService.toTestSuite(this.domainId, result.id, this.testSuiteId)
+      }
+    }).add(() => {
+      this.convertPending = false
+    })
   }
 }

@@ -2,58 +2,63 @@ package controllers.rest
 
 import com.fasterxml.jackson.core.JsonParseException
 import controllers.util.{RequestWithAttributes, ResponseConstructor}
-import exceptions.{AutomationApiException, ErrorCodes, MissingRequiredParameterException}
+import exceptions.{AutomationApiException, ErrorCodes, MissingRequiredParameterException, UnauthorizedAccessException}
 import org.slf4j.LoggerFactory
 import play.api.libs.json.{JsResultException, JsValue, Json}
 import play.api.mvc._
 
-abstract class BaseAutomationService(protected val cc: ControllerComponents) extends AbstractController(cc) {
+import scala.concurrent.{ExecutionContext, Future}
+
+abstract class BaseAutomationService(protected val cc: ControllerComponents)
+                                    (implicit ec: ExecutionContext) extends AbstractController(cc) {
 
   private val LOG = LoggerFactory.getLogger(classOf[BaseAutomationService])
 
   private def bodyToJson(request: Request[AnyContent]): Option[JsValue] = {
-    var result: Option[JsValue] = request.body.asJson
-    if (result.isEmpty) {
-      val text = request.body.asText
-      if (text.isDefined) {
-        result = Some(Json.parse(text.get))
-      }
-    }
-    result
-  }
-
-  protected def process(request: RequestWithAttributes[AnyContent], authorisationFn: Option[RequestWithAttributes[AnyContent] => _], processFn: Any => Result): Result = {
-    if (authorisationFn.isDefined) {
-      authorisationFn.get.apply(request)
-    }
-    var result: Result = null
     try {
-      result = processFn(())
-    } catch {
-      case e: Throwable => result = handleException(e)
-    }
-    result
-  }
-
-  protected def processAsJson(request: RequestWithAttributes[AnyContent], authorisationFn: Option[RequestWithAttributes[AnyContent] => _], processFn: JsValue => Result): Result = {
-    if (authorisationFn.isDefined) {
-      authorisationFn.get.apply(request)
-    }
-    var result: Result = null
-    try {
-      val json = bodyToJson(request)
-      if (json.isEmpty) {
-        result = ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "Failed to parse provided payload as JSON")
-      } else {
-        result = processFn(json.get)
+      var result: Option[JsValue] = request.body.asJson
+      if (result.isEmpty) {
+        val text = request.body.asText
+        if (text.isDefined) {
+          result = Some(Json.parse(text.get))
+        }
       }
+      result
     } catch {
-      case e: Throwable => result = handleException(e)
+      case _: Throwable => None
     }
-    result
   }
 
-  protected def handleException(cause: Throwable): Result = {
+  protected def process(authorisationFn: () => Future[_], processFn: Any => Future[Result]): Future[Result] = {
+    (for {
+      _ <- authorisationFn.apply()
+      result <- {
+        processFn.apply(())
+      }
+    } yield result).recover {
+      handleException(_)
+    }
+  }
+
+  protected def processAsJson(request: RequestWithAttributes[AnyContent], authorisationFn: () => Future[_], processFn: JsValue => Future[Result]): Future[Result] = {
+    (for {
+      _ <- authorisationFn.apply()
+      result <- {
+        val json = bodyToJson(request)
+        if (json.isEmpty) {
+          Future.successful {
+            ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "Failed to parse provided payload as JSON")
+          }
+        } else {
+          processFn(json.get)
+        }
+      }
+    } yield result).recover {
+      handleException(_)
+    }
+  }
+
+  private def handleException(cause: Throwable): Result = {
     cause match {
       case e: JsonParseException =>
         LOG.warn("Failed to parse automation API payload: "+e.getMessage)
@@ -67,6 +72,8 @@ abstract class BaseAutomationService(protected val cc: ControllerComponents) ext
       case e: AutomationApiException =>
         LOG.warn("Failure while processing automation API call: " + e.getMessage)
         ResponseConstructor.constructBadRequestResponse(e.getCode, e.getMessage)
+      case e: UnauthorizedAccessException =>
+        ResponseConstructor.constructAccessDeniedResponse(403, e.msg)
       case e: Throwable =>
         LOG.warn("Unexpected error while processing automation API call: " + e.getMessage, e)
         ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "An unexpected error occurred while processing your request")

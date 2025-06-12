@@ -54,7 +54,7 @@
                 <div class="footer-links">
                     <div class="footer-link"><a href="@config.userGuideLink" target="blank">User guide</a></div>
                     @if(config.restApi.isDefined) {
-                    <div class="footer-link"><a href="@config.restApi.get" target="blank">REST API</a></div>
+                    <div class="footer-link"><a href="@(config.contextPath + config.restApi.get)" target="blank">REST API</a></div>
                     }
                     @if(config.hasDefaultLegalNotice) {
                     <div class="footer-link"><a href="#" data-bs-toggle="modal" data-bs-target="#legalModal">Legal notice</a></div>
@@ -91,6 +91,6 @@
 
     </div>
 </div>
-<script type='text/javascript' src='@(config.contextPath)assets/lib/bootstrap/js/bootstrap.bundle.min.js'></script>
+<script src='@(config.contextPath)assets/lib/bootstrap/js/bootstrap.bundle.min.js'></script>
 </body>
 </html>

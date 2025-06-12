@@ -1,37 +1,62 @@
 @if (context != undefined) {
-  <div class="any-content-view" [class.no-margin]="noMargin" [class.no-border]="noBorder" [class.hovering]="hoveringTitle && withItems">
-    @if (withName || withValue) {
-      <div class="any-content-view-container">
-        <div class="any-content-view-texts" [class.break-texts]="breakText" (click)="containerClicked();$event.stopPropagation()">
-          @if (withName) {
-            <div class="content-name" [class.with-items]="withItems" (mouseover)="hoverUpdate(true)" (mouseout)="hoverUpdate(false)"><app-collapsing-icon [hidden]="!withItems" [isCollapsed]="collapsed"></app-collapsing-icon>{{name}}</div>
-          }
-          @if (withValue && showValueInline) {
-            <div class="content-value" [class.with-name]="withName">{{value}}</div>
-          }
-        </div>
-        @if (withValue) {
-          <div class="any-content-view-controls">
-            <div class="btn-toolbar">
-              @if (showValueInline) {
-                <button class="btn btn-secondary" type="button" (click)="copy()" containerClass="shortTooltip" container="body" tooltip="Copy" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-clipboard" aria-hidden="true"></i></button>
-              } @else {
-                <button class="btn btn-secondary" type="button" (click)="download()" [class.pending]="downloadPending" [pending]="downloadPending" [icon]="true" containerClass="shortTooltip" container="body" tooltip="Download" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-download" aria-hidden="true"></i></button>
-                <button class="btn btn-secondary" type="button" (click)="open()" [class.pending]="openPending" [pending]="openPending" [icon]="true" containerClass="shortTooltip" container="body" tooltip="View" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-search" aria-hidden="true"></i></button>
-              }
+    <div class="any-content-view" [class.no-margin]="noMargin" [class.no-border]="noBorder"
+         [class.hovering]="hoveringTitle && withItems">
+        @if (withName || withValue) {
+            <div class="any-content-view-container">
+                <div class="any-content-view-texts" (click)="containerClicked();$event.stopPropagation()">
+                    @if (withName) {
+                        <div class="content-name" [class.with-items]="withItems" [class.break-texts]="breakNameText"
+                             (mouseover)="hoverUpdate(true)" (mouseout)="hoverUpdate(false)">
+                            <app-collapsing-icon [hidden]="!withItems" [isCollapsed]="collapsed"></app-collapsing-icon>
+                            {{ name }}
+                        </div>
+                    }
+                    @if (withValue) {
+                        @if (showValueInline) {
+                            <div class="content-value" [class.with-name]="withName"
+                                 [class.break-texts]="breakValueText">{{ value }}
+                            </div>
+                        } @else if (!withName) {
+                            <div class="content-value not-inline-help-text" [class.with-name]="withName"
+                                 [class.break-texts]="breakValueText">Download or view in editor
+                            </div>
+                        }
+                    }
+                </div>
+                @if (withValue) {
+                    <div class="any-content-view-controls">
+                        <div class="btn-toolbar">
+                            @if (showValueInline) {
+                                <button class="btn btn-secondary" type="button" (click)="copy()"
+                                        containerClass="shortTooltip" container="body" tooltip="Copy"
+                                        [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i
+                                    class="fa-solid fa-clipboard" aria-hidden="true"></i></button>
+                            } @else {
+                                <button class="btn btn-secondary" type="button" (click)="download()"
+                                        [class.pending]="downloadPending" [pending]="downloadPending" [icon]="true"
+                                        containerClass="shortTooltip" container="body" tooltip="Download"
+                                        [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i
+                                    class="fa-solid fa-download" aria-hidden="true"></i></button>
+                                <button class="btn btn-secondary" type="button" (click)="open()"
+                                        [class.pending]="openPending" [pending]="openPending" [icon]="true"
+                                        containerClass="shortTooltip" container="body" tooltip="View"
+                                        [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i
+                                    class="fa-solid fa-search" aria-hidden="true"></i></button>
+                            }
+                        </div>
+                    </div>
+                }
             </div>
-          </div>
         }
-      </div>
-    }
-    @if (withItems) {
-      <div [collapse]="collapsed" [isAnimated]="true">
-        <div class="content-items" [class.with-name]="withName">
-          @for (item of context!.item!; track $index) {
-            <app-any-content-view [context]="item" [report]="report" [sessionId]="sessionId" [root]="false"></app-any-content-view>
-          }
-        </div>
-      </div>
-    }
-  </div>
+        @if (withItems) {
+            <div [collapse]="collapsed" [isAnimated]="true">
+                <div class="content-items" [class.with-name]="withName">
+                    @for (item of context!.item!; track $index) {
+                        <app-any-content-view [context]="item" [report]="report" [sessionId]="sessionId"
+                                              [root]="false"></app-any-content-view>
+                    }
+                </div>
+            </div>
+        }
+    </div>
 }
