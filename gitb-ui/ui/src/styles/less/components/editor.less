@@ -15,19 +15,19 @@
 	.indicator-editor-widget {
 		font-size: 12px;
 		line-height: 16px;
-		
+
 		&.info-indicator-editor-widget {
 			.indicator-icon {
 				color: @blue-info;
 			}
 		}
-		
+
 		&.warning-indicator-editor-widget {
 			.indicator-icon {
 				color: @orange-warning;
 			}
 		}
-		
+
 		&.error-indicator-editor-widget {
 			.indicator-icon {
 				color: @red-error;
@@ -40,6 +40,13 @@
 	}
 
 	.indicator-widget-line {
-		background-color: fade(@black, 10%);
+		background-color: @gray-light;
 	}
+
+    .selected-editor-line {
+        background-color: @gray-medium;
+    }
+    .selected-editor-line-text {
+        font-weight: bold;
+    }
 }

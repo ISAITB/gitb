@@ -19,7 +19,7 @@ export class CodeEditorModalComponent extends BaseCodeEditorModalComponent imple
   @Input() editorOptions!: EditorOptions
   @Input() indicators?: Indicator[]
   @Input() lineNumber?: number
-  
+
   @ViewChild('codeEditor', {static: false}) codeEditor!: CodemirrorComponent
 
   isNameVisible = false
@@ -37,7 +37,7 @@ export class CodeEditorModalComponent extends BaseCodeEditorModalComponent imple
     this.isNameVisible = this.documentName != undefined
     this.isDownloadVisible = this.editorOptions.download != undefined && this.editorOptions.value != undefined
     if (this.editorOptions.copy == undefined) {
-      this.isCopyVisible = true 
+      this.isCopyVisible = true
     } else {
       this.isCopyVisible = this.editorOptions.copy
     }
@@ -72,11 +72,13 @@ export class CodeEditorModalComponent extends BaseCodeEditorModalComponent imple
           this.codeEditor.codeMirror?.addLineWidget(indicator.location.line-1, widget, {
             coverGutter: false,
             noHScroll: true,
-            above: true   
+            above: true
           })
         }
       }
       if (this.lineNumber != undefined) {
+        this.codeEditor.codeMirror?.addLineClass(this.lineNumber-1, 'background', 'selected-editor-line')
+        this.codeEditor.codeMirror?.markText({line: this.lineNumber-1, ch: 0}, {line: this.lineNumber, ch: 0}, {className: 'selected-editor-line-text'})
         this.jumpToPosition(this.lineNumber, 0)
       }
       return true
@@ -86,4 +88,3 @@ export class CodeEditorModalComponent extends BaseCodeEditorModalComponent imple
   }
 
 }
- 
