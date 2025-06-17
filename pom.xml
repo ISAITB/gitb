@@ -74,6 +74,8 @@
         <!-- Other version overrides - END -->
         <!-- Override the transitive httpclient5 version to resolve CVE-2025-27820 -->
         <version.httpclient5>5.4.4</version.httpclient5>
+        <!-- Override transitive Tomcat version to resolve CVE-2025-49125 and CVE-2025-48988. -->
+        <version.tomcat>10.1.42</version.tomcat>
         <!-- Properties used for filtering replacements -->
         <timestamp>${maven.build.timestamp}</timestamp>
         <engineVersion>${project.version}</engineVersion>
@@ -516,6 +518,23 @@
                 <artifactId>freemarker</artifactId>
                 <version>${version.freeMarker}</version>
             </dependency>
+            <!-- Overriding Tomcat version to resolve CVEs (as a precaution. To be revisited when upgrading Spring Boot version. -->
+            <dependency>
+                <groupId>org.apache.tomcat.embed</groupId>
+                <artifactId>tomcat-embed-core</artifactId>
+                <version>${version.tomcat}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.tomcat.embed</groupId>
+                <artifactId>tomcat-embed-el</artifactId>
+                <version>${version.tomcat}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.tomcat.embed</groupId>
+                <artifactId>tomcat-embed-websocket</artifactId>
+                <version>${version.tomcat}</version>
+            </dependency>
+            <!-- END -->
         </dependencies>
     </dependencyManagement>
 
