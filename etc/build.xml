@@ -63,15 +63,15 @@
             </filterchain>
         </loadfile>
         <copy file="target/generated-sources/license/temp/THIRD_PARTY_LICENCES-gitb-srv.md"
-              tofile="target/generated-sources/license/THIRD_PARTY_LICENCES.md"
+              tofile="target/generated-sources/license/NOTICE.md"
               overwrite="true"/>
-        <replace file="target/generated-sources/license/THIRD_PARTY_LICENCES.md"
+        <replace file="target/generated-sources/license/NOTICE.md"
                  token="~~PLACEHOLDER1~~"
                  value="${licence.placeholder1}" />
-        <replace file="target/generated-sources/license/THIRD_PARTY_LICENCES.md"
+        <replace file="target/generated-sources/license/NOTICE.md"
                  token="~~PLACEHOLDER2~~"
                  value="${licence.placeholder2}" />
         <!-- Step 6: Done -->
-        <echo level="info">Licence report ready at [target/generated-sources/license/THIRD_PARTY_LICENCES.md]</echo>
+        <echo level="info">Licence report ready at [target/generated-sources/license/NOTICE.md]</echo>
     </target>
 </project>
