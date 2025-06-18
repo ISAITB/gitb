@@ -24,7 +24,6 @@
         <#return p.name + " | " + p.groupId + ":" + p.artifactId + " | " + p.version + " | " + (p.url!"no url defined") + " |">
     </#if>
 </#function>
-
 # Notice
 
 Copyright (C) 2025 European Union
