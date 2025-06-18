@@ -8658,6 +8658,12 @@ Copyright 2011-2021 Lightbend, Inc.
 All rights reserved.
 ```
 
+### Spring Boot (org.springframework.boot.*)
+
+```
+Copyright 2002-2023 the original author or authors.
+```
+
 ### Swagger UI (org.webjars.swagger-ui)
 
 ```
