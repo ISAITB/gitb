@@ -1,3 +1,18 @@
+/*
+ * Copyright (C) 2025 European Union
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
+ * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
+ *
+ * You may obtain a copy of the Licence at:
+ *
+ * https://interoperable-europe.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the Licence is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the Licence for
+ * the specific language governing permissions and limitations under the Licence.
+ */
+
 import { ROUTES } from '../common/global';
 import { Injectable } from '@angular/core';
 import { RestService } from './rest.service';
@@ -52,21 +67,21 @@ export class SpecificationService {
     return this.restService.get<{id: number}>({
       path: ROUTES.controllers.SpecificationService.getSpecificationOfActor(actorId).url,
       authenticate: true
-    }) 
+    })
   }
 
   getSpecificationOfActor(actorId: number) {
     return this.restService.get<Specification>({
       path: ROUTES.controllers.SpecificationService.getSpecificationOfActor(actorId).url,
       authenticate: true
-    }) 
+    })
   }
 
   getSpecificationGroupsOfDomains(domainIds: number[]|undefined) {
     let params: any = {}
     if (domainIds != undefined && domainIds.length > 0) {
       params['domain_ids'] = domainIds.join(',')
-    }    
+    }
     return this.restService.post<SpecificationGroup[]>({
       path: ROUTES.controllers.SpecificationService.getSpecificationGroupsOfDomains().url,
       data: params,
@@ -143,7 +158,7 @@ export class SpecificationService {
       },
       authenticate: true
     })
-  }  
+  }
 
   copySpecificationToGroup(groupId: number, specificationId: number) {
     return this.restService.post<{id: number}>({
@@ -160,7 +175,7 @@ export class SpecificationService {
       path: ROUTES.controllers.SpecificationService.removeSpecificationFromGroup(specificationId).url,
       authenticate: true
     })
-  }  
+  }
 
   saveSpecificationOrder(domainId: number, groupIds: number[], groupOrders: number[], specIds: number[], specOrders: number[]) {
     const data: any = {
@@ -179,7 +194,7 @@ export class SpecificationService {
       data: data,
       authenticate: true
     })
-  }  
+  }
 
   resetSpecificationOrder(domainId: number) {
     return this.restService.post<void>({
@@ -189,6 +204,6 @@ export class SpecificationService {
       },
       authenticate: true
     })
-  }  
-  
+  }
+
 }

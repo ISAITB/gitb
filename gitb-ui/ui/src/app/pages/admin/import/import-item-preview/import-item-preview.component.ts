@@ -1,3 +1,18 @@
+/*
+ * Copyright (C) 2025 European Union
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
+ * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
+ *
+ * You may obtain a copy of the Licence at:
+ *
+ * https://interoperable-europe.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the Licence is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the Licence for
+ * the specific language governing permissions and limitations under the Licence.
+ */
+
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { Constants } from 'src/app/common/constants';
 import { IdLabel } from 'src/app/types/id-label';
@@ -94,7 +109,7 @@ export class ImportItemPreviewComponent implements OnInit {
 
   childrenCollapsed() {
     setTimeout(() => {
-      this.collapsed = true      
+      this.collapsed = true
     }, 1)
   }
 
@@ -112,7 +127,7 @@ export class ImportItemPreviewComponent implements OnInit {
       if (newOption == Constants.IMPORT_ITEM_CHOICE.PROCEED && item.process == Constants.IMPORT_ITEM_CHOICE.SKIP_DUE_TO_PARENT) {
         optionForSelf = item.previousOption!
       }
-        
+
       if (optionForSelf == Constants.IMPORT_ITEM_CHOICE.SKIP) {
         processTypeForChildren = Constants.IMPORT_ITEM_CHOICE.SKIP_DUE_TO_PARENT
       } else if (optionForSelf == Constants.IMPORT_ITEM_CHOICE.SKIP_DUE_TO_PARENT) {
