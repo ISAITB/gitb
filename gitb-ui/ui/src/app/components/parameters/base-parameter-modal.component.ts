@@ -1,3 +1,18 @@
+/*
+ * Copyright (C) 2025 European Union
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
+ * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
+ *
+ * You may obtain a copy of the Licence at:
+ *
+ * https://interoperable-europe.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the Licence is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the Licence for
+ * the specific language governing permissions and limitations under the Licence.
+ */
+
 import { BaseComponent } from 'src/app/pages/base-component.component';
 import { DataService } from 'src/app/services/data.service';
 import { ParameterReference } from 'src/app/types/parameter-reference';
@@ -28,7 +43,7 @@ export abstract class BaseParameterModalComponent extends BaseComponent {
   validation = new ValidationState()
 
   constructor(
-    private dataService: DataService, 
+    private dataService: DataService,
     protected modalInstance: BsModalRef
   ) { super() }
 
@@ -43,10 +58,10 @@ export abstract class BaseParameterModalComponent extends BaseComponent {
   }
 
   saveDisabled() {
-    return !(this.textProvided(this.parameter.name) 
-      && this.textProvided(this.parameter.kind) 
-      && (!this.hasKey || this.textProvided(this.parameter.testKey)) 
-      && this.presetValuesValid() 
+    return !(this.textProvided(this.parameter.name)
+      && this.textProvided(this.parameter.kind)
+      && (!this.hasKey || this.textProvided(this.parameter.testKey))
+      && this.presetValuesValid()
       && this.dependencyValid()
     )
   }

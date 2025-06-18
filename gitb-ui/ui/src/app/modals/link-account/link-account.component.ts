@@ -1,3 +1,18 @@
+/*
+ * Copyright (C) 2025 European Union
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
+ * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
+ *
+ * You may obtain a copy of the Licence at:
+ *
+ * https://interoperable-europe.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the Licence is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the Licence for
+ * the specific language governing permissions and limitations under the Licence.
+ */
+
 import { Component, OnInit } from '@angular/core';
 import { BsModalRef } from 'ngx-bootstrap/modal';
 import { Constants } from 'src/app/common/constants';
@@ -60,8 +75,8 @@ export class LinkAccountComponent extends BaseComponent implements OnInit {
     if (this.selectedAccountId == accountId) {
         this.selectedAccountId = -1
     } else {
-      this.selectedAccountId = accountId  
-    }        
+      this.selectedAccountId = accountId
+    }
   }
 
   createEnabled(): boolean {
@@ -70,13 +85,13 @@ export class LinkAccountComponent extends BaseComponent implements OnInit {
     } else if (this.choice == Constants.CREATE_ACCOUNT_OPTION.MIGRATE) {
         return this.textProvided(this.email) && this.textProvided(this.password)
     } else if (this.choice == Constants.CREATE_ACCOUNT_OPTION.SELF_REGISTER) {
-        return this.selfRegData.selfRegOption?.communityId != undefined && 
-            (this.selfRegData.selfRegOption.selfRegType != Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN || this.textProvided(this.selfRegData.selfRegToken)) && 
+        return this.selfRegData.selfRegOption?.communityId != undefined &&
+            (this.selfRegData.selfRegOption.selfRegType != Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN || this.textProvided(this.selfRegData.selfRegToken)) &&
             (!this.selfRegData.selfRegOption.forceTemplateSelection || (this.selfRegData.selfRegOption.templates == undefined || this.selfRegData.selfRegOption.templates.length == 0) || this.selfRegData.template != undefined) &&
             (!this.selfRegData.selfRegOption.forceRequiredProperties || this.dataService.customPropertiesValid(this.selfRegData.selfRegOption.organisationProperties, true)) &&
             this.textProvided(this.selfRegData.orgShortName) && this.textProvided(this.selfRegData.orgFullName)
     } else {
-        return false  
+        return false
     }
   }
 
