@@ -1,3 +1,18 @@
+/*
+ * Copyright (C) 2025 European Union
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
+ * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
+ *
+ * You may obtain a copy of the Licence at:
+ *
+ * https://interoperable-europe.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the Licence is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the Licence for
+ * the specific language governing permissions and limitations under the Licence.
+ */
+
 import { Injectable } from '@angular/core';
 import { mergeMap, Observable, of, Subscriber, throwError } from 'rxjs';
 import { ErrorDataArrayBuffer } from '../types/error-data-array-buffer.type';
@@ -97,7 +112,7 @@ export class ErrorService {
                 errorInfoToUse.error_description = "An unexpected error occurred."
               }
             }
-            errorObj = { 
+            errorObj = {
               error: {
                 error_code: errorInfoToUse.error_code,
                 error_description: errorInfoToUse.error_description,
@@ -168,7 +183,7 @@ export class ErrorService {
       this.errorCurrentlyDisplayed = true
       if (!error.template || error.template == '') {
         if (error.error && error.error.error_id) {
-          error.template = 
+          error.template =
             '<p>'+Constants.PLACEHOLDER__ERROR_DESCRIPTION+'</p>' +
             '<span><b>Error reference: </b>'+Constants.PLACEHOLDER__ERROR_ID+'</span>'
         } else {
@@ -240,7 +255,7 @@ export class ErrorService {
         })
       )
     } else {
-      return of(false)      
+      return of(false)
     }
   }
 

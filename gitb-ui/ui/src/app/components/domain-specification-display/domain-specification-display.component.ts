@@ -1,3 +1,18 @@
+/*
+ * Copyright (C) 2025 European Union
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
+ * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
+ *
+ * You may obtain a copy of the Licence at:
+ *
+ * https://interoperable-europe.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the Licence is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the Licence for
+ * the specific language governing permissions and limitations under the Licence.
+ */
+
 import { CdkDragDrop } from '@angular/cdk/drag-drop';
 import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
 import { Constants } from 'src/app/common/constants';
@@ -68,8 +83,8 @@ export class DomainSpecificationDisplayComponent implements OnInit {
   }
 
   isPending():boolean {
-    return (this.spec.movePending != undefined && this.spec.movePending) 
-      || (this.spec.removePending != undefined && this.spec.removePending) 
+    return (this.spec.movePending != undefined && this.spec.movePending)
+      || (this.spec.removePending != undefined && this.spec.removePending)
       || (this.spec.copyPending != undefined && this.spec.copyPending)
   }
 
@@ -96,7 +111,7 @@ export class DomainSpecificationDisplayComponent implements OnInit {
   dropSpecification(event: CdkDragDrop<any>) {
     if (event.currentIndex != event.previousIndex && this.spec.options) {
       this.spec.options.splice(event.currentIndex, 0, this.spec.options.splice(event.previousIndex, 1)[0]);
-    }    
+    }
   }
 
   propagateDrag(dragging: boolean) {

@@ -242,7 +242,7 @@ and [sample usage tutorials](https://www.itb.ec.europa.eu/docs/guides/latest/def
 
 This software is shared using the [European Union Public Licence (EUPL) version 1.2](https://interoperable-europe.ec.europa.eu/collection/eupl/eupl-text-eupl-12).
 
-Third-party library licences and attributions are listed in [THIRD_PARTY_LICENCES.md](THIRD_PARTY_LICENCES.md).
+Third-party library licences, notices and attributions are listed in [NOTICE.md](NOTICE.md).
 
 # Legal notice
 

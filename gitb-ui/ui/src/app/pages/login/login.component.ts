@@ -1,3 +1,18 @@
+/*
+ * Copyright (C) 2025 European Union
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
+ * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
+ *
+ * You may obtain a copy of the Licence at:
+ *
+ * https://interoperable-europe.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the Licence is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the Licence for
+ * the specific language governing permissions and limitations under the Licence.
+ */
+
 import { HttpClient, HttpResponse } from '@angular/common/http';
 import { AfterViewInit, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { BsModalService } from 'ngx-bootstrap/modal';
@@ -84,7 +99,7 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
       if (this.dataService.actualUser.accounts.length == 1) {
         // The user is linked to a single functional account. Automate its selection.
         userIdToConnectWith = this.dataService.actualUser.accounts[0].id
-      } else if (this.dataService.actualUser.accounts.length > 1) { 
+      } else if (this.dataService.actualUser.accounts.length > 1) {
         const previousUser = this.dataService.checkLocationUser()
         if (previousUser != undefined) {
           const matchedUser = this.dataService.actualUser.accounts.find((account) => account.id == previousUser)

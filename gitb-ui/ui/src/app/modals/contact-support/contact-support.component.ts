@@ -1,3 +1,18 @@
+/*
+ * Copyright (C) 2025 European Union
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
+ * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
+ *
+ * You may obtain a copy of the Licence at:
+ *
+ * https://interoperable-europe.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the Licence is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the Licence for
+ * the specific language governing permissions and limitations under the Licence.
+ */
+
 import { AfterViewInit, Component, OnInit } from '@angular/core';
 import { BsModalRef } from 'ngx-bootstrap/modal';
 import { BaseComponent } from 'src/app/pages/base-component.component';
@@ -21,7 +36,7 @@ export class ContactSupportComponent extends BaseComponent implements OnInit, Af
     {id: 0, description: "Technical issue"},
     {id: 1, description: "Feature request"},
     {id: 2, description: "Question on usage"},
-    {id: 3, description: "Other"}    
+    {id: 3, description: "Other"}
   ]
   surveyAddress?: string
   sendPending = false
@@ -107,7 +122,7 @@ export class ContactSupportComponent extends BaseComponent implements OnInit, Af
             this.validation.applyError(data)
             this.sendPending = false
           } else {
-            this.cancel()                
+            this.cancel()
             this.popupService.success('Your feedback was submitted successfully.')
           }
         }).add(() => {
@@ -147,5 +162,5 @@ export class ContactSupportComponent extends BaseComponent implements OnInit, Af
   showUpload() {
     return this.maximumAttachments > 0
   }
-  
+
 }
