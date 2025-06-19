@@ -151,7 +151,7 @@
                         <fileTemplate>${project.basedir}/etc/licence/third-party-licence-template.ftl</fileTemplate>
                         <outputDirectory>${project.build.directory}/generated-sources/license/temp</outputDirectory>
                         <thirdPartyFilename>THIRD_PARTY_LICENCES-gitb-srv.md</thirdPartyFilename>
-                        <excludedGroups>com.gitb|eu.europa.ec.itb</excludedGroups>
+                        <excludedGroups>com.gitb</excludedGroups>
                         <excludedScopes>test</excludedScopes>
                         <failOnMissing>true</failOnMissing>
                         <failOnBlacklist>true</failOnBlacklist>
@@ -167,6 +167,7 @@
                             <licenseMerge>The 2-Clause BSD License|The BSD 2-Clause License</licenseMerge>
                             <licenseMerge>Common Public License 1.0|CPL</licenseMerge>
                             <licenseMerge>Mozilla Public License Version 1.1|MPL 1.1</licenseMerge>
+                            <licenseMerge>European Union Public Licence (EUPL) Version 1.2</licenseMerge>
                         </licenseMerges>
                         <includedLicenses>
                             <includedLicense>Apache License, Version 2.0</includedLicense>
@@ -176,6 +177,7 @@
                             <includedLicense>Eclipse Public License - v2.0</includedLicense>
                             <includedLicense>GNU General Public License (GPL), Version 2 (with Classpath Exception)</includedLicense>
                             <includedLicense>GNU Lesser General Public License (LGPL), Version 2.1</includedLicense>
+                            <includedLicense>European Union Public Licence (EUPL) Version 1.2</includedLicense>
                             <includedLicense>The 3-Clause BSD License</includedLicense>
                             <includedLicense>The 2-Clause BSD License</includedLicense>
                             <includedLicense>Mozilla Public License Version 2.0</includedLicense>
