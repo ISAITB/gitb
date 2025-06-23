@@ -58,7 +58,7 @@
         <version.saajImpl>3.0.4</version.saajImpl>
         <version.helgerCommons>11.1.6</version.helgerCommons>
         <version.dnsJava>3.6.0</version.dnsJava>
-        <version.commonsFileUpload>1.5</version.commonsFileUpload>
+        <version.commonsFileUpload>1.6.0</version.commonsFileUpload>
         <version.commonsCollections>4.4</version.commonsCollections>
         <version.xmlUnit>2.10.0</version.xmlUnit>
         <version.jerseyClient>1.19.4</version.jerseyClient>
