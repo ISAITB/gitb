@@ -52,6 +52,7 @@ public class SchematronValidator extends AbstractValidator {
     public final static String SHOW_SCHEMATRON_ARGUMENT_NAME = "showSchematron";
     public final static String SORT_BY_SEVERITY_ARGUMENT_NAME  = "sortBySeverity";
     public final static String SHOW_TESTS_ARGUMENT_NAME = "showTests";
+    public final static String SHOW_PATHS_ARGUMENT_NAME  = "showLocationPaths";
     private final static String MODULE_DEFINITION_XML = "/validation/schematron-validator-definition.xml";
 
     public SchematronValidator() {
@@ -66,6 +67,7 @@ public class SchematronValidator extends AbstractValidator {
         var showSchematron = getAndConvert(inputs, SHOW_SCHEMATRON_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class);
         var sortBySeverity = getAndConvert(inputs, SORT_BY_SEVERITY_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class);
         var showTests = getAndConvert(inputs, SHOW_TESTS_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class);
+        var showPaths = getAndConvert(inputs, SchematronValidator.SHOW_PATHS_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class);
         // Process schematron resource.
         SchematronType validationType = determineSchematronType(inputs, sch);
         ISchematronResource schematron;
@@ -102,7 +104,8 @@ public class SchematronValidator extends AbstractValidator {
                 xml,
                 (showSchematron == null || (Boolean)showSchematron.getValue())?sch:null, inputDocument, svrlOutput,
                 convertXPathExpressions,
-                (showTests != null && ((Boolean) showTests.getValue()))
+                (showTests != null && ((Boolean) showTests.getValue())),
+                (showPaths != null && ((Boolean) showPaths.getValue()))
         );
         var report = handler.createReport();
         if (sortBySeverity != null && ((Boolean) sortBySeverity.getValue()) && report.getReports() != null) {

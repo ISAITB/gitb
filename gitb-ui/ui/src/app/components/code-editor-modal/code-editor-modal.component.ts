@@ -92,6 +92,8 @@ export class CodeEditorModalComponent extends BaseCodeEditorModalComponent imple
         }
       }
       if (this.lineNumber != undefined) {
+        this.codeEditor.codeMirror?.addLineClass(this.lineNumber-1, 'background', 'selected-editor-line')
+        this.codeEditor.codeMirror?.markText({line: this.lineNumber-1, ch: 0}, {line: this.lineNumber, ch: 0}, {className: 'selected-editor-line-text'})
         this.jumpToPosition(this.lineNumber, 0)
       }
       return true

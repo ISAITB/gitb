@@ -13,10 +13,10 @@
                 <div class="report-metadata-value">{{assertionReport.value.value}}</div>
             </div>
         }
-        @if (assertionReport.extractedLocation == undefined && assertionReport.value.location) {
+        @if (locationToShow != undefined) {
             <div class="report-metadata">
                 <div class="report-metadata-key">Location:</div>
-                <div class="report-metadata-value">{{assertionReport.value.location}}</div>
+                <div class="report-metadata-value">{{locationToShow}}</div>
             </div>
         }
         @if (assertionReport.value.test != undefined) {

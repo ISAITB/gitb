@@ -59,6 +59,7 @@ public class XmlValidator extends AbstractValidator {
         var showArtefacts = getAndConvert(inputs, SHOW_ARTEFACTS_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class);
         var sortBySeverity = getAndConvert(inputs, SORT_BY_SEVERITY_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class);
         var showTests = getAndConvert(inputs, SHOW_SCHEMATRON_TESTS_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class);
+        var showPaths = getAndConvert(inputs, SchematronValidator.SHOW_PATHS_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class);
         var testCaseId = new StringType(getTestCaseId(inputs));
         TAR xsdReport = null;
         List<TAR> schematronReports = new ArrayList<>();
@@ -89,6 +90,7 @@ public class XmlValidator extends AbstractValidator {
                 putIfNotNull(map, SchematronValidator.SCHEMATRON_TYPE_ARGUMENT_NAME, schematronType);
                 putIfNotNull(map, SchematronValidator.SHOW_SCHEMATRON_ARGUMENT_NAME, showArtefacts);
                 putIfNotNull(map, SchematronValidator.SHOW_TESTS_ARGUMENT_NAME, showTests);
+                putIfNotNull(map, SchematronValidator.SHOW_PATHS_ARGUMENT_NAME, showPaths);
                 schematronReports.add((TAR)schematronValidator.validate(configurations, map));
             }
             allReports.addAll(schematronReports);

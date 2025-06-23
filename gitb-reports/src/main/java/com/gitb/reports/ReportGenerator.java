@@ -130,7 +130,7 @@ public class ReportGenerator {
     public void writeClasspathReport(String reportPath, Map<String, Object> parameters, OutputStream outputStream, ReportSpecs specs) {
         ReportSpecs specsToUse = Objects.requireNonNullElseGet(specs, ReportSpecs::build);
         // Add custom extension functions.
-        parameters = Objects.requireNonNullElse(parameters, Collections.emptyMap());
+        parameters = Objects.requireNonNullElse(parameters, new HashMap<>());
         parameters.putAll(extensionFunctions);
         // Generate HTML report.
         File tempHtmlFile = null;
@@ -203,8 +203,8 @@ public class ReportGenerator {
         try {
             Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
             JAXBElement<TestStepStatus> stepStatus = unmarshaller.unmarshal(new StreamSource(inputStream), TestStepStatus.class);
-            if (!addContext && stepStatus.getValue().getReport() instanceof TAR) {
-                ((TAR) stepStatus.getValue().getReport()).setContext(null);
+            if (!addContext && stepStatus.getValue().getReport() instanceof TAR tarReport) {
+                tarReport.setContext(null);
             }
             Marshaller marshaller = jaxbContext.createMarshaller();
             marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
@@ -350,8 +350,7 @@ public class ReportGenerator {
         }
         report.setReportResult(reportType.getResult().value());
         report.setTitle(Objects.requireNonNullElse(title, "Report"));
-        if (reportType instanceof TAR) {
-            TAR tarReport = (TAR)reportType;
+        if (reportType instanceof TAR tarReport) {
             if (specs.isIncludeContextItems()) {
                 addContextItems(tarReport, report.getContextItems(), specs);
             }
@@ -360,8 +359,7 @@ public class ReportGenerator {
                 int warnings = 0;
                 int messages = 0;
                 for (JAXBElement<TestAssertionReportType> element : tarReport.getReports().getInfoOrWarningOrError()) {
-                    if (element.getValue() instanceof BAR) {
-                        BAR tarItem = (BAR) element.getValue();
+                    if (element.getValue() instanceof BAR tarItem) {
                         ReportItem reportItem = new ReportItem();
                         reportItem.setLevel(element.getName().getLocalPart());
                         if ("error".equalsIgnoreCase(reportItem.getLevel())) {

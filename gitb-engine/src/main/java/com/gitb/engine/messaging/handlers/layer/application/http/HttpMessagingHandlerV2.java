@@ -232,7 +232,9 @@ public class HttpMessagingHandlerV2 extends AbstractNonWorkerMessagingHandler {
             // Body
             getResponseBody(response).ifPresent(item -> responseItem.addItem(REPORT_ITEM_BODY, item));
             messageForReport.getFragments().put(REPORT_ITEM_RESPONSE, responseItem);
-            return MessagingHandlerUtils.generateSuccessReport(messageForReport);
+            MessagingReport messagingReport = MessagingHandlerUtils.generateSuccessReport(messageForReport);
+            new ReportVisibilitySettings(message).apply(messagingReport);
+            return messagingReport;
         });
         return new DeferredMessagingReport(asyncReport);
     }

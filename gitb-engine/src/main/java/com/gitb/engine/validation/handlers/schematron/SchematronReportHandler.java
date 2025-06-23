@@ -62,15 +62,17 @@ public class SchematronReportHandler extends AbstractReportHandler {
     private NamespaceContext namespaceContext;
     private final boolean convertXPathExpressions;
     private final boolean showTests;
+    private final boolean showPaths;
     private Boolean hasDefaultNamespace;
 
-    protected SchematronReportHandler(ObjectType xml, SchemaType sch, Document node, SchematronOutputType svrl, boolean convertXPathExpressions, boolean showTests) {
+    protected SchematronReportHandler(ObjectType xml, SchemaType sch, Document node, SchematronOutputType svrl, boolean convertXPathExpressions, boolean showTests, boolean showPaths) {
         super();
 
         this.node = node;
         this.svrlReport = svrl;
         this.convertXPathExpressions = convertXPathExpressions;
         this.showTests = showTests;
+        this.showPaths = showPaths;
 
         report.setName("Schematron Validation");
         report.setReports(new TestAssertionGroupReportsType());
@@ -145,7 +147,12 @@ public class SchematronReportHandler extends AbstractReportHandler {
         for (T message : svrlMessages) {
             var error = new BAR();
             error.setDescription(message.getText());
-            error.setLocation(XML_ITEM_NAME + ":" + getLineNumberFromXPath(message.getLocation()) + ":0");
+            LocationInfo locationInfo = getLocationInfo(message.getLocation());
+            if (showPaths) {
+                error.setLocation("%s:%s:0|%s".formatted(XML_ITEM_NAME, locationInfo.lineNumber(), locationInfo.path()));
+            } else {
+                error.setLocation("%s:%s:0".formatted(XML_ITEM_NAME, locationInfo.lineNumber()));
+            }
             if (showTests) {
                 error.setTest(message.getTest());
             }
@@ -172,17 +179,35 @@ public class SchematronReportHandler extends AbstractReportHandler {
         return namespaceContext;
     }
 
-    private String getLineNumberFromXPath(String xpathExpression) {
+    private LocationInfo getLocationInfo(String xpathExpression) {
         String xpathExpressionConverted = convertToXPathExpression(xpathExpression);
         XPath xPath = new net.sf.saxon.xpath.XPathFactoryImpl().newXPath();
         xPath.setNamespaceContext(getNamespaceContext());
         Node node;
+        String lineNumber;
         try {
             node = (Node) xPath.evaluate(xpathExpressionConverted, this.node, XPathConstants.NODE);
-            return (String) node.getUserData("lineNumber");
+            lineNumber = (String) node.getUserData("lineNumber");
         } catch (XPathExpressionException e) {
             logger.debug(e.getMessage());
-            return "0";
+            lineNumber = "0";
+        }
+        return new LocationInfo(toPathForPresentation(xpathExpression), lineNumber);
+    }
+
+    /**
+     * Concert the provided XPath expression to one to be used for reporting.
+     *
+     * @param xpathExpression The XPath expression to process.
+     * @return The location path to use.
+     */
+    private String toPathForPresentation(String xpathExpression) {
+        if (xpathExpression != null) {
+            return xpathExpression
+                    .replaceAll("\\*:", "")
+                    .replaceAll("\\[\\s*namespace-uri\\(\\)\\s*=\\s*(?:'[^\\[\\]]+'|\"[^\\[\\]]+\")\\s*]", "");
+        } else {
+            return null;
         }
     }
 
@@ -227,4 +252,5 @@ public class SchematronReportHandler extends AbstractReportHandler {
         return hasDefaultNamespace;
     }
 
+    private record LocationInfo(String path, String lineNumber) {}
 }
