@@ -1,6 +1,5 @@
-The test engine callback endpoints are **localhost addresses**. This means that test components and systems under test
-calling the `gitb-srv` test engine can only do so if located on the same host, which will typically result in errors if
-such calls are expected. If no direct test engine calls are expected this will not cause any issues.
+Test engine callbacks appear to be **working correctly**. This means external test components and systems under test
+should be able to call the `gitb-srv` test engine.
 
 Callbacks to the test engine are used in two cases:
 * When test cases **receive messages** from systems under test.

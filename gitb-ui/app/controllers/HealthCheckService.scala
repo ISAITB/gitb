@@ -226,10 +226,17 @@ class HealthCheckService @Inject()(authorizedAction: AuthorizedAction,
   def checkTestEngineCallbacks(): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canCheckCoreServiceHealth(request).flatMap { _ =>
       testbedClient.healthCheck("callbacks").map { callbackUrl =>
-        ServiceHealthInfo(ServiceHealthStatusType.Info,
-          "Test engine callbacks appear to be working correctly.",
-          readClasspathResource("health/callbacks/info.md").formatted(callbackUrl)
-        )
+        if (callbackUrl.startsWith("http://localhost") || callbackUrl.startsWith("https://localhost")) {
+          ServiceHealthInfo(ServiceHealthStatusType.Info,
+            "Test engine callbacks are limited to localhost calls.",
+            readClasspathResource("health/callbacks/info.md").formatted(callbackUrl)
+          )
+        } else {
+          ServiceHealthInfo(ServiceHealthStatusType.Ok,
+            "Test engine callbacks appear to be working correctly.",
+            readClasspathResource("health/callbacks/ok.md").formatted(callbackUrl)
+          )
+        }
       }.recover {
         case e: Exception =>
           val errors = errorsToString(systemConfigurationManager.extractFailureDetails(e))
