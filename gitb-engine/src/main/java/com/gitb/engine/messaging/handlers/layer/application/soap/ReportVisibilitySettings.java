@@ -46,7 +46,6 @@ public class ReportVisibilitySettings extends BaseReportVisibilitySettings {
     private final static String RESPONSE_ATTACHMENTS_TO_SHOW_ARGUMENT_NAME = "responseAttachmentsToShow";
     private final static String RESPONSE_ATTACHMENTS_TO_HIDE_ARGUMENT_NAME = "responseAttachmentsToHide";
 
-
     private final boolean showRequestUri;
     private final boolean showRequestEnvelope;
     private final boolean showRequestBody;
