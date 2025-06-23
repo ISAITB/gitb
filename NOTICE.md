@@ -93,19 +93,19 @@ Library licences are organised in three sections:
 | Apache License, Version 2.0 | Apache Commons CSV | org.apache.commons:commons-csv | 1.12.0 | https://commons.apache.org/proper/commons-csv/ |
 | Apache License, Version 2.0 | Apache Commons Lang | org.apache.commons:commons-lang3 | 3.17.0 | https://commons.apache.org/proper/commons-lang/ |
 | Apache License, Version 2.0 | Apache Commons Text | org.apache.commons:commons-text | 1.13.1 | https://commons.apache.org/proper/commons-text |
-| Apache License, Version 2.0 | Apache CXF Core | org.apache.cxf:cxf-core | 4.1.1 | https://cxf.apache.org |
-| Apache License, Version 2.0 | Apache CXF Runtime SOAP Binding | org.apache.cxf:cxf-rt-bindings-soap | 4.1.1 | https://cxf.apache.org |
-| Apache License, Version 2.0 | Apache CXF Runtime XML Binding | org.apache.cxf:cxf-rt-bindings-xml | 4.1.1 | https://cxf.apache.org |
-| Apache License, Version 2.0 | Apache CXF Runtime JAXB DataBinding | org.apache.cxf:cxf-rt-databinding-jaxb | 4.1.1 | https://cxf.apache.org |
-| Apache License, Version 2.0 | Apache CXF Metrics Feature | org.apache.cxf:cxf-rt-features-metrics | 4.1.1 | https://cxf.apache.org/cxf-rt-features-metrics |
-| Apache License, Version 2.0 | Apache CXF Runtime JAX-WS Frontend | org.apache.cxf:cxf-rt-frontend-jaxws | 4.1.1 | https://cxf.apache.org |
-| Apache License, Version 2.0 | Apache CXF Runtime Simple Frontend | org.apache.cxf:cxf-rt-frontend-simple | 4.1.1 | https://cxf.apache.org |
-| Apache License, Version 2.0 | Apache CXF Runtime HTTP Transport | org.apache.cxf:cxf-rt-transports-http | 4.1.1 | https://cxf.apache.org |
-| Apache License, Version 2.0 | Apache CXF Runtime WS Addressing | org.apache.cxf:cxf-rt-ws-addr | 4.1.1 | https://cxf.apache.org |
-| Apache License, Version 2.0 | Apache CXF Runtime WS Policy | org.apache.cxf:cxf-rt-ws-policy | 4.1.1 | https://cxf.apache.org |
-| Apache License, Version 2.0 | Apache CXF Runtime Core for WSDL | org.apache.cxf:cxf-rt-wsdl | 4.1.1 | https://cxf.apache.org |
-| Apache License, Version 2.0 | Apache CXF Spring Boot Autoconfigure | org.apache.cxf:cxf-spring-boot-autoconfigure | 4.1.1 | https://cxf.apache.org |
-| Apache License, Version 2.0 | Apache CXF Spring Boot Starter JAX-WS | org.apache.cxf:cxf-spring-boot-starter-jaxws | 4.1.1 | https://cxf.apache.org |
+| Apache License, Version 2.0 | Apache CXF Core | org.apache.cxf:cxf-core | 4.1.2 | https://cxf.apache.org |
+| Apache License, Version 2.0 | Apache CXF Runtime SOAP Binding | org.apache.cxf:cxf-rt-bindings-soap | 4.1.2 | https://cxf.apache.org |
+| Apache License, Version 2.0 | Apache CXF Runtime XML Binding | org.apache.cxf:cxf-rt-bindings-xml | 4.1.2 | https://cxf.apache.org |
+| Apache License, Version 2.0 | Apache CXF Runtime JAXB DataBinding | org.apache.cxf:cxf-rt-databinding-jaxb | 4.1.2 | https://cxf.apache.org |
+| Apache License, Version 2.0 | Apache CXF Metrics Feature | org.apache.cxf:cxf-rt-features-metrics | 4.1.2 | https://cxf.apache.org/cxf-rt-features-metrics |
+| Apache License, Version 2.0 | Apache CXF Runtime JAX-WS Frontend | org.apache.cxf:cxf-rt-frontend-jaxws | 4.1.2 | https://cxf.apache.org |
+| Apache License, Version 2.0 | Apache CXF Runtime Simple Frontend | org.apache.cxf:cxf-rt-frontend-simple | 4.1.2 | https://cxf.apache.org |
+| Apache License, Version 2.0 | Apache CXF Runtime HTTP Transport | org.apache.cxf:cxf-rt-transports-http | 4.1.2 | https://cxf.apache.org |
+| Apache License, Version 2.0 | Apache CXF Runtime WS Addressing | org.apache.cxf:cxf-rt-ws-addr | 4.1.2 | https://cxf.apache.org |
+| Apache License, Version 2.0 | Apache CXF Runtime WS Policy | org.apache.cxf:cxf-rt-ws-policy | 4.1.2 | https://cxf.apache.org |
+| Apache License, Version 2.0 | Apache CXF Runtime Core for WSDL | org.apache.cxf:cxf-rt-wsdl | 4.1.2 | https://cxf.apache.org |
+| Apache License, Version 2.0 | Apache CXF Spring Boot Autoconfigure | org.apache.cxf:cxf-spring-boot-autoconfigure | 4.1.2 | https://cxf.apache.org |
+| Apache License, Version 2.0 | Apache CXF Spring Boot Starter JAX-WS | org.apache.cxf:cxf-spring-boot-starter-jaxws | 4.1.2 | https://cxf.apache.org |
 | Apache License, Version 2.0 | Apache HttpClient | org.apache.httpcomponents:httpclient | 4.5.13 | http://hc.apache.org/httpcomponents-client |
 | Apache License, Version 2.0 | Apache HttpCore | org.apache.httpcomponents:httpcore | 4.4.16 | http://hc.apache.org/httpcomponents-core-ga |
 | Apache License, Version 2.0 | Apache HttpClient Mime | org.apache.httpcomponents:httpmime | 4.5.13 | http://hc.apache.org/httpcomponents-client |
@@ -162,7 +162,7 @@ Library licences are organised in three sections:
 | MIT License | jsoup Java HTML Parser | org.jsoup:jsoup | 1.15.4 | https://jsoup.org/ |
 | Apache License, Version 2.0 | JSpecify annotations | org.jspecify:jspecify | 1.0.0 | http://jspecify.org/ |
 | Eclipse Distribution License - v1.0 | Extended StAX API | org.jvnet.staxex:stax-ex | 2.1.0 | https://projects.eclipse.org/projects/ee4j/stax-ex |
-| The 3-Clause BSD License | asm | org.ow2.asm:asm | 9.7.1 | http://asm.ow2.io/ |
+| The 3-Clause BSD License | asm | org.ow2.asm:asm | 9.8 | http://asm.ow2.io/ |
 | Apache License, Version 2.0, WTFPL | Reflections | org.reflections:reflections | 0.10.2 | http://github.com/ronmamo/reflections |
 | Apache License, Version 2.0 | org.roaringbitmap:RoaringBitmap | org.roaringbitmap:RoaringBitmap | 1.3.0 | https://github.com/RoaringBitmap/RoaringBitmap |
 | Apache License, Version 2.0 | Scala Library | org.scala-lang:scala-library | 2.13.14 | https://www.scala-lang.org/ |
@@ -256,13 +256,13 @@ Library licences are organised in three sections:
 | Apache | [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt) | [org.freemarker # freemarker # 2.3.34](https://freemarker.apache.org/) | <notextile></notextile> |
 | Apache | [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0) | [org.webjars # bootstrap # 5.3.5](http://webjars.org) | <notextile></notextile> |
 | Apache | [Apache Software License - Version 2.0](http://www.apache.org/licenses/LICENSE-2.0) | org.eclipse.jetty # jetty-client # 9.4.50.v20221201 | <notextile></notextile> |
-| Apache | [Apache Software License - Version 2.0](https://www.apache.org/licenses/LICENSE-2.0) | org.eclipse.jetty # jetty-http # 12.0.16 | <notextile></notextile> |
-| Apache | [Apache Software License - Version 2.0](https://www.apache.org/licenses/LICENSE-2.0) | org.eclipse.jetty # jetty-io # 12.0.16 | <notextile></notextile> |
-| Apache | [Apache Software License - Version 2.0](https://www.apache.org/licenses/LICENSE-2.0) | org.eclipse.jetty # jetty-security # 12.0.16 | <notextile></notextile> |
-| Apache | [Apache Software License - Version 2.0](https://www.apache.org/licenses/LICENSE-2.0) | org.eclipse.jetty # jetty-server # 12.0.16 | <notextile></notextile> |
-| Apache | [Apache Software License - Version 2.0](https://www.apache.org/licenses/LICENSE-2.0) | org.eclipse.jetty # jetty-session # 12.0.16 | <notextile></notextile> |
-| Apache | [Apache Software License - Version 2.0](https://www.apache.org/licenses/LICENSE-2.0) | org.eclipse.jetty # jetty-util # 12.0.16 | <notextile></notextile> |
-| Apache | [Apache Software License - Version 2.0](https://www.apache.org/licenses/LICENSE-2.0) | org.eclipse.jetty.ee10 # jetty-ee10-servlet # 12.0.16 | <notextile></notextile> |
+| Apache | [Apache Software License - Version 2.0](https://www.apache.org/licenses/LICENSE-2.0) | org.eclipse.jetty # jetty-http # 12.0.21 | <notextile></notextile> |
+| Apache | [Apache Software License - Version 2.0](https://www.apache.org/licenses/LICENSE-2.0) | org.eclipse.jetty # jetty-io # 12.0.21 | <notextile></notextile> |
+| Apache | [Apache Software License - Version 2.0](https://www.apache.org/licenses/LICENSE-2.0) | org.eclipse.jetty # jetty-security # 12.0.21 | <notextile></notextile> |
+| Apache | [Apache Software License - Version 2.0](https://www.apache.org/licenses/LICENSE-2.0) | org.eclipse.jetty # jetty-server # 12.0.21 | <notextile></notextile> |
+| Apache | [Apache Software License - Version 2.0](https://www.apache.org/licenses/LICENSE-2.0) | org.eclipse.jetty # jetty-session # 12.0.21 | <notextile></notextile> |
+| Apache | [Apache Software License - Version 2.0](https://www.apache.org/licenses/LICENSE-2.0) | org.eclipse.jetty # jetty-util # 12.0.21 | <notextile></notextile> |
+| Apache | [Apache Software License - Version 2.0](https://www.apache.org/licenses/LICENSE-2.0) | org.eclipse.jetty.ee10 # jetty-ee10-servlet # 12.0.21 | <notextile></notextile> |
 | Apache | [Apache Software License - Version 2.0](http://www.apache.org/licenses/LICENSE-2.0) | org.eclipse.jetty.websocket # websocket-api # 9.4.50.v20221201 | <notextile></notextile> |
 | Apache | [Apache Software License - Version 2.0](http://www.apache.org/licenses/LICENSE-2.0) | org.eclipse.jetty.websocket # websocket-client # 9.4.50.v20221201 | <notextile></notextile> |
 | Apache | [Apache Software License - Version 2.0](http://www.apache.org/licenses/LICENSE-2.0) | org.eclipse.jetty.websocket # websocket-common # 9.4.50.v20221201 | <notextile></notextile> |
@@ -275,17 +275,17 @@ Library licences are organised in three sections:
 | Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.commons # commons-configuration2 # 2.11.0](https://commons.apache.org/proper/commons-configuration/) | <notextile></notextile> |
 | Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.commons # commons-lang3 # 3.17.0](https://commons.apache.org/proper/commons-lang/) | <notextile></notextile> |
 | Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.commons # commons-text # 1.13.1](https://commons.apache.org/proper/commons-text) | <notextile></notextile> |
-| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-core # 4.1.1](https://cxf.apache.org) | <notextile></notextile> |
-| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-rt-bindings-soap # 4.1.1](https://cxf.apache.org) | <notextile></notextile> |
-| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-rt-bindings-xml # 4.1.1](https://cxf.apache.org) | <notextile></notextile> |
-| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-rt-databinding-jaxb # 4.1.1](https://cxf.apache.org) | <notextile></notextile> |
-| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-rt-frontend-jaxws # 4.1.1](https://cxf.apache.org) | <notextile></notextile> |
-| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-rt-frontend-simple # 4.1.1](https://cxf.apache.org) | <notextile></notextile> |
-| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-rt-transports-http # 4.1.1](https://cxf.apache.org) | <notextile></notextile> |
-| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-rt-transports-http-jetty # 4.1.1](https://cxf.apache.org) | <notextile></notextile> |
-| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-rt-ws-addr # 4.1.1](https://cxf.apache.org) | <notextile></notextile> |
-| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-rt-ws-policy # 4.1.1](https://cxf.apache.org) | <notextile></notextile> |
-| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-rt-wsdl # 4.1.1](https://cxf.apache.org) | <notextile></notextile> |
+| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-core # 4.1.2](https://cxf.apache.org) | <notextile></notextile> |
+| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-rt-bindings-soap # 4.1.2](https://cxf.apache.org) | <notextile></notextile> |
+| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-rt-bindings-xml # 4.1.2](https://cxf.apache.org) | <notextile></notextile> |
+| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-rt-databinding-jaxb # 4.1.2](https://cxf.apache.org) | <notextile></notextile> |
+| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-rt-frontend-jaxws # 4.1.2](https://cxf.apache.org) | <notextile></notextile> |
+| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-rt-frontend-simple # 4.1.2](https://cxf.apache.org) | <notextile></notextile> |
+| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-rt-transports-http # 4.1.2](https://cxf.apache.org) | <notextile></notextile> |
+| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-rt-transports-http-jetty # 4.1.2](https://cxf.apache.org) | <notextile></notextile> |
+| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-rt-ws-addr # 4.1.2](https://cxf.apache.org) | <notextile></notextile> |
+| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-rt-ws-policy # 4.1.2](https://cxf.apache.org) | <notextile></notextile> |
+| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.cxf # cxf-rt-wsdl # 4.1.2](https://cxf.apache.org) | <notextile></notextile> |
 | Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | org.apache.maven # maven-model # 3.9.1 | <notextile></notextile> |
 | Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.neethi # neethi # 3.2.1](https://ws.apache.org/neethi/) | <notextile></notextile> |
 | Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.html) | [org.apache.pekko # pekko-actor-typed_2.13 # 1.1.3](https://pekko.apache.org/) | <notextile></notextile> |
@@ -411,7 +411,7 @@ Library licences are organised in three sections:
 | Apache | [The Apache Software License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt) | [xml-apis # xml-apis # 1.4.01](http://xml.apache.org/commons/components/external/) | <notextile></notextile> |
 | Apache | [The Apache Software License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt) | [xml-apis # xml-apis-ext # 1.3.04](http://xml.apache.org/commons/components/external/) | <notextile></notextile> |
 | BSD | [BSD](LICENSE.txt) | com.thoughtworks.paranamer # paranamer # 2.8 | <notextile></notextile> |
-| BSD | [BSD-3-Clause](https://asm.ow2.io/license.html) | [org.ow2.asm # asm # 9.7.1](http://asm.ow2.io/) | <notextile></notextile> |
+| BSD | [BSD-3-Clause](https://asm.ow2.io/license.html) | [org.ow2.asm # asm # 9.8](http://asm.ow2.io/) | <notextile></notextile> |
 | BSD | [EDL 1.0](http://www.eclipse.org/org/documents/edl-v10.php) | com.sun.activation # jakarta.activation # 2.0.1 | <notextile></notextile> |
 | BSD | [EDL 1.0](http://www.eclipse.org/org/documents/edl-v10.php) | com.sun.mail # jakarta.mail # 2.0.1 | <notextile></notextile> |
 | BSD | [EDL 1.0](http://www.eclipse.org/org/documents/edl-v10.php) | [jakarta.activation # jakarta.activation-api # 2.1.3](https://github.com/jakartaee/jaf-api) | <notextile></notextile> |

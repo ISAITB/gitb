@@ -3,7 +3,7 @@ import sbtlicensereport.license.{LicenseCategory, LicenseInfo}
 scalaVersion := "2.13.14"
 val pekkoVersion = "1.1.3"
 val jacksonVersion = "2.18.3"
-val cxfVersion = "4.1.1"
+val cxfVersion = "4.1.2"
 val gitbCommonsVersion = "1.27.0-SNAPSHOT"
 val gitbTypesVersion = "1.27.0-SNAPSHOT"
 val bouncyCastleVersion = "1.80"
