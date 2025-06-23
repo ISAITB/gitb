@@ -179,11 +179,14 @@ public class SoapMessagingHandlerV2 extends AbstractNonWorkerMessagingHandler {
                 getResponseBody(response).ifPresent(body -> responseItem.addItem(REPORT_ITEM_ERROR, body));
                 errorRaised = true;
             }
+            MessagingReport messagingReport;
             if (!errorRaised || tolerateNonSoapResponse) {
-                return MessagingHandlerUtils.generateSuccessReport(messageForReport);
+                messagingReport = MessagingHandlerUtils.generateSuccessReport(messageForReport);
             } else {
-                return MessagingHandlerUtils.generateErrorReport(messageForReport);
+                messagingReport = MessagingHandlerUtils.generateErrorReport(messageForReport);
             }
+            new ReportVisibilitySettings(message).apply(messagingReport);
+            return messagingReport;
         });
         return new DeferredMessagingReport(asyncReport);
     }

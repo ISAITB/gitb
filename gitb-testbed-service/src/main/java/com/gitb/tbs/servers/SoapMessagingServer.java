@@ -17,10 +17,12 @@ package com.gitb.tbs.servers;
 
 import com.gitb.engine.CallbackManager;
 import com.gitb.engine.messaging.handlers.layer.application.soap.AttachmentInfo;
+import com.gitb.engine.messaging.handlers.layer.application.soap.ReportVisibilitySettings;
 import com.gitb.engine.messaging.handlers.layer.application.soap.SoapVersion;
 import com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.Message;
+import com.gitb.messaging.MessagingReport;
 import com.gitb.messaging.callback.CallbackType;
 import com.gitb.messaging.callback.SessionCallbackData;
 import com.gitb.types.MapType;
@@ -132,7 +134,9 @@ public class SoapMessagingServer extends AbstractMessagingServer {
                     responseMap.addItem(REPORT_ITEM_ATTACHMENTS, attachmentsItem);
                 });
                 // Make callback for step.
-                CallbackManager.getInstance().callbackReceived(data.get().sessionId(), data.get().callId(), MessagingHandlerUtils.generateSuccessReport(report));
+                MessagingReport messagingReport = MessagingHandlerUtils.generateSuccessReport(report);
+                new ReportVisibilitySettings(data.get().data().inputs()).apply(messagingReport);
+                CallbackManager.getInstance().callbackReceived(data.get().sessionId(), data.get().callId(), messagingReport);
                 /*
                  * Return response.
                  */
