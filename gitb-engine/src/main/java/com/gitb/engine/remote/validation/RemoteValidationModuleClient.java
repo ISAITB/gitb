@@ -33,6 +33,7 @@ import org.apache.cxf.endpoint.Client;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 
 /**
@@ -62,7 +63,7 @@ public class RemoteValidationModuleClient extends RemoteServiceClient implements
 	@Override
 	public ValidationModule getModuleDefinition() {
 		if (serviceModule == null) {
-			serviceModule = call(() -> getServiceClient().getModuleDefinition(new Void()).getModule());
+			serviceModule = call(() -> Optional.ofNullable(getServiceClient().getModuleDefinition(new Void()).getModule()).orElseGet(ValidationModule::new));
 		}
 		return serviceModule;
 	}
