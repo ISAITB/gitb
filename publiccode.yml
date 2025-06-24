@@ -1,0 +1,78 @@
+publiccodeYmlVersion: 0.4.0
+name: Interoperability Test Bed
+applicationSuite: ""
+url: https://github.com/ISAITB/gitb
+softwareVersion: 1.27.0
+releaseDate: 2025-06-24
+logo: https://www.itb.ec.europa.eu/files/itb_logo_simple.png
+platforms:
+  - web
+  - linux
+  - windows
+  - mac
+categories:
+  - test-management
+usedBy:
+  - European Commission
+  - World Health Organization
+  - European Maritime Safety Agency
+  - Publications Office of the European Union
+  - IHE Europe
+developmentStatus: stable
+softwareType: standalone/web
+description:
+  en:
+    localisedName: Interoperability Test Bed
+    shortDescription: Web application for the conformance testing of IT systems
+      against semantic and technical specifications.
+    longDescription: >-
+      The Interoperability Test Bed is a service offered by the European
+      Commission’s DIGIT to facilitate the conformance testing of IT systems.
+      The Test Bed is itself a software system that can be both downloaded and
+      installed locally, but also reused through a shared online installation
+      operated by DIGIT. It offers an intuitive web user interface and rich
+      integration features that allow administrators to define their project’s
+      overall testing setup as well as users to connect and run tests.
+
+      In terms of the testing approach it follows, the Test Bed is typically
+      used to exchange messages with the software systems being tested,
+      supporting both the sending and receiving of messages, validating all
+      steps against the target specification and according to the specific
+      scenario’s expectations. Such scenarios can focus on technical details but
+      can also be defined at business-level, exposing details only when needed
+      to troubleshoot failures. Furthermore, tests can be designed to cover both
+      normal flows but also edge cases and error scenarios that would be
+      otherwise difficult to replicate.
+    documentation: https://www.itb.ec.europa.eu/docs/itb-ta/latest/
+    apiDocumentation: https://www.itb.ec.europa.eu/docs/itb-ta/latest/api/
+    features:
+      - Conformance testing
+      - Interoperability testing
+      - Integration testing
+      - Certification
+      - Test automation
+      - Reporting
+      - Test monitoring
+      - Quality assurance
+    screenshots:
+      - https://www.itb.ec.europa.eu/files/screenshots/itb_01_welcome.png
+      - https://www.itb.ec.europa.eu/files/screenshots/itb_02_my_statements.png
+      - https://www.itb.ec.europa.eu/files/screenshots/itb_03_statement.png
+      - https://www.itb.ec.europa.eu/files/screenshots/itb_04_test_execution.png
+      - https://www.itb.ec.europa.eu/files/screenshots/itb_05_test_step.png
+      - https://www.itb.ec.europa.eu/files/screenshots/itb_06_conformance_dashboard.png
+    videos:
+      - https://youtu.be/_e-XFqYZBR0
+legal:
+  license: EUPL-1.2
+maintenance:
+  type: internal
+  contacts:
+    - name: Test Bed team
+      email: DIGIT-ITB@ec.europa.eu
+      phone: ""
+      affiliation: European Commission, DIGIT
+localisation:
+  localisationReady: false
+  availableLanguages:
+    - en
