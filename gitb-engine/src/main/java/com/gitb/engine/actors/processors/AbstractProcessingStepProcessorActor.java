@@ -22,6 +22,7 @@ import com.gitb.core.TypedParameters;
 import com.gitb.core.UsageEnumeration;
 import com.gitb.engine.expr.ExpressionHandler;
 import com.gitb.engine.expr.resolvers.VariableResolver;
+import com.gitb.engine.remote.processing.RemoteProcessingModuleClient;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.engine.utils.StepContext;
 import com.gitb.exceptions.GITBEngineInternalError;
@@ -59,7 +60,11 @@ public abstract class AbstractProcessingStepProcessorActor<T extends Process> ex
         } else {
             boolean isNameBinding = BindingUtils.isNameBinding(bindings);
             if (isNameBinding) {
-                setInputWithNameBinding(data, bindings, params, (inputName) -> AliasManager.getInstance().resolveProcessingHandlerInput(handler.getModuleDefinition().getId(), inputName));
+                if (handler instanceof RemoteProcessingModuleClient || handler.getModuleDefinition() == null || handler.getModuleDefinition().getId() == null) {
+                    setInputWithNameBinding(data, bindings, params, (inputName) -> inputName);
+                } else {
+                    setInputWithNameBinding(data, bindings, params, (inputName) -> AliasManager.getInstance().resolveProcessingHandlerInput(handler.getModuleDefinition().getId(), inputName));
+                }
             } else {
                 setInputWithModuleDefinition(data, bindings, params);
             }
