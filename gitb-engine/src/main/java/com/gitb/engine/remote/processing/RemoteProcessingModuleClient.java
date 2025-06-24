@@ -31,10 +31,7 @@ import jakarta.xml.ws.soap.AddressingFeature;
 import org.apache.cxf.endpoint.Client;
 
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 public class RemoteProcessingModuleClient extends RemoteServiceClient implements IProcessingHandler {
 
@@ -60,7 +57,7 @@ public class RemoteProcessingModuleClient extends RemoteServiceClient implements
     @Override
     public ProcessingModule getModuleDefinition() {
         if (serviceModule == null) {
-            serviceModule = call(() -> getServiceClient().getModuleDefinition(new Void()).getModule());
+            serviceModule = call(() -> Optional.ofNullable(getServiceClient().getModuleDefinition(new Void()).getModule()).orElseGet(ProcessingModule::new));
         }
         return serviceModule;
     }
