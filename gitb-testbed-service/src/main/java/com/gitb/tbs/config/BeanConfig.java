@@ -26,6 +26,7 @@ import org.apache.cxf.jaxws.EndpointImpl;
 import org.apache.cxf.transport.servlet.CXFServlet;
 import org.springframework.boot.autoconfigure.web.servlet.DispatcherServletAutoConfiguration;
 import org.springframework.boot.autoconfigure.web.servlet.DispatcherServletRegistrationBean;
+import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -98,6 +99,24 @@ public class BeanConfig {
         endpoint.setPublishedEndpointUrl(TestEngineConfiguration.PROCESSING_CALLBACK_URL);
         endpoint.publish("/ProcessingClient");
         return endpoint;
+    }
+
+    @Bean
+    public TomcatServletWebServerFactory tomcatFactory() {
+        return new TomcatServletWebServerFactory() {
+            @Override
+            protected void customizeConnector(org.apache.catalina.connector.Connector connector) {
+                super.customizeConnector(connector);
+                /*
+                 * Requests received by the validator web app are multipart requests (if performed
+                 * through the UI). In this case we need to make sure that Tomcat's limit to the
+                 * maximum number of multipart request parts does not block us (a default limit of
+                 * 10 was added in Tomcat release 10.1.42).
+                 */
+                connector.setMaxParameterCount(10000);
+                connector.setMaxPartCount(100);
+            }
+        };
     }
 
 }
