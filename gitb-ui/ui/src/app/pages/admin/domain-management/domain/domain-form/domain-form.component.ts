@@ -13,9 +13,9 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input, OnInit } from '@angular/core';
-import { DataService } from 'src/app/services/data.service';
-import { Domain } from 'src/app/types/domain';
+import {Component, Input} from '@angular/core';
+import {DataService} from 'src/app/services/data.service';
+import {Domain} from 'src/app/types/domain';
 
 @Component({
     selector: 'app-domain-form',
@@ -23,13 +23,10 @@ import { Domain } from 'src/app/types/domain';
     styles: [],
     standalone: false
 })
-export class DomainFormComponent implements OnInit {
+export class DomainFormComponent {
 
   @Input() domain!: Partial<Domain>
 
-  constructor(public dataService: DataService) { }
-
-  ngOnInit(): void {
-  }
+  constructor(public readonly dataService: DataService) { }
 
 }

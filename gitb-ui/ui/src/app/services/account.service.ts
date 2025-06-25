@@ -32,8 +32,8 @@ import { FileParam } from '../types/file-param.type';
 export class AccountService {
 
   constructor(
-    private restService: RestService,
-    private dataService: DataService
+    private readonly restService: RestService,
+    private readonly dataService: DataService
   ) { }
 
   updateVendorProfile(vendorFname: string|undefined, vendorSname: string|undefined, processProperties: boolean, properties: CustomProperty[], landingPageId: number|undefined) {

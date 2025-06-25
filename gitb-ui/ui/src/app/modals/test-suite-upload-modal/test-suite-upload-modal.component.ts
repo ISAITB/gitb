@@ -79,11 +79,11 @@ export class TestSuiteUploadModalComponent extends BaseComponent implements OnIn
   selectConfig!: MultiSelectConfig<Specification>
 
   constructor(
-    public dataService: DataService,
-    private modalInstance: BsModalRef,
-    private confirmationDialogService: ConfirmationDialogService,
-    private conformanceService: ConformanceService,
-    private popupService: PopupService
+    public readonly dataService: DataService,
+    private readonly modalInstance: BsModalRef,
+    private readonly confirmationDialogService: ConfirmationDialogService,
+    private readonly conformanceService: ConformanceService,
+    private readonly popupService: PopupService
   ) { super() }
 
   ngOnInit(): void {

@@ -37,9 +37,9 @@ export class UserManagementComponent implements OnInit {
   communities: Community[] = []
 
   constructor(
-    private dataService: DataService,
-    private communityService: CommunityService,
-    private routingService: RoutingService
+    private readonly dataService: DataService,
+    private readonly communityService: CommunityService,
+    private readonly routingService: RoutingService
   ) { }
 
   ngOnInit(): void {

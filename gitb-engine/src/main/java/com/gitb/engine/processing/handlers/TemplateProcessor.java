@@ -48,13 +48,13 @@ import java.util.*;
 public class TemplateProcessor extends AbstractProcessingHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(TemplateProcessor.class);
-    private static final String OPERATION__PROCESS = "process";
-    private static final String INPUT__TEMPLATE = "template";
-    private static final String INPUT__SYNTAX = "syntax";
-    private static final String INPUT__SYNTAX__FREEMARKER = "freemarker";
-    private static final String INPUT__SYNTAX__GITB = "gitb";
-    private static final String INPUT__PARAMETERS = "parameters";
-    private static final String OUTPUT__DATA = "data";
+    private static final String OPERATION_PROCESS = "process";
+    private static final String INPUT_TEMPLATE = "template";
+    private static final String INPUT_SYNTAX = "syntax";
+    private static final String INPUT_SYNTAX_FREEMARKER = "freemarker";
+    private static final String INPUT_SYNTAX_GITB = "gitb";
+    private static final String INPUT_PARAMETERS = "parameters";
+    private static final String OUTPUT_DATA = "data";
 
     @Override
     public ProcessingModule createProcessingModule() {
@@ -64,23 +64,23 @@ public class TemplateProcessor extends AbstractProcessingHandler {
         module.getMetadata().setName(module.getId());
         module.getMetadata().setVersion("1.0");
         module.setConfigs(new ConfigurationParameters());
-        module.getOperation().add(createProcessingOperation(OPERATION__PROCESS,
-                List.of(createParameter(INPUT__TEMPLATE, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The actual template content to use."),
-                        createParameter(INPUT__SYNTAX, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, "The syntax used in the provided template (can be the default '"+INPUT__SYNTAX__GITB+"' or '"+INPUT__SYNTAX__FREEMARKER+"')."),
-                        createParameter(INPUT__PARAMETERS, "map", UsageEnumeration.O, ConfigurationType.SIMPLE, "The map of input parameters to replace placeholders.")),
-                List.of(createParameter(OUTPUT__DATA, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The output value after processing the template."))
+        module.getOperation().add(createProcessingOperation(OPERATION_PROCESS,
+                List.of(createParameter(INPUT_TEMPLATE, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The actual template content to use."),
+                        createParameter(INPUT_SYNTAX, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, "The syntax used in the provided template (can be the default '"+ INPUT_SYNTAX_GITB +"' or '"+ INPUT_SYNTAX_FREEMARKER +"')."),
+                        createParameter(INPUT_PARAMETERS, "map", UsageEnumeration.O, ConfigurationType.SIMPLE, "The map of input parameters to replace placeholders.")),
+                List.of(createParameter(OUTPUT_DATA, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The output value after processing the template."))
         ));
         return module;
     }
 
     @Override
     public ProcessingReport process(String session, String operation, ProcessingData input) {
-        var templateContent = getInputForName(input, INPUT__TEMPLATE, StringType.class);
+        var templateContent = getInputForName(input, INPUT_TEMPLATE, StringType.class);
         if (templateContent == null) {
-            throw new IllegalArgumentException("No template was provided. Ensure you pass an input named '"+INPUT__TEMPLATE+"' to this processing handler.");
+            throw new IllegalArgumentException("No template was provided. Ensure you pass an input named '"+ INPUT_TEMPLATE +"' to this processing handler.");
         }
         var templateSyntax = determineTemplateSyntax(input, session);
-        var parameters = getInputForName(input, INPUT__PARAMETERS, MapType.class);
+        var parameters = getInputForName(input, INPUT_PARAMETERS, MapType.class);
         DataType outputValue;
         if (templateSyntax == Syntax.FREEMARKER) {
             var configuration = new Configuration(Configuration.VERSION_2_3_31);
@@ -111,19 +111,19 @@ public class TemplateProcessor extends AbstractProcessingHandler {
             outputValue = TemplateUtils.generateDataTypeFromTemplate(templateScope, templateContent, null, false);
         }
         var data = new ProcessingData();
-        data.getData().put(OUTPUT__DATA, outputValue);
+        data.getData().put(OUTPUT_DATA, outputValue);
         return new ProcessingReport(createReport(TestResultType.SUCCESS), data);
     }
 
     private Syntax determineTemplateSyntax(ProcessingData input, String sessionId) {
         var syntax = Syntax.GITB;
-        var syntaxInput = getInputForName(input, INPUT__SYNTAX, StringType.class);
+        var syntaxInput = getInputForName(input, INPUT_SYNTAX, StringType.class);
         if (syntaxInput != null) {
             var syntaxInputValue = ((String) syntaxInput.getValue()).toLowerCase(Locale.ROOT);
-            if (INPUT__SYNTAX__FREEMARKER.equals(syntaxInputValue)) {
+            if (INPUT_SYNTAX_FREEMARKER.equals(syntaxInputValue)) {
                 syntax = Syntax.FREEMARKER;
-            } else if (!INPUT__SYNTAX__GITB.equals(syntaxInputValue)) {
-                LOG.warn(MarkerFactory.getDetachedMarker(sessionId), "Unsupported template syntax type ["+ syntaxInput.getValue() +"]. Considering ["+INPUT__SYNTAX__GITB+"] instead.");
+            } else if (!INPUT_SYNTAX_GITB.equals(syntaxInputValue)) {
+                LOG.warn(MarkerFactory.getDetachedMarker(sessionId), "Unsupported template syntax type ["+ syntaxInput.getValue() +"]. Considering ["+ INPUT_SYNTAX_GITB +"] instead.");
             }
         }
         return syntax;

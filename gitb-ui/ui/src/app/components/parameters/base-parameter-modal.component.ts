@@ -43,8 +43,8 @@ export abstract class BaseParameterModalComponent extends BaseComponent {
   validation = new ValidationState()
 
   constructor(
-    private dataService: DataService,
-    protected modalInstance: BsModalRef
+    private readonly dataService: DataService,
+    protected readonly modalInstance: BsModalRef
   ) { super() }
 
   protected onInit(options: ParameterModalOptions) {

@@ -27,7 +27,7 @@ export class UserGuideService {
   private currentPath: string|undefined
 
   constructor(
-    private dataService: DataService, private router: Router) {
+    private readonly dataService: DataService, private readonly router: Router) {
     this.initialise()
     this.router.events.subscribe((event) => {
       if (event instanceof NavigationStart) {

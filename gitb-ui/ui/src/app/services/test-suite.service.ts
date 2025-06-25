@@ -30,7 +30,7 @@ import {Id} from '../types/id';
 export class TestSuiteService {
 
   constructor(
-    private restService: RestService
+    private readonly restService: RestService
   ) { }
 
 	searchTestSuites(domainIds: number[]|undefined, specificationIds: number[]|undefined, specificationGroupIds: number[]|undefined, actorIds: number[]|undefined) {

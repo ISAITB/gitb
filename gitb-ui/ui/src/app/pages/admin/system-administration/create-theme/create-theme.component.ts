@@ -40,12 +40,12 @@ export class CreateThemeComponent extends BaseThemeFormComponent implements OnIn
   validation = new ValidationState()
 
   constructor(
-    private routingService: RoutingService,
-    private route: ActivatedRoute,
-    private confirmationDialogService: ConfirmationDialogService,
-    private systemConfigurationService: SystemConfigurationService,
-    private popupService: PopupService,
-    private dataService: DataService
+    private readonly routingService: RoutingService,
+    private readonly route: ActivatedRoute,
+    private readonly confirmationDialogService: ConfirmationDialogService,
+    private readonly systemConfigurationService: SystemConfigurationService,
+    private readonly popupService: PopupService,
+    private readonly dataService: DataService
   ) { super() }
 
   ngOnInit(): void {

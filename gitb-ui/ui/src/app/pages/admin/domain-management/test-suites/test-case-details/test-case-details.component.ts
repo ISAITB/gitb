@@ -60,16 +60,16 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit {
   communityId?: number
 
   constructor(
-    public dataService: DataService,
-    private testSuiteService: TestSuiteService,
-    private routingService: RoutingService,
-    private route: ActivatedRoute,
-    private popupService: PopupService,
-    private htmlService: HtmlService,
-    private conformanceService: ConformanceService,
-    private testService: TestService,
-    private reportService: ReportService,
-    private modalService: BsModalService
+    public readonly dataService: DataService,
+    private readonly testSuiteService: TestSuiteService,
+    private readonly routingService: RoutingService,
+    private readonly route: ActivatedRoute,
+    private readonly popupService: PopupService,
+    private readonly htmlService: HtmlService,
+    private readonly conformanceService: ConformanceService,
+    private readonly testService: TestService,
+    private readonly reportService: ReportService,
+    private readonly modalService: BsModalService
   ) { super() }
 
   ngOnInit(): void {

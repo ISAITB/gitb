@@ -23,7 +23,7 @@ import { RestService } from './rest.service';
 export class EndpointService {
 
   constructor(
-    private restService: RestService
+    private readonly restService: RestService
   ) { }
 
   deleteEndPoint(endPointId: number) {

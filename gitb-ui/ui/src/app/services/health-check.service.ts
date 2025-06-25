@@ -27,8 +27,8 @@ import {WebSocketSubject} from 'rxjs/webSocket';
 export class HealthCheckService {
 
   constructor(
-    private restService: RestService,
-    private webSocketService: WebSocketService
+    private readonly restService: RestService,
+    private readonly webSocketService: WebSocketService
   ) {
   }
 

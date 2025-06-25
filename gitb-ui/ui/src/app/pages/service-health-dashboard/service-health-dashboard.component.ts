@@ -39,8 +39,8 @@ export class ServiceHealthDashboardComponent implements OnInit, AfterViewInit {
   protected readonly HealthStatus = HealthStatus;
 
   constructor(
-    private routingService: RoutingService,
-    private healthCheckService: HealthCheckService) {
+    private readonly routingService: RoutingService,
+    private readonly healthCheckService: HealthCheckService) {
   }
 
   ngOnInit(): void {

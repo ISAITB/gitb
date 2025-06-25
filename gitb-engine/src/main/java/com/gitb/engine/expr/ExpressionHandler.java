@@ -24,7 +24,7 @@ import com.gitb.tdl.Expression;
 import com.gitb.types.DataType;
 import com.gitb.types.DataTypeFactory;
 import com.gitb.utils.ErrorUtils;
-import com.gitb.utils.NamespaceContext;
+import com.gitb.utils.TestSessionNamespaceContext;
 import net.sf.saxon.xpath.XPathFactoryImpl;
 
 import javax.xml.xpath.XPath;
@@ -38,13 +38,13 @@ public class ExpressionHandler {
 
     private final TestCaseScope scope;
     private final VariableResolver variableResolver;
-    private final NamespaceContext namespaceContext;
+    private final TestSessionNamespaceContext namespaceContext;
 
     public ExpressionHandler(TestCaseScope scope) {
-        this(scope, new VariableResolver(scope), new NamespaceContext(scope.getNamespaceDefinitions()));
+        this(scope, new VariableResolver(scope), new TestSessionNamespaceContext(scope.getNamespaceDefinitions()));
     }
 
-    ExpressionHandler(TestCaseScope scope, VariableResolver variableResolver, NamespaceContext namespaceContext) {
+    ExpressionHandler(TestCaseScope scope, VariableResolver variableResolver, TestSessionNamespaceContext namespaceContext) {
         this.scope = scope;
         this.variableResolver = variableResolver;
         this.namespaceContext = namespaceContext;

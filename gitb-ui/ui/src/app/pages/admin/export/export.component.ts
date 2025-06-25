@@ -98,11 +98,11 @@ export class ExportComponent extends BaseComponent implements OnInit {
   Constants = Constants
 
   constructor(
-    public dataService: DataService,
-    private communityService: CommunityService,
-    private conformanceService: ConformanceService,
-    private popupService: PopupService,
-    private routingService: RoutingService
+    public readonly dataService: DataService,
+    private readonly communityService: CommunityService,
+    private readonly conformanceService: ConformanceService,
+    private readonly popupService: PopupService,
+    private readonly routingService: RoutingService
   ) { super() }
 
   ngOnInit(): void {

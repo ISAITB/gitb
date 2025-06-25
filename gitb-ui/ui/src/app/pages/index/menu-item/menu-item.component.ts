@@ -33,7 +33,7 @@ export class MenuItemComponent implements OnInit, OnDestroy {
   active = false
   pageChangeSubscription?: Subscription
 
-  constructor(private dataService: DataService) { }
+  constructor(private readonly dataService: DataService) { }
 
   ngOnInit(): void {
     if (this.dataService.latestPageChange && this.dataService.latestPageChange.menuItem == this.type) {

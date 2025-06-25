@@ -26,7 +26,7 @@ import { ErrorTemplate } from "../types/error-template";
 export class ErrorTemplateResolver  {
 
     constructor(
-        private errorTemplateService: ErrorTemplateService
+        private readonly errorTemplateService: ErrorTemplateService
     ) {}
 
     resolve(route: ActivatedRouteSnapshot, state: RouterStateSnapshot) {

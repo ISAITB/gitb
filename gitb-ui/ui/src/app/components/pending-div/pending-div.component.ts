@@ -37,7 +37,7 @@ export class PendingDivComponent implements AfterViewInit {
     this.applyFocus()
   }
 
-  constructor(private dataService: DataService) {}
+  constructor(private readonly dataService: DataService) {}
 
   ngAfterViewInit(): void {
     this.visible = true

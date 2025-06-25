@@ -27,7 +27,7 @@ import { LandingPage } from "../types/landing-page";
 export class LandingPageResolver  {
 
     constructor(
-        private landingPageService: LandingPageService
+        private readonly landingPageService: LandingPageService
     ) {}
 
     resolve(route: ActivatedRouteSnapshot, state: RouterStateSnapshot) {

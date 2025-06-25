@@ -41,10 +41,10 @@ import java.util.Objects;
 @ProcessingHandler(name="XsltProcessor")
 public class XsltProcessor extends AbstractProcessingHandler {
 
-    private static final String OPERATION__PROCESS = "process";
-    private static final String INPUT__XML = "xml";
-    private static final String INPUT__XSLT = "xslt";
-    private static final String OUTPUT__OUTPUT = "output";
+    private static final String OPERATION_PROCESS = "process";
+    private static final String INPUT_XML = "xml";
+    private static final String INPUT_XSLT = "xslt";
+    private static final String OUTPUT_OUTPUT = "output";
 
     @Override
     public ProcessingModule createProcessingModule() {
@@ -54,20 +54,20 @@ public class XsltProcessor extends AbstractProcessingHandler {
         module.getMetadata().setName(module.getId());
         module.getMetadata().setVersion("1.0");
         module.setConfigs(new ConfigurationParameters());
-        module.getOperation().add(createProcessingOperation(OPERATION__PROCESS,
+        module.getOperation().add(createProcessingOperation(OPERATION_PROCESS,
                 List.of(
-                        createParameter(INPUT__XML, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The XML content to transform."),
-                        createParameter(INPUT__XSLT, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The XSLT template to use for the transformation.")
+                        createParameter(INPUT_XML, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The XML content to transform."),
+                        createParameter(INPUT_XSLT, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The XSLT template to use for the transformation.")
                 ),
-                List.of(createParameter(OUTPUT__OUTPUT, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The transformation output."))
+                List.of(createParameter(OUTPUT_OUTPUT, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The transformation output."))
         ));
         return module;
     }
 
     @Override
     public ProcessingReport process(String session, String operation, ProcessingData input) {
-        var xmlContent = Objects.requireNonNull(getInputForName(input, INPUT__XML, StringType.class), "You need to provide an input named ["+INPUT__XML+"] with the XML content to transform.");
-        var xsltContent = Objects.requireNonNull(getInputForName(input, INPUT__XSLT, StringType.class), "You need to provide an input named ["+INPUT__XSLT+"] with the XSLT to use for the transformation.");
+        var xmlContent = Objects.requireNonNull(getInputForName(input, INPUT_XML, StringType.class), "You need to provide an input named ["+ INPUT_XML +"] with the XML content to transform.");
+        var xsltContent = Objects.requireNonNull(getInputForName(input, INPUT_XSLT, StringType.class), "You need to provide an input named ["+ INPUT_XSLT +"] with the XSLT to use for the transformation.");
         StringType outputValue;
         try {
             var transformer = XMLUtils.getSecureTransformerFactory().newTransformer(toSource(xsltContent));
@@ -80,7 +80,7 @@ public class XsltProcessor extends AbstractProcessingHandler {
             throw new IllegalArgumentException("An error occurred during the XSLT transformation", e);
         }
         var data = new ProcessingData();
-        data.getData().put(OUTPUT__OUTPUT, outputValue);
+        data.getData().put(OUTPUT_OUTPUT, outputValue);
         return new ProcessingReport(createReport(TestResultType.SUCCESS), data);
     }
 

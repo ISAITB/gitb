@@ -24,7 +24,7 @@ import { RestService } from './rest.service';
 })
 export class LandingPageService {
 
-  constructor(private restService: RestService) { }
+  constructor(private readonly restService: RestService) { }
 
   getCommunityDefaultLandingPage(communityId: number) {
     return this.restService.get<LandingPage>({

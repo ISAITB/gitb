@@ -42,11 +42,11 @@ import java.util.Map;
 @ValidationHandler(name="XsdValidator")
 public class XsdValidator extends AbstractValidator {
 
-    public final static String XML_ARGUMENT_NAME = "xml";
-    public final static String XSD_ARGUMENT_NAME = "xsd";
-    public final static String SHOW_SCHEMA_ARGUMENT_NAME  = "showSchema";
-    public final static String SORT_BY_SEVERITY_ARGUMENT_NAME  = "sortBySeverity";
-    private final static String MODULE_DEFINITION_XML = "/validation/xsd-validator-definition.xml";
+    public static final String XML_ARGUMENT_NAME = "xml";
+    public static final String XSD_ARGUMENT_NAME = "xsd";
+    public static final String SHOW_SCHEMA_ARGUMENT_NAME  = "showSchema";
+    public static final String SORT_BY_SEVERITY_ARGUMENT_NAME  = "sortBySeverity";
+    private static final String MODULE_DEFINITION_XML = "/validation/xsd-validator-definition.xml";
 
     public XsdValidator() {
         this.validatorDefinition = readModuleDefinition(MODULE_DEFINITION_XML);

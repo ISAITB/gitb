@@ -44,7 +44,7 @@ export class ParameterFormComponent implements OnInit, AfterViewInit {
   draggingPreset = false
 
   constructor(
-    public dataService: DataService
+    public readonly dataService: DataService
   ) { }
 
   ngAfterViewInit(): void {

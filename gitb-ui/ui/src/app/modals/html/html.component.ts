@@ -29,7 +29,7 @@ export class HtmlComponent implements OnInit {
   customClass?: string
 
   constructor(
-    public modalRef: BsModalRef
+    public readonly modalRef: BsModalRef
   ) { }
 
   ngOnInit(): void {

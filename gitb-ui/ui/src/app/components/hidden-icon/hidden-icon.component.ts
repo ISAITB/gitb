@@ -13,8 +13,8 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, OnInit } from '@angular/core';
-import { Constants } from 'src/app/common/constants';
+import {Component} from '@angular/core';
+import {Constants} from 'src/app/common/constants';
 
 @Component({
     selector: 'app-hidden-icon',
@@ -22,13 +22,10 @@ import { Constants } from 'src/app/common/constants';
     styleUrls: ['./hidden-icon.component.less'],
     standalone: false
 })
-export class HiddenIconComponent implements OnInit {
+export class HiddenIconComponent {
 
   Constants = Constants
 
   constructor() { }
-
-  ngOnInit(): void {
-  }
 
 }

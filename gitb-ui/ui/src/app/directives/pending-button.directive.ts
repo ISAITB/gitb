@@ -30,8 +30,8 @@ export class PendingButtonDirective implements AfterViewInit {
   private rendered = false
 
   constructor(
-    private renderer: Renderer2,
-    private elementRef: ElementRef
+    private readonly renderer: Renderer2,
+    private readonly elementRef: ElementRef
   ) { }
 
   ngAfterViewInit(): void {

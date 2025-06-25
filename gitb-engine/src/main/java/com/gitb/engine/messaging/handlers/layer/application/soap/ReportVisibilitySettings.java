@@ -26,25 +26,25 @@ import static com.gitb.engine.messaging.handlers.layer.application.soap.SoapMess
 
 public class ReportVisibilitySettings extends BaseReportVisibilitySettings {
 
-    private final static String SHOW_REQUEST_URI_ARGUMENT_NAME = "showRequestUri";
-    private final static String SHOW_REQUEST_BODY_ARGUMENT_NAME = "showRequestBody";
-    private final static String SHOW_REQUEST_ENVELOPE_ARGUMENT_NAME = "showRequestEnvelope";
-    private final static String SHOW_REQUEST_HEADERS_ARGUMENT_NAME = "showRequestHeaders";
-    private final static String SHOW_REQUEST_ATTACHMENTS_ARGUMENT_NAME = "showRequestAttachments";
-    private final static String SHOW_RESPONSE_BODY_ARGUMENT_NAME = "showResponseBody";
-    private final static String SHOW_RESPONSE_ATTACHMENTS_ARGUMENT_NAME = "showResponseAttachments";
-    private final static String SHOW_RESPONSE_ENVELOPE_ARGUMENT_NAME = "showResponseEnvelope";
-    private final static String SHOW_RESPONSE_STATUS_ARGUMENT_NAME = "showResponseStatus";
-    private final static String SHOW_RESPONSE_HEADERS_ARGUMENT_NAME = "showResponseHeaders";
-    private final static String SHOW_RESPONSE_ERROR_ARGUMENT_NAME = "showResponseError";
-    private final static String REQUEST_HEADERS_TO_SHOW_ARGUMENT_NAME = "requestHeadersToShow";
-    private final static String REQUEST_HEADERS_TO_HIDE_ARGUMENT_NAME = "requestHeadersToHide";
-    private final static String REQUEST_ATTACHMENTS_TO_SHOW_ARGUMENT_NAME = "requestAttachmentsToShow";
-    private final static String REQUEST_ATTACHMENTS_TO_HIDE_ARGUMENT_NAME = "requestAttachmentsToHide";
-    private final static String RESPONSE_HEADERS_TO_SHOW_ARGUMENT_NAME = "responseHeadersToShow";
-    private final static String RESPONSE_HEADERS_TO_HIDE_ARGUMENT_NAME = "responseHeadersToHide";
-    private final static String RESPONSE_ATTACHMENTS_TO_SHOW_ARGUMENT_NAME = "responseAttachmentsToShow";
-    private final static String RESPONSE_ATTACHMENTS_TO_HIDE_ARGUMENT_NAME = "responseAttachmentsToHide";
+    private static final String SHOW_REQUEST_URI_ARGUMENT_NAME = "showRequestUri";
+    private static final String SHOW_REQUEST_BODY_ARGUMENT_NAME = "showRequestBody";
+    private static final String SHOW_REQUEST_ENVELOPE_ARGUMENT_NAME = "showRequestEnvelope";
+    private static final String SHOW_REQUEST_HEADERS_ARGUMENT_NAME = "showRequestHeaders";
+    private static final String SHOW_REQUEST_ATTACHMENTS_ARGUMENT_NAME = "showRequestAttachments";
+    private static final String SHOW_RESPONSE_BODY_ARGUMENT_NAME = "showResponseBody";
+    private static final String SHOW_RESPONSE_ATTACHMENTS_ARGUMENT_NAME = "showResponseAttachments";
+    private static final String SHOW_RESPONSE_ENVELOPE_ARGUMENT_NAME = "showResponseEnvelope";
+    private static final String SHOW_RESPONSE_STATUS_ARGUMENT_NAME = "showResponseStatus";
+    private static final String SHOW_RESPONSE_HEADERS_ARGUMENT_NAME = "showResponseHeaders";
+    private static final String SHOW_RESPONSE_ERROR_ARGUMENT_NAME = "showResponseError";
+    private static final String REQUEST_HEADERS_TO_SHOW_ARGUMENT_NAME = "requestHeadersToShow";
+    private static final String REQUEST_HEADERS_TO_HIDE_ARGUMENT_NAME = "requestHeadersToHide";
+    private static final String REQUEST_ATTACHMENTS_TO_SHOW_ARGUMENT_NAME = "requestAttachmentsToShow";
+    private static final String REQUEST_ATTACHMENTS_TO_HIDE_ARGUMENT_NAME = "requestAttachmentsToHide";
+    private static final String RESPONSE_HEADERS_TO_SHOW_ARGUMENT_NAME = "responseHeadersToShow";
+    private static final String RESPONSE_HEADERS_TO_HIDE_ARGUMENT_NAME = "responseHeadersToHide";
+    private static final String RESPONSE_ATTACHMENTS_TO_SHOW_ARGUMENT_NAME = "responseAttachmentsToShow";
+    private static final String RESPONSE_ATTACHMENTS_TO_HIDE_ARGUMENT_NAME = "responseAttachmentsToHide";
 
     private final boolean showRequestUri;
     private final boolean showRequestEnvelope;

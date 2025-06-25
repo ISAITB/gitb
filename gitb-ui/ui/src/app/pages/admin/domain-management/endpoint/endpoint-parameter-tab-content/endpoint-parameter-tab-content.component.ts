@@ -53,11 +53,11 @@ export class EndpointParameterTabContentComponent implements OnInit {
   Constants = Constants
 
   constructor(
-    private modalService: BsModalService,
-    private parameterService: ParameterService,
-    private popupService: PopupService,
-    private conformanceService: ConformanceService,
-    public dataService: DataService
+    private readonly modalService: BsModalService,
+    private readonly parameterService: ParameterService,
+    private readonly popupService: PopupService,
+    private readonly conformanceService: ConformanceService,
+    public readonly dataService: DataService
   ) {
   }
 

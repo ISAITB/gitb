@@ -52,9 +52,9 @@ export class FileSelectComponent implements OnInit, OnDestroy {
   hasValidation = false
 
   constructor(
-    private dataService: DataService,
-    private dragSupport: DragSupportService,
-    private popupService: PopupService
+    private readonly dataService: DataService,
+    private readonly dragSupport: DragSupportService,
+    private readonly popupService: PopupService
   ) { }
 
   ngOnInit(): void {

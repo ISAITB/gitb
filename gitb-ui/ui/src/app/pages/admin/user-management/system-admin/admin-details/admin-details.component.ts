@@ -13,25 +13,25 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { AfterViewInit, Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { Constants } from 'src/app/common/constants';
-import { BaseComponent } from 'src/app/pages/base-component.component';
-import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
-import { DataService } from 'src/app/services/data.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { RoutingService } from 'src/app/services/routing.service';
-import { UserService } from 'src/app/services/user.service';
-import { User } from 'src/app/types/user.type';
-import { SystemAdministrationTab } from '../../../system-administration/system-administration-tab.enum';
-import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
+import {Component, OnInit} from '@angular/core';
+import {ActivatedRoute} from '@angular/router';
+import {Constants} from 'src/app/common/constants';
+import {BaseComponent} from 'src/app/pages/base-component.component';
+import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
+import {DataService} from 'src/app/services/data.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {RoutingService} from 'src/app/services/routing.service';
+import {UserService} from 'src/app/services/user.service';
+import {User} from 'src/app/types/user.type';
+import {SystemAdministrationTab} from '../../../system-administration/system-administration-tab.enum';
+import {BreadcrumbType} from 'src/app/types/breadcrumb-type';
 
 @Component({
     selector: 'app-admin-details',
     templateUrl: './admin-details.component.html',
     standalone: false
 })
-export class AdminDetailsComponent extends BaseComponent implements OnInit, AfterViewInit {
+export class AdminDetailsComponent extends BaseComponent implements OnInit {
 
   user: Partial<User> = {}
   userId!: number
@@ -43,16 +43,13 @@ export class AdminDetailsComponent extends BaseComponent implements OnInit, Afte
   focusField?: string
 
   constructor(
-    public dataService: DataService,
-    private routingService: RoutingService,
-    private route: ActivatedRoute,
-    private userService: UserService,
-    private confirmationDialogService: ConfirmationDialogService,
-    private popupService: PopupService
+    public readonly dataService: DataService,
+    private readonly routingService: RoutingService,
+    private readonly route: ActivatedRoute,
+    private readonly userService: UserService,
+    private readonly confirmationDialogService: ConfirmationDialogService,
+    private readonly popupService: PopupService
   ) { super() }
-
-  ngAfterViewInit(): void {
-  }
 
   ngOnInit(): void {
     this.userId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.USER_ID))

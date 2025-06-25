@@ -38,7 +38,7 @@ public class BeginProcessingTransactionStepProcessorActor extends AbstractTestSt
 
     @Override
     protected void init() throws Exception {
-
+        // Do nothing.
     }
 
     @Override

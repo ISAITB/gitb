@@ -44,14 +44,13 @@ public class IfStepProcessorActor extends AbstractTestStepActor<IfStep> {
 	public static final String THEN_BRANCH_ID = "[T]";
 	public static final String ELSE_BRANCH_ID = "[F]";
 
-	private boolean condition;
-
-	public IfStepProcessorActor(IfStep step, TestCaseScope scope, String stepId, StepContext stepContext) {
+    public IfStepProcessorActor(IfStep step, TestCaseScope scope, String stepId, StepContext stepContext) {
 		super(step, scope, stepId, stepContext);
 	}
 
 	@Override
 	protected void init() {
+		// Do nothing.
 	}
 
 	@Override
@@ -60,9 +59,9 @@ public class IfStepProcessorActor extends AbstractTestStepActor<IfStep> {
 
 		ExpressionHandler expressionHandler = new ExpressionHandler(scope);
 
-		condition = (boolean) expressionHandler
-			.processExpression(step.getCond(), DataType.BOOLEAN_DATA_TYPE)
-			.getValue();
+        boolean condition = (boolean) expressionHandler
+                .processExpression(step.getCond(), DataType.BOOLEAN_DATA_TYPE)
+                .getValue();
 
 		ActorRef branch = null;
 		if(condition) {

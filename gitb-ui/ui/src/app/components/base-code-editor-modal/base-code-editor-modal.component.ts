@@ -35,9 +35,9 @@ export class BaseCodeEditorModalComponent implements AfterViewInit {
   @ViewChild('codeEditor', {static: false}) codeEditor?: CodemirrorComponent
 
   constructor(
-    private modalRef: BsModalRef,
-    protected dataService: DataService,
-    private popupService: PopupService
+    private readonly modalRef: BsModalRef,
+    protected readonly dataService: DataService,
+    private readonly popupService: PopupService
   ) { }
 
   applyLineStyles(): boolean {

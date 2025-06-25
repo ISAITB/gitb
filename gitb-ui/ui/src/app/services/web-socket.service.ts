@@ -25,7 +25,7 @@ import {DataService} from './data.service';
 })
 export class WebSocketService {
 
-  constructor(private dataService: DataService) { }
+  constructor(private readonly dataService: DataService) { }
 
   prepareWebSocket<T>(webSocketRoute: any, openObserver: NextObserver<Event>, closeObserver: NextObserver<CloseEvent>) {
     const internalAddressWithServerPart = webSocketRoute.webSocketURL()

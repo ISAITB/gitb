@@ -13,16 +13,16 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter, Input, OnInit } from '@angular/core';
-import { PasswordChangeData } from './password-change-data.type';
-import { ValidationState } from 'src/app/types/validation-state';
+import {Component, EventEmitter, Input} from '@angular/core';
+import {PasswordChangeData} from './password-change-data.type';
+import {ValidationState} from 'src/app/types/validation-state';
 
 @Component({
     selector: '[app-change-password-form]',
     templateUrl: './change-password-form.component.html',
     standalone: false
 })
-export class ChangePasswordFormComponent implements OnInit {
+export class ChangePasswordFormComponent {
 
   @Input() model!: PasswordChangeData
   @Input() autoFocus = false
@@ -31,8 +31,5 @@ export class ChangePasswordFormComponent implements OnInit {
   @Input() focusChange?: EventEmitter<boolean>
 
   constructor() { }
-
-  ngOnInit(): void {
-  }
 
 }

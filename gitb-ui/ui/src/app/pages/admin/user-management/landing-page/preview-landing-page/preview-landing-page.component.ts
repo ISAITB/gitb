@@ -26,7 +26,7 @@ export class PreviewLandingPageComponent implements OnInit {
   @Input() previewContent!: string
 
   constructor(
-    private modalRef: BsModalRef
+    private readonly modalRef: BsModalRef
   ) { }
 
   ngOnInit(): void {

@@ -41,7 +41,7 @@ export class EditorComponent implements OnInit, ControlValueAccessor {
   onChange = (_: any) => {}
   onTouched = () => {}
 
-  constructor(private dataService: DataService) {}
+  constructor(private readonly dataService: DataService) {}
 
   set editorValue(value: string) {
     this._editorValue = value

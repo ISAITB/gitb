@@ -45,12 +45,12 @@ export class CommunityAdminDetailsComponent extends BaseComponent implements OnI
   focusField?: string
 
   constructor(
-    private routingService: RoutingService,
-    private route: ActivatedRoute,
-    public dataService: DataService,
-    private userService: UserService,
-    private confirmationDialogService: ConfirmationDialogService,
-    private popupService: PopupService
+    private readonly routingService: RoutingService,
+    private readonly route: ActivatedRoute,
+    public readonly dataService: DataService,
+    private readonly userService: UserService,
+    private readonly confirmationDialogService: ConfirmationDialogService,
+    private readonly popupService: PopupService
   ) { super() }
 
   ngOnInit(): void {

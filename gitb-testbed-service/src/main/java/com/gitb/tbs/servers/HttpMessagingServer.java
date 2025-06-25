@@ -76,7 +76,7 @@ public class HttpMessagingServer extends AbstractMessagingServer {
                 /*
                  * Prepare response for SUT.
                  */
-                var responseBody = Optional.ofNullable(getAndConvert(data.get().data().inputs().getFragments(), HttpMessagingHandlerV2.BODY_ARGUMENT_NAME, BinaryType.BINARY_DATA_TYPE, BinaryType.class)).map(BinaryType::serializeByDefaultEncoding);
+                var responseBody = Optional.ofNullable(getAndConvert(data.get().data().inputs().getFragments(), HttpMessagingHandlerV2.BODY_ARGUMENT_NAME, DataType.BINARY_DATA_TYPE, BinaryType.class)).map(BinaryType::serializeByDefaultEncoding);
                 var responseHeaders = getMapOfValues(data.get().data().inputs().getFragments(), HttpMessagingHandlerV2.HEADERS_ARGUMENT_NAME);
                 var responseStatus = getStatus(data.get().data().inputs().getFragments(), STATUS_ARGUMENT_NAME, () -> HttpStatus.OK);
                 // Build response.

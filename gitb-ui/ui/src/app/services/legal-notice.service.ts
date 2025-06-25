@@ -26,7 +26,7 @@ import { ErrorDescription } from '../types/error-description';
 })
 export class LegalNoticeService {
 
-  constructor(private restService: RestService) { }
+  constructor(private readonly restService: RestService) { }
 
   getCommunityDefaultLegalNotice(communityId: number) {
     return this.restService.get<LegalNotice>({

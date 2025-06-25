@@ -51,12 +51,12 @@ export class CreateConformanceStatementComponent implements OnInit {
   Constants = Constants
 
   constructor(
-    public dataService: DataService,
-    private popupService: PopupService,
-    private route: ActivatedRoute,
-    private conformanceService: ConformanceService,
-    private systemService: SystemService,
-    private routingService: RoutingService
+    public readonly dataService: DataService,
+    private readonly popupService: PopupService,
+    private readonly route: ActivatedRoute,
+    private readonly conformanceService: ConformanceService,
+    private readonly systemService: SystemService,
+    private readonly routingService: RoutingService
   ) { }
 
   ngOnInit(): void {

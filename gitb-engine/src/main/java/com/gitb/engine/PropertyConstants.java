@@ -24,8 +24,8 @@ public class PropertyConstants {
     public static final String AUTH_USERNAMETOKEN_USERNAME = "auth.token.username";
     public static final String AUTH_USERNAMETOKEN_PASSWORD = "auth.token.password";
     public static final String AUTH_USERNAMETOKEN_PASSWORDTYPE = "auth.token.password.type";
-    public static final String AUTH_USERNAMETOKEN_PASSWORDTYPE__VALUE_TEXT = "text";
-    public static final String AUTH_USERNAMETOKEN_PASSWORDTYPE__VALUE_DIGEST = "digest";
+    public static final String AUTH_USERNAMETOKEN_PASSWORDTYPE_VALUE_TEXT = "text";
+    public static final String AUTH_USERNAMETOKEN_PASSWORDTYPE_VALUE_DIGEST = "digest";
 
     public static final String AUTH_BASIC_USERNAME = "auth.basic.username";
     public static final String AUTH_BASIC_PASSWORD = "auth.basic.password";
@@ -53,11 +53,11 @@ public class PropertyConstants {
      */
     public static final String TEST_SUCCESS = "TEST_SUCCESS";
 
-    public static final String SESSION_MAP__TEST_SESSION_ID = "sessionId";
-    public static final String SESSION_MAP__TEST_CASE_ID = "testCaseId";
-    public static final String SESSION_MAP__TEST_ENGINE_VERSION = "testEngineVersion";
+    public static final String SESSION_MAP_TEST_SESSION_ID = "sessionId";
+    public static final String SESSION_MAP_TEST_CASE_ID = "testCaseId";
+    public static final String SESSION_MAP_TEST_ENGINE_VERSION = "testEngineVersion";
 
-    public static final String SYSTEM_MAP__API_KEY = "apiKey";
+    public static final String SYSTEM_MAP_API_KEY = "apiKey";
 
     private static final Set<String> BUILT_IN_PROPERTIES = Set.of(DOMAIN_MAP, ORGANISATION_MAP, SYSTEM_MAP, SESSION_MAP, STEP_STATUS_MAP, STEP_SUCCESS_MAP, TEST_SUCCESS);
 

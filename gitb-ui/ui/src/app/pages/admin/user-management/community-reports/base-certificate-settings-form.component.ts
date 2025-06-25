@@ -44,7 +44,7 @@ export abstract class BaseCertificateSettingsFormComponent<T extends Certificate
   constructor(
     conformanceService: ConformanceService,
     modalService: BsModalService,
-    private popupService: PopupService,
+    private readonly popupService: PopupService,
     reportService: ReportService,
     errorService: ErrorService
   ) { super(conformanceService, modalService, reportService, errorService) }

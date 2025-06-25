@@ -137,10 +137,11 @@ public class ReportGenerator {
         String tempHtmlString = null;
         try {
             if (specsToUse.getTempFolderPath() == null) {
-                var writer = new StringWriter();
-                getTemplate(reportPath).process(parameters, writer);
-                writer.flush();
-                tempHtmlString = writer.toString();
+                try (var writer = new StringWriter()) {
+                    getTemplate(reportPath).process(parameters, writer);
+                    writer.flush();
+                    tempHtmlString = writer.toString();
+                }
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("### Report HTML - START ###\n\n{}\n\n### Report HTML - END ###", tempHtmlString);
                 }

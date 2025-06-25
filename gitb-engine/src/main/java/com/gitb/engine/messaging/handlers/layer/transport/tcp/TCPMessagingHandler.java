@@ -25,7 +25,10 @@ import com.gitb.engine.messaging.handlers.model.tcp.ITransactionReceiver;
 import com.gitb.engine.messaging.handlers.model.tcp.ITransactionSender;
 import com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 /**
  * Created by serbay on 9/24/14.
@@ -65,14 +68,10 @@ public class TCPMessagingHandler extends AbstractMessagingHandler {
         outputStream.flush();
     }
 
-    public static void readBytes(InputStream inputStream, byte[] buffer) throws IOException {
-        inputStream.read(buffer); //read to buffer
-    }
-
     public static byte[] readBytes(InputStream inputStream, int stopCharacter) throws IOException{
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 
-        int c = 0;
+        int c;
 
         while(true) {
             c = inputStream.read();
@@ -89,14 +88,4 @@ public class TCPMessagingHandler extends AbstractMessagingHandler {
         return readBytes(inputStream, TCP_STOP_CHARACTER);
     }
 
-    public static String readLines(InputStream inputStream) throws Exception {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-
-        String input = "";
-        String read = "";
-        while ((read = reader.readLine()) != null) {
-            input = input + read;
-        }
-        return input;
-    }
 }

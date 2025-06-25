@@ -20,8 +20,8 @@ import java.util.Collection;
 
 public class SessionCleanupCommand implements Serializable {
 
-    private final UpdateMessage sessionEndMessage;
-    private final Collection<UpdateMessage> pendingUpdates;
+    private final transient UpdateMessage sessionEndMessage;
+    private final transient Collection<UpdateMessage> pendingUpdates;
 
     public SessionCleanupCommand(UpdateMessage sessionEndMessage, Collection<UpdateMessage> pendingUpdates) {
         this.sessionEndMessage = sessionEndMessage;

@@ -40,11 +40,11 @@ export class CreateAdminComponent extends BaseComponent implements OnInit, After
   validation = new ValidationState()
 
   constructor(
-    public dataService: DataService,
-    private userService: UserService,
-    private authService: AuthService,
-    private popupService: PopupService,
-    private routingService: RoutingService
+    public readonly dataService: DataService,
+    private readonly userService: UserService,
+    private readonly authService: AuthService,
+    private readonly popupService: PopupService,
+    private readonly routingService: RoutingService
   ) { super() }
 
   ngAfterViewInit(): void {

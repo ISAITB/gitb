@@ -40,12 +40,12 @@ export class SpecificationGroupDetailsComponent extends BaseComponent implements
   loaded = false
 
   constructor(
-    public dataService: DataService,
-    private specificationService: SpecificationService,
-    private popupService: PopupService,
-    private routingService: RoutingService,
-    private route: ActivatedRoute,
-    private confirmationDialogService: ConfirmationDialogService
+    public readonly dataService: DataService,
+    private readonly specificationService: SpecificationService,
+    private readonly popupService: PopupService,
+    private readonly routingService: RoutingService,
+    private readonly route: ActivatedRoute,
+    private readonly confirmationDialogService: ConfirmationDialogService
   ) { super() }
 
   ngOnInit(): void {

@@ -37,7 +37,7 @@ export class OptionalCustomPropertyFormComponent implements OnInit {
   isAdmin = false
 
   constructor(
-    private dataService: DataService
+    private readonly dataService: DataService
   ) { }
 
   ngOnInit(): void {

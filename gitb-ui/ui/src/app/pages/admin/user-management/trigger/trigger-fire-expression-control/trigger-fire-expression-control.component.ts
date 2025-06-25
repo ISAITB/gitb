@@ -34,7 +34,7 @@ export class TriggerFireExpressionControlComponent implements OnInit {
   @Output() delete = new EventEmitter<TriggerFireExpression>();
   expressionDescription!: string
 
-  constructor(private dataService: DataService) {
+  constructor(private readonly dataService: DataService) {
   }
 
   ngOnInit(): void {

@@ -47,12 +47,12 @@ export class CreateSystemComponent extends BaseComponent implements OnInit {
   loaded = false
 
   constructor(
-    public dataService: DataService,
-    private systemService: SystemService,
-    private route: ActivatedRoute,
-    private popupService: PopupService,
-    private routingService: RoutingService,
-    private communityService: CommunityService
+    public readonly dataService: DataService,
+    private readonly systemService: SystemService,
+    private readonly route: ActivatedRoute,
+    private readonly popupService: PopupService,
+    private readonly routingService: RoutingService,
+    private readonly communityService: CommunityService
   ) { super() }
 
   ngOnInit(): void {

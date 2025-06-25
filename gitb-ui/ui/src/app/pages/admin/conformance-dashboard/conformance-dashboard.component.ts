@@ -96,13 +96,13 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
   constructor(
     dataService: DataService,
     zone: NgZone,
-    private conformanceService: ConformanceService,
-    private modalService: BsModalService,
-    private routingService: RoutingService,
-    private communityService: CommunityService,
-    private organisationService: OrganisationService,
-    private systemService: SystemService,
-    private reportSupportService: ReportSupportService,
+    private readonly conformanceService: ConformanceService,
+    private readonly modalService: BsModalService,
+    private readonly routingService: RoutingService,
+    private readonly communityService: CommunityService,
+    private readonly organisationService: OrganisationService,
+    private readonly systemService: SystemService,
+    private readonly reportSupportService: ReportSupportService,
   ) { super(dataService, zone) }
 
   ngOnInit(): void {

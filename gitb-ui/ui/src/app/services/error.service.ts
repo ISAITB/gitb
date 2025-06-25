@@ -38,10 +38,10 @@ export class ErrorService {
   private errorCurrentlyDisplayed = false
 
   constructor(
-    private confirmationDialogService: ConfirmationDialogService,
-    private modalService: BsModalService,
-    private baseRestService: BaseRestService,
-    private dataService: DataService
+    private readonly confirmationDialogService: ConfirmationDialogService,
+    private readonly modalService: BsModalService,
+    private readonly baseRestService: BaseRestService,
+    private readonly dataService: DataService
   ) { }
 
   customErrorHandler(title: string|undefined, message: string, error: string|ErrorData|ErrorDataArrayBuffer): Observable<any> {

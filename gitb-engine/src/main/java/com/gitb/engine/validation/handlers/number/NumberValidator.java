@@ -32,9 +32,9 @@ import java.util.Map;
 @ValidationHandler(name="NumberValidator")
 public class NumberValidator extends SimpleValidator {
 
-    private final static String ACTUAL_NUMBER_ARGUMENT_NAME = "actual";
-    private final static String EXPECTED_NUMBER_ARGUMENT_NAME = "expected";
-    private final static String MODULE_DEFINITION_XML = "/validation/number-validator-definition.xml";
+    private static final String ACTUAL_NUMBER_ARGUMENT_NAME = "actual";
+    private static final String EXPECTED_NUMBER_ARGUMENT_NAME = "expected";
+    private static final String MODULE_DEFINITION_XML = "/validation/number-validator-definition.xml";
 
     public NumberValidator() {
         this.validatorDefinition = readModuleDefinition(MODULE_DEFINITION_XML);

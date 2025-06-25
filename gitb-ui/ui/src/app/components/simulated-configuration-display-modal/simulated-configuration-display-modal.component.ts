@@ -34,8 +34,8 @@ export class SimulatedConfigurationDisplayModalComponent implements OnInit {
   items: AnyContent[] = []
 
   constructor(
-    private dataService: DataService,
-    private modalRef: BsModalRef
+    private readonly dataService: DataService,
+    private readonly modalRef: BsModalRef
   ) { }
 
   ngOnInit(): void {

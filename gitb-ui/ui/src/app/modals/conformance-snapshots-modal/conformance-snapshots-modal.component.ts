@@ -54,11 +54,11 @@ export class ConformanceSnapshotsModalComponent extends BaseComponent implements
   refreshSnapshots = new EventEmitter<void>()
 
   constructor(
-    private modalInstance: BsModalRef,
-    private conformanceService: ConformanceService,
-    private popupService: PopupService,
-    private confirmationDialogService: ConfirmationDialogService,
-    public dataService: DataService
+    private readonly modalInstance: BsModalRef,
+    private readonly conformanceService: ConformanceService,
+    private readonly popupService: PopupService,
+    private readonly confirmationDialogService: ConfirmationDialogService,
+    public readonly dataService: DataService
   ) { super() }
 
   ngOnInit(): void {

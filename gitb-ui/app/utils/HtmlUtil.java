@@ -28,14 +28,14 @@ import static org.owasp.html.Sanitizers.*;
  */
 public class HtmlUtil {
 
-    private final static PolicyFactory FULL_EDITOR_POLICY;
-    private final static PolicyFactory MINIMAL_EDITOR_POLICY;
-    private final static PolicyFactory PDF_POLICY;
+    private static final PolicyFactory FULL_EDITOR_POLICY;
+    private static final PolicyFactory MINIMAL_EDITOR_POLICY;
+    private static final PolicyFactory PDF_POLICY;
 
-    private final static PolicyFactory TABLES_EXTENDED = new HtmlPolicyBuilder()
+    private static final PolicyFactory TABLES_EXTENDED = new HtmlPolicyBuilder()
             .allowElements("td").allowAttributes("colspan", "rowspan").onElements("td").toFactory();
 
-    private final static PolicyFactory LINKS_WITH_TARGET = new HtmlPolicyBuilder()
+    private static final PolicyFactory LINKS_WITH_TARGET = new HtmlPolicyBuilder()
             .allowElements((elementName, attrs) -> {
                 int targetIndex = attrs.indexOf("target");
                 if (targetIndex < 0) {
@@ -50,7 +50,7 @@ public class HtmlUtil {
             .allowAttributes("href", "target").onElements("a").requireRelsOnLinks("noopener", "noreferrer", "nofollow")
             .toFactory();
 
-    private final static PolicyFactory STYLES_EXTENDED = new HtmlPolicyBuilder()
+    private static final PolicyFactory STYLES_EXTENDED = new HtmlPolicyBuilder()
             .allowStyling(CssSchema.union(CssSchema.DEFAULT, CssSchema.withProperties(Set.of("display", "float")))).toFactory();
 
     static {

@@ -122,8 +122,8 @@ export class ConformanceOverviewCertificateFormComponent extends BaseCertificate
     conformanceService: ConformanceService,
     modalService: BsModalService,
     popupService: PopupService,
-    public dataService: DataService,
-    private specificationService: SpecificationService,
+    public readonly dataService: DataService,
+    private readonly specificationService: SpecificationService,
     errorService: ErrorService
   ) { super(conformanceService, modalService, popupService, reportService, errorService) }
 

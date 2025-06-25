@@ -38,7 +38,7 @@ export class ParameterDetailsModalComponent extends BaseParameterModalComponent 
   constructor(
     dataService: DataService,
     modalInstance: BsModalRef,
-    private confirmationDialogService: ConfirmationDialogService
+    private readonly confirmationDialogService: ConfirmationDialogService
   ) { super(dataService, modalInstance) }
 
   ngOnInit(): void {

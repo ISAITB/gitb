@@ -34,7 +34,7 @@ export class AccountCardComponent implements OnInit {
   accountDescription!: string
   Constants = Constants
 
-  constructor(private dataService: DataService) {
+  constructor(private readonly dataService: DataService) {
   }
 
   ngOnInit(): void {

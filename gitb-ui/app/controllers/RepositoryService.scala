@@ -272,8 +272,7 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
     authorizationManager.canViewTestResultForSession(request, sessionId).flatMap { _ =>
       repositoryUtils.getPathForTestSessionWrapper(sessionId, isExpected = true).flatMap { sessionFolderInfo =>
         Future.successful {
-          var path: String = null
-          path = reportPath
+          var path = reportPath
             .replace("__SQS__", "[")
             .replace("__SQE__", "]")
 
@@ -281,8 +280,6 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
             // Backwards compatibility.
             val pathParts = StringUtils.split(codec.decode(path), "/")
             path = pathParts(1)
-          } else {
-            path = path
           }
           path = codec.decode(path)
           val file = new File(sessionFolderInfo.path.toFile, path)

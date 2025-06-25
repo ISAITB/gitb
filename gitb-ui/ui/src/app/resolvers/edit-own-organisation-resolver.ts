@@ -25,8 +25,8 @@ import { OrganisationService } from '../services/organisation.service';
 export class EditOwnOrganisationResolver  {
 
     constructor(
-        private dataService: DataService,
-        private organisationService: OrganisationService
+        private readonly dataService: DataService,
+        private readonly organisationService: OrganisationService
     ) {}
 
     resolve(route: ActivatedRouteSnapshot, state: RouterStateSnapshot) {

@@ -24,7 +24,7 @@ import { Constants } from "../common/constants";
 export class CommunityResolver  {
 
     constructor(
-        private communityService: CommunityService
+        private readonly communityService: CommunityService
     ) {}
 
     resolve(route: ActivatedRouteSnapshot, state: RouterStateSnapshot) {

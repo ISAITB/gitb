@@ -32,8 +32,8 @@ import java.util.Set;
 
 public class MimeUtil {
 
-    private final static Tika tika = new Tika();
-    private final static Set<String> imageMimeTypes = Set.of("image/png", "image/x-png", "image/jpeg", "image/gif", "image/svg+xml");
+    private static final Tika tika = new Tika();
+    private static final Set<String> imageMimeTypes = Set.of("image/png", "image/x-png", "image/jpeg", "image/gif", "image/svg+xml");
 
     public static String base64AsDataURL(String base64Content) {
         return base64AsDataURL(base64Content, null);

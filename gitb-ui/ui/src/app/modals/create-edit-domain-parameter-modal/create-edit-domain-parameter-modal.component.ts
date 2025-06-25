@@ -53,11 +53,11 @@ export class CreateEditDomainParameterModalComponent extends BaseComponent imple
   validation = new ValidationState()
 
   constructor(
-    private dataService: DataService,
-    private popupService: PopupService,
-    private modalInstance: BsModalRef,
-    private conformanceService: ConformanceService,
-    private confirmationDialogService: ConfirmationDialogService
+    private readonly dataService: DataService,
+    private readonly popupService: PopupService,
+    private readonly modalInstance: BsModalRef,
+    private readonly conformanceService: ConformanceService,
+    private readonly confirmationDialogService: ConfirmationDialogService
   ) { super() }
 
   ngAfterViewInit(): void {

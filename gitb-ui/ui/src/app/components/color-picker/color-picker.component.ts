@@ -43,8 +43,8 @@ export class ColorPickerComponent {
   onTouched = () => {}
 
   constructor(
-    private popupService: PopupService,
-    private dataService: DataService
+    private readonly popupService: PopupService,
+    private readonly dataService: DataService
   ) {}
 
   set value(v: string|undefined) {

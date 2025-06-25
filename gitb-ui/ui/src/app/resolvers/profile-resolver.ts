@@ -30,12 +30,12 @@ import { AuthService } from '../services/auth.service'
 export class ProfileResolver  {
 
     constructor(
-        private authProviderService: AuthProviderService,
-        private accountService: AccountService,
-        private dataService: DataService,
-        private userGuideService: UserGuideService,
-        private communityService: CommunityService,
-        private authService: AuthService,
+        private readonly authProviderService: AuthProviderService,
+        private readonly accountService: AccountService,
+        private readonly dataService: DataService,
+        private readonly userGuideService: UserGuideService,
+        private readonly communityService: CommunityService,
+        private readonly authService: AuthService,
     ) {}
 
     resolveData(state: RouterStateSnapshot): Observable<void> {

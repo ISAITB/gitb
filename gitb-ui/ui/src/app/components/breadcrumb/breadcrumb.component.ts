@@ -43,9 +43,9 @@ export class BreadcrumbComponent implements OnInit, OnDestroy {
   Constants = Constants
 
   constructor(
-    private routingService: RoutingService,
-    public dataService: DataService,
-    private breadcrumbService: BreadcrumbService
+    private readonly routingService: RoutingService,
+    public readonly dataService: DataService,
+    private readonly breadcrumbService: BreadcrumbService
   ) { }
 
   ngOnInit(): void {

@@ -47,10 +47,10 @@ export class ContactSupportComponent extends BaseComponent implements OnInit, Af
   validation = new ValidationState()
 
   constructor(
-    private dataService: DataService,
-    private modalInstance: BsModalRef,
-    private accountService: AccountService,
-    private popupService: PopupService
+    private readonly dataService: DataService,
+    private readonly modalInstance: BsModalRef,
+    private readonly accountService: AccountService,
+    private readonly popupService: PopupService
   ) {
     super()
   }

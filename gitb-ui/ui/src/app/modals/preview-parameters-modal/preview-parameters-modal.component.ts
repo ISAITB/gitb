@@ -34,8 +34,8 @@ export class PreviewParametersModalComponent implements OnInit {
   parametersForRegistration: CustomProperty[] = []
 
   constructor(
-    public dataService: DataService,
-    private modalRef: BsModalRef
+    public readonly dataService: DataService,
+    private readonly modalRef: BsModalRef
   ) { }
 
   ngOnInit(): void {

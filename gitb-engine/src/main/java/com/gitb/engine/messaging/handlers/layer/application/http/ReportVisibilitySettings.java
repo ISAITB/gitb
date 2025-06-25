@@ -26,17 +26,17 @@ import static com.gitb.engine.messaging.handlers.layer.application.http.HttpMess
 
 public class ReportVisibilitySettings extends BaseReportVisibilitySettings {
 
-    private final static String SHOW_REQUEST_URI_ARGUMENT_NAME = "showRequestUri";
-    private final static String SHOW_REQUEST_METHOD_ARGUMENT_NAME = "showRequestMethod";
-    private final static String SHOW_REQUEST_BODY_ARGUMENT_NAME = "showRequestBody";
-    private final static String SHOW_REQUEST_HEADERS_ARGUMENT_NAME = "showRequestHeaders";
-    private final static String REQUEST_HEADERS_TO_SHOW_ARGUMENT_NAME = "requestHeadersToShow";
-    private final static String REQUEST_HEADERS_TO_HIDE_ARGUMENT_NAME = "requestHeadersToHide";
-    private final static String SHOW_RESPONSE_BODY_ARGUMENT_NAME = "showResponseBody";
-    private final static String SHOW_RESPONSE_STATUS_ARGUMENT_NAME = "showResponseStatus";
-    private final static String SHOW_RESPONSE_HEADERS_ARGUMENT_NAME = "showResponseHeaders";
-    private final static String RESPONSE_HEADERS_TO_SHOW_ARGUMENT_NAME = "responseHeadersToShow";
-    private final static String RESPONSE_HEADERS_TO_HIDE_ARGUMENT_NAME = "responseHeadersToHide";
+    private static final String SHOW_REQUEST_URI_ARGUMENT_NAME = "showRequestUri";
+    private static final String SHOW_REQUEST_METHOD_ARGUMENT_NAME = "showRequestMethod";
+    private static final String SHOW_REQUEST_BODY_ARGUMENT_NAME = "showRequestBody";
+    private static final String SHOW_REQUEST_HEADERS_ARGUMENT_NAME = "showRequestHeaders";
+    private static final String REQUEST_HEADERS_TO_SHOW_ARGUMENT_NAME = "requestHeadersToShow";
+    private static final String REQUEST_HEADERS_TO_HIDE_ARGUMENT_NAME = "requestHeadersToHide";
+    private static final String SHOW_RESPONSE_BODY_ARGUMENT_NAME = "showResponseBody";
+    private static final String SHOW_RESPONSE_STATUS_ARGUMENT_NAME = "showResponseStatus";
+    private static final String SHOW_RESPONSE_HEADERS_ARGUMENT_NAME = "showResponseHeaders";
+    private static final String RESPONSE_HEADERS_TO_SHOW_ARGUMENT_NAME = "responseHeadersToShow";
+    private static final String RESPONSE_HEADERS_TO_HIDE_ARGUMENT_NAME = "responseHeadersToHide";
 
     private final boolean showRequestUri;
     private final boolean showRequestMethod;

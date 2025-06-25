@@ -20,7 +20,7 @@ import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.types.DataType;
 import com.gitb.types.MapType;
 import com.gitb.types.StringType;
-import com.gitb.utils.NamespaceContext;
+import com.gitb.utils.TestSessionNamespaceContext;
 
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpression;
@@ -41,7 +41,7 @@ public class HandlerUtils {
             for (var entry: ((Map<String, DataType>)namespaces.getValue()).entrySet()) {
                 nsMap.put(entry.getKey(), (String) entry.getValue().getValue());
             }
-            xPath.setNamespaceContext(new NamespaceContext(nsMap));
+            xPath.setNamespaceContext(new TestSessionNamespaceContext(nsMap));
             xPath.setXPathVariableResolver(variableResolver);
         }
         try {

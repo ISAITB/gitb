@@ -51,9 +51,9 @@ export abstract class CommunityXmlReportFormComponent extends BaseReportSettings
   constructor(
     conformanceService: ConformanceService,
     reportService: ReportService,
-    private popupService: PopupService,
+    private readonly popupService: PopupService,
     modalService: BsModalService,
-    private confirmationDialogService: ConfirmationDialogService,
+    private readonly confirmationDialogService: ConfirmationDialogService,
     errorService: ErrorService
   ) { super(conformanceService, modalService, reportService, errorService) }
 

@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input, OnInit } from '@angular/core';
+import {Component, Input} from '@angular/core';
 
 @Component({
     selector: 'app-collapsing-icon',
@@ -21,7 +21,7 @@ import { Component, Input, OnInit } from '@angular/core';
     styles: [],
     standalone: false
 })
-export class CollapsingIconComponent implements OnInit {
+export class CollapsingIconComponent {
 
   @Input() isCollapsed = false
   @Input() hidden = false
@@ -29,8 +29,5 @@ export class CollapsingIconComponent implements OnInit {
   @Input() asDiv = false
 
   constructor() { }
-
-  ngOnInit(): void {
-  }
 
 }

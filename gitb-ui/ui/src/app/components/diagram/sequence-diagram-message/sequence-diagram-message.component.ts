@@ -49,9 +49,9 @@ export class SequenceDiagramMessageComponent implements OnInit, OnDestroy {
   hoveringReport = false
 
   constructor(
-    private reportService: ReportService,
-    private modalService: BsModalService,
-    private htmlService: HtmlService
+    private readonly reportService: ReportService,
+    private readonly modalService: BsModalService,
+    private readonly htmlService: HtmlService
   ) { }
 
   ngOnInit(): void {

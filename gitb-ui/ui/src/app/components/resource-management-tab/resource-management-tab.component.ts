@@ -60,10 +60,10 @@ export class ResourceManagementTabComponent implements AfterViewInit {
   ]
 
   constructor(
-    private modalService: BsModalService,
-    private confirmationDialogService: ConfirmationDialogService,
-    private popupService: PopupService,
-    private dataService: DataService
+    private readonly modalService: BsModalService,
+    private readonly confirmationDialogService: ConfirmationDialogService,
+    private readonly popupService: PopupService,
+    private readonly dataService: DataService
   ) {
   }
 

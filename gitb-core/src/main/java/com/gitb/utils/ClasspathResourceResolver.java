@@ -51,7 +51,7 @@ public class ClasspathResourceResolver implements LSResourceResolver {
 
         @Override
         public void setCharacterStream(Reader characterStream) {
-
+            // Not used.
         }
 
         @Override
@@ -71,7 +71,7 @@ public class ClasspathResourceResolver implements LSResourceResolver {
 
         @Override
         public void setStringData(String stringData) {
-
+            // Not used.
         }
 
         @Override
@@ -101,7 +101,7 @@ public class ClasspathResourceResolver implements LSResourceResolver {
 
         @Override
         public void setBaseURI(String baseURI) {
-
+            // Not used.
         }
 
         @Override
@@ -111,7 +111,7 @@ public class ClasspathResourceResolver implements LSResourceResolver {
 
         @Override
         public void setEncoding(String encoding) {
-
+            // Not used.
         }
 
         @Override
@@ -121,7 +121,7 @@ public class ClasspathResourceResolver implements LSResourceResolver {
 
         @Override
         public void setCertifiedText(boolean certifiedText) {
-
+            // Not used.
         }
     }
 

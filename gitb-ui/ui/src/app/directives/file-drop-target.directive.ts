@@ -25,7 +25,7 @@ export class FileDropTargetDirective {
   dragEnterCounter = 0
 
   constructor(
-    private dragSupport: DragSupportService
+    private readonly dragSupport: DragSupportService
   ) {
     this.dragSupport.onDragDropChange$.subscribe(() => {
       this.dragEnterCounter = 0

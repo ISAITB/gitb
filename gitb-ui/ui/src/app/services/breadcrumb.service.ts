@@ -24,7 +24,7 @@ import { BreadcrumbLabelResponse } from '../types/breadcrumb-label-response';
 })
 export class BreadcrumbService {
 
-  constructor(private restService: RestService) { }
+  constructor(private readonly restService: RestService) { }
 
   getBreadcrumbLabels(ids: BreadcrumbLabelRequest) {
     let data: any = {}

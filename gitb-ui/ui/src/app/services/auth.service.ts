@@ -25,7 +25,7 @@ import { RestService } from './rest.service'
 })
 export class AuthService {
 
-  constructor(private restService: RestService) { }
+  constructor(private readonly restService: RestService) { }
 
   checkEmail(email: string) {
     return this.restService.get<{available: boolean}>({

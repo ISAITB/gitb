@@ -47,9 +47,9 @@ export class ThemeFormComponent implements OnInit, AfterViewInit {
   footerDownloadPending = false
 
   constructor(
-    private systemConfigurationService: SystemConfigurationService,
-    private dataService: DataService,
-    private htmlService: HtmlService
+    private readonly systemConfigurationService: SystemConfigurationService,
+    private readonly dataService: DataService,
+    private readonly htmlService: HtmlService
   ) {}
 
   ngOnInit(): void {

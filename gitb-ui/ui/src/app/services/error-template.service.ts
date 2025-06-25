@@ -24,7 +24,7 @@ import { RestService } from './rest.service';
 })
 export class ErrorTemplateService {
 
-  constructor(private restService: RestService) { }
+  constructor(private readonly restService: RestService) { }
 
   getCommunityDefaultErrorTemplate(communityId: number) {
     return this.restService.get<ErrorTemplate>({

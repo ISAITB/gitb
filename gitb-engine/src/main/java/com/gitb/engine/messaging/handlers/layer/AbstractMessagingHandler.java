@@ -445,7 +445,8 @@ public abstract class AbstractMessagingHandler extends AbstractHandler implement
                 }
             } catch (InterruptedException e) {
                 // Ignore this can be expected.
-                logger.debug("Messaging handler for session ["+sessionId+"] was interrupted");
+                Thread.currentThread().interrupt();
+                logger.debug("Messaging handler for session [{}] was interrupted", sessionId);
                 return handler.onSkip();
             } catch (Exception e) {
                 return handler.onError(new GITBEngineInternalError(e), sessionId);

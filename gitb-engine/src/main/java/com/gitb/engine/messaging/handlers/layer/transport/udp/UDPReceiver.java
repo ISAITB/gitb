@@ -16,10 +16,10 @@
 package com.gitb.engine.messaging.handlers.layer.transport.udp;
 
 import com.gitb.core.Configuration;
-import com.gitb.messaging.Message;
 import com.gitb.engine.messaging.handlers.layer.AbstractDatagramReceiver;
 import com.gitb.engine.messaging.handlers.model.SessionContext;
 import com.gitb.engine.messaging.handlers.model.TransactionContext;
+import com.gitb.messaging.Message;
 import com.gitb.types.BinaryType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,7 +32,7 @@ import java.util.List;
  */
 public class UDPReceiver extends AbstractDatagramReceiver {
 
-	Logger logger = LoggerFactory.getLogger(UDPReceiver.class);
+	private static final Logger logger = LoggerFactory.getLogger(UDPReceiver.class);
 
 	protected UDPReceiver(SessionContext session, TransactionContext transaction) {
 		super(session, transaction);

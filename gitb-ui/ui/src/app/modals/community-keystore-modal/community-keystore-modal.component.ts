@@ -44,10 +44,10 @@ export class CommunityKeystoreModalComponent extends BaseComponent implements On
   updatePasswords = false
 
   constructor(
-    private modalInstance: BsModalRef,
-    private confirmationDialogService: ConfirmationDialogService,
-    private conformanceService: ConformanceService,
-    private popupService: PopupService
+    private readonly modalInstance: BsModalRef,
+    private readonly confirmationDialogService: ConfirmationDialogService,
+    private readonly conformanceService: ConformanceService,
+    private readonly popupService: PopupService
   ) { super() }
 
   ngOnInit(): void {

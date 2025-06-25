@@ -38,11 +38,11 @@ export class CreateEndpointComponent extends BaseComponent implements OnInit, Af
   pending = false
 
   constructor(
-    public dataService: DataService,
-    private routingService: RoutingService,
-    private route: ActivatedRoute,
-    private popupService: PopupService,
-    private conformanceService: ConformanceService
+    public readonly dataService: DataService,
+    private readonly routingService: RoutingService,
+    private readonly route: ActivatedRoute,
+    private readonly popupService: PopupService,
+    private readonly conformanceService: ConformanceService
   ) { super() }
 
   ngAfterViewInit(): void {

@@ -111,13 +111,14 @@ public class DataTypeUtils {
 			}
 			case DataType.MAP_DATA_TYPE:
 				if (fragment.getValue() != null) {
-					Map<String, DataType> values = (Map<String, DataType>) ((MapType)fragment).getValue();
+					Map<String, DataType> values = (Map<String, DataType>) fragment.getValue();
 					for (Map.Entry<String, DataType> entry : values.entrySet()) {
 						AnyContent content = convertDataTypeToAnyContent(entry.getKey(), entry.getValue());
 						attachment.getItem().add(content);
 					}
 				}
 				break;
+			default: // No further action.
 		}
 
 		return attachment;
@@ -185,6 +186,9 @@ public class DataTypeUtils {
 							postProcessor.process(data);
 						} catch (URISyntaxException e) {
 							throw new IllegalStateException("URI had invalid syntax ["+anyContent.getValue()+"]", e);
+						} catch (InterruptedException e) {
+							Thread.currentThread().interrupt();
+							throw new IllegalStateException("Thread interrupted ["+anyContent.getValue()+"]", e);
 						} catch (Exception e) {
 							throw new IllegalStateException("Error while calling URI ["+anyContent.getValue()+"]", e);
 						}

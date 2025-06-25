@@ -25,7 +25,7 @@ import java.util.Optional;
 @ValidationHandler(name="YamlValidator")
 public class YamlValidator extends JsonValidator {
 
-    private final static String MODULE_DEFINITION_XML = "/validation/yaml-validator-definition.xml";
+    private static final String MODULE_DEFINITION_XML = "/validation/yaml-validator-definition.xml";
 
     private static final String YAML_ARGUMENT_NAME = "yaml";
     private static final String SUPPORT_JSON_ARGUMENT_NAME = "supportJson";
