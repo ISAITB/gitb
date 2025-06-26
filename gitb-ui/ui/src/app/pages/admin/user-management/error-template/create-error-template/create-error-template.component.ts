@@ -49,13 +49,13 @@ export class CreateErrorTemplateComponent extends BaseComponent implements OnIni
   Constants = Constants
 
   constructor(
-    private routingService: RoutingService,
-    private route: ActivatedRoute,
-    private errorTemplateService: ErrorTemplateService,
-    private confirmationDialogService: ConfirmationDialogService,
-    private popupService: PopupService,
-    public dataService: DataService,
-    private errorService: ErrorService
+    private readonly routingService: RoutingService,
+    private readonly route: ActivatedRoute,
+    private readonly errorTemplateService: ErrorTemplateService,
+    private readonly confirmationDialogService: ConfirmationDialogService,
+    private readonly popupService: PopupService,
+    public readonly dataService: DataService,
+    private readonly errorService: ErrorService
   ) { super() }
 
   ngAfterViewInit(): void {

@@ -52,11 +52,11 @@ export class CreateCommunityComponent extends BaseComponent implements OnInit {
   validation = new ValidationState()
 
   constructor(
-    private routingService: RoutingService,
-    private communityService: CommunityService,
-    private conformanceService: ConformanceService,
-    private dataService: DataService,
-    private popupService: PopupService
+    private readonly routingService: RoutingService,
+    private readonly communityService: CommunityService,
+    private readonly conformanceService: ConformanceService,
+    private readonly dataService: DataService,
+    private readonly popupService: PopupService
   ) { super() }
 
   ngOnInit(): void {

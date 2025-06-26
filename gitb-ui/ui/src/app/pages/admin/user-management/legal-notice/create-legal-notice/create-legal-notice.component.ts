@@ -46,13 +46,13 @@ export class CreateLegalNoticeComponent extends BaseComponent implements OnInit,
   Constants = Constants
 
   constructor(
-    private routingService: RoutingService,
-    private route: ActivatedRoute,
-    private legalNoticeService: LegalNoticeService,
-    private confirmationDialogService: ConfirmationDialogService,
-    private popupService: PopupService,
-    public dataService: DataService,
-    private htmlService: HtmlService
+    private readonly routingService: RoutingService,
+    private readonly route: ActivatedRoute,
+    private readonly legalNoticeService: LegalNoticeService,
+    private readonly confirmationDialogService: ConfirmationDialogService,
+    private readonly popupService: PopupService,
+    public readonly dataService: DataService,
+    private readonly htmlService: HtmlService
   ) { super() }
 
   ngAfterViewInit(): void {

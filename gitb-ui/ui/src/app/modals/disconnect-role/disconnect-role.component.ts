@@ -33,10 +33,10 @@ export class DisconnectRoleComponent extends BaseComponent {
   public result = new EventEmitter<number|undefined>()
 
   constructor(
-    public dataService: DataService,
-    private confirmationDialogService: ConfirmationDialogService,
-    private authService: AuthService,
-    public modalRef: BsModalRef
+    public readonly dataService: DataService,
+    private readonly confirmationDialogService: ConfirmationDialogService,
+    private readonly authService: AuthService,
+    public readonly modalRef: BsModalRef
   ) { super() }
 
   disconnect() {

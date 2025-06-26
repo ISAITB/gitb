@@ -29,7 +29,7 @@ export class TestSessionPresentationComponent implements OnInit {
   @Output() ready = new EventEmitter<SessionData>()
 
   constructor(
-    private diagramLoaderService: DiagramLoaderService
+    private readonly diagramLoaderService: DiagramLoaderService
   ) { }
 
   ngOnInit(): void {

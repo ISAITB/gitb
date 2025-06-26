@@ -54,7 +54,6 @@ public class SchematronReportHandler extends AbstractReportHandler {
 
     public static final String XML_ITEM_NAME  = "xml";
     public static final String SCH_ITEM_NAME  = "sch";
-    private static final Pattern ARRAY_PATTERN = Pattern.compile("\\[\\d+\\]");
     private static final Pattern DEFAULTNS_PATTERN = Pattern.compile("\\/[\\w]+:?");
 
     private final Document node;

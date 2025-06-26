@@ -55,11 +55,11 @@ export class PlaceholderSelectorComponent implements OnInit {
   systemResourceConfig?: MultiSelectConfig<CommunityResource>
 
   constructor(
-    private dataService: DataService,
-    private popupService: PopupService,
-    private conformanceService: ConformanceService,
-    private communityService: CommunityService,
-    private communityResourceService: CommunityResourceService
+    private readonly dataService: DataService,
+    private readonly popupService: PopupService,
+    private readonly conformanceService: ConformanceService,
+    private readonly communityService: CommunityService,
+    private readonly communityResourceService: CommunityResourceService
   ) { }
 
   ngOnInit(): void {

@@ -53,12 +53,12 @@ export class SystemDetailsComponent extends BaseComponent implements OnInit {
   loaded = false
 
   constructor(
-    private route: ActivatedRoute,
-    private confirmationDialogService: ConfirmationDialogService,
-    public dataService: DataService,
-    private popupService: PopupService,
-    private routingService: RoutingService,
-    private systemService: SystemService
+    private readonly route: ActivatedRoute,
+    private readonly confirmationDialogService: ConfirmationDialogService,
+    public readonly dataService: DataService,
+    private readonly popupService: PopupService,
+    private readonly routingService: RoutingService,
+    private readonly systemService: SystemService
   ) { super() }
 
   ngOnInit(): void {

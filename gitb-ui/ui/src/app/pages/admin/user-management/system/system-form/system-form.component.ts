@@ -45,10 +45,10 @@ export class SystemFormComponent implements OnInit {
   copySelectionConfig!: MultiSelectConfig<System>
 
   constructor(
-    public dataService: DataService,
-    private systemService: SystemService,
-    private confirmationDialogService: ConfirmationDialogService,
-    private popupService: PopupService
+    public readonly dataService: DataService,
+    private readonly systemService: SystemService,
+    private readonly confirmationDialogService: ConfirmationDialogService,
+    private readonly popupService: PopupService
   ) { }
 
   ngOnInit(): void {

@@ -63,8 +63,8 @@ public class VariableResolver implements XPathVariableResolver{
 	private static final String LITERAL_OR_VARIABLE = "[a-zA-Z\\-\\._0-9]*";
 	private static final String NUMBERS = "[0-9]+";
 
-    public static final String VARIABLE_EXPRESSION__NO_DOLLAR = "([a-zA-Z][a-zA-Z\\-_0-9]*)(?:\\{(?:[\\$\\{\\}a-zA-Z\\-\\._0-9]*)\\})*";
-    public static final String VARIABLE_EXPRESSION = "\\$"+VARIABLE_EXPRESSION__NO_DOLLAR;
+    public static final String VARIABLE_EXPRESSION_NO_DOLLAR = "([a-zA-Z][a-zA-Z\\-_0-9]*)(?:\\{(?:[\\$\\{\\}a-zA-Z\\-\\._0-9]*)\\})*";
+    public static final String VARIABLE_EXPRESSION = "\\$"+ VARIABLE_EXPRESSION_NO_DOLLAR;
 	private static final String INDEX_OR_KEY = "(?:(?:\\{((?:"+ LITERAL_OR_VARIABLE +")" +
 		"|(?:"+ NUMBERS +")" +
 		"|(?:"+ VARIABLE_EXPRESSION +"))\\})(.*))";

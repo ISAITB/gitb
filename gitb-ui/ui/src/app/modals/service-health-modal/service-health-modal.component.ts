@@ -35,8 +35,8 @@ export class ServiceHealthModalComponent extends BaseComponent implements OnInit
   checkPending = false
 
   constructor(
-    private modalRef: BsModalRef,
-    private markdownService: MarkdownService,
+    private readonly modalRef: BsModalRef,
+    private readonly markdownService: MarkdownService,
   ) {
     super()
   }

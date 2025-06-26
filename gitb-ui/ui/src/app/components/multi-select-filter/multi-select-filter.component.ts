@@ -89,8 +89,8 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
   itemsWithSameValue: { [key: number]: {applicable: boolean, item: T}[] } = {}
 
   constructor(
-    private eRef: ElementRef,
-    private dataService: DataService
+    private readonly eRef: ElementRef,
+    private readonly dataService: DataService
   ) { }
 
   ngOnInit(): void {

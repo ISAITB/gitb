@@ -62,12 +62,12 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
   collapsed = true
 
   constructor(
-    private testService: TestService,
+    private readonly testService: TestService,
     reportService: ReportService,
     dataService: DataService,
     modalService: BsModalService,
-    private popupService: PopupService,
-    private confirmationDialogService: ConfirmationDialogService,
+    private readonly popupService: PopupService,
+    private readonly confirmationDialogService: ConfirmationDialogService,
     htmlService: HtmlService
   ) { super(modalService, reportService, htmlService, dataService) }
 

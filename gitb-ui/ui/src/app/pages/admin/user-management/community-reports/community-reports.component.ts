@@ -37,8 +37,8 @@ export class CommunityReportsComponent implements OnInit {
   testStepReportSettings = new ReportSettings()
 
   constructor(
-    private route: ActivatedRoute,
-    private routingService: RoutingService
+    private readonly route: ActivatedRoute,
+    private readonly routingService: RoutingService
   ) {}
 
   ngOnInit(): void {

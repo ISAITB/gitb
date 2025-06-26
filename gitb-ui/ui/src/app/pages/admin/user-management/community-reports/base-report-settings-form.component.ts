@@ -49,10 +49,10 @@ export abstract class BaseReportSettingsFormComponent extends BaseComponent impl
   stylesheetNameToShow?: string
 
   constructor(
-    protected conformanceService: ConformanceService,
-    protected modalService: BsModalService,
-    protected reportService: ReportService,
-    protected errorService: ErrorService
+    protected readonly conformanceService: ConformanceService,
+    protected readonly modalService: BsModalService,
+    protected readonly reportService: ReportService,
+    protected readonly errorService: ErrorService
   ) { super() }
 
   ngOnInit(): void {

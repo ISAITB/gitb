@@ -24,7 +24,7 @@ import { ConfirmationComponent } from '../modals/confirmation/confirmation.compo
 export class ConfirmationDialogService {
 
 
-  constructor(private modalService: BsModalService) { }
+  constructor(private readonly modalService: BsModalService) { }
 
   notify(headerText: string, bodyText: string, buttonText: string) {
     const modal = this.modalService.show(ConfirmationComponent, {

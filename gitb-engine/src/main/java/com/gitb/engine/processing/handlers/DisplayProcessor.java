@@ -40,10 +40,10 @@ import java.util.List;
 public class DisplayProcessor extends AbstractProcessingHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(DisplayProcessor.class);
-    private static final String OPERATION__DISPLAY = "display";
-    private static final String INPUT__PARAMETERS = "parameters";
-    private static final String INPUT__CONTENT_TYPES = "contentTypes";
-    private static final String INPUT__RESULT = "result";
+    private static final String OPERATION_DISPLAY = "display";
+    private static final String INPUT_PARAMETERS = "parameters";
+    private static final String INPUT_CONTENT_TYPES = "contentTypes";
+    private static final String INPUT_RESULT = "result";
 
     @Override
     public ProcessingModule createProcessingModule() {
@@ -53,11 +53,11 @@ public class DisplayProcessor extends AbstractProcessingHandler {
         module.getMetadata().setName(module.getId());
         module.getMetadata().setVersion("1.0");
         module.setConfigs(new ConfigurationParameters());
-        module.getOperation().add(createProcessingOperation(OPERATION__DISPLAY,
+        module.getOperation().add(createProcessingOperation(OPERATION_DISPLAY,
                 List.of(
-                        createParameter(INPUT__RESULT, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, String.format("The result of the step. On of '%s', '%s' or '%s'. If not specified the default considered is '%s'.", TestResultType.SUCCESS, TestResultType.WARNING, TestResultType.WARNING, TestResultType.SUCCESS)),
-                        createParameter(INPUT__PARAMETERS, "map", UsageEnumeration.O, ConfigurationType.SIMPLE, "The map of input parameters to display."),
-                        createParameter(INPUT__CONTENT_TYPES, "map", UsageEnumeration.O, ConfigurationType.SIMPLE, "The map of content types to apply for the display of matching input parameters.")
+                        createParameter(INPUT_RESULT, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, String.format("The result of the step. On of '%s', '%s' or '%s'. If not specified the default considered is '%s'.", TestResultType.SUCCESS, TestResultType.WARNING, TestResultType.WARNING, TestResultType.SUCCESS)),
+                        createParameter(INPUT_PARAMETERS, "map", UsageEnumeration.O, ConfigurationType.SIMPLE, "The map of input parameters to display."),
+                        createParameter(INPUT_CONTENT_TYPES, "map", UsageEnumeration.O, ConfigurationType.SIMPLE, "The map of content types to apply for the display of matching input parameters.")
                 ),
                 Collections.emptyList()
         ));
@@ -67,15 +67,15 @@ public class DisplayProcessor extends AbstractProcessingHandler {
     @Override
     public ProcessingReport process(String session, String operation, ProcessingData input) {
         var result = TestResultType.SUCCESS;
-        var resultInput = getInputForName(input, INPUT__RESULT, StringType.class);
+        var resultInput = getInputForName(input, INPUT_RESULT, StringType.class);
         if (resultInput != null) {
             try {
                 result = TestResultType.valueOf((String)(resultInput.convertTo(DataType.STRING_DATA_TYPE).getValue()));
             } catch (IllegalArgumentException | NullPointerException e) {
-                LOG.warn(MarkerFactory.getDetachedMarker(session), String.format("Invalid value for input '%s'. Considering '%s' by default.", INPUT__RESULT, TestResultType.SUCCESS));
+                LOG.warn(MarkerFactory.getDetachedMarker(session), String.format("Invalid value for input '%s'. Considering '%s' by default.", INPUT_RESULT, TestResultType.SUCCESS));
             }
         }
-        var parameters = getInputForName(input, INPUT__PARAMETERS, MapType.class);
+        var parameters = getInputForName(input, INPUT_PARAMETERS, MapType.class);
         var report = createReport(result);
         if (parameters != null) {
             parameters.getItems().forEach((key, value) -> {
@@ -85,7 +85,7 @@ public class DisplayProcessor extends AbstractProcessingHandler {
                 report.getContext().getItem().add(item);
             });
         }
-        TestCaseUtils.applyContentTypes(input.getData().get(INPUT__CONTENT_TYPES), report.getContext());
+        TestCaseUtils.applyContentTypes(input.getData().get(INPUT_CONTENT_TYPES), report.getContext());
         return new ProcessingReport(report, new ProcessingData());
     }
 }

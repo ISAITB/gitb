@@ -59,12 +59,12 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
   sessionBeingRefreshed?: TestResultForDisplay
 
   constructor(
-    private reportService: ReportService,
-    private modalService: BsModalService,
-    private routingService: RoutingService,
-    private testService: TestService,
-    public dataService: DataService,
-    private popupService: PopupService
+    private readonly reportService: ReportService,
+    private readonly modalService: BsModalService,
+    private readonly routingService: RoutingService,
+    private readonly testService: TestService,
+    public readonly dataService: DataService,
+    private readonly popupService: PopupService
   ) { super() }
 
   ngOnInit(): void {

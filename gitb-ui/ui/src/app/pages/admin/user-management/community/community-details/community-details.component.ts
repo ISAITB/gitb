@@ -132,21 +132,21 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   validation = new ValidationState()
 
   constructor(
-    public dataService: DataService,
-    private routingService: RoutingService,
-    private route: ActivatedRoute,
+    public readonly dataService: DataService,
+    private readonly routingService: RoutingService,
+    private readonly route: ActivatedRoute,
     router: Router,
-    private userService: UserService,
-    private landingPageService: LandingPageService,
-    private legalNoticeService: LegalNoticeService,
-    private errorTemplateService: ErrorTemplateService,
-    private triggerService: TriggerService,
-    private confirmationDialogService: ConfirmationDialogService,
-    private organisationService: OrganisationService,
-    private communityService: CommunityService,
-    private conformanceService: ConformanceService,
-    private communityResourceService: CommunityResourceService,
-    private popupService: PopupService
+    private readonly userService: UserService,
+    private readonly landingPageService: LandingPageService,
+    private readonly legalNoticeService: LegalNoticeService,
+    private readonly errorTemplateService: ErrorTemplateService,
+    private readonly triggerService: TriggerService,
+    private readonly confirmationDialogService: ConfirmationDialogService,
+    private readonly organisationService: OrganisationService,
+    private readonly communityService: CommunityService,
+    private readonly conformanceService: ConformanceService,
+    private readonly communityResourceService: CommunityResourceService,
+    private readonly popupService: PopupService
   ) {
     super()
     // Access the tab to show via router state to have it cleared upon refresh.

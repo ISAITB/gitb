@@ -13,9 +13,9 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, HostListener, Input, OnInit } from '@angular/core';
-import { DataService } from 'src/app/services/data.service';
-import { PopupService } from 'src/app/services/popup.service';
+import {Component, HostListener, Input} from '@angular/core';
+import {DataService} from 'src/app/services/data.service';
+import {PopupService} from 'src/app/services/popup.service';
 
 @Component({
     selector: 'app-copy-enabled-text',
@@ -23,18 +23,15 @@ import { PopupService } from 'src/app/services/popup.service';
     styleUrls: ['./copy-enabled-text.component.less'],
     standalone: false
 })
-export class CopyEnabledTextComponent implements OnInit {
+export class CopyEnabledTextComponent {
 
   @Input() value: string|undefined
   hovering = false
 
   constructor(
-    private dataService: DataService,
-    private popupService: PopupService
+    private readonly dataService: DataService,
+    private readonly popupService: PopupService
   ) { }
-
-  ngOnInit(): void {
-  }
 
   @HostListener('mouseenter')
   onMouseEnter() {

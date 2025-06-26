@@ -61,8 +61,8 @@ import {Observable} from 'rxjs';
 export class ConformanceService {
 
   constructor(
-    private restService: RestService,
-    private dataService: DataService
+    private readonly restService: RestService,
+    private readonly dataService: DataService
   ) { }
 
   getDomain(domainId: number) {

@@ -34,7 +34,7 @@ export class CheckboxOptionPanelComponent implements OnInit {
   optionFormVisible = false
   open = false
 
-  constructor(private eRef: ElementRef) { }
+  constructor(private readonly eRef: ElementRef) { }
 
   buttonClicked() {
     this.optionFormVisible = !this.optionFormVisible

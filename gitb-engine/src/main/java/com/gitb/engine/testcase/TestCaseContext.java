@@ -322,13 +322,13 @@ public class TestCaseContext {
 		var map = (MapType) factory.create(DataType.MAP_DATA_TYPE);
 		var sessionId = factory.create(DataType.STRING_DATA_TYPE);
 		sessionId.setValue(getSessionId());
-		map.addItem(SESSION_MAP__TEST_SESSION_ID, sessionId);
+		map.addItem(SESSION_MAP_TEST_SESSION_ID, sessionId);
 		var testCaseId = factory.create(DataType.STRING_DATA_TYPE);
 		testCaseId.setValue(getTestCaseIdentifier());
-		map.addItem(SESSION_MAP__TEST_CASE_ID, testCaseId);
+		map.addItem(SESSION_MAP_TEST_CASE_ID, testCaseId);
 		var testEngineVersion = factory.create(DataType.STRING_DATA_TYPE);
 		testEngineVersion.setValue(TEST_ENGINE_VERSION);
-		map.addItem(SESSION_MAP__TEST_ENGINE_VERSION, testEngineVersion);
+		map.addItem(SESSION_MAP_TEST_ENGINE_VERSION, testEngineVersion);
 		variable.setValue(map);
 	}
 

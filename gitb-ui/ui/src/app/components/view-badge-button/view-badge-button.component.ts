@@ -13,12 +13,12 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input, OnInit } from '@angular/core';
-import { BsModalService } from 'ngx-bootstrap/modal';
-import { PreviewBadgeModalComponent } from 'src/app/modals/preview-badge-modal/preview-badge-modal.component';
-import { ConformanceService } from 'src/app/services/conformance.service';
-import { DataService } from 'src/app/services/data.service';
-import { PopupService } from 'src/app/services/popup.service';
+import {Component, Input} from '@angular/core';
+import {BsModalService} from 'ngx-bootstrap/modal';
+import {PreviewBadgeModalComponent} from 'src/app/modals/preview-badge-modal/preview-badge-modal.component';
+import {ConformanceService} from 'src/app/services/conformance.service';
+import {DataService} from 'src/app/services/data.service';
+import {PopupService} from 'src/app/services/popup.service';
 
 @Component({
     selector: 'app-view-badge-button',
@@ -26,7 +26,7 @@ import { PopupService } from 'src/app/services/popup.service';
     styleUrls: ['./view-badge-button.component.less'],
     standalone: false
 })
-export class ViewBadgeButtonComponent implements OnInit {
+export class ViewBadgeButtonComponent {
 
   @Input() systemId!: number
   @Input() actorId!: number
@@ -35,14 +35,11 @@ export class ViewBadgeButtonComponent implements OnInit {
   copyBadgePending = false
 
   constructor(
-    private conformanceService: ConformanceService,
-    private dataService: DataService,
-    private modalService: BsModalService,
-    private popupService: PopupService
+    private readonly conformanceService: ConformanceService,
+    private readonly dataService: DataService,
+    private readonly modalService: BsModalService,
+    private readonly popupService: PopupService
   ) { }
-
-  ngOnInit(): void {
-  }
 
   copyBadgeURL() {
     this.copyBadgePending = true

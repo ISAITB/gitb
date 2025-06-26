@@ -26,8 +26,8 @@ import { Constants } from '../common/constants';
 export class EditOwnSystemResolver  {
 
     constructor(
-        private dataService: DataService,
-        private systemService: SystemService
+        private readonly dataService: DataService,
+        private readonly systemService: SystemService
     ) {}
 
     resolve(route: ActivatedRouteSnapshot, state: RouterStateSnapshot) {

@@ -37,11 +37,11 @@ import java.util.regex.Pattern;
 @ProcessingHandler(name="RegExpProcessor")
 public class RegExpProcessor extends AbstractProcessingHandler {
 
-    private static final String OPERATION__CHECK = "check";
-    private static final String OPERATION__COLLECT = "collect";
-    private static final String INPUT__INPUT = "input";
-    private static final String INPUT__EXPRESSION = "expression";
-    private static final String OUTPUT__OUTPUT = "output";
+    private static final String OPERATION_CHECK = "check";
+    private static final String OPERATION_COLLECT = "collect";
+    private static final String INPUT_INPUT = "input";
+    private static final String INPUT_EXPRESSION = "expression";
+    private static final String OUTPUT_OUTPUT = "output";
 
     @Override
     public ProcessingModule createProcessingModule() {
@@ -51,22 +51,22 @@ public class RegExpProcessor extends AbstractProcessingHandler {
         module.getMetadata().setName(module.getId());
         module.getMetadata().setVersion("1.0");
         module.setConfigs(new ConfigurationParameters());
-        module.getOperation().add(createProcessingOperation(OPERATION__CHECK,
+        module.getOperation().add(createProcessingOperation(OPERATION_CHECK,
             List.of(
-                    createParameter(INPUT__INPUT, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The text to run the regular expression on."),
-                    createParameter(INPUT__EXPRESSION, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The regular expression to use.")
+                    createParameter(INPUT_INPUT, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The text to run the regular expression on."),
+                    createParameter(INPUT_EXPRESSION, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The regular expression to use.")
             ),
             List.of(
-                createParameter(OUTPUT__OUTPUT, "boolean", UsageEnumeration.R, ConfigurationType.SIMPLE, "Whether or not the provided text matches the regular expression.")
+                createParameter(OUTPUT_OUTPUT, "boolean", UsageEnumeration.R, ConfigurationType.SIMPLE, "Whether or not the provided text matches the regular expression.")
             )
         ));
-        module.getOperation().add(createProcessingOperation(OPERATION__COLLECT,
+        module.getOperation().add(createProcessingOperation(OPERATION_COLLECT,
                 List.of(
-                        createParameter(INPUT__INPUT, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The text to run the regular expression on."),
-                        createParameter(INPUT__EXPRESSION, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The regular expression to use.")
+                        createParameter(INPUT_INPUT, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The text to run the regular expression on."),
+                        createParameter(INPUT_EXPRESSION, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The regular expression to use.")
                 ),
                 List.of(
-                        createParameter(OUTPUT__OUTPUT, "list[string]", UsageEnumeration.R, ConfigurationType.SIMPLE, "A list of strings that were collected as matching groups.")
+                        createParameter(OUTPUT_OUTPUT, "list[string]", UsageEnumeration.R, ConfigurationType.SIMPLE, "A list of strings that were collected as matching groups.")
                 )
         ));
         return module;
@@ -79,22 +79,22 @@ public class RegExpProcessor extends AbstractProcessingHandler {
         }
         // Collect inputs
         String inputText;
-        if (!input.getData().containsKey(INPUT__INPUT)) {
+        if (!input.getData().containsKey(INPUT_INPUT)) {
             throw new IllegalArgumentException("The input for the regular expression is required");
         } else {
-            inputText = (String) input.getData().get(INPUT__INPUT).convertTo(DataType.STRING_DATA_TYPE).getValue();
+            inputText = (String) input.getData().get(INPUT_INPUT).convertTo(DataType.STRING_DATA_TYPE).getValue();
         }
         Pattern expression;
-        if (!input.getData().containsKey(INPUT__EXPRESSION)) {
+        if (!input.getData().containsKey(INPUT_EXPRESSION)) {
             throw new IllegalArgumentException("The regular expression to apply is required");
         } else {
-            expression = Pattern.compile((String) input.getData().get(INPUT__EXPRESSION).convertTo(DataType.STRING_DATA_TYPE).getValue());
+            expression = Pattern.compile((String) input.getData().get(INPUT_EXPRESSION).convertTo(DataType.STRING_DATA_TYPE).getValue());
         }
         // Carry out operation
         ProcessingData data = new ProcessingData();
-        if (OPERATION__CHECK.equalsIgnoreCase(operation)) {
-            data.getData().put(OUTPUT__OUTPUT, new BooleanType(expression.matcher(inputText).matches()));
-        } else if (OPERATION__COLLECT.equalsIgnoreCase(operation)) {
+        if (OPERATION_CHECK.equalsIgnoreCase(operation)) {
+            data.getData().put(OUTPUT_OUTPUT, new BooleanType(expression.matcher(inputText).matches()));
+        } else if (OPERATION_COLLECT.equalsIgnoreCase(operation)) {
             ListType groups = new ListType("string");
             Matcher matcher = expression.matcher(inputText);
             int groupCount = matcher.groupCount();
@@ -106,7 +106,7 @@ public class RegExpProcessor extends AbstractProcessingHandler {
                     groups.append(new StringType(matcher.group(i)));
                 }
             }
-            data.getData().put(OUTPUT__OUTPUT, groups);
+            data.getData().put(OUTPUT_OUTPUT, groups);
         } else {
             throw new IllegalArgumentException("Unknown operation [" + operation + "]");
         }

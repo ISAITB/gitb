@@ -65,10 +65,10 @@ export class TestCaseDisplayComponent extends BaseComponent implements OnInit {
   statusCloseEmitter = new EventEmitter<CloseEvent>()
 
   constructor(
-    private reportService: ReportService,
-    private htmlService: HtmlService,
-    private conformanceService: ConformanceService,
-    private dataService: DataService
+    private readonly reportService: ReportService,
+    private readonly htmlService: HtmlService,
+    private readonly conformanceService: ConformanceService,
+    private readonly dataService: DataService
   ) { super() }
 
   ngOnInit(): void {

@@ -13,14 +13,14 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter, Input } from '@angular/core';
+import {Component, EventEmitter, Input, OnInit} from '@angular/core';
 import * as CodeMirror from 'codemirror';
-import { BsModalRef } from 'ngx-bootstrap/modal';
-import { DataService } from 'src/app/services/data.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { BaseCodeEditorModalComponent } from '../base-code-editor-modal/base-code-editor-modal.component';
-import { LineInfo } from './line-info';
-import { LogLevel } from '../../types/log-level';
+import {BsModalRef} from 'ngx-bootstrap/modal';
+import {DataService} from 'src/app/services/data.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {BaseCodeEditorModalComponent} from '../base-code-editor-modal/base-code-editor-modal.component';
+import {LineInfo} from './line-info';
+import {LogLevel} from '../../types/log-level';
 
 @Component({
     selector: 'app-session-log-modal',
@@ -28,7 +28,7 @@ import { LogLevel } from '../../types/log-level';
     styleUrls: ['./session-log-modal.component.less'],
     standalone: false
 })
-export class SessionLogModalComponent extends BaseCodeEditorModalComponent {
+export class SessionLogModalComponent extends BaseCodeEditorModalComponent implements OnInit {
 
   static LINE_PARTS_REGEX = /^(.+)/gm
 

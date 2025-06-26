@@ -44,8 +44,8 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
   validation = new ValidationState()
 
   constructor(
-    private modalRef: BsModalRef,
-    public dataService: DataService
+    private readonly modalRef: BsModalRef,
+    public readonly dataService: DataService
   ) { }
 
   ngOnInit(): void {

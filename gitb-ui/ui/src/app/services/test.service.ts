@@ -30,7 +30,7 @@ import { RestService } from './rest.service';
 export class TestService {
 
   constructor(
-    private restService: RestService
+    private readonly restService: RestService
   ) { }
 
   stop(session: string) {

@@ -37,11 +37,11 @@ export class CreateActorComponent extends BaseComponent implements OnInit, After
   savePending = false
 
   constructor(
-    public dataService: DataService,
-    private popupService: PopupService,
-    private conformanceService: ConformanceService,
-    private routingService: RoutingService,
-    private route: ActivatedRoute
+    public readonly dataService: DataService,
+    private readonly popupService: PopupService,
+    private readonly conformanceService: ConformanceService,
+    private readonly routingService: RoutingService,
+    private readonly route: ActivatedRoute
   ) { super() }
 
   ngAfterViewInit(): void {

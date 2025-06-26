@@ -47,10 +47,10 @@ export class AuthProviderService {
   public onLogoutComplete$ = this.onLogoutCompleteSource.asObservable()
 
   constructor(
-      private cookieService: CookieService,
-      private httpClient: HttpClient,
-      private dataService: DataService,
-      private routingService: RoutingService
+      private readonly cookieService: CookieService,
+      private readonly httpClient: HttpClient,
+      private readonly dataService: DataService,
+      private readonly routingService: RoutingService
     ) {
     // Check if access token is set in cookies
     let accessTokenValue = cookieService.get(this.atKey)

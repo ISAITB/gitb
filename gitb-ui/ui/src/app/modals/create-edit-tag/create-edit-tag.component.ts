@@ -35,8 +35,8 @@ export class CreateEditTagComponent extends BaseComponent implements OnInit, Aft
   title!: string
 
   constructor(
-    private modalInstance: BsModalRef,
-    private dataService: DataService
+    private readonly modalInstance: BsModalRef,
+    private readonly dataService: DataService
   ) { super() }
 
   ngAfterViewInit(): void {

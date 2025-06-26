@@ -111,14 +111,14 @@ export class TestFilterComponent implements OnInit {
   filterCollapsedFinished = false
 
   constructor(
-    public dataService: DataService,
-    private conformanceService: ConformanceService,
-    private testSuiteService: TestSuiteService,
-    private reportService: ReportService,
-    private communityService: CommunityService,
-    private organisationService: OrganisationService,
-    private systemService: SystemService,
-    private specificationService: SpecificationService
+    public readonly dataService: DataService,
+    private readonly conformanceService: ConformanceService,
+    private readonly testSuiteService: TestSuiteService,
+    private readonly reportService: ReportService,
+    private readonly communityService: CommunityService,
+    private readonly organisationService: OrganisationService,
+    private readonly systemService: SystemService,
+    private readonly specificationService: SpecificationService
   ) { }
 
   ngOnInit(): void {
@@ -590,7 +590,6 @@ export class TestFilterComponent implements OnInit {
     this.addingSystemProperty = false
     this.loadingOrganisationProperties = false
     this.loadingSystemProperties = false
-    this.applicableCommunityId
     this.resetFilters()
     this.applyFilters()
   }

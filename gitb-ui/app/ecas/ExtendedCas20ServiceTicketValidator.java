@@ -45,7 +45,7 @@ public class ExtendedCas20ServiceTicketValidator extends Cas20ServiceTicketValid
      */
     public ExtendedCas20ServiceTicketValidator(String casServerUrlPrefix) {
         super(casServerUrlPrefix);
-        setCustomParameters(Collections.singletonMap(Configurations.AUTHENTICATION_SSO_CUSTOM_PARAMETERS__USER_DETAILS(), "true"));
+        setCustomParameters(Collections.singletonMap(Configurations.AUTHENTICATION_SSO_CUSTOM_PARAMETERS_USER_DETAILS(), "true"));
         if (Configurations.AUTHENTICATION_SSO_AUTHENTICATION_LEVEL().isDefined()) {
             this.acceptableAuthenticationLevels = switch (Configurations.AUTHENTICATION_SSO_AUTHENTICATION_LEVEL().get()) {
                 case AuthenticationLevel.HIGH -> EnumSet.of(AuthenticationLevel.HIGH);
@@ -82,10 +82,10 @@ public class ExtendedCas20ServiceTicketValidator extends Cas20ServiceTicketValid
         if (attributes == null) {
             attributes = new HashMap<>(3);
         }
-        attributes.put(Constants.UserAttributeEmail(), XmlUtils.getTextForElement(xml, Configurations.AUTHENTICATION_SSO_USER_ATTRIBUTES__EMAIL()));
-        attributes.put(Constants.UserAttributeFirstName(), XmlUtils.getTextForElement(xml, Configurations.AUTHENTICATION_SSO_USER_ATTRIBUTES__FIRST_NAME()));
-        attributes.put(Constants.UserAttributeLastName(), XmlUtils.getTextForElement(xml, Configurations.AUTHENTICATION_SSO_USER_ATTRIBUTES__LAST_NAME()));
-        attributes.put(Constants.UserAttributeAuthenticationLevel(), XmlUtils.getTextForElement(xml, Configurations.AUTHENTICATION_SSO_USER_ATTRIBUTES__AUTHENTICATION_LEVEL()));
+        attributes.put(Constants.UserAttributeEmail(), XmlUtils.getTextForElement(xml, Configurations.AUTHENTICATION_SSO_USER_ATTRIBUTES_EMAIL()));
+        attributes.put(Constants.UserAttributeFirstName(), XmlUtils.getTextForElement(xml, Configurations.AUTHENTICATION_SSO_USER_ATTRIBUTES_FIRST_NAME()));
+        attributes.put(Constants.UserAttributeLastName(), XmlUtils.getTextForElement(xml, Configurations.AUTHENTICATION_SSO_USER_ATTRIBUTES_LAST_NAME()));
+        attributes.put(Constants.UserAttributeAuthenticationLevel(), XmlUtils.getTextForElement(xml, Configurations.AUTHENTICATION_SSO_USER_ATTRIBUTES_AUTHENTICATION_LEVEL()));
         return attributes;
     }
 

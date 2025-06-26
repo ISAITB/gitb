@@ -54,8 +54,8 @@ export class OrganisationFormComponent implements OnInit {
   copySelectionConfig!: MultiSelectConfig<Organisation>
 
   constructor(
-    public dataService: DataService,
-    private organisationService: OrganisationService,
+    public readonly dataService: DataService,
+    private readonly organisationService: OrganisationService,
   ) { }
 
   ngOnInit(): void {

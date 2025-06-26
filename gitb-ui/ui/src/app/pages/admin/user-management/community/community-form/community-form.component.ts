@@ -62,8 +62,8 @@ export class CommunityFormComponent extends BaseComponent implements OnInit {
   }
 
   constructor(
-    public dataService: DataService,
-    private routingService: RoutingService
+    public readonly dataService: DataService,
+    private readonly routingService: RoutingService
   ) { super() }
 
   ngOnInit(): void {

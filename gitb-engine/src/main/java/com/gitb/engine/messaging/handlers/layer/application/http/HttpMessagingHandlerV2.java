@@ -52,18 +52,18 @@ public class HttpMessagingHandlerV2 extends AbstractNonWorkerMessagingHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(HttpMessagingHandlerV2.class);
 
-    public final static String METHOD_ARGUMENT_NAME = "method";
-    public final static String STATUS_ARGUMENT_NAME = "status";
-    public final static String HEADERS_ARGUMENT_NAME = "headers";
-    public final static String BODY_ARGUMENT_NAME = "body";
-    public final static String URI_EXTENSION_ARGUMENT_NAME = "uriExtension";
-    private final static String URI_ARGUMENT_NAME = "uri";
-    private final static String PARAMETERS_ARGUMENT_NAME = "parameters";
-    private final static String QUERY_PARAMETERS_ARGUMENT_NAME = "queryParameters";
-    private final static String PARTS_ARGUMENT_NAME = "parts";
-    private final static String FOLLOW_REDIRECTS_ARGUMENT_NAME = "followRedirects";
-    private final static String CONNECTION_TIMEOUT_ARGUMENT_NAME = "connectionTimeout";
-    private final static String REQUEST_TIMEOUT_ARGUMENT_NAME = "requestTimeout";
+    public static final String METHOD_ARGUMENT_NAME = "method";
+    public static final String STATUS_ARGUMENT_NAME = "status";
+    public static final String HEADERS_ARGUMENT_NAME = "headers";
+    public static final String BODY_ARGUMENT_NAME = "body";
+    public static final String URI_EXTENSION_ARGUMENT_NAME = "uriExtension";
+    private static final String URI_ARGUMENT_NAME = "uri";
+    private static final String PARAMETERS_ARGUMENT_NAME = "parameters";
+    private static final String QUERY_PARAMETERS_ARGUMENT_NAME = "queryParameters";
+    private static final String PARTS_ARGUMENT_NAME = "parts";
+    private static final String FOLLOW_REDIRECTS_ARGUMENT_NAME = "followRedirects";
+    private static final String CONNECTION_TIMEOUT_ARGUMENT_NAME = "connectionTimeout";
+    private static final String REQUEST_TIMEOUT_ARGUMENT_NAME = "requestTimeout";
 
     public static final String REPORT_ITEM_REQUEST = "request";
     public static final String REPORT_ITEM_RESPONSE = "response";

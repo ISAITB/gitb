@@ -201,10 +201,7 @@ public class TestEngineConfiguration {
 				config.getInt("gitb.messaging.start-port", 8080),
 				config.getInt("gitb.messaging.end-port", 9000),
 				config.getString("gitb.messaging.server-ip-address"),
-				config.getString("gitb.messaging.actor-name"),
-				config.getString("gitb.messaging.keystore.location"),
-				config.getString("gitb.messaging.keystore.password"),
-				config.getString("gitb.messaging.default.alias")
+				config.getString("gitb.messaging.actor-name")
 		);
 	}
 

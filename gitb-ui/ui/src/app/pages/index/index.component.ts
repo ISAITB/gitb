@@ -48,14 +48,14 @@ export class IndexComponent implements OnInit, OnDestroy {
   bannerSubscription?: Subscription
 
   constructor(
-    public dataService: DataService,
-    private userGuideService: UserGuideService,
-    private htmlService: HtmlService,
-    private legalNoticeService: LegalNoticeService,
-    private authProviderService: AuthProviderService,
-    private modalService: BsModalService,
-    public routingService: RoutingService,
-    private popupService: PopupService
+    public readonly dataService: DataService,
+    private readonly userGuideService: UserGuideService,
+    private readonly htmlService: HtmlService,
+    private readonly legalNoticeService: LegalNoticeService,
+    private readonly authProviderService: AuthProviderService,
+    private readonly modalService: BsModalService,
+    public readonly routingService: RoutingService,
+    private readonly popupService: PopupService
   ) {}
 
   ngOnInit(): void {

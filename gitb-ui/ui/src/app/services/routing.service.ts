@@ -31,8 +31,8 @@ import {BreadcrumbType} from '../types/breadcrumb-type';
 export class RoutingService {
 
   constructor(
-    private router: Router,
-    private dataService: DataService
+    private readonly router: Router,
+    private readonly dataService: DataService
   ) {
     this.initialise()
   }
@@ -76,8 +76,6 @@ export class RoutingService {
       this.dataService.changePage({ menuItem: MenuItem.sessionDashboard })
     } else if (url.startsWith('/admin/health')) {
       this.dataService.changePage({ menuItem: MenuItem.serviceHealthDashboard })
-    } else if (url.startsWith('/admin/conformance')) {
-      this.dataService.changePage({ menuItem: MenuItem.conformanceDashboard })
     } else if (url.startsWith('/admin/conformance')) {
       this.dataService.changePage({ menuItem: MenuItem.conformanceDashboard })
     } else if (url.startsWith('/admin/domains')) {

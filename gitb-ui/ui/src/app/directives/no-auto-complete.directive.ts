@@ -21,7 +21,7 @@ import { Directive, ElementRef, OnInit, Renderer2 } from '@angular/core';
 })
 export class NoAutoCompleteDirective implements OnInit {
 
-  constructor(private renderer: Renderer2, private element: ElementRef) { }
+  constructor(private readonly renderer: Renderer2, private readonly element: ElementRef) { }
 
   ngOnInit(): void {
     this.renderer.setAttribute(this.element.nativeElement, 'autocomplete', 'off')

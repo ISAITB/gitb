@@ -13,17 +13,17 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { Constants } from 'src/app/common/constants';
-import { DataService } from 'src/app/services/data.service';
-import { PopupService } from 'src/app/services/popup.service';
+import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {Constants} from 'src/app/common/constants';
+import {DataService} from 'src/app/services/data.service';
+import {PopupService} from 'src/app/services/popup.service';
 
 @Component({
     selector: 'app-api-key-text',
     templateUrl: './api-key-text.component.html',
     standalone: false
 })
-export class ApiKeyTextComponent implements OnInit {
+export class ApiKeyTextComponent {
 
   @Input() key!: string
   @Input() idName!: string
@@ -42,11 +42,8 @@ export class ApiKeyTextComponent implements OnInit {
   Constants = Constants
 
   constructor(
-    private dataService: DataService,
-    private popupService: PopupService) { }
-
-  ngOnInit(): void {
-  }
+    private readonly dataService: DataService,
+    private readonly popupService: PopupService) { }
 
   copy() {
     this.dataService.copyToClipboard(this.key).subscribe(() => {

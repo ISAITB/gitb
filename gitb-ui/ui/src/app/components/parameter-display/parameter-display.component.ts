@@ -39,7 +39,7 @@ export class ParameterDisplayComponent<T extends Parameter> implements OnInit {
   hovering = false
 
   constructor(
-    private dataService: DataService
+    private readonly dataService: DataService
   ) { }
 
   ngOnInit(): void {

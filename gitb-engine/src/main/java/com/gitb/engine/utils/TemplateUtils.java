@@ -24,13 +24,13 @@ import com.gitb.types.DataTypeFactory;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.gitb.engine.expr.resolvers.VariableResolver.VARIABLE_EXPRESSION__NO_DOLLAR;
+import static com.gitb.engine.expr.resolvers.VariableResolver.VARIABLE_EXPRESSION_NO_DOLLAR;
 
 /**
  * Created by serbay on 10/13/14.
  */
 public class TemplateUtils {
-	private static final Pattern placeholderPattern = Pattern.compile("\\$\\{("+VARIABLE_EXPRESSION__NO_DOLLAR+")\\}");
+	private static final Pattern placeholderPattern = Pattern.compile("\\$\\{("+ VARIABLE_EXPRESSION_NO_DOLLAR +")\\}");
 
 	private static DataType generateDataTypeFromTemplate(TestCaseScope scope, byte[] templateBytes, String type, String encoding, boolean forceBinaryTemplateProcessing) {
 		if (type == null) {

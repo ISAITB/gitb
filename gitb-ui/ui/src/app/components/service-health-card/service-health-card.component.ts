@@ -34,7 +34,7 @@ export class ServiceHealthCardComponent implements ServiceHealthCardComponentApi
 
   hovering = false
 
-  constructor(private modalService: BsModalService) {
+  constructor(private readonly modalService: BsModalService) {
   }
 
   showDetails() {

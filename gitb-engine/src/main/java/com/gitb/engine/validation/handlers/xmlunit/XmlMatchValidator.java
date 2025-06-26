@@ -22,6 +22,7 @@ import com.gitb.engine.validation.handlers.xml.DocumentNamespaceContext;
 import com.gitb.tr.ObjectFactory;
 import com.gitb.tr.*;
 import com.gitb.types.*;
+import com.gitb.utils.TestSessionNamespaceContext;
 import com.gitb.utils.XMLDateTimeUtils;
 import com.gitb.utils.XMLUtils;
 import org.slf4j.Logger;
@@ -54,10 +55,10 @@ import static com.gitb.engine.utils.HandlerUtils.NAMESPACE_MAP_INPUT;
 @ValidationHandler(name="XmlMatchValidator")
 public class XmlMatchValidator extends AbstractValidator {
 
-    private static final Logger logger = LoggerFactory.getLogger(XmlMatchValidator.class);
-    private static final String INPUT__XML = "xml";
-    private static final String INPUT__TEMPLATE = "template";
-    private static final String INPUT__IGNORED_PATHS = "ignoredPaths";
+    private static final Logger LOGGER = LoggerFactory.getLogger(XmlMatchValidator.class);
+    private static final String INPUT_XML = "xml";
+    private static final String INPUT_TEMPLATE = "template";
+    private static final String INPUT_IGNORED_PATHS = "ignoredPaths";
 
     @Override
     public ValidationModule getModuleDefinition() {
@@ -68,9 +69,9 @@ public class XmlMatchValidator extends AbstractValidator {
         module.getMetadata().setName("XmlMatchValidator");
         module.getMetadata().setVersion("1.0");
         module.setInputs(new TypedParameters());
-        module.getInputs().getParam().add(createTypedParameter(INPUT__XML, "The XML document instance to validate", ConfigurationType.SIMPLE, UsageEnumeration.R, "object"));
-        module.getInputs().getParam().add(createTypedParameter(INPUT__TEMPLATE, "The XML document template to consider for the match", ConfigurationType.SIMPLE, UsageEnumeration.R, "object"));
-        module.getInputs().getParam().add(createTypedParameter(INPUT__IGNORED_PATHS, "A list of paths to ignore", ConfigurationType.SIMPLE, UsageEnumeration.O, "list[string]"));
+        module.getInputs().getParam().add(createTypedParameter(INPUT_XML, "The XML document instance to validate", ConfigurationType.SIMPLE, UsageEnumeration.R, "object"));
+        module.getInputs().getParam().add(createTypedParameter(INPUT_TEMPLATE, "The XML document template to consider for the match", ConfigurationType.SIMPLE, UsageEnumeration.R, "object"));
+        module.getInputs().getParam().add(createTypedParameter(INPUT_IGNORED_PATHS, "A list of paths to ignore", ConfigurationType.SIMPLE, UsageEnumeration.O, "list[string]"));
         return module;
     }
 
@@ -86,20 +87,20 @@ public class XmlMatchValidator extends AbstractValidator {
 
     @Override
     public TestStepReportType validate(List<Configuration> configurations, Map<String, DataType> inputs) {
-        if (!inputs.containsKey(INPUT__XML)) {
-            throw new IllegalArgumentException("The ["+INPUT__XML+"] input is required.");
+        if (!inputs.containsKey(INPUT_XML)) {
+            throw new IllegalArgumentException("The ["+ INPUT_XML +"] input is required.");
         }
-        if (!inputs.containsKey(INPUT__TEMPLATE)) {
-            throw new IllegalArgumentException("The ["+INPUT__TEMPLATE+"] input is required.");
+        if (!inputs.containsKey(INPUT_TEMPLATE)) {
+            throw new IllegalArgumentException("The ["+ INPUT_TEMPLATE +"] input is required.");
         }
-        ObjectType xml = getAsObjectType(inputs.get(INPUT__XML));
-        ObjectType template = getAsObjectType(inputs.get(INPUT__TEMPLATE));
+        ObjectType xml = getAsObjectType(inputs.get(INPUT_XML));
+        ObjectType template = getAsObjectType(inputs.get(INPUT_TEMPLATE));
         MapType namespaces = (MapType) inputs.get(NAMESPACE_MAP_INPUT);
 
         List<String> pathsToIgnore = new ArrayList<>();
-        if (inputs.containsKey(INPUT__IGNORED_PATHS)) {
+        if (inputs.containsKey(INPUT_IGNORED_PATHS)) {
             ListType listType;
-            DataType type = inputs.get(INPUT__IGNORED_PATHS);
+            DataType type = inputs.get(INPUT_IGNORED_PATHS);
             if (type instanceof ListType) {
                 listType = (ListType)type;
             } else {
@@ -109,7 +110,7 @@ public class XmlMatchValidator extends AbstractValidator {
                 if (path instanceof StringType) {
                     pathsToIgnore.add((String)((StringType)path).getValue());
                 } else {
-                    throw new IllegalArgumentException("The items of input ["+INPUT__IGNORED_PATHS+"] must be of type string.");
+                    throw new IllegalArgumentException("The items of input ["+ INPUT_IGNORED_PATHS +"] must be of type string.");
                 }
             }
         }
@@ -132,7 +133,7 @@ public class XmlMatchValidator extends AbstractValidator {
             for (var documentPrefix: documentNamespaces.entrySet()) {
                 namespacesToUse.putIfAbsent(documentPrefix.getKey(), documentPrefix.getValue());
             }
-            contextToUse = new com.gitb.utils.NamespaceContext(namespacesToUse);
+            contextToUse = new TestSessionNamespaceContext(namespacesToUse);
         } else {
             contextToUse = documentContext;
             namespacesToUse = documentNamespaces;
@@ -190,7 +191,7 @@ public class XmlMatchValidator extends AbstractValidator {
                 if (lineNumber == null) {
                     lineNumber = getLineNumberFromXPath(xPath, difference.getComparison().getTestDetails().getParentXPath(), xml);
                     if (lineNumber == null) {
-                        logger.warn("Could not extract line information for XPath {} or {}", difference.getComparison().getTestDetails().getXPath(), difference.getComparison().getTestDetails().getParentXPath());
+                        LOGGER.warn("Could not extract line information for XPath {} or {}", difference.getComparison().getTestDetails().getXPath(), difference.getComparison().getTestDetails().getParentXPath());
                         lineNumber = "0";
                     }
                 }
@@ -232,7 +233,7 @@ public class XmlMatchValidator extends AbstractValidator {
                     return (String) node.getUserData(XMLUtils.LINE_NUMBER_KEY_NAME);
                 }
             } catch (XPathExpressionException e) {
-                logger.debug(e.getMessage());
+                LOGGER.debug(e.getMessage());
             }
         }
         return null;

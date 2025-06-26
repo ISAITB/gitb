@@ -13,10 +13,10 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, HostListener, Input, OnInit, Output} from '@angular/core';
-import { Constants } from 'src/app/common/constants';
-import { CustomPropertyPresetValue } from 'src/app/types/custom-property-preset-value.type';
-import { CustomProperty } from './custom-property';
+import {Component, EventEmitter, HostListener, Input, Output} from '@angular/core';
+import {Constants} from 'src/app/common/constants';
+import {CustomPropertyPresetValue} from 'src/app/types/custom-property-preset-value.type';
+import {CustomProperty} from './custom-property';
 
 @Component({
     selector: 'app-custom-property-filter',
@@ -24,7 +24,7 @@ import { CustomProperty } from './custom-property';
     styleUrls: ['./custom-property-filter.component.less'],
     standalone: false
 })
-export class CustomPropertyFilterComponent implements OnInit {
+export class CustomPropertyFilterComponent {
 
   @Input() propertyFilter!: CustomProperty
   @Input() properties: CustomProperty[] = []
@@ -46,9 +46,6 @@ export class CustomPropertyFilterComponent implements OnInit {
   } = {}
 
   constructor() { }
-
-  ngOnInit(): void {
-  }
 
   @HostListener('document:keydown', ['$event'])
   keyDownRegistered(event: KeyboardEvent) {

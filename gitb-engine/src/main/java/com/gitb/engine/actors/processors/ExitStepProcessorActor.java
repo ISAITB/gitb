@@ -86,6 +86,7 @@ public class ExitStepProcessorActor extends AbstractTestStepActor<ExitStep> {
 
 	@Override
 	protected void init() {
+		// Do nothing.
 	}
 
 	public static ActorRef create(ActorContext context, ExitStep step, TestCaseScope scope, String stepId, StepContext stepContext) throws Exception{

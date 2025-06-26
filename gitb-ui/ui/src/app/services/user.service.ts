@@ -26,7 +26,7 @@ import { RestService } from './rest.service';
 export class UserService {
 
   constructor(
-    private restService: RestService
+    private readonly restService: RestService
   ) { }
 
   getSystemAdministrators() {

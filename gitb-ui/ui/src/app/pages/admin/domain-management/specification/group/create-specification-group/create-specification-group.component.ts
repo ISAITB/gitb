@@ -35,11 +35,11 @@ export class CreateSpecificationGroupComponent extends BaseComponent implements 
   pending = false
 
   constructor(
-    public dataService: DataService,
-    private specificationService: SpecificationService,
-    private popupService: PopupService,
-    private route: ActivatedRoute,
-    private routingService: RoutingService
+    public readonly dataService: DataService,
+    private readonly specificationService: SpecificationService,
+    private readonly popupService: PopupService,
+    private readonly route: ActivatedRoute,
+    private readonly routingService: RoutingService
   ) { super() }
 
   ngOnInit(): void {

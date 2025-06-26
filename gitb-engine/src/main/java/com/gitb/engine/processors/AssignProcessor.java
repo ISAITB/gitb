@@ -78,7 +78,7 @@ public class AssignProcessor implements IProcessor {
                 if (keyValue == null) {
 					throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Map key expression ["+mapKey+"] could not resolve an existing variable"));
 				}
-				mapKey = (String)(keyValue.convertTo(StringType.STRING_DATA_TYPE).getValue());
+				mapKey = (String)(keyValue.convertTo(DataType.STRING_DATA_TYPE).getValue());
             }
 			var existingValue = ((MapType)lValue).getItems().get(mapKey);
 			if (existingValue == null) {

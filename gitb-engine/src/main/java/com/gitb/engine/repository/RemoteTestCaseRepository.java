@@ -44,9 +44,6 @@ public class RemoteTestCaseRepository implements ITestCaseRepository {
 
 	private static final Logger logger = LoggerFactory.getLogger(RemoteTestCaseRepository.class);
 
-	public RemoteTestCaseRepository() {
-	}
-
 	@Override
 	public String getName() {
 		return "remote-repository";

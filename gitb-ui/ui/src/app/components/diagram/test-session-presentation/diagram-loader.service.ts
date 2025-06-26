@@ -34,9 +34,9 @@ import {DataService} from '../../../services/data.service';
 export class DiagramLoaderService {
 
   constructor(
-    private reportService: ReportService,
-    private testService: TestService,
-    private dataService: DataService
+    private readonly reportService: ReportService,
+    private readonly testService: TestService,
+    private readonly dataService: DataService
   ) { }
 
   findNodeWithStepId(steps: StepData[]|undefined, stepId: string): StepData|undefined {

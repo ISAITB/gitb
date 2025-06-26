@@ -50,8 +50,8 @@ export class MissingConfigurationModalComponent implements OnInit {
   requiredPropertiesIncludeNonEditable = false
 
   constructor(
-    private modalRef: BsModalRef,
-    public dataService: DataService
+    private readonly modalRef: BsModalRef,
+    public readonly dataService: DataService
   ) { }
 
   ngOnInit(): void {

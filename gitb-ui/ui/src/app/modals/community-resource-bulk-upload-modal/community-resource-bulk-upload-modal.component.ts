@@ -37,8 +37,8 @@ export class CommunityResourceBulkUploadModalComponent implements OnInit {
   file?: FileData
 
   constructor(
-    private modalInstance: BsModalRef,
-    private popupService: PopupService
+    private readonly modalInstance: BsModalRef,
+    private readonly popupService: PopupService
   ) { }
 
   ngOnInit(): void {

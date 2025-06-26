@@ -41,7 +41,7 @@ export class TestResultStatusDisplayComponent implements OnInit {
   Constants = Constants
 
   constructor(
-    private dataService: DataService
+    private readonly dataService: DataService
   ) { }
 
   ngOnInit(): void {

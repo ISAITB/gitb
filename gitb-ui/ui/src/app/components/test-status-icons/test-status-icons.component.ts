@@ -38,8 +38,8 @@ export class TestStatusIconsComponent extends TestStatusBase implements OnInit {
   expanded = false
 
   constructor(
-    private dataService: DataService,
-    private eRef: ElementRef
+    private readonly dataService: DataService,
+    private readonly eRef: ElementRef
   ) { super() }
 
   ngOnInit(): void {

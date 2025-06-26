@@ -51,10 +51,10 @@ export class ConformanceOverviewCertificateModalComponent extends BaseComponent 
   editorSizeEmitter = new EventEmitter<number>()
 
   constructor(
-    public dataService: DataService,
-    private modalInstance: BsModalRef,
-    private reportService: ReportService,
-    private conformanceService: ConformanceService
+    public readonly dataService: DataService,
+    private readonly modalInstance: BsModalRef,
+    private readonly reportService: ReportService,
+    private readonly conformanceService: ConformanceService
   ) { super() }
 
   expandModal(): void {

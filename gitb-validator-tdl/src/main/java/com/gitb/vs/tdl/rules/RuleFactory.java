@@ -24,21 +24,13 @@ import java.util.*;
 
 public class RuleFactory {
 
-    private final static Logger LOG = LoggerFactory.getLogger(RuleFactory.class);
-    private static RuleFactory INSTANCE;
-    private final static Object MUTEX = new Object();
+    private static final Logger LOG = LoggerFactory.getLogger(RuleFactory.class);
+    private static final RuleFactory INSTANCE = new RuleFactory();
 
     private final List<Class<? extends AbstractCheck>> checkClasses = new ArrayList<>();
     private final List<Class<? extends TestCaseObserver>> testCaseObserverClasses = new ArrayList<>();
 
     public static RuleFactory getInstance() {
-        if (INSTANCE == null) {
-            synchronized (MUTEX) {
-                if (INSTANCE == null) {
-                    INSTANCE = new RuleFactory();
-                }
-            }
-        }
         return INSTANCE;
     }
 

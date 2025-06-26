@@ -46,10 +46,10 @@ export class TestTriggerModalComponent extends BaseComponent implements OnInit {
   response?: string
 
   constructor(
-    private modalRef: BsModalRef,
-    public dataService: DataService,
-    private popupService: PopupService,
-    private triggerService: TriggerService
+    private readonly modalRef: BsModalRef,
+    public readonly dataService: DataService,
+    private readonly popupService: PopupService,
+    private readonly triggerService: TriggerService
   ) { super() }
 
   ngOnInit(): void {
@@ -90,7 +90,7 @@ export class TestTriggerModalComponent extends BaseComponent implements OnInit {
               this.responseSuccess = true
               if (this.serviceType == Constants.TRIGGER_SERVICE_TYPE.JSON) {
                 let valueToShow = ''
-                if (data.texts.length > 0 && data.texts.length > 0) {
+                if (data.texts && data.texts.length > 0) {
                   valueToShow = data.texts[0]
                   try {
                     valueToShow = this.dataService.prettifyJSON(valueToShow)

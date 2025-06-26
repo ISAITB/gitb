@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input, OnInit } from '@angular/core';
+import {Component, Input} from '@angular/core';
 
 @Component({
     selector: 'app-tooltip, [app-tooltip]',
@@ -21,7 +21,7 @@ import { Component, Input, OnInit } from '@angular/core';
     styleUrls: ['./tooltip.component.less'],
     standalone: false
 })
-export class TooltipComponent implements OnInit {
+export class TooltipComponent {
 
   @Input() tbTooltip = ''
   @Input() inline = false
@@ -31,8 +31,5 @@ export class TooltipComponent implements OnInit {
   @Input() withTopMargin = true
 
   constructor() { }
-
-  ngOnInit(): void {
-  }
 
 }

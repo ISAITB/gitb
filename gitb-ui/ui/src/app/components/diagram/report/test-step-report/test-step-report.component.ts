@@ -13,9 +13,9 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input, OnInit } from '@angular/core';
-import { StepData } from '../../step-data';
-import { StepReport } from '../step-report';
+import {Component, Input} from '@angular/core';
+import {StepData} from '../../step-data';
+import {StepReport} from '../step-report';
 
 @Component({
     selector: 'app-test-step-report',
@@ -23,15 +23,12 @@ import { StepReport } from '../step-report';
     styleUrls: ['./test-step-report.component.less'],
     standalone: false
 })
-export class TestStepReportComponent implements OnInit {
+export class TestStepReportComponent {
 
   @Input() step!: StepData
   @Input() report!: StepReport
   @Input() sessionId!: string
 
   constructor() { }
-
-  ngOnInit(): void {
-  }
 
 }

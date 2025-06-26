@@ -62,9 +62,9 @@ export class CustomPropertyFormComponent implements OnInit {
   private propertiesInvolvedInPrerequisitesMap: Record<string, boolean> = {}
 
   constructor(
-    private dataService: DataService,
-    private organisationService: OrganisationService,
-    private systemService: SystemService
+    private readonly dataService: DataService,
+    private readonly organisationService: OrganisationService,
+    private readonly systemService: SystemService
   ) { }
 
   ngOnInit(): void {

@@ -13,8 +13,8 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input, OnInit } from '@angular/core';
-import { DataService } from 'src/app/services/data.service';
+import {Component, Input} from '@angular/core';
+import {DataService} from 'src/app/services/data.service';
 
 @Component({
     selector: 'app-result-label',
@@ -22,15 +22,12 @@ import { DataService } from 'src/app/services/data.service';
     styleUrls: ['./result-label.component.less'],
     standalone: false
 })
-export class ResultLabelComponent implements OnInit {
+export class ResultLabelComponent {
 
   @Input() status!: string
 
   constructor(
-    public dataService: DataService
+    public readonly dataService: DataService
   ) { }
-
-  ngOnInit(): void {
-  }
 
 }

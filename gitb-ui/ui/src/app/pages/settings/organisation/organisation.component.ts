@@ -51,7 +51,7 @@ export class OrganisationComponent extends OrganisationDetailsComponent implemen
     legalNoticeService: LegalNoticeService,
     errorTemplateService: ErrorTemplateService,
     router: Router,
-    private accountService: AccountService
+    private readonly accountService: AccountService
   ) {
     super(route, confirmationDialogService, organisationService, userService, dataService, popupService, routingService, systemService, communityService, landingPageService, legalNoticeService, errorTemplateService, router)
   }

@@ -28,23 +28,13 @@ import models.EmailSettings;
 
 public class EmailUtil {
 
-    private static Authenticator authenticator;
-    private static final Object mutex = new Object();
-
     private static Authenticator getAuthenticator(String username, String password) {
-        if (authenticator == null) {
-            synchronized (mutex) {
-                if (authenticator == null) {
-                    authenticator = new Authenticator() {
-                        @Override
-                        protected PasswordAuthentication getPasswordAuthentication() {
-                            return new PasswordAuthentication(username, password);
-                        }
-                    };
-                }
+        return new Authenticator() {
+            @Override
+            protected PasswordAuthentication getPasswordAuthentication() {
+                return new PasswordAuthentication(username, password);
             }
-        }
-        return authenticator;
+        };
     }
 
     public static void sendEmail(EmailSettings settings, String[] tos, String[] ccs, String subject, String content, AttachmentType[] attachments) {

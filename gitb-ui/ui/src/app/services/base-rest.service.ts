@@ -27,9 +27,9 @@ import { DataService } from './data.service';
 export class BaseRestService {
 
   constructor(
-    private http: HttpClient,
-    private authProviderService: AuthProviderService,
-    private dataService: DataService
+    private readonly http: HttpClient,
+    private readonly authProviderService: AuthProviderService,
+    private readonly dataService: DataService
   ) { }
 
   private call<T>(config: HttpRequestConfig, callFn: () => Observable<T>): Observable<T> {

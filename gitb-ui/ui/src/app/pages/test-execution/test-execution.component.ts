@@ -133,18 +133,18 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   ]
 
   constructor(
-    private route: ActivatedRoute,
-    private modalService: BsModalService,
-    private testService: TestService,
-    private conformanceService: ConformanceService,
-    private reportService: ReportService,
-    public dataService: DataService,
-    private popupService: PopupService,
-    private htmlService: HtmlService,
-    private webSocketService: WebSocketService,
-    private errorService: ErrorService,
-    private routingService: RoutingService,
-    private specificationService: SpecificationService
+    private readonly route: ActivatedRoute,
+    private readonly modalService: BsModalService,
+    private readonly testService: TestService,
+    private readonly conformanceService: ConformanceService,
+    private readonly reportService: ReportService,
+    public readonly dataService: DataService,
+    private readonly popupService: PopupService,
+    private readonly htmlService: HtmlService,
+    private readonly webSocketService: WebSocketService,
+    private readonly errorService: ErrorService,
+    private readonly routingService: RoutingService,
+    private readonly specificationService: SpecificationService
   ) { }
 
   private queryParamToNumber(paramName: string): number|undefined {

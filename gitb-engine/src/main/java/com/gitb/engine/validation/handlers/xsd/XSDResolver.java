@@ -72,7 +72,7 @@ public class XSDResolver implements LSResourceResolver {
 	    return null;
     }
 
-    public class Input implements LSInput {
+    public static class Input implements LSInput {
 
         private String publicId;
 
@@ -112,9 +112,12 @@ public class XSDResolver implements LSResourceResolver {
             synchronized (inputStream) {
                 try {
                     byte[] input = new byte[inputStream.available()];
-                    inputStream.read(input);
-                    String contents = new String(input);
-                    return contents;
+                    int readCount = inputStream.read(input);
+                    if (readCount > 0) {
+                        return new String(input);
+                    } else {
+                        return "";
+                    }
                 } catch (IOException e) {
                     throw new GITBEngineInternalError(e);
                 }
@@ -126,18 +129,23 @@ public class XSDResolver implements LSResourceResolver {
         }
 
         public void setByteStream(InputStream byteStream) {
+            // Do nothing.
         }
 
         public void setCertifiedText(boolean certifiedText) {
+            // Do nothing.
         }
 
         public void setCharacterStream(Reader characterStream) {
+            // Do nothing.
         }
 
         public void setEncoding(String encoding) {
+            // Do nothing.
         }
 
         public void setStringData(String stringData) {
+            // Do nothing.
         }
 
         public String getSystemId() {
@@ -148,15 +156,7 @@ public class XSDResolver implements LSResourceResolver {
             this.systemId = systemId;
         }
 
-        public BufferedInputStream getInputStream() {
-            return inputStream;
-        }
-
-        public void setInputStream(BufferedInputStream inputStream) {
-            this.inputStream = inputStream;
-        }
-
-        private BufferedInputStream inputStream;
+        private final BufferedInputStream inputStream;
 
         public Input(String publicId, String sysId, String baseUri, InputStream input) {
             this.publicId = publicId;

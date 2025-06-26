@@ -18,8 +18,6 @@ package com.gitb.engine.messaging.handlers.layer.application.http;
 import com.gitb.core.Configuration;
 import com.gitb.core.MessagingModule;
 import com.gitb.engine.messaging.MessagingHandler;
-import com.gitb.engine.messaging.handlers.SecurityUtils;
-import com.gitb.engine.messaging.handlers.SessionManager;
 import com.gitb.engine.messaging.handlers.layer.AbstractMessagingHandler;
 import com.gitb.engine.messaging.handlers.model.SessionContext;
 import com.gitb.engine.messaging.handlers.model.TransactionContext;
@@ -29,7 +27,6 @@ import com.gitb.engine.messaging.handlers.model.tcp.ITransactionSender;
 import com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils;
 import com.gitb.utils.ConfigurationUtils;
 
-import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.util.List;
 
@@ -64,15 +61,7 @@ public class HttpMessagingHandler extends AbstractMessagingHandler {
 
 		Configuration sslConfig = ConfigurationUtils.getConfiguration(configurations, HTTP_SSL_CONFIG_NAME);
 		if (sslConfig != null && sslConfig.getValue() != null && "true".equalsIgnoreCase(sslConfig.getValue())) {
-			SessionContext sessionContext = SessionManager.getInstance().getSession(sessionId);
-			List<TransactionContext> transactions = sessionContext.getTransactions(transactionId);
-
-			//create an SSLContext and save it to the transaction context
-			SSLContext sslContext = SecurityUtils.createSSLContext();
-
-			for(TransactionContext transactionContext : transactions) {
-				transactionContext.setParameter(SSLContext.class, sslContext);
-			}
+			throw new IllegalStateException("This handler is deprecated and should not be used.");
 		}
 	}
 

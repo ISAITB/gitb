@@ -31,8 +31,8 @@ import { OrganisationParameter } from '../types/organisation-parameter';
 export class OrganisationService {
 
   constructor(
-    private restService: RestService,
-    private dataService: DataService
+    private readonly restService: RestService,
+    private readonly dataService: DataService
   ) { }
 
   getOrganisations() {

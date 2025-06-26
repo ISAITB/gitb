@@ -24,7 +24,7 @@ import {TestStatusBase} from '../test-status-base/test-status-base';
 })
 export class TestResultRatioComponent extends TestStatusBase implements OnInit {
 
-  constructor(private eRef: ElementRef) { super() }
+  constructor(private readonly eRef: ElementRef) { super() }
 
   @Input() alignRight = true
   @Input() asLine? = false

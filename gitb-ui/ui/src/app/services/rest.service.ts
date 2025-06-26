@@ -30,11 +30,11 @@ import { RoutingService } from './routing.service';
 export class RestService {
 
   constructor(
-    private baseRestService: BaseRestService,
-    private authProviderService: AuthProviderService,
-    private errorService: ErrorService,
-    private dataService: DataService,
-    private routingService: RoutingService
+    private readonly baseRestService: BaseRestService,
+    private readonly authProviderService: AuthProviderService,
+    private readonly errorService: ErrorService,
+    private readonly dataService: DataService,
+    private readonly routingService: RoutingService
   ) { }
 
   private call<T>(callFn: () => Observable<T>, errorHandler?: (_:any) => Observable<any>): Observable<T> {

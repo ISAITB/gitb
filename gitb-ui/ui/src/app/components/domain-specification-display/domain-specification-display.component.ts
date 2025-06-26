@@ -13,13 +13,13 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { CdkDragDrop } from '@angular/cdk/drag-drop';
-import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
-import { Constants } from 'src/app/common/constants';
-import { DataService } from 'src/app/services/data.service';
-import { RoutingService } from 'src/app/services/routing.service';
-import { DomainSpecification } from 'src/app/types/domain-specification';
-import { SpecificationGroup } from 'src/app/types/specification-group';
+import {CdkDragDrop} from '@angular/cdk/drag-drop';
+import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {Constants} from 'src/app/common/constants';
+import {DataService} from 'src/app/services/data.service';
+import {RoutingService} from 'src/app/services/routing.service';
+import {DomainSpecification} from 'src/app/types/domain-specification';
+import {SpecificationGroup} from 'src/app/types/specification-group';
 
 @Component({
     selector: 'app-domain-specification-display',
@@ -27,7 +27,7 @@ import { SpecificationGroup } from 'src/app/types/specification-group';
     styleUrls: ['./domain-specification-display.component.less'],
     standalone: false
 })
-export class DomainSpecificationDisplayComponent implements OnInit {
+export class DomainSpecificationDisplayComponent {
 
   @Input() spec!: DomainSpecification
   @Input() groups: SpecificationGroup[] = []
@@ -41,17 +41,12 @@ export class DomainSpecificationDisplayComponent implements OnInit {
   @Output() dragging = new EventEmitter<boolean>()
   Constants = Constants
 
-  removePending = false
-  movePending = false
   copyPending = false
 
   constructor(
-    public dataService: DataService,
-    private routingService: RoutingService
+    public readonly dataService: DataService,
+    private readonly routingService: RoutingService
   ) { }
-
-  ngOnInit(): void {
-  }
 
   removeFromGroup() {
     if (!this.spec.removePending) {

@@ -32,9 +32,9 @@ import java.util.Map;
 @ValidationHandler(name="EDIValidator")
 public class EDIValidator extends AbstractValidator {
 
-    private final static String CONTENT_ARGUMENT_NAME = "edidocument";
-    private final static String SEGMENT_TERMINATOR = "'";
-    private final static String MODULE_DEFINITION_XML = "/validation/edi-validator-definition.xml";
+    private static final String CONTENT_ARGUMENT_NAME = "edidocument";
+    private static final String SEGMENT_TERMINATOR = "'";
+    private static final String MODULE_DEFINITION_XML = "/validation/edi-validator-definition.xml";
 
     public EDIValidator() {
         this.validatorDefinition = readModuleDefinition(MODULE_DEFINITION_XML);

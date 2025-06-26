@@ -28,20 +28,15 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Formatter;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.Flow.Subscriber;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
-import java.util.StringJoiner;
 
 public class MultipartFormDataBodyPublisher implements BodyPublisher {
 
     private static String nextBoundary() {
-        var random = new BigInteger(128, new Random());
+        var random = new BigInteger(128, ThreadLocalRandom.current());
         try (var formatter = new Formatter()) {
             return formatter.format("-----------------------------%039d", random).toString();
         }
@@ -403,7 +398,7 @@ class MultipartFormDataChannel implements ReadableByteChannel {
     }
 
     static String escape(String s) {
-        return s.replaceAll("\"", "\\\"");
+        return s.replace("\"", "\\\"");
     }
 
     String currentHeaders() {

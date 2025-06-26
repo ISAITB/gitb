@@ -42,8 +42,8 @@ export class TriggerFireExpressionModalComponent extends BaseComponent implement
   validation = new ValidationState()
 
   constructor(
-    private modalInstance: BsModalRef,
-    public dataService: DataService
+    private readonly modalInstance: BsModalRef,
+    public readonly dataService: DataService
   ) { super() }
 
   ngAfterViewInit(): void {

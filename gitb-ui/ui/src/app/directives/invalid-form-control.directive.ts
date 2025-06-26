@@ -53,8 +53,8 @@ export class InvalidFormControlDirective implements AfterViewInit, OnDestroy {
   }
 
   constructor(
-    private renderer: Renderer2,
-    private elementRef: ElementRef
+    private readonly renderer: Renderer2,
+    private readonly elementRef: ElementRef
   ) { }
 
   ngAfterViewInit(): void {

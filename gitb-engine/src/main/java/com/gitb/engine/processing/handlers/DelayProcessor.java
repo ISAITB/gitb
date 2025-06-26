@@ -26,7 +26,6 @@ import com.gitb.processing.ProcessingReport;
 import com.gitb.ps.ProcessingModule;
 import com.gitb.tr.TestResultType;
 import com.gitb.types.NumberType;
-import com.gitb.utils.DataTypeUtils;
 
 import java.util.Collections;
 import java.util.List;
@@ -34,8 +33,8 @@ import java.util.List;
 @ProcessingHandler(name="DelayProcessor")
 public class DelayProcessor extends AbstractProcessingHandler {
 
-    private static final String OPERATION__DELAY = "delay";
-    private static final String INPUT__DURATION = "duration";
+    private static final String OPERATION_DELAY = "delay";
+    private static final String INPUT_DURATION = "duration";
 
     @Override
     public ProcessingModule createProcessingModule() {
@@ -45,8 +44,8 @@ public class DelayProcessor extends AbstractProcessingHandler {
         module.getMetadata().setName(module.getId());
         module.getMetadata().setVersion("1.0");
         module.setConfigs(new ConfigurationParameters());
-        module.getOperation().add(createProcessingOperation(OPERATION__DELAY,
-                List.of(createParameter(INPUT__DURATION, "number", UsageEnumeration.R, ConfigurationType.SIMPLE, "A duration in milliseconds to delay for.")),
+        module.getOperation().add(createProcessingOperation(OPERATION_DELAY,
+                List.of(createParameter(INPUT_DURATION, "number", UsageEnumeration.R, ConfigurationType.SIMPLE, "A duration in milliseconds to delay for.")),
                 Collections.emptyList()
         ));
         return module;
@@ -54,7 +53,7 @@ public class DelayProcessor extends AbstractProcessingHandler {
 
     @Override
     public ProcessingReport process(String session, String operation, ProcessingData input) {
-        var duration = getInputForName(input, INPUT__DURATION, NumberType.class);
+        var duration = getInputForName(input, INPUT_DURATION, NumberType.class);
         if (duration == null) {
             throw new IllegalArgumentException("The duration to delay for is required");
         }

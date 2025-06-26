@@ -34,7 +34,7 @@ export class TrueFalseValueDirective implements ControlValueAccessor {
   private onChange = (_: any) => {}
   private onTouched = () => {}
 
-  constructor(private elementRef: ElementRef, private renderer: Renderer2) { }
+  constructor(private readonly elementRef: ElementRef, private readonly renderer: Renderer2) { }
 
   @HostListener('change', ['$event'])
   onHostChange(ev: any) {

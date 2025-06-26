@@ -13,12 +13,12 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input, OnInit } from '@angular/core';
-import { BsModalRef } from 'ngx-bootstrap/modal';
-import { ReportService } from 'src/app/services/report.service';
-import { StepReport } from '../report/step-report';
-import { StepData } from '../step-data';
-import { saveAs } from 'file-saver'
+import {Component, Input} from '@angular/core';
+import {BsModalRef} from 'ngx-bootstrap/modal';
+import {ReportService} from 'src/app/services/report.service';
+import {StepReport} from '../report/step-report';
+import {StepData} from '../step-data';
+import {saveAs} from 'file-saver';
 
 @Component({
     selector: 'app-test-step-report-modal',
@@ -26,7 +26,7 @@ import { saveAs } from 'file-saver'
     styles: [],
     standalone: false
 })
-export class TestStepReportModalComponent implements OnInit {
+export class TestStepReportModalComponent {
 
   @Input() step!: StepData
   @Input() report!: StepReport
@@ -36,12 +36,9 @@ export class TestStepReportModalComponent implements OnInit {
   exportXmlPending = false
 
   constructor(
-    private modalRef: BsModalRef,
-    private reportService: ReportService
+    private readonly modalRef: BsModalRef,
+    private readonly reportService: ReportService
   ) { }
-
-  ngOnInit(): void {
-  }
 
   exportPdf() {
     this.exportPdfPending = true

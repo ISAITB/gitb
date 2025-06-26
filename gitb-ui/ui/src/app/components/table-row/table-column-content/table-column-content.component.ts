@@ -13,23 +13,20 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input, OnInit } from '@angular/core';
-import { TableColumnData } from 'src/app/types/table-column-data.type';
-import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
+import {Component, Input} from '@angular/core';
+import {TableColumnData} from 'src/app/types/table-column-data.type';
+import {TableColumnDefinition} from 'src/app/types/table-column-definition.type';
 
 @Component({
     selector: 'app-table-column-content',
     templateUrl: './table-column-content.component.html',
     standalone: false
 })
-export class TableColumnContentComponent implements OnInit {
+export class TableColumnContentComponent {
 
   @Input() item!: TableColumnData
   @Input() column!: TableColumnDefinition
 
   constructor() { }
-
-  ngOnInit(): void {
-  }
 
 }

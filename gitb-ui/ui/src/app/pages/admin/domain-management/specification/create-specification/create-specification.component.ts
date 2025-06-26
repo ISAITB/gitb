@@ -39,12 +39,12 @@ export class CreateSpecificationComponent extends BaseComponent implements OnIni
   groups?: SpecificationGroup[]
 
   constructor(
-    public dataService: DataService,
-    private conformanceService: ConformanceService,
-    private popupService: PopupService,
-    private route: ActivatedRoute,
-    private routingService: RoutingService,
-    private specificationService: SpecificationService
+    public readonly dataService: DataService,
+    private readonly conformanceService: ConformanceService,
+    private readonly popupService: PopupService,
+    private readonly route: ActivatedRoute,
+    private readonly routingService: RoutingService,
+    private readonly specificationService: SpecificationService
   ) { super() }
 
   ngAfterViewInit(): void {

@@ -43,7 +43,7 @@ export class UserFormComponent {
   passwordFocus = new EventEmitter<boolean>()
 
   constructor(
-    public dataService: DataService
+    public readonly dataService: DataService
   ) { }
 
   passwordExpanded() {

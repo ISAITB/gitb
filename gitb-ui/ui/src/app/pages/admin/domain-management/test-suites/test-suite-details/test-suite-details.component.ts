@@ -78,15 +78,15 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit {
   convertPending = false
 
   constructor(
-    public dataService: DataService,
-    private routingService: RoutingService,
-    private route: ActivatedRoute,
-    private testSuiteService: TestSuiteService,
-    private popupService: PopupService,
-    private htmlService: HtmlService,
-    private conformanceService: ConformanceService,
-    private confirmationDialogService: ConfirmationDialogService,
-    private modalService: BsModalService
+    public readonly dataService: DataService,
+    private readonly routingService: RoutingService,
+    private readonly route: ActivatedRoute,
+    private readonly testSuiteService: TestSuiteService,
+    private readonly popupService: PopupService,
+    private readonly htmlService: HtmlService,
+    private readonly conformanceService: ConformanceService,
+    private readonly confirmationDialogService: ConfirmationDialogService,
+    private readonly modalService: BsModalService
   ) { super() }
 
   ngOnInit(): void {

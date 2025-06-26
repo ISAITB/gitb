@@ -25,8 +25,8 @@ import { DataService } from './data.service';
 export class ActorService {
 
   constructor(
-    private restService: RestService,
-    private dataService: DataService
+    private readonly restService: RestService,
+    private readonly dataService: DataService
   ) { }
 
   deleteActor(actorId: number) {

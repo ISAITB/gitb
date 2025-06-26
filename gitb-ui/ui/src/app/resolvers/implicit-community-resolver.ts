@@ -26,8 +26,8 @@ import {CommunityService} from '../services/community.service';
 export class ImplicitCommunityResolver {
 
   constructor(
-    private dataService: DataService,
-    private communityService: CommunityService) {
+    private readonly dataService: DataService,
+    private readonly communityService: CommunityService) {
   }
 
   resolve(route: ActivatedRouteSnapshot, state: RouterStateSnapshot) {

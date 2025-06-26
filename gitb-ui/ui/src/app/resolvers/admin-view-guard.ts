@@ -27,10 +27,10 @@ import { ErrorService } from '../services/error.service';
 export class AdminViewGuard  {
 
   constructor(
-    private dataService: DataService,
-    private errorService: ErrorService,
-    private routingService: RoutingService,
-    private profileResolver: ProfileResolver
+    private readonly dataService: DataService,
+    private readonly errorService: ErrorService,
+    private readonly routingService: RoutingService,
+    private readonly profileResolver: ProfileResolver
   ) {}
 
   canActivate(

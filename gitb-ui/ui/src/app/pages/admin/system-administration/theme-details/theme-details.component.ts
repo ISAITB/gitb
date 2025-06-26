@@ -44,12 +44,12 @@ export class ThemeDetailsComponent extends BaseThemeFormComponent implements OnI
   validation = new ValidationState()
 
   constructor(
-    private route: ActivatedRoute,
-    private routingService: RoutingService,
-    private popupService: PopupService,
-    private confirmationDialogService: ConfirmationDialogService,
-    private systemConfigurationService: SystemConfigurationService,
-    private dataService: DataService
+    private readonly route: ActivatedRoute,
+    private readonly routingService: RoutingService,
+    private readonly popupService: PopupService,
+    private readonly confirmationDialogService: ConfirmationDialogService,
+    private readonly systemConfigurationService: SystemConfigurationService,
+    private readonly dataService: DataService
   ) { super() }
 
   ngOnInit(): void {

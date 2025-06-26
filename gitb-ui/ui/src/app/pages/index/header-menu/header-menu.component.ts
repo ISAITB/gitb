@@ -13,11 +13,11 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input, OnInit } from '@angular/core';
-import { Constants } from 'src/app/common/constants';
-import { AuthProviderService } from 'src/app/services/auth-provider.service';
-import { DataService } from 'src/app/services/data.service';
-import { RoutingService } from 'src/app/services/routing.service';
+import {Component, Input} from '@angular/core';
+import {Constants} from 'src/app/common/constants';
+import {AuthProviderService} from 'src/app/services/auth-provider.service';
+import {DataService} from 'src/app/services/data.service';
+import {RoutingService} from 'src/app/services/routing.service';
 
 @Component({
     selector: 'app-header-menu',
@@ -25,7 +25,7 @@ import { RoutingService } from 'src/app/services/routing.service';
     styleUrls: ['./header-menu.component.less'],
     standalone: false
 })
-export class HeaderMenuComponent implements OnInit {
+export class HeaderMenuComponent {
 
   @Input() logoutInProgress!: boolean
   expanded = false
@@ -33,13 +33,10 @@ export class HeaderMenuComponent implements OnInit {
   isOverHeader = false
 
   constructor(
-    public dataService: DataService,
-    private authProviderService: AuthProviderService,
-    public routingService: RoutingService
+    public readonly dataService: DataService,
+    private readonly authProviderService: AuthProviderService,
+    public readonly routingService: RoutingService
   ) { }
-
-  ngOnInit(): void {
-  }
 
 	userLoaded(): boolean {
 		return this.dataService.user != undefined && this.dataService.user.name != undefined

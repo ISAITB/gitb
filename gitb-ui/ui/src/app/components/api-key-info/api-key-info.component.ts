@@ -73,12 +73,12 @@ export class ApiKeyInfoComponent implements OnInit {
   testCaseSelectionConfig!: MultiSelectConfig<ApiKeyTestCaseInfo>
 
   constructor(
-    private organisationService: OrganisationService,
-    private systemService: SystemService,
-    private popupService: PopupService,
-    private confirmationDialogService: ConfirmationDialogService,
-    private conformanceService: ConformanceService,
-    public dataService: DataService
+    private readonly organisationService: OrganisationService,
+    private readonly systemService: SystemService,
+    private readonly popupService: PopupService,
+    private readonly confirmationDialogService: ConfirmationDialogService,
+    private readonly conformanceService: ConformanceService,
+    public readonly dataService: DataService
   ) { }
 
   ngOnInit(): void {

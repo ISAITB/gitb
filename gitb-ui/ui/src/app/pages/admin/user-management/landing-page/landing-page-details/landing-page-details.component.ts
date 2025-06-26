@@ -50,13 +50,13 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
   Constants = Constants
 
   constructor(
-    private routingService: RoutingService,
-    private route: ActivatedRoute,
-    public dataService: DataService,
-    private landingPageService: LandingPageService,
-    private confirmationDialogService: ConfirmationDialogService,
-    private popupService: PopupService,
-    private modalService: BsModalService
+    private readonly routingService: RoutingService,
+    private readonly route: ActivatedRoute,
+    public readonly dataService: DataService,
+    private readonly landingPageService: LandingPageService,
+    private readonly confirmationDialogService: ConfirmationDialogService,
+    private readonly popupService: PopupService,
+    private readonly modalService: BsModalService
   ) { super() }
 
   ngOnInit(): void {

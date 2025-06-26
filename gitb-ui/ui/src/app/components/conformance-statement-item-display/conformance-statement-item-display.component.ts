@@ -74,7 +74,7 @@ export class ConformanceStatementItemDisplayComponent implements OnInit {
   Constants = Constants
 
   constructor(
-    public dataService: DataService
+    public readonly dataService: DataService
   ) { }
 
   ngOnInit(): void {

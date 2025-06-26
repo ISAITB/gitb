@@ -55,8 +55,8 @@ export abstract class BaseConformanceItemDisplayComponent implements AfterViewIn
   itemsByType?: { groups: ConformanceStatementItem[], specs: ConformanceStatementItem[], actors: ConformanceStatementItem[] }
 
   constructor(
-    public dataService: DataService,
-    private zone: NgZone
+    public readonly dataService: DataService,
+    private readonly zone: NgZone
   ) {}
 
   ngAfterViewInit(): void {
