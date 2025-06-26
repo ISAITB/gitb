@@ -313,12 +313,12 @@ class FilePart implements Part {
 }
 
 enum State {
-    Boundary, Headers, Body, Done,
+    BOUNDARY, HEADERS, BODY, DONE,
 }
 
 class MultipartFormDataChannel implements ReadableByteChannel {
     private boolean closed = false;
-    private State state = State.Boundary;
+    private State state = State.BOUNDARY;
     private final String boundary;
     private final Iterator<Part> parts;
     private ByteBuffer buf = ByteBuffer.allocate(0);
@@ -359,23 +359,23 @@ class MultipartFormDataChannel implements ReadableByteChannel {
             }
 
             switch (this.state) {
-                case Boundary:
+                case BOUNDARY:
                     if (this.parts.hasNext()) {
                         this.current = this.parts.next();
                         this.buf = ByteBuffer.wrap(("--" + this.boundary + "\r\n").getBytes(StandardCharsets.UTF_8));
-                        this.state = State.Headers;
+                        this.state = State.HEADERS;
                     } else {
                         this.buf = ByteBuffer.wrap(("--" + this.boundary + "--\r\n").getBytes(StandardCharsets.UTF_8));
-                        this.state = State.Done;
+                        this.state = State.DONE;
                     }
                     break;
 
-                case Headers:
+                case HEADERS:
                     this.buf = ByteBuffer.wrap(this.currentHeaders().getBytes(this.charset));
-                    this.state = State.Body;
+                    this.state = State.BODY;
                     break;
 
-                case Body:
+                case BODY:
                     if (this.channel == null) {
                         this.channel = this.current.open();
                     }
@@ -385,13 +385,13 @@ class MultipartFormDataChannel implements ReadableByteChannel {
                         this.channel.close();
                         this.channel = null;
                         this.buf = ByteBuffer.wrap("\r\n".getBytes(StandardCharsets.UTF_8));
-                        this.state = State.Boundary;
+                        this.state = State.BOUNDARY;
                     } else {
                         return n;
                     }
                     break;
 
-                case Done:
+                case DONE:
                     return -1;
             }
         }
