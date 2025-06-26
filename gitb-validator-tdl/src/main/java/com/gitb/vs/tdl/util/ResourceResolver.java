@@ -51,7 +51,7 @@ public class ResourceResolver implements LSResourceResolver {
 
         @Override
         public void setCharacterStream(Reader characterStream) {
-
+            // Do nothing
         }
 
         @Override
@@ -71,7 +71,7 @@ public class ResourceResolver implements LSResourceResolver {
 
         @Override
         public void setStringData(String stringData) {
-
+            // Do nothing
         }
 
         @Override
@@ -101,7 +101,7 @@ public class ResourceResolver implements LSResourceResolver {
 
         @Override
         public void setBaseURI(String baseURI) {
-
+            // Do nothing
         }
 
         @Override
@@ -111,7 +111,7 @@ public class ResourceResolver implements LSResourceResolver {
 
         @Override
         public void setEncoding(String encoding) {
-
+            // Do nothing
         }
 
         @Override
@@ -121,7 +121,7 @@ public class ResourceResolver implements LSResourceResolver {
 
         @Override
         public void setCertifiedText(boolean certifiedText) {
-
+            // Do nothing
         }
     }
 

@@ -126,12 +126,15 @@ public class Utils {
             builder.setErrorHandler(new ErrorHandler() {
                 @Override
                 public void warning(SAXParseException exception) {
+                    // Do nothing
                 }
                 @Override
                 public void error(SAXParseException exception) {
+                    // Do nothing
                 }
                 @Override
                 public void fatalError(SAXParseException exception) {
+                    // Do nothing
                 }
             });
         } catch (ParserConfigurationException e) {
