@@ -40,7 +40,7 @@ export class ProfileComponent extends BaseComponent implements OnInit, AfterView
   validation = new ValidationState()
 
   constructor(
-    public readonly readonly dataService: DataService,
+    public readonly dataService: DataService,
     private readonly confirmationDialogService: ConfirmationDialogService,
     private readonly authProviderService: AuthProviderService,
     private readonly accountService: AccountService,
