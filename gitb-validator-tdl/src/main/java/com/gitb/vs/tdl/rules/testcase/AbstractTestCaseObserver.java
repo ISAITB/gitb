@@ -110,6 +110,7 @@ public class AbstractTestCaseObserver implements TestCaseObserver {
 
     @Override
     public void finalise() {
+        // Do nothing by default.
     }
 
     public String getLocation() {

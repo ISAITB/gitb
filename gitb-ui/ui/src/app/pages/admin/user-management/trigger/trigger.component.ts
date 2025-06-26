@@ -107,16 +107,16 @@ export class TriggerComponent extends BaseComponent implements OnInit {
   loaded = false
 
   constructor(
-    private routingService: RoutingService,
-    private route: ActivatedRoute,
-    private modalService: BsModalService,
-    private triggerService: TriggerService,
-    private conformanceService: ConformanceService,
-    private communityService: CommunityService,
-    private confirmationDialogService: ConfirmationDialogService,
-    private popupService: PopupService,
-    public dataService: DataService,
-    private errorService: ErrorService
+    private readonly routingService: RoutingService,
+    private readonly route: ActivatedRoute,
+    private readonly modalService: BsModalService,
+    private readonly triggerService: TriggerService,
+    private readonly conformanceService: ConformanceService,
+    private readonly communityService: CommunityService,
+    private readonly confirmationDialogService: ConfirmationDialogService,
+    private readonly popupService: PopupService,
+    public readonly dataService: DataService,
+    private readonly errorService: ErrorService
   ) {
     super();
   }
@@ -432,7 +432,7 @@ export class TriggerComponent extends BaseComponent implements OnInit {
     .subscribe((result) => {
       if (result.success) {
         let valueToShow = ''
-        if (result.texts.length > 0 && result.texts.length > 0) {
+        if (result.texts && result.texts.length > 0) {
           valueToShow = result.texts[0]
           if (result.contentType == 'application/json') {
             try {

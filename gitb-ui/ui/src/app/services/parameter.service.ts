@@ -23,7 +23,7 @@ import { RestService } from './rest.service';
 export class ParameterService {
 
   constructor(
-    private restService: RestService
+    private readonly restService: RestService
   ) { }
 
   deleteParameter(parameterId: number) {

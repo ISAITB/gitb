@@ -67,11 +67,11 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
   constructor(
     dataService: DataService,
     zone: NgZone,
-    private systemService: SystemService,
-    private conformanceService: ConformanceService,
-    private route: ActivatedRoute,
-    public routingService: RoutingService,
-    private reportSupportService: ReportSupportService
+    private readonly systemService: SystemService,
+    private readonly conformanceService: ConformanceService,
+    private readonly route: ActivatedRoute,
+    public readonly routingService: RoutingService,
+    private readonly reportSupportService: ReportSupportService
   ) { super(dataService, zone) }
 
   ngOnInit(): void {

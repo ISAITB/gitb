@@ -52,13 +52,13 @@ export class ErrorTemplateDetailsComponent extends BaseComponent implements OnIn
   Constants = Constants
 
   constructor(
-    public dataService: DataService,
-    private routingService: RoutingService,
-    private route: ActivatedRoute,
-    private errorTemplateService: ErrorTemplateService,
-    private confirmationDialogService: ConfirmationDialogService,
-    private popupService: PopupService,
-    private errorService: ErrorService
+    public readonly dataService: DataService,
+    private readonly routingService: RoutingService,
+    private readonly route: ActivatedRoute,
+    private readonly errorTemplateService: ErrorTemplateService,
+    private readonly confirmationDialogService: ConfirmationDialogService,
+    private readonly popupService: PopupService,
+    private readonly errorService: ErrorService
   ) { super() }
 
   ngOnInit(): void {

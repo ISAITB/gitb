@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input, OnInit } from '@angular/core';
+import {Component, Input} from '@angular/core';
 
 @Component({
     selector: 'app-tab-title',
@@ -21,14 +21,11 @@ import { Component, Input, OnInit } from '@angular/core';
     styleUrls: ['./tab-title.component.less'],
     standalone: false
 })
-export class TabTitleComponent implements OnInit {
+export class TabTitleComponent {
 
   @Input() text!: string
   @Input() icon?: string
 
   constructor() { }
-
-  ngOnInit(): void {
-  }
 
 }

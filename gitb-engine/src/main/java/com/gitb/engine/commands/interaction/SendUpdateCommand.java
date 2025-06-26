@@ -16,8 +16,5 @@
 package com.gitb.engine.commands.interaction;
 
 public class SendUpdateCommand {
-
-	public SendUpdateCommand() {
-	}
-
+    // No implementation - this is a marker class.
 }

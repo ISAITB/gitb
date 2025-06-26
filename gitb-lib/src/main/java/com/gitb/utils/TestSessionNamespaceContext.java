@@ -15,9 +15,10 @@
 
 package com.gitb.utils;
 
+import javax.xml.namespace.NamespaceContext;
 import java.util.*;
 
-public class NamespaceContext implements javax.xml.namespace.NamespaceContext{
+public class TestSessionNamespaceContext implements NamespaceContext {
 
     //<prefix, namespaceURI>
     private final Map<String, String> namespaceURIs;
@@ -25,7 +26,7 @@ public class NamespaceContext implements javax.xml.namespace.NamespaceContext{
     //<namespaceURI, prefix>
     private final Map<String, String> prefixes;
 
-    public NamespaceContext(Map<String, String> namespaceDefinitions){
+    public TestSessionNamespaceContext(Map<String, String> namespaceDefinitions){
         namespaceURIs = new HashMap<>();
         prefixes = new HashMap<>();
         if (namespaceDefinitions != null) {

@@ -37,9 +37,9 @@ export class PreviewBadgeModalComponent implements OnInit {
   html?: string
 
   constructor(
-    private conformanceService: ConformanceService,
-    private modalRef: BsModalRef,
-    private dataService: DataService
+    private readonly conformanceService: ConformanceService,
+    private readonly modalRef: BsModalRef,
+    private readonly dataService: DataService
   ) { }
 
   ngOnInit(): void {

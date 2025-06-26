@@ -28,8 +28,6 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static com.gitb.vs.tdl.ErrorLevel.ERROR;
-
 public class CheckUniqueSetsOfValues extends AbstractTestCaseObserver {
 
     private final Set<String> imports = new HashSet<>();
@@ -204,7 +202,7 @@ public class CheckUniqueSetsOfValues extends AbstractTestCaseObserver {
         if (testCaseIsWrappedScriptlet) {
             reportScriptletDuplicates(scriptletParameterDuplicates, ErrorCode.DUPLICATE_PROPERTY_NAME, (duplicate) -> new String[] {currentTestCase.getId(), "parameter", duplicate});
             reportScriptletDuplicates(scriptletOutputDuplicates, ErrorCode.DUPLICATE_PROPERTY_NAME, (duplicate) -> new String[] {currentTestCase.getId(), "output", duplicate});
-            checkForCrossDuplicates(ErrorCode.DUPLICATE__DEFINITION_NAME,
+            checkForCrossDuplicates(ErrorCode.DUPLICATE_DEFINITION_NAME,
                     List.of(
                             new ImmutablePair<>("parameter", scriptletParameters),
                             new ImmutablePair<>("variable", variables),
@@ -213,7 +211,7 @@ public class CheckUniqueSetsOfValues extends AbstractTestCaseObserver {
                     (info) -> new String[] {currentTestCase.getId(), info.getLeft(), info.getRight()}
             );
         } else {
-            checkForCrossDuplicates(ErrorCode.DUPLICATE__DEFINITION_NAME,
+            checkForCrossDuplicates(ErrorCode.DUPLICATE_DEFINITION_NAME,
                     List.of(
                             new ImmutablePair<>("variable", variables),
                             new ImmutablePair<>("import", imports)

@@ -38,10 +38,10 @@ import java.util.List;
 @ProcessingHandler(name="JsonPointerProcessor")
 public class JsonPointerProcessor extends AbstractProcessingHandler {
 
-    private static final String OPERATION__PROCESS = "process";
-    private static final String INPUT__CONTENT = "content";
-    private static final String INPUT__POINTER = "pointer";
-    private static final String OUTPUT__OUTPUT = "output";
+    private static final String OPERATION_PROCESS = "process";
+    private static final String INPUT_CONTENT = "content";
+    private static final String INPUT_POINTER = "pointer";
+    private static final String OUTPUT_OUTPUT = "output";
 
     @Override
     public ProcessingModule createProcessingModule() {
@@ -51,12 +51,12 @@ public class JsonPointerProcessor extends AbstractProcessingHandler {
         module.getMetadata().setName(module.getId());
         module.getMetadata().setVersion("1.0");
         module.setConfigs(new ConfigurationParameters());
-        module.getOperation().add(createProcessingOperation(OPERATION__PROCESS,
+        module.getOperation().add(createProcessingOperation(OPERATION_PROCESS,
             List.of(
-                    createParameter(INPUT__CONTENT, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The JSON content to evaluate the pointer on."),
-                    createParameter(INPUT__POINTER, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The JSON pointer expression to evaluate.")
+                    createParameter(INPUT_CONTENT, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The JSON content to evaluate the pointer on."),
+                    createParameter(INPUT_POINTER, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The JSON pointer expression to evaluate.")
             ),
-            List.of(createParameter(OUTPUT__OUTPUT, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The result after evaluating the pointer."))
+            List.of(createParameter(OUTPUT_OUTPUT, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The result after evaluating the pointer."))
         ));
         return module;
     }
@@ -65,18 +65,18 @@ public class JsonPointerProcessor extends AbstractProcessingHandler {
     public ProcessingReport process(String session, String operation, ProcessingData input) {
         // Collect inputs
         String inputContent;
-        if (!input.getData().containsKey(INPUT__CONTENT)) {
+        if (!input.getData().containsKey(INPUT_CONTENT)) {
             throw new IllegalArgumentException("The JSON content to evaluate the pointer on is required");
         } else {
-            inputContent = (String) input.getData().get(INPUT__CONTENT).convertTo(DataType.STRING_DATA_TYPE).getValue();
+            inputContent = (String) input.getData().get(INPUT_CONTENT).convertTo(DataType.STRING_DATA_TYPE).getValue();
         }
 
         JsonPointer pointer;
-        if (!input.getData().containsKey(INPUT__POINTER)) {
+        if (!input.getData().containsKey(INPUT_POINTER)) {
             throw new IllegalArgumentException("The JSON pointer is required");
         } else {
             try {
-                pointer = JsonPointer.compile((String) input.getData().get(INPUT__POINTER).convertTo(DataType.STRING_DATA_TYPE).getValue());
+                pointer = JsonPointer.compile((String) input.getData().get(INPUT_POINTER).convertTo(DataType.STRING_DATA_TYPE).getValue());
             } catch (Exception e) {
                 throw new IllegalArgumentException("An error occurred while compiling the JSON pointer: "+e.getMessage());
             }
@@ -103,7 +103,7 @@ public class JsonPointerProcessor extends AbstractProcessingHandler {
             }
         }
         ProcessingData data = new ProcessingData();
-        data.getData().put(OUTPUT__OUTPUT, new StringType(StringUtils.defaultString(resultString)));
+        data.getData().put(OUTPUT_OUTPUT, new StringType(StringUtils.defaultString(resultString)));
         return new ProcessingReport(createReport(TestResultType.SUCCESS), data);
     }
 

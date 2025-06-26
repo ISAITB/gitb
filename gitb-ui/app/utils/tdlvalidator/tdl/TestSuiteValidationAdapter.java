@@ -44,8 +44,7 @@ import java.util.*;
 public class TestSuiteValidationAdapter {
 
     private static final Logger LOG = LoggerFactory.getLogger(TestSuiteValidationAdapter.class);
-    private static final Object MUTEX = new Object();
-    private static TestSuiteValidationAdapter INSTANCE;
+    private static final TestSuiteValidationAdapter INSTANCE = new TestSuiteValidationAdapter();
 
     private final ObjectFactory objectFactory = new ObjectFactory();
     private Set<String> dataTypes;
@@ -58,16 +57,11 @@ public class TestSuiteValidationAdapter {
     private ValidationService remoteServiceClient;
 
     public static TestSuiteValidationAdapter getInstance() {
-        if (INSTANCE == null) {
-            synchronized (MUTEX) {
-                if (INSTANCE == null) {
-                    TestSuiteValidationAdapter temp = new TestSuiteValidationAdapter();
-                    temp.initialise();
-                    INSTANCE = temp;
-                }
-            }
-        }
         return INSTANCE;
+    }
+
+    private TestSuiteValidationAdapter() {
+        initialise();
     }
 
     private void initialise() {

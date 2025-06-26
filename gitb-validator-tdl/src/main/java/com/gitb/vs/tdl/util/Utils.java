@@ -15,9 +15,10 @@
 
 package com.gitb.vs.tdl.util;
 
-import com.gitb.tdl.Process;
 import com.gitb.tdl.*;
+import com.gitb.tdl.Process;
 import com.gitb.vs.tdl.Context;
+import jakarta.xml.bind.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.xerces.jaxp.DocumentBuilderFactoryImpl;
 import org.w3c.dom.Document;
@@ -25,7 +26,6 @@ import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXParseException;
 
 import javax.xml.XMLConstants;
-import jakarta.xml.bind.*;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -50,13 +50,13 @@ public class Utils {
 
     public static final String DOMAIN_MAP = "DOMAIN";
     public static final String ORGANISATION_MAP = "ORGANISATION";
-    public static final String ORGANISATION_MAP__SHORT_NAME = "shortName";
-    public static final String ORGANISATION_MAP__FULL_NAME = "fullName";
+    public static final String ORGANISATION_MAP_SHORT_NAME = "shortName";
+    public static final String ORGANISATION_MAP_FULL_NAME = "fullName";
     public static final String SYSTEM_MAP = "SYSTEM";
-    public static final String SYSTEM_MAP__SHORT_NAME = "shortName";
-    public static final String SYSTEM_MAP__FULL_NAME = "fullName";
-    public static final String SYSTEM_MAP__VERSION = "version";
-    public static final String SYSTEM_MAP__API_KEY = "apiKey";
+    public static final String SYSTEM_MAP_SHORT_NAME = "shortName";
+    public static final String SYSTEM_MAP_FULL_NAME = "fullName";
+    public static final String SYSTEM_MAP_VERSION = "version";
+    public static final String SYSTEM_MAP_API_KEY = "apiKey";
     public static final String SESSION_MAP = "SESSION";
     public static final String STEP_SUCCESS = "STEP_SUCCESS";
     public static final String STEP_STATUS = "STEP_STATUS";
@@ -74,12 +74,12 @@ public class Utils {
             File newFile = newFile(targetFolder, zipEntry);
             if (!zipEntry.isDirectory()) {
                 newFile.getParentFile().mkdirs();
-                FileOutputStream fos = new FileOutputStream(newFile);
-                int len;
-                while ((len = zis.read(buffer)) > 0) {
-                    fos.write(buffer, 0, len);
+                try (FileOutputStream fos = new FileOutputStream(newFile)) {
+                    int len;
+                    while ((len = zis.read(buffer)) > 0) {
+                        fos.write(buffer, 0, len);
+                    }
                 }
-                fos.close();
             }
             zipEntry = zis.getNextEntry();
         }
@@ -113,7 +113,7 @@ public class Utils {
 
     public static Document readAsXML(InputStream is) {
         Document document = null;
-        DocumentBuilderFactory dbFactory = null;
+        DocumentBuilderFactory dbFactory;
         try {
             dbFactory = getSecureDocumentBuilderFactory();
             dbFactory.setNamespaceAware(true);

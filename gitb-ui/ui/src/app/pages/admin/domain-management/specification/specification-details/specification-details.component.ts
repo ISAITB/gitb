@@ -78,15 +78,15 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
   unlinkSharedSelectionConfig!: MultiSelectConfig<TestSuite>
 
   constructor(
-    public dataService: DataService,
-    private conformanceService: ConformanceService,
-    private confirmationDialogService: ConfirmationDialogService,
-    private specificationService: SpecificationService,
-    private routingService: RoutingService,
-    private route: ActivatedRoute,
+    public readonly dataService: DataService,
+    private readonly conformanceService: ConformanceService,
+    private readonly confirmationDialogService: ConfirmationDialogService,
+    private readonly specificationService: SpecificationService,
+    private readonly routingService: RoutingService,
+    private readonly route: ActivatedRoute,
     router: Router,
-    private popupService: PopupService,
-    private modalService: BsModalService
+    private readonly popupService: PopupService,
+    private readonly modalService: BsModalService
   ) { super(router) }
 
   loadTab(tabIndex: number): void {

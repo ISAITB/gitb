@@ -38,6 +38,7 @@ public class BeginTransactionStepProcessorActor extends AbstractTestStepActor<Be
 
 	@Override
 	protected void init() throws Exception {
+		// Do nothing.
 	}
 
 	@Override

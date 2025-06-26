@@ -39,9 +39,9 @@ export class DomainManagementComponent implements OnInit {
 
 
   constructor(
-    public dataService: DataService,
-    private conformanceService: ConformanceService,
-    private routingService: RoutingService
+    public readonly dataService: DataService,
+    private readonly conformanceService: ConformanceService,
+    private readonly routingService: RoutingService
   ) { }
 
   ngOnInit(): void {

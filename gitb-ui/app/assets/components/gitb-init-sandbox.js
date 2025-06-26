@@ -14,18 +14,18 @@
  */
 
 $(document).ready(function() {
-    var importFinished = false
+    let importFinished = false
     // Handler definitions.
-    var fileUploadHandler = function () {
+    const fileUploadHandler = function () {
         $("#fileInputControl").trigger("click")
     }
     let contextPath = document.getElementById('ctx-div').textContent;
-    var submitHandler = function (event) {
+    const submitHandler = function (event) {
         event.preventDefault()
         if (!$("#buttonImport").prop("disabled")) {
             $("#initFormAlerts").html("")
             $("#initDataSpinner").show()
-            var dataToSend = new FormData()
+            const dataToSend = new FormData()
             dataToSend.append("file", $("#fileInputControl")[0].files[0])
             dataToSend.append("password", getPasswordField().val())
             $("#buttonImport").prop("disabled", true)
@@ -45,7 +45,7 @@ $(document).ready(function() {
                     $("#buttonNoImport").prop("disabled", false)
                 },
                 error: function (e) {
-                    var message = "An error occurred while importing the archive."
+                    let message = "An error occurred while importing the archive."
                     if (e && e.responseJSON && e.responseJSON.error_description) {
                         message = e.responseJSON.error_description
                     }
@@ -58,16 +58,16 @@ $(document).ready(function() {
         }
     }
     // Method definitions.
-    var getPasswordField = function () {
+    const getPasswordField = function () {
         if ($("#encryptionPasswordVisible").is(":hidden")) {
             return $("#encryptionPassword")
         } else {
             return $("#encryptionPasswordVisible")
         }
     }
-    var checkFormValid = function () {
-        var valid = false
-        var fileInputControl = $("#fileInputControl")
+    const checkFormValid = function () {
+        let valid = false
+        const fileInputControl = $("#fileInputControl")
         if ((fileInputControl.length > 0 && fileInputControl[0].files && fileInputControl[0].files.length > 0) && getPasswordField().val().trim() != "") {
             valid = true
         }

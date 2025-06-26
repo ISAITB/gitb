@@ -55,10 +55,10 @@ export class ConformanceCertificateModalComponent implements OnInit {
   editorSizeEmitter = new EventEmitter<number>()
 
   constructor(
-    private dataService: DataService,
-    private modalInstance: BsModalRef,
-    private reportService: ReportService,
-    private conformanceService: ConformanceService
+    private readonly dataService: DataService,
+    private readonly modalInstance: BsModalRef,
+    private readonly reportService: ReportService,
+    private readonly conformanceService: ConformanceService
   ) { }
 
   ngOnInit(): void {

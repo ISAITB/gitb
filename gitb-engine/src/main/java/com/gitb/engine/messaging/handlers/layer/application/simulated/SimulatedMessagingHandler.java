@@ -40,24 +40,24 @@ import java.util.concurrent.TimeUnit;
 public class SimulatedMessagingHandler extends AbstractNonWorkerMessagingHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(SimulatedMessagingHandler.class);
-    private static final String INPUT__PARAMETERS = "parameters";
-    private static final String INPUT__CONTENT_TYPES = "contentTypes";
-    private static final String INPUT__RESULT = "result";
-    private static final String INPUT__DELAY = "delay";
+    private static final String INPUT_PARAMETERS = "parameters";
+    private static final String INPUT_CONTENT_TYPES = "contentTypes";
+    private static final String INPUT_RESULT = "result";
+    private static final String INPUT_DELAY = "delay";
 
     private MessagingReport createReport(String sessionId, Message message) {
         // Overall result
         var result = TestResultType.SUCCESS;
-        if (message.hasInput(INPUT__RESULT)) {
+        if (message.hasInput(INPUT_RESULT)) {
             try {
-                result = TestResultType.valueOf(((String) message.getFragments().get(INPUT__RESULT).convertTo(StringType.STRING_DATA_TYPE).getValue()));
+                result = TestResultType.valueOf(((String) message.getFragments().get(INPUT_RESULT).convertTo(DataType.STRING_DATA_TYPE).getValue()));
             } catch (IllegalArgumentException | NullPointerException e) {
-                LOG.warn(addMarker(sessionId), String.format("Invalid value for input '%s'. Considering '%s' by default.", INPUT__RESULT, TestResultType.SUCCESS));
+                LOG.warn(addMarker(sessionId), String.format("Invalid value for input '%s'. Considering '%s' by default.", INPUT_RESULT, TestResultType.SUCCESS));
             }
         }
         var messageForReport = new Message();
-        if (message.hasInput(INPUT__PARAMETERS)) {
-            var fragments = message.getFragments().get(INPUT__PARAMETERS);
+        if (message.hasInput(INPUT_PARAMETERS)) {
+            var fragments = message.getFragments().get(INPUT_PARAMETERS);
             if (fragments instanceof MapType) {
                 for (var fragment: ((MapType) fragments).getItems().entrySet()) {
                     messageForReport.addInput(fragment.getKey(), fragment.getValue());
@@ -65,7 +65,7 @@ public class SimulatedMessagingHandler extends AbstractNonWorkerMessagingHandler
             }
         }
         var report = MessagingHandlerUtils.generateSuccessReport(messageForReport);
-        TestCaseUtils.applyContentTypes(message.getFragments().get(INPUT__CONTENT_TYPES), report.getReport().getContext());
+        TestCaseUtils.applyContentTypes(message.getFragments().get(INPUT_CONTENT_TYPES), report.getReport().getContext());
         report.getReport().setResult(result);
         return report;
     }
@@ -78,8 +78,8 @@ public class SimulatedMessagingHandler extends AbstractNonWorkerMessagingHandler
     @Override
     public MessagingReport receiveMessage(String sessionId, String transactionId, String callId, MessagingStep step, Message message, List<Thread> messagingThreads) {
         var report = createReport(sessionId, message);
-        if (message.getFragments().containsKey(INPUT__DELAY)) {
-            var delay = ((Double)message.getFragments().get(INPUT__DELAY).convertTo(DataType.NUMBER_DATA_TYPE).getValue()).longValue();
+        if (message.getFragments().containsKey(INPUT_DELAY)) {
+            var delay = ((Double)message.getFragments().get(INPUT_DELAY).convertTo(DataType.NUMBER_DATA_TYPE).getValue()).longValue();
             if (delay > 0) {
                 TestEngine.getInstance().getEngineActorSystem().getActorSystem().getScheduler().scheduleOnce(
                         scala.concurrent.duration.Duration.apply(delay, TimeUnit.MILLISECONDS), () -> CallbackManager.getInstance().callbackReceived(sessionId, callId, report),

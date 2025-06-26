@@ -61,15 +61,15 @@ export class CreateOrganisationComponent extends BaseComponent implements OnInit
   formDataUpdated = false
 
   constructor(
-    public dataService: DataService,
-    private routingService: RoutingService,
-    private route: ActivatedRoute,
-    private organisationService: OrganisationService,
-    private popupService: PopupService,
-    private landingPageService: LandingPageService,
-    private legalNoticeService: LegalNoticeService,
-    private errorTemplateService: ErrorTemplateService,
-    private communityService: CommunityService
+    public readonly dataService: DataService,
+    private readonly routingService: RoutingService,
+    private readonly route: ActivatedRoute,
+    private readonly organisationService: OrganisationService,
+    private readonly popupService: PopupService,
+    private readonly landingPageService: LandingPageService,
+    private readonly legalNoticeService: LegalNoticeService,
+    private readonly errorTemplateService: ErrorTemplateService,
+    private readonly communityService: CommunityService
   ) { super() }
 
   ngOnInit(): void {

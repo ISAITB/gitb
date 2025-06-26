@@ -27,10 +27,10 @@ import { ProfileResolver } from './profile-resolver';
 export class RouteAuthenticationGuard  {
 
   constructor(
-    private authProviderService: AuthProviderService,
-    private routingService: RoutingService,
-    private dataService: DataService,
-    private profileResolver: ProfileResolver
+    private readonly authProviderService: AuthProviderService,
+    private readonly routingService: RoutingService,
+    private readonly dataService: DataService,
+    private readonly profileResolver: ProfileResolver
   ) {}
 
   canActivate(

@@ -36,7 +36,7 @@ public class EndTransactionStepProcessorActor extends AbstractTestStepActor<EndT
 
 	@Override
 	protected void init() throws Exception {
-
+		// Do nothing.
 	}
 
 	@Override
@@ -62,7 +62,7 @@ public class EndTransactionStepProcessorActor extends AbstractTestStepActor<EndT
 
 	@Override
 	protected void stop() {
-
+		// Do nothing.
 	}
 
 	public static ActorRef create(ActorContext context, EndTransaction step, TestCaseScope scope, String stepId, StepContext stepContext) throws Exception {

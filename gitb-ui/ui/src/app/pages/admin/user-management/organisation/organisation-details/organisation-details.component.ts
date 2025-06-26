@@ -95,18 +95,18 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
   loadApiInfo = new EventEmitter<void>()
 
   constructor(
-    protected route: ActivatedRoute,
-    private confirmationDialogService: ConfirmationDialogService,
-    private organisationService: OrganisationService,
-    private userService: UserService,
-    public dataService: DataService,
-    protected popupService: PopupService,
-    protected routingService: RoutingService,
-    private systemService: SystemService,
-    private communityService: CommunityService,
-    private landingPageService: LandingPageService,
-    private legalNoticeService: LegalNoticeService,
-    private errorTemplateService: ErrorTemplateService,
+    protected readonly route: ActivatedRoute,
+    private readonly confirmationDialogService: ConfirmationDialogService,
+    private readonly organisationService: OrganisationService,
+    private readonly userService: UserService,
+    public readonly dataService: DataService,
+    protected readonly popupService: PopupService,
+    protected readonly routingService: RoutingService,
+    private readonly systemService: SystemService,
+    private readonly communityService: CommunityService,
+    private readonly landingPageService: LandingPageService,
+    private readonly legalNoticeService: LegalNoticeService,
+    private readonly errorTemplateService: ErrorTemplateService,
     router: Router
   ) {
     super()

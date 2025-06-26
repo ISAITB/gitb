@@ -35,7 +35,7 @@ export class ErrorComponent implements OnInit {
   messageToShow?: string
 
   constructor(
-    public modalRef: BsModalRef
+    public readonly modalRef: BsModalRef
   ) { }
 
   ngOnInit(): void {

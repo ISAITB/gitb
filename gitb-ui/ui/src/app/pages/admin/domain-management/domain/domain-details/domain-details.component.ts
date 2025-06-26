@@ -78,14 +78,14 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
   loaded = false
 
   constructor(
-    public dataService: DataService,
-    private specificationService: SpecificationService,
-    private conformanceService: ConformanceService,
-    private confirmationDialogService: ConfirmationDialogService,
-    private modalService: BsModalService,
-    private popupService: PopupService,
-    private routingService: RoutingService,
-    private route: ActivatedRoute,
+    public readonly dataService: DataService,
+    private readonly specificationService: SpecificationService,
+    private readonly conformanceService: ConformanceService,
+    private readonly confirmationDialogService: ConfirmationDialogService,
+    private readonly modalService: BsModalService,
+    private readonly popupService: PopupService,
+    private readonly routingService: RoutingService,
+    private readonly route: ActivatedRoute,
     router: Router
   ) { super(router) }
 

@@ -13,9 +13,9 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input, OnInit } from '@angular/core';
-import { DataService } from 'src/app/services/data.service';
-import { Actor } from 'src/app/types/actor';
+import {Component, Input} from '@angular/core';
+import {DataService} from 'src/app/services/data.service';
+import {Actor} from 'src/app/types/actor';
 
 @Component({
     selector: 'app-actor-form',
@@ -23,15 +23,12 @@ import { Actor } from 'src/app/types/actor';
     styles: [],
     standalone: false
 })
-export class ActorFormComponent implements OnInit {
+export class ActorFormComponent {
 
   @Input() actor!: Partial<Actor>
 
   constructor(
-    public dataService: DataService
+    public readonly dataService: DataService
   ) { }
-
-  ngOnInit(): void {
-  }
 
 }

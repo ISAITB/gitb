@@ -46,14 +46,14 @@ import java.util.Optional;
 @ValidationHandler(name="SchematronValidator")
 public class SchematronValidator extends AbstractValidator {
 
-    public final static String CONTENT_ARGUMENT_NAME     = "xml";
-    public final static String SCHEMATRON_ARGUMENT_NAME  = "schematron";
-    public final static String SCHEMATRON_TYPE_ARGUMENT_NAME = "type";
-    public final static String SHOW_SCHEMATRON_ARGUMENT_NAME = "showSchematron";
-    public final static String SORT_BY_SEVERITY_ARGUMENT_NAME  = "sortBySeverity";
-    public final static String SHOW_TESTS_ARGUMENT_NAME = "showTests";
-    public final static String SHOW_PATHS_ARGUMENT_NAME  = "showLocationPaths";
-    private final static String MODULE_DEFINITION_XML = "/validation/schematron-validator-definition.xml";
+    public static final String CONTENT_ARGUMENT_NAME     = "xml";
+    public static final String SCHEMATRON_ARGUMENT_NAME  = "schematron";
+    public static final String SCHEMATRON_TYPE_ARGUMENT_NAME = "type";
+    public static final String SHOW_SCHEMATRON_ARGUMENT_NAME = "showSchematron";
+    public static final String SORT_BY_SEVERITY_ARGUMENT_NAME  = "sortBySeverity";
+    public static final String SHOW_TESTS_ARGUMENT_NAME = "showTests";
+    public static final String SHOW_PATHS_ARGUMENT_NAME  = "showLocationPaths";
+    private static final String MODULE_DEFINITION_XML = "/validation/schematron-validator-definition.xml";
 
     public SchematronValidator() {
         this.validatorDefinition = readModuleDefinition(MODULE_DEFINITION_XML);

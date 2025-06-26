@@ -16,22 +16,17 @@
 package com.gitb.engine.messaging.handlers.layer.application.https;
 
 import com.gitb.core.Configuration;
-import com.gitb.messaging.Message;
-import com.gitb.engine.messaging.handlers.SecurityUtils;
 import com.gitb.engine.messaging.handlers.layer.application.http.HttpReceiver;
 import com.gitb.engine.messaging.handlers.model.SessionContext;
 import com.gitb.engine.messaging.handlers.model.TransactionContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.gitb.messaging.Message;
 
-import javax.net.ssl.SSLSocket;
 import java.util.List;
 
 /**
  * Created by senan on 07.11.2014.
  */
 public class HttpsReceiver extends HttpReceiver {
-    private Logger logger = LoggerFactory.getLogger(HttpsReceiver.class);
 
     public HttpsReceiver(SessionContext session, TransactionContext transaction) {
         super(session, transaction);
@@ -46,12 +41,6 @@ public class HttpsReceiver extends HttpReceiver {
         //below code blocks until a socket is created
         if(socket == null) {
             waitUntilMessageReceived();
-        }
-
-        //secure this socket if it is not SSL secured
-        if(!(socket instanceof SSLSocket)) {//no need to create if we already have one
-            socket = SecurityUtils.secureSocket(transaction, socket);
-            ((SSLSocket) socket).setUseClientMode(false); //do not use client mode for handshaking since it is a server socket
         }
 
         return super.receive(configurations, inputs);

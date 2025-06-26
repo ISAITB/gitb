@@ -43,12 +43,12 @@ export class CreateCommunityAdminComponent extends BaseComponent implements OnIn
   validation = new ValidationState()
 
   constructor(
-    private routingService: RoutingService,
-    private route: ActivatedRoute,
-    private userService: UserService,
-    private authService: AuthService,
-    public dataService: DataService,
-    private popupService: PopupService
+    private readonly routingService: RoutingService,
+    private readonly route: ActivatedRoute,
+    private readonly userService: UserService,
+    private readonly authService: AuthService,
+    public readonly dataService: DataService,
+    private readonly popupService: PopupService
   ) { super() }
 
   ngAfterViewInit(): void {

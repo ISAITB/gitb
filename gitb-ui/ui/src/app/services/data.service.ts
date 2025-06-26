@@ -99,7 +99,7 @@ export class DataService {
   private static STORAGE_LOGIN_OPTION = "com.itb.loginOption"
 
   constructor(
-    private cookieService: CookieService
+    private readonly cookieService: CookieService
   ) {
     this.configuration = this.emptyAppConfiguration()
     this.destroy()

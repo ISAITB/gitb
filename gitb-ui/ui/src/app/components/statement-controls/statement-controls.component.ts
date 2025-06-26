@@ -33,8 +33,8 @@ export class StatementControlsComponent {
   @Input() hasBadge!: boolean|undefined
 
   constructor(
-    private routingService: RoutingService,
-    public dataService: DataService
+    private readonly routingService: RoutingService,
+    public readonly dataService: DataService
   ) {}
 
   toCommunity() {

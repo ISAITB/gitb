@@ -31,8 +31,7 @@ public class DNSMessagingServer extends UDPMessagingServer {
 	public DNSMessagingServer() throws IOException {
 		super(new Configuration(
 			DNS_MESSAGING_SERVER_PORT, DNS_MESSAGING_SERVER_PORT,
-			DEFAULT_MESSAGING_CONFIGURATION.getIpAddress(), DEFAULT_MESSAGING_CONFIGURATION.getActorName(),
-			null, null, null));
+			DEFAULT_MESSAGING_CONFIGURATION.getIpAddress(), DEFAULT_MESSAGING_CONFIGURATION.getActorName()));
 	}
 
 	@Override

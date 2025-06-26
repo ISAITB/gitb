@@ -112,18 +112,8 @@ public abstract class AbstractProcessingHandler extends AbstractHandler implemen
         return null;
     }
 
-    <T extends DataType> T getDefaultInput(ProcessingData data, Class<T> type) {
-        if (data.getData() != null && data.getData().size() == 1) {
-            return getDataForType(data.getData().values().stream().findFirst().get(), type);
-        }
-        return null;
-    }
-
     <T extends DataType> T getInputForName(ProcessingData data, String inputName, Class<T> type) {
-        if (data.getData() != null) {
-            return getDataForType(data.getData().get(inputName), type);
-        }
-        return null;
+        return getDataForType(data.getData().get(inputName), type);
     }
 
     <T extends DataType> T getRequiredInputForName(ProcessingData data, String inputName, Class<T> type) {

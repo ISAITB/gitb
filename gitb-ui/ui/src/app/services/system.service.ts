@@ -27,8 +27,8 @@ import { RestService } from './rest.service';
 export class SystemService {
 
   constructor(
-    private restService: RestService,
-    private dataService: DataService
+    private readonly restService: RestService,
+    private readonly dataService: DataService
   ) { }
 
   getSystemsByOrganisation(orgId: number, snapshotId?: number, checkIfHasTests?: boolean) {

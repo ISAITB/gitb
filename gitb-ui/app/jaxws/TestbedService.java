@@ -57,7 +57,10 @@ public class TestbedService implements TestbedClient {
                             .resolveOne(Duration.of(5, ChronoUnit.SECONDS))
                             .toCompletableFuture()
                             .get();
-                } catch (ExecutionException | InterruptedException e) {
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException("Thread interrupted", e);
+                } catch (ExecutionException e) {
                     throw new IllegalStateException("Unable to lookup session manager actor", e);
                 }
             }

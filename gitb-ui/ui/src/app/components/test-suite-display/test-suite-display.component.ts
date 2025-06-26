@@ -48,9 +48,9 @@ export class TestSuiteDisplayComponent implements OnInit {
   Constants = Constants
 
   constructor(
-    private conformanceService: ConformanceService,
-    private htmlService: HtmlService,
-    public dataService: DataService
+    private readonly conformanceService: ConformanceService,
+    private readonly htmlService: HtmlService,
+    public readonly dataService: DataService
   ) { }
 
   ngOnInit(): void {

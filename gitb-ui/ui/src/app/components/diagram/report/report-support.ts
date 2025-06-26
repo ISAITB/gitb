@@ -31,10 +31,10 @@ import { BaseComponent } from "src/app/pages/base-component.component"
 export abstract class ReportSupport extends BaseComponent{
 
     constructor(
-        private modalService: BsModalService,
-        private reportService: ReportService,
-        private htmlService: HtmlService,
-        protected dataService: DataService
+        private readonly modalService: BsModalService,
+        private readonly reportService: ReportService,
+        private readonly htmlService: HtmlService,
+        protected readonly dataService: DataService
     ) { super() }
 
     private loadedDataUrlReferences: {[key: string]: FileReference} = {}

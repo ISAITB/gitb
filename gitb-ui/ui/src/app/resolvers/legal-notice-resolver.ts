@@ -26,7 +26,7 @@ import { Constants } from "../common/constants";
 export class LegalNoticeResolver  {
 
     constructor(
-        private legalNoticeService: LegalNoticeService
+        private readonly legalNoticeService: LegalNoticeService
     ) {}
 
     resolve(route: ActivatedRouteSnapshot, state: RouterStateSnapshot) {

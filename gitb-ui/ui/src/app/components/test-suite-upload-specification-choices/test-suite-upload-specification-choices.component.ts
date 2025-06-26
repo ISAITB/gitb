@@ -39,7 +39,7 @@ export class TestSuiteUploadSpecificationChoicesComponent implements OnInit {
   skipCount = 0
 
   constructor(
-    public dataService: DataService
+    public readonly dataService: DataService
   ) { }
 
   ngOnInit(): void {

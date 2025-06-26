@@ -27,6 +27,6 @@ export class SpecificationGroupFormComponent {
 
   @Input() group!: Partial<SpecificationGroup>
 
-  constructor(public dataService: DataService) { }
+  constructor(public readonly dataService: DataService) { }
 
 }

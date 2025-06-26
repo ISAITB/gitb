@@ -29,7 +29,7 @@ import {TriggerFireExpression} from '../types/trigger-fire-expression';
 export class TriggerService {
 
   constructor(
-    private restService: RestService
+    private readonly restService: RestService
   ) { }
 
   getTriggersByCommunity(communityId: number) {

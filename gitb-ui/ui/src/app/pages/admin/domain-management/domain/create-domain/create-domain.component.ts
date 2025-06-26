@@ -13,13 +13,13 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { AfterViewInit, Component, OnInit } from '@angular/core';
-import { BaseComponent } from 'src/app/pages/base-component.component';
-import { ConformanceService } from 'src/app/services/conformance.service';
-import { DataService } from 'src/app/services/data.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { RoutingService } from 'src/app/services/routing.service';
-import { Domain } from 'src/app/types/domain';
+import {AfterViewInit, Component} from '@angular/core';
+import {BaseComponent} from 'src/app/pages/base-component.component';
+import {ConformanceService} from 'src/app/services/conformance.service';
+import {DataService} from 'src/app/services/data.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {RoutingService} from 'src/app/services/routing.service';
+import {Domain} from 'src/app/types/domain';
 
 @Component({
     selector: 'app-create-domain',
@@ -27,23 +27,20 @@ import { Domain } from 'src/app/types/domain';
     styles: [],
     standalone: false
 })
-export class CreateDomainComponent extends BaseComponent implements OnInit, AfterViewInit {
+export class CreateDomainComponent extends BaseComponent implements AfterViewInit {
 
   domain: Partial<Domain> = {}
   pending = false
 
   constructor(
-    public dataService: DataService,
-    private conformanceService: ConformanceService,
-    private popupService: PopupService,
-    private routingService: RoutingService
+    public readonly dataService: DataService,
+    private readonly conformanceService: ConformanceService,
+    private readonly popupService: PopupService,
+    private readonly routingService: RoutingService
   ) { super() }
 
   ngAfterViewInit(): void {
     this.dataService.focus('shortName')
-  }
-
-  ngOnInit(): void {
   }
 
 	saveDisabled() {

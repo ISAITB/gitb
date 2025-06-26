@@ -131,7 +131,7 @@ public enum ErrorCode {
     INTERNAL_SCRIPTLET_OUTPUT_NOT_FOUND_AS_VARIABLE(    "TDL-096", "Test case [%s] includes a scriptlet [%s] with an output [%s] that is not defined through an expression, and for which no variable with the same name exists in scope.", ERROR),
     EXTERNAL_SCRIPTLET_OUTPUT_NOT_FOUND_AS_VARIABLE(    "TDL-097", "Scriptlet [%s] includes an output [%s] that is not defined through an expression, and for which no variable with the same name exists in scope.", ERROR),
     DUPLICATE_INTERNAL_SCRIPTLET_DEFINITION_NAME(       "TDL-098", "Test case [%s] includes a scriptlet [%s] that defines [%s] as a %s.", ERROR),
-    DUPLICATE__DEFINITION_NAME(                         "TDL-099", "%s [%s] defines [%s] as a %s.", ERROR, true),
+    DUPLICATE_DEFINITION_NAME(                          "TDL-099", "%s [%s] defines [%s] as a %s.", ERROR, true),
     NO_RESOURCE_FOUND(                                  "TDL-100", "The provided archive does not contain test cases nor resources that could be used by other test suites.", ERROR),
 
     DOUBLE_PROCESSING_OPERATION(                        "TDL-101", "%s [%s] defines a process step that specifies its operation both as an attribute [%s] and as a child element [%s]. The attribute definition will be ignored.", WARNING, true),

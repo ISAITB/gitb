@@ -34,11 +34,11 @@ import java.util.List;
 @ProcessingHandler(name="XPathProcessor")
 public class XPathProcessor extends AbstractProcessingHandler {
 
-    private static final String OPERATION__PROCESS = "process";
-    private static final String INPUT__INPUT = "input";
-    private static final String INPUT__EXPRESSION = "expression";
-    private static final String INPUT__TYPE = "type";
-    private static final String OUTPUT__OUTPUT = "output";
+    private static final String OPERATION_PROCESS = "process";
+    private static final String INPUT_INPUT = "input";
+    private static final String INPUT_EXPRESSION = "expression";
+    private static final String INPUT_TYPE = "type";
+    private static final String OUTPUT_OUTPUT = "output";
 
     @Override
     public ProcessingModule createProcessingModule() {
@@ -48,13 +48,13 @@ public class XPathProcessor extends AbstractProcessingHandler {
         module.getMetadata().setName(module.getId());
         module.getMetadata().setVersion("1.0");
         module.setConfigs(new ConfigurationParameters());
-        module.getOperation().add(createProcessingOperation(OPERATION__PROCESS,
+        module.getOperation().add(createProcessingOperation(OPERATION_PROCESS,
             List.of(
-                    createParameter(INPUT__INPUT, "object", UsageEnumeration.R, ConfigurationType.SIMPLE, "The XML content to evaluate the expression on."),
-                    createParameter(INPUT__EXPRESSION, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The XPath expression to evaluate."),
-                    createParameter(INPUT__TYPE, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, "The expected result type.")
+                    createParameter(INPUT_INPUT, "object", UsageEnumeration.R, ConfigurationType.SIMPLE, "The XML content to evaluate the expression on."),
+                    createParameter(INPUT_EXPRESSION, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The XPath expression to evaluate."),
+                    createParameter(INPUT_TYPE, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, "The expected result type.")
             ),
-            List.of(createParameter(OUTPUT__OUTPUT, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The result after evaluating the expression."))
+            List.of(createParameter(OUTPUT_OUTPUT, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The result after evaluating the expression."))
         ));
         return module;
     }
@@ -63,22 +63,22 @@ public class XPathProcessor extends AbstractProcessingHandler {
     public ProcessingReport process(String session, String operation, ProcessingData input) {
         // Collect inputs
         ObjectType contentToProcess;
-        if (!input.getData().containsKey(INPUT__INPUT)) {
+        if (!input.getData().containsKey(INPUT_INPUT)) {
             throw new IllegalArgumentException("The XML content to evaluate the expression on is required");
         } else {
-            contentToProcess = getAndConvert(input.getData(), INPUT__INPUT, DataType.OBJECT_DATA_TYPE, ObjectType.class);
+            contentToProcess = getAndConvert(input.getData(), INPUT_INPUT, DataType.OBJECT_DATA_TYPE, ObjectType.class);
         }
         StringType expression;
-        if (!input.getData().containsKey(INPUT__EXPRESSION)) {
+        if (!input.getData().containsKey(INPUT_EXPRESSION)) {
             throw new IllegalArgumentException("The XPath expression is required");
         } else {
-            expression = getAndConvert(input.getData(), INPUT__EXPRESSION, DataType.STRING_DATA_TYPE, StringType.class);
+            expression = getAndConvert(input.getData(), INPUT_EXPRESSION, DataType.STRING_DATA_TYPE, StringType.class);
         }
         String resultType;
-        if (!input.getData().containsKey(INPUT__TYPE)) {
+        if (!input.getData().containsKey(INPUT_TYPE)) {
             resultType = DataType.STRING_DATA_TYPE;
         } else {
-            resultType = DataTypeFactory.getInstance().create((String) getAndConvert(input.getData(), INPUT__TYPE, DataType.STRING_DATA_TYPE, StringType.class).getValue()).getType();
+            resultType = DataTypeFactory.getInstance().create((String) getAndConvert(input.getData(), INPUT_TYPE, DataType.STRING_DATA_TYPE, StringType.class).getValue()).getType();
         }
         MapType namespaces = (MapType) input.getData().get(HandlerUtils.NAMESPACE_MAP_INPUT);
         // Compile expression
@@ -87,7 +87,7 @@ public class XPathProcessor extends AbstractProcessingHandler {
         DataType result = contentToProcess.processXPath(xpath, resultType);
         // Return report
         ProcessingData data = new ProcessingData();
-        data.getData().put(OUTPUT__OUTPUT, result);
+        data.getData().put(OUTPUT_OUTPUT, result);
         return new ProcessingReport(createReport(TestResultType.SUCCESS), data);
     }
 

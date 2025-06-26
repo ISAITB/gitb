@@ -92,15 +92,15 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
   @ViewChild("activeSessions") activeSessionsTable?: SessionTableComponent
 
   constructor(
-    public dataService: DataService,
-    protected conformanceService: ConformanceService,
-    protected reportService: ReportService,
-    private confirmationDialogService: ConfirmationDialogService,
-    protected testService: TestService,
-    private popupService: PopupService,
-    protected route: ActivatedRoute,
-    private diagramLoaderService: DiagramLoaderService,
-    protected routingService: RoutingService
+    public readonly dataService: DataService,
+    protected readonly conformanceService: ConformanceService,
+    protected readonly reportService: ReportService,
+    private readonly confirmationDialogService: ConfirmationDialogService,
+    protected readonly testService: TestService,
+    private readonly popupService: PopupService,
+    protected readonly route: ActivatedRoute,
+    private readonly diagramLoaderService: DiagramLoaderService,
+    protected readonly routingService: RoutingService
   ) { }
 
   ngOnInit(): void {

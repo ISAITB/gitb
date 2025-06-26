@@ -32,10 +32,10 @@ import { Constants } from '../common/constants';
 export class ReportSupportService {
 
   constructor(
-    private conformanceService: ConformanceService,
-    private modalService: BsModalService,
-    private reportService: ReportService,
-    private dataService: DataService
+    private readonly conformanceService: ConformanceService,
+    private readonly modalService: BsModalService,
+    private readonly reportService: ReportService,
+    private readonly dataService: DataService
   ) {}
 
   private showConformanceOverviewModal(communityId: number, systemId: number, identifier: number|undefined, reportLevel: 'all'|'domain'|'specification'|'group', snapshotId: number|undefined, settings: ConformanceOverviewCertificateSettings|undefined) {

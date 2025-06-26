@@ -42,7 +42,7 @@ import { CommunityResource } from '../types/community-resource';
 })
 export class CommunityService {
 
-  constructor(private restService: RestService, private dataService: DataService) { }
+  constructor(private readonly restService: RestService, private readonly dataService: DataService) { }
 
   getCommunities(communityIds?: number[], skipDefault?: boolean) {
     let params: any = {}

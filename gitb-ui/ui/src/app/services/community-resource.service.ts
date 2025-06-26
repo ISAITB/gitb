@@ -28,7 +28,7 @@ import {RestService} from './rest.service';
 })
 export class CommunityResourceService {
 
-  constructor(private restService: RestService) { }
+  constructor(private readonly restService: RestService) { }
 
   getSystemResources() {
     return this.getResourcesInternal(ROUTES.controllers.CommunityResourceService.getSystemResources().url)

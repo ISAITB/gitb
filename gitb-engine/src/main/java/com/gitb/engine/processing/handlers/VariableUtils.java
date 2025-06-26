@@ -35,10 +35,10 @@ import java.util.List;
 @ProcessingHandler(name="VariableUtils")
 public class VariableUtils extends AbstractProcessingHandler {
 
-    private static final String OPERATION__TYPE = "type";
-    private static final String OPERATION__EXISTS = "exists";
-    private static final String INPUT__NAME = "name";
-    private static final String OUTPUT__OUTPUT = "output";
+    private static final String OPERATION_TYPE = "type";
+    private static final String OPERATION_EXISTS = "exists";
+    private static final String INPUT_NAME = "name";
+    private static final String OUTPUT_OUTPUT = "output";
 
     @Override
     public ProcessingModule createProcessingModule() {
@@ -48,20 +48,20 @@ public class VariableUtils extends AbstractProcessingHandler {
         module.getMetadata().setName(module.getId());
         module.getMetadata().setVersion("1.0");
         module.setConfigs(new ConfigurationParameters());
-        module.getOperation().add(createProcessingOperation(OPERATION__TYPE,
+        module.getOperation().add(createProcessingOperation(OPERATION_TYPE,
             List.of(
-                createParameter(INPUT__NAME, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The name of the variable to check.")
+                createParameter(INPUT_NAME, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The name of the variable to check.")
             ),
             List.of(
-                createParameter(OUTPUT__OUTPUT, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The variable's type.")
+                createParameter(OUTPUT_OUTPUT, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The variable's type.")
             )
         ));
-        module.getOperation().add(createProcessingOperation(OPERATION__EXISTS,
+        module.getOperation().add(createProcessingOperation(OPERATION_EXISTS,
                 List.of(
-                    createParameter(INPUT__NAME, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The name of the variable to check.")
+                    createParameter(INPUT_NAME, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The name of the variable to check.")
                 ),
                 List.of(
-                    createParameter(OUTPUT__OUTPUT, "boolean", UsageEnumeration.R, ConfigurationType.SIMPLE, "Whether the variable is defined or not.")
+                    createParameter(OUTPUT_OUTPUT, "boolean", UsageEnumeration.R, ConfigurationType.SIMPLE, "Whether the variable is defined or not.")
                 )
         ));
         return module;
@@ -73,16 +73,16 @@ public class VariableUtils extends AbstractProcessingHandler {
             throw new IllegalArgumentException("No operation provided");
         }
         ProcessingData data = new ProcessingData();
-        if (OPERATION__EXISTS.equalsIgnoreCase(operation)) {
+        if (OPERATION_EXISTS.equalsIgnoreCase(operation)) {
             var variableResolver = new VariableResolver(getScope(session));
-            var variableName = getRequiredInputForName(input, INPUT__NAME, StringType.class);
+            var variableName = getRequiredInputForName(input, INPUT_NAME, StringType.class);
             var matchedVariable = variableResolver.resolveVariable("$"+variableName, true);
-            data.getData().put(OUTPUT__OUTPUT, new BooleanType(matchedVariable.isPresent()));
-        } else if (OPERATION__TYPE.equalsIgnoreCase(operation)) {
+            data.getData().put(OUTPUT_OUTPUT, new BooleanType(matchedVariable.isPresent()));
+        } else if (OPERATION_TYPE.equalsIgnoreCase(operation)) {
             var variableResolver = new VariableResolver(getScope(session));
-            var variableName = getRequiredInputForName(input, INPUT__NAME, StringType.class);
+            var variableName = getRequiredInputForName(input, INPUT_NAME, StringType.class);
             var matchedVariable = variableResolver.resolveVariable("$"+variableName, true);
-            data.getData().put(OUTPUT__OUTPUT, new StringType(matchedVariable.map(DataType::getType).orElse("")));
+            data.getData().put(OUTPUT_OUTPUT, new StringType(matchedVariable.map(DataType::getType).orElse("")));
         } else {
             throw new IllegalArgumentException("Unknown operation [" + operation + "]");
         }

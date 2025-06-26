@@ -140,21 +140,21 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
   refreshCounters = new EventEmitter<Counters>()
 
   constructor(
-    public dataService: DataService,
-    private route: ActivatedRoute,
+    public readonly dataService: DataService,
+    private readonly route: ActivatedRoute,
     router: Router,
-    private conformanceService: ConformanceService,
-    private modalService: BsModalService,
-    private systemService: SystemService,
-    private confirmationDialogService: ConfirmationDialogService,
-    private reportService: ReportService,
-    private testService: TestService,
-    private popupService: PopupService,
-    private organisationService: OrganisationService,
-    private routingService: RoutingService,
-    private reportSupportService: ReportSupportService,
-    private communityService: CommunityService,
-    private zone: NgZone
+    private readonly conformanceService: ConformanceService,
+    private readonly modalService: BsModalService,
+    private readonly systemService: SystemService,
+    private readonly confirmationDialogService: ConfirmationDialogService,
+    private readonly reportService: ReportService,
+    private readonly testService: TestService,
+    private readonly popupService: PopupService,
+    private readonly organisationService: OrganisationService,
+    private readonly routingService: RoutingService,
+    private readonly reportSupportService: ReportSupportService,
+    private readonly communityService: CommunityService,
+    private readonly zone: NgZone
   ) {
     super()
     // Access the tab to show via router state to have it cleared upon refresh.

@@ -34,7 +34,7 @@ export class SpecificationFormComponent implements OnInit {
   groupSelectionConfig!: MultiSelectConfig<SpecificationGroup>
 
   constructor(
-    public dataService: DataService
+    public readonly dataService: DataService
   ) { }
 
   ngOnInit(): void {

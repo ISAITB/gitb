@@ -45,7 +45,7 @@ public class EDIReportHandler extends AbstractReportHandler{
 	    AnyContent ediAttachment = new AnyContent();
 	    ediAttachment.setName(EDI_ITEM_NAME);
 	    ediAttachment.setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
-	    ediAttachment.setType(StringType.STRING_DATA_TYPE);
+	    ediAttachment.setType(DataType.STRING_DATA_TYPE);
 	    ediAttachment.setValue((String)edi.getValue());
 	    attachment.getItem().add(ediAttachment);
 	    

@@ -43,9 +43,9 @@ export class CreateEditCommunityResourceModalComponent extends BaseComponent imp
   file?: FileData
 
   constructor(
-    private modalInstance: BsModalRef,
-    private popupService: PopupService,
-    private confirmationDialogService: ConfirmationDialogService
+    private readonly modalInstance: BsModalRef,
+    private readonly popupService: PopupService,
+    private readonly confirmationDialogService: ConfirmationDialogService
   ) {
     super()
   }

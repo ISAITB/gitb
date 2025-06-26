@@ -170,12 +170,12 @@ public class VariableResolver implements XPathVariableResolver {
                     }
                 }
                 if (Utils.ORGANISATION_MAP.equals(entry.getKey()) && !Utils.isVariableExpression(entry.getValue().containerExpression)) {
-                    if (!Utils.ORGANISATION_MAP__FULL_NAME.equals(entry.getValue().containerExpression) && !Utils.ORGANISATION_MAP__SHORT_NAME.equals(entry.getValue().containerExpression)) {
+                    if (!Utils.ORGANISATION_MAP_FULL_NAME.equals(entry.getValue().containerExpression) && !Utils.ORGANISATION_MAP_SHORT_NAME.equals(entry.getValue().containerExpression)) {
                         provider.getContext().recordCustomOrganisationProperty(entry.getValue().containerExpression);
                     }
                 }
                 if (Utils.SYSTEM_MAP.equals(entry.getKey()) && !Utils.isVariableExpression(entry.getValue().containerExpression)) {
-                    if (!Utils.SYSTEM_MAP__FULL_NAME.equals(entry.getValue().containerExpression) && !Utils.SYSTEM_MAP__SHORT_NAME.equals(entry.getValue().containerExpression) && !Utils.SYSTEM_MAP__VERSION.equals(entry.getValue().containerExpression) && !Utils.SYSTEM_MAP__API_KEY.equals(entry.getValue().containerExpression)) {
+                    if (!Utils.SYSTEM_MAP_FULL_NAME.equals(entry.getValue().containerExpression) && !Utils.SYSTEM_MAP_SHORT_NAME.equals(entry.getValue().containerExpression) && !Utils.SYSTEM_MAP_VERSION.equals(entry.getValue().containerExpression) && !Utils.SYSTEM_MAP_API_KEY.equals(entry.getValue().containerExpression)) {
                         provider.getContext().recordCustomSystemProperty(entry.getValue().containerExpression);
                     }
                 }

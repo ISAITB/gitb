@@ -55,13 +55,13 @@ export class UserDetailsComponent extends BaseComponent implements OnInit {
   focusField = "name"
 
   constructor(
-    private routingService: RoutingService,
-    private route: ActivatedRoute,
-    private confirmationDialogService: ConfirmationDialogService,
-    private userService: UserService,
-    public dataService: DataService,
-    private authService: AuthService,
-    private popupService: PopupService
+    private readonly routingService: RoutingService,
+    private readonly route: ActivatedRoute,
+    private readonly confirmationDialogService: ConfirmationDialogService,
+    private readonly userService: UserService,
+    public readonly dataService: DataService,
+    private readonly authService: AuthService,
+    private readonly popupService: PopupService
   ) { super() }
 
   ngOnInit(): void {

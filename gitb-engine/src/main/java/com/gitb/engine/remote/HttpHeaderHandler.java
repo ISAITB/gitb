@@ -152,9 +152,9 @@ public class HttpHeaderHandler implements SOAPHandler<SOAPMessageContext> {
                         String passwordValue = callProperties.getProperty(PropertyConstants.AUTH_USERNAMETOKEN_PASSWORD);
                         String passwordType = callProperties.getProperty(PropertyConstants.AUTH_USERNAMETOKEN_PASSWORDTYPE);
                         if (StringUtils.isBlank(passwordType)) {
-                            passwordType = PropertyConstants.AUTH_USERNAMETOKEN_PASSWORDTYPE__VALUE_DIGEST;
+                            passwordType = PropertyConstants.AUTH_USERNAMETOKEN_PASSWORDTYPE_VALUE_DIGEST;
                         }
-                        if (PropertyConstants.AUTH_USERNAMETOKEN_PASSWORDTYPE__VALUE_TEXT.equalsIgnoreCase(passwordType)) {
+                        if (PropertyConstants.AUTH_USERNAMETOKEN_PASSWORDTYPE_VALUE_TEXT.equalsIgnoreCase(passwordType)) {
                             // TEXT
                             SOAPElement password = usernameToken.addChildElement(PASSWORD_NAME);
                             password.addAttribute(PASSWORDTYPE_NAME, PASSWORDTYPE_TEXT_VALUE);
@@ -221,6 +221,7 @@ public class HttpHeaderHandler implements SOAPHandler<SOAPMessageContext> {
 
     @Override
     public void close(MessageContext context) {
+        // Do nothing.
     }
 
 }

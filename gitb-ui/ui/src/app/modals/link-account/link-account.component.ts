@@ -47,11 +47,11 @@ export class LinkAccountComponent extends BaseComponent implements OnInit {
   validation = new ValidationState()
 
   constructor(
-    public dataService: DataService,
-    private authService: AuthService,
-    private communityService: CommunityService,
-    public modalRef: BsModalRef,
-    private popupService: PopupService
+    public readonly dataService: DataService,
+    private readonly authService: AuthService,
+    private readonly communityService: CommunityService,
+    public readonly modalRef: BsModalRef,
+    private readonly popupService: PopupService
   ) { super() }
 
   ngOnInit(): void {

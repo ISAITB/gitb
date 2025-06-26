@@ -34,9 +34,9 @@ export class PasswordComponent extends BaseComponent implements OnInit, AfterVie
   currentPasswordFocusChange = new EventEmitter<boolean>()
 
   constructor(
-    private accountService: AccountService,
-    private popupService: PopupService,
-    private routingService: RoutingService
+    private readonly accountService: AccountService,
+    private readonly popupService: PopupService,
+    private readonly routingService: RoutingService
   ) { super() }
 
   ngOnInit(): void {

@@ -240,7 +240,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                     CallbackManager.getInstance().registerCallbackData(new SessionCallbackData(
                             messagingContext.getSessionId(),
                             callId,
-                            ((MapType) scope.getVariable(PropertyConstants.SYSTEM_MAP).getValue()).getItem(PropertyConstants.SYSTEM_MAP__API_KEY).toString(),
+                            ((MapType) scope.getVariable(PropertyConstants.SYSTEM_MAP).getValue()).getItem(PropertyConstants.SYSTEM_MAP_API_KEY).toString(),
                             deferredReport.getCallbackData())
                     );
                 }

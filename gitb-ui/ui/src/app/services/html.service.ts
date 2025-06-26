@@ -23,7 +23,7 @@ import { HtmlComponent } from '../modals/html/html.component'
 export class HtmlService {
 
   constructor(
-    private modalService: BsModalService
+    private readonly modalService: BsModalService
   ) { }
 
   showHtml(headerText: string|undefined, html: string, size?: string, customClass?: string):void {

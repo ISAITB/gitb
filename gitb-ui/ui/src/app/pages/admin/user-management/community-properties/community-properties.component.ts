@@ -78,12 +78,12 @@ export class CommunityPropertiesComponent implements OnInit {
   }
 
   constructor(
-    public dataService: DataService,
-    private routingService: RoutingService,
-    private route: ActivatedRoute,
-    private communityService: CommunityService,
-    private modalService: BsModalService,
-    private popupService: PopupService
+    public readonly dataService: DataService,
+    private readonly routingService: RoutingService,
+    private readonly route: ActivatedRoute,
+    private readonly communityService: CommunityService,
+    private readonly modalService: BsModalService,
+    private readonly popupService: PopupService
   ) { }
 
   ngOnInit(): void {

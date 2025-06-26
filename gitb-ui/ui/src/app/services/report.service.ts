@@ -40,8 +40,8 @@ import { CommunityReportSettings } from '../types/community-report-settings';
 export class ReportService {
 
   constructor(
-    private restService: RestService,
-    private dataService: DataService
+    private readonly restService: RestService,
+    private readonly dataService: DataService
   ) { }
 
   searchTestCasesInDomain(domainId: number, specificationIds: number[]|undefined, specificationGroupIds: number[]|undefined, actorIds: number[]|undefined, testSuiteIds: number[]|undefined) {

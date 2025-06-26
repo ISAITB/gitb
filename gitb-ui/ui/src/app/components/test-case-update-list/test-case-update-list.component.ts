@@ -13,8 +13,8 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input, OnInit } from '@angular/core';
-import { TestSuiteUploadTestCaseChoice } from 'src/app/modals/test-suite-upload-modal/test-suite-upload-test-case-choice';
+import {Component, Input} from '@angular/core';
+import {TestSuiteUploadTestCaseChoice} from 'src/app/modals/test-suite-upload-modal/test-suite-upload-test-case-choice';
 
 @Component({
     selector: 'app-test-case-update-list',
@@ -22,7 +22,7 @@ import { TestSuiteUploadTestCaseChoice } from 'src/app/modals/test-suite-upload-
     styleUrls: ['./test-case-update-list.component.less'],
     standalone: false
 })
-export class TestCaseUpdateListComponent implements OnInit {
+export class TestCaseUpdateListComponent {
 
   @Input() title!: string
   @Input() titleTooltip?: string
@@ -32,9 +32,6 @@ export class TestCaseUpdateListComponent implements OnInit {
   @Input() show = false
 
   constructor() { }
-
-  ngOnInit(): void {
-  }
 
   toggleTestCaseChoices(selected: boolean) {
     for (let testCase of this.testCases) {

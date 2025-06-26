@@ -47,13 +47,13 @@ export class CreateUserComponent extends BaseComponent implements OnInit, AfterV
   validation = new ValidationState()
 
   constructor(
-    private routingService: RoutingService,
-    private route: ActivatedRoute,
-    private userService: UserService,
-    private authService: AuthService,
-    private popupService: PopupService,
-    public dataService: DataService,
-    private accountService: AccountService
+    private readonly routingService: RoutingService,
+    private readonly route: ActivatedRoute,
+    private readonly userService: UserService,
+    private readonly authService: AuthService,
+    private readonly popupService: PopupService,
+    public readonly dataService: DataService,
+    private readonly accountService: AccountService
   ) { super() }
 
   ngAfterViewInit(): void {

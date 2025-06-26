@@ -178,19 +178,19 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
 
   constructor(
     router: Router,
-    private userService: UserService,
-    public dataService: DataService,
-    private routingService: RoutingService,
-    private landingPageService: LandingPageService,
-    private legalNoticeService: LegalNoticeService,
-    private errorTemplateService: ErrorTemplateService,
-    private popupService: PopupService,
-    private systemConfigurationService: SystemConfigurationService,
-    private communityService: CommunityService,
-    private communityResourceService: CommunityResourceService,
-    private organisationService: OrganisationService,
-    private confirmationDialogService: ConfirmationDialogService,
-    private modalService: BsModalService
+    private readonly userService: UserService,
+    public readonly dataService: DataService,
+    private readonly routingService: RoutingService,
+    private readonly landingPageService: LandingPageService,
+    private readonly legalNoticeService: LegalNoticeService,
+    private readonly errorTemplateService: ErrorTemplateService,
+    private readonly popupService: PopupService,
+    private readonly systemConfigurationService: SystemConfigurationService,
+    private readonly communityService: CommunityService,
+    private readonly communityResourceService: CommunityResourceService,
+    private readonly organisationService: OrganisationService,
+    private readonly confirmationDialogService: ConfirmationDialogService,
+    private readonly modalService: BsModalService
   ) {
     super()
     // Access the tab to show via router state to have it cleared upon refresh.

@@ -49,7 +49,7 @@ import java.util.stream.Collectors;
 @ValidationHandler(name="JsonValidator")
 public class JsonValidator extends AbstractValidator {
 
-    private final static String MODULE_DEFINITION_XML = "/validation/json-validator-definition.xml";
+    private static final String MODULE_DEFINITION_XML = "/validation/json-validator-definition.xml";
 
     private static final String JSON_ARGUMENT_NAME = "json";
     private static final String SCHEMA_ARGUMENT_NAME = "schema";

@@ -46,13 +46,13 @@ export class EndpointDetailsComponent extends BaseComponent implements OnInit {
   parametersLoaded = new EventEmitter<EndpointParameter[]|undefined>
 
   constructor(
-    private conformanceService: ConformanceService,
-    private endpointService: EndpointService,
-    private confirmationDialogService: ConfirmationDialogService,
-    private routingService: RoutingService,
-    private route: ActivatedRoute,
-    public dataService: DataService,
-    private popupService: PopupService
+    private readonly conformanceService: ConformanceService,
+    private readonly endpointService: EndpointService,
+    private readonly confirmationDialogService: ConfirmationDialogService,
+    private readonly routingService: RoutingService,
+    private readonly route: ActivatedRoute,
+    public readonly dataService: DataService,
+    private readonly popupService: PopupService
   ) { super() }
 
   ngOnInit(): void {

@@ -37,7 +37,7 @@ export class ConformanceOverviewReportFormComponent extends CommunityXmlReportFo
     popupService: PopupService,
     modalService: BsModalService,
     confirmationDialogService: ConfirmationDialogService,
-    private dataService: DataService,
+    private readonly dataService: DataService,
     errorService: ErrorService
   ) { super(conformanceService, reportService, popupService, modalService, confirmationDialogService, errorService) }
 

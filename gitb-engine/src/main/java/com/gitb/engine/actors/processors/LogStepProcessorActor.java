@@ -15,15 +15,15 @@
 
 package com.gitb.engine.actors.processors;
 
-import com.gitb.engine.utils.StepContext;
-import org.apache.pekko.actor.ActorRef;
 import com.gitb.core.LogLevel;
 import com.gitb.engine.expr.ExpressionHandler;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.engine.utils.StepContext;
 import com.gitb.tdl.Log;
 import com.gitb.types.DataType;
 import com.gitb.types.StringType;
+import org.apache.pekko.actor.ActorRef;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
@@ -46,7 +46,7 @@ public class LogStepProcessorActor extends AbstractTestStepActor<Log> {
     protected void start() {
         processing();
         ExpressionHandler exprHandler = new ExpressionHandler(scope);
-        StringType result = (StringType) exprHandler.processExpression(step).convertTo(StringType.STRING_DATA_TYPE);
+        StringType result = (StringType) exprHandler.processExpression(step).convertTo(DataType.STRING_DATA_TYPE);
         if (result != null) {
             var marker = MarkerFactory.getDetachedMarker(scope.getContext().getSessionId());
             var message = (String)result.getValue();

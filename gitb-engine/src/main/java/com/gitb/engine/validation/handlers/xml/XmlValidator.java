@@ -35,15 +35,15 @@ import java.util.*;
 @ValidationHandler(name="XmlValidator")
 public class XmlValidator extends AbstractValidator {
 
-    private final static String XML_ARGUMENT_NAME = "xml";
-    private final static String XSD_ARGUMENT_NAME = "xsd";
-    private final static String SCHEMATRON_ARGUMENT_NAME = "schematron";
-    private final static String SCHEMATRON_TYPE_ARGUMENT_NAME = "schematronType";
-    private final static String STOP_ON_XSD_ERRORS_ARGUMENT_NAME = "stopOnXsdErrors";
-    private final static String SHOW_ARTEFACTS_ARGUMENT_NAME = "showValidationArtefacts";
-    private final static String SHOW_SCHEMATRON_TESTS_ARGUMENT_NAME = "showSchematronTests";
-    private final static String SORT_BY_SEVERITY_ARGUMENT_NAME  = "sortBySeverity";
-    private final static String MODULE_DEFINITION_XML = "/validation/xml-validator-definition.xml";
+    private static final String XML_ARGUMENT_NAME = "xml";
+    private static final String XSD_ARGUMENT_NAME = "xsd";
+    private static final String SCHEMATRON_ARGUMENT_NAME = "schematron";
+    private static final String SCHEMATRON_TYPE_ARGUMENT_NAME = "schematronType";
+    private static final String STOP_ON_XSD_ERRORS_ARGUMENT_NAME = "stopOnXsdErrors";
+    private static final String SHOW_ARTEFACTS_ARGUMENT_NAME = "showValidationArtefacts";
+    private static final String SHOW_SCHEMATRON_TESTS_ARGUMENT_NAME = "showSchematronTests";
+    private static final String SORT_BY_SEVERITY_ARGUMENT_NAME  = "sortBySeverity";
+    private static final String MODULE_DEFINITION_XML = "/validation/xml-validator-definition.xml";
 
     public XmlValidator() {
         this.validatorDefinition = readModuleDefinition(MODULE_DEFINITION_XML);

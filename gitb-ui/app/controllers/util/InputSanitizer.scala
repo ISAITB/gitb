@@ -41,7 +41,7 @@ object InputSanitizer {
   private def logger = LoggerFactory.getLogger("InputSanitizer")
 
   def check[A](request: Request[A]): Unit = {
-    if (Configurations.INPUT_SANITIZER__ENABLED && Configurations.INPUT_SANITIZER__METHODS_TO_CHECK.contains(request.method)) {
+    if (Configurations.INPUT_SANITIZER_ENABLED && Configurations.INPUT_SANITIZER_METHODS_TO_CHECK.contains(request.method)) {
       // Define the target prefix (class plus action method) acting as the configuration root key for the parameters
       val target = requestTarget(request)
       // Check query string parameters
@@ -116,9 +116,9 @@ object InputSanitizer {
     // The full parameter key to consider is postfixed with the parameter name
     val fullParameterKey = target + "." + parameterKey
     // Check whether the check should be skipped
-    if (!Configurations.INPUT_SANITIZER__PARAMETERS_TO_SKIP.contains(fullParameterKey)) {
+    if (!Configurations.INPUT_SANITIZER_PARAMETERS_TO_SKIP.contains(fullParameterKey)) {
       var parametersToCheck: List[(String, String)] = null
-      if (Configurations.INPUT_SANITIZER__PARAMETERS_AS_JSON.contains(fullParameterKey)) {
+      if (Configurations.INPUT_SANITIZER_PARAMETERS_AS_JSON.contains(fullParameterKey)) {
         if (logger.isDebugEnabled) {
           logger.debug("Treating as JSON ["+fullParameterKey+"]")
         }
@@ -128,18 +128,18 @@ object InputSanitizer {
         parametersToCheck = List((fullParameterKey, parameterValue))
       }
       parametersToCheck.foreach { parameterNameValue =>
-        if (Configurations.INPUT_SANITIZER__PARAMETERS_TO_SKIP.contains(parameterNameValue._1) && StringUtils.isNotBlank(parameterNameValue._2)) {
+        if (Configurations.INPUT_SANITIZER_PARAMETERS_TO_SKIP.contains(parameterNameValue._1) && StringUtils.isNotBlank(parameterNameValue._2)) {
           if (logger.isDebugEnabled) {
             logger.debug("Skipping ["+parameterNameValue._1+"]")
           }
         } else {
-          if (Configurations.INPUT_SANITIZER__PARAMETER_WHITELIST_EXPRESSIONS.contains(parameterNameValue._1)) {
+          if (Configurations.INPUT_SANITIZER_PARAMETER_WHITELIST_EXPRESSIONS.contains(parameterNameValue._1)) {
             if (logger.isDebugEnabled) {
               logger.debug("Whitelist check for ["+parameterNameValue._1+"]")
             }
             // A whitelist rule is defined for the parameter - value must match
-            if (!Configurations.INPUT_SANITIZER__PARAMETER_WHITELIST_EXPRESSIONS(parameterNameValue._1).pattern.matcher(parameterNameValue._2).matches()) {
-              logger.warn("Parameter [" + parameterNameValue._1 + "] failed whitelist validation against [" + Configurations.INPUT_SANITIZER__PARAMETER_WHITELIST_EXPRESSIONS(parameterNameValue._1).regex + "]")
+            if (!Configurations.INPUT_SANITIZER_PARAMETER_WHITELIST_EXPRESSIONS(parameterNameValue._1).pattern.matcher(parameterNameValue._2).matches()) {
+              logger.warn("Parameter [" + parameterNameValue._1 + "] failed whitelist validation against [" + Configurations.INPUT_SANITIZER_PARAMETER_WHITELIST_EXPRESSIONS(parameterNameValue._1).regex + "]")
               throwError("A provided value was blocked due to unexpected content ["+parameterKey+"].")
             }
           } else {
@@ -147,7 +147,7 @@ object InputSanitizer {
               logger.debug("Blacklist check for ["+parameterNameValue._1+"]")
             }
             // The default blacklist applies - value must not match
-            if (Configurations.INPUT_SANITIZER__DEFAULT_BLACKLIST_EXPRESSION.pattern.matcher(parameterNameValue._2).matches()) {
+            if (Configurations.INPUT_SANITIZER_DEFAULT_BLACKLIST_EXPRESSION.pattern.matcher(parameterNameValue._2).matches()) {
               logger.warn("Parameter ["+parameterNameValue._1+"] failed default blacklist validation")
               throwError("A provided value was blocked due to potentially harmful content ["+parameterKey+"].")
             }

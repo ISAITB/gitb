@@ -60,7 +60,7 @@ public class ShaclValidator extends AbstractValidator {
 
     private static final Logger LOG = LoggerFactory.getLogger(ShaclValidator.class);
     private static final ObjectFactory OBJECT_FACTORY = new ObjectFactory();
-    private final static String MODULE_DEFINITION_XML = "/validation/shacl-validator-definition.xml";
+    private static final String MODULE_DEFINITION_XML = "/validation/shacl-validator-definition.xml";
 
     private static final String MODEL_ARGUMENT_NAME = "model";
     private static final String CONTENT_TYPE_ARGUMENT_NAME = "contentType";

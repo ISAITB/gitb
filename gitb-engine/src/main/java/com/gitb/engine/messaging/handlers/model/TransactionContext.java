@@ -26,6 +26,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * Created by serbay on 9/25/14.
  */
 public class TransactionContext {
+
 	private final String transactionId;
 	private final long startTime;
 	private final ActorConfiguration self;
@@ -89,5 +90,6 @@ public class TransactionContext {
     }
 
 	public void end() {
+		// Do nothing.
 	}
 }

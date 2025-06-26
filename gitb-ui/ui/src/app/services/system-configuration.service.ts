@@ -28,7 +28,7 @@ import { EmailSettings } from '../types/email-settings';
 })
 export class SystemConfigurationService {
 
-  constructor(private restService: RestService) { }
+  constructor(private readonly restService: RestService) { }
 
   getConfigurationValues() {
     return this.restService.get<SystemConfiguration[]>({

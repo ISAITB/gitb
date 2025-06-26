@@ -40,7 +40,7 @@ export class ManageBadgeComponent implements OnInit {
   Constants = Constants
 
   constructor(
-    private modalService: BsModalService
+    private readonly modalService: BsModalService
   ) { }
 
   ngOnInit(): void {

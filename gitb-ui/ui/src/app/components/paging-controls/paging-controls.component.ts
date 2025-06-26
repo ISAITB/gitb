@@ -39,7 +39,7 @@ export class PagingControlsComponent implements OnInit, AfterViewInit {
   wrapWidth?: number
   numberFormat = new Intl.NumberFormat('en-GB')
 
-  constructor(private zone: NgZone) {
+  constructor(private readonly zone: NgZone) {
   }
 
   ngOnInit(): void {

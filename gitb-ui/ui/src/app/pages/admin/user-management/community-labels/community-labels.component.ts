@@ -39,11 +39,11 @@ export class CommunityLabelsComponent extends BaseComponent implements OnInit {
   labels: TypedLabelConfig[] = []
 
   constructor(
-    private routingService: RoutingService,
-    private route: ActivatedRoute,
-    private communityService: CommunityService,
-    private dataService: DataService,
-    private popupService: PopupService
+    private readonly routingService: RoutingService,
+    private readonly route: ActivatedRoute,
+    private readonly communityService: CommunityService,
+    private readonly dataService: DataService,
+    private readonly popupService: PopupService
   ) { super() }
 
   ngOnInit(): void {

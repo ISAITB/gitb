@@ -13,9 +13,9 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, ElementRef, EventEmitter, forwardRef, HostListener, Input, OnInit, Output, ViewChild } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { Constants } from 'src/app/common/constants';
+import {Component, ElementRef, EventEmitter, forwardRef, HostListener, Input, Output, ViewChild} from '@angular/core';
+import {ControlValueAccessor, NG_VALUE_ACCESSOR} from '@angular/forms';
+import {Constants} from 'src/app/common/constants';
 
 @Component({
     selector: 'app-text-filter',
@@ -30,7 +30,7 @@ import { Constants } from 'src/app/common/constants';
     ],
     standalone: false
 })
-export class TextFilterComponent implements OnInit, ControlValueAccessor {
+export class TextFilterComponent implements ControlValueAccessor {
 
   @Input() name!: string
   @Input() placeholder = ''
@@ -81,9 +81,6 @@ export class TextFilterComponent implements OnInit, ControlValueAccessor {
 
   registerOnTouched(fn: any): void {
     this.onTouched = fn
-  }
-
-  ngOnInit(): void {
   }
 
   filterClicked() {

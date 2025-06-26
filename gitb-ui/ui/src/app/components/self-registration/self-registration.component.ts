@@ -57,8 +57,8 @@ export class SelfRegistrationComponent extends BaseComponent implements OnInit, 
   private dataReady = false
 
   constructor(
-    public dataService: DataService,
-    private communityService: CommunityService
+    public readonly dataService: DataService,
+    private readonly communityService: CommunityService
   ) { super() }
 
   ngOnInit(): void {

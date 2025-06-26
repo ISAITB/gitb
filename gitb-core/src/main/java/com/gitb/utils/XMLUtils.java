@@ -247,6 +247,14 @@ public class XMLUtils {
     public static String LINE_NUMBER_KEY_NAME = "lineNumber";
 
     public static SchemaFactory getSecureSchemaFactory() throws SAXNotSupportedException, SAXNotRecognizedException {
+        /*
+         * Xerces does not support the JAXP ACCESS_EXTERNAL_DTD and ACCESS_EXTERNAL_STYLESHEET features.
+         * The correct approach for secure schema validation using Xerces is to ensure that the parser used to parse
+         * the XML content is secured.
+         *
+         * Wherever this method is used, the implementation must additionally foresee that the XML content is
+         * loaded after calling getSecureXMLInputFactory() to obtain the parser.
+         */
         return SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
     }
 

@@ -72,11 +72,11 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
   communitySelectionConfig!: MultiSelectConfig<Community>
 
   constructor(
-    private communityService: CommunityService,
-    private conformanceService: ConformanceService,
-    public dataService: DataService,
-    private popupService: PopupService,
-    private routingService: RoutingService
+    private readonly communityService: CommunityService,
+    private readonly conformanceService: ConformanceService,
+    public readonly dataService: DataService,
+    private readonly popupService: PopupService,
+    private readonly routingService: RoutingService
   ) { super() }
 
   ngOnInit(): void {

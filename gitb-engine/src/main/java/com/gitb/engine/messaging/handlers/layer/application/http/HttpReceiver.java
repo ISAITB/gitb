@@ -16,12 +16,11 @@
 package com.gitb.engine.messaging.handlers.layer.application.http;
 
 import com.gitb.core.Configuration;
-import com.gitb.exceptions.GITBEngineInternalError;
-import com.gitb.messaging.Message;
-import com.gitb.engine.messaging.handlers.SecurityUtils;
 import com.gitb.engine.messaging.handlers.layer.AbstractTransactionReceiver;
 import com.gitb.engine.messaging.handlers.model.SessionContext;
 import com.gitb.engine.messaging.handlers.model.TransactionContext;
+import com.gitb.exceptions.GITBEngineInternalError;
+import com.gitb.messaging.Message;
 import com.gitb.types.BinaryType;
 import com.gitb.types.ListType;
 import com.gitb.types.MapType;
@@ -40,8 +39,6 @@ import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocket;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -83,14 +80,6 @@ public class HttpReceiver extends AbstractTransactionReceiver {
         //below code blocks until a socket is created
         if(socket == null){
             waitUntilMessageReceived();
-        }
-
-        if (transaction.getParameter(SSLContext.class) != null) {
-            //secure this socket if it is not SSL secured
-            if(!(socket instanceof SSLSocket)) {//no need to create if we already have one
-                socket = SecurityUtils.secureSocket(transaction, socket);
-                ((SSLSocket) socket).setUseClientMode(false); //do not use client mode for handshaking since it is a server socket
-            }
         }
 
         //use the connection retrieved from the transaction

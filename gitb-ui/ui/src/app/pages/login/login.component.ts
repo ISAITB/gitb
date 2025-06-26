@@ -64,14 +64,14 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
   validation = new ValidationState()
 
   constructor(
-    private authProvider: AuthProviderService,
-    public dataService: DataService,
-    private httpClient: HttpClient,
-    private communityService: CommunityService,
-    private authService: AuthService,
-    private errorService: ErrorService,
-    private popupService: PopupService,
-    private modalService: BsModalService
+    private readonly authProvider: AuthProviderService,
+    public readonly dataService: DataService,
+    private readonly httpClient: HttpClient,
+    private readonly communityService: CommunityService,
+    private readonly authService: AuthService,
+    private readonly errorService: ErrorService,
+    private readonly popupService: PopupService,
+    private readonly modalService: BsModalService
   ) {
     super()
   }

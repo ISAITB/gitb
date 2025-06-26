@@ -28,8 +28,8 @@ export class HomeComponent implements OnInit {
   pageContent?: string
 
   constructor(
-    private accountService: AccountService,
-    public dataService: DataService
+    private readonly accountService: AccountService,
+    public readonly dataService: DataService
   ) { }
 
   ngOnInit(): void {

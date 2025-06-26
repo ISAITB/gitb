@@ -117,11 +117,11 @@ object Configurations {
   var AUTHENTICATION_SSO_AUTHENTICATION_LEVEL_PARAMETER = "authenticationLevel"
   var AUTHENTICATION_SSO_CALLBACK_URL = ""
   var AUTHENTICATION_SSO_CAS_VERSION: Short = 2
-  var AUTHENTICATION_SSO_CUSTOM_PARAMETERS__USER_DETAILS: String = "userDetails"
-  var AUTHENTICATION_SSO_USER_ATTRIBUTES__EMAIL: String = "email"
-  var AUTHENTICATION_SSO_USER_ATTRIBUTES__FIRST_NAME: String = "firstName"
-  var AUTHENTICATION_SSO_USER_ATTRIBUTES__LAST_NAME: String = "lastName"
-  var AUTHENTICATION_SSO_USER_ATTRIBUTES__AUTHENTICATION_LEVEL: String = "authenticationLevel"
+  var AUTHENTICATION_SSO_CUSTOM_PARAMETERS_USER_DETAILS: String = "userDetails"
+  var AUTHENTICATION_SSO_USER_ATTRIBUTES_EMAIL: String = "email"
+  var AUTHENTICATION_SSO_USER_ATTRIBUTES_FIRST_NAME: String = "firstName"
+  var AUTHENTICATION_SSO_USER_ATTRIBUTES_LAST_NAME: String = "lastName"
+  var AUTHENTICATION_SSO_USER_ATTRIBUTES_AUTHENTICATION_LEVEL: String = "authenticationLevel"
   var AUTHENTICATION_SSO_TICKET_VALIDATION_URL_SUFFIX: String = "laxValidate"
 
   var DEMOS_ENABLED = false
@@ -135,12 +135,12 @@ object Configurations {
 
   var CONFORMANCE_STATEMENT_REPORT_MAX_TEST_CASES: Int = 100
 
-  var INPUT_SANITIZER__ENABLED = true
-  var INPUT_SANITIZER__METHODS_TO_CHECK:Set[String] = _
-  var INPUT_SANITIZER__DEFAULT_BLACKLIST_EXPRESSION:Regex = _
-  var INPUT_SANITIZER__PARAMETER_WHITELIST_EXPRESSIONS:Map[String, Regex] = _
-  var INPUT_SANITIZER__PARAMETERS_TO_SKIP:Set[String] = _
-  var INPUT_SANITIZER__PARAMETERS_AS_JSON:Set[String] = _
+  var INPUT_SANITIZER_ENABLED = true
+  var INPUT_SANITIZER_METHODS_TO_CHECK:Set[String] = _
+  var INPUT_SANITIZER_DEFAULT_BLACKLIST_EXPRESSION:Regex = _
+  var INPUT_SANITIZER_PARAMETER_WHITELIST_EXPRESSIONS:Map[String, Regex] = _
+  var INPUT_SANITIZER_PARAMETERS_TO_SKIP:Set[String] = _
+  var INPUT_SANITIZER_PARAMETERS_AS_JSON:Set[String] = _
 
   var DATA_ARCHIVE_KEY = ""
   var DATA_WEB_INIT_ENABLED = false
@@ -301,11 +301,11 @@ object Configurations {
       AUTHENTICATION_SSO_CALLBACK_URL = fromEnv("AUTHENTICATION_SSO_CALLBACK_URL", conf.getString("authentication.sso.url.callback"))
       AUTHENTICATION_SSO_CAS_VERSION = fromEnv("AUTHENTICATION_SSO_CAS_VERSION", conf.getString("authentication.sso.casVersion")).toShort
 
-      AUTHENTICATION_SSO_CUSTOM_PARAMETERS__USER_DETAILS = fromEnv("AUTHENTICATION_SSO_CUSTOM_PARAMETERS__USER_DETAILS", conf.getString("authentication.sso.customParameters.userDetails"))
-      AUTHENTICATION_SSO_USER_ATTRIBUTES__EMAIL = fromEnv("AUTHENTICATION_SSO_USER_ATTRIBUTES__EMAIL", conf.getString("authentication.sso.userAttributes.email"))
-      AUTHENTICATION_SSO_USER_ATTRIBUTES__FIRST_NAME = fromEnv("AUTHENTICATION_SSO_USER_ATTRIBUTES__FIRST_NAME", conf.getString("authentication.sso.userAttributes.firstName"))
-      AUTHENTICATION_SSO_USER_ATTRIBUTES__LAST_NAME = fromEnv("AUTHENTICATION_SSO_USER_ATTRIBUTES__LAST_NAME", conf.getString("authentication.sso.userAttributes.lastName"))
-      AUTHENTICATION_SSO_USER_ATTRIBUTES__AUTHENTICATION_LEVEL = fromEnv("AUTHENTICATION_SSO_USER_ATTRIBUTES__AUTHENTICATION_LEVEL", conf.getString("authentication.sso.userAttributes.authenticationLevel"))
+      AUTHENTICATION_SSO_CUSTOM_PARAMETERS_USER_DETAILS = fromEnv("AUTHENTICATION_SSO_CUSTOM_PARAMETERS__USER_DETAILS", conf.getString("authentication.sso.customParameters.userDetails"))
+      AUTHENTICATION_SSO_USER_ATTRIBUTES_EMAIL = fromEnv("AUTHENTICATION_SSO_USER_ATTRIBUTES__EMAIL", conf.getString("authentication.sso.userAttributes.email"))
+      AUTHENTICATION_SSO_USER_ATTRIBUTES_FIRST_NAME = fromEnv("AUTHENTICATION_SSO_USER_ATTRIBUTES__FIRST_NAME", conf.getString("authentication.sso.userAttributes.firstName"))
+      AUTHENTICATION_SSO_USER_ATTRIBUTES_LAST_NAME = fromEnv("AUTHENTICATION_SSO_USER_ATTRIBUTES__LAST_NAME", conf.getString("authentication.sso.userAttributes.lastName"))
+      AUTHENTICATION_SSO_USER_ATTRIBUTES_AUTHENTICATION_LEVEL = fromEnv("AUTHENTICATION_SSO_USER_ATTRIBUTES__AUTHENTICATION_LEVEL", conf.getString("authentication.sso.userAttributes.authenticationLevel"))
       AUTHENTICATION_SSO_TICKET_VALIDATION_URL_SUFFIX = fromEnv("AUTHENTICATION_SSO_TICKET_VALIDATION_URL_SUFFIX", conf.getString("authentication.sso.ticketValidationUrlSuffix"))
 
       DEMOS_ENABLED = fromEnv("DEMOS_ENABLED", conf.getString("demos.enabled")).toBoolean
@@ -320,17 +320,17 @@ object Configurations {
       GUIDES_EULOGIN_MIGRATION = fromEnv("GUIDES_EULOGIN_MIGRATION", conf.getString("guides.eulogin.migration"))
 
       // Input sanitiser - START
-      INPUT_SANITIZER__ENABLED = fromEnv("INPUT_SANITIZER__ENABLED", conf.getString("inputSanitizer.enabled")).toBoolean
+      INPUT_SANITIZER_ENABLED = fromEnv("INPUT_SANITIZER__ENABLED", conf.getString("inputSanitizer.enabled")).toBoolean
       val sanitizerMethodsToCheck = fromEnv("INPUT_SANITIZER__METHODS_TO_CHECK", conf.getString("inputSanitizer.methodsToCheck"))
       tempSet = new scala.collection.mutable.HashSet[String]()
       sanitizerMethodsToCheck.split(",").map(_.trim).foreach{ method =>
         tempSet += method
       }
-      INPUT_SANITIZER__METHODS_TO_CHECK = tempSet.toSet
-      INPUT_SANITIZER__DEFAULT_BLACKLIST_EXPRESSION = new Regex(fromEnv("INPUT_SANITIZER__DEFAULT_BLACKLIST_EXPRESSION", conf.getString("inputSanitizer.defaultBlacklistExpression")))
+      INPUT_SANITIZER_METHODS_TO_CHECK = tempSet.toSet
+      INPUT_SANITIZER_DEFAULT_BLACKLIST_EXPRESSION = new Regex(fromEnv("INPUT_SANITIZER__DEFAULT_BLACKLIST_EXPRESSION", conf.getString("inputSanitizer.defaultBlacklistExpression")))
       val sanitizerExpressionsConfig = conf.getObjectList("inputSanitizer.parameterWhitelistExpressions")
       if (sanitizerExpressionsConfig == null) {
-        INPUT_SANITIZER__PARAMETER_WHITELIST_EXPRESSIONS = Map()
+        INPUT_SANITIZER_PARAMETER_WHITELIST_EXPRESSIONS = Map()
       } else {
         val tempMap: scala.collection.mutable.Map[String, Regex] = scala.collection.mutable.Map()
         sanitizerExpressionsConfig.forEach { entry =>
@@ -338,19 +338,19 @@ object Configurations {
             tempMap(mapping.getKey) = new Regex(mapping.getValue.unwrapped.asInstanceOf[String])
           }
         }
-        INPUT_SANITIZER__PARAMETER_WHITELIST_EXPRESSIONS = tempMap.iterator.toMap
+        INPUT_SANITIZER_PARAMETER_WHITELIST_EXPRESSIONS = tempMap.iterator.toMap
       }
       val sanitizerSkipped = conf.getStringList("inputSanitizer.parametersToSkip")
       if (sanitizerSkipped == null) {
-        INPUT_SANITIZER__PARAMETERS_TO_SKIP = Set()
+        INPUT_SANITIZER_PARAMETERS_TO_SKIP = Set()
       } else {
-        INPUT_SANITIZER__PARAMETERS_TO_SKIP = sanitizerSkipped.asScala.toSet
+        INPUT_SANITIZER_PARAMETERS_TO_SKIP = sanitizerSkipped.asScala.toSet
       }
       val sanitizerJsonParameters = conf.getStringList("inputSanitizer.parametersAsJson")
       if (sanitizerJsonParameters == null) {
-        INPUT_SANITIZER__PARAMETERS_AS_JSON = Set()
+        INPUT_SANITIZER_PARAMETERS_AS_JSON = Set()
       } else {
-        INPUT_SANITIZER__PARAMETERS_AS_JSON = sanitizerJsonParameters.asScala.toSet
+        INPUT_SANITIZER_PARAMETERS_AS_JSON = sanitizerJsonParameters.asScala.toSet
       }
       // Input sanitiser - END
 

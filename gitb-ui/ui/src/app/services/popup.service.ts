@@ -22,7 +22,7 @@ import { NotificationsService, NotificationType } from 'angular2-notifications';
 export class PopupService {
 
   constructor(
-    private notificationService: NotificationsService
+    private readonly notificationService: NotificationsService
   ) { }
 
   success(message: string, persistent?: boolean) {

@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class Actor extends UntypedAbstractActor {
 
-	Logger logger = LoggerFactory.getLogger(Actor.class);
+	private static final Logger logger = LoggerFactory.getLogger(Actor.class);
 
 	@Override
 	public void onReceive(Object message) throws Exception {}

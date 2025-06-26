@@ -85,11 +85,7 @@ export class ConfigurationEntryComponent implements OnInit {
   }
 
   statusBackground() {
-    if (this.status.enabled) {
-      return "#FFFFFF"
-    } else {
-      return "#FFFFFF"
-    }
+    return "#FFFFFF"
   }
 
   statusIcon() {

@@ -551,11 +551,11 @@ public class TestCaseUtils {
             // Set errors to warnings in counters.
             ValidationCounters counters = ((TAR)report).getCounters();
             if (counters != null) {
-                int errorCount = 0;
+                long errorCount = 0;
                 if (counters.getNrOfErrors() != null) {
                     errorCount = counters.getNrOfErrors().intValue();
                 }
-                int warningCount = 0;
+                long warningCount = 0;
                 if (counters.getNrOfWarnings() != null) {
                     warningCount = counters.getNrOfWarnings().intValue();
                 }
