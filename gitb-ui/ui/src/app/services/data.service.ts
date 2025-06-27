@@ -1194,7 +1194,7 @@ export class DataService {
           }
         }
       } else {
-        observer.next()
+        observer.next(undefined)
         observer.complete()
       }
     })

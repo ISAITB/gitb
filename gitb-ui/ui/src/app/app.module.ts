@@ -19,7 +19,7 @@ import { NgModule } from '@angular/core';
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { MarkdownModule } from 'ngx-markdown';
 import { CookieService } from 'ngx-cookie-service';
-import { ColorPickerModule } from 'ngx-color-picker';
+import { ColorPickerComponent as NgxColorPickerComponent, ColorPickerDirective } from 'ngx-color-picker';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { LoginComponent } from './pages/login/login.component';
@@ -419,7 +419,9 @@ import { ServiceHealthIconComponent } from './components/service-health-icon/ser
         ServiceHealthModalComponent,
         ServiceHealthIconComponent
     ],
-    bootstrap: [AppComponent], imports: [ColorPickerModule,
+    bootstrap: [AppComponent], imports: [
+    NgxColorPickerComponent,
+    ColorPickerDirective,
     BrowserModule,
     BrowserAnimationsModule,
     EditorModule,

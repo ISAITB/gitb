@@ -15,13 +15,15 @@
 
 package utils.signature;
 
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.io.RandomAccessReadBufferedFile;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.interactive.digitalsignature.PDSignature;
 import org.apache.pdfbox.pdmodel.interactive.digitalsignature.SignatureOptions;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Path;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -57,9 +59,8 @@ public class CreateSignature extends CreateSignatureBase {
      * @param out output PDF file
      * @throws IOException if the input file could not be read
      */
-    public void signDetached(InputStream in, OutputStream out, String tsaUrl) throws IOException {
-        // sign
-        try (PDDocument doc = PDDocument.load(in)) {
+    public void signDetached(Path in, OutputStream out, String tsaUrl) throws IOException {
+        try (PDDocument doc = Loader.loadPDF(new RandomAccessReadBufferedFile(in))) {
             signDetached(doc, out, tsaUrl);
         }
     }

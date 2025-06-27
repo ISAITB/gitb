@@ -76,7 +76,7 @@ export class ErrorService {
   showErrorMessageWithRetry(error: undefined|string|ErrorData|ErrorDataArrayBuffer|HttpErrorResponse, withRetry: boolean): Observable<boolean> {
     return new Observable<boolean>((observer) => {
       if (this.errorCurrentlyDisplayed) {
-        observer.next()
+        observer.next(true)
         observer.complete()
       } else {
         let errorObj:ErrorData

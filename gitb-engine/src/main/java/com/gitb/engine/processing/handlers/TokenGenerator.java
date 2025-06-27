@@ -175,8 +175,7 @@ public class TokenGenerator extends AbstractProcessingHandler {
                 throw new IllegalArgumentException("Format to use for string generation is required");
             }
             try {
-                var generator = new RgxGen((String)format.getValue());
-                value = generator.generate();
+                value = RgxGen.parse((String)format.getValue()).generate();
             } catch (Exception e) {
                 throw new IllegalArgumentException("Generation of string failed for expression ["+format.getValue()+"]", e);
             }

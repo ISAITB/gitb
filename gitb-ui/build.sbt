@@ -1,13 +1,14 @@
 import sbtlicensereport.license.{LicenseCategory, LicenseInfo}
 
 scalaVersion := "2.13.14"
-val pekkoVersion = "1.1.3"
+val pekkoVersion = "1.1.4"
 val jacksonVersion = "2.18.3"
 val cxfVersion = "4.1.2"
 val gitbCommonsVersion = "1.28.0-SNAPSHOT"
 val gitbTypesVersion = "1.28.0-SNAPSHOT"
-val bouncyCastleVersion = "1.80"
+val bouncyCastleVersion = "1.81"
 val commonsTextVersion = "1.13.1"
+val mySqlConnectorVersion = "9.3.0"
 
 name := """GITB"""
 version := "1.0-SNAPSHOT"
@@ -33,7 +34,7 @@ libraryDependencies ++= Seq(
   "com.gitb" % "gitb-reports" % gitbCommonsVersion exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
   "com.gitb" % "gitb-validator-tdl" % gitbCommonsVersion exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
   "com.gitb" % "gitb-xml-resources" % gitbCommonsVersion exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
-  "com.mysql" % "mysql-connector-j" % "9.2.0" exclude("com.google.protobuf", "protobuf-java"), // Exclude protobuf as we don't need the X DevAPI.
+  "com.mysql" % "mysql-connector-j" % mySqlConnectorVersion exclude("com.google.protobuf", "protobuf-java"), // Exclude protobuf as we don't need the X DevAPI.
   "org.apache.pekko" %% "pekko-actor" % pekkoVersion,
   "org.apache.pekko" %% "pekko-actor-typed" % pekkoVersion,
   "org.apache.pekko" %% "pekko-remote" % pekkoVersion,
@@ -49,17 +50,17 @@ libraryDependencies ++= Seq(
   "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-annotations" % jacksonVersion,
   "com.fasterxml.jackson.module" % "jackson-module-jakarta-xmlbind-annotations" % jacksonVersion,
-  "com.password4j"  % "password4j" % "1.8.2",
+  "com.password4j"  % "password4j" % "1.8.3",
   "net.debasishg" %% "redisclient" % "3.42",
   // For calling and exporting JAX-WS services.
   "org.apache.cxf" % "cxf-rt-frontend-jaxws" % cxfVersion,
   "org.apache.cxf" % "cxf-rt-transports-http" % cxfVersion,
   "org.apache.cxf" % "cxf-rt-transports-http-jetty" % cxfVersion,
   // ---
-  "org.apache.tika" % "tika-core" % "3.1.0",
+  "org.apache.tika" % "tika-core" % "3.2.0",
   "org.webjars" % "jquery" % "3.7.1",
-  "org.webjars" % "bootstrap" % "5.3.5",
-  "org.webjars" % "swagger-ui" % "5.21.0",
+  "org.webjars" % "bootstrap" % "5.3.7",
+  "org.webjars" % "swagger-ui" % "5.25.2",
   "com.sun.mail" % "jakarta.mail" % "2.0.1",
   "jakarta.activation" % "jakarta.activation-api" % "2.1.3",
   "jakarta.xml.ws" % "jakarta.xml.ws-api" % "4.0.2",
@@ -70,11 +71,11 @@ libraryDependencies ++= Seq(
   "com.sun.xml.messaging.saaj" % "saaj-impl" % "3.0.4", // Needed for SOAP exchanges
   "org.bouncycastle" % "bcmail-jdk18on" % bouncyCastleVersion,
   "org.bouncycastle" % "bcpkix-jdk18on" % bouncyCastleVersion,
-  "org.apache.pdfbox" % "pdfbox" % "2.0.31",
+  "org.apache.pdfbox" % "pdfbox" % "3.0.5",
   "org.jasypt" % "jasypt" % "1.9.3",
   "org.apache.httpcomponents" % "httpclient" % "4.5.14",
   "org.flywaydb" %% "flyway-play" % "9.1.0",
-  "org.flywaydb" % "flyway-mysql" % "11.7.2",
+  "org.flywaydb" % "flyway-mysql" % "11.10.0",
   "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20240325.1",
   "net.lingala.zip4j" % "zip4j" % "2.11.5",
   "org.apache.commons" % "commons-text" % commonsTextVersion
@@ -131,14 +132,14 @@ licenseDepExclusions := {
   case DepModuleInfo("org.scala-sbt", "test-interface", _) => true
   case DepModuleInfo("org.jline", "jline", _) => true
   case DepModuleInfo("com.github.sbt", "junit-interface", _) => true
-  case DepModuleInfo("commons-io", "commons-io", "2.17.0") => true // This is evicted but appears in the licence report
+  case DepModuleInfo("commons-io", "commons-io", "2.19.0") => true // This is evicted but appears in the licence report
 }
 licenseCheckExclusions := {
-  case DepModuleInfo("com.mysql", "mysql-connector-j", "9.2.0") => true
+  case DepModuleInfo("com.mysql", "mysql-connector-j", mySqlConnectorVersion) => true
   case DepModuleInfo("wsdl4j", "wsdl4j", "1.6.3") => true
 }
 licenseReportNotes := {
-  case DepModuleInfo("com.mysql", "mysql-connector-j", "9.2.0") => "The Universal FOSS Exception allows its usage as it is used unchanged."
+  case DepModuleInfo("com.mysql", "mysql-connector-j", mySqlConnectorVersion) => "The Universal FOSS Exception allows its usage as it is used unchanged."
   case DepModuleInfo("wsdl4j", "wsdl4j", "1.6.3") => "Used transitively by CXF, see (https://www.apache.org/legal/resolved.html#category-b)."
 }
 licenseConfigurations := Set("compile", "provided")

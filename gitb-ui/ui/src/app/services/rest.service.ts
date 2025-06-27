@@ -97,19 +97,19 @@ export class RestService {
           this.authProviderService.logoutSignalled = true
           if (this.errorDueToSsoExpiryAfterPageRefresh(error)) {
             this.authProviderService.signalLogout({full: true, fromExpiry: true})
-            observer.next()
+            observer.next(undefined)
             observer.complete()
           } else {
             this.errorService.showInvalidSessionNotification().subscribe((processed) => {
               if (processed) {
                 this.authProviderService.signalLogout({full: true, fromExpiry: true})
               }
-              observer.next()
+              observer.next(undefined)
               observer.complete()
             })
           }
         } else {
-          observer.next()
+          observer.next(undefined)
           observer.complete()
         }
       })

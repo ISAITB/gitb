@@ -838,15 +838,13 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     )
     val signer = new CreateSignature(keystore, communityKeystore.keyPassword.toCharArray)
     try {
-      Using.resource(Files.newInputStream(tempPdfPath)) { input =>
-        Using.resource(Files.newOutputStream(finalPdfPath)) { output =>
-          var tsaUrl: String = null
-          if (Configurations.TSA_SERVER_ENABLED) {
-            tsaUrl = Configurations.TSA_SERVER_URL
-          }
-          signer.signDetached(input, output, tsaUrl)
-          output.flush()
+      Using.resource(Files.newOutputStream(finalPdfPath)) { output =>
+        var tsaUrl: String = null
+        if (Configurations.TSA_SERVER_ENABLED) {
+          tsaUrl = Configurations.TSA_SERVER_URL
         }
+        signer.signDetached(tempPdfPath, output, tsaUrl)
+        output.flush()
       }
     } finally {
       FileUtils.deleteQuietly(tempPdfPath.toFile)

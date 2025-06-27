@@ -36,7 +36,7 @@ export class LandingPageResolver  {
             } else if (route.queryParamMap.has(Constants.NAVIGATION_QUERY_PARAM.COPY)) {
                 this.handleResult(subscriber, this.landingPageService.getLandingPageById(Number(route.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.COPY))))
             } else {
-                subscriber.next()
+                subscriber.next(undefined)
                 subscriber.complete()
             }
         })
@@ -48,7 +48,7 @@ export class LandingPageResolver  {
                 data.name += ' COPY'
                 subscriber.next(data)
             } else {
-                subscriber.next()
+                subscriber.next(undefined)
             }
         }).add(() => {
             subscriber.complete()

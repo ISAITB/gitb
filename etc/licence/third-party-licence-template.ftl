@@ -5270,13 +5270,6 @@ Copyright (c) 2010-2024 Google LLC
 Copyright (c) 2016 Florian Copes
 ```
 
-### Apache Batik (org.apache.xmlgraphics.*)
-
-```
-Apache Batik
-Copyright: 1999-2024 The Apache Software Foundation
-```
-
 ### Apache Commons Codec (commons-codec.*)
 
 ```
@@ -8251,11 +8244,30 @@ Copyright (c) 2017 Steven Meister
 Copyright (c) 2017 Julio Cesar
 ```
 
-### Openhtmltopdf (com.openhtmltopdf.*)
+### Openhtmltopdf (io.github.openhtmltopdf.*)
 
 ```
 Copyright (c) 2004, 2005 Joshua Marinacci, Torbjoern Gannholm
 Copyright (c) 2006 Wisconsin Court System
+
+OPEN HTML TO PDF XML/CSS RENDERER LICENSE COMMENTS
+Copyright (C) 2016 Patrick Wright and others
+https://openhtmltopdf.com
+
+All source code to OPEN HTML TO PDF itself is licensed under the GNU Lesser General
+Public License (LGPL); you can redistribute it and/or modify it under the terms
+of the GNU Lesser General Public License as published by the Free Software
+Foundation, either version 2.1 of the License, or (at your option) any later version.
+A copy of the LGPL can be found
+on the website of the Free Software Foundation, at
+https://www.gnu.org/copyleft/lesser.html, and in our distributions under
+LICENSE-LGPL-2.1.txt or LICENSE-LGPL-3.txt.
+
+OPEN HTML TO PDF relies on several other free or open source projects in
+order to build and run. All currently used libraries are thought to have licenses compatible with the LGPL.
+However, there are several jars under the obsolete-archive folder that are no longer used
+and their licenses are out of the scope of this document. Please check the license before
+using any of those jars.
 ```
 
 ### OWASP HTML Sanitizer (com.googlecode.owasp-java-html-sanitizer.*)
