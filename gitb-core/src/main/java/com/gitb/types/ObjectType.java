@@ -43,7 +43,8 @@ import java.io.*;
  * Created by senan on 9/8/14.
  */
 public class ObjectType extends DataType {
-    public static String DEFAULT_ENCODING = "utf-8";
+
+    public static final String DEFAULT_ENCODING = "utf-8";
 
     //The default storage type is XML
     protected Node value;

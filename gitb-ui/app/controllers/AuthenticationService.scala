@@ -174,7 +174,7 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction,
   /**
     * OAuth2.0 request (Resource Owner Password Credentials Grant) for getting or refreshing access token
     */
-  def access_token: Action[AnyContent] = authorizedAction.async { request =>
+  def accessToken: Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canLogin(request).flatMap { _ =>
       val email = ParameterExtractor.requiredBodyParameter(request, Parameters.EMAIL)
       val passwd = ParameterExtractor.requiredBodyParameter(request, Parameters.PASSWORD)

@@ -806,13 +806,13 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     }
   }
 
-  def canCreateConformanceStatement(request: RequestWithAttributes[_], sut_id: Long): Future[Boolean] = {
+  def canCreateConformanceStatement(request: RequestWithAttributes[_], sutId: Long): Future[Boolean] = {
     val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
       if (isTestBedAdmin(userInfo)) {
         Future.successful(true)
       } else if (isCommunityAdmin(userInfo)) {
         // Own system or within community.
-        systemManager.getSystemById(sut_id).flatMap { system =>
+        systemManager.getSystemById(sutId).flatMap { system =>
           if (system.isDefined) {
             if (isOwnSystem(userInfo, system)) {
               Future.successful(true)
@@ -827,7 +827,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
         communityManager.getById(userInfo.organization.get.community).flatMap { community =>
           if (isOrganisationAdmin(userInfo) && community.isDefined && community.get.allowStatementManagement) {
             // Has to be own system.
-            isOwnSystem(userInfo, sut_id)
+            isOwnSystem(userInfo, sutId)
           } else {
             Future.successful(false)
           }
@@ -837,13 +837,13 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     check.map(setAuthResult(request, _, "User cannot manage the requested statement"))
   }
 
-  def canViewSystem(request: RequestWithAttributes[_], sut_id: Long): Future[Boolean] = {
+  def canViewSystem(request: RequestWithAttributes[_], sutId: Long): Future[Boolean] = {
     val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
       if (isTestBedAdmin(userInfo)) {
         Future.successful(true)
       } else if (isCommunityAdmin(userInfo)) {
         // Own system or within community.
-        systemManager.getSystemById(sut_id).flatMap { system =>
+        systemManager.getSystemById(sutId).flatMap { system =>
           if (system.isDefined) {
             if (isOwnSystem(userInfo, system)) {
               Future.successful(true)
@@ -856,7 +856,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
         }
       } else {
         // Has to be own system.
-        isOwnSystem(userInfo, sut_id)
+        isOwnSystem(userInfo, sutId)
       }
     }
     check.map(setAuthResult(request, _, "User cannot view the requested system"))
@@ -951,12 +951,12 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     }
   }
 
-  def canManageSystem(request: RequestWithAttributes[_], userInfo: User, sut_id: Long): Future[Boolean] = {
+  def canManageSystem(request: RequestWithAttributes[_], userInfo: User, sutId: Long): Future[Boolean] = {
     val check = if (isTestBedAdmin(userInfo)) {
       Future.successful(true)
     } else if (isCommunityAdmin(userInfo)) {
       // Own system or within community.
-      systemManager.getSystemById(sut_id).flatMap { system =>
+      systemManager.getSystemById(sutId).flatMap { system =>
         if (system.isDefined) {
           if (isOwnSystem(userInfo, system)) {
             Future.successful(true)
@@ -969,7 +969,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
       }
     } else if (isOrganisationAdmin(userInfo)) {
       // Has to be own system.
-      isOwnSystem(userInfo, sut_id)
+      isOwnSystem(userInfo, sutId)
     } else {
       Future.successful(false)
     }

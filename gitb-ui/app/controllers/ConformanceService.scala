@@ -306,10 +306,10 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
   /**
    * Gets the specifications that are defined/tested in the platform
    */
-  def getDomainSpecs(domain_id: Long): Action[AnyContent] = authorizedAction.async { request =>
-    authorizationManager.canViewSpecificationsByDomainId(request, domain_id).flatMap { _ =>
+  def getDomainSpecs(domainId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canViewSpecificationsByDomainId(request, domainId).flatMap { _ =>
       val withGroups = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.GROUPS).getOrElse(true)
-      specificationManager.getSpecifications(domain_id, withGroups).map { specs =>
+      specificationManager.getSpecifications(domainId, withGroups).map { specs =>
         val json = JsonUtil.jsSpecifications(specs).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
@@ -319,18 +319,18 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
   /**
    * Gets actors defined  for the spec
    */
-  def getSpecActors(spec_id: Long): Action[AnyContent] = authorizedAction.async { request =>
-    authorizationManager.canManageSpecification(request, spec_id).flatMap { _ =>
-      actorManager.getActorsWithSpecificationId(None, Some(List(spec_id))).map { actors =>
+  def getSpecActors(specId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageSpecification(request, specId).flatMap { _ =>
+      actorManager.getActorsWithSpecificationId(None, Some(List(specId))).map { actors =>
         val json = JsonUtil.jsActorsNonCase(actors).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
     }
   }
 
-  def getSpecTestSuites(spec_id: Long): Action[AnyContent] = authorizedAction.async { request =>
-    authorizationManager.canManageSpecification(request, spec_id).flatMap { _ =>
-      testSuiteManager.getTestSuitesWithSpecificationId(spec_id).map { testSuites =>
+  def getSpecTestSuites(specId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageSpecification(request, specId).flatMap { _ =>
+      testSuiteManager.getTestSuitesWithSpecificationId(specId).map { testSuites =>
         val json = JsonUtil.jsTestSuitesList(testSuites).toString()
         ResponseConstructor.constructJsonResponse(json)
       }

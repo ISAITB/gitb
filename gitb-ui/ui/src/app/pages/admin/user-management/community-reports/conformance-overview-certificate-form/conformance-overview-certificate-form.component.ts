@@ -13,25 +13,25 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter } from '@angular/core';
-import { BaseCertificateSettingsFormComponent } from '../base-certificate-settings-form.component';
-import { ConformanceOverviewCertificateSettings } from 'src/app/types/conformance-overview-certificate-settings';
-import {Observable, forkJoin, map, mergeMap, share, of} from 'rxjs';
-import { PlaceholderInfo } from 'src/app/components/placeholder-selector/placeholder-info';
-import { Constants } from 'src/app/common/constants';
-import { ConformanceService } from 'src/app/services/conformance.service';
-import { BsModalService } from 'ngx-bootstrap/modal';
-import { PopupService } from 'src/app/services/popup.service';
-import { DataService } from 'src/app/services/data.service';
-import { Domain } from 'src/app/types/domain';
-import { SpecificationService } from 'src/app/services/specification.service';
-import { SpecificationGroup } from 'src/app/types/specification-group';
-import { Specification } from 'src/app/types/specification';
-import { filter, find } from 'lodash';
-import { ConformanceOverviewMessage } from '../conformance-overview-message';
-import { ReportService } from 'src/app/services/report.service';
-import { HttpResponse } from '@angular/common/http';
-import { ErrorService } from 'src/app/services/error.service';
+import {Component, EventEmitter} from '@angular/core';
+import {BaseCertificateSettingsFormComponent} from '../base-certificate-settings-form.component';
+import {ConformanceOverviewCertificateSettings} from 'src/app/types/conformance-overview-certificate-settings';
+import {forkJoin, map, Observable, of, share} from 'rxjs';
+import {PlaceholderInfo} from 'src/app/components/placeholder-selector/placeholder-info';
+import {Constants} from 'src/app/common/constants';
+import {ConformanceService} from 'src/app/services/conformance.service';
+import {BsModalService} from 'ngx-bootstrap/modal';
+import {PopupService} from 'src/app/services/popup.service';
+import {DataService} from 'src/app/services/data.service';
+import {Domain} from 'src/app/types/domain';
+import {SpecificationService} from 'src/app/services/specification.service';
+import {SpecificationGroup} from 'src/app/types/specification-group';
+import {Specification} from 'src/app/types/specification';
+import {filter, find} from 'lodash';
+import {ConformanceOverviewMessage} from '../conformance-overview-message';
+import {ReportService} from 'src/app/services/report.service';
+import {HttpResponse} from '@angular/common/http';
+import {ErrorService} from 'src/app/services/error.service';
 import {MultiSelectConfig} from '../../../../../components/multi-select-filter/multi-select-config';
 
 @Component({
@@ -41,12 +41,6 @@ import {MultiSelectConfig} from '../../../../../components/multi-select-filter/m
 })
 export class ConformanceOverviewCertificateFormComponent extends BaseCertificateSettingsFormComponent<ConformanceOverviewCertificateSettings> {
 
-  domainsPending = false
-  groupsPending = false
-  specificationsPending = false
-
-  messageLevelSelectionCollapsed = true
-  specificMessageSettingPending = false
   specificMessageSetting = false
   anyLevelEnabled = false
   messageBlockAnimated = true

@@ -15,6 +15,7 @@
 
 package com.gitb.engine.utils;
 
+import com.gitb.CoreConfiguration;
 import com.gitb.core.AnyContent;
 import com.gitb.core.Configuration;
 import com.gitb.core.ErrorCode;
@@ -42,7 +43,6 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
 
 import javax.xml.datatype.DatatypeConfigurationException;
-import java.io.IOException;
 import java.math.BigInteger;
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
@@ -635,17 +635,7 @@ public class TestCaseUtils {
     }
 
     private static String getTestEngineVersion() {
-        try (var stream = Thread.currentThread().getContextClassLoader().getResourceAsStream("core-module.properties")) {
-            var props = new Properties();
-            props.load(stream);
-            var version = props.getProperty("gitb.version");
-            if (version.toLowerCase(Locale.getDefault()).endsWith("snapshot")) {
-                version += " ("+props.getProperty("gitb.buildTimestamp")+")";
-            }
-            return version;
-        } catch (IOException e) {
-            throw new IllegalStateException("Unable to read core properties", e);
-        }
+        return "%s (%s)".formatted(CoreConfiguration.TEST_ENGINE_VERSION, CoreConfiguration.BUILD_TIMESTAMP);
     }
 
     public static boolean resolveBooleanFlag(String flagValue, boolean defaultIfEmpty, Supplier<VariableResolver> variableResolverSupplier) {

@@ -66,6 +66,8 @@ import java.util.Stack;
  */
 public class XMLUtils {
 
+    public static final String LINE_NUMBER_KEY_NAME = "lineNumber";
+
     /**
      * Converts an XML content into a corresponding Object model.
      * A common interface (StreamSource) is used to support different XML sources, i.e. String, File, etc.
@@ -243,8 +245,6 @@ public class XMLUtils {
         JAXBElement<T> jxElement = new JAXBElement( qname, clazz, object );
         return jxElement;
     }
-
-    public static String LINE_NUMBER_KEY_NAME = "lineNumber";
 
     public static SchemaFactory getSecureSchemaFactory() throws SAXNotSupportedException, SAXNotRecognizedException {
         /*

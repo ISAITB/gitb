@@ -13,11 +13,10 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { BsModalRef } from 'ngx-bootstrap/modal';
-import { CommunityService } from 'src/app/services/community.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { FileData } from 'src/app/types/file-data.type';
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {BsModalRef} from 'ngx-bootstrap/modal';
+import {PopupService} from 'src/app/services/popup.service';
+import {FileData} from 'src/app/types/file-data.type';
 import {ResourceActions} from '../../components/resource-management-tab/resource-actions';
 
 @Component({

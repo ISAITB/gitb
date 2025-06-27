@@ -165,7 +165,7 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
 
 	loginViaCredentials(userEmail: string, userPassword: string) {
     let config: HttpRequestConfig = {
-      path: ROUTES.controllers.AuthenticationService.access_token().url,
+      path: ROUTES.controllers.AuthenticationService.accessToken().url,
       data: {
         email: userEmail,
         password: userPassword

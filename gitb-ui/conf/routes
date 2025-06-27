@@ -21,7 +21,7 @@ GET     /api/theme/css                             @controllers.SystemConfigurat
 GET     /api/theme/resource/:themeId/:resourceName @controllers.SystemConfigurationService.getThemeResource(themeId: Long, resourceName: String)
 
 # Authentication management API
-POST    /api/oauth/access_token                 @controllers.AuthenticationService.access_token()
+POST    /api/oauth/access_token                 @controllers.AuthenticationService.accessToken()
 POST    /api/oauth/replacePassword              @controllers.AuthenticationService.replaceOnetimePassword()
 POST    /api/oauth/logout                       @controllers.AuthenticationService.logout()
 GET     /api/check/email                        @controllers.AuthenticationService.checkEmail()

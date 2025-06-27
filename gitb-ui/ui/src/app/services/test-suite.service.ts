@@ -13,14 +13,12 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Injectable } from '@angular/core';
-import { ROUTES } from '../common/global';
-import { Specification } from '../types/specification';
-import { TestCase } from '../types/test-case';
-import { TestSuiteWithTestCases } from '../types/test-suite-with-test-cases';
-import { RestService } from './rest.service';
-import { TestCaseTag } from '../types/test-case-tag';
-import {TestSuiteUploadResult} from '../modals/test-suite-upload-modal/test-suite-upload-result';
+import {Injectable} from '@angular/core';
+import {ROUTES} from '../common/global';
+import {Specification} from '../types/specification';
+import {TestCase} from '../types/test-case';
+import {TestSuiteWithTestCases} from '../types/test-suite-with-test-cases';
+import {RestService} from './rest.service';
 import {ErrorDescription} from '../types/error-description';
 import {Id} from '../types/id';
 

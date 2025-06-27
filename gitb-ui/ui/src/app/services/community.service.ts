@@ -13,29 +13,25 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Injectable } from '@angular/core';
-import { RestService } from './rest.service'
-import { DataService } from './data.service';
-import { ROUTES } from '../common/global';
-import { SelfRegistrationOption } from '../types/self-registration-option.type';
-import { Community } from '../types/community';
-import { OrganisationParameter } from '../types/organisation-parameter';
-import { SystemParameter } from '../types/system-parameter';
-import { Parameter } from '../types/parameter';
-import { TypedLabelConfig } from '../types/typed-label-config.type';
-import { ExportSettings } from '../types/export-settings';
-import { ImportSettings } from '../types/import-settings';
-import { FileData } from '../types/file-data.type';
-import { ImportPreview } from '../types/import-preview';
-import { ImportItem } from '../types/import-item';
-import { ErrorDescription } from '../types/error-description';
-import { ActualUserInfo } from '../types/actual-user-info';
-import { CustomProperty } from '../types/custom-property.type';
-import { FileParam } from '../types/file-param.type';
-import { HttpResponse } from '@angular/common/http';
-import { CommunityResourceSearchResult } from '../types/community-resource-search-result';
-import { CommunityResourceUploadResult } from '../types/community-resource-upload-result';
-import { CommunityResource } from '../types/community-resource';
+import {Injectable} from '@angular/core';
+import {RestService} from './rest.service';
+import {DataService} from './data.service';
+import {ROUTES} from '../common/global';
+import {SelfRegistrationOption} from '../types/self-registration-option.type';
+import {Community} from '../types/community';
+import {OrganisationParameter} from '../types/organisation-parameter';
+import {SystemParameter} from '../types/system-parameter';
+import {Parameter} from '../types/parameter';
+import {TypedLabelConfig} from '../types/typed-label-config.type';
+import {ExportSettings} from '../types/export-settings';
+import {ImportSettings} from '../types/import-settings';
+import {FileData} from '../types/file-data.type';
+import {ImportPreview} from '../types/import-preview';
+import {ImportItem} from '../types/import-item';
+import {ErrorDescription} from '../types/error-description';
+import {ActualUserInfo} from '../types/actual-user-info';
+import {CustomProperty} from '../types/custom-property.type';
+import {FileParam} from '../types/file-param.type';
 
 @Injectable({
   providedIn: 'root'

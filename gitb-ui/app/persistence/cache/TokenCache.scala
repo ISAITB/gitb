@@ -15,26 +15,21 @@
 
 package persistence.cache
 
-import java.util.concurrent.TimeUnit
-
-import com.redis.api.StringApi.Always
 import config.Configurations
 import exceptions.{ErrorCodes, InvalidTokenException}
 import models.Token
 import persistence.cache.Keys._
-
-import scala.concurrent.duration.FiniteDuration
 
 object TokenCache {
 
   private val sessionMaxAgeMillis = Configurations.AUTHENTICATION_SESSION_MAX_TOTAL_TIME * 1000
 
   def saveOAuthTokens(userId:Long, tokens:Token): Unit = {
-    val act_key =  ACCESS_TOKEN_HASH_KEY  + HASH_SEPERATOR + tokens.access_token
+    val accessTokenKey =  ACCESS_TOKEN_HASH_KEY  + HASH_SEPERATOR + tokens.accessToken
     val redisClient = Redis.getClient()
     try {
       val currentTime = System.currentTimeMillis()
-      redisClient.setex(act_key, Configurations.AUTHENTICATION_SESSION_MAX_IDLE_TIME, s"$userId:$currentTime")
+      redisClient.setex(accessTokenKey, Configurations.AUTHENTICATION_SESSION_MAX_IDLE_TIME, s"$userId:$currentTime")
     } finally {
       Redis.releaseClient(redisClient)
     }

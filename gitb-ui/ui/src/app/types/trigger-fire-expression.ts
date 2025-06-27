@@ -13,8 +13,6 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {EventEmitter} from '@angular/core';
-
 export interface TriggerFireExpression {
 
   id?: number

@@ -13,8 +13,6 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Specification } from "./specification"
-
 export interface DomainSpecification {
 
     id: number

@@ -13,13 +13,12 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Injectable } from "@angular/core";
-import { ActivatedRouteSnapshot, RouterStateSnapshot } from "@angular/router";
-import { Observable, Subscriber } from "rxjs";
-import { mergeMap } from "rxjs/operators";
-import { Constants } from "../common/constants";
-import { LandingPageService } from "../services/landing-page.service";
-import { LandingPage } from "../types/landing-page";
+import {Injectable} from '@angular/core';
+import {ActivatedRouteSnapshot, RouterStateSnapshot} from '@angular/router';
+import {Observable, Subscriber} from 'rxjs';
+import {Constants} from '../common/constants';
+import {LandingPageService} from '../services/landing-page.service';
+import {LandingPage} from '../types/landing-page';
 
 @Injectable({
     providedIn: "root"

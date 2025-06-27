@@ -19,7 +19,7 @@ import java.util.Set;
 
 public class PropertyConstants {
 
-    public static String LOG_EVENT_STEP_ID = "-999";
+    public static final String LOG_EVENT_STEP_ID = "-999";
 
     public static final String AUTH_USERNAMETOKEN_USERNAME = "auth.token.username";
     public static final String AUTH_USERNAMETOKEN_PASSWORD = "auth.token.password";

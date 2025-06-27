@@ -60,11 +60,11 @@ class TestService @Inject() (authorizedAction: AuthorizedAction,
   /**
    * Gets the test case definition for a specific test
    */
-  def getTestCaseDefinitionByStatement(test_id:String): Action[AnyContent] = authorizedAction.async { request =>
-    authorizationManager.canViewTestCase(request, test_id).flatMap { _ =>
+  def getTestCaseDefinitionByStatement(testId:String): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canViewTestCase(request, testId).flatMap { _ =>
       val actorId = ParameterExtractor.requiredQueryParameter(request, Parameters.ACTOR).toLong
       val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM).toLong
-      getTestCasePresentationByStatement(test_id, None, actorId, systemId).map { response =>
+      getTestCasePresentationByStatement(testId, None, actorId, systemId).map { response =>
         val json = JacksonUtil.serializeTestCasePresentation(response.getTestcase)
         ResponseConstructor.constructJsonResponse(json)
       }
@@ -74,10 +74,10 @@ class TestService @Inject() (authorizedAction: AuthorizedAction,
   /**
    * Gets the test case definition for a specific test
    */
-  def getTestCaseDefinitionByDomain(test_id:String): Action[AnyContent] = authorizedAction.async { request =>
-    authorizationManager.canViewTestCase(request, test_id).flatMap { _ =>
+  def getTestCaseDefinitionByDomain(testId:String): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canViewTestCase(request, testId).flatMap { _ =>
       val domainId = ParameterExtractor.requiredQueryParameter(request, Parameters.DOMAIN).toLong
-      getTestCasePresentationByDomain(test_id, domainId).map { response =>
+      getTestCasePresentationByDomain(testId, domainId).map { response =>
         val json = JacksonUtil.serializeTestCasePresentation(response.getTestcase)
         ResponseConstructor.constructJsonResponse(json)
       }
@@ -100,9 +100,9 @@ class TestService @Inject() (authorizedAction: AuthorizedAction,
   /**
    * Initiates the test case
    */
-  def initiate(test_id:String): Action[AnyContent] = authorizedAction.async { request =>
-    authorizationManager.canExecuteTestCase(request, test_id).flatMap { _ =>
-      testbedClient.initiate(test_id.toLong, None).map { response =>
+  def initiate(testId:String): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canExecuteTestCase(request, testId).flatMap { _ =>
+      testbedClient.initiate(testId.toLong, None).map { response =>
         ResponseConstructor.constructStringResponse(response)
       }
     }
@@ -207,9 +207,9 @@ class TestService @Inject() (authorizedAction: AuthorizedAction,
   /**
    * Starts the preliminary phase if test case description has one
    */
-  def initiatePreliminary(session_id:String): Action[AnyContent] = authorizedAction.async { request =>
-    authorizationManager.canExecuteTestSession(request, session_id).flatMap { _ =>
-      testbedClient.initiatePreliminary(session_id).map { _ =>
+  def initiatePreliminary(sessionId:String): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canExecuteTestSession(request, sessionId).flatMap { _ =>
+      testbedClient.initiatePreliminary(sessionId).map { _ =>
         ResponseConstructor.constructEmptyResponse
       }
     }
@@ -239,9 +239,9 @@ class TestService @Inject() (authorizedAction: AuthorizedAction,
   /**
    * Stops the test case
    */
-  def stop(session_id:String): Action[AnyContent] = authorizedAction.async { request =>
-    authorizationManager.canExecuteTestSession(request, session_id).flatMap { _ =>
-      testExecutionManager.endSession(session_id).map { _ =>
+  def stop(sessionId:String): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canExecuteTestSession(request, sessionId).flatMap { _ =>
+      testExecutionManager.endSession(sessionId).map { _ =>
         ResponseConstructor.constructEmptyResponse
       }
     }
@@ -293,10 +293,10 @@ class TestService @Inject() (authorizedAction: AuthorizedAction,
   /**
    * Restarts the test case with same preliminary data
    */
-  def restart(session_id:String): Action[AnyContent] = authorizedAction.async { request =>
-    authorizationManager.canExecuteTestSession(request, session_id).flatMap { _ =>
-      callSessionStartTrigger(session_id).flatMap { _ =>
-        testbedClient.restart(session_id).map { _ =>
+  def restart(sessionId:String): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canExecuteTestSession(request, sessionId).flatMap { _ =>
+      callSessionStartTrigger(sessionId).flatMap { _ =>
+        testbedClient.restart(sessionId).map { _ =>
           ResponseConstructor.constructEmptyResponse
         }
       }

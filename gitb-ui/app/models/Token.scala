@@ -16,4 +16,4 @@
 package models
 
 
-case class Token(access_token:String)
+case class Token(accessToken:String)

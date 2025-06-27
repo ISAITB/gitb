@@ -74,8 +74,8 @@ class SystemService @Inject() (repositoryUtils: RepositoryUtils,
   /**
    * Updates the profile of a system
    */
-  def updateSystemProfile(sut_id:Long): Action[AnyContent] = authorizedAction.async { request =>
-    authorizationManager.canUpdateSystem(request, sut_id).flatMap { _ =>
+  def updateSystemProfile(sutId:Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canUpdateSystem(request, sutId).flatMap { _ =>
       val paramMap = ParameterExtractor.paramMap(request)
       val sname = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SYSTEM_SNAME)
       val fname = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SYSTEM_FNAME)
@@ -94,7 +94,7 @@ class SystemService @Inject() (repositoryUtils: RepositoryUtils,
         }
       } else {
         val userId = ParameterExtractor.extractUserId(request)
-        systemManager.updateSystemProfile(userId, sut_id, sname, fname, descr, version, otherSystem, values, Some(files), copySystemParameters, copyStatementParameters).map { _ =>
+        systemManager.updateSystemProfile(userId, sutId, sname, fname, descr, version, otherSystem, values, Some(files), copySystemParameters, copyStatementParameters).map { _ =>
           ResponseConstructor.constructEmptyResponse
         }
       }
@@ -122,9 +122,9 @@ class SystemService @Inject() (repositoryUtils: RepositoryUtils,
   /**
    * Gets the system profile for the specific system
    */
-  def getSystemProfile(sut_id:Long): Action[AnyContent] = authorizedAction.async { request =>
-    authorizationManager.canViewSystem(request, sut_id).flatMap { _ =>
-      systemManager.getSystemProfile(sut_id).map { system =>
+  def getSystemProfile(sutId:Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canViewSystem(request, sutId).flatMap { _ =>
+      systemManager.getSystemProfile(sutId).map { system =>
         val json:String = JsonUtil.serializeSystem(system)
         ResponseConstructor.constructJsonResponse(json)
       }
@@ -143,9 +143,9 @@ class SystemService @Inject() (repositoryUtils: RepositoryUtils,
     }
   }
 
-	def deleteConformanceStatement(sut_id: Long): Action[AnyContent] = authorizedAction.async { request =>
+	def deleteConformanceStatement(sutId: Long): Action[AnyContent] = authorizedAction.async { request =>
     val actorIds = ParameterExtractor.extractLongIdsQueryParameter(request)
-    authorizationManager.canDeleteConformanceStatement(request, sut_id, actorIds).flatMap { _ =>
+    authorizationManager.canDeleteConformanceStatement(request, sutId, actorIds).flatMap { _ =>
       actorIds match {
         case Some(actorIds) =>
           if (actorIds.isEmpty) {
@@ -153,7 +153,7 @@ class SystemService @Inject() (repositoryUtils: RepositoryUtils,
               ResponseConstructor.constructBadRequestResponse(ErrorCodes.MISSING_PARAMS, "'ids' parameter should be non-empty")
             }
           } else {
-            systemManager.deleteConformanceStatementsWrapper(sut_id, actorIds).map { _ =>
+            systemManager.deleteConformanceStatementsWrapper(sutId, actorIds).map { _ =>
               ResponseConstructor.constructEmptyResponse
             }
           }
