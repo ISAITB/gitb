@@ -42,7 +42,7 @@ import { SelfRegistrationComponent } from './components/self-registration/self-r
 import { TableComponent } from './components/table/table.component';
 import { TableRowComponent } from './components/table-row/table-row.component';
 import { SimpleNotificationsModule } from 'angular2-notifications';
-import { EditorModule, TINYMCE_SCRIPT_SRC } from '@tinymce/tinymce-angular';
+import { EditorModule, HUGERTE_SCRIPT_SRC } from '@hugerte/hugerte-angular';
 import { ContactSupportComponent } from './modals/contact-support/contact-support.component';
 import { EditorComponent } from './components/editor/editor.component';
 import { FileSelectComponent } from './components/file-select/file-select.component';
@@ -439,7 +439,7 @@ import { ServiceHealthIconComponent } from './components/service-health-icon/ser
     MarkdownModule.forRoot()
   ], providers: [
         CookieService,
-        { provide: TINYMCE_SCRIPT_SRC, useValue: 'tinymce/tinymce.min.js' },
+        { provide: HUGERTE_SCRIPT_SRC, useValue: 'hugerte/hugerte.min.js' },
         provideHttpClient(withInterceptorsFromDi())
     ] })
 export class AppModule { }

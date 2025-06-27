@@ -16,7 +16,7 @@
 import {Component, EventEmitter, forwardRef, Input, OnInit, ViewChild} from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { DataService } from 'src/app/services/data.service';
-import { EditorComponent as TinyMceEditorComponent } from '@tinymce/tinymce-angular';
+import { EditorComponent as HugeRteEditorComponent } from '@hugerte/hugerte-angular';
 
 @Component({
     selector: 'app-editor',
@@ -35,7 +35,7 @@ export class EditorComponent implements OnInit, ControlValueAccessor {
   @Input() type:'normal'|'minimal'|'pdf'|'line' = 'normal'
   @Input() height?: number
   @Input() newHeight?: EventEmitter<number>
-  @ViewChild("editor") editor?: TinyMceEditorComponent;
+  @ViewChild("editor") editor?: HugeRteEditorComponent;
   editorConfig: any = {}
   _editorValue: string = ''
   onChange = (_: any) => {}
@@ -68,7 +68,7 @@ export class EditorComponent implements OnInit, ControlValueAccessor {
       min_height: 100,
       menubar: false,
       branding: false,
-      base_url: this.dataService.completePath('/assets/build/tinymce', true),
+      base_url: this.dataService.completePath('/assets/build/hugerte', true),
       cache_suffix: this.dataService.configuration.versionNumber,
       content_css: 'assets/build/styles.css,api/theme/css',
       body_class: 'editor-body',

@@ -7250,6 +7250,20 @@ Unless required by applicable law or agreed to in writing, software distributed 
 language governing permissions and limitations under the Licence.
 ```
 
+### hugerte
+
+```
+Copyright (c) 2022 Ephox Corporation DBA Tiny Technologies, Inc.
+Copyright (c) 2025 HugeRTE contributors
+```
+
+### hugerte-angular
+
+```
+Copyright (c) 2022 Ephox Corporation DBA Tiny Technologies, Inc.
+Copyright (c) 2025 HugeRTE contributors
+```
+
 ### Jackson (com.fasterxml.jackson.*)
 
 ```
@@ -8339,18 +8353,6 @@ Copyright 2002-2023 the original author or authors.
 ```
 swagger-ui
 Copyright 2020-2021 SmartBear Software Inc.
-```
-
-### tinymce
-
-```
-Copyright (c) 2022 Ephox Corporation DBA Tiny Technologies, Inc.
-```
-
-### tinymce-angular
-
-```
-Copyright (c) 2016-2024 Tiny Technologies, Inc.
 ```
 
 ### TopBraid SHACL API (org.topbraid.shacl)

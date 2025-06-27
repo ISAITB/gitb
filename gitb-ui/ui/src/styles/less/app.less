@@ -929,7 +929,7 @@ span.mini-tab, div.mini-tab {
 	}
 }
 
-// TinyMCE override styles - START
+// HugeRTE override styles - START
 .itb-body {
     .tox input.tox-checkbox__input:focus+.tox-checkbox__icons {
         box-shadow: none !important;
@@ -1000,9 +1000,25 @@ span.mini-tab, div.mini-tab {
                 }
             }
         }
-        &.tox-tinymce-aux {
+        .tox-collection--list .tox-collection__item--active {
+            background-color: #cce2fa !important;
+            &:not(.tox-collection__item--state-disabled) {
+                color: inherit !important;
+            }
+        }
+        .tox-split-button:focus::after, .tox-collection--toolbar .tox-collection__item--active:focus::after, .tox-tbtn:focus::after {
+            box-shadow: 0 0 0 2px #cce2fa !important;
+        }
+        .tox-insert-table-picker .tox-insert-table-picker__selected {
+            background-color: rgba(0, 108, 231, .5);
+            border-color: rgba(0, 108, 231, .5);
+        }
+        &.tox-hugerte-aux {
             z-index: 1000;
+        }
+        .tox-edit-area::before {
+            content: inherit !important;
         }
     }
 }
-// TinyMCE override styles - END
+// HugeRTE override styles - END
