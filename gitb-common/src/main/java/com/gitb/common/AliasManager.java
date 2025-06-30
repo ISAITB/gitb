@@ -63,11 +63,15 @@ public class AliasManager {
     }
 
     private String resolveHandler(Map<String, String> map, String alias) {
-        return map.getOrDefault(alias, alias);
+        if (alias != null) {
+            return map.getOrDefault(alias, alias);
+        } else {
+            return null;
+        }
     }
 
     private String resolveHandlerInput(Map<String, Map<String, String>> map, String handler, String alias) {
-        if (map.containsKey(handler)) {
+        if (alias != null && map != null && handler != null && map.containsKey(handler)) {
             return map.get(handler).getOrDefault(alias, alias);
         } else {
             return alias;
