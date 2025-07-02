@@ -105,17 +105,17 @@ class SecurityModule extends AbstractModule {
 
   private def createOidcClient(): OidcClient = {
     val oidcConfiguration = new OidcConfiguration()
-    oidcConfiguration.setClientId(Configurations.AUTHENTICATION_CLIENT_ID)
-    oidcConfiguration.setSecret(Configurations.AUTHENTICATION_CLIENT_SECRET)
-    oidcConfiguration.setDiscoveryURI(Configurations.AUTHENTICATION_DISCOVERY_URI)
-    oidcConfiguration.setClientAuthenticationMethod(ClientAuthenticationMethod.parse(Configurations.AUTHENTICATION_CLIENT_AUTHENTICATION_METHOD))
-    oidcConfiguration.setUseNonce(Configurations.AUTHENTICATION_USE_NONCE)
-    oidcConfiguration.setScope(Configurations.AUTHENTICATION_SCOPE)
-    if (Configurations.AUTHENTICATION_RESPONSE_TYPE.isDefined) {
-      oidcConfiguration.setResponseType(Configurations.AUTHENTICATION_RESPONSE_TYPE.get)
+    oidcConfiguration.setClientId(Configurations.AUTHENTICATION_SSO_CLIENT_ID)
+    oidcConfiguration.setSecret(Configurations.AUTHENTICATION_SSO_CLIENT_SECRET)
+    oidcConfiguration.setDiscoveryURI(Configurations.AUTHENTICATION_SSO_DISCOVERY_URI)
+    oidcConfiguration.setClientAuthenticationMethod(ClientAuthenticationMethod.parse(Configurations.AUTHENTICATION_SSO_CLIENT_AUTHENTICATION_METHOD))
+    oidcConfiguration.setUseNonce(Configurations.AUTHENTICATION_SSO_USE_NONCE)
+    oidcConfiguration.setScope(Configurations.AUTHENTICATION_SSO_SCOPE)
+    if (Configurations.AUTHENTICATION_SSO_RESPONSE_TYPE.isDefined) {
+      oidcConfiguration.setResponseType(Configurations.AUTHENTICATION_SSO_RESPONSE_TYPE.get)
     }
-    if (Configurations.AUTHENTICATION_RESPONSE_MODE.isDefined) {
-      oidcConfiguration.setResponseMode(Configurations.AUTHENTICATION_RESPONSE_MODE.get)
+    if (Configurations.AUTHENTICATION_SSO_RESPONSE_MODE.isDefined) {
+      oidcConfiguration.setResponseMode(Configurations.AUTHENTICATION_SSO_RESPONSE_MODE.get)
     }
     val oidcClient = new OidcClient(oidcConfiguration)
     oidcClient.setName(CLIENT_NAME)

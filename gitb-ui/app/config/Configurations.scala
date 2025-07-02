@@ -131,14 +131,14 @@ object Configurations {
   var AUTHENTICATION_SSO_USER_ATTRIBUTES_AUTHENTICATION_LEVEL: String = "authenticationLevel"
   var AUTHENTICATION_SSO_TICKET_VALIDATION_URL_SUFFIX: String = "laxValidate"
   // OIDC-specific properties
-  var AUTHENTICATION_CLIENT_ID = ""
-  var AUTHENTICATION_CLIENT_SECRET = ""
-  var AUTHENTICATION_CLIENT_AUTHENTICATION_METHOD = ""
-  var AUTHENTICATION_DISCOVERY_URI = ""
-  var AUTHENTICATION_USE_NONCE = true
-  var AUTHENTICATION_SCOPE = "openid profile email"
-  var AUTHENTICATION_RESPONSE_TYPE: Option[String] = None // code (default), id_token, token, code id_token, code token
-  var AUTHENTICATION_RESPONSE_MODE: Option[String] = None // query, fragment, form_post
+  var AUTHENTICATION_SSO_CLIENT_ID = ""
+  var AUTHENTICATION_SSO_CLIENT_SECRET = ""
+  var AUTHENTICATION_SSO_CLIENT_AUTHENTICATION_METHOD = ""
+  var AUTHENTICATION_SSO_DISCOVERY_URI = ""
+  var AUTHENTICATION_SSO_USE_NONCE = true
+  var AUTHENTICATION_SSO_SCOPE = "openid profile email"
+  var AUTHENTICATION_SSO_RESPONSE_TYPE: Option[String] = None // code (default), id_token, token, code id_token, code token
+  var AUTHENTICATION_SSO_RESPONSE_MODE: Option[String] = None // query, fragment, form_post
   /*
    * SSO related configuration - END
    */
@@ -318,12 +318,12 @@ object Configurations {
       AUTHENTICATION_SSO_TYPE = fromEnv("AUTHENTICATION_SSO_TYPE", Constants.SsoTypeEcas)
       AUTHENTICATION_SSO_IN_MIGRATION_PERIOD = fromEnv("AUTHENTICATION_SSO_IN_MIGRATION_PERIOD", conf.getString("authentication.sso.inMigrationPeriod")).toBoolean
       AUTHENTICATION_SSO_IN_MIGRATION_PERIOD_ORIGINAL = AUTHENTICATION_SSO_IN_MIGRATION_PERIOD
+      AUTHENTICATION_SSO_CALLBACK_URL = fromEnv("AUTHENTICATION_SSO_CALLBACK_URL", conf.getString("authentication.sso.url.callback"))
       // CAS-specific properties (EU Login)
       AUTHENTICATION_SSO_LOGIN_URL = fromEnv("AUTHENTICATION_SSO_LOGIN_URL", conf.getString("authentication.sso.url.login"))
       AUTHENTICATION_SSO_PREFIX_URL = Option(fromEnv("AUTHENTICATION_SSO_PREFIX_URL", "")).filter(StringUtils.isNotBlank)
       AUTHENTICATION_SSO_AUTHENTICATION_LEVEL = Option(fromEnv("AUTHENTICATION_SSO_AUTHENTICATION_LEVEL", conf.getString("authentication.sso.authenticationLevel"))).filter(StringUtils.isNotBlank).map(AuthenticationLevel.fromName)
       AUTHENTICATION_SSO_AUTHENTICATION_LEVEL_PARAMETER = fromEnv("AUTHENTICATION_SSO_AUTHENTICATION_LEVEL_PARAMETER", conf.getString("authentication.sso.authenticationLevelParameter"))
-      AUTHENTICATION_SSO_CALLBACK_URL = fromEnv("AUTHENTICATION_SSO_CALLBACK_URL", conf.getString("authentication.sso.url.callback"))
       AUTHENTICATION_SSO_CAS_VERSION = fromEnv("AUTHENTICATION_SSO_CAS_VERSION", conf.getString("authentication.sso.casVersion")).toShort
       AUTHENTICATION_SSO_CUSTOM_PARAMETERS_USER_DETAILS = fromEnv("AUTHENTICATION_SSO_CUSTOM_PARAMETERS__USER_DETAILS", conf.getString("authentication.sso.customParameters.userDetails"))
       AUTHENTICATION_SSO_USER_ATTRIBUTES_EMAIL = fromEnv("AUTHENTICATION_SSO_USER_ATTRIBUTES__EMAIL", conf.getString("authentication.sso.userAttributes.email"))
@@ -332,14 +332,14 @@ object Configurations {
       AUTHENTICATION_SSO_USER_ATTRIBUTES_AUTHENTICATION_LEVEL = fromEnv("AUTHENTICATION_SSO_USER_ATTRIBUTES__AUTHENTICATION_LEVEL", conf.getString("authentication.sso.userAttributes.authenticationLevel"))
       AUTHENTICATION_SSO_TICKET_VALIDATION_URL_SUFFIX = fromEnv("AUTHENTICATION_SSO_TICKET_VALIDATION_URL_SUFFIX", conf.getString("authentication.sso.ticketValidationUrlSuffix"))
       // OIDC-specific properties
-      AUTHENTICATION_CLIENT_ID = fromEnv("AUTHENTICATION_CLIENT_ID", conf.getString("authentication.sso.clientId"))
-      AUTHENTICATION_CLIENT_SECRET = fromEnv("AUTHENTICATION_CLIENT_SECRET", conf.getString("authentication.sso.clientSecret"))
-      AUTHENTICATION_CLIENT_AUTHENTICATION_METHOD = fromEnv("AUTHENTICATION_CLIENT_AUTHENTICATION_METHOD", conf.getString("authentication.sso.clientAuthenticationMethod"))
-      AUTHENTICATION_DISCOVERY_URI = fromEnv("AUTHENTICATION_DISCOVERY_URI", conf.getString("authentication.sso.discoveryUri"))
-      AUTHENTICATION_SCOPE = fromEnv("AUTHENTICATION_SCOPE", conf.getString("authentication.sso.scope"))
-      AUTHENTICATION_USE_NONCE = fromEnv("AUTHENTICATION_SSO_ENABLED", conf.getString("authentication.sso.useNonce")).toBoolean
-      AUTHENTICATION_RESPONSE_TYPE = Option(fromEnv("AUTHENTICATION_RESPONSE_TYPE", "")).filter(StringUtils.isNotBlank)
-      AUTHENTICATION_RESPONSE_MODE = Option(fromEnv("AUTHENTICATION_RESPONSE_MODE", "")).filter(StringUtils.isNotBlank)
+      AUTHENTICATION_SSO_CLIENT_ID = fromEnv("AUTHENTICATION_SSO_CLIENT_ID", conf.getString("authentication.sso.clientId"))
+      AUTHENTICATION_SSO_CLIENT_SECRET = fromEnv("AUTHENTICATION_SSO_CLIENT_SECRET", conf.getString("authentication.sso.clientSecret"))
+      AUTHENTICATION_SSO_CLIENT_AUTHENTICATION_METHOD = fromEnv("AUTHENTICATION_SSO_CLIENT_AUTHENTICATION_METHOD", conf.getString("authentication.sso.clientAuthenticationMethod"))
+      AUTHENTICATION_SSO_DISCOVERY_URI = fromEnv("AUTHENTICATION_SSO_DISCOVERY_URI", conf.getString("authentication.sso.discoveryUri"))
+      AUTHENTICATION_SSO_SCOPE = fromEnv("AUTHENTICATION_SSO_SCOPE", conf.getString("authentication.sso.scope"))
+      AUTHENTICATION_SSO_USE_NONCE = fromEnv("AUTHENTICATION_SSO_USE_NONCE", conf.getString("authentication.sso.useNonce")).toBoolean
+      AUTHENTICATION_SSO_RESPONSE_TYPE = Option(fromEnv("AUTHENTICATION_SSO_RESPONSE_TYPE", "")).filter(StringUtils.isNotBlank)
+      AUTHENTICATION_SSO_RESPONSE_MODE = Option(fromEnv("AUTHENTICATION_SSO_RESPONSE_MODE", "")).filter(StringUtils.isNotBlank)
       /*
        * SSO related configuration - END
        */
