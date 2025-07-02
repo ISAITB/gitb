@@ -109,8 +109,21 @@ class SecurityModule extends AbstractModule {
     oidcConfiguration.setSecret(Configurations.AUTHENTICATION_SSO_CLIENT_SECRET)
     oidcConfiguration.setDiscoveryURI(Configurations.AUTHENTICATION_SSO_DISCOVERY_URI)
     oidcConfiguration.setClientAuthenticationMethod(ClientAuthenticationMethod.parse(Configurations.AUTHENTICATION_SSO_CLIENT_AUTHENTICATION_METHOD))
-    oidcConfiguration.setUseNonce(Configurations.AUTHENTICATION_SSO_USE_NONCE)
     oidcConfiguration.setScope(Configurations.AUTHENTICATION_SSO_SCOPE)
+    /*
+     * Up to v6.1.2 Pac4j has a bug in the token renewal process (see https://groups.google.com/g/pac4j-dev/c/NJpqBQHoiM4).
+     * If nonces are set as required they should normally be included and checked only in the initial login. However,
+     * Pac4j erroneously forces the nonce check also in renewal requests which the server may not include (actually the
+     * OIDC spec suggests to not include them). To avoid the renewal failing, nonce checking is forcibly set to false
+     * until this is resolved in Pac4j.
+     */
+    oidcConfiguration.setUseNonce(false)
+    /*
+     * The preferred JWS signing algorithm is optional but if not set means that the supported algorithms will be attempted
+     * in sequence when validating tokens. It is best to select one specific algorithm and configure this based on the
+     * server's supported ones as published on the discovery URI. This would need to be set per installation depending on
+     * the server and user preferences.
+     */
     Configurations.AUTHENTICATION_SSO_PREFERRED_JWS_ALGORITHM.foreach(oidcConfiguration.setPreferredJwsAlgorithmAsString)
     Configurations.AUTHENTICATION_SSO_RESPONSE_TYPE.foreach(oidcConfiguration.setResponseType)
     Configurations.AUTHENTICATION_SSO_RESPONSE_MODE.foreach(oidcConfiguration.setResponseMode)

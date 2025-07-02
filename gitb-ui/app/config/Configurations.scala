@@ -135,7 +135,7 @@ object Configurations {
   var AUTHENTICATION_SSO_CLIENT_SECRET = ""
   var AUTHENTICATION_SSO_CLIENT_AUTHENTICATION_METHOD = ""
   var AUTHENTICATION_SSO_DISCOVERY_URI = ""
-  var AUTHENTICATION_SSO_USE_NONCE = true
+  var AUTHENTICATION_SSO_USE_NONCE = false
   var AUTHENTICATION_SSO_SCOPE = "openid profile email"
   var AUTHENTICATION_SSO_PREFERRED_JWS_ALGORITHM: Option[String] = None
   var AUTHENTICATION_SSO_RESPONSE_TYPE: Option[String] = None // code (default), id_token, token, code id_token, code token
