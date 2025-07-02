@@ -70,7 +70,8 @@ class Application @Inject() (cc: ControllerComponents,
           Configurations.RELEASE_INFO_ADDRESS,
           Configurations.WELCOME_MESSAGE,
           Configurations.WEB_CONTEXT_ROOT_WITH_SLASH,
-          Configurations.restApiSwaggerLink()
+          Configurations.restApiSwaggerLink(),
+          Configurations.AUTHENTICATION_SSO_TYPE
         )))
     }
   }

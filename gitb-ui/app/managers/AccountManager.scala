@@ -48,7 +48,7 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     val dbAction = PersistenceSchema.users
         .filter(_.id === userId)
         .map(x => (x.ssoUid, x.ssoEmail, x.name, x.ssoStatus, x.onetimePassword))
-        .update((Some(userInfo.uid), Some(userInfo.email), userInfo.firstName+" "+userInfo.lastName, UserSSOStatus.Linked.id.toShort, false))
+        .update((Some(userInfo.uid), Some(userInfo.email), userInfo.name, UserSSOStatus.Linked.id.toShort, false))
     DB.run(dbAction.transactionally)
   }
 
@@ -81,7 +81,7 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   def linkAccountInternal(userId: Long, userInfo: ActualUserInfo): DBIO[_] = {
     val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.ssoUid, u.name, u.ssoStatus)
-    q.update(Some(userInfo.uid), userInfo.firstName+" "+userInfo.lastName, UserSSOStatus.Linked.id.toShort)
+    q.update(Some(userInfo.uid), userInfo.name, UserSSOStatus.Linked.id.toShort)
   }
 
   def linkAccount(userId: Long, userInfo: ActualUserInfo): Future[Unit] = {

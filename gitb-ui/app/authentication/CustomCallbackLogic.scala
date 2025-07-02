@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-package modules
+package authentication
 
 import controllers.util.ResponseConstructor
 import org.pac4j.core.context.{CallContext, Cookie}

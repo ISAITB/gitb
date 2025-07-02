@@ -13,20 +13,13 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-package modules;
+package authentication
 
-import org.pac4j.core.authorization.authorizer.Authorizer;
-import org.pac4j.core.context.WebContext;
-import org.pac4j.core.context.session.SessionStore;
-import org.pac4j.core.profile.UserProfile;
+import models.ActualUserInfo
+import play.api.mvc.RequestHeader
 
-import java.util.List;
+trait ProfileResolver {
 
-public class BasicAuthorizer implements Authorizer {
-
-    @Override
-    public boolean isAuthorized(WebContext context, SessionStore sessionStore, List<UserProfile> profiles) {
-        return true;
-    }
+  def resolveUserInfo(request: RequestHeader): Option[ActualUserInfo]
 
 }

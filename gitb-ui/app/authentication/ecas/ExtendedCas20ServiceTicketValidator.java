@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-package ecas;
+package authentication.ecas;
 
 import config.Configurations;
 import models.Constants;

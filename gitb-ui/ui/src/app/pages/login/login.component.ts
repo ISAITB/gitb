@@ -239,7 +239,7 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
     this.spinner = false
     if (error.status == 401) {
       if (this.dataService.configuration.ssoEnabled) {
-        // We need to re-login to EU Login.
+        // We need to re-login.
         this.errorService.showInvalidSessionNotification().subscribe((shown) => {
           if (shown) {
             this.authProvider.signalLogout({full: true})

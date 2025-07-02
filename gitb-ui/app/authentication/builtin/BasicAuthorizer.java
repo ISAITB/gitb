@@ -13,13 +13,20 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { UserAccount } from "./user-account";
+package authentication.builtin;
 
-export interface ActualUserInfo {
+import org.pac4j.core.authorization.authorizer.Authorizer;
+import org.pac4j.core.context.WebContext;
+import org.pac4j.core.context.session.SessionStore;
+import org.pac4j.core.profile.UserProfile;
 
-  uid: string
-  email: string
-  name: string
-  accounts: UserAccount[]
+import java.util.List;
+
+public class BasicAuthorizer implements Authorizer {
+
+    @Override
+    public boolean isAuthorized(WebContext context, SessionStore sessionStore, List<UserProfile> profiles) {
+        return true;
+    }
 
 }

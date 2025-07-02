@@ -87,6 +87,9 @@ object Constants {
   val UserAttributeLastName = "lastName"
   val UserAttributeAuthenticationLevel = "authLevel"
 
+  val SsoTypeEcas = "ecas"
+  val SsoTypeOidc = "oidc"
+
   // When ending in "-snapshot", this is considered a non-published release.
   val VersionNumber = "1.28.0-snapshot"
   val VersionNumberPostfixForResources = ""

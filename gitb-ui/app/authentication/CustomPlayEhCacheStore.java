@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-package modules;
+package authentication;
 
 import com.google.inject.Provider;
 import net.sf.ehcache.Element;

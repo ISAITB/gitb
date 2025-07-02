@@ -19,7 +19,7 @@
 				@if (dataService.configuration.ssoInMigration) {
 					<div class="form-check pb-2">
 						<input class="form-check-input" type="radio" [(ngModel)]="choice" name="choice" id="choice_migrate" [value]="Constants.CREATE_ACCOUNT_OPTION.MIGRATE" (change)="choiceChanged()">
-						<label class="form-check-label" for="choice_migrate">Migrate an existing account to my EU Login account</label>
+						<label class="form-check-label" for="choice_migrate">Migrate an existing legacy account</label>
 					</div>
 				}
 			</div>
@@ -31,7 +31,7 @@
 						@if (linkedAccounts.length > 0) {
 							<div>
 								<p>The following roles have been assigned to you. Select the one you want to confirm and link to your account.</p>
-								<span><b>Privacy note:</b> By confirming you grant your consent to record your name, email and EU Login user ID.</span>
+								<span><b>Privacy note:</b> By confirming you grant your consent to record your name, email and user ID.</span>
 							</div>
 						} @else {
 							<span>There are no unconfirmed roles currently assigned to you.</span>
@@ -51,8 +51,8 @@
 			<div>
 				<div class="link-account-separator">
 					<div class="alert alert-info rounded">
-						<p>Provide the credentials you have been using to authenticate prior to EU Login.</p>
-						<span><b>Privacy note:</b> By completing this you grant your consent to record your name, email and EU Login user ID.</span>
+						<p>Provide the legacy credentials you have been using previously to authenticate.</p>
+						<span><b>Privacy note:</b> By completing this you grant your consent to record your name, email and user ID.</span>
 					</div>
 				</div>
 				<div class="row mt-3">

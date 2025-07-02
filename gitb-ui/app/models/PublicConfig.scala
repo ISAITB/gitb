@@ -37,7 +37,8 @@ class PublicConfig(
   _releaseInfoLink: String,
   _welcomeText: String,
   _internalContextPath: String,
-  _restAPI: Option[String]) {
+  _restAPI: Option[String],
+  _ssoType: String) {
 
   var ssoEnabled: Boolean = _ssoEnabled
   var versionNumber: String = _versionNumber
@@ -61,7 +62,8 @@ class PublicConfig(
   var welcomeText: String = _welcomeText
   var internalContextPath: String = _internalContextPath
   var restApi: Option[String] = _restAPI
+  var ssoType: String = _ssoType
 
   def this(_resourceVersionNumber: String, _cookiePath: String, _contextPath: String, _internalContextPath: String) =
-    this(false, null, _resourceVersionNumber, false, null, false, false, null, false, null, null, _cookiePath, false, false, _contextPath, false, null, false, null, null, _internalContextPath, None)
+    this(false, null, _resourceVersionNumber, false, null, false, false, null, false, null, null, _cookiePath, false, false, _contextPath, false, null, false, null, null, _internalContextPath, None, null)
 }

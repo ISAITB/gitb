@@ -15,15 +15,13 @@
 
 package managers
 
+import authentication.ProfileResolver
 import com.gitb.utils.HmacUtils
 import config.Configurations
 import controllers.util.{ParameterExtractor, RequestWithAttributes}
 import exceptions.UnauthorizedAccessException
 import models.Enums.{SelfRegistrationType, UserRole}
 import models._
-import org.pac4j.core.context.session.SessionStore
-import org.pac4j.core.profile.ProfileManager
-import org.pac4j.play.PlayWebContext
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.Files
@@ -56,7 +54,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
                                      systemConfigurationManager: SystemConfigurationManager,
                                      domainManager: DomainManager,
                                      repositoryUtils: RepositoryUtils,
-                                     playSessionStore: SessionStore)
+                                     profileResolver: ProfileResolver)
                                     (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[AuthorizationManager])
@@ -2269,37 +2267,14 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
   def getAccountInfo(request: RequestWithAttributes[_]): Future[ActualUserInfo] = {
     getPrincipal(request).flatMap { accountInfo =>
       accountManager.getUserAccountsForUid(accountInfo.uid).map { userAccounts =>
-        new ActualUserInfo(accountInfo.uid, accountInfo.email, accountInfo.firstName, accountInfo.lastName, userAccounts)
+        new ActualUserInfo(accountInfo.uid, accountInfo.email, accountInfo.name, userAccounts)
       }
     }
   }
 
   def getPrincipal(request: RequestWithAttributes[_]): Future[ActualUserInfo] = {
     Future.successful {
-      var userInfo: ActualUserInfo = null
-      val webContext = new PlayWebContext(request)
-      val profileManager = new ProfileManager(webContext, playSessionStore)
-      val profile = profileManager.getProfile()
-      if (profile.isEmpty) {
-        logger.error("Lookup for a real user's data failed due to a missing profile.")
-      } else {
-        val uid = profile.get().getId
-        val userAttributes = profile.get().getAttributes
-        var email: String = null
-        var firstName: String = null
-        var lastName: String = null
-        if (userAttributes != null) {
-          email = userAttributes.get(Constants.UserAttributeEmail).asInstanceOf[String]
-          firstName = userAttributes.get(Constants.UserAttributeFirstName).asInstanceOf[String]
-          lastName = userAttributes.get(Constants.UserAttributeLastName).asInstanceOf[String]
-        }
-        if (uid == null || email == null || firstName == null || lastName == null) {
-          logger.error("User profile did not contain expected information [" + uid + "][" + email + "][" + firstName + "][" + lastName + "]")
-        } else {
-          userInfo = new ActualUserInfo(uid, email, firstName, lastName)
-        }
-      }
-      userInfo
+      profileResolver.resolveUserInfo(request).orNull
     }
   }
 

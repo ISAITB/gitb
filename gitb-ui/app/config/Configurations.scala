@@ -17,7 +17,7 @@ package config
 
 import com.gitb.utils.HmacUtils
 import com.typesafe.config.{Config, ConfigFactory}
-import ecas.AuthenticationLevel
+import authentication.ecas.AuthenticationLevel
 import models.Constants
 import org.apache.commons.lang3.StringUtils
 
@@ -109,13 +109,19 @@ object Configurations {
   var MASTER_PASSWORD_TO_REPLACE: Option[Array[Char]] = None
   var MASTER_PASSWORD_FORCE = false
 
+  /*
+   * SSO related configuration - START
+   */
+  // General properties (above specific types)
   var AUTHENTICATION_SSO_ENABLED = false
   var AUTHENTICATION_SSO_IN_MIGRATION_PERIOD = false
+  var AUTHENTICATION_SSO_CALLBACK_URL = ""
+  var AUTHENTICATION_SSO_TYPE: String = Constants.SsoTypeEcas
+  // CAS-specific properties (EU Login)
   var AUTHENTICATION_SSO_LOGIN_URL = ""
   var AUTHENTICATION_SSO_PREFIX_URL: Option[String] = None
   var AUTHENTICATION_SSO_AUTHENTICATION_LEVEL: Option[AuthenticationLevel] = None
   var AUTHENTICATION_SSO_AUTHENTICATION_LEVEL_PARAMETER = "authenticationLevel"
-  var AUTHENTICATION_SSO_CALLBACK_URL = ""
   var AUTHENTICATION_SSO_CAS_VERSION: Short = 2
   var AUTHENTICATION_SSO_CUSTOM_PARAMETERS_USER_DETAILS: String = "userDetails"
   var AUTHENTICATION_SSO_USER_ATTRIBUTES_EMAIL: String = "email"
@@ -123,6 +129,18 @@ object Configurations {
   var AUTHENTICATION_SSO_USER_ATTRIBUTES_LAST_NAME: String = "lastName"
   var AUTHENTICATION_SSO_USER_ATTRIBUTES_AUTHENTICATION_LEVEL: String = "authenticationLevel"
   var AUTHENTICATION_SSO_TICKET_VALIDATION_URL_SUFFIX: String = "laxValidate"
+  // OIDC-specific properties
+  var AUTHENTICATION_CLIENT_ID = ""
+  var AUTHENTICATION_CLIENT_SECRET = ""
+  var AUTHENTICATION_CLIENT_AUTHENTICATION_METHOD = ""
+  var AUTHENTICATION_DISCOVERY_URI = ""
+  var AUTHENTICATION_USE_NONCE = true
+  var AUTHENTICATION_SCOPE = "openid profile email"
+  var AUTHENTICATION_RESPONSE_TYPE: Option[String] = None // code (default), id_token, token, code id_token, code token
+  var AUTHENTICATION_RESPONSE_MODE: Option[String] = None // query, fragment, form_post
+  /*
+   * SSO related configuration - END
+   */
 
   var DEMOS_ENABLED = false
   var DEMOS_ACCOUNT:Long = -1
@@ -292,21 +310,37 @@ object Configurations {
       val hmacKeyWindow = fromEnv("HMAC_WINDOW", conf.getString("hmac.window"))
       HmacUtils.configure(hmacKey, hmacKeyWindow.toLong)
 
+      /*
+       * SSO related configuration - START
+       */
       AUTHENTICATION_SSO_ENABLED = fromEnv("AUTHENTICATION_SSO_ENABLED", conf.getString("authentication.sso.enabled")).toBoolean
+      AUTHENTICATION_SSO_TYPE = fromEnv("AUTHENTICATION_SSO_TYPE", Constants.SsoTypeEcas)
       AUTHENTICATION_SSO_IN_MIGRATION_PERIOD = fromEnv("AUTHENTICATION_SSO_IN_MIGRATION_PERIOD", conf.getString("authentication.sso.inMigrationPeriod")).toBoolean
+      // CAS-specific properties (EU Login)
       AUTHENTICATION_SSO_LOGIN_URL = fromEnv("AUTHENTICATION_SSO_LOGIN_URL", conf.getString("authentication.sso.url.login"))
       AUTHENTICATION_SSO_PREFIX_URL = Option(fromEnv("AUTHENTICATION_SSO_PREFIX_URL", "")).filter(StringUtils.isNotBlank)
       AUTHENTICATION_SSO_AUTHENTICATION_LEVEL = Option(fromEnv("AUTHENTICATION_SSO_AUTHENTICATION_LEVEL", conf.getString("authentication.sso.authenticationLevel"))).filter(StringUtils.isNotBlank).map(AuthenticationLevel.fromName)
       AUTHENTICATION_SSO_AUTHENTICATION_LEVEL_PARAMETER = fromEnv("AUTHENTICATION_SSO_AUTHENTICATION_LEVEL_PARAMETER", conf.getString("authentication.sso.authenticationLevelParameter"))
       AUTHENTICATION_SSO_CALLBACK_URL = fromEnv("AUTHENTICATION_SSO_CALLBACK_URL", conf.getString("authentication.sso.url.callback"))
       AUTHENTICATION_SSO_CAS_VERSION = fromEnv("AUTHENTICATION_SSO_CAS_VERSION", conf.getString("authentication.sso.casVersion")).toShort
-
       AUTHENTICATION_SSO_CUSTOM_PARAMETERS_USER_DETAILS = fromEnv("AUTHENTICATION_SSO_CUSTOM_PARAMETERS__USER_DETAILS", conf.getString("authentication.sso.customParameters.userDetails"))
       AUTHENTICATION_SSO_USER_ATTRIBUTES_EMAIL = fromEnv("AUTHENTICATION_SSO_USER_ATTRIBUTES__EMAIL", conf.getString("authentication.sso.userAttributes.email"))
       AUTHENTICATION_SSO_USER_ATTRIBUTES_FIRST_NAME = fromEnv("AUTHENTICATION_SSO_USER_ATTRIBUTES__FIRST_NAME", conf.getString("authentication.sso.userAttributes.firstName"))
       AUTHENTICATION_SSO_USER_ATTRIBUTES_LAST_NAME = fromEnv("AUTHENTICATION_SSO_USER_ATTRIBUTES__LAST_NAME", conf.getString("authentication.sso.userAttributes.lastName"))
       AUTHENTICATION_SSO_USER_ATTRIBUTES_AUTHENTICATION_LEVEL = fromEnv("AUTHENTICATION_SSO_USER_ATTRIBUTES__AUTHENTICATION_LEVEL", conf.getString("authentication.sso.userAttributes.authenticationLevel"))
       AUTHENTICATION_SSO_TICKET_VALIDATION_URL_SUFFIX = fromEnv("AUTHENTICATION_SSO_TICKET_VALIDATION_URL_SUFFIX", conf.getString("authentication.sso.ticketValidationUrlSuffix"))
+      // OIDC-specific properties
+      AUTHENTICATION_CLIENT_ID = fromEnv("AUTHENTICATION_CLIENT_ID", conf.getString("authentication.sso.clientId"))
+      AUTHENTICATION_CLIENT_SECRET = fromEnv("AUTHENTICATION_CLIENT_SECRET", conf.getString("authentication.sso.clientSecret"))
+      AUTHENTICATION_CLIENT_AUTHENTICATION_METHOD = fromEnv("AUTHENTICATION_CLIENT_AUTHENTICATION_METHOD", conf.getString("authentication.sso.clientAuthenticationMethod"))
+      AUTHENTICATION_DISCOVERY_URI = fromEnv("AUTHENTICATION_DISCOVERY_URI", conf.getString("authentication.sso.discoveryUri"))
+      AUTHENTICATION_SCOPE = fromEnv("AUTHENTICATION_SCOPE", conf.getString("authentication.sso.scope"))
+      AUTHENTICATION_USE_NONCE = fromEnv("AUTHENTICATION_SSO_ENABLED", conf.getString("authentication.sso.useNonce")).toBoolean
+      AUTHENTICATION_RESPONSE_TYPE = Option(fromEnv("AUTHENTICATION_RESPONSE_TYPE", "")).filter(StringUtils.isNotBlank)
+      AUTHENTICATION_RESPONSE_MODE = Option(fromEnv("AUTHENTICATION_RESPONSE_MODE", "")).filter(StringUtils.isNotBlank)
+      /*
+       * SSO related configuration - END
+       */
 
       DEMOS_ENABLED = fromEnv("DEMOS_ENABLED", conf.getString("demos.enabled")).toBoolean
       DEMOS_ACCOUNT = fromEnv("DEMOS_ACCOUNT", conf.getString("demos.account")).toLong

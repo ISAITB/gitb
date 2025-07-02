@@ -166,7 +166,7 @@ export class DataService {
     if (!this.user) {
       this.user = {}
     }
-    this.user.name = actualUser.firstName + ' ' + actualUser.lastName
+    this.user.name = actualUser.name
     this.user.email = actualUser.email
   }
 

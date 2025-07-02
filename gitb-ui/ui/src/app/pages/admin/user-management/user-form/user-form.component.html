@@ -2,7 +2,7 @@
     <div class="row mb-3">
         <label class="col-3 col-form-label text-end" for="name">Name:</label>
         <div class="col-6"><input id="name" [readonly]="true" name="name" [(ngModel)]="user.name" class="form-control" type="text"></div>
-        <div app-tooltip class="col-auto" tbTooltip="The name of the user retrieved from her EU Login account."></div>
+        <div app-tooltip class="col-auto" tbTooltip="The name of the user retrieved from her account information."></div>
     </div>
 } @else if (!sso) {
     <div class="row mb-3">
@@ -15,7 +15,7 @@
     <label [ngClass]="{'col-3': sso, 'col-4': !sso}" class="col-form-label text-end" for="email">@if (new) {<span>* </span>} {{sso?'Email:':'Username:'}}</label>
     <div class="col-6"><input id="email" name="email" [(ngModel)]="user.email" class="form-control" type="text" [readonly]="!new" [invalid]="validation?.get('email')"></div>
     @if (sso) {
-        <div app-tooltip class="col-auto" tbTooltip="The email address linked to the user's EU Login account."></div>
+        <div app-tooltip class="col-auto" tbTooltip="The email address linked to the user's account."></div>
     } @else {
         <div app-tooltip class="col-auto" tbTooltip="The username for this user that is used for logging in."></div>
     }
