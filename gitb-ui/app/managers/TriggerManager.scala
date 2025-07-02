@@ -480,6 +480,8 @@ class TriggerManager @Inject()(env: Environment,
                         value = Base64.getEncoder.encodeToString(Files.readAllBytes(repositoryUtils.getOrganisationPropertyFile(param._1, param._2._4.get).toPath))
                       }
                       orgParamData.getItem.add(toAnyContent(param._2._1, "binary", value, Some(ValueEmbeddingEnumeration.BASE_64)))
+                    } else if ("HIDDEN".equals(param._2._2) || "SECRET".equals(param._2._2)) {
+                      orgParamData.getItem.add(toAnyContent(param._2._1, "string", param._2._3.map(MimeUtil.decryptString).getOrElse("Sample data"), None))
                     } else {
                       orgParamData.getItem.add(toAnyContent(param._2._1, "string", param._2._3.getOrElse("Sample data"), None))
                     }
@@ -513,6 +515,8 @@ class TriggerManager @Inject()(env: Environment,
                         value = Base64.getEncoder.encodeToString(Files.readAllBytes(repositoryUtils.getSystemPropertyFile(param._1, param._2._4.get).toPath))
                       }
                       sysParamData.getItem.add(toAnyContent(param._2._1, "binary", value, Some(ValueEmbeddingEnumeration.BASE_64)))
+                    } else if ("HIDDEN".equals(param._2._2) || "SECRET".equals(param._2._2)) {
+                      sysParamData.getItem.add(toAnyContent(param._2._1, "string", param._2._3.map(MimeUtil.decryptString).getOrElse("Sample data"), None))
                     } else {
                       sysParamData.getItem.add(toAnyContent(param._2._1, "string", param._2._3.getOrElse("Sample data"), None))
                     }
@@ -542,6 +546,8 @@ class TriggerManager @Inject()(env: Environment,
                       value = Base64.getEncoder.encodeToString(Files.readAllBytes(repositoryUtils.getDomainParameterFile(param._2._4, param._1).toPath))
                     }
                     domainParamData.getItem.add(toAnyContent(param._2._1, "binary", value, Some(ValueEmbeddingEnumeration.BASE_64)))
+                  } else if ("HIDDEN".equals(param._2._2) || "SECRET".equals(param._2._2)) {
+                    domainParamData.getItem.add(toAnyContent(param._2._1, "string", param._2._3.map(MimeUtil.decryptString).getOrElse("Sample data"), None))
                   } else {
                     domainParamData.getItem.add(toAnyContent(param._2._1, "string", param._2._3.getOrElse("Sample data"), None))
                   }
@@ -577,6 +583,8 @@ class TriggerManager @Inject()(env: Environment,
                         value = Base64.getEncoder.encodeToString(Files.readAllBytes(repositoryUtils.getStatementParameterFile(param._1, param._2._4.get).toPath))
                       }
                       statementParamData.getItem.add(toAnyContent(param._2._1, "binary", value, Some(ValueEmbeddingEnumeration.BASE_64)))
+                    } else if ("HIDDEN".equals(param._2._2) || "SECRET".equals(param._2._2)) {
+                      statementParamData.getItem.add(toAnyContent(param._2._1, "string", param._2._3.map(MimeUtil.decryptString).getOrElse("Sample data"), None))
                     } else {
                       statementParamData.getItem.add(toAnyContent(param._2._1, "string", param._2._3.getOrElse("Sample data"), None))
                     }
