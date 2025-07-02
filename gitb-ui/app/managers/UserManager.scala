@@ -283,7 +283,7 @@ class UserManager @Inject() (accountManager: AccountManager,
    */
   def migratedUsersExist(): Future[Boolean] = {
     DB.run(PersistenceSchema.users
-      .filter(_.role =!= Enums.UserSSOStatus.NotMigrated.id.toShort)
+      .filter(_.ssoStatus =!= Enums.UserSSOStatus.NotMigrated.id.toShort)
       .exists
       .result)
   }
