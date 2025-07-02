@@ -115,6 +115,7 @@ object Configurations {
   // General properties (above specific types)
   var AUTHENTICATION_SSO_ENABLED = false
   var AUTHENTICATION_SSO_IN_MIGRATION_PERIOD = false
+  var AUTHENTICATION_SSO_IN_MIGRATION_PERIOD_ORIGINAL = false
   var AUTHENTICATION_SSO_CALLBACK_URL = ""
   var AUTHENTICATION_SSO_TYPE: String = Constants.SsoTypeEcas
   // CAS-specific properties (EU Login)
@@ -316,6 +317,7 @@ object Configurations {
       AUTHENTICATION_SSO_ENABLED = fromEnv("AUTHENTICATION_SSO_ENABLED", conf.getString("authentication.sso.enabled")).toBoolean
       AUTHENTICATION_SSO_TYPE = fromEnv("AUTHENTICATION_SSO_TYPE", Constants.SsoTypeEcas)
       AUTHENTICATION_SSO_IN_MIGRATION_PERIOD = fromEnv("AUTHENTICATION_SSO_IN_MIGRATION_PERIOD", conf.getString("authentication.sso.inMigrationPeriod")).toBoolean
+      AUTHENTICATION_SSO_IN_MIGRATION_PERIOD_ORIGINAL = AUTHENTICATION_SSO_IN_MIGRATION_PERIOD
       // CAS-specific properties (EU Login)
       AUTHENTICATION_SSO_LOGIN_URL = fromEnv("AUTHENTICATION_SSO_LOGIN_URL", conf.getString("authentication.sso.url.login"))
       AUTHENTICATION_SSO_PREFIX_URL = Option(fromEnv("AUTHENTICATION_SSO_PREFIX_URL", "")).filter(StringUtils.isNotBlank)

@@ -278,4 +278,14 @@ class UserManager @Inject() (accountManager: AccountManager,
       .delete.transactionally)
   }
 
+  /**
+   * Check to see that migrated users exist.
+   */
+  def migratedUsersExist(): Future[Boolean] = {
+    DB.run(PersistenceSchema.users
+      .filter(_.role =!= Enums.UserSSOStatus.NotMigrated.id.toShort)
+      .exists
+      .result)
+  }
+
 }

@@ -85,6 +85,7 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
             _ <- prepareTheme()
             _ <- setupAdministratorOneTimePassword()
             _ <- setupInteractionNotifications()
+            _ <- setupSsoMigrationModeIfNeeded()
             _ <- removeOverrideConfiguration()
           } yield ()
         ).recover {
@@ -331,6 +332,20 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
   private def setupInteractionNotifications(): Future[Unit] = {
     Future.successful {
       testResultManager.schedulePendingTestInteractionNotifications()
+    }
+  }
+
+  private def setupSsoMigrationModeIfNeeded(): Future[Unit] = {
+    if (Configurations.AUTHENTICATION_SSO_ENABLED && !Configurations.AUTHENTICATION_SSO_IN_MIGRATION_PERIOD) {
+      userManager.migratedUsersExist().map { exist =>
+        if (!exist) {
+          // We force migration mode because otherwise the ITB instance is unusable without being manually set to migration mode.
+          logger.info("SSO is enabled without any SSO-enabled accounts. Forcing SSO migration mode until an initial account is migrated.")
+          Configurations.AUTHENTICATION_SSO_IN_MIGRATION_PERIOD = true
+        }
+      }
+    } else {
+      Future.successful(())
     }
   }
 

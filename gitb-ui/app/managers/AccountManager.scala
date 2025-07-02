@@ -44,12 +44,22 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     DB.run(q.update(None, UserSSOStatus.NotLinked.id.toShort).transactionally)
   }
 
-  def migrateAccount(userId: Long, userInfo: ActualUserInfo): Future[Int] = {
+  def migrateAccount(userId: Long, userInfo: ActualUserInfo): Future[Unit] = {
     val dbAction = PersistenceSchema.users
         .filter(_.id === userId)
         .map(x => (x.ssoUid, x.ssoEmail, x.name, x.ssoStatus, x.onetimePassword))
         .update((Some(userInfo.uid), Some(userInfo.email), userInfo.name, UserSSOStatus.Linked.id.toShort, false))
-    DB.run(dbAction.transactionally)
+    DB.run(dbAction.transactionally).map { _ =>
+      if (Configurations.AUTHENTICATION_SSO_IN_MIGRATION_PERIOD && !Configurations.AUTHENTICATION_SSO_IN_MIGRATION_PERIOD_ORIGINAL) {
+        /*
+         * The Test Bed was started in non-migration mode but was forced to migration mode because no migrated accounts
+         * existed. In this case, upon migration of a first account, the forced migration mode is reset. The point of
+         * this is essentially to allow a initial installation to be done with SSO without needing to set and then unset
+         * the migration mode to migrate the initial administrator.
+         */
+        Configurations.AUTHENTICATION_SSO_IN_MIGRATION_PERIOD = false
+      }
+    }
   }
 
   def getUnlinkedUserAccountsForEmail(email: String): Future[List[UserAccount]] = {
