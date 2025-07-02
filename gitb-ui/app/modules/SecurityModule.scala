@@ -111,12 +111,9 @@ class SecurityModule extends AbstractModule {
     oidcConfiguration.setClientAuthenticationMethod(ClientAuthenticationMethod.parse(Configurations.AUTHENTICATION_SSO_CLIENT_AUTHENTICATION_METHOD))
     oidcConfiguration.setUseNonce(Configurations.AUTHENTICATION_SSO_USE_NONCE)
     oidcConfiguration.setScope(Configurations.AUTHENTICATION_SSO_SCOPE)
-    if (Configurations.AUTHENTICATION_SSO_RESPONSE_TYPE.isDefined) {
-      oidcConfiguration.setResponseType(Configurations.AUTHENTICATION_SSO_RESPONSE_TYPE.get)
-    }
-    if (Configurations.AUTHENTICATION_SSO_RESPONSE_MODE.isDefined) {
-      oidcConfiguration.setResponseMode(Configurations.AUTHENTICATION_SSO_RESPONSE_MODE.get)
-    }
+    Configurations.AUTHENTICATION_SSO_PREFERRED_JWS_ALGORITHM.foreach(oidcConfiguration.setPreferredJwsAlgorithmAsString)
+    Configurations.AUTHENTICATION_SSO_RESPONSE_TYPE.foreach(oidcConfiguration.setResponseType)
+    Configurations.AUTHENTICATION_SSO_RESPONSE_MODE.foreach(oidcConfiguration.setResponseMode)
     val oidcClient = new OidcClient(oidcConfiguration)
     oidcClient.setName(CLIENT_NAME)
     oidcClient

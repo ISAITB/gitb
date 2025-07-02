@@ -137,6 +137,7 @@ object Configurations {
   var AUTHENTICATION_SSO_DISCOVERY_URI = ""
   var AUTHENTICATION_SSO_USE_NONCE = true
   var AUTHENTICATION_SSO_SCOPE = "openid profile email"
+  var AUTHENTICATION_SSO_PREFERRED_JWS_ALGORITHM: Option[String] = None
   var AUTHENTICATION_SSO_RESPONSE_TYPE: Option[String] = None // code (default), id_token, token, code id_token, code token
   var AUTHENTICATION_SSO_RESPONSE_MODE: Option[String] = None // query, fragment, form_post
   /*
@@ -338,6 +339,7 @@ object Configurations {
       AUTHENTICATION_SSO_DISCOVERY_URI = fromEnv("AUTHENTICATION_SSO_DISCOVERY_URI", conf.getString("authentication.sso.discoveryUri"))
       AUTHENTICATION_SSO_SCOPE = fromEnv("AUTHENTICATION_SSO_SCOPE", conf.getString("authentication.sso.scope"))
       AUTHENTICATION_SSO_USE_NONCE = fromEnv("AUTHENTICATION_SSO_USE_NONCE", conf.getString("authentication.sso.useNonce")).toBoolean
+      AUTHENTICATION_SSO_PREFERRED_JWS_ALGORITHM = Option(fromEnv("AUTHENTICATION_SSO_PREFERRED_JWS_ALGORITHM", "")).filter(StringUtils.isNotBlank)
       AUTHENTICATION_SSO_RESPONSE_TYPE = Option(fromEnv("AUTHENTICATION_SSO_RESPONSE_TYPE", "")).filter(StringUtils.isNotBlank)
       AUTHENTICATION_SSO_RESPONSE_MODE = Option(fromEnv("AUTHENTICATION_SSO_RESPONSE_MODE", "")).filter(StringUtils.isNotBlank)
       /*
