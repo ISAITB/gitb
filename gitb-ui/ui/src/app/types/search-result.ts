@@ -13,11 +13,9 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {CommunityLimited} from './community-limited';
+export interface SearchResult<T> {
 
-export interface CommunitySearchResult {
-
-  data: CommunityLimited[],
+  data: T[],
   count: number
 
 }

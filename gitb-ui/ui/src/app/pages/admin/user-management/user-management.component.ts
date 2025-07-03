@@ -77,9 +77,9 @@ export class UserManagementComponent implements OnInit {
         this.communities = data.data
         this.updatePagination(pagingInfo.targetPage, data.count!)
       }).add(() => {
-      this.communitiesRefreshing = false
-      this.communityStatus.status = Constants.STATUS.FINISHED
-    })
+        this.communitiesRefreshing = false
+        this.communityStatus.status = Constants.STATUS.FINISHED
+      })
   }
 
   applyFilter() {

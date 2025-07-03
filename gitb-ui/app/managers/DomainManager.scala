@@ -74,15 +74,55 @@ class DomainManager @Inject() (domainParameterManager: DomainParameterManager,
     )
   }
 
+  def searchDomains(page: Long, limit: Long, filter: Option[String]): Future[(Iterable[Domain], Int)] = {
+    DB.run(searchDomainsInternal(page, limit, filter))
+  }
+
+  private def searchDomainsInternal(page: Long, limit: Long, filter: Option[String]): DBIO[(Iterable[Domain], Int)] = {
+    val query = PersistenceSchema.domains
+      .filterOpt(filter)((table, filterValue) => {
+        val filterValueToUse = s"%${filterValue.toLowerCase}%"
+        table.shortname.toLowerCase.like(filterValueToUse) || table.fullname.toLowerCase.like(filterValueToUse)
+      })
+      .sortBy(_.shortname.asc)
+    for {
+      results <- query.drop((page - 1) * limit).take(limit).result
+      resultCount <- query.size.result
+    } yield (results, resultCount)
+  }
+
+  def searchCommunityDomains(page: Long, limit: Long, filter: Option[String], communityId: Long): Future[(Iterable[Domain], Int)] = {
+    DB.run {
+      for {
+        communityDomain <- getCommunityDomainInternal(communityId)
+        domains <- {
+          if (communityDomain.isDefined) {
+            val filterValueToUse = filter.map(_.toLowerCase)
+            if (filterValueToUse.isEmpty || communityDomain.get.shortname.toLowerCase.contains(filterValueToUse) || communityDomain.get.fullname.toLowerCase.contains(filterValueToUse)) {
+              DBIO.successful((List(communityDomain.get), 1))
+            } else {
+              DBIO.successful((List(), 0))
+            }
+          } else {
+            // Community has access to all domains.
+            searchDomainsInternal(page, limit, filter)
+          }
+        }
+      } yield domains
+    }
+  }
+
   def getCommunityDomain(communityId: Long): Future[Option[Domain]] = {
-    DB.run(
-      PersistenceSchema.communities
+    DB.run(getCommunityDomainInternal(communityId))
+  }
+
+  private def getCommunityDomainInternal(communityId: Long): DBIO[Option[Domain]] = {
+    PersistenceSchema.communities
       .join(PersistenceSchema.domains).on(_.domain === _.id)
       .filter(_._1.id === communityId)
       .map(_._2)
       .result
       .headOption
-    )
   }
 
   def getDomainOfActor(actorId: Long): Future[Domain] = {

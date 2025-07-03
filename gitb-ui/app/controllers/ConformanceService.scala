@@ -112,6 +112,18 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
     }
   }
 
+  def searchDomains: Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canViewAllDomains(request).flatMap { _ =>
+      val filter = ParameterExtractor.optionalQueryParameter(request, Parameters.FILTER)
+      val page = ParameterExtractor.extractPageNumber(request)
+      val limit = ParameterExtractor.extractPageLimit(request)
+      domainManager.searchDomains(page, limit, filter).map { result =>
+        val json = JsonUtil.jsDomainSearchResult(result._1, result._2).toString()
+        ResponseConstructor.constructJsonResponse(json)
+      }
+    }
+  }
+
   def getDomainOfSpecification(specId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewDomainBySpecificationId(request, specId).flatMap { _ =>
       domainManager.getDomainOfSpecification(specId).map { domain =>
@@ -167,6 +179,19 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
           val json = JsonUtil.jsCommunityDomains(domainInfo._1, domainInfo._2).toString()
           ResponseConstructor.constructJsonResponse(json)
         }
+      }
+    }
+  }
+
+  def searchCommunityDomains: Action[AnyContent] = authorizedAction.async { request =>
+    val communityId = ParameterExtractor.requiredQueryParameter(request, Parameters.COMMUNITY_ID).toLong
+    authorizationManager.canViewDomainByCommunityId(request, communityId).flatMap { _ =>
+      val filter = ParameterExtractor.optionalQueryParameter(request, Parameters.FILTER)
+      val page = ParameterExtractor.extractPageNumber(request)
+      val limit = ParameterExtractor.extractPageLimit(request)
+      domainManager.searchCommunityDomains(page, limit, filter, communityId).map { result =>
+        val json = JsonUtil.jsDomainSearchResult(result._1, result._2).toString()
+        ResponseConstructor.constructJsonResponse(json)
       }
     }
   }

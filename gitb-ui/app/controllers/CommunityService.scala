@@ -575,7 +575,7 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
       val page = ParameterExtractor.extractPageNumber(request)
       val limit = ParameterExtractor.extractPageLimit(request)
       communityManager.searchCommunities(page, limit, filter).map { result =>
-        val json = JsonUtil.jsCommunitiesSearchResult(result._1, result._2).toString()
+        val json = JsonUtil.jsCommunitySearchResult(result._1, result._2).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
     }

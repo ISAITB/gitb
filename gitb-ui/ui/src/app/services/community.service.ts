@@ -32,7 +32,8 @@ import {ErrorDescription} from '../types/error-description';
 import {ActualUserInfo} from '../types/actual-user-info';
 import {CustomProperty} from '../types/custom-property.type';
 import {FileParam} from '../types/file-param.type';
-import {CommunitySearchResult} from '../types/community-search-result';
+import {SearchResult} from '../types/search-result';
+import {CommunityLimited} from '../types/community-limited';
 
 @Injectable({
   providedIn: 'root'
@@ -64,7 +65,7 @@ export class CommunityService {
   }
 
   searchCommunities(filter: string|undefined, page: number|undefined, limit: number|undefined) {
-    return this.restService.get<CommunitySearchResult>({
+    return this.restService.get<SearchResult<CommunityLimited>>({
       path: ROUTES.controllers.CommunityService.searchCommunities().url,
       authenticate: true,
       params: {

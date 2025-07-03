@@ -53,6 +53,7 @@ import {Constants} from '../common/constants';
 import {SystemParameter} from '../types/system-parameter';
 import {OrganisationParameter} from '../types/organisation-parameter';
 import {ErrorDescription} from '../types/error-description';
+import {SearchResult} from '../types/search-result';
 
 @Injectable({
   providedIn: 'root'
@@ -116,6 +117,31 @@ export class ConformanceService {
       authenticate: true,
       params: {
         community_id: communityId
+      }
+    })
+  }
+
+  searchDomains(filter: string|undefined, page: number|undefined, limit: number|undefined) {
+    return this.restService.get<SearchResult<Domain>>({
+      path: ROUTES.controllers.ConformanceService.searchDomains().url,
+      authenticate: true,
+      params: {
+        filter: filter,
+        page: page,
+        limit: limit,
+      }
+    })
+  }
+
+  searchCommunityDomains(communityId: number, filter: string|undefined, page: number|undefined, limit: number|undefined) {
+    return this.restService.get<SearchResult<Domain>>({
+      path: ROUTES.controllers.ConformanceService.searchCommunityDomains().url,
+      authenticate: true,
+      params: {
+        community_id: communityId,
+        filter: filter,
+        page: page,
+        limit: limit,
       }
     })
   }

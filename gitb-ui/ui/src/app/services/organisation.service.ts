@@ -19,11 +19,11 @@ import { ApiKeyInfo } from '../types/api-key-info';
 import { CustomProperty } from '../types/custom-property.type';
 import { ErrorDescription } from '../types/error-description';
 import { FileParam } from '../types/file-param.type';
-import { OrganisationSearchResult } from '../types/organisation-search-result.type';
 import { Organisation } from '../types/organisation.type';
 import { DataService } from './data.service';
 import { RestService } from './rest.service';
 import { OrganisationParameter } from '../types/organisation-parameter';
+import {SearchResult} from '../types/search-result';
 
 @Injectable({
   providedIn: 'root'
@@ -82,7 +82,7 @@ export class OrganisationService {
   }
 
   searchOrganisationsByCommunity(communityId: number, filter: string|undefined, sortOrder: string|undefined, sortColumn: string|undefined, page: number|undefined, limit: number|undefined, creationOrderSort: string) {
-    return this.restService.get<OrganisationSearchResult>({
+    return this.restService.get<SearchResult<Organisation>>({
       path: ROUTES.controllers.OrganizationService.searchOrganizationsByCommunity(communityId).url,
       authenticate: true,
       params: {

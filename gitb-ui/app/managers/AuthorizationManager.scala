@@ -2163,6 +2163,10 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     check.map(setAuthResult(request, _, "User doesn't have access to the requested domain(s)"))
   }
 
+  def canViewAllDomains(request: RequestWithAttributes[_]): Future[Boolean] = {
+    checkTestBedAdmin(request)
+  }
+
   def canViewDomains(request: RequestWithAttributes[_], ids: Option[List[Long]]): Future[Boolean] = {
     getUser(getRequestUserId(request)).flatMap { userInfo =>
       canViewDomains(request, userInfo, ids)

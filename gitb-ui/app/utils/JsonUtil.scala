@@ -787,9 +787,16 @@ object JsonUtil {
     json
   }
 
-  def jsCommunitiesSearchResult(list: Iterable[CommunityLimited], resultCount: Int): JsObject = {
+  def jsCommunitySearchResult(list: Iterable[CommunityLimited], resultCount: Int): JsObject = {
     Json.obj(
       "data" -> jsCommunitiesLimited(list),
+      "count" -> resultCount
+    )
+  }
+
+  def jsDomainSearchResult(list: Iterable[Domain], resultCount: Int): JsObject = {
+    Json.obj(
+      "data" -> jsDomains(list, withApiKeys = false),
       "count" -> resultCount
     )
   }
@@ -913,7 +920,7 @@ object JsonUtil {
    * @param list List of Domains to be converted
    * @return JsArray
    */
-  def jsDomains(list:List[Domain], withApiKeys: Boolean):JsArray = {
+  def jsDomains(list: Iterable[Domain], withApiKeys: Boolean):JsArray = {
     var json = Json.arr()
     list.foreach{ domain =>
       json = json.append(jsDomain(domain, withApiKeys))
