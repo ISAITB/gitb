@@ -1,0 +1,11 @@
+<div class="btn-group" dropdown>
+    <button type="button" class="btn btn-secondary" (click)="doToggle()"><app-collapsing-icon [isCollapsed]="!visible"></app-collapsing-icon>Search</button>
+    <button id="button-filters" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+        <span class="caret"></span>
+        <span class="sr-only visually-hidden">Search</span>
+    </button>
+    <ul id="dropdown-filters" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-filters">
+        <li role="menuitem"><a class="dropdown-item" href (click)="doRefresh();$event.preventDefault();">Refresh</a></li>
+        <li role="menuitem"><a class="dropdown-item" href (click)="doClear();$event.preventDefault();">Clear</a></li>
+    </ul>
+</div>
