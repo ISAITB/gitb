@@ -115,13 +115,13 @@ const routes: Routes = [
       // Administration
       { path: 'admin', resolve: { profile: ProfileResolver }, canActivate: [AdminViewGuard], children: [
           // Session dashboard
-          { path: 'health', component: ServiceHealthDashboardComponent },
+          { path: 'health', component: ServiceHealthDashboardComponent, canActivate: [SystemAdminViewGuard] },
           // Session dashboard
           { path: 'sessions', component: SessionDashboardComponent },
           // Conformance dashboard
           { path: 'conformance', component: ConformanceDashboardComponent },
           // Domain management
-          { path: 'domains', component: DomainManagementComponent, canActivate: [SystemAdminViewGuard] },
+          { path: 'domains', component: DomainManagementComponent },
           { path: 'domains/create', component: CreateDomainComponent, canActivate: [SystemAdminViewGuard] },
           { path: 'domains/:'+Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID, component: DomainDetailsComponent },
           { path: 'domains/:'+Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID+'/testsuites/:'+Constants.NAVIGATION_PATH_PARAM.TEST_SUITE_ID, component: TestSuiteDetailsComponent, resolve: { implicitCommunityId: ImplicitCommunityResolver } },
