@@ -1,8 +1,8 @@
 import sbtlicensereport.license.{LicenseCategory, LicenseInfo}
 
-scalaVersion := "2.13.14"
+scalaVersion := "2.13.16"
 val pekkoVersion = "1.1.4"
-val jacksonVersion = "2.18.3"
+val jacksonVersion = "2.19.1"
 val cxfVersion = "4.1.2"
 val gitbCommonsVersion = "1.28.0-SNAPSHOT"
 val gitbTypesVersion = "1.28.0-SNAPSHOT"
@@ -43,8 +43,8 @@ libraryDependencies ++= Seq(
   "org.apache.pekko" %% "pekko-serialization-jackson" % pekkoVersion,
   "org.playframework" %% "play-slick" % "6.2.0",
   "org.pac4j" %% "play-pac4j" % "12.0.2-PLAY3.0",
-  "org.pac4j" % "pac4j-cas" % "6.1.2" exclude("org.bouncycastle", "bcpkix-jdk15on"),
-  "org.pac4j" % "pac4j-oidc" % "6.1.2",
+  "org.pac4j" % "pac4j-cas" % "6.1.3" exclude("org.bouncycastle", "bcpkix-jdk15on"),
+  "org.pac4j" % "pac4j-oidc" % "6.1.3",
   "org.apache.commons" % "commons-lang3" % "3.17.0",
   "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
