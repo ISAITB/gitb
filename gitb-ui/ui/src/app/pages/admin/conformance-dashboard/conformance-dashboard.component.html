@@ -4,17 +4,7 @@
             <div class="card-title">Conformance statements</div>
             <div class="btn-toolbar allStatementControls" [class.disable-events]="filterState.updatePending">
                 @if (!treeView) {
-                    <div class="btn-group" dropdown>
-                        <button type="button" class="btn btn-secondary" (click)="toggleFilters()"><app-collapsing-icon [isCollapsed]="!filtersVisible"></app-collapsing-icon>Search filters</button>
-                        <button id="button-filters" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
-                            <span class="caret"></span>
-                            <span class="sr-only visually-hidden">Search filters</span>
-                        </button>
-                        <ul id="dropdown-filters" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-filters">
-                            <li role="menuitem"><a class="dropdown-item" href (click)="refreshFilters();$event.preventDefault();">Refresh results</a></li>
-                            <li role="menuitem"><a class="dropdown-item" href (click)="clearFilters();$event.preventDefault();">Clear filters</a></li>
-                        </ul>
-                    </div>
+                    <app-filter-control (toggle)="toggleFilters()" (refresh)="refreshFilters()" (clear)="clearFilters()"></app-filter-control>
                     @if (conformanceStatements.length > 0) {
                         <button type="button" class="btn btn-secondary"  (click)="onExportConformanceStatementsAsCsv()" [disable]="conformanceStatements.length == 0" [pending]="exportPending">Export CSV</button>
                     }
@@ -187,7 +177,7 @@
                         </tbody>
                     } @else if (conformanceStatements.length > 0) {
                         <tbody [class.disable-events]="filterState.updatePending">
-                            @for (statement of conformanceStatements; track statement) {
+                            @for (statement of conformanceStatements; track trackStatement($index, statement)) {
                                 <tr (click)="onExpand(statement)"
                                     class="table-row-directive expandable-table-row-collapsed">
                                     <td class="td-min-centered"><app-collapsing-icon [padded]="false" [isCollapsed]="!isExpanded(statement)"></app-collapsing-icon></td>

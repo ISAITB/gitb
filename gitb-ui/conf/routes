@@ -38,12 +38,12 @@ POST    /api/user/disconnect                    @controllers.AuthenticationServi
 
 # Account management API
 GET	    /api/vendor/profile                     @controllers.AccountService.getVendorProfile()
-POST	/api/vendor/profile                     @controllers.AccountService.updateVendorProfile()
+POST	  /api/vendor/profile                     @controllers.AccountService.updateVendorProfile()
 GET	    /api/vendor/users                       @controllers.AccountService.getVendorUsers()
-POST	/api/user/register                      @controllers.AccountService.registerUser()
+POST	  /api/user/register                      @controllers.AccountService.registerUser()
 GET	    /api/user/profile                       @controllers.AccountService.getUserProfile()
 GET	    /api/user/community                     @controllers.CommunityService.getUserCommunity()
-POST	/api/user/profile                       @controllers.AccountService.updateUserProfile()
+POST	  /api/user/profile                       @controllers.AccountService.updateUserProfile()
 GET     /api/app/configuration                  @controllers.AccountService.getConfiguration()
 POST    /api/user/feedback                      @controllers.AccountService.submitFeedback()
 POST    /api/user/selfreg                       @controllers.CommunityService.selfRegister()
@@ -239,6 +239,7 @@ GET     /api/organizations/:id/apiKey           @controllers.OrganizationService
 GET     /api/communities/all                    @controllers.CommunityService.getCommunities()
 GET     /api/communities/user                   @controllers.CommunityService.getUserCommunities()
 POST    /api/communities/create                 @controllers.CommunityService.createCommunity()
+GET	    /api/communities/search                 @controllers.CommunityService.searchCommunities()
 GET     /api/communities/:id                    @controllers.CommunityService.getCommunityById(id : Long)
 POST    /api/communities/:id                    @controllers.CommunityService.updateCommunity(id : Long)
 DELETE  /api/communities/:id                    @controllers.CommunityService.deleteCommunity(id: Long)

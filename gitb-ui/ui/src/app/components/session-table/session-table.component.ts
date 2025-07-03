@@ -31,7 +31,7 @@ import {LogLevel} from 'src/app/types/log-level';
 import {TestInteractionData} from 'src/app/types/test-interaction-data';
 import {filter, find} from 'lodash';
 import {PopupService} from 'src/app/services/popup.service';
-import {PagingControlsComponent} from '../paging-controls/paging-controls.component';
+import {PagingControlsApi} from '../paging-controls/paging-controls-api';
 
 @Component({
     selector: '[app-session-table]',
@@ -49,7 +49,7 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
   @Input() showCheckbox?: EventEmitter<boolean>
   @Input() showNavigationControls = true
   @Output() onRefresh = new EventEmitter<TestResultForDisplay>()
-  @ViewChild("pagingControls") pagingControls?: PagingControlsComponent
+  @ViewChild("pagingControls") pagingControls?: PagingControlsApi
 
   Constants = Constants
   columnCount = 0

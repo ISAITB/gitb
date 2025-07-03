@@ -43,8 +43,8 @@ import {FilterUpdate} from 'src/app/components/test-filter/filter-update';
 import {
   BaseConformanceItemDisplayComponent
 } from 'src/app/components/base-conformance-item-display/base-conformance-item-display.component';
-import {PagingControlsComponent} from '../../../components/paging-controls/paging-controls.component';
 import {PagingEvent} from '../../../components/paging-controls/paging-event';
+import {PagingControlsApi} from '../../../components/paging-controls/paging-controls-api';
 
 @Component({
     selector: 'app-conformance-dashboard',
@@ -54,7 +54,7 @@ import {PagingEvent} from '../../../components/paging-controls/paging-event';
 })
 export class ConformanceDashboardComponent extends BaseConformanceItemDisplayComponent implements OnInit {
 
-  @ViewChild("pagingControls") pagingControls?: PagingControlsComponent
+  @ViewChild("pagingControls") pagingControls?: PagingControlsApi
 
   exportPending = false
   dataStatus = {status: Constants.STATUS.PENDING}
@@ -74,7 +74,6 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
   conformanceStatements: ConformanceResultFullWithTestSuites[] = []
   settings?: Partial<ConformanceCertificateSettings>
   Constants = Constants
-  filtersVisible = false
 
   sortOrder = Constants.ORDER.ASC
   sortColumn = Constants.FILTER_TYPE.COMMUNITY
@@ -167,12 +166,11 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
   }
 
   toggleFilters() {
-    this.filtersVisible = !this.filtersVisible
     this.filterCommands.emit(Constants.FILTER_COMMAND.TOGGLE)
   }
 
   clearFilters() {
-    this.filtersVisible = false
+    console.log("CLEAR")
     this.filterCommands.emit(Constants.FILTER_COMMAND.CLEAR)
   }
 
@@ -665,6 +663,10 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     ((this.selectedCommunityId != undefined && this.availableCommunities) && (this.availableOrganisations == undefined || this.availableOrganisations.length > 0)) ||
     ((this.selectedOrganisationId != undefined && this.availableOrganisations) && (this.availableSystems == undefined || this.availableSystems.length > 0)) ||
     (this.statements.length > 0)
+  }
+
+  trackStatement(index: number, statement: ConformanceResultFullWithTestSuites): string {
+    return `${statement.actorId}_${statement.systemId}`;
   }
 
 }

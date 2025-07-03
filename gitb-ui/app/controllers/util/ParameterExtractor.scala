@@ -55,6 +55,20 @@ object ParameterExtractor {
     fileMap.iterator.toMap
   }
 
+  def extractPageNumber(request:Request[AnyContent]): Long = {
+    ParameterExtractor.optionalQueryParameter(request, Parameters.PAGE) match {
+      case Some(v) => v.toLong
+      case _ => 1L
+    }
+  }
+
+  def extractPageLimit(request:Request[AnyContent]): Long = {
+    ParameterExtractor.optionalQueryParameter(request, Parameters.LIMIT) match {
+      case Some(v) => v.toLong
+      case None => 10L
+    }
+  }
+
   def requiredQueryParameter(request:Request[AnyContent], parameter:String):String = {
     val param = request.getQueryString(parameter)
     if(param.isEmpty)

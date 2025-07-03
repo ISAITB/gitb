@@ -105,14 +105,8 @@ class OrganizationService @Inject() (repositoryUtils: RepositoryUtils,
       val filter = ParameterExtractor.optionalQueryParameter(request, Parameters.FILTER)
       val sortOrder = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_ORDER)
       val sortColumn = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_COLUMN)
-      val page = ParameterExtractor.optionalQueryParameter(request, Parameters.PAGE) match {
-        case Some(v) => v.toLong
-        case None => 1L
-      }
-      val limit = ParameterExtractor.optionalQueryParameter(request, Parameters.LIMIT) match {
-        case Some(v) => v.toLong
-        case None => 10L
-      }
+      val page = ParameterExtractor.extractPageNumber(request)
+      val limit = ParameterExtractor.extractPageLimit(request)
       var creationOrderSort: Option[String] = None
       val creationOrderSortParam = ParameterExtractor.optionalQueryParameter(request, Parameters.CREATION_ORDER_SORT).getOrElse("none")
       if (!creationOrderSortParam.equals("none")) {

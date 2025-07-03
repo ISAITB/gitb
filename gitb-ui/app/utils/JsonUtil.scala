@@ -787,12 +787,35 @@ object JsonUtil {
     json
   }
 
+  def jsCommunitiesSearchResult(list: Iterable[CommunityLimited], resultCount: Int): JsObject = {
+    Json.obj(
+      "data" -> jsCommunitiesLimited(list),
+      "count" -> resultCount
+    )
+  }
+
+  def jsCommunitiesLimited(list: Iterable[CommunityLimited]):JsArray = {
+    var json = Json.arr()
+    list.foreach{ community =>
+      json = json.append(jsCommunityLimited(community))
+    }
+    json
+  }
+
   def jsCommunities(list:List[Communities]):JsArray = {
     var json = Json.arr()
     list.foreach{ community =>
       json = json.append(jsCommunity(community, includeAdminInfo = true))
     }
     json
+  }
+
+  def jsCommunityLimited(community: CommunityLimited):JsObject = {
+    Json.obj(
+      "id"    -> community.id,
+      "sname" -> community.shortname,
+      "fname" -> community.fullname
+    )
   }
 
   def jsCommunity(community:Communities, includeAdminInfo: Boolean):JsObject = {

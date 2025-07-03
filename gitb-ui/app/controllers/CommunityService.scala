@@ -569,4 +569,16 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
     }
   }
 
+  def searchCommunities(): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canViewAllCommunities(request).flatMap { _ =>
+      val filter = ParameterExtractor.optionalQueryParameter(request, Parameters.FILTER)
+      val page = ParameterExtractor.extractPageNumber(request)
+      val limit = ParameterExtractor.extractPageLimit(request)
+      communityManager.searchCommunities(page, limit, filter).map { result =>
+        val json = JsonUtil.jsCommunitiesSearchResult(result._1, result._2).toString()
+        ResponseConstructor.constructJsonResponse(json)
+      }
+    }
+  }
+
 }

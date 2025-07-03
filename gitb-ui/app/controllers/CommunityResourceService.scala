@@ -251,14 +251,8 @@ class CommunityResourceService @Inject() (authorizedAction: AuthorizedAction,
 
   private def searchResourcesInternal(communityId: Long, request: RequestWithAttributes[AnyContent]): Future[Result] = {
     val filter = ParameterExtractor.optionalQueryParameter(request, Parameters.FILTER)
-    val page = ParameterExtractor.optionalQueryParameter(request, Parameters.PAGE) match {
-      case Some(v) => v.toLong
-      case None => 1L
-    }
-    val limit = ParameterExtractor.optionalQueryParameter(request, Parameters.LIMIT) match {
-      case Some(v) => v.toLong
-      case None => 10L
-    }
+    val page = ParameterExtractor.extractPageNumber(request)
+    val limit = ParameterExtractor.extractPageLimit(request)
     communityResourceManager.searchCommunityResources(communityId, page, limit, filter).map { result =>
       ResponseConstructor.constructJsonResponse(JsonUtil.jsCommunityResourceSearchResult(result._1, result._2).toString)
     }

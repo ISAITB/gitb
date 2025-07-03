@@ -134,6 +134,27 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
     )
   }
 
+  def searchCommunities(page: Long, limit: Long, filter: Option[String]): Future[(Iterable[CommunityLimited], Int)] = {
+    val query = PersistenceSchema.communities
+      .filter(_.id =!= Constants.DefaultCommunityId)
+      .filterOpt(filter)((table, filterValue) => {
+        val filterValueToUse = s"%${filterValue.toLowerCase}%"
+        table.shortname.toLowerCase.like(filterValueToUse) || table.fullname.toLowerCase.like(filterValueToUse)
+      })
+      .map(x => (x.id, x.shortname, x.fullname))
+      .sortBy(_._2.asc)
+    DB.run(
+      for {
+        results <- query.drop((page - 1) * limit).take(limit).result.map { results =>
+          results.map { result =>
+            CommunityLimited(result._1, result._2, result._3)
+          }
+        }
+        resultCount <- query.size.result
+      } yield (results, resultCount)
+    )
+  }
+
   def getSelfRegistrationOptions(): Future[List[SelfRegOption]] = {
     val action = for {
       // Load self registration-enabled communities and domains

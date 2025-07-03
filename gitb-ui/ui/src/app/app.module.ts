@@ -225,6 +225,7 @@ import { ServiceHealthDashboardComponent } from './pages/service-health-dashboar
 import { ServiceHealthCardComponent } from './components/service-health-card/service-health-card.component';
 import { ServiceHealthModalComponent } from './modals/service-health-modal/service-health-modal.component';
 import { ServiceHealthIconComponent } from './components/service-health-icon/service-health-icon.component';
+import { FilterControlComponent } from './components/filter-control/filter-control.component';
 
 @NgModule({ declarations: [
         AppComponent,
@@ -417,7 +418,8 @@ import { ServiceHealthIconComponent } from './components/service-health-icon/ser
         ServiceHealthDashboardComponent,
         ServiceHealthCardComponent,
         ServiceHealthModalComponent,
-        ServiceHealthIconComponent
+        ServiceHealthIconComponent,
+        FilterControlComponent
     ],
     bootstrap: [AppComponent], imports: [
     NgxColorPickerComponent,

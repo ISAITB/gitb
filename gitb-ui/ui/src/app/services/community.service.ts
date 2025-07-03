@@ -32,6 +32,7 @@ import {ErrorDescription} from '../types/error-description';
 import {ActualUserInfo} from '../types/actual-user-info';
 import {CustomProperty} from '../types/custom-property.type';
 import {FileParam} from '../types/file-param.type';
+import {CommunitySearchResult} from '../types/community-search-result';
 
 @Injectable({
   providedIn: 'root'
@@ -59,6 +60,18 @@ export class CommunityService {
     return this.restService.get<Community[]>({
       path: ROUTES.controllers.CommunityService.getUserCommunities().url,
       authenticate: true
+    })
+  }
+
+  searchCommunities(filter: string|undefined, page: number|undefined, limit: number|undefined) {
+    return this.restService.get<CommunitySearchResult>({
+      path: ROUTES.controllers.CommunityService.searchCommunities().url,
+      authenticate: true,
+      params: {
+        filter: filter,
+        page: page,
+        limit: limit,
+      }
     })
   }
 

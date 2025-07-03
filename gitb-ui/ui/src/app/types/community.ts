@@ -14,13 +14,11 @@
  */
 
 import {Domain} from './domain';
-import {EntityWithId} from './entity-with-id';
 import {TypedLabelConfig} from './typed-label-config.type';
+import {CommunityLimited} from './community-limited';
 
-export interface Community extends EntityWithId {
+export interface Community extends CommunityLimited {
 
-  sname: string;
-  fname: string;
   description?: string;
   selfRegType: number;
   selfRegRestriction: number;

@@ -13,13 +13,16 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, OnInit } from '@angular/core';
+import {Component, OnInit, ViewChild} from '@angular/core';
 import { Constants } from 'src/app/common/constants';
 import { CommunityService } from 'src/app/services/community.service';
 import { DataService } from 'src/app/services/data.service';
 import { RoutingService } from 'src/app/services/routing.service';
 import { Community } from 'src/app/types/community';
 import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
+import {TableApi} from '../../../components/table/table-api';
+import {PagingEvent} from '../../../components/paging-controls/paging-event';
+import {CommunityLimited} from '../../../types/community-limited';
 
 @Component({
     selector: 'app-user-management',
@@ -29,12 +32,16 @@ import { TableColumnDefinition } from 'src/app/types/table-column-definition.typ
 })
 export class UserManagementComponent implements OnInit {
 
+  @ViewChild("communityTable") communityTable?: TableApi
+
   communityStatus = {status: Constants.STATUS.PENDING}
   communityColumns: TableColumnDefinition[] = [
     { field: 'sname', title: 'Short name' },
     { field: 'fname', title: 'Full name' }
   ]
-  communities: Community[] = []
+  communities: CommunityLimited[] = []
+  communityFilter?: string
+  communitiesRefreshing = false
 
   constructor(
     private readonly dataService: DataService,
@@ -46,12 +53,7 @@ export class UserManagementComponent implements OnInit {
     if (!this.dataService.isSystemAdmin) {
       this.routingService.toHome()
     }
-    this.communityService.getUserCommunities()
-    .subscribe((data) => {
-      this.communities = data
-    }).add(() => {
-      this.communityStatus.status = Constants.STATUS.FINISHED
-    })
+    this.refreshCommunities()
     this.routingService.communitiesBreadcrumbs()
   }
 
@@ -62,5 +64,37 @@ export class UserManagementComponent implements OnInit {
 
   createCommunity() {
     this.routingService.toCreateCommunity()
+  }
+
+  loadCommunities(pagingInfo: PagingEvent) {
+    if (this.communityStatus.status == Constants.STATUS.FINISHED) {
+      this.communitiesRefreshing = true
+    } else {
+      this.communityStatus.status = Constants.STATUS.PENDING
+    }
+    this.communityService.searchCommunities(this.communityFilter, pagingInfo.targetPage, pagingInfo.targetPageSize)
+      .subscribe((data) => {
+        this.communities = data.data
+        this.updatePagination(pagingInfo.targetPage, data.count!)
+      }).add(() => {
+      this.communitiesRefreshing = false
+      this.communityStatus.status = Constants.STATUS.FINISHED
+    })
+  }
+
+  applyFilter() {
+    this.refreshCommunities()
+  }
+
+  refreshCommunities() {
+    this.loadCommunities({ targetPage: 1, targetPageSize: this.communityTable?.getPagingControls()?.getCurrentStatus().pageSize! })
+  }
+
+  doCommunityPaging(event: PagingEvent) {
+    this.loadCommunities(event)
+  }
+
+  private updatePagination(page: number, count: number) {
+    this.communityTable?.getPagingControls()?.updateStatus(page, count)
   }
 }

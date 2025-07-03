@@ -46,8 +46,8 @@ import {Observable, of} from 'rxjs';
 import {ResourceActions} from '../../../../../components/resource-management-tab/resource-actions';
 import {FileData} from '../../../../../types/file-data.type';
 import {CommunityResourceService} from '../../../../../services/community-resource.service';
-import {TableComponent} from '../../../../../components/table/table.component';
 import {PagingEvent} from '../../../../../components/paging-controls/paging-event';
+import {TableApi} from '../../../../../components/table/table-api';
 
 @Component({
     selector: 'app-community-details',
@@ -57,7 +57,7 @@ import {PagingEvent} from '../../../../../components/paging-controls/paging-even
 })
 export class CommunityDetailsComponent extends BaseComponent implements OnInit, AfterViewInit {
 
-  @ViewChild("organisationTable") organisationTable?: TableComponent
+  @ViewChild("organisationTable") organisationTable?: TableApi
 
   community!: Community
   adminStatus = {status: Constants.STATUS.NONE}
@@ -476,11 +476,11 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   }
 
   refreshOrganisations() {
-    this.queryOrganisations({ targetPage: 1, targetPageSize: this.organisationTable?.pagingControls?.getCurrentStatus().pageSize! })
+    this.queryOrganisations({ targetPage: 1, targetPageSize: this.organisationTable?.getPagingControls()?.getCurrentStatus().pageSize! })
   }
 
   private updateOrganisationPagination(page: number, count: number) {
-    this.organisationTable?.pagingControls?.updateStatus(page, count)
+    this.organisationTable?.getPagingControls()?.updateStatus(page, count)
   }
 
   sortOrganisations(column: TableColumnDefinition) {
