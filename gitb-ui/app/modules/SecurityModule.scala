@@ -129,6 +129,7 @@ class SecurityModule extends AbstractModule {
     Configurations.AUTHENTICATION_SSO_RESPONSE_MODE.foreach(oidcConfiguration.setResponseMode)
     val oidcClient = new OidcClient(oidcConfiguration)
     oidcClient.setName(CLIENT_NAME)
+    oidcClient.setAjaxRequestResolver(new DefaultAjaxRequestResolver)
     oidcClient
   }
 
