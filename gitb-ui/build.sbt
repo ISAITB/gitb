@@ -51,7 +51,7 @@ libraryDependencies ++= Seq(
   "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-annotations" % jacksonVersion,
   "com.fasterxml.jackson.module" % "jackson-module-jakarta-xmlbind-annotations" % jacksonVersion,
-  "com.password4j"  % "password4j" % "1.8.3",
+  "com.password4j"  % "password4j" % "1.8.4",
   "net.debasishg" %% "redisclient" % "3.42",
   // For calling and exporting JAX-WS services.
   "org.apache.cxf" % "cxf-rt-frontend-jaxws" % cxfVersion,
@@ -61,7 +61,7 @@ libraryDependencies ++= Seq(
   "org.apache.tika" % "tika-core" % "3.2.0",
   "org.webjars" % "jquery" % "3.7.1",
   "org.webjars" % "bootstrap" % "5.3.7",
-  "org.webjars" % "swagger-ui" % "5.25.2",
+  "org.webjars" % "swagger-ui" % "5.25.3",
   "com.sun.mail" % "jakarta.mail" % "2.0.1",
   "jakarta.activation" % "jakarta.activation-api" % "2.1.3",
   "jakarta.xml.ws" % "jakarta.xml.ws-api" % "4.0.2",
