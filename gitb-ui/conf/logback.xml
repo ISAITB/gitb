@@ -21,6 +21,7 @@
         <appender-ref ref="FILE" />
         <appender-ref ref="STDOUT" />
     </root>
+    <logger name="play.api.http.HttpErrorHandlerExceptions" level="WARN"/>
     <logger name="com.zaxxer.hikari" level="WARN" />
     <logger name="scala.slick" level="WARN" />
     <logger name="com.sun.xml" level="WARN" />
