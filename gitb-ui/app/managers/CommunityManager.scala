@@ -134,7 +134,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
     )
   }
 
-  def searchCommunities(page: Long, limit: Long, filter: Option[String]): Future[(Iterable[CommunityLimited], Int)] = {
+  def searchCommunities(page: Long, limit: Long, filter: Option[String]): Future[SearchResult[CommunityLimited]] = {
     val query = PersistenceSchema.communities
       .filter(_.id =!= Constants.DefaultCommunityId)
       .filterOpt(filter)((table, filterValue) => {
@@ -151,7 +151,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
           }
         }
         resultCount <- query.size.result
-      } yield (results, resultCount)
+      } yield SearchResult(results, resultCount)
     )
   }
 

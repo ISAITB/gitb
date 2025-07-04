@@ -25,6 +25,7 @@
 				<div class="tabPanel">
 					<div class="tabControls">
 						<div class="btn-toolbar">
+                            <app-text-filter name="testSuiteFilter" [width]="300" [placeholder]="'Search test suites...'" [(ngModel)]="testSuiteFilter" (apply)="applyFilter()"></app-text-filter>
 							<button class="btn btn-secondary" (click)="uploadTestSuite()" [disabled]="linkPending || unlinkPending">Upload test suite</button>
                             <app-multi-select-filter [config]="linkSharedSelectionConfig" (apply)="linkTestSuite($event)" [pending]="linkPending" [disable]="unlinkPending"></app-multi-select-filter>
                             <app-multi-select-filter [config]="unlinkSharedSelectionConfig" (apply)="unlinkTestSuite($event)" [pending]="unlinkPending" [disable]="sharedTestSuites.length == 0 || linkPending"></app-multi-select-filter>
@@ -32,12 +33,15 @@
 					</div>
 					<app-alert-display [alerts]="alerts" [outerClass]="'inTab'"></app-alert-display>
 					<div class="card">
-						<div table-directive id="test-suites-table"
+						<div #testSuiteTable table-directive id="test-suites-table"
 							[columns]="testSuiteTableColumns"
 							[data]="testSuites"
 							noDataMessage="No test suites found"
 							[loadingStatus]="testSuiteStatus"
 							[allowSelect]="true"
+                            [contentRefreshing]="testSuitesRefreshing"
+                            [supportPaging]="true"
+                            (pageNavigation)="doTestSuitePaging($event)"
 							(onSelect)="onTestSuiteSelect($event)">
 						</div>
 					</div>

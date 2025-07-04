@@ -109,7 +109,7 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
     organizations
   }
 
-  def searchOrganizationsByCommunity(communityId: Long, page: Long, limit: Long, filter: Option[String], sortOrder: Option[String], sortColumn: Option[String], creationOrderSort: Option[String]): Future[(Iterable[Organizations], Int)] = {
+  def searchOrganizationsByCommunity(communityId: Long, page: Long, limit: Long, filter: Option[String], sortOrder: Option[String], sortColumn: Option[String], creationOrderSort: Option[String]): Future[SearchResult[Organizations]] = {
     var query = PersistenceSchema.organizations
       .filter(_.adminOrganization === false)
       .filter(_.community === communityId)
@@ -142,7 +142,7 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
       for {
         results <- query.drop((page - 1) * limit).take(limit).result
         resultCount <- query.size.result
-      } yield (results, resultCount)
+      } yield SearchResult(results, resultCount)
     )
   }
 

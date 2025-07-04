@@ -695,9 +695,21 @@ export class ConformanceService {
     })
   }
 
-  getTestSuites(specificationId: number) {
-    return this.restService.get<TestSuite[]>({
+  getTestSuites(specificationId: number, filter: string|undefined, page: number|undefined, limit: number|undefined) {
+    return this.restService.get<SearchResult<TestSuite>>({
       path: ROUTES.controllers.ConformanceService.getSpecTestSuites(specificationId).url,
+      authenticate: true,
+      params: {
+        filter: filter,
+        page: page,
+        limit: limit,
+      }
+    })
+  }
+
+  getSpecSharedTestSuites(specificationId: number) {
+    return this.restService.get<TestSuite[]>({
+      path: ROUTES.controllers.ConformanceService.getSpecSharedTestSuites(specificationId).url,
       authenticate: true
     })
   }
@@ -706,6 +718,18 @@ export class ConformanceService {
     return this.restService.get<TestSuite[]>({
       path: ROUTES.controllers.ConformanceService.getSharedTestSuites(domainId).url,
       authenticate: true
+    })
+  }
+
+  searchSharedTestSuites(domainId: number, filter: string|undefined, page: number|undefined, limit: number|undefined) {
+    return this.restService.get<SearchResult<TestSuite>>({
+      path: ROUTES.controllers.ConformanceService.searchSharedTestSuites(domainId).url,
+      authenticate: true,
+      params: {
+        filter: filter,
+        page: page,
+        limit: limit,
+      }
     })
   }
 

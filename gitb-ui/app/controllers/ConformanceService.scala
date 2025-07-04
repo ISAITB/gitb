@@ -118,7 +118,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
       val page = ParameterExtractor.extractPageNumber(request)
       val limit = ParameterExtractor.extractPageLimit(request)
       domainManager.searchDomains(page, limit, filter).map { result =>
-        val json = JsonUtil.jsDomainSearchResult(result._1, result._2).toString()
+        val json = JsonUtil.jsSearchResult(result, list => JsonUtil.jsDomains(list, withApiKeys = false)).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
     }
@@ -190,7 +190,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
       val page = ParameterExtractor.extractPageNumber(request)
       val limit = ParameterExtractor.extractPageLimit(request)
       domainManager.searchCommunityDomains(page, limit, filter, communityId).map { result =>
-        val json = JsonUtil.jsDomainSearchResult(result._1, result._2).toString()
+        val json = JsonUtil.jsSearchResult(result, list => JsonUtil.jsDomains(list, withApiKeys = false)).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
     }
@@ -355,8 +355,32 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
 
   def getSpecTestSuites(specId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canManageSpecification(request, specId).flatMap { _ =>
-      testSuiteManager.getTestSuitesWithSpecificationId(specId).map { testSuites =>
-        val json = JsonUtil.jsTestSuitesList(testSuites).toString()
+      val filter = ParameterExtractor.optionalQueryParameter(request, Parameters.FILTER)
+      val page = ParameterExtractor.extractPageNumber(request)
+      val limit = ParameterExtractor.extractPageLimit(request)
+      testSuiteManager.getTestSuitesWithSpecificationId(filter, page, limit, specId).map { result =>
+        val json = JsonUtil.jsSearchResult(result, JsonUtil.jsTestSuitesList).toString()
+        ResponseConstructor.constructJsonResponse(json)
+      }
+    }
+  }
+
+  def getSpecSharedTestSuites(specId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageSpecification(request, specId).flatMap { _ =>
+      testSuiteManager.getSharedTestSuitesWithSpecificationId(specId).map { result =>
+        val json = JsonUtil.jsTestSuitesList(result).toString()
+        ResponseConstructor.constructJsonResponse(json)
+      }
+    }
+  }
+
+  def searchSharedTestSuites(domainId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageDomain(request, domainId).flatMap { _ =>
+      val filter = ParameterExtractor.optionalQueryParameter(request, Parameters.FILTER)
+      val page = ParameterExtractor.extractPageNumber(request)
+      val limit = ParameterExtractor.extractPageLimit(request)
+      testSuiteManager.searchSharedTestSuitesWithDomainId(filter, page, limit, domainId).map { result =>
+        val json = JsonUtil.jsSearchResult(result, JsonUtil.jsTestSuitesList).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
     }
@@ -903,7 +927,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
         // Return only the requested page
         val count = results.size
         val pageResults = results.slice((page - 1) * limit, (page - 1) * limit + limit)
-        val json = JsonUtil.jsConformanceResultFullList(pageResults, parameterData, count).toString()
+        val json = JsonUtil.jsConformanceResultFullList(SearchResult(pageResults, count), parameterData).toString()
         Future.successful(ResponseConstructor.constructJsonResponse(json))
       }
     } yield result

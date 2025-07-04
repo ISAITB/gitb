@@ -13,31 +13,35 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { AfterViewInit, Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
-import { BsModalService } from 'ngx-bootstrap/modal';
-import { Constants } from 'src/app/common/constants';
-import { CreateEditDomainParameterModalComponent } from 'src/app/modals/create-edit-domain-parameter-modal/create-edit-domain-parameter-modal.component';
-import { TestSuiteUploadModalComponent } from 'src/app/modals/test-suite-upload-modal/test-suite-upload-modal.component';
-import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
-import { ConformanceService } from 'src/app/services/conformance.service';
-import { DataService } from 'src/app/services/data.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { RoutingService } from 'src/app/services/routing.service';
-import { Domain } from 'src/app/types/domain';
-import { DomainParameter } from 'src/app/types/domain-parameter';
-import { Specification } from 'src/app/types/specification';
-import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
-import { saveAs } from 'file-saver'
-import { TestSuite } from 'src/app/types/test-suite';
-import { BaseTabbedComponent } from 'src/app/pages/base-tabbed-component';
-import { SpecificationService } from 'src/app/services/specification.service';
-import { forkJoin } from 'rxjs';
-import { DomainSpecification } from 'src/app/types/domain-specification';
-import { SpecificationGroup } from 'src/app/types/specification-group';
-import { find, remove } from 'lodash';
-import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
-import { CdkDragDrop } from '@angular/cdk/drag-drop';
+import {AfterViewInit, Component, OnInit, ViewChild} from '@angular/core';
+import {ActivatedRoute, Router} from '@angular/router';
+import {BsModalService} from 'ngx-bootstrap/modal';
+import {Constants} from 'src/app/common/constants';
+import {
+  CreateEditDomainParameterModalComponent
+} from 'src/app/modals/create-edit-domain-parameter-modal/create-edit-domain-parameter-modal.component';
+import {TestSuiteUploadModalComponent} from 'src/app/modals/test-suite-upload-modal/test-suite-upload-modal.component';
+import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
+import {ConformanceService} from 'src/app/services/conformance.service';
+import {DataService} from 'src/app/services/data.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {RoutingService} from 'src/app/services/routing.service';
+import {Domain} from 'src/app/types/domain';
+import {DomainParameter} from 'src/app/types/domain-parameter';
+import {Specification} from 'src/app/types/specification';
+import {TableColumnDefinition} from 'src/app/types/table-column-definition.type';
+import {saveAs} from 'file-saver';
+import {TestSuite} from 'src/app/types/test-suite';
+import {BaseTabbedComponent} from 'src/app/pages/base-tabbed-component';
+import {SpecificationService} from 'src/app/services/specification.service';
+import {forkJoin} from 'rxjs';
+import {DomainSpecification} from 'src/app/types/domain-specification';
+import {SpecificationGroup} from 'src/app/types/specification-group';
+import {find, remove} from 'lodash';
+import {BreadcrumbType} from 'src/app/types/breadcrumb-type';
+import {CdkDragDrop} from '@angular/cdk/drag-drop';
+import {TableApi} from '../../../../../components/table/table-api';
+import {PagingEvent} from '../../../../../components/paging-controls/paging-event';
 
 @Component({
     selector: 'app-domain-details',
@@ -47,8 +51,8 @@ import { CdkDragDrop } from '@angular/cdk/drag-drop';
 })
 export class DomainDetailsComponent extends BaseTabbedComponent implements OnInit, AfterViewInit {
 
+  @ViewChild("sharedTestSuiteTable") sharedTestSuiteTable?: TableApi
   domain: Partial<Domain> = {}
-
   domainSpecifications: DomainSpecification[] = []
   specifications: Specification[] = []
   hasGroups = false
@@ -59,12 +63,6 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
   specificationStatus = {status: Constants.STATUS.NONE}
   sharedTestSuiteStatus = {status: Constants.STATUS.NONE}
   parameterStatus = {status: Constants.STATUS.NONE}
-  tableColumns: TableColumnDefinition[] = [
-    { field: 'sname', title: 'Short name' },
-    { field: 'fname', title: 'Full name' },
-    { field: 'description', title: 'Description' },
-    { field: 'hidden', title: 'Hidden' }
-  ]
   sharedTestSuiteTableColumns: TableColumnDefinition[] = [
     { field: 'identifier', title: 'ID' },
     { field: 'sname', title: 'Name' },
@@ -76,6 +74,8 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
   saveOrderPending = false
   dragOngoing = false
   loaded = false
+  sharedTestSuitesRefreshing = false
+  sharedTestSuiteFilter?: string
 
   constructor(
     public readonly dataService: DataService,
@@ -142,15 +142,40 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
 
   loadSharedTestSuites(forceLoad?: boolean) {
     if (this.sharedTestSuiteStatus.status == Constants.STATUS.NONE || forceLoad) {
-      this.sharedTestSuiteStatus.status = Constants.STATUS.PENDING
-      this.sharedTestSuites = []
-      this.conformanceService.getSharedTestSuites(this.domainId)
-      .subscribe((data) => {
-        this.sharedTestSuites = data
-      }).add(() => {
-        this.sharedTestSuiteStatus.status = Constants.STATUS.FINISHED
-      })
+      this.refreshSharedTestSuites()
     }
+  }
+
+  loadSharedTestSuitesInternal(pagingInfo: PagingEvent) {
+    if (this.sharedTestSuiteStatus.status == Constants.STATUS.FINISHED) {
+      this.sharedTestSuitesRefreshing = true
+    } else {
+      this.sharedTestSuiteStatus.status = Constants.STATUS.PENDING
+    }
+    this.conformanceService.searchSharedTestSuites(this.domainId, this.sharedTestSuiteFilter, pagingInfo.targetPage, pagingInfo.targetPageSize)
+      .subscribe((data) => {
+        this.sharedTestSuites = data.data
+        this.updateSharedTestSuitePagination(pagingInfo.targetPage, data.count)
+      }).add(() => {
+      this.sharedTestSuitesRefreshing = false
+      this.sharedTestSuiteStatus.status = Constants.STATUS.FINISHED
+    })
+  }
+
+  refreshSharedTestSuites() {
+    this.loadSharedTestSuitesInternal({ targetPage: 1, targetPageSize: this.sharedTestSuiteTable?.getPagingControls()?.getCurrentStatus().pageSize! })
+  }
+
+  doSharedTestSuitePaging(event: PagingEvent) {
+    this.loadSharedTestSuitesInternal(event)
+  }
+
+  applySharedTestSuiteFilter() {
+    this.refreshSharedTestSuites()
+  }
+
+  private updateSharedTestSuitePagination(page: number, count: number) {
+    this.sharedTestSuiteTable?.getPagingControls()?.updateStatus(page, count)
   }
 
   loadDomainParameters(forceLoad?: boolean) {

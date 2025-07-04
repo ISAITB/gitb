@@ -113,7 +113,7 @@ class OrganizationService @Inject() (repositoryUtils: RepositoryUtils,
         creationOrderSort = Some(creationOrderSortParam)
       }
       organizationManager.searchOrganizationsByCommunity(communityId, page, limit, filter, sortOrder, sortColumn, creationOrderSort).map { result =>
-        val json: String = JsonUtil.jsOrganizationSearchResults(result._1, result._2).toString
+        val json: String = JsonUtil.jsSearchResult(result, JsonUtil.jsOrganizations).toString
         ResponseConstructor.constructJsonResponse(json)
       }
     }

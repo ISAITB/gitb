@@ -16,7 +16,7 @@
 package managers
 
 import exceptions.{AutomationApiException, ErrorCodes}
-import models.Domain
+import models.{Domain, SearchResult}
 import models.automation.UpdateDomainRequest
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
@@ -74,34 +74,34 @@ class DomainManager @Inject() (domainParameterManager: DomainParameterManager,
     )
   }
 
-  def searchDomains(page: Long, limit: Long, filter: Option[String]): Future[(Iterable[Domain], Int)] = {
+  def searchDomains(page: Long, limit: Long, filter: Option[String]): Future[SearchResult[Domain]] = {
     DB.run(searchDomainsInternal(page, limit, filter))
   }
 
-  private def searchDomainsInternal(page: Long, limit: Long, filter: Option[String]): DBIO[(Iterable[Domain], Int)] = {
+  private def searchDomainsInternal(page: Long, limit: Long, filter: Option[String]): DBIO[SearchResult[Domain]] = {
     val query = PersistenceSchema.domains
       .filterOpt(filter)((table, filterValue) => {
         val filterValueToUse = s"%${filterValue.toLowerCase}%"
-        table.shortname.toLowerCase.like(filterValueToUse) || table.fullname.toLowerCase.like(filterValueToUse)
+        table.shortname.toLowerCase.like(filterValueToUse) || table.fullname.toLowerCase.like(filterValueToUse) || table.description.getOrElse("").toLowerCase.like(filterValueToUse)
       })
       .sortBy(_.shortname.asc)
     for {
       results <- query.drop((page - 1) * limit).take(limit).result
       resultCount <- query.size.result
-    } yield (results, resultCount)
+    } yield SearchResult(results, resultCount)
   }
 
-  def searchCommunityDomains(page: Long, limit: Long, filter: Option[String], communityId: Long): Future[(Iterable[Domain], Int)] = {
+  def searchCommunityDomains(page: Long, limit: Long, filter: Option[String], communityId: Long): Future[SearchResult[Domain]] = {
     DB.run {
       for {
         communityDomain <- getCommunityDomainInternal(communityId)
         domains <- {
           if (communityDomain.isDefined) {
             val filterValueToUse = filter.map(_.toLowerCase)
-            if (filterValueToUse.isEmpty || communityDomain.get.shortname.toLowerCase.contains(filterValueToUse) || communityDomain.get.fullname.toLowerCase.contains(filterValueToUse)) {
-              DBIO.successful((List(communityDomain.get), 1))
+            if (filterValueToUse.isEmpty || communityDomain.get.shortname.toLowerCase.contains(filterValueToUse) || communityDomain.get.fullname.toLowerCase.contains(filterValueToUse) || communityDomain.get.description.getOrElse("").toLowerCase.contains(filterValueToUse)) {
+              DBIO.successful(SearchResult(List(communityDomain.get), 1))
             } else {
-              DBIO.successful((List(), 0))
+              DBIO.successful(SearchResult(List[Domain](), 0))
             }
           } else {
             // Community has access to all domains.

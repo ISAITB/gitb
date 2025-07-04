@@ -56,7 +56,7 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction,
       val sortOrder = ParameterExtractor.optionalBodyParameter(request, Parameters.SORT_ORDER)
 
       testResultManager.getOrganisationActiveTestResults(page, limit, organisationId, systemIds, domainIds, specIds, specGroupIds, actorIds, testSuiteIds, testCaseIds, startTimeBegin, startTimeEnd, sessionId, sortColumn, sortOrder).map { output =>
-        val json = JsonUtil.jsTestResultReports(output._1, Some(output._2)).toString()
+        val json = JsonUtil.jsSearchResult(output, JsonUtil.jsTestResultReports).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
     }
@@ -85,7 +85,7 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction,
       val sortOrder = ParameterExtractor.optionalBodyParameter(request, Parameters.SORT_ORDER)
 
       testResultManager.getTestResults(page, limit, organisationId, systemIds, domainIds, specIds, specGroupIds, actorIds, testSuiteIds, testCaseIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, sortColumn, sortOrder).map { output =>
-        val json = JsonUtil.jsTestResultReports(output._1, Some(output._2)).toString()
+        val json = JsonUtil.jsSearchResult(output, JsonUtil.jsTestResultReports).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
     }
@@ -125,7 +125,7 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction,
         }
       }
       result <- {
-        val json = JsonUtil.jsTestResultSessionReports(results._1, parameterInfo, Some(results._2)).toString()
+        val json = JsonUtil.jsTestResultSessionReports(results, parameterInfo).toString()
         Future.successful {
           ResponseConstructor.constructJsonResponse(json)
         }
@@ -169,7 +169,7 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction,
         }
       }
       result <- {
-        val json = JsonUtil.jsTestResultSessionReports(results._1, parameterInfo, Some(results._2)).toString()
+        val json = JsonUtil.jsTestResultSessionReports(results, parameterInfo).toString()
         Future.successful{
           ResponseConstructor.constructJsonResponse(json)
         }

@@ -156,7 +156,7 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
     )
   }
 
-  def getTestResultForSession(sessionId: String): DBIO[Option[(TestResult, String)]] = {
+  private def getTestResultForSession(sessionId: String): DBIO[Option[(TestResult, String)]] = {
     for {
       testResult <- PersistenceSchema.testResults.filter(_.testSessionId === sessionId).result.headOption
       testDefinition <- if (testResult.isDefined) {
@@ -718,14 +718,14 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
                                        startTimeEnd: Option[String],
                                        sessionId: Option[String],
                                        sortColumn: Option[String],
-                                       sortOrder: Option[String]): Future[(Iterable[TestResult], Int)] = {
+                                       sortOrder: Option[String]): Future[SearchResult[TestResult]] = {
     getSpecIdsCriterionToUse(specIds, specGroupIds).flatMap { specIds =>
       val query = getTestResultsQuery(None, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, Some(List(organisationId)), systemIds, None, startTimeBegin, startTimeEnd, None, None, sessionId, Some(false), sortColumn, sortOrder, pendingAdministratorInteraction = false)
       DB.run(
         for {
           results <- query.drop((page - 1) * limit).take(limit).result
           resultCount <- query.size.result
-        } yield (results, resultCount)
+        } yield SearchResult(results, resultCount)
       )
     }
   }
@@ -747,7 +747,7 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
                      endTimeEnd: Option[String],
                      sessionId: Option[String],
                      sortColumn: Option[String],
-                     sortOrder: Option[String]): Future[(Iterable[TestResult], Int)] = {
+                     sortOrder: Option[String]): Future[SearchResult[TestResult]] = {
 
     getSpecIdsCriterionToUse(specIds, specGroupIds).flatMap { specIds =>
       val query = getTestResultsQuery(None, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, Some(List(organisationId)), systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder, pendingAdministratorInteraction = false)
@@ -755,7 +755,7 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
         for {
           results <- query.drop((page - 1) * limit).take(limit).result
           resultCount <- query.size.result
-        } yield (results, resultCount)
+        } yield SearchResult(results, resultCount)
       )
     }
   }
@@ -778,7 +778,7 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
                            sysParameters: Option[Map[Long, Set[String]]],
                            sortColumn: Option[String],
                            sortOrder: Option[String],
-                           pendingAdminInteraction: Boolean): Future[(Iterable[TestResult], Int)] = {
+                           pendingAdminInteraction: Boolean): Future[SearchResult[TestResult]] = {
     communityHelper.memberIdsToUse(organisationIds, systemIds, orgParameters, sysParameters).zip(
       getSpecIdsCriterionToUse(specIds, specGroupIds)
     ).flatMap { data =>
@@ -792,7 +792,7 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
         for {
           results <- query.drop((page - 1) * limit).take(limit).result
           resultCount <- query.size.result
-        } yield (results, resultCount)
+        } yield SearchResult(results, resultCount)
       )
     }
   }
@@ -817,7 +817,7 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
                              orgParameters: Option[Map[Long, Set[String]]],
                              sysParameters: Option[Map[Long, Set[String]]],
                              sortColumn: Option[String],
-                             sortOrder: Option[String]): Future[(Iterable[TestResult], Int)] = {
+                             sortOrder: Option[String]): Future[SearchResult[TestResult]] = {
     communityHelper.memberIdsToUse(organisationIds, systemIds, orgParameters, sysParameters).zip(
       getSpecIdsCriterionToUse(specIds, specGroupIds)
     ).flatMap { data =>
@@ -831,7 +831,7 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
         for {
           results <- query.drop((page - 1) * limit).take(limit).result
           resultCount <- query.size.result
-        } yield (results, resultCount)
+        } yield SearchResult(results, resultCount)
       )
     }
   }

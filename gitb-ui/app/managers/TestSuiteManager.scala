@@ -164,6 +164,24 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 		} yield testSuiteInfo)
 	}
 
+	def searchSharedTestSuitesWithDomainId(filter: Option[String], page: Long, limit: Long, domain: Long): Future[SearchResult[TestSuites]] = {
+		val query = PersistenceSchema.testSuites
+			.filter(_.domain === domain)
+			.filter(_.shared === true)
+			.filterOpt(filter)((table, filterValue) => {
+				val filterValueToUse = s"%${filterValue.toLowerCase}%"
+				table.identifier.toLowerCase.like(filterValueToUse) || table.shortname.toLowerCase.like(filterValueToUse) || table.description.getOrElse("").toLowerCase.like(filterValueToUse)
+			})
+			.sortBy(_.shortname.asc)
+			.map(TestSuiteManager.withoutDocumentation)
+		DB.run {
+			for {
+				results <- query.drop((page - 1) * limit).take(limit).result.map(x => x.map(TestSuiteManager.tupleToTestSuite))
+				resultCount <- query.size.result
+			} yield SearchResult(results, resultCount)
+		}
+	}
+
 	def getSharedTestSuitesWithDomainId(domain: Long): Future[List[TestSuites]] = {
 		DB.run(PersistenceSchema.testSuites
 			.filter(_.domain === domain)
@@ -176,16 +194,34 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 		}
 	}
 
-	def getTestSuitesWithSpecificationId(specification: Long): Future[List[TestSuites]] = {
-		DB.run(
+	def getSharedTestSuitesWithSpecificationId(specification: Long): Future[Iterable[TestSuites]] = {
+		DB.run {
 			PersistenceSchema.testSuites
 				.join(PersistenceSchema.specificationHasTestSuites).on(_.id === _.testSuiteId)
 				.filter(_._2.specId === specification)
+				.filter(_._1.shared === true)
 				.sortBy(_._1.shortname.asc)
 				.map(x => TestSuiteManager.withoutDocumentation(x._1))
-				.result.map(_.toList)
-		).map { result =>
-			result.map(TestSuiteManager.tupleToTestSuite)
+				.result
+				.map(x => x.map(TestSuiteManager.tupleToTestSuite))
+		}
+	}
+
+	def getTestSuitesWithSpecificationId(filter: Option[String], page: Long, limit: Long, specification: Long): Future[SearchResult[TestSuites]] = {
+		val query = PersistenceSchema.testSuites
+			.join(PersistenceSchema.specificationHasTestSuites).on(_.id === _.testSuiteId)
+			.filter(_._2.specId === specification)
+			.filterOpt(filter)((table, filterValue) => {
+				val filterValueToUse = s"%${filterValue.toLowerCase}%"
+				table._1.identifier.toLowerCase.like(filterValueToUse) || table._1.shortname.toLowerCase.like(filterValueToUse) || table._1.description.getOrElse("").toLowerCase.like(filterValueToUse)
+			})
+			.sortBy(_._1.shortname.asc)
+			.map(x => TestSuiteManager.withoutDocumentation(x._1))
+		DB.run {
+			for {
+				results <- query.drop((page - 1) * limit).take(limit).result.map(x => x.map(TestSuiteManager.tupleToTestSuite))
+				resultCount <- query.size.result
+			} yield SearchResult(results, resultCount)
 		}
 	}
 

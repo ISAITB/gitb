@@ -323,14 +323,6 @@ object JsonUtil {
     json
   }
 
-  def jsCommunityResourceSearchResult(list: Iterable[CommunityResources], resultCount: Int): JsObject = {
-    val jsonResult = Json.obj(
-      "data" -> jsCommunityResources(list),
-      "count" -> resultCount
-    )
-    jsonResult
-  }
-
   def jsCommunityResources(resources: Iterable[CommunityResources]): JsArray = {
     var json = Json.arr()
     resources.foreach { resource =>
@@ -427,7 +419,14 @@ object JsonUtil {
     json
   }
 
-  def jsTestSuitesList(list: List[TestSuites]): JsArray = {
+  def jsSearchResult[T](result: SearchResult[T], dataFn: Iterable[T] => JsArray): JsObject = {
+    Json.obj(
+      "data" -> dataFn.apply(result.data),
+      "count" -> result.count
+    )
+  }
+
+  def jsTestSuitesList(list: Iterable[TestSuites]): JsArray = {
     var json = Json.arr()
     list.foreach { testSuite =>
       json = json.append(jsTestSuite(testSuite, None, withDocumentation = false, withSpecReference = false))
@@ -718,24 +717,12 @@ object JsonUtil {
    * @param list List of Organizations to be convert
    * @return JsArray
    */
-  def jsOrganizations(list:List[Organizations]):JsArray = {
+  def jsOrganizations(list: Iterable[Organizations]):JsArray = {
     var json = Json.arr()
     list.foreach{ organization =>
       json = json.append(jsOrganization(organization))
     }
     json
-  }
-
-  def jsOrganizationSearchResults(list: Iterable[Organizations], resultCount: Int): JsObject = {
-    var json = Json.arr()
-    list.foreach { organisation =>
-      json = json.append(jsOrganization(organisation))
-    }
-    val jsonResult = Json.obj(
-      "data" -> json,
-      "count" -> resultCount
-    )
-    jsonResult
   }
 
   /**
@@ -785,20 +772,6 @@ object JsonUtil {
       "extension" -> extension
     )
     json
-  }
-
-  def jsCommunitySearchResult(list: Iterable[CommunityLimited], resultCount: Int): JsObject = {
-    Json.obj(
-      "data" -> jsCommunitiesLimited(list),
-      "count" -> resultCount
-    )
-  }
-
-  def jsDomainSearchResult(list: Iterable[Domain], resultCount: Int): JsObject = {
-    Json.obj(
-      "data" -> jsDomains(list, withApiKeys = false),
-      "count" -> resultCount
-    )
   }
 
   def jsCommunitiesLimited(list: Iterable[CommunityLimited]):JsArray = {
@@ -2112,27 +2085,22 @@ object JsonUtil {
     json
   }
 
-  def jsTestResultReports(list: Iterable[TestResult], resultCount: Option[Int]): JsObject = {
+  def jsTestResultReports(list: Iterable[TestResult]): JsArray = {
     var json = Json.arr()
     list.foreach { report =>
       json = json.append(jsTestResultReport(report, None))
     }
-    val jsonResult = Json.obj(
-      "data" -> json,
-      "count" -> (if (resultCount.isDefined) resultCount.get else JsNull)
-    )
-    jsonResult
+    json
   }
 
-  def jsTestResultSessionReports(list: Iterable[TestResult], parameterInfo: Option[ParameterInfo], resultCount: Option[Int]): JsObject = {
-    var json = Json.arr()
-    list.foreach { report =>
-      json = json.append(jsTestResultReport(report, parameterInfo))
-    }
-    var jsonResult = Json.obj(
-      "data" -> json,
-      "count" -> (if (resultCount.isDefined) resultCount.get else JsNull)
-    )
+  def jsTestResultSessionReports(result: SearchResult[TestResult], parameterInfo: Option[ParameterInfo]): JsObject = {
+    var jsonResult = jsSearchResult(result, (list: Iterable[TestResult]) => {
+      var json = Json.arr()
+      list.foreach { report =>
+        json = json.append(jsTestResultReport(report, parameterInfo))
+      }
+      json
+    })
     if (parameterInfo.isDefined) {
       var orgParameters = Json.arr()
       parameterInfo.get.orgDefinitions.foreach{ param =>
@@ -3063,15 +3031,14 @@ object JsonUtil {
     json
   }
 
-  def jsConformanceResultFullList(list: List[ConformanceStatementFull], parameterInfo: Option[ParameterInfo], count: Int): JsObject = {
-    var json = Json.arr()
-    list.foreach{ info =>
-      json = json.append(jsConformanceResultFull(info, parameterInfo))
-    }
-    var jsonResult = Json.obj(
-      "data" -> json,
-      "count" -> count
-    )
+  def jsConformanceResultFullList(result: SearchResult[ConformanceStatementFull], parameterInfo: Option[ParameterInfo]): JsObject = {
+    var jsonResult = jsSearchResult(result, (list: Iterable[ConformanceStatementFull]) => {
+      var json = Json.arr()
+      list.foreach{ info =>
+        json = json.append(jsConformanceResultFull(info, parameterInfo))
+      }
+      json
+    })
     if (parameterInfo.isDefined) {
       var orgParameters = Json.arr()
       parameterInfo.get.orgDefinitions.foreach{ param =>

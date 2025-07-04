@@ -109,16 +109,20 @@
                 <div class="tabPanel">
                     <div class="tabControls">
                         <div class="btn-toolbar">
+                            <app-text-filter name="sharedTestSuiteFilter" [width]="300" [placeholder]="'Search test suites...'" [(ngModel)]="sharedTestSuiteFilter" (apply)="applySharedTestSuiteFilter()"></app-text-filter>
                             <button type="button" class="btn btn-secondary" (click)="uploadSharedTestSuite()">Upload shared test suite</button>
                         </div>
                     </div>
                     <div class="card">
-                        <div table-directive
+                        <div #sharedTestSuiteTable table-directive
                             [columns]="sharedTestSuiteTableColumns"
                             [data]="sharedTestSuites"
                             [noDataMessage]="'No shared test suites found'"
                             [loadingStatus]="sharedTestSuiteStatus"
                             [allowSelect]="true"
+                            [contentRefreshing]="sharedTestSuitesRefreshing"
+                            [supportPaging]="true"
+                            (pageNavigation)="doSharedTestSuitePaging($event)"
                             (onSelect)="onSharedTestSuiteSelect($event)">
                         </div>
                     </div>

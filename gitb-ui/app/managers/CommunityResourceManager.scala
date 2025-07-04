@@ -15,7 +15,7 @@
 
 package managers
 
-import models.{CommunityResources, Constants}
+import models.{CommunityResources, Constants, SearchResult}
 import org.apache.commons.io.{FileUtils, FilenameUtils}
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
@@ -131,7 +131,7 @@ class CommunityResourceManager @Inject()(repositoryUtils: RepositoryUtils,
       .result).map(_.toList)
   }
 
-  def searchCommunityResources(communityId: Long, page: Long, limit: Long, filter: Option[String]): Future[(Iterable[CommunityResources], Int)] = {
+  def searchCommunityResources(communityId: Long, page: Long, limit: Long, filter: Option[String]): Future[SearchResult[CommunityResources]] = {
     val query = PersistenceSchema.communityResources
       .filter(_.community === communityId)
       .filterOpt(filter)((table, filterValue) => {
@@ -143,7 +143,7 @@ class CommunityResourceManager @Inject()(repositoryUtils: RepositoryUtils,
       for {
         results <- query.drop((page - 1) * limit).take(limit).result
         resultCount <- query.size.result
-      } yield (results, resultCount)
+      } yield SearchResult(results, resultCount)
     )
   }
 
