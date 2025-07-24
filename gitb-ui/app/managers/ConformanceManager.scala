@@ -24,7 +24,7 @@ import models.Enums.{ConformanceStatementItemType, OrganizationType, UserRole}
 import models.snapshot._
 import models.statement.{ConformanceItemTreeData, ConformanceStatementResults}
 import models.{FileInfo, _}
-import org.apache.commons.lang3.StringUtils
+import org.apache.commons.lang3.Strings
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import slick.lifted.{Query, Rep}
@@ -1660,7 +1660,7 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 		DB.run(query).map { keys =>
 			if (keys.isDefined) {
 				Some(
-					StringUtils.appendIfMissing(Configurations.TESTBED_HOME_LINK, "/") // Base URL
+					Strings.CS.appendIfMissing(Configurations.TESTBED_HOME_LINK, "/") // Base URL
 						+ "badge/" // Badge API prefix
 						+ keys.get._1 // System key
 						+ "/" + keys.get._2 // Actor key

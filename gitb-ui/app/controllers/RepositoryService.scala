@@ -31,7 +31,7 @@ import models.Enums.{OverviewLevelType, ReportType}
 import models._
 import org.apache.commons.codec.net.URLCodec
 import org.apache.commons.io.FileUtils
-import org.apache.commons.lang3.StringUtils
+import org.apache.commons.lang3.{StringUtils, Strings}
 import org.slf4j.LoggerFactory
 import play.api.mvc._
 import utils._
@@ -107,7 +107,7 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
             filePathToAlsoCheck = None
           } else {
             filePathToAlsoCheck = Some(testSuite.get.filename + "/" + filePathToLookup)
-            filePathToLookup = StringUtils.replaceOnce(filePathToLookup, testSuite.get.identifier, testSuite.get.filename)
+            filePathToLookup = Strings.CS.replaceOnce(filePathToLookup, testSuite.get.identifier, testSuite.get.filename)
           }
           // Ensure that the requested resource is within the test suite folder (to avoid path traversal)
           val testSuiteFolder = repositoryUtils.getTestSuitesResource(testSuite.get.domain, testSuite.get.filename, None)

@@ -21,7 +21,7 @@ import controllers.util.ResponseConstructor
 import filters.CorsFilter
 import managers.LegalNoticeManager
 import models.{Constants, PublicConfig}
-import org.apache.commons.lang3.StringUtils
+import org.apache.commons.lang3.{StringUtils, Strings}
 import play.api.Environment
 import play.api.mvc._
 import play.api.routing._
@@ -164,9 +164,9 @@ class Application @Inject() (cc: ControllerComponents,
     // Replace absolute address in the javascript routes' file to match the public address
     val host = if (Configurations.TESTBED_HOME_LINK != "/") {
       val linkLength = Configurations.TESTBED_HOME_LINK.length
-      if (StringUtils.startsWithIgnoreCase(Configurations.TESTBED_HOME_LINK, "http://") && linkLength > 7) {
+      if (Strings.CI.startsWith(Configurations.TESTBED_HOME_LINK, "http://") && linkLength > 7) {
         removePublicRootPath(Configurations.TESTBED_HOME_LINK.substring(7))
-      } else if (StringUtils.startsWithIgnoreCase(Configurations.TESTBED_HOME_LINK, "https://") && linkLength > 8) {
+      } else if (Strings.CI.startsWith(Configurations.TESTBED_HOME_LINK, "https://") && linkLength > 8) {
         removePublicRootPath(Configurations.TESTBED_HOME_LINK.substring(8))
       } else {
         request.host
@@ -180,11 +180,11 @@ class Application @Inject() (cc: ControllerComponents,
   }
 
   private def removePublicRootPath(pathWithoutProtocol: String): String = {
-    val pathWithoutTrailingSlash = StringUtils.removeEnd(pathWithoutProtocol, "/")
+    val pathWithoutTrailingSlash = Strings.CS.removeEnd(pathWithoutProtocol, "/")
     if (Configurations.PUBLIC_CONTEXT_ROOT == "/") {
       pathWithoutTrailingSlash
     } else {
-      StringUtils.removeEnd(pathWithoutTrailingSlash, Configurations.PUBLIC_CONTEXT_ROOT)
+      Strings.CS.removeEnd(pathWithoutTrailingSlash, Configurations.PUBLIC_CONTEXT_ROOT)
     }
   }
 

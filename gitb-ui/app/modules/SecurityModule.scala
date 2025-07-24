@@ -23,7 +23,7 @@ import com.nimbusds.oauth2.sdk.auth.ClientAuthenticationMethod
 import config.Configurations
 import config.Configurations._
 import models.{ActualUserInfo, Constants}
-import org.apache.commons.lang3.StringUtils
+import org.apache.commons.lang3.Strings
 import org.pac4j.cas.client.{CasClient, CasProxyReceptor}
 import org.pac4j.cas.config.CasProtocol
 import org.pac4j.core.authorization.authorizer.{Authorizer, IsAuthenticatedAuthorizer}
@@ -76,13 +76,13 @@ class SecurityModule extends AbstractModule {
 
     // logout
     val logoutController = new LogoutController()
-    logoutController.setDefaultUrl(StringUtils.appendIfMissing(Configurations.TESTBED_HOME_LINK, "/"))
+    logoutController.setDefaultUrl(Strings.CS.appendIfMissing(Configurations.TESTBED_HOME_LINK, "/"))
     bind(classOf[LogoutController]).toInstance(logoutController)
   }
 
   private def buildDefaultCallbackUrl(): String = {
-    val homeWithSlash = StringUtils.appendIfMissing(Configurations.TESTBED_HOME_LINK, "/")
-    StringUtils.appendIfMissing(homeWithSlash, "app")
+    val homeWithSlash = Strings.CS.appendIfMissing(Configurations.TESTBED_HOME_LINK, "/")
+    Strings.CS.appendIfMissing(homeWithSlash, "app")
   }
 
   private def createCasClient(): CasClient = {

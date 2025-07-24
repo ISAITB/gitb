@@ -26,7 +26,7 @@ import models.Enums.{ReportType, TestResultStatus}
 import models._
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.io.{FileUtils, FilenameUtils, IOUtils}
-import org.apache.commons.lang3.{RandomStringUtils, StringUtils}
+import org.apache.commons.lang3.{RandomStringUtils, StringUtils, Strings}
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
@@ -60,6 +60,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 																(implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
 	import dbConfig.profile.api._
+
 	import scala.jdk.CollectionConverters._
 
 	private final val logger = LoggerFactory.getLogger("RepositoryUtils")
@@ -615,7 +616,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 								testCasePaths.update(testCase.getId, targetFolder.getParentFile.toURI.relativize(newFile.toURI).getPath)
 							} else if (isTestSuite(zip, zipEntry)) {
 								logger.debug("File ["+newFile+"] is a test suite file")
-								val path = StringUtils.removeStart(targetFolder.getParentFile.toURI.relativize(newFile.toURI).getPath, targetFolder.getName+"/")
+								val path = Strings.CS.removeStart(targetFolder.getParentFile.toURI.relativize(newFile.toURI).getPath, targetFolder.getName+"/")
 								testSuitePath = Some(path)
 							}
 
@@ -680,7 +681,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 												filePathToAlsoCheck = None
 											} else {
 												filePathToAlsoCheck = Some(testSuite.get.filename + "/" + filePathToLookup)
-												filePathToLookup = StringUtils.replaceOnce(filePathToLookup, testSuite.get.identifier, testSuite.get.filename)
+												filePathToLookup = Strings.CS.replaceOnce(filePathToLookup, testSuite.get.identifier, testSuite.get.filename)
 											}
 											val testSuiteFolder = getTestSuitesResource(domain, testSuite.get.filename, None)
 											val file = getTestSuitesResource(domain, filePathToLookup, filePathToAlsoCheck)

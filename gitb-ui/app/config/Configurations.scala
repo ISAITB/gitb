@@ -15,11 +15,11 @@
 
 package config
 
+import authentication.ecas.AuthenticationLevel
 import com.gitb.utils.HmacUtils
 import com.typesafe.config.{Config, ConfigFactory}
-import authentication.ecas.AuthenticationLevel
 import models.Constants
-import org.apache.commons.lang3.StringUtils
+import org.apache.commons.lang3.{StringUtils, Strings}
 
 import java.util.Locale
 import scala.jdk.CollectionConverters.CollectionHasAsScala
@@ -194,7 +194,7 @@ object Configurations {
   }
 
   def mainVersionNumber(): String = {
-    StringUtils.removeEnd(Constants.VersionNumber.toLowerCase(Locale.getDefault), "-snapshot")
+    Strings.CS.removeEnd(Constants.VersionNumber.toLowerCase(Locale.getDefault), "-snapshot")
   }
 
   def loadConfigurations(): Unit = {
@@ -203,11 +203,11 @@ object Configurations {
       val conf:Config = ConfigFactory.load()
       // Context paths - start
       WEB_CONTEXT_ROOT = fromEnv("WEB_CONTEXT_ROOT", conf.getString("play.http.context"))
-      WEB_CONTEXT_ROOT_WITH_SLASH = StringUtils.appendIfMissing(WEB_CONTEXT_ROOT, "/")
+      WEB_CONTEXT_ROOT_WITH_SLASH = Strings.CS.appendIfMissing(WEB_CONTEXT_ROOT, "/")
       API_PREFIX = conf.getString("apiPrefix")
       API_ROOT = WEB_CONTEXT_ROOT_WITH_SLASH + API_PREFIX
       PUBLIC_CONTEXT_ROOT = fromEnv("AUTHENTICATION_COOKIE_PATH", WEB_CONTEXT_ROOT)
-      PUBLIC_CONTEXT_ROOT_WITH_SLASH = StringUtils.appendIfMissing(PUBLIC_CONTEXT_ROOT, "/")
+      PUBLIC_CONTEXT_ROOT_WITH_SLASH = Strings.CS.appendIfMissing(PUBLIC_CONTEXT_ROOT, "/")
       // Context paths - end
       //Parse DB Parameters
       DB_JDBC_URL     = conf.getString("db.default.url")
@@ -437,7 +437,7 @@ object Configurations {
     } else {
       Constants.VersionNumber
     }
-    StringUtils.replace(link, "{RELEASE}", versionNumberForDocs)
+    link.replace("{RELEASE}", versionNumberForDocs)
   }
 
 }

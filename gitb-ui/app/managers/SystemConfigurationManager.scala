@@ -21,7 +21,7 @@ import models.Enums.UserRole
 import models._
 import models.theme.{Theme, ThemeFiles}
 import org.apache.commons.io.FilenameUtils
-import org.apache.commons.lang3.StringUtils
+import org.apache.commons.lang3.{StringUtils, Strings}
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
@@ -69,7 +69,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
     if (!isBuiltInThemeResource(partialLogoPath)) {
       path.append("api/theme/resource/").append(themeId).append("/")
     }
-    path.append(StringUtils.removeStart(partialLogoPath, "/"))
+    path.append(Strings.CS.removeStart(partialLogoPath, "/"))
       .append("')")
       .toString()
   }
@@ -596,12 +596,12 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
   }
 
   def isBuiltInThemeResource(resourcePath: String): Boolean = {
-    StringUtils.startsWithIgnoreCase(resourcePath, "/assets/")
+    Strings.CI.startsWith(resourcePath, "/assets/")
   }
 
   def adaptBuiltInThemeResourcePathForClasspathLookup(resourcePath: String): String = {
     // Built-in resource. This is exposed as "/assets/*" but to look it up on the classpath we use "public/*".
-    "public/" + StringUtils.removeStartIgnoreCase(resourcePath, "/assets/")
+    "public/" + Strings.CI.removeStart(resourcePath, "/assets/")
   }
 
   def updateTheme(theme: Theme, themeFiles: ThemeFiles): Future[Unit] = {
