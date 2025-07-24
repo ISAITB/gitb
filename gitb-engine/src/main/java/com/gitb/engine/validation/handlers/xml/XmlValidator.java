@@ -38,7 +38,7 @@ public class XmlValidator extends AbstractValidator {
     private static final String XML_ARGUMENT_NAME = "xml";
     private static final String XSD_ARGUMENT_NAME = "xsd";
     private static final String SCHEMATRON_ARGUMENT_NAME = "schematron";
-    private static final String SCHEMATRON_TYPE_ARGUMENT_NAME = "schematronType";
+    public static final String SCHEMATRON_TYPE_ARGUMENT_NAME = "schematronType";
     private static final String STOP_ON_XSD_ERRORS_ARGUMENT_NAME = "stopOnXsdErrors";
     private static final String SHOW_ARTEFACTS_ARGUMENT_NAME = "showValidationArtefacts";
     private static final String SHOW_SCHEMATRON_TESTS_ARGUMENT_NAME = "showSchematronTests";
@@ -91,6 +91,7 @@ public class XmlValidator extends AbstractValidator {
                 putIfNotNull(map, SchematronValidator.SHOW_SCHEMATRON_ARGUMENT_NAME, showArtefacts);
                 putIfNotNull(map, SchematronValidator.SHOW_TESTS_ARGUMENT_NAME, showTests);
                 putIfNotNull(map, SchematronValidator.SHOW_PATHS_ARGUMENT_NAME, showPaths);
+                map.put(SchematronValidator.FROM_XML_VALIDATOR_ARGUMENT_NAME,new BooleanType(true));
                 schematronReports.add((TAR)schematronValidator.validate(configurations, map));
             }
             allReports.addAll(schematronReports);

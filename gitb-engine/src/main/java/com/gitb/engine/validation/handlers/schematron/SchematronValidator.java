@@ -19,6 +19,7 @@ import com.gitb.core.Configuration;
 import com.gitb.engine.utils.ReportItemComparator;
 import com.gitb.engine.validation.ValidationHandler;
 import com.gitb.engine.validation.handlers.common.AbstractValidator;
+import com.gitb.engine.validation.handlers.xml.XmlValidator;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tr.TestStepReportType;
 import com.gitb.types.BooleanType;
@@ -53,6 +54,7 @@ public class SchematronValidator extends AbstractValidator {
     public static final String SORT_BY_SEVERITY_ARGUMENT_NAME  = "sortBySeverity";
     public static final String SHOW_TESTS_ARGUMENT_NAME = "showTests";
     public static final String SHOW_PATHS_ARGUMENT_NAME  = "showLocationPaths";
+    public static final String FROM_XML_VALIDATOR_ARGUMENT_NAME  = "com.gitb.fromXmlValidator";
     private static final String MODULE_DEFINITION_XML = "/validation/schematron-validator-definition.xml";
 
     public SchematronValidator() {
@@ -75,6 +77,7 @@ public class SchematronValidator extends AbstractValidator {
         if (validationType == SchematronType.SCH) {
             // Use the pure implementation as SCH can be very resource and time-consuming
             schematron = new SchematronResourcePure(new StringResource(sch.toString(), sch.getImportPath()));
+            ((SchematronResourcePure) schematron).setErrorHandler(new PureSchematronErrorHandler());
             convertXPathExpressions = true;
         } else {
             schematron = new SchematronResourceXSLT(new StringResource(sch.toString(), sch.getImportPath()));
@@ -92,7 +95,14 @@ public class SchematronValidator extends AbstractValidator {
         try {
             resultDocument = schematron.applySchematronValidation(new DOMSource(inputDocument));
         } catch (Exception e) {
-            throw new GITBEngineInternalError("Invalid schematron file.", e);
+            if (schematron instanceof SchematronResourcePure pureSchematron
+                    && pureSchematron.getErrorHandler() instanceof PureSchematronErrorHandler errorHandler
+                    && errorHandler.isDueToExternalFunctionCall()) {
+                boolean isFromXmlValidator = inputs.containsKey(FROM_XML_VALIDATOR_ARGUMENT_NAME);
+                throw new GITBEngineInternalError("You are using Schematron rules provided in the pure Schematron format (a '.sch' file if provided as a file) within which you are referring to functions (built-in or custom). To be able to use functions you must (a) convert the Schematron file to XSLT format, (b) include the XSLT file in the test suite and import it from the test case, and (c) define in the test case's 'verify' step, the '%s' input of the '%s' with a value of 'xslt'.".formatted((isFromXmlValidator?XmlValidator.SCHEMATRON_TYPE_ARGUMENT_NAME:SCHEMATRON_TYPE_ARGUMENT_NAME), (isFromXmlValidator?XmlValidator.class.getSimpleName():SchematronValidator.class.getSimpleName())), e);
+            } else {
+                throw new GITBEngineInternalError("Invalid schematron file.", e);
+            }
         }
         if (resultDocument == null) {
             throw new GITBEngineInternalError("Invalid schematron file.");
