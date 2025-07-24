@@ -149,9 +149,16 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
-        file name: commons-lang3-3.17.0.jar
-        ]]></notes>
+   file name: commons-lang3-3.17.0.jar
+   ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.apache\.commons/commons-lang3@.*$</packageUrl>
         <vulnerabilityName>CVE-2025-48924</vulnerabilityName>
-    </suppress>    
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: nimbus-jose-jwt-9.37.3.jar (shaded: com.google.code.gson:gson:2.10.1)
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.google\.code\.gson/gson@.*$</packageUrl>
+        <vulnerabilityName>CVE-2025-53864</vulnerabilityName>
+    </suppress>
 </suppressions>
