@@ -119,11 +119,4 @@
         <packageUrl regex="true">^pkg:maven/org\.xmlunit/xmlunit-.*@.*$</packageUrl>
         <cve>CVE-2024-9410</cve>
     </suppress>
-    <suppress>
-        <notes><![CDATA[
-        file name: commons-lang3-3.17.0.jar
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.apache\.commons/commons-lang3@.*$</packageUrl>
-        <vulnerabilityName>CVE-2025-48924</vulnerabilityName>
-    </suppress>    
 </suppressions>
