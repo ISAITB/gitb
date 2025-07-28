@@ -16,7 +16,6 @@
 import {Component, OnInit, ViewChild} from '@angular/core';
 import {TableColumnDefinition} from 'src/app/types/table-column-definition.type';
 import {BaseTableComponent} from '../base-table/base-table.component';
-import {PagingControlsComponent} from '../paging-controls/paging-controls.component';
 import {PagingControlsApi} from '../paging-controls/paging-controls-api';
 
 @Component({
