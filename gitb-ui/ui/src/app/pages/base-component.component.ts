@@ -108,6 +108,18 @@ export abstract class BaseComponent {
       }
     }
 
+  trimSearchString(searchString: string|undefined): string|undefined {
+    if (searchString != undefined) {
+      searchString = searchString.trim()
+      if (searchString.length == 0) {
+        searchString = undefined
+      } else {
+        searchString = searchString.toLocaleLowerCase()
+      }
+    }
+    return searchString
+  }
+
     protected isErrorDescription(obj: ErrorDescription|any): obj is ErrorDescription {
         return obj != undefined && ((obj as ErrorDescription).error_description != undefined || (obj as ErrorDescription).error_id != undefined)
     }

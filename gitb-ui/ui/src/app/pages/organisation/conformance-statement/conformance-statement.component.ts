@@ -105,6 +105,7 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
   executionMode = this.executionModeInteractive
   executionModeButton = this.executionModeLabelInteractive
   testCaseFilter?: string
+  testSuiteFilter?: string
   private static SHOW_SUCCEEDED = '0'
   private static SHOW_FAILED = '1'
   private static SHOW_INCOMPLETE = '2'
@@ -408,45 +409,42 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
   }
 
   applySearchFilters() {
-    let testCaseFilter = this.testCaseFilter
-    if (testCaseFilter != undefined) {
-      testCaseFilter = testCaseFilter.trim()
-      if (testCaseFilter.length == 0) {
-        testCaseFilter = undefined
-      } else {
-        testCaseFilter = testCaseFilter.toLocaleLowerCase()
-      }
-    }
+    let testSuiteFilter = this.trimSearchString(this.testSuiteFilter)
+    let testCaseFilter = this.trimSearchString(this.testCaseFilter)
     let filteredTestSuites: ConformanceTestSuite[] = []
     for (let testSuite of this.testSuites) {
-      let testCases: ConformanceTestCase[] = []
-      for (let testCase of testSuite.testCases) {
-        if (this.showResults.has(testCase.result)
-          && (!testCase.optional || this.showOptional)
-          && (!testCase.disabled || this.showDisabled)
-          && (testCaseFilter == undefined ||
-              (testCase.sname.toLocaleLowerCase().indexOf(testCaseFilter) >= 0) ||
-              (testCase.description != undefined && testCase.description.toLocaleLowerCase().indexOf(testCaseFilter) >= 0))) {
-          testCases.push(testCase)
+      if (testSuiteFilter == undefined
+        || (testSuite.sname.toLocaleLowerCase().indexOf(testSuiteFilter) >= 0)
+        || (testSuite.description != undefined && testSuite.description.toLocaleLowerCase().indexOf(testSuiteFilter) >= 0)) {
+        let testCases: ConformanceTestCase[] = []
+        for (let testCase of testSuite.testCases) {
+          if (this.showResults.has(testCase.result)
+            && (!testCase.optional || this.showOptional)
+            && (!testCase.disabled || this.showDisabled)
+            && (testCaseFilter == undefined
+              || (testCase.sname.toLocaleLowerCase().indexOf(testCaseFilter) >= 0)
+              || (testCase.description != undefined && testCase.description.toLocaleLowerCase().indexOf(testCaseFilter) >= 0))) {
+            testCases.push(testCase)
+          }
         }
-      }
-      if (testCases.length > 0) {
-        filteredTestSuites.push({
-          id: testSuite.id,
-          sname: testSuite.sname,
-          result: testSuite.result,
-          hasDocumentation: testSuite.hasDocumentation,
-          expanded: true,
-          description: testSuite.description,
-          hasOptionalTestCases: testSuite.hasOptionalTestCases && this.showOptional,
-          hasDisabledTestCases: testSuite.hasDisabledTestCases && this.showDisabled,
-          testCases: testCases,
-          testCaseGroups: testSuite.testCaseGroups,
-          testCaseGroupMap: testSuite.testCaseGroupMap,
-          specReference: testSuite.specReference,
-          specDescription: testSuite.specDescription,
-          specLink: testSuite.specLink
-        })
+        if (testCases.length > 0) {
+          filteredTestSuites.push({
+            id: testSuite.id,
+            sname: testSuite.sname,
+            result: testSuite.result,
+            hasDocumentation: testSuite.hasDocumentation,
+            expanded: true,
+            description: testSuite.description,
+            hasOptionalTestCases: testSuite.hasOptionalTestCases && this.showOptional,
+            hasDisabledTestCases: testSuite.hasDisabledTestCases && this.showDisabled,
+            testCases: testCases,
+            testCaseGroups: testSuite.testCaseGroups,
+            testCaseGroupMap: testSuite.testCaseGroupMap,
+            specReference: testSuite.specReference,
+            specDescription: testSuite.specDescription,
+            specLink: testSuite.specLink
+          })
+        }
       }
     }
     this.displayedTestSuites = filteredTestSuites

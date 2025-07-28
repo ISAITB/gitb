@@ -381,15 +381,7 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit {
 
   applySearchFilter() {
     if (this.loadedTestCases) {
-      let testCaseFilter = this.testCaseFilter
-      if (testCaseFilter != undefined) {
-        testCaseFilter = testCaseFilter.trim()
-        if (testCaseFilter.length == 0) {
-          testCaseFilter = undefined
-        } else {
-          testCaseFilter = testCaseFilter.toLocaleLowerCase()
-        }
-      }
+      let testCaseFilter = this.trimSearchString(this.testCaseFilter)
       let testCases: ConformanceTestCase[] = []
       for (let testCase of this.loadedTestCases) {
         if ((testCaseFilter == undefined
