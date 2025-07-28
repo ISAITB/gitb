@@ -13,34 +13,12 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, Output} from '@angular/core';
+export interface TestCaseFilterState {
 
-@Component({
-  selector: 'app-filter-control',
-  standalone: false,
-  templateUrl: './filter-control.component.html'
-})
-export class FilterControlComponent {
-
-  @Input() showRefresh = true
-  @Input() showClear = true
-  @Output() toggle = new EventEmitter<boolean>();
-  @Output() refresh = new EventEmitter<void>();
-  @Output() clear = new EventEmitter<void>();
-  visible = false
-
-  doClear() {
-    this.visible = false
-    this.clear.emit();
-  }
-
-  doRefresh() {
-    this.refresh.emit();
-  }
-
-  doToggle() {
-    this.visible = !this.visible;
-    this.toggle.emit(this.visible);
-  }
+  showSuccessful: boolean,
+  showFailed: boolean,
+  showIncomplete: boolean,
+  showOptional: boolean,
+  showDisabled: boolean
 
 }

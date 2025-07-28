@@ -13,18 +13,20 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { filter } from 'lodash';
-import { ConformanceStatementItem } from 'src/app/types/conformance-statement-item';
-import { ConformanceStatementResult } from 'src/app/types/conformance-statement-result';
-import { Counters } from '../test-status-icons/counters';
-import { DataService } from 'src/app/services/data.service';
-import { Constants } from 'src/app/common/constants';
-import { ConformanceStatus } from 'src/app/types/conformance-status';
-import { Observable } from 'rxjs';
-import { ConformanceTestSuite } from 'src/app/pages/organisation/conformance-statement/conformance-test-suite';
-import { ConformanceStatusSummary } from 'src/app/types/conformance-status-summary';
-import { ExportReportEvent } from 'src/app/types/export-report-event';
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {filter} from 'lodash';
+import {ConformanceStatementItem} from 'src/app/types/conformance-statement-item';
+import {ConformanceStatementResult} from 'src/app/types/conformance-statement-result';
+import {Counters} from '../test-status-icons/counters';
+import {DataService} from 'src/app/services/data.service';
+import {Constants} from 'src/app/common/constants';
+import {ConformanceStatus} from 'src/app/types/conformance-status';
+import {Observable} from 'rxjs';
+import {ConformanceTestSuite} from 'src/app/pages/organisation/conformance-statement/conformance-test-suite';
+import {ConformanceStatusSummary} from 'src/app/types/conformance-status-summary';
+import {ExportReportEvent} from 'src/app/types/export-report-event';
+import {StatementFilterState} from '../statement-controls/statement-filter-state';
+import {BaseComponent} from '../../pages/base-component.component';
 
 @Component({
     selector: 'app-conformance-statement-item-display',
@@ -32,7 +34,7 @@ import { ExportReportEvent } from 'src/app/types/export-report-event';
     styleUrls: ['./conformance-statement-item-display.component.less'],
     standalone: false
 })
-export class ConformanceStatementItemDisplayComponent implements OnInit {
+export class ConformanceStatementItemDisplayComponent extends BaseComponent implements OnInit{
 
   @Input() item!: ConformanceStatementItem
   @Input() shade = false
@@ -68,14 +70,16 @@ export class ConformanceStatementItemDisplayComponent implements OnInit {
   updateTime?: string
   testCasesOpen = false
   testSuites: ConformanceTestSuite[]|undefined
+  displayedTestSuites: ConformanceTestSuite[] = []
   statementSummary?: ConformanceStatusSummary
   hasBadge = false
   pending = false
   Constants = Constants
+  refreshTestSuiteDisplay = new EventEmitter<void>()
 
   constructor(
     public readonly dataService: DataService
-  ) { }
+  ) { super() }
 
   ngOnInit(): void {
     this.hasChildren = this.item.items != undefined && this.item.items.length > 0
@@ -160,6 +164,10 @@ export class ConformanceStatementItemDisplayComponent implements OnInit {
           this.statementSummary = data.summary
           this.hasBadge = data.summary.hasBadge
           this.testSuites = data.testSuites
+          for (let testSuite of this.testSuites) {
+            testSuite.testCaseGroupMap = this.dataService.toTestCaseGroupMap(testSuite.testCaseGroups)
+          }
+          this.applySearchFilters()
         }
       }).add(() => {
         setTimeout(() => {
@@ -218,5 +226,26 @@ export class ConformanceStatementItemDisplayComponent implements OnInit {
 
   onViewTestSession(session: string) {
     this.viewTestSession.emit(session)
+  }
+
+  applySearchFilters(state?: StatementFilterState) {
+    if (state == undefined) {
+      state = {
+        showSuccessful: true,
+        showFailed: true,
+        showIncomplete: true,
+        showOptional: true,
+        showDisabled: true
+      }
+    }
+    if (this.testSuites) {
+      const testSuiteFilter = this.trimSearchString(state.testSuiteFilter)
+      const testCaseFilter = this.trimSearchString(state.testCaseFilter)
+      this.displayedTestSuites = this.dataService.filterTestSuites(this.testSuites, testSuiteFilter, testCaseFilter, state)
+      setTimeout(() => {
+        this.refreshTestSuiteDisplay.emit()
+      })
+    }
+
   }
 }

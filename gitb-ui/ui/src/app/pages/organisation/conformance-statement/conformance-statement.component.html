@@ -176,13 +176,7 @@
                                 <app-text-filter name="testSuiteFilter" [width]="250" [placeholder]="'Search test suites...'" [(ngModel)]="testSuiteFilter" (apply)="applySearchFilters()"></app-text-filter>
                             }
                             <app-text-filter name="testCaseFilter" [width]="250" [placeholder]="'Search test cases...'" [(ngModel)]="testCaseFilter" (apply)="applySearchFilters()"></app-text-filter>
-                            <div class="resultFilterDiv">
-                                <app-checkbox-option-panel
-                                    label="Show tests..."
-                                    [options]="testDisplayOptions"
-                                    [refresh]="refreshDisplayOptions"
-                                    (updated)="resultFilterUpdated($event)"></app-checkbox-option-panel>
-                            </div>
+                            <app-test-case-filter #testCaseResultFilter [options]="testCaseFilterOptions" (apply)="resultFilterUpdated($event)"></app-test-case-filter>
                         </div>
                     </div>
                     @if (!isReadonly) {

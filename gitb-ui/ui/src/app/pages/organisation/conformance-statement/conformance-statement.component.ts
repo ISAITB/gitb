@@ -21,8 +21,6 @@ import {BsModalService} from 'ngx-bootstrap/modal';
 import {TabsetComponent} from 'ngx-bootstrap/tabs';
 import {finalize, forkJoin, mergeMap, Observable, of, tap} from 'rxjs';
 import {Constants} from 'src/app/common/constants';
-import {CheckboxOption} from 'src/app/components/checkbox-option-panel/checkbox-option';
-import {CheckboxOptionState} from 'src/app/components/checkbox-option-panel/checkbox-option-state';
 import {Counters} from 'src/app/components/test-status-icons/counters';
 import {MissingConfigurationAction} from 'src/app/modals/missing-configuration-modal/missing-configuration-action';
 import {MissingConfigurationModalComponent} from 'src/app/modals/missing-configuration-modal/missing-configuration-modal.component';
@@ -50,6 +48,9 @@ import {CustomProperty} from 'src/app/types/custom-property.type';
 import {BaseComponent} from '../../base-component.component';
 import {ValidationState} from 'src/app/types/validation-state';
 import {share} from 'rxjs/operators';
+import {TestCaseFilterState} from '../../../components/test-case-filter/test-case-filter-state';
+import {TestCaseFilterOptions} from '../../../components/test-case-filter/test-case-filter-options';
+import {TestCaseFilterApi} from '../../../components/test-case-filter/test-case-filter-api';
 
 @Component({
     selector: 'app-conformance-statement',
@@ -82,6 +83,7 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
   updateConfigurationPending = false
   tabToShow = ConformanceStatementTab.tests
   @ViewChild('tabs', { static: false }) tabs?: TabsetComponent;
+  @ViewChild('testCaseResultFilter') testCaseResultFilter?: TestCaseFilterApi;
   collapsedDetails = false
   collapsedDetailsFinished = false
   hasBadge = false
@@ -91,9 +93,14 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
   canEditSystemConfiguration = false
   canEditStatementConfiguration = false
 
-  showResults = new Set<string>([Constants.TEST_CASE_RESULT.SUCCESS, Constants.TEST_CASE_RESULT.FAILURE, Constants.TEST_CASE_RESULT.UNDEFINED]);
-  showOptional = true
-  showDisabled = false
+  testCaseFilterOptions?: TestCaseFilterOptions
+  testCaseFilterState: TestCaseFilterState = {
+    showSuccessful: true,
+    showFailed: true,
+    showIncomplete: true,
+    showOptional: true,
+    showDisabled: false
+  }
 
   executionModeSequential = "backgroundSequential"
   executionModeParallel = "backgroundParallel"
@@ -106,13 +113,6 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
   executionModeButton = this.executionModeLabelInteractive
   testCaseFilter?: string
   testSuiteFilter?: string
-  private static SHOW_SUCCEEDED = '0'
-  private static SHOW_FAILED = '1'
-  private static SHOW_INCOMPLETE = '2'
-  private static SHOW_OPTIONAL = '3'
-  private static SHOW_DISABLED = '4'
-  testDisplayOptions!: CheckboxOption[][]
-  refreshDisplayOptions = new EventEmitter<CheckboxOption[][]>()
   refreshTestSuiteDisplay = new EventEmitter<void>()
 
   statement?: ConformanceStatementItem
@@ -321,18 +321,11 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
   }
 
   private prepareTestFilter(): void {
-    this.testDisplayOptions = [[
-        {key: ConformanceStatementComponent.SHOW_SUCCEEDED, label: 'Succeeded tests', default: true, iconClass: this.dataService.iconForTestResult(Constants.TEST_CASE_RESULT.SUCCESS)},
-        {key: ConformanceStatementComponent.SHOW_FAILED, label: 'Failed tests', default: true, iconClass: this.dataService.iconForTestResult(Constants.TEST_CASE_RESULT.FAILURE)},
-        {key: ConformanceStatementComponent.SHOW_INCOMPLETE, label: 'Incomplete tests', default: true, iconClass: this.dataService.iconForTestResult(Constants.TEST_CASE_RESULT.UNDEFINED)}
-    ]]
-    if (this.hasOptionalTests) {
-      this.testDisplayOptions.push([{key: ConformanceStatementComponent.SHOW_OPTIONAL, label: 'Optional tests', default: true}])
+    this.testCaseFilterOptions = {
+      showOptional: this.hasOptionalTests,
+      showDisabled: this.hasDisabledTests
     }
-    if (this.hasDisabledTests) {
-      this.testDisplayOptions.push([{key: ConformanceStatementComponent.SHOW_DISABLED, label: 'Disabled tests', default: false}])
-    }
-    this.refreshDisplayOptions.emit(this.testDisplayOptions)
+    this.testCaseResultFilter?.refreshOptions(this.testCaseFilterOptions)
   }
 
   private findByType(items: ConformanceStatementItem[], itemType: number): ConformanceStatementItem|undefined {
@@ -387,70 +380,15 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
     }
   }
 
-  resultFilterUpdated(choices: CheckboxOptionState) {
-    this.showOptional = choices[ConformanceStatementComponent.SHOW_OPTIONAL]
-    this.showDisabled = choices[ConformanceStatementComponent.SHOW_DISABLED]
-    if (choices[ConformanceStatementComponent.SHOW_SUCCEEDED]) {
-      this.showResults.add(Constants.TEST_CASE_RESULT.SUCCESS)
-    } else {
-      this.showResults.delete(Constants.TEST_CASE_RESULT.SUCCESS)
-    }
-    if (choices[ConformanceStatementComponent.SHOW_FAILED]) {
-      this.showResults.add(Constants.TEST_CASE_RESULT.FAILURE)
-    } else {
-      this.showResults.delete(Constants.TEST_CASE_RESULT.FAILURE)
-    }
-    if (choices[ConformanceStatementComponent.SHOW_INCOMPLETE]) {
-      this.showResults.add(Constants.TEST_CASE_RESULT.UNDEFINED)
-    } else {
-      this.showResults.delete(Constants.TEST_CASE_RESULT.UNDEFINED)
-    }
+  resultFilterUpdated(choices: TestCaseFilterState) {
+    this.testCaseFilterState = choices
     this.applySearchFilters()
   }
 
   applySearchFilters() {
-    let testSuiteFilter = this.trimSearchString(this.testSuiteFilter)
-    let testCaseFilter = this.trimSearchString(this.testCaseFilter)
-    let filteredTestSuites: ConformanceTestSuite[] = []
-    for (let testSuite of this.testSuites) {
-      if (testSuiteFilter == undefined
-        || (testSuite.sname.toLocaleLowerCase().indexOf(testSuiteFilter) >= 0)
-        || (testSuite.description != undefined && testSuite.description.toLocaleLowerCase().indexOf(testSuiteFilter) >= 0)) {
-        let testCases: ConformanceTestCase[] = []
-        for (let testCase of testSuite.testCases) {
-          if (this.showResults.has(testCase.result)
-            && (!testCase.optional || this.showOptional)
-            && (!testCase.disabled || this.showDisabled)
-            && (testCaseFilter == undefined
-              || (testCase.sname.toLocaleLowerCase().indexOf(testCaseFilter) >= 0)
-              || (testCase.description != undefined && testCase.description.toLocaleLowerCase().indexOf(testCaseFilter) >= 0))) {
-            testCases.push(testCase)
-          }
-        }
-        if (testCases.length > 0) {
-          filteredTestSuites.push({
-            id: testSuite.id,
-            sname: testSuite.sname,
-            result: testSuite.result,
-            hasDocumentation: testSuite.hasDocumentation,
-            expanded: true,
-            description: testSuite.description,
-            hasOptionalTestCases: testSuite.hasOptionalTestCases && this.showOptional,
-            hasDisabledTestCases: testSuite.hasDisabledTestCases && this.showDisabled,
-            testCases: testCases,
-            testCaseGroups: testSuite.testCaseGroups,
-            testCaseGroupMap: testSuite.testCaseGroupMap,
-            specReference: testSuite.specReference,
-            specDescription: testSuite.specDescription,
-            specLink: testSuite.specLink
-          })
-        }
-      }
-    }
-    this.displayedTestSuites = filteredTestSuites
-    for (let testSuite of this.displayedTestSuites) {
-      this.dataService.prepareTestCaseGroupPresentation(testSuite.testCases, testSuite.testCaseGroupMap)
-    }
+    const testSuiteFilter = this.trimSearchString(this.testSuiteFilter)
+    const testCaseFilter = this.trimSearchString(this.testCaseFilter)
+    this.displayedTestSuites = this.dataService.filterTestSuites(this.testSuites, testSuiteFilter, testCaseFilter, this.testCaseFilterState)
     setTimeout(() => {
       this.refreshTestSuiteDisplay.emit()
     })

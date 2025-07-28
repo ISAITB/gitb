@@ -417,6 +417,14 @@ export class Constants {
     HIDE_PENDING_INDICATOR: 4
 	}
 
+  public static readonly TEST_FILTER = {
+    SUCCEEDED: '0',
+    FAILED: '1',
+    INCOMPLETE: '2',
+    OPTIONAL: '3',
+    DISABLED: '4'
+  }
+
 	public static readonly PASSWORD_REGEX = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[\!\@\#\&\(\)\[\{\}\]\:\;\'\"\,\?\/\\\*\~\$\^\+\=\<\>\_\-]).{8,}$/
 	public static readonly END_OF_TEST_STEP = "-1"
 	public static readonly END_OF_TEST_STEP_EXTERNAL = "-2"

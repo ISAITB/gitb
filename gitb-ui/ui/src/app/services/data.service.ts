@@ -52,6 +52,7 @@ import {CookieOptions, CookieService} from 'ngx-cookie-service';
 import {LocationData} from '../types/location-data';
 import {TestCaseTag} from '../types/test-case-tag';
 import {ConformanceTestCaseGroup} from '../pages/organisation/conformance-statement/conformance-test-case-group';
+import {TestCaseFilterState} from '../components/test-case-filter/test-case-filter-state';
 
 @Injectable({
   providedIn: 'root'
@@ -1954,6 +1955,51 @@ export class DataService {
     if (this.isSystemAdmin && communityId != undefined) {
       this.setCookie("implicitCommunity", communityId.toString())
     }
+  }
+
+  filterTestSuites(testSuites: ConformanceTestSuite[], testSuiteFilter: string|undefined, testCaseFilter: string|undefined, testCaseFilterState: TestCaseFilterState): ConformanceTestSuite[] {
+    let filteredTestSuites: ConformanceTestSuite[] = []
+    for (let testSuite of testSuites) {
+      if (testSuiteFilter == undefined
+        || (testSuite.sname.toLocaleLowerCase().indexOf(testSuiteFilter) >= 0)
+        || (testSuite.description != undefined && testSuite.description.toLocaleLowerCase().indexOf(testSuiteFilter) >= 0)) {
+        let testCases: ConformanceTestCase[] = []
+        for (let testCase of testSuite.testCases) {
+          if ((testCase.result == Constants.TEST_CASE_RESULT.SUCCESS && testCaseFilterState.showSuccessful
+              || testCase.result == Constants.TEST_CASE_RESULT.FAILURE && testCaseFilterState.showFailed
+              || testCase.result == Constants.TEST_CASE_RESULT.UNDEFINED && testCaseFilterState.showIncomplete)
+            && (!testCase.optional || testCaseFilterState.showOptional)
+            && (!testCase.disabled || testCaseFilterState.showDisabled)
+            && (testCaseFilter == undefined
+              || (testCase.sname.toLocaleLowerCase().indexOf(testCaseFilter) >= 0)
+              || (testCase.description != undefined && testCase.description.toLocaleLowerCase().indexOf(testCaseFilter) >= 0))) {
+            testCases.push(testCase)
+          }
+        }
+        if (testCases.length > 0) {
+          filteredTestSuites.push({
+            id: testSuite.id,
+            sname: testSuite.sname,
+            result: testSuite.result,
+            hasDocumentation: testSuite.hasDocumentation,
+            expanded: true,
+            description: testSuite.description,
+            hasOptionalTestCases: testSuite.hasOptionalTestCases && testCaseFilterState.showOptional,
+            hasDisabledTestCases: testSuite.hasDisabledTestCases && testCaseFilterState.showDisabled,
+            testCases: testCases,
+            testCaseGroups: testSuite.testCaseGroups,
+            testCaseGroupMap: testSuite.testCaseGroupMap,
+            specReference: testSuite.specReference,
+            specDescription: testSuite.specDescription,
+            specLink: testSuite.specLink
+          })
+        }
+      }
+    }
+    for (let testSuite of filteredTestSuites) {
+      this.prepareTestCaseGroupPresentation(testSuite.testCases, testSuite.testCaseGroupMap)
+    }
+    return filteredTestSuites
   }
 
 }

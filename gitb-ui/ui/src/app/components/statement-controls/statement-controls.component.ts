@@ -13,10 +13,13 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input } from '@angular/core';
-import { DataService } from 'src/app/services/data.service';
-import { RoutingService } from 'src/app/services/routing.service';
-import { ConformanceIds } from 'src/app/types/conformance-ids';
+import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {DataService} from 'src/app/services/data.service';
+import {RoutingService} from 'src/app/services/routing.service';
+import {ConformanceIds} from 'src/app/types/conformance-ids';
+import {TestCaseFilterState} from '../test-case-filter/test-case-filter-state';
+import {TestCaseFilterOptions} from '../test-case-filter/test-case-filter-options';
+import {StatementFilterState} from './statement-filter-state';
 
 @Component({
     selector: 'app-statement-controls',
@@ -31,6 +34,24 @@ export class StatementControlsComponent {
   @Input() snapshotId!:number|undefined
   @Input() snapshotLabel!:string|undefined
   @Input() hasBadge!: boolean|undefined
+  @Output() filter = new EventEmitter<StatementFilterState>()
+
+  filtersActive = false
+  testCaseFilter?: string
+  testSuiteFilter?: string
+  defaultTestCaseFilterState: TestCaseFilterState = {
+    showSuccessful: true,
+    showFailed: true,
+    showIncomplete: true,
+    showOptional: true,
+    showDisabled: true
+  }
+  testCaseFilterState = this.defaultTestCaseFilterState
+  testCaseFilterOptions: TestCaseFilterOptions = {
+    showOptional: true,
+    showDisabled: true,
+    initialState: this.testCaseFilterState
+  }
 
   constructor(
     private readonly routingService: RoutingService,
@@ -102,5 +123,21 @@ export class StatementControlsComponent {
     return this.showToSpecification() && this.conformanceIds.actorId != undefined && this.conformanceIds.actorId >= 0
   }
 
+  applySearchFilters() {
+    this.filter.emit({
+      showSuccessful: this.testCaseFilterState.showSuccessful,
+      showFailed: this.testCaseFilterState.showFailed,
+      showIncomplete: this.testCaseFilterState.showIncomplete,
+      showOptional: this.testCaseFilterState.showOptional,
+      showDisabled: this.testCaseFilterState.showDisabled,
+      testCaseFilter: this.testCaseFilter,
+      testSuiteFilter: this.testSuiteFilter
+    })
+  }
+
+  resultFilterUpdated(state: TestCaseFilterState) {
+    this.testCaseFilterState = state
+    this.applySearchFilters()
+  }
 
 }

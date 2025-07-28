@@ -84,7 +84,8 @@
                                     [organisationId]="organisationId!"
                                     [snapshotId]="snapshotId"
                                     [snapshotLabel]="snapshotLabel"
-                                    [hasBadge]="hasBadge">
+                                    [hasBadge]="hasBadge"
+                                    (filter)="applySearchFilters($event)">
                                     <div class="btn-group export-group" dropdown [isDisabled]="item.exportPdfPending == true || item.exportXmlPending == true">
                                         <button type="button" [disable]="item.exportPdfPending == true || item.exportXmlPending == true" [pending]="item.exportPdfPending || item.exportXmlPending" class="btn btn-secondary" (click)="onExport({statementReport: true, item: item, actorId: statementSummary.actorId, format: 'pdf'})">Download report</button>
                                         <button id="button-export" type="button" [disabled]="item.exportPdfPending == true || item.exportXmlPending == true" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
@@ -99,16 +100,27 @@
                             </div>
                         }
                         @if (testSuites) {
-                            <div class="statement-test-suites">
-                                <app-test-suite-display
-                                    [testSuites]="testSuites"
-                                    [showExecute]="false"
-                                    [showExport]="true"
-                                    [shaded]="shade"
-                                    [communityId]="communityId"
-                                    (viewTestSession)="onViewTestSession($event)"
-                                ></app-test-suite-display>
-                            </div>
+                            @if (displayedTestSuites.length > 0) {
+                                <div class="statement-test-suites">
+                                    <app-test-suite-display
+                                        [testSuites]="displayedTestSuites"
+                                        [showExecute]="false"
+                                        [showExport]="true"
+                                        [shaded]="shade"
+                                        [communityId]="communityId"
+                                        [refresh]="refreshTestSuiteDisplay"
+                                        (viewTestSession)="onViewTestSession($event)"
+                                    ></app-test-suite-display>
+                                </div>
+                            } @else {
+                                <div class="no-test-cases">
+                                    @if (testSuites.length == 0) {
+                                        <span>No test cases are defined in this conformance statement.</span>
+                                    } @else {
+                                        <span>No test cases were found matching your search criteria.</span>
+                                    }
+                                </div>
+                            }
                         }
                     </div>
                 </div>

@@ -226,6 +226,7 @@ import { ServiceHealthCardComponent } from './components/service-health-card/ser
 import { ServiceHealthModalComponent } from './modals/service-health-modal/service-health-modal.component';
 import { ServiceHealthIconComponent } from './components/service-health-icon/service-health-icon.component';
 import { FilterControlComponent } from './components/filter-control/filter-control.component';
+import { TestCaseFilterComponent } from './components/test-case-filter/test-case-filter.component';
 
 @NgModule({ declarations: [
         AppComponent,
@@ -419,7 +420,8 @@ import { FilterControlComponent } from './components/filter-control/filter-contr
         ServiceHealthCardComponent,
         ServiceHealthModalComponent,
         ServiceHealthIconComponent,
-        FilterControlComponent
+        FilterControlComponent,
+        TestCaseFilterComponent
     ],
     bootstrap: [AppComponent], imports: [
     NgxColorPickerComponent,

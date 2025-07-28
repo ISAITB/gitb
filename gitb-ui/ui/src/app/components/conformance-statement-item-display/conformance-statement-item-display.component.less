@@ -65,7 +65,7 @@
                 flex-basis: 100%;
             }
             .item-description {
-                margin: 10px 0px 0px 0px;
+                margin: 10px 0 0 0;
             }
         }
         &:not(.wrapDescriptions) {
@@ -81,7 +81,7 @@
     }
     .item-content {
         margin-top: -10px;
-        padding: 0px 10px 10px 10px;
+        padding: 0 10px 10px 10px;
     }
     .item-results {
         display: flex;
@@ -94,5 +94,11 @@
     }
     .item-pending {
         align-self: center;
+    }
+    .no-test-cases {
+        margin: 15px 10px 5px 10px;
+        span {
+            opacity: 0.5;
+        }
     }
 }
