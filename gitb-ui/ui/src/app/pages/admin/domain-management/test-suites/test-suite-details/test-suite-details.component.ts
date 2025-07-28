@@ -67,6 +67,7 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit {
   unlinkedSpecifications: Specification[] = []
   clearLinkedSpecificationsSelection = new EventEmitter<void>()
 
+  loadedTestCases?: ConformanceTestCase[]
   testCasesToShow?: ConformanceTestCase[]
   hasDisabledTestCases = false
   hasOptionalTestCases = false
@@ -76,6 +77,8 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit {
   movePending = false
   moveSelectionConfig!: MultiSelectConfig<Specification>
   convertPending = false
+
+  testCaseFilter?: string
 
   constructor(
     public readonly dataService: DataService,
@@ -118,8 +121,9 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit {
       this.testSuiteService.getTestSuiteWithTestCases(this.testSuiteId)
       .subscribe((data) => {
         this.testSuite = data
-        this.testCaseGroupMap = this.dataService.toTestCaseGroupMap(data.testCaseGroups)
-        this.testCasesToShow = this.toConformanceTestCases(data.testCases)
+        this.testCaseGroupMap = this.dataService.toTestCaseGroupMap(this.testSuite.testCaseGroups)
+        this.loadedTestCases = this.toConformanceTestCases(data.testCases)
+        this.applySearchFilter()
         if (this.specificationId) {
           this.routingService.testSuiteBreadcrumbs(this.domainId, this.specificationId, this.testSuiteId, this.testSuite.identifier!)
         } else {
@@ -374,4 +378,29 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit {
       this.convertPending = false
     })
   }
+
+  applySearchFilter() {
+    if (this.loadedTestCases) {
+      let testCaseFilter = this.testCaseFilter
+      if (testCaseFilter != undefined) {
+        testCaseFilter = testCaseFilter.trim()
+        if (testCaseFilter.length == 0) {
+          testCaseFilter = undefined
+        } else {
+          testCaseFilter = testCaseFilter.toLocaleLowerCase()
+        }
+      }
+      let testCases: ConformanceTestCase[] = []
+      for (let testCase of this.loadedTestCases) {
+        if ((testCaseFilter == undefined
+          || (testCase.sname.toLocaleLowerCase().indexOf(testCaseFilter) >= 0)
+          || (testCase.description != undefined && testCase.description.toLocaleLowerCase().indexOf(testCaseFilter) >= 0))) {
+          testCases.push(testCase)
+        }
+      }
+      this.testCasesToShow = testCases
+      this.dataService.prepareTestCaseGroupPresentation(this.testCasesToShow, this.testCaseGroupMap)
+    }
+  }
+
 }

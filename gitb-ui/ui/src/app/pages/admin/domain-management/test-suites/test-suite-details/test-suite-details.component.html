@@ -91,6 +91,11 @@
                             <div class="pending-message">Loading test cases...</div>
                         </div>
                     } @else {
+                        <div class="tabControls">
+                            <div class="btn-toolbar">
+                                <app-text-filter name="testCaseFilter" [width]="250" [placeholder]="'Search test cases...'" [(ngModel)]="testCaseFilter" (apply)="applySearchFilter()"></app-text-filter>
+                            </div>
+                        </div>
                         @if (testCasesToShow && testCasesToShow.length > 0) {
                             <div class="testCaseDisplayContainer">
                                 <app-test-case-display
