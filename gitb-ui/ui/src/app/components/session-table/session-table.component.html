@@ -114,9 +114,7 @@
                                                 </div>
                                             }
                                         }
-                                    </div>
                                     @if (showNavigationControls) {
-                                        <div class="btn-toolbar goto-controls">
                                             <!-- Copy link -->
                                             @if (copyForOtherRoleOption) {
                                                 <div class="btn-group" dropdown>
@@ -135,80 +133,10 @@
                                             } @else {
                                                 <button type="button" class="btn btn-secondary" (click)="copyLink(row)">Copy link</button>
                                             }
-                                            <!-- View statement -->
-                                            @if (showToStatement(row)) {
-                                                <button type="button" class="btn btn-secondary" (click)="toStatement(row)">View statement</button>
-                                            }
-                                            <!-- View party -->
-                                            @if (showPartyNavigation(row)) {
-                                                @if (showToSystem(row)) {
-                                                    <div class="btn-group" dropdown>
-                                                        <button type="button" class="btn btn-secondary" (click)="toSystem(row)">View {{dataService.labelSystemLower()}}</button>
-                                                        <button id="button-system" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
-                                                        <ul id="dropdown-system" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-system">
-                                                            @if (showToCommunity(row)) {
-                                                                <li role="menuitem"><a class="dropdown-item" href (click)="toCommunity(row);$event.preventDefault();">View community</a></li>
-                                                            }
-                                                            <li role="menuitem"><a class="dropdown-item" href (click)="toOrganisation(row); $event.preventDefault();">View {{dataService.labelOrganisationLower()}}</a></li>
-                                                        </ul>
-                                                    </div>
-                                                } @else {
-                                                    @if (showToOrganisation(row)) {
-                                                        <div class="btn-group" dropdown>
-                                                            <button type="button" class="btn btn-secondary" (click)="toOrganisation(row)">View {{dataService.labelOrganisationLower()}}</button>
-                                                            <button id="button-organisation" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
-                                                            <ul id="dropdown-organisation" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-organisation">
-                                                                <li role="menuitem"><a class="dropdown-item" href (click)="toCommunity(row);$event.preventDefault();">View community</a></li>
-                                                            </ul>
-                                                        </div>
-                                                    } @else {
-                                                        <button type="button" class="btn btn-secondary" (click)="toCommunity(row)">View community</button>
-                                                    }
-                                                }
-                                            }
-                                            <!-- View specification -->
-                                            @if (showSpecificationNavigation(row)) {
-                                                @if (showToSpecification(row)) {
-                                                    <div class="btn-group" dropdown>
-                                                        <button type="button" class="btn btn-secondary" (click)="toSpecification(row)">View {{dataService.labelSpecificationLower()}}</button>
-                                                        <button id="button-spec" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
-                                                        <ul id="dropdown-spec" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-spec">
-                                                            <li role="menuitem"><a class="dropdown-item" href (click)="toDomain(row);$event.preventDefault();">View {{dataService.labelDomainLower()}}</a></li>
-                                                            @if (showToActor(row)) {
-                                                                <li role="menuitem"><a class="dropdown-item" href (click)="toActor(row); $event.preventDefault();">View {{dataService.labelActorLower()}}</a></li>
-                                                            }
-                                                        </ul>
-                                                    </div>
-                                                } @else {
-                                                    @if (showToActor(row)) {
-                                                        <div class="btn-group" dropdown>
-                                                            <button type="button" class="btn btn-secondary" (click)="toActor(row)">View {{dataService.labelActorLower()}}</button>
-                                                            <button id="button-actor" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
-                                                            <ul id="dropdown-actor" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-actor">
-                                                                <li role="menuitem"><a class="dropdown-item" href (click)="toDomain(row);$event.preventDefault();">View {{dataService.labelDomainLower()}}</a></li>
-                                                            </ul>
-                                                        </div>
-                                                    } @else {
-                                                        <button type="button" class="btn btn-secondary" (click)="toDomain(row)">View {{dataService.labelDomainLower()}}</button>
-                                                    }
-                                                }
-                                            }
-                                            <!-- View test case -->
-                                            @if (showToTestSuite(row) || showToTestCase(row)) {
-                                                @if (showToTestCase(row)) {
-                                                    <div class="btn-group" dropdown>
-                                                        <button type="button" class="btn btn-secondary" (click)="toTestCase(row)">View test case</button>
-                                                        <button id="button-testcase" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
-                                                        <ul id="dropdown-testcase" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-testcase">
-                                                            <li role="menuitem"><a class="dropdown-item" href (click)="toTestSuite(row);$event.preventDefault();">View test suite</a></li>
-                                                        </ul>
-                                                    </div>
-                                                } @else {
-                                                    <button type="button" class="btn btn-secondary" (click)="toTestSuite(row)">View test suite</button>
-                                                }
-                                            }
-                                        </div>
+                                            <!-- View -->
+                                            <app-navigation-controls [config]="toNavigationConfig(row)"></app-navigation-controls>
                                     }
+                                    </div>
                                 </div>
                                 <div class="card">
                                     <div class="card-header session-table-title clickable" (click)="diagramCollapsed[row.session] = !diagramCollapsed[row.session]" [class.collapsed]="diagramCollapsedFinished[row.session]">

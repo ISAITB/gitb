@@ -13,17 +13,16 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-@import '../../../styles/less/_common.less';
+export interface NavigationControlsConfig {
 
-.sessionControls {
-    margin-bottom: 10px;
-    display: flex;
-    .goto-controls {
-        padding-left: 20px;
-        margin-left: 20px;
-        border-left: 1px solid @gray-dark-1;
-    }
-}
-tr.session-table-row {
-    height: 51px;
+  organisationId?: number
+  systemId?: number
+  communityId?: number
+  actorId?: number
+  specificationId?: number
+  domainId?: number
+  testCaseId?: number
+  testSuiteId?: number
+  showStatement?: boolean
+
 }

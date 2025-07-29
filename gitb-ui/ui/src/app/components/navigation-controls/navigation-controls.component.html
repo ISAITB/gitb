@@ -1,0 +1,19 @@
+@if (mainNavigationItem) {
+    @if (extraNavigationItems.length == 0) {
+        <button type="button" class="btn btn-secondary" (click)="mainNavigationItem.action!()">{{ mainNavigationItem.label }}</button>
+    } @else {
+        <div class="btn-group" dropdown>
+            <button type="button" class="btn btn-secondary" (click)="mainNavigationItem.action!()">{{ mainNavigationItem.label }}</button>
+            <button id="button-view" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
+            <ul id="dropdown-view" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-system">
+                @for (item of extraNavigationItems; track $index) {
+                    @if (item.label == undefined) {
+                        <li class="divider dropdown-divider"></li>
+                    } @else {
+                        <li role="menuitem"><a class="dropdown-item" href (click)="item.action!();$event.preventDefault();">{{ item.label }}</a></li>
+                    }
+                }
+            </ul>
+        </div>
+    }
+}

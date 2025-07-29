@@ -51,6 +51,7 @@ import {share} from 'rxjs/operators';
 import {TestCaseFilterState} from '../../../components/test-case-filter/test-case-filter-state';
 import {TestCaseFilterOptions} from '../../../components/test-case-filter/test-case-filter-options';
 import {TestCaseFilterApi} from '../../../components/test-case-filter/test-case-filter-api';
+import {NavigationControlsConfig} from '../../../components/navigation-controls/navigation-controls-config';
 
 @Component({
     selector: 'app-conformance-statement',
@@ -92,6 +93,7 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
   canEditOrganisationConfiguration = false
   canEditSystemConfiguration = false
   canEditStatementConfiguration = false
+  navigationConfig?: NavigationControlsConfig
 
   testCaseFilterOptions?: TestCaseFilterOptions
   testCaseFilterState: TestCaseFilterState = {
@@ -228,6 +230,7 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
         // IDs.
         this.domainId = this.findByType([this.statement]!, Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.DOMAIN)!.id
         this.specId = this.findByType([this.statement]!, Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION)!.id
+        this.prepareNavigationConfig()
         // Test results.
         for (let testSuite of statementData.results.testSuites) {
           testSuite.hasDisabledTestCases = find(testSuite.testCases, (testCase) => testCase.disabled) != undefined
@@ -274,6 +277,18 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
     )
     obs$.subscribe()
     return obs$
+  }
+
+  private prepareNavigationConfig() {
+    this.navigationConfig = {
+      systemId: this.systemId,
+      organisationId: this.organisationId,
+      communityId: this.communityIdOfStatement,
+      actorId: this.actorId,
+      specificationId: this.specId,
+      domainId: this.domainId,
+      showStatement: false
+    }
   }
 
   private retrieveSnapshotLabel(snapshotId: number|undefined, labelFromNavigation: string|undefined): Observable<string|null> {
@@ -611,58 +626,6 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
     } else {
       this.routingService.toSessionDashboard(sessionId)
     }
-  }
-
-  toCommunity() {
-    this.routingService.toCommunity(this.communityId!)
-  }
-
-  toOrganisation() {
-    if (this.communityId == undefined || this.organisationId == this.dataService.vendor!.id) {
-      this.routingService.toOwnOrganisationDetails()
-    } else {
-      this.routingService.toOrganisationDetails(this.communityId!, this.organisationId)
-    }
-  }
-
-  toSystem() {
-    if (this.communityId == undefined || this.organisationId == this.dataService.vendor!.id) {
-      this.routingService.toOwnSystemDetails(this.systemId)
-    } else {
-      this.routingService.toSystemDetails(this.communityId!, this.organisationId, this.systemId)
-    }
-  }
-
-  toDomain() {
-    this.routingService.toDomain(this.domainId!)
-  }
-
-  toSpecification() {
-    this.routingService.toSpecification(this.domainId!, this.specId!)
-  }
-
-  toActor() {
-    this.routingService.toActor(this.domainId!, this.specId!, this.actorId)
-  }
-
-  showToCommunity() {
-    return this.communityId != undefined && (this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin)
-  }
-
-  showToDomain() {
-    return this.domainId != undefined && this.domainId >= 0 && (
-      this.dataService.isSystemAdmin || (
-        this.dataService.isCommunityAdmin && this.dataService.community?.domain != undefined
-      )
-    )
-  }
-
-  showToSpecification() {
-    return this.showToDomain() && this.specId != undefined && this.specId >= 0
-  }
-
-  showToActor() {
-    return this.showToSpecification() && this.actorId >= 0
   }
 
   toggleOverviewCollapse(value: boolean) {
