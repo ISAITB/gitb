@@ -84,7 +84,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
   snapshotButtonLabel = this.latestSnapshotButtonLabel
   activeConformanceSnapshot?: ConformanceSnapshot
 
-  treeView = true
+  listView = false
   availableCommunities?: Community[]
   availableOrganisations?: Organisation[]
   availableSystems?: System[]
@@ -164,7 +164,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
 
   ngAfterViewInit() {
     super.ngAfterViewInit();
-    this.treeViewToggled()
+    this.viewTypeToggled()
   }
 
   toggleFilters() {
@@ -464,10 +464,10 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
           this.snapshotButtonLabel = selectedSnapshot.label
           if (this.activeConformanceSnapshot == undefined || this.activeConformanceSnapshot.id != selectedSnapshot.id) {
             this.activeConformanceSnapshot = selectedSnapshot
-            if (this.treeView) {
-              this.updateTreeViewForSnapshotChange()
-            } else {
+            if (this.listView) {
               this.getConformanceStatements()
+            } else {
+              this.updateTreeViewForSnapshotChange()
             }
           }
           this.activeConformanceSnapshot = selectedSnapshot
@@ -485,10 +485,10 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
       reload = true
     }
     if (reload) {
-      if (this.treeView) {
-        this.updateTreeViewForSnapshotChange()
-      } else {
+      if (this.listView) {
         this.getConformanceStatements()
+      } else {
+        this.updateTreeViewForSnapshotChange()
       }
     }
     this.snapshotButtonLabel = this.latestSnapshotButtonLabel
@@ -498,8 +498,23 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     this.communityChanged(true)
   }
 
-  treeViewToggled() {
-    if (this.treeView) {
+  viewTypeToggled() {
+    if (this.listView) {
+      this.selectedCommunityId = this.communityId
+      this.selectedOrganisationId = undefined
+      this.selectedSystemId = undefined
+      this.itemsByType = undefined
+      this.availableOrganisations = undefined
+      this.availableSystems = undefined
+      this.statements = []
+      if (this.dataService.isSystemAdmin) {
+        // Force a switch back to the latest snapshot and refresh
+        this.viewLatestConformanceSnapshot(true)
+      } else {
+        // Refresh search results
+        this.getConformanceStatements()
+      }
+    } else {
       this.resetStatementFilters()
       let observable: Observable<Community[]>
       if (this.availableCommunities == undefined) {
@@ -537,21 +552,6 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
           }
         })
       })
-    } else {
-      this.selectedCommunityId = this.communityId
-      this.selectedOrganisationId = undefined
-      this.selectedSystemId = undefined
-      this.itemsByType = undefined
-      this.availableOrganisations = undefined
-      this.availableSystems = undefined
-      this.statements = []
-      if (this.dataService.isSystemAdmin) {
-        // Force a switch back to the latest snapshot and refresh
-        this.viewLatestConformanceSnapshot(true)
-      } else {
-        // Refresh search results
-        this.getConformanceStatements()
-      }
     }
   }
 

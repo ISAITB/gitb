@@ -3,7 +3,7 @@
         <div class="card-header">
             <div class="card-title">Conformance statements</div>
             <div class="btn-toolbar allStatementControls" [class.disable-events]="filterState.updatePending">
-                @if (!treeView) {
+                @if (listView) {
                     <app-filter-control (toggle)="toggleFilters()" (refresh)="refreshFilters()" (clear)="clearFilters()"></app-filter-control>
                     @if (conformanceStatements.length > 0) {
                         <button type="button" class="btn btn-secondary"  (click)="onExportConformanceStatementsAsCsv()" [disable]="conformanceStatements.length == 0" [pending]="exportPending">Export CSV</button>
@@ -22,13 +22,13 @@
                 </div>
                 <div class="btn input-switch">
                     <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" role="switch" id="treeViewToggle" [(ngModel)]="treeView" (change)="treeViewToggled()">
-                        <label class="form-check-label" for="treeViewToggle">View per {{ dataService.labelOrganisationLower() }}</label>
+                        <input class="form-check-input" type="checkbox" role="switch" id="viewTypeToggle" [(ngModel)]="listView" (change)="viewTypeToggled()">
+                        <label class="form-check-label" for="viewTypeToggle">List view</label>
                     </div>
                 </div>
             </div>
         </div>
-        @if (treeView) {
+        @if (!listView) {
             <div class="card-body treeDisplay">
                 @if (treeControlsExist()) {
                     <div class="partyControls" [class.wrapped]="searchControlsWrapped" [class.not-wrapped]="!searchControlsWrapped">
