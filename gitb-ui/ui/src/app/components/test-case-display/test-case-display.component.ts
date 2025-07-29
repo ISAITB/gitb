@@ -72,13 +72,11 @@ export class TestCaseDisplayComponent extends BaseComponent implements OnInit {
   ) { super() }
 
   ngOnInit(): void {
+    this.resetPresentation()
     if (this.refresh) {
       this.refresh.subscribe(() => {
         this.resetPresentation()
       })
-    } else {
-      this.resetPresentation()
-      this.dataService.prepareTestCaseGroupPresentation(this.testCases, this.testCaseGroups)
     }
   }
 
@@ -93,6 +91,9 @@ export class TestCaseDisplayComponent extends BaseComponent implements OnInit {
       }
       this.descriptionVisible[testCase.id] = false
     }
+    setTimeout(() => {
+      this.dataService.prepareTestCaseGroupPresentation(this.testCases, this.testCaseGroups)
+    })
   }
 
   viewTestCase(testCase: ConformanceTestCase) {

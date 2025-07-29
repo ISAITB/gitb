@@ -87,13 +87,13 @@
                                     [hasBadge]="hasBadge"
                                     (filter)="applySearchFilters($event)">
                                     <div class="btn-group export-group" dropdown [isDisabled]="item.exportPdfPending == true || item.exportXmlPending == true">
-                                        <button type="button" [disable]="item.exportPdfPending == true || item.exportXmlPending == true" [pending]="item.exportPdfPending || item.exportXmlPending" class="btn btn-secondary" (click)="onExport({statementReport: true, item: item, actorId: statementSummary.actorId, format: 'pdf'})">Download report</button>
+                                        <button type="button" [disable]="item.exportPdfPending == true || item.exportXmlPending == true" [pending]="item.exportPdfPending || item.exportXmlPending" class="btn btn-secondary" (click)="onExport({statementReport: true, item: item, actorId: statementSummary!.actorId, format: 'pdf'})">Download report</button>
                                         <button id="button-export" type="button" [disabled]="item.exportPdfPending == true || item.exportXmlPending == true" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
                                             <span class="caret"></span>
                                             <span class="sr-only visually-hidden">Download report</span>
                                         </button>
                                         <ul id="dropdown-export" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-export">
-                                            <li role="menuitem"><a class="dropdown-item" href (click)="onExport({statementReport: true, item: item, actorId: statementSummary.actorId, format: 'xml'});$event.preventDefault();">Download report as XML</a></li>
+                                            <li role="menuitem"><a class="dropdown-item" href (click)="onExport({statementReport: true, item: item, actorId: statementSummary!.actorId, format: 'xml'});$event.preventDefault();">Download report as XML</a></li>
                                         </ul>
                                     </div>
                                 </app-statement-controls>

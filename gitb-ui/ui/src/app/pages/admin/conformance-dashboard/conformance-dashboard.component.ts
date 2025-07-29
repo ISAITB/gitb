@@ -45,6 +45,7 @@ import {
 } from 'src/app/components/base-conformance-item-display/base-conformance-item-display.component';
 import {PagingEvent} from '../../../components/paging-controls/paging-event';
 import {PagingControlsApi} from '../../../components/paging-controls/paging-controls-api';
+import {StatementFilterState} from '../../../components/statement-controls/statement-filter-state';
 
 @Component({
     selector: 'app-conformance-dashboard',
@@ -267,7 +268,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     })
   }
 
-	onExpand(statement: ConformanceResultFull) {
+	onExpand(statement: ConformanceResultFullWithTestSuites) {
 		if (this.isExpanded(statement)) {
 			this.collapse(statement)
     } else {
@@ -280,6 +281,8 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
             this.dataService.organiseTestSuitesForDisplay(data.testSuites)
             statement.hasBadge = data.summary.hasBadge
             statement.testSuites = data.testSuites
+            statement.displayedTestSuites = data.testSuites
+            statement.refreshTestSuites = new EventEmitter<void>()
           }
         }).add(() => {
           statement.testSuitesLoaded = true
@@ -423,7 +426,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     this.filterState.updatePending = true
     this.getConformanceStatementsInternal(pagingInfo, false, false)
     .subscribe((data) => {
-			this.conformanceStatements = data.data
+      this.conformanceStatements = data.data
       this.pagingControls?.updateStatus(pagingInfo.targetPage, data.count)
 			this.onCollapseAll()
     }).add(() => {
@@ -669,4 +672,16 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     return `${statement.actorId}_${statement.systemId}`;
   }
 
+  applyStatementSearchFilters(statement: ConformanceResultFullWithTestSuites, state: StatementFilterState) {
+    if (statement.testSuites && statement.testSuites.length > 0) {
+      const testSuiteFilter = this.trimSearchString(state.testSuiteFilter)
+      const testCaseFilter = this.trimSearchString(state.testCaseFilter)
+      statement.displayedTestSuites = this.dataService.filterTestSuites(statement.testSuites, testSuiteFilter, testCaseFilter, state)
+      setTimeout(() => {
+        if (statement.refreshTestSuites) {
+          statement.refreshTestSuites.emit()
+        }
+      })
+    }
+  }
 }

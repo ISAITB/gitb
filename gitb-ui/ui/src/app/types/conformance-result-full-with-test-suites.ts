@@ -15,9 +15,13 @@
 
 import { ConformanceTestSuite } from "../pages/organisation/conformance-statement/conformance-test-suite";
 import { ConformanceResultFull } from "./conformance-result-full";
+import {EventEmitter} from '@angular/core';
 
 export interface ConformanceResultFullWithTestSuites extends ConformanceResultFull {
 
-    testSuites?: ConformanceTestSuite[]
+  testSuites?: ConformanceTestSuite[]
+  displayedTestSuites?: ConformanceTestSuite[]
+
+  refreshTestSuites?: EventEmitter<void>
 
 }

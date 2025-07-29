@@ -21,12 +21,13 @@ import { find } from 'lodash';
 import { Constants } from 'src/app/common/constants';
 import { CheckboxOptionState } from '../checkbox-option-panel/checkbox-option-state';
 import {ExportReportEvent} from '../../types/export-report-event';
+import {BaseComponent} from '../../pages/base-component.component';
 
 @Component({
     template: '',
     standalone: false
 })
-export abstract class BaseConformanceItemDisplayComponent implements AfterViewInit, OnDestroy {
+export abstract class BaseConformanceItemDisplayComponent extends BaseComponent implements AfterViewInit, OnDestroy {
 
   @ViewChild('searchControls') searchControls?: ElementRef
   @ViewChild('selectorControls') selectorControls?: ElementRef
@@ -57,7 +58,9 @@ export abstract class BaseConformanceItemDisplayComponent implements AfterViewIn
   constructor(
     public readonly dataService: DataService,
     private readonly zone: NgZone
-  ) {}
+  ) {
+    super()
+  }
 
   ngAfterViewInit(): void {
     this.resizeObserver = new ResizeObserver(() => {

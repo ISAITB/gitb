@@ -79,6 +79,7 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit {
   convertPending = false
 
   testCaseFilter?: string
+  refreshTestCases = new EventEmitter<void>()
 
   constructor(
     public readonly dataService: DataService,
@@ -391,7 +392,7 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit {
         }
       }
       this.testCasesToShow = testCases
-      this.dataService.prepareTestCaseGroupPresentation(this.testCasesToShow, this.testCaseGroupMap)
+      this.refreshTestCases.emit()
     }
   }
 

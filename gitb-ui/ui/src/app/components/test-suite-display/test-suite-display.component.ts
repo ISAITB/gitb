@@ -65,8 +65,10 @@ export class TestSuiteDisplayComponent implements OnInit {
   private prepareTestCaseGroupMaps(): void {
     if (this.testSuites) {
       for (let testSuite of this.testSuites) {
-        if (testSuite.testCaseGroups && !testSuite.testCaseGroupMap) {
-          testSuite.testCaseGroupMap = this.dataService.toTestCaseGroupMap(testSuite.testCaseGroups)
+        if (testSuite.testCaseGroups) {
+          if (!testSuite.testCaseGroupMap) {
+            testSuite.testCaseGroupMap = this.dataService.toTestCaseGroupMap(testSuite.testCaseGroups)
+          }
         }
       }
     }

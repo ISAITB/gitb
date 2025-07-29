@@ -214,6 +214,7 @@
                                                             [snapshotId]="activeConformanceSnapshot?.id"
                                                             [snapshotLabel]="activeConformanceSnapshot?.label"
                                                             [hasBadge]="statement.hasBadge"
+                                                            (filter)="applyStatementSearchFilters(statement, $event)"
                                                         ></app-statement-controls>
                                                     </div>
                                                     <div class="statementRatios">
@@ -225,13 +226,24 @@
                                                         <app-pending-block></app-pending-block>
                                                     </div>
                                                 } @else {
-                                                    <app-test-suite-display
-                                                        [testSuites]="statement.testSuites"
-                                                        [showExecute]="false"
-                                                        [showExport]="true"
-                                                        [communityId]="statement.communityId"
-                                                        (viewTestSession)="toTestSession($event)"
-                                                    ></app-test-suite-display>
+                                                    @if (statement.displayedTestSuites == undefined || statement.displayedTestSuites.length == 0) {
+                                                        <div class="no-test-cases">
+                                                            @if (statement.testSuites == undefined || statement.testSuites.length == 0) {
+                                                                <span>No test cases are defined in this conformance statement.</span>
+                                                            } @else {
+                                                                <span>No test cases were found matching your search criteria.</span>
+                                                            }
+                                                        </div>
+                                                    } @else {
+                                                        <app-test-suite-display
+                                                            [testSuites]="statement.displayedTestSuites"
+                                                            [showExecute]="false"
+                                                            [showExport]="true"
+                                                            [communityId]="statement.communityId"
+                                                            [refresh]="statement.refreshTestSuites"
+                                                            (viewTestSession)="toTestSession($event)"
+                                                        ></app-test-suite-display>
+                                                    }
                                                 }
                                             </div>
                                         </div>
