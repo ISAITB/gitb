@@ -94,6 +94,7 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
   canEditSystemConfiguration = false
   canEditStatementConfiguration = false
   navigationConfig?: NavigationControlsConfig
+  hasExpandedTestSuites = false
 
   testCaseFilterOptions?: TestCaseFilterOptions
   testCaseFilterState: TestCaseFilterState = {
@@ -404,6 +405,7 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
     const testSuiteFilter = this.trimSearchString(this.testSuiteFilter)
     const testCaseFilter = this.trimSearchString(this.testCaseFilter)
     this.displayedTestSuites = this.dataService.filterTestSuites(this.testSuites, testSuiteFilter, testCaseFilter, this.testCaseFilterState)
+    this.setTestSuiteExpandedStatus()
     setTimeout(() => {
       this.refreshTestSuiteDisplay.emit()
     })
@@ -658,4 +660,25 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
       this.refreshPending = false
     })
   }
+
+  collapseAll() {
+    this.displayedTestSuites.forEach(suite => {
+      suite.expanded = false
+    })
+    this.setTestSuiteExpandedStatus()
+  }
+
+  setTestSuiteExpandedStatus() {
+    this.hasExpandedTestSuites = this.checkForExpandedTestSuite()
+  }
+
+  private checkForExpandedTestSuite() {
+    for (let testSuite of this.displayedTestSuites) {
+      if (testSuite.expanded) {
+        return true
+      }
+    }
+    return false
+  }
+
 }

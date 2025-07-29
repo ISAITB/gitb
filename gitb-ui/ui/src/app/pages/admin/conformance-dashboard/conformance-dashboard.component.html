@@ -214,6 +214,8 @@
                                                             [snapshotId]="activeConformanceSnapshot?.id"
                                                             [snapshotLabel]="activeConformanceSnapshot?.label"
                                                             [hasBadge]="statement.hasBadge"
+                                                            [showCollapseAll]="statement.hasExpandedTestSuites == true && statement.testSuites != undefined && statement.testSuites.length > 1"
+                                                            (collapseAll)="collapseAllTestSuites(statement)"
                                                             (filter)="applyStatementSearchFilters(statement, $event)"
                                                         ></app-statement-controls>
                                                     </div>
@@ -242,6 +244,7 @@
                                                             [communityId]="statement.communityId"
                                                             [refresh]="statement.refreshTestSuites"
                                                             (viewTestSession)="toTestSession($event)"
+                                                            (toggleExpand)="setCollapseAllStatus(statement)"
                                                         ></app-test-suite-display>
                                                     }
                                                 }

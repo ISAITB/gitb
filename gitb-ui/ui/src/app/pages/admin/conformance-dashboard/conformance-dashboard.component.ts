@@ -46,6 +46,7 @@ import {
 import {PagingEvent} from '../../../components/paging-controls/paging-event';
 import {PagingControlsApi} from '../../../components/paging-controls/paging-controls-api';
 import {StatementFilterState} from '../../../components/statement-controls/statement-filter-state';
+import {ConformanceTestSuite} from '../../organisation/conformance-statement/conformance-test-suite';
 
 @Component({
     selector: 'app-conformance-dashboard',
@@ -282,6 +283,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
             statement.hasBadge = data.summary.hasBadge
             statement.testSuites = data.testSuites
             statement.displayedTestSuites = data.testSuites
+            this.setCollapseAllStatus(statement)
             statement.refreshTestSuites = new EventEmitter<void>()
           }
         }).add(() => {
@@ -685,6 +687,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
       const testSuiteFilter = this.trimSearchString(state.testSuiteFilter)
       const testCaseFilter = this.trimSearchString(state.testCaseFilter)
       statement.displayedTestSuites = this.dataService.filterTestSuites(statement.testSuites, testSuiteFilter, testCaseFilter, state)
+      this.setCollapseAllStatus(statement)
       setTimeout(() => {
         if (statement.refreshTestSuites) {
           statement.refreshTestSuites.emit()
@@ -692,4 +695,29 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
       })
     }
   }
+
+  setCollapseAllStatus(statement: ConformanceResultFullWithTestSuites) {
+    statement.hasExpandedTestSuites = this.hasExpandedTestSuite(statement)
+  }
+
+  private hasExpandedTestSuite(statement: ConformanceResultFullWithTestSuites) {
+    if (statement.displayedTestSuites) {
+      for (let testSuite of statement.displayedTestSuites) {
+        if (testSuite.expanded) {
+          return true
+        }
+      }
+    }
+    return false
+  }
+
+  collapseAllTestSuites(statement: ConformanceResultFullWithTestSuites) {
+    if (statement.displayedTestSuites) {
+      statement.displayedTestSuites.forEach((testSuite: ConformanceTestSuite) => {
+        testSuite.expanded = false
+      })
+      this.setCollapseAllStatus(statement)
+    }
+  }
+
 }

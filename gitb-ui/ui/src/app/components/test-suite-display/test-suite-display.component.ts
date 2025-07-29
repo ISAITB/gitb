@@ -41,6 +41,7 @@ export class TestSuiteDisplayComponent implements OnInit {
   @Output() viewTestCaseDocumentation = new EventEmitter<number>()
   @Output() executeTestCase = new EventEmitter<ConformanceTestCase>()
   @Output() executeTestSuite = new EventEmitter<ConformanceTestSuite>()
+  @Output() toggleExpand = new EventEmitter<boolean>()
 
   hovering: {[key:number]: boolean } = {}
   viewDocumentationPending: {[key:number]: boolean } = {}
@@ -76,6 +77,7 @@ export class TestSuiteDisplayComponent implements OnInit {
 
   onExpand(testSuite: ConformanceTestSuite) {
     testSuite.expanded = !testSuite.expanded
+    this.toggleExpand.emit(testSuite.expanded)
   }
 
   propagateViewTestSession(sessionId: string) {

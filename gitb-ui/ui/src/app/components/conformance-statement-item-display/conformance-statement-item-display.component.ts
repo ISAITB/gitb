@@ -76,6 +76,7 @@ export class ConformanceStatementItemDisplayComponent extends BaseComponent impl
   pending = false
   Constants = Constants
   refreshTestSuiteDisplay = new EventEmitter<void>()
+  hasExpandedTestSuites = false
 
   constructor(
     public readonly dataService: DataService
@@ -242,10 +243,32 @@ export class ConformanceStatementItemDisplayComponent extends BaseComponent impl
       const testSuiteFilter = this.trimSearchString(state.testSuiteFilter)
       const testCaseFilter = this.trimSearchString(state.testCaseFilter)
       this.displayedTestSuites = this.dataService.filterTestSuites(this.testSuites, testSuiteFilter, testCaseFilter, state)
+      this.setCollapseAllStatus()
       setTimeout(() => {
         this.refreshTestSuiteDisplay.emit()
       })
     }
 
   }
+
+  setCollapseAllStatus() {
+    this.hasExpandedTestSuites = this.hasExpandedTestSuite()
+  }
+
+  private hasExpandedTestSuite() {
+    for (let testSuite of this.displayedTestSuites) {
+      if (testSuite.expanded) {
+        return true
+      }
+    }
+    return false
+  }
+
+  collapseAllTestSuites() {
+    this.displayedTestSuites.forEach((testSuite: ConformanceTestSuite) => {
+      testSuite.expanded = false
+    })
+    this.setCollapseAllStatus()
+  }
+
 }

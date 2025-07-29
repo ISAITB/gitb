@@ -6,6 +6,9 @@
     @if (hasBadge == true) {
         <app-view-badge-button [systemId]="conformanceIds.systemId" [actorId]="conformanceIds.actorId" [snapshotId]="snapshotId"></app-view-badge-button>
     }
+    @if (showCollapseAll) {
+        <button type="button" class="btn btn-secondary" (click)="handleCollapseAll()">Collapse all</button>
+    }
     <ng-content></ng-content>
 </div>
 <div [collapse]="!filtersActive" [isAnimated]="true">

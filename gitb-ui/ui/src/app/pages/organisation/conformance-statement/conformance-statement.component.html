@@ -115,6 +115,9 @@
                             }
                             <app-text-filter name="testCaseFilter" [width]="250" [placeholder]="'Search test cases...'" [(ngModel)]="testCaseFilter" (apply)="applySearchFilters()"></app-text-filter>
                             <app-test-case-filter #testCaseResultFilter [options]="testCaseFilterOptions" (apply)="resultFilterUpdated($event)"></app-test-case-filter>
+                            @if (testSuites.length > 1 && hasExpandedTestSuites) {
+                                <button type="button" class="btn btn-secondary" (click)="collapseAll()">Collapse all</button>
+                            }
                         </div>
                     </div>
                     @if (!isReadonly) {
@@ -152,6 +155,7 @@
 						(viewTestSession)="toTestSession($event)"
 						(executeTestCase)="onTestSelect($event)"
 						(executeTestSuite)="onTestSuiteSelect($event)"
+                        (toggleExpand)="setTestSuiteExpandedStatus()"
 					></app-test-suite-display>
 				}
 			</div>

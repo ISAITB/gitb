@@ -85,7 +85,9 @@
                                     [snapshotId]="snapshotId"
                                     [snapshotLabel]="snapshotLabel"
                                     [hasBadge]="hasBadge"
-                                    (filter)="applySearchFilters($event)">
+                                    [showCollapseAll]="hasExpandedTestSuites && testSuites != undefined && testSuites.length > 1"
+                                    (filter)="applySearchFilters($event)"
+                                    (collapseAll)="collapseAllTestSuites()">
                                     <div class="btn-group export-group" dropdown [isDisabled]="item.exportPdfPending == true || item.exportXmlPending == true">
                                         <button type="button" [disable]="item.exportPdfPending == true || item.exportXmlPending == true" [pending]="item.exportPdfPending || item.exportXmlPending" class="btn btn-secondary" (click)="onExport({statementReport: true, item: item, actorId: statementSummary!.actorId, format: 'pdf'})">Download report</button>
                                         <button id="button-export" type="button" [disabled]="item.exportPdfPending == true || item.exportXmlPending == true" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
@@ -110,6 +112,7 @@
                                         [communityId]="communityId"
                                         [refresh]="refreshTestSuiteDisplay"
                                         (viewTestSession)="onViewTestSession($event)"
+                                        (toggleExpand)="setCollapseAllStatus()"
                                     ></app-test-suite-display>
                                 </div>
                             } @else {

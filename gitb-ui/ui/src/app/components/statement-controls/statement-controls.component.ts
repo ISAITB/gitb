@@ -34,7 +34,9 @@ export class StatementControlsComponent implements OnInit {
   @Input() snapshotId!:number|undefined
   @Input() snapshotLabel!:string|undefined
   @Input() hasBadge!: boolean|undefined
+  @Input() showCollapseAll = false
   @Output() filter = new EventEmitter<StatementFilterState>()
+  @Output() collapseAll = new EventEmitter<void>()
 
   filtersActive = false
   testCaseFilter?: string
@@ -84,6 +86,10 @@ export class StatementControlsComponent implements OnInit {
   resultFilterUpdated(state: TestCaseFilterState) {
     this.testCaseFilterState = state
     this.applySearchFilters()
+  }
+
+  handleCollapseAll() {
+    this.collapseAll.emit()
   }
 
 }

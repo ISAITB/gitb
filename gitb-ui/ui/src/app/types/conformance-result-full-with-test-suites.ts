@@ -23,5 +23,6 @@ export interface ConformanceResultFullWithTestSuites extends ConformanceResultFu
   displayedTestSuites?: ConformanceTestSuite[]
 
   refreshTestSuites?: EventEmitter<void>
+  hasExpandedTestSuites?: boolean
 
 }
