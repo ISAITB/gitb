@@ -512,26 +512,28 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
         observable = of(this.availableCommunities)
       }
       observable.subscribe((data) => {
-        this.availableCommunities = data
-        let communityToApply: Community|undefined
-        if (data.length == 1) {
-          communityToApply = data[0]
-          this.selectedCommunityId = communityToApply.id
-        } else {
-          this.selectedCommunityId = undefined
-        }
-        if (this.communitySelectConfig) {
-          setTimeout(() => {
-            this.communitySelectConfig!.replaceItems!.emit(this.availableCommunities)
-            this.communitySelectConfig!.replaceSelectedItems!.emit((communityToApply == undefined)?[]:[communityToApply])
-          }, 1)
-        }
-        if (this.dataService.isSystemAdmin) {
-          // Force a switch back to the latest snapshot and refresh
-          this.viewLatestConformanceSnapshot(true)
-        } else {
-          this.communityChanged(true)
-        }
+        setTimeout(() => {
+          this.availableCommunities = data
+          let communityToApply: Community|undefined
+          if (data.length == 1) {
+            communityToApply = data[0]
+            this.selectedCommunityId = communityToApply.id
+          } else {
+            this.selectedCommunityId = undefined
+          }
+          if (this.communitySelectConfig) {
+            setTimeout(() => {
+              this.communitySelectConfig!.replaceItems!.emit(this.availableCommunities)
+              this.communitySelectConfig!.replaceSelectedItems!.emit((communityToApply == undefined)?[]:[communityToApply])
+            }, 1)
+          }
+          if (this.dataService.isSystemAdmin) {
+            // Force a switch back to the latest snapshot and refresh
+            this.viewLatestConformanceSnapshot(true)
+          } else {
+            this.communityChanged(true)
+          }
+        })
       })
     } else {
       this.selectedCommunityId = this.communityId
@@ -565,25 +567,27 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     } else {
       loadObservable = this.organisationService.getOrganisationsByCommunity(this.selectedCommunityId, false, this.activeConformanceSnapshot?.id)
     }
-    this.availableOrganisations = undefined
-    loadObservable.subscribe((data) => {
-      this.availableOrganisations = data
-      let organisationToApply: Organisation|undefined
-      if (data.length == 1) {
-        organisationToApply = data[0]
-        this.selectedOrganisationId = organisationToApply.id
-      } else if (data.length > 1 && this.selectedOrganisationId != undefined) {
-        organisationToApply = find(data, (org) => org.id == this.selectedOrganisationId)
-        if (organisationToApply == undefined) {
+    setTimeout(() => {
+      this.availableOrganisations = undefined
+      loadObservable.subscribe((data) => {
+        this.availableOrganisations = data
+        let organisationToApply: Organisation|undefined
+        if (data.length == 1) {
+          organisationToApply = data[0]
+          this.selectedOrganisationId = organisationToApply.id
+        } else if (data.length > 1 && this.selectedOrganisationId != undefined) {
+          organisationToApply = find(data, (org) => org.id == this.selectedOrganisationId)
+          if (organisationToApply == undefined) {
+            this.selectedOrganisationId = undefined
+          }
+        } else {
           this.selectedOrganisationId = undefined
         }
-      } else {
-        this.selectedOrganisationId = undefined
-      }
-      setTimeout(() => {
-        this.organisationSelectConfig!.replaceItems!.emit(this.availableOrganisations)
-        this.organisationSelectConfig!.replaceSelectedItems!.emit((organisationToApply == undefined)?[]:[organisationToApply])
-        this.organisationChanged()
+        setTimeout(() => {
+          this.organisationSelectConfig!.replaceItems!.emit(this.availableOrganisations)
+          this.organisationSelectConfig!.replaceSelectedItems!.emit((organisationToApply == undefined)?[]:[organisationToApply])
+          this.organisationChanged()
+        })
       })
     })
   }
@@ -599,26 +603,28 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     } else {
       loadObservable = this.systemService.getSystemsByOrganisation(this.selectedOrganisationId, this.activeConformanceSnapshot?.id)
     }
-    this.availableSystems = undefined
-    loadObservable.subscribe((data) => {
-      this.availableSystems = data
-      let systemToApply: System|undefined
-      if (data.length == 1) {
-        systemToApply = data[0]
-        this.selectedSystemId = systemToApply.id
-      } else if (data.length > 1 && this.selectedSystemId != undefined) {
-        systemToApply = find(data, (sys) => sys.id == this.selectedSystemId)
-        if (systemToApply == undefined) {
+    setTimeout(() => {
+      this.availableSystems = undefined
+      loadObservable.subscribe((data) => {
+        this.availableSystems = data
+        let systemToApply: System|undefined
+        if (data.length == 1) {
+          systemToApply = data[0]
+          this.selectedSystemId = systemToApply.id
+        } else if (data.length > 1 && this.selectedSystemId != undefined) {
+          systemToApply = find(data, (sys) => sys.id == this.selectedSystemId)
+          if (systemToApply == undefined) {
+            this.selectedSystemId = undefined
+          }
+        } else {
           this.selectedSystemId = undefined
         }
-      } else {
-        this.selectedSystemId = undefined
-      }
-      setTimeout(() => {
-        this.systemSelectConfig!.replaceItems!.emit(this.availableSystems)
-        this.systemSelectConfig!.replaceSelectedItems!.emit((systemToApply == undefined)?[]:[systemToApply])
-        this.systemChanged()
-      }, 1)
+        setTimeout(() => {
+          this.systemSelectConfig!.replaceItems!.emit(this.availableSystems)
+          this.systemSelectConfig!.replaceSelectedItems!.emit((systemToApply == undefined)?[]:[systemToApply])
+          this.systemChanged()
+        }, 1)
+      })
     })
   }
 
@@ -627,13 +633,15 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     if (system && system.values.active.length > 0) {
       this.selectedSystemId = system.values.active[0].id
     }
-    if (this.selectedSystemId == undefined) {
-      this.dataStatus.status = Constants.STATUS.FINISHED
-      this.itemsByType = undefined
-      this.statements = []
-    } else {
-      this.getConformanceStatementsForTreeView()
-    }
+    setTimeout(() => {
+      if (this.selectedSystemId == undefined) {
+        this.dataStatus.status = Constants.STATUS.FINISHED
+        this.itemsByType = undefined
+        this.statements = []
+      } else {
+        this.getConformanceStatementsForTreeView()
+      }
+    })
   }
 
   getConformanceStatementsForTreeView() {
@@ -663,9 +671,9 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
 
   treeControlsExist() {
     return (this.communityId == undefined && (this.availableCommunities == undefined || this.availableCommunities.length > 0)) ||
-    ((this.selectedCommunityId != undefined && this.availableCommunities) && (this.availableOrganisations == undefined || this.availableOrganisations.length > 0)) ||
-    ((this.selectedOrganisationId != undefined && this.availableOrganisations) && (this.availableSystems == undefined || this.availableSystems.length > 0)) ||
-    (this.statements.length > 0)
+      ((this.selectedCommunityId != undefined && this.availableCommunities) && (this.availableOrganisations == undefined || this.availableOrganisations.length > 0)) ||
+      ((this.selectedOrganisationId != undefined && this.availableOrganisations) && (this.availableSystems == undefined || this.availableSystems.length > 0)) ||
+      (this.statements.length > 0)
   }
 
   trackStatement(index: number, statement: ConformanceResultFullWithTestSuites): string {
