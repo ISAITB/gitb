@@ -139,5 +139,26 @@
     ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/tomcat-embed-.*@.*$</packageUrl>
         <cve>CVE-2025-53506</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+    file name: jena-core-5.2.0.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.jena/jena-.*@.*$</packageUrl>
+        <cve>CVE-2025-50151</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+    file name: jena-core-5.2.0.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.jena/jena-.*@.*$</packageUrl>
+        <cve>CVE-2025-49656</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+    file name: protobuf-java-4.28.2.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.google\.protobuf/protobuf-java@.*$</packageUrl>
+        <cve>CVE-2024-7254</cve>
     </suppress>    
 </suppressions>
