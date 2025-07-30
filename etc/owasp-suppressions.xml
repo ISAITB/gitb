@@ -119,4 +119,18 @@
         <packageUrl regex="true">^pkg:maven/org\.xmlunit/xmlunit-.*@.*$</packageUrl>
         <cve>CVE-2024-9410</cve>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: jena-core-5.2.0.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.jena/jena-.*@.*$</packageUrl>
+        <cve>CVE-2025-50151</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: jena-core-5.2.0.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.jena/jena-.*@.*$</packageUrl>
+        <cve>CVE-2025-49656</cve>
+    </suppress>
 </suppressions>
