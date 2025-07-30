@@ -125,5 +125,19 @@
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.apache\.commons/commons-lang3@.*$</packageUrl>
         <vulnerabilityName>CVE-2025-48924</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+    file name: tomcat-embed-core-10.1.42.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/tomcat-embed-.*@.*$</packageUrl>
+        <cve>CVE-2025-52520</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+    file name: tomcat-embed-core-10.1.42.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/tomcat-embed-.*@.*$</packageUrl>
+        <cve>CVE-2025-53506</cve>
     </suppress>    
 </suppressions>
