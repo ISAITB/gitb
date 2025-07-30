@@ -43,36 +43,25 @@ import {FilterUpdate} from '../../../components/test-filter/filter-update';
 export class ConformanceStatementsComponent extends BaseConformanceItemDisplayComponent implements OnInit {
 
   system?: System
-  communityId?: number
   communityIdForSnapshots!: number
-  organisationId!: number
   systems!: System[]
   systemStatus = {status: Constants.STATUS.PENDING}
-  dataStatus = {status: Constants.STATUS.NONE}
-
   showCreate = false
   showDomain = false
   showBack = false
-  columnCount = -1
-  Constants = Constants
-  exportPending = false
-
   showCreateSystem = false
-  latestSnapshotButtonLabel?: string
   conformanceSnapshots?: ConformanceSnapshot[]
-  snapshotButtonLabel?: string
-  currentlySelectedSnapshot?: ConformanceSnapshot
   systemSelectionConfig!: MultiSelectConfig<System>
 
   constructor(
     dataService: DataService,
     zone: NgZone,
     private readonly systemService: SystemService,
-    private readonly conformanceService: ConformanceService,
+    conformanceService: ConformanceService,
     private readonly route: ActivatedRoute,
     public readonly routingService: RoutingService,
     private readonly reportSupportService: ReportSupportService
-  ) { super(dataService, zone) }
+  ) { super(dataService, zone, conformanceService) }
 
   ngOnInit(): void {
     this.organisationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID))
@@ -92,7 +81,6 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
     this.showCreate = this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || (this.dataService.isVendorAdmin && this.dataService.community!.allowStatementManagement)
     this.showCreateSystem = this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || this.dataService.isVendorAdmin
     this.showDomain = this.dataService.isSystemAdmin || this.dataService.community?.domainId == undefined
-    this.columnCount = this.showDomain?6:5
     this.systemSelectionConfig = {
       name: "system",
       textField: "fname",
@@ -104,7 +92,7 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
       replaceSelectedItems: new EventEmitter(),
       replaceItems: new EventEmitter()
     }
-    const systemsLoaded = this.systemService.getSystemsByOrganisation(this.organisationId, snapshotId)
+    const systemsLoaded = this.getSystems()
     let snapshotsLoaded: Observable<ConformanceSnapshotList>
     if (isOwnConformanceStatements && (this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin)) {
       // Administrator organisations are not included in conformance snapshots
@@ -122,8 +110,8 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
       if (snapshotId != undefined) {
         const referencedSnapshot = find(this.conformanceSnapshots, (snapshot) => snapshot.id == snapshotId)
         if (referencedSnapshot) {
-          this.currentlySelectedSnapshot = referencedSnapshot
-          this.snapshotButtonLabel = this.currentlySelectedSnapshot.label
+          this.activeConformanceSnapshot = referencedSnapshot
+          this.snapshotButtonLabel = this.activeConformanceSnapshot.label
         } else {
           // The snapshot could have been deleted or rendered hidden.
           this.snapshotButtonLabel = this.latestSnapshotButtonLabel
@@ -161,9 +149,9 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
 
   private updateBreadcrumbs() {
     if (this.communityId == undefined) {
-      this.routingService.ownConformanceStatementsBreadcrumbs(this.organisationId, this.system?.id, this.system?.sname, this.currentlySelectedSnapshot?.id, this.currentlySelectedSnapshot?.label)
+      this.routingService.ownConformanceStatementsBreadcrumbs(this.organisationId!, this.system?.id, this.system?.sname, this.activeConformanceSnapshot?.id, this.activeConformanceSnapshot?.label)
     } else {
-      this.routingService.conformanceStatementsBreadcrumbs(this.communityId, this.organisationId, undefined, this.system?.id, this.system?.sname, this.currentlySelectedSnapshot?.id, this.currentlySelectedSnapshot?.label)
+      this.routingService.conformanceStatementsBreadcrumbs(this.communityId, this.organisationId!, undefined, this.system?.id, this.system?.sname, this.activeConformanceSnapshot?.id, this.activeConformanceSnapshot?.label)
     }
   }
 
@@ -176,7 +164,7 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
 
   getConformanceStatements() {
     this.dataStatus.status = Constants.STATUS.PENDING
-    this.conformanceService.getConformanceStatementsForSystem(this.system!.id, this.currentlySelectedSnapshot?.id)
+    this.conformanceService.getConformanceStatementsForSystem(this.system!.id, this.activeConformanceSnapshot?.id)
     .subscribe((data) => {
       this.itemsByType = this.dataService.organiseConformanceItemsByType(data)
       this.statements = this.dataService.prepareConformanceStatementItemsForDisplay(data)
@@ -188,23 +176,23 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
 
   onStatementSelect(statement: ConformanceStatementItem) {
     if (this.communityId == undefined) {
-      this.routingService.toOwnConformanceStatement(this.organisationId, this.system!.id, statement.id, this.currentlySelectedSnapshot?.id, this.currentlySelectedSnapshot?.label)
+      this.routingService.toOwnConformanceStatement(this.organisationId!, this.system!.id, statement.id, this.activeConformanceSnapshot?.id, this.activeConformanceSnapshot?.label)
     } else {
-      this.routingService.toConformanceStatement(this.organisationId, this.system!.id, statement.id, this.communityId, this.currentlySelectedSnapshot?.id, this.currentlySelectedSnapshot?.label)
+      this.routingService.toConformanceStatement(this.organisationId!, this.system!.id, statement.id, this.communityId, this.activeConformanceSnapshot?.id, this.activeConformanceSnapshot?.label)
     }
   }
 
   createStatement() {
-    this.routingService.toCreateConformanceStatement(this.organisationId, this.system!.id, this.communityId)
+    this.routingService.toCreateConformanceStatement(this.organisationId!, this.system!.id, this.communityId)
   }
 
   back() {
-    this.routingService.toOrganisationDetails(this.communityId!, this.organisationId)
+    this.routingService.toOrganisationDetails(this.communityId!, this.organisationId!)
   }
 
   toCreateSystem() {
     if (this.communityId != undefined) {
-      this.routingService.toCreateSystem(this.communityId, this.organisationId)
+      this.routingService.toCreateSystem(this.communityId, this.organisationId!)
     } else {
       this.routingService.toCreateOwnSystem()
     }
@@ -212,32 +200,29 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
 
   private updateRouting() {
     if (this.communityId != undefined) {
-      this.routingService.toConformanceStatements(this.communityId, this.organisationId, this.system?.id, this.currentlySelectedSnapshot?.id, true)
+      this.routingService.toConformanceStatements(this.communityId, this.organisationId!, this.system?.id, this.activeConformanceSnapshot?.id, true)
     } else {
-      this.routingService.toOwnConformanceStatements(this.organisationId, this.system?.id, this.currentlySelectedSnapshot?.id, true)
+      this.routingService.toOwnConformanceStatements(this.organisationId!, this.system?.id, this.activeConformanceSnapshot?.id, true)
     }
   }
 
   snapshotSelected(snapshot?: ConformanceSnapshot) {
-    let systemsLoaded: Observable<System[]>|undefined
-    if (snapshot && snapshot.id != this.currentlySelectedSnapshot?.id) {
-      // Selected a non-latest snapshot that differs from the (possibly) currently selected one.
-      systemsLoaded = this.systemService.getSystemsByOrganisation(this.organisationId, snapshot.id)
-    } else if (snapshot == undefined && this.currentlySelectedSnapshot) {
-      // Latest snapshot selected while a previous non-latest one was selected.
-      systemsLoaded = this.systemService.getSystemsByOrganisation(this.organisationId)
-    }
-    if (systemsLoaded) {
-      this.currentlySelectedSnapshot = snapshot
+    const reloadNeeded = snapshot?.id != this.activeConformanceSnapshot?.id
+    if (reloadNeeded) {
+      this.activeConformanceSnapshot = snapshot
       this.snapshotButtonLabel = (snapshot == undefined)?this.latestSnapshotButtonLabel:snapshot.label
-      this.systemStatus.status = Constants.STATUS.PENDING
-      systemsLoaded.subscribe((data) => {
-        this.systemsLoaded(data)
-      }).add(() => {
-        // Update the routing path (to avoid loss of state on refresh).
-        this.updateRouting()
-        this.systemStatus.status = Constants.STATUS.FINISHED
-      })
+      if (this.listView) {
+        this.listViewTable?.reloadData()
+      } else {
+        this.systemStatus.status = Constants.STATUS.PENDING
+        this.systemService.getSystemsByOrganisation(this.organisationId!, snapshot?.id).subscribe((data) => {
+          this.systemsLoaded(data)
+        }).add(() => {
+          // Update the routing path (to avoid loss of state on refresh).
+          this.updateRouting()
+          this.systemStatus.status = Constants.STATUS.FINISHED
+        })
+      }
     }
   }
 
@@ -248,7 +233,7 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
       event.item.exportPdfPending = true
     }
     const reportLevel = this.determineReportLevel(event)
-    this.reportSupportService.handleConformanceOverviewReport(this.communityIdForSnapshots, this.system!.id, event.item.id, reportLevel, this.currentlySelectedSnapshot?.id, event.format, this.dataService.conformanceStatusForConformanceItem(event.item))
+    this.reportSupportService.handleConformanceOverviewReport(this.communityIdForSnapshots, this.system!.id, event.item.id, reportLevel, this.activeConformanceSnapshot?.id, event.format, this.dataService.conformanceStatusForConformanceItem(event.item))
     .subscribe(() => {
       // Do nothing further.
     }).add(() => {
@@ -263,12 +248,22 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
   exportOverview(format: 'xml'|'pdf') {
     this.exportPending = true
     const overallStatus = this.dataService.conformanceStatusForConformanceItems(this.statements)
-    this.reportSupportService.handleConformanceOverviewReport(this.communityIdForSnapshots, this.system!.id, undefined, "all", this.currentlySelectedSnapshot?.id, format, overallStatus)
+    this.reportSupportService.handleConformanceOverviewReport(this.communityIdForSnapshots, this.system!.id, undefined, "all", this.activeConformanceSnapshot?.id, format, overallStatus)
     .subscribe(() => {
       // Do nothing further
     }).add(() => {
       this.exportPending = false
     })
+  }
+
+  viewTypeToggled() {
+    if (!this.listView) {
+      this.systemsLoaded(this.systems)
+    }
+  }
+
+  getSystems() {
+    return this.systemService.getSystemsByOrganisation(this.organisationId!, this.activeConformanceSnapshot?.id)
   }
 
 }

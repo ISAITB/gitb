@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { AfterViewInit, Component, ElementRef, NgZone, OnDestroy, ViewChild } from '@angular/core';
+import {AfterViewInit, Component, ElementRef, EventEmitter, NgZone, OnDestroy, ViewChild} from '@angular/core';
 import { CheckboxOption } from '../checkbox-option-panel/checkbox-option';
 import { ConformanceStatementItem } from 'src/app/types/conformance-statement-item';
 import { DataService } from 'src/app/services/data.service';
@@ -22,6 +22,13 @@ import { Constants } from 'src/app/common/constants';
 import { CheckboxOptionState } from '../checkbox-option-panel/checkbox-option-state';
 import {ExportReportEvent} from '../../types/export-report-event';
 import {BaseComponent} from '../../pages/base-component.component';
+import {ConformanceSnapshot} from '../../types/conformance-snapshot';
+import {ConformanceStatementTableApi} from '../conformance-statement-table/conformance-statement-table-api';
+import {TestResultSearchCriteria} from '../../types/test-result-search-criteria';
+import {PagingEvent} from '../paging-controls/paging-event';
+import {Observable} from 'rxjs';
+import {ConformanceResultFullList} from '../../types/conformance-result-full-list';
+import {ConformanceService} from '../../services/conformance.service';
 
 @Component({
     template: '',
@@ -29,6 +36,7 @@ import {BaseComponent} from '../../pages/base-component.component';
 })
 export abstract class BaseConformanceItemDisplayComponent extends BaseComponent implements AfterViewInit, OnDestroy {
 
+  @ViewChild("listViewTable") listViewTable?: ConformanceStatementTableApi
   @ViewChild('searchControls') searchControls?: ElementRef
   @ViewChild('selectorControls') selectorControls?: ElementRef
   @ViewChild('conformanceItemPage') conformanceItemPage?: ElementRef
@@ -37,6 +45,7 @@ export abstract class BaseConformanceItemDisplayComponent extends BaseComponent 
   protected static SHOW_FAILED = '1'
   protected static SHOW_INCOMPLETE = '2'
 
+  readonly Constants = Constants
   statementFilter?: string
   showCompleted = true
   showFailed = true
@@ -54,10 +63,23 @@ export abstract class BaseConformanceItemDisplayComponent extends BaseComponent 
   searchControlsWrapped = false
   statements: ConformanceStatementItem[] = []
   itemsByType?: { groups: ConformanceStatementItem[], specs: ConformanceStatementItem[], actors: ConformanceStatementItem[] }
+  latestSnapshotButtonLabel?: string
+  snapshotButtonLabel?: string
+  activeConformanceSnapshot?: ConformanceSnapshot
+  dataStatus = {status: Constants.STATUS.PENDING}
+  filterCommands = new EventEmitter<number>()
+  showCollapseAllStatements = false
+  showExport = false
+  updatePending = false
+  exportPending = false
+  organisationId?: number
+  communityId?: number
+  listView = false
 
-  constructor(
+  protected constructor(
     public readonly dataService: DataService,
-    private readonly zone: NgZone
+    private readonly zone: NgZone,
+    protected readonly conformanceService: ConformanceService
   ) {
     super()
   }
@@ -235,6 +257,54 @@ export abstract class BaseConformanceItemDisplayComponent extends BaseComponent 
       reportLevel = "all"
     }
     return reportLevel
+  }
+
+  toggleFilters() {
+    this.filterCommands.emit(Constants.FILTER_COMMAND.TOGGLE)
+    this.listViewTable?.toggleFilters()
+  }
+
+  clearFilters() {
+    this.filterCommands.emit(Constants.FILTER_COMMAND.CLEAR)
+    this.listViewTable?.clearFilters()
+  }
+
+  refreshFilters() {
+    this.filterCommands.emit(Constants.FILTER_COMMAND.REFRESH)
+    this.listViewTable?.refreshFilters()
+  }
+
+  onCollapseAll() {
+    this.listViewTable?.collapseAll()
+  }
+
+  onExportConformanceStatementsAsCsv() {
+    this.exportPending = true
+    this.listViewTable?.exportAsCsv().subscribe().add(() => {
+      this.exportPending = false
+    })
+  }
+
+  listViewStatementCollapseChange(hasExpanded: boolean) {
+    this.showCollapseAllStatements = hasExpanded
+  }
+
+  listViewExportChange(showExport: boolean) {
+    this.showExport = showExport
+  }
+
+  listViewSearching(pending: boolean) {
+    setTimeout(() => {
+      this.updatePending = pending
+    })
+  }
+
+  loadConformanceStatementsForListViewFactory() {
+    return (this.loadConformanceStatementsForListView).bind(this)
+  }
+
+  loadConformanceStatementsForListView(params: TestResultSearchCriteria, pagingInfo: PagingEvent, fullResults: boolean, forExport: boolean, sortColumn: string, sortOrder: string): Observable<ConformanceResultFullList> {
+    return this.conformanceService.getConformanceOverview(params, this.activeConformanceSnapshot?.id, fullResults, forExport, sortColumn, sortOrder, pagingInfo.targetPage, pagingInfo.targetPageSize, this.organisationId)
   }
 
 }

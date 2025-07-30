@@ -83,6 +83,7 @@ GET     /api/communityOfSnapshot                @controllers.CommunityService.ge
 GET     /api/applicabledomains/community        @controllers.ConformanceService.getCommunityDomains()
 GET     /api/applicabledomains/search           @controllers.ConformanceService.searchCommunityDomains()
 POST    /api/domains/conformance                @controllers.ConformanceService.getConformanceOverview()
+POST    /api/domains/conformance/organisation/:id @controllers.ConformanceService.getConformanceOverviewForOrganisation(id: Long)
 POST    /api/domains/conformance/snapshot       @controllers.ConformanceService.createConformanceSnapshot()
 GET     /api/domains/conformance/snapshot       @controllers.ConformanceService.getConformanceSnapshots()
 GET     /api/domains/conformance/snapshot/:id   @controllers.ConformanceService.getConformanceSnapshot(id: Long)

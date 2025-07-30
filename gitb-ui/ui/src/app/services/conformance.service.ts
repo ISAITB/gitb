@@ -284,7 +284,7 @@ export class ConformanceService {
     })
   }
 
-  getConformanceOverview(criteria: TestResultSearchCriteria, snapshotId: number|undefined, fullResults: boolean, forExport: boolean, sortColumn: string, sortOrder: string, page: number, limit: number) {
+  getConformanceOverview(criteria: TestResultSearchCriteria, snapshotId: number|undefined, fullResults: boolean, forExport: boolean, sortColumn: string, sortOrder: string, page: number, limit: number, organisationId: number|undefined) {
     let params: any = {}
     params.full = fullResults
     params.page = page
@@ -331,8 +331,14 @@ export class ConformanceService {
     params.export = forExport != undefined && forExport
     params.sort_column = sortColumn
     params.sort_order = sortOrder
+    let pathToUse: string
+    if (organisationId == undefined) {
+      pathToUse = ROUTES.controllers.ConformanceService.getConformanceOverview().url
+    } else {
+      pathToUse = ROUTES.controllers.ConformanceService.getConformanceOverviewForOrganisation(organisationId).url
+    }
     return this.restService.post<ConformanceResultFullList>({
-      path: ROUTES.controllers.ConformanceService.getConformanceOverview().url,
+      path: pathToUse,
       authenticate: true,
       data: params
     })

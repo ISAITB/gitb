@@ -1,0 +1,117 @@
+<app-test-filter [embedded]="true" [commands]="filterCommands" [filterState]="filterState" [communityId]="communityId" [organisationId]="organisationId" (onApply)="getConformanceStatements()"></app-test-filter>
+<div class="table-container rounded">
+    <table class="table table-directive expandable-table">
+        <thead>
+        <tr>
+            <th class="th-min-centered"></th>
+            @if (organisationId == undefined) {
+                @if (!dataService.isCommunityAdmin) {
+                    <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.COMMUNITY)">Community<app-sort-indicator [columnType]="Constants.FILTER_TYPE.COMMUNITY" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></th>
+                }
+                <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.ORGANISATION)">{{dataService.labelOrganisation()}}<app-sort-indicator [columnType]="Constants.FILTER_TYPE.ORGANISATION" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></th>
+            }
+            <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.SYSTEM)">{{dataService.labelSystem()}}<app-sort-indicator [columnType]="Constants.FILTER_TYPE.SYSTEM" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></th>
+            @if (dataService.isSystemAdmin || dataService.community!.domain == undefined) {
+                <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.DOMAIN)">{{dataService.labelDomain()}}<app-sort-indicator [columnType]="Constants.FILTER_TYPE.DOMAIN" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></th>
+            }
+            <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.SPECIFICATION)">{{dataService.labelSpecification()}}<app-sort-indicator [columnType]="Constants.FILTER_TYPE.SPECIFICATION" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></th>
+            <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.ACTOR)">{{dataService.labelActor()}}<app-sort-indicator [columnType]="Constants.FILTER_TYPE.ACTOR" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></th>
+            <th class="th-min">Last update</th>
+            <th class="th-min-centered">Test results</th>
+            <th class="th-min-centered">Status</th>
+            <th class="th-min-centered"></th>
+        </tr>
+        </thead>
+        @if (dataStatus.status != Constants.STATUS.FINISHED) {
+            <tbody>
+            <tr><td [attr.colspan]="columnCount" class="td-data-loading"><span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></td></tr>
+            </tbody>
+        } @else if (dataStatus.status == Constants.STATUS.FINISHED && conformanceStatements.length == 0) {
+            <tbody>
+            <tr><td [attr.colspan]="columnCount" class="td-no-data"><span>No conformance data found</span></td></tr>
+            </tbody>
+        } @else if (conformanceStatements.length > 0) {
+            <tbody [class.disable-events]="filterState.updatePending">
+                @for (statement of conformanceStatements; track trackStatement($index, statement)) {
+                    <tr (click)="onExpand(statement)"
+                        class="table-row-directive expandable-table-row-collapsed">
+                        <td class="td-min-centered"><app-collapsing-icon [padded]="false" [isCollapsed]="!isExpanded(statement)"></app-collapsing-icon></td>
+                        @if (organisationId == undefined) {
+                            @if (!dataService.isCommunityAdmin) {
+                                <td>{{statement.communityName}}</td>
+                            }
+                            <td>{{statement.organizationName}}</td>
+                        }
+                        <td>{{statement.systemName}}</td>
+                        @if (dataService.isSystemAdmin || (dataService.isCommunityAdmin && dataService.community!.domain == undefined)) {
+                            <td>{{statement.domainName}}</td>
+                        }
+                        <td>{{statement.specName}}</td>
+                        <td>{{statement.actorName}}</td>
+                        <td class="td-min">{{statement.updateTime}}</td>
+                        <td class="td-min-centered"><app-test-status-icons [counters]="statement.counters!" [asLine]="true"></app-test-status-icons></td>
+                        <td class="td-min-centered"><span><i containerClass="shortTooltip" [tooltip]="dataService.tooltipForTestResult(statement.overallStatus)" [ngClass]="dataService.iconForTestResult(statement.overallStatus)"></i></span></td>
+                        <td class="td-min-centered">
+                            <div class="btn-toolbar no-wrap">
+                                <button class="btn btn-secondary" (click)="onExportConformanceStatement(statement, 'xml'); $event.stopPropagation();" [pending]="statement.exportXmlPending" [icon]="true"  containerClass="shortTooltip" container="body" tooltip="Export (XML)" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-regular fa-file-lines"></i></button>
+                                <button class="btn btn-secondary" (click)="onExportConformanceStatement(statement, 'pdf'); $event.stopPropagation();" [pending]="statement.exportPdfPending" [icon]="true"  containerClass="shortTooltip" container="body" tooltip="Export (PDF)" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-regular fa-file-pdf"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr class="expandable-table-row-expanded">
+                        <td [attr.colspan]="columnCount" class="expandable-table-expandable-cell">
+                            <div [collapse]="!isExpanded(statement)" [isAnimated]="true">
+                                <div class="collapsing-div">
+                                    <div class="statementControls">
+                                        <div class="btn-toolbar">
+                                            <app-statement-controls
+                                                [conformanceIds]="statement"
+                                                [communityId]="statement.communityId"
+                                                [organisationId]="statement.organizationId"
+                                                [snapshotId]="snapshot?.id"
+                                                [snapshotLabel]="snapshot?.label"
+                                                [hasBadge]="statement.hasBadge"
+                                                [showCollapseAll]="statement.hasExpandedTestSuites == true && statement.testSuites != undefined && statement.testSuites.length > 1"
+                                                (collapseAll)="collapseAllTestSuites(statement)"
+                                                (filter)="applyStatementSearchFilters(statement, $event)"
+                                            ></app-statement-controls>
+                                        </div>
+                                        <div class="statementRatios">
+                                            <app-test-result-ratio [counters]="statement.counters!" [asLine]="true"></app-test-result-ratio>
+                                        </div>
+                                    </div>
+                                    @if (statement.testSuitesLoaded == undefined || !statement.testSuitesLoaded) {
+                                        <div class="spinnerPadded">
+                                            <app-pending-block></app-pending-block>
+                                        </div>
+                                    } @else {
+                                        @if (statement.displayedTestSuites == undefined || statement.displayedTestSuites.length == 0) {
+                                            <div class="no-test-cases">
+                                                @if (statement.testSuites == undefined || statement.testSuites.length == 0) {
+                                                    <span>No test cases are defined in this conformance statement.</span>
+                                                } @else {
+                                                    <span>No test cases were found matching your search criteria.</span>
+                                                }
+                                            </div>
+                                        } @else {
+                                            <app-test-suite-display
+                                                [testSuites]="statement.displayedTestSuites"
+                                                [showExecute]="false"
+                                                [showExport]="true"
+                                                [communityId]="statement.communityId"
+                                                [refresh]="statement.refreshTestSuites"
+                                                (viewTestSession)="toTestSession($event)"
+                                                (toggleExpand)="setCollapseAllStatus(statement)"
+                                            ></app-test-suite-display>
+                                        }
+                                    }
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        }
+    </table>
+    <app-paging-controls #pagingControls [refreshing]="filterState.updatePending" (navigation)="doPageNavigation($event)"></app-paging-controls>
+</div>

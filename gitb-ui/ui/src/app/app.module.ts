@@ -228,6 +228,7 @@ import { ServiceHealthIconComponent } from './components/service-health-icon/ser
 import { FilterControlComponent } from './components/filter-control/filter-control.component';
 import { TestCaseFilterComponent } from './components/test-case-filter/test-case-filter.component';
 import { NavigationControlsComponent } from './components/navigation-controls/navigation-controls.component';
+import { ConformanceStatementTableComponent } from './components/conformance-statement-table/conformance-statement-table.component';
 
 @NgModule({ declarations: [
         AppComponent,
@@ -423,7 +424,8 @@ import { NavigationControlsComponent } from './components/navigation-controls/na
         ServiceHealthIconComponent,
         FilterControlComponent,
         TestCaseFilterComponent,
-        NavigationControlsComponent
+        NavigationControlsComponent,
+        ConformanceStatementTableComponent
     ],
     bootstrap: [AppComponent], imports: [
     NgxColorPickerComponent,

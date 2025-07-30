@@ -2,105 +2,138 @@
 	<div class="card mb-0">
 		<div class="card-header">
 			<div class="card-title">Conformance statements</div>
-			@if (showCreate || (conformanceSnapshots != undefined && conformanceSnapshots.length > 0)) {
-				<div class="btn-toolbar">
-				@if (conformanceSnapshots != undefined && conformanceSnapshots.length > 0) {
-					<div class="btn-group" dropdown>
-						<button id="button-snapshot" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-snapshot"><span class="me-2">{{snapshotButtonLabel}}</span></button>
-						<ul id="dropdown-snapshot" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-snapshot">
-							<li role="menuitem"><a class="dropdown-item" href (click)="snapshotSelected();$event.preventDefault()">{{latestSnapshotButtonLabel}}</a></li>
-							<li class="divider dropdown-divider"></li>
-							@for (snapshot of conformanceSnapshots; track snapshot.id) {
-								<li role="menuitem"><a class="dropdown-item" href (click)="snapshotSelected(snapshot);$event.preventDefault()">{{snapshot.label}}</a></li>
-							}
-						</ul>
-					</div>
-				}
-				@if (showCreate) {
-					<button (click)="createStatement()" [disabled]="system == undefined || currentlySelectedSnapshot != undefined" class="btn btn-secondary">Create statements</button>
-				}
-				</div>
-			}
+            <div class="btn-toolbar" [class.disable-events]="updatePending">
+                @if (listView) {
+                    <app-filter-control (toggle)="toggleFilters()" (refresh)="refreshFilters()" (clear)="clearFilters()"></app-filter-control>
+                    @if (showExport) {
+                        <button type="button" class="btn btn-secondary"  (click)="onExportConformanceStatementsAsCsv()" [pending]="exportPending">Export CSV</button>
+                    }
+                    @if (showCollapseAllStatements) {
+                        <button type="button" class="btn btn-secondary" (click)="onCollapseAll()">Collapse all</button>
+                    }
+                }
+                @if (conformanceSnapshots != undefined && conformanceSnapshots.length > 0) {
+                    <div class="btn-group" dropdown placement="bottom right">
+                        <button id="button-snapshot" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-snapshot"><span class="me-2">{{snapshotButtonLabel}}</span></button>
+                        <ul id="dropdown-snapshot" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-snapshot">
+                            <li role="menuitem"><a class="dropdown-item" href (click)="snapshotSelected();$event.preventDefault()">{{latestSnapshotButtonLabel}}</a></li>
+                            <li class="divider dropdown-divider"></li>
+                            @for (snapshot of conformanceSnapshots; track snapshot.id) {
+                                <li role="menuitem"><a class="dropdown-item" href (click)="snapshotSelected(snapshot);$event.preventDefault()">{{snapshot.label}}</a></li>
+                            }
+                        </ul>
+                    </div>
+                }
+                @if (showCreate && !listView) {
+                    <button (click)="createStatement()" [disabled]="system == undefined || activeConformanceSnapshot != undefined" class="btn btn-secondary">Create statements</button>
+                }
+                @if (listView || (showCreate || conformanceSnapshots != undefined && conformanceSnapshots.length > 0)) {
+                    <div class="extra-control-container">
+                        <ng-container [ngTemplateOutlet]="viewTypeButton"></ng-container>
+                    </div>
+                } @else {
+                    <ng-container [ngTemplateOutlet]="viewTypeButton"></ng-container>
+                }
+                <ng-template #viewTypeButton>
+                    <div class="btn input-switch me-0">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch" id="viewTypeToggle" [(ngModel)]="listView" (change)="viewTypeToggled()">
+                            <label class="form-check-label" for="viewTypeToggle">List view</label>
+                        </div>
+                    </div>
+                </ng-template>
+            </div>
 		</div>
-		<div class="card-body">
-			@if (systemStatus.status == Constants.STATUS.FINISHED) {
-				@if (systems.length == 0) {
-					<div class="alert alert-info rounded mb-0">
-						@if (showCreateSystem && currentlySelectedSnapshot == undefined) {
-							<span>No {{dataService.labelSystemsLower()}} defined. You must <a href (click)="toCreateSystem();$event.preventDefault()">create a system</a> before defining its conformance statements.</span>
-						} @else if (currentlySelectedSnapshot == undefined) {
-							<span>No {{dataService.labelSystemsLower()}} defined. One must be created by an administrator before conformance statements can be defined.</span>
-						} @else {
-							<span>No {{dataService.labelSystemsLower()}} defined.</span>
-						}
-					</div>
-				} @else {
-					<div class="controls" [class.wrapped]="searchControlsWrapped" [class.not-wrapped]="!searchControlsWrapped">
-						<div #selectorControls class="system-filter">
-							<div class="system-filter-value">
-                                <app-multi-select-filter [config]="systemSelectionConfig" (apply)="systemSelectionChanged($event)"></app-multi-select-filter>
-							</div>
-						</div>
-						@if (statements.length > 0) {
-						<div #searchControls class="searchControls">
-							<div class="text-filter">
-								<app-text-filter name="statementFilter" [width]="300" [placeholder]="'Search statements...'" [(ngModel)]="statementFilter" (apply)="filterStatements()"></app-text-filter>
-							</div>
-							<div class="status-filter">
-								<app-checkbox-option-panel
-									label="Show statements..."
-									[options]="statusOptions"
-									(updated)="filterByStatus($event)"></app-checkbox-option-panel>
-							</div>
-							<div class="btn-group export-group" dropdown [isDisabled]="system == undefined || exportPending">
-								<button type="button" [disable]="system == undefined || exportPending" [pending]="exportPending" class="btn btn-secondary" (click)="exportOverview('pdf')">Download report</button>
-								<button id="button-export" type="button" [disabled]="system == undefined || exportPending" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
-									<span class="caret"></span>
-									<span class="sr-only visually-hidden">Download report</span>
-								</button>
-								<ul id="dropdown-export" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-export">
-									<li role="menuitem"><a class="dropdown-item" href (click)="exportOverview('xml');$event.preventDefault()">Download report as XML</a></li>
-								</ul>
-							</div>
-						</div>
-						}
-					</div>
-					@if (system != undefined) {
-						@if (dataStatus.status == Constants.STATUS.FINISHED) {
-							@if (statements.length == 0) {
-								<div class="alert alert-info rounded mb-0 top-margin">
-									<span>No conformance statements defined.</span>
-								</div>
-							} @else {
-								<div class="statement-container">
-									@if (visibleItemCount == 0) {
-										<div class="alert alert-info rounded mb-0 top-margin">
-											<span>No conformance statements match your search criteria.</span>
-										</div>
-									} @else {
-										<app-conformance-statement-items-display [items]="statements" [animated]="animated" [withCheck]="false" [withExport]="true" [withResults]="true" (selectionChanged)="onStatementSelect($event)" (export)="onExportConformanceOverview($event)"></app-conformance-statement-items-display>
-									}
-								</div>
-							}
-						} @else {
-							<div class="pending-container top-margin">
-								<div class="pending-icon"><app-pending-block [pending]="true"></app-pending-block></div>
-								<div class="pending-message">Loading conformance statements for {{system!.fname}}...</div>
-							</div>
-						}
-					} @else {
-						<div class="alert alert-info rounded mb-0 top-margin">
-							<span>Select a {{dataService.labelSystemLower()}} to view its conformance statements.</span>
-						</div>
-					}
-				}
-			} @else {
-				<div class="pending-container">
-					<div class="pending-icon"><app-pending-block [pending]="true"></app-pending-block></div>
-					<div class="pending-message">Loading {{dataService.labelSystemsLower()}}...</div>
-				</div>
-			}
-		</div>
+        @if (!listView) {
+            <div class="card-body">
+                @if (systemStatus.status == Constants.STATUS.FINISHED) {
+                    @if (systems.length == 0) {
+                        <div class="alert alert-info rounded mb-0">
+                            @if (showCreateSystem && activeConformanceSnapshot == undefined) {
+                                <span>No {{dataService.labelSystemsLower()}} defined. You must <a href (click)="toCreateSystem();$event.preventDefault()">create a system</a> before defining its conformance statements.</span>
+                            } @else if (activeConformanceSnapshot == undefined) {
+                                <span>No {{dataService.labelSystemsLower()}} defined. One must be created by an administrator before conformance statements can be defined.</span>
+                            } @else {
+                                <span>No {{dataService.labelSystemsLower()}} defined.</span>
+                            }
+                        </div>
+                    } @else {
+                        <div class="controls" [class.wrapped]="searchControlsWrapped" [class.not-wrapped]="!searchControlsWrapped">
+                            <div #selectorControls class="system-filter">
+                                <div class="system-filter-value">
+                                    <app-multi-select-filter [config]="systemSelectionConfig" (apply)="systemSelectionChanged($event)"></app-multi-select-filter>
+                                </div>
+                            </div>
+                            @if (statements.length > 0) {
+                                <div #searchControls class="searchControls">
+                                    <div class="text-filter">
+                                        <app-text-filter name="statementFilter" [width]="300" [placeholder]="'Search statements...'" [(ngModel)]="statementFilter" (apply)="filterStatements()"></app-text-filter>
+                                    </div>
+                                    <div class="status-filter">
+                                        <app-checkbox-option-panel
+                                            label="Show statements..."
+                                            [options]="statusOptions"
+                                            (updated)="filterByStatus($event)"></app-checkbox-option-panel>
+                                    </div>
+                                    <div class="btn-group export-group" dropdown [isDisabled]="system == undefined || exportPending">
+                                        <button type="button" [disable]="system == undefined || exportPending" [pending]="exportPending" class="btn btn-secondary" (click)="exportOverview('pdf')">Download report</button>
+                                        <button id="button-export" type="button" [disabled]="system == undefined || exportPending" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+                                            <span class="caret"></span>
+                                            <span class="sr-only visually-hidden">Download report</span>
+                                        </button>
+                                        <ul id="dropdown-export" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-export">
+                                            <li role="menuitem"><a class="dropdown-item" href (click)="exportOverview('xml');$event.preventDefault()">Download report as XML</a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                        @if (system != undefined) {
+                            @if (dataStatus.status == Constants.STATUS.FINISHED) {
+                                @if (statements.length == 0) {
+                                    <div class="alert alert-info rounded mb-0 top-margin">
+                                        <span>No conformance statements defined.</span>
+                                    </div>
+                                } @else {
+                                    <div class="statement-container">
+                                        @if (visibleItemCount == 0) {
+                                            <div class="alert alert-info rounded mb-0 top-margin">
+                                                <span>No conformance statements match your search criteria.</span>
+                                            </div>
+                                        } @else {
+                                            <app-conformance-statement-items-display [items]="statements" [animated]="animated" [withCheck]="false" [withExport]="true" [withResults]="true" (selectionChanged)="onStatementSelect($event)" (export)="onExportConformanceOverview($event)"></app-conformance-statement-items-display>
+                                        }
+                                    </div>
+                                }
+                            } @else {
+                                <div class="pending-container top-margin">
+                                    <div class="pending-icon"><app-pending-block [pending]="true"></app-pending-block></div>
+                                    <div class="pending-message">Loading conformance statements for {{system!.fname}}...</div>
+                                </div>
+                            }
+                        } @else {
+                            <div class="alert alert-info rounded mb-0 top-margin">
+                                <span>Select a {{dataService.labelSystemLower()}} to view its conformance statements.</span>
+                            </div>
+                        }
+                    }
+                } @else {
+                    <div class="pending-container">
+                        <div class="pending-icon"><app-pending-block [pending]="true"></app-pending-block></div>
+                        <div class="pending-message">Loading {{dataService.labelSystemsLower()}}...</div>
+                    </div>
+                }
+            </div>
+        } @else {
+            <app-conformance-statement-table #listViewTable
+                                             [communityId]="communityId"
+                                             [organisationId]="organisationId"
+                                             [statementLoader]="loadConformanceStatementsForListViewFactory()"
+                                             [snapshot]="activeConformanceSnapshot"
+                                             (searchChange)="listViewSearching($event)"
+                                             (exportChange)="listViewExportChange($event)"
+                                             (collapseChange)="listViewStatementCollapseChange($event)"></app-conformance-statement-table>
+        }
 		@if (showBack) {
 			<div class="card-footer">
 				<div class="btn-toolbar">

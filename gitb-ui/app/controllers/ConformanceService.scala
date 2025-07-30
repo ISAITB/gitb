@@ -881,16 +881,59 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
     case None => Constants.defaultLimit.toInt
   }
 
-  def getConformanceOverview(): Action[AnyContent] = authorizedAction.async { request =>
-    val page = getPageOrDefault(ParameterExtractor.optionalBodyParameter(request, Parameters.PAGE))
-    val limit = getLimitOrDefault(ParameterExtractor.optionalBodyParameter(request, Parameters.LIMIT))
+
+  def getConformanceOverviewForOrganisation(organisationId: Long): Action[AnyContent] = authorizedAction.async { request =>
     val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SNAPSHOT)
+    for {
+      _ <- authorizationManager.canViewConformanceOverviewForOrganisation(request, organisationId, snapshotId)
+      organisationIds <- Future.successful(Some(List(organisationId)))
+      systemIds <- Future.successful(ParameterExtractor.optionalLongListBodyParameter(request, Parameters.SYSTEM_IDS))
+      page <- Future.successful(getPageOrDefault(ParameterExtractor.optionalBodyParameter(request, Parameters.PAGE)))
+      limit <- Future.successful(getLimitOrDefault(ParameterExtractor.optionalBodyParameter(request, Parameters.LIMIT)))
+      results <- {
+        val fullResults = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL).toBoolean
+        val domainIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.DOMAIN_IDS)
+        val specIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.SPEC_IDS)
+        val specGroupIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.GROUP_IDS)
+        val actorIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.ACTOR_IDS)
+        val status = ParameterExtractor.optionalListBodyParameter(request, Parameters.STATUS)
+        val updateTimeBegin = ParameterExtractor.optionalBodyParameter(request, Parameters.UPDATE_TIME_BEGIN)
+        val updateTimeEnd = ParameterExtractor.optionalBodyParameter(request, Parameters.UPDATE_TIME_END)
+        val sortColumn = ParameterExtractor.optionalBodyParameter(request, Parameters.SORT_COLUMN)
+        val sortOrder = ParameterExtractor.optionalBodyParameter(request, Parameters.SORT_ORDER)
+        if (fullResults) {
+          conformanceManager.getConformanceStatementsFull(domainIds, specIds, specGroupIds, actorIds,
+            None, organisationIds, systemIds, None, None,
+            status, updateTimeBegin, updateTimeEnd,
+            sortColumn, sortOrder, snapshotId)
+        } else {
+          conformanceManager.getConformanceStatements(domainIds, specIds, specGroupIds, actorIds,
+            None, organisationIds, systemIds, None, None,
+            status, updateTimeBegin, updateTimeEnd,
+            sortColumn, sortOrder, snapshotId)
+        }
+      }
+      result <- {
+        // Return only the requested page
+        val count = results.size
+        val pageResults = results.slice((page - 1) * limit, (page - 1) * limit + limit)
+        val json = JsonUtil.jsConformanceResultFullList(SearchResult(pageResults, count), None).toString()
+        Future.successful(ResponseConstructor.constructJsonResponse(json))
+      }
+    } yield result
+  }
+
+
+  def getConformanceOverview(): Action[AnyContent] = authorizedAction.async { request =>
     val communityIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.COMMUNITY_IDS)
-    val organizationIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.ORG_IDS)
-    val systemIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.SYSTEM_IDS)
     for {
       _ <- authorizationManager.canViewConformanceOverview(request, communityIds)
+      organisationIds <- Future.successful(ParameterExtractor.optionalLongListBodyParameter(request, Parameters.ORG_IDS))
+      systemIds <- Future.successful(ParameterExtractor.optionalLongListBodyParameter(request, Parameters.SYSTEM_IDS))
+      page <- Future.successful(getPageOrDefault(ParameterExtractor.optionalBodyParameter(request, Parameters.PAGE)))
+      limit <- Future.successful(getLimitOrDefault(ParameterExtractor.optionalBodyParameter(request, Parameters.LIMIT)))
       results <- {
+        val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SNAPSHOT)
         val fullResults = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL).toBoolean
         val domainIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.DOMAIN_IDS)
         val specIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.SPEC_IDS)
@@ -905,12 +948,12 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
         val sortOrder = ParameterExtractor.optionalBodyParameter(request, Parameters.SORT_ORDER)
         if (fullResults) {
           conformanceManager.getConformanceStatementsFull(domainIds, specIds, specGroupIds, actorIds,
-            communityIds, organizationIds, systemIds, orgParameters, sysParameters,
+            communityIds, organisationIds, systemIds, orgParameters, sysParameters,
             status, updateTimeBegin, updateTimeEnd,
             sortColumn, sortOrder, snapshotId)
         } else {
           conformanceManager.getConformanceStatements(domainIds, specIds, specGroupIds, actorIds,
-            communityIds, organizationIds, systemIds, orgParameters, sysParameters,
+            communityIds, organisationIds, systemIds, orgParameters, sysParameters,
             status, updateTimeBegin, updateTimeEnd,
             sortColumn, sortOrder, snapshotId)
         }
@@ -918,7 +961,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
       parameterData <- {
         val forExport = ParameterExtractor.optionalBodyParameter(request, Parameters.EXPORT).getOrElse("false").toBoolean
         if (forExport && communityIds.isDefined && communityIds.get.size == 1) {
-          communityManager.getParameterInfo(communityIds.get.head, organizationIds, systemIds).map(Some(_))
+          communityManager.getParameterInfo(communityIds.get.head, organisationIds, systemIds).map(Some(_))
         } else {
           Future.successful(None)
         }

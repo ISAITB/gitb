@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, NgZone, OnInit, ViewChild} from '@angular/core';
+import {Component, EventEmitter, NgZone, OnInit} from '@angular/core';
 import {BsModalService} from 'ngx-bootstrap/modal';
 import {Observable, of} from 'rxjs';
 import {Constants} from 'src/app/common/constants';
@@ -21,12 +21,6 @@ import {ConformanceService} from 'src/app/services/conformance.service';
 import {DataService} from 'src/app/services/data.service';
 import {RoutingService} from 'src/app/services/routing.service';
 import {ConformanceCertificateSettings} from 'src/app/types/conformance-certificate-settings';
-import {ConformanceResultFull} from 'src/app/types/conformance-result-full';
-import {ConformanceResultFullList} from 'src/app/types/conformance-result-full-list';
-import {ConformanceResultFullWithTestSuites} from 'src/app/types/conformance-result-full-with-test-suites';
-import {FilterState} from 'src/app/types/filter-state';
-import {TestResultSearchCriteria} from 'src/app/types/test-result-search-criteria';
-import {ConformanceSnapshot} from 'src/app/types/conformance-snapshot';
 import {ConformanceSnapshotsModalComponent} from 'src/app/modals/conformance-snapshots-modal/conformance-snapshots-modal.component';
 import {Community} from 'src/app/types/community';
 import {Organisation} from 'src/app/types/organisation.type';
@@ -43,10 +37,6 @@ import {FilterUpdate} from 'src/app/components/test-filter/filter-update';
 import {
   BaseConformanceItemDisplayComponent
 } from 'src/app/components/base-conformance-item-display/base-conformance-item-display.component';
-import {PagingEvent} from '../../../components/paging-controls/paging-event';
-import {PagingControlsApi} from '../../../components/paging-controls/paging-controls-api';
-import {StatementFilterState} from '../../../components/statement-controls/statement-filter-state';
-import {ConformanceTestSuite} from '../../organisation/conformance-statement/conformance-test-suite';
 
 @Component({
     selector: 'app-conformance-dashboard',
@@ -56,39 +46,13 @@ import {ConformanceTestSuite} from '../../organisation/conformance-statement/con
 })
 export class ConformanceDashboardComponent extends BaseConformanceItemDisplayComponent implements OnInit {
 
-  @ViewChild("pagingControls") pagingControls?: PagingControlsApi
-
-  exportPending = false
-  dataStatus = {status: Constants.STATUS.PENDING}
-  filterState: FilterState = {
-    filters: [ Constants.FILTER_TYPE.SPECIFICATION, Constants.FILTER_TYPE.SPECIFICATION_GROUP, Constants.FILTER_TYPE.ACTOR, Constants.FILTER_TYPE.ORGANISATION, Constants.FILTER_TYPE.SYSTEM, Constants.FILTER_TYPE.ORGANISATION_PROPERTY, Constants.FILTER_TYPE.SYSTEM_PROPERTY, Constants.FILTER_TYPE.RESULT, Constants.FILTER_TYPE.END_TIME ],
-    updatePending: false,
-    updateDisabled: false
-  }
-  communityId?: number
   selectedCommunityId?: number
   selectedOrganisationId?: number
   selectedSystemId?: number
-  columnCount!: number
-  expandedStatements: { [key: string]: any, count: number } = {
-    count: 0
-  }
-  conformanceStatements: ConformanceResultFullWithTestSuites[] = []
   settings?: Partial<ConformanceCertificateSettings>
-  Constants = Constants
-
-  sortOrder = Constants.ORDER.ASC
-  sortColumn = Constants.FILTER_TYPE.COMMUNITY
-
-  latestSnapshotButtonLabel = 'Latest conformance status'
-  snapshotButtonLabel = this.latestSnapshotButtonLabel
-  activeConformanceSnapshot?: ConformanceSnapshot
-
-  listView = false
   availableCommunities?: Community[]
   availableOrganisations?: Organisation[]
   availableSystems?: System[]
-  filterCommands = new EventEmitter<number>()
   exportOverviewPending = false
   communitySelectConfig?: MultiSelectConfig<Community>
   organisationSelectConfig?: MultiSelectConfig<Organisation>
@@ -97,35 +61,23 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
   constructor(
     dataService: DataService,
     zone: NgZone,
-    private readonly conformanceService: ConformanceService,
+    conformanceService: ConformanceService,
     private readonly modalService: BsModalService,
     private readonly routingService: RoutingService,
     private readonly communityService: CommunityService,
     private readonly organisationService: OrganisationService,
     private readonly systemService: SystemService,
     private readonly reportSupportService: ReportSupportService,
-  ) { super(dataService, zone) }
+  ) { super(dataService, zone, conformanceService) }
 
   ngOnInit(): void {
-    this.filterState.names = {}
-    this.filterState.names[Constants.FILTER_TYPE.RESULT] = 'Status'
-    this.filterState.names[Constants.FILTER_TYPE.END_TIME] = 'Last update time'
-		if (this.dataService.isSystemAdmin) {
-			this.columnCount = 11
-			this.filterState.filters.push(Constants.FILTER_TYPE.DOMAIN)
-			this.filterState.filters.push(Constants.FILTER_TYPE.COMMUNITY)
-    } else if (this.dataService.isCommunityAdmin) {
-      this.sortColumn = Constants.FILTER_TYPE.ORGANISATION
+    this.latestSnapshotButtonLabel = 'Latest conformance status'
+    this.snapshotButtonLabel = this.latestSnapshotButtonLabel
+		if (!this.dataService.isSystemAdmin) {
 			this.communityId = this.dataService.community!.id
       this.selectedCommunityId = this.communityId
-			if (this.dataService.community!.domain == undefined) {
-				this.columnCount = 10
-				this.filterState.filters.push(Constants.FILTER_TYPE.DOMAIN)
-      } else {
-				this.columnCount = 9
-      }
     }
-    // Tree view select configs - start
+    // Tree view selection configs - start
     if (this.dataService.isSystemAdmin) {
       this.communitySelectConfig = {
         name: 'availableCommunities',
@@ -167,193 +119,9 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     this.viewTypeToggled()
   }
 
-  toggleFilters() {
-    this.filterCommands.emit(Constants.FILTER_COMMAND.TOGGLE)
-  }
-
-  clearFilters() {
-    console.log("CLEAR")
-    this.filterCommands.emit(Constants.FILTER_COMMAND.CLEAR)
-  }
-
-  refreshFilters() {
-    this.filterCommands.emit(Constants.FILTER_COMMAND.REFRESH)
-  }
-
-	getCurrentSearchCriteria() {
-    let searchCriteria: TestResultSearchCriteria = {}
-    if (this.dataService.isCommunityAdmin) {
-      searchCriteria.communityIds = [this.dataService.community!.id]
-      if (this.dataService.community!.domain != undefined) {
-        searchCriteria.domainIds = [this.dataService.community!.domain.id]
-      }
-    }
-    let filterData:{[key: string]: any}|undefined = undefined
-    if (this.filterState?.filterData) {
-      filterData = this.filterState.filterData()
-    }
-    if (filterData) {
-      if (this.dataService.isSystemAdmin) {
-        searchCriteria.communityIds = filterData[Constants.FILTER_TYPE.COMMUNITY]
-        searchCriteria.domainIds = filterData[Constants.FILTER_TYPE.DOMAIN]
-      } else {
-        if (this.dataService.community!.domain == undefined) {
-          searchCriteria.domainIds = filterData[Constants.FILTER_TYPE.DOMAIN]
-        }
-      }
-      searchCriteria.specIds = filterData[Constants.FILTER_TYPE.SPECIFICATION]
-      searchCriteria.specGroupIds = filterData[Constants.FILTER_TYPE.SPECIFICATION_GROUP]
-      searchCriteria.actorIds = filterData[Constants.FILTER_TYPE.ACTOR]
-      searchCriteria.organisationIds = filterData[Constants.FILTER_TYPE.ORGANISATION]
-      searchCriteria.systemIds = filterData[Constants.FILTER_TYPE.SYSTEM]
-      searchCriteria.results = filterData[Constants.FILTER_TYPE.RESULT]
-      searchCriteria.endTimeBeginStr = filterData.endTimeBeginStr
-      searchCriteria.endTimeEndStr = filterData.endTimeEndStr
-      searchCriteria.organisationProperties = filterData.organisationProperties
-      searchCriteria.systemProperties = filterData.systemProperties
-    }
-    if (this.communityId == undefined) {
-      if (searchCriteria.communityIds != undefined && searchCriteria.communityIds.length == 1) {
-        const communityIdFromFilters = searchCriteria.communityIds[0]
-        if (communityIdFromFilters != this.selectedCommunityId) {
-          this.snapshotButtonLabel = this.latestSnapshotButtonLabel
-          this.activeConformanceSnapshot = undefined
-          this.selectedCommunityId = communityIdFromFilters
-        }
-      } else {
-        this.snapshotButtonLabel = this.latestSnapshotButtonLabel
-        this.activeConformanceSnapshot = undefined
-        this.selectedCommunityId = undefined
-      }
-    }
-		return searchCriteria
-  }
-
-	private getConformanceStatementsInternal(pagingInfo: PagingEvent, fullResults: boolean, forExport: boolean) {
-    return new Observable<ConformanceResultFullList>((subscriber) => {
-      let params = this.getCurrentSearchCriteria()
-      this.conformanceService.getConformanceOverview(params, this.activeConformanceSnapshot?.id, fullResults, forExport, this.sortColumn, this.sortOrder, pagingInfo.targetPage, pagingInfo.targetPageSize)
-        .subscribe((data: ConformanceResultFullList) => {
-          for (let conformanceStatement of data.data) {
-            const completedCountToConsider = Number(conformanceStatement.completedToConsider)
-            const failedCountToConsider = Number(conformanceStatement.failedToConsider)
-            const undefinedCountToConsider = Number(conformanceStatement.undefinedToConsider)
-            conformanceStatement.counters = {
-              completed: Number(conformanceStatement.completed),
-              failed: Number(conformanceStatement.failed),
-              other: Number(conformanceStatement.undefined),
-              completedOptional: Number(conformanceStatement.completedOptional),
-              failedOptional: Number(conformanceStatement.failedOptional),
-              otherOptional: Number(conformanceStatement.undefinedOptional),
-              completedToConsider: completedCountToConsider,
-              failedToConsider: failedCountToConsider,
-              otherToConsider: undefinedCountToConsider
-            }
-            conformanceStatement.overallStatus = this.dataService.conformanceStatusForTests(completedCountToConsider, failedCountToConsider, undefinedCountToConsider)
-          }
-          subscriber.next(data)
-        }).add(() => {
-        this.dataStatus = {status: Constants.STATUS.FINISHED}
-        subscriber.complete()
-      })
-    })
-  }
-
-	getConformanceStatements() {
-    this.selectPage({ targetPage: 1, targetPageSize: this.pagingControls?.getCurrentStatus().pageSize! })
-  }
-
   testSuiteLoader() {
     return ((item: ConformanceStatementItem) => {
       return this.conformanceService.getConformanceStatus(item.id, this.selectedSystemId!, this.activeConformanceSnapshot?.id)
-    })
-  }
-
-	onExpand(statement: ConformanceResultFullWithTestSuites) {
-		if (this.isExpanded(statement)) {
-			this.collapse(statement)
-    } else {
-      this.expand(statement)
-      if (statement.testSuites == undefined) {
-        statement.testSuitesLoaded = false
-        this.conformanceService.getConformanceStatus(statement.actorId, statement.systemId, this.activeConformanceSnapshot?.id)
-        .subscribe((data) => {
-          if (data) {
-            this.dataService.organiseTestSuitesForDisplay(data.testSuites)
-            statement.hasBadge = data.summary.hasBadge
-            statement.testSuites = data.testSuites
-            statement.displayedTestSuites = data.testSuites
-            this.setCollapseAllStatus(statement)
-            statement.refreshTestSuites = new EventEmitter<void>()
-          }
-        }).add(() => {
-          statement.testSuitesLoaded = true
-        })
-      }
-    }
-  }
-
-	collapse(statement: ConformanceResultFull) {
-		delete this.expandedStatements[statement.systemId+"_"+statement.actorId]
-		this.expandedStatements.count -= 1
-  }
-
-	expand(statement: ConformanceResultFull) {
-		this.expandedStatements[statement.systemId+"_"+statement.actorId] = true
-		this.expandedStatements.count += 1
-  }
-
-	isExpanded(statement: ConformanceResultFull) {
-		return this.expandedStatements[statement.systemId+"_"+statement.actorId] != undefined
-  }
-
-	showCollapseAll() {
-		return this.expandedStatements.count > 0
-  }
-
-	onCollapseAll() {
-		this.expandedStatements = { count: 0 }
-  }
-
-	onExportConformanceStatementsAsCsv() {
-		this.exportPending = true
-    const pagingInfo = {
-      targetPage: 1,
-      targetPageSize: 100000000
-    }
-		this.getConformanceStatementsInternal(pagingInfo, true, true)
-		.subscribe((data) => {
-			let headers: string[] = []
-			let columnMap: string[] = []
-			if (!this.dataService.isCommunityAdmin) {
-				headers.push("Community")
-				columnMap.push("communityName")
-      }
-			headers.push(this.dataService.labelOrganisation())
-			columnMap.push("organizationName")
-			if (data.orgParameters != undefined) {
-				for (let param of data.orgParameters) {
-					headers.push(this.dataService.labelOrganisation() + " ("+param+")")
-					columnMap.push("orgparam_"+param)
-        }
-      }
-			headers.push(this.dataService.labelSystem())
-			columnMap.push("systemName")
-			if (data.sysParameters != undefined) {
-				for (let param of data.sysParameters) {
-					headers.push(this.dataService.labelSystem() + " ("+param+")")
-					columnMap.push("sysparam_"+param)
-        }
-      }
-			if (!this.dataService.isCommunityAdmin || this.dataService.isCommunityAdmin && this.dataService.community!.domain == undefined) {
-				headers.push(this.dataService.labelDomain())
-				columnMap.push("domainName")
-      }
-			headers = headers.concat([this.dataService.labelSpecification(), this.dataService.labelActor(), "Test suite", "Test case", "Result"])
-			columnMap = columnMap.concat(["specName", "actorName", "testSuiteName", "testCaseName", "result"])
-			this.dataService.exportPropertiesAsCsv(headers, columnMap, data.data)
-    }).add(() => {
-      this.exportPending = false
     })
   }
 
@@ -396,58 +164,8 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     })
   }
 
-	onExportConformanceStatement(statement: ConformanceResultFull, format: 'xml'|'pdf') {
-    if (format == 'xml') {
-      statement.exportXmlPending = true
-    } else {
-      statement.exportPdfPending = true
-    }
-    const testCaseCount = statement.completed + statement.failed + statement.undefined
-    this.reportSupportService.handleConformanceStatementReport(statement.communityId, statement.actorId, statement.systemId, this.activeConformanceSnapshot?.id, format, true, testCaseCount)
-    .subscribe(() => {
-      // Do nothing further
-    })
-    .add(() => {
-      if (format == 'xml') {
-        statement.exportXmlPending = false
-      } else {
-        statement.exportPdfPending = false
-      }
-    })
-  }
-
   toTestSession(sessionId: string) {
     this.routingService.toSessionDashboard(sessionId)
-  }
-
-  doPageNavigation(event: PagingEvent) {
-    this.selectPage(event)
-  }
-
-  private selectPage(pagingInfo: PagingEvent) {
-    this.filterState.updatePending = true
-    this.getConformanceStatementsInternal(pagingInfo, false, false)
-    .subscribe((data) => {
-      this.conformanceStatements = data.data
-      this.pagingControls?.updateStatus(pagingInfo.targetPage, data.count)
-			this.onCollapseAll()
-    }).add(() => {
-			this.filterState.updatePending = false
-    })
-  }
-
-  sort(column: string) {
-    if (column == this.sortColumn) {
-      if (this.sortOrder == Constants.ORDER.DESC) {
-        this.sortOrder = Constants.ORDER.ASC
-      } else {
-        this.sortOrder = Constants.ORDER.DESC
-      }
-    } else {
-      this.sortColumn = column
-      this.sortOrder = Constants.ORDER.DESC
-    }
-    this.getConformanceStatements()
   }
 
   manageConformanceSnapshots() {
@@ -465,7 +183,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
           if (this.activeConformanceSnapshot == undefined || this.activeConformanceSnapshot.id != selectedSnapshot.id) {
             this.activeConformanceSnapshot = selectedSnapshot
             if (this.listView) {
-              this.getConformanceStatements()
+              this.listViewTable?.reloadData()
             } else {
               this.updateTreeViewForSnapshotChange()
             }
@@ -486,7 +204,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     }
     if (reload) {
       if (this.listView) {
-        this.getConformanceStatements()
+        this.listViewTable?.reloadData()
       } else {
         this.updateTreeViewForSnapshotChange()
       }
@@ -510,9 +228,6 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
       if (this.dataService.isSystemAdmin) {
         // Force a switch back to the latest snapshot and refresh
         this.viewLatestConformanceSnapshot(true)
-      } else {
-        // Refresh search results
-        this.getConformanceStatements()
       }
     } else {
       this.resetStatementFilters()
@@ -678,45 +393,19 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
       (this.statements.length > 0)
   }
 
-  trackStatement(index: number, statement: ConformanceResultFullWithTestSuites): string {
-    return `${statement.actorId}_${statement.systemId}`;
-  }
-
-  applyStatementSearchFilters(statement: ConformanceResultFullWithTestSuites, state: StatementFilterState) {
-    if (statement.testSuites && statement.testSuites.length > 0) {
-      const testSuiteFilter = this.trimSearchString(state.testSuiteFilter)
-      const testCaseFilter = this.trimSearchString(state.testCaseFilter)
-      statement.displayedTestSuites = this.dataService.filterTestSuites(statement.testSuites, testSuiteFilter, testCaseFilter, state)
-      this.setCollapseAllStatus(statement)
-      setTimeout(() => {
-        if (statement.refreshTestSuites) {
-          statement.refreshTestSuites.emit()
+  listViewCommunityChange(newCommunityId: number|undefined) {
+    if (this.communityId == undefined) {
+      if (newCommunityId != undefined) {
+        if (newCommunityId != this.selectedCommunityId) {
+          this.snapshotButtonLabel = this.latestSnapshotButtonLabel
+          this.activeConformanceSnapshot = undefined
+          this.selectedCommunityId = newCommunityId
         }
-      })
-    }
-  }
-
-  setCollapseAllStatus(statement: ConformanceResultFullWithTestSuites) {
-    statement.hasExpandedTestSuites = this.hasExpandedTestSuite(statement)
-  }
-
-  private hasExpandedTestSuite(statement: ConformanceResultFullWithTestSuites) {
-    if (statement.displayedTestSuites) {
-      for (let testSuite of statement.displayedTestSuites) {
-        if (testSuite.expanded) {
-          return true
-        }
+      } else {
+        this.snapshotButtonLabel = this.latestSnapshotButtonLabel
+        this.activeConformanceSnapshot = undefined
+        this.selectedCommunityId = undefined
       }
-    }
-    return false
-  }
-
-  collapseAllTestSuites(statement: ConformanceResultFullWithTestSuites) {
-    if (statement.displayedTestSuites) {
-      statement.displayedTestSuites.forEach((testSuite: ConformanceTestSuite) => {
-        testSuite.expanded = false
-      })
-      this.setCollapseAllStatus(statement)
     }
   }
 

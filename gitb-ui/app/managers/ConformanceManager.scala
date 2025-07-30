@@ -1475,6 +1475,16 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 			.head)
 	}
 
+	def existsOrganisationInConformanceSnapshot(snapshot: Long, organisationId: Long): Future[Boolean] = {
+		DB.run(
+			PersistenceSchema.conformanceSnapshotResults
+				.filter(_.snapshotId === snapshot)
+				.filter(_.organisationId === organisationId)
+				.exists
+				.result
+		)
+	}
+
 	def existsInConformanceSnapshot(snapshot: Long, systemId: Long, organisationId: Long): Future[Boolean] = {
 		DB.run(
 			PersistenceSchema.conformanceSnapshotResults

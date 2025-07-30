@@ -860,6 +860,33 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     check.map(setAuthResult(request, _, "User cannot view the requested system"))
   }
 
+  def canViewOrganisationInSnapshot(request: RequestWithAttributes[_], organisationId: Long, snapshotId: Long): Future[Boolean] = {
+    val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
+      if (isTestBedAdmin(userInfo)) {
+        Future.successful(true)
+      } else {
+        if (userInfo.organization.isDefined) {
+          if (isCommunityAdmin(userInfo)) {
+            // This is a snapshot of the user's own community.
+            conformanceManager.getConformanceSnapshot(snapshotId).map { snapshot =>
+              snapshot.community == userInfo.organization.get.community
+            }
+          } else {
+            if (organisationId == userInfo.organization.get.id) {
+              // The requested organisation ID and the user's own organisation ID must exist as results in the specified snapshot.
+              conformanceManager.existsOrganisationInConformanceSnapshot(snapshotId, organisationId)
+            } else {
+              Future.successful(false)
+            }
+          }
+        } else {
+          Future.successful(false)
+        }
+      }
+    }
+    check.map(setAuthResult(request, _, "User cannot view the requested organisation in the given conformance snapshot"))
+  }
+
   def canViewSystemInSnapshot(request: RequestWithAttributes[_], systemId: Long, snapshotId: Long): Future[Boolean] = {
     val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
       if (isTestBedAdmin(userInfo)) {
@@ -1817,6 +1844,14 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   def canDeleteAllObsoleteTestResults(request: RequestWithAttributes[_]): Future[Boolean] = {
     checkTestBedAdmin(request)
+  }
+
+  def canViewConformanceOverviewForOrganisation(request: RequestWithAttributes[_], organisationId: Long, snapshotId: Option[Long]): Future[Boolean] = {
+    if (snapshotId.isEmpty) {
+      canViewOrganisation(request, organisationId)
+    } else {
+      canViewOrganisationInSnapshot(request, organisationId, snapshotId.get)
+    }
   }
 
   def canViewConformanceOverview(request: RequestWithAttributes[_], communityIds: Option[List[Long]], snapshotId: Option[Long] = None): Future[Boolean] = {
