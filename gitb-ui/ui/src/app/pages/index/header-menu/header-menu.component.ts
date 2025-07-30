@@ -31,6 +31,7 @@ export class HeaderMenuComponent {
   expanded = false
   isOverPopup = false
   isOverHeader = false
+  private allowedToHide = false
 
   constructor(
     public readonly dataService: DataService,
@@ -61,30 +62,42 @@ export class HeaderMenuComponent {
 
   overHeader() {
     this.isOverHeader = true
-    this.expanded = true
+    this.expandPopup()
   }
 
   leftHeader() {
     this.isOverHeader = false
     setTimeout(() => {
-      if (!this.isOverPopup) {
-        this.expanded = false
-      }
+      this.checkToHide()
     }, 5)
   }
 
   overPopup() {
     this.isOverPopup = true
-    this.expanded = true
+    this.expandPopup()
   }
 
   leftPopup() {
     this.isOverPopup = false
     setTimeout(() => {
-      if (!this.isOverHeader) {
-        this.expanded = false
-      }
+      this.checkToHide()
     }, 5)
+  }
+
+  private checkToHide() {
+    if (!this.isOverHeader && !this.isOverPopup && this.allowedToHide) {
+      this.expanded = false
+    }
+  }
+
+  private expandPopup() {
+    if (!this.expanded) {
+      this.expanded = true
+      setTimeout(() => {
+        this.allowedToHide = true
+        this.checkToHide()
+      }, 50)
+    }
   }
 
 }
