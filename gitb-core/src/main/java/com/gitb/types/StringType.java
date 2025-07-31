@@ -24,7 +24,8 @@ import java.util.Objects;
 /**
  * Created by senan on 9/8/14.
  */
-public class StringType extends PrimitiveType {
+public class StringType extends PrimitiveType<String> {
+
     private String data;
     private String encoding;
 
@@ -72,7 +73,7 @@ public class StringType extends PrimitiveType {
     }
 
     @Override
-    public Object getValue() {
+    public String getValue() {
         return this.data;
     }
 
@@ -83,7 +84,7 @@ public class StringType extends PrimitiveType {
 
     @Override
     public String toString() {
-        return (String) this.getValue();
+        return this.getValue();
     }
 
     @Override

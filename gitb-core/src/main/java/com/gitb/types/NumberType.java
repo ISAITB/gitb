@@ -20,7 +20,7 @@ import javax.xml.xpath.XPathExpression;
 /**
  * Created by senan on 9/15/14.
  */
-public class NumberType extends PrimitiveType {
+public class NumberType extends PrimitiveType<Double> {
 
     private Double value = (double) 0;
 
@@ -56,12 +56,12 @@ public class NumberType extends PrimitiveType {
     }
 
     @Override
-    public Object getValue() {
+    public Double getValue() {
         return this.value;
     }
 
     public double doubleValue() {
-        return this.value.doubleValue();
+        return this.value;
     }
 
     public int intValue() {

@@ -20,7 +20,8 @@ import javax.xml.xpath.XPathExpression;
 /**
  * Created by tuncay on 9/25/14.
  */
-public class BinaryType extends PrimitiveType {
+public class BinaryType extends PrimitiveType<byte[]> {
+
     private byte[] content;
 
     public BinaryType() {
@@ -48,35 +49,39 @@ public class BinaryType extends PrimitiveType {
 
     @Override
     public byte[] serialize(String encoding) {
-        return (byte[]) getValue();
+        return getValue();
     }
 
     @Override
-    public Object getValue() {
+    public byte[] getValue() {
         return content;
     }
 
     @Override
     public void setValue(Object value) {
-        this.content = (byte [])value;
+        if (value instanceof String stringValue) {
+            this.content = stringValue.getBytes();
+        } else {
+            this.content = (byte[])value;
+        }
     }
 
     @Override
     protected StringType toStringType() {
-        return new StringType(new String((byte[]) getValue()));
+        return new StringType(new String(getValue()));
     }
 
     @Override
     public ObjectType toObjectType() {
         ObjectType type = new ObjectType();
-        type.deserialize((byte[]) getValue());
+        type.deserialize(getValue());
         return type;
     }
 
     @Override
     protected SchemaType toSchemaType() {
         SchemaType type = new SchemaType();
-        type.deserialize((byte[]) getValue());
+        type.deserialize(getValue());
         return type;
     }
 

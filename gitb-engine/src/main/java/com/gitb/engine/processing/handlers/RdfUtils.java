@@ -219,7 +219,7 @@ public class RdfUtils extends AbstractProcessingHandler {
             data.getData().put(OUTPUT_OUTPUT, new BooleanType(result));
         } else if (OPERATION_SELECT.equalsIgnoreCase(operation)) {
             var outputContentType = Optional.ofNullable(getInputForName(input, INPUT_OUTPUT_CONTENT_TYPE, StringType.class))
-                    .map(type -> ContentType.create((String) type.getValue()))
+                    .map(type -> ContentType.create(type.getValue()))
                     .orElse(APPLICATION_XML);
             BiConsumer<ByteArrayOutputStream, ResultSet> resultSetConsumer;
             if (APPLICATION_XML.equals(outputContentType) || TEXT_XML.equals(outputContentType) || APPLICATION_SPARQL_RESULTS_XML.equals(outputContentType)) {
@@ -258,7 +258,7 @@ public class RdfUtils extends AbstractProcessingHandler {
     }
 
     private Query parseQuery(StringType queryString, QueryType expectedQueryType) {
-        Query query = QueryFactory.create((String) queryString.getValue());
+        Query query = QueryFactory.create(queryString.getValue());
         if (query.queryType() != expectedQueryType) {
             throw new IllegalArgumentException("Unexpected query type [%s]".formatted(query.queryType().name()));
         }
@@ -266,7 +266,7 @@ public class RdfUtils extends AbstractProcessingHandler {
     }
 
     private Lang parseLanguage(StringType syntax, Supplier<String> messageSupplier) {
-        var contentType = ContentType.create((String) syntax.getValue());
+        var contentType = ContentType.create(syntax.getValue());
         Lang rdfLanguage = RDFLanguages.contentTypeToLang(contentType);
         if (rdfLanguage == null) {
             rdfLanguage = EQUIVALENT_CONTENT_TYPES.get(contentType.getContentTypeStr());
@@ -279,7 +279,7 @@ public class RdfUtils extends AbstractProcessingHandler {
 
     private Model parseModel(StringType modelContent, Lang modeLanguage) {
         Model model = ModelFactory.createDefaultModel();
-        model.read(new StringReader((String) modelContent.getValue()), null, modeLanguage.getName());
+        model.read(new StringReader(modelContent.getValue()), null, modeLanguage.getName());
         return model;
     }
 

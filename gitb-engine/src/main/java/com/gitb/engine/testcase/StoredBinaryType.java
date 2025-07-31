@@ -32,14 +32,14 @@ public class StoredBinaryType extends BinaryType {
         setImportTestSuite(wrappedType.getImportTestSuite());
         try {
             reference = Files.createFile(Path.of(sessionFolder.toString(), UUID.randomUUID().toString()));
-            Files.write(reference, (byte[]) wrappedType.getValue());
+            Files.write(reference, wrappedType.getValue());
         } catch (IOException e) {
             throw new IllegalStateException("Error while storing session data to temporary filesystem", e);
         }
     }
 
     @Override
-    public Object getValue() {
+    public byte[] getValue() {
         try {
             return Files.readAllBytes(reference);
         } catch (IOException e) {

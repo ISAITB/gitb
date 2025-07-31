@@ -28,7 +28,8 @@ import java.io.OutputStream;
 /**
  * Created by tuncay on 9/25/14.
  */
-public abstract class PrimitiveType extends DataType {
+public abstract class PrimitiveType<T> extends DataType {
+
     public static final String DEFAULT_ENCODING = "utf-8";
 
     @Override
@@ -73,4 +74,6 @@ public abstract class PrimitiveType extends DataType {
         return serialize(PrimitiveType.DEFAULT_ENCODING);
     }
 
+    @Override
+    abstract public T getValue();
 }

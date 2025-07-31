@@ -264,10 +264,10 @@ public class CollectionUtils extends AbstractProcessingHandler {
                 throw new IllegalArgumentException("You must provide either [%s] and [%s] inputs, or [%s] and [%s] inputs for the [%s] operation".formatted(INPUT_FROM_LIST, INPUT_TO_LIST, INPUT_FROM_MAP, INPUT_TO_MAP, operation));
             }
             boolean onlyMissing = Optional.ofNullable(getInputForName(input, INPUT_ONLY_MISSING, BooleanType.class))
-                    .map(flag -> (Boolean) flag.getValue())
+                    .map(BooleanType::getValue)
                     .orElse(false);
             boolean caseInsensitive = Optional.ofNullable(getInputForName(input, INPUT_CASE_INSENSITIVE, BooleanType.class))
-                    .map(flag -> (Boolean) flag.getValue())
+                    .map(BooleanType::getValue)
                     .orElse(false);
             if (listPair != null) {
                 List<DataType> toList = (List<DataType>) listPair.getRight().getValue();

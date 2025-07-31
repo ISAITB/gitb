@@ -18,17 +18,15 @@ package com.gitb.types;
 import com.gitb.core.ErrorCode;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.utils.ErrorUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.xml.xpath.XPathExpression;
-import java.io.*;
+import java.io.UnsupportedEncodingException;
 
 /**
  * Created by senan on 9/11/14.
  */
-public class BooleanType extends PrimitiveType {
-    private static Logger logger = LoggerFactory.getLogger(BooleanType.class);
+public class BooleanType extends PrimitiveType<Boolean> {
+
     private boolean value = false;
 
     public BooleanType() {}
@@ -63,7 +61,7 @@ public class BooleanType extends PrimitiveType {
     }
 
     @Override
-    public Object getValue() {
+    public Boolean getValue() {
         return value;
     }
 
