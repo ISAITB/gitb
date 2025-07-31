@@ -17,6 +17,11 @@ package com.gitb.engine;
 
 import com.gitb.engine.messaging.handlers.server.Configuration;
 import com.gitb.utils.HmacUtils;
+import com.jayway.jsonpath.Option;
+import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
+import com.jayway.jsonpath.spi.json.JsonProvider;
+import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
+import com.jayway.jsonpath.spi.mapper.MappingProvider;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.configuration2.EnvironmentConfiguration;
 import org.apache.commons.configuration2.SystemConfiguration;
@@ -26,7 +31,9 @@ import org.apache.commons.lang3.StringUtils;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.EnumSet;
 import java.util.Objects;
+import java.util.Set;
 
 import static com.gitb.utils.ConfigUtils.getPropertiesConfiguration;
 
@@ -163,9 +170,35 @@ public class TestEngineConfiguration {
 			// Embedded messaging handler configuration - start.
 			DEFAULT_MESSAGING_CONFIGURATION = loadDefaultMessagingHandlerConfiguration(config);
 			// Embedded messaging handler configuration - end.
+			// JSON Path configuration
+			configureJsonPath();
 		} catch (ConfigurationException | IOException e) {
 			throw new IllegalStateException("Error loading configuration", e);
 		}
+	}
+
+	private static void configureJsonPath() {
+		com.jayway.jsonpath.Configuration.setDefaults(new com.jayway.jsonpath.Configuration.Defaults() {
+
+			private final JsonProvider jsonProvider = new JacksonJsonProvider();
+			private final MappingProvider mappingProvider = new JacksonMappingProvider();
+
+			@Override
+			public JsonProvider jsonProvider() {
+				return jsonProvider;
+			}
+
+			@Override
+			public MappingProvider mappingProvider() {
+				return mappingProvider;
+			}
+
+			@Override
+			public Set<Option> options() {
+				return EnumSet.noneOf(Option.class);
+			}
+		});
+
 	}
 
 	private static String getFromFileConfigOrEnvironment(String baseName, String defaultValue) {

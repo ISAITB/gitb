@@ -21,10 +21,15 @@ import com.gitb.types.DataType;
 import com.gitb.types.MapType;
 import com.gitb.types.StringType;
 import com.gitb.utils.TestSessionNamespaceContext;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonSyntaxException;
 
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
+import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -48,6 +53,19 @@ public class HandlerUtils {
             return xPath.compile((String)expression.getValue());
         } catch (XPathExpressionException e) {
             throw new GITBEngineInternalError(e);
+        }
+    }
+
+    public static String prettyPrintJson(String input) {
+        try (StringReader in = new StringReader(input)) {
+            JsonElement json = com.google.gson.JsonParser.parseReader(in);
+            Gson gson = new GsonBuilder()
+                    .setPrettyPrinting()
+                    .serializeNulls()
+                    .create();
+            return gson.toJson(json);
+        } catch (JsonSyntaxException e) {
+            throw new IllegalStateException("Unable to parse provided input as a JSON document", e);
         }
     }
 

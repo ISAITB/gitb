@@ -25,18 +25,30 @@ import java.util.List;
  * Created by tuncay on 9/2/14.
  */
 public class ListType extends ContainerType implements Iterable<DataType> {
+
     //Elements of the list
     protected List<DataType> elements;
     //The type for all elements
     protected String containedType;
 
     public ListType() {
-	    elements = new ArrayList<>();
+        this(null, null);
+    }
+
+    public ListType(List<DataType> items) {
+        this(null, items);
     }
 
     public ListType(String containedType) {
+        this(containedType, null);
+    }
+
+    public ListType(String containedType, List<DataType> items) {
         this.containedType = containedType;
-        elements = new ArrayList<>();
+        if (items == null) {
+            items = new ArrayList<>();
+        }
+        elements = items;
     }
 
     /**

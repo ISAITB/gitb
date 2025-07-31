@@ -57,6 +57,7 @@ Library licences are organised in three sections:
 | Apache License, Version 2.0 | ph-schematron-pure | com.helger.schematron:ph-schematron-pure | 8.0.6 | https://github.com/phax/ph-schematron/ph-schematron-pure |
 | Apache License, Version 2.0 | ph-schematron-xslt | com.helger.schematron:ph-schematron-xslt | 8.0.6 | https://github.com/phax/ph-schematron/ph-schematron-xslt |
 | Apache License, Version 2.0 | ph-xsds-xml | com.helger.xsd:ph-xsds-xml | 3.0.0 | https://github.com/phax/ph-xsds/ph-xsds-xml |
+| Apache License, Version 2.0 | json-path | com.jayway.jsonpath:json-path | 2.9.0 | https://github.com/jayway/JsonPath |
 | Apache License, Version 2.0 | JsonSchemaValidator | com.networknt:json-schema-validator | 1.5.8 | https://github.com/networknt/json-schema-validator |
 | Eclipse Distribution License - v1.0 | istack common utility code runtime | com.sun.istack:istack-commons-runtime | 4.1.2 | https://projects.eclipse.org/projects/ee4j/istack-commons/istack-commons-runtime |
 | Eclipse Distribution License - v1.0 | Old JAXB Core | com.sun.xml.bind:jaxb-core | 4.0.5 | https://eclipse-ee4j.github.io/jaxb-ri/ |
@@ -85,6 +86,8 @@ Library licences are organised in three sections:
 | Eclipse Distribution License - v1.0 | Jakarta XML Binding API | jakarta.xml.bind:jakarta.xml.bind-api | 4.0.2 | https://github.com/jakartaee/jaxb-api/jakarta.xml.bind-api |
 | Eclipse Distribution License - v1.0 | Jakarta SOAP with Attachments API | jakarta.xml.soap:jakarta.xml.soap-api | 3.0.2 | https://github.com/jakartaee/saaj-api |
 | Eclipse Distribution License - v1.0 | Jakarta XML Web Services API | jakarta.xml.ws:jakarta.xml.ws-api | 4.0.2 | https://github.com/jakartaee/jax-ws-api |
+| Apache License, Version 2.0 | ASM based accessors helper used by json-smart | net.minidev:accessors-smart | 2.5.2 | https://urielch.github.io/ |
+| Apache License, Version 2.0 | JSON Small and Fast Parser | net.minidev:json-smart | 2.5.2 | https://urielch.github.io/ |
 | Mozilla Public License Version 2.0 | Saxon-HE | net.sf.saxon:Saxon-HE | 12.7 | http://www.saxonica.com/ |
 | Apache License, Version 2.0 | Apache Commons Collections | org.apache.commons:commons-collections4 | 4.5.0 | https://commons.apache.org/proper/commons-collections/ |
 | Apache License, Version 2.0 | Apache Commons Compress | org.apache.commons:commons-compress | 1.27.1 | https://commons.apache.org/proper/commons-compress/ |
@@ -8587,6 +8590,12 @@ Except as contained in this notice, the name of a copyright
 holder shall not be used in advertising or otherwise to
 promote the sale, use or other dealings in this Software
 without prior written authorization of the copyright holder.
+```
+
+### Jayway JsonPath (com.jayway.jsonpath.*)
+
+```
+Copyright 2010-2020 the original author or authors.
 ```
 
 ### JQuery (org.webjars.jquery)

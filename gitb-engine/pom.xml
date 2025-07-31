@@ -139,5 +139,9 @@
 			<groupId>com.networknt</groupId>
 			<artifactId>json-schema-validator</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>com.jayway.jsonpath</groupId>
+			<artifactId>json-path</artifactId>
+		</dependency>
 	</dependencies>
 </project>

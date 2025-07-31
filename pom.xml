@@ -68,6 +68,7 @@
         <version.jena>5.2.0</version.jena>
         <version.topbraid>1.4.4</version.topbraid>
         <version.json-schema-validator>1.5.8</version.json-schema-validator>
+        <version.jayway>2.9.0</version.jayway>
         <!-- Other version overrides - START -->
         <version.pdfbox>3.0.5</version.pdfbox>
         <!-- Other version overrides - END -->
@@ -482,6 +483,11 @@
                 <groupId>com.networknt</groupId>
                 <artifactId>json-schema-validator</artifactId>
                 <version>${version.json-schema-validator}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.jayway.jsonpath</groupId>
+                <artifactId>json-path</artifactId>
+                <version>${version.jayway}</version>
             </dependency>
             <!-- Force the version of org.apache.httpcomponents.client5:httpclient5 to resolve CVE-2025-27820 (from Saxon-HE:12.4)  -->
             <dependency>

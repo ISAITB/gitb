@@ -22,7 +22,15 @@ import javax.xml.xpath.XPathExpression;
  */
 public class NumberType extends PrimitiveType<Double> {
 
-    private Double value = (double) 0;
+    private Double value;
+
+    public NumberType() {
+        this(0.0);
+    }
+
+    public NumberType(Number value) {
+        this.value = value.doubleValue();
+    }
 
     @Override
     public String getType() {

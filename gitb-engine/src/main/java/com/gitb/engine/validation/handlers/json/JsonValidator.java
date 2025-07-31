@@ -46,6 +46,8 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.gitb.engine.utils.HandlerUtils.prettyPrintJson;
+
 @ValidationHandler(name="JsonValidator")
 public class JsonValidator extends AbstractValidator {
 
@@ -133,19 +135,6 @@ public class JsonValidator extends AbstractValidator {
             } else {
                 return new InputInfo(prettyPrintJson(input), false);
             }
-        }
-    }
-
-    private String prettyPrintJson(String input) {
-        try (StringReader in = new StringReader(input)) {
-            JsonElement json = com.google.gson.JsonParser.parseReader(in);
-            Gson gson = new GsonBuilder()
-                    .setPrettyPrinting()
-                    .serializeNulls()
-                    .create();
-            return gson.toJson(json);
-        } catch (JsonSyntaxException e) {
-            throw new IllegalStateException("Unable to parse provided input as a JSON document", e);
         }
     }
 
