@@ -62,6 +62,7 @@ export class TestFilterComponent implements OnInit {
   @Input() embedded = false
   @Input() commands?: EventEmitter<number>
   @Input() initialSessionId?: string
+  @Input() snapshotId?: number
 
   @Input() loadDomainsFn?: () => Observable<Domain[]>
   @Input() loadSpecificationsFn?: () => Observable<Specification[]>

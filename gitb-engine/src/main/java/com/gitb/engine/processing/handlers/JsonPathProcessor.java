@@ -41,6 +41,9 @@ import java.util.Optional;
 public class JsonPathProcessor extends AbstractProcessingHandler {
 
     private static final String OPERATION_PROCESS = "process";
+    private static final String OPERATION_COUNT = "count";
+    private static final String OPERATION_EXISTS = "exists";
+
     private static final String INPUT_CONTENT = "content";
     private static final String INPUT_EXPRESSION = "expression";
     private static final String INPUT_OUTPUT_TYPE = "outputType";
@@ -58,40 +61,60 @@ public class JsonPathProcessor extends AbstractProcessingHandler {
                 List.of(
                         createParameter(INPUT_CONTENT, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The JSON content to evaluate the expression on."),
                         createParameter(INPUT_EXPRESSION, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The JSON path expression to evaluate."),
-                        createParameter(INPUT_OUTPUT_TYPE, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, "The type of output to return ('raw', 'list', 'count', 'exists', 'default').")
+                        createParameter(INPUT_OUTPUT_TYPE, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, "The type of output to return ('raw', 'list', 'default').")
                 ),
-                List.of(createParameter(OUTPUT_OUTPUT, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The result after evaluating the expression."))
+                List.of(createParameter(OUTPUT_OUTPUT, "list", UsageEnumeration.R, ConfigurationType.SIMPLE, "The result after evaluating the expression."))
+        ));
+        module.getOperation().add(createProcessingOperation(OPERATION_COUNT,
+                List.of(
+                        createParameter(INPUT_CONTENT, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The JSON content to evaluate the expression on."),
+                        createParameter(INPUT_EXPRESSION, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The JSON path expression to evaluate.")
+                ),
+                List.of(createParameter(OUTPUT_OUTPUT, "number", UsageEnumeration.R, ConfigurationType.SIMPLE, "The result count."))
+        ));
+        module.getOperation().add(createProcessingOperation(OPERATION_EXISTS,
+                List.of(
+                        createParameter(INPUT_CONTENT, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The JSON content to evaluate the expression on."),
+                        createParameter(INPUT_EXPRESSION, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The JSON path expression to evaluate.")
+                ),
+                List.of(createParameter(OUTPUT_OUTPUT, "boolean", UsageEnumeration.R, ConfigurationType.SIMPLE, "Whether matches exist."))
         ));
         return module;
     }
 
     @Override
     public ProcessingReport process(String session, String operation, ProcessingData input) {
-        if (operation == null) {
-            operation = OPERATION_PROCESS;
-        }
         ProcessingData data = new ProcessingData();
-        if (OPERATION_PROCESS.equalsIgnoreCase(operation)) {
-            // Collect inputs.
-            String content = getRequiredInputForName(input, INPUT_CONTENT, StringType.class).getValue();
-            String expression = getRequiredInputForName(input, INPUT_EXPRESSION, StringType.class).getValue();
+        // Collect common inputs.
+        String content = getRequiredInputForName(input, INPUT_CONTENT, StringType.class).getValue();
+        String expression = getRequiredInputForName(input, INPUT_EXPRESSION, StringType.class).getValue();
+        if (operation == null || OPERATION_PROCESS.equalsIgnoreCase(operation)) {
             OutputType outputType = OutputType.parse(Optional.ofNullable(getInputForName(input, INPUT_OUTPUT_TYPE, StringType.class)).map(StringType::getValue).orElse(null));
             // Process expression.
-            Configuration conf = Configuration.defaultConfiguration();
-            var result = JsonPath.using(conf).parse(content).read(expression, ArrayNode.class);
+            var result = processJson(content, expression);
             // Construct result.
             DataType output = switch (outputType) {
                 case OutputType.RAW -> new StringType(serialise(result));
                 case OutputType.LIST -> convertToResult(result, true);
                 case OutputType.DEFAULT -> convertToResult(result, false);
-                case OutputType.COUNT -> new NumberType(result.size());
-                case OutputType.EXISTS -> new BooleanType(!result.isEmpty());
             };
             data.getData().put(OUTPUT_OUTPUT, output);
+        } else if (OPERATION_COUNT.equalsIgnoreCase(operation)) {
+            // Process expression.
+            var result = processJson(content, expression);
+            data.getData().put(OUTPUT_OUTPUT, new NumberType(result.size()));
+        } else if (OPERATION_EXISTS.equalsIgnoreCase(operation)) {
+            // Process expression.
+            var result = processJson(content, expression);
+            data.getData().put(OUTPUT_OUTPUT, new BooleanType(!result.isEmpty()));
         } else {
             throw new IllegalArgumentException("Unknown operation [" + operation + "]");
         }
         return new ProcessingReport(createReport(TestResultType.SUCCESS), data);
+    }
+
+    private ArrayNode processJson(String content, String expression) {
+        return JsonPath.using(Configuration.defaultConfiguration()).parse(content).read(expression, ArrayNode.class);
     }
 
     private String serialise(JsonNode node) {
@@ -172,7 +195,7 @@ public class JsonPathProcessor extends AbstractProcessingHandler {
 
     private enum OutputType {
 
-        RAW, LIST, COUNT, EXISTS, DEFAULT;
+        RAW, LIST, DEFAULT;
 
         private static OutputType parse(String providedType) {
             if (providedType == null || "default".equalsIgnoreCase(providedType)) {
@@ -181,12 +204,8 @@ public class JsonPathProcessor extends AbstractProcessingHandler {
                 return RAW;
             } else if ("list".equalsIgnoreCase(providedType)) {
                 return LIST;
-            } else if ("count".equalsIgnoreCase(providedType)) {
-                return COUNT;
-            } else if ("exists".equalsIgnoreCase(providedType)) {
-                return EXISTS;
             } else {
-                throw new IllegalArgumentException("Unsupported 'resultType' value ["+providedType+"]");
+                throw new IllegalArgumentException("Unsupported '%s' value [%s]".formatted(INPUT_OUTPUT_TYPE, providedType));
             }
         }
     }
