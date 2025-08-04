@@ -175,4 +175,11 @@
         <packageUrl regex="true">^pkg:maven/org\.apache\.jena/jena-.*@.*$</packageUrl>
         <cve>CVE-2025-49656</cve>
     </suppress>    
+    <suppress>
+        <notes><![CDATA[
+    file name: jetty-io-12.0.16.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty/jetty-.*@.*$</packageUrl>
+        <cve>CVE-2025-1948</cve>
+    </suppress>
 </suppressions>
