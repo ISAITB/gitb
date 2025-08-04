@@ -32,6 +32,7 @@ import com.gitb.tr.TestResultType;
 import com.gitb.types.*;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.Option;
 
 import java.io.IOException;
 import java.util.List;
@@ -114,7 +115,8 @@ public class JsonPathProcessor extends AbstractProcessingHandler {
     }
 
     private ArrayNode processJson(String content, String expression) {
-        return JsonPath.using(Configuration.defaultConfiguration()).parse(content).read(expression, ArrayNode.class);
+        var config = Configuration.defaultConfiguration().addOptions(Option.ALWAYS_RETURN_LIST);
+        return JsonPath.using(config).parse(content).read(expression, ArrayNode.class);
     }
 
     private String serialise(JsonNode node) {
