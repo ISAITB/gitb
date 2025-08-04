@@ -93,12 +93,12 @@ public class JsonValidator extends AbstractValidator {
                 )
                 .orElseGet(Collections::emptyList);
         boolean showSchemas = Optional.ofNullable(getAndConvert(inputs, SHOW_SCHEMA_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class))
-                .map(value -> (Boolean) value.getValue())
+                .map(BooleanType::getValue)
                 .orElse(true);
         boolean supportYaml = supportsYaml(inputs);
         boolean supportJson = supportsJson(inputs);
         SchemaCombinationApproach schemaCombinationApproach = Optional.ofNullable(getAndConvert(inputs, SCHEMA_COMBINATION_APPROACH_ARGUMENT_NAME, DataType.STRING_DATA_TYPE, StringType.class))
-                .map(value -> SchemaCombinationApproach.byName((String) value.getValue()))
+                .map(value -> SchemaCombinationApproach.byName(value.getValue()))
                 .orElse(SchemaCombinationApproach.ALL);
         String testCaseId = getTestCaseId(inputs);
         String sessionId = (String) inputs.get(HandlerUtils.SESSION_INPUT).getValue();
