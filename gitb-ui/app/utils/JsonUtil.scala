@@ -3065,7 +3065,7 @@ object JsonUtil {
       "systemName"    -> item.systemName,
       "domainId"    -> item.domainId,
       "domainName"    -> item.domainName,
-      "specId"    -> item.specificationId,
+      "specificationId"    -> item.specificationId,
       "specName"    -> item.specificationName,
       "specGroupName"    -> (if(item.specificationGroupName.isDefined) item.specificationGroupName.get else JsNull),
       "specGroupOptionName"    -> item.specificationGroupOptionName,

@@ -370,8 +370,23 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
     if (badges.failure.isDefined) repositoryUtils.setActorBadge(specId, actorId, badges.failure.get, TestResultStatus.FAILURE.toString, forReport)
   }
 
-  def searchActors(domainIds: Option[List[Long]], specificationIds: Option[List[Long]], specificationGroupIds: Option[List[Long]]): Future[List[Actor]] = {
-    DB.run(
+  def searchActors(domainIds: Option[List[Long]], specificationIds: Option[List[Long]], specificationGroupIds: Option[List[Long]], snapshotId: Option[Long] = None): Future[List[Actor]] = {
+    val query = if (snapshotId.isDefined) {
+      PersistenceSchema.conformanceSnapshotResults
+        .join(PersistenceSchema.conformanceSnapshotActors).on((q, a) => q.snapshotId === a.snapshotId && q.actorId === a.id)
+        .filter(_._1.snapshotId === snapshotId.get)
+        .filterOpt(domainIds)((q, ids) => q._1.domainId inSet ids)
+        .filterOpt(specificationIds)((q, ids) => q._1.specificationId inSet ids)
+        .filterOpt(specificationGroupIds)((q, ids) => q._1.specificationGroupId inSet ids)
+        .map(_._2)
+        .sortBy(_.actorId.asc)
+        .result
+        .map { results =>
+          results.map { x =>
+            new Actor(Actors(x.id, x.actorId, x.name, x.description, x.reportMetadata, None, hidden = false, None, "", -1), null, null, -1)
+          }
+        }
+    } else {
       PersistenceSchema.actors
         .join(PersistenceSchema.specificationHasActors).on(_.id === _.actorId)
         .join(PersistenceSchema.specifications).on(_._2.specId === _.id)
@@ -381,9 +396,13 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
         .sortBy(_._1._1.actorId.asc)
         .map(x => (x._1._1, x._1._2.specId))
         .result
-    ).map { results =>
-      results.map(x => new Actor(x._1, null, null, x._2)).toList
+        .map { results =>
+          results.map { x =>
+            new Actor(x._1, null, null, x._2)
+          }
+        }
     }
+    DB.run(query).map(_.toList)
   }
 
   def getActorIdsOfSpecifications(specIds: List[Long]): Future[Map[Long, Set[String]]] = {

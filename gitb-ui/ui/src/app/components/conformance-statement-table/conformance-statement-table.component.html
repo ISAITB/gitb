@@ -1,4 +1,10 @@
-<app-test-filter [embedded]="true" [commands]="filterCommands" [filterState]="filterState" [communityId]="communityId" [organisationId]="organisationId" (onApply)="getConformanceStatements()"></app-test-filter>
+<app-test-filter [embedded]="true"
+                 [commands]="filterCommands"
+                 [filterState]="filterState"
+                 [communityId]="communityId"
+                 [organisationId]="organisationId"
+                 [snapshotId]="snapshot?.id"
+                 (onApply)="getConformanceStatements()"></app-test-filter>
 <div class="table-container rounded">
     <table class="table table-directive expandable-table">
         <thead>

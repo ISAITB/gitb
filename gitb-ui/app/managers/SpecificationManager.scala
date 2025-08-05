@@ -104,17 +104,31 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
     } yield ()
   }
 
-  def getSpecificationGroups(domainId: Long): Future[List[SpecificationGroups]] = {
-    getSpecificationGroupsByDomainIds(Some(List(domainId)))
+  def getSpecificationGroups(domainId: Long, snapshotId: Option[Long] = None): Future[List[SpecificationGroups]] = {
+    getSpecificationGroupsByDomainIds(Some(List(domainId)), snapshotId)
   }
 
-  def getSpecificationGroupsByDomainIds(domainIds: Option[List[Long]]): Future[List[SpecificationGroups]] = {
-    DB.run(
+  def getSpecificationGroupsByDomainIds(domainIds: Option[List[Long]], snapshotId: Option[Long] = None): Future[List[SpecificationGroups]] = {
+    val query = if (snapshotId.isDefined) {
+      PersistenceSchema.conformanceSnapshotResults
+        .join(PersistenceSchema.conformanceSnapshotSpecificationGroups).on((q, g) => q.snapshotId === g.snapshotId && q.specificationGroupId === g.id)
+        .filter(_._1.snapshotId === snapshotId.get)
+        .filterOpt(domainIds)((q, ids) => q._1.domainId inSet ids)
+        .map(_._2)
+        .sortBy(_.shortname.asc)
+        .result
+        .map { results =>
+          results.map { x =>
+            SpecificationGroups(x.id, x.shortname, x.fullname, x.description, x.reportMetadata, x.displayOrder, "", -1)
+          }
+        }
+    } else {
       PersistenceSchema.specificationGroups
         .filterOpt(domainIds)((q, ids) => q.domain inSet ids)
         .sortBy(_.shortname.asc)
         .result
-    ).map(_.toList)
+    }
+    DB.run(query).map(_.toList)
   }
 
   def getSpecificationGroupById(groupId: Long): Future[SpecificationGroups] = {
@@ -636,7 +650,7 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
     specsToReturn.toList
   }
 
-  def getSpecificationsInternal(ids: Option[Iterable[Long]] = None, domainIds: Option[List[Long]] = None, groupIds: Option[List[Long]] = None, withGroups: Boolean = false): DBIO[Seq[Specifications]] = {
+  def getSpecificationsInternal(ids: Option[Iterable[Long]] = None, domainIds: Option[List[Long]] = None, groupIds: Option[List[Long]] = None, withGroups: Boolean = false, snapshotId: Option[Long] = None): DBIO[Seq[Specifications]] = {
     if (withGroups) {
       for {
         specData <- PersistenceSchema.specifications
@@ -649,6 +663,27 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
         mergedData <- DBIO.successful(mergeSpecsWithGroups(specData))
       } yield mergedData
     } else {
+      getSpecificationsWithoutGroupsInternal(ids, domainIds, groupIds, snapshotId)
+    }
+  }
+
+  private def getSpecificationsWithoutGroupsInternal(ids: Option[Iterable[Long]] = None, domainIds: Option[List[Long]] = None, groupIds: Option[List[Long]] = None, snapshotId: Option[Long] = None): DBIO[Seq[Specifications]] = {
+    if (snapshotId.isDefined) {
+      PersistenceSchema.conformanceSnapshotResults
+        .join(PersistenceSchema.conformanceSnapshotSpecifications).on((q, s) => q.snapshotId === s.snapshotId && q.specificationId === s.id)
+        .filter(_._1.snapshotId === snapshotId.get)
+        .filterOpt(ids)((q, ids) => q._1.specificationId inSet ids)
+        .filterOpt(domainIds)((q, ids) => q._1.domainId inSet ids)
+        .filterOpt(groupIds)((q, ids) => q._1.specificationGroupId inSet ids)
+        .map(_._2)
+        .sortBy(x => (x.displayOrder.asc, x.shortname.asc))
+        .result
+        .map { results =>
+          results.map { x =>
+            Specifications(x.id, x.shortname, x.fullname, x.description, x.reportMetadata, hidden = false, "", -1, x.displayOrder, None)
+          }
+        }
+    } else {
       PersistenceSchema.specifications
         .filterOpt(ids)((q, ids) => q.id inSet ids)
         .filterOpt(domainIds)((q, domainIds) => q.domain inSet domainIds)
@@ -658,8 +693,8 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
     }
   }
 
-  def getSpecifications(ids: Option[Iterable[Long]] = None, domainIds: Option[List[Long]] = None, groupIds: Option[List[Long]] = None, withGroups: Boolean = false): Future[Seq[Specifications]] = {
-    DB.run(getSpecificationsInternal(ids, domainIds, groupIds, withGroups))
+  def getSpecifications(ids: Option[Iterable[Long]] = None, domainIds: Option[List[Long]] = None, groupIds: Option[List[Long]] = None, withGroups: Boolean = false, snapshotId: Option[Long] = None): Future[Seq[Specifications]] = {
+    DB.run(getSpecificationsInternal(ids, domainIds, groupIds, withGroups, snapshotId))
   }
 
   def getSpecifications(domain: Long, withGroups: Boolean): Future[Seq[Specifications]] = {

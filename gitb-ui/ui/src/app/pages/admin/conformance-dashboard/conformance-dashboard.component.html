@@ -4,7 +4,7 @@
             <div class="card-title">Conformance statements</div>
             <div class="btn-toolbar allStatementControls" [class.disable-events]="updatePending">
                 @if (listView) {
-                    <app-filter-control (toggle)="toggleFilters()" (refresh)="refreshFilters()" (clear)="clearFilters()"></app-filter-control>
+                    <app-filter-control #filterControl (toggle)="toggleFilters()" (refresh)="refreshFilters()" (clear)="clearFilters()"></app-filter-control>
                     @if (showExport) {
                         <button type="button" class="btn btn-secondary"  (click)="onExportConformanceStatementsAsCsv()" [pending]="exportPending">Export CSV</button>
                     }
@@ -83,7 +83,7 @@
                                         [options]="statusOptions"
                                         (updated)="filterByStatus($event)"></app-checkbox-option-panel>
                                 </div>
-                                <div class="btn-group export-group" dropdown [isDisabled]="selectedSystemId == undefined || statements.length == 0 || exportOverviewPending">
+                                <div class="btn-group export-group" dropdown [isDisabled]="selectedSystemId == undefined || statements.length == 0 || exportOverviewPending" placement="bottom right">
                                     <button type="button" [disable]="selectedSystemId == undefined || statements.length == 0 || exportOverviewPending" [pending]="exportOverviewPending" class="btn btn-secondary text-nowrap" (click)="exportOverview('pdf')">Download report</button>
                                     <button id="button-export" type="button" [disabled]="selectedSystemId == undefined || statements.length == 0 || exportOverviewPending" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
                                         <span class="caret"></span>

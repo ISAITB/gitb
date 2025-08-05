@@ -224,6 +224,11 @@ export class ConformanceStatementTableComponent extends BaseComponent implements
     this.filterCommands.emit(Constants.FILTER_COMMAND.CLEAR)
   }
 
+  snapshotChanged() {
+    this.filterCommands.emit(Constants.FILTER_COMMAND.CLEAR_WITHOUT_RELOAD)
+    this.reloadData()
+  }
+
   refreshFilters() {
     this.filterCommands.emit(Constants.FILTER_COMMAND.REFRESH)
   }
@@ -302,7 +307,7 @@ export class ConformanceStatementTableComponent extends BaseComponent implements
   }
 
   trackStatement(index: number, statement: ConformanceResultFullWithTestSuites): string {
-    return `${statement.actorId}_${statement.systemId}`;
+    return `${statement.actorId}_${statement.systemId}_${this.snapshot?.id}`;
   }
 
   applyStatementSearchFilters(statement: ConformanceResultFullWithTestSuites, state: StatementFilterState) {

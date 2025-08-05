@@ -102,8 +102,9 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
    */
   def getDomains: Action[AnyContent] = authorizedAction.async { request =>
     val ids = ParameterExtractor.extractLongIdsQueryParameter(request)
-    authorizationManager.canViewDomains(request, ids).flatMap { _ =>
-      domainManager.getDomains(ids).map { domains =>
+    val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SNAPSHOT)
+    authorizationManager.canViewDomains(request, ids, snapshotId).flatMap { _ =>
+      domainManager.getDomains(ids, snapshotId).map { domains =>
         val withApiKeys = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.KEYS)
           .getOrElse(ids.exists(_.nonEmpty))
         val json = JsonUtil.jsDomains(domains, withApiKeys).toString()
@@ -203,13 +204,14 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
     val ids = ParameterExtractor.extractLongIdsBodyParameter(request)
     val domainIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.DOMAIN_IDS)
     val groupIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.GROUP_IDS)
+    val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SNAPSHOT)
     val auth = if (domainIds.isDefined && domainIds.get.nonEmpty) {
-      authorizationManager.canViewDomains(request, domainIds)
+      authorizationManager.canViewDomains(request, domainIds, snapshotId)
     } else {
-      authorizationManager.canViewSpecifications(request, ids)
+      authorizationManager.canViewSpecifications(request, ids, snapshotId)
     }
     auth.flatMap { _ =>
-      specificationManager.getSpecifications(ids, domainIds, groupIds).map { result =>
+      specificationManager.getSpecifications(ids, domainIds, groupIds, withGroups = false, snapshotId).map { result =>
         val json = JsonUtil.jsSpecifications(result).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
@@ -296,11 +298,12 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def searchActors(): Action[AnyContent] = authorizedAction.async { request =>
-    authorizationManager.canViewActors(request, None).flatMap { _ =>
+    val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SNAPSHOT)
+    authorizationManager.canViewActors(request, None, snapshotId).flatMap { _ =>
       val domainIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.DOMAIN_IDS)
       val groupIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.GROUP_IDS)
       val specificationIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.SPEC_IDS)
-      actorManager.searchActors(domainIds, specificationIds, groupIds).map { result =>
+      actorManager.searchActors(domainIds, specificationIds, groupIds, snapshotId).map { result =>
         val json = JsonUtil.jsActorsNonCase(result).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
@@ -309,10 +312,11 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
 
   def searchActorsInDomain(): Action[AnyContent] = authorizedAction.async { request =>
     val domainId = ParameterExtractor.requiredBodyParameter(request, Parameters.DOMAIN_ID).toLong
-    authorizationManager.canViewActorsByDomainId(request, domainId).flatMap { _ =>
+    val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SNAPSHOT)
+    authorizationManager.canViewActorsByDomainId(request, domainId, snapshotId).flatMap { _ =>
       val groupIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.GROUP_IDS)
       val specificationIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.SPEC_IDS)
-      actorManager.searchActors(Some(List(domainId)), specificationIds, groupIds).map { result =>
+      actorManager.searchActors(Some(List(domainId)), specificationIds, groupIds, snapshotId).map { result =>
         val json = JsonUtil.jsActorsNonCase(result).toString()
         ResponseConstructor.constructJsonResponse(json)
       }

@@ -67,7 +67,9 @@ export class StatementControlsComponent implements OnInit {
       communityId: this.communityId,
       actorId: this.conformanceIds.actorId,
       specificationId: this.conformanceIds.specificationId,
-      domainId: this.conformanceIds.domainId
+      domainId: this.conformanceIds.domainId,
+      snapshotId: this.snapshotId,
+      snapshotLabel: this.snapshotLabel
     }
   }
 

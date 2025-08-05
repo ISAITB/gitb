@@ -178,39 +178,41 @@ export class TestFilterComponent implements OnInit {
       this.applyFilters()
     } else if (command == Constants.FILTER_COMMAND.CLEAR) {
       this.clearFilters()
+    } else if (command == Constants.FILTER_COMMAND.CLEAR_WITHOUT_RELOAD) {
+      this.clearFilters(true)
     }
   }
 
   private setupDefaultLoadFunctions() {
     if (this.filterDefined(Constants.FILTER_TYPE.DOMAIN) && this.loadDomainsFn == undefined) {
       this.loadDomainsFn = (() => {
-        return this.conformanceService.getDomains()
+        return this.conformanceService.getDomains(undefined, undefined, this.snapshotId)
       }).bind(this)
     }
     if (this.filterDefined(Constants.FILTER_TYPE.SPECIFICATION) && this.loadSpecificationsFn == undefined) {
       this.loadSpecificationsFn = (() => {
         if (this.dataService.isSystemAdmin || this.dataService.community!.domainId == undefined) {
-          return this.conformanceService.getSpecificationsWithIds(undefined, this.filterValue(Constants.FILTER_TYPE.DOMAIN), this.filterValue(Constants.FILTER_TYPE.SPECIFICATION_GROUP))
+          return this.conformanceService.getSpecificationsWithIds(undefined, this.filterValue(Constants.FILTER_TYPE.DOMAIN), this.filterValue(Constants.FILTER_TYPE.SPECIFICATION_GROUP), this.snapshotId)
         } else {
-          return this.conformanceService.getSpecificationsWithIds(undefined, [this.dataService.community!.domainId], this.filterValue(Constants.FILTER_TYPE.SPECIFICATION_GROUP))
+          return this.conformanceService.getSpecificationsWithIds(undefined, [this.dataService.community!.domainId], this.filterValue(Constants.FILTER_TYPE.SPECIFICATION_GROUP), this.snapshotId)
         }
       }).bind(this)
     }
     if (this.filterDefined(Constants.FILTER_TYPE.SPECIFICATION_GROUP) && this.loadSpecificationGroupsFn == undefined) {
       this.loadSpecificationGroupsFn = (() => {
         if (this.dataService.isSystemAdmin || this.dataService.community!.domainId == undefined) {
-          return this.specificationService.getSpecificationGroupsOfDomains(this.filterValue(Constants.FILTER_TYPE.DOMAIN))
+          return this.specificationService.getSpecificationGroupsOfDomains(this.filterValue(Constants.FILTER_TYPE.DOMAIN), this.snapshotId)
         } else {
-          return this.specificationService.getSpecificationGroups(this.dataService.community!.domainId)
+          return this.specificationService.getSpecificationGroups(this.dataService.community!.domainId, this.snapshotId)
         }
       }).bind(this)
     }
     if (this.filterDefined(Constants.FILTER_TYPE.ACTOR) && this.loadActorsFn == undefined) {
       this.loadActorsFn = (() => {
         if (this.dataService.isSystemAdmin || this.dataService.community!.domainId == undefined) {
-          return this.conformanceService.searchActors(this.filterValue(Constants.FILTER_TYPE.DOMAIN), this.filterValue(Constants.FILTER_TYPE.SPECIFICATION), this.filterValue(Constants.FILTER_TYPE.SPECIFICATION_GROUP))
+          return this.conformanceService.searchActors(this.filterValue(Constants.FILTER_TYPE.DOMAIN), this.filterValue(Constants.FILTER_TYPE.SPECIFICATION), this.filterValue(Constants.FILTER_TYPE.SPECIFICATION_GROUP), this.snapshotId)
         } else {
-          return this.conformanceService.searchActorsInDomain(this.dataService.community!.domainId, this.filterValue(Constants.FILTER_TYPE.SPECIFICATION), this.filterValue(Constants.FILTER_TYPE.SPECIFICATION_GROUP))
+          return this.conformanceService.searchActorsInDomain(this.dataService.community!.domainId, this.filterValue(Constants.FILTER_TYPE.SPECIFICATION), this.filterValue(Constants.FILTER_TYPE.SPECIFICATION_GROUP), this.snapshotId)
         }
       }).bind(this)
     }
@@ -250,12 +252,12 @@ export class TestFilterComponent implements OnInit {
     if (this.filterDefined(Constants.FILTER_TYPE.SYSTEM) && this.loadSystemsFn == undefined) {
       this.loadSystemsFn = (() => {
         if (this.organisationId != undefined) {
-          return this.systemService.getSystemsByOrganisation(this.organisationId)
+          return this.systemService.getSystemsByOrganisation(this.organisationId, this.snapshotId)
         } else {
           if (this.dataService.isSystemAdmin) {
-            return this.systemService.searchSystems(this.filterValue(Constants.FILTER_TYPE.COMMUNITY), this.filterValue(Constants.FILTER_TYPE.ORGANISATION))
+            return this.systemService.searchSystems(this.filterValue(Constants.FILTER_TYPE.COMMUNITY), this.filterValue(Constants.FILTER_TYPE.ORGANISATION), this.snapshotId)
           } else {
-            return this.systemService.searchSystemsInCommunity(this.dataService.community!.id, this.filterValue(Constants.FILTER_TYPE.ORGANISATION))
+            return this.systemService.searchSystemsInCommunity(this.dataService.community!.id, this.filterValue(Constants.FILTER_TYPE.ORGANISATION), this.snapshotId)
           }
         }
       }).bind(this)
@@ -564,7 +566,7 @@ export class TestFilterComponent implements OnInit {
     }
   }
 
-  clearFilters() {
+  clearFilters(skipReload?: boolean) {
     this.showFiltering = false
     this.clearFilter(Constants.FILTER_TYPE.DOMAIN)
     this.clearFilter(Constants.FILTER_TYPE.SPECIFICATION)
@@ -592,7 +594,9 @@ export class TestFilterComponent implements OnInit {
     this.loadingOrganisationProperties = false
     this.loadingSystemProperties = false
     this.resetFilters()
-    this.applyFilters()
+    if (skipReload == true) {
+      this.applyFilters()
+    }
   }
 
   clickedHeader() {
@@ -605,7 +609,7 @@ export class TestFilterComponent implements OnInit {
   }
 
   private resetCustomProperties(): Observable<boolean> {
-    if (this.applicableCommunityId != undefined) {
+    if (this.applicableCommunityId != undefined && this.filterDefined(Constants.FILTER_TYPE.ORGANISATION_PROPERTY) && this.filterDefined(Constants.FILTER_TYPE.SYSTEM_PROPERTY)) {
       const obs1 = this.loadOrganisationProperties(this.applicableCommunityId)
       const obs2 = this.loadSystemProperties(this.applicableCommunityId)
       return forkJoin([obs1, obs2]).pipe(

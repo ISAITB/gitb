@@ -64,14 +64,26 @@ class DomainManager @Inject() (domainParameterManager: DomainParameterManager,
     )
   }
 
-  def getDomains(ids: Option[List[Long]] = None): Future[List[Domain]] = {
-    DB.run(
+  def getDomains(ids: Option[List[Long]] = None, snapshotId: Option[Long] = None): Future[List[Domain]] = {
+    val query = if (snapshotId.isDefined) {
+      PersistenceSchema.conformanceSnapshotDomains
+        .filterOpt(ids)((q, ids) => q.id inSet ids)
+        .filter(_.snapshotId === snapshotId.get)
+        .sortBy(_.shortname.asc)
+        .result
+        .map { results =>
+          results.map { x =>
+            Domain(x.id, x.shortname, x.fullname, x.description, x.reportMetadata, "")
+          }.toList
+        }
+    } else {
       PersistenceSchema.domains
         .filterOpt(ids)((q, ids) => q.id inSet ids)
         .sortBy(_.shortname.asc)
         .result
         .map(_.toList)
-    )
+    }
+    DB.run(query)
   }
 
   def searchDomains(page: Long, limit: Long, filter: Option[String]): Future[SearchResult[Domain]] = {

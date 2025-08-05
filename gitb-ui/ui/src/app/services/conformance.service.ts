@@ -72,13 +72,16 @@ export class ConformanceService {
     })
   }
 
-  getDomains(ids?: number[], withApiKeys?: boolean) {
+  getDomains(ids?: number[], withApiKeys?: boolean, snapshotId?: number) {
     let params:any = {}
     if (ids !== undefined && ids.length > 0) {
       params['ids'] = ids.join(',')
     }
     if (withApiKeys != undefined) {
       params['keys'] = withApiKeys == true
+    }
+    if (snapshotId != undefined) {
+      params['snapshot'] = snapshotId
     }
     return this.restService.get<Domain[]>({
       path: ROUTES.controllers.ConformanceService.getDomains().url,
@@ -165,7 +168,7 @@ export class ConformanceService {
     })
   }
 
-  getSpecificationsWithIds(ids?: number[], domainIds?: number[], groupIds?: number[]) {
+  getSpecificationsWithIds(ids?: number[], domainIds?: number[], groupIds?: number[], snapshotId?: number) {
     let params: any = {}
     if (ids != undefined && ids.length > 0) {
       params['ids'] = ids.join(',')
@@ -176,6 +179,9 @@ export class ConformanceService {
     if (groupIds != undefined && groupIds.length > 0) {
       params['group_ids'] = groupIds.join(',')
     }
+    if (snapshotId != undefined) {
+      params['snapshot'] = snapshotId
+    }
     return this.restService.post<Specification[]>({
       path: ROUTES.controllers.ConformanceService.getSpecs().url,
       authenticate: true,
@@ -183,7 +189,7 @@ export class ConformanceService {
     })
   }
 
-  searchActors(domainIds: number[]|undefined, specificationIds: number[]|undefined, specificationGroupIds: number[]|undefined) {
+  searchActors(domainIds: number[]|undefined, specificationIds: number[]|undefined, specificationGroupIds: number[]|undefined, snapshotId?: number) {
     const data: any = {}
     if (domainIds && domainIds.length > 0) {
       data["domain_ids"] = domainIds.join(',')
@@ -194,6 +200,9 @@ export class ConformanceService {
     if (specificationGroupIds != undefined && specificationGroupIds.length > 0) {
       data['group_ids'] = specificationGroupIds.join(',')
     }
+    if (snapshotId != undefined) {
+      data['snapshot'] = snapshotId
+    }
     return this.restService.post<Actor[]>({
       path: ROUTES.controllers.ConformanceService.searchActors().url,
       authenticate: true,
@@ -201,7 +210,7 @@ export class ConformanceService {
     })
   }
 
-  searchActorsInDomain(domainId: number, specificationIds: number[]|undefined, specificationGroupIds: number[]|undefined) {
+  searchActorsInDomain(domainId: number, specificationIds: number[]|undefined, specificationGroupIds: number[]|undefined, snapshotId?: number) {
     const data: any = {
       domain_id: domainId
     }
@@ -210,6 +219,9 @@ export class ConformanceService {
     }
     if (specificationGroupIds != undefined && specificationGroupIds.length > 0) {
       data['group_ids'] = specificationGroupIds.join(',')
+    }
+    if (snapshotId != undefined) {
+      data['snapshot'] = snapshotId
     }
     return this.restService.post<Actor[]>({
       path: ROUTES.controllers.ConformanceService.searchActorsInDomain().url,

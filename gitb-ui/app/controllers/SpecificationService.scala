@@ -160,8 +160,9 @@ class SpecificationService @Inject() (authorizedAction: AuthorizedAction,
 
   def getSpecificationGroups(): Action[AnyContent] = authorizedAction.async { request =>
     val domainId = ParameterExtractor.requiredQueryParameter(request, Parameters.DOMAIN_ID).toLong
-    authorizationManager.canViewDomains(request, Some(List(domainId))).flatMap { _ =>
-      specificationManager.getSpecificationGroups(domainId).map { groups =>
+    val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SNAPSHOT)
+    authorizationManager.canViewDomains(request, Some(List(domainId)), snapshotId).flatMap { _ =>
+      specificationManager.getSpecificationGroups(domainId, snapshotId).map { groups =>
         ResponseConstructor.constructJsonResponse(JsonUtil.jsSpecificationGroups(groups).toString())
       }
     }
@@ -177,8 +178,9 @@ class SpecificationService @Inject() (authorizedAction: AuthorizedAction,
 
   def getSpecificationGroupsOfDomains(): Action[AnyContent] = authorizedAction.async { request =>
     val domainIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.DOMAIN_IDS)
-    authorizationManager.canViewDomains(request, domainIds).flatMap { _ =>
-      specificationManager.getSpecificationGroupsByDomainIds(domainIds).map { groups =>
+    val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SNAPSHOT)
+    authorizationManager.canViewDomains(request, domainIds, snapshotId).flatMap { _ =>
+      specificationManager.getSpecificationGroupsByDomainIds(domainIds, snapshotId).map { groups =>
         ResponseConstructor.constructJsonResponse(JsonUtil.jsSpecificationGroups(groups).toString())
       }
     }

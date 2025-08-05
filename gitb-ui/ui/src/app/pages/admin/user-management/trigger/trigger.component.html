@@ -89,7 +89,7 @@
                                     <div class="row mt-3">
                                         <div class="offset-3 col-7 test-fire-condition-container">
                                             <div class="input-group" [class.has-validation]="testedFireCondition">
-                                                <div class="btn-group" dropdown>
+                                                <div class="btn-group" dropdown placement="bottom right">
                                                     <button id="button-testConditionType" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-testConditionType"><span class="me-2">{{dataService.triggerExpressionTypeLabel(this.testValueTypeForFireCondition!)}}</span></button>
                                                     <ul id="dropdown-testConditionType" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-testConditionType">
                                                         @for (expressionType of fireExpressionTypes; track expressionType) {

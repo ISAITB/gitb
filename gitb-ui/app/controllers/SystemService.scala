@@ -216,10 +216,11 @@ class SystemService @Inject() (repositoryUtils: RepositoryUtils,
   }
 
   def searchSystems(): Action[AnyContent] = authorizedAction.async { request =>
-    authorizationManager.canViewSystemsById(request, None).flatMap { _ =>
+    val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SNAPSHOT)
+    authorizationManager.canViewSystemsById(request, None, snapshotId).flatMap { _ =>
       val communityIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.COMMUNITY_IDS)
       val organisationIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.ORG_IDS)
-      systemManager.searchSystems(communityIds, organisationIds).map { systems =>
+      systemManager.searchSystems(communityIds, organisationIds, snapshotId).map { systems =>
         val json = JsonUtil.jsSystems(systems).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
@@ -228,9 +229,10 @@ class SystemService @Inject() (repositoryUtils: RepositoryUtils,
 
   def searchSystemsInCommunity(): Action[AnyContent] = authorizedAction.async { request =>
     val communityId = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
-    authorizationManager.canViewSystemsByCommunityId(request, communityId).flatMap { _ =>
+    val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SNAPSHOT)
+    authorizationManager.canViewSystemsByCommunityId(request, communityId, snapshotId).flatMap { _ =>
       val organisationIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.ORG_IDS)
-      systemManager.searchSystems(Some(List(communityId)), organisationIds).map { systems =>
+      systemManager.searchSystems(Some(List(communityId)), organisationIds, snapshotId).map { systems =>
         val json = JsonUtil.jsSystems(systems).toString()
         ResponseConstructor.constructJsonResponse(json)
       }

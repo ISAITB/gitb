@@ -13,18 +13,8 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-export interface NavigationControlsConfig {
+export interface FilterControlApi {
 
-  organisationId?: number
-  systemId?: number
-  communityId?: number
-  actorId?: number
-  specificationId?: number
-  domainId?: number
-  testCaseId?: number
-  testSuiteId?: number
-  snapshotId?: number
-  snapshotLabel?: string
-  showStatement?: boolean
+  setToggleState: (state: boolean) => void;
 
 }

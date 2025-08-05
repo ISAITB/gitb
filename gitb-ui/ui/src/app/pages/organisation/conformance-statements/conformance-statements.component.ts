@@ -92,7 +92,7 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
       replaceSelectedItems: new EventEmitter(),
       replaceItems: new EventEmitter()
     }
-    const systemsLoaded = this.getSystems()
+    const systemsLoaded = this.getSystems(snapshotId)
     let snapshotsLoaded: Observable<ConformanceSnapshotList>
     if (isOwnConformanceStatements && (this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin)) {
       // Administrator organisations are not included in conformance snapshots
@@ -211,18 +211,22 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
     if (reloadNeeded) {
       this.activeConformanceSnapshot = snapshot
       this.snapshotButtonLabel = (snapshot == undefined)?this.latestSnapshotButtonLabel:snapshot.label
-      if (this.listView) {
-        this.listViewTable?.reloadData()
-      } else {
-        this.systemStatus.status = Constants.STATUS.PENDING
-        this.systemService.getSystemsByOrganisation(this.organisationId!, snapshot?.id).subscribe((data) => {
-          this.systemsLoaded(data)
-        }).add(() => {
-          // Update the routing path (to avoid loss of state on refresh).
+      setTimeout(() => {
+        if (this.listView) {
+          this.filterControl?.setToggleState(false)
+          this.listViewTable?.snapshotChanged()
           this.updateRouting()
-          this.systemStatus.status = Constants.STATUS.FINISHED
-        })
-      }
+        } else {
+          this.systemStatus.status = Constants.STATUS.PENDING
+          this.systemService.getSystemsByOrganisation(this.organisationId!, snapshot?.id).subscribe((data) => {
+            this.systemsLoaded(data)
+          }).add(() => {
+            // Update the routing path (to avoid loss of state on refresh).
+            this.updateRouting()
+            this.systemStatus.status = Constants.STATUS.FINISHED
+          })
+        }
+      })
     }
   }
 
@@ -262,8 +266,12 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
     }
   }
 
-  getSystems() {
-    return this.systemService.getSystemsByOrganisation(this.organisationId!, this.activeConformanceSnapshot?.id)
+  getSystems(snapshotId?: number) {
+    let snapshotIdToUse = snapshotId
+    if (snapshotIdToUse == undefined) {
+      snapshotIdToUse = this.activeConformanceSnapshot?.id
+    }
+    return this.systemService.getSystemsByOrganisation(this.organisationId!, snapshotIdToUse)
   }
 
 }

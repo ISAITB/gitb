@@ -926,8 +926,22 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
     DB.run(PersistenceSchema.systems.filter(_.id === systemId).map(_.apiKey).update(apiKey).transactionally).map(_ => ())
   }
 
-  def searchSystems(communityIds: Option[List[Long]], organisationIds: Option[List[Long]]): Future[List[Systems]] = {
-    DB.run(
+  def searchSystems(communityIds: Option[List[Long]], organisationIds: Option[List[Long]], snapshotId: Option[Long] = None): Future[List[Systems]] = {
+    val query = if (snapshotId.isDefined) {
+      PersistenceSchema.conformanceSnapshotResults
+        .join(PersistenceSchema.conformanceSnapshotSystems).on((q, s) => q.snapshotId === s.snapshotId && q.systemId === s.id)
+        .join(PersistenceSchema.conformanceSnapshots).on(_._1.snapshotId === _.id)
+        .filter(_._2.id === snapshotId.get)
+        .filterOpt(communityIds)((q, ids) => q._2.community inSet ids)
+        .filterOpt(organisationIds)((q, ids) => q._1._1.organisationId inSet ids)
+        .map(_._1._2)
+        .result
+        .map { results =>
+          results.map { x =>
+            Systems(x.id, x.shortname, x.fullname, x.description, x.version, x.apiKey, x.badgeKey, -1)
+          }.toList
+        }
+    } else {
       PersistenceSchema.systems
         .join(PersistenceSchema.organizations).on(_.owner === _.id)
         .filterOpt(organisationIds)((q, ids) => q._1.owner inSet ids)
@@ -936,6 +950,7 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
         .sortBy(_.shortname.asc)
         .result
         .map(_.toList)
-    )
+    }
+    DB.run(query)
   }
 }

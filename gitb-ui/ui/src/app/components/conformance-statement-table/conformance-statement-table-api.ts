@@ -23,5 +23,6 @@ export interface ConformanceStatementTableApi {
   collapseAll: () => void
   exportAsCsv: () => Observable<void>
   reloadData: () => void
+  snapshotChanged: () => void
 
 }

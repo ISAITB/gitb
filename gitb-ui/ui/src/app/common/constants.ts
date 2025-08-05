@@ -414,7 +414,8 @@ export class Constants {
 		TOGGLE: 1,
 		CLEAR: 2,
 		REFRESH: 3,
-    HIDE_PENDING_INDICATOR: 4
+    HIDE_PENDING_INDICATOR: 4,
+    CLEAR_WITHOUT_RELOAD: 5,
 	}
 
   public static readonly TEST_FILTER = {

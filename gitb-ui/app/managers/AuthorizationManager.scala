@@ -380,7 +380,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     check.map(setAuthResult(request, _, "You cannot access the requested account"))
   }
 
-  def canViewActors(request: RequestWithAttributes[AnyContent], ids: Option[List[Long]]): Future[Boolean] = {
+  def canViewActors(request: RequestWithAttributes[AnyContent], ids: Option[List[Long]], snapshotId: Option[Long] = None): Future[Boolean] = {
     val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
       if (isTestBedAdmin(userInfo)) {
         Future.successful(true)
@@ -388,11 +388,15 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
         if (ids.isDefined) {
           getVisibleDomainForUser(userInfo).flatMap { domainLinkedToUser =>
             if (domainLinkedToUser.isDefined) {
-              actorManager.getActorDomainIds(ids.get).map { domainIds =>
-                if (domainIds.nonEmpty) {
-                  domainIds.size == 1 && domainIds.head == domainLinkedToUser.get
-                } else {
-                  true
+              if (snapshotId.isDefined) {
+                canViewConformanceSnapshot(request, userInfo, snapshotId.get)
+              } else {
+                actorManager.getActorDomainIds(ids.get).map { domainIds =>
+                  if (domainIds.nonEmpty) {
+                    domainIds.size == 1 && domainIds.head == domainLinkedToUser.get
+                  } else {
+                    true
+                  }
                 }
               }
             } else {
@@ -407,17 +411,21 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     check.map(setAuthResult(request, _, "User cannot view the requested actor"))
   }
 
-  def canViewActorsByDomainId(request: RequestWithAttributes[AnyContent], domainId: Long): Future[Boolean] = {
-    canViewDomains(request, Some(List(domainId)))
+  def canViewActorsByDomainId(request: RequestWithAttributes[AnyContent], domainId: Long, snapshotId: Option[Long] = None): Future[Boolean] = {
+    canViewDomains(request, Some(List(domainId)), snapshotId)
   }
 
-  private def canViewCommunityContent(request: RequestWithAttributes[_], communityId: Long): Future[Boolean] = {
+  private def canViewCommunityContent(request: RequestWithAttributes[_], communityId: Long, snapshotId: Option[Long] = None): Future[Boolean] = {
     getUser(getRequestUserId(request)).flatMap { userInfo =>
       if (isTestBedAdmin(userInfo) || isCommunityAdmin(userInfo)) {
         canManageCommunity(request, userInfo, communityId)
       } else {
-        // Organisation users can view all systems in the community if enabled as a permission.
-        organisationUserCanViewCommunityContent(request, userInfo, communityId)
+        if (snapshotId.isDefined) {
+          canViewConformanceSnapshot(request, userInfo, snapshotId.get)
+        } else {
+          // Organisation users can view all systems in the community if enabled as a permission.
+          organisationUserCanViewCommunityContent(request, userInfo, communityId)
+        }
       }
     }
   }
@@ -435,8 +443,8 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     check.map(setAuthResult(request, _, "User cannot view the requested community"))
   }
 
-  def canViewSystemsByCommunityId(request: RequestWithAttributes[AnyContent], communityId: Long): Future[Boolean] = {
-    canViewCommunityContent(request, communityId)
+  def canViewSystemsByCommunityId(request: RequestWithAttributes[AnyContent], communityId: Long, snapshotId: Option[Long] = None): Future[Boolean] = {
+    canViewCommunityContent(request, communityId, snapshotId)
   }
 
   def canDeleteOrganisationUser(request: RequestWithAttributes[_], userId: Long): Future[Boolean] = {
@@ -612,8 +620,8 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
       } else {
         testCaseManager.getSpecificationsOfTestCases(testCaseIds).flatMap { specIds =>
           if (specIds.nonEmpty && specIds.contains(specId)) {
-            canViewSpecifications(request, userInfo, Some(specIds.toList)).flatMap { _ =>
-              canViewSystemsById(request, userInfo, Some(List(systemId)))
+            canViewSpecifications(request, userInfo, Some(specIds.toList), None).flatMap { _ =>
+              canViewSystemsById(request, userInfo, Some(List(systemId)), None)
             }
           } else {
             Future.successful(false)
@@ -637,32 +645,36 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     true
   }
 
-  def canViewSystemsById(request: RequestWithAttributes[_], userInfo: User, systemIds: Option[List[Long]]): Future[Boolean] = {
+  def canViewSystemsById(request: RequestWithAttributes[_], userInfo: User, systemIds: Option[List[Long]], snapshotId: Option[Long]): Future[Boolean] = {
     val check = if (isTestBedAdmin(userInfo)) {
       Future.successful(true)
     } else {
-      if (systemIds.isDefined && userInfo.organization.isDefined) {
-        if (isCommunityAdmin(userInfo)) {
-          // All the system's should be in organisations in the user's community.
-          systemManager.getCommunityIdsOfSystems(systemIds.get).map { communityIds =>
-            communityIds.size == 1 && userInfo.organization.exists(x => x.community == communityIds.head)
+      if (snapshotId.isDefined) {
+        canViewConformanceSnapshot(request, snapshotId.get)
+      } else {
+        if (systemIds.isDefined && userInfo.organization.isDefined) {
+          if (isCommunityAdmin(userInfo)) {
+            // All the system's should be in organisations in the user's community.
+            systemManager.getCommunityIdsOfSystems(systemIds.get).map { communityIds =>
+              communityIds.size == 1 && userInfo.organization.exists(x => x.community == communityIds.head)
+            }
+          } else {
+            // The systems should be in the user's organisation.
+            systemManager.getSystemIdsForOrganization(userInfo.organization.get.id).map { orgSystemIds =>
+              containsAll(systemIds.get, orgSystemIds)
+            }
           }
         } else {
-          // The systems should be in the user's organisation.
-          systemManager.getSystemIdsForOrganization(userInfo.organization.get.id).map { orgSystemIds =>
-            containsAll(systemIds.get, orgSystemIds)
-          }
+          Future.successful(false)
         }
-      } else {
-        Future.successful(false)
       }
     }
     check.map(setAuthResult(request, _, "User can't view the requested system(s)"))
   }
 
-  def canViewSystemsById(request: RequestWithAttributes[_], systemIds: Option[List[Long]]): Future[Boolean] = {
+  def canViewSystemsById(request: RequestWithAttributes[_], systemIds: Option[List[Long]], snapshotId: Option[Long] = None): Future[Boolean] = {
     getUser(getRequestUserId(request)).flatMap { userInfo =>
-      canViewSystemsById(request, userInfo, systemIds)
+      canViewSystemsById(request, userInfo, systemIds, snapshotId)
     }
   }
 
@@ -1103,7 +1115,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
         } else {
           conformanceManager.getSpecificationIdForTestCaseFromConformanceStatements(testId.toLong).flatMap { specId =>
             if (specId.isDefined) {
-              canViewSpecifications(request, userInfo, Some(List(specId.get)))
+              canViewSpecifications(request, userInfo, Some(List(specId.get)), None)
             } else {
               Future.successful(false)
             }
@@ -1887,7 +1899,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
         // There must be a conformance statement for this.
         conformanceManager.getSpecificationIdForTestCaseFromConformanceStatements(testCaseId).flatMap { specId =>
           if (specId.isDefined) {
-            canViewSpecifications(request, userInfo, Some(List(specId.get)))
+            canViewSpecifications(request, userInfo, Some(List(specId.get)), None)
           } else {
             Future.successful(false)
           }
@@ -1913,7 +1925,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
         // There must be a conformance statement for this.
         conformanceManager.getSpecificationIdForTestSuiteFromConformanceStatements(testSuiteId).flatMap { specId =>
           if (specId.isDefined) {
-            canViewSpecifications(request, userInfo, Some(List(specId.get)))
+            canViewSpecifications(request, userInfo, Some(List(specId.get)), None)
           } else {
             Future.successful(false)
           }
@@ -1925,14 +1937,10 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   def canViewConformanceStatus(request: RequestWithAttributes[_], actorId: Long, sutId: Long, snapshotId: Option[Long] = None): Future[Boolean] = {
     val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
-      if (isTestBedAdmin(userInfo)) {
-        Future.successful(true)
+      if (snapshotId.isDefined) {
+        canViewConformanceSnapshot(request, userInfo, snapshotId.get)
       } else {
-        if (snapshotId.isDefined) {
-          canManageConformanceSnapshot(request, userInfo, snapshotId.get)
-        } else {
-          canViewSystemsById(request, userInfo, Some(List(sutId)))
-        }
+        canViewSystemsById(request, userInfo, Some(List(sutId)), None)
       }
     }
     check.map(setAuthResult(request, _, "User cannot view the requested conformance status"))
@@ -2120,15 +2128,19 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     true
   }
 
-  def canViewSpecifications(request: RequestWithAttributes[_], userInfo: User, ids: Option[List[Long]]): Future[Boolean] = {
+  def canViewSpecifications(request: RequestWithAttributes[_], userInfo: User, ids: Option[List[Long]], snapshotId: Option[Long]): Future[Boolean] = {
     val check = if (isTestBedAdmin(userInfo)) {
       Future.successful(true)
     } else {
       getVisibleDomainForUser(userInfo).flatMap { userDomain =>
         if (userDomain.isDefined) {
           if (ids.isDefined && ids.get.nonEmpty) {
-            specificationManager.getSpecifications(ids).map { specs =>
-              specificationsMatchDomain(specs, userDomain.get)
+            if (snapshotId.isDefined) {
+              canViewConformanceSnapshot(request, userInfo, snapshotId.get)
+            } else {
+              specificationManager.getSpecifications(ids).map { specs =>
+                specificationsMatchDomain(specs, userDomain.get)
+              }
             }
           } else {
             Future.successful(false)
@@ -2141,9 +2153,9 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     check.map(setAuthResult(request, _, "User doesn't have access to the requested specification(s)"))
   }
 
-  def canViewSpecifications(request: RequestWithAttributes[_], ids: Option[List[Long]]): Future[Boolean] = {
+  def canViewSpecifications(request: RequestWithAttributes[_], ids: Option[List[Long]], snapshotId: Option[Long] = None): Future[Boolean] = {
     getUser(getRequestUserId(request)).flatMap { userInfo =>
-      canViewSpecifications(request, userInfo, ids)
+      canViewSpecifications(request, userInfo, ids, snapshotId)
     }
   }
 
@@ -2181,15 +2193,19 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     check.map(setAuthResult(request, _, "User doesn't have access to the requested domain(s)"))
   }
 
-  def canViewDomains(request: RequestWithAttributes[_], userInfo: User, ids: Option[List[Long]]): Future[Boolean] = {
+  def canViewDomains(request: RequestWithAttributes[_], userInfo: User, ids: Option[List[Long]], snapshotId: Option[Long]): Future[Boolean] = {
     val check = if (isTestBedAdmin(userInfo)) {
       Future.successful(true)
     } else {
       // Users are either linked to a community or not (in which case they view all domains).
       getVisibleDomainForUser(userInfo).flatMap { domainLinkedToUser =>
         if (domainLinkedToUser.isDefined) {
-          // The list of domains should include only the user's domain.
-          Future.successful(ids.isDefined && ids.get.size == 1 && ids.get.head == domainLinkedToUser.get)
+          if (snapshotId.isDefined) {
+            canViewConformanceSnapshot(request, userInfo, snapshotId.get)
+          } else {
+            // The list of domains should include only the user's domain.
+            Future.successful(ids.isDefined && ids.get.size == 1 && ids.get.head == domainLinkedToUser.get)
+          }
         } else {
           Future.successful(true)
         }
@@ -2202,9 +2218,9 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     checkTestBedAdmin(request)
   }
 
-  def canViewDomains(request: RequestWithAttributes[_], ids: Option[List[Long]]): Future[Boolean] = {
+  def canViewDomains(request: RequestWithAttributes[_], ids: Option[List[Long]], snapshotId: Option[Long] = None): Future[Boolean] = {
     getUser(getRequestUserId(request)).flatMap { userInfo =>
-      canViewDomains(request, userInfo, ids)
+        canViewDomains(request, userInfo, ids, snapshotId)
     }
   }
 

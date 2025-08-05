@@ -28,7 +28,16 @@ export class NavigationControlsComponent implements OnInit {
 
   @Input() config!: NavigationControlsConfig
 
-  configToUse!: NavigationControlsConfig
+  statementNavigable!: boolean
+  testCaseNavigable!: boolean
+  testSuiteNavigable!: boolean
+  actorNavigable!: boolean
+  specificationNavigable!: boolean
+  domainNavigable!: boolean
+  systemNavigable!: boolean
+  organisationNavigable!: boolean
+  communityNavigable!: boolean
+
   mainNavigationItem?: { label?: string, action?: () => void }
   extraNavigationItems: Array<{ label?: string, action?: () => void }> = []
 
@@ -38,45 +47,43 @@ export class NavigationControlsComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.prepareConfig()
+    this.processConfig()
     // Statement
-    if ((this.configToUse.showStatement == undefined || this.configToUse.showStatement) && this.configToUse.organisationId != undefined && this.configToUse.systemId != undefined && this.configToUse.communityId != undefined && this.configToUse.actorId != undefined && this.configToUse.specificationId != undefined) {
+    if (this.statementNavigable) {
       this.extraNavigationItems.push({ label: "View statement", action: () => this.toStatement() })
     }
     // Party information
-    if (this.configToUse.organisationId != undefined) {
-      if (this.configToUse.systemId != undefined) {
-        this.extraNavigationItems.push({ label: `View ${this.dataService.labelSystemLower()}`, action: () => this.toSystem() })
-      }
+    if (this.systemNavigable) {
+      this.extraNavigationItems.push({ label: `View ${this.dataService.labelSystemLower()}`, action: () => this.toSystem() })
+    }
+    if (this.organisationNavigable) {
       this.extraNavigationItems.push({ label: `View ${this.dataService.labelOrganisationLower()}`, action: () => this.toOrganisation() })
     }
-    if (this.configToUse.communityId != undefined && this.configToUse.communityId != Constants.DEFAULT_COMMUNITY_ID && (this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin)) {
+    if (this.communityNavigable) {
       this.extraNavigationItems.push({ label: "View community", action: () => this.toCommunity() })
     }
     // Specification information
-    const showDomain = this.configToUse.domainId != undefined && (this.dataService.isSystemAdmin || (this.dataService.isCommunityAdmin && this.dataService.community?.domain != undefined))
-    const showSpecification = showDomain && this.configToUse.specificationId != undefined
-    if (showDomain) {
-      if (this.extraNavigationItems.length > 0 && this.extraNavigationItems[this.extraNavigationItems.length - 1].label != undefined) {
-        this.extraNavigationItems.push({})
+    if (this.domainNavigable || this.specificationNavigable || this.actorNavigable) {
+      this.addSeparatorIfNeeded()
+      if (this.actorNavigable) {
+        this.extraNavigationItems.push({ label: `View ${this.dataService.labelActorLower()}`, action: () => this.toActor() })
       }
-      if (showSpecification) {
-        if (this.configToUse.actorId != undefined) {
-          this.extraNavigationItems.push({ label: `View ${this.dataService.labelActorLower()}`, action: () => this.toActor() })
-        }
+      if (this.specificationNavigable) {
         this.extraNavigationItems.push({ label: `View ${this.dataService.labelSpecificationLower()}`, action: () => this.toSpecification() })
       }
-      this.extraNavigationItems.push({ label: `View ${this.dataService.labelDomainLower()}`, action: () => this.toDomain() })
+      if (this.domainNavigable) {
+        this.extraNavigationItems.push({ label: `View ${this.dataService.labelDomainLower()}`, action: () => this.toDomain() })
+      }
     }
     // Test case information
-    if (showSpecification && this.configToUse.testSuiteId != undefined) {
-      if (this.extraNavigationItems.length > 0 && this.extraNavigationItems[this.extraNavigationItems.length - 1].label != undefined) {
-        this.extraNavigationItems.push({})
-      }
-      if (this.configToUse.testCaseId != undefined) {
+    if (this.testSuiteNavigable || this.testCaseNavigable) {
+      this.addSeparatorIfNeeded()
+      if (this.testCaseNavigable) {
         this.extraNavigationItems.push({ label: "View test case", action: () => this.toTestCase() })
       }
-      this.extraNavigationItems.push({ label: "View test suite", action: () => this.toTestSuite() })
+      if (this.testSuiteNavigable) {
+        this.extraNavigationItems.push({ label: "View test suite", action: () => this.toTestSuite() })
+      }
     }
     // Keep the first item as the main one.
     this.mainNavigationItem = this.extraNavigationItems.shift()
@@ -86,67 +93,111 @@ export class NavigationControlsComponent implements OnInit {
     }
   }
 
-  private prepareConfig() {
-    this.configToUse = { ...this.config}
-    if (this.configToUse.testCaseId != undefined && this.configToUse.testCaseId < 0) this.configToUse.testCaseId = undefined
-    if (this.configToUse.testSuiteId != undefined && this.configToUse.testSuiteId < 0) this.configToUse.testSuiteId = undefined
-    if (this.configToUse.actorId != undefined && this.configToUse.actorId < 0) this.configToUse.actorId = undefined
-    if (this.configToUse.specificationId != undefined && this.configToUse.specificationId < 0) this.configToUse.specificationId = undefined
-    if (this.configToUse.domainId != undefined && this.configToUse.domainId < 0) this.configToUse.domainId = undefined
-    if (this.configToUse.systemId != undefined && this.configToUse.systemId < 0) this.configToUse.systemId = undefined
-    if (this.configToUse.organisationId != undefined && this.configToUse.organisationId < 0) this.configToUse.organisationId = undefined
-    if (this.configToUse.communityId != undefined && this.configToUse.communityId < 0) this.configToUse.communityId = undefined
+  private addSeparatorIfNeeded() {
+    if (this.extraNavigationItems.length > 0 && this.extraNavigationItems[this.extraNavigationItems.length - 1].label != undefined) {
+      this.extraNavigationItems.push({})
+    }
+  }
+
+  private isOwnOrganisation(): boolean {
+    return this.config.organisationId == this.dataService.vendor?.id
+  }
+
+  private processConfig() {
+    this.domainNavigable = this.isNavigable(this.config.domainId) && (this.dataService.isSystemAdmin || (this.dataService.isCommunityAdmin && this.dataService.community?.domain == undefined))
+    this.specificationNavigable = this.isNavigable(this.config.domainId) && this.isNavigable(this.config.specificationId) && (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin)
+    this.actorNavigable = this.specificationNavigable && this.isNavigable(this.config.actorId)
+    this.testSuiteNavigable = this.specificationNavigable && this.isNavigable(this.config.testSuiteId)
+    this.testCaseNavigable = this.testSuiteNavigable && this.isNavigable(this.config.testCaseId)
+    this.communityNavigable = this.isNavigable(this.config.communityId) && this.config.communityId != Constants.DEFAULT_COMMUNITY_ID && (this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin)
+    this.organisationNavigable = this.isNavigable(this.config.organisationId) && (this.isOwnOrganisation() || this.communityNavigable)
+    this.systemNavigable = this.organisationNavigable && this.isNavigable(this.config.systemId)
+    if (this.config.snapshotId == undefined) {
+      this.statementNavigable = this.organisationNavigable
+        && this.systemNavigable
+        && this.actorNavigable
+        && (this.isOwnOrganisation() || this.communityNavigable)
+    } else {
+      this.statementNavigable = this.config.organisationId != undefined
+        && this.config.systemId != undefined
+        && this.config.actorId != undefined
+        && (this.isOwnOrganisation() || this.config.communityId != undefined)
+    }
+    this.statementNavigable = this.statementNavigable
+      && (this.config.showStatement == undefined || this.config.showStatement)
+  }
+
+  private isNavigable(identifier: number|undefined): boolean {
+    return identifier != undefined && identifier > 0
   }
 
   private toSystem() {
-    if (this.configToUse.organisationId! == this.dataService.vendor!.id) {
-      // This is the user's own organisation
-      this.routingService.toOwnSystemDetails(this.configToUse.systemId!)
-    } else {
-      this.routingService.toSystemDetails(this.configToUse.communityId!, this.configToUse.organisationId!, this.configToUse.systemId!)
+    if (this.systemNavigable) {
+      if (this.isOwnOrganisation()) {
+        // This is the user's own organisation
+        this.routingService.toOwnSystemDetails(this.config.systemId!)
+      } else {
+        this.routingService.toSystemDetails(this.config.communityId!, this.config.organisationId!, this.config.systemId!)
+      }
     }
   }
 
   private toStatement() {
-    if (this.configToUse.organisationId! == this.dataService.vendor?.id) {
-      this.routingService.toOwnConformanceStatement(this.configToUse.organisationId!, this.configToUse.systemId!, this.configToUse.actorId!)
-    } else {
-      this.routingService.toConformanceStatement(this.configToUse.organisationId!, this.configToUse.systemId!, this.configToUse.actorId!, this.configToUse.communityId!)
+    if (this.statementNavigable) {
+      if (this.isOwnOrganisation()) {
+        this.routingService.toOwnConformanceStatement(this.config.organisationId!, this.config.systemId!, this.config.actorId!, this.config.snapshotId, this.config.snapshotLabel)
+      } else {
+        this.routingService.toConformanceStatement(this.config.organisationId!, this.config.systemId!, this.config.actorId!, this.config.communityId!, this.config.snapshotId, this.config.snapshotLabel)
+      }
     }
   }
 
   private toOrganisation() {
-    if (this.configToUse.organisationId! == this.dataService.vendor!.id) {
-      // This is the user's own organisation
-      this.routingService.toOwnOrganisationDetails()
-    } else {
-      // Another organisation
-      this.routingService.toOrganisationDetails(this.configToUse.communityId!, this.configToUse.organisationId!)
+    if (this.organisationNavigable) {
+      if (this.isOwnOrganisation()) {
+        // This is the user's own organisation
+        this.routingService.toOwnOrganisationDetails()
+      } else {
+        // Another organisation
+        this.routingService.toOrganisationDetails(this.config.communityId!, this.config.organisationId!)
+      }
     }
   }
 
   private toCommunity() {
-    this.routingService.toCommunity(this.configToUse.communityId!)
+    if (this.communityNavigable) {
+      this.routingService.toCommunity(this.config.communityId!)
+    }
   }
 
   private toDomain() {
-    this.routingService.toDomain(this.configToUse.domainId!)
+    if (this.domainNavigable) {
+      this.routingService.toDomain(this.config.domainId!)
+    }
   }
 
   private toSpecification() {
-    this.routingService.toSpecification(this.configToUse.domainId!, this.configToUse.specificationId!)
+    if (this.specificationNavigable) {
+      this.routingService.toSpecification(this.config.domainId!, this.config.specificationId!)
+    }
   }
 
   private toActor() {
-    this.routingService.toActor(this.configToUse.domainId!, this.configToUse.specificationId!, this.configToUse.actorId!)
+    if (this.actorNavigable) {
+      this.routingService.toActor(this.config.domainId!, this.config.specificationId!, this.config.actorId!)
+    }
   }
 
   private toTestSuite() {
-    this.routingService.toTestSuite(this.configToUse.domainId!, this.configToUse.specificationId!, this.configToUse.testSuiteId!)
+    if (this.testSuiteNavigable) {
+      this.routingService.toTestSuite(this.config.domainId!, this.config.specificationId!, this.config.testSuiteId!)
+    }
   }
 
   private toTestCase() {
-    this.routingService.toTestCase(this.configToUse.domainId!, this.configToUse.specificationId!, this.configToUse.testSuiteId!, this.configToUse.testCaseId!)
+    if (this.testCaseNavigable) {
+      this.routingService.toTestCase(this.config.domainId!, this.config.specificationId!, this.config.testSuiteId!, this.config.testCaseId!)
+    }
   }
 
 }

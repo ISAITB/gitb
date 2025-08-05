@@ -14,13 +14,14 @@
  */
 
 import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {FilterControlApi} from './filter-control-api';
 
 @Component({
   selector: 'app-filter-control',
   standalone: false,
   templateUrl: './filter-control.component.html'
 })
-export class FilterControlComponent {
+export class FilterControlComponent implements FilterControlApi {
 
   @Input() showRefresh = true
   @Input() showClear = true
@@ -28,6 +29,10 @@ export class FilterControlComponent {
   @Output() refresh = new EventEmitter<void>();
   @Output() clear = new EventEmitter<void>();
   visible = false
+
+  setToggleState(state: boolean): void  {
+    this.visible = state
+  }
 
   doClear() {
     this.visible = false

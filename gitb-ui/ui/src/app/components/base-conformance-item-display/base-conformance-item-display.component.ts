@@ -29,6 +29,7 @@ import {PagingEvent} from '../paging-controls/paging-event';
 import {Observable} from 'rxjs';
 import {ConformanceResultFullList} from '../../types/conformance-result-full-list';
 import {ConformanceService} from '../../services/conformance.service';
+import {FilterControlApi} from '../filter-control/filter-control-api';
 
 @Component({
     template: '',
@@ -36,6 +37,7 @@ import {ConformanceService} from '../../services/conformance.service';
 })
 export abstract class BaseConformanceItemDisplayComponent extends BaseComponent implements AfterViewInit, OnDestroy {
 
+  @ViewChild("filterControl") filterControl?: FilterControlApi
   @ViewChild("listViewTable") listViewTable?: ConformanceStatementTableApi
   @ViewChild('searchControls') searchControls?: ElementRef
   @ViewChild('selectorControls') selectorControls?: ElementRef

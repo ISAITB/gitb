@@ -28,7 +28,7 @@
                             <button id="button-remove-option" [disable]="isPending()" [pending]="spec.removePending" [icon]="true" class="btn btn-secondary drag-hide" (click)="removeFromGroup();$event.stopPropagation();" containerClass="shortTooltip" container="body" tooltip="Ungroup" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrow-up-right-from-square"></i></span></button>
                         }
                         @if ((spec.groupId && groups.length > 1) || (!spec.groupId && groups.length > 0)) {
-                            <div class="btn-group drag-hide" dropdown [isDisabled]="isPending()">
+                            <div class="btn-group drag-hide" dropdown [isDisabled]="isPending()" placement="bottom right">
                                 <button id="button-copy" (click)="$event.stopPropagation()" [pending]="spec.copyPending" [icon]="true" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-copy" containerClass="shortTooltip" tooltip="Copy" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-clone me-2"></i></span></button>
                                 <ul id="dropdown-copy" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-copy">
                                     @for (group of groups; track group.id) {
@@ -38,7 +38,7 @@
                                     }
                                 </ul>
                             </div>
-                            <div class="btn-group drag-hide" dropdown [isDisabled]="isPending()">
+                            <div class="btn-group drag-hide" dropdown [isDisabled]="isPending()" placement="bottom right">
                                 <button id="button-move" (click)="$event.stopPropagation()" [pending]="spec.movePending" [icon]="true" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-move" containerClass="shortTooltip" tooltip="Move" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrow-right me-2"></i></span></button>
                                 <ul id="dropdown-move" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-move">
                                     @for (group of groups; track group.id) {
