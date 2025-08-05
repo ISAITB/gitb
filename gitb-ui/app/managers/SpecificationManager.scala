@@ -184,6 +184,102 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
     DB.run(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
   }
 
+  def getSpecificationThroughAutomationApi(communityKey: String, specificationKey: String): Future[Specifications] = {
+    DB.run {
+      for {
+        communityDomain <- automationApiHelper.getDomainIdByCommunity(communityKey)
+        specification <- PersistenceSchema.specifications
+          .filter(_.apiKey === specificationKey)
+          .filterOpt(communityDomain)((q, domain) => q.domain === domain)
+          .result
+          .headOption
+        specificationToReturn <- {
+          if (specification.isEmpty) {
+            throw AutomationApiException(ErrorCodes.API_SPECIFICATION_NOT_FOUND, "No specification found for the provided API keys")
+          } else {
+            DBIO.successful(specification.get)
+          }
+        }
+      } yield specificationToReturn
+    }
+  }
+
+  def searchSpecificationsThroughAutomationApi(communityKey: String, domainKey: String, name: Option[String]): Future[Seq[Specifications]] = {
+    val param = toLowercaseLikeParameter(name)
+    DB.run {
+      for {
+        domainId <- automationApiHelper.getDomainIdByDomainApiKey(domainKey, Some(communityKey))
+        specifications <- PersistenceSchema.specifications
+          .filter(_.domain === domainId)
+          .filter(_.group.isEmpty)
+          .filterOpt(param)((q, p) => q.shortname.toLowerCase.like(p) || q.fullname.toLowerCase.like(p))
+          .sortBy(_.shortname.asc)
+          .result
+      } yield specifications
+    }
+  }
+
+  def searchSpecificationsInGroupThroughAutomationApi(communityKey: String, groupKey: String, name: Option[String]): Future[Seq[Specifications]] = {
+    val param = toLowercaseLikeParameter(name)
+    DB.run {
+      for {
+        communityDomainId <- automationApiHelper.getDomainIdByCommunity(communityKey)
+        groupId <- PersistenceSchema.specificationGroups
+          .filter(_.apiKey === groupKey)
+          .filterOpt(communityDomainId)((q, d) => q.domain === d)
+          .map(_.id)
+          .result
+          .headOption
+          .map { result =>
+            if (result.isDefined) {
+              result.get
+            } else {
+              throw AutomationApiException(ErrorCodes.API_SPECIFICATION_GROUP_NOT_FOUND, "No specification group found for the provided API keys")
+            }
+          }
+        specifications <- PersistenceSchema.specifications
+          .filter(_.group === groupId)
+          .filterOpt(param)((q, p) => q.shortname.toLowerCase.like(p) || q.fullname.toLowerCase.like(p))
+          .sortBy(_.shortname.asc)
+          .result
+      } yield specifications
+    }
+  }
+
+  def getSpecificationGroupThroughAutomationApi(communityKey: String, groupKey: String): Future[SpecificationGroups] = {
+    DB.run {
+      for {
+        communityDomain <- automationApiHelper.getDomainIdByCommunity(communityKey)
+        group <- PersistenceSchema.specificationGroups
+          .filter(_.apiKey === groupKey)
+          .filterOpt(communityDomain)((q, domain) => q.domain === domain)
+          .result
+          .headOption
+        groupToReturn <- {
+          if (group.isEmpty) {
+            throw AutomationApiException(ErrorCodes.API_SPECIFICATION_GROUP_NOT_FOUND, "No specification group found for the provided API keys")
+          } else {
+            DBIO.successful(group.get)
+          }
+        }
+      } yield groupToReturn
+    }
+  }
+
+  def searchSpecificationGroupsThroughAutomationApi(communityKey: String, domainKey: String, name: Option[String]): Future[Seq[SpecificationGroups]] = {
+    val param = toLowercaseLikeParameter(name)
+    DB.run {
+      for {
+        domainId <- automationApiHelper.getDomainIdByDomainApiKey(domainKey, Some(communityKey))
+        groups <- PersistenceSchema.specificationGroups
+          .filter(_.domain === domainId)
+          .filterOpt(param)((q, p) => q.shortname.toLowerCase.like(p) || q.fullname.toLowerCase.like(p))
+          .sortBy(_.shortname.asc)
+          .result
+      } yield groups
+    }
+  }
+
   def createSpecificationGroupInternal(group: SpecificationGroups, checkApiKeyUniqueness: Boolean):DBIO[Long] = {
     for {
       replaceApiKey <- if (checkApiKeyUniqueness) {

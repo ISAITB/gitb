@@ -89,5 +89,8 @@ abstract class BaseManager @Inject() (dbConfigProvider: DatabaseConfigProvider)
 		}
 	}
 
+	protected def toLowercaseLikeParameter(value: Option[String]): Option[String] = {
+		value.map(x => s"%${x.toLowerCase}%")
+	}
 
 }

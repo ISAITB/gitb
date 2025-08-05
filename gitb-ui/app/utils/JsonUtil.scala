@@ -3489,4 +3489,103 @@ object JsonUtil {
     }.toList
   }
 
+  def jsDomainsForAutomationApi(domains: Iterable[Domain]): JsArray = {
+    var json = Json.arr()
+    domains.foreach { domain =>
+      json = json.append(jsDomainForAutomationApi(domain))
+    }
+    json
+  }
+
+  def jsDomainForAutomationApi(domain: Domain): JsObject = {
+    var json = Json.obj(
+      "apiKey" -> domain.apiKey,
+      "shortName" -> domain.shortname,
+      "fullName" -> domain.fullname
+    )
+    if (domain.description.isDefined) {
+      json = json + ("description" -> JsString(domain.description.get))
+    }
+    if (domain.reportMetadata.isDefined) {
+      json = json + ("reportMetadata" -> JsString(domain.reportMetadata.get))
+    }
+    json
+  }
+
+  def jsSpecificationGroupsForAutomationApi(groups: Iterable[SpecificationGroups]): JsArray = {
+    var json = Json.arr()
+    groups.foreach { group =>
+      json = json.append(jsSpecificationGroupForAutomationApi(group))
+    }
+    json
+  }
+
+  def jsSpecificationGroupForAutomationApi(group: SpecificationGroups): JsObject = {
+    var json = Json.obj(
+      "apiKey" -> group.apiKey,
+      "shortName" -> group.shortname,
+      "fullName" -> group.fullname,
+      "displayOrder" -> group.displayOrder,
+    )
+    if (group.description.isDefined) {
+      json = json + ("description" -> JsString(group.description.get))
+    }
+    if (group.reportMetadata.isDefined) {
+      json = json + ("reportMetadata" -> JsString(group.reportMetadata.get))
+    }
+    json
+  }
+
+  def jsSpecificationsForAutomationApi(specifications: Iterable[Specifications]): JsArray = {
+    var json = Json.arr()
+    specifications.foreach { specification =>
+      json = json.append(jsSpecificationForAutomationApi(specification))
+    }
+    json
+  }
+
+  def jsSpecificationForAutomationApi(specification: Specifications): JsObject = {
+    var json = Json.obj(
+      "apiKey" -> specification.apiKey,
+      "shortName" -> specification.shortname,
+      "fullName" -> specification.fullname,
+      "hidden" -> specification.hidden,
+      "displayOrder" -> specification.displayOrder
+    )
+    if (specification.description.isDefined) {
+      json = json + ("description" -> JsString(specification.description.get))
+    }
+    if (specification.reportMetadata.isDefined) {
+      json = json + ("reportMetadata" -> JsString(specification.reportMetadata.get))
+    }
+    json
+  }
+
+  def jsActorsForAutomationApi(actors: Iterable[Actors]): JsArray = {
+    var json = Json.arr()
+    actors.foreach { actor =>
+      json = json.append(jsActorForAutomationApi(actor))
+    }
+    json
+  }
+
+  def jsActorForAutomationApi(actor: Actors): JsObject = {
+    var json = Json.obj(
+      "apiKey" -> actor.apiKey,
+      "identifier" -> actor.actorId,
+      "name" -> actor.name,
+      "hidden" -> actor.hidden,
+      "displayOrder" -> actor.displayOrder
+    )
+    if (actor.default.isDefined) {
+      json = json + ("default" -> JsBoolean(actor.default.get))
+    }
+    if (actor.description.isDefined) {
+      json = json + ("description" -> JsString(actor.description.get))
+    }
+    if (actor.reportMetadata.isDefined) {
+      json = json + ("reportMetadata" -> JsString(actor.reportMetadata.get))
+    }
+    json
+  }
 }

@@ -243,6 +243,57 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     canCreateCommunityThroughAutomationApi(request)
   }
 
+  def canViewDomainsThroughAutomationApi(request: RequestWithAttributes[_]): Future[Boolean] = {
+    val check = if (Configurations.AUTOMATION_API_ENABLED) {
+      val apiKey = request.headers.get(Constants.AutomationHeader)
+      if (apiKey.isDefined) {
+        communityManager.getByApiKey(apiKey.get).map { community =>
+          community.isDefined
+        }
+      } else {
+        Future.successful(false)
+      }
+    } else {
+      Future.successful(false)
+    }
+    check.map(setAuthResult(request, _, "You are not allowed to view domains through the automation API"))
+  }
+
+  def canViewDomainThroughAutomationApi(request: RequestWithAttributes[_], domainKey: Option[String]): Future[Boolean] = {
+    val check = if (Configurations.AUTOMATION_API_ENABLED) {
+      val apiKey = request.headers.get(Constants.AutomationHeader)
+      if (apiKey.isDefined) {
+        // The API key must match a community.
+        communityManager.getByApiKey(apiKey.get).flatMap { community =>
+          if (community.isDefined) {
+            if (community.get.domain.isDefined) {
+              // We can only update the domain linked to the community.
+              if (domainKey.isDefined) {
+                // The provided domain key must match the key of the community's domain.
+                domainManager.getDomainByIdAsync(community.get.domain.get).map { domain =>
+                  domainKey.get == domain.apiKey
+                }
+              } else {
+                // We implicitly match the community's domain.
+                Future.successful(true)
+              }
+            } else {
+              // We can update any domain.
+              Future.successful(true)
+            }
+          } else {
+            Future.successful(false)
+          }
+        }
+      } else {
+        Future.successful(false)
+      }
+    } else {
+      Future.successful(false)
+    }
+    check.map(setAuthResult(request, _, "You are not allowed to view this domain through the automation API"))
+  }
+
   def canUpdateDomainThroughAutomationApi(request: RequestWithAttributes[_], domainKey: Option[String]): Future[Boolean] = {
     val check = if (Configurations.AUTOMATION_API_ENABLED) {
       val apiKey = request.headers.get(Constants.AutomationHeader)

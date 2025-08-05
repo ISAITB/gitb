@@ -123,6 +123,39 @@
             }
           }
         }
+      },
+      "get": {
+        "tags": [
+          "Domain management"
+        ],
+        "summary": "Get the domain linked to the community identified by the community API key provided for authorisation.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Domain retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Domain"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/domain/{domain}": {
@@ -197,6 +230,99 @@
         "responses": {
           "200": {
             "description": "Domain deleted."
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Domain management"
+        ],
+        "summary": "Get a domain.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "domain",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the domain."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Domain retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Domain"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/domains": {
+      "get": {
+        "tags": [
+          "Domain management"
+        ],
+        "summary": "Search for domains.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "name",
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "description": "An optional value to filter domains with based on their short and long names. The value is checked in a case-insensitive manner and using wildcard matching."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Domains retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Domain"
+                  }
+                }
+              }
+            }
           },
           "default": {
             "description": "The received request was invalid.",
@@ -340,6 +466,108 @@
             }
           }
         }
+      },
+      "get": {
+        "tags": [
+          "Domain management"
+        ],
+        "summary": "Get a specification group.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "group",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the specification group."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Specification group retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpecificationGroup"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/domain/{domain}/groups": {
+      "get": {
+        "tags": [
+          "Domain management"
+        ],
+        "summary": "Search for specification groups under a given domain.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "domain",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the domain within which to search."
+          },
+          {
+            "in": "query",
+            "name": "name",
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "description": "An optional value to filter specification groups with based on their short and long names. The value is checked in a case-insensitive manner and using wildcard matching."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Specification groups retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SpecificationGroup"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/specification": {
@@ -471,6 +699,166 @@
             }
           }
         }
+      },
+      "get": {
+        "tags": [
+          "Domain management"
+        ],
+        "summary": "Get a specification.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "specification",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the specification."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Specification retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Specification"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/domain/{domain}/specifications": {
+      "get": {
+        "tags": [
+          "Domain management"
+        ],
+        "summary": "Search for specifications under a given domain that are not defined within a group.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "domain",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the domain within which to search."
+          },
+          {
+            "in": "query",
+            "name": "name",
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "description": "An optional value to filter specifications with based on their short and long names. The value is checked in a case-insensitive manner and using wildcard matching."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Specifications retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Specification"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/group/{group}/specifications": {
+      "get": {
+        "tags": [
+          "Domain management"
+        ],
+        "summary": "Search for specifications under a given specification group.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "group",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the specification group within which to search."
+          },
+          {
+            "in": "query",
+            "name": "name",
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "description": "An optional value to filter specifications with based on their short and long names. The value is checked in a case-insensitive manner and using wildcard matching."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Specifications retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Specification"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/actor": {
@@ -590,6 +978,108 @@
         "responses": {
           "200": {
             "description": "Actor deleted."
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Domain management"
+        ],
+        "summary": "Get an actor.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "actor",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the actor."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Actor retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Actor"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/specification/{specification}/actors": {
+      "get": {
+        "tags": [
+          "Domain management"
+        ],
+        "summary": "Search for actors under a given specification.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "specification",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the specification within which to search."
+          },
+          {
+            "in": "query",
+            "name": "name",
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "description": "An optional value to filter actors with based on their identifiers and names. The value is checked in a case-insensitive manner and using wildcard matching."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Actors retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Actor"
+                  }
+                }
+              }
+            }
           },
           "default": {
             "description": "The received request was invalid.",
@@ -4249,6 +4739,38 @@
         },
         "additionalProperties": false
       },
+      "Domain": {
+        "description": "A domain.",
+        "type": "object",
+        "properties": {
+          "shortName": {
+            "description": "The domain's short name.",
+            "type": "string"
+          },
+          "fullName": {
+            "description": "The domain's full name.",
+            "type": "string"
+          },
+          "description": {
+            "description": "The domain's description.",
+            "type": "string"
+          },
+          "reportMetadata": {
+            "description": "The domain's additional metadata for XML reports.",
+            "type": "string"
+          },
+          "apiKey": {
+            "description": "The domain's API key.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "shortName",
+          "fullName",
+          "apiKey"
+        ],
+        "additionalProperties": false
+      },
       "CreateDomainRequest": {
         "description": "The data used to create a new domain.",
         "type": "object",
@@ -4301,6 +4823,42 @@
             "type": "string"
           }
         },
+        "additionalProperties": false
+      },
+      "SpecificationGroup": {
+        "description": "A specification group.",
+        "type": "object",
+        "properties": {
+          "shortName": {
+            "description": "The group's short name.",
+            "type": "string"
+          },
+          "fullName": {
+            "description": "The group's full name.",
+            "type": "string"
+          },
+          "description": {
+            "description": "The group's description.",
+            "type": "string"
+          },
+          "reportMetadata": {
+            "description": "The group's additional metadata for XML reports.",
+            "type": "string"
+          },
+          "displayOrder": {
+            "description": "The group's display order relative to other groups and specifications.",
+            "type": "number"
+          },
+          "apiKey": {
+            "description": "The group's API key.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "shortName",
+          "fullName",
+          "apiKey"
+        ],
         "additionalProperties": false
       },
       "CreateSpecificationGroupRequest": {
@@ -4363,6 +4921,47 @@
             "type": "string"
           }
         },
+        "additionalProperties": false
+      },
+      "Specification": {
+        "description": "A specification.",
+        "type": "object",
+        "properties": {
+          "shortName": {
+            "description": "The specification's short name.",
+            "type": "string"
+          },
+          "fullName": {
+            "description": "The specification's full name.",
+            "type": "string"
+          },
+          "description": {
+            "description": "The specification's description.",
+            "type": "string"
+          },
+          "reportMetadata": {
+            "description": "The specification's additional metadata for XML reports.",
+            "type": "string"
+          },
+          "hidden": {
+            "description": "Whether the specification should be hidden.",
+            "type": "boolean",
+            "default": false
+          },
+          "displayOrder": {
+            "description": "The specification's display order relative to other groups and specifications.",
+            "type": "number"
+          },
+          "apiKey": {
+            "description": "The specification's API key.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "shortName",
+          "fullName",
+          "apiKey"
+        ],
         "additionalProperties": false
       },
       "CreateSpecificationRequest": {
@@ -4446,6 +5045,52 @@
             "type": "string"
           }
         },
+        "additionalProperties": false
+      },
+      "Actor": {
+        "description": "An actor.",
+        "type": "object",
+        "properties": {
+          "identifier": {
+            "description": "The actor's unique identifier in the specification, used to refer to it from test cases.",
+            "type": "string"
+          },
+          "name": {
+            "description": "The actor's display name.",
+            "type": "string"
+          },
+          "description": {
+            "description": "The actor's description.",
+            "type": "string"
+          },
+          "reportMetadata": {
+            "description": "The actor's additional metadata for XML reports.",
+            "type": "string"
+          },
+          "default": {
+            "description": "Whether the actor should be considered as the default choice for new conformance statements within its specification.",
+            "type": "boolean",
+            "default": false
+          },
+          "hidden": {
+            "description": "Whether the actor should be hidden.",
+            "type": "boolean",
+            "default": false
+          },
+          "displayOrder": {
+            "description": "The actor's display order relative to other actors when presented in test execution diagrams.",
+            "type": "number"
+          },
+          "apiKey": {
+            "description": "The actor's API key.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "identifier",
+          "name",
+          "apiKey"
+        ],
         "additionalProperties": false
       },
       "CreateActorRequest": {

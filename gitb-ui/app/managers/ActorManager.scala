@@ -267,6 +267,56 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
     } yield ()
   }
 
+  def getActorThroughAutomationApi(communityKey: String, actorKey: String): Future[Actors] = {
+    DB.run {
+      for {
+        communityDomain <- automationApiHelper.getDomainIdByCommunity(communityKey)
+        actor <- PersistenceSchema.actors
+          .filter(_.apiKey === actorKey)
+          .filterOpt(communityDomain)((q, domain) => q.domain === domain)
+          .result
+          .headOption
+        actorToReturn <- {
+          if (actor.isEmpty) {
+            throw AutomationApiException(ErrorCodes.API_ACTOR_NOT_FOUND, "No actor found for the provided API keys")
+          } else {
+            DBIO.successful(actor.get)
+          }
+        }
+      } yield actorToReturn
+    }
+  }
+
+  def searchActorsThroughAutomationApi(communityKey: String, specificationKey: String, name: Option[String]): Future[Seq[Actors]] = {
+    val param = toLowercaseLikeParameter(name)
+    DB.run {
+      for {
+        domainId <- automationApiHelper.getDomainIdByCommunity(communityKey)
+        specificationId <- PersistenceSchema.specifications
+          .filter(_.apiKey === specificationKey)
+          .filterOpt(domainId)((q, d) => q.domain === d)
+          .map(_.id)
+          .result
+          .headOption
+          .map { result =>
+            if (result.isEmpty) {
+              throw AutomationApiException(ErrorCodes.API_SPECIFICATION_NOT_FOUND, "No specification found for the provided API keys")
+            } else {
+              result.get
+            }
+          }
+        actors <- PersistenceSchema.actors
+          .join(PersistenceSchema.specificationHasActors).on(_.id === _.actorId)
+          .filter(_._2.specId === specificationId)
+          .filter(_._1.domain === domainId)
+          .filterOpt(param)((q, p) => q._1.actorId.toLowerCase.like(p) || q._1.name.toLowerCase.like(p))
+          .map(_._1)
+          .sortBy(_.actorId.asc)
+          .result
+      } yield actors
+    }
+  }
+
   def createActorThroughAutomationApi(input: CreateActorRequest): Future[String] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val action = for {
