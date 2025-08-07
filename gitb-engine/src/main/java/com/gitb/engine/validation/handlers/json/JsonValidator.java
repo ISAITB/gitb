@@ -91,7 +91,7 @@ public class JsonValidator extends AbstractValidator {
                 )
                 .orElseGet(Collections::emptyList);
         boolean showSchemas = Optional.ofNullable(getAndConvert(inputs, SHOW_SCHEMA_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class))
-                .map(value -> (Boolean) value.getValue())
+                .map(v -> (Boolean) v.getValue())
                 .orElse(true);
         boolean supportYaml = supportsYaml(inputs);
         boolean supportJson = supportsJson(inputs);

@@ -10,7 +10,7 @@
         <param type="string" name="json" desc="The JSON content to be validated"/>
         <param type="list" use="O" name="schema" desc="The JSON schemas to use"/>
         <param type="boolean" use="O" name="showSchema" desc="Whether the applied JSON schemas should be added to the report"/>
-        <param type="boolean" use="O" name="schemaCombinationApproach" desc="How should multiple provided schemas be treated"/>
+        <param type="string" use="O" name="schemaCombinationApproach" desc="How should multiple provided schemas be treated"/>
         <param type="boolean" use="O" name="supportYaml" desc="Whether YAML can also be provided to the validator as the input to validate"/>
     </inputs>
 </module>
