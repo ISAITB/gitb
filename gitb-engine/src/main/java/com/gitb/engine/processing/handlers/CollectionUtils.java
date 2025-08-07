@@ -366,7 +366,8 @@ public class CollectionUtils extends AbstractProcessingHandler {
             ListType outputList = new ListType();
             inputMap.getItems().forEach((key, value) -> {
                 var entryMap = new MapType();
-                entryMap.addItem(key, value);
+                entryMap.addItem("key", new StringType(key));
+                entryMap.addItem("value", value);
                 outputList.append(entryMap);
             });
             data.getData().put(OUTPUT_OUTPUT, outputList);
