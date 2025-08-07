@@ -64,7 +64,8 @@ export class CreateSystemComponent extends BaseComponent implements OnInit {
       this.organisationId = this.dataService.vendor!.id
       this.communityId = this.dataService.community!.id
     }
-    this.communityService.getSystemParameters(this.communityId).subscribe((data) => {
+    const onlyPublicProperties = !this.dataService.isSystemAdmin && !this.dataService.isCommunityAdmin
+    this.communityService.getSystemParameters(this.communityId, false, onlyPublicProperties).subscribe((data) => {
       this.propertyData.properties = data
     }).add(() => {
       this.loaded = true
