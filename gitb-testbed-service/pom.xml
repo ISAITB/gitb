@@ -5,7 +5,7 @@
     <parent>
         <artifactId>GITB</artifactId>
         <groupId>com.gitb</groupId>
-        <version>1.27.1</version>
+        <version>1.27.2</version>
     </parent>
     <packaging>war</packaging>
     <properties>
