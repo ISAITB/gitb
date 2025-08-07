@@ -84,22 +84,7 @@
             <id>central</id>
             <url>https://repo1.maven.org/maven2/</url>
         </repository>
-        <repository>
-            <id>itbRepoRead</id>
-            <url>${itbRepoReadUrl}</url>
-        </repository>
     </repositories>
-
-    <distributionManagement>
-        <repository>
-            <id>itbRepoWrite</id>
-            <url>${itbRepoWriteUrl}</url>
-        </repository>
-        <snapshotRepository>
-            <id>itbRepoWrite</id>
-            <url>${itbRepoWriteUrl}</url>
-        </snapshotRepository>
-    </distributionManagement>
 
     <build>
         <pluginManagement>
