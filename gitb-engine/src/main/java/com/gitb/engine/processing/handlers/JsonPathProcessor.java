@@ -16,7 +16,6 @@
 package com.gitb.engine.processing.handlers;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ValueNode;
@@ -34,9 +33,11 @@ import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.Option;
 
-import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
+import static com.gitb.engine.utils.HandlerUtils.*;
 
 @ProcessingHandler(name="JsonPathProcessor")
 public class JsonPathProcessor extends AbstractProcessingHandler {
@@ -48,6 +49,7 @@ public class JsonPathProcessor extends AbstractProcessingHandler {
     private static final String INPUT_CONTENT = "content";
     private static final String INPUT_EXPRESSION = "expression";
     private static final String INPUT_OUTPUT_TYPE = "outputType";
+    private static final String INPUT_AS_YAML = "asYaml";
     private static final String OUTPUT_OUTPUT = "output";
 
     @Override
@@ -62,21 +64,24 @@ public class JsonPathProcessor extends AbstractProcessingHandler {
                 List.of(
                         createParameter(INPUT_CONTENT, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The JSON content to evaluate the expression on."),
                         createParameter(INPUT_EXPRESSION, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The JSON path expression to evaluate."),
-                        createParameter(INPUT_OUTPUT_TYPE, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, "The type of output to return ('raw', 'list', 'default').")
+                        createParameter(INPUT_OUTPUT_TYPE, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, "The type of output to return ('raw', 'list', 'default')."),
+                        createParameter(INPUT_AS_YAML, "boolean", UsageEnumeration.O, ConfigurationType.SIMPLE, "Whether the provided input should be parsed as YAML.")
                 ),
                 List.of(createParameter(OUTPUT_OUTPUT, "list", UsageEnumeration.R, ConfigurationType.SIMPLE, "The result after evaluating the expression."))
         ));
         module.getOperation().add(createProcessingOperation(OPERATION_COUNT,
                 List.of(
                         createParameter(INPUT_CONTENT, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The JSON content to evaluate the expression on."),
-                        createParameter(INPUT_EXPRESSION, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The JSON path expression to evaluate.")
+                        createParameter(INPUT_EXPRESSION, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The JSON path expression to evaluate."),
+                        createParameter(INPUT_AS_YAML, "boolean", UsageEnumeration.O, ConfigurationType.SIMPLE, "Whether the provided input should be parsed as YAML.")
                 ),
                 List.of(createParameter(OUTPUT_OUTPUT, "number", UsageEnumeration.R, ConfigurationType.SIMPLE, "The result count."))
         ));
         module.getOperation().add(createProcessingOperation(OPERATION_EXISTS,
                 List.of(
                         createParameter(INPUT_CONTENT, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The JSON content to evaluate the expression on."),
-                        createParameter(INPUT_EXPRESSION, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The JSON path expression to evaluate.")
+                        createParameter(INPUT_EXPRESSION, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The JSON path expression to evaluate."),
+                        createParameter(INPUT_AS_YAML, "boolean", UsageEnumeration.O, ConfigurationType.SIMPLE, "Whether the provided input should be parsed as YAML.")
                 ),
                 List.of(createParameter(OUTPUT_OUTPUT, "boolean", UsageEnumeration.R, ConfigurationType.SIMPLE, "Whether matches exist."))
         ));
@@ -89,24 +94,25 @@ public class JsonPathProcessor extends AbstractProcessingHandler {
         // Collect common inputs.
         String content = getRequiredInputForName(input, INPUT_CONTENT, StringType.class).getValue();
         String expression = getRequiredInputForName(input, INPUT_EXPRESSION, StringType.class).getValue();
+        boolean asYaml = Optional.ofNullable(getInputForName(input, INPUT_AS_YAML, BooleanType.class)).map(BooleanType::getValue).orElse(false);
         if (operation == null || OPERATION_PROCESS.equalsIgnoreCase(operation)) {
             OutputType outputType = OutputType.parse(Optional.ofNullable(getInputForName(input, INPUT_OUTPUT_TYPE, StringType.class)).map(StringType::getValue).orElse(null));
             // Process expression.
-            var result = processJson(content, expression);
+            var result = processJson(content, expression, asYaml);
             // Construct result.
             DataType output = switch (outputType) {
-                case OutputType.RAW -> new StringType(serialise(result));
-                case OutputType.LIST -> convertToResult(result, true);
-                case OutputType.DEFAULT -> convertToResult(result, false);
+                case OutputType.RAW -> new StringType(serialise(result, asYaml));
+                case OutputType.LIST -> convertToResult(result, true, asYaml);
+                case OutputType.DEFAULT -> convertToResult(result, false, asYaml);
             };
             data.getData().put(OUTPUT_OUTPUT, output);
         } else if (OPERATION_COUNT.equalsIgnoreCase(operation)) {
             // Process expression.
-            var result = processJson(content, expression);
+            var result = processJson(content, expression, asYaml);
             data.getData().put(OUTPUT_OUTPUT, new NumberType(result.size()));
         } else if (OPERATION_EXISTS.equalsIgnoreCase(operation)) {
             // Process expression.
-            var result = processJson(content, expression);
+            var result = processJson(content, expression, asYaml);
             data.getData().put(OUTPUT_OUTPUT, new BooleanType(!result.isEmpty()));
         } else {
             throw new IllegalArgumentException("Unknown operation [" + operation + "]");
@@ -114,50 +120,54 @@ public class JsonPathProcessor extends AbstractProcessingHandler {
         return new ProcessingReport(createReport(TestResultType.SUCCESS), data);
     }
 
-    private ArrayNode processJson(String content, String expression) {
+    private ArrayNode processJson(String content, String expression, boolean asYaml) {
+        if (asYaml) {
+            content = convertYamlToJson(content);
+        }
         var config = Configuration.defaultConfiguration().addOptions(Option.ALWAYS_RETURN_LIST);
         return JsonPath.using(config).parse(content).read(expression, ArrayNode.class);
     }
 
-    private String serialise(JsonNode node) {
-        try {
-            var mapper = new ObjectMapper();
-            return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(node);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+    private String serialise(JsonNode node, boolean asYaml) {
+        if (asYaml) {
+            return writeAsYaml(node);
+        } else {
+            return writeAsJson(node);
         }
     }
 
-    private DataType convertToResult(ArrayNode result, boolean resultAsList) {
+    private DataType convertToResult(ArrayNode result, boolean resultAsList, boolean asYaml) {
         int resultCount = result.size();
         DataType resultType;
         if (resultCount == 0) {
             // Empty list.
             resultType = new ListType();
         } else if (resultCount == 1) {
-            DataType data = convertToDataType(result.get(0));
+            DataType data = convertToDataType(result.get(0), asYaml);
             if (resultAsList) {
-                resultType = new ListType(List.of(data));
+                var value = new ArrayList<DataType>();
+                value.add(data);
+                resultType = new ListType(value);
             } else {
                 resultType = data;
             }
         } else {
-            resultType = convertArrayToDataType(result);
+            resultType = convertArrayToDataType(result, asYaml);
         }
         return resultType;
     }
 
-    private DataType convertArrayToDataType(ArrayNode node) {
+    private DataType convertArrayToDataType(ArrayNode node, boolean asYaml) {
         Optional<JsonNodeType> commonType =  commonNodeType(node);
         var listType = new ListType();
         if (commonType.isEmpty()) {
             for (JsonNode jsonNode : node) {
-                listType.append(new StringType(serialise(jsonNode)));
+                listType.append(new StringType(serialise(jsonNode, asYaml)));
             }
         } else {
             // All elements have the same type.
             for (JsonNode jsonNode : node) {
-                listType.append(convertToDataType(jsonNode));
+                listType.append(convertToDataType(jsonNode, asYaml));
             }
         }
         return listType;
@@ -178,7 +188,7 @@ public class JsonPathProcessor extends AbstractProcessingHandler {
         return Optional.ofNullable(currentType);
     }
 
-    private DataType convertToDataType(JsonNode node) {
+    private DataType convertToDataType(JsonNode node, boolean asYaml) {
         if (node instanceof ValueNode valueNode) {
             // Simple (leaf) value.
             return switch (valueNode.getNodeType()) {
@@ -188,10 +198,10 @@ public class JsonPathProcessor extends AbstractProcessingHandler {
                 default -> new StringType("");
             };
         } else if (node instanceof ArrayNode arrayNode) {
-            return convertArrayToDataType(arrayNode);
+            return convertArrayToDataType(arrayNode, asYaml);
         } else {
             // Non-leaf value.
-            return new StringType(serialise(node));
+            return new StringType(serialise(node, asYaml));
         }
     }
 

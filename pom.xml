@@ -69,9 +69,8 @@
         <version.topbraid>1.4.4</version.topbraid>
         <version.json-schema-validator>1.5.8</version.json-schema-validator>
         <version.jayway>2.9.0</version.jayway>
-        <!-- Other version overrides - START -->
+        <version.jackson>2.19.2</version.jackson>
         <version.pdfbox>3.0.5</version.pdfbox>
-        <!-- Other version overrides - END -->
         <!-- Override the transitive httpclient5 version to resolve CVE-2025-27820 -->
         <version.httpclient5>5.4.4</version.httpclient5>
         <!-- Properties used for filtering replacements -->
@@ -488,6 +487,11 @@
                 <groupId>com.jayway.jsonpath</groupId>
                 <artifactId>json-path</artifactId>
                 <version>${version.jayway}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${version.jackson}</version>
             </dependency>
             <!-- Force the version of org.apache.httpcomponents.client5:httpclient5 to resolve CVE-2025-27820 (from Saxon-HE:12.4)  -->
             <dependency>
