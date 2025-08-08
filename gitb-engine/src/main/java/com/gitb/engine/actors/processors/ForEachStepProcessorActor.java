@@ -63,7 +63,7 @@ public class ForEachStepProcessorActor extends AbstractIterationStepActor<ForEac
 				});
 				collectionToIterate = Collections.unmodifiableList(entries);
 			} else if (referencedValue != null) {
-				collectionToIterate = Collections.unmodifiableList(((ListType) referencedValue.convertTo(DataType.LIST_DATA_TYPE).getValue()).getElements());
+				collectionToIterate = Collections.unmodifiableList(((ListType) referencedValue.convertTo(DataType.LIST_DATA_TYPE)).getElements());
 			} else {
 				throw new IllegalStateException("No variable could be found for expression ["+step.getOf()+"]");
 			}
