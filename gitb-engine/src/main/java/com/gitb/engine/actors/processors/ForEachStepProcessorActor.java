@@ -21,15 +21,16 @@ import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.engine.utils.StepContext;
 import com.gitb.tdl.ForEachStep;
-import com.gitb.types.NumberType;
+import com.gitb.types.*;
 import org.apache.pekko.actor.ActorRef;
 
-import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 
 /**
- * Created by serbay on 9/18/14.
- *
- * For each step executor actor
+ * For each step executor actor.
  */
 public class ForEachStepProcessorActor extends AbstractIterationStepActor<ForEachStep> {
 
@@ -37,6 +38,8 @@ public class ForEachStepProcessorActor extends AbstractIterationStepActor<ForEac
 
 	private TestCaseScope childScope;
 	private int iteration;
+	private List<DataType> collectionToIterate;
+	private boolean recordCounter = true;
 
 	public ForEachStepProcessorActor(ForEachStep step, TestCaseScope scope, String stepId, StepContext stepContext) {
 		super(step, scope, stepId, stepContext);
@@ -45,13 +48,36 @@ public class ForEachStepProcessorActor extends AbstractIterationStepActor<ForEac
 	@Override
 	protected void init() throws Exception {
 		iteration = 0;
+		if (step.getOf() != null) {
+			VariableResolver resolver = new VariableResolver(scope);
+			DataType referencedValue = resolver.resolveVariable(step.getOf());
+			if (referencedValue instanceof ListType listType) {
+				collectionToIterate = Collections.unmodifiableList(listType.getElements());
+			} else if (referencedValue instanceof MapType mapType) {
+				List<MapType> entries = new ArrayList<>();
+				mapType.getItems().forEach((key, value) -> {
+					var entry = new MapType();
+					entry.addItem("key", new StringType(key));
+					entry.addItem("value", value);
+					entries.add(entry);
+				});
+				collectionToIterate = Collections.unmodifiableList(entries);
+			} else if (referencedValue != null) {
+				collectionToIterate = Collections.unmodifiableList(((ListType) referencedValue.convertTo(DataType.LIST_DATA_TYPE).getValue()).getElements());
+			} else {
+				throw new IllegalStateException("No variable could be found for expression ["+step.getOf()+"]");
+			}
+			recordCounter = !Objects.equals(step.getItem(), step.getCounter());
+		} else {
+			recordCounter = true;
+		}
 		childScope = createChildScope();
 	}
 
 	@Override
 	protected void start() throws Exception {
 		processing();
-		if(!loop()) {
+		if (!loop()) {
 			completed();
 		}
 	}
@@ -63,51 +89,66 @@ public class ForEachStepProcessorActor extends AbstractIterationStepActor<ForEac
 
 	private boolean loop() throws Exception {
 		checkIteration(iteration);
-
-		BigInteger endValue = getNumber(step.getEnd());
-		BigInteger startValue = getNumber(step.getStart());
-
-		if(iteration < endValue.intValue() - startValue.intValue()) {
-			TestCaseScope.ScopedVariable counter = childScope
-				.getVariable(step.getCounter());
-
-			NumberType val = (NumberType) counter.getValue();
-
-			val.setValue((double)(startValue.intValue()+iteration));
-
+		int startIndex = getStartIndex();
+		int endIndex = getEndIndex();
+		if (iteration < endIndex - startIndex) {
+			if (collectionToIterate != null && step.getItem() != null) {
+				TestCaseScope.ScopedVariable item = childScope.createVariable(step.getItem());
+				item.setValue(collectionToIterate.get(iteration));
+			}
+			if (recordCounter) {
+				TestCaseScope.ScopedVariable counter = childScope.getVariable(step.getCounter());
+				NumberType val = (NumberType) counter.getValue();
+				val.setValue(startIndex + iteration);
+			}
+			iteration += 1;
 			ActorRef child = SequenceProcessorActor.create(getContext(), step.getDo(), childScope, stepId + ITERATION_OPENING_TAG + (iteration + 1) + ITERATION_CLOSING_TAG, stepContext);
 			child.tell(new StartCommand(scope.getContext().getSessionId()), self());
-
-			iteration++;
 			return true;
 		} else {
 			return false;
 		}
 	}
 
-	private BigInteger getNumber(String expression) {
-		VariableResolver resolver = new VariableResolver(scope);
-		BigInteger number;
-		if (VariableResolver.isVariableReference(expression)) {
-			number = BigInteger.valueOf(resolver.resolveVariableAsNumber(expression).longValue());
+	private int getStartIndex() {
+		return getIndexNumber(step.getStart());
+	}
+
+	private int getEndIndex() {
+		int endIndex;
+		if (step.getEnd() != null) {
+			endIndex = getIndexNumber(step.getEnd());
+			if (collectionToIterate != null && endIndex > collectionToIterate.size()) {
+				endIndex = collectionToIterate.size();
+			}
+		} else if (collectionToIterate != null) {
+			endIndex = collectionToIterate.size();
 		} else {
-			number = BigInteger.valueOf(Long.parseLong(expression));
+			throw new IllegalStateException("A foreach step must either have an 'end' attribute or reference a collection through the 'of' attribute");
 		}
-		return number;
+		return endIndex;
+	}
+
+	private int getIndexNumber(String expression) {
+		int numberToReturn;
+		if (expression != null) {
+			VariableResolver resolver = new VariableResolver(scope);
+			if (VariableResolver.isVariableReference(expression)) {
+				numberToReturn = resolver.resolveVariableAsNumber(expression).intValue();
+			} else {
+				numberToReturn = Double.valueOf(expression).intValue();
+			}
+		} else {
+			throw new IllegalStateException("Missing index expression");
+		}
+		return numberToReturn;
 	}
 
 	private TestCaseScope createChildScope() {
 		TestCaseScope childScope = scope.createChildScope();
-
-		NumberType start = new NumberType();
-
-		BigInteger startValue = getNumber(step.getStart());
-		start.setValue(startValue.doubleValue());
-
-		childScope
-			.createVariable(step.getCounter())
-			.setValue(start);
-
+		if (recordCounter) {
+			childScope.createVariable(step.getCounter()).setValue(new NumberType(getStartIndex()));
+		}
 		return childScope;
 	}
 

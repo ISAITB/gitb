@@ -56,8 +56,10 @@ public class NumberType extends PrimitiveType<Double> {
 
     @Override
     public void setValue(Object value) {
-        if(value instanceof String){
-            this.value = Double.parseDouble((String)value);
+        if (value instanceof String) {
+            this.value = Double.parseDouble((String) value);
+        } else if (value instanceof Number numberValue) {
+            this.value = numberValue.doubleValue();
         } else{
             this.value = (double) value;
         }

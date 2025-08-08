@@ -168,6 +168,8 @@ public enum ErrorCode {
     INTERACTION_WITH_UNEXPECTED_HANDLER_INPUTS(         "TDL-131", "%s [%s] defines an interact step with a handler configuration, which however never delegates to a handler. The handler configuration will be ignored.", WARNING, true),
     INTERACTION_WITHOUT_EXPECTED_HANDLER(               "TDL-132", "%s [%s] defines an interact step that delegates to a handler but that does not define the handler reference.", ERROR, true),
     INTERACTION_WITH_UNEXPECTED_HANDLER(                "TDL-133", "%s [%s] defines an interact step with a handler reference but that never enables it. The handler reference will be ignored.", WARNING, true),
+    FOREACH_MISSING_ITERATOR_COLLECTION(                "TDL-134", "%s [%s] defines a foreach step with an 'item' attribute but no collection provided through the 'of' attribute. The 'item' attributes will be ignored.", WARNING, true),
+    FOREACH_MISSING_ITERATION_END(                      "TDL-135", "%s [%s] defines a foreach step with no limit. You need to either specify an explicit 'end' attribute, or the collection to iterate over through the 'of' attribute.", ERROR, true)
     ;
 
     private final String code;
