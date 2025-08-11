@@ -13,9 +13,9 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { InvalidFormControlConfig } from "./invalid-form-control-config";
-import { ErrorDescription } from "./error-description";
-import { ReplaySubject } from "rxjs";
+import {InvalidFormControlConfig} from './invalid-form-control-config';
+import {ErrorDescription} from './error-description';
+import {ReplaySubject} from 'rxjs';
 
 export class ValidationState {
 
@@ -36,9 +36,9 @@ export class ValidationState {
         if (identifier) {
             matchedEmitter = this.emitterMap[identifier]
         } else {
-            for (const id in this.emitterMap) {
-                matchedEmitter = this.emitterMap[id]
-                break
+            const keys = Object.keys(this.emitterMap)
+            if (keys.length > 0) {
+              matchedEmitter = this.emitterMap[keys[0]]
             }
         }
         if (!matchedEmitter) {
