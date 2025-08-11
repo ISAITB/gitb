@@ -30,7 +30,7 @@ import org.apache.commons.lang3.{RandomStringUtils, StringUtils, Strings}
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
-import utils.RepositoryUtils.TestCaseInfo
+import utils.RepositoryUtils.{ParsedTestCase, TestCaseGroupWithIndexes, TestCaseInfo}
 
 import java.io.{File, StringWriter}
 import java.nio.charset.Charset
@@ -52,6 +52,8 @@ import scala.xml.XML
 object RepositoryUtils {
 
 	case class TestCaseInfo(testCases: Option[List[TestCases]], testCaseGroups: Option[List[TestCaseGroup]], testCaseUpdateApproach: Option[Map[String, Update]])
+	case class ParsedTestCase(testCase: TestCases, updateApproach: Option[Update], definition: com.gitb.tdl.TestCase)
+	case class TestCaseGroupWithIndexes(group: TestCaseGroup, testCaseEntryIndexes: ListBuffer[Int])
 
 }
 
@@ -81,13 +83,8 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 	private final val FILES_BADGES_SNAPSHOT_PATH: String = "snapshot"
 	private final val DATA_PATH: String = "data"
 	private final val DATA_PATH_IN: String = "in"
-	private final val DATA_PATH_PROCESSED: String = "processed"
 	private final val DATA_PATH_LOCK: String = "data.lock"
 	private final val STATUS_UPDATES_PATH: String = "status-updates"
-
-	def getFilesRootFolder(): File = {
-		new File(getRepositoryPath(), FILES_PATH)
-	}
 
 	private def isChildPath(expectedParent: Path, expectedChild: Path): Boolean = {
 		expectedChild.normalize().toAbsolutePath.startsWith(expectedParent.normalize().toAbsolutePath)
@@ -328,10 +325,6 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 		}
 	}
 
-	def getCommunityResourceFolder(communityId: Long): File = {
-		Paths.get(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_CR_PATH, communityId.toString).toFile
-	}
-
 	def setCommunityResourceFile(communityId: Long, resourceId: Long, content: File): Unit = {
 		_setFile(getCommunityResource(communityId, resourceId), content, copy = false)
 	}
@@ -344,19 +337,12 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 		_deleteFile(getCommunityResource(communityId, resourceId))
 	}
 
-	def getDomainParametersFolder(domainId: Long): File = {
+	private def getDomainParametersFolder(domainId: Long): File = {
 		Paths.get(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_DP_PATH, domainId.toString).toFile
 	}
 
 	def getDomainParameterFile(domainId: Long, parameterId: Long): File = {
 		Paths.get(getDomainParametersFolder(domainId).getAbsolutePath, parameterId.toString).toFile
-	}
-
-	def deleteDomainParameterFolder(domainId: Long): Unit = {
-		val folder = getDomainParametersFolder(domainId)
-		if (folder.exists()) {
-			FileUtils.deleteQuietly(folder)
-		}
 	}
 
 	def deleteDomainParameterFile(domainId: Long, parameterId: Long): Unit = {
@@ -371,7 +357,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 		_setFile(getDomainParameterFile(domainId, parameterId), newFile, copy)
 	}
 
-	def getOrganisationPropertiesFolder(parameterId: Long): File = {
+	private def getOrganisationPropertiesFolder(parameterId: Long): File = {
 		Paths.get(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_OP_PATH, parameterId.toString).toFile
 	}
 
@@ -398,7 +384,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 		_setFile(getOrganisationPropertyFile(parameterId, organisationId), newFile, copy)
 	}
 
-	def getSystemPropertiesFolder(parameterId: Long): File = {
+	private def getSystemPropertiesFolder(parameterId: Long): File = {
 		Paths.get(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_SP_PATH, parameterId.toString).toFile
 	}
 
@@ -425,7 +411,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 		_setFile(getSystemPropertyFile(parameterId, systemId), newFile, copy)
 	}
 
-	def getStatementParametersFolder(parameterId: Long): File = {
+	private def getStatementParametersFolder(parameterId: Long): File = {
 		Paths.get(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_EP_PATH, parameterId.toString).toFile
 	}
 
@@ -506,7 +492,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 		new File(getTempFolder(), "ts_validation")
 	}
 
-	def getDataRootFolder(): File = {
+	private def getDataRootFolder(): File = {
 		new File(getRepositoryPath(), DATA_PATH)
 	}
 
@@ -526,10 +512,6 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 
 	def getDataInFolder(): File = {
 		getDataRootFolder().toPath.resolve(DATA_PATH_IN).toFile
-	}
-
-	def getDataProcessedFolder(): File = {
-		getDataRootFolder().toPath.resolve(DATA_PATH_PROCESSED).toFile
 	}
 
 	private def getTestSuitesRootFolder(): File = {
@@ -567,15 +549,14 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 
 	/**
 		* Extracts the test suite resources in the <code>file</code> into the <code>targetFolder</code>
-		* @param targetFolder
-		* @param file
+	 *
 		* @return id->path maps for the test case files
 		*/
 	def extractTestSuiteFilesFromZipToFolder(targetFolder: File, file: File): (Option[String], Map[String, String]) = {
 
 		//target folder needs to be deleted due to an unknown exception thrown
 		if (targetFolder.exists()) {
-			FileUtils.forceDelete(targetFolder);
+			FileUtils.forceDelete(targetFolder)
 		}
 		logger.info("Creating folder [" + targetFolder + "]")
 		targetFolder.mkdirs()
@@ -790,37 +771,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 				}
 				testSuiteCase <- {
 					if (tdlTestSuite.isDefined) {
-						val identifier: String = tdlTestSuite.get.getId
-						val name: String = tdlTestSuite.get.getMetadata.getName
-						val version: String = tdlTestSuite.get.getMetadata.getVersion
-						val authors: String = tdlTestSuite.get.getMetadata.getAuthors
-						val originalDate: String = tdlTestSuite.get.getMetadata.getPublished
-						val modificationDate: String = tdlTestSuite.get.getMetadata.getLastModified
-						val description: String = tdlTestSuite.get.getMetadata.getDescription
-						val tdlTestCaseEntries = tdlTestSuite.get.getTestcase.asScala
-						val folderName = generateTestSuiteFileName()
-						val specificationInfo = Option(tdlTestSuite.get.getMetadata.getSpecification)
-						for {
-							testSuiteDocumentation <- {
-								if (completeParse && tdlTestSuite.get.getMetadata.getDocumentation != null) {
-									getDocumentation(tdlTestSuite.get.getId, tdlTestSuite.get.getMetadata.getDocumentation, zip, specificationId, domainId)
-								}	else {
-									Future.successful(None)
-								}
-							}
-							testSuiteCase <- {
-								Future.successful {
-									Some(
-										TestSuites(0L, name, name, Option(version).getOrElse(""), Option(authors), Option(originalDate), Option(modificationDate), Option(description), None,
-											folderName, testSuiteDocumentation.isDefined, testSuiteDocumentation, identifier, tdlTestCaseEntries.isEmpty, shared = false, domainId, None,
-											specificationInfo.flatMap(x => Option(x.getReference)),
-											specificationInfo.flatMap(x => Option(x.getDescription)),
-											specificationInfo.flatMap(x => Option(x.getLink))
-										)
-									)
-								}
-							}
-						} yield testSuiteCase
+						parseTestSuite(tdlTestSuite.get, completeParse, zip, specificationId, domainId).map(Some(_))
 					} else {
 						Future.successful(None)
 					}
@@ -828,134 +779,33 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 				testCaseInfo <- {
 					if (tdlTestSuite.isDefined && testSuiteCase.isDefined && completeParse) {
 						val tdlTestCases = zip.entries().asScala.filter(isTestCase(zip, _)).map(getTestCase(zip, _)).toList
-						val tdlTestCaseEntries = tdlTestSuite.get.getTestcase.asScala
-						/*
-             * Process test case groupings
-             */
+						val tdlTestCaseEntries = tdlTestSuite.get.getTestcase.asScala.toList
 						// Map groups to test case indexes
-						val groupMap = new mutable.HashMap[String, (TestCaseGroup, ListBuffer[Int])]() // Group identifier to group data and list of test case indexes.
-						if (tdlTestSuite.get.getGroups != null && !tdlTestSuite.get.getGroups.getGroup.isEmpty) {
-							val definedGroups = new mutable.HashMap[String, TestCaseGroup]()
-							var counter = 0
-							tdlTestSuite.get.getGroups.getGroup.forEach { tdlGroup =>
-								definedGroups += (tdlGroup.getId -> TestCaseGroup(counter, tdlGroup.getId, Option(tdlGroup.getName), Option(tdlGroup.getDesc), 0L))
-								counter += 1
-							}
-							counter = 0
-							tdlTestCaseEntries.foreach { testCase =>
-								if (testCase.getGroup != null && !testCase.getGroup.isBlank && definedGroups.contains(testCase.getGroup)) {
-									val indexes = if (!groupMap.contains(testCase.getGroup)) {
-										val buffer = new ListBuffer[Int]
-										groupMap += testCase.getGroup -> (definedGroups(testCase.getGroup), buffer)
-										buffer
-									} else {
-										groupMap(testCase.getGroup)._2
-									}
-									indexes += counter
-								}
-								counter += 1
-							}
-						}
+						val groupMap = parseTestCaseGroupInfo(tdlTestSuite.get, tdlTestCaseEntries)
 						// Read test cases and order them considering their groups
-						val orderedTestCases = new util.LinkedList[TestCaseEntry]()
-						val processedTestCases = new mutable.HashSet[String]()
-						tdlTestCaseEntries.foreach { entry =>
-							if (!processedTestCases.contains(entry.getId)) {
-								if (entry.getGroup != null && !entry.getGroup.isBlank) {
-									if (groupMap.contains(entry.getGroup)) {
-										var processed = false
-										groupMap(entry.getGroup)._2.foreach { testCaseIndex =>
-											if (testCaseIndex < tdlTestCaseEntries.length) {
-												val testCaseAtIndex = tdlTestCaseEntries(testCaseIndex)
-												if (!processedTestCases.contains(testCaseAtIndex.getId)) {
-													processed = true
-													orderedTestCases.addLast(testCaseAtIndex)
-													processedTestCases.add(testCaseAtIndex.getId)
-												}
-											}
-										}
-										if (!processed) {
-											// We should normally never reach this case
-											orderedTestCases.addLast(entry)
-											processedTestCases.add(entry.getId)
-										}
-									} else {
-										// We should normally never reach this case
-										orderedTestCases.addLast(entry)
-										processedTestCases.add(entry.getId)
-									}
-								} else {
-									orderedTestCases.addLast(entry)
-									processedTestCases.add(entry.getId)
-								}
-							}
-						}
+						val testCases = parseTestCases(tdlTestCases, tdlTestCaseEntries, groupMap)
 						/*
              * Process test cases
              */
-						val testCaseTask = for {
-							testCases <- {
-								var testCaseCounter = 0
-								Future.sequence {
-									orderedTestCases.asScala.map { entry =>
-										testCaseCounter += 1
-										val tdlTestCase = tdlTestCases.find(_.getId == entry.getId).get
-										val actorString = new StringBuilder
-										tdlTestCase.getActors.getActor.asScala.foreach(role => {
-											actorString.append(role.getId)
-											if (role.getRole == TestRoleEnumeration.SUT) {
-												actorString.append("[SUT]")
-											}
-											actorString.append(',')
-										})
-										actorString.deleteCharAt(actorString.length - 1)
-
-										val testCaseType = Option(tdlTestCase.getMetadata.getType).getOrElse(TestCaseType.CONFORMANCE)
-										val updateApproach = Option(tdlTestCase.getMetadata.getUpdate)
-										val testCaseSpecificationInfo = Option(tdlTestCase.getMetadata.getSpecification)
-
-										val documentationTask = if (tdlTestCase.getMetadata.getDocumentation != null) {
-											getDocumentation(tdlTestSuite.get.getId, tdlTestCase.getMetadata.getDocumentation, zip, specificationId, domainId)
-										} else {
-											Future.successful(None)
-										}
-										documentationTask.map { documentation =>
-											(
-												TestCases(
-													0L, tdlTestCase.getMetadata.getName, tdlTestCase.getMetadata.getName, Option(tdlTestCase.getMetadata.getVersion).getOrElse(""),
-													Option(tdlTestCase.getMetadata.getAuthors), Option(tdlTestCase.getMetadata.getPublished),
-													Option(tdlTestCase.getMetadata.getLastModified), Option(tdlTestCase.getMetadata.getDescription),
-													None, testCaseType.ordinal().toShort, null, Some(actorString.toString()), None,
-													testCaseCounter.toShort, documentation.isDefined, documentation, tdlTestCase.getId, tdlTestCase.isOptional, tdlTestCase.isDisabled, getTagsStr(tdlTestCase),
-													testCaseSpecificationInfo.flatMap(x => Option(x.getReference)),
-													testCaseSpecificationInfo.flatMap(x => Option(x.getDescription)),
-													testCaseSpecificationInfo.flatMap(x => Option(x.getLink)),
-													Option(entry.getGroup).filter(groupMap.get(_).exists(_._2.nonEmpty)).map(groupMap(_)._1.id)),
-												updateApproach
-											)
-										}
+						for {
+							testCasesWithDocumentation <- addDocumentationToTestCases(tdlTestSuite.get, testCases, zip, specificationId, domainId)
+							testCaseInfoToReturn <- Future.successful {
+								val testCaseGroups = if (groupMap.nonEmpty) {
+									Some(groupMap.filter(_._2.testCaseEntryIndexes.nonEmpty).map { entry =>
+										entry._2.group
+									}.toList)
+								} else {
+									None
+								}
+								val testCaseUpdateApproachTemp = new mutable.HashMap[String, Update]()
+								testCasesWithDocumentation.foreach { info =>
+									if (info.updateApproach.isDefined) {
+										testCaseUpdateApproachTemp += (info.testCase.identifier -> info.updateApproach.get)
 									}
-								}.map { testCases =>
-									testCases.toList
 								}
+								TestCaseInfo(Some(testCases.map(_.testCase)), testCaseGroups, Some(testCaseUpdateApproachTemp.toMap))
 							}
-						} yield testCases
-						testCaseTask.map { testCaseInfo =>
-							val testCaseGroups = if (groupMap.nonEmpty) {
-								Some(groupMap.filter(_._2._2.nonEmpty).map { entry =>
-									entry._2._1
-								}.toList)
-							} else {
-								None
-							}
-							val testCaseUpdateApproachTemp = new mutable.HashMap[String, Update]()
-							testCaseInfo.foreach { info =>
-								if (info._2.isDefined) {
-									testCaseUpdateApproachTemp += (info._1.identifier -> info._2.get)
-								}
-							}
-							TestCaseInfo(Some(testCaseInfo.map(_._1)), testCaseGroups, Some(testCaseUpdateApproachTemp.toMap))
-						}
+						} yield testCaseInfoToReturn
 					} else {
 						Future.successful(TestCaseInfo(None, None, None))
 					}
@@ -986,6 +836,154 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 		} else {
 			Future.successful(None)
 		}
+	}
+
+	private def parseTestSuite(tdlTestSuite: com.gitb.tdl.TestSuite, completeParse: Boolean, zipFile: ZipFile, specification: Option[Long], domain: Long): Future[TestSuites] = {
+		val identifier: String = tdlTestSuite.getId
+		val name: String = tdlTestSuite.getMetadata.getName
+		val version: String = tdlTestSuite.getMetadata.getVersion
+		val authors: String = tdlTestSuite.getMetadata.getAuthors
+		val originalDate: String = tdlTestSuite.getMetadata.getPublished
+		val modificationDate: String = tdlTestSuite.getMetadata.getLastModified
+		val description: String = tdlTestSuite.getMetadata.getDescription
+		val tdlTestCaseEntries = tdlTestSuite.getTestcase.asScala
+		val folderName = generateTestSuiteFileName()
+		val specificationInfo = Option(tdlTestSuite.getMetadata.getSpecification)
+		for {
+			testSuiteDocumentation <- {
+				if (completeParse && tdlTestSuite.getMetadata.getDocumentation != null) {
+					getDocumentation(tdlTestSuite.getId, tdlTestSuite.getMetadata.getDocumentation, zipFile, specification, domain)
+				}	else {
+					Future.successful(None)
+				}
+			}
+			testSuite <- {
+				Future.successful {
+					TestSuites(0L, name, name, Option(version).getOrElse(""), Option(authors), Option(originalDate), Option(modificationDate), Option(description), None,
+						folderName, testSuiteDocumentation.isDefined, testSuiteDocumentation, identifier, tdlTestCaseEntries.isEmpty, shared = false, domain, None,
+						specificationInfo.flatMap(x => Option(x.getReference)),
+						specificationInfo.flatMap(x => Option(x.getDescription)),
+						specificationInfo.flatMap(x => Option(x.getLink))
+					)
+				}
+			}
+		} yield testSuite
+	}
+
+	private def addDocumentationToTestCases(tdlTestSuite: com.gitb.tdl.TestSuite, testCases: List[ParsedTestCase], zipFile: ZipFile, specification: Option[Long], domain: Long): Future[List[ParsedTestCase]] = {
+		val result = Future.sequence {
+			testCases.map { testCaseInfo =>
+				for {
+					documentation <- {
+						if (testCaseInfo.definition.getMetadata.getDocumentation != null) {
+							getDocumentation(tdlTestSuite.getId, testCaseInfo.definition.getMetadata.getDocumentation, zipFile, specification, domain)
+						} else {
+							Future.successful(None)
+						}
+					}
+					testCase <- Future.successful {
+						testCaseInfo.copy(
+							testCase = testCaseInfo.testCase.copy(hasDocumentation = documentation.isDefined, documentation = documentation)
+						)
+					}
+				} yield testCase
+			}
+		}
+		result
+	}
+
+	private def parseTestCaseGroupInfo(tdlTestSuite: com.gitb.tdl.TestSuite, tdlTestCaseEntries: Iterable[TestCaseEntry]): Map[String, TestCaseGroupWithIndexes] = {
+		val groupMap = new mutable.HashMap[String, TestCaseGroupWithIndexes]() // Group identifier to group data and list of test case indexes.
+		if (tdlTestSuite.getGroups != null && !tdlTestSuite.getGroups.getGroup.isEmpty) {
+			val definedGroups = new mutable.HashMap[String, TestCaseGroup]()
+			var counter = 0
+			tdlTestSuite.getGroups.getGroup.forEach { tdlGroup =>
+				definedGroups += (tdlGroup.getId -> TestCaseGroup(counter, tdlGroup.getId, Option(tdlGroup.getName), Option(tdlGroup.getDesc), 0L))
+				counter += 1
+			}
+			counter = 0
+			tdlTestCaseEntries.foreach { testCase =>
+				if (testCase.getGroup != null && !testCase.getGroup.isBlank && definedGroups.contains(testCase.getGroup)) {
+					val indexes = if (!groupMap.contains(testCase.getGroup)) {
+						val newGroup = TestCaseGroupWithIndexes(definedGroups(testCase.getGroup), new ListBuffer[Int])
+						groupMap += testCase.getGroup -> newGroup
+						newGroup.testCaseEntryIndexes
+					} else {
+						groupMap(testCase.getGroup).testCaseEntryIndexes
+					}
+					indexes += counter
+				}
+				counter += 1
+			}
+		}
+		groupMap.toMap
+	}
+
+	private def parseTestCases(tdlTestCases: List[com.gitb.tdl.TestCase], tdlTestCaseEntries: List[TestCaseEntry], groupMap: Map[String, TestCaseGroupWithIndexes]): List[ParsedTestCase] = {
+		val orderedTestCaseEntries = new util.LinkedList[TestCaseEntry]()
+		val processedTestCaseEntries = new mutable.HashSet[String]()
+		tdlTestCaseEntries.foreach { entry =>
+			if (!processedTestCaseEntries.contains(entry.getId)) {
+				if (entry.getGroup != null && !entry.getGroup.isBlank) {
+					if (groupMap.contains(entry.getGroup)) {
+						var processed = false
+						groupMap(entry.getGroup).testCaseEntryIndexes.foreach { testCaseIndex =>
+							if (testCaseIndex < tdlTestCaseEntries.length) {
+								val testCaseAtIndex = tdlTestCaseEntries(testCaseIndex)
+								if (!processedTestCaseEntries.contains(testCaseAtIndex.getId)) {
+									processed = true
+									orderedTestCaseEntries.addLast(testCaseAtIndex)
+									processedTestCaseEntries.add(testCaseAtIndex.getId)
+								}
+							}
+						}
+						if (!processed) {
+							// We should normally never reach this case
+							orderedTestCaseEntries.addLast(entry)
+							processedTestCaseEntries.add(entry.getId)
+						}
+					} else {
+						// We should normally never reach this case
+						orderedTestCaseEntries.addLast(entry)
+						processedTestCaseEntries.add(entry.getId)
+					}
+				} else {
+					orderedTestCaseEntries.addLast(entry)
+					processedTestCaseEntries.add(entry.getId)
+				}
+			}
+		}
+		var testCaseCounter = 0
+		orderedTestCaseEntries.stream().map { entry =>
+			testCaseCounter += 1
+			val tdlTestCase = tdlTestCases.find(_.getId == entry.getId).get
+			val actorString = new StringBuilder
+			tdlTestCase.getActors.getActor.asScala.foreach(role => {
+				actorString.append(role.getId)
+				if (role.getRole == TestRoleEnumeration.SUT) {
+					actorString.append("[SUT]")
+				}
+				actorString.append(',')
+			})
+			actorString.deleteCharAt(actorString.length - 1)
+			val testCaseType = Option(tdlTestCase.getMetadata.getType).getOrElse(TestCaseType.CONFORMANCE)
+			val testCaseSpecificationInfo = Option(tdlTestCase.getMetadata.getSpecification)
+			ParsedTestCase(
+				TestCases(
+					0L, tdlTestCase.getMetadata.getName, tdlTestCase.getMetadata.getName, Option(tdlTestCase.getMetadata.getVersion).getOrElse(""),
+					Option(tdlTestCase.getMetadata.getAuthors), Option(tdlTestCase.getMetadata.getPublished),
+					Option(tdlTestCase.getMetadata.getLastModified), Option(tdlTestCase.getMetadata.getDescription),
+					None, testCaseType.ordinal().toShort, null, Some(actorString.toString()), None,
+					testCaseCounter.toShort, hasDocumentation = false, None, tdlTestCase.getId, isOptional = tdlTestCase.isOptional, isDisabled = tdlTestCase.isDisabled, getTagsStr(tdlTestCase),
+					testCaseSpecificationInfo.flatMap(x => Option(x.getReference)),
+					testCaseSpecificationInfo.flatMap(x => Option(x.getDescription)),
+					testCaseSpecificationInfo.flatMap(x => Option(x.getLink)),
+					Option(entry.getGroup).filter(groupMap.get(_).exists(_.testCaseEntryIndexes.nonEmpty)).map(groupMap(_).group.id)
+				),
+				Option(tdlTestCase.getMetadata.getUpdate),
+				tdlTestCase
+			)
+		}.toList.asScala.toList
 	}
 
 	private def getTagsStr(testCase: com.gitb.tdl.TestCase): Option[String] = {
@@ -1186,7 +1184,6 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 				)
 				if (Files.exists(archivePath)) {
 					// Unzip session folder from ZIP archive into temp folder.
-					val pathFromArchive:Option[Path] = None
 					val zipFs = FileSystems.newFileSystem(archivePath)
 					val pathInArchive = zipFs.getPath("/", String.valueOf(startTime.getDayOfMonth), sessionId)
 					val targetPath = Path.of(getTempArchivedSessionWorkspaceFolder().getAbsolutePath, sessionId+"_"+System.currentTimeMillis().toString)
