@@ -34,44 +34,11 @@ jobs:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ secrets.CACHE_VERSION }}-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2-${{ secrets.CACHE_VERSION }}
-      - name: Generate Maven settings
-        uses: whelk-io/maven-settings-xml-action@v22
-        with:
-          repositories: >
-            [
-              {
-                "id": "itbRepoRead",
-                "name": "itbRepoRead",
-                "url": "${{ secrets.ITB_MVN_REPO_URL }}",
-                "releases": {
-                  "enabled": "true"
-                },
-                "snapshots": {
-                  "enabled": "true"
-                }
-              }
-            ]
-          servers: >
-            [
-              {
-                "id": "itbRepoRead",
-                "username": "${{ secrets.ITB_MVN_REPO_USER }}",
-                "password": "${{ secrets.ITB_MVN_REPO_PASS }}"
-              }
-            ]
-          profiles: >
-            [
-              {
-                "id": "itbRepoRead",
-                "properties": {
-                  "itbRepoReadUrl": "${{ secrets.ITB_MVN_REPO_URL }}"
-                }
-              }
-            ]
-          active_profiles: >
-            [
-              "itbRepoRead", "github"
-            ]
+      - name: Install latest build of gitb-types
+        run: |
+          git clone --branch development https://github.com/ISAITB/gitb-types.git /tmp/gitb-types
+          cd /tmp/gitb-types
+          mvn clean install -DskipTests
       - name: Build gitb-srv
         run: mvn -B install --file pom.xml -DskipTests=true
       - name: Build gitb-ui
