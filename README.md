@@ -1,4 +1,4 @@
-![Banner](https://www.itb.ec.europa.eu/files/banners/gitb_banner.png)
+![Banner](https://www.itb.ec.europa.eu/files/banners/gitb_banner.png?v=1)
 
 # Interoperability Test Bed
 
