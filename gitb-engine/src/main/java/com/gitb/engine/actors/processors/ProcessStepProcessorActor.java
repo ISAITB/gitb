@@ -72,6 +72,7 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
         promise.future().foreach(new OnSuccess<>() {
             @Override
             public void onSuccess(TestStepReportType result) {
+                HandlerUtils.recordHandlerTimeout(step.getHandlerTimeoutFlag(), scope, false);
                 if (result != null) {
                     if (result.getResult() == TestResultType.SUCCESS) {
                         updateTestStepStatus(context, StepStatus.COMPLETED, result);
@@ -105,7 +106,12 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
             }
             VariableResolver resolver = new VariableResolver(scope);
             String handlerIdentifier = resolveProcessingHandler(step.getHandler(), () -> resolver);
-            context = new ProcessingContext(handlerIdentifier, TestCaseUtils.getStepProperties(step.getProperty(), resolver), scope.getContext().getSessionId());
+            context = new ProcessingContext(
+                    handlerIdentifier,
+                    TestCaseUtils.getStepProperties(step.getProperty(), resolver),
+                    scope.getContext().getSessionId(),
+                    HandlerUtils.getHandlerTimeout(step.getHandlerTimeout(), resolver)
+            );
         } else {
             // A processing transaction is referenced.
             context = this.scope.getContext().getProcessingContext(step.getTxnId());

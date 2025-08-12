@@ -17,6 +17,7 @@ package com.gitb.engine.processing;
 
 import com.gitb.engine.ModuleManager;
 import com.gitb.core.ErrorCode;
+import com.gitb.engine.remote.ClientConfiguration;
 import com.gitb.engine.remote.processing.RemoteProcessingModuleClient;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.processing.IProcessingHandler;
@@ -32,10 +33,12 @@ public final class ProcessingContext {
     private final IProcessingHandler handler;
     private String session;
     private final String testSessionId;
+    private final Long handlerTimeout;
 
-    public ProcessingContext(String handler, Properties transactionProperties, String testSessionId) {
-        this.handler = resolveHandler(handler, transactionProperties, testSessionId);
+    public ProcessingContext(String handler, Properties transactionProperties, String testSessionId, Long handlerTimeout) {
+        this.handlerTimeout = handlerTimeout;
         this.testSessionId = testSessionId;
+        this.handler = resolveHandler(handler, transactionProperties, testSessionId);
     }
 
     public void setSession(String session) {
@@ -72,7 +75,12 @@ public final class ProcessingContext {
 
     private IProcessingHandler getRemoteProcessor(String handler, Properties transactionProperties, String testSessionId) {
         try {
-            return new RemoteProcessingModuleClient(new URI(handler).toURL(), transactionProperties, testSessionId);
+            return new RemoteProcessingModuleClient(
+                    new URI(handler).toURL(),
+                    transactionProperties,
+                    testSessionId,
+                    new ClientConfiguration(handlerTimeout)
+            );
         } catch (MalformedURLException e) {
             throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Remote processing module found with an malformed URL [" + handler + "]"), e);
         } catch (URISyntaxException e) {

@@ -30,7 +30,9 @@ import com.gitb.engine.expr.ExpressionHandler;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.messaging.MessagingContext;
 import com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils;
+import com.gitb.engine.remote.HandlerTimeoutException;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.engine.utils.HandlerUtils;
 import com.gitb.engine.utils.StepContext;
 import com.gitb.engine.utils.TemplateUtils;
 import com.gitb.engine.utils.TestCaseUtils;
@@ -140,6 +142,20 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                 handleFutureFailure(failure);
             }
         }, getContext().dispatcher());
+    }
+
+    @Override
+    protected void completed(TestStepReportType testStepReport) {
+        HandlerUtils.recordHandlerTimeout(step.getHandlerTimeoutFlag(), scope, false);
+        super.completed(testStepReport);
+    }
+
+    @Override
+    protected void handleFutureFailure(Throwable failure) {
+        if (failure instanceof HandlerTimeoutException) {
+            HandlerUtils.recordHandlerTimeout(step.getHandlerTimeoutFlag(), scope, true);
+        }
+        super.handleFutureFailure(failure);
     }
 
     private String fixedValueOrVariable(String value, VariableResolver variableResolver, String defaultValue) {

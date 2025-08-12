@@ -169,7 +169,9 @@ public enum ErrorCode {
     INTERACTION_WITHOUT_EXPECTED_HANDLER(               "TDL-132", "%s [%s] defines an interact step that delegates to a handler but that does not define the handler reference.", ERROR, true),
     INTERACTION_WITH_UNEXPECTED_HANDLER(                "TDL-133", "%s [%s] defines an interact step with a handler reference but that never enables it. The handler reference will be ignored.", WARNING, true),
     FOREACH_MISSING_ITERATOR_COLLECTION(                "TDL-134", "%s [%s] defines a foreach step with an 'item' attribute but no collection provided through the 'of' attribute. The 'item' attributes will be ignored.", WARNING, true),
-    FOREACH_MISSING_ITERATION_END(                      "TDL-135", "%s [%s] defines a foreach step with no limit. You need to either specify an explicit 'end' attribute, or the collection to iterate over through the 'of' attribute.", ERROR, true)
+    FOREACH_MISSING_ITERATION_END(                      "TDL-135", "%s [%s] defines a foreach step with no limit. You need to either specify an explicit 'end' attribute, or the collection to iterate over through the 'of' attribute.", ERROR, true),
+    MISSING_ACTOR_REFERENCE_IN_TRANSACTION(             "TDL-136", "Test case [%s] defines a btxn step with missing actor references. This is allowed only when the test case defines at most two actors.", ERROR, false),
+    HANDLER_TIMEOUT_DEFINED_WHEN_USING_TRANSACTION(     "TDL-137", "%s [%s] defines a %s step with a transaction reference (txnId) and handler timeout (handlerTimeout). When using transactions, handler timeouts not declared on the level of the transaction are ignored.", WARNING, true),
     ;
 
     private final String code;

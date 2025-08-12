@@ -20,6 +20,8 @@ import com.gitb.core.*;
 import com.gitb.engine.ModuleManager;
 import com.gitb.engine.expr.ExpressionHandler;
 import com.gitb.engine.expr.resolvers.VariableResolver;
+import com.gitb.engine.remote.ClientConfiguration;
+import com.gitb.engine.remote.HandlerTimeoutException;
 import com.gitb.engine.remote.validation.RemoteValidationModuleClient;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.engine.utils.HandlerUtils;
@@ -79,7 +81,11 @@ public class VerifyProcessor implements IProcessor {
 		}
 
 		if (isURL(handlerIdentifier)) {
-			validator = getRemoteValidator(handlerIdentifier, TestCaseUtils.getStepProperties(verify.getProperty(), resolver), scope.getContext().getSessionId());
+			validator = getRemoteValidator(handlerIdentifier,
+					TestCaseUtils.getStepProperties(verify.getProperty(), resolver),
+					scope.getContext().getSessionId(),
+					HandlerUtils.getHandlerTimeout(verify.getHandlerTimeout(), resolver)
+			);
 		} else {
 			// This is a local validator.
 			handlerIdentifier = AliasManager.getInstance().resolveValidationHandler(handlerIdentifier);
@@ -88,87 +94,93 @@ public class VerifyProcessor implements IProcessor {
 		if (validator == null) {
 			throw new IllegalStateException("Validation handler for ["+handlerIdentifier+"] could not be resolved");
 		}
-		ExpressionHandler exprHandler = new ExpressionHandler(scope);
-		TestModule validatorDefinition = validator.getModuleDefinition();
+		try {
+			ExpressionHandler exprHandler = new ExpressionHandler(scope);
+			TestModule validatorDefinition = validator.getModuleDefinition();
 
-		//Construct the inputs
-		Map<String, DataType> inputs = new HashMap<>();
-		List<Binding> inputExpressions = verify.getInput();
+			//Construct the inputs
+			Map<String, DataType> inputs = new HashMap<>();
+			List<Binding> inputExpressions = verify.getInput();
 
-		//If binding is expected in order
-		if (BindingUtils.isNameBinding(inputExpressions)) {
-			//Find expected inputs
-			Map<String, TypedParameter> expectedParamsMap = constructExpectedParameterMap(validatorDefinition);
-			//Evaluate each expression to supply the inputs
-			for (Binding inputExpression : inputExpressions) {
-				String inputName = AliasManager.getInstance().resolveValidationHandlerInput(handlerIdentifier, inputExpression.getName());
-				TypedParameter expectedParam = expectedParamsMap.get(inputName);
-				DataType result;
-				if (expectedParam == null) {
-					result = exprHandler.processExpression(inputExpression);
-				} else {
-					result = exprHandler.processExpression(inputExpression, expectedParam.getType());
+			//If binding is expected in order
+			if (BindingUtils.isNameBinding(inputExpressions)) {
+				//Find expected inputs
+				Map<String, TypedParameter> expectedParamsMap = constructExpectedParameterMap(validatorDefinition);
+				//Evaluate each expression to supply the inputs
+				for (Binding inputExpression : inputExpressions) {
+					String inputName = AliasManager.getInstance().resolveValidationHandlerInput(handlerIdentifier, inputExpression.getName());
+					TypedParameter expectedParam = expectedParamsMap.get(inputName);
+					DataType result;
+					if (expectedParam == null) {
+						result = exprHandler.processExpression(inputExpression);
+					} else {
+						result = exprHandler.processExpression(inputExpression, expectedParam.getType());
+					}
+					//Add result to the input map
+					inputs.put(inputName, result);
 				}
-				//Add result to the input map
-				inputs.put(inputName, result);
+			} else {
+				List<TypedParameter> expectedParams = new ArrayList<>();
+				if (validatorDefinition != null && validatorDefinition.getInputs() != null) {
+					expectedParams.addAll(validatorDefinition.getInputs().getParam());
+				}
+				Iterator<TypedParameter> expectedParamsIterator = expectedParams.iterator();
+				Iterator<Binding> inputExpressionsIterator = inputExpressions.iterator();
+				while (expectedParamsIterator.hasNext() && inputExpressionsIterator.hasNext()) {
+					TypedParameter expectedParam = expectedParamsIterator.next();
+					Binding inputExpression = inputExpressionsIterator.next();
+					DataType result = exprHandler.processExpression(inputExpression, expectedParam.getType());
+					inputs.put(expectedParam.getName(), result);
+				}
 			}
-		} else {
-			List<TypedParameter> expectedParams = new ArrayList<>();
 			if (validatorDefinition != null && validatorDefinition.getInputs() != null) {
-				expectedParams.addAll(validatorDefinition.getInputs().getParam());
+				failIfMissingRequiredParameter(inputs, validatorDefinition.getInputs().getParam());
 			}
-			Iterator<TypedParameter> expectedParamsIterator = expectedParams.iterator();
-			Iterator<Binding> inputExpressionsIterator = inputExpressions.iterator();
-			while (expectedParamsIterator.hasNext() && inputExpressionsIterator.hasNext()) {
-				TypedParameter expectedParam = expectedParamsIterator.next();
-				Binding inputExpression = inputExpressionsIterator.next();
-				DataType result = exprHandler.processExpression(inputExpression, expectedParam.getType());
-				inputs.put(expectedParam.getName(), result);
-			}
-		}
-		if (validatorDefinition != null && validatorDefinition.getInputs() != null) {
-			failIfMissingRequiredParameter(inputs, validatorDefinition.getInputs().getParam());
-		}
 
-		// Add validator-specific inputs
-		if (validator instanceof AbstractValidator) {
-			inputs.put(AbstractValidator.TEST_CASE_ID_INPUT, new StringType(scope.getContext().getTestCase().getId()));
-			inputs.put(HandlerUtils.SESSION_INPUT, new StringType(scope.getContext().getSessionId()));
-			if (validator instanceof XPathValidator || validator instanceof XmlMatchValidator) {
-				inputs.put(HandlerUtils.NAMESPACE_MAP_INPUT, MapType.fromMap(scope.getNamespaceDefinitions()));
- 			}
-		}
-
-		// Validate content with given configurations and inputs; and return the report
-		TestStepReportType report = validator.validate(verify.getConfig(), inputs, verify.getId());
-		ErrorLevel errorLevel = resolveReportErrorLevel(verify.getLevel(), scope.getContext().getSessionId(), resolver);
-
-		// Post process the step's report (invert logic, error to warning switch, counter creation)
-		postProcessReport(verify.isInvert(), errorLevel, report);
-
-		// Record the step's result as a Boolean flag bound to its ID
-        if(verify.getId() != null && !verify.getId().isEmpty()) {
-            boolean result = report.getResult().equals(TestResultType.SUCCESS) || report.getResult().equals(TestResultType.WARNING);
-
-            if(scope.getVariable(verify.getId()).isDefined()) {
-                scope.getVariable(verify.getId()).setValue(new BooleanType(result));
-            } else {
-                scope.createVariable(verify.getId()).setValue(new BooleanType(result));
-            }
-        }
-		if ((report instanceof TAR) && ((TAR)report).getContext() != null) {
-			// Record the report's context if specified to do so.
-			if (verify.getOutput() != null && !verify.getOutput().isBlank()) {
-				String outputVariable = verify.getOutput().trim();
-				var contextData = DataTypeFactory.getInstance().create(((TAR)report).getContext(), AnyContent::isForContext);
-				if (contextData != null) {
-					scope.createVariable(outputVariable).setValue(contextData);
+			// Add validator-specific inputs
+			if (validator instanceof AbstractValidator) {
+				inputs.put(AbstractValidator.TEST_CASE_ID_INPUT, new StringType(scope.getContext().getTestCase().getId()));
+				inputs.put(HandlerUtils.SESSION_INPUT, new StringType(scope.getContext().getSessionId()));
+				if (validator instanceof XPathValidator || validator instanceof XmlMatchValidator) {
+					inputs.put(HandlerUtils.NAMESPACE_MAP_INPUT, MapType.fromMap(scope.getNamespaceDefinitions()));
 				}
 			}
-			// Remove from the report the context items not meant for display (do this last as this changes the context itself).
-			((TAR) report).setContext(DataTypeFactory.getInstance().applyFilter(((TAR) report).getContext(), AnyContent::isForDisplay));
+
+			// Validate content with given configurations and inputs; and return the report
+			TestStepReportType report = validator.validate(verify.getConfig(), inputs, verify.getId());
+			ErrorLevel errorLevel = resolveReportErrorLevel(verify.getLevel(), scope.getContext().getSessionId(), resolver);
+
+			// Post process the step's report (invert logic, error to warning switch, counter creation)
+			postProcessReport(verify.isInvert(), errorLevel, report);
+
+			// Record the step's result as a Boolean flag bound to its ID
+			if(verify.getId() != null && !verify.getId().isEmpty()) {
+				boolean result = report.getResult().equals(TestResultType.SUCCESS) || report.getResult().equals(TestResultType.WARNING);
+
+				if(scope.getVariable(verify.getId()).isDefined()) {
+					scope.getVariable(verify.getId()).setValue(new BooleanType(result));
+				} else {
+					scope.createVariable(verify.getId()).setValue(new BooleanType(result));
+				}
+			}
+			if ((report instanceof TAR) && ((TAR)report).getContext() != null) {
+				// Record the report's context if specified to do so.
+				if (verify.getOutput() != null && !verify.getOutput().isBlank()) {
+					String outputVariable = verify.getOutput().trim();
+					var contextData = DataTypeFactory.getInstance().create(((TAR)report).getContext(), AnyContent::isForContext);
+					if (contextData != null) {
+						scope.createVariable(outputVariable).setValue(contextData);
+					}
+				}
+				// Remove from the report the context items not meant for display (do this last as this changes the context itself).
+				((TAR) report).setContext(DataTypeFactory.getInstance().applyFilter(((TAR) report).getContext(), AnyContent::isForDisplay));
+			}
+			HandlerUtils.recordHandlerTimeout(verify.getHandlerTimeoutFlag(), resolver, scope, false);
+			return report;
+		} catch (HandlerTimeoutException e) {
+			HandlerUtils.recordHandlerTimeout(verify.getHandlerTimeoutFlag(), resolver, scope, true);
+			throw e;
 		}
-		return report;
 	}
 
 
@@ -181,9 +193,9 @@ public class VerifyProcessor implements IProcessor {
 		return true;
 	}
 
-	private IValidationHandler getRemoteValidator(String handler, Properties connectionProperties, String sessionId) {
+	private IValidationHandler getRemoteValidator(String handler, Properties connectionProperties, String sessionId, Long handlerTimeout) {
 		try {
-			return new RemoteValidationModuleClient(new URI(handler).toURL(), connectionProperties, sessionId);
+			return new RemoteValidationModuleClient(new URI(handler).toURL(), connectionProperties, sessionId, new ClientConfiguration(handlerTimeout));
 		} catch (MalformedURLException e) {
 			throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Remote validation module found with an malformed URL ["+handler+"]"), e);
 		} catch (URISyntaxException e) {

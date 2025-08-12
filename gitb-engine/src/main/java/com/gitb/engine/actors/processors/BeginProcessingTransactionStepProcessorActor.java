@@ -19,6 +19,7 @@ import com.gitb.core.Configuration;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.processing.ProcessingContext;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.engine.utils.HandlerUtils;
 import com.gitb.engine.utils.StepContext;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.tdl.BeginProcessingTransaction;
@@ -55,7 +56,12 @@ public class BeginProcessingTransactionStepProcessorActor extends AbstractTestSt
             }
         }
 
-        ProcessingContext context = new ProcessingContext(handlerIdentifier, TestCaseUtils.getStepProperties(step.getProperty(), resolver), scope.getContext().getSessionId());
+        ProcessingContext context = new ProcessingContext(
+                handlerIdentifier,
+                TestCaseUtils.getStepProperties(step.getProperty(), resolver),
+                scope.getContext().getSessionId(),
+                HandlerUtils.getHandlerTimeout(step.getHandlerTimeout(), resolver)
+        );
         String session = context.getHandler().beginTransaction(step.getId(), step.getConfig());
         if (session == null || session.isBlank()) {
             session = scope.getContext().getSessionId();

@@ -17,6 +17,7 @@ package com.gitb.engine.remote.processing;
 
 import com.gitb.core.AnyContent;
 import com.gitb.core.Configuration;
+import com.gitb.engine.remote.ClientConfiguration;
 import com.gitb.engine.remote.RemoteServiceClient;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.processing.IProcessingHandler;
@@ -37,8 +38,8 @@ public class RemoteProcessingModuleClient extends RemoteServiceClient implements
 
     private ProcessingModule serviceModule;
 
-    public RemoteProcessingModuleClient(URL serviceURL, Properties callProperties, String sessionId) {
-        super(serviceURL, callProperties, sessionId);
+    public RemoteProcessingModuleClient(URL serviceURL, Properties callProperties, String sessionId, ClientConfiguration clientConfiguration) {
+        super(serviceURL, callProperties, sessionId, clientConfiguration);
     }
 
     @Override

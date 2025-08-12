@@ -21,14 +21,15 @@ import com.gitb.core.Configuration;
 import com.gitb.core.MessagingModule;
 import com.gitb.engine.CallbackManager;
 import com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils;
+import com.gitb.engine.remote.ClientConfiguration;
 import com.gitb.engine.remote.RemoteServiceClient;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.messaging.DeferredMessagingReport;
 import com.gitb.messaging.IMessagingHandler;
 import com.gitb.messaging.Message;
 import com.gitb.messaging.MessagingReport;
-import com.gitb.ms.Void;
 import com.gitb.ms.*;
+import com.gitb.ms.Void;
 import com.gitb.tdl.MessagingStep;
 import com.gitb.types.DataType;
 import com.gitb.utils.DataTypeUtils;
@@ -40,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.function.Supplier;
 
 /**
  * Created by serbay.
@@ -48,8 +50,8 @@ public class RemoteMessagingModuleClient extends RemoteServiceClient implements 
 
 	private MessagingModule serviceModule;
 
-	public RemoteMessagingModuleClient(URL serviceURL, Properties callProperties, String sessionId) {
-		super(serviceURL, callProperties, sessionId);
+	public RemoteMessagingModuleClient(URL serviceURL, Properties callProperties, String sessionId, Supplier<ClientConfiguration> clientConfigurationProvider) {
+		super(serviceURL, callProperties, sessionId, clientConfigurationProvider);
 	}
 
 	@Override
@@ -66,16 +68,20 @@ public class RemoteMessagingModuleClient extends RemoteServiceClient implements 
 	}
 
 	private MessagingService getServiceClient() {
-		TestCaseUtils.prepareRemoteServiceLookup(getCallProperties());
-		var client = new MessagingServiceClient(getServiceURL()).getMessagingServicePort(new AddressingFeature(true));
-		prepareClient((Client)client);
-		return client;
+		return getServiceClient(true);
 	}
+
+    private MessagingService getServiceClient(boolean configureTimeouts) {
+        TestCaseUtils.prepareRemoteServiceLookup(getCallProperties());
+        var client = new MessagingServiceClient(getServiceURL()).getMessagingServicePort(new AddressingFeature(true));
+        prepareClient((Client)client, configureTimeouts);
+        return client;
+    }
 
 	@Override
 	public MessagingModule getModuleDefinition() {
 		if (serviceModule == null) {
-			serviceModule = call(() -> Optional.ofNullable(getServiceClient().getModuleDefinition(new Void()).getModule()).orElseGet(MessagingModule::new));
+			serviceModule = call(() -> Optional.ofNullable(getServiceClient(false).getModuleDefinition(new Void()).getModule()).orElseGet(MessagingModule::new));
 		}
 		return serviceModule;
 	}
@@ -86,7 +92,8 @@ public class RemoteMessagingModuleClient extends RemoteServiceClient implements 
         request.getActorConfiguration().addAll(actorConfigurations);
 		InitiateResponse wsResponse = call(() -> {
 			try {
-				return getServiceClient().initiate(request);
+                // Skip step-specific client timeouts when initiating.
+				return getServiceClient(false).initiate(request);
 			} catch (Exception e) {
 				throw new IllegalStateException("Error raised by remote messaging service while processing the initiate call.", e);
 			}
@@ -156,7 +163,7 @@ public class RemoteMessagingModuleClient extends RemoteServiceClient implements 
 		try {
 			FinalizeRequest request = new FinalizeRequest();
 			request.setSessionId(sessionId);
-			call(() -> getServiceClient().finalize(request));
+			call(() -> getServiceClient(false).finalize(request));
 		} finally {
 			CallbackManager.getInstance().sessionEnded(sessionId);
 		}

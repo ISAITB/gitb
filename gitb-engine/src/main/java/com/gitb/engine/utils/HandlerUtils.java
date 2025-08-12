@@ -22,7 +22,9 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.gitb.engine.expr.resolvers.VariableResolver;
+import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.exceptions.GITBEngineInternalError;
+import com.gitb.types.BooleanType;
 import com.gitb.types.DataType;
 import com.gitb.types.MapType;
 import com.gitb.types.StringType;
@@ -145,6 +147,31 @@ public class HandlerUtils {
             return out.toString();
         } catch (IOException e) {
             throw new IllegalStateException("Unexpected error while converting JSON to YAML", e);
+        }
+    }
+
+    public static Long getHandlerTimeout(String timeout, VariableResolver resolver) {
+        Long handlerTimeout = null;
+        if (timeout != null) {
+            if (VariableResolver.isVariableReference(timeout)) {
+                handlerTimeout = resolver.resolveVariableAsNumber(timeout).longValue();
+            } else {
+                handlerTimeout = Double.valueOf(timeout).longValue();
+            }
+        }
+        return handlerTimeout;
+    }
+
+    public static void recordHandlerTimeout(String timeoutFlag, TestCaseScope scope, boolean timeoutOccurred) {
+        recordHandlerTimeout(timeoutFlag, new VariableResolver(scope), scope, timeoutOccurred);
+    }
+
+    public static void recordHandlerTimeout(String timeoutFlag, VariableResolver resolver, TestCaseScope scope, boolean timeoutOccurred) {
+        if (timeoutFlag != null) {
+            if (VariableResolver.isVariableReference(timeoutFlag)) {
+                timeoutFlag = resolver.resolveVariableAsString(timeoutFlag).getValue();
+            }
+            scope.createVariable(timeoutFlag).setValue(new BooleanType(timeoutOccurred));
         }
     }
 

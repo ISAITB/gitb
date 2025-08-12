@@ -22,11 +22,13 @@ import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.utils.ErrorUtils;
 import org.apache.cxf.endpoint.Client;
 import org.apache.cxf.transport.http.HTTPConduit;
+import org.apache.cxf.transports.http.configuration.HTTPClientPolicy;
 
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.http.HttpTimeoutException;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
@@ -37,13 +39,19 @@ public abstract class RemoteServiceClient {
     private final Properties callProperties;
     protected URL serviceURL;
     protected final String testSessionId;
+    protected final Supplier<ClientConfiguration> clientConfigurationProvider;
 
-    protected RemoteServiceClient(URL serviceURL, Properties callProperties, String sessionId) {
+    protected RemoteServiceClient(URL serviceURL, Properties callProperties, String sessionId, Supplier<ClientConfiguration> clientConfigurationProvider) {
         this.serviceURL = serviceURL;
         this.testSessionId = sessionId;
+        this.clientConfigurationProvider = clientConfigurationProvider;
         this.callProperties = Objects.requireNonNullElseGet(callProperties, Properties::new);
         this.callProperties.put(PropertyConstants.TEST_SESSION_ID, sessionId);
         this.callProperties.put(PropertyConstants.TEST_CASE_ID, SessionManager.getInstance().getContext(sessionId).getTestCaseIdentifier());
+    }
+
+    protected RemoteServiceClient(URL serviceURL, Properties callProperties, String sessionId, ClientConfiguration clientConfiguration) {
+        this(serviceURL, callProperties, sessionId, () -> clientConfiguration);
     }
 
     protected abstract String getServiceLocation();
@@ -79,8 +87,24 @@ public abstract class RemoteServiceClient {
             }
             RemoteCallContext.setCallProperties(propertiesToUse);
             return supplier.get();
+        } catch (RuntimeException e) {
+            if (isTimeoutException(e)) {
+                throw new HandlerTimeoutException(e);
+            } else {
+                throw e;
+            }
         } finally {
             RemoteCallContext.clearCallProperties();
+        }
+    }
+
+    private boolean isTimeoutException(Throwable cause) {
+        if (cause instanceof HttpTimeoutException) {
+            return true;
+        } else if (cause != null) {
+            return isTimeoutException(cause.getCause());
+        } else {
+            return false;
         }
     }
 
@@ -95,12 +119,27 @@ public abstract class RemoteServiceClient {
         return null;
     }
 
+    protected void prepareClient(Client client, boolean configureTimeouts) {
+        if (client.getConduit() instanceof HTTPConduit httpConduit) {
+            var clientPolicy = new HTTPClientPolicy();
+            clientPolicy.setConnectionTimeout(30000L);
+            long receiveTimeout = 0L;
+            if (configureTimeouts) {
+                var clientConfiguration = clientConfigurationProvider.get();
+                if (clientConfiguration.timeout() != null) {
+                    long specificTimeout = clientConfiguration.timeout();
+                    if (specificTimeout > 0L) {
+                        receiveTimeout = specificTimeout;
+                    }
+                }
+            }
+            clientPolicy.setReceiveTimeout(receiveTimeout);
+            httpConduit.setClient(clientPolicy);
+        }
+    }
+
     protected void prepareClient(Client client) {
-        /*
-         * The receiveTimeout applies when the service is reached but is taking long to respond.
-         * In this case we deactivate the timeout.
-         */
-        ((HTTPConduit)client.getConduit()).getClient().setReceiveTimeout(0L);
+        prepareClient(client, true);
     }
 
 }

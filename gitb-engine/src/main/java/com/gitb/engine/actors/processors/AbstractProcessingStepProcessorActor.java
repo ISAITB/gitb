@@ -22,8 +22,10 @@ import com.gitb.core.TypedParameters;
 import com.gitb.core.UsageEnumeration;
 import com.gitb.engine.expr.ExpressionHandler;
 import com.gitb.engine.expr.resolvers.VariableResolver;
+import com.gitb.engine.remote.HandlerTimeoutException;
 import com.gitb.engine.remote.processing.RemoteProcessingModuleClient;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.engine.utils.HandlerUtils;
 import com.gitb.engine.utils.StepContext;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.processing.IProcessingHandler;
@@ -43,6 +45,14 @@ import java.util.function.Function;
 public abstract class AbstractProcessingStepProcessorActor<T extends Process> extends AbstractTestStepActor<T> {
 
     private final ExpressionHandler expressionHandler;
+
+    @Override
+    protected void handleFutureFailure(Throwable failure) {
+        if (failure instanceof HandlerTimeoutException) {
+            HandlerUtils.recordHandlerTimeout(step.getHandlerTimeoutFlag(), scope, true);
+        }
+        super.handleFutureFailure(failure);
+    }
 
     public AbstractProcessingStepProcessorActor(T step, TestCaseScope scope, String stepId, StepContext stepContext) {
         super(step, scope, stepId, stepContext);

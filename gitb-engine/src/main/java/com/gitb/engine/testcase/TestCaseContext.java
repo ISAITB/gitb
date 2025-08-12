@@ -25,7 +25,9 @@ import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.messaging.MessagingContext;
 import com.gitb.engine.messaging.handlers.layer.AbstractMessagingHandler;
 import com.gitb.engine.processing.ProcessingContext;
+import com.gitb.engine.remote.ClientConfiguration;
 import com.gitb.engine.remote.messaging.RemoteMessagingModuleClient;
+import com.gitb.engine.utils.HandlerUtils;
 import com.gitb.engine.utils.ScriptletCache;
 import com.gitb.engine.utils.ScriptletInfo;
 import com.gitb.engine.utils.TestCaseUtils;
@@ -44,6 +46,7 @@ import com.gitb.utils.map.Tuple;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,7 +68,7 @@ import static com.gitb.engine.utils.TestCaseUtils.TEST_ENGINE_VERSION;
 
 /**
  * Created by serbay on 9/3/14.
- *
+ * <p>
  * Class that encapsulates all the necessary information for a test case execution session
  */
 public class TestCaseContext {
@@ -526,13 +529,14 @@ public class TestCaseContext {
 		return staticExpressionHandler;
 	}
 
-	private TransactionInfo buildTransactionInfo(String from, String to, String handler, List<Configuration> properties, VariableResolver resolver, LinkedList<Pair<CallStep, Scriptlet>> scriptletCallStack) {
+	private TransactionInfo buildTransactionInfo(String from, String to, String handler, String handlerTimeout, List<Configuration> properties, VariableResolver resolver, LinkedList<Pair<CallStep, Scriptlet>> scriptletCallStack) {
 		return new TransactionInfo(
 				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractActorId(from), String.class, scriptletCallStack, getStaticExpressionHandler(resolver)),
 				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractEndpointName(from), String.class, scriptletCallStack, getStaticExpressionHandler(resolver)),
 				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractActorId(to), String.class, scriptletCallStack, getStaticExpressionHandler(resolver)),
 				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractEndpointName(to), String.class, scriptletCallStack, getStaticExpressionHandler(resolver)),
 				VariableResolver.isVariableReference(handler)?resolver.resolveVariableAsString(handler).toString():handler,
+				handlerTimeout,
 				TestCaseUtils.getStepProperties(properties, resolver)
 		);
 	}
@@ -548,7 +552,27 @@ public class TestCaseContext {
             if(step instanceof Sequence) {
                 transactions.addAll(createTransactionInfo((Sequence) step, testSuiteContext, resolver, scriptletCallStack));
             } else if(step instanceof BeginTransaction beginTransactionStep) {
-                transactions.add(buildTransactionInfo(beginTransactionStep.getFrom(), beginTransactionStep.getTo(), beginTransactionStep.getHandler(), beginTransactionStep.getProperty(), resolver, scriptletCallStack));
+                String fromActor = beginTransactionStep.getFrom();
+                String toActor = beginTransactionStep.getTo();
+                if (fromActor == null && toActor == null) {
+                    fromActor = testCase.getActors().getActor().getFirst().getId();
+                    toActor = testCase.getActors().getActor().getLast().getId(); // This would be the same actor is the test case defines only one.
+                } else if (fromActor == null) {
+                    // Get the first actor (differing from the 'to' actor).
+                    fromActor = testCase.getActors().getActor().stream()
+                            .filter(actor -> !beginTransactionStep.getTo().equals(actor.getId()))
+                            .findFirst()
+                            .map(TestRole::getId)
+                            .orElseGet(() -> testCase.getActors().getActor().getFirst().getId());
+                } else if (toActor == null) {
+                    // Get the first actor (differing from the 'from' actor).
+                    toActor = testCase.getActors().getActor().stream()
+                            .filter(actor -> !beginTransactionStep.getFrom().equals(actor.getId()))
+                            .findFirst()
+                            .map(TestRole::getId)
+                            .orElseGet(() -> testCase.getActors().getActor().getFirst().getId());
+                }
+                transactions.add(buildTransactionInfo(fromActor, toActor, beginTransactionStep.getHandler(), beginTransactionStep.getHandlerTimeout(), beginTransactionStep.getProperty(), resolver, scriptletCallStack));
 			} else if (step instanceof MessagingStep messagingStep) {
 				if (StringUtils.isBlank(messagingStep.getTxnId()) && StringUtils.isNotBlank(messagingStep.getHandler())) {
 					String fromActor;
@@ -560,14 +584,14 @@ public class TestCaseContext {
 						fromActor = Objects.requireNonNullElseGet(messagingStep.getFrom(), this::getDefaultNonSutActor);
 						toActor = Objects.requireNonNullElseGet(messagingStep.getTo(), this::getDefaultSutActor);
 					}
-					transactions.add(buildTransactionInfo(fromActor, toActor, messagingStep.getHandler(), messagingStep.getProperty(), resolver, scriptletCallStack));
+					transactions.add(buildTransactionInfo(fromActor, toActor, messagingStep.getHandler(), messagingStep.getHandlerTimeout(), messagingStep.getProperty(), resolver, scriptletCallStack));
 				}
 			} else if (step instanceof UserInteraction interactionStep) {
-				if (!StringUtils.equalsIgnoreCase(interactionStep.getHandlerEnabled(), "false") && interactionStep.getHandler() != null) {
+				if (!Strings.CS.equals(interactionStep.getHandlerEnabled(), "false") && interactionStep.getHandler() != null) {
 					// We have an interaction step that may delegate processing to a custom handler.
 					String interactionActor = getDefaultSutActor();
 					List<Configuration> stepProperties = Optional.ofNullable(interactionStep.getHandlerConfig()).map(HandlerConfiguration::getProperty).orElseGet(Collections::emptyList);
-					transactions.add(buildTransactionInfo(interactionActor, interactionActor, interactionStep.getHandler(), stepProperties, resolver, scriptletCallStack));
+					transactions.add(buildTransactionInfo(interactionActor, interactionActor, interactionStep.getHandler(), interactionStep.getHandlerTimeout(), stepProperties, resolver, scriptletCallStack));
 				}
             } else if (step instanceof IfStep) {
 	            transactions.addAll(createTransactionInfo(((IfStep) step).getThen(), testSuiteContext, resolver, scriptletCallStack));
@@ -692,7 +716,7 @@ public class TestCaseContext {
 			try {
 				FileUtils.deleteDirectory(dataFolder.toFile());
 			} catch (IOException e) {
-				logger.warn(String.format("Unable to delete data folder for session [%s]", sessionId), e);
+				logger.warn("Unable to delete data folder for session [{}]", sessionId, e);
 			}
 		}
         destroyMessagingContexts();
@@ -766,7 +790,15 @@ public class TestCaseContext {
 
 		private IMessagingHandler getRemoteMessagingHandler(TransactionInfo transactionInfo, String sessionId) {
 			try {
-				return new RemoteMessagingModuleClient(new URI(transactionInfo.handler).toURL(), transactionInfo.properties, sessionId);
+				return new RemoteMessagingModuleClient(
+                        new URI(transactionInfo.handler).toURL(),
+                        transactionInfo.properties,
+                        sessionId,
+                        () -> {
+                            var resolver = new VariableResolver(SessionManager.getInstance().getContext(sessionId).getScope());
+                            Long handlerTimeout = HandlerUtils.getHandlerTimeout(transactionInfo.handlerTimeoutExpression(), resolver);
+                            return new ClientConfiguration(handlerTimeout);
+                        });
 			} catch (MalformedURLException e) {
 				throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Remote validation module found with an malformed URL ["+transactionInfo.handler+"]"), e);
 			} catch (URISyntaxException e) {
@@ -846,23 +878,7 @@ public class TestCaseContext {
 		}
 	}
 
-    private static class TransactionInfo {
-        public final String fromActorId;
-	    public final String fromEndpointName;
-
-        public final String toActorId;
-	    public final String toEndpointName;
-
-	    public final String handler;
-	    public final Properties properties;
-
-        public TransactionInfo(String fromActorId, String fromEndpointName, String toActorId, String toEndpointName, String handler, Properties properties) {
-	        this.fromActorId = fromActorId;
-	        this.fromEndpointName = fromEndpointName;
-	        this.toActorId = toActorId;
-	        this.toEndpointName = toEndpointName;
-	        this.handler = handler;
-	        this.properties = properties;
-        }
-    }
+	private record TransactionInfo(String fromActorId, String fromEndpointName, String toActorId, String toEndpointName,
+								   String handler, String handlerTimeoutExpression, Properties properties) {
+	}
 }

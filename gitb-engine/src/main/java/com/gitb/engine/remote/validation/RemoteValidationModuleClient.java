@@ -17,6 +17,7 @@ package com.gitb.engine.remote.validation;
 
 import com.gitb.core.Configuration;
 import com.gitb.core.ValidationModule;
+import com.gitb.engine.remote.ClientConfiguration;
 import com.gitb.engine.remote.RemoteServiceClient;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.tr.TestStepReportType;
@@ -43,8 +44,8 @@ public class RemoteValidationModuleClient extends RemoteServiceClient implements
 
 	private ValidationModule serviceModule;
 
-	public RemoteValidationModuleClient(URL serviceURL, Properties callProperties, String sessionId) {
-		super(serviceURL, callProperties, sessionId);
+	public RemoteValidationModuleClient(URL serviceURL, Properties callProperties, String sessionId, ClientConfiguration clientConfiguration) {
+		super(serviceURL, callProperties, sessionId, clientConfiguration);
 	}
 
 	@Override

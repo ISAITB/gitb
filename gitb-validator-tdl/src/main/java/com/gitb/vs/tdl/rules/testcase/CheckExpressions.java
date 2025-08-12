@@ -17,8 +17,8 @@ package com.gitb.vs.tdl.rules.testcase;
 
 import com.gitb.core.Configuration;
 import com.gitb.core.TestRole;
-import com.gitb.tdl.Process;
 import com.gitb.tdl.*;
+import com.gitb.tdl.Process;
 import com.gitb.vs.tdl.Context;
 import com.gitb.vs.tdl.ErrorCode;
 import com.gitb.vs.tdl.rules.TestCaseSection;
@@ -213,10 +213,15 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
             checkConstantReferenceInScriptlet(beginTransactionStep.getFrom(), ATTRIBUTE_FROM);
             checkConstantReferenceInScriptlet(beginTransactionStep.getTo(), ATTRIBUTE_TO);
             checkToken(beginTransactionStep.getHandler(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+            checkToken(beginTransactionStep.getHandlerTimeout(), TokenType.STRING_OR_VARIABLE_REFERENCE);
             checkConfigurations(beginTransactionStep.getProperty());
             checkConfigurations(beginTransactionStep.getConfig());
         } else if (step instanceof MessagingStep messagingStep) {
             checkToken(messagingStep.getHandler(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+            checkToken(messagingStep.getHandlerTimeout(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+            if (messagingStep.getHandlerTimeoutFlag() != null) {
+                recordVariable(messagingStep.getHandlerTimeoutFlag(), false);
+            }
             checkConstantReferenceInScriptlet(messagingStep.getFrom(), ATTRIBUTE_FROM);
             checkConstantReferenceInScriptlet(messagingStep.getTo(), ATTRIBUTE_TO);
             checkConstantReferenceInScriptlet(messagingStep.getReply(), ATTRIBUTE_REPLY);
@@ -230,10 +235,15 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
             }
         } else if (step instanceof BeginProcessingTransaction beginProcessingTransactionStep) {
             checkToken(beginProcessingTransactionStep.getHandler(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+            checkToken(beginProcessingTransactionStep.getHandlerTimeout(), TokenType.STRING_OR_VARIABLE_REFERENCE);
             checkConfigurations(beginProcessingTransactionStep.getProperty());
             checkConfigurations(beginProcessingTransactionStep.getConfig());
         } else if (step instanceof Process processStep) {
             checkToken(processStep.getHandler(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+            checkToken(processStep.getHandlerTimeout(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+            if (processStep.getHandlerTimeoutFlag() != null) {
+                recordVariable(processStep.getHandlerTimeoutFlag(), false);
+            }
             checkBindings(processStep.getInput());
             checkToken(processStep.getInputAttribute(), TokenType.STRING_OR_VARIABLE_REFERENCE);
             checkToken(processStep.getLevel(), TokenType.ERROR_LEVEL_OR_VARIABLE_REFERENCE);
@@ -304,6 +314,10 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
             checkToken(logStep.getSkipped(), TokenType.STRING_OR_VARIABLE_REFERENCE);
         } else if (step instanceof Verify verifyStep) {
             checkToken(verifyStep.getHandler(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+            checkToken(verifyStep.getHandlerTimeout(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+            if (verifyStep.getHandlerTimeoutFlag() != null) {
+                recordVariable(verifyStep.getHandlerTimeoutFlag(), false);
+            }
             checkToken(verifyStep.getLevel(), TokenType.ERROR_LEVEL_OR_VARIABLE_REFERENCE);
             checkConfigurations(verifyStep.getProperty());
             checkConfigurations(verifyStep.getConfig());
@@ -326,6 +340,10 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
             checkToken(userInteractionStep.getBlocking(), TokenType.STRING_OR_VARIABLE_REFERENCE);
             checkToken(userInteractionStep.getHandlerEnabled(), TokenType.STRING_OR_VARIABLE_REFERENCE);
             checkToken(userInteractionStep.getHandler(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+            checkToken(userInteractionStep.getHandlerTimeout(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+            if (userInteractionStep.getHandlerTimeoutFlag() != null) {
+                recordVariable(userInteractionStep.getHandlerTimeoutFlag(), false);
+            }
             if (userInteractionStep.getInstructOrRequest() != null) {
                 for (InstructionOrRequest ir: userInteractionStep.getInstructOrRequest()) {
                     checkConstantReferenceInScriptlet(ir.getDesc(), ATTRIBUTE_DESC);

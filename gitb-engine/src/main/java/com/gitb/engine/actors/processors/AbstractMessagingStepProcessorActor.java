@@ -21,7 +21,9 @@ import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.messaging.MessagingContext;
 import com.gitb.engine.messaging.TransactionContext;
 import com.gitb.engine.messaging.handlers.layer.AbstractMessagingHandler;
+import com.gitb.engine.remote.HandlerTimeoutException;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.engine.utils.HandlerUtils;
 import com.gitb.engine.utils.StepContext;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.IMessagingHandler;
@@ -207,7 +209,15 @@ public abstract class AbstractMessagingStepProcessorActor<T extends MessagingSte
         };
     }
 
+    protected void handleFutureFailure(Throwable failure) {
+        if (failure instanceof HandlerTimeoutException) {
+            HandlerUtils.recordHandlerTimeout(step.getHandlerTimeoutFlag(), scope, true);
+        }
+        super.handleFutureFailure(failure);
+    }
+
     protected void signalStepStatus(TestStepReportType result) {
+        HandlerUtils.recordHandlerTimeout(step.getHandlerTimeoutFlag(), scope, false);
         if (result != null) {
             if (result.getResult() == TestResultType.SUCCESS) {
                 updateTestStepStatus(getContext(), StepStatus.COMPLETED, result);
