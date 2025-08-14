@@ -4,7 +4,7 @@ applicationSuite: ""
 url: https://github.com/ISAITB/gitb
 softwareVersion: 1.27.3
 releaseDate: 2025-08-11
-logo: https://www.itb.ec.europa.eu/files/itb_logo_simple.png
+logo: https://www.itb.ec.europa.eu/files/itb_logo_simple.png?v=1
 platforms:
   - web
   - linux
