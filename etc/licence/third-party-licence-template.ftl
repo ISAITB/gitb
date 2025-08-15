@@ -8167,6 +8167,12 @@ promote the sale, use or other dealings in this Software
 without prior written authorization of the copyright holder.
 ```
 
+### Jayway JsonPath (com.jayway.jsonpath.*)
+
+```
+Copyright 2010-2020 the original author or authors.
+```
+
 ### JQuery (org.webjars.jquery)
 
 ```
