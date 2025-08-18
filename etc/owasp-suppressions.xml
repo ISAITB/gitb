@@ -147,4 +147,11 @@
         <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty/jetty-.*@.*$</packageUrl>
         <cve>CVE-2025-1948</cve>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+    file name: spring-core-6.2.9.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework/spring-.*@.*$</packageUrl>
+        <vulnerabilityName>CVE-2025-41242</vulnerabilityName>
+    </suppress>    
 </suppressions>
