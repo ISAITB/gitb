@@ -37,6 +37,7 @@
     <logger name="org.pac4j.core.matching.matcher.PathMatcher" level="ERROR"/>
     <logger name="org.apache.fontbox.ttf.CmapSubtable" level="ERROR"/>
     <logger name="play.api.Play" level="WARN"/>
+    <logger name="org.apache.pdfbox.pdmodel.font.PDType1Font" level="ERROR"/>
 
     <!-- DB debug logging used only in development
     <logger name="slick" level="INFO"/>
