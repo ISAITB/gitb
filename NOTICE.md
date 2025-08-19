@@ -28,173 +28,173 @@ Library licences are organised in three sections:
 
 ### Component gitb-srv (test engine)
 
-| Licence type | Name | Dependency | Version | Link |
-| :----------- | :--- | :--------- | :------ | :--- |
-| Eclipse Public License - v1.0, GNU Lesser General Public License (LGPL), Version 2.1 | Logback Classic Module | ch.qos.logback:logback-classic | 1.5.18 | http://logback.qos.ch/logback-classic |
-| Eclipse Public License - v1.0, GNU Lesser General Public License (LGPL), Version 2.1 | Logback Core Module | ch.qos.logback:logback-core | 1.5.18 | http://logback.qos.ch/logback-core |
-| Apache License, Version 2.0 | Titanium JSON-LD 1.1 (JRE11) | com.apicatalog:titanium-json-ld | 1.4.1 | https://github.com/filip26/titanium-json-ld |
-| Apache License, Version 2.0 | Internet Time Utility | com.ethlo.time:itu | 1.10.3 | https://github.com/ethlo/itu |
-| Apache License, Version 2.0 | ClassMate | com.fasterxml:classmate | 1.7.0 | https://github.com/FasterXML/java-classmate |
-| Apache License, Version 2.0 | Jackson-annotations | com.fasterxml.jackson.core:jackson-annotations | 2.19.2 | https://github.com/FasterXML/jackson |
-| Apache License, Version 2.0 | Jackson-core | com.fasterxml.jackson.core:jackson-core | 2.19.2 | https://github.com/FasterXML/jackson-core |
-| Apache License, Version 2.0 | jackson-databind | com.fasterxml.jackson.core:jackson-databind | 2.19.2 | https://github.com/FasterXML/jackson |
-| Apache License, Version 2.0 | Jackson-dataformat-YAML | com.fasterxml.jackson.dataformat:jackson-dataformat-yaml | 2.19.2 | https://github.com/FasterXML/jackson-dataformats-text |
-| Apache License, Version 2.0 | Jackson datatype: jdk8 | com.fasterxml.jackson.datatype:jackson-datatype-jdk8 | 2.19.2 | https://github.com/FasterXML/jackson-modules-java8/jackson-datatype-jdk8 |
-| Apache License, Version 2.0 | Jackson datatype: JSR310 | com.fasterxml.jackson.datatype:jackson-datatype-jsr310 | 2.19.2 | https://github.com/FasterXML/jackson-modules-java8/jackson-datatype-jsr310 |
-| Apache License, Version 2.0 | Jackson-module-parameter-names | com.fasterxml.jackson.module:jackson-module-parameter-names | 2.19.2 | https://github.com/FasterXML/jackson-modules-java8/jackson-module-parameter-names |
-| Apache License, Version 2.0 | Woodstox | com.fasterxml.woodstox:woodstox-core | 7.1.1 | https://github.com/FasterXML/woodstox |
-| MIT License | dexx | com.github.andrewoma.dexx:collection | 0.7 | https://github.com/andrewoma/dexx |
-| Apache License, Version 2.0 | Caffeine cache | com.github.ben-manes.caffeine:caffeine | 3.2.2 | https://github.com/ben-manes/caffeine |
-| Apache License, Version 2.0 | RgxGen | com.github.curious-odd-man:rgxgen | 3.0 | https://github.com/curious-odd-man/RgxGen |
-| Apache License, Version 2.0 | FindBugs-jsr305 | com.google.code.findbugs:jsr305 | 3.0.2 | http://findbugs.sourceforge.net/ |
-| Apache License, Version 2.0 | Gson | com.google.code.gson:gson | 2.13.1 | https://github.com/google/gson |
-| Apache License, Version 2.0 | error-prone annotations | com.google.errorprone:error_prone_annotations | 2.38.0 | https://errorprone.info/error_prone_annotations |
-| The 3-Clause BSD License | Protocol Buffers [Core] | com.google.protobuf:protobuf-java | 4.28.2 | https://developers.google.com/protocol-buffers/protobuf-java/ |
-| Apache License, Version 2.0 | ph-commons | com.helger.commons:ph-commons | 11.2.6 | https://github.com/phax/ph-commons/ph-commons |
-| Apache License, Version 2.0 | ph-jaxb | com.helger.commons:ph-jaxb | 11.2.6 | https://github.com/phax/ph-commons/ph-jaxb |
-| Apache License, Version 2.0 | ph-xml | com.helger.commons:ph-xml | 11.2.6 | https://github.com/phax/ph-commons/ph-xml |
-| Apache License, Version 2.0 | ph-schematron-api | com.helger.schematron:ph-schematron-api | 8.0.6 | https://github.com/phax/ph-schematron/ph-schematron-api |
-| Apache License, Version 2.0 | ph-schematron-pure | com.helger.schematron:ph-schematron-pure | 8.0.6 | https://github.com/phax/ph-schematron/ph-schematron-pure |
-| Apache License, Version 2.0 | ph-schematron-xslt | com.helger.schematron:ph-schematron-xslt | 8.0.6 | https://github.com/phax/ph-schematron/ph-schematron-xslt |
-| Apache License, Version 2.0 | ph-xsds-xml | com.helger.xsd:ph-xsds-xml | 3.0.0 | https://github.com/phax/ph-xsds/ph-xsds-xml |
-| Apache License, Version 2.0 | json-path | com.jayway.jsonpath:json-path | 2.9.0 | https://github.com/jayway/JsonPath |
-| Apache License, Version 2.0 | JsonSchemaValidator | com.networknt:json-schema-validator | 1.5.8 | https://github.com/networknt/json-schema-validator |
-| Eclipse Distribution License - v1.0 | istack common utility code runtime | com.sun.istack:istack-commons-runtime | 4.1.2 | https://projects.eclipse.org/projects/ee4j/istack-commons/istack-commons-runtime |
-| Eclipse Distribution License - v1.0 | Old JAXB Core | com.sun.xml.bind:jaxb-core | 4.0.5 | https://eclipse-ee4j.github.io/jaxb-ri/ |
-| Eclipse Distribution License - v1.0 | Old JAXB Runtime | com.sun.xml.bind:jaxb-impl | 4.0.4 | https://eclipse-ee4j.github.io/jaxb-ri/ |
-| Eclipse Distribution License - v1.0 | Jakarta SOAP Implementation | com.sun.xml.messaging.saaj:saaj-impl | 3.0.4 | https://projects.eclipse.org/projects/ee4j/metro-saaj/saaj-impl |
-| Apache License, Version 2.0 | config | com.typesafe:config | 1.4.3 | https://github.com/lightbend/config |
-| Apache License, Version 2.0 | Apache Commons Codec | commons-codec:commons-codec | 1.18.0 | https://commons.apache.org/proper/commons-codec/ |
-| Apache License, Version 2.0 | Apache Commons FileUpload | commons-fileupload:commons-fileupload | 1.6.0 | https://commons.apache.org/proper/commons-fileupload/ |
-| Apache License, Version 2.0 | Apache Commons IO | commons-io:commons-io | 2.19.0 | https://commons.apache.org/proper/commons-io/ |
-| Apache License, Version 2.0 | Apache Commons Logging | commons-logging:commons-logging | 1.3.5 | https://commons.apache.org/proper/commons-logging/ |
-| Apache License, Version 2.0 | PDFBox-Graphics2d | de.rototor.pdfbox:graphics2d | 3.0.1 | https://github.com/rototor/pdfbox-graphics2d/graphics2d |
-| The 3-Clause BSD License | dnsjava | dnsjava:dnsjava | 3.6.3 | https://github.com/dnsjava/dnsjava |
+| Licence type | Name | Dependency | Version         | Link |
+| :----------- | :--- | :--------- |:----------------| :--- |
+| Eclipse Public License - v1.0, GNU Lesser General Public License (LGPL), Version 2.1 | Logback Classic Module | ch.qos.logback:logback-classic | 1.5.18          | http://logback.qos.ch/logback-classic |
+| Eclipse Public License - v1.0, GNU Lesser General Public License (LGPL), Version 2.1 | Logback Core Module | ch.qos.logback:logback-core | 1.5.18          | http://logback.qos.ch/logback-core |
+| Apache License, Version 2.0 | Titanium JSON-LD 1.1 (JRE11) | com.apicatalog:titanium-json-ld | 1.4.1           | https://github.com/filip26/titanium-json-ld |
+| Apache License, Version 2.0 | Internet Time Utility | com.ethlo.time:itu | 1.10.3          | https://github.com/ethlo/itu |
+| Apache License, Version 2.0 | ClassMate | com.fasterxml:classmate | 1.7.0           | https://github.com/FasterXML/java-classmate |
+| Apache License, Version 2.0 | Jackson-annotations | com.fasterxml.jackson.core:jackson-annotations | 2.19.2          | https://github.com/FasterXML/jackson |
+| Apache License, Version 2.0 | Jackson-core | com.fasterxml.jackson.core:jackson-core | 2.19.2          | https://github.com/FasterXML/jackson-core |
+| Apache License, Version 2.0 | jackson-databind | com.fasterxml.jackson.core:jackson-databind | 2.19.2          | https://github.com/FasterXML/jackson |
+| Apache License, Version 2.0 | Jackson-dataformat-YAML | com.fasterxml.jackson.dataformat:jackson-dataformat-yaml | 2.19.2          | https://github.com/FasterXML/jackson-dataformats-text |
+| Apache License, Version 2.0 | Jackson datatype: jdk8 | com.fasterxml.jackson.datatype:jackson-datatype-jdk8 | 2.19.2          | https://github.com/FasterXML/jackson-modules-java8/jackson-datatype-jdk8 |
+| Apache License, Version 2.0 | Jackson datatype: JSR310 | com.fasterxml.jackson.datatype:jackson-datatype-jsr310 | 2.19.2          | https://github.com/FasterXML/jackson-modules-java8/jackson-datatype-jsr310 |
+| Apache License, Version 2.0 | Jackson-module-parameter-names | com.fasterxml.jackson.module:jackson-module-parameter-names | 2.19.2          | https://github.com/FasterXML/jackson-modules-java8/jackson-module-parameter-names |
+| Apache License, Version 2.0 | Woodstox | com.fasterxml.woodstox:woodstox-core | 7.1.1           | https://github.com/FasterXML/woodstox |
+| MIT License | dexx | com.github.andrewoma.dexx:collection | 0.7             | https://github.com/andrewoma/dexx |
+| Apache License, Version 2.0 | Caffeine cache | com.github.ben-manes.caffeine:caffeine | 3.2.2           | https://github.com/ben-manes/caffeine |
+| Apache License, Version 2.0 | RgxGen | com.github.curious-odd-man:rgxgen | 3.0             | https://github.com/curious-odd-man/RgxGen |
+| Apache License, Version 2.0 | FindBugs-jsr305 | com.google.code.findbugs:jsr305 | 3.0.2           | http://findbugs.sourceforge.net/ |
+| Apache License, Version 2.0 | Gson | com.google.code.gson:gson | 2.13.1          | https://github.com/google/gson |
+| Apache License, Version 2.0 | error-prone annotations | com.google.errorprone:error_prone_annotations | 2.38.0          | https://errorprone.info/error_prone_annotations |
+| The 3-Clause BSD License | Protocol Buffers [Core] | com.google.protobuf:protobuf-java | 4.28.2          | https://developers.google.com/protocol-buffers/protobuf-java/ |
+| Apache License, Version 2.0 | ph-commons | com.helger.commons:ph-commons | 11.2.6          | https://github.com/phax/ph-commons/ph-commons |
+| Apache License, Version 2.0 | ph-jaxb | com.helger.commons:ph-jaxb | 11.2.6          | https://github.com/phax/ph-commons/ph-jaxb |
+| Apache License, Version 2.0 | ph-xml | com.helger.commons:ph-xml | 11.2.6          | https://github.com/phax/ph-commons/ph-xml |
+| Apache License, Version 2.0 | ph-schematron-api | com.helger.schematron:ph-schematron-api | 8.0.6           | https://github.com/phax/ph-schematron/ph-schematron-api |
+| Apache License, Version 2.0 | ph-schematron-pure | com.helger.schematron:ph-schematron-pure | 8.0.6           | https://github.com/phax/ph-schematron/ph-schematron-pure |
+| Apache License, Version 2.0 | ph-schematron-xslt | com.helger.schematron:ph-schematron-xslt | 8.0.6           | https://github.com/phax/ph-schematron/ph-schematron-xslt |
+| Apache License, Version 2.0 | ph-xsds-xml | com.helger.xsd:ph-xsds-xml | 3.0.0           | https://github.com/phax/ph-xsds/ph-xsds-xml |
+| Apache License, Version 2.0 | json-path | com.jayway.jsonpath:json-path | 2.9.0           | https://github.com/jayway/JsonPath |
+| Apache License, Version 2.0 | JsonSchemaValidator | com.networknt:json-schema-validator | 1.5.8           | https://github.com/networknt/json-schema-validator |
+| Eclipse Distribution License - v1.0 | istack common utility code runtime | com.sun.istack:istack-commons-runtime | 4.1.2           | https://projects.eclipse.org/projects/ee4j/istack-commons/istack-commons-runtime |
+| Eclipse Distribution License - v1.0 | Old JAXB Core | com.sun.xml.bind:jaxb-core | 4.0.5           | https://eclipse-ee4j.github.io/jaxb-ri/ |
+| Eclipse Distribution License - v1.0 | Old JAXB Runtime | com.sun.xml.bind:jaxb-impl | 4.0.4           | https://eclipse-ee4j.github.io/jaxb-ri/ |
+| Eclipse Distribution License - v1.0 | Jakarta SOAP Implementation | com.sun.xml.messaging.saaj:saaj-impl | 3.0.4           | https://projects.eclipse.org/projects/ee4j/metro-saaj/saaj-impl |
+| Apache License, Version 2.0 | config | com.typesafe:config | 1.4.3           | https://github.com/lightbend/config |
+| Apache License, Version 2.0 | Apache Commons Codec | commons-codec:commons-codec | 1.18.0          | https://commons.apache.org/proper/commons-codec/ |
+| Apache License, Version 2.0 | Apache Commons FileUpload | commons-fileupload:commons-fileupload | 1.6.0           | https://commons.apache.org/proper/commons-fileupload/ |
+| Apache License, Version 2.0 | Apache Commons IO | commons-io:commons-io | 2.19.0          | https://commons.apache.org/proper/commons-io/ |
+| Apache License, Version 2.0 | Apache Commons Logging | commons-logging:commons-logging | 1.3.5           | https://commons.apache.org/proper/commons-logging/ |
+| Apache License, Version 2.0 | PDFBox-Graphics2d | de.rototor.pdfbox:graphics2d | 3.0.1           | https://github.com/rototor/pdfbox-graphics2d/graphics2d |
+| The 3-Clause BSD License | dnsjava | dnsjava:dnsjava | 3.6.3           | https://github.com/dnsjava/dnsjava |
 | European Union Public Licence (EUPL) Version 1.2 | eu.europa.ec.itb:gitb-types-jakarta | eu.europa.ec.itb:gitb-types-jakarta | 1.28.0-SNAPSHOT | https://interoperable-europe.ec.europa.eu/collection/interoperability-test-bed-repository/solution/interoperability-test-bed/gitb-types-jakarta |
 | European Union Public Licence (EUPL) Version 1.2 | eu.europa.ec.itb:gitb-types-specs | eu.europa.ec.itb:gitb-types-specs | 1.28.0-SNAPSHOT | https://interoperable-europe.ec.europa.eu/collection/interoperability-test-bed-repository/solution/interoperability-test-bed/gitb-types-specs |
-| GNU Lesser General Public License (LGPL), Version 2.1 | Openhtmltopdf Core Renderer | io.github.openhtmltopdf:openhtmltopdf-core | 1.1.28 | https://github.com/openhtmltopdf/openhtmltopdf/openhtmltopdf-core |
-| GNU Lesser General Public License (LGPL), Version 2.1 | Openhtmltopdf PDF Rendering (Apache PDF-BOX 3) | io.github.openhtmltopdf:openhtmltopdf-pdfbox | 1.1.28 | https://github.com/openhtmltopdf/openhtmltopdf/openhtmltopdf-pdfbox |
-| GNU Lesser General Public License (LGPL), Version 2.1 | Openhtmltopdf slf4j Support | io.github.openhtmltopdf:openhtmltopdf-slf4j | 1.1.28 | https://github.com/openhtmltopdf/openhtmltopdf/openhtmltopdf-slf4j |
-| GNU Lesser General Public License (LGPL), Version 2.1 | Openhtmltopdf SVG Support | io.github.openhtmltopdf:openhtmltopdf-svg-support | 1.1.28 | https://github.com/openhtmltopdf/openhtmltopdf/openhtmltopdf-svg-support |
-| Apache License, Version 2.0 | micrometer-commons | io.micrometer:micrometer-commons | 1.15.2 | https://github.com/micrometer-metrics/micrometer |
-| Apache License, Version 2.0 | micrometer-observation | io.micrometer:micrometer-observation | 1.15.2 | https://github.com/micrometer-metrics/micrometer |
-| Eclipse Distribution License - v1.0 | Jakarta Activation API | jakarta.activation:jakarta.activation-api | 2.1.2 | https://github.com/jakartaee/jaf-api |
-| Eclipse Public License - v2.0, GNU General Public License (GPL), Version 2 (with Classpath Exception) | Jakarta Annotations API | jakarta.annotation:jakarta.annotation-api | 2.1.1 | https://projects.eclipse.org/projects/ee4j.ca |
-| Eclipse Distribution License - v1.0 | Jakarta Web Services Metadata API | jakarta.jws:jakarta.jws-api | 3.0.0 | https://github.com/eclipse-ee4j/jws-api |
-| Eclipse Distribution License - v1.0, Eclipse Public License - v2.0, GNU General Public License (GPL), Version 2 (with Classpath Exception) | Jakarta Mail API | jakarta.mail:jakarta.mail-api | 2.1.3 | https://projects.eclipse.org/projects/ee4j/jakarta.mail-api |
-| Apache License, Version 2.0 | Jakarta Bean Validation API | jakarta.validation:jakarta.validation-api | 3.0.2 | https://beanvalidation.org |
-| Eclipse Distribution License - v1.0 | Jakarta XML Binding API | jakarta.xml.bind:jakarta.xml.bind-api | 4.0.2 | https://github.com/jakartaee/jaxb-api/jakarta.xml.bind-api |
-| Eclipse Distribution License - v1.0 | Jakarta SOAP with Attachments API | jakarta.xml.soap:jakarta.xml.soap-api | 3.0.2 | https://github.com/jakartaee/saaj-api |
-| Eclipse Distribution License - v1.0 | Jakarta XML Web Services API | jakarta.xml.ws:jakarta.xml.ws-api | 4.0.2 | https://github.com/jakartaee/jax-ws-api |
-| Apache License, Version 2.0 | ASM based accessors helper used by json-smart | net.minidev:accessors-smart | 2.5.2 | https://urielch.github.io/ |
-| Apache License, Version 2.0 | JSON Small and Fast Parser | net.minidev:json-smart | 2.5.2 | https://urielch.github.io/ |
-| Mozilla Public License Version 2.0 | Saxon-HE | net.sf.saxon:Saxon-HE | 12.7 | http://www.saxonica.com/ |
-| Apache License, Version 2.0 | Apache Commons Collections | org.apache.commons:commons-collections4 | 4.5.0 | https://commons.apache.org/proper/commons-collections/ |
-| Apache License, Version 2.0 | Apache Commons Compress | org.apache.commons:commons-compress | 1.27.1 | https://commons.apache.org/proper/commons-compress/ |
-| Apache License, Version 2.0 | Apache Commons Configuration | org.apache.commons:commons-configuration2 | 2.12.0 | https://commons.apache.org/proper/commons-configuration/ |
-| Apache License, Version 2.0 | Apache Commons CSV | org.apache.commons:commons-csv | 1.12.0 | https://commons.apache.org/proper/commons-csv/ |
-| Apache License, Version 2.0 | Apache Commons Lang | org.apache.commons:commons-lang3 | 3.18.0 | https://commons.apache.org/proper/commons-lang/ |
-| Apache License, Version 2.0 | Apache Commons Text | org.apache.commons:commons-text | 1.13.1 | https://commons.apache.org/proper/commons-text |
-| Apache License, Version 2.0 | Apache CXF Core | org.apache.cxf:cxf-core | 4.1.3 | https://cxf.apache.org |
-| Apache License, Version 2.0 | Apache CXF Runtime SOAP Binding | org.apache.cxf:cxf-rt-bindings-soap | 4.1.3 | https://cxf.apache.org |
-| Apache License, Version 2.0 | Apache CXF Runtime XML Binding | org.apache.cxf:cxf-rt-bindings-xml | 4.1.3 | https://cxf.apache.org |
-| Apache License, Version 2.0 | Apache CXF Runtime JAXB DataBinding | org.apache.cxf:cxf-rt-databinding-jaxb | 4.1.3 | https://cxf.apache.org |
-| Apache License, Version 2.0 | Apache CXF Metrics Feature | org.apache.cxf:cxf-rt-features-metrics | 4.1.3 | https://cxf.apache.org/cxf-rt-features-metrics |
-| Apache License, Version 2.0 | Apache CXF Runtime JAX-WS Frontend | org.apache.cxf:cxf-rt-frontend-jaxws | 4.1.3 | https://cxf.apache.org |
-| Apache License, Version 2.0 | Apache CXF Runtime Simple Frontend | org.apache.cxf:cxf-rt-frontend-simple | 4.1.3 | https://cxf.apache.org |
-| Apache License, Version 2.0 | Apache CXF Runtime HTTP Transport | org.apache.cxf:cxf-rt-transports-http | 4.1.3 | https://cxf.apache.org |
-| Apache License, Version 2.0 | Apache CXF Runtime WS Addressing | org.apache.cxf:cxf-rt-ws-addr | 4.1.3 | https://cxf.apache.org |
-| Apache License, Version 2.0 | Apache CXF Runtime WS Policy | org.apache.cxf:cxf-rt-ws-policy | 4.1.3 | https://cxf.apache.org |
-| Apache License, Version 2.0 | Apache CXF Runtime Core for WSDL | org.apache.cxf:cxf-rt-wsdl | 4.1.3 | https://cxf.apache.org |
-| Apache License, Version 2.0 | Apache CXF Spring Boot Autoconfigure | org.apache.cxf:cxf-spring-boot-autoconfigure | 4.1.3 | https://cxf.apache.org |
-| Apache License, Version 2.0 | Apache CXF Spring Boot Starter JAX-WS | org.apache.cxf:cxf-spring-boot-starter-jaxws | 4.1.3 | https://cxf.apache.org |
-| Apache License, Version 2.0 | Apache HttpClient | org.apache.httpcomponents:httpclient | 4.5.13 | http://hc.apache.org/httpcomponents-client |
-| Apache License, Version 2.0 | Apache HttpCore | org.apache.httpcomponents:httpcore | 4.4.16 | http://hc.apache.org/httpcomponents-core-ga |
-| Apache License, Version 2.0 | Apache HttpClient Mime | org.apache.httpcomponents:httpmime | 4.5.13 | http://hc.apache.org/httpcomponents-client |
-| Apache License, Version 2.0 | Apache Jena - ARQ | org.apache.jena:jena-arq | 5.2.0 | https://jena.apache.org/jena-arq/ |
-| Apache License, Version 2.0 | Apache Jena - Base | org.apache.jena:jena-base | 5.2.0 | https://jena.apache.org/jena-base/ |
-| Apache License, Version 2.0 | Apache Jena - Core | org.apache.jena:jena-core | 5.2.0 | https://jena.apache.org/jena-core/ |
-| Apache License, Version 2.0 | Apache Jena - IRI | org.apache.jena:jena-iri | 5.2.0 | https://jena.apache.org/jena-iri/ |
-| Apache License, Version 2.0 | Apache Log4j API | org.apache.logging.log4j:log4j-api | 2.24.3 | https://logging.apache.org/log4j/2.x/log4j/log4j-api/ |
-| Apache License, Version 2.0 | Log4j API to SLF4J Adapter | org.apache.logging.log4j:log4j-to-slf4j | 2.24.3 | https://logging.apache.org/log4j/2.x/log4j/log4j-to-slf4j/ |
-| Apache License, Version 2.0 | Apache Neethi | org.apache.neethi:neethi | 3.2.1 | https://ws.apache.org/neethi/ |
-| Apache License, Version 2.0 | Apache FontBox | org.apache.pdfbox:fontbox | 3.0.5 | http://pdfbox.apache.org/ |
-| Apache License, Version 2.0 | Apache PDFBox | org.apache.pdfbox:pdfbox | 3.0.5 | https://www.apache.org/pdfbox-parent/pdfbox/ |
-| Apache License, Version 2.0 | Apache PDFBox io | org.apache.pdfbox:pdfbox-io | 3.0.5 | https://www.apache.org/pdfbox-parent/pdfbox-io/ |
-| Apache License, Version 2.0 | Apache XmpBox | org.apache.pdfbox:xmpbox | 3.0.3 | https://www.apache.org/pdfbox-parent/xmpbox/ |
-| Apache License, Version 2.0 | Apache Pekko Actor | org.apache.pekko:pekko-actor_3 | 1.1.4 | https://pekko.apache.org/ |
-| Apache License, Version 2.0 | Apache Thrift | org.apache.thrift:libthrift | 0.21.0 | http://thrift.apache.org |
-| Apache License, Version 2.0 | Apache Tika core | org.apache.tika:tika-core | 3.2.0 | https://tika.apache.org/ |
-| Apache License, Version 2.0 | tomcat-embed-core | org.apache.tomcat.embed:tomcat-embed-core | 10.1.43 | https://tomcat.apache.org/ |
-| Apache License, Version 2.0 | tomcat-embed-el | org.apache.tomcat.embed:tomcat-embed-el | 10.1.43 | https://tomcat.apache.org/ |
-| Apache License, Version 2.0 | tomcat-embed-websocket | org.apache.tomcat.embed:tomcat-embed-websocket | 10.1.43 | https://tomcat.apache.org/ |
-| Apache License, Version 2.0 | XmlSchema Core | org.apache.ws.xmlschema:xmlschema-core | 2.3.1 | https://ws.apache.org/commons/xmlschema20/xmlschema-core/ |
-| Apache License, Version 2.0 | org.apache.xmlgraphics:batik-anim | org.apache.xmlgraphics:batik-anim | 1.17 | http://xmlgraphics.apache.org/batik/batik-anim/ |
-| Apache License, Version 2.0 | org.apache.xmlgraphics:batik-awt-util | org.apache.xmlgraphics:batik-awt-util | 1.17 | http://xmlgraphics.apache.org/batik/batik-awt-util/ |
-| Apache License, Version 2.0 | org.apache.xmlgraphics:batik-bridge | org.apache.xmlgraphics:batik-bridge | 1.17 | http://xmlgraphics.apache.org/batik/batik-bridge/ |
-| Apache License, Version 2.0 | org.apache.xmlgraphics:batik-codec | org.apache.xmlgraphics:batik-codec | 1.17 | http://xmlgraphics.apache.org/batik/batik-codec/ |
-| Apache License, Version 2.0 | org.apache.xmlgraphics:batik-constants | org.apache.xmlgraphics:batik-constants | 1.17 | http://xmlgraphics.apache.org/batik/batik-constants/ |
-| Apache License, Version 2.0 | org.apache.xmlgraphics:batik-css | org.apache.xmlgraphics:batik-css | 1.17 | http://xmlgraphics.apache.org/batik/batik-css/ |
-| Apache License, Version 2.0 | org.apache.xmlgraphics:batik-dom | org.apache.xmlgraphics:batik-dom | 1.17 | http://xmlgraphics.apache.org/batik/batik-dom/ |
-| Apache License, Version 2.0 | org.apache.xmlgraphics:batik-ext | org.apache.xmlgraphics:batik-ext | 1.17 | http://xmlgraphics.apache.org/batik/batik-ext/ |
-| Apache License, Version 2.0 | org.apache.xmlgraphics:batik-gvt | org.apache.xmlgraphics:batik-gvt | 1.17 | http://xmlgraphics.apache.org/batik/batik-gvt/ |
-| Apache License, Version 2.0 | org.apache.xmlgraphics:batik-i18n | org.apache.xmlgraphics:batik-i18n | 1.17 | http://xmlgraphics.apache.org/batik/batik-i18n/ |
-| Apache License, Version 2.0 | org.apache.xmlgraphics:batik-parser | org.apache.xmlgraphics:batik-parser | 1.17 | http://xmlgraphics.apache.org/batik/batik-parser/ |
-| Apache License, Version 2.0 | org.apache.xmlgraphics:batik-script | org.apache.xmlgraphics:batik-script | 1.17 | http://xmlgraphics.apache.org/batik/batik-script/ |
-| Apache License, Version 2.0 | org.apache.xmlgraphics:batik-shared-resources | org.apache.xmlgraphics:batik-shared-resources | 1.17 | http://xmlgraphics.apache.org/batik/batik-shared-resources/ |
-| Apache License, Version 2.0 | org.apache.xmlgraphics:batik-svg-dom | org.apache.xmlgraphics:batik-svg-dom | 1.17 | http://xmlgraphics.apache.org/batik/batik-svg-dom/ |
-| Apache License, Version 2.0 | org.apache.xmlgraphics:batik-svggen | org.apache.xmlgraphics:batik-svggen | 1.17 | http://xmlgraphics.apache.org/batik/batik-svggen/ |
-| Apache License, Version 2.0 | org.apache.xmlgraphics:batik-transcoder | org.apache.xmlgraphics:batik-transcoder | 1.17 | http://xmlgraphics.apache.org/batik/batik-transcoder/ |
-| Apache License, Version 2.0 | org.apache.xmlgraphics:batik-util | org.apache.xmlgraphics:batik-util | 1.17 | http://xmlgraphics.apache.org/batik/batik-util/ |
-| Apache License, Version 2.0 | org.apache.xmlgraphics:batik-xml | org.apache.xmlgraphics:batik-xml | 1.17 | http://xmlgraphics.apache.org/batik/batik-xml/ |
-| Apache License, Version 2.0 | Apache XML Graphics Commons | org.apache.xmlgraphics:xmlgraphics-commons | 2.9 | http://xmlgraphics.apache.org/commons/ |
-| The 2-Clause BSD License | Stax2 API | org.codehaus.woodstox:stax2-api | 4.2.2 | http://github.com/FasterXML/stax2-api |
-| Eclipse Distribution License - v1.0 | Angus Activation Registries | org.eclipse.angus:angus-activation | 2.0.2 | https://github.com/eclipse-ee4j/angus-activation/angus-activation |
-| Eclipse Distribution License - v1.0, Eclipse Public License - v2.0, GNU General Public License (GPL), Version 2 (with Classpath Exception) | Angus Mail Provider | org.eclipse.angus:angus-mail | 2.0.3 | http://eclipse-ee4j.github.io/angus-mail/angus-mail |
-| Apache License, Version 2.0 | Apache FreeMarker | org.freemarker:freemarker | 2.3.34 | https://freemarker.apache.org/ |
-| Eclipse Public License - v2.0, GNU General Public License (GPL), Version 2 (with Classpath Exception) | JSON-P Default Provider | org.glassfish:jakarta.json | 2.0.1 | https://github.com/eclipse-ee4j/jsonp |
-| Eclipse Distribution License - v1.0 | JAXB Core | org.glassfish.jaxb:jaxb-core | 4.0.5 | https://eclipse-ee4j.github.io/jaxb-ri/ |
-| Eclipse Distribution License - v1.0 | JAXB Runtime | org.glassfish.jaxb:jaxb-runtime | 4.0.5 | https://eclipse-ee4j.github.io/jaxb-ri/ |
-| Eclipse Distribution License - v1.0 | TXW2 Runtime | org.glassfish.jaxb:txw2 | 4.0.5 | https://eclipse-ee4j.github.io/jaxb-ri/ |
-| Apache License, Version 2.0 | Hibernate Validator Engine | org.hibernate.validator:hibernate-validator | 8.0.2.Final | http://hibernate.org/validator/hibernate-validator |
-| Apache License, Version 2.0, GNU Lesser General Public License (LGPL), Version 2.1, Mozilla Public License Version 1.1 | Javassist | org.javassist:javassist | 3.28.0-GA | http://www.javassist.org/ |
-| Apache License, Version 2.0 | JBoss Logging 3 | org.jboss.logging:jboss-logging | 3.6.1.Final | http://www.jboss.org |
-| MIT License | jsoup Java HTML Parser | org.jsoup:jsoup | 1.15.4 | https://jsoup.org/ |
-| Apache License, Version 2.0 | JSpecify annotations | org.jspecify:jspecify | 1.0.0 | http://jspecify.org/ |
-| Eclipse Distribution License - v1.0 | Extended StAX API | org.jvnet.staxex:stax-ex | 2.1.0 | https://projects.eclipse.org/projects/ee4j/stax-ex |
-| The 3-Clause BSD License | asm | org.ow2.asm:asm | 9.8 | http://asm.ow2.io/ |
-| Apache License, Version 2.0, WTFPL | Reflections | org.reflections:reflections | 0.10.2 | http://github.com/ronmamo/reflections |
-| Apache License, Version 2.0 | org.roaringbitmap:RoaringBitmap | org.roaringbitmap:RoaringBitmap | 1.3.0 | https://github.com/RoaringBitmap/RoaringBitmap |
-| Apache License, Version 2.0 | Scala Library | org.scala-lang:scala-library | 2.13.14 | https://www.scala-lang.org/ |
-| Apache License, Version 2.0 | scala3-library-bootstrapped | org.scala-lang:scala3-library_3 | 3.3.4 | https://github.com/scala/scala3 |
-| Apache License, Version 2.0 | JCL 1.2 implemented over SLF4J | org.slf4j:jcl-over-slf4j | 2.0.17 | http://www.slf4j.org |
-| MIT License | JUL to SLF4J bridge | org.slf4j:jul-to-slf4j | 2.0.17 | http://www.slf4j.org |
-| MIT License | SLF4J API Module | org.slf4j:slf4j-api | 2.0.17 | http://www.slf4j.org |
-| Apache License, Version 2.0 | Spring AOP | org.springframework:spring-aop | 6.2.9 | https://github.com/spring-projects/spring-framework |
-| Apache License, Version 2.0 | Spring Beans | org.springframework:spring-beans | 6.2.9 | https://github.com/spring-projects/spring-framework |
-| Apache License, Version 2.0 | Spring Context | org.springframework:spring-context | 6.2.9 | https://github.com/spring-projects/spring-framework |
-| Apache License, Version 2.0 | Spring Core | org.springframework:spring-core | 6.2.9 | https://github.com/spring-projects/spring-framework |
-| Apache License, Version 2.0 | Spring Expression Language (SpEL) | org.springframework:spring-expression | 6.2.9 | https://github.com/spring-projects/spring-framework |
-| Apache License, Version 2.0 | Spring Commons Logging Bridge | org.springframework:spring-jcl | 6.2.9 | https://github.com/spring-projects/spring-framework |
-| Apache License, Version 2.0 | Spring Web | org.springframework:spring-web | 6.2.9 | https://github.com/spring-projects/spring-framework |
-| Apache License, Version 2.0 | Spring Web MVC | org.springframework:spring-webmvc | 6.2.9 | https://github.com/spring-projects/spring-framework |
-| Apache License, Version 2.0 | spring-boot | org.springframework.boot:spring-boot | 3.5.4 | https://spring.io/projects/spring-boot |
-| Apache License, Version 2.0 | spring-boot-autoconfigure | org.springframework.boot:spring-boot-autoconfigure | 3.5.4 | https://spring.io/projects/spring-boot |
-| Apache License, Version 2.0 | spring-boot-starter | org.springframework.boot:spring-boot-starter | 3.5.4 | https://spring.io/projects/spring-boot |
-| Apache License, Version 2.0 | spring-boot-starter-json | org.springframework.boot:spring-boot-starter-json | 3.5.4 | https://spring.io/projects/spring-boot |
-| Apache License, Version 2.0 | spring-boot-starter-logging | org.springframework.boot:spring-boot-starter-logging | 3.5.4 | https://spring.io/projects/spring-boot |
-| Apache License, Version 2.0 | spring-boot-starter-tomcat | org.springframework.boot:spring-boot-starter-tomcat | 3.5.4 | https://spring.io/projects/spring-boot |
-| Apache License, Version 2.0 | spring-boot-starter-validation | org.springframework.boot:spring-boot-starter-validation | 3.5.4 | https://spring.io/projects/spring-boot |
-| Apache License, Version 2.0 | spring-boot-starter-web | org.springframework.boot:spring-boot-starter-web | 3.5.4 | https://spring.io/projects/spring-boot |
-| Apache License, Version 2.0 | TopBraid SHACL API | org.topbraid:shacl | 1.4.4 | http://topbraid.org/shacl/api |
-| Apache License, Version 2.0 | XML Resolver | org.xmlresolver:xmlresolver | 5.3.3 | https://github.com/xmlresolver/xmlresolver |
-| Apache License, Version 2.0 | org.xmlunit:xmlunit-core | org.xmlunit:xmlunit-core | 2.10.3 | https://www.xmlunit.org/ |
-| Apache License, Version 2.0 | SnakeYAML | org.yaml:snakeyaml | 2.4 | https://bitbucket.org/snakeyaml/snakeyaml |
-| Common Public License 1.0 | WSDL4J | wsdl4j:wsdl4j | 1.6.3 | http://sf.net/projects/wsdl4j |
-| Apache License, Version 2.0 | Xerces2-j | xerces:xercesImpl | 2.12.2 | https://xerces.apache.org/xerces2-j/ |
-| Apache License, Version 2.0, The SAX License, The W3C License | XML Commons External Components XML APIs | xml-apis:xml-apis | 1.4.01 | http://xml.apache.org/commons/components/external/ |
-| Apache License, Version 2.0 | XML Commons External Components XML APIs Extensions | xml-apis:xml-apis-ext | 1.3.04 | http://xml.apache.org/commons/components/external/ |
-| Apache License, Version 2.0 | XML Commons Resolver Component | xml-resolver:xml-resolver | 1.2 | http://xml.apache.org/commons/components/resolver/ |
+| GNU Lesser General Public License (LGPL), Version 2.1 | Openhtmltopdf Core Renderer | io.github.openhtmltopdf:openhtmltopdf-core | 1.1.28          | https://github.com/openhtmltopdf/openhtmltopdf/openhtmltopdf-core |
+| GNU Lesser General Public License (LGPL), Version 2.1 | Openhtmltopdf PDF Rendering (Apache PDF-BOX 3) | io.github.openhtmltopdf:openhtmltopdf-pdfbox | 1.1.28          | https://github.com/openhtmltopdf/openhtmltopdf/openhtmltopdf-pdfbox |
+| GNU Lesser General Public License (LGPL), Version 2.1 | Openhtmltopdf slf4j Support | io.github.openhtmltopdf:openhtmltopdf-slf4j | 1.1.28          | https://github.com/openhtmltopdf/openhtmltopdf/openhtmltopdf-slf4j |
+| GNU Lesser General Public License (LGPL), Version 2.1 | Openhtmltopdf SVG Support | io.github.openhtmltopdf:openhtmltopdf-svg-support | 1.1.28          | https://github.com/openhtmltopdf/openhtmltopdf/openhtmltopdf-svg-support |
+| Apache License, Version 2.0 | micrometer-commons | io.micrometer:micrometer-commons | 1.15.2          | https://github.com/micrometer-metrics/micrometer |
+| Apache License, Version 2.0 | micrometer-observation | io.micrometer:micrometer-observation | 1.15.2          | https://github.com/micrometer-metrics/micrometer |
+| Eclipse Distribution License - v1.0 | Jakarta Activation API | jakarta.activation:jakarta.activation-api | 2.1.2           | https://github.com/jakartaee/jaf-api |
+| Eclipse Public License - v2.0, GNU General Public License (GPL), Version 2 (with Classpath Exception) | Jakarta Annotations API | jakarta.annotation:jakarta.annotation-api | 2.1.1           | https://projects.eclipse.org/projects/ee4j.ca |
+| Eclipse Distribution License - v1.0 | Jakarta Web Services Metadata API | jakarta.jws:jakarta.jws-api | 3.0.0           | https://github.com/eclipse-ee4j/jws-api |
+| Eclipse Distribution License - v1.0, Eclipse Public License - v2.0, GNU General Public License (GPL), Version 2 (with Classpath Exception) | Jakarta Mail API | jakarta.mail:jakarta.mail-api | 2.1.3           | https://projects.eclipse.org/projects/ee4j/jakarta.mail-api |
+| Apache License, Version 2.0 | Jakarta Bean Validation API | jakarta.validation:jakarta.validation-api | 3.0.2           | https://beanvalidation.org |
+| Eclipse Distribution License - v1.0 | Jakarta XML Binding API | jakarta.xml.bind:jakarta.xml.bind-api | 4.0.2           | https://github.com/jakartaee/jaxb-api/jakarta.xml.bind-api |
+| Eclipse Distribution License - v1.0 | Jakarta SOAP with Attachments API | jakarta.xml.soap:jakarta.xml.soap-api | 3.0.2           | https://github.com/jakartaee/saaj-api |
+| Eclipse Distribution License - v1.0 | Jakarta XML Web Services API | jakarta.xml.ws:jakarta.xml.ws-api | 4.0.2           | https://github.com/jakartaee/jax-ws-api |
+| Apache License, Version 2.0 | ASM based accessors helper used by json-smart | net.minidev:accessors-smart | 2.5.2           | https://urielch.github.io/ |
+| Apache License, Version 2.0 | JSON Small and Fast Parser | net.minidev:json-smart | 2.5.2           | https://urielch.github.io/ |
+| Mozilla Public License Version 2.0 | Saxon-HE | net.sf.saxon:Saxon-HE | 12.7            | http://www.saxonica.com/ |
+| Apache License, Version 2.0 | Apache Commons Collections | org.apache.commons:commons-collections4 | 4.5.0           | https://commons.apache.org/proper/commons-collections/ |
+| Apache License, Version 2.0 | Apache Commons Compress | org.apache.commons:commons-compress | 1.27.1          | https://commons.apache.org/proper/commons-compress/ |
+| Apache License, Version 2.0 | Apache Commons Configuration | org.apache.commons:commons-configuration2 | 2.12.0          | https://commons.apache.org/proper/commons-configuration/ |
+| Apache License, Version 2.0 | Apache Commons CSV | org.apache.commons:commons-csv | 1.12.0          | https://commons.apache.org/proper/commons-csv/ |
+| Apache License, Version 2.0 | Apache Commons Lang | org.apache.commons:commons-lang3 | 3.18.0          | https://commons.apache.org/proper/commons-lang/ |
+| Apache License, Version 2.0 | Apache Commons Text | org.apache.commons:commons-text | 1.13.1          | https://commons.apache.org/proper/commons-text |
+| Apache License, Version 2.0 | Apache CXF Core | org.apache.cxf:cxf-core | 4.1.3           | https://cxf.apache.org |
+| Apache License, Version 2.0 | Apache CXF Runtime SOAP Binding | org.apache.cxf:cxf-rt-bindings-soap | 4.1.3           | https://cxf.apache.org |
+| Apache License, Version 2.0 | Apache CXF Runtime XML Binding | org.apache.cxf:cxf-rt-bindings-xml | 4.1.3           | https://cxf.apache.org |
+| Apache License, Version 2.0 | Apache CXF Runtime JAXB DataBinding | org.apache.cxf:cxf-rt-databinding-jaxb | 4.1.3           | https://cxf.apache.org |
+| Apache License, Version 2.0 | Apache CXF Metrics Feature | org.apache.cxf:cxf-rt-features-metrics | 4.1.3           | https://cxf.apache.org/cxf-rt-features-metrics |
+| Apache License, Version 2.0 | Apache CXF Runtime JAX-WS Frontend | org.apache.cxf:cxf-rt-frontend-jaxws | 4.1.3           | https://cxf.apache.org |
+| Apache License, Version 2.0 | Apache CXF Runtime Simple Frontend | org.apache.cxf:cxf-rt-frontend-simple | 4.1.3           | https://cxf.apache.org |
+| Apache License, Version 2.0 | Apache CXF Runtime HTTP Transport | org.apache.cxf:cxf-rt-transports-http | 4.1.3           | https://cxf.apache.org |
+| Apache License, Version 2.0 | Apache CXF Runtime WS Addressing | org.apache.cxf:cxf-rt-ws-addr | 4.1.3           | https://cxf.apache.org |
+| Apache License, Version 2.0 | Apache CXF Runtime WS Policy | org.apache.cxf:cxf-rt-ws-policy | 4.1.3           | https://cxf.apache.org |
+| Apache License, Version 2.0 | Apache CXF Runtime Core for WSDL | org.apache.cxf:cxf-rt-wsdl | 4.1.3           | https://cxf.apache.org |
+| Apache License, Version 2.0 | Apache CXF Spring Boot Autoconfigure | org.apache.cxf:cxf-spring-boot-autoconfigure | 4.1.3           | https://cxf.apache.org |
+| Apache License, Version 2.0 | Apache CXF Spring Boot Starter JAX-WS | org.apache.cxf:cxf-spring-boot-starter-jaxws | 4.1.3           | https://cxf.apache.org |
+| Apache License, Version 2.0 | Apache HttpClient | org.apache.httpcomponents:httpclient | 4.5.13          | http://hc.apache.org/httpcomponents-client |
+| Apache License, Version 2.0 | Apache HttpCore | org.apache.httpcomponents:httpcore | 4.4.16          | http://hc.apache.org/httpcomponents-core-ga |
+| Apache License, Version 2.0 | Apache HttpClient Mime | org.apache.httpcomponents:httpmime | 4.5.13          | http://hc.apache.org/httpcomponents-client |
+| Apache License, Version 2.0 | Apache Jena - ARQ | org.apache.jena:jena-arq | 5.2.0           | https://jena.apache.org/jena-arq/ |
+| Apache License, Version 2.0 | Apache Jena - Base | org.apache.jena:jena-base | 5.2.0           | https://jena.apache.org/jena-base/ |
+| Apache License, Version 2.0 | Apache Jena - Core | org.apache.jena:jena-core | 5.2.0           | https://jena.apache.org/jena-core/ |
+| Apache License, Version 2.0 | Apache Jena - IRI | org.apache.jena:jena-iri | 5.2.0           | https://jena.apache.org/jena-iri/ |
+| Apache License, Version 2.0 | Apache Log4j API | org.apache.logging.log4j:log4j-api | 2.24.3          | https://logging.apache.org/log4j/2.x/log4j/log4j-api/ |
+| Apache License, Version 2.0 | Log4j API to SLF4J Adapter | org.apache.logging.log4j:log4j-to-slf4j | 2.24.3          | https://logging.apache.org/log4j/2.x/log4j/log4j-to-slf4j/ |
+| Apache License, Version 2.0 | Apache Neethi | org.apache.neethi:neethi | 3.2.1           | https://ws.apache.org/neethi/ |
+| Apache License, Version 2.0 | Apache FontBox | org.apache.pdfbox:fontbox | 3.0.5           | http://pdfbox.apache.org/ |
+| Apache License, Version 2.0 | Apache PDFBox | org.apache.pdfbox:pdfbox | 3.0.5           | https://www.apache.org/pdfbox-parent/pdfbox/ |
+| Apache License, Version 2.0 | Apache PDFBox io | org.apache.pdfbox:pdfbox-io | 3.0.5           | https://www.apache.org/pdfbox-parent/pdfbox-io/ |
+| Apache License, Version 2.0 | Apache XmpBox | org.apache.pdfbox:xmpbox | 3.0.3           | https://www.apache.org/pdfbox-parent/xmpbox/ |
+| Apache License, Version 2.0 | Apache Pekko Actor | org.apache.pekko:pekko-actor_3 | 1.1.4           | https://pekko.apache.org/ |
+| Apache License, Version 2.0 | Apache Thrift | org.apache.thrift:libthrift | 0.21.0          | http://thrift.apache.org |
+| Apache License, Version 2.0 | Apache Tika core | org.apache.tika:tika-core | 3.2.0           | https://tika.apache.org/ |
+| Apache License, Version 2.0 | tomcat-embed-core | org.apache.tomcat.embed:tomcat-embed-core | 10.1.44         | https://tomcat.apache.org/ |
+| Apache License, Version 2.0 | tomcat-embed-el | org.apache.tomcat.embed:tomcat-embed-el | 10.1.44         | https://tomcat.apache.org/ |
+| Apache License, Version 2.0 | tomcat-embed-websocket | org.apache.tomcat.embed:tomcat-embed-websocket | 10.1.44         | https://tomcat.apache.org/ |
+| Apache License, Version 2.0 | XmlSchema Core | org.apache.ws.xmlschema:xmlschema-core | 2.3.1           | https://ws.apache.org/commons/xmlschema20/xmlschema-core/ |
+| Apache License, Version 2.0 | org.apache.xmlgraphics:batik-anim | org.apache.xmlgraphics:batik-anim | 1.17            | http://xmlgraphics.apache.org/batik/batik-anim/ |
+| Apache License, Version 2.0 | org.apache.xmlgraphics:batik-awt-util | org.apache.xmlgraphics:batik-awt-util | 1.17            | http://xmlgraphics.apache.org/batik/batik-awt-util/ |
+| Apache License, Version 2.0 | org.apache.xmlgraphics:batik-bridge | org.apache.xmlgraphics:batik-bridge | 1.17            | http://xmlgraphics.apache.org/batik/batik-bridge/ |
+| Apache License, Version 2.0 | org.apache.xmlgraphics:batik-codec | org.apache.xmlgraphics:batik-codec | 1.17            | http://xmlgraphics.apache.org/batik/batik-codec/ |
+| Apache License, Version 2.0 | org.apache.xmlgraphics:batik-constants | org.apache.xmlgraphics:batik-constants | 1.17            | http://xmlgraphics.apache.org/batik/batik-constants/ |
+| Apache License, Version 2.0 | org.apache.xmlgraphics:batik-css | org.apache.xmlgraphics:batik-css | 1.17            | http://xmlgraphics.apache.org/batik/batik-css/ |
+| Apache License, Version 2.0 | org.apache.xmlgraphics:batik-dom | org.apache.xmlgraphics:batik-dom | 1.17            | http://xmlgraphics.apache.org/batik/batik-dom/ |
+| Apache License, Version 2.0 | org.apache.xmlgraphics:batik-ext | org.apache.xmlgraphics:batik-ext | 1.17            | http://xmlgraphics.apache.org/batik/batik-ext/ |
+| Apache License, Version 2.0 | org.apache.xmlgraphics:batik-gvt | org.apache.xmlgraphics:batik-gvt | 1.17            | http://xmlgraphics.apache.org/batik/batik-gvt/ |
+| Apache License, Version 2.0 | org.apache.xmlgraphics:batik-i18n | org.apache.xmlgraphics:batik-i18n | 1.17            | http://xmlgraphics.apache.org/batik/batik-i18n/ |
+| Apache License, Version 2.0 | org.apache.xmlgraphics:batik-parser | org.apache.xmlgraphics:batik-parser | 1.17            | http://xmlgraphics.apache.org/batik/batik-parser/ |
+| Apache License, Version 2.0 | org.apache.xmlgraphics:batik-script | org.apache.xmlgraphics:batik-script | 1.17            | http://xmlgraphics.apache.org/batik/batik-script/ |
+| Apache License, Version 2.0 | org.apache.xmlgraphics:batik-shared-resources | org.apache.xmlgraphics:batik-shared-resources | 1.17            | http://xmlgraphics.apache.org/batik/batik-shared-resources/ |
+| Apache License, Version 2.0 | org.apache.xmlgraphics:batik-svg-dom | org.apache.xmlgraphics:batik-svg-dom | 1.17            | http://xmlgraphics.apache.org/batik/batik-svg-dom/ |
+| Apache License, Version 2.0 | org.apache.xmlgraphics:batik-svggen | org.apache.xmlgraphics:batik-svggen | 1.17            | http://xmlgraphics.apache.org/batik/batik-svggen/ |
+| Apache License, Version 2.0 | org.apache.xmlgraphics:batik-transcoder | org.apache.xmlgraphics:batik-transcoder | 1.17            | http://xmlgraphics.apache.org/batik/batik-transcoder/ |
+| Apache License, Version 2.0 | org.apache.xmlgraphics:batik-util | org.apache.xmlgraphics:batik-util | 1.17            | http://xmlgraphics.apache.org/batik/batik-util/ |
+| Apache License, Version 2.0 | org.apache.xmlgraphics:batik-xml | org.apache.xmlgraphics:batik-xml | 1.17            | http://xmlgraphics.apache.org/batik/batik-xml/ |
+| Apache License, Version 2.0 | Apache XML Graphics Commons | org.apache.xmlgraphics:xmlgraphics-commons | 2.9             | http://xmlgraphics.apache.org/commons/ |
+| The 2-Clause BSD License | Stax2 API | org.codehaus.woodstox:stax2-api | 4.2.2           | http://github.com/FasterXML/stax2-api |
+| Eclipse Distribution License - v1.0 | Angus Activation Registries | org.eclipse.angus:angus-activation | 2.0.2           | https://github.com/eclipse-ee4j/angus-activation/angus-activation |
+| Eclipse Distribution License - v1.0, Eclipse Public License - v2.0, GNU General Public License (GPL), Version 2 (with Classpath Exception) | Angus Mail Provider | org.eclipse.angus:angus-mail | 2.0.3           | http://eclipse-ee4j.github.io/angus-mail/angus-mail |
+| Apache License, Version 2.0 | Apache FreeMarker | org.freemarker:freemarker | 2.3.34          | https://freemarker.apache.org/ |
+| Eclipse Public License - v2.0, GNU General Public License (GPL), Version 2 (with Classpath Exception) | JSON-P Default Provider | org.glassfish:jakarta.json | 2.0.1           | https://github.com/eclipse-ee4j/jsonp |
+| Eclipse Distribution License - v1.0 | JAXB Core | org.glassfish.jaxb:jaxb-core | 4.0.5           | https://eclipse-ee4j.github.io/jaxb-ri/ |
+| Eclipse Distribution License - v1.0 | JAXB Runtime | org.glassfish.jaxb:jaxb-runtime | 4.0.5           | https://eclipse-ee4j.github.io/jaxb-ri/ |
+| Eclipse Distribution License - v1.0 | TXW2 Runtime | org.glassfish.jaxb:txw2 | 4.0.5           | https://eclipse-ee4j.github.io/jaxb-ri/ |
+| Apache License, Version 2.0 | Hibernate Validator Engine | org.hibernate.validator:hibernate-validator | 8.0.2.Final     | http://hibernate.org/validator/hibernate-validator |
+| Apache License, Version 2.0, GNU Lesser General Public License (LGPL), Version 2.1, Mozilla Public License Version 1.1 | Javassist | org.javassist:javassist | 3.28.0-GA       | http://www.javassist.org/ |
+| Apache License, Version 2.0 | JBoss Logging 3 | org.jboss.logging:jboss-logging | 3.6.1.Final     | http://www.jboss.org |
+| MIT License | jsoup Java HTML Parser | org.jsoup:jsoup | 1.15.4          | https://jsoup.org/ |
+| Apache License, Version 2.0 | JSpecify annotations | org.jspecify:jspecify | 1.0.0           | http://jspecify.org/ |
+| Eclipse Distribution License - v1.0 | Extended StAX API | org.jvnet.staxex:stax-ex | 2.1.0           | https://projects.eclipse.org/projects/ee4j/stax-ex |
+| The 3-Clause BSD License | asm | org.ow2.asm:asm | 9.8             | http://asm.ow2.io/ |
+| Apache License, Version 2.0, WTFPL | Reflections | org.reflections:reflections | 0.10.2          | http://github.com/ronmamo/reflections |
+| Apache License, Version 2.0 | org.roaringbitmap:RoaringBitmap | org.roaringbitmap:RoaringBitmap | 1.3.0           | https://github.com/RoaringBitmap/RoaringBitmap |
+| Apache License, Version 2.0 | Scala Library | org.scala-lang:scala-library | 2.13.14         | https://www.scala-lang.org/ |
+| Apache License, Version 2.0 | scala3-library-bootstrapped | org.scala-lang:scala3-library_3 | 3.3.4           | https://github.com/scala/scala3 |
+| Apache License, Version 2.0 | JCL 1.2 implemented over SLF4J | org.slf4j:jcl-over-slf4j | 2.0.17          | http://www.slf4j.org |
+| MIT License | JUL to SLF4J bridge | org.slf4j:jul-to-slf4j | 2.0.17          | http://www.slf4j.org |
+| MIT License | SLF4J API Module | org.slf4j:slf4j-api | 2.0.17          | http://www.slf4j.org |
+| Apache License, Version 2.0 | Spring AOP | org.springframework:spring-aop | 6.2.9           | https://github.com/spring-projects/spring-framework |
+| Apache License, Version 2.0 | Spring Beans | org.springframework:spring-beans | 6.2.9           | https://github.com/spring-projects/spring-framework |
+| Apache License, Version 2.0 | Spring Context | org.springframework:spring-context | 6.2.9           | https://github.com/spring-projects/spring-framework |
+| Apache License, Version 2.0 | Spring Core | org.springframework:spring-core | 6.2.9           | https://github.com/spring-projects/spring-framework |
+| Apache License, Version 2.0 | Spring Expression Language (SpEL) | org.springframework:spring-expression | 6.2.9           | https://github.com/spring-projects/spring-framework |
+| Apache License, Version 2.0 | Spring Commons Logging Bridge | org.springframework:spring-jcl | 6.2.9           | https://github.com/spring-projects/spring-framework |
+| Apache License, Version 2.0 | Spring Web | org.springframework:spring-web | 6.2.9           | https://github.com/spring-projects/spring-framework |
+| Apache License, Version 2.0 | Spring Web MVC | org.springframework:spring-webmvc | 6.2.9           | https://github.com/spring-projects/spring-framework |
+| Apache License, Version 2.0 | spring-boot | org.springframework.boot:spring-boot | 3.5.4           | https://spring.io/projects/spring-boot |
+| Apache License, Version 2.0 | spring-boot-autoconfigure | org.springframework.boot:spring-boot-autoconfigure | 3.5.4           | https://spring.io/projects/spring-boot |
+| Apache License, Version 2.0 | spring-boot-starter | org.springframework.boot:spring-boot-starter | 3.5.4           | https://spring.io/projects/spring-boot |
+| Apache License, Version 2.0 | spring-boot-starter-json | org.springframework.boot:spring-boot-starter-json | 3.5.4           | https://spring.io/projects/spring-boot |
+| Apache License, Version 2.0 | spring-boot-starter-logging | org.springframework.boot:spring-boot-starter-logging | 3.5.4           | https://spring.io/projects/spring-boot |
+| Apache License, Version 2.0 | spring-boot-starter-tomcat | org.springframework.boot:spring-boot-starter-tomcat | 3.5.4           | https://spring.io/projects/spring-boot |
+| Apache License, Version 2.0 | spring-boot-starter-validation | org.springframework.boot:spring-boot-starter-validation | 3.5.4           | https://spring.io/projects/spring-boot |
+| Apache License, Version 2.0 | spring-boot-starter-web | org.springframework.boot:spring-boot-starter-web | 3.5.4           | https://spring.io/projects/spring-boot |
+| Apache License, Version 2.0 | TopBraid SHACL API | org.topbraid:shacl | 1.4.4           | http://topbraid.org/shacl/api |
+| Apache License, Version 2.0 | XML Resolver | org.xmlresolver:xmlresolver | 5.3.3           | https://github.com/xmlresolver/xmlresolver |
+| Apache License, Version 2.0 | org.xmlunit:xmlunit-core | org.xmlunit:xmlunit-core | 2.10.3          | https://www.xmlunit.org/ |
+| Apache License, Version 2.0 | SnakeYAML | org.yaml:snakeyaml | 2.4             | https://bitbucket.org/snakeyaml/snakeyaml |
+| Common Public License 1.0 | WSDL4J | wsdl4j:wsdl4j | 1.6.3           | http://sf.net/projects/wsdl4j |
+| Apache License, Version 2.0 | Xerces2-j | xerces:xercesImpl | 2.12.2          | https://xerces.apache.org/xerces2-j/ |
+| Apache License, Version 2.0, The SAX License, The W3C License | XML Commons External Components XML APIs | xml-apis:xml-apis | 1.4.01          | http://xml.apache.org/commons/components/external/ |
+| Apache License, Version 2.0 | XML Commons External Components XML APIs Extensions | xml-apis:xml-apis-ext | 1.3.04          | http://xml.apache.org/commons/components/external/ |
+| Apache License, Version 2.0 | XML Commons Resolver Component | xml-resolver:xml-resolver | 1.2             | http://xml.apache.org/commons/components/resolver/ |
 
 ### Component gitb-ui (user interface)
 

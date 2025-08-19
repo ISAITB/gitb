@@ -33,7 +33,8 @@
         <version.plugin.versions-maven-plugin>2.18.0</version.plugin.versions-maven-plugin>
         <!-- Dependency versions -->
         <version.gitbTypes>1.28.0-SNAPSHOT</version.gitbTypes>
-        <version.springBoot>3.5.4</version.springBoot>
+        <version.springBoot>3.5.4</version.springBoot> <!-- When upgrading adapt Tomcat version (below) as needed. -->
+        <tomcat.version>10.1.44</tomcat.version>
         <version.bouncycastle>1.81</version.bouncycastle>
         <version.helgerSchematron>8.0.6</version.helgerSchematron>
         <version.metaInfServices>1.9</version.metaInfServices>
