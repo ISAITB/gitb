@@ -153,5 +153,12 @@
     ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.springframework/spring-.*@.*$</packageUrl>
         <vulnerabilityName>CVE-2025-41242</vulnerabilityName>
+    </suppress>
+   <suppress>
+        <notes><![CDATA[
+   file name: tomcat-embed-core-10.1.42.jar
+   ]]></notes>
+       <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/tomcat-embed-.*@.*$</packageUrl>
+       <cve>CVE-2025-48989</cve>
     </suppress>    
 </suppressions>
