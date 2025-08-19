@@ -45,10 +45,11 @@
                 <div class="no-statements-visible">
                   No conformance statements were found matching your search text.
                 </div>
+              } @else {
+                  <div class="statement-container">
+                      <app-conformance-statement-items-display [items]="items" [animated]="animated" (selectionChanged)="selectionChanged($event)"></app-conformance-statement-items-display>
+                  </div>
               }
-              <div class="statement-container">
-                <app-conformance-statement-items-display [items]="items" [animated]="animated" (selectionChanged)="selectionChanged($event)"></app-conformance-statement-items-display>
-              </div>
             }
           }
         </div>
