@@ -20,6 +20,7 @@ import com.gitb.tdl.Process;
 import com.gitb.vs.tdl.Context;
 import jakarta.xml.bind.*;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.xerces.jaxp.DocumentBuilderFactoryImpl;
 import org.w3c.dom.Document;
 import org.xml.sax.ErrorHandler;
@@ -287,7 +288,7 @@ public class Utils {
 
     public static String standardisePath(String path) {
         if (path != null && !path.isBlank()) {
-            path = StringUtils.replace(path, "\\", "/");
+            path = Strings.CS.replace(path, "\\", "/");
             if (!path.startsWith("/")) {
                 path = "/" + path;
             }

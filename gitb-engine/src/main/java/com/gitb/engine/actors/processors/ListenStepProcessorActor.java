@@ -48,7 +48,7 @@ import static com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils.get
 
 /**
  * Created by serbay.
- *
+ * <p>
  * Listen step executor actor
  */
 public class ListenStepProcessorActor extends AbstractMessagingStepProcessorActor<Listen> {
@@ -123,8 +123,8 @@ public class ListenStepProcessorActor extends AbstractMessagingStepProcessorActo
                 }
 
                 Message inputMessage = getMessageFromBindings(messagingHandler, step.getInput(), expressionHandler);
-                var from = VariableResolver.isVariableReference(getFrom())?(String) resolver.resolveVariableAsString(getFrom()).getValue():getFrom();
-                var to = VariableResolver.isVariableReference(getTo())?(String) resolver.resolveVariableAsString(getTo()).getValue():getTo();
+                var from = VariableResolver.isVariableReference(getFrom())? resolver.resolveVariableAsString(getFrom()).getValue() :getFrom();
+                var to = VariableResolver.isVariableReference(getTo())? resolver.resolveVariableAsString(getTo()).getValue() :getTo();
                 MessagingReport report =
                         messagingHandler
                                 .listenMessage(

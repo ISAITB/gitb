@@ -45,7 +45,7 @@ public class SchematronResolver implements URIResolver {
     }
 
     @Override
-    public Source resolve(String href, String baseURI) throws TransformerException {
+    public Source resolve(String href, String baseURI) {
         ModuleManager moduleManager = ModuleManager.getInstance();
         ITestCaseRepository repository = moduleManager.getTestCaseRepository();
         String parentFolder;

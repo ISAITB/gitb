@@ -20,14 +20,14 @@ import com.gitb.engine.commands.common.SessionCommand;
 
 /**
  * Command to prepare the test session to be stopped.
- *
+ * <p>
  * This records the original source of the request to avoid cyclic notifications.
- *
+ * <p>
  * Created by simatosc.
  */
 public class PrepareForStopCommand extends SessionCommand {
 
-	private ActorRef originalSource;
+	private final ActorRef originalSource;
 
 	public PrepareForStopCommand(String sessionId, ActorRef originalSource) {
 		super(sessionId);

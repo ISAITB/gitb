@@ -29,7 +29,6 @@ import com.gitb.tdl.MessagingStep;
 import com.gitb.tr.TestResultType;
 import com.gitb.types.DataType;
 import com.gitb.types.MapType;
-import com.gitb.types.StringType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

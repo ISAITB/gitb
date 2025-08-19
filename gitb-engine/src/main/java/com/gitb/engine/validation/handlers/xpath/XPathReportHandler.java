@@ -59,7 +59,7 @@ public class XPathReportHandler extends AbstractReportHandler {
 	    schema.setValue(new String(xpath.serializeByDefaultEncoding()));
 	    attachment.getItem().add(schema);
 
-	    if((boolean) result.getValue()) {
+	    if(result.getValue()) {
 		    report.setResult(TestResultType.SUCCESS);
 	    } else {
 		    report.setResult(TestResultType.FAILURE);

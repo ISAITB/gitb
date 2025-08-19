@@ -24,5 +24,5 @@ import java.net.DatagramSocket;
  * Created by serbay.
  */
 public interface IDatagramReceiver extends IReceiver {
-	public void onReceive(DatagramSocket socket, DatagramPacket datagramPacket);
+	void onReceive(DatagramSocket socket, DatagramPacket datagramPacket);
 }

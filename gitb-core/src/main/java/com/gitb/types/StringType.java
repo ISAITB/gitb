@@ -66,7 +66,7 @@ public class StringType extends PrimitiveType<String> {
     @Override
     public byte[] serialize(String encoding) {
         try {
-            return ((String) getValue()).getBytes(encoding);
+            return getValue().getBytes(encoding);
         } catch (UnsupportedEncodingException e) {
             throw new GITBEngineInternalError(e);
         }
@@ -104,7 +104,7 @@ public class StringType extends PrimitiveType<String> {
     @Override
     protected BooleanType toBooleanType() {
         BooleanType type = new BooleanType();
-        type.setValue(Boolean.valueOf((String) getValue()));
+        type.setValue(Boolean.valueOf(getValue()));
         return type;
     }
 
@@ -124,7 +124,7 @@ public class StringType extends PrimitiveType<String> {
 
     @Override
     protected StringType toStringType() {
-	    return new StringType((String) this.getValue(), this.encoding);
+	    return new StringType(this.getValue(), this.encoding);
     }
 
     public String getEncoding() {

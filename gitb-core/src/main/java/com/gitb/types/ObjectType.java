@@ -20,7 +20,7 @@ import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.utils.BomStrippingReader;
 import com.gitb.utils.ErrorUtils;
 import com.gitb.utils.XMLUtils;
-import org.apache.commons.io.input.CountingInputStream;
+import org.apache.commons.io.input.BoundedInputStream;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -31,7 +31,10 @@ import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.*;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.xpath.XPathConstants;
@@ -156,12 +159,12 @@ public class ObjectType extends DataType {
     }
 
     @Override
-    public void deserialize(InputStream inputStream, String encoding)   {
-        try (CountingInputStream in = new CountingInputStream(inputStream)) {
+    public void deserialize(InputStream inputStream, String encoding) {
+        try (var in = BoundedInputStream.builder().setInputStream(inputStream).get()) {
             InputSource inputSource = new InputSource(new BomStrippingReader(in));
             inputSource.setEncoding(encoding);
             deserialize(inputSource);
-            size = in.getByteCount();
+            size = in.getCount();
         } catch (IOException e) {
             throw new IllegalStateException("Error while reading stream.", e);
         }

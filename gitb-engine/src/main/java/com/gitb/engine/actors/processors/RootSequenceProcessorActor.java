@@ -48,7 +48,7 @@ public class RootSequenceProcessorActor<T extends Sequence> extends SequenceProc
             if (forcedResult == TestResultType.SUCCESS) {
                 currentValue.setValue(true);
             } else {
-                currentValue.setValue(forcedResult == null && ((Boolean)currentValue.getValue()) && (event.getStatus() == StepStatus.COMPLETED || event.getStatus() == StepStatus.WARNING));
+                currentValue.setValue(forcedResult == null && currentValue.getValue() && (event.getStatus() == StepStatus.COMPLETED || event.getStatus() == StepStatus.WARNING));
             }
         }
         // Handle regular processing.

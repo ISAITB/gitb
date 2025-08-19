@@ -228,8 +228,8 @@ public class VariableResolver implements XPathVariableResolver {
 
     static class VariableData {
 
-        Boolean container;
-        String containerExpression;
+        final Boolean container;
+        final String containerExpression;
 
         VariableData(Boolean container, String containerExpression) {
             this.container = container;

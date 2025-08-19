@@ -38,8 +38,6 @@ public interface IValidationHandler extends StepHandler {
 
     /**
      * Validates the content with given validator
-     * @param inputs
-     * @return
      */
     TestStepReportType validate(List<Configuration> configurations, Map<String, DataType> inputs, String stepId);
 

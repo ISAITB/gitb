@@ -17,10 +17,8 @@ package com.gitb.repository;
 
 import com.gitb.tdl.Scriptlet;
 import com.gitb.tdl.TestCase;
-import com.gitb.tdl.TestSuite;
 
 import java.io.InputStream;
-import java.util.Collection;
 
 /**
  * Created by serbay on 9/10/14.

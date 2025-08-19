@@ -40,7 +40,7 @@ public class Validator {
     private final String tmpFolderPath;
     private final ExternalConfiguration externalConfiguration;
 
-    private ValidationReport report = new ValidationReport();
+    private final ValidationReport report = new ValidationReport();
 
     public Validator(String tmpFolderPath, ExternalConfiguration externalConfiguration) {
         this.tmpFolderPath = tmpFolderPath;

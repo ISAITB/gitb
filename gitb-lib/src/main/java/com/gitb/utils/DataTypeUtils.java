@@ -181,9 +181,11 @@ public class DataTypeUtils {
 									.header("Accept", "*/*")
 									.GET()
 									.build();
-							var content = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString()).body();
-							data.deserialize(content.getBytes());
-							postProcessor.process(data);
+                            try (var client = HttpClient.newHttpClient()) {
+                                var content = client.send(request, HttpResponse.BodyHandlers.ofString()).body();
+                                data.deserialize(content.getBytes());
+                                postProcessor.process(data);
+                            }
 						} catch (URISyntaxException e) {
 							throw new IllegalStateException("URI had invalid syntax ["+anyContent.getValue()+"]", e);
 						} catch (InterruptedException e) {

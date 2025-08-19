@@ -266,7 +266,7 @@ public class CheckUniqueSetsOfValues extends AbstractTestCaseObserver {
         var msgBuilder = new StringBuilder();
         while (it.hasNext()) {
             var part = it.next();
-            if (msgBuilder.length() > 0) {
+            if (!msgBuilder.isEmpty()) {
                 if (it.hasNext()) {
                     msgBuilder.append(", ");
                 } else {

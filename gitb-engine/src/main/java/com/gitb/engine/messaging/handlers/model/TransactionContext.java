@@ -89,7 +89,4 @@ public class TransactionContext {
         nonCriticalErrors.clear();
     }
 
-	public void end() {
-		// Do nothing.
-	}
 }

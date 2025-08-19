@@ -27,6 +27,7 @@ import org.apache.commons.configuration2.EnvironmentConfiguration;
 import org.apache.commons.configuration2.SystemConfiguration;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -117,7 +118,7 @@ public class TestEngineConfiguration {
 				rootCallbackUrl = inferCallbackURL("", referenceToUse);
 			}
 			// By default, infer the messaging, processing and validation callback URLs from the root callback URL to avoid requiring their explicit definition.
-			rootCallbackUrl = Objects.requireNonNull(StringUtils.appendIfMissing(rootCallbackUrl, "/"), "No root callback address could be determined. You must configure the %s property.".formatted(ENV_CALLBACK_ROOT_URL));
+			rootCallbackUrl = Objects.requireNonNull(Strings.CS.appendIfMissing(rootCallbackUrl, "/"), "No root callback address could be determined. You must configure the %s property.".formatted(ENV_CALLBACK_ROOT_URL));
 			if (messagingCallbackUrl.isEmpty()) {
 				messagingCallbackUrl = inferCallbackURL("MessagingClient", rootCallbackUrl);
 			}
@@ -147,19 +148,19 @@ public class TestEngineConfiguration {
 			if (System.getenv().containsKey(ENV_REPOSITORY_TEST_CASE_URL)) {
 				TEST_CASE_REPOSITORY_URL = System.getenv().get(ENV_REPOSITORY_TEST_CASE_URL);
 			} else if (System.getenv().containsKey(ENV_REPOSITORY_ROOT_URL)) {
-				TEST_CASE_REPOSITORY_URL = StringUtils.removeEnd(System.getenv(ENV_REPOSITORY_ROOT_URL), "/") + "/api/repository/tests/:test_id/definition";
+				TEST_CASE_REPOSITORY_URL = Strings.CS.removeEnd(System.getenv(ENV_REPOSITORY_ROOT_URL), "/") + "/api/repository/tests/:test_id/definition";
 			} else {
 				TEST_CASE_REPOSITORY_URL = config.getString(ENV_REPOSITORY_TEST_CASE_URL);
 			}
 			if (System.getenv().containsKey(ENV_REPOSITORY_TEST_RESOURCE_URL)) {
 				TEST_RESOURCE_REPOSITORY_URL = System.getenv().get(ENV_REPOSITORY_TEST_RESOURCE_URL);
 			} else if (System.getenv().containsKey(ENV_REPOSITORY_ROOT_URL)) {
-				TEST_RESOURCE_REPOSITORY_URL = StringUtils.removeEnd(System.getenv(ENV_REPOSITORY_ROOT_URL), "/") + "/api/repository/resource/:test_id/:resource_id";
+				TEST_RESOURCE_REPOSITORY_URL = Strings.CS.removeEnd(System.getenv(ENV_REPOSITORY_ROOT_URL), "/") + "/api/repository/resource/:test_id/:resource_id";
 			} else {
 				TEST_RESOURCE_REPOSITORY_URL = config.getString(ENV_REPOSITORY_TEST_RESOURCE_URL);
 			}
-			REPOSITORY_HEALTHCHECK_URL = StringUtils.removeEnd(TEST_RESOURCE_REPOSITORY_URL, "/resource/:test_id/:resource_id") + "/healthCheck";
-			REPOSITORY_ROOT_URL = StringUtils.removeEnd(StringUtils.removeEnd(StringUtils.getCommonPrefix(REPOSITORY_HEALTHCHECK_URL, TEST_CASE_REPOSITORY_URL, TEST_RESOURCE_REPOSITORY_URL), "/"), "/api/repository");
+			REPOSITORY_HEALTHCHECK_URL = Strings.CS.removeEnd(TEST_RESOURCE_REPOSITORY_URL, "/resource/:test_id/:resource_id") + "/healthCheck";
+			REPOSITORY_ROOT_URL = Strings.CS.removeEnd(Strings.CS.removeEnd(StringUtils.getCommonPrefix(REPOSITORY_HEALTHCHECK_URL, TEST_CASE_REPOSITORY_URL, TEST_RESOURCE_REPOSITORY_URL), "/"), "/api/repository");
 			TEST_ID_PARAMETER = System.getenv().getOrDefault("remote.testcase.test-id.parameter", config.getString("remote.testcase.test-id.parameter"));
 			RESOURCE_ID_PARAMETER = System.getenv().getOrDefault("remote.testcase.resource-id.parameter", config.getString("remote.testcase.resource-id.parameter"));
 			// Configure also the HMAC information used to authorize remote calls.

@@ -49,10 +49,10 @@ import java.util.List;
  * Created by serbay on 9/23/14.
  */
 public class HttpReceiver extends AbstractTransactionReceiver {
-	private Logger logger = LoggerFactory.getLogger(HttpReceiver.class);
 
+	private static final Logger logger = LoggerFactory.getLogger(HttpReceiver.class);
 	private static final int BUFFER_SIZE = 8*1024;
-	private static HttpConnectionFactory<DefaultBHttpServerConnection> httpConnectionFactory;
+	private static final HttpConnectionFactory<DefaultBHttpServerConnection> httpConnectionFactory;
 
 	static {
 		ConnectionConfig connectionConfig = ConnectionConfig
@@ -109,15 +109,14 @@ public class HttpReceiver extends AbstractTransactionReceiver {
      * Receives HTTP requests from clients
      * @param configurations Receiver configurations
      * @return Received HTTP request
-     * @throws Exception
      */
     private Message receiveHttpRequest(List<Configuration> configurations) throws Exception{
-        logger.debug(addMarker(), "Message received: " + socket);
+        logger.debug(addMarker(), "Message received: {}", socket);
 
-        logger.debug(addMarker(), "Connection created: " + connection);
+        logger.debug(addMarker(), "Connection created: {}", connection);
 
         HttpRequest request = ((DefaultBHttpServerConnection) connection).receiveRequestHeader();
-        logger.debug(addMarker(), "Received request header: " + request);
+        logger.debug(addMarker(), "Received request header: {}", request);
 
         Message message = new Message();
         message.getFragments()
@@ -133,7 +132,7 @@ public class HttpReceiver extends AbstractTransactionReceiver {
         if(request instanceof HttpEntityEnclosingRequest) {
             ((DefaultBHttpServerConnection) connection).receiveRequestEntity((HttpEntityEnclosingRequest) request);
 
-            logger.debug(addMarker(), "Received request entity: " + request);
+            logger.debug(addMarker(), "Received request entity: {}", request);
 
             HttpEntity entity = ((HttpEntityEnclosingRequest)request).getEntity();
 
@@ -166,7 +165,7 @@ public class HttpReceiver extends AbstractTransactionReceiver {
             boundary = boundary.trim();
             ListType parts = new ListType("map");
             MapType partsByName = new MapType();
-            try (ByteArrayInputStream bis = new ByteArrayInputStream((byte[])httpBody.getValue())) {
+            try (ByteArrayInputStream bis = new ByteArrayInputStream(httpBody.getValue())) {
                 MultipartStream multipartStream = new MultipartStream(bis, boundary.getBytes(), 4096, null);
                 boolean nextPart = multipartStream.skipPreamble();
                 ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -207,18 +206,17 @@ public class HttpReceiver extends AbstractTransactionReceiver {
      * Receives HTTP responses from servers
      * @param configurations Receiver configurations
      * @return Received HTTP response
-     * @throws Exception
      */
     private Message receiveHttpResponse(List<Configuration> configurations) throws Exception {
-        logger.debug(addMarker(), "Message received: " + socket);
+        logger.debug(addMarker(), "Message received: {}", socket);
 
         HttpResponse response = ((DefaultBHttpClientConnection) connection).receiveResponseHeader();
 
-        logger.debug(addMarker(), "Received response header: " + response);
+        logger.debug(addMarker(), "Received response header: {}", response);
 
         ((DefaultBHttpClientConnection) connection).receiveResponseEntity(response);
 
-        logger.debug(addMarker(), "Received response entity: " + response);
+        logger.debug(addMarker(), "Received response entity: {}", response);
 
         //check retrieved status code
         Integer statusCode = checkStatusCode(configurations, response);

@@ -49,7 +49,7 @@ import java.util.*;
 
 /**
  * Created by serbay on 9/25/14.
- *
+ * <p>
  * Abstract Messaging Handler class that provides several utilities to handle the session and transaction configuration
  */
 public abstract class AbstractMessagingHandler extends AbstractHandler implements IMessagingHandler {
@@ -211,7 +211,7 @@ public abstract class AbstractMessagingHandler extends AbstractHandler implement
         ITransactionListener transactionListener = getListener(sessionContext, receiverTransactionContext, senderTransactionContext);
         IDatagramListener datagramListener = getDatagramListener(sessionContext, receiverTransactionContext, senderTransactionContext);
 
-        IListener listener = null;
+        IListener listener;
         if(transactionListener != null) {
             listener = transactionListener;
         } else if(datagramListener != null) {
@@ -324,9 +324,7 @@ public abstract class AbstractMessagingHandler extends AbstractHandler implement
             if(requiredActorConfigurations.isEmpty()) {
                 break;
             }
-            if(requiredActorConfigurations.contains(configuration.getName())) {
-                requiredActorConfigurations.remove(configuration.getName());
-            }
+            requiredActorConfigurations.remove(configuration.getName());
         }
 
         if(!requiredActorConfigurations.isEmpty()) {

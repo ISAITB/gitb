@@ -33,8 +33,6 @@ public class TestCaseManager {
     /**
      * Return the TestCase Description (TDL) given TestCase.id
      *
-     * @param testCaseId
-     * @return
      */
     public static TestCase getTestCaseDescription(String testCaseId) {
 	    ITestCaseRepository repository = ModuleManager.getInstance().getTestCaseRepository();

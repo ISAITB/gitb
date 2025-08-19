@@ -33,15 +33,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Created by serbay on 9/24/14.
- *
+ * <p>
  * TCP messaging server worker used by TCP messaging server.
  *
  */
 public class TCPMessagingServerWorker extends AbstractMessagingServerWorker {
-	private static Logger logger = LoggerFactory.getLogger(TCPMessagingServerWorker.class);
+	private static final Logger logger = LoggerFactory.getLogger(TCPMessagingServerWorker.class);
 
 	private TCPListenerThread listenerThread;
-	private AtomicBoolean active;
+	private final AtomicBoolean active;
 
     public TCPMessagingServerWorker(int port) {
 	    super(port);
@@ -93,7 +93,7 @@ public class TCPMessagingServerWorker extends AbstractMessagingServerWorker {
             }
             logger.warn(failedConnectionInfo.toString());
             try {
-                logger.debug("Closing socket: " + socket);
+                logger.debug("Closing socket: {}", socket);
                 socket.close();
             } catch (IOException e) {
                 // Ignore exception.
@@ -117,15 +117,13 @@ public class TCPMessagingServerWorker extends AbstractMessagingServerWorker {
 
     private class TCPListenerThread extends Thread {
 
-        private final int port;
         private final ServerSocket serverSocket;
 
         private TCPListenerThread(int port) throws IOException {
             super(TCPListenerThread.class.getSimpleName() + ":" + port);
-            this.port = port;
-	        serverSocket = new ServerSocket(port);
+            serverSocket = new ServerSocket(port);
 
-	        logger.debug("New server created on: " + serverSocket);
+            logger.debug("New server created on: {}", serverSocket);
         }
 
 	    public void close() {
@@ -145,7 +143,7 @@ public class TCPMessagingServerWorker extends AbstractMessagingServerWorker {
                 while (!Thread.interrupted() && !serverSocket.isClosed()) {
                     Socket socket = serverSocket.accept();
 
-                    logger.debug("New socket created: " + socket);
+                    logger.debug("New socket created: {}", socket);
 
                     TCPReceiverThread receiverThread = new TCPReceiverThread(socket);
                     receiverThread.start();
@@ -156,7 +154,7 @@ public class TCPMessagingServerWorker extends AbstractMessagingServerWorker {
 		            logger.error("An error occurred", e);
 	            }
             } finally {
-	            logger.debug("Closing server created on: " + serverSocket);
+                logger.debug("Closing server created on: {}", serverSocket);
 	            if (!serverSocket.isClosed()) {
 		            try {
 			            serverSocket.close();

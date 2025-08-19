@@ -38,12 +38,12 @@ public class BeginProcessingTransactionStepProcessorActor extends AbstractTestSt
     }
 
     @Override
-    protected void init() throws Exception {
+    protected void init() {
         // Do nothing.
     }
 
     @Override
-    protected void start() throws Exception {
+    protected void start() {
         processing();
 
         VariableResolver resolver = new VariableResolver(scope);

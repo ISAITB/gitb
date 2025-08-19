@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Created by serbay on 9/8/14.
- *
+ * <p>
  * Base actor implementation that is used to track the actor instance's lifetime and incoming
  * messages.
  */

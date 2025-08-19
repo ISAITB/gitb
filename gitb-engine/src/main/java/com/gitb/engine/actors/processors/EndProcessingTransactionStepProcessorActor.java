@@ -34,12 +34,12 @@ public class EndProcessingTransactionStepProcessorActor extends AbstractTestStep
     }
 
     @Override
-    protected void init() throws Exception {
+    protected void init() {
         // Do nothing.
     }
 
     @Override
-    protected void start() throws Exception {
+    protected void start() {
         processing();
         ProcessingContext processingContext = this.scope.getContext().getProcessingContext(step.getTxnId());
         processingContext.getHandler().endTransaction(processingContext.getSession(), step.getId());

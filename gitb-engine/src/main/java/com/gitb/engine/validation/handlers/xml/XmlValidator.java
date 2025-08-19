@@ -102,7 +102,7 @@ public class XmlValidator extends AbstractValidator {
             var context = new AnyContent();
             context.getItem().add(TestCaseUtils.getInputFor(report.getContext().getItem(), XsdReportHandler.XML_ITEM_NAME).get(0));
             // Add validation artefacts.
-            if (showArtefacts == null || ((Boolean) showArtefacts.getValue())) {
+            if (showArtefacts == null || showArtefacts.getValue()) {
                 // Add XSD.
                 if (xsdReport != null) {
                     context.getItem().add(TestCaseUtils.getInputFor(xsdReport.getContext().getItem(), XsdReportHandler.XSD_ITEM_NAME).get(0));
@@ -129,7 +129,7 @@ public class XmlValidator extends AbstractValidator {
             report.setContext(context);
             if (report.getReports() != null) {
                 var sortType = ReportItemComparator.SortType.LOCATION_THEN_SEVERITY;
-                if (sortBySeverity != null && ((Boolean) sortBySeverity.getValue())) {
+                if (sortBySeverity != null && sortBySeverity.getValue()) {
                     sortType = ReportItemComparator.SortType.SEVERITY_THEN_LOCATION;
                 }
                 report.getReports().getInfoOrWarningOrError().sort(new ReportItemComparator(sortType));

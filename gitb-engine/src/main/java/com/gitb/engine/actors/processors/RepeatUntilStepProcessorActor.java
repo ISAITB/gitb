@@ -29,7 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by serbay on 9/15/14.
- *
+ * <p/>
  * Repeat until step executor actor
  */
 public class RepeatUntilStepProcessorActor extends AbstractIterationStepActor<RepeatUntilStep> {
@@ -37,17 +37,15 @@ public class RepeatUntilStepProcessorActor extends AbstractIterationStepActor<Re
 
 	private ExpressionHandler expressionHandler;
 	private Map<Integer, Integer> childActorUidIndexMap;
-	private Map<Integer, ActorRef> iterationIndexActorMap;
 
 	public RepeatUntilStepProcessorActor(RepeatUntilStep step, TestCaseScope scope, String stepId, StepContext stepContext)  {
 		super(step, scope, stepId, stepContext);
 	}
 
 	@Override
-	protected void init() throws Exception {
+	protected void init() {
 		expressionHandler = new ExpressionHandler(scope);
 		childActorUidIndexMap = new ConcurrentHashMap<>();
-		iterationIndexActorMap = new ConcurrentHashMap<>();
 	}
 
 	@Override
@@ -73,19 +71,16 @@ public class RepeatUntilStepProcessorActor extends AbstractIterationStepActor<Re
 		ActorRef iterationActor = SequenceProcessorActor.create(getContext(), step.getDo(), scope, stepId + ITERATION_OPENING_TAG + (iteration + 1) + ITERATION_CLOSING_TAG, stepContext);
 
 		childActorUidIndexMap.put(iterationActor.path().uid(), iteration);
-		iterationIndexActorMap.put(iteration, iterationActor);
 
 		StartCommand command = new StartCommand(scope.getContext().getSessionId());
 		iterationActor.tell(command, self());
 	}
 
-	private boolean evaluateCondition() throws Exception {
+	private boolean evaluateCondition() {
 
-		boolean condition = (boolean) expressionHandler
-			.processExpression(step.getCond(), DataType.BOOLEAN_DATA_TYPE)
-			.getValue();
-
-		return condition;
+        return (boolean) expressionHandler
+            .processExpression(step.getCond(), DataType.BOOLEAN_DATA_TYPE)
+            .getValue();
 	}
 
 	public static ActorRef create(ActorContext context, RepeatUntilStep step, TestCaseScope scope, String stepId, StepContext stepContext) throws Exception {

@@ -208,7 +208,7 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 					boolean errorIfTimeout = false;
 					if (!StringUtils.isBlank(step.getTimeoutIsError())) {
 						if (VariableResolver.isVariableReference(step.getTimeoutIsError())) {
-							errorIfTimeout = (Boolean) resolver.resolveVariableAsBoolean(step.getTimeoutIsError()).getValue();
+							errorIfTimeout = resolver.resolveVariableAsBoolean(step.getTimeoutIsError()).getValue();
 						} else {
 							errorIfTimeout = Boolean.parseBoolean(step.getTimeoutIsError());
 						}

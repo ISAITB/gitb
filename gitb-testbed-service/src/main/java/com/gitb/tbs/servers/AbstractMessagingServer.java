@@ -20,6 +20,7 @@ import com.gitb.types.MapType;
 import com.gitb.types.StringType;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpMethod;
@@ -48,12 +49,12 @@ public abstract class AbstractMessagingServer {
                 String detectedAfterQueryString = null;
                 if (expectedExtension.indexOf('?') != -1) {
                     var parts = StringUtils.split(expectedExtension, '?');
-                    expectedBeforeQueryString = StringUtils.appendIfMissing(StringUtils.prependIfMissing(parts[0].toLowerCase(), "/"), "/");
+                    expectedBeforeQueryString = Strings.CS.appendIfMissing(Strings.CS.prependIfMissing(parts[0].toLowerCase(), "/"), "/");
                     expectedAfterQueryString = parts[1];
                 } else {
-                    expectedBeforeQueryString = StringUtils.appendIfMissing(StringUtils.prependIfMissing(expectedExtension.toLowerCase(), "/"), "/");
+                    expectedBeforeQueryString = Strings.CS.appendIfMissing(Strings.CS.prependIfMissing(expectedExtension.toLowerCase(), "/"), "/");
                 }
-                detectedBeforeQueryString = StringUtils.appendIfMissing(StringUtils.prependIfMissing(detectedUriExtension.toLowerCase(), "/"), "/");
+                detectedBeforeQueryString = Strings.CS.appendIfMissing(Strings.CS.prependIfMissing(detectedUriExtension.toLowerCase(), "/"), "/");
                 if (detectedQueryString.isPresent()) {
                     detectedAfterQueryString = detectedQueryString.get();
                 }

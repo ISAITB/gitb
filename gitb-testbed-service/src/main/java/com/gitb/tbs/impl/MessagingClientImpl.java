@@ -49,7 +49,7 @@ public class MessagingClientImpl implements MessagingClient {
         if (logRequest.getSessionId() != null) {
             var testSessionId = SessionManager.getInstance().getTestSessionForMessagingSession(logRequest.getSessionId());
             if (testSessionId == null) {
-                LOG.warn(String.format("Could not determine test session for messaging session [%s]", logRequest.getSessionId()));
+                LOG.warn("Could not determine test session for messaging session [{}]", logRequest.getSessionId());
             } else {
                 CallbackManager.getInstance().logMessageReceived(testSessionId, logRequest.getMessage(), logRequest.getLevel());
             }

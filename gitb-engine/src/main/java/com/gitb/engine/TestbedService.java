@@ -52,9 +52,7 @@ public class TestbedService {
 	/**
 	 * Initiate a TestCase Session, return session id
 	 *
-	 * @param testCaseId
-	 * @return
-	 */
+     */
 	public static String initiate(String testCaseId, String sessionIdToAssign) {
 		//Create a Session in TestEngine and return session id
 		String sessionId = SessionManager
@@ -71,9 +69,7 @@ public class TestbedService {
 	/**
 	 * Save the configurations for the given actors
 	 *
-	 * @param sessionId
-	 * @param allConfigurations
-	 */
+     */
 	public static void configure(String sessionId, List<ActorConfiguration> allConfigurations, List<AnyContent> inputs) {
 		logger.debug(MarkerFactory.getDetachedMarker(sessionId), String.format("Starting to configure session [%s]", sessionId));
 		SessionManager sessionManager = SessionManager.getInstance();
@@ -107,10 +103,7 @@ public class TestbedService {
 	/**
 	 * Provide the expected user inputs to the test engine for the interaction step or preliminary phase
 	 *
-	 * @param sessionId
-	 * @param stepId
-	 * @param userInputs
-	 */
+     */
 	public static void provideInput(String sessionId, String stepId, List<UserInput> userInputs, boolean isAdmin)  {
 		TestStepInputEventBus.getInstance().publish(new InputEvent(sessionId, stepId, userInputs, isAdmin));
 	}
@@ -127,8 +120,7 @@ public class TestbedService {
 	/**
 	 * Start the TestCase session execution
 	 *
-	 * @param sessionId
-	 */
+     */
 	public static void start(String sessionId) {
 		logger.debug("Starting session {}", sessionId);
 		sessionLogger.info(MarkerFactory.getDetachedMarker(sessionId), "Starting session");
@@ -142,8 +134,7 @@ public class TestbedService {
 	/**
 	 * Stop the TestCase session execution
 	 *
-	 * @param sessionId
-	 */
+     */
 	public static void stop(String sessionId) {
 		boolean isClosedConnectionSignal = false;
 		if (sessionId.startsWith("CONNECTION_CLOSED|")) {
@@ -171,7 +162,6 @@ public class TestbedService {
 	/**
 	 * Restart the TestCase session execution
 	 *
-	 * @param sessionId
 	 * @return new test execution session id
 	 */
 	public static String restart(String sessionId) {
@@ -234,9 +224,7 @@ public class TestbedService {
 	/**
 	 * Callback to inform the client for expected user interaction
 	 *
-	 * @param sessionId
-	 * @param interaction
-	 */
+     */
 	public static void interactWithUsers(String sessionId, String stepId, UserInteractionRequest interaction) {
 		//Construct the Callback
 		var request = new InteractWithUsersRequest();

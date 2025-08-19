@@ -23,5 +23,5 @@ import java.net.Socket;
  * Created by serbay on 9/25/14.
  */
 public interface ITransactionReceiver extends IReceiver {
-	public void onReceive(Socket socket);
+	void onReceive(Socket socket);
 }

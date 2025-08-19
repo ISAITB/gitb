@@ -45,8 +45,8 @@ public class StringValidator extends SimpleValidator {
         StringType actualString    = getAndConvert(inputs, ACTUAL_ARGUMENT_NAME, DataType.STRING_DATA_TYPE, StringType.class);
         StringType expectedString  = getAndConvert(inputs, EXPECTED_ARGUMENT_NAME, DataType.STRING_DATA_TYPE, StringType.class);
 
-        String actualStringValue   = (String) actualString.getValue();
-        String expectedStringValue = (String) expectedString.getValue();
+        String actualStringValue   = actualString.getValue();
+        String expectedStringValue = expectedString.getValue();
 
         // process xpath
         BooleanType result = new BooleanType(actualStringValue.equals(expectedStringValue));

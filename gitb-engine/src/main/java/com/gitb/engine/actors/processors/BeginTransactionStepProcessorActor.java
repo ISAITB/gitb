@@ -26,7 +26,7 @@ import org.apache.pekko.actor.ActorRef;
 
 /**
  * Created by serbay on 9/29/14.
- *
+ * <p>
  * Begin transaction step executor actor
  */
 public class BeginTransactionStepProcessorActor extends AbstractTestStepActor<BeginTransaction> {
@@ -37,12 +37,12 @@ public class BeginTransactionStepProcessorActor extends AbstractTestStepActor<Be
 	}
 
 	@Override
-	protected void init() throws Exception {
+	protected void init() {
 		// Do nothing.
 	}
 
 	@Override
-	protected void start() throws Exception {
+	protected void start() {
 		processing();
 
 		String handlerIdentifier = step.getHandler();

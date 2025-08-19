@@ -97,15 +97,15 @@ public class TokenGenerator extends AbstractProcessingHandler {
         if (OPERATION_UUID.equalsIgnoreCase(operation)) {
             var prefix = getInputForName(input, INPUT_PREFIX, StringType.class);
             var postfix = getInputForName(input, INPUT_POSTFIX, StringType.class);
-            var prefixString = (prefix == null) ? "" : (String) prefix.getValue();
-            var postfixString = (postfix == null) ? "" : (String) postfix.getValue();
+            var prefixString = (prefix == null) ? "" : prefix.getValue();
+            var postfixString = (postfix == null) ? "" : postfix.getValue();
             value = String.format("%s%s%s", prefixString, UUID.randomUUID(), postfixString);
         } else if (OPERATION_RANDOM.equalsIgnoreCase(operation)) {
             var minimumBound = getInputForName(input, INPUT_MINIMUM, NumberType.class);
             var maximumBound = getInputForName(input, INPUT_MAXIMUM, NumberType.class);
             var integer = getInputForName(input, INPUT_INTEGER, BooleanType.class);
             Number result;
-            if (integer != null && (Boolean) integer.getValue()) {
+            if (integer != null && integer.getValue()) {
                 // Generate as an integer
                 int minimumToUse = 0;
                 if (minimumBound != null) {
@@ -148,7 +148,7 @@ public class TokenGenerator extends AbstractProcessingHandler {
                     // UTC time in milliseconds by default.
                     epochMilliseconds = Instant.now().toEpochMilli();
                 } else {
-                    epochMilliseconds = parseDateStringAsMilliseconds((String) inputDate.getValue(), inputDateFormat == null?null: (String) inputDateFormat.getValue());
+                    epochMilliseconds = parseDateStringAsMilliseconds(inputDate.getValue(), inputDateFormat == null?null: inputDateFormat.getValue());
                 }
             } else {
                 epochMilliseconds = time.longValue();
@@ -159,13 +159,13 @@ public class TokenGenerator extends AbstractProcessingHandler {
             if (format == null) {
                 value = String.valueOf(epochMilliseconds);
             } else {
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern((String)format.getValue());
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format.getValue());
                 Instant instant = Instant.ofEpochMilli(epochMilliseconds);
                 ZoneId zoneId;
                 if (zone == null) {
                     zoneId = DEFAULT_ZONE;
                 } else {
-                    zoneId = ZoneId.of((String)zone.getValue());
+                    zoneId = ZoneId.of(zone.getValue());
                 }
                 value = formatter.format(instant.atZone(zoneId));
             }
@@ -175,7 +175,7 @@ public class TokenGenerator extends AbstractProcessingHandler {
                 throw new IllegalArgumentException("Format to use for string generation is required");
             }
             try {
-                value = RgxGen.parse((String)format.getValue()).generate();
+                value = RgxGen.parse(format.getValue()).generate();
             } catch (Exception e) {
                 throw new IllegalArgumentException("Generation of string failed for expression ["+format.getValue()+"]", e);
             }

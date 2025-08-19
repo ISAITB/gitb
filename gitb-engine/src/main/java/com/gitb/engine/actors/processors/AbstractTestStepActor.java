@@ -89,15 +89,13 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 	/**
 	 * Initialize the Processor in this function
 	 *
-	 * @throws Exception
-	 */
+     */
 	protected abstract void init() throws Exception;
 
 	/**
 	 * Put your processing logic in this function
 	 *
-	 * @throws Exception
-	 */
+     */
 	protected abstract void start() throws Exception;
 
 	/**
@@ -130,18 +128,14 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 	/**
 	 * If step is waiting input in some phase, implement this to handle the input event
 	 *
-	 * @param event
-	 * @throws Exception
-	 */
-	protected void handleInputEvent(InputEvent event) throws Exception {
+     */
+	protected void handleInputEvent(InputEvent event) {
 	}
 
 	/**
 	 * If step is a container step waiting status events from its children, implement this
 	 *
-	 * @param event
-	 * @throws Exception
-	 */
+     */
 	protected void handleStatusEvent(StatusEvent event) throws Exception {
         inform(event);
 	}
@@ -163,8 +157,7 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 	/**
 	 * Commands and Events for TestStep Processors
 	 *
-	 * @param message
-	 */
+     */
 	@Override
 	public void onReceive(Object message) {
 		try {
@@ -371,7 +364,7 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 			report.setResult(resultType);
 
 		} catch (DatatypeConfigurationException e) {
-			logger.error(addMarker(), "An error occurred while trying to construct a completed report for [" + step + "] with id [" + stepId + "]");
+            logger.error(addMarker(), "An error occurred while trying to construct a completed report for [{}] with id [{}]", step, stepId);
 		}
 
 		return report;
@@ -400,7 +393,7 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 			report.getReports().getInfoOrWarningOrError().add(trObjectFactory.createTestAssertionGroupReportsTypeError(error));
 
 		} catch (DatatypeConfigurationException e) {
-			logger.error(addMarker(), "An error occurred while trying to construct a report for exception [" + statusEvent.getException() + "]", e);
+            logger.error(addMarker(), "An error occurred while trying to construct a report for exception [{}]", statusEvent.getException(), e);
 		}
 		return report;
 	}
@@ -414,11 +407,11 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 		}
 	}
 
-	public static <T, S extends AbstractTestStepActor<T>> Props props(final Class<S> clazz, final T step, final TestCaseScope scope, final String stepId) throws Exception {
+	public static <T, S extends AbstractTestStepActor<T>> Props props(final Class<S> clazz, final T step, final TestCaseScope scope, final String stepId) {
 		return Props.create(clazz, (Creator<S>) () -> ConstructorUtils.invokeConstructor(clazz, step, scope, stepId));
 	}
 
-	public static <T, S extends AbstractTestStepActor<T>> Props props(final Class<S> clazz, final T step, final TestCaseScope scope, final String stepId, final StepContext stepContext) throws Exception {
+	public static <T, S extends AbstractTestStepActor<T>> Props props(final Class<S> clazz, final T step, final TestCaseScope scope, final String stepId, final StepContext stepContext) {
 		return Props.create(clazz, (Creator<S>) () -> ConstructorUtils.invokeConstructor(clazz, step, scope, stepId, stepContext));
 	}
 

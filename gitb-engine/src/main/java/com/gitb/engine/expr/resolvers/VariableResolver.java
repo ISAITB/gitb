@@ -99,7 +99,6 @@ public class VariableResolver implements XPathVariableResolver{
 
     /**
      * Used by XPath Expression Evaluator to resolve the values of the variables referred in the XPath itself
-     * @param name
      * @return
      *      Returns Java correspondents for GITB Primitive types.
      *      Return Node for Object Type
@@ -203,9 +202,7 @@ public class VariableResolver implements XPathVariableResolver{
 	/**
 	 * Resolve variable value from the given variable expression ex: $x{2}, $y
 	 * This can be used externally by other types if they write their own implementation for Expression evaluation
-	 * @param variableExpression
-	 * @return
-	 */
+     */
 	public DataType resolveVariable(String variableExpression) {
 	    return resolveVariable(variableExpression, false).orElseThrow();
 	}
@@ -231,8 +228,6 @@ public class VariableResolver implements XPathVariableResolver{
 
     /**
      * Try to convert list of other types to NodeList
-     * @param list
-     * @return
      */
     private List<Node> convertListOfOthersToListOfNodes(List<DataType> list) {
         List<Node> nodeList = new ArrayList<Node>();
@@ -247,8 +242,6 @@ public class VariableResolver implements XPathVariableResolver{
 
     /**
      * Convert List of Nodes into a NodeList
-     * @param listOfNodes
-     * @return
      */
     private NodeList convertListOfNodesToNodeList(List listOfNodes){
         Document temp = documentBuilder.newDocument();
@@ -262,8 +255,6 @@ public class VariableResolver implements XPathVariableResolver{
 
     /**
      * Convert a primitive List into a NodeList with Text nodes
-     * @param primitiveList
-     * @return
      */
     private NodeList convertPrimitiveListToNodeList(List primitiveList){
         Document temp = documentBuilder.newDocument();
@@ -277,8 +268,6 @@ public class VariableResolver implements XPathVariableResolver{
 
     /**
      * Resolve an index expression embedded in a variable expression
-     * @param indexOrKeyExpression
-     * @return
      */
     private String resolveIndexOrKeyExpression(String indexOrKeyExpression){
 	    Matcher variableExpressionMatcher = VARIABLE_EXPRESSION_PATTERN.matcher(indexOrKeyExpression);
@@ -328,7 +317,6 @@ public class VariableResolver implements XPathVariableResolver{
      * Resolve item in a container by giving the index or key
      * @param container List or Map type object
      * @param keyOrIndex Numeric index for list type or string keys for map type
-     * @return
      */
     private DataType resolveItemInContainer(DataType container, String keyOrIndex){
         if(!(container instanceof ContainerType)){

@@ -18,11 +18,11 @@ package com.gitb.engine.messaging.handlers.model;
 import com.gitb.core.ActorConfiguration;
 import com.gitb.core.Configuration;
 import com.gitb.core.ErrorCode;
-import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.engine.messaging.handlers.ServerUtils;
 import com.gitb.engine.messaging.handlers.layer.AbstractMessagingHandler;
 import com.gitb.engine.messaging.handlers.server.IMessagingServer;
 import com.gitb.engine.messaging.handlers.server.IMessagingServerWorker;
+import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.utils.ActorUtils;
 import com.gitb.utils.ConfigurationUtils;
 import com.gitb.utils.ErrorUtils;
@@ -33,10 +33,7 @@ import org.slf4j.MarkerFactory;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -101,12 +98,6 @@ public class SessionContext {
     }
 
     public void end() {
-        for (List<TransactionContext> transactions : transactionMappings.values()) {
-            for (TransactionContext transactionContext : transactions) {
-                transactionContext.end();
-            }
-        }
-
         transactionMappings.clear();
     }
 
@@ -116,14 +107,7 @@ public class SessionContext {
      * @return Closed transactions
      */
     public List<TransactionContext> endTransaction(String transactionId) {
-        List<TransactionContext> transactions = transactionMappings.remove(transactionId);
-
-        for(TransactionContext transactionContext : transactions) {
-            transactionContext.end();
-        }
-
-
-        return transactions;
+        return transactionMappings.remove(transactionId);
     }
 
     /**
@@ -148,14 +132,14 @@ public class SessionContext {
                 ActorConfiguration serverActorConfiguration;
                 TransactionContext transactionContext = null;
                 if ((fromEndpointName == null && actorConfiguration.getActor().equals(from))
-                        || (fromEndpointName != null && actorConfiguration.getActor().equals(fromActorId) && actorConfiguration.getEndpoint().equals(fromEndpointName))) {
+                        || (actorConfiguration.getActor().equals(fromActorId) && actorConfiguration.getEndpoint().equals(fromEndpointName))) {
 
                     serverActorConfiguration = ActorUtils.getActorConfiguration(serverActorConfigurations, toActorId, toEndpointName);
 
                     transactionContext = new TransactionContext(transactionId, serverActorConfiguration, actorConfiguration, configurations);
 
                 } else if((toEndpointName == null && actorConfiguration.getActor().equals(to))
-                        || (toEndpointName != null && actorConfiguration.getActor().equals(toActorId) && actorConfiguration.getEndpoint().equals(toEndpointName))) {
+                        || (actorConfiguration.getActor().equals(toActorId) && actorConfiguration.getEndpoint().equals(toEndpointName))) {
                     serverActorConfiguration = ActorUtils.getActorConfiguration(serverActorConfigurations, fromActorId, fromEndpointName);
 
                     transactionContext = new TransactionContext(transactionId, serverActorConfiguration, actorConfiguration, configurations);
@@ -197,8 +181,8 @@ public class SessionContext {
         for(TransactionContext transaction : transactions) {
             ActorConfiguration with = transaction.getWith();
 
-            if((endpointName == null && actorId.equals(with.getActor()))
-                    || (endpointName != null && endpointName.equals(with.getEndpoint()) && actorId.equals(with.getActor()))) {
+            if((endpointName == null && Objects.requireNonNull(actorId).equals(with.getActor()))
+                    || (endpointName != null && endpointName.equals(with.getEndpoint()) && Objects.requireNonNull(actorId).equals(with.getActor()))) {
                 return transaction;
             }
         }
@@ -214,7 +198,6 @@ public class SessionContext {
      * Get the transaction with the given ip address
      * @param address IP address
      * @return Transaction with the actor that has the given ip address.
-     * @throws UnknownHostException
      */
     public TransactionContext getTransaction(InetAddress address, int incomingPort, boolean orFirstAvailable) {
         TransactionContext lastAwaitingTransaction = null;
@@ -228,8 +211,8 @@ public class SessionContext {
 
                     Configuration ipAddressConfig = ConfigurationUtils.getConfiguration(transactionContext.getWith().getConfig(), ServerUtils.IP_ADDRESS_CONFIG_NAME);
 
-                    InetAddress actorAddress = null;
-                        actorAddress = InetAddress.getByName(ipAddressConfig.getValue());
+                    InetAddress actorAddress;
+                        actorAddress = InetAddress.getByName(Objects.requireNonNull(ipAddressConfig).getValue());
                     int serverPort = -1;
 
                     if(transactionContext.getSelf() != null) {
@@ -255,7 +238,7 @@ public class SessionContext {
                 }
             }
         } catch (UnknownHostException e) {
-            logger.error(MarkerFactory.getDetachedMarker(testSessionId), "An error occurred while trying to find the transaction coming from [" + address + "] and bound to ["+incomingPort+"] port.", e);
+            logger.error(MarkerFactory.getDetachedMarker(testSessionId), "An error occurred while trying to find the transaction coming from [{}] and bound to [{}] port.", address, incomingPort, e);
         }
         if (lastAwaitingTransaction == null && orFirstAvailable && firstAvailableTransaction != null) {
             lastAwaitingTransaction = firstAvailableTransaction;
@@ -268,9 +251,7 @@ public class SessionContext {
         List<TransactionContext> result = new ArrayList<>();
 
         for(List<TransactionContext> transactions : transactionMappings.values()) {
-            for(TransactionContext transaction : transactions) {
-                result.add(transaction);
-            }
+            result.addAll(transactions);
         }
 
         return result;

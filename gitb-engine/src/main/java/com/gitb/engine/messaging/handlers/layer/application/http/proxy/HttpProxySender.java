@@ -39,17 +39,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * HTTP proxy implementation that proxies (currently) GET and POST requests to a configured server.
  * The proxy also exposes all request and response information so that it can be subsequently
  * validated.
- *
+ * <p>
  * Created by simatosc on 26/04/2016.
  */
 public class HttpProxySender extends HttpSender {
 
-    private Logger logger = LoggerFactory.getLogger(HttpProxySender.class);
+    private static final Logger logger = LoggerFactory.getLogger(HttpProxySender.class);
 
     public HttpProxySender(SessionContext session, TransactionContext transaction) {
         super(session, transaction);
@@ -66,7 +67,7 @@ public class HttpProxySender extends HttpSender {
 
     private void sendMessageToServer(List<Configuration> configurations, Message message) throws Exception {
         Configuration receiverConfiguration = ConfigurationUtils.getConfiguration(configurations, HttpProxyMessagingHandler.PROXY_ADDRESS_CONFIG_NAME);
-        String receiverAddress = receiverConfiguration.getValue();
+        String receiverAddress = Objects.requireNonNull(receiverConfiguration).getValue();
 
         MapType requestData = (MapType) message.getFragments().get(HttpProxyMessagingHandler.HTTP_REQUEST_DATA);
         String httpMethod = requestData.getItem(HttpProxyMessagingHandler.HTTP_METHOD_FIELD_NAME).getValue().toString();
@@ -85,7 +86,7 @@ public class HttpProxySender extends HttpSender {
             httpRequest = new HttpPost(receiverAddress);
             BinaryType body = (BinaryType) requestData.getItem(HttpProxyMessagingHandler.HTTP_BODY_FIELD_NAME);
             if (body != null) {
-                ByteArrayEntity contentEntity = new ByteArrayEntity((byte[])body.getValue());
+                ByteArrayEntity contentEntity = new ByteArrayEntity(body.getValue());
                 ((HttpPost)httpRequest).setEntity(contentEntity);
             }
         } else if ("GET".equals(httpMethod)) {
@@ -93,7 +94,7 @@ public class HttpProxySender extends HttpSender {
         }
         CloseableHttpClient httpclient = HttpClients.createDefault();
         CloseableHttpResponse response = null;
-        byte[] responseContent = null;
+        byte[] responseContent;
         try {
             response = httpclient.execute(httpRequest);
             HttpEntity responseEntity = response.getEntity();

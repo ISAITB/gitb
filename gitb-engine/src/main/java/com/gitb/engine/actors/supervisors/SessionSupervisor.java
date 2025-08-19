@@ -31,7 +31,7 @@ import org.slf4j.MarkerFactory;
 
 /**
  * Created by serbay on 9/4/14.
- *
+ * <p>
  * The supervisor of a Test Case Execution instance
  */
 public class SessionSupervisor extends com.gitb.engine.actors.Actor {

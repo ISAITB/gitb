@@ -31,6 +31,7 @@ import org.slf4j.MarkerFactory;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Created by serbay on 9/25/14.
@@ -60,7 +61,7 @@ public abstract class AbstractTransactionSender implements ITransactionSender {
 			Configuration ipAddressConfig = ConfigurationUtils.getConfiguration(actorConfiguration.getConfig(), ServerUtils.IP_ADDRESS_CONFIG_NAME);
 			Configuration portConfig = ConfigurationUtils.getConfiguration(actorConfiguration.getConfig(), ServerUtils.PORT_CONFIG_NAME);
 
-			socket = new Socket(InetAddress.getByName(ipAddressConfig.getValue()), Integer.parseInt(portConfig.getValue()));
+			socket = new Socket(InetAddress.getByName(Objects.requireNonNull(ipAddressConfig).getValue()), Integer.parseInt(Objects.requireNonNull(portConfig).getValue()));
 
             transaction.setParameter(Socket.class, socket);
 		}
@@ -72,7 +73,7 @@ public abstract class AbstractTransactionSender implements ITransactionSender {
 	public void onEnd() throws Exception {
 		Socket socket = getSocket();
 		if(socket != null && !socket.isClosed()) {
-			logger.debug(addMarker(), "Closing socket: " + socket);
+            logger.debug(addMarker(), "Closing socket: {}", socket);
 			socket.close();
 		}
 	}

@@ -24,6 +24,6 @@ import java.util.List;
  * Created by serbay.
  */
 public interface ISender {
-	public Message send(List<Configuration> configurations, Message message) throws Exception;
-	public void onEnd() throws Exception;
+	Message send(List<Configuration> configurations, Message message) throws Exception;
+	void onEnd() throws Exception;
 }

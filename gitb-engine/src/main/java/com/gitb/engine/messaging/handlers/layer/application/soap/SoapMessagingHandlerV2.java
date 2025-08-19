@@ -94,7 +94,7 @@ public class SoapMessagingHandlerV2 extends AbstractNonWorkerMessagingHandler {
         Optional<List<AttachmentInfo>> attachments = getSoapAttachments(message.getFragments(), ATTACHMENTS_ARGUMENT_NAME);
         // Tolerate non-SOAP responses.
         boolean tolerateNonSoapResponse = Optional.ofNullable(getAndConvert(message.getFragments(), TOLERATE_NON_SOAP_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class))
-                .map(value -> (Boolean) value.getValue())
+                .map(BooleanType::getValue)
                 .orElse(false);
         /*
          * Create SOAP message.

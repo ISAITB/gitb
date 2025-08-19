@@ -25,7 +25,7 @@ import java.util.List;
  */
 public class ValidationReport {
 
-    private List<ValidationReportItem> items = new ArrayList<>();
+    private final List<ValidationReportItem> items = new ArrayList<>();
 
     public List<ValidationReportItem> getItems() {
         return items;
@@ -50,10 +50,10 @@ public class ValidationReport {
 
     public static class ValidationReportItem {
 
-        private String code;
-        private String description;
-        private String location;
-        private ErrorLevel level;
+        private final String code;
+        private final String description;
+        private final String location;
+        private final ErrorLevel level;
 
         ValidationReportItem(ErrorCode error, String location, String... messageArguments) {
             this.code = error.getCode();

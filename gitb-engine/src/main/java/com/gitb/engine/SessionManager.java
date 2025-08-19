@@ -73,8 +73,6 @@ public class SessionManager {
 
     /**
      * Create a new testcase execution session
-     * @param testCaseId
-     * @return
      */
 	public String newSession(String testCaseId, String sessionIdToAssign) {
 		String sessionId = sessionIdToAssign;
@@ -83,7 +81,7 @@ public class SessionManager {
 			sessionId = UUID.randomUUID().toString();
 		} else if (exists(sessionId)) {
 			sessionId = UUID.randomUUID().toString();
-			logger.warn("Ignoring requested session ID ["+sessionIdToAssign+"] as it already exists. Using ["+sessionId+"] instead.");
+            logger.warn("Ignoring requested session ID [{}] as it already exists. Using [{}] instead.", sessionIdToAssign, sessionId);
 		}
 		//Load the tdl:TestCase definition
         TestCase testCase = TestCaseManager.getTestCaseDescription(testCaseId);
@@ -130,8 +128,6 @@ public class SessionManager {
 
     /**
      * Returns the TestCaseContext object for the given test execution session
-     * @param sessionId
-     * @return
      */
 	public TestCaseContext getContext(String sessionId) {
 		return contexts.get(sessionId);

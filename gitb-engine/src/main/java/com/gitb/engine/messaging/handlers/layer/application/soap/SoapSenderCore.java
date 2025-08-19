@@ -32,6 +32,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class SoapSenderCore {
 
@@ -69,23 +70,23 @@ public class SoapSenderCore {
         Message httpMessage = new Message();
 
         // compute Content-Type
-        String soapContentType = "start-info=\"application/soap+xml\"; start=\"" + SoapMessagingHandler.SOAP_START_HEADER + "\";";
+        StringBuilder soapContentType = new StringBuilder("start-info=\"application/soap+xml\"; start=\"" + SoapMessagingHandler.SOAP_START_HEADER + "\";");
         String[] soapHeaders = soapMessage.getMimeHeaders().getHeader(SoapMessagingHandler.HTTP_CONTENT_TYPE_HEADER);
         if (soapMessage.countAttachments() != 0 && soapHeaders != null) {
             // add MTOM specific Content-Type
-            soapContentType = "multipart/related; type=\"application/xop+xml\"; " + soapContentType;
+            soapContentType.insert(0, "multipart/related; type=\"application/xop+xml\"; ");
 
             // add boundary
             for (String soapHeader : soapHeaders[0].split(";")) {
                 if (soapHeader.contains("boundary")) {
-                    soapContentType += soapHeader + ";";
+                    soapContentType.append(soapHeader).append(";");
                 }
             }
         }
 
         // add Content-Type
         MapType soapHeaderType = new MapType();
-        soapHeaderType.addItem(SoapMessagingHandler.HTTP_CONTENT_TYPE_HEADER, new StringType(soapContentType));
+        soapHeaderType.addItem(SoapMessagingHandler.HTTP_CONTENT_TYPE_HEADER, new StringType(soapContentType.toString()));
         httpMessage
                 .getFragments()
                 .put(SoapMessagingHandler.HTTP_HEADERS_FIELD_NAME, soapHeaderType);
@@ -109,7 +110,7 @@ public class SoapSenderCore {
 
     protected SOAPMessage constructSoapMessage(List<Configuration> configurations, Message message) throws SOAPException, IOException {
         //initialize the message factory according to given configuration in send step
-        String soapVersion = ConfigurationUtils.getConfiguration(configurations, SoapMessagingHandler.SOAP_VERSION_CONFIG_NAME).getValue();
+        String soapVersion = Objects.requireNonNull(ConfigurationUtils.getConfiguration(configurations, SoapMessagingHandler.SOAP_VERSION_CONFIG_NAME)).getValue();
 
         MessageFactory messageFactory = null;
 
@@ -117,13 +118,11 @@ public class SoapSenderCore {
             messageFactory = MessageFactory.newInstance(SOAPConstants.SOAP_1_1_PROTOCOL);
         } else if(soapVersion.contentEquals(SoapMessagingHandler.SOAP_VERSION_1_2)) {
             messageFactory = MessageFactory.newInstance(SOAPConstants.SOAP_1_2_PROTOCOL); //double check
-        } else {
-            //will not execute here, already handled in SoapMessagingHandler
         }
 
         ObjectType messageNode = getMessageNode(configurations, message);
 
-        SOAPMessage soapMessage = messageFactory.createMessage(null, new ByteArrayInputStream(messageNode.serializeByDefaultEncoding()));
+        SOAPMessage soapMessage = Objects.requireNonNull(messageFactory).createMessage(null, new ByteArrayInputStream(messageNode.serializeByDefaultEncoding()));
 
         // add a content-id
         soapMessage.getSOAPPart().setContentId(SoapMessagingHandler.SOAP_START_HEADER);
@@ -145,15 +144,11 @@ public class SoapSenderCore {
     }
 
     private ObjectType getMessageNode(List<Configuration> configurations, Message message) {
-        ObjectType object = (ObjectType) message.getFragments().get(SoapMessagingHandler.SOAP_MESSAGE_FIELD_NAME);
-
-        return object;
+        return (ObjectType) message.getFragments().get(SoapMessagingHandler.SOAP_MESSAGE_FIELD_NAME);
     }
 
     private MapType getAttachments(Message message) {
-        MapType object = (MapType) message.getFragments().get(SoapMessagingHandler.SOAP_ATTACHMENTS_FIELD_NAME);
-
-        return object;
+        return (MapType) message.getFragments().get(SoapMessagingHandler.SOAP_ATTACHMENTS_FIELD_NAME);
     }
 
 

@@ -81,7 +81,7 @@ public class RegExpValidator extends SimpleValidator {
             schema.setName(RegExpValidator.EXPRESSION_ARGUMENT_NAME);
             schema.setValue(expression);
             attachment.getItem().add(schema);
-            if ((boolean) result.getValue()) {
+            if (result.getValue()) {
                 report.setResult(TestResultType.SUCCESS);
             } else {
                 report.setResult(TestResultType.FAILURE);

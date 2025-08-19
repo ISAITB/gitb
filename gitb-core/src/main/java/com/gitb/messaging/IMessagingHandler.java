@@ -46,41 +46,21 @@ public interface IMessagingHandler extends StepHandler {
 
     /**
      * Initiate a transaction with Messaging Handler
-     * @param sessionId
-     * @param transactionId transaction id
-     * @param from
-     * @param to
-     * @param configurations configurations related to the transaction
-     * @return the unique transactionId
      */
     void beginTransaction(String sessionId, String transactionId, String stepId, String from, String to, List<Configuration> configurations);
 
     /**
      *
-     * @param sessionId
-     * @param transactionId
-     * @param configurations
-     * @param message
-     * @return
      */
     MessagingReport sendMessage(String sessionId, String transactionId, String stepId, List<Configuration> configurations, Message message);
 
     /**
      *
-     * @param sessionId
-     * @param transactionId
-     * @return
      */
     MessagingReport receiveMessage(String sessionId, String transactionId, String callId, MessagingStep step, Message message, List<Thread> messagingThreads);
 
     /**
      *
-     * @param sessionId
-     * @param transactionId
-     * @param from
-     * @param to
-     * @param configurations
-     * @return
      */
     MessagingReport listenMessage(String sessionId, String transactionId, String stepId, String from, String to, List<Configuration> configurations, Message inputs);
 

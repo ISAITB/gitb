@@ -50,7 +50,7 @@ import static com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils.get
 
 /**
  * Created by serbay on 9/30/14.
- *
+ * <p>
  * Send step processor actor
  */
 public class SendStepProcessorActor extends AbstractMessagingStepProcessorActor<Send> {

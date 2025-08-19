@@ -28,6 +28,7 @@ import com.gitb.messaging.callback.CallbackType;
 import com.gitb.tdl.MessagingStep;
 import com.gitb.types.*;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
@@ -87,7 +88,7 @@ public class HttpMessagingHandlerV2 extends AbstractNonWorkerMessagingHandler {
         var body = Optional.ofNullable(message.getFragments().get(BODY_ARGUMENT_NAME));
         // Follow redirects.
         var followRedirects = Optional.ofNullable(getAndConvert(message.getFragments(), FOLLOW_REDIRECTS_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class))
-                .map(value -> (Boolean) value.getValue())
+                .map(BooleanType::getValue)
                 .orElse(Boolean.TRUE);
         // Multipart form parts.
         var parts = Optional.ofNullable(getAndConvert(message.getFragments(), PARTS_ARGUMENT_NAME, DataType.LIST_DATA_TYPE, ListType.class));
@@ -280,7 +281,7 @@ public class HttpMessagingHandlerV2 extends AbstractNonWorkerMessagingHandler {
             if (uri.endsWith("?")) {
                 return uri + queryStringParameters;
             } else if (uri.indexOf('?') != -1) {
-                return StringUtils.appendIfMissing(uri, "&") + queryStringParameters;
+                return Strings.CS.appendIfMissing(uri, "&") + queryStringParameters;
             } else {
                 return uri + "?" + queryStringParameters;
             }

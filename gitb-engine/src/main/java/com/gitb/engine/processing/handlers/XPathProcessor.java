@@ -78,7 +78,7 @@ public class XPathProcessor extends AbstractProcessingHandler {
         if (!input.getData().containsKey(INPUT_TYPE)) {
             resultType = DataType.STRING_DATA_TYPE;
         } else {
-            resultType = DataTypeFactory.getInstance().create((String) getAndConvert(input.getData(), INPUT_TYPE, DataType.STRING_DATA_TYPE, StringType.class).getValue()).getType();
+            resultType = DataTypeFactory.getInstance().create(getAndConvert(input.getData(), INPUT_TYPE, DataType.STRING_DATA_TYPE, StringType.class).getValue()).getType();
         }
         MapType namespaces = (MapType) input.getData().get(HandlerUtils.NAMESPACE_MAP_INPUT);
         // Compile expression

@@ -121,7 +121,7 @@ public class XMLUtils {
             throw new IllegalStateException(e);
         }
         JAXBElement<T> element    =  unmarshaller.unmarshal(xsr, clazz);
-        return (T) element.getValue();
+        return element.getValue();
     }
 
     /**
@@ -203,7 +203,6 @@ public class XMLUtils {
      * @param element Object to be converted
      * @param out Output stream that the XML structure will be written to
      * @param <T> Type of the object
-     * @throws JAXBException
      */
     public static <T> void marshalToStream(JAXBElement<T> element, OutputStream out) throws JAXBException {
         Class<?> clazz        = element.getValue().getClass();
@@ -218,7 +217,6 @@ public class XMLUtils {
      * and returns it. The objects "must" be wrapped
      * into a JAXBElement by ObjectFactory's before using it.
      * @param element Object to be converted
-     * @throws JAXBException
      * @return DOM Element
      */
     public static Node marshalToNode(JAXBElement element) throws JAXBException {
@@ -242,11 +240,10 @@ public class XMLUtils {
     public static <T> JAXBElement<T> wrap( String namespace, String tag, T object ){
         QName qname = new QName( namespace, tag );
         Class<?> clazz = object.getClass();
-        JAXBElement<T> jxElement = new JAXBElement( qname, clazz, object );
-        return jxElement;
+        return (JAXBElement<T>) new JAXBElement( qname, clazz, object );
     }
 
-    public static SchemaFactory getSecureSchemaFactory() throws SAXNotSupportedException, SAXNotRecognizedException {
+    public static SchemaFactory getSecureSchemaFactory() {
         /*
          * Xerces does not support the JAXP ACCESS_EXTERNAL_DTD and ACCESS_EXTERNAL_STYLESHEET features.
          * The correct approach for secure schema validation using Xerces is to ensure that the parser used to parse
@@ -287,8 +284,6 @@ public class XMLUtils {
      * Parses an XML document from a provided InputStream and sets a "lineNumber" attribute for each node
      * @param is InputStream of XML document to be parsed
      * @return DOM Document whose nodes have its line number
-     * @throws IOException
-     * @throws SAXException
      */
     public static Document readXMLWithLineNumbers(InputStream is) throws IOException, SAXException {
         final Document doc;
@@ -313,8 +308,7 @@ public class XMLUtils {
             }
 
             @Override
-            public void startElement(final String uri, final String localName, final String qName, final Attributes attributes)
-                    throws SAXException {
+            public void startElement(final String uri, final String localName, final String qName, final Attributes attributes) {
                 addTextIfNeeded();
                 final org.w3c.dom.Element el = doc.createElement(qName);
                 for (int i = 0; i < attributes.getLength(); i++) {
@@ -337,13 +331,13 @@ public class XMLUtils {
             }
 
             @Override
-            public void characters(final char ch[], final int start, final int length) throws SAXException {
+            public void characters(final char[] ch, final int start, final int length) {
                 textBuffer.append(ch, start, length);
             }
 
             // Outputs text accumulated under the current node
             private void addTextIfNeeded() {
-                if (textBuffer.length() > 0) {
+                if (!textBuffer.isEmpty()) {
                     final org.w3c.dom.Element el = elementStack.peek();
                     final Node textNode = doc.createTextNode(textBuffer.toString());
                     el.appendChild(textNode);
@@ -363,10 +357,6 @@ public class XMLUtils {
      * @param certificate Public certificate to get information about keystore owner
      * @param privateKey Private key to sign XML document
      * @return XML DOM Document with a generated XML signature
-     * @throws InvalidAlgorithmParameterException
-     * @throws NoSuchAlgorithmException
-     * @throws javax.xml.crypto.MarshalException
-     * @throws XMLSignatureException
      */
     public static Node sign(Node parentNode, X509Certificate certificate, PrivateKey privateKey) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, javax.xml.crypto.MarshalException, XMLSignatureException {
         // First, create the DOM XMLSignatureFactory that will be used to generate the XMLSignature
@@ -412,10 +402,6 @@ public class XMLUtils {
      * @param certificate Public certificate to get information about keystore owner
      * @param privateKey Private key to sign XML document
      * @return XML DOM Document with a generated XML signature
-     * @throws InvalidAlgorithmParameterException
-     * @throws NoSuchAlgorithmException
-     * @throws javax.xml.crypto.MarshalException
-     * @throws XMLSignatureException
      */
     public static Document sign(Document doc, X509Certificate certificate, PrivateKey privateKey) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, javax.xml.crypto.MarshalException, XMLSignatureException {
         sign(doc.getDocumentElement(), certificate, privateKey);

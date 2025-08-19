@@ -61,7 +61,7 @@ public class VerifyProcessor implements IProcessor {
 	}
 
 	@Override
-	public TestStepReportType process(Object object) throws Exception {
+	public TestStepReportType process(Object object) {
 		Verify verify = (Verify) object;
 		//Get the Validator Module from its name
 

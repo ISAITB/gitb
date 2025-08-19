@@ -44,7 +44,7 @@ public class EDIValidator extends AbstractValidator {
     public TestStepReportType validate(List<Configuration> configurations, Map<String, DataType> inputs) {
         //get inputs
         BinaryType content   = (BinaryType) inputs.get(CONTENT_ARGUMENT_NAME);
-        String stringContent = new String((byte [])content.getValue());
+        String stringContent = new String(content.getValue());
         StringType document  = new StringType(stringContent);
 
         //create error handler
@@ -544,7 +544,6 @@ public class EDIValidator extends AbstractValidator {
      * @param line the invoice line
      * @param flens lengths of fields
      * @param mstr mandatory strings
-     * @return
      */
     protected int checkINV(String line, int[][] flens, String[][] mstr) {
         String[] t1= line.split("\\+");
@@ -558,14 +557,14 @@ public class EDIValidator extends AbstractValidator {
                 flen= flens[i][j];
 
                  //if negative, it is mandatory
-                if(flen<0 && t2[j].length()==0) {
+                if(flen<0 && t2[j].isEmpty()) {
                     //mandatory field is null: error
                     return -100*i-j;
                 }
                 if(j>=t2.length) continue;
 
                 //Conditional fields not given
-                if(t2[j].length()==0) continue;
+                if(t2[j].isEmpty()) continue;
 
                 //Conditional field, NULL value
                 if(flen<0) flen= -flen;
@@ -574,7 +573,7 @@ public class EDIValidator extends AbstractValidator {
                     //longer than field max length
                     return -100*i-j;
                 }
-                if(i>=mstr.length || j>= mstr[i].length || mstr[i][j].length()==0)
+                if(i>=mstr.length || j>= mstr[i].length || mstr[i][j].isEmpty())
                     continue;
 
                 if(!(mstr[i][j] + ",").contains(t2[j] + ",")) {

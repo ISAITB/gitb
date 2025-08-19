@@ -106,8 +106,8 @@ public class ShaclValidator extends AbstractValidator {
     @Override
     public TestStepReportType validate(List<Configuration> configurations, Map<String, DataType> inputs) {
         // Retrieve and check inputs.
-        String modelContent = (String) Objects.requireNonNull(getAndConvert(inputs, MODEL_ARGUMENT_NAME, DataType.STRING_DATA_TYPE, StringType.class), "Input ["+MODEL_ARGUMENT_NAME+"] must be provided").getValue();
-        Lang modelLanguage = Optional.of((String) Objects.requireNonNull(getAndConvert(inputs, CONTENT_TYPE_ARGUMENT_NAME, DataType.STRING_DATA_TYPE, StringType.class), "Input ["+CONTENT_TYPE_ARGUMENT_NAME+"] must be provided").getValue())
+        String modelContent = Objects.requireNonNull(getAndConvert(inputs, MODEL_ARGUMENT_NAME, DataType.STRING_DATA_TYPE, StringType.class), "Input ["+MODEL_ARGUMENT_NAME+"] must be provided").getValue();
+        Lang modelLanguage = Optional.of(Objects.requireNonNull(getAndConvert(inputs, CONTENT_TYPE_ARGUMENT_NAME, DataType.STRING_DATA_TYPE, StringType.class), "Input ["+CONTENT_TYPE_ARGUMENT_NAME+"] must be provided").getValue())
                 .map(type -> parseLanguage(type, () -> "Unsupported content type [%s] provided for model".formatted(type)))
                 .get();
         List<ContentInfo> shapes = Optional.ofNullable(getAndConvert(inputs, SHAPES_ARGUMENT_NAME, DataType.LIST_DATA_TYPE, ListType.class))
@@ -124,22 +124,22 @@ public class ShaclValidator extends AbstractValidator {
                 })
                 .orElseGet(Collections::emptyList);
         Lang reportContentType = Optional.ofNullable(getAndConvert(inputs, REPORT_CONTENT_TYPE_ARGUMENT_NAME, DataType.STRING_DATA_TYPE, StringType.class))
-                .map(type -> parseLanguage((String) type.getValue(), () -> "Unsupported content type [%s] provided for report".formatted(type)))
+                .map(type -> parseLanguage(type.getValue(), () -> "Unsupported content type [%s] provided for report".formatted(type)))
                 .orElse(modelLanguage);
         boolean showShapes = Optional.ofNullable(getAndConvert(inputs, SHOW_SHAPES_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class))
-                .map(value -> (Boolean) value.getValue())
+                .map(BooleanType::getValue)
                 .orElse(true);
         boolean sortBySeverity = Optional.ofNullable(getAndConvert(inputs, SORT_BY_SEVERITY_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class))
-                .map(value -> (Boolean) value.getValue())
+                .map(BooleanType::getValue)
                 .orElse(false);
         boolean showReport = Optional.ofNullable(getAndConvert(inputs, SHOW_REPORT_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class))
-                .map(value -> (Boolean) value.getValue())
+                .map(BooleanType::getValue)
                 .orElse(false);
         boolean loadImports = Optional.ofNullable(getAndConvert(inputs, LOAD_IMPORTS_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class))
-                .map(value -> (Boolean) value.getValue())
+                .map(BooleanType::getValue)
                 .orElse(false);
         boolean mergeModelsBeforeValidation = Optional.ofNullable(getAndConvert(inputs, MERGE_MODELS_BEFORE_VALIDATION, DataType.BOOLEAN_DATA_TYPE, BooleanType.class))
-                .map(value -> (Boolean) value.getValue())
+                .map(BooleanType::getValue)
                 .orElse(true);
         // Proceed with validation.
         Model inputModel;

@@ -18,7 +18,6 @@ package com.gitb.engine.commands.interaction;
 import com.gitb.core.ActorConfiguration;
 import com.gitb.core.AnyContent;
 import com.gitb.engine.commands.common.SessionCommand;
-import com.gitb.core.Configuration;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;

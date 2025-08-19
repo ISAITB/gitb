@@ -112,13 +112,13 @@ public class SchematronValidator extends AbstractValidator {
         // Produce validation report.
         SchematronReportHandler handler = new SchematronReportHandler(
                 xml,
-                (showSchematron == null || (Boolean)showSchematron.getValue())?sch:null, inputDocument, svrlOutput,
+                (showSchematron == null || showSchematron.getValue())?sch:null, inputDocument, svrlOutput,
                 convertXPathExpressions,
-                (showTests != null && ((Boolean) showTests.getValue())),
-                (showPaths != null && ((Boolean) showPaths.getValue()))
+                (showTests != null && showTests.getValue()),
+                (showPaths != null && showPaths.getValue())
         );
         var report = handler.createReport();
-        if (sortBySeverity != null && ((Boolean) sortBySeverity.getValue()) && report.getReports() != null) {
+        if (sortBySeverity != null && sortBySeverity.getValue() && report.getReports() != null) {
             report.getReports().getInfoOrWarningOrError().sort(new ReportItemComparator(ReportItemComparator.SortType.SEVERITY_THEN_LOCATION));
         }
         return report;

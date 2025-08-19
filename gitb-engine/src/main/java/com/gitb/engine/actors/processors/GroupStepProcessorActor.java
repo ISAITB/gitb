@@ -22,7 +22,7 @@ import org.apache.pekko.actor.ActorRef;
 
 /**
  * Created by serbay on 9/12/14.
- *
+ * <p>
  * Group step executor actor
  */
 public class GroupStepProcessorActor extends SequenceProcessorActor<Group> {

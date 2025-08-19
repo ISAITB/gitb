@@ -26,15 +26,11 @@ import com.gitb.engine.validation.ValidationHandler;
 import com.gitb.engine.validation.handlers.common.AbstractValidator;
 import com.gitb.tr.*;
 import com.gitb.types.*;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonSyntaxException;
 import com.networknt.schema.*;
 import com.networknt.schema.i18n.ResourceBundleMessageSource;
 import com.networknt.schema.serialization.JsonNodeReader;
 import com.networknt.schema.utils.JsonNodes;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.springframework.http.MediaType;
 import org.springframework.util.MimeType;
 
@@ -72,7 +68,7 @@ public class JsonValidator extends AbstractValidator {
     @Override
     public TestStepReportType validate(List<Configuration> configurations, Map<String, DataType> inputs) {
         // Retrieve and check inputs.
-        String content = (String) Objects.requireNonNull(getAndConvert(inputs, getInputArgumentName(), DataType.STRING_DATA_TYPE, StringType.class), "Input [%s] must be provided".formatted(getInputArgumentName())).getValue();
+        String content = Objects.requireNonNull(getAndConvert(inputs, getInputArgumentName(), DataType.STRING_DATA_TYPE, StringType.class), "Input [%s] must be provided".formatted(getInputArgumentName())).getValue();
         List<MapType> schemas = Optional.ofNullable(getAndConvert(inputs, SCHEMA_ARGUMENT_NAME, DataType.LIST_DATA_TYPE, ListType.class))
                 .map(list -> list.getElements().stream()
                         .map(schemaData -> {
@@ -114,7 +110,7 @@ public class JsonValidator extends AbstractValidator {
 
     protected boolean supportsYaml(Map<String, DataType> inputs) {
         return Optional.ofNullable(getAndConvert(inputs, SUPPORT_YAML_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class))
-                .map(value -> (Boolean) value.getValue())
+                .map(BooleanType::getValue)
                 .orElse(false);
     }
 
@@ -198,7 +194,7 @@ public class JsonValidator extends AbstractValidator {
     private List<Message> validateAgainstSchema(JsonNode contentNode, MapType schema, JsonNodeReader jsonReader, String testCaseId, String sessionId) {
         JsonSchema parsedSchema = readSchema(schema, jsonReader, testCaseId, sessionId);
         var locationMapper = getLocationMapper();
-        return parsedSchema.validate(contentNode).stream().map((message) -> new Message(StringUtils.removeStart(message.getMessage(), "[] "), locationMapper.apply(message))).collect(Collectors.toList());
+        return parsedSchema.validate(contentNode).stream().map((message) -> new Message(Strings.CS.removeStart(message.getMessage(), "[] "), locationMapper.apply(message))).collect(Collectors.toList());
     }
 
     private void addBranchErrors(List<Message> aggregatedMessages, List<Message> branchMessages, int branchCounter) {

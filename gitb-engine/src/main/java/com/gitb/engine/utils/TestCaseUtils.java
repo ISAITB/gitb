@@ -503,7 +503,7 @@ public class TestCaseUtils {
         if (VariableResolver.isVariableReference(stepLevel)) {
             var resolvedErrorLevel = resolver.resolveVariableAsString(stepLevel);
             try {
-                errorLevel = ErrorLevel.valueOf((String) resolvedErrorLevel.getValue());
+                errorLevel = ErrorLevel.valueOf(resolvedErrorLevel.getValue());
             } catch (NullPointerException e) {
                 LOG.warn(MarkerFactory.getDetachedMarker(sessionId), "Severity level for step could not be determined using expression [%s]. Using %s level instead.".formatted(stepLevel, ErrorLevel.ERROR));
             } catch (IllegalArgumentException e) {
@@ -644,7 +644,7 @@ public class TestCaseUtils {
         } else if ("true".equalsIgnoreCase(flagValue)) {
             return true;
         } else if (VariableResolver.isVariableReference(flagValue)) {
-            return (boolean) variableResolverSupplier.get().resolveVariableAsBoolean(flagValue).getValue();
+            return variableResolverSupplier.get().resolveVariableAsBoolean(flagValue).getValue();
         } else {
             return defaultIfEmpty;
         }

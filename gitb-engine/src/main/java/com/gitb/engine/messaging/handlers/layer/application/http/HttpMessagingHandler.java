@@ -53,7 +53,7 @@ public class HttpMessagingHandler extends AbstractMessagingHandler {
 
 	public static final String MODULE_DEFINITION_XML = "/messaging/http-messaging-definition.xml";
 
-	private static MessagingModule module = MessagingHandlerUtils.readModuleDefinition(MODULE_DEFINITION_XML);
+	private static final MessagingModule module = MessagingHandlerUtils.readModuleDefinition(MODULE_DEFINITION_XML);
 
 	@Override
 	public void beginTransaction(String sessionId, String transactionId, String stepId, String from, String to, List<Configuration> configurations) {
@@ -71,7 +71,7 @@ public class HttpMessagingHandler extends AbstractMessagingHandler {
 	}
 
 	@Override
-	public ITransactionReceiver getReceiver(SessionContext sessionContext, TransactionContext transactionContext) throws IOException {
+	public ITransactionReceiver getReceiver(SessionContext sessionContext, TransactionContext transactionContext) {
 		return new HttpReceiver(sessionContext, transactionContext);
 	}
 

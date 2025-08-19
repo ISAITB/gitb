@@ -188,7 +188,7 @@ public class HttpHeaderHandler implements SOAPHandler<SOAPMessageContext> {
             random.setSeed(System.currentTimeMillis());
             byte[] nonceBytes = new byte[16];
             random.nextBytes(nonceBytes);
-            return new String(Base64.encodeBase64(nonceBytes), "UTF-8");
+            return new String(Base64.encodeBase64(nonceBytes), StandardCharsets.UTF_8);
         } catch (Exception e) {
             throw new IllegalStateException("Unable to make nonce", e);
         }
@@ -207,8 +207,7 @@ public class HttpHeaderHandler implements SOAPHandler<SOAPMessageContext> {
             offset += b2.length;
             System.arraycopy(passwordBase64Bytes, 0, b4, offset, passwordBase64Bytes.length);
             byte[] digestBytes = MessageDigest.getInstance("SHA-1").digest(b4);
-            String passwdDigest = Base64.encodeBase64String(digestBytes);
-            return passwdDigest;
+            return Base64.encodeBase64String(digestBytes);
         } catch (Exception e) {
             throw new IllegalStateException("Unable to make digest", e);
         }

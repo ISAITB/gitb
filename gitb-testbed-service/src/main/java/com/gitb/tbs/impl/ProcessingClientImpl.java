@@ -35,7 +35,7 @@ public class ProcessingClientImpl implements ProcessingClient {
         if (logRequest.getSessionId() != null) {
             var testSessionId = SessionManager.getInstance().getTestSessionForProcessingSession(logRequest.getSessionId());
             if (testSessionId == null) {
-                LOG.warn(String.format("Could not determine test session for processing session [%s]", logRequest.getSessionId()));
+                LOG.warn("Could not determine test session for processing session [{}]", logRequest.getSessionId());
             } else {
                 CallbackManager.getInstance().logMessageReceived(testSessionId, logRequest.getMessage(), logRequest.getLevel());
             }

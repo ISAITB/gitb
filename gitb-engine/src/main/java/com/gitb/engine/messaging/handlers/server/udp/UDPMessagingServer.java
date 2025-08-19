@@ -39,9 +39,9 @@ public class UDPMessagingServer implements IMessagingServer {
     // initial configuration for the messaging server
     private final Configuration configuration;
     // port -> listener thread map
-    private Map<Integer, IMessagingServerWorker> workers;
+    private final Map<Integer, IMessagingServerWorker> workers;
 
-    protected UDPMessagingServer(Configuration configuration) throws IOException {
+    protected UDPMessagingServer(Configuration configuration) {
         this.configuration = configuration;
         this.workers = new ConcurrentHashMap<>();
     }
@@ -53,13 +53,9 @@ public class UDPMessagingServer implements IMessagingServer {
     public synchronized IMessagingServerWorker listenNextAvailablePort() {
         for (int port = configuration.getStart(); port <= configuration.getEnd(); port++) {
             if(!workers.containsKey(port)) {
-	            UDPMessagingServerWorker worker = null;
-	            try {
-		            worker = listen(port);
-	            } catch (IOException e) {
-		            throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Could not open server at the port ["+port+"]"), e);
-	            }
-	            return worker;
+	            UDPMessagingServerWorker worker;
+                worker = listen(port);
+                return worker;
             }
         }
 
@@ -74,7 +70,7 @@ public class UDPMessagingServer implements IMessagingServer {
         return workers.values();
     }
 
-    private UDPMessagingServerWorker listen(int port) throws IOException {
+    private UDPMessagingServerWorker listen(int port) {
         UDPMessagingServerWorker worker = new UDPMessagingServerWorker(port, allowAllConnections());
 
         workers.put(port, worker);
@@ -95,7 +91,7 @@ public class UDPMessagingServer implements IMessagingServer {
         return configuration;
     }
 
-    private static UDPMessagingServer getInstance(Configuration configuration) throws IOException {
+    private static UDPMessagingServer getInstance(Configuration configuration) {
         if(instance == null) {
             instance = new UDPMessagingServer(configuration);
         }

@@ -79,7 +79,7 @@ public abstract class AbstractDatagramReceiver implements IDatagramReceiver {
 	}
 
 	@Override
-	public void onEnd() throws Exception {
+	public void onEnd() {
 
 	}
 

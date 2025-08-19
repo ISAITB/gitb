@@ -328,19 +328,7 @@ public class TestCaseOverview {
             if (messageParts != null) {
                 for (var part: messageParts) {
                     if (!part.isEmpty()) {
-                        short partLevel = previousLevel;
-                        if (part.length() > 22) { // The timestamp part is of length 22 "[yyyy-mm-dd HH:MM:SS] "
-                            var withoutTimestamp = part.substring(22);
-                            if (withoutTimestamp.startsWith("DEBUG ")) {
-                                partLevel = LogMessage.DEBUG;
-                            } else if (withoutTimestamp.startsWith("INFO ")) {
-                                partLevel = LogMessage.INFO;
-                            } else if (withoutTimestamp.startsWith("WARN ")) {
-                                partLevel = LogMessage.WARNING;
-                            } else if (withoutTimestamp.startsWith("ERROR ")) {
-                                partLevel = LogMessage.ERROR;
-                            }
-                        }
+                        short partLevel = getPartLevel(part, previousLevel);
                         if (partLevel != LogMessage.DEBUG) {
                             tempMessages.add(new LogMessage(partLevel, part));
                         }
@@ -352,6 +340,23 @@ public class TestCaseOverview {
         if (!tempMessages.isEmpty()) {
             logMessages = tempMessages;
         }
+    }
+
+    private short getPartLevel(String part, short previousLevel) {
+        short partLevel = previousLevel;
+        if (part.length() > 22) { // The timestamp part is of length 22 "[yyyy-mm-dd HH:MM:SS] "
+            var withoutTimestamp = part.substring(22);
+            if (withoutTimestamp.startsWith("DEBUG ")) {
+                partLevel = LogMessage.DEBUG;
+            } else if (withoutTimestamp.startsWith("INFO ")) {
+                partLevel = LogMessage.INFO;
+            } else if (withoutTimestamp.startsWith("WARN ")) {
+                partLevel = LogMessage.WARNING;
+            } else if (withoutTimestamp.startsWith("ERROR ")) {
+                partLevel = LogMessage.ERROR;
+            }
+        }
+        return partLevel;
     }
 
     public static class LogMessage {

@@ -18,8 +18,6 @@ package com.gitb.types;
 import com.gitb.core.ErrorCode;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.utils.ErrorUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -29,7 +27,7 @@ import java.io.OutputStream;
  * Created by tuncay on 9/2/14.
  */
 public abstract class ContainerType extends DataType {
-    private static Logger logger = LoggerFactory.getLogger(ListType.class);
+
     private static final String DEFAULT_ENCODING = "utf-8";
 
     public abstract boolean isEmpty();

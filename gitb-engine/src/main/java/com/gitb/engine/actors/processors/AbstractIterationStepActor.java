@@ -31,7 +31,7 @@ import com.gitb.utils.ErrorUtils;
 
 /**
  * Created by serbay on 9/15/14.
- *
+ * <p>
  * Checks if the iteration limit is reached for the while/foreach/repeatuntil steps
  *
  */

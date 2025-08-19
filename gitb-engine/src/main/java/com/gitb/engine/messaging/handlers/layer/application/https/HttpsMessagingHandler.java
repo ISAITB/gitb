@@ -45,7 +45,7 @@ public class HttpsMessagingHandler extends AbstractMessagingHandler{
     }
 
     @Override
-    public ITransactionReceiver getReceiver(SessionContext sessionContext, TransactionContext transactionContext) throws IOException {
+    public ITransactionReceiver getReceiver(SessionContext sessionContext, TransactionContext transactionContext) {
         return new HttpsReceiver(sessionContext, transactionContext);
     }
 

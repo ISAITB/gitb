@@ -44,9 +44,8 @@ public class MultipartFormDataBodyPublisher implements BodyPublisher {
 
     private final String boundary = nextBoundary();
     private final List<Part> parts = new ArrayList<>();
-    private Charset charset;
-    private final BodyPublisher delegate = BodyPublishers.ofInputStream(
-            () -> Channels.newInputStream(new MultipartFormDataChannel(this.boundary, this.parts, this.charset)));
+    private final Charset charset;
+    private final BodyPublisher delegate;
 
     /**
      * Construct {@link MultipartFormDataBodyPublisher}
@@ -63,6 +62,7 @@ public class MultipartFormDataBodyPublisher implements BodyPublisher {
      */
     public MultipartFormDataBodyPublisher(Charset charset) {
         this.charset = charset;
+        this.delegate = BodyPublishers.ofInputStream(() -> Channels.newInputStream(new MultipartFormDataChannel(this.boundary, this.parts, this.charset)));
     }
 
     private MultipartFormDataBodyPublisher add(Part part) {
@@ -232,7 +232,7 @@ class StringPart implements Part {
     }
 
     @Override
-    public ReadableByteChannel open() throws IOException {
+    public ReadableByteChannel open() {
         var input = new ByteArrayInputStream(this.value.getBytes(this.charset));
         return Channels.newChannel(input);
     }
@@ -271,7 +271,7 @@ class StreamPart implements Part {
     }
 
     @Override
-    public ReadableByteChannel open() throws IOException {
+    public ReadableByteChannel open() {
         return this.supplier.get();
     }
 }

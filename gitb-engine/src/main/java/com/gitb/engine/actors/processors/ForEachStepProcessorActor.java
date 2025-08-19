@@ -46,7 +46,7 @@ public class ForEachStepProcessorActor extends AbstractIterationStepActor<ForEac
 	}
 
 	@Override
-	protected void init() throws Exception {
+	protected void init() {
 		iteration = 0;
 		if (step.getOf() != null) {
 			VariableResolver resolver = new VariableResolver(scope);

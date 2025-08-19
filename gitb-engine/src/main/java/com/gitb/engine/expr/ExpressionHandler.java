@@ -85,7 +85,7 @@ public class ExpressionHandler {
     DataType processSourceExpression(String expectedReturnType, String sourceVariableExpression, String xpathExpression) {
         DataType expressionResult;
         DataType source = variableResolver.resolveVariable(sourceVariableExpression);
-        if(xpathExpression == null || xpathExpression.equals("")) {
+        if(xpathExpression == null || xpathExpression.isEmpty()) {
             //if nothing to process, return the source immediately
             expressionResult = source;
         } else {

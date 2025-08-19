@@ -17,8 +17,8 @@ package com.gitb.vs.tdl.util;
 
 public class ContainerTypeInfo {
 
-    private String containerType;
-    private String containedType;
+    private final String containerType;
+    private final String containedType;
 
     public ContainerTypeInfo(String containerType, String containedType) {
         this.containerType = containerType;

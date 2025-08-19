@@ -78,7 +78,7 @@ public class SoapMessagingHandler extends AbstractMessagingHandler {
     }
 
     @Override
-    public ITransactionReceiver getReceiver(SessionContext sessionContext, TransactionContext transactionContext) throws IOException {
+    public ITransactionReceiver getReceiver(SessionContext sessionContext, TransactionContext transactionContext) {
         if (transactionContext.getConfigurations() != null) {
             Configuration sslConfig = ConfigurationUtils.getConfiguration(transactionContext.getConfigurations(), HTTP_SSL_CONFIG_NAME);
             if (sslConfig != null && sslConfig.getValue() != null && "true".equalsIgnoreCase(sslConfig.getValue())) {
@@ -112,7 +112,7 @@ public class SoapMessagingHandler extends AbstractMessagingHandler {
         if(versionConfig != null) {
             String version = versionConfig.getValue();
             if(!version.contentEquals(SOAP_VERSION_1_1) && !version.contentEquals(SOAP_VERSION_1_2)) {
-                throw new GITBEngineInternalError("Invalid SOAP version [" + version + "]. It can be either " + SOAP_VERSION_1_1 +" or " + SOAP_VERSION_1_2 + "");
+                throw new GITBEngineInternalError("Invalid SOAP version [" + version + "]. It can be either " + SOAP_VERSION_1_1 +" or " + SOAP_VERSION_1_2);
             }
         } else {
             //cannot be null
@@ -128,7 +128,7 @@ public class SoapMessagingHandler extends AbstractMessagingHandler {
         if(versionConfig != null) {
             String version = versionConfig.getValue();
             if(!version.contentEquals("1.1") && !version.contentEquals("1.2")) {
-                throw new GITBEngineInternalError("Invalid SOAP version [" + version + "]. It can be either " + SOAP_VERSION_1_1 +" or " + SOAP_VERSION_1_2 + "");
+                throw new GITBEngineInternalError("Invalid SOAP version [" + version + "]. It can be either " + SOAP_VERSION_1_1 +" or " + SOAP_VERSION_1_2);
             }
         } else {
             //cannot be null

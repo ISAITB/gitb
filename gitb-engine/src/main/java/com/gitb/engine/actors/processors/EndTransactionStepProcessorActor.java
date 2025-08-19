@@ -15,16 +15,16 @@
 
 package com.gitb.engine.actors.processors;
 
-import com.gitb.engine.utils.StepContext;
-import org.apache.pekko.actor.ActorRef;
 import com.gitb.engine.messaging.MessagingContext;
 import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.engine.utils.StepContext;
 import com.gitb.tdl.EndTransaction;
+import org.apache.pekko.actor.ActorRef;
 
 /**
  * Created by serbay on 9/29/14.
- *
+ * <p>
  * End transaction step executor actor
  */
 public class EndTransactionStepProcessorActor extends AbstractTestStepActor<EndTransaction> {
@@ -35,12 +35,12 @@ public class EndTransactionStepProcessorActor extends AbstractTestStepActor<EndT
 	}
 
 	@Override
-	protected void init() throws Exception {
+	protected void init() {
 		// Do nothing.
 	}
 
 	@Override
-	protected void start() throws Exception {
+	protected void start() {
 		processing();
 
 		TestCaseContext context = scope.getContext();
@@ -58,11 +58,6 @@ public class EndTransactionStepProcessorActor extends AbstractTestStepActor<EndT
 		}
 
 		completed();
-	}
-
-	@Override
-	protected void stop() {
-		// Do nothing.
 	}
 
 	public static ActorRef create(ActorContext context, EndTransaction step, TestCaseScope scope, String stepId, StepContext stepContext) throws Exception {

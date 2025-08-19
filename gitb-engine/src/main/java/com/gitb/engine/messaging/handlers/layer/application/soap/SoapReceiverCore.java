@@ -30,6 +30,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 
 public class SoapReceiverCore {
 
@@ -49,14 +50,14 @@ public class SoapReceiverCore {
         BinaryType binaryContent = (BinaryType) httpMessage.getFragments().get(
                 HttpMessagingHandler.HTTP_BODY_FIELD_NAME);
 
-        byte[] content = (byte[]) binaryContent.getValue();
+        byte[] content = binaryContent.getValue();
 
         InputStream inputStream = new ByteArrayInputStream(content);
 
         // initialize the message factory according to given configuration in
         // receive step
-        String soapVersion = ConfigurationUtils.getConfiguration(configurations,
-                SoapMessagingHandler.SOAP_VERSION_CONFIG_NAME).getValue();
+        String soapVersion = Objects.requireNonNull(ConfigurationUtils.getConfiguration(configurations,
+                SoapMessagingHandler.SOAP_VERSION_CONFIG_NAME)).getValue();
 
         MessageFactory messageFactory = null;
 
@@ -65,20 +66,18 @@ public class SoapReceiverCore {
         } else if (soapVersion.contentEquals(SoapMessagingHandler.SOAP_VERSION_1_2)) {
             messageFactory = MessageFactory.newInstance(SOAPConstants.SOAP_1_2_PROTOCOL); // double
             // check
-        } else {
-            // will not execute here, already handled in SoapMessagingHandler
         }
 
         // extract mimeHeaders if present
         MimeHeaders mimeHeaders = new MimeHeaders();
         StringType contentType = (StringType) httpHeaders.getItem(SoapMessagingHandler.HTTP_CONTENT_TYPE_HEADER);
         if (contentType != null) {
-            mimeHeaders.addHeader(SoapMessagingHandler.HTTP_CONTENT_TYPE_HEADER, (String) contentType.getValue());
+            mimeHeaders.addHeader(SoapMessagingHandler.HTTP_CONTENT_TYPE_HEADER, contentType.getValue());
         }
 
-        SOAPMessage soapMessage = messageFactory.createMessage(mimeHeaders, inputStream);
+        SOAPMessage soapMessage = Objects.requireNonNull(messageFactory).createMessage(mimeHeaders, inputStream);
 
-        logger.debug(parent.addMarker(), "Created soap message from the http message: " + soapMessage);
+        logger.debug(parent.addMarker(), "Created soap message from the http message: {}", soapMessage);
 
         // manage attachment parts
         ListType atts = new ListType(DataType.BINARY_DATA_TYPE);
@@ -90,21 +89,21 @@ public class SoapReceiverCore {
             Object att = null;
 
             AttachmentPart itAtt = (AttachmentPart) itAtts.next();
-            logger.debug(parent.addMarker(), "Found an attachment: " + itAtt);
+            logger.debug(parent.addMarker(), "Found an attachment: {}", itAtt);
             String typeAtt = itAtt.getContentType();
             if (typeAtt.contains("text/")) {
                 String text = (String) itAtt.getContent();
                 att = text.getBytes();
                 // process text
-                logger.debug(parent.addMarker(), "Found an attachment of type text: " + text);
+                logger.debug(parent.addMarker(), "Found an attachment of type text: {}", text);
             } else if (typeAtt.contains("image/")) {
                 att = IOUtils.toByteArray((InputStream) itAtt.getContent());
                 // process InputStream of image
-                logger.debug(parent.addMarker(), "Found an attachment of type image: " + atts);
+                logger.debug(parent.addMarker(), "Found an attachment of type image: {}", atts);
             } else if (typeAtt.contains("application/")) {
                 att = IOUtils.toByteArray((InputStream) itAtt.getContent());
                 // process InputStream of image
-                logger.debug(parent.addMarker(), "Found an attachment of type binary: " + atts);
+                logger.debug(parent.addMarker(), "Found an attachment of type binary: {}", atts);
             }
 
             // add to the list
@@ -148,8 +147,6 @@ public class SoapReceiverCore {
     /**
      * Extract the first element of the soapBody
      *
-     * @param soapBody
-     * @return
      */
     private Object getFirstElement(SOAPBody soapBody) {
         Iterator<?> it = soapBody.getChildElements();

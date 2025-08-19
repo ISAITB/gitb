@@ -104,9 +104,7 @@ public class RemoteTestCaseRepository implements ITestCaseRepository {
 			InputStream inputStream = retrieveRemoteTestResource(testCaseId, uri);
 
 			if (inputStream != null) {
-				TestCase resource = XMLUtils.unmarshal(TestCase.class, new StreamSource(inputStream));
-
-				return resource;
+                return XMLUtils.unmarshal(TestCase.class, new StreamSource(inputStream));
 			} else {
 				return null;
 			}
