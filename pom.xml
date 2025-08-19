@@ -55,7 +55,7 @@
         <version.commonsConfiguration>2.12.0</version.commonsConfiguration>
         <version.commonsText>1.13.1</version.commonsText>
         <version.pekko>1.1.4</version.pekko>
-        <version.rgxgen>3.0</version.rgxgen>
+        <version.rgxgen>3.1</version.rgxgen>
         <version.saajImpl>3.0.4</version.saajImpl>
         <version.helgerCommons>11.2.6</version.helgerCommons>
         <version.dnsJava>3.6.3</version.dnsJava>
