@@ -3,7 +3,7 @@
       <div class="card-header">
         <div class="card-title">Create conformance statements</div>
       </div>
-      <div class="card-body">
+      <div class="card-body create-card-body">
         <div>
           @if (dataStatus.status == Constants.STATUS.PENDING) {
             <div class="pending-container">
@@ -12,7 +12,7 @@
             </div>
           } @else {
             @if (items.length == 0) {
-              <div>
+              <div class="statement-alert-container">
                 <div class="alert alert-info rounded mb-0">
                   @if (hasOtherStatements) {
                     <span>All available conformance statements are already created.</span>
@@ -47,7 +47,7 @@
                 </div>
               } @else {
                   <div class="statement-container">
-                      <app-conformance-statement-items-display [items]="items" [animated]="animated" (selectionChanged)="selectionChanged($event)"></app-conformance-statement-items-display>
+                          <app-conformance-statement-items-display [items]="items" [animated]="animated" (selectionChanged)="selectionChanged($event)"></app-conformance-statement-items-display>
                   </div>
               }
             }

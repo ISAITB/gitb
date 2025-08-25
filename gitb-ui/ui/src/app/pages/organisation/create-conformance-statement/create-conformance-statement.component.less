@@ -13,19 +13,31 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
+@import "../../../../styles/less/_common.less";
+
 .control-container {
     display: flex;
-    flex-wrap: wrap
+    flex-wrap: wrap;
+    padding-left: 16px;
+    padding-right: 16px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid @gray-highlight;
+}
+.pending-container, .statement-alert-container {
+    padding-left: 16px;
+    padding-right: 16px;
+    padding-bottom: 16px;
 }
 .no-statements-visible {
-    margin-top: 15px;
+    margin: 16px;
     opacity: 0.5;
 }
+.create-card-body.card-body {
+    padding: 16px 0 0;
+}
 .statement-container {
-    margin-top: 10px;
-    padding-right: 5px;
-    margin-right: -5px;
+    padding: 6px 16px 16px;
     overflow-y: auto;
-    max-height: calc(100vh - 459px);
-    min-height: 70px;
+    max-height: calc(100vh - 449px);
+    min-height: 80px;
 }
