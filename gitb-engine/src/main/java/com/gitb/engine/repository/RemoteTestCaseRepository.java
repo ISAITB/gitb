@@ -64,7 +64,7 @@ public class RemoteTestCaseRepository implements ITestCaseRepository {
 		try {
 			return getTestResource(toLocationKey(from, testCaseId), artifactPath);
 		} catch (Exception e) {
-			throw new GITBEngineInternalError(e);
+			throw new GITBEngineInternalError("Unable to look up artifact at path [%s] from %s".formatted(artifactPath, (from == null)?"current test suite":"test suite [%s]".formatted(from)), e);
 		}
 	}
 
