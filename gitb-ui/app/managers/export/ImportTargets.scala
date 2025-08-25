@@ -109,6 +109,7 @@ object ImportTargets {
       item.itemType match {
         case ImportItemType.Domain => targets.hasDomain = true
         case ImportItemType.DomainParameter => targets.hasDomainParameters = true
+        case ImportItemType.TestService => targets.hasTestServices = true
         case ImportItemType.Specification => targets.hasSpecifications = true
         case ImportItemType.SpecificationGroup => targets.hasSpecifications = true
         case ImportItemType.TestSuite => targets.hasTestSuites = true
@@ -182,6 +183,9 @@ object ImportTargets {
       }
       if (domain.getParameters != null && !domain.getParameters.getParameter.isEmpty) {
         result.hasDomainParameters = true
+        if (domain.getTestServices != null && !domain.getTestServices.getService.isEmpty) {
+          result.hasTestServices = true
+        }
       }
     }
   }
@@ -235,6 +239,7 @@ class ImportTargets {
   var hasEndpoints: Boolean = false
   var hasEndpointParameters: Boolean = false
   var hasDomainParameters: Boolean = false
+  var hasTestServices: Boolean = false
 
   var hasCommunity: Boolean = false
   var hasCommunityCertificateSettings: Boolean = false

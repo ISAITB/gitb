@@ -46,6 +46,7 @@ export abstract class BaseTableComponent extends BaseComponent {
 	@Input() checkboxEnabled = false
 	@Input() tableCaption?: string
   @Input() allowSelect = false
+  @Input() persistentSelection = true
   @Input() allowMultiSelect = false
   @Input() actionTooltip = ''
   @Input() deleteTooltip = 'Delete'

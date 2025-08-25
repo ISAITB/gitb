@@ -34,7 +34,6 @@ import {DomainParameter} from 'src/app/types/domain-parameter';
 import {map, share} from 'rxjs/operators';
 import {TriggerDataItem} from 'src/app/types/trigger-data-item';
 import {ErrorDescription} from 'src/app/types/error-description';
-import {CodeEditorModalComponent} from 'src/app/components/code-editor-modal/code-editor-modal.component';
 import {CustomProperty} from 'src/app/types/custom-property.type';
 import {RoutingService} from 'src/app/services/routing.service';
 import {CommunityTab} from '../community/community-details/community-tab.enum';
@@ -46,6 +45,8 @@ import {ValidationState} from 'src/app/types/validation-state';
 import {TriggerInfo} from 'src/app/types/trigger-info';
 import {TriggerFireExpression} from '../../../../types/trigger-fire-expression';
 import {TriggerFireExpressionModalComponent} from './trigger-fire-expression-modal/trigger-fire-expression-modal.component';
+import {DomainParameterService} from '../../../../services/domain-parameter.service';
+import {ServiceCallResultHandlerService} from '../../../../services/service-call-result-handler.service';
 
 @Component({
     selector: 'app-trigger',
@@ -111,12 +112,14 @@ export class TriggerComponent extends BaseComponent implements OnInit {
     private readonly route: ActivatedRoute,
     private readonly modalService: BsModalService,
     private readonly triggerService: TriggerService,
+    private readonly domainParameterService: DomainParameterService,
     private readonly conformanceService: ConformanceService,
     private readonly communityService: CommunityService,
     private readonly confirmationDialogService: ConfirmationDialogService,
     private readonly popupService: PopupService,
     public readonly dataService: DataService,
-    private readonly errorService: ErrorService
+    private readonly errorService: ErrorService,
+    private readonly serviceCallResultHandlerService: ServiceCallResultHandlerService
   ) {
     super();
   }
@@ -198,9 +201,9 @@ export class TriggerComponent extends BaseComponent implements OnInit {
 
     let domainParameterFnResult: Observable<DomainParameter[]>|undefined
     if (this.dataService.isCommunityAdmin && this.dataService.community!.domainId != undefined) {
-      domainParameterFnResult = this.conformanceService.getDomainParameters(this.dataService.community!.domainId, false, false)
+      domainParameterFnResult = this.domainParameterService.getDomainParameters(this.dataService.community!.domainId, false, false)
     } else if (this.dataService.isSystemAdmin) {
-      domainParameterFnResult = this.conformanceService.getDomainParametersOfCommunity(this.communityId, false, false)
+      domainParameterFnResult = this.domainParameterService.getDomainParametersOfCommunity(this.communityId, false, false)
     }
     if (domainParameterFnResult != undefined) {
       loadPromises.push(domainParameterFnResult.pipe(
@@ -430,36 +433,7 @@ export class TriggerComponent extends BaseComponent implements OnInit {
     this.testPending = true
     this.triggerService.testTriggerEndpoint(this.trigger.url!, this.trigger.serviceType!, this.communityId)
     .subscribe((result) => {
-      if (result.success) {
-        let valueToShow = ''
-        if (result.texts && result.texts.length > 0) {
-          valueToShow = result.texts[0]
-          if (result.contentType == 'application/json') {
-            try {
-              valueToShow = this.dataService.prettifyJSON(valueToShow)
-            } catch (e) {
-              console.warn('Response reported as JSON but could not be parsed')
-              valueToShow = result.texts[0]
-            }
-          }
-        }
-        this.modalService.show(CodeEditorModalComponent, {
-          class: 'modal-lg',
-          initialState: {
-            documentName: 'Test success',
-            editorOptions: {
-              value: valueToShow,
-              readOnly: true,
-              lineNumbers: true,
-              smartIndent: false,
-              electricChars: false,
-              mode: result.contentType
-            }
-          }
-        })
-      } else {
-        this.errorService.popupErrorsArray(result.texts, undefined, result.contentType)
-      }
+      this.serviceCallResultHandlerService.handleResult(result)
     }).add(() => {
       this.testPending = false
     })

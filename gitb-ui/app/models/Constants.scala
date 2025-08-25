@@ -81,6 +81,7 @@ object Constants {
   val MimeTypePDF = "application/pdf"
   val MimeTypeXML = "application/xml"
   val MimeTypeTextXML = "text/xml"
+  val MimeTypeTextPlain = "text/plain"
 
   val UserAttributeEmail = "email"
   val UserAttributeFirstName = "firstName"

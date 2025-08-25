@@ -45,6 +45,7 @@ import static com.gitb.engine.messaging.handlers.layer.application.http.HttpMess
 import static com.gitb.engine.messaging.handlers.layer.application.soap.SoapMessagingHandlerV2.*;
 import static com.gitb.engine.messaging.handlers.layer.application.soap.SoapVersion.VERSION_1_1;
 import static com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils.*;
+import static com.gitb.utils.MessagingReportUtils.generateSuccessReport;
 
 @RestController
 public class SoapMessagingServer extends AbstractMessagingServer {
@@ -134,7 +135,7 @@ public class SoapMessagingServer extends AbstractMessagingServer {
                     responseMap.addItem(REPORT_ITEM_ATTACHMENTS, attachmentsItem);
                 });
                 // Make callback for step.
-                MessagingReport messagingReport = MessagingHandlerUtils.generateSuccessReport(report);
+                MessagingReport messagingReport = generateSuccessReport(report);
                 new ReportVisibilitySettings(data.get().data().inputs()).apply(messagingReport);
                 CallbackManager.getInstance().callbackReceived(data.get().sessionId(), data.get().callId(), messagingReport);
                 /*

@@ -19,6 +19,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.gitb.PropertyConstants;
 import com.gitb.core.ActorConfiguration;
 import com.gitb.core.AnyContent;
 import com.gitb.core.ErrorCode;

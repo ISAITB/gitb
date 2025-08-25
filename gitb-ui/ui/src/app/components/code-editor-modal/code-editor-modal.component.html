@@ -2,6 +2,7 @@
 	<div class="modal-title">{{isNameVisible?documentName:"Data"}}</div>
 </div>
 <div class="modal-body">
+    <app-alert-display [alerts]="alerts"></app-alert-display>
 	<div class="editor" [ngClass]="styleClass">
 		<ngx-codemirror #codeEditor [(ngModel)]="editorOptions.value" [options]="editorOptions"></ngx-codemirror>
 	</div>

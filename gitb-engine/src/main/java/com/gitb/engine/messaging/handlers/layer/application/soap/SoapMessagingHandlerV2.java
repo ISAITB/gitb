@@ -45,6 +45,8 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import static com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils.*;
+import static com.gitb.utils.MessagingReportUtils.generateErrorReport;
+import static com.gitb.utils.MessagingReportUtils.generateSuccessReport;
 
 @MessagingHandler(name="SoapMessagingV2")
 public class SoapMessagingHandlerV2 extends AbstractNonWorkerMessagingHandler {
@@ -181,9 +183,9 @@ public class SoapMessagingHandlerV2 extends AbstractNonWorkerMessagingHandler {
             }
             MessagingReport messagingReport;
             if (!errorRaised || tolerateNonSoapResponse) {
-                messagingReport = MessagingHandlerUtils.generateSuccessReport(messageForReport);
+                messagingReport = generateSuccessReport(messageForReport);
             } else {
-                messagingReport = MessagingHandlerUtils.generateErrorReport(messageForReport);
+                messagingReport = generateErrorReport(messageForReport);
             }
             new ReportVisibilitySettings(message).apply(messagingReport);
             return messagingReport;

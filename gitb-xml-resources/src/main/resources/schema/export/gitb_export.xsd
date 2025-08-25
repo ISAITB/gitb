@@ -509,6 +509,7 @@
                     <xsd:element name="parameters" type="DomainParameters" minOccurs="0"/>
                     <xsd:element name="sharedTestSuites" type="TestSuites" minOccurs="0"/>
                     <xsd:element name="specificationGroups" type="SpecificationGroups" minOccurs="0"/>
+                    <xsd:element name="testServices" type="TestServices" minOccurs="0"/>
                 </xsd:sequence>
             </xsd:extension>
         </xsd:complexContent>
@@ -528,9 +529,52 @@
                 </xsd:sequence>
                 <xsd:attribute name="type" type="PropertyType" use="required"/>
                 <xsd:attribute name="inTests" type="xsd:boolean" default="true"/>
+                <xsd:attribute name="testService" type="xsd:boolean" default="false"/>
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>
+    <xsd:complexType name="TestServices">
+        <xsd:sequence>
+            <xsd:element name="service" type="TestService" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+    <xsd:complexType name="TestService">
+        <xsd:complexContent>
+            <xsd:extension base="ExportType">
+                <xsd:sequence>
+                    <xsd:element name="identifier" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="version" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="authBasicUsername" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="authBasicPassword" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="authTokenUsername" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="authTokenPassword" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="authTokenPasswordType" type="TestServiceAuthTokenPasswordType" minOccurs="0"/>
+                </xsd:sequence>
+                <xsd:attribute name="serviceType" type="TestServiceType" use="required"/>
+                <xsd:attribute name="apiType" type="TestServiceApiType" use="required"/>
+                <xsd:attribute name="parameter" use="required" type="xsd:IDREF"/>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <xsd:simpleType name="TestServiceType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="validation"/>
+            <xsd:enumeration value="processing"/>
+            <xsd:enumeration value="messaging"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+    <xsd:simpleType name="TestServiceApiType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="SOAP"/>
+            <xsd:enumeration value="REST"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+    <xsd:simpleType name="TestServiceAuthTokenPasswordType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="DIGEST"/>
+            <xsd:enumeration value="TEXT"/>
+        </xsd:restriction>
+    </xsd:simpleType>
     <xsd:complexType name="Specifications">
         <xsd:sequence>
             <xsd:element name="specification" type="Specification" maxOccurs="unbounded"/>

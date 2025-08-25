@@ -17,7 +17,6 @@ package com.gitb.tbs.impl;
 
 import com.gitb.engine.CallbackManager;
 import com.gitb.engine.SessionManager;
-import com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils;
 import com.gitb.ms.LogRequest;
 import com.gitb.ms.MessagingClient;
 import com.gitb.ms.NotifyForMessageRequest;
@@ -25,6 +24,8 @@ import com.gitb.ms.Void;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+
+import static com.gitb.utils.MessagingReportUtils.getMessagingReport;
 
 /**
  * Created by simatosc on 25/11/2016.
@@ -39,7 +40,7 @@ public class MessagingClientImpl implements MessagingClient {
         CallbackManager.getInstance().callbackReceived(
                 parameters.getSessionId(),
                 parameters.getCallId(),
-                MessagingHandlerUtils.getMessagingReport(parameters.getReport()));
+                getMessagingReport(parameters.getReport()));
         return new Void();
     }
 

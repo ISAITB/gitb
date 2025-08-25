@@ -19,7 +19,6 @@ import com.gitb.core.Configuration;
 import com.gitb.engine.CallbackManager;
 import com.gitb.engine.messaging.MessagingHandler;
 import com.gitb.engine.messaging.handlers.layer.AbstractNonWorkerMessagingHandler;
-import com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils;
 import com.gitb.messaging.DeferredMessagingReport;
 import com.gitb.messaging.Message;
 import com.gitb.messaging.MessagingReport;
@@ -47,6 +46,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 import static com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils.*;
+import static com.gitb.utils.MessagingReportUtils.generateSuccessReport;
 
 @MessagingHandler(name="HttpMessagingV2")
 public class HttpMessagingHandlerV2 extends AbstractNonWorkerMessagingHandler {
@@ -233,7 +233,7 @@ public class HttpMessagingHandlerV2 extends AbstractNonWorkerMessagingHandler {
             // Body
             getResponseBody(response).ifPresent(item -> responseItem.addItem(REPORT_ITEM_BODY, item));
             messageForReport.getFragments().put(REPORT_ITEM_RESPONSE, responseItem);
-            MessagingReport messagingReport = MessagingHandlerUtils.generateSuccessReport(messageForReport);
+            MessagingReport messagingReport = generateSuccessReport(messageForReport);
             new ReportVisibilitySettings(message).apply(messagingReport);
             return messagingReport;
         });

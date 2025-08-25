@@ -18,7 +18,6 @@ package com.gitb.tbs.servers;
 import com.gitb.engine.CallbackManager;
 import com.gitb.engine.messaging.handlers.layer.application.http.HttpMessagingHandlerV2;
 import com.gitb.engine.messaging.handlers.layer.application.http.ReportVisibilitySettings;
-import com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.Message;
 import com.gitb.messaging.MessagingReport;
@@ -45,6 +44,7 @@ import java.util.Optional;
 
 import static com.gitb.engine.messaging.handlers.layer.application.http.HttpMessagingHandlerV2.*;
 import static com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils.*;
+import static com.gitb.utils.MessagingReportUtils.generateSuccessReport;
 
 @RestController
 public class HttpMessagingServer extends AbstractMessagingServer {
@@ -147,7 +147,7 @@ public class HttpMessagingServer extends AbstractMessagingServer {
                 // Response body.
                 responseBody.flatMap(body -> getResponseBody(body, responseHeaders)).ifPresent(item -> responseMap.addItem(REPORT_ITEM_BODY, item));
                 // Prepare report.
-                MessagingReport messagingReport = MessagingHandlerUtils.generateSuccessReport(report);
+                MessagingReport messagingReport = generateSuccessReport(report);
                 new ReportVisibilitySettings(data.get().data().inputs()).apply(messagingReport);
                 // Make callback for step.
                 CallbackManager.getInstance().callbackReceived(data.get().sessionId(), data.get().callId(), messagingReport);

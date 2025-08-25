@@ -1036,50 +1036,49 @@ class TriggerManager @Inject()(env: Environment,
     }
   }
 
-  private def callHttpService(url: String, fnPayloadProvider: () => String): Future[(Boolean, List[String], String)] = {
+  private def callHttpService(url: String, fnPayloadProvider: () => String): Future[ServiceTestResult] = {
     for {
       payload <- Future.successful { fnPayloadProvider.apply() }
       response <- ws.url(url)
         .addHttpHeaders("Content-Type" -> "application/json")
         .withFollowRedirects(true)
         .post(payload)
-        .map(response => (response.status < 400, List(response.body), response.headers.getOrElse("Content-Type", List("text/plain")).head))
+        .map { response => ServiceTestResult(response.status < 400, Some(List(response.body)), response.headers.getOrElse("Content-Type", List("text/plain")).head)
+        }
     } yield response
   }
 
-  private def callProcessingService(url: String, fnCallOperation: ProcessingService => JAXBElement[_]): Future[(Boolean, List[String], String)] = {
+  private def callProcessingService(url: String, fnCallOperation: ProcessingService => JAXBElement[_]): Future[ServiceTestResult] = {
     Future {
       val service = new ProcessingServiceService(URI.create(url).toURL)
       val response = fnCallOperation.apply(service.getProcessingServicePort)
       val bos = new ByteArrayOutputStream()
       XMLUtils.marshalToStream(response, bos)
-      (true, List(new String(bos.toByteArray, StandardCharsets.UTF_8)), Constants.MimeTypeXML)
+      ServiceTestResult(success = true, Some(List(new String(bos.toByteArray, StandardCharsets.UTF_8))), Constants.MimeTypeXML)
     }
   }
 
-  def testTriggerEndpoint(url: String, serviceType: TriggerServiceType): Future[(Boolean, List[String], String)] = {
-    val promise = Promise[(Boolean, List[String], String)]()
-    var future: Future[(Boolean, List[String], String)] = null
-    if (serviceType == TriggerServiceType.GITB) {
-      future = callProcessingService(url, service => {
+  def testTriggerEndpoint(url: String, serviceType: TriggerServiceType): Future[ServiceTestResult] = {
+    val promise = Promise[ServiceTestResult]()
+    val future: Future[ServiceTestResult] = if (serviceType == TriggerServiceType.GITB) {
+      callProcessingService(url, service => {
         val response = service.getModuleDefinition(new com.gitb.ps.Void())
         new JAXBElement[GetModuleDefinitionResponse](new QName("http://www.gitb.com/ps/v1/", "GetModuleDefinitionResponse"), classOf[GetModuleDefinitionResponse], response)
       })
     } else {
-      future = callHttpService(url, () => "{}")
+      callHttpService(url, () => "{}")
     }
     future.onComplete {
       case Success(result) => promise.success(result)
-      case Failure(exception) => promise.success(false, extractFailureDetails(exception), "text/plain")
+      case Failure(exception) => promise.success(ServiceTestResult(success = false, Some(extractFailureDetails(exception)), Constants.MimeTypeTextPlain))
     }
     promise.future
   }
 
-  def testTriggerCall(url: String, serviceType: TriggerServiceType, payload: String): Future[(Boolean, List[String], String)] = {
-    val promise = Promise[(Boolean, List[String], String)]()
-    var future: Future[(Boolean, List[String], String)] = null
-    if (serviceType == TriggerServiceType.GITB) {
-      future = callProcessingService(url, service => {
+  def testTriggerCall(url: String, serviceType: TriggerServiceType, payload: String): Future[ServiceTestResult] = {
+    val promise = Promise[ServiceTestResult]()
+    val future: Future[ServiceTestResult] = if (serviceType == TriggerServiceType.GITB) {
+      callProcessingService(url, service => {
         val request = XMLUtils.unmarshal(classOf[ProcessRequest],
           new StreamSource(new StringReader(payload)),
           new StreamSource(this.getClass.getResourceAsStream("/schema/gitb_ps.xsd")),
@@ -1088,7 +1087,7 @@ class TriggerManager @Inject()(env: Environment,
         new JAXBElement[ProcessResponse](new QName("http://www.gitb.com/ps/v1/", "ProcessResponse"), classOf[ProcessResponse], response)
       })
     } else {
-      future = callHttpService(url, () => {
+      callHttpService(url, () => {
         val payloadAsJson = Json.parse(payload)
         payloadAsJson.validate(JsonUtil.validatorForProcessRequest())
         payloadAsJson.toString()
@@ -1096,7 +1095,7 @@ class TriggerManager @Inject()(env: Environment,
     }
     future.onComplete {
       case Success(result) => promise.success(result)
-      case Failure(exception) => promise.success(false, extractFailureDetails(exception), "text/plain")
+      case Failure(exception) => promise.success(ServiceTestResult(success = false, Some(extractFailureDetails(exception)), Constants.MimeTypeTextPlain))
     }
     promise.future
   }
@@ -1365,16 +1364,14 @@ class TriggerManager @Inject()(env: Environment,
       callHttpService(trigger.url, () => {
         JsonUtil.jsProcessRequest(request).toString()
       }).map { result =>
-        if (result._1) {
-          JsonUtil.parseJsProcessResponse(Json.parse(result._2.headOption.filter(StringUtils.isNotEmpty(_)).getOrElse("{}")))
+        if (result.success) {
+          JsonUtil.parseJsProcessResponse(Json.parse(result.errorMessages.flatMap(_.headOption).filter(StringUtils.isNotEmpty(_)).getOrElse("{}")))
         } else {
-          throw new IllegalStateException(result._2.headOption.getOrElse("Unexpected error"))
+          throw new IllegalStateException(result.errorMessages.flatMap(_.headOption).getOrElse("Unexpected error"))
         }
       }
     }
   }
-
-
 
   private def fireTrigger(trigger: Triggers, dataCache: Map[String, Any], callbacks: TriggerCallbacks, request: ProcessRequest): Future[Unit] = {
     callTriggerService(trigger, request).flatMap { response =>

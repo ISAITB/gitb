@@ -21,6 +21,7 @@ export interface DomainParameter {
     kind: 'HIDDEN'|'BINARY'|'SIMPLE'
     kindLabel?: string
     inTests: boolean
+    isTestService: boolean
     value?: string
     contentType?: string
 

@@ -75,6 +75,31 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
     encryptText(value, isAlreadyEncrypted = false, encryptionKey)
   }
 
+  private def toExportedTestServiceType(modelType: models.Enums.TestServiceType.TestServiceType): com.gitb.xml.export.TestServiceType = {
+    modelType match {
+      case models.Enums.TestServiceType.ProcessingService => com.gitb.xml.export.TestServiceType.PROCESSING
+      case models.Enums.TestServiceType.ValidationService => com.gitb.xml.export.TestServiceType.VALIDATION
+      case models.Enums.TestServiceType.MessagingService => com.gitb.xml.export.TestServiceType.MESSAGING
+      case _ => throw new IllegalArgumentException("Unknown test service type %s".formatted(modelType.id))
+    }
+  }
+
+  private def toExportedTestServiceApiType(modelType: models.Enums.TestServiceApiType.TestServiceApiType): com.gitb.xml.export.TestServiceApiType = {
+    modelType match {
+      case models.Enums.TestServiceApiType.SoapApi => com.gitb.xml.export.TestServiceApiType.SOAP
+      case models.Enums.TestServiceApiType.RestApi => com.gitb.xml.export.TestServiceApiType.REST
+      case _ => throw new IllegalArgumentException("Unknown test service API type %s".formatted(modelType.id))
+    }
+  }
+
+  private def toExportedTestServiceAuthTokenPasswordType(modelType: models.Enums.TestServiceAuthTokenPasswordType.TestServiceAuthTokenPasswordType): com.gitb.xml.export.TestServiceAuthTokenPasswordType = {
+    modelType match {
+      case models.Enums.TestServiceAuthTokenPasswordType.Digest => com.gitb.xml.export.TestServiceAuthTokenPasswordType.DIGEST
+      case models.Enums.TestServiceAuthTokenPasswordType.Text => com.gitb.xml.export.TestServiceAuthTokenPasswordType.TEXT
+      case _ => throw new IllegalArgumentException("Unknown test service auth token password type %s".formatted(modelType.id))
+    }
+  }
+
   private def propertyTypeForExport(modelType: String): PropertyType = {
     if ("BINARY".equals(modelType)) {
       PropertyType.BINARY
@@ -567,6 +592,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
               exportedParameter.setDescription(parameter.desc.orNull)
               exportedParameter.setType(propertyTypeForExport(parameter.kind))
               exportedParameter.setInTests(parameter.inTests)
+              exportedParameter.setTestService(exportSettings.testServices && parameter.isTestService)
               if (exportedParameter.getType == PropertyType.SECRET) {
                 exportedParameter.setValue(encryptText(parameter.value, isAlreadyEncrypted = true, exportSettings.encryptionKey))
               } else if (exportedParameter.getType == PropertyType.BINARY) {
@@ -578,6 +604,28 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
               exportedDomainParameterMap += (parameter.id -> exportedParameter)
             }
           }
+          // Test services
+          if (exportSettings.testServices) {
+            val testServices = data.testServices.get
+            if (testServices.nonEmpty) {
+              exportedDomain.setTestServices(new com.gitb.xml.export.TestServices)
+              testServices.foreach { testService =>
+                val exportedTestService = new com.gitb.xml.export.TestService
+                exportedTestService.setId(toId(sequence.next()))
+                exportedTestService.setIdentifier(testService.identifier.orNull)
+                exportedTestService.setVersion(testService.version.orNull)
+                exportedTestService.setServiceType(toExportedTestServiceType(models.Enums.TestServiceType.apply(testService.serviceType)))
+                exportedTestService.setApiType(toExportedTestServiceApiType(models.Enums.TestServiceApiType.apply(testService.apiType)))
+                exportedTestService.setAuthBasicUsername(testService.authBasicUsername.orNull)
+                exportedTestService.setAuthBasicPassword(encryptText(testService.authBasicPassword, isAlreadyEncrypted = true, exportSettings.encryptionKey))
+                exportedTestService.setAuthTokenUsername(testService.authTokenUsername.orNull)
+                exportedTestService.setAuthTokenPassword(encryptText(testService.authTokenPassword, isAlreadyEncrypted = true, exportSettings.encryptionKey))
+                exportedTestService.setAuthTokenPasswordType(testService.authTokenPasswordType.map(x => toExportedTestServiceAuthTokenPasswordType(models.Enums.TestServiceAuthTokenPasswordType.apply(x))).orNull)
+                exportedTestService.setParameter(exportedDomainParameterMap(testService.parameter))
+                exportedDomain.getTestServices.getService.add(exportedTestService)
+              }
+            }
+          }
         }
         Future.successful {
           DomainExportInfo(
@@ -585,8 +633,8 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
             exportedActorMap.toMap,
             exportedEndpointParameterMap.toMap,
             Some(exportedDomain),
-            data.actorEndpointMap.get,
-            data.endpointParameterMap.get,
+            data.actorEndpointMap.getOrElse(Map.empty),
+            data.endpointParameterMap.getOrElse(Map.empty),
             exportedDomainParameterMap.toMap,
             exportedSpecificationGroupMap.toMap,
             exportedSpecificationMap.toMap
@@ -1103,6 +1151,11 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
                           loadIfApplicable(exportSettings.domainParameters,
                             () => domainParameterManager.getDomainParameters(domainId)
                           )
+                        ).zip(
+                          // Test services
+                          loadIfApplicable(exportSettings.domainParameters && exportSettings.testServices,
+                            () => domainParameterManager.getTestServices(domainId)
+                          )
                         )
                       )
                     )
@@ -1116,17 +1169,18 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
     ).map { results =>
       DomainExportData(
         domain = Some(results._1),
-        sharedTestSuites = results._2._1,
-        specificationGroups = results._2._2._1,
-        specifications = results._2._2._2._1,
-        specificationActorMap = results._2._2._2._2._1,
-        actorEndpointMap = results._2._2._2._2._2._1,
-        endpointParameterMap = results._2._2._2._2._2._2._1,
-        testSuiteActorMap = results._2._2._2._2._2._2._2._1,
+        sharedTestSuites =          results._2._1,
+        specificationGroups =       results._2._2._1,
+        specifications =            results._2._2._2._1,
+        specificationActorMap =     results._2._2._2._2._1,
+        actorEndpointMap =          results._2._2._2._2._2._1,
+        endpointParameterMap =      results._2._2._2._2._2._2._1,
+        testSuiteActorMap =         results._2._2._2._2._2._2._2._1,
         testSuiteTestCaseGroupMap = results._2._2._2._2._2._2._2._2._1,
-        testSuiteTestCaseMap = results._2._2._2._2._2._2._2._2._2._1,
-        specificationTestSuiteMap = results._2._2._2._2._2._2._2._2._2._2._1,
-        domainParameters = results._2._2._2._2._2._2._2._2._2._2._2
+        testSuiteTestCaseMap =      results._2._2._2._2._2._2._2._2._2._1,
+        specificationTestSuiteMap = results._2._2._2._2._2._2._2._2._2._2._1._1,
+        domainParameters =          results._2._2._2._2._2._2._2._2._2._2._1._2,
+        testServices =              results._2._2._2._2._2._2._2._2._2._2._2
       )
     }
   }

@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.4</version>
+        <version>3.5.5</version>
     </parent>
     <groupId>com.gitb</groupId>
     <artifactId>GITB</artifactId>
@@ -33,7 +33,7 @@
         <version.plugin.versions-maven-plugin>2.18.0</version.plugin.versions-maven-plugin>
         <!-- Dependency versions -->
         <version.gitbTypes>1.28.0-SNAPSHOT</version.gitbTypes>
-        <version.springBoot>3.5.4</version.springBoot> <!-- When upgrading adapt Tomcat version (below) as needed. -->
+        <version.springBoot>3.5.5</version.springBoot> <!-- When upgrading adapt Tomcat version (below) as needed. -->
         <tomcat.version>10.1.44</tomcat.version>
         <version.bouncycastle>1.81</version.bouncycastle>
         <version.helgerSchematron>8.0.6</version.helgerSchematron>
@@ -251,6 +251,11 @@
             <dependency>
                 <groupId>com.gitb</groupId>
                 <artifactId>gitb-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.gitb</groupId>
+                <artifactId>gitb-remote</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -516,6 +521,7 @@
     <modules>
         <module>gitb-common</module>
         <module>gitb-core</module>
+        <module>gitb-remote</module>
         <module>gitb-engine</module>
         <module>gitb-lib</module>
         <module>gitb-testbed-service</module>

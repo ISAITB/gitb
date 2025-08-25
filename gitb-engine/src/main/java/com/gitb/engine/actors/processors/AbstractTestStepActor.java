@@ -15,12 +15,12 @@
 
 package com.gitb.engine.actors.processors;
 
+import com.gitb.PropertyConstants;
 import com.gitb.common.AliasManager;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.StepStatus;
 import com.gitb.core.TestRole;
 import com.gitb.core.TestRoleEnumeration;
-import com.gitb.engine.PropertyConstants;
 import com.gitb.engine.actors.Actor;
 import com.gitb.engine.commands.interaction.PrepareForStopCommand;
 import com.gitb.engine.commands.interaction.RestartCommand;

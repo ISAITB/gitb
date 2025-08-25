@@ -193,10 +193,27 @@ object PersistenceSchema {
     def value = column[Option[String]]("value", O.SqlType("MEDIUMBLOB"))
     def inTests = column[Boolean]("in_tests")
     def contentType  = column[Option[String]]("content_type")
+    def isTestService = column[Boolean]("is_test_service")
     def domain = column[Long]("domain")
-    def * = (id, name, desc, kind, value, inTests, contentType, domain) <> (models.DomainParameter.tupled, models.DomainParameter.unapply)
+    def * = (id, name, desc, kind, value, inTests, contentType, isTestService, domain) <> (models.DomainParameter.tupled, models.DomainParameter.unapply)
   }
   val domainParameters = TableQuery[DomainParametersTable]
+
+  class TestServicesTable(tag: Tag) extends Table[models.TestService] (tag, "TestServices") {
+    def id    = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def serviceType = column[Short]("service_type")
+    def apiType = column[Short]("api_type")
+    def identifier  = column[Option[String]]("identifier")
+    def version  = column[Option[String]]("version")
+    def authBasicUsername = column[Option[String]]("auth_basic_username")
+    def authBasicPassword = column[Option[String]]("auth_basic_password")
+    def authTokenUsername = column[Option[String]]("auth_token_username")
+    def authTokenPassword = column[Option[String]]("auth_token_password")
+    def authTokenPasswordType = column[Option[Short]]("auth_token_password_type")
+    def parameter = column[Long]("parameter")
+    def * = (id, serviceType, apiType, identifier, version, authBasicUsername, authBasicPassword, authTokenUsername, authTokenPassword, authTokenPasswordType, parameter) <> (models.TestService.tupled, models.TestService.unapply)
+  }
+  val testServices = TableQuery[TestServicesTable]
 
   class ConformanceResultsTable(tag: Tag) extends Table[models.ConformanceResult] (tag, "ConformanceResults") {
     def id    = column[Long]("id", O.PrimaryKey, O.AutoInc)

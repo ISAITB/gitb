@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, EventEmitter, OnInit, ViewChild} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {BsModalService} from 'ngx-bootstrap/modal';
 import {Constants} from 'src/app/common/constants';
@@ -34,7 +34,7 @@ import {saveAs} from 'file-saver';
 import {TestSuite} from 'src/app/types/test-suite';
 import {BaseTabbedComponent} from 'src/app/pages/base-tabbed-component';
 import {SpecificationService} from 'src/app/services/specification.service';
-import {forkJoin} from 'rxjs';
+import {finalize, forkJoin, map, Observable, ReplaySubject} from 'rxjs';
 import {DomainSpecification} from 'src/app/types/domain-specification';
 import {SpecificationGroup} from 'src/app/types/specification-group';
 import {find, remove} from 'lodash';
@@ -42,6 +42,15 @@ import {BreadcrumbType} from 'src/app/types/breadcrumb-type';
 import {CdkDragDrop} from '@angular/cdk/drag-drop';
 import {TableApi} from '../../../../../components/table/table-api';
 import {PagingEvent} from '../../../../../components/paging-controls/paging-event';
+import {DomainParameterService} from '../../../../../services/domain-parameter.service';
+import {TestServiceRow} from './test-service-row';
+import {TestServiceWithParameter} from '../../../../../types/test-service-with-parameter';
+import {
+  CreateEditTestServiceModalComponent
+} from '../../../../../modals/create-edit-test-service-modal/create-edit-test-service-modal.component';
+import {MultiSelectConfig} from '../../../../../components/multi-select-filter/multi-select-config';
+import {FilterUpdate} from '../../../../../components/test-filter/filter-update';
+import {TestService} from '../../../../../types/test-service';
 
 @Component({
     selector: 'app-domain-details',
@@ -51,6 +60,10 @@ import {PagingEvent} from '../../../../../components/paging-controls/paging-even
 })
 export class DomainDetailsComponent extends BaseTabbedComponent implements OnInit, AfterViewInit {
 
+  private static readonly MESSAGING_SERVICE_ENDPOINT_REGEXP = /^https?:\/\/\S+\/messaging/
+  private static readonly VALIDATION_SERVICE_ENDPOINT_REGEXP = /^https?:\/\/\S+\/validation/
+  private static readonly PROCESSING_SERVICE_ENDPOINT_REGEXP = /^https?:\/\/\S+\/process/
+
   @ViewChild("sharedTestSuiteTable") sharedTestSuiteTable?: TableApi
   domain: Partial<Domain> = {}
   domainSpecifications: DomainSpecification[] = []
@@ -59,15 +72,23 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
   specificationGroups: SpecificationGroup[] = []
   sharedTestSuites: TestSuite[] = []
   domainParameters: DomainParameter[] = []
+  testServices: TestServiceRow[] = []
   domainId!: number
   specificationStatus = {status: Constants.STATUS.NONE}
   sharedTestSuiteStatus = {status: Constants.STATUS.NONE}
   parameterStatus = {status: Constants.STATUS.NONE}
+  testServiceStatus = {status: Constants.STATUS.NONE}
   sharedTestSuiteTableColumns: TableColumnDefinition[] = [
     { field: 'identifier', title: 'ID' },
     { field: 'sname', title: 'Name' },
     { field: 'description', title: 'Description' },
     { field: 'version', title: 'Version' }
+  ]
+  testServiceTableColumns: TableColumnDefinition[] = [
+    { field: 'name', title: 'Name' },
+    { field: 'endpoint', title: 'Endpoint address' },
+    { field: 'description', title: 'Description' },
+    { field: 'serviceType', title: 'Service type' }
   ]
   savePending = false
   deletePending = false
@@ -76,10 +97,15 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
   loaded = false
   sharedTestSuitesRefreshing = false
   sharedTestSuiteFilter?: string
+  domainParameterColumnCount = 4
+  hasTestServices = false
+  convertParameterSelectionConfig!: MultiSelectConfig<DomainParameter>
+  convertPending = false
 
   constructor(
     public readonly dataService: DataService,
     private readonly specificationService: SpecificationService,
+    private readonly domainParameterService: DomainParameterService,
     private readonly conformanceService: ConformanceService,
     private readonly confirmationDialogService: ConfirmationDialogService,
     private readonly modalService: BsModalService,
@@ -94,6 +120,8 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
       this.loadDomainParameters()
     } else if (tabIndex == Constants.TAB.DOMAIN.SPECIFICATIONS) {
       this.loadSpecifications()
+    } else if (tabIndex == Constants.TAB.DOMAIN.TEST_SERVICES) {
+      this.loadTestServices()
     } else {
       this.loadSharedTestSuites()
     }
@@ -113,6 +141,16 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
       this.loaded = true
     })
     this.loadSpecifications()
+    this.convertParameterSelectionConfig = {
+      name: 'convertParameterToService',
+      textField: 'name',
+      singleSelection: true,
+      filterLabel: 'Register from parameter',
+      noItemsMessage: 'No candidate parameters available.',
+      searchPlaceholder: 'Search parameter...',
+      clearItems: new EventEmitter(),
+      loader: () => this.domainParameterService.getAvailableDomainParametersForTestServiceConversion(this.domainId)
+    }
   }
 
   toggleSpecificationGroupCollapse(collapse: boolean) {
@@ -182,7 +220,7 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
     if (this.parameterStatus.status == Constants.STATUS.NONE || forceLoad) {
       this.domainParameters = []
       this.parameterStatus.status = Constants.STATUS.PENDING
-      this.conformanceService.getDomainParameters(this.domainId, true, false)
+      this.domainParameterService.getDomainParameters(this.domainId, true, false)
       .subscribe((data) => {
         for (let parameter of data) {
           if (parameter.kind == 'HIDDEN') {
@@ -195,14 +233,51 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
           }
           this.domainParameters.push(parameter)
         }
+        this.hasTestServices = this.domainParameters.find(p => p.isTestService) != undefined
+        if (this.hasTestServices) {
+          this.domainParameterColumnCount = 5
+        } else {
+          this.domainParameterColumnCount = 4
+        }
       }).add(() => {
         this.parameterStatus.status = Constants.STATUS.FINISHED
       })
     }
   }
 
+  loadTestServices(forceLoad?: boolean): Observable<void> {
+    const completed$ = new ReplaySubject<void>(1);
+    if (this.testServiceStatus.status == Constants.STATUS.NONE || forceLoad) {
+      this.testServices = []
+      this.testServiceStatus.status = Constants.STATUS.PENDING
+      this.domainParameterService.getTestServices(this.domainId).pipe(
+        map((data) => {
+          for (let service of data) {
+            this.testServices.push({
+              serviceType: this.dataService.testServiceTypeLabel(service.service.serviceType),
+              apiType: this.dataService.testServiceApiTypeLabel(service.service.apiType),
+              name: service.parameter.name,
+              endpoint: service.parameter.value!,
+              description: service.parameter.description,
+              data: service
+            })
+          }
+        }),
+        finalize(() => {
+          this.testServiceStatus.status = Constants.STATUS.FINISHED
+          completed$.next()
+          completed$.complete()
+        })
+      ).subscribe()
+    } else {
+      completed$.next()
+      completed$.complete()
+    }
+    return completed$.asObservable()
+  }
+
 	downloadParameter(parameter: DomainParameter) {
-    this.conformanceService.downloadDomainParameterFile(this.domainId, parameter.id)
+    this.domainParameterService.downloadDomainParameterFile(this.domainId, parameter.id)
     .subscribe((data) => {
       const blobData = new Blob([data], {type: parameter.contentType})
       const extension = this.dataService.extensionFromMimeType(parameter.contentType)
@@ -274,12 +349,52 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
     })
   }
 
+  openTestServiceModal(testService: Partial<TestServiceWithParameter>, updateMatching: boolean) {
+    const modalRef = this.modalService.show(CreateEditTestServiceModalComponent, {
+      class: 'modal-lg',
+      initialState: {
+        testService: testService,
+        domainId: this.domain.id,
+        updateMatching: updateMatching
+      }
+    })
+    modalRef.content!.servicesUpdated.subscribe((updated: boolean) => {
+      if (updated) {
+        this.loadTestServices(true)
+        // Ensure that the next time we navigate to the domain parameters tab it is also updated
+        this.parameterStatus.status = Constants.STATUS.NONE
+      }
+    })
+  }
+
 	onDomainParameterSelect(domainParameter: DomainParameter) {
-		this.openParameterModal(domainParameter)
+    if (domainParameter.isTestService) {
+      // Display the requested test service
+      this.loadTestServices().subscribe(() => {
+        const selectedService = this.testServices.find(service => service.data.parameter.id == domainParameter.id)
+        if (selectedService) {
+          this.onTestServiceSelect(selectedService)
+        }
+      })
+      // Switch to the test services tab
+      if (this.tabs) {
+        this.tabs.tabs[3].active = true
+      }
+    } else {
+      this.openParameterModal(domainParameter)
+    }
+  }
+
+  onTestServiceSelect(serviceRow: TestServiceRow) {
+    this.openTestServiceModal(serviceRow.data, false)
   }
 
 	createDomainParameter() {
 		this.openParameterModal({})
+  }
+
+  createTestService() {
+    this.openTestServiceModal({}, false)
   }
 
 	uploadTestSuite() {
@@ -463,6 +578,51 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
     }).add(() => {
       this.saveOrderPending = false
     })
+  }
+
+  convertParameterToTestService(event: FilterUpdate<DomainParameter>) {
+    const parameter = event.values.active[0]
+    const guessedServiceType = this.guessTestServiceTypeFromParameter(parameter)
+    let service: TestService|undefined
+    if (guessedServiceType != undefined) {
+      service = {
+        id: 0,
+        serviceType: guessedServiceType,
+        apiType: Constants.TEST_SERVICE_API_TYPE.SOAP,
+        parameter: parameter.id
+      }
+    }
+    this.openTestServiceModal({
+      service: service,
+      parameter: parameter
+    }, true)
+  }
+
+
+
+  private guessTestServiceTypeFromParameter(parameter: DomainParameter): number|undefined {
+    let guessedServiceType: number|undefined
+    let textToCheck = parameter.value!.toLowerCase()
+    // Check endpoint address
+    if (DomainDetailsComponent.VALIDATION_SERVICE_ENDPOINT_REGEXP.test(textToCheck)) {
+      guessedServiceType = Constants.TEST_SERVICE_TYPE.VALIDATION
+    } else if (DomainDetailsComponent.MESSAGING_SERVICE_ENDPOINT_REGEXP.test(textToCheck)) {
+      guessedServiceType = Constants.TEST_SERVICE_TYPE.MESSAGING
+    } else if (DomainDetailsComponent.PROCESSING_SERVICE_ENDPOINT_REGEXP.test(textToCheck)) {
+      guessedServiceType = Constants.TEST_SERVICE_TYPE.PROCESSING
+    }
+    if (guessedServiceType == undefined) {
+      // Check parameter name
+      textToCheck = parameter.name.toLowerCase()
+      if (textToCheck.includes("valid")) {
+        guessedServiceType = Constants.TEST_SERVICE_TYPE.VALIDATION
+      } else if (textToCheck.includes("message") || textToCheck.includes("messaging")) {
+        guessedServiceType = Constants.TEST_SERVICE_TYPE.MESSAGING
+      } else if (textToCheck.includes("process")) {
+        guessedServiceType = Constants.TEST_SERVICE_TYPE.PROCESSING
+      }
+    }
+    return guessedServiceType
   }
 
 }

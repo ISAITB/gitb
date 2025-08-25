@@ -15,8 +15,8 @@
 
 package com.gitb.engine.actors.processors;
 
+import com.gitb.PropertyConstants;
 import com.gitb.core.StepStatus;
-import com.gitb.engine.PropertyConstants;
 import com.gitb.engine.events.model.StatusEvent;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.engine.utils.StepContext;

@@ -106,7 +106,9 @@ export class TableComponent extends BaseTableComponent implements OnInit {
           this.onDeselect.emit(row)
         }
       } else {
-        row._selected = true
+        if (this.persistentSelection) {
+          row._selected = true
+        }
         this.onSelect.emit(row)
       }
       if (!this.allowMultiSelect) {

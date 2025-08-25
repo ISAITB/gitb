@@ -13,20 +13,20 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { AfterViewInit, Component, EventEmitter, Input, OnInit } from '@angular/core';
-import { BsModalRef } from 'ngx-bootstrap/modal';
-import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
-import { ConformanceService } from 'src/app/services/conformance.service';
-import { DataService } from 'src/app/services/data.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { DomainParameter } from 'src/app/types/domain-parameter';
-import { cloneDeep } from 'lodash'
-import { BaseComponent } from 'src/app/pages/base-component.component';
-import { FileData } from 'src/app/types/file-data.type';
-import { ParameterFormData } from './parameter-form-data';
-import { saveAs } from 'file-saver'
-import { Constants } from 'src/app/common/constants';
-import { ValidationState } from 'src/app/types/validation-state';
+import {AfterViewInit, Component, EventEmitter, Input, OnInit} from '@angular/core';
+import {BsModalRef} from 'ngx-bootstrap/modal';
+import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
+import {DataService} from 'src/app/services/data.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {DomainParameter} from 'src/app/types/domain-parameter';
+import {cloneDeep} from 'lodash';
+import {BaseComponent} from 'src/app/pages/base-component.component';
+import {FileData} from 'src/app/types/file-data.type';
+import {ParameterFormData} from './parameter-form-data';
+import {saveAs} from 'file-saver';
+import {Constants} from 'src/app/common/constants';
+import {ValidationState} from 'src/app/types/validation-state';
+import {DomainParameterService} from '../../services/domain-parameter.service';
 
 @Component({
     selector: 'app-create-edit-domain-parameter-modal',
@@ -56,7 +56,7 @@ export class CreateEditDomainParameterModalComponent extends BaseComponent imple
     private readonly dataService: DataService,
     private readonly popupService: PopupService,
     private readonly modalInstance: BsModalRef,
-    private readonly conformanceService: ConformanceService,
+    private readonly domainParameterService: DomainParameterService,
     private readonly confirmationDialogService: ConfirmationDialogService
   ) { super() }
 
@@ -112,7 +112,7 @@ export class CreateEditDomainParameterModalComponent extends BaseComponent imple
           } else if (this.domainParameter.kind == 'SIMPLE') {
             valueToSave = this.domainParameter.value!
           }
-          this.conformanceService.updateDomainParameter(this.domainParameter.id, this.domainParameter.name!, this.domainParameter.description, valueToSave, this.domainParameter.kind!, this.domainParameter.inTests, this.domainId)
+          this.domainParameterService.updateDomainParameter(this.domainParameter.id, this.domainParameter.name!, this.domainParameter.description, valueToSave, this.domainParameter.kind!, this.domainParameter.inTests, this.domainId)
           .subscribe((data) => {
             if (this.isErrorDescription(data)) {
               this.validation.applyError(data)
@@ -135,7 +135,7 @@ export class CreateEditDomainParameterModalComponent extends BaseComponent imple
           } else {
             valueToSave = this.domainParameter.value!
           }
-          this.conformanceService.createDomainParameter(this.domainParameter.name!, this.domainParameter.description, valueToSave, this.domainParameter.kind!, this.domainParameter.inTests, this.domainId)
+          this.domainParameterService.createDomainParameter(this.domainParameter.name!, this.domainParameter.description, valueToSave, this.domainParameter.kind!, this.domainParameter.inTests, this.domainId)
           .subscribe((data) => {
             if (this.isErrorDescription(data)) {
               this.validation.applyError(data)
@@ -158,7 +158,7 @@ export class CreateEditDomainParameterModalComponent extends BaseComponent imple
     .subscribe(() => {
       this.pending = true
       this.deletePending = true
-      this.conformanceService.deleteDomainParameter(this.domainParameter.id!, this.domainId)
+      this.domainParameterService.deleteDomainParameter(this.domainParameter.id!, this.domainId)
       .subscribe(() => {
         this.parametersUpdated.emit(true)
         this.modalInstance.hide()
@@ -198,7 +198,7 @@ export class CreateEditDomainParameterModalComponent extends BaseComponent imple
     if (this.formData.file) {
       saveAs(this.formData.file, this.getFileName())
     } else {
-      this.conformanceService.downloadDomainParameterFile(this.domainId, this.domainParameter.id!)
+      this.domainParameterService.downloadDomainParameterFile(this.domainId, this.domainParameter.id!)
       .subscribe((data) => {
         const blobData = new Blob([data], {type: this.domainParameter.contentType})
         saveAs(blobData, this.getFileName())

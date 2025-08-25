@@ -66,6 +66,20 @@ export abstract class BaseComponent {
         return this.textProvided(username) && !/\s/g.test(username!.trim())
     }
 
+    isValidAbsoluteHttpUrl(value: string|undefined): boolean {
+      if (value == undefined || /\s/.test(value)) {
+        return false
+      } else {
+        try {
+          const u = new URL(value);
+          const protocol = u.protocol.toLowerCase()
+          return protocol === 'http:' || protocol === 'https:';
+        } catch {
+          return false;
+        }
+      }
+    }
+
     isComplexPassword(password: string|undefined): boolean {
         let valid = true
         if (password != undefined) {
@@ -90,7 +104,7 @@ export abstract class BaseComponent {
         this.addAlert({type:'success', msg: message})
     }
 
-    private addAlert(alert: Alert):void {
+    addAlert(alert: Alert):void {
         this.alerts.push(alert)
     }
 
@@ -120,8 +134,8 @@ export abstract class BaseComponent {
     return searchString
   }
 
-    protected isErrorDescription(obj: ErrorDescription|any): obj is ErrorDescription {
-        return obj != undefined && ((obj as ErrorDescription).error_description != undefined || (obj as ErrorDescription).error_id != undefined)
-    }
+  protected isErrorDescription(obj: ErrorDescription|any): obj is ErrorDescription {
+      return obj != undefined && ((obj as ErrorDescription).error_description != undefined || (obj as ErrorDescription).error_id != undefined)
+  }
 
 }

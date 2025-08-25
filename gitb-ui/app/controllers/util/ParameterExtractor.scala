@@ -20,7 +20,7 @@ import exceptions.{ErrorCodes, InvalidRequestException}
 import models.Enums._
 import controllers.util.Parameters
 import models.theme.{Theme, ThemeFiles}
-import models.{Actor, Badges, Communities, CommunityReportSettings, CommunityResources, Configs, Constants, Domain, Endpoints, ErrorTemplates, FileInfo, LandingPages, LegalNotices, NamedFile, OrganisationParameterValues, Organizations, SpecificationGroups, Specifications, SystemParameterValues, Systems, Trigger, TriggerData, TriggerFireExpression, Triggers, Users}
+import models.{Actor, Badges, Communities, CommunityReportSettings, CommunityResources, Configs, Constants, Domain, DomainParameter, Endpoints, ErrorTemplates, FileInfo, LandingPages, LegalNotices, NamedFile, OrganisationParameterValues, Organizations, SpecificationGroups, Specifications, SystemParameterValues, Systems, TestService, TestServiceWithParameter, Trigger, TriggerData, TriggerFireExpression, Triggers, Users}
 import org.apache.commons.lang3.StringUtils
 import play.api.mvc._
 import utils.{ClamAVClient, CryptoUtil, HtmlUtil, JsonUtil, MimeUtil}
@@ -991,6 +991,51 @@ object ParameterExtractor {
       }
     }
     (stylesheetFile, response)
+  }
+
+  def extractTestServiceWithParameter(request: Request[AnyContent], domainId: Long, serviceId: Option[Long]): TestServiceWithParameter = {
+    val parameter = DomainParameter(
+      id = optionalLongBodyParameter(request, Parameters.PARAMETER).getOrElse(0L),
+      name = requiredBodyParameter(request, Parameters.NAME),
+      desc = optionalBodyParameter(request, Parameters.DESC),
+      kind = "SIMPLE",
+      value = Some(requiredBodyParameter(request, Parameters.VALUE)),
+      inTests = true,
+      contentType = None,
+      isTestService = true,
+      domain = domainId
+    )
+    var authBasicUsername = optionalBodyParameter(request, Parameters.AUTH_BASIC_USERNAME)
+    var authBasicPassword = optionalBodyParameter(request, Parameters.AUTH_BASIC_PASSWORD)
+    var authTokenPassword = optionalBodyParameter(request, Parameters.AUTH_TOKEN_PASSWORD)
+    var authTokenUsername = optionalBodyParameter(request, Parameters.AUTH_TOKEN_USERNAME)
+    var authTokenPasswordType = optionalShortBodyParameter(request, Parameters.AUTH_TOKEN_PASSWORD_TYPE).map(TestServiceAuthTokenPasswordType.apply(_).id.toShort)
+    if (serviceId.isEmpty) {
+      // This is a new test service - Ensure consistency of auth fields
+      if ((authBasicUsername.nonEmpty || authBasicPassword.nonEmpty) && (authBasicUsername.isEmpty || authBasicPassword.isEmpty)) {
+        authBasicUsername = None
+        authBasicPassword = None
+      }
+      if ((authTokenUsername.nonEmpty || authTokenPassword.nonEmpty || authTokenPasswordType.nonEmpty) && (authTokenUsername.isEmpty || authTokenPassword.isEmpty || authTokenPasswordType.isEmpty)) {
+        authTokenPassword = None
+        authTokenUsername = None
+        authTokenPasswordType = None
+      }
+    }
+    val service = TestService(
+      id = serviceId.getOrElse(optionalLongBodyParameter(request, Parameters.ID).getOrElse(0L)),
+      serviceType = TestServiceType.apply(requiredBodyParameter(request, Parameters.SERVICE_TYPE).toInt).id.toShort,
+      apiType = TestServiceApiType.apply(requiredBodyParameter(request, Parameters.API_TYPE).toInt).id.toShort,
+      identifier = optionalBodyParameter(request, Parameters.IDENTIFIER),
+      version = optionalBodyParameter(request, Parameters.VERSION),
+      authBasicUsername = authBasicUsername,
+      authBasicPassword = authBasicPassword,
+      authTokenUsername = authTokenUsername,
+      authTokenPassword = authTokenPassword,
+      authTokenPasswordType = authTokenPasswordType,
+      parameter = parameter.id
+    )
+    TestServiceWithParameter(service, parameter)
   }
 
 }

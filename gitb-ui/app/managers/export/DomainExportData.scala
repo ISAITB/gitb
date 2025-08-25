@@ -28,5 +28,6 @@ case class DomainExportData(domain: Option[Domain],
                             testSuiteTestCaseGroupMap: Option[Map[Long, List[TestCaseGroup]]],
                             testSuiteTestCaseMap: Option[Map[Long, List[TestCases]]],
                             specificationTestSuiteMap: Option[Map[Long, List[TestSuites]]],
-                            domainParameters: Option[List[DomainParameter]]
+                            domainParameters: Option[List[DomainParameter]],
+                            testServices: Option[List[TestService]]
                            )

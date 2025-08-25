@@ -31,6 +31,9 @@ public class CoreConfiguration {
 
 	public static final String TEST_ENGINE_VERSION;
 	public static final String BUILD_TIMESTAMP;
+    public static String MESSAGING_CALLBACK_URL;
+    public static String VALIDATION_CALLBACK_URL;
+    public static String PROCESSING_CALLBACK_URL;
 
     /*
      * Load the configurations from the configuration files
@@ -40,11 +43,12 @@ public class CoreConfiguration {
 			CompositeConfiguration config = new CompositeConfiguration();
 			config.addConfiguration(new SystemConfiguration());
 			config.addConfiguration(getPropertiesConfiguration("core-module.properties"));
-			TEST_ENGINE_VERSION  = config.getString("gitb.version");
 			BUILD_TIMESTAMP  = config.getString("gitb.buildTimestamp");
+            String version  = config.getString("gitb.version");
+            TEST_ENGINE_VERSION = "%s (%s)".formatted(version, CoreConfiguration.BUILD_TIMESTAMP);
 		} catch (ConfigurationException | IOException e) {
 			throw new IllegalStateException("Error loading configuration", e);
 		}
-
 	}
+
 }

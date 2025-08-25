@@ -79,7 +79,8 @@ object Enums {
     Community, Administrator, CustomLabel, OrganisationProperty, SystemProperty, LandingPage, LegalNotice, ErrorTemplate,
     Organisation, OrganisationUser, OrganisationPropertyValue, System, SystemPropertyValue,
     Statement, StatementConfiguration, Trigger, CommunityResource, SpecificationGroup, Settings, Theme,
-    DefaultLandingPage, DefaultLegalNotice, DefaultErrorTemplate, SystemAdministrator, SystemConfiguration, SystemResource = Value
+    DefaultLandingPage, DefaultLegalNotice, DefaultErrorTemplate, SystemAdministrator, SystemConfiguration, SystemResource,
+    TestService = Value
   }
 
   object ImportItemMatch extends Enumeration(1) {
@@ -163,6 +164,21 @@ object Enums {
   object ServiceHealthStatusType extends Enumeration(1) {
     type ServiceHealthStatusType = Value
     val Ok, Warning, Error, Info, Unknown = Value
+  }
+
+  object TestServiceType extends Enumeration(1) {
+    type TestServiceType = Value
+    val ValidationService, ProcessingService, MessagingService = Value
+  }
+
+  object TestServiceApiType extends Enumeration(1) {
+    type TestServiceApiType = Value
+    val SoapApi, RestApi = Value
+  }
+
+  object TestServiceAuthTokenPasswordType extends Enumeration(1) {
+    type TestServiceAuthTokenPasswordType = Value
+    val Digest, Text = Value
   }
 
 }

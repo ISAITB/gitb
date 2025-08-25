@@ -15,6 +15,7 @@
 
 package com.gitb.engine;
 
+import com.gitb.CoreConfiguration;
 import com.gitb.engine.messaging.handlers.server.Configuration;
 import com.gitb.utils.HmacUtils;
 import com.jayway.jsonpath.Option;
@@ -46,9 +47,6 @@ public class TestEngineConfiguration {
 
 	public static int ITERATION_LIMIT;
 	public static String ROOT_CALLBACK_URL;
-	public static String MESSAGING_CALLBACK_URL;
-	public static String VALIDATION_CALLBACK_URL;
-	public static String PROCESSING_CALLBACK_URL;
 	public static Boolean TEMP_STORAGE_ENABLED;
 	public static String TEMP_STORAGE_LOCATION;
 	public static Boolean TEMP_STORAGE_BINARY_ENABLED;
@@ -129,9 +127,9 @@ public class TestEngineConfiguration {
 				processingCallbackUrl = inferCallbackURL("ProcessingClient", rootCallbackUrl);
 			}
 			ROOT_CALLBACK_URL = rootCallbackUrl;
-			MESSAGING_CALLBACK_URL = messagingCallbackUrl;
-			VALIDATION_CALLBACK_URL = validationCallbackUrl;
-			PROCESSING_CALLBACK_URL = processingCallbackUrl;
+			CoreConfiguration.MESSAGING_CALLBACK_URL = messagingCallbackUrl;
+            CoreConfiguration.VALIDATION_CALLBACK_URL = validationCallbackUrl;
+            CoreConfiguration.PROCESSING_CALLBACK_URL = processingCallbackUrl;
 			HANDLER_API_ROOT = rootCallbackUrl+HANDLER_API_SEGMENT+"/";
 			// Determine callback URLs - end.
 			// Temp storage properties - start.

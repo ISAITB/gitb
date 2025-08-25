@@ -21,12 +21,13 @@ import { PopupService } from 'src/app/services/popup.service';
 import { EditorOptions } from '../code-editor-modal/code-editor-options';
 import { Indicator } from '../code-editor-modal/indicator';
 import { saveAs } from 'file-saver'
+import {BaseComponent} from '../../pages/base-component.component';
 
 @Component({
     template: '',
     standalone: false
 })
-export class BaseCodeEditorModalComponent implements AfterViewInit {
+export class BaseCodeEditorModalComponent extends BaseComponent implements AfterViewInit {
 
   editorOptions?: EditorOptions
   indicators?: Indicator[]
@@ -38,7 +39,7 @@ export class BaseCodeEditorModalComponent implements AfterViewInit {
     private readonly modalRef: BsModalRef,
     protected readonly dataService: DataService,
     private readonly popupService: PopupService
-  ) { }
+  ) { super() }
 
   applyLineStyles(): boolean {
     return false

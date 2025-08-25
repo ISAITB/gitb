@@ -15,18 +15,17 @@
 
 package com.gitb.engine.actors.processors;
 
+import com.gitb.PropertyConstants;
 import com.gitb.core.Configuration;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.MessagingModule;
 import com.gitb.engine.CallbackManager;
-import com.gitb.engine.PropertyConstants;
 import com.gitb.engine.actors.ActorSystem;
 import com.gitb.engine.commands.messaging.NotificationReceived;
 import com.gitb.engine.commands.messaging.TimeoutExpired;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.messaging.MessagingContext;
 import com.gitb.engine.messaging.TransactionContext;
-import com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.engine.utils.StepContext;
 import com.gitb.engine.utils.TestCaseUtils;
@@ -59,6 +58,8 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils.getMessageFromBindings;
+import static com.gitb.utils.MessagingReportUtils.generateSuccessReport;
+import static com.gitb.utils.MessagingReportUtils.getMessagingReportForTimeout;
 
 /**
  * Receive step executor actor
@@ -218,7 +219,7 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 					} else {
 						logger.debug(addMarker(), "Timeout expired while waiting to receive message");
 					}
-					promise.trySuccess(handleMessagingResult(MessagingHandlerUtils.getMessagingReportForTimeout(flagName, errorIfTimeout)));
+					promise.trySuccess(handleMessagingResult(getMessagingReportForTimeout(flagName, errorIfTimeout)));
 				}
 			} else {
 				super.onReceive(message);
@@ -269,7 +270,7 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 		} else if (report != null) {
 			reportToReturn = report.getReport();
 		} else {
-			reportToReturn = MessagingHandlerUtils.generateSuccessReport(null).getReport();
+			reportToReturn = generateSuccessReport(null).getReport();
 		}
 		ErrorLevel errorLevel = TestCaseUtils.resolveReportErrorLevel(step.getLevel(), scope.getContext().getSessionId(), resolver.orElse(new VariableResolver(scope)));
 		TestCaseUtils.postProcessReport(step.isInvert(), errorLevel, reportToReturn);

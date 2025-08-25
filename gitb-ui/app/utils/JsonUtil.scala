@@ -93,7 +93,14 @@ object JsonUtil {
     json
   }
 
-  def jsTextArray(texts: List[String]): JsObject = {
+  def jsServiceTestResult(result: ServiceTestResult): JsObject = {
+    var json = JsonUtil.jsTextArray(result.errorMessages.getOrElse(List.empty))
+    json = json + ("success", JsBoolean(result.success))
+    json = json + ("contentType", JsString(result.contentType))
+    json
+  }
+
+  def jsTextArray(texts: Iterable[String]): JsObject = {
     var textArray = Json.arr()
     texts.foreach { text =>
       textArray = textArray.append(JsString(text))
@@ -863,7 +870,37 @@ object JsonUtil {
     json
   }
 
-  def jsDomainParameters(list:List[DomainParameter]):JsArray = {
+  def jsTestServicesWithParameters(list: Iterable[TestServiceWithParameter]):JsArray = {
+    var json = Json.arr()
+    list.foreach{ service =>
+      json = json.append(jsTestServiceWithParameter(service))
+    }
+    json
+  }
+
+  def jsTestServiceWithParameter(service: TestServiceWithParameter): JsObject = {
+    Json.obj(
+      "service" -> jsTestService(service.service),
+      "parameter" -> jsDomainParameter(service.parameter)
+    )
+  }
+
+  def jsTestService(service: TestService): JsObject = {
+    Json.obj(
+      "id" -> service.id,
+      "identifier" -> service.identifier,
+      "version" -> service.version,
+      "serviceType" -> service.serviceType,
+      "apiType" -> service.apiType,
+      "parameter" -> service.parameter,
+      // Passwords are never sent to the UI
+      "authBasicUsername" -> service.authBasicUsername,
+      "authTokenUsername" -> service.authTokenUsername,
+      "authTokenPasswordType" -> service.authTokenPasswordType
+    )
+  }
+
+  def jsDomainParameters(list: Iterable[DomainParameter]):JsArray = {
     var json = Json.arr()
     list.foreach{ parameter =>
       json = json.append(jsDomainParameter(parameter))
@@ -882,6 +919,7 @@ object JsonUtil {
       "description" -> domainParameter.desc,
       "kind" -> domainParameter.kind,
       "inTests" -> domainParameter.inTests,
+      "isTestService" -> domainParameter.isTestService,
       "contentType" -> (if(domainParameter.contentType.isDefined) JsString(domainParameter.contentType.get) else JsNull),
       "value" -> valueToUse
     )
@@ -1777,6 +1815,7 @@ object JsonUtil {
     settings.statementConfigurations = (jsonConfig \ "statementConfigurations").as[Boolean]
     settings.domain = (jsonConfig \ "domain").as[Boolean]
     settings.domainParameters = (jsonConfig \ "domainParameters").as[Boolean]
+    settings.testServices = (jsonConfig \ "testServices").as[Boolean]
     settings.specifications = (jsonConfig \ "specifications").as[Boolean]
     settings.actors = (jsonConfig \ "actors").as[Boolean]
     settings.endpoints = (jsonConfig \ "endpoints").as[Boolean]
@@ -1866,13 +1905,17 @@ object JsonUtil {
     list.toList
   }
 
-  def parseJsDomainParameter(json:String, domainParameterId: Option[Long], domainId: Long): DomainParameter = {
+  def parseJsDomainParameter(json:String, domainParameterId: Option[Long], domainId: Long, isTestService: Boolean): DomainParameter = {
     val jsonConfig = Json.parse(json).as[JsObject]
     var idToUse = 0L
     if (domainParameterId.isDefined) {
       idToUse = domainParameterId.get
     }
-    val kind = (jsonConfig \ "kind").as[String]
+    val kind = if (isTestService) {
+      "SIMPLE"
+    } else {
+      (jsonConfig \ "kind").as[String]
+    }
     var value: Option[String] = None
     var contentType: Option[String] = None
     if (kind.equals("HIDDEN")) {
@@ -1886,14 +1929,20 @@ object JsonUtil {
       value = Some("")
       contentType = (jsonConfig \ "contentType").asOpt[String]
     }
+    val inTests = if (isTestService) {
+      true
+    } else {
+      (jsonConfig \ "inTests").as[Boolean]
+    }
     DomainParameter(
       idToUse,
       (jsonConfig \ "name").as[String],
       (jsonConfig \ "desc").asOpt[String],
       kind,
       value,
-      (jsonConfig \ "inTests").as[Boolean],
+      inTests,
       contentType,
+      isTestService,
       domainId
     )
   }

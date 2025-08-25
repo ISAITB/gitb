@@ -2002,4 +2002,29 @@ export class DataService {
     return filteredTestSuites
   }
 
+  testServiceTypeLabel(serviceType: number) {
+    switch (serviceType) {
+      case Constants.TEST_SERVICE_TYPE.MESSAGING: return 'Messaging'
+      case Constants.TEST_SERVICE_TYPE.PROCESSING: return 'Processing'
+      case Constants.TEST_SERVICE_TYPE.VALIDATION: return 'Validation'
+      default: throw new Error('Unknown service type ['+serviceType+']')
+    }
+  }
+
+  testServiceApiTypeLabel(apiType: number) {
+    switch (apiType) {
+      case Constants.TEST_SERVICE_API_TYPE.SOAP: return 'SOAP'
+      case Constants.TEST_SERVICE_API_TYPE.REST: return 'REST'
+      default: throw new Error('Unknown service API type ['+apiType+']')
+    }
+  }
+
+  testServiceAuthTokenPasswordType(passwordType: number) {
+    switch (passwordType) {
+      case Constants.TEST_SERVICE_AUTH_TOKEN_PASSWORD_TYPE.DIGEST: return 'Digest'
+      case Constants.TEST_SERVICE_AUTH_TOKEN_PASSWORD_TYPE.TEXT: return 'Text'
+      default: throw new Error('Unknown service auth token password type ['+passwordType+']')
+    }
+  }
+
 }

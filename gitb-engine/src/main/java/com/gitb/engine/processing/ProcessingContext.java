@@ -15,12 +15,13 @@
 
 package com.gitb.engine.processing;
 
-import com.gitb.engine.ModuleManager;
 import com.gitb.core.ErrorCode;
-import com.gitb.engine.remote.ClientConfiguration;
-import com.gitb.engine.remote.processing.RemoteProcessingModuleClient;
+import com.gitb.engine.ModuleManager;
+import com.gitb.engine.SessionManager;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.processing.IProcessingHandler;
+import com.gitb.remote.ClientConfiguration;
+import com.gitb.remote.processing.RemoteProcessingModuleClient;
 import com.gitb.utils.ErrorUtils;
 
 import java.net.MalformedURLException;
@@ -79,6 +80,7 @@ public final class ProcessingContext {
                     new URI(handler).toURL(),
                     transactionProperties,
                     testSessionId,
+                    SessionManager.getInstance().getContext(testSessionId).getTestCaseIdentifier(),
                     new ClientConfiguration(handlerTimeout)
             );
         } catch (MalformedURLException e) {

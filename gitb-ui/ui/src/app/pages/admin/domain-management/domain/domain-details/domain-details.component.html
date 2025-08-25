@@ -144,14 +144,17 @@
                                     <th>Name</th>
                                     <th>Value</th>
                                     <th>Description</th>
-                                    <th>In&nbsp;tests</th>
+                                    <th class="th-min-centered">In&nbsp;tests</th>
+                                    @if (hasTestServices) {
+                                        <th></th>
+                                    }
                                 </tr>
                             </thead>
                             <tbody>
                                 @if (parameterStatus.status == Constants.STATUS.FINISHED) {
                                     @if (domainParameters.length == 0) {
                                         <tr>
-                                            <td colspan="4" class="td-no-data"><span>No parameters found</span></td>
+                                            <td [attr.colspan]="domainParameterColumnCount" class="td-no-data"><span>No parameters found</span></td>
                                         </tr>
                                     } @else {
                                         @for (parameter of domainParameters; track parameter.id) {
@@ -163,7 +166,16 @@
                                                     <td>{{parameter.valueToShow}}</td>
                                                 }
                                                 <td>{{parameter.description}}</td>
-                                                <td><div><span><i class="fa" [ngClass]="{'fa-check': parameter.inTests, 'fa-times': !parameter.inTests}"></i></span></div></td>
+                                                <td class="td-min-centered">
+                                                    <div><i class="fa-solid" [ngClass]="{'fa-check': parameter.inTests, 'fa-times': !parameter.inTests}"></i></div>
+                                                </td>
+                                                @if (hasTestServices) {
+                                                    <td class="td-min-centered">
+                                                    @if (parameter.isTestService) {
+                                                        <div class="ms-4 me-2" tooltip="Corresponds to a registered test service" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" container="body"><i class="fa-solid fa-gears standalone-icon"></i></div>
+                                                    }
+                                                    </td>
+                                                }
                                             </tr>
                                         }
                                     }
@@ -174,6 +186,29 @@
                                 }
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            </tab>
+
+            <tab (selectTab)="loadTestServices()" customClass="tabClass">
+                <ng-template tabHeading><app-tab-title icon="fa-solid fa-gears" text="Test services"></app-tab-title></ng-template>
+                <div class="tabPanel">
+                    <div class="tabControls">
+                        <div class="btn-toolbar">
+                            <button type="button" class="btn btn-secondary" (click)="createTestService()">Register service</button>
+                            <app-multi-select-filter [config]="convertParameterSelectionConfig" (apply)="convertParameterToTestService($event)" [pending]="convertPending"></app-multi-select-filter>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div table-directive
+                             [columns]="testServiceTableColumns"
+                             [data]="testServices"
+                             [noDataMessage]="'No services found'"
+                             [loadingStatus]="testServiceStatus"
+                             [allowSelect]="true"
+                             [persistentSelection]="false"
+                             (onSelect)="onTestServiceSelect($event)">
+                        </div>
                     </div>
                 </div>
             </tab>

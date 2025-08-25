@@ -77,6 +77,7 @@ export class ExportComponent extends BaseComponent implements OnInit {
     statementConfigurations: false,
     domain: false,
     domainParameters: false,
+    testServices: false,
     specifications: false,
     actors: false,
     endpoints: false,
@@ -194,6 +195,7 @@ export class ExportComponent extends BaseComponent implements OnInit {
       statementConfigurations: false,
       domain: false,
       domainParameters: false,
+      testServices: false,
       specifications: false,
       actors: false,
       endpoints: false,
@@ -294,6 +296,7 @@ export class ExportComponent extends BaseComponent implements OnInit {
       this.settings.endpoints = this.allDomainData
       this.settings.testSuites = this.allDomainData
       this.settings.domainParameters = this.allDomainData
+      this.settings.testServices = this.allDomainData
     }
   }
 
@@ -374,6 +377,13 @@ export class ExportComponent extends BaseComponent implements OnInit {
     }
   }
 
+  testServicesChanged() {
+    if (this.settings.testServices) {
+      this.settings.domainParameters = true
+      this.domainParametersChanged()
+    }
+  }
+
   organisationUsersChanged() {
     if (this.settings.organisationUsers) {
       this.settings.organisations = true
@@ -386,8 +396,12 @@ export class ExportComponent extends BaseComponent implements OnInit {
     }
   }
 
+  isPrerequisiteDomainParameters() {
+    return this.settings.testServices
+  }
+
   isPrerequisiteDomain() {
-    return this.settings.domainParameters || this.settings.specifications || this.isPrerequisiteSpecifications()
+    return this.settings.domainParameters || this.isPrerequisiteDomainParameters() || this.settings.specifications || this.isPrerequisiteSpecifications()
   }
 
   isPrerequisiteSpecifications() {
@@ -465,6 +479,7 @@ export class ExportComponent extends BaseComponent implements OnInit {
       this.settings.statementConfigurations ||
       this.settings.domain ||
       this.settings.domainParameters ||
+      this.settings.testServices ||
       this.settings.specifications ||
       this.settings.actors ||
       this.settings.endpoints ||

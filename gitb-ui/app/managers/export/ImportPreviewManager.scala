@@ -862,6 +862,19 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
       }
       map.toMap
     }
+    // Test services
+    val testServicesMap = DB.run(
+      PersistenceSchema.testServices
+        .join(PersistenceSchema.domainParameters).on(_.parameter === _.id)
+        .filter(_._2.domain === domainId)
+        .result
+    ).map { results =>
+      val map = mutable.Map[String, models.TestServiceWithParameter]()
+      results.foreach { x =>
+        map += (x._2.name -> TestServiceWithParameter(x._1, x._2))
+      }
+      map.toMap
+    }
     /*
      * Load the data using zip to load in parallel.
      */
@@ -872,7 +885,9 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
             specificationActorMap.zip(
               actorEndpointMap.zip(
                 endpointParameterMap.zip(
-                  domainParameterMap
+                  domainParameterMap.zip(
+                    testServicesMap
+                  )
                 )
               )
             )
@@ -881,15 +896,16 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
       )
     ).map { results =>
       DomainImportPreviewData(
-        specificationGroupMap = results._1,
-        specificationMap = results._2._1._1,
-        specificationIdMap = results._2._1._2,
-        domainTestSuiteMap = results._2._2._1,
-        specificationTestSuiteMap = results._2._2._2._1,
-        specificationActorMap = results._2._2._2._2._1,
-        actorEndpointMap = results._2._2._2._2._2._1,
-        endpointParameterMap = results._2._2._2._2._2._2._1,
-        domainParametersMap = results._2._2._2._2._2._2._2
+        specificationGroupMap =       results._1,
+        specificationMap =            results._2._1._1,
+        specificationIdMap =          results._2._1._2,
+        domainTestSuiteMap =          results._2._2._1,
+        specificationTestSuiteMap =   results._2._2._2._1,
+        specificationActorMap =       results._2._2._2._2._1,
+        actorEndpointMap =            results._2._2._2._2._2._1,
+        endpointParameterMap =        results._2._2._2._2._2._2._1,
+        domainParametersMap =         results._2._2._2._2._2._2._2._1,
+        testServicesMap =             results._2._2._2._2._2._2._2._2
       )
     }
   }
@@ -951,6 +967,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
           val targetSpecificationActorMap = toMutableOfMaps(data.map(_.specificationActorMap))
           val targetActorEndpointMap = toMutableOfMaps(data.map(_.actorEndpointMap))
           val targetDomainParametersMap = toMutable(data.map(_.domainParametersMap))
+          val targetTestServicesMap = toMutable(data.map(_.testServicesMap))
           val targetEndpointParameterMap = toMutableOfMaps(data.map(_.endpointParameterMap))
 
           val referenceActorEndpointMap = toMutableOfMaps(data.map(_.actorEndpointMap))
@@ -970,10 +987,12 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
           val importItemMapActor = mutable.Map[String, ImportItem]()
           val importItemMapEndpoint = mutable.Map[String, ImportItem]()
           val actorXmlIdToImportItemMap = mutable.Map[String, ImportItem]()
+          val domainParameterIdNameMap = mutable.Map[String, String]()
 
           // Domain parameters.
           if (importTargets.hasDomainParameters) {
             exportedDomain.getParameters.getParameter.asScala.foreach { exportedDomainParameter =>
+              domainParameterIdNameMap += (exportedDomainParameter.getId -> exportedDomainParameter.getName)
               var targetParameter: Option[models.DomainParameter] = None
               if (targetDomain.isDefined) {
                 targetParameter = targetDomainParametersMap.remove(exportedDomainParameter.getName)
@@ -982,6 +1001,21 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
                 new ImportItem(Some(targetParameter.get.name), ImportItemType.DomainParameter, ImportItemMatch.Both, Some(targetParameter.get.id.toString), Some(exportedDomainParameter.getId), importItemDomain)
               } else {
                 new ImportItem(Some(exportedDomainParameter.getName), ImportItemType.DomainParameter, ImportItemMatch.ArchiveOnly, None, Some(exportedDomainParameter.getId), importItemDomain)
+              }
+            }
+          }
+          // Test services.
+          if (importTargets.hasTestServices) {
+            exportedDomain.getTestServices.getService.asScala.foreach { exportedTestService =>
+              var targetService: Option[models.TestServiceWithParameter] = None
+              val linkedParameterName = domainParameterIdNameMap(exportedTestService.getParameter.getId)
+              if (targetDomain.isDefined) {
+                targetService = targetTestServicesMap.remove(linkedParameterName)
+              }
+              if (targetService.isDefined) {
+                new ImportItem(Some(targetService.get.parameter.name), ImportItemType.TestService, ImportItemMatch.Both, Some(targetService.get.service.id.toString), Some(exportedTestService.getId), importItemDomain)
+              } else {
+                new ImportItem(Some(linkedParameterName), ImportItemType.TestService, ImportItemMatch.ArchiveOnly, None, Some(exportedTestService.getId), importItemDomain)
               }
             }
           }
@@ -1115,6 +1149,9 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
             }
           }
           // Mark items not found for deletion.
+          targetTestServicesMap.values.foreach { service =>
+            new ImportItem(Some(service.parameter.name), ImportItemType.TestService, ImportItemMatch.DBOnly, Some(service.service.id.toString), None, importItemDomain)
+          }
           targetDomainParametersMap.values.foreach { parameter =>
             new ImportItem(Some(parameter.name), ImportItemType.DomainParameter, ImportItemMatch.DBOnly, Some(parameter.id.toString), None, importItemDomain)
           }

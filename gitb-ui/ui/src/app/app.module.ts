@@ -229,6 +229,7 @@ import { FilterControlComponent } from './components/filter-control/filter-contr
 import { TestCaseFilterComponent } from './components/test-case-filter/test-case-filter.component';
 import { NavigationControlsComponent } from './components/navigation-controls/navigation-controls.component';
 import { ConformanceStatementTableComponent } from './components/conformance-statement-table/conformance-statement-table.component';
+import { CreateEditTestServiceModalComponent } from './modals/create-edit-test-service-modal/create-edit-test-service-modal.component';
 
 @NgModule({ declarations: [
         AppComponent,
@@ -425,7 +426,8 @@ import { ConformanceStatementTableComponent } from './components/conformance-sta
         FilterControlComponent,
         TestCaseFilterComponent,
         NavigationControlsComponent,
-        ConformanceStatementTableComponent
+        ConformanceStatementTableComponent,
+        CreateEditTestServiceModalComponent
     ],
     bootstrap: [AppComponent], imports: [
     NgxColorPickerComponent,

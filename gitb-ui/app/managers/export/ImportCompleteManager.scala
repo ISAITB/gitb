@@ -314,9 +314,12 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                   } else {
                     // Default handling methods.
                     // Assign the ID generated for this from the DB. This will be used for FK associations from children.
-                    importItem.get.targetKey = Some(newId.toString)
-                    // Add to processed ID map.
-                    addIdToProcessedIdMap(itemType, itemId, newId.toString, ctx)
+                    val idAsString = newId.toString
+                    if (idAsString.nonEmpty) {
+                      importItem.get.targetKey = Some(idAsString)
+                      // Add to processed ID map.
+                      addIdToProcessedIdMap(itemType, itemId, idAsString, ctx)
+                    }
                   }
                   // Custom post-create method.
                   if (importCallbacks.fnPostCreate.isDefined) {
@@ -671,6 +674,41 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
 
   private def toModelReportSetting(data: com.gitb.xml.export.CommunityReportSetting, communityId: Long): models.CommunityReportSettings = {
     models.CommunityReportSettings(toModelReportType(data.getReportType).id.toShort, data.isSignPdfs, data.isCustomPdfs, data.isCustomPdfsWithCustomXml, Option(data.getCustomPdfService), communityId)
+  }
+
+  private def toModelTestServiceType(data: com.gitb.xml.export.TestServiceType): models.Enums.TestServiceType.TestServiceType = {
+    data match {
+      case com.gitb.xml.export.TestServiceType.MESSAGING => models.Enums.TestServiceType.MessagingService
+      case com.gitb.xml.export.TestServiceType.PROCESSING => models.Enums.TestServiceType.ProcessingService
+      case com.gitb.xml.export.TestServiceType.VALIDATION => models.Enums.TestServiceType.ValidationService
+      case _ => throw new IllegalArgumentException("Unknown test service type [%s]".formatted(data.value()))
+    }
+  }
+
+  private def toModelTestServiceApiType(data: com.gitb.xml.export.TestServiceApiType): models.Enums.TestServiceApiType.TestServiceApiType = {
+    data match {
+      case com.gitb.xml.export.TestServiceApiType.SOAP => models.Enums.TestServiceApiType.SoapApi
+      case com.gitb.xml.export.TestServiceApiType.REST => models.Enums.TestServiceApiType.RestApi
+      case _ => throw new IllegalArgumentException("Unknown test service API type [%s]".formatted(data.value()))
+    }
+  }
+
+  private def toModelTestServiceAuthTokenPasswordType(data: com.gitb.xml.export.TestServiceAuthTokenPasswordType): models.Enums.TestServiceAuthTokenPasswordType.TestServiceAuthTokenPasswordType = {
+    data match {
+      case com.gitb.xml.export.TestServiceAuthTokenPasswordType.DIGEST => models.Enums.TestServiceAuthTokenPasswordType.Digest
+      case com.gitb.xml.export.TestServiceAuthTokenPasswordType.TEXT => models.Enums.TestServiceAuthTokenPasswordType.Text
+      case _ => throw new IllegalArgumentException("Unknown test service auth token password type [%s]".formatted(data.value()))
+    }
+  }
+
+  private def toModelTestService(data: com.gitb.xml.export.TestService, parameterId: Long, serviceId: Option[Long], importSettings: ImportSettings): models.TestService = {
+    models.TestService(serviceId.getOrElse(0L), toModelTestServiceType(data.getServiceType).id.toShort,
+      toModelTestServiceApiType(data.getApiType).id.toShort, Option(data.getIdentifier), Option(data.getVersion),
+      Option(data.getAuthBasicUsername), Option(data.getAuthBasicPassword).map(decrypt(importSettings, _)),
+      Option(data.getAuthTokenUsername), Option(data.getAuthTokenPassword).map(decrypt(importSettings, _)),
+      Option(data.getAuthTokenPasswordType).map(toModelTestServiceAuthTokenPasswordType(_).id.toShort),
+      parameterId
+    )
   }
 
   private def toModelReportType(data: com.gitb.xml.export.ReportType): models.Enums.ReportType.ReportType = {
@@ -1441,16 +1479,24 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
       loadIfApplicable(ctx.importTargets.hasDomainParameters,
         () => DB.run(PersistenceSchema.domainParameters.filter(_.domain === domainId).map(_.id).result)
       )
+    ).zip(
+      // Test services
+      loadIfApplicable(ctx.importTargets.hasTestServices,
+        () => DB.run(PersistenceSchema.testServices
+          .join(PersistenceSchema.domainParameters).on(_.parameter === _.id)
+          .filter(_._2.domain === domainId).map(_._1.id).result)
+      )
     ).map { results =>
-      val domain =              results._1._1._1._1._1._1._1._1
-      val sharedTestSuites =    results._1._1._1._1._1._1._1._2
-      val specifications =      results._1._1._1._1._1._1._2
-      val specificationGroups = results._1._1._1._1._1._2
-      val testSuites =          results._1._1._1._1._2
-      val actors =              results._1._1._1._2
-      val endpoints =           results._1._1._2
-      val endpointParameters =  results._1._2
-      val domainParameters =    results._2
+      val domain =              results._1._1._1._1._1._1._1._1._1
+      val sharedTestSuites =    results._1._1._1._1._1._1._1._1._2
+      val specifications =      results._1._1._1._1._1._1._1._2
+      val specificationGroups = results._1._1._1._1._1._1._2
+      val testSuites =          results._1._1._1._1._1._2
+      val actors =              results._1._1._1._1._2
+      val endpoints =           results._1._1._1._2
+      val endpointParameters =  results._1._1._2
+      val domainParameters =    results._1._2
+      val testServices =        results._2
       domain.foreach(x => ctx.existingIds.map(ImportItemType.Domain) += x.toString)
       sharedTestSuites.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.TestSuite) += x.toString))
       specifications.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.Specification) += x.toString))
@@ -1460,6 +1506,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
       endpoints.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.Endpoint) += x.toString))
       endpointParameters.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.EndpointParameter) += x.toString))
       domainParameters.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.DomainParameter) += x.toString))
+      testServices.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.TestService) += x.toString))
       ctx
     }
   }
@@ -1542,14 +1589,14 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                   domainParameterManager.createDomainParameterInternal(
                     models.DomainParameter(0L, data.getName, Option(data.getDescription),
                       fileData._1, manageEncryptionIfNeeded(ctx.importSettings, data.getType, Option(data.getValue)), data.isInTests,
-                      fileData._2, domainId), fileData._3, ctx.onSuccessCalls)
+                      fileData._2, data.isTestService, domainId), fileData._3, ctx.onSuccessCalls)
                 },
                 (data: com.gitb.xml.export.DomainParameter, targetKey: String, item: ImportItem) => {
                   val domainId = getDomainIdFromParentItem(item)
                   val fileData = parameterFileMetadata(ctx, data.getType, isDomainParameter = true, data.getValue)
                   domainParameterManager.updateDomainParameterInternal(domainId,
                     targetKey.toLong, data.getName, Option(data.getDescription), fileData._1,
-                    manageEncryptionIfNeeded(ctx.importSettings, data.getType, Option(data.getValue)), data.isInTests,
+                    manageEncryptionIfNeeded(ctx.importSettings, data.getType, Option(data.getValue)), data.isInTests, data.isTestService,
                     fileData._2, fileData._3, ctx.onSuccessCalls)
                 }
               )
@@ -1562,9 +1609,74 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
         processRemaining(ImportItemType.DomainParameter, ctx,
           (targetKey: String, item: ImportItem) => {
             val domainId = getDomainIdFromParentItem(item)
-            domainParameterManager.deleteDomainParameter(domainId, targetKey.toLong, ctx.onSuccessCalls)
+            domainParameterManager.deleteDomainParameter(domainId, targetKey.toLong, checkToDeleteLinkedTestService = true, ctx.onSuccessCalls)
           }
         )
+      }
+      _ <- {
+        // Test services
+        val dbActions = ListBuffer[DBIO[_]]()
+        if (exportedDomain.getTestServices != null) {
+          exportedDomain.getTestServices.getService.asScala.foreach { testService =>
+            dbActions += processFromArchive(ImportItemType.TestService, testService, testService.getId, ctx,
+              ImportCallbacks.set(
+                (data: com.gitb.xml.export.TestService, item: ImportItem) => {
+                  val processedDomainParameterId = ctx.processedIdMap(ImportItemType.DomainParameter).get(data.getParameter.getId).map(_.toLong)
+                  if (processedDomainParameterId.isDefined) {
+                    domainParameterManager.createTestServiceInternal(toModelTestService(data, processedDomainParameterId.get, None, ctx.importSettings))
+                  } else {
+                    DBIO.successful("")
+                  }
+                },
+                (data: com.gitb.xml.export.TestService, targetKey: String, item: ImportItem) => {
+                  val processedDomainParameterId = ctx.processedIdMap(ImportItemType.DomainParameter).get(data.getParameter.getId).map(_.toLong)
+                  if (processedDomainParameterId.isDefined) {
+                    domainParameterManager.updateTestServiceInternal(toModelTestService(data, processedDomainParameterId.get, Some(targetKey.toLong), ctx.importSettings))
+                  } else {
+                    DBIO.successful(())
+                  }
+                }
+              )
+            )
+          }
+        }
+        toDBIO(dbActions)
+      }
+      _ <- {
+        processRemaining(ImportItemType.TestService, ctx,
+          (targetKey: String, item: ImportItem) => {
+            domainParameterManager.deleteTestServiceInternal(targetKey.toLong)
+          }
+        )
+      }
+      _ <- {
+        // Post-processing consistency steps for domain parameters and test services.
+        val domainId = ctx.processedIdMap(ImportItemType.Domain).get(exportedDomain.getId).map(_.toLong)
+        if (domainId.isDefined) {
+          for {
+            // Get the parameter IDs that are linked to test services.
+            testServiceParametersId <- PersistenceSchema.testServices
+              .join(PersistenceSchema.domainParameters).on(_.parameter === _.id)
+              .filter(_._2.domain === domainId.get)
+              .map(_._2.id)
+              .result
+            // Any parameters with other IDs that are flagged as linked to test services should be set as not being services.
+            _ <- PersistenceSchema.domainParameters
+              .filter(_.domain === domainId.get)
+              .filter(_.isTestService)
+              .filterNot(_.id inSet testServiceParametersId)
+              .map(_.isTestService)
+              .update(false)
+            // The parameters linked with test services flagged as not included in tests should be force-included.
+            _ <- PersistenceSchema.domainParameters
+              .filter(_.id inSet testServiceParametersId)
+              .filterNot(_.inTests)
+              .map(_.inTests)
+              .update(true)
+          } yield ()
+        } else {
+          DBIO.successful(())
+        }
       }
       _ <- {
         // Shared test suites

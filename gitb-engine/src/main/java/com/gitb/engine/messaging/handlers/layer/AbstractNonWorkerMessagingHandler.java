@@ -15,10 +15,10 @@
 
 package com.gitb.engine.messaging.handlers.layer;
 
+import com.gitb.PropertyConstants;
 import com.gitb.core.ActorConfiguration;
 import com.gitb.core.Configuration;
 import com.gitb.core.MessagingModule;
-import com.gitb.engine.PropertyConstants;
 import com.gitb.engine.SessionManager;
 import com.gitb.messaging.Message;
 import com.gitb.messaging.MessagingReport;

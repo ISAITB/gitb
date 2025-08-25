@@ -34,6 +34,7 @@ libraryDependencies ++= Seq(
   "com.gitb" % "gitb-reports" % gitbCommonsVersion exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
   "com.gitb" % "gitb-validator-tdl" % gitbCommonsVersion exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
   "com.gitb" % "gitb-xml-resources" % gitbCommonsVersion exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
+  "com.gitb" % "gitb-remote" % gitbCommonsVersion exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
   "com.mysql" % "mysql-connector-j" % mySqlConnectorVersion exclude("com.google.protobuf", "protobuf-java"), // Exclude protobuf as we don't need the X DevAPI.
   "org.apache.pekko" %% "pekko-actor" % pekkoVersion,
   "org.apache.pekko" %% "pekko-actor-typed" % pekkoVersion,
@@ -58,7 +59,7 @@ libraryDependencies ++= Seq(
   "org.apache.cxf" % "cxf-rt-transports-http" % cxfVersion,
   "org.apache.cxf" % "cxf-rt-transports-http-jetty" % cxfVersion,
   // ---
-  "org.apache.tika" % "tika-core" % "3.2.0",
+  "org.apache.tika" % "tika-core" % "3.2.2",
   "org.webjars" % "jquery" % "3.7.1",
   "org.webjars" % "bootstrap" % "5.3.7",
   "org.webjars" % "swagger-ui" % "5.25.3",

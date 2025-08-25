@@ -1934,6 +1934,10 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     canManageDomain(request, domainId)
   }
 
+  def canManageTestServices(request: RequestWithAttributes[_], domainId: Long): Future[Boolean] = {
+    canManageDomain(request, domainId)
+  }
+
   def canViewDomainParametersForCommunity(request: RequestWithAttributes[_], communityId: Long): Future[Boolean] = {
     canManageCommunity(request, communityId)
   }

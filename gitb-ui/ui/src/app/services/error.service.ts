@@ -29,6 +29,7 @@ import { ErrorTemplate } from '../types/error-template';
 import { ErrorDescription } from '../types/error-description';
 import { DataService } from './data.service';
 import { CodeEditorModalComponent } from '../components/code-editor-modal/code-editor-modal.component';
+import {Alert} from '../types/alert.type';
 
 @Injectable({
   providedIn: 'root'
@@ -216,7 +217,7 @@ export class ErrorService {
     }
   }
 
-  popupErrorsArray(errorArray: string[]|undefined, title?: string, contentType?: string) {
+  popupErrorsArray(errorArray: string[]|undefined, title?: string, contentType?: string, alert?: Alert) {
     let content = this.dataService.errorArrayToString(errorArray)
     if (contentType == undefined) {
       contentType = 'text/plain'
@@ -230,6 +231,7 @@ export class ErrorService {
     this.modalService.show(CodeEditorModalComponent, {
       class: 'modal-lg',
       initialState: {
+        alert: alert,
         documentName: titleToUse,
         editorOptions: {
           value: content,

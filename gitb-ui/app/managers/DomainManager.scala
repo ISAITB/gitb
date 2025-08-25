@@ -291,6 +291,7 @@ class DomainManager @Inject() (domainParameterManager: DomainParameterManager,
       _ <- DBIO.seq(sharedTestSuiteIds.map(testSuiteManager.undeployTestSuite(_, onSuccessCalls)): _*)
       _ <- deleteTransactionByDomain(domain)
       _ <- testResultManager.updateForDeletedDomain(domain)
+      _ <- domainParameterManager.deleteTestServices(domain)
       _ <- domainParameterManager.deleteDomainParameters(domain, onSuccessCalls)
       _ <- PersistenceSchema.conformanceOverviewCertificateMessages.filter(row => row.domain.isDefined && row.domain === domain).delete
       _ <- PersistenceSchema.conformanceSnapshotResults.filter(_.domainId === domain).map(_.domainId).update(domain * -1)

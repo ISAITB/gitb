@@ -178,6 +178,7 @@ object Parameters {
   val SESSION_IDS= "session_ids"
   val CONFIG     = "config"
   val INPUTS     = "inputs"
+  val VALUE     = "value"
   val VALUES     = "values"
   val SIMPLE     = "simple"
   val ALLOWED_VALUES     = "allowedValues"
@@ -263,4 +264,13 @@ object Parameters {
   val SECONDARY_BUTTON_HOVER_COLOR = "secondaryButtonHoverColor"
   val SECONDARY_BUTTON_ACTIVE_COLOR = "secondaryButtonActiveColor"
   val PENDING_ADMIN_INTERACTION = "pending_admin_interaction"
+  val SERVICE_TYPE = "serviceType"
+  val API_TYPE = "apiType"
+  val IDENTIFIER = "identifier"
+  val AUTH_BASIC_USERNAME = "authBasicUsername"
+  val AUTH_BASIC_PASSWORD = "authBasicPassword"
+  val AUTH_TOKEN_USERNAME = "authTokenUsername"
+  val AUTH_TOKEN_PASSWORD = "authTokenPassword"
+  val AUTH_TOKEN_PASSWORD_TYPE = "authTokenPasswordType"
+
 }

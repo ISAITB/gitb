@@ -284,7 +284,8 @@ export class Constants {
 		DEFAULT_ERROR_TEMPLATE: 30,
 		SYSTEM_ADMINISTRATOR: 31,
 		SYSTEM_CONFIGURATION: 32,
-    SYSTEM_RESOURCE: 33
+    SYSTEM_RESOURCE: 33,
+    TEST_SERVICE: 34
 	}
 
 	public static readonly IMPORT_ITEM_MATCH = {
@@ -316,7 +317,8 @@ export class Constants {
 		DOMAIN: {
 			SPECIFICATIONS: 0,
 			TEST_SUITES: 1,
-			PARAMETERS: 2
+			PARAMETERS: 2,
+      TEST_SERVICES: 3
 		},
 		SPECIFICATION: {
 			TEST_SUITES: 0,
@@ -426,6 +428,22 @@ export class Constants {
     DISABLED: '4'
   }
 
+  public static readonly TEST_SERVICE_TYPE = {
+    VALIDATION: 1,
+    PROCESSING: 2,
+    MESSAGING: 3
+  }
+
+  public static readonly TEST_SERVICE_API_TYPE = {
+    SOAP: 1,
+    REST: 2
+  }
+
+  public static readonly TEST_SERVICE_AUTH_TOKEN_PASSWORD_TYPE = {
+    DIGEST: 1,
+    TEXT: 2
+  }
+
 	public static readonly PASSWORD_REGEX = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[\!\@\#\&\(\)\[\{\}\]\:\;\'\"\,\?\/\\\*\~\$\^\+\=\<\>\_\-]).{8,}$/
 	public static readonly END_OF_TEST_STEP = "-1"
 	public static readonly END_OF_TEST_STEP_EXTERNAL = "-2"
@@ -435,6 +453,5 @@ export class Constants {
 	public static readonly VARIABLE_NAME_REGEX = /^[a-zA-Z][a-zA-Z\-_\.0-9]*$/
 	public static readonly LOG_LEVEL_REGEX = /^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\] (DEBUG|ERROR|WARN|INFO) /
 	public static readonly BADGE_PLACEHOLDER_REGEX = /(\$com\.gitb\.placeholder\.BadgeUrl\{[A-Z]+\|\-?\d+\|\-?\d+\|\-?\d+\|\-?\d+\})/g
-
 
 }

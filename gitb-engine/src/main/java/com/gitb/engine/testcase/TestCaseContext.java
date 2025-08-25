@@ -17,6 +17,7 @@ package com.gitb.engine.testcase;
 
 import com.gitb.core.*;
 import com.gitb.core.LogLevel;
+import com.gitb.engine.CallbackManager;
 import com.gitb.engine.ModuleManager;
 import com.gitb.engine.SessionManager;
 import com.gitb.engine.TestEngineConfiguration;
@@ -25,8 +26,6 @@ import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.messaging.MessagingContext;
 import com.gitb.engine.messaging.handlers.layer.AbstractMessagingHandler;
 import com.gitb.engine.processing.ProcessingContext;
-import com.gitb.engine.remote.ClientConfiguration;
-import com.gitb.engine.remote.messaging.RemoteMessagingModuleClient;
 import com.gitb.engine.utils.HandlerUtils;
 import com.gitb.engine.utils.ScriptletCache;
 import com.gitb.engine.utils.ScriptletInfo;
@@ -34,6 +33,8 @@ import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.IMessagingHandler;
 import com.gitb.ms.InitiateResponse;
+import com.gitb.remote.ClientConfiguration;
+import com.gitb.remote.messaging.RemoteMessagingModuleClient;
 import com.gitb.tbs.SUTConfiguration;
 import com.gitb.tdl.*;
 import com.gitb.tr.TestResultType;
@@ -63,8 +64,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
 
-import static com.gitb.engine.PropertyConstants.*;
-import static com.gitb.engine.utils.TestCaseUtils.TEST_ENGINE_VERSION;
+import static com.gitb.CoreConfiguration.TEST_ENGINE_VERSION;
+import static com.gitb.PropertyConstants.*;
 
 /**
  * Created by serbay on 9/3/14.
@@ -790,15 +791,18 @@ public class TestCaseContext {
 
 		private IMessagingHandler getRemoteMessagingHandler(TransactionInfo transactionInfo, String sessionId) {
 			try {
-				return new RemoteMessagingModuleClient(
+                return new RemoteMessagingModuleClient(
                         new URI(transactionInfo.handler).toURL(),
                         transactionInfo.properties,
                         sessionId,
+                        SessionManager.getInstance().getContext(sessionId).getTestCaseIdentifier(),
                         () -> {
                             var resolver = new VariableResolver(SessionManager.getInstance().getContext(sessionId).getScope());
                             Long handlerTimeout = HandlerUtils.getHandlerTimeout(transactionInfo.handlerTimeoutExpression(), resolver);
                             return new ClientConfiguration(handlerTimeout);
-                        });
+                        },
+                        (completedTestSession) -> CallbackManager.getInstance().sessionEnded(sessionId)
+                );
 			} catch (MalformedURLException e) {
 				throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Remote validation module found with an malformed URL ["+transactionInfo.handler+"]"), e);
 			} catch (URISyntaxException e) {

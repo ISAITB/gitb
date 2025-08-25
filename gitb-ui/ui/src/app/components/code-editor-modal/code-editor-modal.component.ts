@@ -21,6 +21,7 @@ import { Indicator } from './indicator';
 import { DataService } from 'src/app/services/data.service';
 import { PopupService } from 'src/app/services/popup.service';
 import { BaseCodeEditorModalComponent } from '../base-code-editor-modal/base-code-editor-modal.component';
+import {Alert} from '../../types/alert.type';
 
 @Component({
     selector: 'app-code-editor-modal',
@@ -34,6 +35,7 @@ export class CodeEditorModalComponent extends BaseCodeEditorModalComponent imple
   @Input() editorOptions!: EditorOptions
   @Input() indicators?: Indicator[]
   @Input() lineNumber?: number
+  @Input() alert?: Alert
 
   @ViewChild('codeEditor', {static: false}) codeEditor!: CodemirrorComponent
 
@@ -58,6 +60,9 @@ export class CodeEditorModalComponent extends BaseCodeEditorModalComponent imple
     }
     if (this.editorOptions.styleClass != undefined) {
       this.styleClass = this.editorOptions.styleClass
+    }
+    if (this.alert) {
+      this.addAlert(this.alert)
     }
   }
 

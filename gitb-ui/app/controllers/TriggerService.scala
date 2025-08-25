@@ -100,9 +100,7 @@ class TriggerService @Inject()(authorizedAction: AuthorizedAction,
       val url = ParameterExtractor.requiredBodyParameter(request, Parameters.URL)
       val serviceType = TriggerServiceType.apply(ParameterExtractor.requiredBodyParameter(request, Parameters.TYPE).toInt)
       triggerManager.testTriggerEndpoint(url, serviceType).map { result =>
-        var json = JsonUtil.jsTextArray(result._2)
-        json = json+("success", JsBoolean(result._1))
-        json = json+("contentType", JsString(result._3))
+        val json = JsonUtil.jsServiceTestResult(result)
         ResponseConstructor.constructJsonResponse(json.toString())
       }
     }
@@ -130,9 +128,7 @@ class TriggerService @Inject()(authorizedAction: AuthorizedAction,
       val serviceType = TriggerServiceType.apply(ParameterExtractor.requiredBodyParameter(request, Parameters.TYPE).toInt)
       val payloadString = ParameterExtractor.requiredBodyParameter(request, Parameters.PAYLOAD)
       triggerManager.testTriggerCall(url, serviceType, payloadString).map { result =>
-        var json = JsonUtil.jsTextArray(result._2)
-        json = json + ("success", JsBoolean(result._1))
-        json = json+("contentType", JsString(result._3))
+        val json = JsonUtil.jsServiceTestResult(result)
         ResponseConstructor.constructJsonResponse(json.toString())
       }
     }

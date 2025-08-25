@@ -16,7 +16,6 @@
 package com.gitb.tbs.context;
 
 import com.gitb.engine.TestEngine;
-import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.tbs.impl.TestbedServiceCallbackHandler;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -29,6 +28,8 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+
+import static com.gitb.CoreConfiguration.TEST_ENGINE_VERSION;
 
 /**
  * Created by senan on 9/16/14.
@@ -71,6 +72,6 @@ public class TestbedServiceContextListener {
         } catch (IOException e) {
             banner = "";
         }
-        logger.info("Started ITB test engine (itb-srv) - release {}\n{}", TestCaseUtils.TEST_ENGINE_VERSION, banner);
+        logger.info("Started ITB test engine (itb-srv) - release {}\n{}", TEST_ENGINE_VERSION, banner);
     }
 }

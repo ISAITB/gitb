@@ -168,9 +168,13 @@
 															</div>
 														}
 														<div class="form-check form-check-inline">
-															<input class="form-check-input" type="checkbox" id="settingsDomainParameters" name="settingsDomainParameters" [(ngModel)]="settings.domainParameters" (change)="domainParametersChanged()" [disabled]="allDomainData">
+															<input class="form-check-input" type="checkbox" id="settingsDomainParameters" name="settingsDomainParameters" [(ngModel)]="settings.domainParameters" (change)="domainParametersChanged()" [disabled]="allDomainData || isPrerequisiteDomainParameters()">
 															<label class="form-check-label" for="settingsDomainParameters">{{dataService.labelDomain()}} parameters</label>
 														</div>
+                                                        <div class="form-check form-check-inline">
+                                                            <input class="form-check-input" type="checkbox" id="settingsTestServices" name="settingsTestServices" [(ngModel)]="settings.testServices" (change)="testServicesChanged()" [disabled]="allDomainData">
+                                                            <label class="form-check-label" for="settingsTestServices">Test services</label>
+                                                        </div>
 														<div class="form-check form-check-inline">
 															<input class="form-check-input" type="checkbox" id="settingsSpecifications" name="settingsSpecifications" [(ngModel)]="settings.specifications" (change)="specificationsChanged()" [disabled]="allDomainData || isPrerequisiteSpecifications()">
 															<label class="form-check-label" for="settingsSpecifications">{{dataService.labelSpecifications()}}</label>

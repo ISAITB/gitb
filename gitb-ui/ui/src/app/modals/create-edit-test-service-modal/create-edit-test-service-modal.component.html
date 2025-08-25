@@ -1,0 +1,186 @@
+<!--
+  ~ Copyright (C) 2025 European Union
+  ~
+  ~ Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
+  ~ versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
+  ~
+  ~ You may obtain a copy of the Licence at:
+  ~
+  ~ https://interoperable-europe.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software distributed under the Licence is distributed on an
+  ~ "AS IS" basis, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the Licence for
+  ~ the specific language governing permissions and limitations under the Licence.
+  -->
+
+<div class="modal-header">
+    <div class="modal-title">{{title}}</div>
+</div>
+<form>
+    <div class="modal-body">
+        <div class="row mb-3">
+            <label class="col-3 col-form-label text-end" for="name">* Test identifier:</label>
+            <div class="col-7"><input #nameField id="name" name="name" [(ngModel)]="testService.parameter!.name" class="form-control" type="text" [invalid]="validation.get('name')"></div>
+            <div app-tooltip class="col-auto" tbTooltip="An identifier for the test service used to refer to it from within test cases."></div>
+        </div>
+        <div class="row mb-3">
+            <label class="col-3 col-form-label text-end" for="serviceDescription">Description:</label>
+            <div class="col-7">
+                <textarea id="serviceDescription" name="serviceDescription" [(ngModel)]="testService.parameter!.description" class="form-control"></textarea>
+            </div>
+            <div app-tooltip class="col-auto" tbTooltip="A text describing the purpose of this test service."></div>
+        </div>
+        <app-form-section sectionTitle="Service endpoint" [collapsed]="endpointSectionCollapsed" [marginBefore]="true">
+            <div class="row mt-3">
+                <label class="col-3 col-form-label text-end" for="value">* Endpoint address:</label>
+                <div class="col-7"><input id="value" name="value" [(ngModel)]="testService.parameter!.value" class="form-control" type="text" [invalid]="validation.get('value')"></div>
+                <div app-tooltip class="col-auto" tbTooltip="The endpoint address at which the service can be reached."></div>
+            </div>
+            <div class="row mt-3 pt-1">
+                <legend class="col-3 col-form-label text-end pt-0">* Service type:</legend>
+                <div class="col-7">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" [(ngModel)]="testService.service!.serviceType" name="serviceTypes" id="type_validation" [value]="Constants.TEST_SERVICE_TYPE.VALIDATION">
+                        <label class="form-check-label" for="type_validation">{{dataService.testServiceTypeLabel(Constants.TEST_SERVICE_TYPE.VALIDATION)}}
+                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="A GITB-compliant validation service used to validate data and produce validation reports."></div>
+                        </label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" [(ngModel)]="testService.service!.serviceType" name="serviceTypes" id="type_messaging" [value]="Constants.TEST_SERVICE_TYPE.MESSAGING">
+                        <label class="form-check-label" for="type_messaging">{{dataService.testServiceTypeLabel(Constants.TEST_SERVICE_TYPE.MESSAGING)}}
+                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="A GITB-compliant messaging service used to send and receive messages to external systems."></div>
+                        </label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" [(ngModel)]="testService.service!.serviceType" name="serviceTypes" id="type_processing" [value]="Constants.TEST_SERVICE_TYPE.PROCESSING">
+                        <label class="form-check-label" for="type_processing">{{dataService.testServiceTypeLabel(Constants.TEST_SERVICE_TYPE.PROCESSING)}}
+                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="A GITB-compliant processing service used to provide utility functions to test cases."></div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-3 row">
+                <legend class="col-3 col-form-label text-end pt-0">Authentication:</legend>
+                <div class="col-7">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="basicAuthCheck" name="basicAuthCheck" [(ngModel)]="hasBasicAuthentication">
+                        <label class="form-check-label" for="basicAuthCheck">Basic
+                            <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Authenticate using basic HTTP authentication with a username and password."></div>
+                        </label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="tokenAuthCheck" name="tokenAuthCheck" [(ngModel)]="hasTokenAuthentication">
+                        <label class="form-check-label" for="tokenAuthCheck">Token
+                            <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Authenticate using the WS-Security UsernameToken profile, with a username and password sent in digest or plaintext."></div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div [collapse]="!hasBasicAuthentication" [isAnimated]="true">
+                <div class="row mt-3">
+                    <label class="col-3 col-form-label text-end" for="basicAuthUsername">* Basic username:</label>
+                    <div class="col-7"><input id="basicAuthUsername" name="basicAuthUsername" [(ngModel)]="testService.service!.authBasicUsername" class="form-control" type="text"></div>
+                    <div app-tooltip class="col-auto" tbTooltip="The username to use for basic HTTP authentication."></div>
+                </div>
+                <div class="row mt-3">
+                    <label class="col-3 col-form-label text-end" for="basicAuthPassword">* Basic password:</label>
+                    <div class="col-7">
+                        @if (hasExistingBasicAuthentication) {
+                            <div class="row row-cols-auto align-items-center">
+                                <div class="col-auto">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="updateBasicAuthPassword" name="updateBasicAuthPassword" [(ngModel)]="updateBasicAuthPassword">
+                                        <label class="form-check-label" for="updateBasicAuthPassword">Update</label>
+                                    </div>
+                                </div>
+                                <div class="col-auto flex-grow-1">
+                                    @if (updateBasicAuthPassword) {
+                                        <app-secret-input id="basicAuthPassword" name="basicAuthPassword" [(ngModel)]="testService.service!.authBasicPassword"></app-secret-input>
+                                    } @else {
+                                        <input type="text" class="form-control" readonly="readonly" [value]="basicAuthPasswordMask">
+                                    }
+                                </div>
+                            </div>
+                        } @else {
+                            <app-secret-input id="basicAuthPassword" name="basicAuthPassword" [(ngModel)]="testService.service!.authBasicPassword"></app-secret-input>
+                        }
+                    </div>
+                    <div app-tooltip class="col-auto" tbTooltip="The password to use for basic HTTP authentication."></div>
+                </div>
+            </div>
+            <div [collapse]="!hasTokenAuthentication" [isAnimated]="true">
+                <div class="row mt-3">
+                    <label class="col-3 col-form-label text-end" for="tokenAuthUsername">* Token username:</label>
+                    <div class="col-7"><input id="tokenAuthUsername" name="tokenAuthUsername" [(ngModel)]="testService.service!.authTokenUsername" class="form-control" type="text"></div>
+                    <div app-tooltip class="col-auto" tbTooltip="The username to use for UsernameToken-based authentication."></div>
+                </div>
+                <div class="row mt-3">
+                    <label class="col-3 col-form-label text-end" for="tokenAuthPassword">* Token password:</label>
+                    <div class="col-7">
+                        @if (hasExistingTokenAuthentication) {
+                            <div class="row row-cols-auto align-items-center">
+                                <div class="col-auto">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="updateTokenAuthPassword" name="updateTokenAuthPassword" [(ngModel)]="updateTokenAuthPassword">
+                                        <label class="form-check-label" for="updateTokenAuthPassword">Update</label>
+                                    </div>
+                                </div>
+                                <div class="col-auto flex-grow-1">
+                                    @if (updateTokenAuthPassword) {
+                                        <app-secret-input id="tokenAuthPassword" name="tokenAuthPassword" [(ngModel)]="testService.service!.authTokenPassword"></app-secret-input>
+                                    } @else {
+                                        <input type="text" class="form-control" readonly="readonly" [value]="tokenAuthPasswordMask">
+                                    }
+                                </div>
+                            </div>
+                        } @else {
+                            <app-secret-input id="tokenAuthPassword" name="tokenAuthPassword" [(ngModel)]="testService.service!.authTokenPassword"></app-secret-input>
+                        }
+                    </div>
+                    <div app-tooltip class="col-auto" tbTooltip="The password to use for UsernameToken-based authentication."></div>
+                </div>
+                <div class="row mt-3 pt-1">
+                    <legend class="col-3 col-form-label text-end pt-0">* Password type:</legend>
+                    <div class="col-7">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" [(ngModel)]="testService.service!.authTokenPasswordType" name="authTokenPasswordTypes" id="pwdTypeDigest" [value]="Constants.TEST_SERVICE_AUTH_TOKEN_PASSWORD_TYPE.DIGEST">
+                            <label class="form-check-label" for="pwdTypeDigest">{{dataService.testServiceAuthTokenPasswordType(Constants.TEST_SERVICE_AUTH_TOKEN_PASSWORD_TYPE.DIGEST)}}
+                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="The password used for a UsernameToken-based authentication will be sent in digest form."></div>
+                            </label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" [(ngModel)]="testService.service!.authTokenPasswordType" name="authTokenPasswordTypes" id="pwdTypeText" [value]="Constants.TEST_SERVICE_AUTH_TOKEN_PASSWORD_TYPE.TEXT">
+                            <label class="form-check-label" for="pwdTypeText">{{dataService.testServiceAuthTokenPasswordType(Constants.TEST_SERVICE_AUTH_TOKEN_PASSWORD_TYPE.TEXT)}}
+                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="The password used for a UsernameToken-based authentication will be sent in plaintext."></div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </app-form-section>
+        <app-form-section sectionTitle="Additional information" [collapsed]="additionalInfoSectionCollapsed" [marginBefore]="true">
+            <div class="row mt-3">
+                <label class="col-3 col-form-label text-end" for="reference">Reference identifier:</label>
+                <div class="col-7"><input id="reference" name="reference" [(ngModel)]="testService.service!.identifier" class="form-control" type="text"></div>
+                <div app-tooltip class="col-auto" tbTooltip="An optional reference code for the test service that can be used to refer to it from outside the Test Bed."></div>
+            </div>
+            <div class="row mt-3">
+                <label class="col-3 col-form-label text-end" for="version">Version:</label>
+                <div class="col-7"><input id="version" name="version" [(ngModel)]="testService.service!.version" class="form-control" type="text"></div>
+                <div app-tooltip class="col-auto" tbTooltip="An optional version number for the test service."></div>
+            </div>
+        </app-form-section>
+    </div>
+    <div class="modal-footer button-container">
+        @if (testService.service?.id) {
+            <div class="btn-toolbar btn-toolbar-delete">
+                <button class="btn btn-outline-danger" type="button" (click)="delete()" [disable]="pending" [pending]="deletePending">Delete</button>
+            </div>
+        }
+        <div class="btn-toolbar">
+            <button class="btn btn-secondary" type="button" (click)="cancel()" [disabled]="pending">Cancel</button>
+            <button class="btn btn-secondary" type="submit" (click)="test()" [disable]="pending || !serviceSettingsOk()" [pending]="testPending">Test</button>
+            <button class="btn btn-secondary" type="submit" (click)="save()" [disable]="pending || !saveAllowed()" [pending]="savePending">Save</button>
+        </div>
+    </div>
+</form>

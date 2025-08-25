@@ -18,11 +18,9 @@ package com.gitb.engine.processors;
 import com.gitb.common.AliasManager;
 import com.gitb.core.*;
 import com.gitb.engine.ModuleManager;
+import com.gitb.engine.SessionManager;
 import com.gitb.engine.expr.ExpressionHandler;
 import com.gitb.engine.expr.resolvers.VariableResolver;
-import com.gitb.engine.remote.ClientConfiguration;
-import com.gitb.engine.remote.HandlerTimeoutException;
-import com.gitb.engine.remote.validation.RemoteValidationModuleClient;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.engine.utils.HandlerUtils;
 import com.gitb.engine.utils.TestCaseUtils;
@@ -30,6 +28,9 @@ import com.gitb.engine.validation.handlers.common.AbstractValidator;
 import com.gitb.engine.validation.handlers.xmlunit.XmlMatchValidator;
 import com.gitb.engine.validation.handlers.xpath.XPathValidator;
 import com.gitb.exceptions.GITBEngineInternalError;
+import com.gitb.remote.ClientConfiguration;
+import com.gitb.remote.HandlerTimeoutException;
+import com.gitb.remote.validation.RemoteValidationModuleClient;
 import com.gitb.tdl.Binding;
 import com.gitb.tdl.ErrorLevel;
 import com.gitb.tdl.Verify;
@@ -195,7 +196,13 @@ public class VerifyProcessor implements IProcessor {
 
 	private IValidationHandler getRemoteValidator(String handler, Properties connectionProperties, String sessionId, Long handlerTimeout) {
 		try {
-			return new RemoteValidationModuleClient(new URI(handler).toURL(), connectionProperties, sessionId, new ClientConfiguration(handlerTimeout));
+			return new RemoteValidationModuleClient(
+                    new URI(handler).toURL(),
+                    connectionProperties,
+                    sessionId,
+                    SessionManager.getInstance().getContext(sessionId).getTestCaseIdentifier(),
+                    new ClientConfiguration(handlerTimeout)
+            );
 		} catch (MalformedURLException e) {
 			throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Remote validation module found with an malformed URL ["+handler+"]"), e);
 		} catch (URISyntaxException e) {
