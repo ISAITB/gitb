@@ -50,7 +50,7 @@
 									}
 									@case ("SECRET") {
 										<!-- Secret -->
-										<app-secret-input [name]="'input-'+index" [id]="'input-'+index" [(ngModel)]="interaction.data" [validation]="validation.get('input_'+index)"></app-secret-input>
+										<app-secret-input [inputId]="'input-'+index" [inputName]="'input-'+index" [name]="'secret-input-'+index" [(ngModel)]="interaction.data" [validation]="validation.get('input_'+index)"></app-secret-input>
 									}
 									@default {
 										<!-- Text field -->

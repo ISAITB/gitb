@@ -95,14 +95,14 @@
                                 </div>
                                 <div class="col-auto flex-grow-1">
                                     @if (updateBasicAuthPassword) {
-                                        <app-secret-input id="basicAuthPassword" name="basicAuthPassword" [(ngModel)]="testService.service!.authBasicPassword"></app-secret-input>
+                                        <app-secret-input inputId="basicAuthPassword" inputName="basicAuthPassword" name="basicAuthPasswordSecret" [(ngModel)]="testService.service!.authBasicPassword"></app-secret-input>
                                     } @else {
                                         <input type="text" class="form-control" readonly="readonly" [value]="basicAuthPasswordMask">
                                     }
                                 </div>
                             </div>
                         } @else {
-                            <app-secret-input id="basicAuthPassword" name="basicAuthPassword" [(ngModel)]="testService.service!.authBasicPassword"></app-secret-input>
+                            <app-secret-input inputId="basicAuthPassword" inputName="basicAuthPassword" name="basicAuthPasswordSecret" [(ngModel)]="testService.service!.authBasicPassword"></app-secret-input>
                         }
                     </div>
                     <div app-tooltip class="col-auto" tbTooltip="The password to use for basic HTTP authentication."></div>
@@ -127,14 +127,14 @@
                                 </div>
                                 <div class="col-auto flex-grow-1">
                                     @if (updateTokenAuthPassword) {
-                                        <app-secret-input id="tokenAuthPassword" name="tokenAuthPassword" [(ngModel)]="testService.service!.authTokenPassword"></app-secret-input>
+                                        <app-secret-input inputId="tokenAuthPassword" inputName="tokenAuthPassword" name="tokenAuthPasswordSecret" [(ngModel)]="testService.service!.authTokenPassword"></app-secret-input>
                                     } @else {
                                         <input type="text" class="form-control" readonly="readonly" [value]="tokenAuthPasswordMask">
                                     }
                                 </div>
                             </div>
                         } @else {
-                            <app-secret-input id="tokenAuthPassword" name="tokenAuthPassword" [(ngModel)]="testService.service!.authTokenPassword"></app-secret-input>
+                            <app-secret-input inputId="tokenAuthPassword" inputName="tokenAuthPassword" name="tokenAuthPasswordSecret" [(ngModel)]="testService.service!.authTokenPassword"></app-secret-input>
                         }
                     </div>
                     <div app-tooltip class="col-auto" tbTooltip="The password to use for UsernameToken-based authentication."></div>

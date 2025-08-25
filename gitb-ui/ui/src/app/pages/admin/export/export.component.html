@@ -68,7 +68,7 @@
 					<div class="row mt-3">
 						<label class="col-3 col-form-label text-end" for="encryptionPassword">* Export password:</label>
 						<div class="col-4">
-							<app-secret-input id="encryptionPassword" name="encryptionPassword" [(ngModel)]="settings.encryptionKey"></app-secret-input>
+							<app-secret-input inputId="encryptionPassword" inputName="encryptionPassword" name="encryptionPasswordSecret" [(ngModel)]="settings.encryptionKey"></app-secret-input>
 						</div>
 						<div app-tooltip class="col-auto" tbTooltip="Used to encrypt the exported ZIP archive and also any sensitive values it may include. This password will need to be provided when importing or opening the archive."></div>
 					</div>

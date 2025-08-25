@@ -71,7 +71,7 @@
             <div class="row mb-3">
               <label class="col-4 col-form-label text-end" for="password">* One-time password:</label>
               <div class="col-6">
-                <app-secret-input id="password" name="password" [(ngModel)]="user.password" [focusChange]="passwordFocus"></app-secret-input>
+                <app-secret-input inputId="password" inputName="password" name="passwordSecret" [(ngModel)]="user.password" [focusChange]="passwordFocus"></app-secret-input>
               </div>
               <div app-tooltip class="col-auto" tbTooltip="This password can only be used once at first login and will then need to be changed."></div>
             </div>

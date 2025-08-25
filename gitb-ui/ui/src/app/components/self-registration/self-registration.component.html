@@ -120,7 +120,7 @@
                         <div class="row">
                             <label class="col-3 col-form-label text-end" for="adminPassword">* Password:</label>
                             <div class="col-7">
-                                <app-secret-input id="adminPassword" name="adminPassword" [(ngModel)]="model.adminPassword" [validation]="validation?.get('new')"></app-secret-input>
+                                <app-secret-input inputId="adminPassword" inputName="adminPassword" name="adminPasswordSecret" [(ngModel)]="model.adminPassword" [validation]="validation?.get('new')"></app-secret-input>
                             </div>
                             <div app-tooltip class="col-auto" tbTooltip="The account's password, to be provided with the username when logging in."></div>
                         </div>

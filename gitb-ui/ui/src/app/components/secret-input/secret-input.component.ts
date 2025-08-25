@@ -34,8 +34,8 @@ import { InvalidFormControlConfig } from 'src/app/types/invalid-form-control-con
 })
 export class SecretInputComponent implements OnInit, AfterViewInit,  ControlValueAccessor, OnDestroy {
 
-  @Input() id!: string
-  @Input() name!: string
+  @Input() inputId!: string
+  @Input() inputName!: string
   @Input() autoFocus = false
   @Input() validation?: ReplaySubject<InvalidFormControlConfig>
   @Input() focusChange?: EventEmitter<boolean>

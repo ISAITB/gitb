@@ -163,7 +163,7 @@
                                                         <legend class="col-3 col-form-label text-end">* Password:</legend>
                                                         <div class="col-4 minimum-width-text">
                                                             @if (emailSettings.password == undefined) {
-                                                                <app-secret-input id="emailPassword" name="emailPassword" [(ngModel)]="emailSettings.newPassword"></app-secret-input>
+                                                                <app-secret-input inputId="emailPassword" inputName="emailPassword" name="emailPasswordSecret" [(ngModel)]="emailSettings.newPassword"></app-secret-input>
                                                             } @else {
                                                                 <div class="row row-cols-auto align-items-center gx-3">
                                                                     <div class="col-auto">
@@ -174,7 +174,7 @@
                                                                     </div>
                                                                     <div class="col-auto flex-grow-1">
                                                                         @if (emailSettings.updatePassword) {
-                                                                            <app-secret-input id="updatePassword" name="updatePassword" [(ngModel)]="emailSettings.newPassword"></app-secret-input>
+                                                                            <app-secret-input inputId="updatePassword" inputName="updatePassword" input="updatePasswordSecret" [(ngModel)]="emailSettings.newPassword"></app-secret-input>
                                                                         }
                                                                     </div>
                                                                 </div>

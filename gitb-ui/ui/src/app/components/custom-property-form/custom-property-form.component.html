@@ -64,7 +64,7 @@
                           @if (property.desc) {
                             <span [class.ml-2]="property.configured" [tooltip]="property.desc" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span>
                           }
-                        </div>                          
+                        </div>
                       } @else {
                         <div class="row row-cols-auto align-items-center">
                           <div class="col-auto">
@@ -81,7 +81,7 @@
                                 <input type="text" [readonly]="true" class="form-control" [invalid]="validation?.get(tbPropertyType+property.id)">
                               }
                             } @else {
-                              <app-secret-input [attr.id]="'prop-'+property.id" name="{{'prop-'+property.id}}" [(ngModel)]="property.value" [invalid]="validation?.get(tbPropertyType+property.id)"></app-secret-input>
+                              <app-secret-input [inputId]="'prop-'+property.id" [inputName]="'prop-'+property.id" name="{{'secret-prop-'+property.id}}" [(ngModel)]="property.value" [invalid]="validation?.get(tbPropertyType+property.id)"></app-secret-input>
                             }
                           </div>
                         </div>
@@ -98,7 +98,7 @@
                             @if (property.desc) {
                               <span [ngStyle]="{'margin-left':(property.value?'10px':'0px')}" [tooltip]="property.desc" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span>
                             }
-                          </p>                            
+                          </p>
                         </div>
                       } @else {
                         <app-file-select [fileName]="fileName(property)" [validation]="validation?.get(tbPropertyType+property.id)" (onUpload)="onFileSelect(property, $event)" placeholder="Drop or browse for file ..." [extraActions]="true" [reset]="resetMap[property.id]">
