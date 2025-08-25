@@ -30,14 +30,16 @@ public class ConfigureCommand extends SessionCommand {
 	private final ActorConfiguration organisationConfiguration;
 	private final ActorConfiguration systemConfiguration;
     private final List<ActorConfiguration> actorConfigurations;
+    private final List<ActorConfiguration> testServiceConfigurations;
 	private final List<AnyContent> inputs;
 
-	public ConfigureCommand(String sessionId, List<ActorConfiguration> actorConfigurations, ActorConfiguration domainConfiguration, ActorConfiguration organisationConfiguration, ActorConfiguration systemConfiguration, List<AnyContent> inputs) {
+	public ConfigureCommand(String sessionId, List<ActorConfiguration> actorConfigurations, ActorConfiguration domainConfiguration, ActorConfiguration organisationConfiguration, ActorConfiguration systemConfiguration, List<ActorConfiguration> testServiceConfigurations, List<AnyContent> inputs) {
 		super(sessionId);
 		this.actorConfigurations = new CopyOnWriteArrayList<>(actorConfigurations);
 		this.domainConfiguration = domainConfiguration;
 		this.organisationConfiguration = organisationConfiguration;
 		this.systemConfiguration = systemConfiguration;
+        this.testServiceConfigurations = testServiceConfigurations;
 		this.inputs = inputs;
 	}
 
@@ -57,7 +59,12 @@ public class ConfigureCommand extends SessionCommand {
 		return systemConfiguration;
 	}
 
-	public List<AnyContent> getInputs() {
+    public List<ActorConfiguration> getTestServiceConfigurations() {
+        return testServiceConfigurations;
+    }
+
+    public List<AnyContent> getInputs() {
 		return inputs;
 	}
+
 }

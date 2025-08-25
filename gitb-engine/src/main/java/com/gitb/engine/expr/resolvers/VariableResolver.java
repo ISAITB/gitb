@@ -16,6 +16,7 @@
 package com.gitb.engine.expr.resolvers;
 
 import com.gitb.core.ErrorCode;
+import com.gitb.engine.expr.PossibleDomainIdentifier;
 import com.gitb.engine.testcase.StepStatusMapType;
 import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.engine.testcase.TestCaseScope;
@@ -45,6 +46,8 @@ import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static com.gitb.PropertyConstants.DOMAIN_MAP;
 
 /**
  * Created by senan on 9/8/14.
@@ -206,6 +209,15 @@ public class VariableResolver implements XPathVariableResolver{
 	public DataType resolveVariable(String variableExpression) {
 	    return resolveVariable(variableExpression, false).orElseThrow();
 	}
+
+    public PossibleDomainIdentifier resolveAsPossibleDomainIdentifier(String variableExpression) {
+        String value = resolveVariableAsString(variableExpression).getValue();
+        String domainIdentifier = null;
+        if (variableExpression.startsWith("$"+DOMAIN_MAP+"{") && variableExpression.endsWith("}")) {
+            domainIdentifier = variableExpression.substring(variableExpression.indexOf("{")+1, variableExpression.lastIndexOf("}"));
+        }
+        return new PossibleDomainIdentifier(domainIdentifier, value);
+    }
 
     public StringType resolveVariableAsString(String variableExpression) {
         return (StringType)resolveVariable(variableExpression).convertTo(DataType.STRING_DATA_TYPE);

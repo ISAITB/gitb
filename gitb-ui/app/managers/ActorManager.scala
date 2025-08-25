@@ -224,6 +224,16 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
     ).map(_.toSet)
   }
 
+  def getActorDomainId(actorId: Long): Future[Long] = {
+    DB.run(
+      PersistenceSchema.actors
+        .filter(_.id === actorId)
+        .map(_.domain)
+        .result
+        .head
+    )
+  }
+
   private def setOtherActorsAsNonDefault(defaultActorId: Long, specificationId: Long) = {
     val actions = (for {
       actorIds <- PersistenceSchema.specificationHasActors

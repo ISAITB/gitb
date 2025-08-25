@@ -21,6 +21,8 @@ import com.gitb.engine.processing.ProcessingContext;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.tdl.EndProcessingTransaction;
 
+import java.util.Objects;
+
 public class EndProcessingTransactionStepProcessorActor extends AbstractTestStepActor<EndProcessingTransaction> {
 
     public static final String NAME = "eptxn-p";
@@ -41,7 +43,7 @@ public class EndProcessingTransactionStepProcessorActor extends AbstractTestStep
     @Override
     protected void start() {
         processing();
-        ProcessingContext processingContext = this.scope.getContext().getProcessingContext(step.getTxnId());
+        ProcessingContext processingContext = Objects.requireNonNull(this.scope.getContext().getProcessingContext(step.getTxnId()), () -> "No context could be retrieved for processing transaction [%s]".formatted(step.getTxnId()));
         processingContext.getHandler().endTransaction(processingContext.getSession(), step.getId());
         this.scope.getContext().removeProcessingContext(step.getTxnId());
         completed();

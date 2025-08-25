@@ -16,6 +16,7 @@
 package com.gitb.engine.actors.processors;
 
 import com.gitb.core.Configuration;
+import com.gitb.engine.expr.PossibleDomainIdentifier;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.processing.ProcessingContext;
 import com.gitb.engine.testcase.TestCaseScope;
@@ -47,7 +48,7 @@ public class BeginProcessingTransactionStepProcessorActor extends AbstractTestSt
         processing();
 
         VariableResolver resolver = new VariableResolver(scope);
-        String handlerIdentifier = resolveProcessingHandler(step.getHandler(), () -> resolver);
+        PossibleDomainIdentifier handlerInfo = resolveProcessingHandler(step.getHandler(), () -> resolver);
         if (step.getConfig() != null) {
             for (Configuration config: step.getConfig()) {
                 if (VariableResolver.isVariableReference(config.getValue())) {
@@ -57,7 +58,8 @@ public class BeginProcessingTransactionStepProcessorActor extends AbstractTestSt
         }
 
         ProcessingContext context = new ProcessingContext(
-                handlerIdentifier,
+                handlerInfo.value(),
+                handlerInfo.domainIdentifier(),
                 TestCaseUtils.getStepProperties(step.getProperty(), resolver),
                 scope.getContext().getSessionId(),
                 HandlerUtils.getHandlerTimeout(step.getHandlerTimeout(), resolver)

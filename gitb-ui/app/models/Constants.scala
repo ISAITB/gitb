@@ -39,14 +39,6 @@ object Constants {
   val EnvironmentTheme = "THEME"
   val DefaultTheme = "gitb"
 
-  val domainTestVariable = "DOMAIN"
-  val organisationTestVariable = "ORGANISATION"
-  val systemTestVariable = "SYSTEM"
-
-  val domainConfigurationName: String = "com.gitb."+domainTestVariable
-  val organisationConfigurationName: String = "com.gitb."+organisationTestVariable
-  val systemConfigurationName: String = "com.gitb."+systemTestVariable
-
   val organisationConfiguration_shortName = "shortName"
   val organisationConfiguration_fullName = "fullName"
   val systemConfiguration_shortName = "shortName"

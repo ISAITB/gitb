@@ -166,7 +166,8 @@ public class SessionActor extends AbstractActor {
                         ctx.message().getActorConfigurations(),
                         ctx.message().getDomainConfiguration(),
                         ctx.message().getOrganisationConfiguration(),
-                        ctx.message().getSystemConfiguration()
+                        ctx.message().getSystemConfiguration(),
+                        ctx.message().getTestServiceConfigurations()
                 );
                 setInputsToSessionContext(context, ctx.message().getInputs());
                 if (context.getTestCase().getPreliminary() != null) {

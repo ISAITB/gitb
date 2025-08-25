@@ -111,10 +111,11 @@ class TestService @Inject() (authorizedAction: AuthorizedAction,
   private def getSessionConfigurationData(domainId: Long): Future[SessionConfigurationData] = {
     testExecutionManager.loadDomainParametersByDomainId(domainId, onlySimple = true).map { domainParameters =>
       SessionConfigurationData(
-        None,
-        domainParameters,
-        None,
-        None
+        statementParameters = None,
+        domainParameters = domainParameters,
+        organisationParameters = None,
+        systemParameters = None,
+        testServiceParameters = None
       )
     }
   }
@@ -123,15 +124,18 @@ class TestService @Inject() (authorizedAction: AuthorizedAction,
     testExecutionManager.loadConformanceStatementParameters(systemId, actorId, onlySimple).zip(
       testExecutionManager.loadDomainParametersByActorId(actorId, onlySimple).zip(
         testExecutionManager.loadOrganisationParameters(systemId, onlySimple).zip(
-          testExecutionManager.loadSystemParameters(systemId, onlySimple)
+          testExecutionManager.loadSystemParameters(systemId, onlySimple).zip(
+            testExecutionManager.loadTestServicesByActorId(actorId)
+          )
         )
       )
     ).map { x =>
       SessionConfigurationData(
-        Some(x._1),
-        x._2._1,
-        Some(x._2._2._1._2),
-        Some(x._2._2._2)
+        statementParameters = Some(x._1),
+        domainParameters = x._2._1,
+        organisationParameters = Some(x._2._2._1._2),
+        systemParameters = Some(x._2._2._2._1),
+        testServiceParameters = x._2._2._2._2
       )
     }
   }

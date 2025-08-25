@@ -19,6 +19,7 @@ import com.gitb.core.AnyContent;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.StepStatus;
 import com.gitb.engine.actors.ActorSystem;
+import com.gitb.engine.expr.PossibleDomainIdentifier;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.processing.ProcessingContext;
 import com.gitb.engine.processing.handlers.XPathProcessor;
@@ -48,6 +49,7 @@ import scala.concurrent.Future;
 import scala.concurrent.Promise;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -105,16 +107,17 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
                 throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Test step [" + stepId + "] is a process step with no transaction reference and no handler definition."));
             }
             VariableResolver resolver = new VariableResolver(scope);
-            String handlerIdentifier = resolveProcessingHandler(step.getHandler(), () -> resolver);
+            PossibleDomainIdentifier handlerInfo = resolveProcessingHandler(step.getHandler(), () -> resolver);
             context = new ProcessingContext(
-                    handlerIdentifier,
+                    handlerInfo.value(),
+                    handlerInfo.domainIdentifier(),
                     TestCaseUtils.getStepProperties(step.getProperty(), resolver),
                     scope.getContext().getSessionId(),
                     HandlerUtils.getHandlerTimeout(step.getHandlerTimeout(), resolver)
             );
         } else {
             // A processing transaction is referenced.
-            context = this.scope.getContext().getProcessingContext(step.getTxnId());
+            context = Objects.requireNonNull(this.scope.getContext().getProcessingContext(step.getTxnId()), () -> "No context could be retrieved for processing transaction [%s]".formatted(step.getTxnId()));
         }
 
         Future<Future<TestStepReportType>> future = Futures.future(() -> {

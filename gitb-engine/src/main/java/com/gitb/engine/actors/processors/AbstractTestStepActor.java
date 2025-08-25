@@ -31,6 +31,7 @@ import com.gitb.engine.events.model.ErrorStatusEvent;
 import com.gitb.engine.events.model.InputEvent;
 import com.gitb.engine.events.model.StatusEvent;
 import com.gitb.engine.events.model.TestStepStatusEvent;
+import com.gitb.engine.expr.PossibleDomainIdentifier;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.engine.utils.StepContext;
@@ -445,12 +446,12 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 		}
 	}
 
-	protected String resolveProcessingHandler(String handler, Supplier<VariableResolver> variableResolverSupplier) {
-		String handlerIdentifier = handler;
-		if (VariableResolver.isVariableReference(handlerIdentifier)) {
-			handlerIdentifier = variableResolverSupplier.get().resolveVariableAsString(handlerIdentifier).toString();
-		}
-		return AliasManager.getInstance().resolveProcessingHandler(handlerIdentifier);
+	protected PossibleDomainIdentifier resolveProcessingHandler(String handlerValue, Supplier<VariableResolver> variableResolverSupplier) {
+		if (VariableResolver.isVariableReference(handlerValue)) {
+			return variableResolverSupplier.get().resolveAsPossibleDomainIdentifier(handlerValue);
+        } else {
+            return new PossibleDomainIdentifier(null, AliasManager.getInstance().resolveProcessingHandler(handlerValue));
+        }
 	}
 
 }

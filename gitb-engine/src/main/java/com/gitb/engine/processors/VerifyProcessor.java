@@ -20,7 +20,9 @@ import com.gitb.core.*;
 import com.gitb.engine.ModuleManager;
 import com.gitb.engine.SessionManager;
 import com.gitb.engine.expr.ExpressionHandler;
+import com.gitb.engine.expr.PossibleDomainIdentifier;
 import com.gitb.engine.expr.resolvers.VariableResolver;
+import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.engine.utils.HandlerUtils;
 import com.gitb.engine.utils.TestCaseUtils;
@@ -67,12 +69,18 @@ public class VerifyProcessor implements IProcessor {
 		//Get the Validator Module from its name
 
 		IValidationHandler validator;
+        VariableResolver resolver = new VariableResolver(scope);
 
-		String handlerIdentifier = verify.getHandler();
-		VariableResolver resolver = new VariableResolver(scope);
-		if (VariableResolver.isVariableReference(handlerIdentifier)) {
-			handlerIdentifier = resolver.resolveVariableAsString(handlerIdentifier).toString();
-		}
+		String handler;
+        String handlerDomainIdentifier;
+		if (VariableResolver.isVariableReference(verify.getHandler())) {
+            PossibleDomainIdentifier handlerInfo = resolver.resolveAsPossibleDomainIdentifier(verify.getHandler());
+            handler = handlerInfo.value();
+            handlerDomainIdentifier = handlerInfo.domainIdentifier();
+		} else {
+            handler = verify.getHandler();
+            handlerDomainIdentifier = null;
+        }
 		if (verify.getConfig() != null) {
 			for (Configuration config: verify.getConfig()) {
 				if (VariableResolver.isVariableReference(config.getValue())) {
@@ -81,19 +89,19 @@ public class VerifyProcessor implements IProcessor {
 			}
 		}
 
-		if (isURL(handlerIdentifier)) {
-			validator = getRemoteValidator(handlerIdentifier,
+		if (isURL(handler)) {
+			validator = getRemoteValidator(handler, handlerDomainIdentifier,
 					TestCaseUtils.getStepProperties(verify.getProperty(), resolver),
 					scope.getContext().getSessionId(),
 					HandlerUtils.getHandlerTimeout(verify.getHandlerTimeout(), resolver)
 			);
 		} else {
 			// This is a local validator.
-			handlerIdentifier = AliasManager.getInstance().resolveValidationHandler(handlerIdentifier);
-			validator = ModuleManager.getInstance().getValidationHandler(handlerIdentifier);
+            handler = AliasManager.getInstance().resolveValidationHandler(handler);
+			validator = ModuleManager.getInstance().getValidationHandler(handler);
 		}
 		if (validator == null) {
-			throw new IllegalStateException("Validation handler for ["+handlerIdentifier+"] could not be resolved");
+			throw new IllegalStateException("Validation handler for ["+handler+"] could not be resolved");
 		}
 		try {
 			ExpressionHandler exprHandler = new ExpressionHandler(scope);
@@ -109,7 +117,7 @@ public class VerifyProcessor implements IProcessor {
 				Map<String, TypedParameter> expectedParamsMap = constructExpectedParameterMap(validatorDefinition);
 				//Evaluate each expression to supply the inputs
 				for (Binding inputExpression : inputExpressions) {
-					String inputName = AliasManager.getInstance().resolveValidationHandlerInput(handlerIdentifier, inputExpression.getName());
+					String inputName = AliasManager.getInstance().resolveValidationHandlerInput(handler, inputExpression.getName());
 					TypedParameter expectedParam = expectedParamsMap.get(inputName);
 					DataType result;
 					if (expectedParam == null) {
@@ -194,13 +202,14 @@ public class VerifyProcessor implements IProcessor {
 		return true;
 	}
 
-	private IValidationHandler getRemoteValidator(String handler, Properties connectionProperties, String sessionId, Long handlerTimeout) {
+	private IValidationHandler getRemoteValidator(String handler, String handlerDomainIdentifier, Properties connectionProperties, String sessionId, Long handlerTimeout) {
+        TestCaseContext context = SessionManager.getInstance().getContext(sessionId);
 		try {
 			return new RemoteValidationModuleClient(
                     new URI(handler).toURL(),
-                    connectionProperties,
+                    context.prepareRemoteServiceCallProperties(handlerDomainIdentifier, connectionProperties),
                     sessionId,
-                    SessionManager.getInstance().getContext(sessionId).getTestCaseIdentifier(),
+                    context.getTestCaseIdentifier(),
                     new ClientConfiguration(handlerTimeout)
             );
 		} catch (MalformedURLException e) {

@@ -38,6 +38,13 @@ public class PropertyConstants {
     public static final String ORGANISATION_MAP = "ORGANISATION";
     public static final String SYSTEM_MAP = "SYSTEM";
     public static final String SESSION_MAP = "SESSION";
+
+    public static final String ACTOR_CONFIG_DOMAIN = "com.gitb.DOMAIN";
+    public static final String ACTOR_CONFIG_ORGANISATION = "com.gitb.ORGANISATION";
+    public static final String ACTOR_CONFIG_SYSTEM = "com.gitb.SYSTEM";
+    public static final String ACTOR_CONFIG_TEST_SERVICE = "com.gitb.TEST_SERVICE";
+    public static final char ACTOR_CONFIG_TEST_SERVICE_SEPARATOR = '|';
+
     /**
      * The map containing the success flags for each executed step.
      */

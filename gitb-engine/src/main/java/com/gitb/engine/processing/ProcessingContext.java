@@ -18,6 +18,7 @@ package com.gitb.engine.processing;
 import com.gitb.core.ErrorCode;
 import com.gitb.engine.ModuleManager;
 import com.gitb.engine.SessionManager;
+import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.processing.IProcessingHandler;
 import com.gitb.remote.ClientConfiguration;
@@ -36,10 +37,10 @@ public final class ProcessingContext {
     private final String testSessionId;
     private final Long handlerTimeout;
 
-    public ProcessingContext(String handler, Properties transactionProperties, String testSessionId, Long handlerTimeout) {
+    public ProcessingContext(String handler, String handlerDomainIdentifier, Properties transactionProperties, String testSessionId, Long handlerTimeout) {
         this.handlerTimeout = handlerTimeout;
         this.testSessionId = testSessionId;
-        this.handler = resolveHandler(handler, transactionProperties, testSessionId);
+        this.handler = resolveHandler(handler, handlerDomainIdentifier, transactionProperties, testSessionId);
     }
 
     public void setSession(String session) {
@@ -66,21 +67,22 @@ public final class ProcessingContext {
         return true;
     }
 
-    private IProcessingHandler resolveHandler(String handler, Properties transactionProperties, String testSessionId) {
+    private IProcessingHandler resolveHandler(String handler, String handlerDomainIdentifier, Properties transactionProperties, String testSessionId) {
         if (isURL(handler)) {
-            return getRemoteProcessor(handler, transactionProperties, testSessionId);
+            return getRemoteProcessor(handler, handlerDomainIdentifier, transactionProperties, testSessionId);
         } else {
             return ModuleManager.getInstance().getProcessingHandler(handler);
         }
     }
 
-    private IProcessingHandler getRemoteProcessor(String handler, Properties transactionProperties, String testSessionId) {
+    private IProcessingHandler getRemoteProcessor(String handler, String handlerDomainIdentifier, Properties transactionProperties, String testSessionId) {
+        TestCaseContext context = SessionManager.getInstance().getContext(testSessionId);
         try {
             return new RemoteProcessingModuleClient(
                     new URI(handler).toURL(),
-                    transactionProperties,
+                    context.prepareRemoteServiceCallProperties(handlerDomainIdentifier, transactionProperties),
                     testSessionId,
-                    SessionManager.getInstance().getContext(testSessionId).getTestCaseIdentifier(),
+                    context.getTestCaseIdentifier(),
                     new ClientConfiguration(handlerTimeout)
             );
         } catch (MalformedURLException e) {

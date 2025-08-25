@@ -17,10 +17,8 @@ package com.gitb.engine.testcase;
 
 import com.gitb.core.*;
 import com.gitb.core.LogLevel;
-import com.gitb.engine.CallbackManager;
-import com.gitb.engine.ModuleManager;
-import com.gitb.engine.SessionManager;
-import com.gitb.engine.TestEngineConfiguration;
+import com.gitb.engine.*;
+import com.gitb.engine.expr.PossibleDomainIdentifier;
 import com.gitb.engine.expr.StaticExpressionHandler;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.messaging.MessagingContext;
@@ -178,6 +176,7 @@ public class TestCaseContext {
     }
 
 	private final Map<String, ResourceInfo> resourceCache = new ConcurrentHashMap<>();
+    private final Map<String, TestServiceInformation> registeredTestServices = new ConcurrentHashMap<>();
 	private boolean resourceCacheLoaded = false;
 
 	private com.gitb.core.LogLevel logLevelToSignal = LogLevel.INFO;
@@ -292,10 +291,11 @@ public class TestCaseContext {
      * @param configurations SUT configurations
      * @return Simulated actor configurations for each (actorId, endpointName) tuple
      */
-    public List<SUTConfiguration> configure(List<ActorConfiguration> configurations, ActorConfiguration domainConfiguration, ActorConfiguration organisationConfiguration, ActorConfiguration systemConfiguration){
+    public List<SUTConfiguration> configure(List<ActorConfiguration> configurations, ActorConfiguration domainConfiguration, ActorConfiguration organisationConfiguration, ActorConfiguration systemConfiguration, List<ActorConfiguration> testServiceConfigurations){
 		addSpecialConfiguration(DOMAIN_MAP, domainConfiguration);
 		addSpecialConfiguration(ORGANISATION_MAP, organisationConfiguration);
 		addSpecialConfiguration(SYSTEM_MAP, systemConfiguration);
+        addRegisteredTestServices(testServiceConfigurations);
 		addSessionMetadata();
 		for (ActorConfiguration actorConfiguration : configurations) {
 		    Tuple<String> actorIdEndpointTupleKey = new Tuple<>(new String[] {actorConfiguration.getActor(), actorConfiguration.getEndpoint()});
@@ -335,6 +335,19 @@ public class TestCaseContext {
 		map.addItem(SESSION_MAP_TEST_ENGINE_VERSION, testEngineVersion);
 		variable.setValue(map);
 	}
+
+    private void addRegisteredTestServices(List<ActorConfiguration> servicesConfiguration) {
+        if (servicesConfiguration != null) {
+            for (ActorConfiguration serviceConfiguration : servicesConfiguration) {
+                String testKey = serviceConfiguration.getActor();
+                if (testKey != null && !serviceConfiguration.getConfig().isEmpty()) {
+                    Properties authenticationProperties = new Properties();
+                    serviceConfiguration.getConfig().stream().filter(c -> c.getName() != null && c.getValue() != null).forEach(config -> authenticationProperties.setProperty(config.getName(), config.getValue()));
+                    registeredTestServices.put(testKey, new TestServiceInformation(authenticationProperties));
+                }
+            }
+        }
+    }
 
 	private void addSpecialConfiguration(String mapVariableName, ActorConfiguration domainConfiguration) {
 		if (domainConfiguration != null) {
@@ -531,12 +544,23 @@ public class TestCaseContext {
 	}
 
 	private TransactionInfo buildTransactionInfo(String from, String to, String handler, String handlerTimeout, List<Configuration> properties, VariableResolver resolver, LinkedList<Pair<CallStep, Scriptlet>> scriptletCallStack) {
+        String handlerValue;
+        String handlerDomainIdentifier;
+        if (VariableResolver.isVariableReference(handler)) {
+            PossibleDomainIdentifier handlerInfo = resolver.resolveAsPossibleDomainIdentifier(handler);
+            handlerValue = handlerInfo.value();
+            handlerDomainIdentifier = handlerInfo.domainIdentifier();
+        } else {
+            handlerValue = handler;
+            handlerDomainIdentifier = null;
+        }
 		return new TransactionInfo(
 				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractActorId(from), String.class, scriptletCallStack, getStaticExpressionHandler(resolver)),
 				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractEndpointName(from), String.class, scriptletCallStack, getStaticExpressionHandler(resolver)),
 				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractActorId(to), String.class, scriptletCallStack, getStaticExpressionHandler(resolver)),
 				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractEndpointName(to), String.class, scriptletCallStack, getStaticExpressionHandler(resolver)),
-				VariableResolver.isVariableReference(handler)?resolver.resolveVariableAsString(handler).toString():handler,
+                handlerValue,
+                handlerDomainIdentifier,
 				handlerTimeout,
 				TestCaseUtils.getStepProperties(properties, resolver)
 		);
@@ -755,6 +779,21 @@ public class TestCaseContext {
 		}
 	}
 
+    public Properties prepareRemoteServiceCallProperties(String serviceTestKey, Properties stepProperties) {
+        Properties propertiesToUse = new Properties();
+        if (stepProperties != null) {
+            propertiesToUse.putAll(stepProperties);
+        }
+        if (serviceTestKey != null) {
+            TestServiceInformation serviceInfo = registeredTestServices.get(serviceTestKey);
+            if (serviceInfo != null) {
+                // Use putIfAbsent, as the configuration coming from the test case supersedes the registered services.
+                serviceInfo.authenticationProperties().forEach(propertiesToUse::putIfAbsent);
+            }
+        }
+        return propertiesToUse;
+    }
+
 	private static class MessagingContextBuilder {
 		private final TransactionInfo transactionInfo;
 		private final Map<Tuple<String>, ActorConfiguration> sutConfigurations;
@@ -790,12 +829,13 @@ public class TestCaseContext {
 		}
 
 		private IMessagingHandler getRemoteMessagingHandler(TransactionInfo transactionInfo, String sessionId) {
+            TestCaseContext context = SessionManager.getInstance().getContext(sessionId);
 			try {
                 return new RemoteMessagingModuleClient(
                         new URI(transactionInfo.handler).toURL(),
-                        transactionInfo.properties,
+                        context.prepareRemoteServiceCallProperties(transactionInfo.handlerDomainIdentifier, transactionInfo.properties),
                         sessionId,
-                        SessionManager.getInstance().getContext(sessionId).getTestCaseIdentifier(),
+                        context.getTestCaseIdentifier(),
                         () -> {
                             var resolver = new VariableResolver(SessionManager.getInstance().getContext(sessionId).getScope());
                             Long handlerTimeout = HandlerUtils.getHandlerTimeout(transactionInfo.handlerTimeoutExpression(), resolver);
@@ -883,6 +923,6 @@ public class TestCaseContext {
 	}
 
 	private record TransactionInfo(String fromActorId, String fromEndpointName, String toActorId, String toEndpointName,
-								   String handler, String handlerTimeoutExpression, Properties properties) {
+								   String handler, String handlerDomainIdentifier, String handlerTimeoutExpression, Properties properties) {
 	}
 }

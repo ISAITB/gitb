@@ -82,7 +82,15 @@ public class TestbedService {
 				.getInstance()
 				.getEngineActorSystem()
 				.getSessionSupervisor()
-				.tell(new ConfigureCommand(sessionId, configData.getActorConfigurations(), configData.getDomainConfiguration(), configData.getOrganisationConfiguration(), configData.getSystemConfiguration(), inputs), ActorRef.noSender());
+				.tell(new ConfigureCommand(
+                        sessionId,
+                        configData.getActorConfigurations(),
+                        configData.getDomainConfiguration(),
+                        configData.getOrganisationConfiguration(),
+                        configData.getSystemConfiguration(),
+                        configData.getTestServiceConfigurations(),
+                        inputs
+                ), ActorRef.noSender());
 	}
 
 	private static List<String> extractFailureDetails(Throwable error) {
