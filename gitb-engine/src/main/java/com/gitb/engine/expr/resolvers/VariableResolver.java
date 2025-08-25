@@ -127,18 +127,21 @@ public class VariableResolver implements XPathVariableResolver{
                 itemValues.add(list.getItem(i).getValue());
             }
             NodeList result;
-            switch (list.getContainedType()){
-                case DataType.NUMBER_DATA_TYPE:
-                case DataType.STRING_DATA_TYPE:
-                case DataType.BOOLEAN_DATA_TYPE:
-                    result = convertPrimitiveListToNodeList(itemValues);
-                    break;
-                case DataType.OBJECT_DATA_TYPE:
-                    result = convertListOfNodesToNodeList(itemValues);
-                    break;
-                default:
-                    List<DataType> objects = (List<DataType>)list.getValue();
-                    result = convertListOfNodesToNodeList(convertListOfOthersToListOfNodes(objects));
+            if (list.getContainedType() != null) {
+                switch (list.getContainedType()) {
+                    case DataType.NUMBER_DATA_TYPE:
+                    case DataType.STRING_DATA_TYPE:
+                    case DataType.BOOLEAN_DATA_TYPE:
+                        result = convertPrimitiveListToNodeList(itemValues);
+                        break;
+                    case DataType.OBJECT_DATA_TYPE:
+                        result = convertListOfNodesToNodeList(itemValues);
+                        break;
+                    default:
+                        result = convertListOfNodesToNodeList(convertListOfOthersToListOfNodes((List<DataType>)list.getValue()));
+                }
+            } else {
+                result = convertListOfNodesToNodeList(convertListOfOthersToListOfNodes((List<DataType>)list.getValue()));
             }
             return result;
         } else if(value instanceof  MapType){
