@@ -203,4 +203,11 @@
         <packageUrl regex="true">^pkg:maven/org\.springframework/spring-core@.*$</packageUrl>
         <vulnerabilityName>CVE-2025-41242</vulnerabilityName>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+    file name: tika-core-3.1.0.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.tika/tika-core@.*$</packageUrl>
+        <cve>CVE-2025-54988</cve>
+    </suppress>        
 </suppressions>
