@@ -127,7 +127,7 @@ class Application @Inject() (cc: ControllerComponents,
         ALLOW -> CorsFilter.origin,
         ACCESS_CONTROL_ALLOW_ORIGIN -> CorsFilter.origin,
         ACCESS_CONTROL_ALLOW_METHODS -> CorsFilter.methods,
-        ACCESS_CONTROL_ALLOW_HEADERS -> CorsFilter.headers
+        ACCESS_CONTROL_ALLOW_HEADERS -> Configurations.HEADERS_FOR_CORS_FILTERING
       )
     }
   }

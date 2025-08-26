@@ -133,7 +133,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   def canOrganisationUseAutomationApi(request: RequestWithAttributes[_]): Future[Boolean] = {
     val check = if (Configurations.AUTOMATION_API_ENABLED) {
-      val apiKey = request.headers.get(Constants.AutomationHeader)
+      val apiKey = ParameterExtractor.extractApiKeyHeader(request)
       if (apiKey.isDefined) {
         organizationManager.getByApiKey(apiKey.get).flatMap { organisation =>
           if (organisation.isDefined) {
@@ -160,7 +160,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   private def restApiEnabledAndValidCommunityKeyDefined(request: RequestWithAttributes[_]): Future[Boolean] = {
     if (Configurations.AUTOMATION_API_ENABLED) {
-      val apiKey = request.headers.get(Constants.AutomationHeader)
+      val apiKey = ParameterExtractor.extractApiKeyHeader(request)
       if (apiKey.isDefined) {
         // Validate the community API key.
         communityManager.getByApiKey(apiKey.get).map { community =>
@@ -176,7 +176,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   private def restApiEnabledAndValidMasterKeyDefined(request: RequestWithAttributes[_]): Future[Boolean] = {
     if (Configurations.AUTOMATION_API_ENABLED) {
-      val apiKey = request.headers.get(Constants.AutomationHeader)
+      val apiKey = ParameterExtractor.extractApiKeyHeader(request)
       if (apiKey.isDefined) {
         // Check to see that the API key is the master API key.
         systemConfigurationManager.getSystemConfigurationAsync(Constants.RestApiAdminKey).map { masterApiKey =>
@@ -245,7 +245,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   def canViewDomainsThroughAutomationApi(request: RequestWithAttributes[_]): Future[Boolean] = {
     val check = if (Configurations.AUTOMATION_API_ENABLED) {
-      val apiKey = request.headers.get(Constants.AutomationHeader)
+      val apiKey = ParameterExtractor.extractApiKeyHeader(request)
       if (apiKey.isDefined) {
         communityManager.getByApiKey(apiKey.get).map { community =>
           community.isDefined
@@ -261,7 +261,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   def canViewDomainThroughAutomationApi(request: RequestWithAttributes[_], domainKey: Option[String]): Future[Boolean] = {
     val check = if (Configurations.AUTOMATION_API_ENABLED) {
-      val apiKey = request.headers.get(Constants.AutomationHeader)
+      val apiKey = ParameterExtractor.extractApiKeyHeader(request)
       if (apiKey.isDefined) {
         // The API key must match a community.
         communityManager.getByApiKey(apiKey.get).flatMap { community =>
@@ -296,7 +296,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   def canUpdateDomainThroughAutomationApi(request: RequestWithAttributes[_], domainKey: Option[String]): Future[Boolean] = {
     val check = if (Configurations.AUTOMATION_API_ENABLED) {
-      val apiKey = request.headers.get(Constants.AutomationHeader)
+      val apiKey = ParameterExtractor.extractApiKeyHeader(request)
       if (apiKey.isDefined) {
         systemConfigurationManager.getSystemConfigurationAsync(Constants.RestApiAdminKey).flatMap { masterApiKey =>
           if (masterApiKey.flatMap(_.parameter).isDefined && masterApiKey.get.parameter.get == apiKey.get) {

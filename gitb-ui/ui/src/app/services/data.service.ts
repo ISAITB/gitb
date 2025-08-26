@@ -158,7 +158,8 @@ export class DataService {
       automationApiEnabled: (this.configuration?.automationApiEnabled != undefined)?this.configuration!.automationApiEnabled:false,
       versionNumber: (this.configuration?.versionNumber != undefined)?this.configuration!.versionNumber:'',
       hasDefaultLegalNotice: (this.configuration?.hasDefaultLegalNotice != undefined)?this.configuration!.hasDefaultLegalNotice:false,
-      conformanceStatementReportMaxTestCases: (this.configuration?.conformanceStatementReportMaxTestCases != undefined)?this.configuration!.conformanceStatementReportMaxTestCases:100
+      conformanceStatementReportMaxTestCases: (this.configuration?.conformanceStatementReportMaxTestCases != undefined)?this.configuration!.conformanceStatementReportMaxTestCases:100,
+      headerNameAuthenticationCookiePath: (this.configuration?.headerNameAuthenticationCookiePath != undefined)?this.configuration!.headerNameAuthenticationCookiePath:"ITB-PATH"
     }
   }
 

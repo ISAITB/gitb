@@ -223,8 +223,8 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
         path = result.body.path
       }
     }
-    if (result.headers.get('ITB-PATH')) {
-      path = result.headers.get('ITB-PATH')!
+    if (result.headers.get(this.dataService.configuration.headerNameAuthenticationCookiePath)) {
+      path = result.headers.get(this.dataService.configuration.headerNameAuthenticationCookiePath)!
     }
     this.loginState = {
       userId: userId!,

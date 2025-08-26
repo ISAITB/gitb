@@ -17,7 +17,6 @@ package controllers.rest
 
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
 import managers.{ActorManager, AuthorizationManager, DomainManager, SpecificationManager}
-import models.Constants
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import utils.JsonUtil
 
@@ -35,7 +34,7 @@ class DomainAutomationService @Inject() (authorizedAction: AuthorizedAction,
 
   def searchDomains(): Action[AnyContent] = authorizedAction.async { request =>
     process(() => authorizationManager.canViewDomainsThroughAutomationApi(request), { _ =>
-      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       val name = ParameterExtractor.optionalQueryParameter(request, Parameters.NAME)
       domainManager.searchDomainsThroughAutomationApi(communityKey, name).map { domains =>
         ResponseConstructor.constructJsonResponse(JsonUtil.jsDomainsForAutomationApi(domains).toString())
@@ -45,7 +44,7 @@ class DomainAutomationService @Inject() (authorizedAction: AuthorizedAction,
 
   def getDomainOfCommunity(): Action[AnyContent] = authorizedAction.async { request =>
     process(() => authorizationManager.canViewDomainThroughAutomationApi(request, None), { _ =>
-      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       domainManager.getCommunityDomainThroughAutomationApi(communityKey).map { domain =>
         ResponseConstructor.constructJsonResponse(JsonUtil.jsDomainForAutomationApi(domain).toString())
       }
@@ -54,7 +53,7 @@ class DomainAutomationService @Inject() (authorizedAction: AuthorizedAction,
 
   def getDomain(domain: String): Action[AnyContent] = authorizedAction.async { request =>
     process(() => authorizationManager.canViewDomainThroughAutomationApi(request, Some(domain)), { _ =>
-      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       domainManager.getDomainThroughAutomationApi(communityKey, domain).map { domain =>
         ResponseConstructor.constructJsonResponse(JsonUtil.jsDomainForAutomationApi(domain).toString())
       }
@@ -89,7 +88,7 @@ class DomainAutomationService @Inject() (authorizedAction: AuthorizedAction,
 
   def updateDomainOfCommunity(): Action[AnyContent] = authorizedAction.async { request =>
     processAsJson(request, () => authorizationManager.canUpdateDomainThroughAutomationApi(request, None), { body =>
-      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       val input = JsonUtil.parseJsUpdateDomainRequest(body, None, Some(communityKey))
       domainManager.updateDomainThroughAutomationApi(input).map { _ =>
         ResponseConstructor.constructEmptyResponse
@@ -99,7 +98,7 @@ class DomainAutomationService @Inject() (authorizedAction: AuthorizedAction,
 
   def getSpecificationGroup(group: String): Action[AnyContent] = authorizedAction.async { request =>
     process(() => authorizationManager.canManageSpecificationGroupThroughAutomationApi(request), { _ =>
-      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       specificationManager.getSpecificationGroupThroughAutomationApi(communityKey, group).map { group =>
         ResponseConstructor.constructJsonResponse(JsonUtil.jsSpecificationGroupForAutomationApi(group).toString())
       }
@@ -108,7 +107,7 @@ class DomainAutomationService @Inject() (authorizedAction: AuthorizedAction,
 
   def searchSpecificationGroups(domain: String): Action[AnyContent] = authorizedAction.async { request =>
     process(() => authorizationManager.canManageSpecificationGroupThroughAutomationApi(request), { _ =>
-      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       val name = ParameterExtractor.optionalQueryParameter(request, Parameters.NAME)
       specificationManager.searchSpecificationGroupsThroughAutomationApi(communityKey, domain, name).map { groups =>
         ResponseConstructor.constructJsonResponse(JsonUtil.jsSpecificationGroupsForAutomationApi(groups).toString())
@@ -118,7 +117,7 @@ class DomainAutomationService @Inject() (authorizedAction: AuthorizedAction,
 
   def createSpecificationGroup(): Action[AnyContent] = authorizedAction.async { request =>
     processAsJson(request, () => authorizationManager.canManageSpecificationGroupThroughAutomationApi(request), { body =>
-      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       val input = JsonUtil.parseJsCreateSpecificationGroupRequest(body, communityKey)
       specificationManager.createSpecificationGroupThroughAutomationApi(input).map { savedApiKey =>
         ResponseConstructor.constructJsonResponse(JsonUtil.jsApiKey(savedApiKey).toString())
@@ -128,7 +127,7 @@ class DomainAutomationService @Inject() (authorizedAction: AuthorizedAction,
 
   def deleteSpecificationGroup(group: String): Action[AnyContent] = authorizedAction.async { request =>
     process(() => authorizationManager.canManageSpecificationGroupThroughAutomationApi(request), { _ =>
-      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       specificationManager.deleteSpecificationGroupThroughAutomationApi(group, communityKey).map { _ =>
         ResponseConstructor.constructEmptyResponse
       }
@@ -137,7 +136,7 @@ class DomainAutomationService @Inject() (authorizedAction: AuthorizedAction,
 
   def updateSpecificationGroup(group: String): Action[AnyContent] = authorizedAction.async { request =>
     processAsJson(request, () => authorizationManager.canManageSpecificationGroupThroughAutomationApi(request), { body =>
-      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       val input = JsonUtil.parseJsUpdateSpecificationGroupRequest(body, group, communityKey)
       specificationManager.updateSpecificationGroupThroughAutomationApi(input).map { _ =>
         ResponseConstructor.constructEmptyResponse
@@ -147,7 +146,7 @@ class DomainAutomationService @Inject() (authorizedAction: AuthorizedAction,
 
   def getSpecification(specification: String): Action[AnyContent] = authorizedAction.async { request =>
     process(() => authorizationManager.canManageSpecificationThroughAutomationApi(request), { _ =>
-      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       specificationManager.getSpecificationThroughAutomationApi(communityKey, specification).map { specification =>
         ResponseConstructor.constructJsonResponse(JsonUtil.jsSpecificationForAutomationApi(specification).toString())
       }
@@ -156,7 +155,7 @@ class DomainAutomationService @Inject() (authorizedAction: AuthorizedAction,
 
   def searchSpecifications(domain: String): Action[AnyContent] = authorizedAction.async { request =>
     process(() => authorizationManager.canManageSpecificationThroughAutomationApi(request), { _ =>
-      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       val name = ParameterExtractor.optionalQueryParameter(request, Parameters.NAME)
       specificationManager.searchSpecificationsThroughAutomationApi(communityKey, domain, name).map { specifications =>
         ResponseConstructor.constructJsonResponse(JsonUtil.jsSpecificationsForAutomationApi(specifications).toString())
@@ -166,7 +165,7 @@ class DomainAutomationService @Inject() (authorizedAction: AuthorizedAction,
 
   def searchSpecificationsInGroup(group: String): Action[AnyContent] = authorizedAction.async { request =>
     process(() => authorizationManager.canManageSpecificationThroughAutomationApi(request), { _ =>
-      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       val name = ParameterExtractor.optionalQueryParameter(request, Parameters.NAME)
       specificationManager.searchSpecificationsInGroupThroughAutomationApi(communityKey, group, name).map { specifications =>
         ResponseConstructor.constructJsonResponse(JsonUtil.jsSpecificationsForAutomationApi(specifications).toString())
@@ -176,7 +175,7 @@ class DomainAutomationService @Inject() (authorizedAction: AuthorizedAction,
 
   def createSpecification(): Action[AnyContent] = authorizedAction.async { request =>
     processAsJson(request, () => authorizationManager.canManageSpecificationThroughAutomationApi(request), { body =>
-      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       val input = JsonUtil.parseJsCreateSpecificationRequest(body, communityKey)
       specificationManager.createSpecificationThroughAutomationApi(input).map { savedApiKey =>
         ResponseConstructor.constructJsonResponse(JsonUtil.jsApiKey(savedApiKey).toString())
@@ -186,7 +185,7 @@ class DomainAutomationService @Inject() (authorizedAction: AuthorizedAction,
 
   def deleteSpecification(specification: String): Action[AnyContent] = authorizedAction.async { request =>
     process(() => authorizationManager.canManageSpecificationThroughAutomationApi(request), { _ =>
-      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       specificationManager.deleteSpecificationThroughAutomationApi(specification, communityKey).map { _ =>
         ResponseConstructor.constructEmptyResponse
       }
@@ -195,7 +194,7 @@ class DomainAutomationService @Inject() (authorizedAction: AuthorizedAction,
 
   def updateSpecification(specification: String): Action[AnyContent] = authorizedAction.async { request =>
     processAsJson(request, () => authorizationManager.canManageSpecificationThroughAutomationApi(request), { body =>
-      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       val input = JsonUtil.parseJsUpdateSpecificationRequest(body, specification, communityKey)
       specificationManager.updateSpecificationThroughAutomationApi(input).map { _ =>
         ResponseConstructor.constructEmptyResponse
@@ -205,7 +204,7 @@ class DomainAutomationService @Inject() (authorizedAction: AuthorizedAction,
 
   def getActor(actor: String): Action[AnyContent] = authorizedAction.async { request =>
     process(() => authorizationManager.canManageActorThroughAutomationApi(request), { _ =>
-      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       actorManager.getActorThroughAutomationApi(communityKey, actor).map { actor =>
         ResponseConstructor.constructJsonResponse(JsonUtil.jsActorForAutomationApi(actor).toString())
       }
@@ -214,7 +213,7 @@ class DomainAutomationService @Inject() (authorizedAction: AuthorizedAction,
 
   def searchActors(specification: String): Action[AnyContent] = authorizedAction.async { request =>
     process(() => authorizationManager.canManageActorThroughAutomationApi(request), { _ =>
-      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       val name = ParameterExtractor.optionalQueryParameter(request, Parameters.NAME)
       actorManager.searchActorsThroughAutomationApi(communityKey, specification, name).map { actors =>
         ResponseConstructor.constructJsonResponse(JsonUtil.jsActorsForAutomationApi(actors).toString())
@@ -224,7 +223,7 @@ class DomainAutomationService @Inject() (authorizedAction: AuthorizedAction,
 
   def createActor(): Action[AnyContent] = authorizedAction.async { request =>
     processAsJson(request, () => authorizationManager.canManageActorThroughAutomationApi(request), { body =>
-      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       val input = JsonUtil.parseJsCreateActorRequest(body, communityKey)
       actorManager.createActorThroughAutomationApi(input).map { savedApiKey =>
         ResponseConstructor.constructJsonResponse(JsonUtil.jsApiKey(savedApiKey).toString())
@@ -234,7 +233,7 @@ class DomainAutomationService @Inject() (authorizedAction: AuthorizedAction,
 
   def deleteActor(actor: String): Action[AnyContent] = authorizedAction.async { request =>
     process(() => authorizationManager.canManageActorThroughAutomationApi(request), { _ =>
-      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       actorManager.deleteActorThroughAutomationApi(actor, communityKey).map { _ =>
         ResponseConstructor.constructEmptyResponse
       }
@@ -243,7 +242,7 @@ class DomainAutomationService @Inject() (authorizedAction: AuthorizedAction,
 
   def updateActor(actor: String): Action[AnyContent] = authorizedAction.async { request =>
     processAsJson(request, () => authorizationManager.canManageActorThroughAutomationApi(request), { body =>
-      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       val input = JsonUtil.parseJsUpdateActorRequest(body, actor, communityKey)
       actorManager.updateActorThroughAutomationApi(input).map { _ =>
         ResponseConstructor.constructEmptyResponse

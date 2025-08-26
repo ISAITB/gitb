@@ -15,7 +15,7 @@
 
 package controllers.rest
 
-import controllers.util.{AuthorizedAction, RequestWithAttributes, ResponseConstructor}
+import controllers.util.{AuthorizedAction, ParameterExtractor, RequestWithAttributes, ResponseConstructor}
 import exceptions.{AutomationApiException, ErrorCodes}
 import managers.{AuthorizationManager, ReportManager, SystemManager, TestExecutionManager}
 import models.Constants
@@ -39,7 +39,7 @@ class TestAutomationService @Inject() (authorizedAction: AuthorizedAction,
 
   def start: Action[AnyContent] = authorizedAction.async { request =>
     processAsJson(request, () => authorizationManager.canOrganisationUseAutomationApi(request), { body =>
-      val organisationKey = request.headers.get(Constants.AutomationHeader).get
+      val organisationKey = ParameterExtractor.extractApiKeyHeader(request).get
       val input = JsonUtil.parseJsTestSessionLaunchRequest(body, organisationKey)
       testExecutionManager.processAutomationLaunchRequest(input).map { result =>
         ResponseConstructor.constructJsonResponse(JsonUtil.jsTestSessionLaunchInfo(result).toString())
@@ -49,7 +49,7 @@ class TestAutomationService @Inject() (authorizedAction: AuthorizedAction,
 
   def stop: Action[AnyContent] = authorizedAction.async { request =>
     processAsJson(request, () => authorizationManager.canOrganisationUseAutomationApi(request), { body =>
-      val organisationKey = request.headers.get(Constants.AutomationHeader).get
+      val organisationKey = ParameterExtractor.extractApiKeyHeader(request).get
       val sessionIds = JsonUtil.parseJsSessions(body)
       testExecutionManager.processAutomationStopRequest(organisationKey, sessionIds).map { _ =>
         ResponseConstructor.constructEmptyResponse
@@ -59,7 +59,7 @@ class TestAutomationService @Inject() (authorizedAction: AuthorizedAction,
 
   def status: Action[AnyContent] = authorizedAction.async { request =>
     processAsJson(request, () => authorizationManager.canOrganisationUseAutomationApi(request), { body =>
-        val organisationKey = request.headers.get(Constants.AutomationHeader).get
+        val organisationKey = ParameterExtractor.extractApiKeyHeader(request).get
         val query = JsonUtil.parseJsSessionStatusRequest(body)
         val sessionIds = query._1
         val withLogs = query._2
@@ -73,7 +73,7 @@ class TestAutomationService @Inject() (authorizedAction: AuthorizedAction,
 
   def report(sessionId: String): Action[AnyContent] = authorizedAction.async { request =>
     process(() => authorizationManager.canOrganisationUseAutomationApi(request), { _ =>
-      val organisationKey = request.headers.get(Constants.AutomationHeader).get
+      val organisationKey = ParameterExtractor.extractApiKeyHeader(request).get
       val contentType = determineReportType(request)
       val suffix = if (contentType == Constants.MimeTypePDF) ".pdf" else ".xml"
       reportManager.processAutomationReportRequest(getReportTempFile(suffix), organisationKey, sessionId, contentType).map { report =>
@@ -92,7 +92,7 @@ class TestAutomationService @Inject() (authorizedAction: AuthorizedAction,
 
   def createStatement(systemKey: String, actorKey: String): Action[AnyContent] = authorizedAction.async { request =>
     process(() => authorizationManager.canOrganisationUseAutomationApi(request), { _ =>
-      val organisationKey = request.headers.get(Constants.AutomationHeader).get
+      val organisationKey = ParameterExtractor.extractApiKeyHeader(request).get
       systemManager.defineConformanceStatementViaApi(organisationKey, systemKey, actorKey).map { _ =>
         ResponseConstructor.constructEmptyResponse
       }
@@ -101,7 +101,7 @@ class TestAutomationService @Inject() (authorizedAction: AuthorizedAction,
 
   def deleteStatement(systemKey: String, actorKey: String): Action[AnyContent] = authorizedAction.async { request =>
     process(() => authorizationManager.canOrganisationUseAutomationApi(request), { _ =>
-      val organisationKey = request.headers.get(Constants.AutomationHeader).get
+      val organisationKey = ParameterExtractor.extractApiKeyHeader(request).get
       systemManager.deleteConformanceStatementViaApi(organisationKey, systemKey, actorKey).map { _ =>
         ResponseConstructor.constructEmptyResponse
       }
@@ -118,7 +118,7 @@ class TestAutomationService @Inject() (authorizedAction: AuthorizedAction,
 
   private def statementReportInternal(systemKey: String, actorKey: String, snapshotKey: Option[String], request: RequestWithAttributes[AnyContent]): Future[Result] = {
     process(() => authorizationManager.canOrganisationUseAutomationApi(request), { _ =>
-      val organisationKey = request.headers.get(Constants.AutomationHeader).get
+      val organisationKey = ParameterExtractor.extractApiKeyHeader(request).get
       val contentType = determineReportType(request)
       val suffix = if (contentType == Constants.MimeTypePDF) ".pdf" else ".xml"
       reportManager.generateConformanceStatementReportViaApi(getReportTempFile(suffix), organisationKey, systemKey, actorKey, snapshotKey, contentType).map { report =>

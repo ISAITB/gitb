@@ -1038,4 +1038,13 @@ object ParameterExtractor {
     TestServiceWithParameter(service, parameter)
   }
 
+  def extractApiKeyHeader(request: RequestHeader): Option[String] = {
+    var header = request.headers.get(Configurations.HEADER_NAME_ITB_API_KEY)
+    if (header.isEmpty) {
+      // Backwards compatibility.
+      header = request.headers.get("ITB_API_KEY")
+    }
+    header
+  }
+
 }

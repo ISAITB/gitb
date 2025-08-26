@@ -22,6 +22,7 @@ import models.Constants
 import org.apache.commons.lang3.{StringUtils, Strings}
 
 import java.util.Locale
+import scala.collection.mutable
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.util.matching.Regex
 
@@ -185,6 +186,10 @@ object Configurations {
   var WELCOME_MESSAGE: String = WELCOME_MESSAGE_DEFAULT
   var SESSION_COOKIE_SECURE: Boolean = false
 
+  var HEADER_NAME_AUTHENTICATION_COOKIE_PATH = ""
+  var HEADER_NAME_ITB_API_KEY = ""
+  var HEADERS_FOR_CORS_FILTERING = ""
+
   def versionInfo(): String = {
     if (Constants.VersionNumber.toLowerCase.endsWith("snapshot")) {
       Constants.VersionNumber + " (" + Configurations.BUILD_TIMESTAMP + ")"
@@ -345,7 +350,18 @@ object Configurations {
       /*
        * SSO related configuration - END
        */
-
+      /*
+       * Custom HTTP header names - START
+       */
+      HEADER_NAME_AUTHENTICATION_COOKIE_PATH = fromEnv("HEADER_NAME_AUTHENTICATION_COOKIE_PATH", "ITB-PATH")
+      HEADER_NAME_ITB_API_KEY = fromEnv("HEADER_NAME_ITB_API_KEY", "ITB-API-KEY")
+      val headerList = mutable.LinkedHashSet("Authorization", "Origin", "X-Requested-With", "Content-Type", "Accept", "X-Custom-Header", "ITB_API_KEY")
+      headerList.add(HEADER_NAME_ITB_API_KEY)
+      headerList.add(HEADER_NAME_AUTHENTICATION_COOKIE_PATH)
+      HEADERS_FOR_CORS_FILTERING = headerList.mkString(",")
+      /*
+       * Custom HTTP header names - END
+       */
       DEMOS_ENABLED = fromEnv("DEMOS_ENABLED", conf.getString("demos.enabled")).toBoolean
       DEMOS_ACCOUNT = fromEnv("DEMOS_ACCOUNT", conf.getString("demos.account")).toLong
 

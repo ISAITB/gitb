@@ -2452,7 +2452,8 @@ object JsonUtil {
       "automationApiEnabled" -> config.get("automationApi.enabled").toBoolean,
       "versionNumber" -> config.get("versionNumber"),
       "hasDefaultLegalNotice" -> config.get("hasDefaultLegalNotice").toBoolean,
-      "conformanceStatementReportMaxTestCases" -> config.get("conformanceStatementReportMaxTestCases").toInt
+      "conformanceStatementReportMaxTestCases" -> config.get("conformanceStatementReportMaxTestCases").toInt,
+      "headerNameAuthenticationCookiePath" -> config.get("headerNameAuthenticationCookiePath")
     )
     json
   }
