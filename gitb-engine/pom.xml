@@ -39,6 +39,10 @@
             <groupId>com.gitb</groupId>
             <artifactId>gitb-remote</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.apache.cxf</groupId>
+            <artifactId>cxf-spring-boot-starter-jaxws</artifactId>
+        </dependency>
 		<dependency>
 			<groupId>org.apache.pekko</groupId>
 			<artifactId>pekko-actor_3</artifactId>
