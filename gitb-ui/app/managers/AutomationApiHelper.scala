@@ -199,6 +199,20 @@ class AutomationApiHelper @Inject()(dbConfigProvider: DatabaseConfigProvider)
     } yield communityIds._1
   }
 
+  def getOrganisationByOrganisationApiKey(communityId: Long, organisationApiKey: String): DBIO[Long] = {
+    for {
+      organisationId <- PersistenceSchema.organizations
+        .filter(_.community === communityId)
+        .filter(_.apiKey === organisationApiKey)
+        .map(_.id)
+        .result
+        .headOption
+        .map { result =>
+          result.getOrElse(throw AutomationApiException(ErrorCodes.API_ORGANISATION_NOT_FOUND, "No organisation found for the provided API key"))
+        }
+    } yield organisationId
+  }
+
   def getDomainIdByDomainApiKey(domainApiKey: String, communityKeyToCheckAgainst: Option[String] = None): DBIO[Long] = {
     for {
       newDomainId <- PersistenceSchema.domains

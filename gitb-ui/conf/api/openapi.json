@@ -1262,6 +1262,42 @@
       }
     },
     "/organisation": {
+      "get": {
+        "tags": [
+          "Community management"
+        ],
+        "summary": "Get the organisations of a given community.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The community's organisations.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Organisation"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      },
       "put": {
         "tags": [
           "Community management"
@@ -1307,6 +1343,50 @@
       }
     },
     "/organisation/{organisation}": {
+      "get": {
+        "tags": [
+          "Community management"
+        ],
+        "summary": "Get a given organisation's data.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organisation",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the organisation."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The organisation's data.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Organisation"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      },
       "post": {
         "tags": [
           "Community management"
@@ -1392,6 +1472,55 @@
         }
       }
     },
+    "/organisation/{organisation}/systems": {
+      "get": {
+        "tags": [
+          "Community management"
+        ],
+        "summary": "Get the systems of a given organisation.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organisation",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the organisation."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The organisation's systems.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/System"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/system": {
       "put": {
         "tags": [
@@ -1438,6 +1567,50 @@
       }
     },
     "/system/{system}": {
+      "get": {
+        "tags": [
+          "Community management"
+        ],
+        "summary": "Get a given system's data.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "system",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the system."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The system's data.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/System"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      },
       "post": {
         "tags": [
           "Community management"
@@ -4642,6 +4815,30 @@
         },
         "additionalProperties": false
       },
+      "Organisation": {
+        "description": "An organisation.",
+        "type": "object",
+        "properties": {
+          "apiKey": {
+            "description": "The organisation's API key.",
+            "type": "string"
+          },
+          "shortName": {
+            "description": "The organisation's short name.",
+            "type": "string"
+          },
+          "fullName": {
+            "description": "The organisation's full name.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "apiKey",
+          "shortName",
+          "fullName"
+        ],
+        "additionalProperties": false
+      },
       "CreateOrganisationRequest": {
         "description": "The data used to create a new organisation.",
         "type": "object",
@@ -4678,6 +4875,40 @@
             "type": "string"
           }
         },
+        "additionalProperties": false
+      },
+      "System": {
+        "description": "A system.",
+        "type": "object",
+        "properties": {
+          "apiKey": {
+            "description": "The system's API key.",
+            "type": "string"
+          },
+          "shortName": {
+            "description": "The system's short name.",
+            "type": "string"
+          },
+          "fullName": {
+            "description": "The system's full name.",
+            "type": "string"
+          },
+          "description": {
+            "description": "The system's description.",
+            "type": "string"
+          },
+          "version": {
+            "description": "The system's version information.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "apiKey",
+          "shortName",
+          "fullName",
+          "description",
+          "version"
+        ],
         "additionalProperties": false
       },
       "CreateSystemRequest": {

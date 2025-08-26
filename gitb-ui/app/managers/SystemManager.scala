@@ -104,6 +104,36 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
     PersistenceSchema.organizations.filter(_.id === organisationId).map(x => x.community).result.head
   }
 
+  def getSystemsThroughAutomationApi(communityApiKey: String, organisationApiKey: String): Future[Seq[Systems]] = {
+    DB.run {
+      for {
+        communityId <- apiHelper.getCommunityByCommunityApiKey(communityApiKey)
+        organisationId <- apiHelper.getOrganisationByOrganisationApiKey(communityId, organisationApiKey)
+        systems <- PersistenceSchema.systems
+          .filter(_.owner === organisationId)
+          .result
+      } yield systems
+    }
+  }
+
+  def getSystemThroughAutomationApi(communityApiKey: String, systemApiKey: String): Future[Systems] = {
+    DB.run {
+      for {
+        communityId <- apiHelper.getCommunityByCommunityApiKey(communityApiKey)
+        system <- PersistenceSchema.systems
+          .join(PersistenceSchema.organizations).on(_.owner === _.id)
+          .filter(_._2.community === communityId)
+          .filter(_._1.apiKey === systemApiKey)
+          .map(_._1)
+          .result
+          .headOption
+          .map { result =>
+            result.getOrElse(throw AutomationApiException(ErrorCodes.API_SYSTEM_NOT_FOUND, "No system found for the provided API key"))
+          }
+      } yield system
+    }
+  }
+
   def createSystemThroughAutomationApi(input: CreateSystemRequest): Future[String] = {
     val action = for {
       communityId <- apiHelper.getCommunityByCommunityApiKey(input.communityApiKey)

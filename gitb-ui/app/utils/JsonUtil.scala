@@ -3638,4 +3638,44 @@ object JsonUtil {
     }
     json
   }
+
+  def jsOrganisationsForAutomationApi(organisations: Iterable[Organizations]): JsArray = {
+    var json = Json.arr()
+    organisations.foreach { organisation =>
+      json = json.append(jsOrganisationForAutomationApi(organisation))
+    }
+    json
+  }
+
+  def jsOrganisationForAutomationApi(organisation: Organizations): JsObject = {
+    Json.obj(
+      "apiKey" -> organisation.apiKey,
+      "shortName" -> organisation.shortname,
+      "fullName" -> organisation.shortname
+    )
+  }
+
+  def jsSystemsForAutomationApi(systems: Iterable[Systems]): JsArray = {
+    var json = Json.arr()
+    systems.foreach { system =>
+      json = json.append(jsSystemForAutomationApi(system))
+    }
+    json
+  }
+
+  def jsSystemForAutomationApi(system: Systems): JsObject = {
+    var json = Json.obj(
+      "apiKey" -> system.apiKey,
+      "shortName" -> system.shortname,
+      "fullName" -> system.fullname
+    )
+    if (system.description.isDefined) {
+      json = json + ("description" -> JsString(system.description.get))
+    }
+    if (system.version.isDefined) {
+      json = json + ("version" -> JsString(system.version.get))
+    }
+    json
+  }
+
 }

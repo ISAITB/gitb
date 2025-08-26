@@ -311,6 +311,34 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
     }
   }
 
+  def getOrganisationsThroughAutomationApi(communityApiKey: String): Future[Seq[Organizations]] = {
+    DB.run {
+      for {
+        communityId <- automationApiHelper.getCommunityByCommunityApiKey(communityApiKey)
+        organisations <- PersistenceSchema.organizations
+          .filter(_.community === communityId)
+          .filter(_.adminOrganization === false)
+          .result
+      } yield organisations
+    }
+  }
+
+  def getOrganisationThroughAutomationApi(communityApiKey: String, organisationApiKey: String): Future[Organizations] = {
+    DB.run {
+      for {
+        communityId <- automationApiHelper.getCommunityByCommunityApiKey(communityApiKey)
+        organisation <- PersistenceSchema.organizations
+          .filter(_.community === communityId)
+          .filter(_.apiKey === organisationApiKey)
+          .result
+          .headOption
+          .map { result =>
+            result.getOrElse(throw AutomationApiException(ErrorCodes.API_ORGANISATION_NOT_FOUND, "No organisation found for the provided API key"))
+          }
+      } yield organisation
+    }
+  }
+
   def createOrganisationThroughAutomationApi(input: CreateOrganisationRequest): Future[String] = {
     val action = for {
       communityId <- automationApiHelper.getCommunityByCommunityApiKey(input.communityApiKey)
