@@ -3678,4 +3678,19 @@ object JsonUtil {
     json
   }
 
+  def jsStatementsForAutomationApi(statements: Iterable[ConformanceStatementKeys]): JsArray = {
+    var json = Json.arr()
+    statements.foreach { statement =>
+      json = json.append(jsStatementForAutomationApi(statement))
+    }
+    json
+  }
+
+  def jsStatementForAutomationApi(statement: ConformanceStatementKeys): JsObject = {
+    Json.obj(
+      "system" -> statement.systemKey,
+      "actor" -> statement.actorKey
+    )
+  }
+
 }

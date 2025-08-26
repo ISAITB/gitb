@@ -90,6 +90,42 @@ class TestAutomationService @Inject() (authorizedAction: AuthorizedAction,
     })
   }
 
+  def getOrganisationStatements(): Action[AnyContent] = authorizedAction.async { request =>
+    process(() => authorizationManager.canOrganisationUseAutomationApi(request), { _ =>
+      val organisationKey = ParameterExtractor.extractApiKeyHeader(request).get
+      systemManager.getConformanceStatementsViaApi(organisationKey, None, None).map { result =>
+        ResponseConstructor.constructJsonResponse(JsonUtil.jsStatementsForAutomationApi(result).toString())
+      }
+    })
+  }
+
+  def getOrganisationStatementsOfSnapshot(snapshotKey: String): Action[AnyContent] = authorizedAction.async { request =>
+    process(() => authorizationManager.canOrganisationUseAutomationApi(request), { _ =>
+      val organisationKey = ParameterExtractor.extractApiKeyHeader(request).get
+      systemManager.getConformanceStatementsViaApi(organisationKey, None, Some(snapshotKey)).map { result =>
+        ResponseConstructor.constructJsonResponse(JsonUtil.jsStatementsForAutomationApi(result).toString())
+      }
+    })
+  }
+
+  def getSystemStatements(systemKey: String): Action[AnyContent] = authorizedAction.async { request =>
+    process(() => authorizationManager.canOrganisationUseAutomationApi(request), { _ =>
+      val organisationKey = ParameterExtractor.extractApiKeyHeader(request).get
+      systemManager.getConformanceStatementsViaApi(organisationKey, Some(systemKey), None).map { result =>
+        ResponseConstructor.constructJsonResponse(JsonUtil.jsStatementsForAutomationApi(result).toString())
+      }
+    })
+  }
+
+  def getSystemStatementsOfSnapshot(systemKey: String, snapshotKey: String): Action[AnyContent] = authorizedAction.async { request =>
+    process(() => authorizationManager.canOrganisationUseAutomationApi(request), { _ =>
+      val organisationKey = ParameterExtractor.extractApiKeyHeader(request).get
+      systemManager.getConformanceStatementsViaApi(organisationKey, Some(systemKey), Some(snapshotKey)).map { result =>
+        ResponseConstructor.constructJsonResponse(JsonUtil.jsStatementsForAutomationApi(result).toString())
+      }
+    })
+  }
+
   def createStatement(systemKey: String, actorKey: String): Action[AnyContent] = authorizedAction.async { request =>
     process(() => authorizationManager.canOrganisationUseAutomationApi(request), { _ =>
       val organisationKey = ParameterExtractor.extractApiKeyHeader(request).get

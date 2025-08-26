@@ -2272,6 +2272,160 @@
         }
       }
     },
+    "/conformance": {
+      "get": {
+        "tags": [
+          "Conformance statements"
+        ],
+        "summary": "Retrieve the conformance statements (system and actor API key combinations) for the organisation identified by the organisation API key provided for authorisation.",
+        "security": [
+          {
+            "OrganisationApiKeyAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The list of conformance statements.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConformanceStatementKeys"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/conformance/{system}": {
+      "get": {
+        "tags": [
+          "Conformance statements"
+        ],
+        "summary": "Retrieve the conformance statements (system and actor API key combinations) for a given system.",
+        "security": [
+          {
+            "OrganisationApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "system",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The API key identifying the conformance statement's system."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The list of conformance statements.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConformanceStatementKeys"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/conformance/snapshot/{snapshot}": {
+      "get": {
+        "tags": [
+          "Conformance statements"
+        ],
+        "summary": "Retrieve the conformance statements (system and actor API key combinations) for the organisation identified by the organisation API key provided for authorisation, in a given conformance snapshot.",
+        "security": [
+          {
+            "OrganisationApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "snapshot",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The API key identifying the relevant conformance snapshot."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The list of conformance statements.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConformanceStatementKeys"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/conformance/snapshot/{snapshot}/{system}": {
+      "get": {
+        "tags": [
+          "Conformance statements"
+        ],
+        "summary": "Retrieve the conformance statements (system and actor API key combinations) for a given system and conformance snapshot.",
+        "security": [
+          {
+            "OrganisationApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "snapshot",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The API key identifying the relevant conformance snapshot."
+          },
+          {
+            "in": "path",
+            "name": "system",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The API key identifying the conformance statement's system in the specific snapshot."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The list of conformance statements.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConformanceStatementKeys"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/conformance/{system}/{actor}": {
       "put": {
         "tags": [
@@ -5405,6 +5559,21 @@
           "displayOrder": {
             "description": "The actor's display order relative to other actors when presented in test execution diagrams. Skip this if no update should be made or set to a negative value to remove the ordering altogether.",
             "type": "number"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ConformanceStatementKeys": {
+        "description": "The API keys needed to identify a specific conformance statement.",
+        "type": "object",
+        "properties": {
+          "system": {
+            "description": "The API key of the statement's related system.",
+            "type": "string"
+          },
+          "actor": {
+            "description": "The API key of the statement's related actor.",
+            "type": "string"
           }
         },
         "additionalProperties": false

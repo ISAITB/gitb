@@ -20,7 +20,7 @@ import exceptions.{AutomationApiException, ErrorCodes}
 import managers.triggers.TriggerHelper
 import models.Enums.{TestResultStatus, UserRole}
 import models._
-import models.automation.{CreateSystemRequest, UpdateSystemRequest}
+import models.automation.{ConformanceStatementKeys, CreateSystemRequest, UpdateSystemRequest}
 import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
 import utils.{CryptoUtil, MimeUtil, RepositoryUtils}
@@ -982,5 +982,78 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
         .map(_.toList)
     }
     DB.run(query)
+  }
+
+  def getConformanceStatementsViaApi(organisationKey: String, systemKey: Option[String], snapshotKey: Option[String]): Future[Seq[ConformanceStatementKeys]] = {
+    DB.run {
+      for {
+        organisationIds <- apiHelper.getOrganisationIdsByOrganisationApiKey(organisationKey)
+        snapshotId <- {
+          if (snapshotKey.isDefined) {
+            PersistenceSchema.conformanceSnapshots
+              .filter(_.community === organisationIds._2)
+              .filter(_.apiKey === snapshotKey.get)
+              .map(_.id)
+              .result
+              .headOption
+              .map { result =>
+                Some(result.getOrElse(throw AutomationApiException(ErrorCodes.API_SNAPSHOT_DOES_NOT_EXIST, "No snapshot found for the provided API key")))
+              }
+          } else {
+            DBIO.successful(None)
+          }
+        }
+        systemId <- {
+          if (systemKey.isDefined) {
+            val systemLookup = if (snapshotId.isEmpty) {
+              PersistenceSchema.systems
+                .filter(_.owner === organisationIds._1)
+                .filter(_.apiKey === systemKey.get)
+                .map(_.id)
+                .result
+                .headOption
+            } else {
+              PersistenceSchema.conformanceSnapshotResults
+                .join(PersistenceSchema.conformanceSnapshotSystems).on((q, sys) => q.snapshotId === sys.snapshotId && q.systemId === sys.id)
+                .filter(_._1.snapshotId === snapshotId.get)
+                .filter(_._2.apiKey === systemKey.get)
+                .map(_._1.systemId)
+                .distinct
+                .result
+                .headOption
+            }
+            systemLookup.map { result =>
+              Some(result.getOrElse(throw AutomationApiException(ErrorCodes.API_SYSTEM_NOT_FOUND, "No system found for the provided API key")))
+            }
+          } else {
+            DBIO.successful(None)
+          }
+        }
+        statements <- {
+          val statementLookup = if (snapshotId.isEmpty) {
+            PersistenceSchema.systemImplementsActors
+              .join(PersistenceSchema.actors).on(_.actorId === _.id)
+              .join(PersistenceSchema.systems).on(_._1.systemId === _.id)
+              .filter(_._2.owner === organisationIds._1)
+              .filterOpt(systemId)((q, id) => q._1._1.systemId === id)
+              .map(x => (x._2.apiKey, x._1._2.apiKey))
+              .result
+          } else {
+            PersistenceSchema.conformanceSnapshotResults
+              .join(PersistenceSchema.conformanceSnapshotSystems).on((q, sys) => q.snapshotId === sys.snapshotId && q.systemId === sys.id)
+              .join(PersistenceSchema.conformanceSnapshotActors).on((q, act) => q._1.snapshotId === act.snapshotId && q._1.actorId === act.id)
+              .filter(_._1._1.organisationId === organisationIds._1)
+              .filter(_._1._1.snapshotId === snapshotId.get)
+              .filterOpt(systemId)((q, id) => q._1._1.systemId === id)
+              .map(x => (x._1._2.apiKey, x._2.apiKey))
+              .distinct
+              .result
+          }
+          statementLookup.map { results =>
+            results.map(x => ConformanceStatementKeys(x._1, x._2))
+          }
+        }
+      } yield statements
+    }
   }
 }

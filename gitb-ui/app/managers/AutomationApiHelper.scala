@@ -199,6 +199,19 @@ class AutomationApiHelper @Inject()(dbConfigProvider: DatabaseConfigProvider)
     } yield communityIds._1
   }
 
+  def getOrganisationIdsByOrganisationApiKey(organisationApiKey: String): DBIO[(Long, Long)] = {
+    for {
+      organisationIds <- PersistenceSchema.organizations
+        .filter(_.apiKey === organisationApiKey)
+        .map(x => (x.id, x.community))
+        .result
+        .headOption
+        .map { result =>
+          result.getOrElse(throw AutomationApiException(ErrorCodes.API_ORGANISATION_NOT_FOUND, "No organisation found for the provided API key"))
+        }
+    } yield organisationIds
+  }
+
   def getOrganisationByOrganisationApiKey(communityId: Long, organisationApiKey: String): DBIO[Long] = {
     for {
       organisationId <- PersistenceSchema.organizations
