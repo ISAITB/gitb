@@ -188,5 +188,12 @@
    ]]></notes>
        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/tomcat-embed-.*@.*$</packageUrl>
        <cve>CVE-2025-48989</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+    file name: tika-core-3.1.0.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.tika/tika-core@.*$</packageUrl>
+        <cve>CVE-2025-54988</cve>
     </suppress>    
 </suppressions>
