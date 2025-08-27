@@ -23,8 +23,8 @@ import com.gitb.utils.XMLUtils
 import exceptions.{AutomationApiException, ErrorCodes}
 import jakarta.xml.bind.JAXBElement
 import managers.triggers.TriggerHelper
-import models.Enums.{TestServiceAuthTokenPasswordType, TestServiceType, TriggerDataType}
-import models.automation.DomainParameterInfo
+import models.Enums.{TestServiceApiType, TestServiceAuthTokenPasswordType, TestServiceType, TriggerDataType}
+import models.automation.{DomainParameterInfo, TestServiceInfo, TestServiceSearchCriteria, TestServiceWithParameterAndDomainKey}
 import models._
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
@@ -267,6 +267,146 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
         }
       }
     } yield parameter
+  }
+
+  def createTestServiceThroughAutomationApi(communityApiKey: String, service: TestServiceInfo): Future[Unit] = {
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val dbAction = for {
+      // Load domain ID.
+      domainId <- automationApiHelper.getDomainIdByCommunityOrDomainApiKey(communityApiKey, service.domainApiKey)
+      // Check to see if this matches an existing test service.
+      _ <- PersistenceSchema.testServices
+        .join(PersistenceSchema.domainParameters).on(_.parameter === _.id)
+        .filter(_._2.domain === domainId)
+        .filter(_._2.name === service.parameterInfo.key)
+        .exists
+        .result
+        .map { result =>
+          if (result) {
+            throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "An existing test service was found with the same key.")
+          }
+        }
+      // Check to see if the parameter name of the test service matches an existing parameter.
+      matchingParameterId <- getDomainParameterIdForName(domainId, service.parameterInfo.key)
+      parameterIdToUse <- {
+        if (matchingParameterId.isEmpty) {
+          // This is a new domain parameter.
+          createDomainParameterInternal(service.getParameter(None, domainId), None, onSuccessCalls)
+        } else {
+          if (service.replaceExisting) {
+            updateDomainParameterAsTestService(service.getParameter(matchingParameterId, domainId), onSuccessCalls).map(_ => matchingParameterId.get)
+          } else {
+            throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "An existing domain parameter was found with the same key. You can have this parameter set as a test service by specifying 'replaceExisting' as true.")
+          }
+        }
+      }
+      _ <- createTestServiceInternal(service.getAsNewTestService(None, parameterIdToUse))
+    } yield ()
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+  }
+
+  private def getTestServiceForAutomationApi(domainId: Long, parameterKey: String): DBIO[TestServiceWithParameter] = {
+    PersistenceSchema.testServices
+      .join(PersistenceSchema.domainParameters).on(_.parameter === _.id)
+      .filter(_._2.domain === domainId)
+      .filter(_._2.name === parameterKey)
+      .map(x => (x._1, x._2))
+      .result
+      .headOption
+      .map { result =>
+        result.map(x => TestServiceWithParameter(x._1, x._2))
+          .getOrElse(throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "No test service found for the provided domain and key"))
+      }
+  }
+
+  def updateTestServiceThroughAutomationApi(communityApiKey: String, receivedData: TestServiceInfo): Future[Unit] = {
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val dbAction = for {
+      // Load domain ID.
+      domainId <- automationApiHelper.getDomainIdByCommunityOrDomainApiKey(communityApiKey, receivedData.domainApiKey)
+      // Match an existing test service in the same domain having the same parameter name.
+      existingData <- getTestServiceForAutomationApi(domainId, receivedData.parameterInfo.key).map { data =>
+        // Do validations.
+        if (data.service.authBasicUsername.isEmpty) {
+          if (receivedData.authBasicUsername.flatten.isEmpty && receivedData.authBasicPassword.flatten.isDefined) {
+            throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "When basic authentication is not used an update of the password is not expected")
+          }
+          if (receivedData.authBasicUsername.flatten.isDefined && receivedData.authBasicPassword.flatten.isEmpty) {
+            throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "When a basic authentication username is set you must also set the basic authentication password")
+          }
+        }
+        if (data.service.authTokenUsername.isEmpty) {
+          if (receivedData.authTokenUsername.flatten.isEmpty && (receivedData.authTokenPassword.flatten.isDefined || receivedData.authTokenPasswordType.flatten.isDefined)) {
+            throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "When token authentication is not used an update of the password or password type is not expected")
+          }
+          if (receivedData.authTokenUsername.flatten.isDefined && (receivedData.authTokenPassword.flatten.isEmpty || receivedData.authTokenPasswordType.flatten.isEmpty)) {
+            throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "When a token username is set you must also set the token password and password type")
+          }
+        }
+        data
+      }
+      // Update the parameter data
+      _ <- updateDomainParameterAsTestService(existingData.parameter.copy(
+        value = Some(receivedData.parameterInfo.value.getOrElse(existingData.parameter.value.get)),
+        desc = receivedData.description.getOrElse(existingData.parameter.desc)
+      ), onSuccessCalls)
+      // Update the test service data
+      _ <- updateTestServiceInternal(existingData.service.copy(
+        serviceType = receivedData.serviceType.getOrElse(TestServiceType.apply(existingData.service.serviceType)).id.toShort,
+        apiType = receivedData.apiType.getOrElse(TestServiceApiType.apply(existingData.service.apiType)).id.toShort,
+        identifier = receivedData.identifier.getOrElse(existingData.service.identifier),
+        version = receivedData.description.getOrElse(existingData.service.version),
+        authBasicUsername = receivedData.authBasicUsername.getOrElse(existingData.service.authBasicUsername),
+        authBasicPassword = receivedData.authBasicPassword.getOrElse(existingData.service.authBasicPassword),
+        authTokenUsername = receivedData.authTokenUsername.getOrElse(existingData.service.authTokenUsername),
+        authTokenPassword = receivedData.authTokenPassword.getOrElse(existingData.service.authTokenPassword),
+        authTokenPasswordType = receivedData.authTokenPasswordType.getOrElse(existingData.service.authTokenPasswordType.map(x => TestServiceAuthTokenPasswordType.apply(x))).map(_.id.toShort),
+      ))
+    } yield ()
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+  }
+
+  def deleteTestServiceThroughAutomationApi(communityApiKey: String, domainKey: Option[String], parameterKey: String): Future[Unit] = {
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val dbAction = for {
+      // Load domain ID.
+      domainId <- automationApiHelper.getDomainIdByCommunityOrDomainApiKey(communityApiKey, domainKey)
+      // Check to see if the property exists.
+      existingService <- getTestServiceForAutomationApi(domainId, parameterKey)
+      // Delete service.
+      _ <- deleteTestServiceInternal(existingService.service.id)
+      // Delete parameter
+      _ <- deleteDomainParameter(domainId, existingService.parameter.id, checkToDeleteLinkedTestService = false, onSuccessCalls)
+    } yield ()
+    DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+  }
+
+  def searchTestServicesThroughAutomationApi(communityApiKey: String, criteria: TestServiceSearchCriteria): Future[Seq[TestServiceWithParameterAndDomainKey]] = {
+    val versionParam = toLowercaseLikeParameter(criteria.version)
+    val identifierParam = toLowercaseLikeParameter(criteria.identifier)
+    DB.run {
+      for {
+        // Load domain ID.
+        domainId <- automationApiHelper.getDomainIdByCommunity(communityApiKey)
+        // Search test services.
+        results <- PersistenceSchema.testServices
+          .join(PersistenceSchema.domainParameters).on(_.parameter === _.id)
+          .join(PersistenceSchema.domains).on(_._2.domain === _.id)
+          .filterOpt(domainId)((q, id) => q._2.id === id)
+          .filterOpt(criteria.domainKey)((q, key) => q._2.apiKey === key)
+          .filterOpt(criteria.parameterKey)((q, key) => q._1._2.name === key)
+          .filterOpt(identifierParam)((q, param) => q._1._1.identifier.filter(_.toLowerCase like param).isDefined)
+          .filterOpt(versionParam)((q, param) => q._1._1.version.filter(_.toLowerCase like param).isDefined)
+          .filterOpt(criteria.serviceType)((q, t) => q._1._1.serviceType === t.id.toShort)
+          .filterOpt(criteria.apiType)((q, t) => q._1._1.apiType === t.id.toShort)
+          .map(x => (x._2.apiKey, x._1._1, x._1._2))
+          .sortBy(x => (x._1.asc, x._3.name.asc))
+          .result
+          .map { result =>
+            result.map(x => TestServiceWithParameterAndDomainKey(TestServiceWithParameter(x._2, x._3), x._1))
+          }
+      } yield results
+    }
   }
 
   def createDomainParameterThroughAutomationApi(communityApiKey: String, parameter: DomainParameterInfo): Future[Unit] = {

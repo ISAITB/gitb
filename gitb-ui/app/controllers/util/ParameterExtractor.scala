@@ -19,14 +19,16 @@ import config.Configurations
 import exceptions.{ErrorCodes, InvalidRequestException}
 import models.Enums._
 import controllers.util.Parameters
+import models.automation.TestServiceSearchCriteria
 import models.theme.{Theme, ThemeFiles}
-import models.{Actor, Badges, Communities, CommunityReportSettings, CommunityResources, Configs, Constants, Domain, DomainParameter, Endpoints, ErrorTemplates, FileInfo, LandingPages, LegalNotices, NamedFile, OrganisationParameterValues, Organizations, SpecificationGroups, Specifications, SystemParameterValues, Systems, TestService, TestServiceWithParameter, Trigger, TriggerData, TriggerFireExpression, Triggers, Users}
+import models.{Actor, Badges, Communities, CommunityReportSettings, CommunityResources, Configs, Constants, Domain, DomainParameter, Endpoints, Enums, ErrorTemplates, FileInfo, LandingPages, LegalNotices, NamedFile, OrganisationParameterValues, Organizations, SpecificationGroups, Specifications, SystemParameterValues, Systems, TestService, TestServiceWithParameter, Trigger, TriggerData, TriggerFireExpression, Triggers, Users}
 import org.apache.commons.lang3.StringUtils
 import play.api.mvc._
 import utils.{ClamAVClient, CryptoUtil, HtmlUtil, JsonUtil, MimeUtil}
 
 import java.awt.Color
 import java.io.File
+import java.net.URI
 import java.util.concurrent.ThreadLocalRandom
 import scala.collection.mutable.ListBuffer
 
@@ -1045,6 +1047,36 @@ object ParameterExtractor {
       header = request.headers.get("ITB_API_KEY")
     }
     header
+  }
+
+  def extractTestServiceSearchCriteria(request: Request[AnyContent]): TestServiceSearchCriteria = {
+    TestServiceSearchCriteria(
+      ParameterExtractor.optionalQueryParameter(request, Parameters.DOMAIN),
+      ParameterExtractor.optionalQueryParameter(request, Parameters.KEY),
+      ParameterExtractor.optionalQueryParameter(request, Parameters.IDENTIFIER),
+      ParameterExtractor.optionalQueryParameter(request, Parameters.VERSION),
+      ParameterExtractor.optionalQueryParameter(request, Parameters.SERVICE_TYPE).map(Enums.parseTestServiceTypeForApi),
+      ParameterExtractor.optionalQueryParameter(request, Parameters.API_TYPE).map(Enums.parseTestServiceApiTypeForApi)
+    )
+  }
+
+  def validHttpAbsoluteUrl(value: String): Boolean = {
+    var result = false
+    if (!value.isBlank && !value.matches(".*\\s+.*")) {
+      try {
+        val url = URI.create(value).toURL
+        val protocol = url.getProtocol
+        result = "http".equalsIgnoreCase(protocol) || "https".equalsIgnoreCase(protocol)
+      } catch {
+        case _: Exception =>
+          // Ignore error (result is false)
+      }
+    }
+    result
+  }
+
+  def validTestVariableName(value: String): Boolean = {
+    value.matches("^[a-zA-Z][a-zA-Z\\-_.0-9]*$")
   }
 
 }

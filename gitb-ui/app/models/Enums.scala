@@ -15,6 +15,11 @@
 
 package models
 
+import exceptions.{AutomationApiException, ErrorCodes}
+import models.Enums.TestServiceApiType.TestServiceApiType
+import models.Enums.TestServiceAuthTokenPasswordType.TestServiceAuthTokenPasswordType
+import models.Enums.TestServiceType.TestServiceType
+
 object Enums {
   object OrganizationType extends Enumeration(1) {
     type OrganizationType = Value
@@ -179,6 +184,53 @@ object Enums {
   object TestServiceAuthTokenPasswordType extends Enumeration(1) {
     type TestServiceAuthTokenPasswordType = Value
     val Digest, Text = Value
+  }
+
+  def parseTestServiceTypeForApi(value: String): TestServiceType = {
+    value match {
+      case "messaging" => TestServiceType.MessagingService
+      case "validation" => TestServiceType.ValidationService
+      case "processing" => TestServiceType.ProcessingService
+      case _ => throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "Invalid value provided for service type")
+    }
+  }
+
+  def toTestServiceTypeForApi(value: TestServiceType): String = {
+    value match {
+      case TestServiceType.MessagingService => "messaging"
+      case TestServiceType.ValidationService => "validation"
+      case _ => "processing"
+    }
+  }
+
+  def parseTestServiceApiTypeForApi(value: String): TestServiceApiType = {
+    value match {
+      case "soap" => TestServiceApiType.SoapApi
+      case "rest" => TestServiceApiType.RestApi
+      case _ => throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "Invalid value provided for service API type")
+    }
+  }
+
+  def toTestServiceApiTypeForApi(value: TestServiceApiType): String = {
+    value match {
+      case TestServiceApiType.RestApi => "rest"
+      case _ => "soap"
+    }
+  }
+
+  def parseTestServiceAuthTokenPasswordTypeForApi(value: String): TestServiceAuthTokenPasswordType = {
+    value match {
+      case "digest" => TestServiceAuthTokenPasswordType.Digest
+      case "text" => TestServiceAuthTokenPasswordType.Text
+      case _ => throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "Invalid value provided for token password type")
+    }
+  }
+
+  def toTestServiceAuthTokenPasswordTypeForApi(value: TestServiceAuthTokenPasswordType): String = {
+    value match {
+      case TestServiceAuthTokenPasswordType.Digest => "digest"
+      case _ => "text"
+    }
   }
 
 }

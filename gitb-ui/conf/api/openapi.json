@@ -1902,6 +1902,261 @@
         }
       }
     },
+    "/configure/service": {
+      "get": {
+        "tags": [
+          "Configuration"
+        ],
+        "summary": "Search for test services.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "domain",
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "description": "The domain API key value to identify the domain within which to search for test services. If not provided, the domain used is the one linked to the community identified by the community API key provided for authentication."
+          },
+          {
+            "in": "query",
+            "name": "key",
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "description": "The service's key."
+          },
+          {
+            "in": "query",
+            "name": "identifier",
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "description": "The service's reference identifier. The value is checked in a case-insensitive manner and using wildcard matching."
+          },
+          {
+            "in": "query",
+            "name": "version",
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "description": "The service's version. The value is checked in a case-insensitive manner and using wildcard matching."
+          },
+          {
+            "in": "query",
+            "name": "serviceType",
+            "schema": {
+              "type": "string",
+              "enum": ["messaging", "validation", "processing"]
+            },
+            "required": false,
+            "description": "The service's type."
+          },
+          {
+            "in": "query",
+            "name": "apiType",
+            "schema": {
+              "type": "string",
+              "enum": ["soap", "rest"]
+            },
+            "required": false,
+            "description": "The service's API type."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Test services retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TestService"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Configuration"
+        ],
+        "summary": "Create a test service.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "The data for the new test service.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestServiceCreationInfo"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Test service created."
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Configuration"
+        ],
+        "summary": "Update a test service.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "The test service's identification and updates.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestServiceUpdateInfo"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Test service updated."
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/configure/service/{service}": {
+      "delete": {
+        "tags": [
+          "Configuration"
+        ],
+        "summary": "Delete a test service. The domain of the service is assumed to be the one linked to the community identified by the community API key used for authentication.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "service",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the test service."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Test service deleted."
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/configure/service/{domain}/{service}": {
+      "delete": {
+        "tags": [
+          "Configuration"
+        ],
+        "summary": "Delete a test service for a given domain.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "domain",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The domain API key for the service's domain."
+          },
+          {
+            "in": "path",
+            "name": "service",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the test service."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Test service deleted."
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/configure/organisation": {
       "put": {
         "tags": [
@@ -4642,6 +4897,189 @@
           },
           "domain": {
             "description": "The API key identifying the domain of the parameter. This is required if the community API key used for authentication refers to a community that is not linked to a specific domain.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "additionalProperties": false
+      },
+      "TestServiceCreationInfo": {
+        "description": "The data for the new test service.",
+        "type": "object",
+        "properties": {
+          "key": {
+            "description": "The unique key used to identify the service and its underlying domain parameter.",
+            "type": "string"
+          },
+          "address": {
+            "description": "The service's address as an absolute HTTP URL.",
+            "type": "string"
+          },
+          "description": {
+            "description": "The service's description.",
+            "type": "string"
+          },
+          "serviceType": {
+            "description": "The type of the service.",
+            "type": "string",
+            "enum": ["messaging", "validation", "processing"]
+          },
+          "apiType": {
+            "description": "The API type of the service.",
+            "type": "string",
+            "enum": ["soap", "rest"],
+            "default": "soap"
+          },
+          "authBasicUsername": {
+            "description": "When HTTP basic authentication is used, this is the username to use.",
+            "type": "string"
+          },
+          "authBasicPassword": {
+            "description": "When HTTP basic authentication is used, this is the password to use.",
+            "type": "string"
+          },
+          "authTokenUsername": {
+            "description": "When the WS-Security UsernameToken profile is used, this is the username to use.",
+            "type": "string"
+          },
+          "authTokenPassword": {
+            "description": "When the WS-Security UsernameToken profile is used, this is the password to use.",
+            "type": "string"
+          },
+          "authTokenPasswordType": {
+            "description": "When the WS-Security UsernameToken profile is used, this is the type of password provision to use.",
+            "type": "string",
+            "enum": ["digest", "text"]
+          },
+          "identifier": {
+            "description": "The service's reference identifier.",
+            "type": "string"
+          },
+          "version": {
+            "description": "The service's version.",
+            "type": "string"
+          },
+          "domain": {
+            "description": "The API key identifying the domain of the service. This is required if the community API key used for authentication refers to a community that is not linked to a specific domain.",
+            "type": "string"
+          },
+          "replaceExisting": {
+            "description": "In case the service information matches an existing domain parameter, this flag can be used to link the parameter with the service's definition.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "key",
+          "address",
+          "serviceType"
+        ],
+        "additionalProperties": false
+      },
+      "TestServiceUpdateInfo": {
+        "description": "The test service's identification and updates.",
+        "type": "object",
+        "properties": {
+          "key": {
+            "description": "The unique key used to identify the service and its underlying domain parameter.",
+            "type": "string"
+          },
+          "address": {
+            "description": "The new address to apply for the service. Skip this if no update should be made.",
+            "type": "string"
+          },
+          "description": {
+            "description": "The service's description. Skip this if no update should be made.",
+            "type": "string"
+          },
+          "serviceType": {
+            "description": "The type of the service. Skip this if no update should be made.",
+            "type": "string",
+            "enum": ["messaging", "validation", "processing"]
+          },
+          "apiType": {
+            "description": "The API type of the service. Skip this if no update should be made.",
+            "type": "string",
+            "enum": ["soap", "rest"],
+            "default": "soap"
+          },
+          "authBasicUsername": {
+            "description": "When HTTP basic authentication is used, this is the username to use. Skip this if no update should be made or set with an empty string to delete all basic authentication information.",
+            "type": "string"
+          },
+          "authBasicPassword": {
+            "description": "When HTTP basic authentication is used, this is the password to use. Skip this if no update should be made.",
+            "type": "string"
+          },
+          "authTokenUsername": {
+            "description": "When the WS-Security UsernameToken profile is used, this is the username to use. Skip this if no update should be made or set with an empty string to delete all token authentication information.",
+            "type": "string"
+          },
+          "authTokenPassword": {
+            "description": "When the WS-Security UsernameToken profile is used, this is the password to use. Skip this if no update should be made.",
+            "type": "string"
+          },
+          "authTokenPasswordType": {
+            "description": "When the WS-Security UsernameToken profile is used, this is the type of password provision to use. Skip this if no update should be made.",
+            "type": "string",
+            "enum": ["digest", "text"]
+          },
+          "identifier": {
+            "description": "The service's reference identifier. Skip this if no update should be made or set with an empty string to delete the existing value.",
+            "type": "string"
+          },
+          "version": {
+            "description": "The service's version. Skip this if no update should be made or set with an empty string to delete the existing value.",
+            "type": "string"
+          },
+          "domain": {
+            "description": "The API key identifying the domain of the service. This is required if the community API key used for authentication refers to a community that is not linked to a specific domain.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "additionalProperties": false
+      },
+      "TestService": {
+        "description": "A test service's information.",
+        "type": "object",
+        "properties": {
+          "key": {
+            "description": "The unique key used to identify the service and its underlying domain parameter.",
+            "type": "string"
+          },
+          "domain": {
+            "description": "The API key identifying the domain of the service.",
+            "type": "string"
+          },
+          "address": {
+            "description": "The service's address.",
+            "type": "string"
+          },
+          "serviceType": {
+            "description": "The type of the service.",
+            "type": "string",
+            "enum": ["messaging", "validation", "processing"]
+          },
+          "apiType": {
+            "description": "The API type of the service.",
+            "type": "string",
+            "enum": ["soap", "rest"],
+            "default": "soap"
+          },
+          "description": {
+            "description": "The service's description.",
+            "type": "string"
+          },
+          "identifier": {
+            "description": "The service's reference identifier.",
+            "type": "string"
+          },
+          "version": {
+            "description": "The service's version.",
             "type": "string"
           }
         },

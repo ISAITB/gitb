@@ -80,6 +80,53 @@ class ConfigurationAutomationService @Inject() (authorizedAction: AuthorizedActi
     })
   }
 
+  def createTestService(): Action[AnyContent] = authorizedAction.async { request =>
+    processAsJson(request, () => authorizationManager.canManageConfigurationThroughAutomationApi(request), { body =>
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
+      val input = JsonUtil.parseJsTestServiceConfiguration(body, isNew = true)
+      domainParameterManager.createTestServiceThroughAutomationApi(communityKey, input).map { _ =>
+        ResponseConstructor.constructEmptyResponse
+      }
+    })
+  }
+
+  def updateTestService(): Action[AnyContent] = authorizedAction.async { request =>
+    processAsJson(request, () => authorizationManager.canManageConfigurationThroughAutomationApi(request), { body =>
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
+      val input = JsonUtil.parseJsTestServiceConfiguration(body, isNew = false)
+      domainParameterManager.updateTestServiceThroughAutomationApi(communityKey, input).map { _ =>
+        ResponseConstructor.constructEmptyResponse
+      }
+    })
+  }
+
+  def deleteTestService(parameter: String): Action[AnyContent] = authorizedAction.async { request =>
+    deleteTestServiceInternal(None, parameter, request)
+  }
+
+  def deleteTestServiceForDomain(domain: String, parameter: String): Action[AnyContent] = authorizedAction.async { request =>
+    deleteTestServiceInternal(Some(domain), parameter, request)
+  }
+
+  private def deleteTestServiceInternal(domain: Option[String], parameter: String, request: RequestWithAttributes[AnyContent]): Future[Result] = {
+    process(() => authorizationManager.canManageConfigurationThroughAutomationApi(request), { _ =>
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
+      domainParameterManager.deleteTestServiceThroughAutomationApi(communityKey, domain, parameter).map { _ =>
+        ResponseConstructor.constructEmptyResponse
+      }
+    })
+  }
+
+  def searchTestServices(): Action[AnyContent] = authorizedAction.async { request =>
+    process(() => authorizationManager.canManageConfigurationThroughAutomationApi(request), { _ =>
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
+      val searchCriteria = ParameterExtractor.extractTestServiceSearchCriteria(request)
+      domainParameterManager.searchTestServicesThroughAutomationApi(communityKey, searchCriteria).map { results =>
+        ResponseConstructor.constructJsonResponse(JsonUtil.jsTestServicesForAutomationApi(results).toString())
+      }
+    })
+  }
+
   def createOrganisationProperty(): Action[AnyContent] = authorizedAction.async { request =>
     processAsJson(request, () => authorizationManager.canManageConfigurationThroughAutomationApi(request), { body =>
       val communityKey = ParameterExtractor.extractApiKeyHeader(request).get

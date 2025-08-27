@@ -125,7 +125,7 @@ export class CreateEditTestServiceModalComponent extends BaseComponent implement
   validateData(serviceData: Partial<TestServiceWithParameter>): boolean {
     let nameCheck = Constants.VARIABLE_NAME_REGEX.test(serviceData.parameter!.name!)
     if (!nameCheck) {
-      this.validation.invalid('name', 'The service name must begin with a character followed by zero or more characters, digits, or one of [\'.\', \'_\', \'-\'].')
+      this.validation.invalid('name', 'The service identifier must begin with a character followed by zero or more characters, digits, or one of [\'.\', \'_\', \'-\'].')
     }
     let addressCheck = this.validateServiceData(serviceData)
     return nameCheck && addressCheck
@@ -133,7 +133,7 @@ export class CreateEditTestServiceModalComponent extends BaseComponent implement
 
   validateServiceData(serviceData: Partial<TestServiceWithParameter>): boolean {
     if (!this.isValidAbsoluteHttpUrl(serviceData.parameter?.value)) {
-      this.validation.invalid("value", "The service address must be a valid absolute HTTP url.")
+      this.validation.invalid("value", "The service address must be a valid absolute HTTP URL.")
       return false
     }
     return true

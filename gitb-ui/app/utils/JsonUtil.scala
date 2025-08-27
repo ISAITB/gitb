@@ -21,7 +21,8 @@ import com.gitb.tbs.UserInput
 import com.gitb.tr._
 import config.Configurations
 import controllers.dto.ParameterInfo
-import exceptions.JsonValidationException
+import controllers.util.ParameterExtractor
+import exceptions.{AutomationApiException, ErrorCodes, JsonValidationException}
 import jakarta.xml.bind.JAXBElement
 import managers.breadcrumb.BreadcrumbLabelResponse
 import managers.export.{ExportSettings, ImportItem, ImportSettings}
@@ -1426,20 +1427,28 @@ object JsonUtil {
 
   private def parseJsStatementConfigurationArray(jsonArray: JsArray): List[StatementConfiguration] = {
     jsonArray.value.map { json =>
-      StatementConfiguration(
+      val config = StatementConfiguration(
         (json \ "system").as[String],
         (json \ "actor").as[String],
         parseJsKeyValueArray((json \ "properties").asOpt[JsArray].getOrElse(JsArray.empty))
       )
+      if (config.properties.exists(v => !ParameterExtractor.validTestVariableName(v.key))) {
+        throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "Keys must begin with a character followed by zero or more characters, digits, or one of ['.', '_', '-']")
+      }
+      config
     }.toList
   }
 
   private def parseJsPartyConfigurationArray(jsonArray: JsArray, partyPropertyName: String): List[PartyConfiguration] = {
     jsonArray.value.map { json =>
-      PartyConfiguration(
+      val config = PartyConfiguration(
         (json \ partyPropertyName).as[String],
         parseJsKeyValueArray((json \ "properties").asOpt[JsArray].getOrElse(JsArray.empty))
       )
+      if (config.properties.exists(v => !ParameterExtractor.validTestVariableName(v.key))) {
+        throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "Keys must begin with a character followed by zero or more characters, digits, or one of ['.', '_', '-']")
+      }
+      config
     }.toList
   }
 
@@ -1459,7 +1468,7 @@ object JsonUtil {
   }
 
   def parseJsCustomPropertyInfo(json: JsValue): CustomPropertyInfo = {
-    CustomPropertyInfo(
+    val info = CustomPropertyInfo(
       (json \ "key").as[String],
       (json \ "name").asOpt[String],
       (json \ "description").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
@@ -1475,6 +1484,10 @@ object JsonUtil {
       (json \ "dependsOnValue").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
       (json \ "defaultValue").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x))
     )
+    if (!ParameterExtractor.validTestVariableName(info.key)) {
+      throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "Keys must begin with a character followed by zero or more characters, digits, or one of ['.', '_', '-']")
+    }
+    info
   }
 
   def parseJsAllowedPropertyValues(jsonContent: String): List[KeyValueRequired] = {
@@ -1495,7 +1508,7 @@ object JsonUtil {
   }
 
   def parseJsDomainParameterConfiguration(json: JsValue, domainApiKey: Option[String] = None, parameterKey: Option[String] = None): DomainParameterInfo = {
-    DomainParameterInfo(
+    val info = DomainParameterInfo(
       KeyValue(
         parameterKey.getOrElse((json \ "key").as[String]),
         (json \ "value").asOpt[String]
@@ -1504,6 +1517,76 @@ object JsonUtil {
       (json \ "inTests").asOpt[Boolean],
       domainApiKey.orElse((json \ "domain").asOpt[String])
     )
+    if (!ParameterExtractor.validTestVariableName(info.parameterInfo.key)) {
+      throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "Keys must begin with a character followed by zero or more characters, digits, or one of ['.', '_', '-']")
+    }
+    info
+  }
+
+  def parseJsTestServiceConfiguration(json: JsValue, isNew: Boolean): TestServiceInfo = {
+    val info = TestServiceInfo(
+      KeyValue(
+        (json \ "key").as[String],
+        (json \ "address").asOpt[String]
+      ),
+      (json \ "description").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      (json \ "serviceType").asOpt[String].map(Enums.parseTestServiceTypeForApi),
+      (json \ "apiType").asOpt[String].map(Enums.parseTestServiceApiTypeForApi),
+      (json \ "authBasicUsername").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      (json \ "authBasicPassword").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(MimeUtil.encryptString(x))),
+      (json \ "authTokenUsername").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      (json \ "authTokenPassword").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(MimeUtil.encryptString(x))),
+      (json \ "authTokenPasswordType").asOpt[String].map(x => Some(Enums.parseTestServiceAuthTokenPasswordTypeForApi(x))),
+      (json \ "identifier").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      (json \ "version").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      (json \ "domain").asOpt[String],
+      (json \ "replaceExisting").asOpt[Boolean].getOrElse(false)
+    )
+    // Consistency checks
+    if (!ParameterExtractor.validTestVariableName(info.parameterInfo.key)) {
+      throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "The service key must begin with a character followed by zero or more characters, digits, or one of ['.', '_', '-']")
+    }
+    if (info.parameterInfo.value.exists(v => !ParameterExtractor.validHttpAbsoluteUrl(v))) {
+      throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "The service address must be a valid absolute HTTP URL")
+    }
+    if (info.apiType.exists(t => t != TestServiceApiType.SoapApi)) {
+      throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "Only services with a SOAP API are currently supported")
+    }
+    if (isNew) {
+      if (info.parameterInfo.value.isEmpty) {
+        throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "The service address is required")
+      }
+      if (info.serviceType.isEmpty) {
+        throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "The service type is required")
+      }
+      if (info.authBasicUsername.flatten.isDefined && info.authBasicPassword.flatten.isEmpty) {
+        throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "When a basic authentication username is set you must also set the basic authentication password")
+      }
+      if (info.authBasicUsername.flatten.isEmpty && info.authBasicPassword.flatten.isDefined) {
+        throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "Provided a basic authentication password but no username")
+      }
+      if (info.authTokenUsername.flatten.isDefined && (info.authTokenPassword.flatten.isEmpty || info.authTokenPasswordType.flatten.isEmpty)) {
+        throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "When a token username is set you must also set the token password and password type")
+      }
+      if (info.authTokenUsername.flatten.isEmpty && (info.authTokenPassword.flatten.isDefined || info.authTokenPasswordType.flatten.isDefined)) {
+        throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "Provided a token authentication password but no username")
+      }
+    } else {
+      // Provided empty usernames means that we delete the relevant password information.
+      if (info.authBasicUsername.exists(_.isEmpty) && info.authBasicPassword.exists(_.isDefined)) {
+        throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "When removing basic authentication you must not specify the password")
+      }
+      if ((info.authBasicUsername.exists(_.isDefined) || info.authBasicUsername.isEmpty) && info.authBasicPassword.exists(_.isEmpty)) {
+        throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "When basic authentication is used a password is required")
+      }
+      if (info.authTokenUsername.exists(_.isEmpty) && (info.authTokenPassword.exists(_.isDefined) || info.authTokenPasswordType.exists(_.isDefined))) {
+        throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "When removing token authentication you must not specify the password and password type")
+      }
+      if ((info.authTokenUsername.exists(_.isDefined) || info.authTokenUsername.isEmpty) && (info.authTokenPassword.exists(_.isEmpty) || info.authTokenPasswordType.exists(_.isEmpty))) {
+        throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "When token authentication is used the password and password type are required")
+      }
+    }
+    info
   }
 
   private def parseJsKeyValueArray(jsonArray: JsArray): List[KeyValue] = {
@@ -3691,6 +3774,34 @@ object JsonUtil {
       "system" -> statement.systemKey,
       "actor" -> statement.actorKey
     )
+  }
+
+  def jsTestServicesForAutomationApi(services: Iterable[TestServiceWithParameterAndDomainKey]): JsArray = {
+    var json = Json.arr()
+    services.foreach { service =>
+      json = json.append(jsTestServiceForAutomationApi(service))
+    }
+    json
+  }
+
+  def jsTestServiceForAutomationApi(service: TestServiceWithParameterAndDomainKey): JsObject = {
+    var json = Json.obj(
+      "key" -> service.service.parameter.name,
+      "domain" -> service.domainKey,
+      "address" -> service.service.parameter.value.get,
+      "serviceType" -> Enums.toTestServiceTypeForApi(TestServiceType.apply(service.service.service.serviceType)),
+      "apiType" -> Enums.toTestServiceApiTypeForApi(TestServiceApiType.apply(service.service.service.apiType))
+    )
+    if (service.service.parameter.desc.isDefined) {
+      json = json + ("description" -> JsString(service.service.parameter.desc.get))
+    }
+    if (service.service.service.identifier.isDefined) {
+      json = json + ("identifier" -> JsString(service.service.service.identifier.get))
+    }
+    if (service.service.service.version.isDefined) {
+      json = json + ("version" -> JsString(service.service.service.version.get))
+    }
+    json
   }
 
 }
