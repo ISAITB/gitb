@@ -13,11 +13,8 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, EventEmitter, OnInit, ViewChild} from '@angular/core';
-import {TabsetComponent} from 'ngx-bootstrap/tabs';
-import {SystemAdministrationTab} from './system-administration-tab.enum';
-import {BaseComponent} from '../../base-component.component';
-import {Router} from '@angular/router';
+import {Component, EventEmitter, OnInit} from '@angular/core';
+import {ActivatedRoute, Router} from '@angular/router';
 import {Constants} from 'src/app/common/constants';
 import {UserService} from 'src/app/services/user.service';
 import {DataService} from 'src/app/services/data.service';
@@ -53,6 +50,7 @@ import {UserBasic} from '../../../types/user-basic.type';
 import {FilterUpdate} from '../../../components/test-filter/filter-update';
 import {SslProtocol} from '../../../types/ssl-protocol';
 import {MimeType} from '../../../types/mime-type';
+import {BaseTabbedComponent} from '../../base-tabbed-component';
 
 @Component({
     selector: 'app-system-administration',
@@ -60,17 +58,13 @@ import {MimeType} from '../../../types/mime-type';
     styleUrls: ['./system-administration.component.less'],
     standalone: false
 })
-export class SystemAdministrationComponent extends BaseComponent implements OnInit, AfterViewInit {
+export class SystemAdministrationComponent extends BaseTabbedComponent implements OnInit {
 
   adminStatus = {status: Constants.STATUS.NONE}
   landingPageStatus = {status: Constants.STATUS.NONE}
   errorTemplateStatus = {status: Constants.STATUS.NONE}
   legalNoticeStatus = {status: Constants.STATUS.NONE}
   themeStatus = {status: Constants.STATUS.NONE}
-
-  tabToShow = SystemAdministrationTab.administrators
-  tabTriggers!: Record<SystemAdministrationTab, {index: number, loader: () => any}>
-  @ViewChild('tabs', { static: false }) tabs?: TabsetComponent;
 
   adminColumns: TableColumnDefinition[] = []
   landingPagesColumns: TableColumnDefinition[] = [
@@ -177,6 +171,7 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
   resourceEmitter = new EventEmitter<void>()
 
   constructor(
+    route: ActivatedRoute,
     router: Router,
     private readonly userService: UserService,
     public readonly dataService: DataService,
@@ -192,18 +187,24 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
     private readonly confirmationDialogService: ConfirmationDialogService,
     private readonly modalService: BsModalService
   ) {
-    super()
-    // Access the tab to show via router state to have it cleared upon refresh.
-    const tabParam = router.getCurrentNavigation()?.extras?.state?.tab
-    if (tabParam != undefined) {
-      this.tabToShow = SystemAdministrationTab[tabParam as keyof typeof SystemAdministrationTab]
-    }
+    super(router, route)
   }
 
-  ngAfterViewInit(): void {
-    setTimeout(() => {
-      this.triggerTab(this.tabToShow)
-    })  }
+  loadTab(tabIndex: number) {
+    if (tabIndex == Constants.TAB.SYSTEM_ADMINISTRATION.ADMINISTRATORS) {
+      this.showAdministrators()
+    } else if (tabIndex == Constants.TAB.SYSTEM_ADMINISTRATION.LANDING_PAGES) {
+      this.showLandingPages()
+    } else if (tabIndex == Constants.TAB.SYSTEM_ADMINISTRATION.LEGAL_NOTICES) {
+      this.showLegalNotices()
+    } else if (tabIndex == Constants.TAB.SYSTEM_ADMINISTRATION.ERROR_TEMPLATES) {
+      this.showErrorTemplates()
+    } else if (tabIndex == Constants.TAB.SYSTEM_ADMINISTRATION.THEMES) {
+      this.showThemes()
+    } else {
+      this.showResources()
+    }
+  }
 
   ngOnInit(): void {
     this.adminColumns.push({ field: 'name', title: 'Name' })
@@ -367,7 +368,6 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
       this.configValuesPending = false
     })
     // Setup tab triggers
-    this.setupTabs()
     this.routingService.systemConfigurationBreadcrumbs()
   }
 
@@ -525,23 +525,6 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
     } else {
       return of(false)
     }
-  }
-
-  private triggerTab(tab: SystemAdministrationTab) {
-    this.tabTriggers[tab].loader()
-    if (this.tabs) {
-      this.tabs.tabs[this.tabTriggers[tab].index].active = true
-    }
-  }
-
-  private setupTabs() {
-    const temp: Partial<Record<SystemAdministrationTab, {index: number, loader: () => any}>> = {}
-    temp[SystemAdministrationTab.administrators] = {index: 0, loader: () => {this.showAdministrators()}}
-    temp[SystemAdministrationTab.landingPages] = {index: 1, loader: () => {this.showLandingPages()}}
-    temp[SystemAdministrationTab.legalNotices] = {index: 2, loader: () => {this.showLegalNotices()}}
-    temp[SystemAdministrationTab.errorTemplates] = {index: 3, loader: () => {this.showErrorTemplates()}}
-    temp[SystemAdministrationTab.themes] = {index: 4, loader: () => {this.showThemes()}}
-    this.tabTriggers = temp as Record<SystemAdministrationTab, {index: number, loader: () => any}>
   }
 
   showAdministrators() {

@@ -30,7 +30,7 @@
     </div>
     <div>
         <tabset #tabs>
-            <tab (selectTab)="loadSpecifications()" customClass="tabClass">
+            <tab (selectTab)="showTab(Constants.TAB.DOMAIN.SPECIFICATIONS)" customClass="tabClass">
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-list-check" [text]="dataService.labelSpecifications()"></app-tab-title></ng-template>
                 <div class="tabPanel">
                     <div class="tabControls">
@@ -104,7 +104,7 @@
                 </div>
             </tab>
 
-            <tab (selectTab)="loadSharedTestSuites()" customClass="tabClass">
+            <tab (selectTab)="showTab(Constants.TAB.DOMAIN.TEST_SUITES)" customClass="tabClass">
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-box-archive" text="Shared test suites"></app-tab-title></ng-template>
                 <div class="tabPanel">
                     <div class="tabControls">
@@ -129,7 +129,7 @@
                 </div>
             </tab>
 
-            <tab (selectTab)="loadDomainParameters()" customClass="tabClass">
+            <tab (selectTab)="showTab(Constants.TAB.DOMAIN.PARAMETERS)" customClass="tabClass">
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-sliders" text="Parameters"></app-tab-title></ng-template>
                 <div class="tabPanel">
                     <div class="tabControls">
@@ -190,7 +190,7 @@
                 </div>
             </tab>
 
-            <tab (selectTab)="loadTestServices()" customClass="tabClass">
+            <tab (selectTab)="showTab(Constants.TAB.DOMAIN.TEST_SERVICES)" customClass="tabClass">
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-gears" text="Test services"></app-tab-title></ng-template>
                 <div class="tabPanel">
                     <div class="tabControls">

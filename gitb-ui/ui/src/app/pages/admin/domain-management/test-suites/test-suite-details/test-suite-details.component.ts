@@ -14,9 +14,8 @@
  */
 
 import {Component, EventEmitter, OnInit} from '@angular/core';
-import {ActivatedRoute} from '@angular/router';
+import {ActivatedRoute, Router} from '@angular/router';
 import {Constants} from 'src/app/common/constants';
-import {BaseComponent} from 'src/app/pages/base-component.component';
 import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
 import {ConformanceService} from 'src/app/services/conformance.service';
 import {DataService} from 'src/app/services/data.service';
@@ -37,6 +36,7 @@ import {ConformanceTestCase} from '../../../../organisation/conformance-statemen
 import {ConformanceTestCaseGroup} from '../../../../organisation/conformance-statement/conformance-test-case-group';
 import {FilterUpdate} from '../../../../../components/test-filter/filter-update';
 import {MultiSelectConfig} from '../../../../../components/multi-select-filter/multi-select-config';
+import {BaseTabbedComponent} from '../../../../base-tabbed-component';
 
 @Component({
     selector: 'app-test-suite-details',
@@ -44,7 +44,7 @@ import {MultiSelectConfig} from '../../../../../components/multi-select-filter/m
     styleUrls: ['./test-suite-details.component.less'],
     standalone: false
 })
-export class TestSuiteDetailsComponent extends BaseComponent implements OnInit {
+export class TestSuiteDetailsComponent extends BaseTabbedComponent implements OnInit {
 
   testSuite: Partial<TestSuiteWithTestCases> = {}
   domainId!: number
@@ -84,14 +84,15 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit {
   constructor(
     public readonly dataService: DataService,
     private readonly routingService: RoutingService,
-    private readonly route: ActivatedRoute,
     private readonly testSuiteService: TestSuiteService,
     private readonly popupService: PopupService,
     private readonly htmlService: HtmlService,
     private readonly conformanceService: ConformanceService,
     private readonly confirmationDialogService: ConfirmationDialogService,
-    private readonly modalService: BsModalService
-  ) { super() }
+    private readonly modalService: BsModalService,
+    route: ActivatedRoute,
+    router: Router
+  ) { super(router, route) }
 
   ngOnInit(): void {
     this.domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
@@ -115,6 +116,14 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit {
       loader: () => this.loadAvailableSpecificationsForMove()
     }
     this.loadTestCases()
+  }
+
+  loadTab(tabIndex: number): void {
+    if (tabIndex == Constants.TAB.TEST_SUITE.TEST_CASES) {
+      this.loadTestCases()
+    } else {
+      this.loadLinkedSpecifications()
+    }
   }
 
   loadTestCases() {

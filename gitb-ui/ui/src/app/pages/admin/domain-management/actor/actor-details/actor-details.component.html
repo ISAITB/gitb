@@ -19,11 +19,11 @@
 		</form>
 	</div>
 	<div>
-		<tabset>
-			<tab customClass="tabClass">
-        <ng-template tabHeading><app-tab-title icon="fa-solid fa-gear" text="Configuration parameters"></app-tab-title></ng-template>
+		<tabset #tabs>
+			<tab (selectTab)="showTab(Constants.TAB.ACTOR.PARAMETERS)" customClass="tabClass">
+                <ng-template tabHeading><app-tab-title icon="fa-solid fa-gear" text="Configuration parameters"></app-tab-title></ng-template>
 				<div class="tabPanel">
-					@if (dataStatus.status != Constants.STATUS.FINISHED) {
+					@if (parameterStatus.status != Constants.STATUS.FINISHED) {
 						<app-pending-block></app-pending-block>
 					} @else {
 						@if (endpoints.length == 0) {

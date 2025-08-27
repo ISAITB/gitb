@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, EventEmitter, OnInit, ViewChild} from '@angular/core';
+import {Component, EventEmitter, OnInit, ViewChild} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {BsModalService} from 'ngx-bootstrap/modal';
 import {Constants} from 'src/app/common/constants';
@@ -58,7 +58,7 @@ import {TestService} from '../../../../../types/test-service';
     styleUrls: ['./domain-details.component.less'],
     standalone: false
 })
-export class DomainDetailsComponent extends BaseTabbedComponent implements OnInit, AfterViewInit {
+export class DomainDetailsComponent extends BaseTabbedComponent implements OnInit {
 
   private static readonly MESSAGING_SERVICE_ENDPOINT_REGEXP = /^https?:\/\/\S+\/messaging/
   private static readonly VALIDATION_SERVICE_ENDPOINT_REGEXP = /^https?:\/\/\S+\/validation/
@@ -111,9 +111,9 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
     private readonly modalService: BsModalService,
     private readonly popupService: PopupService,
     private readonly routingService: RoutingService,
-    private readonly route: ActivatedRoute,
+    route: ActivatedRoute,
     router: Router
-  ) { super(router) }
+  ) { super(router, route) }
 
   loadTab(tabIndex: number): void {
     if (tabIndex == Constants.TAB.DOMAIN.PARAMETERS) {
@@ -125,10 +125,6 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
     } else {
       this.loadSharedTestSuites()
     }
-  }
-
-  ngAfterViewInit(): void {
-    this.showTab()
   }
 
   ngOnInit(): void {

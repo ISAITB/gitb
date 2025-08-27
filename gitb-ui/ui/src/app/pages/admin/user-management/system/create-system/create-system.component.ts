@@ -22,7 +22,6 @@ import {PopupService} from 'src/app/services/popup.service';
 import {RoutingService} from 'src/app/services/routing.service';
 import {SystemService} from 'src/app/services/system.service';
 import {System} from 'src/app/types/system';
-import {OrganisationTab} from '../../organisation/organisation-details/OrganisationTab';
 import {Constants} from 'src/app/common/constants';
 import {CommunityService} from 'src/app/services/community.service';
 
@@ -91,9 +90,9 @@ export class CreateSystemComponent extends BaseComponent implements OnInit {
 
   cancel() {
     if (this.fromCommunityManagement) {
-      this.routingService.toOrganisationDetails(this.communityId, this.organisationId, OrganisationTab.systems)
+      this.routingService.toOrganisationDetails(this.communityId, this.organisationId, Constants.TAB.ORGANISATION.SYSTEMS)
     } else {
-      this.routingService.toOwnOrganisationDetails(OrganisationTab.systems)
+      this.routingService.toOwnOrganisationDetails(Constants.TAB.ORGANISATION.SYSTEMS)
     }
   }
 

@@ -13,12 +13,11 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, ElementRef, EventEmitter, NgZone, OnInit, ViewChild} from '@angular/core';
+import {Component, ElementRef, EventEmitter, NgZone, OnInit, ViewChild} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {saveAs} from 'file-saver';
 import {find, map} from 'lodash';
 import {BsModalService} from 'ngx-bootstrap/modal';
-import {TabsetComponent} from 'ngx-bootstrap/tabs';
 import {finalize, forkJoin, mergeMap, Observable, of, tap} from 'rxjs';
 import {Constants} from 'src/app/common/constants';
 import {Counters} from 'src/app/components/test-status-icons/counters';
@@ -40,18 +39,17 @@ import {EndpointParameter} from 'src/app/types/endpoint-parameter';
 import {LoadingStatus} from 'src/app/types/loading-status.type';
 import {OrganisationParameter} from 'src/app/types/organisation-parameter';
 import {SystemParameter} from 'src/app/types/system-parameter';
-import {ConformanceStatementTab} from './conformance-statement-tab';
 import {ConformanceTestCase} from './conformance-test-case';
 import {ConformanceTestSuite} from './conformance-test-suite';
 import {ConfigurationPropertyVisibility} from 'src/app/types/configuration-property-visibility';
 import {CustomProperty} from 'src/app/types/custom-property.type';
-import {BaseComponent} from '../../base-component.component';
 import {ValidationState} from 'src/app/types/validation-state';
 import {share} from 'rxjs/operators';
 import {TestCaseFilterState} from '../../../components/test-case-filter/test-case-filter-state';
 import {TestCaseFilterOptions} from '../../../components/test-case-filter/test-case-filter-options';
 import {TestCaseFilterApi} from '../../../components/test-case-filter/test-case-filter-api';
 import {NavigationControlsConfig} from '../../../components/navigation-controls/navigation-controls-config';
+import {BaseTabbedComponent} from '../../base-tabbed-component';
 
 @Component({
     selector: 'app-conformance-statement',
@@ -59,7 +57,7 @@ import {NavigationControlsConfig} from '../../../components/navigation-controls/
     styleUrls: ['./conformance-statement.component.less'],
     standalone: false
 })
-export class ConformanceStatementComponent extends BaseComponent implements OnInit, AfterViewInit {
+export class ConformanceStatementComponent extends BaseTabbedComponent implements OnInit {
 
   communityId?: number
   communityIdOfStatement!: number
@@ -82,8 +80,6 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
   deletePending = false
   exportPending = false
   updateConfigurationPending = false
-  tabToShow = ConformanceStatementTab.tests
-  @ViewChild('tabs', { static: false }) tabs?: TabsetComponent;
   @ViewChild('testCaseResultFilter') testCaseResultFilter?: TestCaseFilterApi;
   collapsedDetails = false
   collapsedDetailsFinished = false
@@ -145,7 +141,7 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
 
   constructor(
     public readonly dataService: DataService,
-    private readonly route: ActivatedRoute,
+    route: ActivatedRoute,
     router: Router,
     private readonly conformanceService: ConformanceService,
     private readonly modalService: BsModalService,
@@ -160,19 +156,15 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
     private readonly communityService: CommunityService,
     private readonly zone: NgZone
   ) {
-    super()
-    // Access the tab to show via router state to have it cleared upon refresh.
+    super(router, route)
     const navigation = router.getCurrentNavigation()
     if (navigation?.extras?.state) {
-      const tabParam = navigation.extras.state[Constants.NAVIGATION_PATH_PARAM.TAB]
-      if (tabParam != undefined) {
-        this.tabToShow = ConformanceStatementTab[tabParam as keyof typeof ConformanceStatementTab]
-      }
       this.snapshotLabel = navigation.extras.state[Constants.NAVIGATION_PATH_PARAM.SNAPSHOT_LABEL]
     }
   }
 
   ngAfterViewInit(): void {
+    super.ngAfterViewInit()
     this.resizeObserver = new ResizeObserver(() => {
       this.zone.run(() => {
         this.calculateWrapping()
@@ -181,11 +173,6 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
     if (this.conformanceDetailPage) {
       this.resizeObserver.observe(this.conformanceDetailPage.nativeElement)
     }
-    setTimeout(() => {
-      if (this.tabToShow == ConformanceStatementTab.configuration) {
-        this.showConfigurationTab()
-      }
-    })
   }
 
   ngOnInit(): void {
@@ -278,6 +265,12 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
     )
     obs$.subscribe()
     return obs$
+  }
+
+  loadTab(tabIndex: number) {
+    if (tabIndex == Constants.TAB.CONFORMANCE_STATEMENT.CONFIGURATION) {
+      this.showConfigurationTab()
+    }
   }
 
   private prepareNavigationConfig() {

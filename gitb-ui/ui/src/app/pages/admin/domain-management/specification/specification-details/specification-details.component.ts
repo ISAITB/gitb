@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, EventEmitter, OnInit, ViewChild} from '@angular/core';
+import {Component, EventEmitter, OnInit, ViewChild} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {filter, find} from 'lodash';
 import {BsModalService} from 'ngx-bootstrap/modal';
@@ -44,7 +44,7 @@ import {TableApi} from '../../../../../components/table/table-api';
     templateUrl: './specification-details.component.html',
     standalone: false
 })
-export class SpecificationDetailsComponent extends BaseTabbedComponent implements OnInit, AfterViewInit {
+export class SpecificationDetailsComponent extends BaseTabbedComponent implements OnInit {
 
   @ViewChild("testSuiteTable") testSuiteTable?: TableApi
 
@@ -89,11 +89,11 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
     private readonly confirmationDialogService: ConfirmationDialogService,
     private readonly specificationService: SpecificationService,
     private readonly routingService: RoutingService,
-    private readonly route: ActivatedRoute,
+    route: ActivatedRoute,
     router: Router,
     private readonly popupService: PopupService,
     private readonly modalService: BsModalService
-  ) { super(router) }
+  ) { super(router, route) }
 
   loadTab(tabIndex: number): void {
     if (tabIndex == Constants.TAB.SPECIFICATION.TEST_SUITES) {
@@ -101,10 +101,6 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
     } else {
       this.loadActors()
     }
-  }
-
-  ngAfterViewInit(): void {
-    this.showTab()
   }
 
   ngOnInit(): void {

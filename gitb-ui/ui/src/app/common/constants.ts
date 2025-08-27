@@ -323,7 +323,40 @@ export class Constants {
 		SPECIFICATION: {
 			TEST_SUITES: 0,
 			ACTORS: 1
-		}
+		},
+    TEST_SUITE: {
+      TEST_CASES: 0,
+      SPECIFICATIONS: 1
+    },
+    ACTOR: {
+      PARAMETERS: 0
+    },
+    COMMUNITY: {
+      ORGANISATIONS: 0,
+      ADMINISTRATORS: 1,
+      LANDING_PAGES: 2,
+      LEGAL_NOTICES: 3,
+      ERROR_TEMPLATES: 4,
+      TRIGGERS: 5,
+      RESOURCES: 6
+    },
+    ORGANISATION: {
+      SYSTEMS: 0,
+      USERS: 1,
+      API_KEYS: 2
+    },
+    SYSTEM_ADMINISTRATION: {
+      ADMINISTRATORS: 0,
+      LANDING_PAGES: 1,
+      LEGAL_NOTICES: 2,
+      ERROR_TEMPLATES: 3,
+      THEMES: 4,
+      RESOURCES: 5
+    },
+    CONFORMANCE_STATEMENT: {
+      TESTS: 0,
+      CONFIGURATION: 1
+    }
 	}
 
 	public static readonly TEST_CASE_UPLOAD_MATCH = {
@@ -348,7 +381,8 @@ export class Constants {
 		TEST_SUITE_ID: 'ts',
 		COPY: 'copy',
 		COPY_DEFAULT: 'copyDefault',
-		SNAPSHOT_ID: 'snapshot'
+		SNAPSHOT_ID: 'snapshot',
+    TAB: 'tab'
 	}
 
 	public static readonly NAVIGATION_PATH_PARAM = {

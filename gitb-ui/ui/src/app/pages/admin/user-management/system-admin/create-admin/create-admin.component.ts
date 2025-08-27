@@ -13,18 +13,18 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { AfterViewInit, Component, OnInit } from '@angular/core';
-import { BaseComponent } from 'src/app/pages/base-component.component';
-import { AuthService } from 'src/app/services/auth.service';
-import { DataService } from 'src/app/services/data.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { UserService } from 'src/app/services/user.service';
-import { User } from 'src/app/types/user.type';
-import { mergeMap, map, share } from 'rxjs/operators'
-import { EMPTY } from 'rxjs';
-import { RoutingService } from 'src/app/services/routing.service';
-import { SystemAdministrationTab } from '../../../system-administration/system-administration-tab.enum';
-import { ValidationState } from 'src/app/types/validation-state';
+import {AfterViewInit, Component, OnInit} from '@angular/core';
+import {BaseComponent} from 'src/app/pages/base-component.component';
+import {AuthService} from 'src/app/services/auth.service';
+import {DataService} from 'src/app/services/data.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {UserService} from 'src/app/services/user.service';
+import {User} from 'src/app/types/user.type';
+import {map, mergeMap, share} from 'rxjs/operators';
+import {EMPTY} from 'rxjs';
+import {RoutingService} from 'src/app/services/routing.service';
+import {ValidationState} from 'src/app/types/validation-state';
+import {Constants} from '../../../../../common/constants';
 
 @Component({
     selector: 'app-create-admin',
@@ -125,7 +125,7 @@ export class CreateAdminComponent extends BaseComponent implements OnInit, After
   }
 
   cancelCreateAdmin() {
-    this.routingService.toSystemAdministration(SystemAdministrationTab.administrators)
+    this.routingService.toSystemAdministration(Constants.TAB.SYSTEM_ADMINISTRATION.ADMINISTRATORS)
   }
 
 }

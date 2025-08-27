@@ -13,19 +13,18 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { Constants } from 'src/app/common/constants';
-import { RoutingService } from 'src/app/services/routing.service';
-import { SystemConfigurationService } from 'src/app/services/system-configuration.service';
-import { Theme } from 'src/app/types/theme';
-import { SystemAdministrationTab } from '../system-administration-tab.enum';
-import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { Observable, of } from 'rxjs';
-import { DataService } from 'src/app/services/data.service';
-import { BaseThemeFormComponent } from '../base-theme-form.component';
-import { ValidationState } from 'src/app/types/validation-state';
+import {Component, OnInit} from '@angular/core';
+import {ActivatedRoute} from '@angular/router';
+import {Constants} from 'src/app/common/constants';
+import {RoutingService} from 'src/app/services/routing.service';
+import {SystemConfigurationService} from 'src/app/services/system-configuration.service';
+import {Theme} from 'src/app/types/theme';
+import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {Observable, of} from 'rxjs';
+import {DataService} from 'src/app/services/data.service';
+import {BaseThemeFormComponent} from '../base-theme-form.component';
+import {ValidationState} from 'src/app/types/validation-state';
 
 @Component({
     selector: 'app-theme-details',
@@ -143,7 +142,7 @@ export class ThemeDetailsComponent extends BaseThemeFormComponent implements OnI
   }
 
   back() {
-    this.routingService.toSystemAdministration(SystemAdministrationTab.themes)
+    this.routingService.toSystemAdministration(Constants.TAB.SYSTEM_ADMINISTRATION.THEMES)
   }
 
 }

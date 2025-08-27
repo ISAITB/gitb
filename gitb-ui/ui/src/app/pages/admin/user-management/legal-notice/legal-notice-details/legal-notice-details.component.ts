@@ -13,21 +13,19 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { BaseComponent } from 'src/app/pages/base-component.component';
-import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
-import { DataService } from 'src/app/services/data.service';
-import { LegalNoticeService } from 'src/app/services/legal-notice.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { RoutingService } from 'src/app/services/routing.service';
-import { LegalNotice } from 'src/app/types/legal-notice';
-import { CommunityTab } from '../../community/community-details/community-tab.enum';
-import { Constants } from 'src/app/common/constants';
-import { SystemAdministrationTab } from '../../../system-administration/system-administration-tab.enum';
-import { HtmlService } from 'src/app/services/html.service';
-import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
-import { ValidationState } from 'src/app/types/validation-state';
+import {Component, OnInit} from '@angular/core';
+import {ActivatedRoute} from '@angular/router';
+import {BaseComponent} from 'src/app/pages/base-component.component';
+import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
+import {DataService} from 'src/app/services/data.service';
+import {LegalNoticeService} from 'src/app/services/legal-notice.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {RoutingService} from 'src/app/services/routing.service';
+import {LegalNotice} from 'src/app/types/legal-notice';
+import {Constants} from 'src/app/common/constants';
+import {HtmlService} from 'src/app/services/html.service';
+import {BreadcrumbType} from 'src/app/types/breadcrumb-type';
+import {ValidationState} from 'src/app/types/validation-state';
 
 @Component({
     selector: 'app-legal-notice-details',
@@ -146,9 +144,9 @@ export class LegalNoticeDetailsComponent extends BaseComponent implements OnInit
 
   cancelDetailLegalNotice() {
     if (this.communityId == Constants.DEFAULT_COMMUNITY_ID) {
-      this.routingService.toSystemAdministration(SystemAdministrationTab.legalNotices)
+      this.routingService.toSystemAdministration(Constants.TAB.SYSTEM_ADMINISTRATION.LEGAL_NOTICES)
     } else {
-      this.routingService.toCommunity(this.communityId, CommunityTab.legalNotices)
+      this.routingService.toCommunity(this.communityId, Constants.TAB.COMMUNITY.LEGAL_NOTICES)
     }
   }
 

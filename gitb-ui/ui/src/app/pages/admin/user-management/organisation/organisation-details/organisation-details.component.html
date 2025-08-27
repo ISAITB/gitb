@@ -40,7 +40,7 @@
     </div>
     <div>
         <tabset #tabs>
-            <tab (selectTab)="showSystems()" customClass="tabClass">
+            <tab (selectTab)="showTab(Constants.TAB.ORGANISATION.SYSTEMS)" customClass="tabClass">
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-cube" [text]="dataService.labelSystems()"></app-tab-title></ng-template>
                 <div class="tabPanel">
                     @if (showCreateSystem) {
@@ -63,7 +63,7 @@
                 </div>
             </tab>
             @if (showUsersTab) {
-                <tab (selectTab)="showUsers()" customClass="tabClass">
+                <tab (selectTab)="showTab(Constants.TAB.ORGANISATION.USERS)" customClass="tabClass">
                     <ng-template tabHeading><app-tab-title icon="fa-solid fa-user" text="Users"></app-tab-title></ng-template>
                     <div class="tabPanel">
                         @if (showCreateUser) {
@@ -87,7 +87,7 @@
                 </tab>
             }
             @if (apiInfoVisible) {
-                <tab (selectTab)="showApiInfo()" customClass="tabClass">
+                <tab (selectTab)="showTab(Constants.TAB.ORGANISATION.API_KEYS)" customClass="tabClass">
                     <ng-template tabHeading><app-tab-title icon="fa-solid fa-key" text="REST API keys"></app-tab-title></ng-template>
                     <div class="tabPanel">
                         <app-api-key-info

@@ -104,7 +104,7 @@
 		</div>
 	</div>
 	<tabset #tabs>
-		<tab customClass="tabClass">
+		<tab (selectTab)="showTab(Constants.TAB.CONFORMANCE_STATEMENT.TESTS)" customClass="tabClass">
 			<ng-template tabHeading><app-tab-title icon="fa-solid fa-list-ul" text="Conformance tests"></app-tab-title></ng-template>
 			<div class="tabPanel">
 				<div class="tabControls">
@@ -161,7 +161,7 @@
 			</div>
 		</tab>
 		@if (!isReadonly) {
-			<tab (selectTab)="loadConfigurations()" customClass="tabClass">
+			<tab (selectTab)="showTab(Constants.TAB.CONFORMANCE_STATEMENT.CONFIGURATION)" customClass="tabClass">
 				<ng-template tabHeading><app-tab-title icon="fa-solid fa-sliders" text="Configuration properties"></app-tab-title></ng-template>
 				<div class="tabPanel">
 					@if (loadingConfiguration.status != Constants.STATUS.FINISHED) {

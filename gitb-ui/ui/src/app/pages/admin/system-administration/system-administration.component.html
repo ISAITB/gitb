@@ -413,7 +413,7 @@
     </div>
     <div>
         <tabset #tabs>
-            <tab (selectTab)="showAdministrators()" customClass="tabClass">
+            <tab (selectTab)="showTab(Constants.TAB.SYSTEM_ADMINISTRATION.ADMINISTRATORS)" customClass="tabClass">
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-user" text="Administrators"></app-tab-title></ng-template>
                 <!-- Administrators -->
                 <div class="tabPanel">
@@ -434,7 +434,7 @@
                     </div>
                 </div>
             </tab>
-            <tab (selectTab)="showLandingPages()" customClass="tabClass">
+            <tab (selectTab)="showTab(Constants.TAB.SYSTEM_ADMINISTRATION.LANDING_PAGES)" customClass="tabClass">
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-house" text="Default landing pages"></app-tab-title></ng-template>
                 <!-- Landing pages -->
                 <div class="tabPanel">
@@ -455,7 +455,7 @@
                     </div>
                 </div>
             </tab>
-            <tab (selectTab)="showLegalNotices()" customClass="tabClass">
+            <tab (selectTab)="showTab(Constants.TAB.SYSTEM_ADMINISTRATION.LEGAL_NOTICES)" customClass="tabClass">
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-scale-balanced" text="Default legal notices"></app-tab-title></ng-template>
                 <!-- Legal notices -->
                 <div class="tabPanel">
@@ -476,7 +476,7 @@
                     </div>
                 </div>
             </tab>
-            <tab (selectTab)="showErrorTemplates()" customClass="tabClass">
+            <tab (selectTab)="showTab(Constants.TAB.SYSTEM_ADMINISTRATION.ERROR_TEMPLATES)" customClass="tabClass">
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-bug" text="Default error templates"></app-tab-title></ng-template>
                 <!-- error templates -->
                 <div class="tabPanel">
@@ -497,7 +497,7 @@
                     </div>
                 </div>
             </tab>
-            <tab (selectTab)="showThemes()" customClass="tabClass">
+            <tab (selectTab)="showTab(Constants.TAB.SYSTEM_ADMINISTRATION.THEMES)" customClass="tabClass">
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-palette" text="Themes"></app-tab-title></ng-template>
                 <!-- Themes -->
                 <div class="tabPanel">
@@ -518,7 +518,7 @@
                     </div>
                 </div>
             </tab>
-            <tab (selectTab)="showResources()" customClass="tabClass">
+            <tab (selectTab)="showTab(Constants.TAB.SYSTEM_ADMINISTRATION.RESOURCES)" customClass="tabClass">
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-image" text="Resources"></app-tab-title></ng-template>
                 <!-- System-wide resources -->
                 <app-resource-management-tab [actions]="resourceActions" [deferredActivation]="resourceEmitter"></app-resource-management-tab>

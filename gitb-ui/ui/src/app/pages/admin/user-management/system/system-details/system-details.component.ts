@@ -23,7 +23,6 @@ import {PopupService} from 'src/app/services/popup.service';
 import {RoutingService} from 'src/app/services/routing.service';
 import {BaseComponent} from 'src/app/pages/base-component.component';
 import {SystemService} from 'src/app/services/system.service';
-import {OrganisationTab} from '../../organisation/organisation-details/OrganisationTab';
 import {Constants} from 'src/app/common/constants';
 import {BreadcrumbType} from 'src/app/types/breadcrumb-type';
 import {forkJoin} from 'rxjs';
@@ -140,9 +139,9 @@ export class SystemDetailsComponent extends BaseComponent implements OnInit {
 
   cancel() {
     if (this.fromCommunityManagement) {
-      this.routingService.toOrganisationDetails(this.communityId, this.organisationId, OrganisationTab.systems)
+      this.routingService.toOrganisationDetails(this.communityId, this.organisationId, Constants.TAB.ORGANISATION.SYSTEMS)
     } else {
-      this.routingService.toOwnOrganisationDetails(OrganisationTab.systems)
+      this.routingService.toOwnOrganisationDetails(Constants.TAB.ORGANISATION.SYSTEMS)
     }
   }
 }

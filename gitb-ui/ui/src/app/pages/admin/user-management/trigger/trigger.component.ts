@@ -36,7 +36,6 @@ import {TriggerDataItem} from 'src/app/types/trigger-data-item';
 import {ErrorDescription} from 'src/app/types/error-description';
 import {CustomProperty} from 'src/app/types/custom-property.type';
 import {RoutingService} from 'src/app/services/routing.service';
-import {CommunityTab} from '../community/community-details/community-tab.enum';
 import {StatementParameterMinimal} from 'src/app/types/statement-parameter-minimal';
 import {TestTriggerModalComponent} from './test-trigger-modal/test-trigger-modal.component';
 import {BreadcrumbType} from 'src/app/types/breadcrumb-type';
@@ -426,7 +425,7 @@ export class TriggerComponent extends BaseComponent implements OnInit {
   }
 
   back() {
-    this.routingService.toCommunity(this.communityId, CommunityTab.triggers)
+    this.routingService.toCommunity(this.communityId, Constants.TAB.COMMUNITY.TRIGGERS)
   }
 
   testEndpoint() {

@@ -13,22 +13,22 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
-import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
-import { DataService } from 'src/app/services/data.service';
-import { OrganisationService } from 'src/app/services/organisation.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { UserService } from 'src/app/services/user.service';
-import { OrganisationDetailsComponent } from '../../admin/user-management/organisation/organisation-details/organisation-details.component';
-import { RoutingService } from 'src/app/services/routing.service';
-import { SystemService } from 'src/app/services/system.service';
-import { map } from 'rxjs';
-import { AccountService } from 'src/app/services/account.service';
-import { CommunityService } from 'src/app/services/community.service';
-import { LandingPageService } from 'src/app/services/landing-page.service';
-import { LegalNoticeService } from 'src/app/services/legal-notice.service';
-import { ErrorTemplateService } from 'src/app/services/error-template.service';
+import {Component, OnInit} from '@angular/core';
+import {ActivatedRoute, Router} from '@angular/router';
+import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
+import {DataService} from 'src/app/services/data.service';
+import {OrganisationService} from 'src/app/services/organisation.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {UserService} from 'src/app/services/user.service';
+import {OrganisationDetailsComponent} from '../../admin/user-management/organisation/organisation-details/organisation-details.component';
+import {RoutingService} from 'src/app/services/routing.service';
+import {SystemService} from 'src/app/services/system.service';
+import {map} from 'rxjs';
+import {AccountService} from 'src/app/services/account.service';
+import {CommunityService} from 'src/app/services/community.service';
+import {LandingPageService} from 'src/app/services/landing-page.service';
+import {LegalNoticeService} from 'src/app/services/legal-notice.service';
+import {ErrorTemplateService} from 'src/app/services/error-template.service';
 
 @Component({
     selector: 'app-organisation',
@@ -38,7 +38,6 @@ import { ErrorTemplateService } from 'src/app/services/error-template.service';
 export class OrganisationComponent extends OrganisationDetailsComponent implements OnInit {
 
   constructor(
-    route: ActivatedRoute,
     confirmationDialogService: ConfirmationDialogService,
     organisationService: OrganisationService,
     userService: UserService,
@@ -51,9 +50,10 @@ export class OrganisationComponent extends OrganisationDetailsComponent implemen
     legalNoticeService: LegalNoticeService,
     errorTemplateService: ErrorTemplateService,
     router: Router,
+    route: ActivatedRoute,
     private readonly accountService: AccountService
   ) {
-    super(route, confirmationDialogService, organisationService, userService, dataService, popupService, routingService, systemService, communityService, landingPageService, legalNoticeService, errorTemplateService, router)
+    super(confirmationDialogService, organisationService, userService, dataService, popupService, routingService, systemService, communityService, landingPageService, legalNoticeService, errorTemplateService, router, route)
   }
 
   override getOrganisationId() {

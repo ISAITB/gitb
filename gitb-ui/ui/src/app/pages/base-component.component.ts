@@ -19,7 +19,7 @@ import { ErrorDescription } from "../types/error-description"
 
 export abstract class BaseComponent {
 
-    Constants = Constants
+    protected Constants = Constants
     alerts: Alert[] = []
 
     numberOrEmpty(value: any): boolean {

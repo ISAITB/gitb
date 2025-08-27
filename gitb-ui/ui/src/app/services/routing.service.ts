@@ -15,13 +15,9 @@
 
 import {Injectable} from '@angular/core';
 import {NavigationEnd, NavigationExtras, NavigationStart, Router} from '@angular/router';
-import {CommunityTab} from '../pages/admin/user-management/community/community-details/community-tab.enum';
-import {ConformanceStatementTab} from '../pages/organisation/conformance-statement/conformance-statement-tab';
-import {OrganisationTab} from '../pages/admin/user-management/organisation/organisation-details/OrganisationTab';
 import {Constants} from '../common/constants';
 import {DataService} from './data.service';
 import {MenuItem} from '../types/menu-item.enum';
-import {SystemAdministrationTab} from '../pages/admin/system-administration/system-administration-tab.enum';
 import {BreadcrumbItem} from '../components/breadcrumb/breadcrumb-item';
 import {BreadcrumbType} from '../types/breadcrumb-type';
 
@@ -150,7 +146,7 @@ export class RoutingService {
     }
   }
 
-  toOwnConformanceStatement(organisationId: number, systemId: number, actorId: number, snapshotId?: number, snapshotLabel?: string, tab?: ConformanceStatementTab) {
+  toOwnConformanceStatement(organisationId: number, systemId: number, actorId: number, snapshotId?: number, snapshotLabel?: string, tab?: number) {
     const pathParts = ['organisation', 'conformance', organisationId, 'system', systemId, 'actor', actorId]
     if (snapshotId != undefined) {
       pathParts.push('snapshot', snapshotId)
@@ -158,7 +154,7 @@ export class RoutingService {
     return this.navigate(MenuItem.myConformanceStatements, pathParts, this.addConformanceStatementExtras(tab, snapshotLabel))
   }
 
-  toConformanceStatement(organisationId: number, systemId: number, actorId: number, communityId: number, snapshotId?: number, snapshotLabel?: string, tab?: ConformanceStatementTab) {
+  toConformanceStatement(organisationId: number, systemId: number, actorId: number, communityId: number, snapshotId?: number, snapshotLabel?: string, tab?: number) {
     const pathParts = ['admin', 'users', 'community', communityId, 'organisation', organisationId, 'conformance', 'system', systemId, 'actor', actorId]
     if (snapshotId != undefined) {
       pathParts.push('snapshot', snapshotId)
@@ -166,15 +162,16 @@ export class RoutingService {
     return this.navigate(MenuItem.communityManagement, pathParts, this.addConformanceStatementExtras(tab, snapshotLabel))
   }
 
-  private addConformanceStatementExtras(tab?: ConformanceStatementTab, snapshotLabel?: string) {
-    let extras: NavigationExtras|undefined = undefined
-    if (tab != undefined || snapshotLabel != undefined) {
-      extras = {}
-      extras.state = {}
-      if (tab != undefined) {
-        extras.state[Constants.NAVIGATION_PATH_PARAM.TAB] = ConformanceStatementTab[tab]
+  private addConformanceStatementExtras(tab?: number, snapshotLabel?: string) {
+    let extras: NavigationExtras|undefined = this.addTabExtras(tab)
+    if (snapshotLabel != undefined) {
+      if (extras == undefined) {
+        extras = {}
+        if (extras.state == undefined) {
+          extras.state = {}
+        }
       }
-      if (snapshotLabel != undefined) {
+      if (extras.state != undefined) {
         extras.state[Constants.NAVIGATION_PATH_PARAM.SNAPSHOT_LABEL] = snapshotLabel
       }
     }
@@ -222,34 +219,38 @@ export class RoutingService {
     return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'organisation', 'create'])
   }
 
-  toOwnOrganisationDetails(tab?: OrganisationTab, viewProperties?: boolean) {
+  toOwnOrganisationDetails(tab?: number, viewProperties?: boolean) {
     const navigationPaths = ['settings', 'organisation']
     if (viewProperties == true) {
       if (tab != undefined) {
-        return this.navigate(MenuItem.myOrganisation, navigationPaths, { state: { tab: OrganisationTab[tab] }, queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.VIEW_PROPERTIES, true) })
+        const extras = this.addTabExtras(tab)!
+        extras.queryParams = this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.VIEW_PROPERTIES, true)
+        return this.navigate(MenuItem.myOrganisation, navigationPaths, extras)
       } else {
         return this.navigate(MenuItem.myOrganisation, navigationPaths, { queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.VIEW_PROPERTIES, true) })
       }
     } else {
       if (tab != undefined) {
-        return this.navigate(MenuItem.myOrganisation, navigationPaths, { state: { tab: OrganisationTab[tab] } })
+        return this.navigate(MenuItem.myOrganisation, navigationPaths, this.addTabExtras(tab))
       } else {
         return this.navigate(MenuItem.myOrganisation, navigationPaths)
       }
     }
   }
 
-  toOrganisationDetails(communityId: number, organisationId: number, tab?: OrganisationTab, viewProperties?: boolean) {
+  toOrganisationDetails(communityId: number, organisationId: number, tab?: number, viewProperties?: boolean) {
     let navigationPaths = ['admin', 'users', 'community', communityId, 'organisation', organisationId]
     if (viewProperties == true) {
       if (tab != undefined) {
-        return this.navigate(MenuItem.communityManagement, navigationPaths, { state: { tab: OrganisationTab[tab] }, queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.VIEW_PROPERTIES, true) })
+        const extras = this.addTabExtras(tab)!
+        extras.queryParams = this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.VIEW_PROPERTIES, true)
+        return this.navigate(MenuItem.communityManagement, navigationPaths, extras)
       } else {
         return this.navigate(MenuItem.communityManagement, navigationPaths, { queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.VIEW_PROPERTIES, true) })
       }
     } else {
       if (tab != undefined) {
-        return this.navigate(MenuItem.communityManagement, navigationPaths, { state: { tab: OrganisationTab[tab] } })
+        return this.navigate(MenuItem.communityManagement, navigationPaths, this.addTabExtras(tab))
       } else {
         return this.navigate(MenuItem.communityManagement, navigationPaths)
       }
@@ -372,9 +373,9 @@ export class RoutingService {
     return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', 'create'])
   }
 
-  toCommunity(communityId: number, tab?: CommunityTab) {
+  toCommunity(communityId: number, tab?: number) {
     if (tab != undefined) {
-      return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId], { state: { tab: CommunityTab[tab] } })
+      return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId], this.addTabExtras(tab))
     } else {
       return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId])
     }
@@ -504,9 +505,9 @@ export class RoutingService {
     return this.navigate(MenuItem.dataExport, ['admin', 'export'])
   }
 
-  toSystemAdministration(tab?: SystemAdministrationTab) {
+  toSystemAdministration(tab?: number) {
     if (tab != undefined) {
-      return this.navigate(MenuItem.systemAdministration, [ 'admin', 'system' ], { state: { tab: SystemAdministrationTab[tab] } })
+      return this.navigate(MenuItem.systemAdministration, [ 'admin', 'system' ], this.addTabExtras(tab))
     } else {
       return this.navigate(MenuItem.systemAdministration, [ 'admin', 'system' ])
     }
@@ -523,7 +524,11 @@ export class RoutingService {
   private addTabExtras(tabIndex?: number) {
     let extras: NavigationExtras|undefined = undefined
     if (tabIndex != undefined) {
-      extras = { state: { tab: tabIndex }}
+      extras = {
+        queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.TAB, tabIndex),
+        state: { tab: tabIndex },
+        replaceUrl: true
+      }
     }
     return extras
   }

@@ -82,7 +82,7 @@
 	</div>
 	<div>
 		<tabset #tabs>
-			<tab (selectTab)="loadTestCases()" customClass="tabClass">
+			<tab (selectTab)="showTab(Constants.TAB.TEST_SUITE.TEST_CASES)" customClass="tabClass">
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-file-code" text="Test cases"></app-tab-title></ng-template>
 				<div class="tabPanel">
                     @if (dataStatus.status != Constants.STATUS.FINISHED) {
@@ -122,7 +122,7 @@
 				</div>
 			</tab>
 			@if (testSuite.shared) {
-				<tab (selectTab)="loadLinkedSpecifications()" customClass="tabClass">
+				<tab (selectTab)="showTab(Constants.TAB.TEST_SUITE.SPECIFICATIONS)" customClass="tabClass">
 					<ng-template tabHeading><app-tab-title icon="fa-solid fa-list-check" text="Linked specifications"></app-tab-title></ng-template>
 					<div class="tabPanel">
 						<div class="tabControls">
