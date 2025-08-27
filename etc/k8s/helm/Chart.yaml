@@ -1,6 +1,6 @@
 apiVersion: v2
 name: itb
-version: 1.8.0
+version: 1.9.0
 description: A Helm chart to install the Interoperability Test Bed (ITB) on Kubernetes
 type: application
 keywords:
@@ -17,4 +17,4 @@ maintainers:
     email: DIGIT-ITB@ec.europa.eu
     url: https://ec.europa.eu/info/departments/informatics_en
 icon: https://www.itb.ec.europa.eu/files/itb_logo.png
-appVersion: "1.27.3"
+appVersion: "1.27.4"

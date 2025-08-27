@@ -5,7 +5,7 @@
     <parent>
         <artifactId>GITB</artifactId>
         <groupId>com.gitb</groupId>
-        <version>1.27.3</version>
+        <version>1.27.4</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -27,7 +27,7 @@
 	    <dependency>
 		    <groupId>com.gitb</groupId>
 		    <artifactId>gitb-core</artifactId>
-		    <version>1.27.3</version>
+		    <version>1.27.4</version>
 	    </dependency>
 		<dependency>
 			<groupId>commons-codec</groupId>

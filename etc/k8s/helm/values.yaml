@@ -12,7 +12,7 @@
 #
 redis:
   # redis.image is the (full) image to use to create redis container(s).
-  image: isaitb/gitb-redis:1.27.3
+  image: isaitb/gitb-redis:1.27.4
   #
   # redis.name is the name to use for the redis deployment and (by default) service.
   name: itb-redis
@@ -45,7 +45,7 @@ redis:
 #
 mysql:
   # mysql.image is the (full) image to use to create mysql container(s).
-  image: isaitb/gitb-mysql:1.27.3
+  image: isaitb/gitb-mysql:1.27.4
   #
   # mysql.name is the name to use for the mysql deployment and (by default) service.
   name: itb-mysql
@@ -94,7 +94,7 @@ mysql:
 #
 srv:
   # srv.image is the (full) image to use to create srv container(s).
-  image: isaitb/gitb-srv:1.27.3
+  image: isaitb/gitb-srv:1.27.4
   #
   # srv.name is the name to use for the srv deployment and (by default) service.
   name: itb-srv
@@ -141,7 +141,7 @@ srv:
 #
 ui:
   # ui.image is the (full) image to use to create ui container(s).
-  image: isaitb/gitb-ui:1.27.3
+  image: isaitb/gitb-ui:1.27.4
   #
   # ui.name is the name to use for the ui deployment and (by default) service.
   name: itb-ui
