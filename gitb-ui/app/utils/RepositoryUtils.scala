@@ -784,9 +784,9 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 						val groupMap = parseTestCaseGroupInfo(tdlTestSuite.get, tdlTestCaseEntries)
 						// Read test cases and order them considering their groups
 						val testCases = parseTestCases(tdlTestCases, tdlTestCaseEntries, groupMap)
-						/*
-             * Process test cases
-             */
+                        /*
+                         * Process test cases
+                         */
 						for {
 							testCasesWithDocumentation <- addDocumentationToTestCases(tdlTestSuite.get, testCases, zip, specificationId, domainId)
 							testCaseInfoToReturn <- Future.successful {
