@@ -43,9 +43,9 @@
                     }
                     <div class="testCaseName">{{testCase.sname}}</div>
                     <div class="testCaseExecution">
-                        @if (testCase.parsedTags) {
+                        @if (testCase.tags) {
                             <div class="testCaseTagsContainer">
-                                <app-tags-display [tags]="testCase.parsedTags"></app-tags-display>
+                                <app-tags-display [tags]="getParsedTags(testCase)"></app-tags-display>
                             </div>
                         }
                         @if (testCase.updateTime) {

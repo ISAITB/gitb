@@ -80,11 +80,15 @@ export class TestCaseDisplayComponent extends BaseComponent implements OnInit {
     }
   }
 
+  getParsedTags(testCase: ConformanceTestCase) {
+    if (testCase.tags != undefined && testCase.parsedTags == undefined) {
+      testCase.parsedTags = sortBy(JSON.parse(testCase.tags), ['name'])
+    }
+    return testCase.parsedTags
+  }
+
   private resetPresentation() {
     for (let testCase of this.testCases) {
-      if (testCase.tags != undefined && testCase.parsedTags == undefined) {
-        testCase.parsedTags = sortBy(JSON.parse(testCase.tags), ['name'])
-      }
       this.hasDescription[testCase.id] = testCase.description != undefined && testCase.description != ''
       if (this.hasDescription[testCase.id] && !this.hasDescriptions) {
         this.hasDescriptions = true
