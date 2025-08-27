@@ -803,7 +803,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 										testCaseUpdateApproachTemp += (info.testCase.identifier -> info.updateApproach.get)
 									}
 								}
-								TestCaseInfo(Some(testCases.map(_.testCase)), testCaseGroups, Some(testCaseUpdateApproachTemp.toMap))
+								TestCaseInfo(Some(testCasesWithDocumentation.map(_.testCase)), testCaseGroups, Some(testCaseUpdateApproachTemp.toMap))
 							}
 						} yield testCaseInfoToReturn
 					} else {
@@ -882,10 +882,10 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 						}
 					}
 					testCase <- Future.successful {
-						testCaseInfo.copy(
-							testCase = testCaseInfo.testCase.copy(hasDocumentation = documentation.isDefined, documentation = documentation)
-						)
-					}
+              testCaseInfo.copy(
+                testCase = testCaseInfo.testCase.copy(hasDocumentation = documentation.isDefined, documentation = documentation)
+              )
+            }
 				} yield testCase
 			}
 		}
