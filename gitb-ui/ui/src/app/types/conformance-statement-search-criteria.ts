@@ -13,8 +13,11 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-package models
+export interface ConformanceStatementSearchCriteria {
 
-import play.api.libs.json.JsValue
+  filterText?: string
+  succeeded: boolean
+  failed: boolean
+  incomplete: boolean
 
-case class SearchResult[T](data: Iterable[T], count: Int, extraPropertyProvider: Option[() => Map[String, JsValue]] = None)
+}

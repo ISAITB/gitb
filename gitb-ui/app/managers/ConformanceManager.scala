@@ -22,11 +22,12 @@ import managers.ConformanceManager._
 import managers.triggers.TriggerHelper
 import models.Enums.{ConformanceStatementItemType, OrganizationType, UserRole}
 import models.snapshot._
-import models.statement.{ConformanceItemTreeData, ConformanceStatementResults}
+import models.statement.{ConformanceItemTreeData, ConformanceStatementPaging, ConformanceStatementResults, ConformanceStatementSearchCriteria}
 import models.{FileInfo, _}
 import org.apache.commons.lang3.Strings
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
+import play.api.libs.json.JsBoolean
 import slick.lifted.{Query, Rep}
 import utils.TimeUtil.dateFromFilterString
 import utils.{CryptoUtil, MimeUtil, RepositoryUtils, TimeUtil}
@@ -809,7 +810,68 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 		}
 	}
 
-	def getConformanceStatementsForSystem(systemId: Long, actorId: Option[Long] = None, snapshotId: Option[Long] = None, withDescriptions: Boolean = false, withResults: Boolean = true): Future[Iterable[ConformanceStatementItem]] = {
+  def getConformanceStatementsForSystemPaged(page: Long, limit: Long, searchCriteria: ConformanceStatementSearchCriteria, systemId: Long, snapshotId: Option[Long] = None): Future[SearchResult[ConformanceStatementItem]] = {
+    getConformanceStatementsForSystem(systemId, None, snapshotId).map { statements =>
+      // Apply paging.
+      val filteredResults = if (searchCriteria.filteringNeeded()) {
+        filterStatements(statements, searchCriteria, onlyCheckStatus = false)
+      } else {
+        statements
+      }
+      val pagingInfo = new ConformanceStatementPaging(page, limit)
+      SearchResult(
+        pageStatements(filteredResults, pagingInfo),
+        pagingInfo.count,
+        Some(() => {
+          Map("hasStatements" -> JsBoolean(statements.nonEmpty))
+        })
+      )
+    }
+  }
+
+  private def filterStatements(statements: Iterable[ConformanceStatementItem], criteria: ConformanceStatementSearchCriteria, onlyCheckStatus: Boolean): Iterable[ConformanceStatementItem] = {
+    statements.filter { childItem =>
+      filterStatement(childItem, criteria, onlyCheckStatus)
+    }
+  }
+
+  private def filterStatement(statement: ConformanceStatementItem, criteria: ConformanceStatementSearchCriteria, onlyCheckStatus: Boolean): Boolean = {
+    val matches = criteria.checkItem(statement, onlyCheckStatus)
+    if (statement.items.isEmpty || statement.items.get.isEmpty) {
+      // This is a leaf.
+      matches
+    } else {
+      // This is a parent item.
+      val retainedChildren = if (matches) {
+        filterStatements(statement.items.get, criteria, onlyCheckStatus = true)
+      } else {
+        filterStatements(statement.items.get, criteria, onlyCheckStatus)
+      }
+      statement.withChildren(retainedChildren)
+      retainedChildren.nonEmpty
+    }
+  }
+
+  private def pageStatements(statements: Iterable[ConformanceStatementItem], pagingInfo: ConformanceStatementPaging): Iterable[ConformanceStatementItem] = {
+    statements.filter { childItem =>
+      pageStatement(childItem, pagingInfo)
+    }
+  }
+
+  private def pageStatement(statement: ConformanceStatementItem, pagingInfo: ConformanceStatementPaging): Boolean = {
+    if (statement.items.isEmpty || statement.items.get.isEmpty) {
+      // This is a leaf.
+      pagingInfo.count += 1
+      // Keep if within range.
+      pagingInfo.count >= pagingInfo.minIndex && pagingInfo.count <= pagingInfo.maxIndex
+    } else {
+      val retainedChildren = pageStatements(statement.items.get, pagingInfo)
+      statement.withChildren(retainedChildren)
+      retainedChildren.nonEmpty
+    }
+  }
+
+  def getConformanceStatementsForSystem(systemId: Long, actorId: Option[Long] = None, snapshotId: Option[Long] = None, withDescriptions: Boolean = false, withResults: Boolean = true): Future[Iterable[ConformanceStatementItem]] = {
 		DB.run(
 			for {
 				statements <- {
@@ -1023,7 +1085,7 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 		}
 	}
 
-	private def sortConformanceStatementItems(items: Seq[ConformanceStatementItem]): Seq[ConformanceStatementItem] = {
+	private def sortConformanceStatementItems(items: Iterable[ConformanceStatementItem]): Iterable[ConformanceStatementItem] = {
 		val sortedItems = new ListBuffer[ConformanceStatementItem]()
 		items.foreach { item =>
 			if (item.items.isDefined && item.items.get.nonEmpty) {

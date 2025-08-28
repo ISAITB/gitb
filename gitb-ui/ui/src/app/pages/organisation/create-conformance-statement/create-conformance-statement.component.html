@@ -42,13 +42,15 @@
                 }
               </div>
               @if (visibleItemCount == 0) {
-                <div class="no-statements-visible">
-                  No conformance statements were found matching your search text.
+                <div class="statement-alert-container">
+                    <div class="alert alert-info rounded mb-0 mt-3">
+                        <span>No conformance statements were found matching your search text.</span>
+                    </div>
                 </div>
               } @else {
-                  <div class="statement-container">
-                          <app-conformance-statement-items-display [items]="items" [animated]="animated" (selectionChanged)="selectionChanged($event)"></app-conformance-statement-items-display>
-                  </div>
+                <div class="statement-container">
+                    <app-conformance-statement-items-display [items]="items" [animated]="animated" (selectionChanged)="selectionChanged($event)"></app-conformance-statement-items-display>
+                </div>
               }
             }
           }

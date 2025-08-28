@@ -37,6 +37,8 @@ import {FilterUpdate} from 'src/app/components/test-filter/filter-update';
 import {
   BaseConformanceItemDisplayComponent
 } from 'src/app/components/base-conformance-item-display/base-conformance-item-display.component';
+import {PagingEvent} from '../../../components/paging-controls/paging-event';
+import {CheckboxOptionState} from '../../../components/checkbox-option-panel/checkbox-option-state';
 
 @Component({
     selector: 'app-conformance-dashboard',
@@ -361,15 +363,31 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     })
   }
 
+  filterByStatus(choices: CheckboxOptionState) {
+    super.filterByStatus(choices);
+    this.getConformanceStatementsForTreeView()
+  }
+
+  doTreeViewPaging(event: PagingEvent) {
+    this.getConformanceStatementsForTreeViewInternal(event)
+  }
+
   getConformanceStatementsForTreeView() {
+    this.getConformanceStatementsForTreeViewInternal({ targetPage: 1, targetPageSize: 10 })
+  }
+
+  getConformanceStatementsForTreeViewInternal(pagingInfo: PagingEvent) {
     if (this.selectedSystemId != undefined) {
-      this.dataStatus.status = Constants.STATUS.PENDING
-      this.conformanceService.getConformanceStatementsForSystem(this.selectedSystemId, this.activeConformanceSnapshot?.id)
+      if (this.dataStatus.status == Constants.STATUS.FINISHED) {
+        this.updatePending = true
+      } else {
+        this.dataStatus.status = Constants.STATUS.PENDING
+      }
+      this.conformanceService.getConformanceStatementsForSystem(this.selectedSystemId, this.activeConformanceSnapshot?.id, pagingInfo.targetPage, pagingInfo.targetPageSize, this.searchCriteria)
       .subscribe((data) => {
-        this.itemsByType = this.dataService.organiseConformanceItemsByType(data)
-        this.statements = this.dataService.prepareConformanceStatementItemsForDisplay(data)
-        this.filterStatements()
+        this.applyTreeViewSearchResult(data, pagingInfo)
       }).add(() => {
+        this.updatePending = false
         this.dataStatus.status = Constants.STATUS.FINISHED
       })
     }

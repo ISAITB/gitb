@@ -13,8 +13,12 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-package models
+package models.statement
 
-import play.api.libs.json.JsValue
+class ConformanceStatementPaging(page: Long, limit: Long) {
 
-case class SearchResult[T](data: Iterable[T], count: Int, extraPropertyProvider: Option[() => Map[String, JsValue]] = None)
+  val minIndex: Long = (page - 1) * limit + 1
+  val maxIndex: Long = (page - 1) * limit + limit
+  var count = 0
+
+}

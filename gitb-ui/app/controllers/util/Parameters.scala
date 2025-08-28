@@ -211,6 +211,9 @@ object Parameters {
 
   val FILTERING = "filtering"
   val FILTER = "filter"
+  val SUCCEEDED = "succeeded"
+  val FAILED = "failed"
+  val INCOMPLETE = "incomplete"
 
   val SEQUENTIAL = "sequential"
   var PAYLOAD = "payload"

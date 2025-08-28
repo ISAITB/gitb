@@ -26,6 +26,7 @@ import {PagingEvent} from './paging-event';
 export class PagingControlsComponent implements OnInit, AfterViewInit {
 
   @Input() refreshing = false
+  @Input() inCard = false
   @Output() navigation = new EventEmitter<PagingEvent>();
   @ViewChild("pagingContainer") pagingContainer?: ElementRef
   @ViewChild("lastButton") lastButton?: ElementRef

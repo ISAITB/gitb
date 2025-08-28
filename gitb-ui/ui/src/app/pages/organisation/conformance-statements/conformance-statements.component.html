@@ -45,7 +45,7 @@
             </div>
 		</div>
         @if (!listView) {
-            <div class="card-body">
+            <div class="card-body" [class.disable-events]="updatePending">
                 @if (systemStatus.status == Constants.STATUS.FINISHED) {
                     @if (systems.length == 0) {
                         <div class="alert alert-info rounded mb-0">
@@ -64,10 +64,10 @@
                                     <app-multi-select-filter [config]="systemSelectionConfig" (apply)="systemSelectionChanged($event)"></app-multi-select-filter>
                                 </div>
                             </div>
-                            @if (statements.length > 0) {
+                            @if (hasStatementsBeforeFiltering || statements.length > 0) {
                                 <div #searchControls class="searchControls">
                                     <div class="text-filter">
-                                        <app-text-filter name="statementFilter" [width]="300" [placeholder]="'Search statements...'" [(ngModel)]="statementFilter" (apply)="filterStatements()"></app-text-filter>
+                                        <app-text-filter name="statementFilter" [width]="300" [placeholder]="'Search statements...'" [(ngModel)]="searchCriteria.filterText" (apply)="getConformanceStatements()"></app-text-filter>
                                     </div>
                                     <div class="status-filter">
                                         <app-checkbox-option-panel
@@ -91,18 +91,18 @@
                         @if (system != undefined) {
                             @if (dataStatus.status == Constants.STATUS.FINISHED) {
                                 @if (statements.length == 0) {
-                                    <div class="alert alert-info rounded mb-0 top-margin">
-                                        <span>No conformance statements defined.</span>
-                                    </div>
+                                    @if (hasStatementsBeforeFiltering) {
+                                        <div class="alert alert-info rounded mb-0 top-margin">
+                                            <span>No conformance statements match your search criteria.</span>
+                                        </div>
+                                    } @else {
+                                        <div class="alert alert-info rounded mb-0 top-margin">
+                                            <span>No conformance statements defined.</span>
+                                        </div>
+                                    }
                                 } @else {
                                     <div class="statement-container">
-                                        @if (visibleItemCount == 0) {
-                                            <div class="alert alert-info rounded mb-0 top-margin">
-                                                <span>No conformance statements match your search criteria.</span>
-                                            </div>
-                                        } @else {
-                                            <app-conformance-statement-items-display [items]="statements" [animated]="animated" [withCheck]="false" [withExport]="true" [withResults]="true" (selectionChanged)="onStatementSelect($event)" (export)="onExportConformanceOverview($event)"></app-conformance-statement-items-display>
-                                        }
+                                        <app-conformance-statement-items-display #conformanceItemTree [items]="statements" [animated]="animated" [withCheck]="false" [withExport]="true" [withResults]="true" (selectionChanged)="onStatementSelect($event)" (export)="onExportConformanceOverview($event)"></app-conformance-statement-items-display>
                                     </div>
                                 }
                             } @else {
@@ -123,6 +123,7 @@
                         <div class="pending-message">Loading {{dataService.labelSystemsLower()}}...</div>
                     </div>
                 }
+                <app-paging-controls #pagingControls [inCard]="true" (navigation)="doTreeViewPaging($event)"></app-paging-controls>
             </div>
         } @else {
             <app-conformance-statement-table #listViewTable

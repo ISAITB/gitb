@@ -54,6 +54,8 @@ import {SystemParameter} from '../types/system-parameter';
 import {OrganisationParameter} from '../types/organisation-parameter';
 import {ErrorDescription} from '../types/error-description';
 import {SearchResult} from '../types/search-result';
+import {ConformanceStatementSearchCriteria} from '../types/conformance-statement-search-criteria';
+import {ConformanceStatementSearchResult} from '../types/conformance-statement-search-result';
 
 @Injectable({
   providedIn: 'root'
@@ -1106,14 +1108,24 @@ export class ConformanceService {
     })
   }
 
-  getConformanceStatementsForSystem(system: number, snapshotId?: number) {
-    let params: any = undefined
-    if (snapshotId != undefined) {
-      params = {
-        snapshot: snapshotId
-      }
+  private toPayload(searchCriteria: ConformanceStatementSearchCriteria): any {
+    const payload: any = {
+      succeeded: searchCriteria.succeeded,
+      failed: searchCriteria.failed,
+      incomplete: searchCriteria.incomplete
     }
-    return this.restService.get<ConformanceStatementItem[]>({
+    if (searchCriteria.filterText != undefined && searchCriteria.filterText.trim().length > 0) {
+      payload.filter = searchCriteria.filterText
+    }
+    return payload
+  }
+
+  getConformanceStatementsForSystem(system: number, snapshotId: number|undefined, page: number|undefined, limit: number|undefined, searchCriteria: ConformanceStatementSearchCriteria) {
+    const params = this.toPayload(searchCriteria)
+    if (snapshotId != undefined) params.snapshot = snapshotId
+    if (page != undefined) params.page = page
+    if (limit != undefined) params.limit = limit
+    return this.restService.get<ConformanceStatementSearchResult>({
       path: ROUTES.controllers.ConformanceService.getConformanceStatementsForSystem(system).url,
       authenticate: true,
       params: params

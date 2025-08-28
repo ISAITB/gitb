@@ -13,13 +13,12 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import {filter} from 'lodash';
 import {ConformanceStatementItem} from 'src/app/types/conformance-statement-item';
 import {ConformanceStatementResult} from 'src/app/types/conformance-statement-result';
 import {Counters} from '../test-status-icons/counters';
 import {DataService} from 'src/app/services/data.service';
-import {Constants} from 'src/app/common/constants';
 import {ConformanceStatus} from 'src/app/types/conformance-status';
 import {Observable} from 'rxjs';
 import {ConformanceTestSuite} from 'src/app/pages/organisation/conformance-statement/conformance-test-suite';
@@ -27,6 +26,10 @@ import {ConformanceStatusSummary} from 'src/app/types/conformance-status-summary
 import {ExportReportEvent} from 'src/app/types/export-report-event';
 import {StatementFilterState} from '../statement-controls/statement-filter-state';
 import {BaseComponent} from '../../pages/base-component.component';
+import {ConformanceStatementItemDisplayComponentApi} from './conformance-statement-item-display-component-api';
+import {
+  ConformanceStatementItemsDisplayComponentApi
+} from '../conformance-statement-items-display/conformance-statement-items-display-component-api';
 
 @Component({
     selector: 'app-conformance-statement-item-display',
@@ -34,7 +37,7 @@ import {BaseComponent} from '../../pages/base-component.component';
     styleUrls: ['./conformance-statement-item-display.component.less'],
     standalone: false
 })
-export class ConformanceStatementItemDisplayComponent extends BaseComponent implements OnInit{
+export class ConformanceStatementItemDisplayComponent extends BaseComponent implements OnInit, ConformanceStatementItemDisplayComponentApi {
 
   @Input() item!: ConformanceStatementItem
   @Input() shade = false
@@ -59,6 +62,8 @@ export class ConformanceStatementItemDisplayComponent extends BaseComponent impl
   @Output() export = new EventEmitter<ExportReportEvent>()
   @Output() viewTestSession = new EventEmitter<string>()
 
+  @ViewChildren('itemsComponent') itemsComponents?: QueryList<ConformanceStatementItemsDisplayComponentApi>
+
   hasChildren = false
   allChildrenHidden = false
   showCheck = false
@@ -74,16 +79,27 @@ export class ConformanceStatementItemDisplayComponent extends BaseComponent impl
   statementSummary?: ConformanceStatusSummary
   hasBadge = false
   pending = false
-  Constants = Constants
   refreshTestSuiteDisplay = new EventEmitter<void>()
   hasExpandedTestSuites = false
+  refreshCounters = new EventEmitter<Counters>()
 
   constructor(
     public readonly dataService: DataService
   ) { super() }
 
+  reset() {
+    this.ngOnInit()
+    if (this.itemsComponents) {
+      this.itemsComponents.forEach(item => item.reset())
+    }
+    if (this.counters) {
+      this.refreshCounters.emit(this.counters)
+    }
+  }
+
   ngOnInit(): void {
     this.hasChildren = this.item.items != undefined && this.item.items.length > 0
+    this.allChildrenHidden = false
     if (this.hasChildren) {
       const hiddenChildren = filter(this.item.items, (item) => {
         return item.hidden == true
@@ -93,6 +109,19 @@ export class ConformanceStatementItemDisplayComponent extends BaseComponent impl
       this.allChildrenHidden = true
     }
     this.showCheck = this.withCheck && (!this.hasChildren || this.allChildrenHidden)
+    this.showResults = false
+    this.showTestCases = false
+    this.results = undefined
+    this.counters = undefined
+    this.status = undefined
+    this.updateTime = undefined
+    this.testCasesOpen = false
+    this.testSuites = undefined
+    this.displayedTestSuites = []
+    this.statementSummary = undefined
+    this.hasBadge = false
+    this.pending = false
+    this.hasExpandedTestSuites = false
     if (this.withResults && this.allChildrenHidden) {
       this.results = this.findResults(this.item)
       if (this.results) {

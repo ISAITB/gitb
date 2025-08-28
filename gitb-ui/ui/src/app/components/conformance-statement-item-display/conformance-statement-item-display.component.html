@@ -1,7 +1,7 @@
 @if (!filtering || item.filtered) {
     @if (hideSelf) {
         @if (item.items) {
-            <app-conformance-statement-items-display
+            <app-conformance-statement-items-display #itemsComponent
                 [items]="item.items"
                 [wrapDescriptions]="wrapDescriptions"
                 [expandable]="expandable"
@@ -61,10 +61,10 @@
                         }
                         @if (counters) {
                             <div class="item-counters">
-                                <app-test-status-icons [counters]="counters" [asLine]="true"></app-test-status-icons>
+                                <app-test-status-icons [counters]="counters" [asLine]="true" [refresh]="refreshCounters"></app-test-status-icons>
                             </div>
                             <div class="item-ratios">
-                                <app-test-result-ratio [counters]="counters" [asLine]="true"></app-test-result-ratio>
+                                <app-test-result-ratio [counters]="counters" [asLine]="true" [refresh]="refreshCounters"></app-test-result-ratio>
                             </div>
                         }
                         @if (status) {
@@ -129,7 +129,7 @@
                 </div>
             } @else if (item.items && item.items.length > 0) {
                 <div class="item-content-container item-content" [collapse]="item.collapsed!" [isAnimated]="expandable && animated" (expanded)="expanded()" (collapses)="collapses()">
-                    <app-conformance-statement-items-display
+                    <app-conformance-statement-items-display #itemsComponent
                         [items]="item.items"
                         [wrapDescriptions]="wrapDescriptions"
                         [expandable]="expandable"

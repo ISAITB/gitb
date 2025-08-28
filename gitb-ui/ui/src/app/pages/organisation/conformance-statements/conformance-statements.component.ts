@@ -33,6 +33,8 @@ import {
 import {ConformanceSnapshotList} from 'src/app/types/conformance-snapshot-list';
 import {MultiSelectConfig} from '../../../components/multi-select-filter/multi-select-config';
 import {FilterUpdate} from '../../../components/test-filter/filter-update';
+import {PagingEvent} from '../../../components/paging-controls/paging-event';
+import {CheckboxOptionState} from '../../../components/checkbox-option-panel/checkbox-option-state';
 
 @Component({
     selector: 'app-conformance-statements',
@@ -163,15 +165,31 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
   }
 
   getConformanceStatements() {
-    this.dataStatus.status = Constants.STATUS.PENDING
-    this.conformanceService.getConformanceStatementsForSystem(this.system!.id, this.activeConformanceSnapshot?.id)
-    .subscribe((data) => {
-      this.itemsByType = this.dataService.organiseConformanceItemsByType(data)
-      this.statements = this.dataService.prepareConformanceStatementItemsForDisplay(data)
-      this.filterStatements()
-    }).add(() => {
+    this.getConformanceStatementsInternal({ targetPage: 1, targetPageSize: 10 })
+  }
+
+  filterByStatus(choices: CheckboxOptionState) {
+    super.filterByStatus(choices);
+    this.getConformanceStatements()
+  }
+
+  private getConformanceStatementsInternal(pagingInfo: PagingEvent) {
+    if (this.dataStatus.status == Constants.STATUS.FINISHED) {
+      this.updatePending = true
+    } else {
+      this.dataStatus.status = Constants.STATUS.PENDING
+    }
+    this.conformanceService.getConformanceStatementsForSystem(this.system!.id, this.activeConformanceSnapshot?.id, pagingInfo.targetPage, pagingInfo.targetPageSize, this.searchCriteria)
+      .subscribe((data) => {
+        this.applyTreeViewSearchResult(data, pagingInfo)
+      }).add(() => {
+      this.updatePending = false
       this.dataStatus.status = Constants.STATUS.FINISHED
     })
+  }
+
+  doTreeViewPaging(event: PagingEvent) {
+    this.getConformanceStatementsInternal(event)
   }
 
   onStatementSelect(statement: ConformanceStatementItem) {

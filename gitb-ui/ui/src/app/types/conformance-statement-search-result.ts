@@ -13,8 +13,11 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-package models
+import {SearchResult} from './search-result';
+import {ConformanceStatementItem} from './conformance-statement-item';
 
-import play.api.libs.json.JsValue
+export interface ConformanceStatementSearchResult extends SearchResult<ConformanceStatementItem> {
 
-case class SearchResult[T](data: Iterable[T], count: Int, extraPropertyProvider: Option[() => Map[String, JsValue]] = None)
+  hasStatements: boolean
+
+}

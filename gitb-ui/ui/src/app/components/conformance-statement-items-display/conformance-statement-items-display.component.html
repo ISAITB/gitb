@@ -1,5 +1,5 @@
 @for (item of items; track item.id) {
-    <app-conformance-statement-item-display
+    <app-conformance-statement-item-display #itemComponent
         [item]="item"
         [shade]="item.hidden?!shade:shade"
         [wrapDescriptions]="wrapDescriptions"

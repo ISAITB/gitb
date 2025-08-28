@@ -1513,8 +1513,11 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
   def getConformanceStatementsForSystem(systemId: Long): Action[AnyContent] = authorizedAction.async { request =>
     val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SNAPSHOT)
     authorizationManager.canViewConformanceStatements(request, systemId, snapshotId).flatMap { _ =>
-      conformanceManager.getConformanceStatementsForSystem(systemId, None, snapshotId).map { conformanceStatements =>
-        val json: String = JsonUtil.jsConformanceStatementItems(conformanceStatements).toString()
+      val page = ParameterExtractor.extractPageNumber(request)
+      val limit = ParameterExtractor.extractPageLimit(request)
+      val searchCriteria = ParameterExtractor.extractConformanceStatementSearchCriteria(request)
+      conformanceManager.getConformanceStatementsForSystemPaged(page, limit, searchCriteria, systemId, snapshotId).map { result =>
+        val json = JsonUtil.jsSearchResult(result, JsonUtil.jsConformanceStatementItems).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
     }

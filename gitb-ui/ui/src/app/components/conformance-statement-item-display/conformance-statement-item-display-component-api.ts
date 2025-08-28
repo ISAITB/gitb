@@ -13,8 +13,8 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-package models
+export interface ConformanceStatementItemDisplayComponentApi {
 
-import play.api.libs.json.JsValue
+  reset: () => void
 
-case class SearchResult[T](data: Iterable[T], count: Int, extraPropertyProvider: Option[() => Map[String, JsValue]] = None)
+}

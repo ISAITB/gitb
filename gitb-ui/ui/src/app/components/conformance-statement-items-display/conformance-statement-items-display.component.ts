@@ -13,12 +13,16 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { Observable } from 'rxjs';
-import { Constants } from 'src/app/common/constants';
-import { ConformanceStatementItem } from 'src/app/types/conformance-statement-item';
-import { ConformanceStatus } from 'src/app/types/conformance-status';
-import { ExportReportEvent } from 'src/app/types/export-report-event';
+import {Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
+import {Observable} from 'rxjs';
+import {Constants} from 'src/app/common/constants';
+import {ConformanceStatementItem} from 'src/app/types/conformance-statement-item';
+import {ConformanceStatus} from 'src/app/types/conformance-status';
+import {ExportReportEvent} from 'src/app/types/export-report-event';
+import {ConformanceStatementItemsDisplayComponentApi} from './conformance-statement-items-display-component-api';
+import {
+  ConformanceStatementItemDisplayComponentApi
+} from '../conformance-statement-item-display/conformance-statement-item-display-component-api';
 
 @Component({
     selector: 'app-conformance-statement-items-display',
@@ -26,7 +30,7 @@ import { ExportReportEvent } from 'src/app/types/export-report-event';
     styles: [],
     standalone: false
 })
-export class ConformanceStatementItemsDisplayComponent implements OnInit {
+export class ConformanceStatementItemsDisplayComponent implements OnInit, ConformanceStatementItemsDisplayComponentApi {
 
   @Input() items: ConformanceStatementItem[] = []
   @Input() shade = false
@@ -50,15 +54,15 @@ export class ConformanceStatementItemsDisplayComponent implements OnInit {
   @Output() export = new EventEmitter<ExportReportEvent>()
   @Output() viewTestSession = new EventEmitter<string>()
 
+  @ViewChildren('itemComponent') itemComponents?: QueryList<ConformanceStatementItemDisplayComponentApi>
+
   hidden = false
 
   constructor() { }
 
   ngOnInit(): void {
-    if (this.items.length == 1 && this.items[0].itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.DOMAIN) {
-      // If we have only one domain then we don't show it.
-      this.hidden = true
-    }
+    // If we have only one domain then we don't show it.
+    this.hidden = (this.items.length == 1 && this.items[0].itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.DOMAIN)
   }
 
   childSelectionChanged(childItem: ConformanceStatementItem) {
@@ -72,4 +76,12 @@ export class ConformanceStatementItemsDisplayComponent implements OnInit {
   onViewTestSession(session: string) {
     this.viewTestSession.emit(session)
   }
+
+  reset() {
+    this.ngOnInit()
+    if (this.itemComponents) {
+      this.itemComponents.forEach(item => item.reset())
+    }
+  }
+
 }

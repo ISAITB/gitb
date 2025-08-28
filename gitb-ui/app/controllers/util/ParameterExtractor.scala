@@ -20,6 +20,7 @@ import exceptions.{ErrorCodes, InvalidRequestException}
 import models.Enums._
 import controllers.util.Parameters
 import models.automation.TestServiceSearchCriteria
+import models.statement.ConformanceStatementSearchCriteria
 import models.theme.{Theme, ThemeFiles}
 import models.{Actor, Badges, Communities, CommunityReportSettings, CommunityResources, Configs, Constants, Domain, DomainParameter, Endpoints, Enums, ErrorTemplates, FileInfo, LandingPages, LegalNotices, NamedFile, OrganisationParameterValues, Organizations, SpecificationGroups, Specifications, SystemParameterValues, Systems, TestService, TestServiceWithParameter, Trigger, TriggerData, TriggerFireExpression, Triggers, Users}
 import org.apache.commons.lang3.StringUtils
@@ -55,6 +56,15 @@ object ParameterExtractor {
       }
     }
     fileMap.iterator.toMap
+  }
+
+  def extractConformanceStatementSearchCriteria(request: Request[AnyContent]): ConformanceStatementSearchCriteria = {
+    ConformanceStatementSearchCriteria(
+      filterText = ParameterExtractor.optionalQueryParameter(request, Parameters.FILTER).filter(s => !s.isBlank),
+      succeeded = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.SUCCEEDED).getOrElse(true),
+      failed = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.FAILED).getOrElse(true),
+      incomplete = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.INCOMPLETE).getOrElse(true)
+    )
   }
 
   def extractPageNumber(request:Request[AnyContent]): Long = {

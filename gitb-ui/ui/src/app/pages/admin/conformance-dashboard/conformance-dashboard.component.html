@@ -31,7 +31,7 @@
             </div>
         </div>
         @if (!listView) {
-            <div class="card-body treeDisplay">
+            <div class="card-body treeDisplay" [class.disable-events]="updatePending">
                 @if (treeControlsExist()) {
                     <div class="partyControls" [class.wrapped]="searchControlsWrapped" [class.not-wrapped]="!searchControlsWrapped">
                         <div #selectorControls class="partySelectors">
@@ -72,10 +72,10 @@
                                 }
                             }
                         </div>
-                        @if (dataStatus.status == Constants.STATUS.FINISHED && statements.length > 0) {
+                        @if (dataStatus.status == Constants.STATUS.FINISHED && (hasStatementsBeforeFiltering || statements.length > 0)) {
                             <div #searchControls class="partyButtons">
                                 <div class="text-filter">
-                                    <app-text-filter name="statementFilter" [width]="350" [placeholder]="'Search statements...'" [(ngModel)]="statementFilter" (apply)="filterStatements()"></app-text-filter>
+                                    <app-text-filter name="statementFilter" [width]="350" [placeholder]="'Search statements...'" [(ngModel)]="searchCriteria.filterText" (apply)="getConformanceStatementsForTreeView()"></app-text-filter>
                                 </div>
                                 <div class="status-filter">
                                     <app-checkbox-option-panel
@@ -83,9 +83,9 @@
                                         [options]="statusOptions"
                                         (updated)="filterByStatus($event)"></app-checkbox-option-panel>
                                 </div>
-                                <div class="btn-group export-group" dropdown [isDisabled]="selectedSystemId == undefined || statements.length == 0 || exportOverviewPending" placement="bottom right">
-                                    <button type="button" [disable]="selectedSystemId == undefined || statements.length == 0 || exportOverviewPending" [pending]="exportOverviewPending" class="btn btn-secondary text-nowrap" (click)="exportOverview('pdf')">Download report</button>
-                                    <button id="button-export" type="button" [disabled]="selectedSystemId == undefined || statements.length == 0 || exportOverviewPending" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+                                <div class="btn-group export-group" dropdown [isDisabled]="selectedSystemId == undefined || exportOverviewPending" placement="bottom right">
+                                    <button type="button" [disable]="selectedSystemId == undefined || exportOverviewPending" [pending]="exportOverviewPending" class="btn btn-secondary text-nowrap" (click)="exportOverview('pdf')">Download report</button>
+                                    <button id="button-export" type="button" [disabled]="selectedSystemId == undefined || exportOverviewPending" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
                                         <span class="caret"></span>
                                         <span class="sr-only visually-hidden">Download report</span>
                                     </button>
@@ -116,12 +116,19 @@
                 } @else if (availableCommunities && availableOrganisations && availableSystems && selectedSystemId != undefined) {
                     @if (dataStatus.status == Constants.STATUS.FINISHED) {
                         @if (statements.length == 0) {
-                            <div class="alert alert-info rounded mb-0 top-margin">
-                                <span>No conformance statements defined.</span>
-                            </div>
+                            @if (hasStatementsBeforeFiltering) {
+                                <div class="alert alert-info rounded mb-0 top-margin">
+                                    <span>No conformance statements match your search criteria.</span>
+                                </div>
+                            } @else {
+                                <div class="alert alert-info rounded mb-0 top-margin">
+                                    <span>No conformance statements defined.</span>
+                                </div>
+                            }
                         } @else {
                             <div class="statement-container">
                                 <app-conformance-statement-items-display
+                                    #conformanceItemTree
                                     [items]="statements"
                                     [animated]="true"
                                     [withCheck]="false"
@@ -145,6 +152,7 @@
                         </div>
                     }
                 }
+                <app-paging-controls #pagingControls [inCard]="true" (navigation)="doTreeViewPaging($event)"></app-paging-controls>
             </div>
         } @else {
             <app-conformance-statement-table #listViewTable

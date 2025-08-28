@@ -428,10 +428,16 @@ object JsonUtil {
   }
 
   def jsSearchResult[T](result: SearchResult[T], dataFn: Iterable[T] => JsArray): JsObject = {
-    Json.obj(
+    var json = Json.obj(
       "data" -> dataFn.apply(result.data),
       "count" -> result.count
     )
+    if (result.extraPropertyProvider.isDefined) {
+      result.extraPropertyProvider.get.apply().foreach { entry =>
+        json = json + (entry._1 -> entry._2)
+      }
+    }
+    json
   }
 
   def jsTestSuitesList(list: Iterable[TestSuites]): JsArray = {
