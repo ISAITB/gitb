@@ -2067,6 +2067,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
         item.results.get.testSuites.get.foreach { testSuite =>
           val testSuiteOverview = new com.gitb.reports.dto.TestSuiteOverview()
           newItem.getData.getTestSuites.add(testSuiteOverview)
+          testSuiteOverview.setTestSuiteId(testSuite.id)
           testSuiteOverview.setOverallStatus(testSuite.result.value())
           testSuiteOverview.setTestSuiteName(testSuite.name)
           testSuiteOverview.setTestSuiteDescription(testSuite.description.orNull)
