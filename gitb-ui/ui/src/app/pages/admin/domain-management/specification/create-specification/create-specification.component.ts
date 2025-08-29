@@ -60,6 +60,9 @@ export class CreateSpecificationComponent extends BaseComponent implements OnIni
     this.specificationService.getDomainSpecificationGroups(this.domainId)
     .subscribe((data) => {
       this.specification.groups = data
+      if (this.specification.groups && this.specification.groups.length > 0 && this.specification.group != undefined) {
+        this.specification.groupObject = this.specification.groups.find(x => x.id == this.specification.group)
+      }
     })
     this.specification.badges = {
       enabled: false,
