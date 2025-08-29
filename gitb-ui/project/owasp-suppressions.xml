@@ -209,5 +209,5 @@
     ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.eclipse\.angus/smtp@.*$</packageUrl>
         <vulnerabilityName>CVE-2025-7962</vulnerabilityName>
-    </suppress>    
+    </suppress>
 </suppressions>
