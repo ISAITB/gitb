@@ -154,4 +154,11 @@
         <packageUrl regex="true">^pkg:maven/org\.springframework/spring-.*@.*$</packageUrl>
         <vulnerabilityName>CVE-2025-41242</vulnerabilityName>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+    file name: angus-mail-2.0.3.jar (shaded: org.eclipse.angus:smtp:2.0.3)
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.eclipse\.angus/smtp@.*$</packageUrl>
+        <vulnerabilityName>CVE-2025-7962</vulnerabilityName>
+    </suppress>
 </suppressions>
