@@ -152,7 +152,7 @@
                         </div>
                     }
                 }
-                <app-paging-controls #pagingControls [inCard]="true" (navigation)="doTreeViewPaging($event)"></app-paging-controls>
+                <app-paging-controls #pagingControls [placement]="PagingPlacement.card" (navigation)="doTreeViewPaging($event)"></app-paging-controls>
             </div>
         } @else {
             <app-conformance-statement-table #listViewTable

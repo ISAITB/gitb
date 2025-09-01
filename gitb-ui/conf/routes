@@ -94,6 +94,7 @@ POST    /api/domains                            @controllers.ConformanceService.
 DELETE  /api/domains/:domain_id                 @controllers.ConformanceService.deleteDomain(domain_id: Long)
 POST    /api/domains/:domain_id                 @controllers.ConformanceService.updateDomain(domain_id: Long)
 GET     /api/domains/:domain_id/specs           @controllers.ConformanceService.getDomainSpecs(domain_id: Long)
+GET     /api/domains/:domain_id/specsPaged      @controllers.ConformanceService.getDomainSpecsWithPaging(domain_id: Long)
 GET     /api/domains/:domain_id/searchSuites    @controllers.ConformanceService.searchSharedTestSuites(domain_id: Long)
 GET     /api/domains/:domain_id/suites          @controllers.ConformanceService.getSharedTestSuites(domain_id: Long)
 POST    /api/domains/suites/link                @controllers.ConformanceService.linkSharedTestSuite()

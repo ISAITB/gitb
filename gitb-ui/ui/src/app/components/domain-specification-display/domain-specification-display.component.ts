@@ -34,6 +34,7 @@ export class DomainSpecificationDisplayComponent {
   @Input() first = false
   @Input() last = false
   @Input() dragOngoing = false
+  @Input() dragEnabled = false
   @Output() selectSpec = new EventEmitter<DomainSpecification>()
   @Output() removeSpec = new EventEmitter<[number, number]>()
   @Output() moveSpec = new EventEmitter<[number, number|undefined, number]>()

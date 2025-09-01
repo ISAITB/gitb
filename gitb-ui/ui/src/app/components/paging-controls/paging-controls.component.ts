@@ -16,6 +16,7 @@
 import {AfterViewInit, Component, ElementRef, EventEmitter, Input, NgZone, OnInit, Output, ViewChild} from '@angular/core';
 import {PagingStatus} from './paging-status';
 import {PagingEvent} from './paging-event';
+import {PagingPlacement} from './paging-placement';
 
 @Component({
   selector: 'app-paging-controls',
@@ -26,7 +27,7 @@ import {PagingEvent} from './paging-event';
 export class PagingControlsComponent implements OnInit, AfterViewInit {
 
   @Input() refreshing = false
-  @Input() inCard = false
+  @Input() placement: PagingPlacement = PagingPlacement.table
   @Output() navigation = new EventEmitter<PagingEvent>();
   @ViewChild("pagingContainer") pagingContainer?: ElementRef
   @ViewChild("lastButton") lastButton?: ElementRef
@@ -39,6 +40,7 @@ export class PagingControlsComponent implements OnInit, AfterViewInit {
   controlsWrapped = false
   wrapWidth?: number
   numberFormat = new Intl.NumberFormat('en-GB')
+  protected readonly PagingPlacement = PagingPlacement;
 
   constructor(private readonly zone: NgZone) {
   }

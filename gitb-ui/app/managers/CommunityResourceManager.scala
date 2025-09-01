@@ -135,7 +135,7 @@ class CommunityResourceManager @Inject()(repositoryUtils: RepositoryUtils,
     val query = PersistenceSchema.communityResources
       .filter(_.community === communityId)
       .filterOpt(filter)((table, filterValue) => {
-        val filterValueToUse = s"%${filterValue.toLowerCase}%"
+        val filterValueToUse = toLowercaseLikeParameter(filterValue)
         table.name.toLowerCase.like(filterValueToUse) || table.description.toLowerCase.like(filterValueToUse)
       })
       .sortBy(_.name.asc)
@@ -328,7 +328,7 @@ class CommunityResourceManager @Inject()(repositoryUtils: RepositoryUtils,
       resources <- PersistenceSchema.communityResources
         .filter(_.community === communityId)
         .filterOpt(filter)((table, filterValue) => {
-          val filterValueToUse = s"%${filterValue.toLowerCase}%"
+          val filterValueToUse = toLowercaseLikeParameter(filterValue)
           table.name.toLowerCase.like(filterValueToUse) || table.description.toLowerCase.like(filterValueToUse)
         })
         .map(x => (x.id, x.name))

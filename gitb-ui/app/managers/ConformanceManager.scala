@@ -22,8 +22,8 @@ import managers.ConformanceManager._
 import managers.triggers.TriggerHelper
 import models.Enums.{ConformanceStatementItemType, OrganizationType, UserRole}
 import models.snapshot._
-import models.statement.{ConformanceItemTreeData, ConformanceStatementPaging, ConformanceStatementResults, ConformanceStatementSearchCriteria}
-import models.{FileInfo, _}
+import models.statement.{ConformanceItemTreeData, ConformanceStatementResults, ConformanceStatementSearchCriteria}
+import models.{FileInfo, PagingStatus, _}
 import org.apache.commons.lang3.Strings
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
@@ -818,7 +818,7 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
       } else {
         statements
       }
-      val pagingInfo = new ConformanceStatementPaging(page, limit)
+      val pagingInfo = new PagingStatus(page, limit)
       SearchResult(
         pageStatements(filteredResults, pagingInfo),
         pagingInfo.count,
@@ -852,13 +852,13 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
     }
   }
 
-  private def pageStatements(statements: Iterable[ConformanceStatementItem], pagingInfo: ConformanceStatementPaging): Iterable[ConformanceStatementItem] = {
+  private def pageStatements(statements: Iterable[ConformanceStatementItem], pagingInfo: PagingStatus): Iterable[ConformanceStatementItem] = {
     statements.filter { childItem =>
       pageStatement(childItem, pagingInfo)
     }
   }
 
-  private def pageStatement(statement: ConformanceStatementItem, pagingInfo: ConformanceStatementPaging): Boolean = {
+  private def pageStatement(statement: ConformanceStatementItem, pagingInfo: PagingStatus): Boolean = {
     if (statement.items.isEmpty || statement.items.get.isEmpty) {
       // This is a leaf.
       pagingInfo.count += 1

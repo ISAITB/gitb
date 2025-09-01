@@ -35,6 +35,7 @@ import {
   ConformanceStatementItemsDisplayComponentApi
 } from '../conformance-statement-items-display/conformance-statement-items-display-component-api';
 import {ConformanceStatementSearchResult} from '../../types/conformance-statement-search-result';
+import {PagingPlacement} from '../paging-controls/paging-placement';
 
 @Component({
     template: '',
@@ -53,6 +54,7 @@ export abstract class BaseConformanceItemDisplayComponent extends BaseComponent 
   protected static SHOW_SUCCEEDED = '0'
   protected static SHOW_FAILED = '1'
   protected static SHOW_INCOMPLETE = '2'
+  protected readonly PagingPlacement = PagingPlacement;
 
   readonly Constants = Constants
   searchCriteria: ConformanceStatementSearchCriteria = {

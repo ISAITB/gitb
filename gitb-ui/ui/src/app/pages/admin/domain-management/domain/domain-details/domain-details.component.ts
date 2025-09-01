@@ -34,10 +34,9 @@ import {saveAs} from 'file-saver';
 import {TestSuite} from 'src/app/types/test-suite';
 import {BaseTabbedComponent} from 'src/app/pages/base-tabbed-component';
 import {SpecificationService} from 'src/app/services/specification.service';
-import {finalize, forkJoin, map, Observable, ReplaySubject} from 'rxjs';
+import {finalize, forkJoin, map, Observable, of, ReplaySubject} from 'rxjs';
 import {DomainSpecification} from 'src/app/types/domain-specification';
 import {SpecificationGroup} from 'src/app/types/specification-group';
-import {find, remove} from 'lodash';
 import {BreadcrumbType} from 'src/app/types/breadcrumb-type';
 import {CdkDragDrop} from '@angular/cdk/drag-drop';
 import {TableApi} from '../../../../../components/table/table-api';
@@ -51,6 +50,8 @@ import {
 import {MultiSelectConfig} from '../../../../../components/multi-select-filter/multi-select-config';
 import {FilterUpdate} from '../../../../../components/test-filter/filter-update';
 import {TestService} from '../../../../../types/test-service';
+import {PagingControlsApi} from '../../../../../components/paging-controls/paging-controls-api';
+import {PagingPlacement} from '../../../../../components/paging-controls/paging-placement';
 
 @Component({
     selector: 'app-domain-details',
@@ -65,6 +66,8 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
   private static readonly PROCESSING_SERVICE_ENDPOINT_REGEXP = /^https?:\/\/\S+\/process/
 
   @ViewChild("sharedTestSuiteTable") sharedTestSuiteTable?: TableApi
+  @ViewChild("specificationPagingControls") specificationPagingControls?: PagingControlsApi
+
   domain: Partial<Domain> = {}
   domainSpecifications: DomainSpecification[] = []
   specifications: Specification[] = []
@@ -101,6 +104,12 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
   hasTestServices = false
   convertParameterSelectionConfig!: MultiSelectConfig<DomainParameter>
   convertPending = false
+  specificationFilter?: string
+  specificationsRefreshing = false
+  specificationGroupsLoaded = false
+  managingSpecificationOrder = false
+  hasMultipleSpecifications = false
+  protected readonly PagingPlacement = PagingPlacement;
 
   constructor(
     public readonly dataService: DataService,
@@ -136,7 +145,6 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
     }).add(() => {
       this.loaded = true
     })
-    this.loadSpecifications()
     this.convertParameterSelectionConfig = {
       name: 'convertParameterToService',
       textField: 'name',
@@ -157,21 +165,47 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
     }
   }
 
-  loadSpecifications(force?: boolean) {
-    if (this.specificationStatus.status == Constants.STATUS.NONE || force) {
+  applySpecificationFilter() {
+    this.loadSpecifications()
+  }
+
+  doSpecificationPaging(event: PagingEvent) {
+    this.loadSpecificationsInternal(event)
+  }
+
+  loadSpecifications() {
+    this.loadSpecificationsInternal({ targetPage: 1, targetPageSize: 10 })
+  }
+
+  loadSpecificationsInternal(pagingInfo: PagingEvent) {
+    if (this.specificationStatus.status == Constants.STATUS.FINISHED) {
+      this.specificationsRefreshing = true
+    } else {
       this.specificationStatus.status = Constants.STATUS.PENDING
-      this.domainSpecifications = []
-      const specsObservable = this.conformanceService.getDomainSpecifications(this.domainId, false)
-      const specGroupsObservable = this.specificationService.getDomainSpecificationGroups(this.domainId)
-      forkJoin([specsObservable, specGroupsObservable]).subscribe((results) => {
-        this.specificationGroups = results[1]
-        this.hasGroups = this.specificationGroups.length > 0
-        this.domainSpecifications = this.dataService.toDomainSpecifications(this.specificationGroups, results[0])
-        this.specifications = this.dataService.toSpecifications(this.domainSpecifications)
-      }).add(() => {
-        this.specificationStatus.status = Constants.STATUS.FINISHED
-      })
     }
+    const specsObservable = this.conformanceService.getDomainSpecificationsPaged(this.domainId, pagingInfo.targetPage, pagingInfo.targetPageSize, this.specificationFilter)
+    let specGroupsObservable: Observable<SpecificationGroup[]>
+    if (!this.specificationGroupsLoaded) {
+      specGroupsObservable = this.specificationService.getDomainSpecificationGroups(this.domainId)
+    } else {
+      specGroupsObservable = of(this.specificationGroups)
+    }
+    forkJoin([specsObservable, specGroupsObservable]).subscribe((results) => {
+      this.specificationGroups = results[1]
+      this.hasGroups = this.specificationGroups.length > 0
+      this.specificationGroupsLoaded = true
+      this.domainSpecifications = results[0].data
+      this.specifications = this.dataService.toSpecifications(this.domainSpecifications)
+      if (this.specificationStatus.status == Constants.STATUS.PENDING) {
+        // This was the very first load.
+        this.hasMultipleSpecifications = results[0].count > 1
+      }
+      this.toggleSpecificationGroupCollapse(false)
+      this.specificationPagingControls?.updateStatus(pagingInfo.targetPage, results[0].count)
+    }).add(() => {
+      this.specificationsRefreshing = false
+      this.specificationStatus.status = Constants.STATUS.FINISHED
+    })
   }
 
   loadSharedTestSuites(forceLoad?: boolean) {
@@ -433,90 +467,32 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
     this.routingService.toCreateSpecificationGroup(this.domainId)
   }
 
-  removeSpecificationFromGroup(specificationId: number, currentGroupId: number) {
-    this.specificationService.removeSpecificationFromGroup(specificationId)
-    .subscribe(() => {
-      const currentGroup = find(this.domainSpecifications, (ds) => ds.id == currentGroupId)
-      if (currentGroup && currentGroup.options) {
-        const specifications = remove(currentGroup.options, (ds) => ds.id == specificationId)
-        if (specifications && specifications.length > 0) {
-          specifications[0].groupId = undefined
-          specifications[0].option = false
-          specifications[0].removePending = false
-          this.domainSpecifications.push(specifications[0])
-        }
-        this.dataService.setSpecificationGroupVisibility(currentGroup)
-      }
-      this.dataService.sortDomainSpecifications(this.domainSpecifications)
-      this.specifications = this.dataService.toSpecifications(this.domainSpecifications)
-      this.popupService.success(this.dataService.labelSpecificationInGroup()+' removed.')
+  private reloadCurrentSpecificationPage() {
+    let page = this.specificationPagingControls?.getCurrentStatus().currentPage
+    let pageSize = this.specificationPagingControls?.getCurrentStatus().pageSize
+    if (page == undefined) page = 1
+    if (pageSize == undefined) pageSize = Constants.TABLE_PAGE_SIZE
+    this.loadSpecificationsInternal({ targetPage: page, targetPageSize: pageSize })
+  }
+
+  removeSpecificationFromGroup(specificationId: number) {
+    this.specificationService.removeSpecificationFromGroup(specificationId).subscribe(() => {
+      this.popupService.success(this.dataService.labelSpecificationInGroup() + ' removed.')
+      this.reloadCurrentSpecificationPage()
     })
   }
 
-  copySpecificationToGroup(specificationId: number, currentGroupId: number|undefined, newGroupId: number) {
-    this.specificationService.copySpecificationToGroup(newGroupId, specificationId)
-    .subscribe((result) => {
-      const newSpecificationId = result.id
-      let specification: DomainSpecification|undefined
-      if (currentGroupId) {
-        const currentGroup = find(this.domainSpecifications, (ds) => ds.id == currentGroupId)
-        if (currentGroup && currentGroup.options) {
-          specification = find(currentGroup.options, (ds) => ds.id == specificationId)
-        }
-      } else {
-        specification = find(this.domainSpecifications, (ds) => ds.id == specificationId)
-      }
-      const newGroup = find(this.domainSpecifications, (ds) => ds.id == newGroupId)
-      if (specification && newGroup && newGroup.options) {
-        const newSpecification: DomainSpecification = {
-          id: newSpecificationId,
-          sname: specification.sname,
-          fname: specification.fname,
-          description: specification.description,
-          domain: specification.domain,
-          hidden: specification.hidden,
-          groupId: newGroupId,
-          group: false,
-          option: true,
-          collapsed: false,
-          order: specification.order
-        }
-        specification.copyPending = false
-        newGroup.options.push(newSpecification)
-        this.dataService.sortDomainSpecifications(newGroup.options)
-        this.dataService.setSpecificationGroupVisibility(newGroup)
-        this.specifications = this.dataService.toSpecifications(this.domainSpecifications)
-        this.popupService.success(this.dataService.labelSpecificationInGroup()+' copied.')
-      }
+  copySpecificationToGroup(specificationId: number, newGroupId: number) {
+    this.specificationService.copySpecificationToGroup(newGroupId, specificationId).subscribe(() => {
+      this.popupService.success(this.dataService.labelSpecificationInGroup()+' copied.')
+      this.reloadCurrentSpecificationPage()
     })
   }
 
-  moveSpecificationToGroup(specificationId: number, currentGroupId: number|undefined, newGroupId: number) {
-    this.specificationService.addSpecificationToGroup(newGroupId, specificationId)
-    .subscribe(() => {
-      let specifications: DomainSpecification[]|undefined
-      if (currentGroupId) {
-        const currentGroup = find(this.domainSpecifications, (ds) => ds.id == currentGroupId)
-        if (currentGroup && currentGroup.options) {
-          specifications = remove(currentGroup.options, (ds) => ds.id == specificationId)
-          this.dataService.setSpecificationGroupVisibility(currentGroup)
-        }
-      } else {
-        specifications = remove(this.domainSpecifications, (ds) => ds.id == specificationId)
-      }
-      if (specifications && specifications.length > 0) {
-        specifications[0].movePending = false
-        specifications[0].groupId = newGroupId;
-        const group = find(this.domainSpecifications, (ds) => ds.id == newGroupId)
-        if (group && group.options) {
-          specifications[0].option = true
-          group.options.push(specifications[0])
-          this.dataService.setSpecificationGroupVisibility(group)
-          this.dataService.sortDomainSpecifications(group.options)
-        }
-      }
-      this.specifications = this.dataService.toSpecifications(this.domainSpecifications)
+  moveSpecificationToGroup(specificationId: number, newGroupId: number) {
+    this.specificationService.addSpecificationToGroup(newGroupId, specificationId).subscribe(() => {
       this.popupService.success(this.dataService.labelSpecificationInGroup()+' moved.')
+      this.reloadCurrentSpecificationPage()
     })
   }
 
@@ -555,22 +531,28 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
     .subscribe(() => {
       this.popupService.success("Ordering saved successfully.")
     }).add(() => {
+      this.managingSpecificationOrder = false
       this.saveOrderPending = false
     })
+  }
+
+  manageOrdering() {
+    this.managingSpecificationOrder = true
+    this.specificationFilter = undefined
+    this.loadSpecificationsInternal({ targetPage: 1, targetPageSize: 1000000})
+  }
+
+  cancelManageOrdering() {
+    this.managingSpecificationOrder = false
+    this.loadSpecifications()
   }
 
   resetOrdering() {
     this.saveOrderPending = true
     this.specificationService.resetSpecificationOrder(this.domainId)
     .subscribe(() => {
-      this.domainSpecifications.forEach((item) => {
-        item.order = 0
-        if (item.options) {
-          item.options.forEach((option) => option.order = 0)
-        }
-      })
-      this.dataService.sortDomainSpecifications(this.domainSpecifications)
       this.popupService.success("Ordering reset successfully.")
+      this.loadSpecifications()
     }).add(() => {
       this.saveOrderPending = false
     })
@@ -593,8 +575,6 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
       parameter: parameter
     }, true)
   }
-
-
 
   private guessTestServiceTypeFromParameter(parameter: DomainParameter): number|undefined {
     let guessedServiceType: number|undefined

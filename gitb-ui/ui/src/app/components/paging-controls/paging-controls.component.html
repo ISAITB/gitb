@@ -1,4 +1,4 @@
-<div #pagingContainer class="table-paging-controls" [class.hidden]="status.totalCount < status.pageSize" [class.in-card]="inCard">
+<div #pagingContainer class="table-paging-controls" [class.hidden]="status.totalCount <= status.pageSize"  [ngClass]="{'in-card': placement == PagingPlacement.card, 'in-tab': placement == PagingPlacement.tab, 'in-table': placement == PagingPlacement.table}">
     <div #pageControlsContainer class="paging-controls">
         <button type="button" class="btn btn-sm btn-secondary" [disabled]="status.previousDisabled || refreshing" (click)="doFirstPage()"><i class="fa-solid fa-chevron-left"></i><i class="fa-solid fa-chevron-left me-2"></i> First</button>
         <button type="button" class="btn btn-sm btn-secondary" [disabled]="status.previousDisabled || refreshing" (click)="doPrevPage()"><i class="fa-solid fa-chevron-left me-2"></i> Previous</button>

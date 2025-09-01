@@ -138,7 +138,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
     val query = PersistenceSchema.communities
       .filter(_.id =!= Constants.DefaultCommunityId)
       .filterOpt(filter)((table, filterValue) => {
-        val filterValueToUse = s"%${filterValue.toLowerCase}%"
+        val filterValueToUse = toLowercaseLikeParameter(filterValue)
         table.shortname.toLowerCase.like(filterValueToUse) || table.fullname.toLowerCase.like(filterValueToUse)
       })
       .map(x => (x.id, x.shortname, x.fullname))

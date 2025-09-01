@@ -793,8 +793,8 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
     DB.run(getSpecificationsInternal(ids, domainIds, groupIds, withGroups, snapshotId))
   }
 
-  def getSpecifications(domain: Long, withGroups: Boolean): Future[Seq[Specifications]] = {
-    val action = if (withGroups) {
+  def getSpecificationsWithGroups(domain: Long): Future[Seq[Specifications]] = {
+    DB.run {
       for {
         specData <- PersistenceSchema.specifications
           .joinLeft(PersistenceSchema.specificationGroups).on(_.group === _.id)
@@ -803,13 +803,120 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
           .result
         specsWithGroups <- DBIO.successful(mergeSpecsWithGroups(specData))
       } yield specsWithGroups
-    } else {
+    }
+  }
+
+  def getSpecificationsWithoutGroups(domain: Long): Future[Seq[Specifications]] = {
+    DB.run {
       PersistenceSchema.specifications
         .filter(_.domain === domain)
         .sortBy(x => (x.displayOrder.asc, x.shortname.asc))
         .result
     }
-    DB.run(action)
+  }
+
+  def getSpecificationsWithPaging(domain: Long, filter: Option[String], page: Long, limit: Long): Future[SearchResult[DomainSpecification]] = {
+    DB.run {
+      for {
+        groups <- PersistenceSchema.specificationGroups
+          .filter(_.domain === domain)
+          .sortBy(x => (x.displayOrder.asc, x.fullname.asc))
+          .result
+        specifications <- PersistenceSchema.specifications
+          .filter(_.domain === domain)
+          .sortBy(x => (x.displayOrder.asc, x.fullname.asc))
+          .result
+      } yield (groups, specifications)
+    }.map { data =>
+      val groups = data._1
+      val specifications = data._2
+      var results = ListBuffer[DomainSpecification]()
+      val groupMap = mutable.HashMap[Long, DomainSpecification]()
+      // Organise results.
+      groups.foreach { group =>
+        val result = DomainSpecification.forGroup(group)
+        results += result
+        groupMap += (result.id -> result)
+      }
+      specifications.foreach { specification =>
+        val result = DomainSpecification.forSpecification(specification)
+        if (result.groupId.isEmpty) {
+          results += result
+        } else {
+          groupMap(result.groupId.get).options.get += result
+        }
+      }
+      // Set visibility for groups.
+      groupMap.values.foreach { group =>
+        group.hidden = !group.options.exists(_.exists(spec => !spec.hidden))
+      }
+      // Apply sorting.
+      results = results.sortWith ((a, b) => {
+        if (a.displayOrder == b.displayOrder) {
+          a.fname.compareTo(b.fname) < 0
+        } else {
+          a.displayOrder < b.displayOrder
+        }
+      })
+      // Apply filtering.
+      if (filter.isDefined) {
+        results = filterDomainSpecifications(results, filter.get)
+      }
+      // Apply paging.
+      val pagingInfo = new PagingStatus(page, limit)
+      SearchResult(
+        pageDomainSpecifications(results, pagingInfo),
+        pagingInfo.count
+      )
+    }
+  }
+
+  private def filterDomainSpecifications(specs: ListBuffer[DomainSpecification], filterText: String): ListBuffer[DomainSpecification] = {
+    specs.filter { spec =>
+      filterDomainSpecification(spec, filterText)
+    }
+  }
+
+  private def filterDomainSpecification(spec: DomainSpecification, filterText: String): Boolean = {
+    val matches = spec.fname.toLowerCase().contains(filterText.toLowerCase)
+    if (spec.options.isEmpty || spec.options.get.isEmpty) {
+      matches
+    } else {
+      if (matches) {
+        true
+      } else {
+        val matchingOptions = filterDomainSpecifications(spec.options.get, filterText)
+        if (matchingOptions.isEmpty) {
+          spec.options = None
+        } else {
+          spec.options = Some(matchingOptions)
+        }
+        spec.options.isDefined
+      }
+    }
+  }
+
+  private def pageDomainSpecifications(specs: ListBuffer[DomainSpecification], pagingInfo: PagingStatus): ListBuffer[DomainSpecification] = {
+    specs.filter { spec =>
+      pageDomainSpecification(spec, pagingInfo)
+    }
+  }
+
+  private def pageDomainSpecification(spec: DomainSpecification, pagingInfo: PagingStatus): Boolean = {
+    if (spec.options.isEmpty || spec.options.get.isEmpty) {
+      // This is a leaf.
+      pagingInfo.count += 1
+      // Keep if within range.
+      pagingInfo.count >= pagingInfo.minIndex && pagingInfo.count <= pagingInfo.maxIndex
+    } else {
+      val retainedChildren = pageDomainSpecifications(spec.options.get, pagingInfo)
+      if (retainedChildren.isEmpty) {
+        spec.options = None
+      } else {
+        spec.options = Some(retainedChildren)
+      }
+      retainedChildren.nonEmpty
+    }
   }
 
   def getSpecificationsLinkedToTestSuite(testSuiteId: Long): Future[Seq[Specifications]] = {

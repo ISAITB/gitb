@@ -13,23 +13,12 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-export interface DomainSpecification {
+package models
 
-    id: number
-    sname: string
-    fname: string
-    description?: string
-    hidden: boolean
-    group: boolean
-    option: boolean
-    groupId?: number
-    options?: DomainSpecification[]
-    domain: number
-    order: number
+class PagingStatus(page: Long, limit: Long) {
 
-    collapsed?: boolean
-    movePending?: boolean
-    copyPending?: boolean
-    removePending?: boolean
+  val minIndex: Long = (page - 1) * limit + 1
+  val maxIndex: Long = (page - 1) * limit + limit
+  var count = 0
 
 }

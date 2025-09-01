@@ -56,6 +56,7 @@ import {ErrorDescription} from '../types/error-description';
 import {SearchResult} from '../types/search-result';
 import {ConformanceStatementSearchCriteria} from '../types/conformance-statement-search-criteria';
 import {ConformanceStatementSearchResult} from '../types/conformance-statement-search-result';
+import {DomainSpecification} from '../types/domain-specification';
 
 @Injectable({
   providedIn: 'root'
@@ -151,13 +152,21 @@ export class ConformanceService {
     })
   }
 
-  getDomainSpecifications(domainId: number, withGroups?: boolean) {
-    let params: any = {}
-    if (withGroups != undefined) {
-      params['groups'] = withGroups
-    }
+  getDomainSpecifications(domainId: number) {
     return this.restService.get<Specification[]>({
       path: ROUTES.controllers.ConformanceService.getDomainSpecs(domainId).url,
+      authenticate: true
+    })
+  }
+
+  getDomainSpecificationsPaged(domainId: number, page: number, limit: number, filter: string|undefined) {
+    let params: any = {
+      page: page,
+      limit: limit
+    }
+    if (filter != undefined) params.filter = filter
+    return this.restService.get<SearchResult<DomainSpecification>>({
+      path: ROUTES.controllers.ConformanceService.getDomainSpecsWithPaging(domainId).url,
       authenticate: true,
       params: params
     })

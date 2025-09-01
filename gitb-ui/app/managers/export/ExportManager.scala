@@ -1117,7 +1117,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
         ).zip(
           // Specifications
           loadIfApplicable(exportSettings.specifications,
-            () => specificationManager.getSpecifications(domainId, withGroups = false)
+            () => specificationManager.getSpecificationsWithoutGroups(domainId)
           ).zip(
             // Specification actors
             loadIfApplicable(exportSettings.specifications && exportSettings.actors,

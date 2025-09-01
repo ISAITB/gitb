@@ -93,7 +93,7 @@ class DomainManager @Inject() (domainParameterManager: DomainParameterManager,
   private def searchDomainsInternal(page: Long, limit: Long, filter: Option[String]): DBIO[SearchResult[Domain]] = {
     val query = PersistenceSchema.domains
       .filterOpt(filter)((table, filterValue) => {
-        val filterValueToUse = s"%${filterValue.toLowerCase}%"
+        val filterValueToUse = toLowercaseLikeParameter(filterValue)
         table.shortname.toLowerCase.like(filterValueToUse) || table.fullname.toLowerCase.like(filterValueToUse) || table.description.getOrElse("").toLowerCase.like(filterValueToUse)
       })
       .sortBy(_.shortname.asc)

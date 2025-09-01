@@ -169,7 +169,7 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 			.filter(_.domain === domain)
 			.filter(_.shared === true)
 			.filterOpt(filter)((table, filterValue) => {
-				val filterValueToUse = s"%${filterValue.toLowerCase}%"
+        val filterValueToUse = toLowercaseLikeParameter(filterValue)
 				table.identifier.toLowerCase.like(filterValueToUse) || table.shortname.toLowerCase.like(filterValueToUse) || table.description.getOrElse("").toLowerCase.like(filterValueToUse)
 			})
 			.sortBy(_.shortname.asc)
@@ -212,7 +212,7 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 			.join(PersistenceSchema.specificationHasTestSuites).on(_.id === _.testSuiteId)
 			.filter(_._2.specId === specification)
 			.filterOpt(filter)((table, filterValue) => {
-				val filterValueToUse = s"%${filterValue.toLowerCase}%"
+        val filterValueToUse = toLowercaseLikeParameter(filterValue)
 				table._1.identifier.toLowerCase.like(filterValueToUse) || table._1.shortname.toLowerCase.like(filterValueToUse) || table._1.description.getOrElse("").toLowerCase.like(filterValueToUse)
 			})
 			.sortBy(_._1.shortname.asc)

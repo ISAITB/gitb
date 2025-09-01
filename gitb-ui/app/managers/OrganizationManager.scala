@@ -114,7 +114,7 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
       .filter(_.adminOrganization === false)
       .filter(_.community === communityId)
       .filterOpt(filter)((table, filterValue) => {
-        val filterValueToUse = s"%${filterValue.toLowerCase}%"
+        val filterValueToUse = toLowercaseLikeParameter(filterValue)
         table.shortname.toLowerCase.like(filterValueToUse) || table.fullname.toLowerCase.like(filterValueToUse)
       })
     if (creationOrderSort.nonEmpty) {

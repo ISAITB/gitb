@@ -1046,7 +1046,42 @@ object JsonUtil {
     json
   }
 
-  def jsSpecificationGroups(list: List[SpecificationGroups]): JsArray = {
+  def jsSpecificationsWithoutApiKeys(list:Iterable[Specifications]):JsArray = {
+    jsSpecifications(list)
+  }
+
+  def jsDomainSpecifications(specs: Iterable[DomainSpecification]): JsArray = {
+    var json = Json.arr()
+    specs.foreach{ spec =>
+      json = json.append(jsDomainSpecification(spec))
+    }
+    json
+  }
+
+  def jsDomainSpecification(spec: DomainSpecification): JsObject = {
+    var json = Json.obj(
+      "id" -> spec.id,
+      "sname" -> spec.sname,
+      "fname"   -> spec.fname,
+      "hidden" -> spec.hidden,
+      "group" -> spec.group,
+      "hidden" -> spec.hidden,
+      "domain"  -> spec.domain,
+      "order" -> spec.displayOrder
+    )
+    if (spec.description.isDefined) {
+      json = json + ("description" -> JsString(spec.description.get))
+    }
+    if (spec.groupId.isDefined) {
+      json = json + ("groupId" -> JsNumber(spec.groupId.get))
+    }
+    if (spec.options.exists(_.nonEmpty)) {
+      json = json + ("options" -> jsDomainSpecifications(spec.options.get))
+    }
+    json
+  }
+
+  def jsSpecificationGroups(list: Iterable[SpecificationGroups]): JsArray = {
     var json = Json.arr()
     list.foreach { group =>
       json = json.append(jsSpecificationGroup(group, withApiKeys = false))

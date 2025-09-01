@@ -336,9 +336,20 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
    */
   def getDomainSpecs(domainId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewSpecificationsByDomainId(request, domainId).flatMap { _ =>
-      val withGroups = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.GROUPS).getOrElse(true)
-      specificationManager.getSpecifications(domainId, withGroups).map { specs =>
+      specificationManager.getSpecificationsWithGroups(domainId).map { specs =>
         val json = JsonUtil.jsSpecifications(specs).toString()
+        ResponseConstructor.constructJsonResponse(json)
+      }
+    }
+  }
+
+  def getDomainSpecsWithPaging(domainId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canViewSpecificationsByDomainId(request, domainId).flatMap { _ =>
+      val filter = ParameterExtractor.optionalQueryParameter(request, Parameters.FILTER)
+      val page = ParameterExtractor.extractPageNumber(request)
+      val limit = ParameterExtractor.extractPageLimit(request)
+      specificationManager.getSpecificationsWithPaging(domainId, filter, page, limit).map { result =>
+        val json = JsonUtil.jsSearchResult(result, JsonUtil.jsDomainSpecifications).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
     }

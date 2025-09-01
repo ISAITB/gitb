@@ -13,12 +13,10 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-package models.statement
+export enum PagingPlacement {
 
-class ConformanceStatementPaging(page: Long, limit: Long) {
-
-  val minIndex: Long = (page - 1) * limit + 1
-  val maxIndex: Long = (page - 1) * limit + limit
-  var count = 0
+  table,
+  card,
+  tab
 
 }

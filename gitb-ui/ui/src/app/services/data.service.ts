@@ -35,7 +35,6 @@ import {UserAccount} from '../types/user-account';
 import {User} from '../types/user.type';
 import {saveAs} from 'file-saver';
 import {LogLevel} from '../types/log-level';
-import {SpecificationGroup} from '../types/specification-group';
 import {Specification} from '../types/specification';
 import {DomainSpecification} from '../types/domain-specification';
 import {find} from 'lodash';
@@ -44,7 +43,6 @@ import {BadgesInfo} from '../components/manage-badges/badges-info';
 import {BreadcrumbChange} from '../types/breadcrumb-change';
 import {FieldInfo} from '../types/field-info';
 import {HttpResponse} from '@angular/common/http';
-import {EntityWithId} from '../types/entity-with-id';
 import {ConformanceTestSuite} from '../pages/organisation/conformance-statement/conformance-test-suite';
 import {ConformanceStatementItem} from '../types/conformance-statement-item';
 import {EndpointParameter} from '../types/endpoint-parameter';
@@ -78,7 +76,6 @@ export class DataService {
   public showCommunityViewMenu = false
   private tests?: ConformanceTestCase[]
   public currentLandingPageContent?: string
-  private apiRoot?: string
   public cookiePath?: string
   private locationData?: LocationData
   private loginOption?: string
@@ -238,7 +235,7 @@ export class DataService {
         community = account.communityShortName
       }
     }
-    let description = ''
+    let description: string
     if (role == Constants.USER_ROLE.SYSTEM_ADMIN) {
       description = 'Test Bed administrator'
     } else if (role == Constants.USER_ROLE.COMMUNITY_ADMIN) {
@@ -1119,7 +1116,7 @@ export class DataService {
           header += arr[i].toString(16)
         }
         let type: string|undefined
-        let extension: string|undefined = undefined
+        let extension: string|undefined
         if (header.startsWith('89504e47')) {
           type = "image/png"
           extension = "png"
@@ -1292,80 +1289,6 @@ export class DataService {
     }
   }
 
-  private specToDomainSpecification(specification: Specification): DomainSpecification {
-    return {
-      id: specification.id,
-      sname: specification.sname,
-      fname: specification.fname,
-      description: specification.description,
-      hidden: specification.hidden,
-      groupId: specification.group,
-      option: specification.group != undefined,
-      collapsed: false,
-      group: false,
-      order: specification.order,
-      domain: specification.domain,
-    }
-  }
-
-  private specGroupToDomainSpecification(group: SpecificationGroup): DomainSpecification {
-    return {
-      id: group.id,
-      sname: group.sname,
-      fname: group.fname,
-      description: group.description,
-      hidden: false,
-      group: true,
-      option: false,
-      collapsed: true,
-      domain: group.domain,
-      order: group.order,
-      options: []
-    }
-  }
-
-  toDomainSpecifications(groups: SpecificationGroup[], specs: Specification[]): DomainSpecification[] {
-    const groupMap: {[id: number]: DomainSpecification} = {}
-    let results: DomainSpecification[] = []
-    for (let group of groups) {
-      const groupAsDomainSpecification = this.specGroupToDomainSpecification(group)
-      results.push(groupAsDomainSpecification)
-      groupMap[group.id] = groupAsDomainSpecification
-    }
-    for (let spec of specs) {
-      if (spec.group == undefined) {
-        results.push(this.specToDomainSpecification(spec))
-      } else {
-        if (groupMap[spec.group]) {
-          groupMap[spec.group].options!.push(this.specToDomainSpecification(spec))
-        }
-      }
-    }
-    for (let key in groupMap) {
-      this.setSpecificationGroupVisibility(groupMap[key])
-    }
-    return this.sortDomainSpecifications(results)
-  }
-
-  setSpecificationGroupVisibility(group: DomainSpecification) {
-    if (group.group) {
-      const hasVisible = find(group.options, (s) => !s.hidden)
-      group.hidden = !hasVisible
-    }
-  }
-
-  sortDomainSpecifications(specs: DomainSpecification[]) {
-    // Apply sorting.
-    specs.sort((a, b) => a.order - b.order || a.fname.localeCompare(b.fname))
-    // Sort also options.
-    specs.forEach(spec => {
-      if (spec.options) {
-        spec.options.sort((a, b) => a.order - b.order || a.fname.localeCompare(b.fname))
-      }
-    })
-    return specs
-  }
-
   toSpecifications(domainSpecifications: DomainSpecification[]) {
     const specs: Specification[] = []
     for (let domainSpec of domainSpecifications) {
@@ -1506,10 +1429,6 @@ export class DataService {
       valid = true
     }
     return valid
-  }
-
-  sameId(a: EntityWithId, b: EntityWithId) {
-    return a == undefined && b == undefined || a != undefined && b != undefined && a.id == b.id
   }
 
   organiseTestSuitesForDisplay(testSuites: ConformanceTestSuite[]|undefined) {

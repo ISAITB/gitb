@@ -35,20 +35,23 @@
                 <div class="tabPanel">
                     <div class="tabControls">
                         <div class="btn-toolbar">
-                            @if (specifications.length > 0) {
-                                <button type="button" class="btn btn-secondary" (click)="uploadTestSuite()">Upload test suite</button>
+                            @if (!managingSpecificationOrder) {
+                                <app-text-filter name="specificationFilter" [width]="300" [placeholder]="'Search '+dataService.labelSpecificationsLower()+'...'" [(ngModel)]="specificationFilter" (apply)="applySpecificationFilter()"></app-text-filter>
+                                @if (specifications.length > 0) {
+                                    <button type="button" class="btn btn-secondary" (click)="uploadTestSuite()">Upload test suite</button>
+                                }
+                                <div class="btn-group" dropdown>
+                                    <button type="button" class="btn btn-secondary" (click)="createSpecification()">Create {{dataService.labelSpecificationLower()}}</button>
+                                    <button id="button-create-spec" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+                                        <span class="caret"></span>
+                                        <span class="sr-only visually-hidden">Create {{dataService.labelSpecificationLower()}}</span>
+                                    </button>
+                                    <ul id="dropdown-create-spec" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-create-spec">
+                                        <li role="menuitem"><a class="dropdown-item" href (click)="createSpecificationGroup();$event.preventDefault();">Create {{dataService.labelSpecificationGroupLower()}}</a></li>
+                                    </ul>
+                                </div>
                             }
-                            <div class="btn-group" dropdown>
-                                <button type="button" class="btn btn-secondary" (click)="createSpecification()">Create {{dataService.labelSpecificationLower()}}</button>
-                                <button id="button-create-spec" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
-                                    <span class="caret"></span>
-                                    <span class="sr-only visually-hidden">Create {{dataService.labelSpecificationLower()}}</span>
-                                </button>
-                                <ul id="dropdown-create-spec" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-create-spec">
-                                    <li role="menuitem"><a class="dropdown-item" href (click)="createSpecificationGroup();$event.preventDefault();">Create {{dataService.labelSpecificationGroupLower()}}</a></li>
-                                </ul>
-                            </div>
-                            @if (specificationGroups.length > 0) {
+                            @if (specificationGroups.length > 0 && managingSpecificationOrder) {
                                 <div class="btn-group" dropdown>
                                     <button id="button-option-visibility" (click)="$event.stopPropagation()" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-option-visibility"><span class="me-2">View {{dataService.labelSpecificationInGroupsLower()}}</span></button>
                                     <ul id="dropdown-option-visibility" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-option-visibility">
@@ -57,9 +60,13 @@
                                     </ul>
                                 </div>
                             }
-                            @if (specifications.length > 1) {
+                            @if (hasMultipleSpecifications) {
                                 <div class="btn-group" dropdown>
-                                    <button [pending]="saveOrderPending" type="button" class="btn btn-secondary" (click)="saveOrdering()">Save {{dataService.labelSpecificationLower()}} order</button>
+                                    @if (managingSpecificationOrder) {
+                                        <button [pending]="saveOrderPending" type="button" class="btn btn-secondary" (click)="saveOrdering()">Save {{dataService.labelSpecificationLower()}} order</button>
+                                    } @else {
+                                        <button type="button" class="btn btn-secondary" (click)="manageOrdering()">Manage {{dataService.labelSpecificationLower()}} order</button>
+                                    }
                                     <button id="button-order" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
                                         <span class="caret"></span>
                                         <span class="sr-only visually-hidden">Reset {{dataService.labelSpecificationLower()}} order</span>
@@ -68,10 +75,13 @@
                                         <li role="menuitem"><a class="dropdown-item" href (click)="resetOrdering();$event.preventDefault();">Reset {{dataService.labelSpecificationLower()}} order</a></li>
                                     </ul>
                                 </div>
+                                @if (managingSpecificationOrder) {
+                                    <button type="button" class="btn btn-secondary" (click)="cancelManageOrdering()">Cancel</button>
+                                }
                             }
                         </div>
                     </div>
-                    <div class="option-container" cdkDropList cdkDropListLockAxis="y" (cdkDropListDropped)="dropSpecification($event)" >
+                    <div class="option-container" cdkDropList cdkDropListLockAxis="y" (cdkDropListDropped)="dropSpecification($event)" [class.disable-events]="specificationsRefreshing">
                         @if (specificationStatus && specificationStatus.status != Constants.STATUS.FINISHED) {
                             <div class="spec-message-div">
                                 <div class="pending-icon"><app-pending-block [pending]="true"></app-pending-block></div>
@@ -90,15 +100,19 @@
                                         [last]="lastGroup"
                                         [groups]="specificationGroups"
                                         [dragOngoing]="dragOngoing"
-                                        (removeSpec)="removeSpecificationFromGroup($event[0], $event[1])"
-                                        (moveSpec)="moveSpecificationToGroup($event[0], $event[1], $event[2])"
-                                        (copySpec)="copySpecificationToGroup($event[0], $event[1], $event[2])"
+                                        [dragEnabled]="managingSpecificationOrder"
+                                        (removeSpec)="removeSpecificationFromGroup($event[0])"
+                                        (moveSpec)="moveSpecificationToGroup($event[0], $event[2])"
+                                        (copySpec)="copySpecificationToGroup($event[0], $event[2])"
                                         (selectSpec)="onSpecificationSelect($event)"
                                         (dragging)="dragOngoing = $event"
                                         (click)="onSpecificationGroupSelect(spec)"
                                     ></app-domain-specification-display>
                                 }
                             }
+                        }
+                        @if (!managingSpecificationOrder) {
+                            <app-paging-controls #specificationPagingControls [placement]="PagingPlacement.tab" (navigation)="doSpecificationPaging($event)"></app-paging-controls>
                         }
                     </div>
                 </div>
