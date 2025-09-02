@@ -211,6 +211,8 @@ object Parameters {
 
   val FILTERING = "filtering"
   val FILTER = "filter"
+  val SELECTED = "selected"
+  val UNSELECTED = "unselected"
   val SUCCEEDED = "succeeded"
   val FAILED = "failed"
   val INCOMPLETE = "incomplete"

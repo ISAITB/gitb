@@ -22,12 +22,12 @@ import managers.ConformanceManager._
 import managers.triggers.TriggerHelper
 import models.Enums.{ConformanceStatementItemType, OrganizationType, UserRole}
 import models.snapshot._
-import models.statement.{ConformanceItemTreeData, ConformanceStatementResults, ConformanceStatementSearchCriteria}
+import models.statement.{AvailableStatementsSearchCriteria, ConformanceItemTreeData, ConformanceStatementResults, ConformanceStatementSearchCriteria}
 import models.{FileInfo, PagingStatus, _}
 import org.apache.commons.lang3.Strings
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
-import play.api.libs.json.JsBoolean
+import play.api.libs.json.{JsArray, JsBoolean, JsNumber}
 import slick.lifted.{Query, Rep}
 import utils.TimeUtil.dateFromFilterString
 import utils.{CryptoUtil, MimeUtil, RepositoryUtils, TimeUtil}
@@ -141,7 +141,7 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 
 	import dbConfig.profile.api._
 
-	def getAvailableConformanceStatements(domainId: Option[Long], systemId: Long): Future[(Boolean, Seq[ConformanceStatementItem])] = {
+	def getAvailableConformanceStatements(domainId: Option[Long], systemId: Long, searchCriteria: AvailableStatementsSearchCriteria, page: Long, limit: Long): Future[SearchResult[ConformanceStatementItem]] = {
 		DB.run(for {
 			// Load the actors for which the system already has statements (these will be later skipped).
 			actorIdsInExistingStatements <- PersistenceSchema.systemImplementsActors
@@ -252,8 +252,58 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 				})
 				DBIO.successful((actorIdsInExistingStatements.nonEmpty, domainItems.toList))
 			}
-		} yield results)
+		} yield results).map { results =>
+      var filteredResults = if (searchCriteria.isApplicable()) {
+        filterAvailableStatements(results._2, searchCriteria, onlyCheckStatus = false)
+      } else {
+        results._2
+      }
+      filteredResults = sortConformanceStatementItems(filteredResults)
+      val collectedActorIds = ListBuffer[Long]()
+      collectActorIds(filteredResults, collectedActorIds)
+      val pagingInfo = new PagingStatus(page, limit)
+      SearchResult(
+        pageStatements(filteredResults, pagingInfo),
+        pagingInfo.count,
+        Some(() => {
+          Map("hasOtherStatements" -> JsBoolean(results._1), "matchedActorIds" -> JsArray(collectedActorIds.map(JsNumber(_)).toSeq))
+        })
+      )
+    }
 	}
+
+  private def collectActorIds(statements: Iterable[ConformanceStatementItem], actorIds: ListBuffer[Long]): Unit = {
+    statements.foreach { statement =>
+      if (statement.items.exists(_.nonEmpty)) {
+        collectActorIds(statement.items.get, actorIds)
+      } else  {
+        actorIds += statement.id
+      }
+    }
+  }
+
+  private def filterAvailableStatements(statements: Iterable[ConformanceStatementItem], criteria: AvailableStatementsSearchCriteria, onlyCheckStatus: Boolean): Iterable[ConformanceStatementItem] = {
+    statements.filter { childItem =>
+      filterAvailableStatement(childItem, criteria, onlyCheckStatus)
+    }
+  }
+
+  private def filterAvailableStatement(statement: ConformanceStatementItem, criteria: AvailableStatementsSearchCriteria, onlyCheckStatus: Boolean): Boolean = {
+    val matches = criteria.checkItem(statement, onlyCheckStatus)
+    if (statement.items.isEmpty || statement.items.get.isEmpty) {
+      // This is a leaf.
+      matches
+    } else {
+      // This is a parent item.
+      val retainedChildren = if (matches) {
+        filterAvailableStatements(statement.items.get, criteria, onlyCheckStatus = true)
+      } else {
+        filterAvailableStatements(statement.items.get, criteria, onlyCheckStatus)
+      }
+      statement.withChildren(retainedChildren)
+      retainedChildren.nonEmpty
+    }
+  }
 
 	def getCompletedConformanceStatementsForTestSession(systemId: Long, sessionId: String): Future[Option[Long]] = { // Actor ID considered as completed.
 		DB.run(

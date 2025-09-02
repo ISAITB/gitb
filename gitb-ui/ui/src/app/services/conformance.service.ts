@@ -22,7 +22,6 @@ import {Actor} from '../types/actor';
 import {ConformanceCertificateSettings} from '../types/conformance-certificate-settings';
 import {ConformanceResultFullList} from '../types/conformance-result-full-list';
 import {Domain} from '../types/domain';
-import {DomainParameter} from '../types/domain-parameter';
 import {Endpoint} from '../types/endpoint';
 import {EndpointParameter} from '../types/endpoint-parameter';
 import {FileData} from '../types/file-data.type';
@@ -39,11 +38,9 @@ import {TestCase} from '../types/test-case';
 import {ConformanceStatus} from '../types/conformance-status';
 import {FileParam} from '../types/file-param.type';
 import {StatementParameterMinimal} from '../types/statement-parameter-minimal';
-import {ConformanceStatementItemInfo} from '../types/conformance-statement-item-info';
 import {ConformanceSnapshot} from '../types/conformance-snapshot';
 import {BadgesInfo} from '../components/manage-badges/badges-info';
 import {HttpResponse} from '@angular/common/http';
-import {ConformanceStatementItem} from '../types/conformance-statement-item';
 import {ConformanceStatementWithResults} from '../types/conformance-statement-with-results';
 import {ConformanceSnapshotList} from '../types/conformance-snapshot-list';
 import {CommunityKeystore} from '../types/community-keystore';
@@ -57,6 +54,8 @@ import {SearchResult} from '../types/search-result';
 import {ConformanceStatementSearchCriteria} from '../types/conformance-statement-search-criteria';
 import {ConformanceStatementSearchResult} from '../types/conformance-statement-search-result';
 import {DomainSpecification} from '../types/domain-specification';
+import {CreateConformanceStatementSearchResult} from '../types/create-conformance-statement-search-result';
+import {CreateStatementSearchCriteria} from '../pages/organisation/create-conformance-statement/create-statement-search-criteria';
 
 @Injectable({
   providedIn: 'root'
@@ -944,14 +943,20 @@ export class ConformanceService {
     })
   }
 
-  getAvailableConformanceStatements(domainId: number|undefined, systemId: number) {
-    let params:any = {}
-    if (domainId) {
-      params.domain_id = domainId
-    }
-    return this.restService.get<ConformanceStatementItemInfo>({
+  getAvailableConformanceStatements(domainId: number|undefined, systemId: number, searchCriteria: CreateStatementSearchCriteria, page: number|undefined, limit: number|undefined) {
+    let params: any = {}
+    let data: any = {}
+    if (page != undefined) params.page = page
+    if (limit != undefined) params.limit = limit
+    if (domainId != undefined) data.domain_id = domainId
+    if (searchCriteria.filterText != undefined) data.filter = searchCriteria.filterText
+    data.selected = searchCriteria.selected
+    data.unselected = searchCriteria.unselected
+    if (searchCriteria.selectedIds) data.ids = searchCriteria.selectedIds.join(",")
+    return this.restService.post<CreateConformanceStatementSearchResult>({
       path: ROUTES.controllers.ConformanceService.getAvailableConformanceStatements(systemId).url,
       authenticate: true,
+      data: data,
       params: params
     })
   }

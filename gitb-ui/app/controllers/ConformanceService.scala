@@ -24,6 +24,7 @@ import models.Enums.TestSuiteReplacementChoice.{PROCEED, TestSuiteReplacementCho
 import models.Enums.{Result => _, _}
 import models._
 import models.prerequisites.PrerequisiteUtil
+import models.statement.AvailableStatementsSearchCriteria
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.io.{FileUtils, FilenameUtils}
 import org.apache.commons.lang3.RandomStringUtils
@@ -324,9 +325,18 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
 
   def getAvailableConformanceStatements(systemId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canManageSystem(request, systemId).flatMap { _ =>
-      val domainId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.DOMAIN_ID)
-      conformanceManager.getAvailableConformanceStatements(domainId, systemId).map { result =>
-        ResponseConstructor.constructJsonResponse(JsonUtil.jsConformanceStatementItemInfo(result).toString)
+      val domainId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
+      val page = ParameterExtractor.extractPageNumber(request)
+      val limit = ParameterExtractor.extractPageLimit(request)
+      val searchCriteria = AvailableStatementsSearchCriteria(
+        filterText = ParameterExtractor.optionalBodyParameter(request, Parameters.FILTER),
+        selected = ParameterExtractor.optionalBodyParameter(request, Parameters.SELECTED).forall(_.toBoolean),
+        unselected = ParameterExtractor.optionalBodyParameter(request, Parameters.UNSELECTED).forall(_.toBoolean),
+        selectedIds = ParameterExtractor.extractIdsBodyParameter(request)
+      )
+      conformanceManager.getAvailableConformanceStatements(domainId, systemId, searchCriteria, page, limit).map { result =>
+        val json = JsonUtil.jsSearchResult(result, JsonUtil.jsConformanceStatementItems).toString()
+        ResponseConstructor.constructJsonResponse(json)
       }
     }
   }

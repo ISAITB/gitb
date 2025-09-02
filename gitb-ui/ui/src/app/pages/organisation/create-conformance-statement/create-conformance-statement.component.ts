@@ -13,17 +13,22 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { ConformanceService } from 'src/app/services/conformance.service';
-import { DataService } from 'src/app/services/data.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { Constants } from 'src/app/common/constants';
-import { RoutingService } from 'src/app/services/routing.service';
-import { ConformanceStatementItem } from 'src/app/types/conformance-statement-item';
-import { mergeMap, Observable, of } from 'rxjs';
-import { SystemService } from 'src/app/services/system.service';
-import { filter, find, remove } from 'lodash';
+import {AfterViewInit, Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {ActivatedRoute} from '@angular/router';
+import {ConformanceService} from 'src/app/services/conformance.service';
+import {DataService} from 'src/app/services/data.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {Constants} from 'src/app/common/constants';
+import {RoutingService} from 'src/app/services/routing.service';
+import {ConformanceStatementItem} from 'src/app/types/conformance-statement-item';
+import {mergeMap, Observable, of} from 'rxjs';
+import {SystemService} from 'src/app/services/system.service';
+import {PagingEvent} from '../../../components/paging-controls/paging-event';
+import {PagingControlsApi} from '../../../components/paging-controls/paging-controls-api';
+import {PagingPlacement} from '../../../components/paging-controls/paging-placement';
+import {CheckboxOption} from '../../../components/checkbox-option-panel/checkbox-option';
+import {CreateStatementSearchCriteria} from './create-statement-search-criteria';
+import {CheckboxOptionState} from '../../../components/checkbox-option-panel/checkbox-option-state';
 
 @Component({
     selector: 'app-create-conformance-statement',
@@ -31,7 +36,7 @@ import { filter, find, remove } from 'lodash';
     styleUrls: ['./create-conformance-statement.component.less'],
     standalone: false
 })
-export class CreateConformanceStatementComponent implements OnInit {
+export class CreateConformanceStatementComponent implements OnInit, AfterViewInit, OnDestroy {
 
   systemId!: number
   organisationId!: number
@@ -41,14 +46,32 @@ export class CreateConformanceStatementComponent implements OnInit {
   items: ConformanceStatementItem[] = []
   createDisabled = true
   createPending = false
-  statementFilter?: string
+  updatePending = false
   hasOtherStatements = false
-  selectedActorIds: number[] = []
-  itemsByType?: { groups: ConformanceStatementItem[], specs: ConformanceStatementItem[], actors: ConformanceStatementItem[] }
-  animated = false
-  visibleItemCount = 0
-
+  hasStatementsBeforeFiltering = false
+  matchedActorIds = new Set<number>()
+  selectedActorIds = new Set<number>()
+  animated = true
+  hasVisibleItems = false
+  protected readonly PagingPlacement = PagingPlacement;
   Constants = Constants
+  searchCriteria: CreateStatementSearchCriteria = {
+    filterText: undefined,
+    selected: true,
+    unselected: true
+  }
+  statusOptions: CheckboxOption[][] = [
+    [
+      {key: "selected", label: 'Selected statements', default: this.searchCriteria.selected},
+      {key: "unselected", label: 'Unselected statements', default: this.searchCriteria.unselected}
+    ]
+  ]
+  controlsWrapped = false
+  @ViewChild("pagingControls") pagingControls?: PagingControlsApi
+  @ViewChild("controlContainer") controlContainer?: ElementRef
+  @ViewChild("statusContainer") statusContainer?: ElementRef
+  @ViewChild("conformanceItemPage") conformanceItemPage?: ElementRef
+  resizeObserver!: ResizeObserver
 
   constructor(
     public readonly dataService: DataService,
@@ -56,7 +79,8 @@ export class CreateConformanceStatementComponent implements OnInit {
     private readonly route: ActivatedRoute,
     private readonly conformanceService: ConformanceService,
     private readonly systemService: SystemService,
-    private readonly routingService: RoutingService
+    private readonly routingService: RoutingService,
+    private readonly zone: NgZone
   ) { }
 
   ngOnInit(): void {
@@ -66,7 +90,6 @@ export class CreateConformanceStatementComponent implements OnInit {
       this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
     }
     let domainIdObservable: Observable<number|undefined>
-
     if (this.communityId == undefined) {
       // Use own community domain.
       domainIdObservable = of(this.dataService.community?.domainId)
@@ -79,101 +102,79 @@ export class CreateConformanceStatementComponent implements OnInit {
         })
       )
     }
-    const statementObservable = domainIdObservable.pipe(
-      mergeMap((domainId) => {
-        this.domainId = domainId
-        return this.conformanceService.getAvailableConformanceStatements(this.domainId, this.systemId)
+    domainIdObservable.subscribe((domainId) => {
+      this.domainId = domainId
+      this.loadStatements()
+    })
+  }
+
+  ngAfterViewInit(): void {
+    this.resizeObserver = new ResizeObserver(() => {
+      this.zone.run(() => {
+        this.calculateWrapping()
       })
-    )
-    statementObservable.subscribe((itemInfo) => {
-      this.hasOtherStatements = itemInfo.exists
-      this.items = this.processItems(itemInfo.items)
-      this.countVisibleItems()
-      this.toggleAnimated(true)
-    }).add(() => {
-      this.dataStatus.status = Constants.STATUS.FINISHED
     })
-  }
-
-  private processItems(items: ConformanceStatementItem[]) {
-    if (items.length == 1) {
-      if (this.domainId != undefined) {
-        // We only have one domain. Hide it unless the user has access to any domain.
-        items[0].hidden = true
-      }
-      // Display single option as expanded.
-      items[0].collapsed = false
-      // If there is only one possible option, pre-select it.
-      const uniqueActor = this.findUniqueActor(items[0])
-      if (uniqueActor) {
-        uniqueActor.checked = true
-        this.selectionChanged(uniqueActor)
-      }
+    if (this.conformanceItemPage) {
+      this.resizeObserver.observe(this.conformanceItemPage.nativeElement)
     }
-    let specs: ConformanceStatementItem[] = []
-    for (let domain of items) {
-      const specsInDomain = filter(domain.items, (item) => item.itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION)
-      specsInDomain.forEach((item) => specs.push(item))
-      const groupsInDomain = filter(domain.items, (item) => item.itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION_GROUP)
-      for (let group of groupsInDomain) {
-        const specsInGroup = filter(group.items, (item) => item.itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION)
-        specsInGroup.forEach((item) => specs.push(item))
-      }
+  }
+
+  filterByStatus(choices: CheckboxOptionState) {
+    this.searchCriteria.selected = choices["selected"]
+    this.searchCriteria.unselected = choices["unselected"]
+    this.loadStatements()
+  }
+
+  loadStatements() {
+    return this.loadStatementsInternal({ targetPage: 1, targetPageSize: Constants.TABLE_PAGE_SIZE })
+  }
+
+  doPagingNavigation(pagingInfo: PagingEvent) {
+    this.loadStatementsInternal(pagingInfo)
+  }
+
+  private loadStatementsInternal(pagingInfo: PagingEvent) {
+    if (this.dataStatus.status == Constants.STATUS.FINISHED) {
+      this.updatePending = true
+    } else {
+      this.dataStatus.status = Constants.STATUS.PENDING
     }
-    this.checkToHideActors(specs)
-    this.itemsByType = this.dataService.organiseConformanceItemsByType(items)
-    // Initialise item state.
-    this.dataService.visitConformanceItems(items, (item) => {
-      if (item.collapsed == undefined) {
-        item.collapsed = true
-      }
-      if (item.items && item.items.length == 1) {
-        item.items[0].collapsed = false
-      }
-      if (item.checked == undefined) {
-        item.checked = false
-      }
-      if (item.hidden == undefined) {
-        item.hidden = false
-      }
-      item.filtered = true
-    })
-    this.sortItems(items)
-    return items
-  }
-
-  private sortItems(items: ConformanceStatementItem[]) {
-    items.sort((a, b) => a.order - b.order || a.name.localeCompare(b.name))
-    items.forEach((item) => {
-      if (item.items) {
-        this.sortItems(item.items)
-      }
-    })
-  }
-
-  private countVisibleItems() {
-    let count = 0
-    this.dataService.visitConformanceItems(this.items, (item) => {
-      if (item.filtered == true) {
-        count += 1
-      }
-    })
-    this.visibleItemCount = count
-  }
-
-  private checkToHideActors(specifications?: ConformanceStatementItem[]) {
-    if (specifications) {
-      for (let specification of specifications) {
-        // If we have a specification with a single actor don't show the actor.
-        if (specification.itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION
-          && specification.items != undefined && specification.items.length == 1 && specification.items[0].itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.ACTOR && specification.items[0].hidden) {
-            // The specification will be an alias for the actor.
-            specification.id = specification.items[0].id
-            specification.checked = specification.items[0].checked
-            specification.items = []
+    if ((!this.searchCriteria.selected || !this.searchCriteria.unselected) && this.selectedActorIds.size > 0) {
+      this.searchCriteria.selectedIds = [...this.selectedActorIds]
+    } else {
+      this.searchCriteria.selectedIds = undefined
+    }
+    this.conformanceService.getAvailableConformanceStatements(this.domainId, this.systemId, this.searchCriteria, pagingInfo.targetPage, pagingInfo.targetPageSize)
+      .subscribe(data => {
+        this.hasOtherStatements = data.hasOtherStatements
+        this.items = this.dataService.prepareConformanceStatementItemsForDisplay(data.data)
+        this.matchedActorIds.clear()
+        data.matchedActorIds.forEach((actorId) => {
+          this.matchedActorIds.add(actorId)
+        })
+        this.hasVisibleItems = data.data.length > 0
+        if (this.dataStatus.status == Constants.STATUS.PENDING) {
+          // This is the initial, unfiltered load.
+          this.hasStatementsBeforeFiltering = this.hasVisibleItems
+          // If there is only one possible option, preselect it.
+          if (this.hasVisibleItems && this.items.length ==  1) {
+            const uniqueActor = this.findUniqueActor(this.items[0])
+            if (uniqueActor) {
+              this.selectedActorIds.add(uniqueActor.id)
+            }
+          }
         }
-      }
-    }
+        this.updateChecks()
+        this.toggleAnimated(true)
+        this.applyPagingResult(pagingInfo, data.count)
+      }).add(() => {
+        this.updatePending = false
+        this.dataStatus.status = Constants.STATUS.FINISHED
+    })
+  }
+
+  private applyPagingResult(pagingInfo: PagingEvent, count: number) {
+    this.pagingControls?.updateStatus(pagingInfo.targetPage, count)
   }
 
   private findUniqueActor(item: ConformanceStatementItem): ConformanceStatementItem|undefined {
@@ -188,107 +189,50 @@ export class CreateConformanceStatementComponent implements OnInit {
     }
   }
 
-  private filterItems(items: ConformanceStatementItem[]|undefined, filterValue: string|undefined) {
-    if (filterValue && items) {
-      for (let item of items) {
-        this.filterItem(item, filterValue)
-      }
-    }
-  }
-
-  private filterItem(item: ConformanceStatementItem, filterValue: string|undefined) {
-    if (filterValue) {
-      const filterToApply = filterValue.trim().toLowerCase()
-      if (item.checked || ((item.name.toLowerCase().indexOf(filterToApply)) >= 0) || (item.description != undefined && item.description.toLowerCase().indexOf(filterToApply) >= 0)) {
-        // Match.
-        item.matched = true
-        item.filtered = true
-      }
-    }
-  }
-
-  searchStatements() {
-    this.animated = false
-    setTimeout(() => {
-      if (this.itemsByType) {
-        const defaultFilteredValue = this.statementFilter == undefined
-        // Flag all items not filtered.
-        this.items.forEach((item) => { item.filtered = defaultFilteredValue; item.matched = false; })
-        this.itemsByType.groups.forEach((item) => { item.filtered = defaultFilteredValue; item.matched = false; })
-        this.itemsByType.specs.forEach((item) => { item.filtered = defaultFilteredValue; item.matched = false; })
-        this.itemsByType.actors.forEach((item) => { item.filtered = defaultFilteredValue; item.matched = false; })
-        if (this.statementFilter != undefined) {
-          // Apply filters per item type.
-          this.filterItems(this.items, this.statementFilter)
-          this.filterItems(this.itemsByType.groups, this.statementFilter)
-          this.filterItems(this.itemsByType.specs, this.statementFilter)
-          this.filterItems(this.itemsByType.actors, this.statementFilter)
-          // Apply match semantics to hierarchy.
-          this.filterParentsWithFilteredChildren(this.itemsByType.specs)
-          this.filterParentsWithFilteredChildren(this.itemsByType.groups)
-          this.filterParentsWithFilteredChildren(this.items)
-          // Adapt collapsing
-          this.adaptParentCollapse(this.itemsByType!.specs)
-          this.adaptParentCollapse(this.itemsByType!.groups)
-          this.adaptParentCollapse(this.items)
-          const filteredDomains = filter(this.items, (item) => item.filtered != undefined && item.filtered)
-          if (filteredDomains.length == 1) {
-            filteredDomains[0].collapsed = false
-          }
-          this.toggleAnimated(true)
-        }
-        this.countVisibleItems()
-      }
-      this.toggleAnimated(true)
-    }, 1)
-  }
-
   private toggleAnimated(animatedValue: boolean) {
     setTimeout(() => {
       this.animated = animatedValue
     }, 1)
   }
 
-  private adaptParentCollapse(items: ConformanceStatementItem[]) {
-    for (let item of items) {
-      const hasChild = item.items != undefined && item.items.length > 0
-      const hasMatchedChild = hasChild && (find(item.items, (child) => {
-        return child.matched == true
-      }) != undefined)
-      if (hasMatchedChild) {
-        item.collapsed = false
-      }
-    }
+  selectAllStatements() {
+    this.matchedActorIds.forEach((actorId) => {
+      this.selectedActorIds.add(actorId)
+    })
+    this.updateChecks()
   }
 
-  private filterParentsWithFilteredChildren(items: ConformanceStatementItem[]) {
-    for (let item of items) {
-      const hasChild = item.items != undefined && item.items.length > 0
-      const hasVisibleChild = hasChild && (find(item.items, (child) => {
-        return child.filtered == true
-      }) != undefined)
-      if (hasVisibleChild) {
-        item.collapsed = false
-      }
-      if (!item.filtered) {
-        item.filtered = hasVisibleChild
+  deselectAllStatements() {
+    this.matchedActorIds.forEach((actorId) => {
+      this.selectedActorIds.delete(actorId)
+    })
+    this.updateChecks()
+  }
+
+  private updateCheckForItem(item: ConformanceStatementItem) {
+    if (item.items != undefined && item.items.length > 0) {
+      if (item.items.length == 1) {
+        if (item.items[0].hidden) {
+          item.checked = this.selectedActorIds.has(item.items[0].id)
+        } else {
+          this.updateCheckForItem(item.items[0])
+        }
       } else {
-        // Apply filtering logic to children.
-        this.dataService.visitConformanceItems(item.items, (item) => {
-          item.filtered = true
+        item.items.forEach((item) => {
+          this.updateCheckForItem(item)
         })
       }
+    } else {
+      item.checked = this.selectedActorIds.has(item.id)
     }
   }
 
-  toggleCheck(check: boolean) {
-    this.dataService.visitConformanceItems(this.items, (item) => {
-      if (item.filtered && (item.items == undefined || item.items.length == 0)) {
-        // Only toggle items that are visible and have a checkbox.
-        item.checked = check
-        this.selectionChanged(item)
-      }
+
+  private updateChecks() {
+    this.items.forEach((item) => {
+      this.updateCheckForItem(item)
     })
+    this.createDisabled = this.selectedActorIds.size == 0
   }
 
   toggleCollapse(collapse: boolean) {
@@ -302,12 +246,12 @@ export class CreateConformanceStatementComponent implements OnInit {
   }
 
   selectionChanged(selectedItem: ConformanceStatementItem) {
-    if (selectedItem.checked) {
-      this.selectedActorIds.push(selectedItem.id)
+    if (this.selectedActorIds.has(selectedItem.id)) {
+      this.selectedActorIds.delete(selectedItem.id)
     } else {
-      remove(this.selectedActorIds, (id) => id == selectedItem.id)
+      this.selectedActorIds.add(selectedItem.id)
     }
-    this.createDisabled = this.selectedActorIds.length == 0
+    this.updateChecks()
   }
 
   create() {
@@ -316,7 +260,7 @@ export class CreateConformanceStatementComponent implements OnInit {
       this.systemService.defineConformanceStatements(this.systemId, this.selectedActorIds)
       .subscribe(() => {
         this.cancel()
-        if (this.selectedActorIds.length > 1) {
+        if (this.selectedActorIds.size > 1) {
           this.popupService.success("Conformance statements created.")
         } else {
           this.popupService.success("Conformance statement created.")
@@ -332,6 +276,20 @@ export class CreateConformanceStatementComponent implements OnInit {
       this.routingService.toOwnConformanceStatements(this.organisationId, this.systemId)
     } else {
       this.routingService.toConformanceStatements(this.communityId, this.organisationId, this.systemId)
+    }
+  }
+
+  ngOnDestroy() {
+    if (this.resizeObserver) {
+      if (this.conformanceItemPage) {
+        this.resizeObserver.unobserve(this.conformanceItemPage.nativeElement)
+      }
+    }
+  }
+
+  private calculateWrapping() {
+    if (this.controlContainer && this.statusContainer) {
+      this.controlsWrapped = this.hasStatementsBeforeFiltering && this.controlContainer.nativeElement.getBoundingClientRect().top != this.statusContainer.nativeElement.getBoundingClientRect().top
     }
   }
 

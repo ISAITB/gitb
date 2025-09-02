@@ -203,11 +203,11 @@ export class SystemService {
     })
   }
 
-  defineConformanceStatements(system: number, actorIds: number[]) {
+  defineConformanceStatements(system: number, actorIds: Set<number>) {
     return this.restService.post<void>({
       path: ROUTES.controllers.SystemService.defineConformanceStatements(system).url,
       data: {
-        ids: actorIds.join(',')
+        ids: [...actorIds].join(',')
       },
       authenticate: true
     })

@@ -74,7 +74,6 @@ export abstract class BaseConformanceItemDisplayComponent extends BaseComponent 
   resizeObserver!: ResizeObserver
   searchControlsWrapped = false
   statements: ConformanceStatementItem[] = []
-  itemsByType?: { groups: ConformanceStatementItem[], specs: ConformanceStatementItem[], actors: ConformanceStatementItem[] }
   latestSnapshotButtonLabel?: string
   snapshotButtonLabel?: string
   activeConformanceSnapshot?: ConformanceSnapshot
@@ -209,7 +208,6 @@ export abstract class BaseConformanceItemDisplayComponent extends BaseComponent 
   }
 
   applyTreeViewSearchResult(data: ConformanceStatementSearchResult, pagingInfo: PagingEvent) {
-    this.itemsByType = this.dataService.organiseConformanceItemsByType(data.data)
     this.statements = this.dataService.prepareConformanceStatementItemsForDisplay(data.data)
     this.hasStatementsBeforeFiltering = data.hasStatements
     this.updateTreeViewPagination(pagingInfo.targetPage, data.count)

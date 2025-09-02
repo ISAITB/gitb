@@ -13,11 +13,12 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { ConformanceStatementItem } from "./conformance-statement-item"
+import {SearchResult} from './search-result';
+import {ConformanceStatementItem} from './conformance-statement-item';
 
-export interface ConformanceStatementItemInfo {
+export interface CreateConformanceStatementSearchResult extends SearchResult<ConformanceStatementItem> {
 
-    exists: boolean
-    items: ConformanceStatementItem[]
+  hasOtherStatements: boolean
+  matchedActorIds: number[]
 
 }

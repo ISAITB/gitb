@@ -282,13 +282,6 @@ object JsonUtil {
     json
   }
 
-  def jsConformanceStatementItemInfo(info: (Boolean, Iterable[ConformanceStatementItem])): JsObject = {
-    Json.obj(
-      "existing" -> info._1,
-      "items" -> jsConformanceStatementItems(info._2)
-    )
-  }
-
   def jsConformanceStatementItems(items: Iterable[ConformanceStatementItem]): JsArray = {
     var json = Json.arr()
     items.foreach { item =>

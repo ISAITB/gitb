@@ -1441,38 +1441,6 @@ export class DataService {
     }
   }
 
-  organiseConformanceItemsByType(items: ConformanceStatementItem[]): { groups: ConformanceStatementItem[], specs: ConformanceStatementItem[], actors: ConformanceStatementItem[] } {
-    let groups: ConformanceStatementItem[] = []
-    let specs: ConformanceStatementItem[] = []
-    let actors: ConformanceStatementItem[] = []
-    for (let domain of items) {
-      if (domain.items) {
-        for (let specOrGroup of domain.items) {
-          if (specOrGroup.itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION_GROUP) {
-            groups.push(specOrGroup)
-            // Specifications in group
-            if (specOrGroup.items) {
-              specOrGroup.items.forEach((item) => specs.push(item))
-            }
-          } else {
-            // Specification in domain
-            specs.push(specOrGroup)
-          }
-        }
-      }
-    }
-    for (let spec of specs) {
-      if (spec.items) {
-        spec.items.forEach((item) => actors.push(item))
-      }
-    }
-    return {
-      groups: groups,
-      specs: specs,
-      actors: actors
-    }
-  }
-
   toTestCaseGroupMap(testCaseGroups: ConformanceTestCaseGroup[]|undefined): Map<number, ConformanceTestCaseGroup>|undefined {
     if (testCaseGroups) {
       const testCaseGroupMap = new Map<number, ConformanceTestCaseGroup>()

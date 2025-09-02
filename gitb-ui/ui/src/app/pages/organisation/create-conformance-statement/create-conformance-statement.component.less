@@ -18,22 +18,36 @@
 .control-container {
     display: flex;
     flex-wrap: wrap;
-    padding-left: 16px;
-    padding-right: 16px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid @gray-highlight;
+    &.wrapped {
+        .btn-toolbar {
+            flex-grow: 1;
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid @gray-highlight;
+        }
+    }
+    &.not-wrapped {
+        .total-container {
+            margin-left: 30px;
+            padding-left: 30px;
+            border-left: 1px solid @gray-highlight;
+        }
+    }
+    &.wrapped {
+        .total-container {
+            margin-right: 100px;
+        }
+    }
 }
-.pending-container, .statement-alert-container {
-    padding-left: 16px;
-    padding-right: 16px;
-    padding-bottom: 16px;
-}
-.create-card-body.card-body {
-    padding: 16px 0 0;
-}
+
 .statement-container {
-    padding: 6px 16px 16px;
-    overflow-y: auto;
-    max-height: calc(100vh - 449px);
-    min-height: 80px;
+    padding-top: 6px;
+}
+
+.total-container {
+    display: flex;
+    align-items: center;
+    span {
+        opacity: 0.5;
+    }
 }

@@ -223,7 +223,6 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
       this.selectedCommunityId = this.communityId
       this.selectedOrganisationId = undefined
       this.selectedSystemId = undefined
-      this.itemsByType = undefined
       this.availableOrganisations = undefined
       this.availableSystems = undefined
       this.statements = []
@@ -355,7 +354,6 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     setTimeout(() => {
       if (this.selectedSystemId == undefined) {
         this.dataStatus.status = Constants.STATUS.FINISHED
-        this.itemsByType = undefined
         this.statements = []
       } else {
         this.getConformanceStatementsForTreeView()

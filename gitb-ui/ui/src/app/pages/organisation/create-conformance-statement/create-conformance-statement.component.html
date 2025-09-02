@@ -1,66 +1,88 @@
-<div class="page conformance create">
+<div #conformanceItemPage class="page conformance create">
     <div class="card mb-0">
-      <div class="card-header">
-        <div class="card-title">Create conformance statements</div>
-      </div>
-      <div class="card-body create-card-body">
-        <div>
-          @if (dataStatus.status == Constants.STATUS.PENDING) {
-            <div class="pending-container">
-              <div class="pending-icon"><app-pending-block [pending]="true"></app-pending-block></div>
-              <div class="pending-message">Loading available conformance statements...</div>
-            </div>
-          } @else {
-            @if (items.length == 0) {
-              <div class="statement-alert-container">
-                <div class="alert alert-info rounded mb-0">
-                  @if (hasOtherStatements) {
-                    <span>All available conformance statements are already created.</span>
-                  } @else {
-                    <span>There are currently no conformance statements available to create.</span>
-                  }
-                </div>
-              </div>
-            } @else {
-              <div class="control-container btn-toolbar">
-                <app-text-filter name="statementFilter" [width]="300" [placeholder]="'Search statements...'" [(ngModel)]="statementFilter" (apply)="searchStatements()"></app-text-filter>
-                @if (items.length > 0) {
-                  <div class="btn-group" dropdown>
-                    <button id="button-item-select" [disabled]="visibleItemCount == 0" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-item-select"><span class="me-2">Select statements</span></button>
-                    <ul id="dropdown-item-select" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-item-select">
-                        <li role="menuitem"><a class="dropdown-item" href (click)="toggleCheck(true);$event.preventDefault();">Select all statements</a></li>
-                        <li role="menuitem"><a class="dropdown-item" href (click)="toggleCheck(false);$event.preventDefault();">Unselect all statements</a></li>
-                    </ul>
-                  </div>
-                  <div class="btn-group" dropdown>
-                      <button id="button-item-show" [disabled]="visibleItemCount == 0" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-item-show"><span class="me-2">View statements</span></button>
-                    <ul id="dropdown-item-show" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-item-show">
-                        <li role="menuitem"><a class="dropdown-item" href (click)="toggleCollapse(false);$event.preventDefault();">Expand all statements</a></li>
-                        <li role="menuitem"><a class="dropdown-item" href (click)="toggleCollapse(true);$event.preventDefault();">Collapse all statements</a></li>
-                    </ul>
-                  </div>
-                }
-              </div>
-              @if (visibleItemCount == 0) {
-                <div class="statement-alert-container">
-                    <div class="alert alert-info rounded mb-0 mt-3">
-                        <span>No conformance statements were found matching your search text.</span>
-                    </div>
-                </div>
-              } @else {
-                <div class="statement-container">
-                    <app-conformance-statement-items-display [items]="items" [animated]="animated" (selectionChanged)="selectionChanged($event)"></app-conformance-statement-items-display>
-                </div>
-              }
-            }
-          }
+        <div class="card-header">
+            <div class="card-title">Create conformance statements</div>
         </div>
-      </div>
-      <div class="card-footer">
-          <div class="btn-toolbar">
-              <button type="button" class="btn btn-secondary" (click)="create()" [disable]="createDisabled" [pending]="createPending">Confirm</button>
-              <button type="button" class="btn btn-secondary" (click)="cancel()" [disabled]="createPending">Cancel</button>
-          </div>
-      </div>
+        <div class="card-body" [class.disable-events]="updatePending">
+            @if (dataStatus.status == Constants.STATUS.PENDING) {
+                <div class="pending-container">
+                    <div class="pending-icon">
+                        <app-pending-block [pending]="true"></app-pending-block>
+                    </div>
+                    <div class="pending-message">Loading available conformance statements...</div>
+                </div>
+            } @else {
+                @if (!hasStatementsBeforeFiltering) {
+                    <div class="statement-alert-container">
+                        <div class="alert alert-info rounded mb-0">
+                            @if (hasOtherStatements) {
+                                <span>All available conformance statements are already created.</span>
+                            } @else {
+                                <span>There are currently no conformance statements available to create.</span>
+                            }
+                        </div>
+                    </div>
+                } @else {
+                    <div #controlContainer class="control-container" [class.wrapped]="controlsWrapped" [class.not-wrapped]="!controlsWrapped">
+                        <div class="btn-toolbar">
+                            <app-text-filter name="statementFilter" [width]="300" [placeholder]="'Search statements...'" [(ngModel)]="searchCriteria.filterText" (apply)="loadStatements()"></app-text-filter>
+                            <app-checkbox-option-panel
+                                label="Show statements..."
+                                [options]="statusOptions"
+                                (updated)="filterByStatus($event)"></app-checkbox-option-panel>
+                            <div class="btn-group select-group" dropdown [isDisabled]="!hasVisibleItems">
+                                <button type="button" [disabled]="!hasVisibleItems" class="btn btn-secondary" (click)="selectAllStatements()">Select current statements</button>
+                                <button id="button-select" type="button" [disabled]="!hasVisibleItems" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+                                    <span class="caret"></span>
+                                    <span class="sr-only visually-hidden">Select all statements</span>
+                                </button>
+                                <ul id="dropdown-select" *dropdownMenu class="dropdown-menu dropdown-menu-right"
+                                    role="menu" aria-labelledby="button-select">
+                                    <li role="menuitem"><a class="dropdown-item" href (click)="deselectAllStatements();$event.preventDefault()">Unselect current statements</a></li>
+                                </ul>
+                            </div>
+                            <div class="btn-group collapse-group" dropdown [isDisabled]="!hasVisibleItems">
+                                <button type="button" [disabled]="!hasVisibleItems" class="btn btn-secondary" (click)="toggleCollapse(true)">Collapse statements</button>
+                                <button id="button-collapse" type="button" [disabled]="!hasVisibleItems" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+                                    <span class="caret"></span>
+                                    <span class="sr-only visually-hidden">Collapse statements</span>
+                                </button>
+                                <ul id="dropdown-collapse" *dropdownMenu class="dropdown-menu dropdown-menu-right"
+                                    role="menu" aria-labelledby="button-collapse">
+                                    <li role="menuitem"><a class="dropdown-item" href (click)="toggleCollapse(false);$event.preventDefault()">Expand statements</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div #statusContainer class="total-container"><span>
+                            @if (selectedActorIds.size == 0) {
+                                No statements currently selected
+                            } @else if (selectedActorIds.size == 1) {
+                                1 statement currently selected
+                            } @else {
+                                {{ selectedActorIds.size }} statements currently selected
+                            }</span>
+                        </div>
+                    </div>
+                    @if (!hasVisibleItems) {
+                        <div class="statement-alert-container">
+                            <div class="alert alert-info rounded mb-0 mt-3">
+                                <span>No available conformance statements match your search criteria.</span>
+                            </div>
+                        </div>
+                    } @else {
+                        <div class="statement-container">
+                            <app-conformance-statement-items-display [items]="items" [animated]="animated" (selectionChanged)="selectionChanged($event)"></app-conformance-statement-items-display>
+                        </div>
+                    }
+                }
+            }
+            <app-paging-controls #pagingControls [placement]="PagingPlacement.card" (navigation)="doPagingNavigation($event)"></app-paging-controls>
+        </div>
+        <div class="card-footer">
+            <div class="btn-toolbar">
+                <button type="button" class="btn btn-secondary" (click)="create()" [disable]="createDisabled" [pending]="createPending">Confirm</button>
+                <button type="button" class="btn btn-secondary" (click)="cancel()" [disabled]="createPending">Cancel</button>
+            </div>
+        </div>
     </div>
 </div>
