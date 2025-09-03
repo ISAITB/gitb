@@ -113,7 +113,7 @@ export class OrganisationFormComponent implements OnInit {
       return this.organisationService.getOrganisationsByCommunity(this.communityId).pipe(
         map((data) => {
           let sources: Organisation[]
-          if (this.organisation.id != undefined) {
+          if (this.organisation.id == undefined) {
             sources = data
           } else {
             sources = data.filter(x => Number(x.id) != Number(this.organisation.id))

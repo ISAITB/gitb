@@ -71,7 +71,7 @@ export class SystemFormComponent implements OnInit {
       return this.systemService.getSystemsByOrganisation(this.organisationId).pipe(
         map((data) => {
           let sources: System[]
-          if (this.system.id != undefined) {
+          if (this.system.id == undefined) {
             sources = data
           } else {
             sources = data.filter(x => Number(x.id) != Number(this.system.id))
