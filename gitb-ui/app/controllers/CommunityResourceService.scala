@@ -53,8 +53,8 @@ class CommunityResourceService @Inject() (authorizedAction: AuthorizedAction,
 
   private def createResourceInternal(communityId: Long, request: RequestWithAttributes[AnyContent]): Future[Result] = {
     val files = ParameterExtractor.extractFiles(request)
-    if (files.contains(Parameters.FILE)) {
-      val fileToStore = files(Parameters.FILE).file
+    if (files.contains(ParameterNames.FILE)) {
+      val fileToStore = files(ParameterNames.FILE).file
       if (Configurations.ANTIVIRUS_SERVER_ENABLED && ParameterExtractor.virusPresentInFiles(List(fileToStore))) {
         Future.successful {
           ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")
@@ -93,8 +93,8 @@ class CommunityResourceService @Inject() (authorizedAction: AuthorizedAction,
     for {
       fileToStore <- {
         val files = ParameterExtractor.extractFiles(request)
-        if (files.contains(Parameters.FILE)) {
-          val fileToStore = Some(files(Parameters.FILE).file)
+        if (files.contains(ParameterNames.FILE)) {
+          val fileToStore = Some(files(ParameterNames.FILE).file)
           if (Configurations.ANTIVIRUS_SERVER_ENABLED && ParameterExtractor.virusPresentInFiles(List(fileToStore.get))) {
             Future.successful((None, Some(ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan."))))
           } else {
@@ -107,8 +107,8 @@ class CommunityResourceService @Inject() (authorizedAction: AuthorizedAction,
       result <- {
         if (fileToStore._2.isEmpty) {
           val paramMap = ParameterExtractor.paramMap(request)
-          val name = requiredBodyParameter(paramMap, Parameters.NAME)
-          val description = optionalBodyParameter(paramMap, Parameters.DESCRIPTION)
+          val name = requiredBodyParameter(paramMap, ParameterNames.NAME)
+          val description = optionalBodyParameter(paramMap, ParameterNames.DESCRIPTION)
           communityResourceManager.updateCommunityResource(resourceId, name, description, fileToStore._1).map { _ =>
             ResponseConstructor.constructEmptyResponse
           }
@@ -137,15 +137,15 @@ class CommunityResourceService @Inject() (authorizedAction: AuthorizedAction,
 
   private def uploadResourcesInBulkInternal(communityId: Long, request: RequestWithAttributes[AnyContent]): Future[Result] = {
     val files = ParameterExtractor.extractFiles(request)
-    if (files.contains(Parameters.FILE)) {
-      val fileToStore = files(Parameters.FILE).file
+    if (files.contains(ParameterNames.FILE)) {
+      val fileToStore = files(ParameterNames.FILE).file
       if (Configurations.ANTIVIRUS_SERVER_ENABLED && ParameterExtractor.virusPresentInFiles(List(fileToStore))) {
         Future.successful {
           ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")
         }
       } else {
         val paramMap = ParameterExtractor.paramMap(request)
-        val updateMatchingResources = ParameterExtractor.optionalBooleanBodyParameter(paramMap, Parameters.UPDATE).getOrElse(true)
+        val updateMatchingResources = ParameterExtractor.optionalBooleanBodyParameter(paramMap, ParameterNames.UPDATE).getOrElse(true)
         communityResourceManager.saveCommunityResourcesInBulk(communityId, fileToStore, updateMatchingResources).map { counts =>
           ResponseConstructor.constructJsonResponse(JsonUtil.jsUpdateCounts(counts._1, counts._2).toString())
         }
@@ -207,7 +207,7 @@ class CommunityResourceService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   private def downloadResourcesInternal(communityId: Long, request: RequestWithAttributes[AnyContent]): Future[Result] = {
-    val filter = ParameterExtractor.optionalQueryParameter(request, Parameters.FILTER)
+    val filter = ParameterExtractor.optionalQueryParameter(request, ParameterNames.FILTER)
     communityResourceManager.createCommunityResourceArchive(communityId, filter).map { archive =>
       Ok.sendFile(
         content = archive.toFile,
@@ -250,7 +250,7 @@ class CommunityResourceService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   private def searchResourcesInternal(communityId: Long, request: RequestWithAttributes[AnyContent]): Future[Result] = {
-    val filter = ParameterExtractor.optionalQueryParameter(request, Parameters.FILTER)
+    val filter = ParameterExtractor.optionalQueryParameter(request, ParameterNames.FILTER)
     val page = ParameterExtractor.extractPageNumber(request)
     val limit = ParameterExtractor.extractPageLimit(request)
     communityResourceManager.searchCommunityResources(communityId, page, limit, filter).map { result =>

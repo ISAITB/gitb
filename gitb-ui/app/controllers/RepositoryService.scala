@@ -21,7 +21,7 @@ import com.gitb.xml.export.Export
 import config.Configurations
 import controllers.dto.ExportDemoCertificateInfo
 import controllers.util.ParameterExtractor.requiredBodyParameter
-import controllers.util.{Parameters, _}
+import controllers.util._
 import exceptions.{ErrorCodes, ServiceCallException}
 import jakarta.xml.bind.JAXBElement
 import managers._
@@ -345,7 +345,7 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def exportTestCaseReport(): Action[AnyContent] = authorizedAction.async { request =>
-    val session = ParameterExtractor.requiredQueryParameter(request, Parameters.SESSION_ID)
+    val session = ParameterExtractor.requiredQueryParameter(request, ParameterNames.SESSION_ID)
     val contentType = request.headers.get(Constants.AcceptHeader).getOrElse(Constants.MimeTypeXML)
     val suffix = if (contentType == Constants.MimeTypePDF) ".pdf" else ".xml"
     val reportPath = getReportTempFile(suffix)
@@ -393,12 +393,12 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def exportOwnConformanceOverviewCertificateReport(): Action[AnyContent] = authorizedAction.async { request =>
-    val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SNAPSHOT)
-    val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
+    val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.SNAPSHOT)
+    val systemId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.SYSTEM_ID).toLong
     authorizationManager.canViewOwnConformanceCertificateReport(request, systemId, snapshotId).flatMap { _ =>
-      val domainId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
-      val groupId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.GROUP_ID)
-      val specificationId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SPECIFICATION_ID)
+      val domainId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.DOMAIN_ID)
+      val groupId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.GROUP_ID)
+      val specificationId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.SPECIFICATION_ID)
       systemManager.getCommunityIdOfSystem(systemId).flatMap { communityId =>
         exportConformanceOverviewCertificateInternal(None, communityId, systemId, domainId, groupId, specificationId, snapshotId)
       }
@@ -406,26 +406,26 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def exportConformanceOverviewCertificateReport(): Action[AnyContent] = authorizedAction.async { request =>
-    val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SNAPSHOT)
-    val communityId = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
+    val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.SNAPSHOT)
+    val communityId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.COMMUNITY_ID).toLong
     authorizationManager.canViewConformanceCertificateReport(request, communityId, snapshotId).flatMap { _ =>
-      val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
-      val domainId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
-      val groupId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.GROUP_ID)
-      val specificationId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SPECIFICATION_ID)
-      val jsSettings = ParameterExtractor.optionalBodyParameter(request, Parameters.SETTINGS)
+      val systemId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.SYSTEM_ID).toLong
+      val domainId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.DOMAIN_ID)
+      val groupId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.GROUP_ID)
+      val specificationId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.SPECIFICATION_ID)
+      val jsSettings = ParameterExtractor.optionalBodyParameter(request, ParameterNames.SETTINGS)
       val settings = jsSettings.map(JsonUtil.parseJsConformanceOverviewCertificateWithMessages(_, communityId))
       exportConformanceOverviewCertificateInternal(settings, communityId, systemId, domainId, groupId, specificationId, snapshotId)
     }
   }
 
   def exportConformanceOverviewReport(): Action[AnyContent] = authorizedAction.async { request =>
-    val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SNAPSHOT)
-    val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
+    val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.SNAPSHOT)
+    val systemId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.SYSTEM_ID).toLong
     authorizationManager.canViewConformanceStatementReport(request, systemId, snapshotId).flatMap { _ =>
-      val domainId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
-      val groupId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.GROUP_ID)
-      val specificationId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SPECIFICATION_ID)
+      val domainId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.DOMAIN_ID)
+      val groupId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.GROUP_ID)
+      val specificationId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.SPECIFICATION_ID)
 
       val reportPath = getReportTempFile(".pdf")
       val task = for {
@@ -457,8 +457,8 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def exportOwnConformanceOverviewReportInXML(): Action[AnyContent] = authorizedAction.async { request =>
-    val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
-    val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SNAPSHOT)
+    val systemId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.SYSTEM_ID).toLong
+    val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.SNAPSHOT)
     for {
       _ <- {
         if (snapshotId.isDefined) {
@@ -468,9 +468,9 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
         }
       }
       result <- {
-        val domainId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
-        val groupId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.GROUP_ID)
-        val specificationId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SPECIFICATION_ID)
+        val domainId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.DOMAIN_ID)
+        val groupId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.GROUP_ID)
+        val specificationId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.SPECIFICATION_ID)
         systemManager.getCommunityIdOfSystem(systemId).flatMap { communityId =>
           val reportPath = getReportTempFile(".pdf")
           reportManager.generateConformanceOverviewReportInXML(reportPath, systemId, domainId, groupId, specificationId, communityId, snapshotId).map { _ =>
@@ -492,13 +492,13 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def exportConformanceOverviewReportInXML(): Action[AnyContent] = authorizedAction.async { request =>
-    val communityId = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
+    val communityId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.COMMUNITY_ID).toLong
     authorizationManager.canManageCommunity(request, communityId).flatMap { _ =>
-      val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
-      val domainId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
-      val groupId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.GROUP_ID)
-      val specificationId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SPECIFICATION_ID)
-      val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SNAPSHOT)
+      val systemId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.SYSTEM_ID).toLong
+      val domainId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.DOMAIN_ID)
+      val groupId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.GROUP_ID)
+      val specificationId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.SPECIFICATION_ID)
+      val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.SNAPSHOT)
       val reportPath = getReportTempFile(".pdf")
       reportManager.generateConformanceOverviewReportInXML(reportPath, systemId, domainId, groupId, specificationId, communityId, snapshotId).map { _ =>
         Ok.sendFile(
@@ -517,11 +517,11 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def exportOwnConformanceStatementReportInXML(): Action[AnyContent] = authorizedAction.async { request =>
-    val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SNAPSHOT)
-    val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
+    val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.SNAPSHOT)
+    val systemId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.SYSTEM_ID).toLong
     authorizationManager.canViewConformanceStatementReport(request, systemId, snapshotId).flatMap { _ =>
-      val actorId = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID).toLong
-      val withTestSteps = ParameterExtractor.optionalBooleanBodyParameter(request, Parameters.TESTS).getOrElse(false)
+      val actorId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.ACTOR_ID).toLong
+      val withTestSteps = ParameterExtractor.optionalBooleanBodyParameter(request, ParameterNames.TESTS).getOrElse(false)
       systemManager.getCommunityIdOfSystem(systemId).flatMap { communityId =>
         val reportPath = getReportTempFile(".pdf")
         reportManager.generateConformanceStatementReportInXML(reportPath, withTestSteps, actorId, systemId, communityId, snapshotId).map { _ =>
@@ -542,12 +542,12 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def exportConformanceStatementReportInXML(): Action[AnyContent] = authorizedAction.async { request =>
-    val communityId = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
+    val communityId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.COMMUNITY_ID).toLong
     authorizationManager.canManageCommunity(request, communityId).flatMap { _ =>
-      val withTestSteps = ParameterExtractor.optionalBooleanBodyParameter(request, Parameters.TESTS).getOrElse(false)
-      val actorId = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID).toLong
-      val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SNAPSHOT)
-      val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
+      val withTestSteps = ParameterExtractor.optionalBooleanBodyParameter(request, ParameterNames.TESTS).getOrElse(false)
+      val actorId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.ACTOR_ID).toLong
+      val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.SNAPSHOT)
+      val systemId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.SYSTEM_ID).toLong
       val reportPath = getReportTempFile(".xml")
       reportManager.generateConformanceStatementReportInXML(reportPath, withTestSteps, actorId, systemId, communityId, snapshotId).map { _ =>
         Ok.sendFile(
@@ -566,8 +566,8 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def exportConformanceStatementReport(): Action[AnyContent] = authorizedAction.async { request =>
-    val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SNAPSHOT)
-    val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
+    val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.SNAPSHOT)
+    val systemId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.SYSTEM_ID).toLong
     for {
       _ <- authorizationManager.canViewConformanceStatementReport(request, systemId, snapshotId)
       labels <- communityLabelManager.getLabelsByUserId(ParameterExtractor.extractUserId(request))
@@ -579,8 +579,8 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
         }
       }
       result <- {
-        val actorId = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID).toLong
-        val includeTests = ParameterExtractor.requiredBodyParameter(request, Parameters.TESTS).toBoolean
+        val actorId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.ACTOR_ID).toLong
+        val includeTests = ParameterExtractor.requiredBodyParameter(request, ParameterNames.TESTS).toBoolean
         val reportPath = getReportTempFile(".pdf")
         reportManager.generateConformanceStatementReport(reportPath, includeTests, actorId, systemId, labels, communityId, snapshotId).map { _ =>
           Ok.sendFile(
@@ -619,8 +619,8 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
   def exportDemoConformanceOverviewCertificateReport(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
     exportDemoCertificateReport(communityId, request, ReportType.ConformanceOverviewCertificate , exportInfo => {
       val certificateSettings = JsonUtil.parseJsConformanceOverviewCertificateWithMessages(exportInfo.jsSettings, communityId)
-      val reportIdentifier = ParameterExtractor.optionalLongBodyParameter(exportInfo.paramMap, Parameters.ID)
-      val reportLevel = OverviewLevelType.withName(ParameterExtractor.requiredBodyParameter(exportInfo.paramMap, Parameters.LEVEL))
+      val reportIdentifier = ParameterExtractor.optionalLongBodyParameter(exportInfo.paramMap, ParameterNames.ID)
+      val reportLevel = OverviewLevelType.withName(ParameterExtractor.requiredBodyParameter(exportInfo.paramMap, ParameterNames.LEVEL))
       for {
         keystore <- {
           // Get the keystore (if needed) to use for the signature
@@ -647,9 +647,9 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def exportOwnConformanceCertificateReport(): Action[AnyContent] = authorizedAction.async { request =>
-    val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SNAPSHOT)
-    val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
-    val actorId = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID).toLong
+    val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.SNAPSHOT)
+    val systemId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.SYSTEM_ID).toLong
+    val actorId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.ACTOR_ID).toLong
     authorizationManager.canViewOwnConformanceCertificateReport(request, systemId, snapshotId).flatMap { _ =>
       systemManager.getCommunityIdOfSystem(systemId).flatMap { communityId =>
         exportConformanceCertificateInternal(None, communityId, systemId, actorId, snapshotId)
@@ -658,14 +658,14 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def exportConformanceCertificateReport(): Action[AnyContent] = authorizedAction.async { request =>
-    val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SNAPSHOT)
-    val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
-    val communityId = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
-    val actorId = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID).toLong
+    val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.SNAPSHOT)
+    val systemId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.SYSTEM_ID).toLong
+    val communityId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.COMMUNITY_ID).toLong
+    val actorId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.ACTOR_ID).toLong
     for {
       _ <- authorizationManager.canViewConformanceCertificateReport(request, communityId, snapshotId)
       settings <- {
-        val jsSettings = ParameterExtractor.optionalBodyParameter(request, Parameters.SETTINGS)
+        val jsSettings = ParameterExtractor.optionalBodyParameter(request, ParameterNames.SETTINGS)
         jsSettings.map(x => {
           val parsedSettings = JsonUtil.parseJsConformanceCertificateSettings(x, communityId)
           if (parsedSettings.includeSignature) {
@@ -688,7 +688,7 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
     val task = for {
       paramMap <- Future.successful(ParameterExtractor.paramMap(request))
       reportSettings <- Future.successful(ParameterExtractor.extractCommunityReportSettings(paramMap, communityId))
-      jsSettings <- Future.successful(ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SETTINGS))
+      jsSettings <- Future.successful(ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.SETTINGS))
       _ <- authorizationManager.canPreviewConformanceCertificateReport(request, communityId)
       stylesheetInfo <- {
         var result: Option[Result] = None
@@ -790,7 +790,7 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
 
   def exportDemoConformanceOverviewReport(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
     exportDemoReport(request, communityId, "conformance_report.pdf", ReportType.ConformanceOverviewReport, (reportPath: Path, xsltPath: Option[Path], paramMap: Option[Map[String, Seq[String]]]) => {
-      val level = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.LEVEL).map(OverviewLevelType.withName).getOrElse(OverviewLevelType.OrganisationLevel)
+      val level = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.LEVEL).map(OverviewLevelType.withName).getOrElse(OverviewLevelType.OrganisationLevel)
       val settings = ParameterExtractor.extractCommunityReportSettings(paramMap, communityId)
       reportManager.generateDemoConformanceOverviewReport(reportPath, settings, xsltPath, communityId, level).map(_ => ())
     })
@@ -798,7 +798,7 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
 
   def exportDemoConformanceOverviewReportInXML(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
     exportDemoReportInXML(request, communityId, "conformance_report.xml", ReportType.ConformanceOverviewReport, (reportPath: Path, xsltPath: Option[Path], paramMap: Option[Map[String, Seq[String]]]) => {
-      val level = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.LEVEL).map(OverviewLevelType.withName).getOrElse(OverviewLevelType.OrganisationLevel)
+      val level = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.LEVEL).map(OverviewLevelType.withName).getOrElse(OverviewLevelType.OrganisationLevel)
       reportManager.generateDemoConformanceOverviewReportInXML(reportPath, xsltPath, communityId, level).map(_ => ())
     })
   }
@@ -806,14 +806,14 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
   def exportDemoConformanceStatementReport(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
     exportDemoReport(request, communityId, "conformance_report.pdf", ReportType.ConformanceStatementReport, (reportPath: Path, xsltPath: Option[Path], paramMap: Option[Map[String, Seq[String]]]) => {
       val settings = ParameterExtractor.extractCommunityReportSettings(paramMap, communityId)
-      val withTestSteps = ParameterExtractor.optionalBooleanBodyParameter(paramMap, Parameters.TESTS).getOrElse(false)
+      val withTestSteps = ParameterExtractor.optionalBooleanBodyParameter(paramMap, ParameterNames.TESTS).getOrElse(false)
       reportManager.generateDemoConformanceStatementReport(reportPath, settings, xsltPath, withTestSteps, communityId).map(_ => ())
     })
   }
 
   def exportDemoConformanceStatementReportInXML(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
     exportDemoReportInXML(request, communityId, "conformance_report.xml", ReportType.ConformanceStatementReport, (reportPath: Path, xsltPath: Option[Path], paramMap: Option[Map[String, Seq[String]]]) => {
-      val withTestSteps = ParameterExtractor.optionalBooleanBodyParameter(paramMap, Parameters.TESTS).getOrElse(false)
+      val withTestSteps = ParameterExtractor.optionalBooleanBodyParameter(paramMap, ParameterNames.TESTS).getOrElse(false)
       reportManager.generateDemoConformanceStatementReportInXML(reportPath, xsltPath, withTestSteps, communityId).map(_ => ())
     })
   }
@@ -827,7 +827,7 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
         val settings = ParameterExtractor.extractCommunityReportSettings(paramMap, communityId)
         var stylesheetToUse: Option[Path] = None
         var resultToReturn: Option[Result] = None
-        val useStyleSheet = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.USE_STYLE_SHEET).toBoolean
+        val useStyleSheet = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.USE_STYLE_SHEET).toBoolean
         if (useStyleSheet && settings.customPdfsWithCustomXml) {
           val stylesheetInfo = ParameterExtractor.extractReportStylesheet(request)
           if (stylesheetInfo._2.isEmpty) {
@@ -895,7 +895,7 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
       paramMap <- Future.successful(ParameterExtractor.paramMap(request))
       _ <- authorizationManager.canManageCommunity(request, communityId)
       stylesheetInfo <- {
-        val enabled = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.ENABLE).toBoolean
+        val enabled = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.ENABLE).toBoolean
         var stylesheetToUse: Option[Path] = None
         var resultToReturn: Option[Result] = None
         if (enabled) {
@@ -946,7 +946,7 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
 
   def loadReportSettings(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canManageCommunity(request, communityId).flatMap { _ =>
-      val reportType = ReportType.apply(ParameterExtractor.requiredQueryParameter(request, Parameters.TYPE).toShort)
+      val reportType = ReportType.apply(ParameterExtractor.requiredQueryParameter(request, ParameterNames.TYPE).toShort)
       reportManager.getReportSettings(communityId, reportType).map { settings =>
         val styleSheetExists = repositoryUtils.getCommunityReportStylesheet(communityId, reportType).isDefined
         ResponseConstructor.constructJsonResponse(JsonUtil.jsReportSettings(settings, styleSheetExists).toString)
@@ -956,7 +956,7 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
 
   def getReportStylesheet(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canManageCommunity(request, communityId).map { _ =>
-      val reportType = ReportType.apply(ParameterExtractor.requiredQueryParameter(request, Parameters.TYPE).toShort)
+      val reportType = ReportType.apply(ParameterExtractor.requiredQueryParameter(request, ParameterNames.TYPE).toShort)
       val stylesheet = repositoryUtils.getCommunityReportStylesheet(communityId, reportType)
       if (stylesheet.isDefined) {
         Ok.sendFile(
@@ -1009,7 +1009,7 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
       }
       result <- {
         if (stylesheetInfo._1.isEmpty) {
-          val jsSettings = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SETTINGS)
+          val jsSettings = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.SETTINGS)
           certificateSettingsHandler.apply(reportSettings, stylesheetInfo._2, jsSettings).map { _ =>
             ResponseConstructor.constructEmptyResponse
           }
@@ -1031,7 +1031,7 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
       paramMap <- Future.successful(ParameterExtractor.paramMap(request))
       reportSettings <- Future.successful(ParameterExtractor.extractCommunityReportSettings(paramMap, communityId))
       stylesheetInfo <- {
-        val useStyleSheet = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.USE_STYLE_SHEET).toBoolean
+        val useStyleSheet = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.USE_STYLE_SHEET).toBoolean
         var stylesheetFile: Option[Option[Path]] = None
         var result: Option[Result] = None
         if (useStyleSheet) {
@@ -1090,11 +1090,11 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
 
   def searchTestCases(): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewAllTestCases(request).flatMap { _ =>
-      val domainIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.DOMAIN_IDS)
-      val specificationIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.SPEC_IDS)
-      val groupIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.GROUP_IDS)
-      val actorIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.ACTOR_IDS)
-      val testSuiteIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.TEST_SUITE_IDS)
+      val domainIds = ParameterExtractor.extractLongIdsBodyParameter(request, ParameterNames.DOMAIN_IDS)
+      val specificationIds = ParameterExtractor.extractLongIdsBodyParameter(request, ParameterNames.SPEC_IDS)
+      val groupIds = ParameterExtractor.extractLongIdsBodyParameter(request, ParameterNames.GROUP_IDS)
+      val actorIds = ParameterExtractor.extractLongIdsBodyParameter(request, ParameterNames.ACTOR_IDS)
+      val testSuiteIds = ParameterExtractor.extractLongIdsBodyParameter(request, ParameterNames.TEST_SUITE_IDS)
       testCaseManager.searchTestCases(domainIds, specificationIds, groupIds, actorIds, testSuiteIds).map { testCases =>
         val json = JsonUtil.jsTestCasesList(testCases).toString()
         ResponseConstructor.constructJsonResponse(json)
@@ -1103,12 +1103,12 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def searchTestCasesInDomain(): Action[AnyContent] = authorizedAction.async { request =>
-    val domainId = ParameterExtractor.requiredBodyParameter(request, Parameters.DOMAIN_ID).toLong
+    val domainId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.DOMAIN_ID).toLong
     authorizationManager.canViewDomains(request, Some(List(domainId))).flatMap { _ =>
-      val specificationIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.SPEC_IDS)
-      val groupIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.GROUP_IDS)
-      val actorIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.ACTOR_IDS)
-      val testSuiteIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.TEST_SUITE_IDS)
+      val specificationIds = ParameterExtractor.extractLongIdsBodyParameter(request, ParameterNames.SPEC_IDS)
+      val groupIds = ParameterExtractor.extractLongIdsBodyParameter(request, ParameterNames.GROUP_IDS)
+      val actorIds = ParameterExtractor.extractLongIdsBodyParameter(request, ParameterNames.ACTOR_IDS)
+      val testSuiteIds = ParameterExtractor.extractLongIdsBodyParameter(request, ParameterNames.TEST_SUITE_IDS)
 
       testCaseManager.searchTestCases(Some(List(domainId)), specificationIds, groupIds, actorIds, testSuiteIds).map { testCases =>
         val json = JsonUtil.jsTestCasesList(testCases).toString()
@@ -1167,7 +1167,7 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
 
   private def exportInternal(request: Request[AnyContent], includeSettings: Boolean, fnExportData: ExportSettings => Future[Export]): Future[Result] = {
     // Get export settings to apply.
-    val exportSettings = JsonUtil.parseJsExportSettings(requiredBodyParameter(request, Parameters.VALUES), includeSettings)
+    val exportSettings = JsonUtil.parseJsExportSettings(requiredBodyParameter(request, ParameterNames.VALUES), includeSettings)
     fnExportData.apply(exportSettings).map { exportData =>
       exportData.setVersion(Configurations.mainVersionNumber())
       exportData.setTimestamp(XMLDateTimeUtils.getXMLGregorianCalendarDateTime)
@@ -1203,9 +1203,9 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
     // Get import settings.
     val paramMap = ParameterExtractor.paramMap(request)
     val files = ParameterExtractor.extractFiles(request)
-    val importSettings = JsonUtil.parseJsImportSettings(ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SETTINGS))
-    if (files.contains(Parameters.FILE)) {
-      importPreviewManager.prepareImportPreview(files(Parameters.FILE).file, importSettings, requireDomain, requireCommunity, requireSettings, requireDeletions).flatMap { result =>
+    val importSettings = JsonUtil.parseJsImportSettings(ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.SETTINGS))
+    if (files.contains(ParameterNames.FILE)) {
+      importPreviewManager.prepareImportPreview(files(ParameterNames.FILE).file, importSettings, requireDomain, requireCommunity, requireSettings, requireDeletions).flatMap { result =>
         if (result._1.isDefined) {
           // We have an error.
           Future.successful {
@@ -1321,7 +1321,7 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
 
   private def cancelImportInternal(request: Request[AnyContent]): Future[Result] = {
     Future.successful {
-      val pendingImportId = ParameterExtractor.requiredBodyParameter(request, Parameters.PENDING_ID)
+      val pendingImportId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.PENDING_ID)
       val pendingFolder = Paths.get(importPreviewManager.getPendingFolder().getAbsolutePath, pendingImportId)
       // Delete temporary folder (if exists)
       FileUtils.deleteQuietly(pendingFolder.toFile)
@@ -1348,7 +1348,7 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   private def confirmImportInternal(request: Request[AnyContent], fnImportData: (Export, ImportSettings, List[ImportItem]) => Future[Unit]): Future[Result] = {
-    val pendingImportId = ParameterExtractor.requiredBodyParameter(request, Parameters.PENDING_ID)
+    val pendingImportId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.PENDING_ID)
     val pendingFolder = Paths.get(importPreviewManager.getPendingFolder().getAbsolutePath, pendingImportId)
     Future.successful {
       // Get XML file and deserialize.
@@ -1356,9 +1356,9 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
       if (xmlFile.isDefined) {
         // We can skip XSD validation this time as the time was checked previously (at initial upload).
         val exportData: Export = XMLUtils.unmarshal(classOf[com.gitb.xml.export.Export], new StreamSource(Files.newInputStream(xmlFile.get.toPath)))
-        val importSettings = JsonUtil.parseJsImportSettings(ParameterExtractor.requiredBodyParameter(request, Parameters.SETTINGS))
+        val importSettings = JsonUtil.parseJsImportSettings(ParameterExtractor.requiredBodyParameter(request, ParameterNames.SETTINGS))
         importSettings.dataFilePath = Some(xmlFile.get.toPath)
-        val importItems = JsonUtil.parseJsImportItems(ParameterExtractor.requiredBodyParameter(request, Parameters.ITEMS))
+        val importItems = JsonUtil.parseJsImportItems(ParameterExtractor.requiredBodyParameter(request, ParameterNames.ITEMS))
         fnImportData.apply(exportData, importSettings, importItems).map { _ =>
           ResponseConstructor.constructEmptyResponse
         }
@@ -1426,8 +1426,8 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
 
   def applySandboxData(): Action[MultipartFormData[play.api.libs.Files.TemporaryFile]] = authorizedAction.async(parse.multipartFormData) { request =>
     authorizationManager.canApplySandboxDataMulti(request).flatMap { _ =>
-      val archivePassword = ParameterExtractor.requiredBodyParameterMulti(request, Parameters.PASSWORD)
-      request.body.file(Parameters.FILE) match {
+      val archivePassword = ParameterExtractor.requiredBodyParameterMulti(request, ParameterNames.PASSWORD)
+      request.body.file(ParameterNames.FILE) match {
         case Some(archive) =>
           val archiveFile = archive.ref.path.toFile
           importCompleteManager.importSandboxData(archiveFile, archivePassword).flatMap { importResult =>
@@ -1450,7 +1450,7 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
           }
         case None =>
           Future.successful {
-            ResponseConstructor.constructBadRequestResponse(ErrorCodes.MISSING_PARAMS, "[" + Parameters.FILE + "] parameter is missing.")
+            ResponseConstructor.constructBadRequestResponse(ErrorCodes.MISSING_PARAMS, "[" + ParameterNames.FILE + "] parameter is missing.")
           }
       }
     }

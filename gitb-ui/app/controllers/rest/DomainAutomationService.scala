@@ -15,7 +15,7 @@
 
 package controllers.rest
 
-import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
+import controllers.util.{AuthorizedAction, ParameterExtractor, ParameterNames, ResponseConstructor}
 import managers.{ActorManager, AuthorizationManager, DomainManager, SpecificationManager}
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import utils.JsonUtil
@@ -35,7 +35,7 @@ class DomainAutomationService @Inject() (authorizedAction: AuthorizedAction,
   def searchDomains(): Action[AnyContent] = authorizedAction.async { request =>
     process(() => authorizationManager.canViewDomainsThroughAutomationApi(request), { _ =>
       val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
-      val name = ParameterExtractor.optionalQueryParameter(request, Parameters.NAME)
+      val name = ParameterExtractor.optionalQueryParameter(request, ParameterNames.NAME)
       domainManager.searchDomainsThroughAutomationApi(communityKey, name).map { domains =>
         ResponseConstructor.constructJsonResponse(JsonUtil.jsDomainsForAutomationApi(domains).toString())
       }
@@ -108,7 +108,7 @@ class DomainAutomationService @Inject() (authorizedAction: AuthorizedAction,
   def searchSpecificationGroups(domain: String): Action[AnyContent] = authorizedAction.async { request =>
     process(() => authorizationManager.canManageSpecificationGroupThroughAutomationApi(request), { _ =>
       val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
-      val name = ParameterExtractor.optionalQueryParameter(request, Parameters.NAME)
+      val name = ParameterExtractor.optionalQueryParameter(request, ParameterNames.NAME)
       specificationManager.searchSpecificationGroupsThroughAutomationApi(communityKey, domain, name).map { groups =>
         ResponseConstructor.constructJsonResponse(JsonUtil.jsSpecificationGroupsForAutomationApi(groups).toString())
       }
@@ -156,7 +156,7 @@ class DomainAutomationService @Inject() (authorizedAction: AuthorizedAction,
   def searchSpecifications(domain: String): Action[AnyContent] = authorizedAction.async { request =>
     process(() => authorizationManager.canManageSpecificationThroughAutomationApi(request), { _ =>
       val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
-      val name = ParameterExtractor.optionalQueryParameter(request, Parameters.NAME)
+      val name = ParameterExtractor.optionalQueryParameter(request, ParameterNames.NAME)
       specificationManager.searchSpecificationsThroughAutomationApi(communityKey, domain, name).map { specifications =>
         ResponseConstructor.constructJsonResponse(JsonUtil.jsSpecificationsForAutomationApi(specifications).toString())
       }
@@ -166,7 +166,7 @@ class DomainAutomationService @Inject() (authorizedAction: AuthorizedAction,
   def searchSpecificationsInGroup(group: String): Action[AnyContent] = authorizedAction.async { request =>
     process(() => authorizationManager.canManageSpecificationThroughAutomationApi(request), { _ =>
       val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
-      val name = ParameterExtractor.optionalQueryParameter(request, Parameters.NAME)
+      val name = ParameterExtractor.optionalQueryParameter(request, ParameterNames.NAME)
       specificationManager.searchSpecificationsInGroupThroughAutomationApi(communityKey, group, name).map { specifications =>
         ResponseConstructor.constructJsonResponse(JsonUtil.jsSpecificationsForAutomationApi(specifications).toString())
       }
@@ -214,7 +214,7 @@ class DomainAutomationService @Inject() (authorizedAction: AuthorizedAction,
   def searchActors(specification: String): Action[AnyContent] = authorizedAction.async { request =>
     process(() => authorizationManager.canManageActorThroughAutomationApi(request), { _ =>
       val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
-      val name = ParameterExtractor.optionalQueryParameter(request, Parameters.NAME)
+      val name = ParameterExtractor.optionalQueryParameter(request, ParameterNames.NAME)
       actorManager.searchActorsThroughAutomationApi(communityKey, specification, name).map { actors =>
         ResponseConstructor.constructJsonResponse(JsonUtil.jsActorsForAutomationApi(actors).toString())
       }

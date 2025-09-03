@@ -15,7 +15,7 @@
 
 package controllers
 
-import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
+import controllers.util.{AuthorizedAction, ParameterExtractor, ParameterNames, ResponseConstructor}
 import managers.{ActorManager, AuthorizationManager, CommunityLabelManager}
 import models.BadgeInfo
 import models.Enums.{LabelType, TestResultStatus}
@@ -45,7 +45,7 @@ class ActorService @Inject() (authorizedAction: AuthorizedAction,
     authorizationManager.canUpdateActor(request, actorId).flatMap { _ =>
       val paramMap = ParameterExtractor.paramMap(request)
       val actor = ParameterExtractor.extractActor(paramMap)
-      val specificationId = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SPECIFICATION_ID).toLong
+      val specificationId = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.SPECIFICATION_ID).toLong
       actorManager.checkActorExistsInSpecification(actor.actorId, specificationId, Some(actorId)).flatMap { actorExists =>
         if (actorExists) {
           communityLabelManager.getLabelsByUserId(ParameterExtractor.extractUserId(request)).map { labels =>
@@ -72,7 +72,7 @@ class ActorService @Inject() (authorizedAction: AuthorizedAction,
 
   def getBadgeForStatus(specId: Long, actorId: Long, status: String): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canManageSpecification(request, specId).map { _ =>
-      val forReport = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.REPORT)
+      val forReport = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.REPORT)
       val statusToLookup = TestResultStatus.withName(status).toString
       val badge = repositoryUtils.getConformanceBadge(specId, Some(actorId), None, statusToLookup, exactMatch = true, forReport.getOrElse(false))
       if (badge.isDefined && badge.get.exists()) {

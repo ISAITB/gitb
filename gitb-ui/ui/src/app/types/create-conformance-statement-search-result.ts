@@ -19,6 +19,5 @@ import {ConformanceStatementItem} from './conformance-statement-item';
 export interface CreateConformanceStatementSearchResult extends SearchResult<ConformanceStatementItem> {
 
   hasOtherStatements: boolean
-  matchedActorIds: number[]
 
 }

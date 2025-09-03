@@ -15,7 +15,7 @@
 
 package controllers
 
-import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
+import controllers.util.{AuthorizedAction, ParameterExtractor, ParameterNames, ResponseConstructor}
 import managers.breadcrumb.BreadcrumbLabelRequest
 import managers.{AuthorizationManager, BreadcrumbManager}
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
@@ -33,13 +33,13 @@ class BreadcrumbService @Inject()(authorizationManager: AuthorizationManager,
   def getBreadcrumbLabels(): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewBreadcrumbLabels(request).flatMap { _ =>
       val userId = ParameterExtractor.extractUserId(request)
-      val domain = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
-      val specification = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SPECIFICATION_ID)
-      val specificationGroup = ParameterExtractor.optionalLongBodyParameter(request, Parameters.GROUP_ID)
-      val actor = ParameterExtractor.optionalLongBodyParameter(request, Parameters.ACTOR_ID)
-      val community = ParameterExtractor.optionalLongBodyParameter(request, Parameters.COMMUNITY_ID)
-      val organisation = ParameterExtractor.optionalLongBodyParameter(request, Parameters.ORGANIZATION_ID)
-      val system = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SYSTEM_ID)
+      val domain = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.DOMAIN_ID)
+      val specification = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.SPECIFICATION_ID)
+      val specificationGroup = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.GROUP_ID)
+      val actor = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.ACTOR_ID)
+      val community = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.COMMUNITY_ID)
+      val organisation = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.ORGANIZATION_ID)
+      val system = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.SYSTEM_ID)
 
       breadcrumbManager.getLabels(BreadcrumbLabelRequest(userId, domain, specification, specificationGroup, actor, community, organisation, system)).map { result =>
         val json: String = JsonUtil.jsBreadcrumbLabelResponse(result).toString

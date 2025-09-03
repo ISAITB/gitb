@@ -37,8 +37,8 @@ class SystemConfigurationService @Inject()(authorizedAction: AuthorizedAction,
 
   def testEmailSettings(): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.checkTestBedAdmin(request).flatMap { _ =>
-      val toAddress = ParameterExtractor.requiredBodyParameter(request, Parameters.TO)
-      val settingsJson = ParameterExtractor.requiredBodyParameter(request, Parameters.SETTINGS)
+      val toAddress = ParameterExtractor.requiredBodyParameter(request, ParameterNames.TO)
+      val settingsJson = ParameterExtractor.requiredBodyParameter(request, ParameterNames.SETTINGS)
       val emailSettings = JsonUtil.parseJsEmailSettings(settingsJson)
       systemConfigurationManager.testEmailSettings(emailSettings, toAddress).map { errors =>
         var json = Json.obj("success" -> JsBoolean(errors.isEmpty))
@@ -61,8 +61,8 @@ class SystemConfigurationService @Inject()(authorizedAction: AuthorizedAction,
 
   def updateConfigurationValue(): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canUpdateSystemConfigurationValues(request).flatMap { _ =>
-      val name = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
-      var value = ParameterExtractor.optionalBodyParameter(request, Parameters.PARAMETER)
+      val name = ParameterExtractor.requiredBodyParameter(request, ParameterNames.NAME)
+      var value = ParameterExtractor.optionalBodyParameter(request, ParameterNames.PARAMETER)
       if (systemConfigurationManager.isEditableSystemParameter(name)) {
         if (name == Constants.WelcomeMessage && value.isDefined) {
           value = Some(HtmlUtil.sanitizeEditorContent(value.get))
@@ -127,8 +127,8 @@ class SystemConfigurationService @Inject()(authorizedAction: AuthorizedAction,
 
   def previewThemeResource: Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canManageThemes(request).map { _ =>
-      val themeId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.ID)
-      val resourcePath = ParameterExtractor.requiredQueryParameter(request, Parameters.NAME)
+      val themeId = ParameterExtractor.optionalLongQueryParameter(request, ParameterNames.ID)
+      val resourcePath = ParameterExtractor.requiredQueryParameter(request, ParameterNames.NAME)
       streamThemeResource(resourcePath, themeId)
     }
   }
@@ -174,7 +174,7 @@ class SystemConfigurationService @Inject()(authorizedAction: AuthorizedAction,
               ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "A theme with this key already exists.", Some("key"))
             }
           } else {
-            val referenceThemeId = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.REFERENCE).toLong
+            val referenceThemeId = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.REFERENCE).toLong
             systemConfigurationManager.createTheme(referenceThemeId, themeData._1.get, themeData._2.get).map { _ =>
               ResponseConstructor.constructEmptyResponse
             }

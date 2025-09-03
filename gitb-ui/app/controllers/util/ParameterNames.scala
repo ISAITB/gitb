@@ -15,7 +15,7 @@
 
 package controllers.util
 
-object Parameters {
+object ParameterNames {
 
   val USER_ID = "GITB-USER-ID"
   val ID      = "id"

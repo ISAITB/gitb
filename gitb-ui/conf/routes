@@ -65,6 +65,7 @@ DELETE  /api/suts/:sut_id/conformance           @controllers.SystemService.delet
 GET     /api/suts/:sut_id/conformance           @controllers.ConformanceService.getConformanceStatementsForSystem(sut_id : Long)
 GET     /api/suts/:sut_id/conformance/:actor_id @controllers.ConformanceService.getConformanceStatement(sut_id : Long, actor_id: Long)
 POST    /api/suts/:sut_id/availableStatements   @controllers.ConformanceService.getAvailableConformanceStatements(sut_id : Long)
+POST    /api/suts/:sut_id/availableStatementIds @controllers.ConformanceService.getAvailableConformanceStatementIds(sut_id : Long)
 GET     /api/vendor/systems                     @controllers.SystemService.getSystemsByOrganization()
 POST    /api/vendor/systems/register            @controllers.SystemService.registerSystemWithOrganization()
 POST    /api/suts/:sut_id/apiKey                @controllers.SystemService.updateSystemApiKey(sut_id: Long)

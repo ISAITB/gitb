@@ -120,12 +120,12 @@ object JsonUtil {
     json
   }
 
-  def jsStringArray(texts: Iterable[String]): JsValue = {
-    var textArray = Json.arr()
-    texts.foreach { text =>
-      textArray = textArray.append(JsString(text))
-    }
-    textArray
+  def jsNumberArray(values: Iterable[Long]): JsArray = {
+    JsArray(values.map(JsNumber(_)).toSeq)
+  }
+
+  def jsStringArray(values: Iterable[String]): JsArray = {
+    JsArray(values.map(JsString(_)).toSeq)
   }
 
   def jsApiKeyInfo(apiKeyInfo: ApiKeyInfo): JsObject = {

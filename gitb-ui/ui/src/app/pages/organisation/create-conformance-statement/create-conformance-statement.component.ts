@@ -49,7 +49,6 @@ export class CreateConformanceStatementComponent implements OnInit, AfterViewIni
   updatePending = false
   hasOtherStatements = false
   hasStatementsBeforeFiltering = false
-  matchedActorIds = new Set<number>()
   selectedActorIds = new Set<number>()
   animated = true
   hasVisibleItems = false
@@ -148,10 +147,6 @@ export class CreateConformanceStatementComponent implements OnInit, AfterViewIni
       .subscribe(data => {
         this.hasOtherStatements = data.hasOtherStatements
         this.items = this.dataService.prepareConformanceStatementItemsForDisplay(data.data)
-        this.matchedActorIds.clear()
-        data.matchedActorIds.forEach((actorId) => {
-          this.matchedActorIds.add(actorId)
-        })
         this.hasVisibleItems = data.data.length > 0
         if (this.dataStatus.status == Constants.STATUS.PENDING) {
           // This is the initial, unfiltered load.
@@ -196,17 +191,27 @@ export class CreateConformanceStatementComponent implements OnInit, AfterViewIni
   }
 
   selectAllStatements() {
-    this.matchedActorIds.forEach((actorId) => {
-      this.selectedActorIds.add(actorId)
+    this.updatePending = true
+    this.conformanceService.getAvailableConformanceStatementIds(this.domainId, this.systemId, this.searchCriteria).subscribe(data => {
+      data.forEach((actorId) => {
+        this.selectedActorIds.add(actorId)
+      })
+      this.updateChecks()
+    }).add(() => {
+      this.updatePending = false
     })
-    this.updateChecks()
   }
 
   deselectAllStatements() {
-    this.matchedActorIds.forEach((actorId) => {
-      this.selectedActorIds.delete(actorId)
+    this.updatePending = true
+    this.conformanceService.getAvailableConformanceStatementIds(this.domainId, this.systemId, this.searchCriteria).subscribe(data => {
+      data.forEach((actorId) => {
+        this.selectedActorIds.delete(actorId)
+      })
+      this.updateChecks()
+    }).add(() => {
+      this.updatePending = false
     })
-    this.updateChecks()
   }
 
   private updateCheckForItem(item: ConformanceStatementItem) {

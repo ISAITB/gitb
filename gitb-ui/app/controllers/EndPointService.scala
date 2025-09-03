@@ -15,7 +15,7 @@
 
 package controllers
 
-import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
+import controllers.util.{AuthorizedAction, ParameterExtractor, ParameterNames, ResponseConstructor}
 import managers.{AuthorizationManager, CommunityLabelManager, EndPointManager}
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
 
@@ -39,9 +39,9 @@ class EndPointService @Inject() (authorizedAction: AuthorizedAction,
 
   def updateEndPoint(endPointId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canUpdateEndpoint(request, endPointId).flatMap { _ =>
-      val name:String = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
-      val description:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
-      val actorId = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID).toLong
+      val name:String = ParameterExtractor.requiredBodyParameter(request, ParameterNames.NAME)
+      val description:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.DESC)
+      val actorId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.ACTOR_ID).toLong
       endPointManager.checkEndPointExistsForActor(name, actorId, Some(endPointId)).flatMap { endpointExists =>
         if (endpointExists) {
           communityLabelManager.getLabelsByUserId(ParameterExtractor.extractUserId(request)).map { labels =>

@@ -281,8 +281,9 @@ class UserManager @Inject() (accountManager: AccountManager,
   /**
    * Check to see that migrated users exist.
    */
-  def migratedUsersExist(): Future[Boolean] = {
+  def migratedAdministratorsExist(): Future[Boolean] = {
     DB.run(PersistenceSchema.users
+      .filter(_.role === UserRole.SystemAdmin.id.toShort)
       .filter(_.ssoStatus =!= Enums.UserSSOStatus.NotMigrated.id.toShort)
       .exists
       .result)

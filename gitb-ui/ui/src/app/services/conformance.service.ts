@@ -943,20 +943,32 @@ export class ConformanceService {
     })
   }
 
-  getAvailableConformanceStatements(domainId: number|undefined, systemId: number, searchCriteria: CreateStatementSearchCriteria, page: number|undefined, limit: number|undefined) {
-    let params: any = {}
+  private payloadFromCreateStatementSearchCriteria(domainId: number|undefined, searchCriteria: CreateStatementSearchCriteria) {
     let data: any = {}
-    if (page != undefined) params.page = page
-    if (limit != undefined) params.limit = limit
     if (domainId != undefined) data.domain_id = domainId
     if (searchCriteria.filterText != undefined) data.filter = searchCriteria.filterText
     data.selected = searchCriteria.selected
     data.unselected = searchCriteria.unselected
     if (searchCriteria.selectedIds) data.ids = searchCriteria.selectedIds.join(",")
+    return data
+  }
+
+  getAvailableConformanceStatementIds(domainId: number|undefined, systemId: number, searchCriteria: CreateStatementSearchCriteria) {
+    return this.restService.post<number[]>({
+      path: ROUTES.controllers.ConformanceService.getAvailableConformanceStatementIds(systemId).url,
+      authenticate: true,
+      data: this.payloadFromCreateStatementSearchCriteria(domainId, searchCriteria)
+    })
+  }
+
+  getAvailableConformanceStatements(domainId: number|undefined, systemId: number, searchCriteria: CreateStatementSearchCriteria, page: number|undefined, limit: number|undefined) {
+    let params: any = {}
+    if (page != undefined) params.page = page
+    if (limit != undefined) params.limit = limit
     return this.restService.post<CreateConformanceStatementSearchResult>({
       path: ROUTES.controllers.ConformanceService.getAvailableConformanceStatements(systemId).url,
       authenticate: true,
-      data: data,
+      data: this.payloadFromCreateStatementSearchCriteria(domainId, searchCriteria),
       params: params
     })
   }

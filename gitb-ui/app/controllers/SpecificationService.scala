@@ -15,7 +15,7 @@
 
 package controllers
 
-import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
+import controllers.util.{AuthorizedAction, ParameterExtractor, ParameterNames, ResponseConstructor}
 import exceptions.{ErrorCodes, NotFoundException}
 import managers.{AuthorizationManager, CommunityLabelManager, SpecificationManager}
 import models.BadgeInfo
@@ -58,12 +58,12 @@ class SpecificationService @Inject() (authorizedAction: AuthorizedAction,
               if (badgeInfoForReport._2.nonEmpty) {
                 Future.successful(badgeInfoForReport._2.get)
               } else {
-                val sname: String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SHORT_NAME)
-                val fname: String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.FULL_NAME)
-                val descr: Option[String] = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.DESC)
-                val reportMetadata: Option[String] = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.METADATA)
-                val hidden = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.HIDDEN).toBoolean
-                val groupId = ParameterExtractor.optionalLongBodyParameter(paramMap, Parameters.GROUP_ID)
+                val sname: String = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.SHORT_NAME)
+                val fname: String = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.FULL_NAME)
+                val descr: Option[String] = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.DESC)
+                val reportMetadata: Option[String] = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.METADATA)
+                val hidden = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.HIDDEN).toBoolean
+                val groupId = ParameterExtractor.optionalLongBodyParameter(paramMap, ParameterNames.GROUP_ID)
                 specificationManager.updateSpecification(specId, sname, fname, descr, reportMetadata, hidden, groupId, BadgeInfo(badgeInfo._1.get, badgeInfoForReport._1.get)).map { _ =>
                   ResponseConstructor.constructEmptyResponse
                 }
@@ -93,10 +93,10 @@ class SpecificationService @Inject() (authorizedAction: AuthorizedAction,
 
   def updateSpecificationGroup(groupId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canManageSpecificationGroup(request, groupId).flatMap { _ =>
-      val shortname: String = ParameterExtractor.requiredBodyParameter(request, Parameters.SHORT_NAME)
-      val fullname: String = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL_NAME)
-      val description: Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
-      val reportMetadata: Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.METADATA)
+      val shortname: String = ParameterExtractor.requiredBodyParameter(request, ParameterNames.SHORT_NAME)
+      val fullname: String = ParameterExtractor.requiredBodyParameter(request, ParameterNames.FULL_NAME)
+      val description: Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.DESC)
+      val reportMetadata: Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.METADATA)
       specificationManager.updateSpecificationGroup(groupId, shortname, fullname, description, reportMetadata).map { _ =>
         ResponseConstructor.constructEmptyResponse
       }
@@ -105,7 +105,7 @@ class SpecificationService @Inject() (authorizedAction: AuthorizedAction,
 
   def deleteSpecificationGroup(groupId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canManageSpecificationGroup(request, groupId).flatMap { _ =>
-      val withSpecifications = ParameterExtractor.optionalBooleanBodyParameter(request, Parameters.SPECS).getOrElse(false)
+      val withSpecifications = ParameterExtractor.optionalBooleanBodyParameter(request, ParameterNames.SPECS).getOrElse(false)
       specificationManager.deleteSpecificationGroup(groupId, withSpecifications).map { _ =>
         ResponseConstructor.constructEmptyResponse
       }
@@ -122,7 +122,7 @@ class SpecificationService @Inject() (authorizedAction: AuthorizedAction,
 
   def addSpecificationToGroup(groupId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canManageSpecificationGroup(request, groupId).flatMap { _ =>
-      val specificationId = ParameterExtractor.requiredBodyParameter(request, Parameters.SPEC).toLong
+      val specificationId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.SPEC).toLong
       authorizationManager.canManageSpecification(request, specificationId).flatMap { _ =>
         specificationManager.addSpecificationToGroup(specificationId, groupId).map { _ =>
           ResponseConstructor.constructEmptyResponse
@@ -133,7 +133,7 @@ class SpecificationService @Inject() (authorizedAction: AuthorizedAction,
 
   def copySpecificationToGroup(groupId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canManageSpecificationGroup(request, groupId).flatMap { _ =>
-      val specificationId = ParameterExtractor.requiredBodyParameter(request, Parameters.SPEC).toLong
+      val specificationId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.SPEC).toLong
       authorizationManager.canManageSpecification(request, specificationId).flatMap { _ =>
         specificationManager.copySpecificationToGroup(specificationId, groupId).map { newSpecificationId =>
           ResponseConstructor.constructJsonResponse(JsonUtil.jsId(newSpecificationId).toString())
@@ -159,8 +159,8 @@ class SpecificationService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def getSpecificationGroups(): Action[AnyContent] = authorizedAction.async { request =>
-    val domainId = ParameterExtractor.requiredQueryParameter(request, Parameters.DOMAIN_ID).toLong
-    val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SNAPSHOT)
+    val domainId = ParameterExtractor.requiredQueryParameter(request, ParameterNames.DOMAIN_ID).toLong
+    val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, ParameterNames.SNAPSHOT)
     authorizationManager.canViewDomains(request, Some(List(domainId)), snapshotId).flatMap { _ =>
       specificationManager.getSpecificationGroups(domainId, snapshotId).map { groups =>
         ResponseConstructor.constructJsonResponse(JsonUtil.jsSpecificationGroups(groups).toString())
@@ -177,8 +177,8 @@ class SpecificationService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def getSpecificationGroupsOfDomains(): Action[AnyContent] = authorizedAction.async { request =>
-    val domainIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.DOMAIN_IDS)
-    val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SNAPSHOT)
+    val domainIds = ParameterExtractor.extractLongIdsBodyParameter(request, ParameterNames.DOMAIN_IDS)
+    val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.SNAPSHOT)
     authorizationManager.canViewDomains(request, domainIds, snapshotId).flatMap { _ =>
       specificationManager.getSpecificationGroupsByDomainIds(domainIds, snapshotId).map { groups =>
         ResponseConstructor.constructJsonResponse(JsonUtil.jsSpecificationGroups(groups).toString())
@@ -195,12 +195,12 @@ class SpecificationService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def saveSpecificationOrder(): Action[AnyContent] = authorizedAction.async { request =>
-    val domainId = ParameterExtractor.requiredBodyParameter(request, Parameters.DOMAIN_ID).toLong
+    val domainId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.DOMAIN_ID).toLong
     authorizationManager.canManageDomain(request, domainId).flatMap { _ =>
-      val groupIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.GROUP_IDS).getOrElse(List.empty)
-      val groupOrders = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.GROUP_ORDERS).getOrElse(List.empty)
-      val specIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.SPEC_IDS).getOrElse(List.empty)
-      val specOrders = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.SPEC_ORDERS).getOrElse(List.empty)
+      val groupIds = ParameterExtractor.extractLongIdsBodyParameter(request, ParameterNames.GROUP_IDS).getOrElse(List.empty)
+      val groupOrders = ParameterExtractor.extractLongIdsBodyParameter(request, ParameterNames.GROUP_ORDERS).getOrElse(List.empty)
+      val specIds = ParameterExtractor.extractLongIdsBodyParameter(request, ParameterNames.SPEC_IDS).getOrElse(List.empty)
+      val specOrders = ParameterExtractor.extractLongIdsBodyParameter(request, ParameterNames.SPEC_ORDERS).getOrElse(List.empty)
       specificationManager.saveSpecificationOrder(groupIds, groupOrders, specIds, specOrders).map { _ =>
         ResponseConstructor.constructEmptyResponse
       }
@@ -208,7 +208,7 @@ class SpecificationService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def resetSpecificationOrder(): Action[AnyContent] = authorizedAction.async { request =>
-    val domainId = ParameterExtractor.requiredBodyParameter(request, Parameters.DOMAIN_ID).toLong
+    val domainId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.DOMAIN_ID).toLong
     authorizationManager.canManageDomain(request, domainId).flatMap { _ =>
       specificationManager.resetSpecificationOrder(domainId).map { _ =>
         ResponseConstructor.constructEmptyResponse
@@ -218,7 +218,7 @@ class SpecificationService @Inject() (authorizedAction: AuthorizedAction,
 
   def getBadgeForStatus(specId: Long, status: String): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canManageSpecification(request, specId).map { _ =>
-      val forReport = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.REPORT)
+      val forReport = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.REPORT)
       val statusToLookup = TestResultStatus.withName(status).toString
       val badge = repositoryUtils.getConformanceBadge(specId, None, None, statusToLookup, exactMatch = true, forReport.getOrElse(false))
       if (badge.isDefined && badge.get.exists()) {

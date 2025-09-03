@@ -16,7 +16,7 @@
 package controllers
 
 import config.Configurations
-import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
+import controllers.util.{AuthorizedAction, ParameterExtractor, ParameterNames, ResponseConstructor}
 import exceptions.ErrorCodes
 import managers.{AuthorizationManager, OrganizationManager, TestResultManager, UserManager}
 import models.prerequisites.PrerequisiteUtil
@@ -78,8 +78,8 @@ class OrganizationService @Inject() (repositoryUtils: RepositoryUtils,
    */
   def getOrganizationsByCommunity(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewOrganisationsByCommunity(request, communityId).flatMap { _ =>
-      val includeAdmin = ParameterExtractor.optionalQueryParameter(request, Parameters.ADMIN).exists(_.toBoolean)
-      val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SNAPSHOT)
+      val includeAdmin = ParameterExtractor.optionalQueryParameter(request, ParameterNames.ADMIN).exists(_.toBoolean)
+      val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, ParameterNames.SNAPSHOT)
       organizationManager.getOrganizationsByCommunity(communityId, includeAdmin, snapshotId).map { list =>
         val json: String = JsonUtil.jsOrganizations(list).toString
         ResponseConstructor.constructJsonResponse(json)
@@ -89,7 +89,7 @@ class OrganizationService @Inject() (repositoryUtils: RepositoryUtils,
 
   def searchOrganizations(): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewAllOrganisations(request).flatMap { _ =>
-      val communityIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.COMMUNITY_IDS)
+      val communityIds = ParameterExtractor.extractLongIdsBodyParameter(request, ParameterNames.COMMUNITY_IDS)
       organizationManager.searchOrganizations(communityIds).map { list =>
         val json: String = JsonUtil.jsOrganizations(list).toString
         ResponseConstructor.constructJsonResponse(json)
@@ -102,13 +102,13 @@ class OrganizationService @Inject() (repositoryUtils: RepositoryUtils,
    */
   def searchOrganizationsByCommunity(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewOrganisationsByCommunity(request, communityId).flatMap { _ =>
-      val filter = ParameterExtractor.optionalQueryParameter(request, Parameters.FILTER)
-      val sortOrder = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_ORDER)
-      val sortColumn = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_COLUMN)
+      val filter = ParameterExtractor.optionalQueryParameter(request, ParameterNames.FILTER)
+      val sortOrder = ParameterExtractor.optionalQueryParameter(request, ParameterNames.SORT_ORDER)
+      val sortColumn = ParameterExtractor.optionalQueryParameter(request, ParameterNames.SORT_COLUMN)
       val page = ParameterExtractor.extractPageNumber(request)
       val limit = ParameterExtractor.extractPageLimit(request)
       var creationOrderSort: Option[String] = None
-      val creationOrderSortParam = ParameterExtractor.optionalQueryParameter(request, Parameters.CREATION_ORDER_SORT).getOrElse("none")
+      val creationOrderSortParam = ParameterExtractor.optionalQueryParameter(request, ParameterNames.CREATION_ORDER_SORT).getOrElse("none")
       if (!creationOrderSortParam.equals("none")) {
         creationOrderSort = Some(creationOrderSortParam)
       }
@@ -125,13 +125,13 @@ class OrganizationService @Inject() (repositoryUtils: RepositoryUtils,
   def createOrganization(): Action[AnyContent] = authorizedAction.async { request =>
     val paramMap = ParameterExtractor.paramMap(request)
     val organization = ParameterExtractor.extractOrganizationInfo(paramMap)
-    val otherOrganisation = ParameterExtractor.optionalLongBodyParameter(paramMap, Parameters.OTHER_ORGANISATION)
+    val otherOrganisation = ParameterExtractor.optionalLongBodyParameter(paramMap, ParameterNames.OTHER_ORGANISATION)
     authorizationManager.canCreateOrganisation(request, organization, otherOrganisation).flatMap { _ =>
-      val copyOrganisationParameters = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.ORGANISATION_PARAMETERS).getOrElse("false").toBoolean
-      val copySystemParameters = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.SYSTEM_PARAMETERS).getOrElse("false").toBoolean
-      val copyStatementParameters = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.STATEMENT_PARAMETERS).getOrElse("false").toBoolean
+      val copyOrganisationParameters = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.ORGANISATION_PARAMETERS).getOrElse("false").toBoolean
+      val copySystemParameters = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.SYSTEM_PARAMETERS).getOrElse("false").toBoolean
+      val copyStatementParameters = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.STATEMENT_PARAMETERS).getOrElse("false").toBoolean
 
-      val values = ParameterExtractor.extractOrganisationParameterValues(paramMap, Parameters.PROPERTIES, optional = true)
+      val values = ParameterExtractor.extractOrganisationParameterValues(paramMap, ParameterNames.PROPERTIES, optional = true)
       val files = ParameterExtractor.extractFiles(request).map {
         case (key, value) => (key.substring(key.indexOf('_')+1).toLong, value)
       }
@@ -176,16 +176,16 @@ class OrganizationService @Inject() (repositoryUtils: RepositoryUtils,
   def updateOrganization(orgId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canUpdateOrganisation(request, orgId).flatMap { _ =>
       val paramMap = ParameterExtractor.paramMap(request)
-      val shortName = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.VENDOR_SNAME)
-      val fullName = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.VENDOR_FNAME)
-      val landingPageId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(paramMap, Parameters.LANDING_PAGE_ID)
-      val legalNoticeId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(paramMap, Parameters.LEGAL_NOTICE_ID)
-      val errorTemplateId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(paramMap, Parameters.ERROR_TEMPLATE_ID)
-      val otherOrganisation = ParameterExtractor.optionalLongBodyParameter(paramMap, Parameters.OTHER_ORGANISATION)
-      val copyOrganisationParameters = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.ORGANISATION_PARAMETERS).getOrElse("false").toBoolean
-      val copySystemParameters = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.SYSTEM_PARAMETERS).getOrElse("false").toBoolean
-      val copyStatementParameters = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.STATEMENT_PARAMETERS).getOrElse("false").toBoolean
-      val values = ParameterExtractor.extractOrganisationParameterValues(paramMap, Parameters.PROPERTIES, optional = true)
+      val shortName = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.VENDOR_SNAME)
+      val fullName = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.VENDOR_FNAME)
+      val landingPageId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(paramMap, ParameterNames.LANDING_PAGE_ID)
+      val legalNoticeId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(paramMap, ParameterNames.LEGAL_NOTICE_ID)
+      val errorTemplateId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(paramMap, ParameterNames.ERROR_TEMPLATE_ID)
+      val otherOrganisation = ParameterExtractor.optionalLongBodyParameter(paramMap, ParameterNames.OTHER_ORGANISATION)
+      val copyOrganisationParameters = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.ORGANISATION_PARAMETERS).getOrElse("false").toBoolean
+      val copySystemParameters = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.SYSTEM_PARAMETERS).getOrElse("false").toBoolean
+      val copyStatementParameters = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.STATEMENT_PARAMETERS).getOrElse("false").toBoolean
+      val values = ParameterExtractor.extractOrganisationParameterValues(paramMap, ParameterNames.PROPERTIES, optional = true)
       val files = ParameterExtractor.extractFiles(request).map {
         case (key, value) => (key.substring(key.indexOf('_')+1).toLong, value)
       }
@@ -199,8 +199,8 @@ class OrganizationService @Inject() (repositoryUtils: RepositoryUtils,
             var template: Boolean = false
             var templateName: Option[String] = None
             if (Configurations.REGISTRATION_ENABLED) {
-              template = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.TEMPLATE).toBoolean
-              templateName = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.TEMPLATE_NAME)
+              template = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.TEMPLATE).toBoolean
+              templateName = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.TEMPLATE_NAME)
             }
             Future.successful((template, templateName))
           }
@@ -259,7 +259,7 @@ class OrganizationService @Inject() (repositoryUtils: RepositoryUtils,
 
   def getOrganisationParameterValues(orgId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewOrganisation(request, orgId).flatMap { _ =>
-      val onlySimple = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.SIMPLE)
+      val onlySimple = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.SIMPLE)
       organizationManager.getOrganisationParameterValues(orgId, onlySimple).map { values =>
         val json: String = JsonUtil.jsOrganisationParametersWithValues(values, includeValues = true).toString
         ResponseConstructor.constructJsonResponse(json)
@@ -283,7 +283,7 @@ class OrganizationService @Inject() (repositoryUtils: RepositoryUtils,
       result <- {
         val paramMap = ParameterExtractor.paramMap(request)
         val userId = ParameterExtractor.extractUserId(request)
-        val values = ParameterExtractor.extractOrganisationParameterValues(paramMap, Parameters.VALUES, optional = false)
+        val values = ParameterExtractor.extractOrganisationParameterValues(paramMap, ParameterNames.VALUES, optional = false)
         val files = ParameterExtractor.extractFiles(request).map {
           case (key, value) => (key.substring(key.indexOf('_')+1).toLong, value)
         }
@@ -343,7 +343,7 @@ class OrganizationService @Inject() (repositoryUtils: RepositoryUtils,
   }
 
   def getAutomationKeysForOrganisation(organisationId: Long): Action[AnyContent] = authorizedAction.async { request =>
-    val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SNAPSHOT)
+    val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, ParameterNames.SNAPSHOT)
     for {
       _ <- {
         if (snapshotId.isEmpty) {

@@ -18,7 +18,7 @@ package controllers
 import config.Configurations
 import controllers.CommunityService.SelfRegistrationInfo
 import controllers.util.ParameterExtractor.requiredBodyParameter
-import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
+import controllers.util.{AuthorizedAction, ParameterExtractor, ParameterNames, ResponseConstructor}
 import exceptions.ErrorCodes
 import managers.{AuthenticationManager, AuthorizationManager, CommunityManager}
 import models.Enums.{SelfRegistrationRestriction, SelfRegistrationType}
@@ -79,7 +79,7 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
   def getCommunities(): Action[AnyContent] = authorizedAction.async { request =>
     val communityIds = ParameterExtractor.extractLongIdsQueryParameter(request)
     authorizationManager.canViewCommunities(request, communityIds).flatMap { _ =>
-      val skipDefault = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.SKIP_DEFAULT)
+      val skipDefault = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.SKIP_DEFAULT)
       communityManager.getCommunities(communityIds, skipDefault.isDefined && skipDefault.get).map { communities =>
         val json = JsonUtil.jsCommunities(communities).toString()
         ResponseConstructor.constructJsonResponse(json)
@@ -126,22 +126,22 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
     */
   def updateCommunity(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canUpdateCommunity(request, communityId).flatMap { _ =>
-      val shortName = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_SNAME)
-      val fullName = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_FNAME)
-      val email = ParameterExtractor.optionalBodyParameter(request, Parameters.COMMUNITY_EMAIL)
-      val description = ParameterExtractor.optionalBodyParameter(request, Parameters.DESCRIPTION)
-      val allowCertificateDownload = ParameterExtractor.requiredBodyParameter(request, Parameters.ALLOW_CERTIFICATE_DOWNLOAD).toBoolean
-      val allowStatementManagement = requiredBodyParameter(request, Parameters.ALLOW_STATEMENT_MANAGEMENT).toBoolean
-      val allowSystemManagement = requiredBodyParameter(request, Parameters.ALLOW_SYSTEM_MANAGEMENT).toBoolean
-      val allowPostTestOrganisationUpdate = requiredBodyParameter(request, Parameters.ALLOW_POST_TEST_ORG_UPDATE).toBoolean
-      val allowPostTestSystemUpdate = requiredBodyParameter(request, Parameters.ALLOW_POST_TEST_SYS_UPDATE).toBoolean
-      val allowPostTestStatementUpdate = requiredBodyParameter(request, Parameters.ALLOW_POST_TEST_STM_UPDATE).toBoolean
+      val shortName = ParameterExtractor.requiredBodyParameter(request, ParameterNames.COMMUNITY_SNAME)
+      val fullName = ParameterExtractor.requiredBodyParameter(request, ParameterNames.COMMUNITY_FNAME)
+      val email = ParameterExtractor.optionalBodyParameter(request, ParameterNames.COMMUNITY_EMAIL)
+      val description = ParameterExtractor.optionalBodyParameter(request, ParameterNames.DESCRIPTION)
+      val allowCertificateDownload = ParameterExtractor.requiredBodyParameter(request, ParameterNames.ALLOW_CERTIFICATE_DOWNLOAD).toBoolean
+      val allowStatementManagement = requiredBodyParameter(request, ParameterNames.ALLOW_STATEMENT_MANAGEMENT).toBoolean
+      val allowSystemManagement = requiredBodyParameter(request, ParameterNames.ALLOW_SYSTEM_MANAGEMENT).toBoolean
+      val allowPostTestOrganisationUpdate = requiredBodyParameter(request, ParameterNames.ALLOW_POST_TEST_ORG_UPDATE).toBoolean
+      val allowPostTestSystemUpdate = requiredBodyParameter(request, ParameterNames.ALLOW_POST_TEST_SYS_UPDATE).toBoolean
+      val allowPostTestStatementUpdate = requiredBodyParameter(request, ParameterNames.ALLOW_POST_TEST_STM_UPDATE).toBoolean
       var allowAutomationApi: Option[Boolean] = None
       if (Configurations.AUTOMATION_API_ENABLED) {
-        allowAutomationApi = Some(requiredBodyParameter(request, Parameters.ALLOW_AUTOMATION_API).toBoolean)
+        allowAutomationApi = Some(requiredBodyParameter(request, ParameterNames.ALLOW_AUTOMATION_API).toBoolean)
       }
-      val allowCommunityView = requiredBodyParameter(request, Parameters.ALLOW_COMMUNITY_VIEW).toBoolean
-      val interactionNotification = requiredBodyParameter(request, Parameters.COMMUNITY_INTERACTION_NOTIFICATION).toBoolean
+      val allowCommunityView = requiredBodyParameter(request, ParameterNames.ALLOW_COMMUNITY_VIEW).toBoolean
+      val interactionNotification = requiredBodyParameter(request, ParameterNames.COMMUNITY_INTERACTION_NOTIFICATION).toBoolean
       var selfRegType: Short = SelfRegistrationType.NotSupported.id.toShort
       var selfRegRestriction: Short = SelfRegistrationRestriction.NoRestriction.id.toShort
       var selfRegToken: Option[String] = None
@@ -150,12 +150,12 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
       var selfRegForceTemplateSelection: Boolean = false
       var selfRegForceRequiredProperties: Boolean = false
       if (Configurations.REGISTRATION_ENABLED) {
-        selfRegType = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_TYPE).toShort
+        selfRegType = ParameterExtractor.requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_TYPE).toShort
         if (!ParameterExtractor.validCommunitySelfRegType(selfRegType)) {
           throw new IllegalArgumentException("Unsupported value [" + selfRegType + "] for self-registration type")
         }
-        selfRegToken = ParameterExtractor.optionalBodyParameter(request, Parameters.COMMUNITY_SELFREG_TOKEN)
-        selfRegTokenHelpText = ParameterExtractor.optionalBodyParameter(request, Parameters.COMMUNITY_SELFREG_TOKEN_HELP_TEXT)
+        selfRegToken = ParameterExtractor.optionalBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_TOKEN)
+        selfRegTokenHelpText = ParameterExtractor.optionalBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_TOKEN_HELP_TEXT)
         if (selfRegTokenHelpText.isDefined) {
           selfRegTokenHelpText = Some(HtmlUtil.sanitizeEditorContent(selfRegTokenHelpText.get))
         }
@@ -168,17 +168,17 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
           selfRegTokenHelpText = None
         }
         if (selfRegType != SelfRegistrationType.NotSupported.id.toShort) {
-          selfRegForceTemplateSelection = requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_FORCE_TEMPLATE).toBoolean
-          selfRegForceRequiredProperties = requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_FORCE_PROPERTIES).toBoolean
+          selfRegForceTemplateSelection = requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_FORCE_TEMPLATE).toBoolean
+          selfRegForceRequiredProperties = requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_FORCE_PROPERTIES).toBoolean
           if (Configurations.EMAIL_ENABLED) {
-            selfRegNotification = requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_NOTIFICATION).toBoolean
+            selfRegNotification = requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_NOTIFICATION).toBoolean
           }
           if (Configurations.AUTHENTICATION_SSO_ENABLED) {
-            selfRegRestriction = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_RESTRICTION).toShort
+            selfRegRestriction = ParameterExtractor.requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_RESTRICTION).toShort
           }
         }
       }
-      val domainId: Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
+      val domainId: Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.DOMAIN_ID)
       communityManager.updateCommunity(
         communityId, shortName, fullName, email, selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification,
         interactionNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties,
@@ -205,9 +205,9 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
   def selfRegister(): Action[AnyContent] = authorizedAction.async { request =>
     val task = for {
       paramMap <- Future.successful(ParameterExtractor.paramMap(request))
-      selfRegToken <- Future.successful(ParameterExtractor.optionalBodyParameter(paramMap, Parameters.COMMUNITY_SELFREG_TOKEN))
+      selfRegToken <- Future.successful(ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.COMMUNITY_SELFREG_TOKEN))
       organisation <- Future.successful(ParameterExtractor.extractOrganizationInfo(paramMap))
-      templateId  <- Future.successful(ParameterExtractor.optionalLongBodyParameter(paramMap, Parameters.TEMPLATE_ID))
+      templateId  <- Future.successful(ParameterExtractor.optionalLongBodyParameter(paramMap, ParameterNames.TEMPLATE_ID))
       info <- {
         if (Configurations.AUTHENTICATION_SSO_ENABLED) {
           authorizationManager.getPrincipal(request).map { actualUserInfo =>
@@ -290,7 +290,7 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
       }
       result <- {
         if (info.failure.isEmpty) {
-          val customPropertyValues = ParameterExtractor.extractOrganisationParameterValues(paramMap, Parameters.PROPERTIES, optional = true)
+          val customPropertyValues = ParameterExtractor.extractOrganisationParameterValues(paramMap, ParameterNames.PROPERTIES, optional = true)
           val customPropertyFiles = ParameterExtractor.extractFiles(request).map {
             case (key, value) => (key.substring(key.indexOf('_')+1).toLong, value)
           }
@@ -476,7 +476,7 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def getOrganisationParameters(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
-    val onlyPublic = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.PUBLIC).getOrElse(false)
+    val onlyPublic = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.PUBLIC).getOrElse(false)
     for {
       _ <- {
         if (onlyPublic) {
@@ -486,7 +486,7 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
         }
       }
       result <- {
-        val forFiltering = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.FILTERING)
+        val forFiltering = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.FILTERING)
         communityManager.getOrganisationParameters(communityId, forFiltering, onlyPublic).map { parameters =>
           ResponseConstructor.constructJsonResponse(JsonUtil.jsOrganisationParameters(parameters).toString)
         }
@@ -495,7 +495,7 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def getSystemParameters(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
-    val onlyPublic = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.PUBLIC).getOrElse(false)
+    val onlyPublic = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.PUBLIC).getOrElse(false)
     for {
       _ <- {
         if (onlyPublic) {
@@ -505,7 +505,7 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
         }
       }
       result <- {
-        val forFiltering = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.FILTERING)
+        val forFiltering = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.FILTERING)
         communityManager.getSystemParameters(communityId, forFiltering, onlyPublic).map { parameters =>
           ResponseConstructor.constructJsonResponse(JsonUtil.jsSystemParameters(parameters).toString)
         }
@@ -523,7 +523,7 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
 
   def setCommunityLabels(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canManageCommunity(request, communityId).flatMap { _ =>
-      val labels = JsonUtil.parseJsCommunityLabels(communityId, requiredBodyParameter(request, Parameters.VALUES))
+      val labels = JsonUtil.parseJsCommunityLabels(communityId, requiredBodyParameter(request, ParameterNames.VALUES))
       communityManager.setCommunityLabels(communityId, labels).map { _ =>
         ResponseConstructor.constructEmptyResponse
       }
@@ -531,7 +531,7 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def getCommunityIdOfDomain: Action[AnyContent] = authorizedAction.async { request =>
-    val domainId = ParameterExtractor.requiredQueryParameter(request, Parameters.DOMAIN_ID).toLong
+    val domainId = ParameterExtractor.requiredQueryParameter(request, ParameterNames.DOMAIN_ID).toLong
     authorizationManager.checkTestBedAdmin(request).flatMap { _ =>
       communityManager.getCommunityIdOfDomain(domainId).map { communityId =>
         if (communityId.isDefined) {
@@ -544,7 +544,7 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def getCommunityIdOfActor: Action[AnyContent] = authorizedAction.async { request =>
-    val actorId = ParameterExtractor.requiredQueryParameter(request, Parameters.ACTOR_ID).toLong
+    val actorId = ParameterExtractor.requiredQueryParameter(request, ParameterNames.ACTOR_ID).toLong
     authorizationManager.checkTestBedAdmin(request).flatMap { _ =>
       communityManager.getCommunityIdOfActor(actorId).map { communityId =>
         if (communityId.isDefined) {
@@ -557,7 +557,7 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def getCommunityIdOfSnapshot: Action[AnyContent] = authorizedAction.async { request =>
-    val snapshotId = ParameterExtractor.requiredQueryParameter(request, Parameters.SNAPSHOT).toLong
+    val snapshotId = ParameterExtractor.requiredQueryParameter(request, ParameterNames.SNAPSHOT).toLong
     authorizationManager.checkTestBedAdmin(request).flatMap { _ =>
       communityManager.getCommunityIdOfSnapshot(snapshotId).map { communityId =>
         if (communityId.isDefined) {
@@ -571,7 +571,7 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
 
   def searchCommunities(): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewAllCommunities(request).flatMap { _ =>
-      val filter = ParameterExtractor.optionalQueryParameter(request, Parameters.FILTER)
+      val filter = ParameterExtractor.optionalQueryParameter(request, ParameterNames.FILTER)
       val page = ParameterExtractor.extractPageNumber(request)
       val limit = ParameterExtractor.extractPageLimit(request)
       communityManager.searchCommunities(page, limit, filter).map { result =>

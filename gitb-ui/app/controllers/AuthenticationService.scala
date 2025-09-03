@@ -61,7 +61,7 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def linkFunctionalAccount: Action[AnyContent] = authorizedAction.async { request =>
-    val userId = ParameterExtractor.requiredBodyParameter(request, Parameters.ID).toLong
+    val userId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.ID).toLong
     authorizationManager.canLinkFunctionalAccount(request, userId).flatMap { _ =>
       authorizationManager.getPrincipal(request).flatMap { principal =>
         accountManager.linkAccount(userId, principal).flatMap { _ =>
@@ -77,8 +77,8 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction,
 
   def migrateFunctionalAccount: Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canMigrateAccount(request).flatMap { _ =>
-      val email = ParameterExtractor.requiredBodyParameter(request, Parameters.EMAIL).trim
-      val password = ParameterExtractor.requiredBodyParameter(request, Parameters.PASSWORD).trim
+      val email = ParameterExtractor.requiredBodyParameter(request, ParameterNames.EMAIL).trim
+      val password = ParameterExtractor.requiredBodyParameter(request, ParameterNames.PASSWORD).trim
       authManager.checkUserByEmail(email, password).flatMap { result =>
         if (result.isDefined) {
           if (result.get.ssoUid.isDefined || result.get.ssoEmail.isDefined) {
@@ -114,7 +114,7 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def selectFunctionalAccount: Action[AnyContent] = authorizedAction.async { request =>
-    val userId = ParameterExtractor.requiredBodyParameter(request, Parameters.ID).toLong
+    val userId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.ID).toLong
     authorizationManager.canSelectFunctionalAccount(request, userId).map { _ =>
       completeAccessTokenLogin(userId)
     }
@@ -124,7 +124,7 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction,
     authorizationManager.canDisconnectFunctionalAccount(request).flatMap { _ =>
       val userId = ParameterExtractor.extractUserId(request)
       authorizationManager.getPrincipal(request).flatMap { userInfo =>
-        val option = ParameterExtractor.requiredBodyParameter(request, Parameters.TYPE).toShort
+        val option = ParameterExtractor.requiredBodyParameter(request, ParameterNames.TYPE).toShort
         val action = if (option == 1) {
           // Current partial.
           accountManager.disconnectAccount(userId)
@@ -152,10 +152,10 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction,
 
   def replaceOnetimePassword: Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canLogin(request).flatMap { _ =>
-      val email = ParameterExtractor.requiredBodyParameter(request, Parameters.EMAIL)
-      val newPassword = ParameterExtractor.requiredBodyParameter(request, Parameters.PASSWORD)
+      val email = ParameterExtractor.requiredBodyParameter(request, ParameterNames.EMAIL)
+      val newPassword = ParameterExtractor.requiredBodyParameter(request, ParameterNames.PASSWORD)
       if (CryptoUtil.isAcceptedPassword(newPassword)) {
-        val oldPassword = ParameterExtractor.requiredBodyParameter(request, Parameters.OLD_PASSWORD)
+        val oldPassword = ParameterExtractor.requiredBodyParameter(request, ParameterNames.OLD_PASSWORD)
         authManager.replaceOnetimePassword(email, newPassword, oldPassword).map { result =>
           if (result.isEmpty) {
             ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_CREDENTIALS, "Incorrect password.", Some("current"))
@@ -176,8 +176,8 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction,
     */
   def accessToken: Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canLogin(request).flatMap { _ =>
-      val email = ParameterExtractor.requiredBodyParameter(request, Parameters.EMAIL)
-      val passwd = ParameterExtractor.requiredBodyParameter(request, Parameters.PASSWORD)
+      val email = ParameterExtractor.requiredBodyParameter(request, ParameterNames.EMAIL)
+      val passwd = ParameterExtractor.requiredBodyParameter(request, ParameterNames.PASSWORD)
       authManager.checkUserByEmail(email, passwd).map { result =>
         // User found
         if (result.isDefined) {
@@ -203,7 +203,7 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction,
     */
   def checkEmail: Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canCheckAnyUserEmail(request).flatMap { _ =>
-      val email = ParameterExtractor.requiredQueryParameter(request, Parameters.EMAIL)
+      val email = ParameterExtractor.requiredQueryParameter(request, ParameterNames.EMAIL)
       authManager.checkEmailAvailability(email, None, None, Some(Enums.UserRole.VendorUser.id.toShort)).map { isAvailable =>
         ResponseConstructor.constructAvailabilityResponse(isAvailable)
       }
@@ -217,9 +217,9 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction,
     val userId = ParameterExtractor.extractUserId(request)
     accountManager.getUserProfile(userId).flatMap { userInfo =>
       authorizationManager.canCheckUserEmail(request, userInfo.organization.get.id).flatMap { _ =>
-        val email = ParameterExtractor.requiredQueryParameter(request, Parameters.EMAIL)
+        val email = ParameterExtractor.requiredQueryParameter(request, ParameterNames.EMAIL)
         val roleId = if (Configurations.AUTHENTICATION_SSO_ENABLED) {
-          Some(ParameterExtractor.requiredQueryParameter(request, Parameters.ROLE_ID).toShort)
+          Some(ParameterExtractor.requiredQueryParameter(request, ParameterNames.ROLE_ID).toShort)
         } else {
           None
         }
@@ -237,7 +237,7 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction,
     val userId = ParameterExtractor.extractUserId(request)
     accountManager.getUserProfile(userId).flatMap { userInfo =>
       authorizationManager.canCheckSystemAdminEmail(request).flatMap { _ =>
-        val email = ParameterExtractor.requiredQueryParameter(request, Parameters.EMAIL)
+        val email = ParameterExtractor.requiredQueryParameter(request, ParameterNames.EMAIL)
         authManager.checkEmailAvailability(email, Some(userInfo.organization.get.id), None, None).map { isAvailable =>
           ResponseConstructor.constructAvailabilityResponse(isAvailable)
         }
@@ -249,9 +249,9 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction,
     * Check email availability
     */
   def checkEmailOfCommunityAdmin: Action[AnyContent] = authorizedAction.async { request =>
-    val communityId = ParameterExtractor.requiredQueryParameter(request, Parameters.COMMUNITY_ID).toLong
+    val communityId = ParameterExtractor.requiredQueryParameter(request, ParameterNames.COMMUNITY_ID).toLong
     authorizationManager.canCheckCommunityAdminEmail(request, communityId).flatMap { _ =>
-      val email = ParameterExtractor.requiredQueryParameter(request, Parameters.EMAIL)
+      val email = ParameterExtractor.requiredQueryParameter(request, ParameterNames.EMAIL)
       authManager.checkEmailAvailability(email, None, Some(communityId), None).map { isAvailable =>
         ResponseConstructor.constructAvailabilityResponse(isAvailable)
       }
@@ -262,10 +262,10 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction,
     * Check email availability
     */
   def checkEmailOfOrganisationUser(): Action[AnyContent] = authorizedAction.async { request =>
-    val organisationId = ParameterExtractor.requiredQueryParameter(request, Parameters.ORGANIZATION_ID).toLong
+    val organisationId = ParameterExtractor.requiredQueryParameter(request, ParameterNames.ORGANIZATION_ID).toLong
     authorizationManager.canCheckOrganisationUserEmail(request, organisationId).flatMap { _ =>
-      val email = ParameterExtractor.requiredQueryParameter(request, Parameters.EMAIL)
-      val roleId = ParameterExtractor.requiredQueryParameter(request, Parameters.ROLE_ID).toShort
+      val email = ParameterExtractor.requiredQueryParameter(request, ParameterNames.EMAIL)
+      val roleId = ParameterExtractor.requiredQueryParameter(request, ParameterNames.ROLE_ID).toShort
       authManager.checkEmailAvailability(email, Some(organisationId), None, Some(roleId)).map { isAvailable =>
         ResponseConstructor.constructAvailabilityResponse(isAvailable)
       }
@@ -279,7 +279,7 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction,
     */
   def logout: Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canLogout(request).map { _ =>
-      val isFullLogout = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL).toBoolean
+      val isFullLogout = ParameterExtractor.requiredBodyParameter(request, ParameterNames.FULL).toBoolean
       val authzHeader = request.headers.get(AUTHORIZATION)
       if (authzHeader.isDefined){
         val list = authzHeader.get.split(BEARER + " ")

@@ -16,7 +16,7 @@
 package controllers
 
 import config.Configurations
-import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
+import controllers.util.{AuthorizedAction, ParameterExtractor, ParameterNames, ResponseConstructor}
 import exceptions.ErrorCodes
 import managers.{AuthorizationManager, UserManager}
 import models.Constants
@@ -52,7 +52,7 @@ class UserService @Inject() (authorizedAction: AuthorizedAction,
    * Gets community administrator users
    */
   def getCommunityAdministrators(): Action[AnyContent] = authorizedAction.async { request =>
-    val communityId = ParameterExtractor.requiredQueryParameter(request, Parameters.COMMUNITY_ID).toLong
+    val communityId = ParameterExtractor.requiredQueryParameter(request, ParameterNames.COMMUNITY_ID).toLong
     authorizationManager.canViewCommunityAdministrators(request, communityId).flatMap { _ =>
       userManager.getCommunityAdministrators(communityId).map { list =>
         val json: String = JsonUtil.jsUsers(list).toString
@@ -134,7 +134,7 @@ class UserService @Inject() (authorizedAction: AuthorizedAction,
     * Creates new community administrator
     */
   def createCommunityAdmin: Action[AnyContent] = authorizedAction.async { request =>
-    val communityId = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
+    val communityId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.COMMUNITY_ID).toLong
     authorizationManager.canCreateCommunityAdministrator(request, communityId).flatMap { _ =>
       val user = ParameterExtractor.extractCommunityAdminInfo(request)
       userManager.createAdmin(user, communityId).map { _ =>
@@ -148,7 +148,7 @@ class UserService @Inject() (authorizedAction: AuthorizedAction,
    */
   def createUser(orgId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canCreateOrganisationUser(request, orgId).flatMap { _ =>
-      val roleId = ParameterExtractor.requiredBodyParameter(request, Parameters.ROLE_ID).toShort
+      val roleId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.ROLE_ID).toShort
       val user = UserRole(roleId) match {
         case UserRole.VendorUser => ParameterExtractor.extractUserInfo(request)
         case UserRole.VendorAdmin => ParameterExtractor.extractAdminInfo(request)
@@ -165,8 +165,8 @@ class UserService @Inject() (authorizedAction: AuthorizedAction,
    */
   def updateSystemAdminProfile(userId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canUpdateTestBedAdministrator(request).flatMap { _ =>
-      val name = ParameterExtractor.requiredBodyParameter(request, Parameters.USER_NAME)
-      val password = ParameterExtractor.optionalBodyParameter(request, Parameters.PASSWORD)
+      val name = ParameterExtractor.requiredBodyParameter(request, ParameterNames.USER_NAME)
+      val password = ParameterExtractor.optionalBodyParameter(request, ParameterNames.PASSWORD)
       userManager.updateSystemAdminProfile(userId, name, password).map { _ =>
         ResponseConstructor.constructEmptyResponse
       }
@@ -178,8 +178,8 @@ class UserService @Inject() (authorizedAction: AuthorizedAction,
     */
   def updateCommunityAdminProfile(userId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canUpdateCommunityAdministrator(request, userId).flatMap { _ =>
-      val name = ParameterExtractor.requiredBodyParameter(request, Parameters.USER_NAME)
-      val password = ParameterExtractor.optionalBodyParameter(request, Parameters.PASSWORD)
+      val name = ParameterExtractor.requiredBodyParameter(request, ParameterNames.USER_NAME)
+      val password = ParameterExtractor.optionalBodyParameter(request, ParameterNames.PASSWORD)
       userManager.updateCommunityAdminProfile(userId, name, password).map { _ =>
         ResponseConstructor.constructEmptyResponse
       }
@@ -191,17 +191,17 @@ class UserService @Inject() (authorizedAction: AuthorizedAction,
    */
   def updateUserProfile(userId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canUpdateOrganisationUser(request, userId).flatMap { _ =>
-      val roleId = ParameterExtractor.requiredBodyParameter(request, Parameters.ROLE_ID).toShort
+      val roleId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.ROLE_ID).toShort
       var name: Option[String] = None
       if (!Configurations.AUTHENTICATION_SSO_ENABLED) {
-        name = Some(ParameterExtractor.requiredBodyParameter(request, Parameters.USER_NAME))
+        name = Some(ParameterExtractor.requiredBodyParameter(request, ParameterNames.USER_NAME))
       }
       if (Configurations.DEMOS_ENABLED && Configurations.DEMOS_ACCOUNT == userId && roleId != UserRole.VendorUser.id) {
         Future.successful {
           ResponseConstructor.constructErrorResponse(ErrorCodes.CANNOT_UPDATE, "Cannot update the role of the configured demo account.")
         }
       } else {
-        val password = ParameterExtractor.optionalBodyParameter(request, Parameters.PASSWORD)
+        val password = ParameterExtractor.optionalBodyParameter(request, ParameterNames.PASSWORD)
         userManager.updateUserProfile(userId, name, roleId, password).map { _ =>
           ResponseConstructor.constructEmptyResponse
         }

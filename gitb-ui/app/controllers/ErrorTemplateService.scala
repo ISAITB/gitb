@@ -15,7 +15,7 @@
 
 package controllers
 
-import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
+import controllers.util.{AuthorizedAction, ParameterExtractor, ParameterNames, ResponseConstructor}
 import exceptions.ErrorCodes
 
 import javax.inject.Inject
@@ -81,11 +81,11 @@ class ErrorTemplateService @Inject() (authorizedAction: AuthorizedAction,
    */
   def updateErrorTemplate(templateId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canManageErrorTemplate(request, templateId).flatMap { _ =>
-      val name = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
-      val description = ParameterExtractor.optionalBodyParameter(request, Parameters.DESCRIPTION)
-      val content = HtmlUtil.sanitizeEditorContent(ParameterExtractor.requiredBodyParameter(request, Parameters.CONTENT))
-      val default = ParameterExtractor.requiredBodyParameter(request, Parameters.DEFAULT).toBoolean
-      val communityId = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
+      val name = ParameterExtractor.requiredBodyParameter(request, ParameterNames.NAME)
+      val description = ParameterExtractor.optionalBodyParameter(request, ParameterNames.DESCRIPTION)
+      val content = HtmlUtil.sanitizeEditorContent(ParameterExtractor.requiredBodyParameter(request, ParameterNames.CONTENT))
+      val default = ParameterExtractor.requiredBodyParameter(request, ParameterNames.DEFAULT).toBoolean
+      val communityId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.COMMUNITY_ID).toLong
       errorTemplateManager.checkUniqueName(templateId, name, communityId).flatMap { uniqueName =>
         if (uniqueName) {
           errorTemplateManager.updateErrorTemplate(templateId, name, description, content, default, communityId).map { _ =>
@@ -115,7 +115,7 @@ class ErrorTemplateService @Inject() (authorizedAction: AuthorizedAction,
     * Gets the default error template for given community
     */
   def getCommunityDefaultErrorTemplate(): Action[AnyContent] = authorizedAction.async { request =>
-    val communityId = ParameterExtractor.requiredQueryParameter(request, Parameters.COMMUNITY_ID).toLong
+    val communityId = ParameterExtractor.requiredQueryParameter(request, ParameterNames.COMMUNITY_ID).toLong
     authorizationManager.canViewDefaultErrorTemplate(request, communityId).flatMap { _ =>
       errorTemplateManager.getCommunityDefaultErrorTemplate(communityId).flatMap { errorTemplate =>
         if (errorTemplate.isEmpty) {

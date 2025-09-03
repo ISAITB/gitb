@@ -15,7 +15,7 @@
 
 package controllers
 
-import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
+import controllers.util.{AuthorizedAction, ParameterExtractor, ParameterNames, ResponseConstructor}
 import exceptions.{ErrorCodes, UserException}
 import managers._
 import models.Enums.LabelType
@@ -42,13 +42,13 @@ class TestSuiteService @Inject() (authorizedAction: AuthorizedAction,
 
 	def updateTestSuiteMetadata(testSuiteId:Long): Action[AnyContent] = authorizedAction.async { request =>
 		authorizationManager.canEditTestSuite(request, testSuiteId).flatMap { _ =>
-			val name:String = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
-			val version:String = ParameterExtractor.requiredBodyParameter(request, Parameters.VERSION)
-			val description:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESCRIPTION)
-			val specReference = ParameterExtractor.optionalBodyParameter(request, Parameters.SPEC_REFERENCE)
-			val specDescription = ParameterExtractor.optionalBodyParameter(request, Parameters.SPEC_DESCRIPTION)
-			val specLink = ParameterExtractor.optionalBodyParameter(request, Parameters.SPEC_LINK)
-			var documentation:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DOCUMENTATION)
+			val name:String = ParameterExtractor.requiredBodyParameter(request, ParameterNames.NAME)
+			val version:String = ParameterExtractor.requiredBodyParameter(request, ParameterNames.VERSION)
+			val description:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.DESCRIPTION)
+			val specReference = ParameterExtractor.optionalBodyParameter(request, ParameterNames.SPEC_REFERENCE)
+			val specDescription = ParameterExtractor.optionalBodyParameter(request, ParameterNames.SPEC_DESCRIPTION)
+			val specLink = ParameterExtractor.optionalBodyParameter(request, ParameterNames.SPEC_LINK)
+			var documentation:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.DOCUMENTATION)
 			if (documentation.isDefined) {
 				documentation = Some(HtmlUtil.sanitizeEditorContent(documentation.get))
 			}
@@ -60,15 +60,15 @@ class TestSuiteService @Inject() (authorizedAction: AuthorizedAction,
 
 	def updateTestCaseMetadata(testCaseId:Long): Action[AnyContent] = authorizedAction.async { request =>
 		authorizationManager.canEditTestCase(request, testCaseId).flatMap { _ =>
-			val name:String = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
-			val description:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESCRIPTION)
-			var documentation:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DOCUMENTATION)
-			val isOptional = ParameterExtractor.optionalBooleanBodyParameter(request, Parameters.OPTIONAL).getOrElse(false)
-			val isDisabled = ParameterExtractor.optionalBooleanBodyParameter(request, Parameters.DISABLED).getOrElse(false)
-			val tags = sanitizeTags(ParameterExtractor.optionalBodyParameter(request, Parameters.TAGS))
-			val specReference = ParameterExtractor.optionalBodyParameter(request, Parameters.SPEC_REFERENCE)
-			val specDescription = ParameterExtractor.optionalBodyParameter(request, Parameters.SPEC_DESCRIPTION)
-			val specLink = ParameterExtractor.optionalBodyParameter(request, Parameters.SPEC_LINK)
+			val name:String = ParameterExtractor.requiredBodyParameter(request, ParameterNames.NAME)
+			val description:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.DESCRIPTION)
+			var documentation:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.DOCUMENTATION)
+			val isOptional = ParameterExtractor.optionalBooleanBodyParameter(request, ParameterNames.OPTIONAL).getOrElse(false)
+			val isDisabled = ParameterExtractor.optionalBooleanBodyParameter(request, ParameterNames.DISABLED).getOrElse(false)
+			val tags = sanitizeTags(ParameterExtractor.optionalBodyParameter(request, ParameterNames.TAGS))
+			val specReference = ParameterExtractor.optionalBodyParameter(request, ParameterNames.SPEC_REFERENCE)
+			val specDescription = ParameterExtractor.optionalBodyParameter(request, ParameterNames.SPEC_DESCRIPTION)
+			val specLink = ParameterExtractor.optionalBodyParameter(request, ParameterNames.SPEC_LINK)
 			if (documentation.isDefined) {
 				documentation = Some(HtmlUtil.sanitizeEditorContent(documentation.get))
 			}
@@ -94,7 +94,7 @@ class TestSuiteService @Inject() (authorizedAction: AuthorizedAction,
 	def previewTestCaseDocumentationInReports(): Action[AnyContent] = authorizedAction.async { request =>
 		authorizationManager.canPreviewDocumentation(request).flatMap { _ =>
 			val userId = ParameterExtractor.extractUserId(request)
-			val documentation = HtmlUtil.sanitizeEditorContent(ParameterExtractor.requiredBodyParameter(request, Parameters.DOCUMENTATION))
+			val documentation = HtmlUtil.sanitizeEditorContent(ParameterExtractor.requiredBodyParameter(request, ParameterNames.DOCUMENTATION))
 			communityManager.getUserCommunityId(userId).map { communityId =>
 				val reportPath = Paths.get(
 					repositoryUtils.getTempReportFolder().getAbsolutePath,
@@ -129,10 +129,10 @@ class TestSuiteService @Inject() (authorizedAction: AuthorizedAction,
 
 	def searchTestSuites(): Action[AnyContent] = authorizedAction.async { request =>
 		authorizationManager.canViewAllTestSuites(request).flatMap { _ =>
-			val domainIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.DOMAIN_IDS)
-			val specificationIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.SPEC_IDS)
-			val groupIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.GROUP_IDS)
-			val actorIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.ACTOR_IDS)
+			val domainIds = ParameterExtractor.extractLongIdsBodyParameter(request, ParameterNames.DOMAIN_IDS)
+			val specificationIds = ParameterExtractor.extractLongIdsBodyParameter(request, ParameterNames.SPEC_IDS)
+			val groupIds = ParameterExtractor.extractLongIdsBodyParameter(request, ParameterNames.GROUP_IDS)
+			val actorIds = ParameterExtractor.extractLongIdsBodyParameter(request, ParameterNames.ACTOR_IDS)
 			testSuiteManager.searchTestSuites(domainIds, specificationIds, groupIds, actorIds).map { results =>
 				val json = JsonUtil.jsTestSuiteList(results).toString()
 				ResponseConstructor.constructJsonResponse(json)
@@ -141,11 +141,11 @@ class TestSuiteService @Inject() (authorizedAction: AuthorizedAction,
 	}
 
 	def searchTestSuitesInDomain(): Action[AnyContent] = authorizedAction.async { request =>
-		val domainId = ParameterExtractor.requiredBodyParameter(request, Parameters.DOMAIN_ID).toLong
+		val domainId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.DOMAIN_ID).toLong
 		authorizationManager.canViewDomains(request, Some(List(domainId))).flatMap { _ =>
-			val specificationIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.SPEC_IDS)
-			val groupIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.GROUP_IDS)
-			val actorIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.ACTOR_IDS)
+			val specificationIds = ParameterExtractor.extractLongIdsBodyParameter(request, ParameterNames.SPEC_IDS)
+			val groupIds = ParameterExtractor.extractLongIdsBodyParameter(request, ParameterNames.GROUP_IDS)
+			val actorIds = ParameterExtractor.extractLongIdsBodyParameter(request, ParameterNames.ACTOR_IDS)
 			testSuiteManager.searchTestSuites(Some(List(domainId)), specificationIds, groupIds, actorIds).map { results =>
 				val json = JsonUtil.jsTestSuiteList(results).toString()
 				ResponseConstructor.constructJsonResponse(json)
@@ -196,7 +196,7 @@ class TestSuiteService @Inject() (authorizedAction: AuthorizedAction,
 	}
 
 	def moveTestSuiteToSpecification(testSuiteId: Long): Action[AnyContent] = authorizedAction.async { request =>
-		val specificationId = ParameterExtractor.requiredBodyParameter(request, Parameters.SPECIFICATION_ID).toLong
+		val specificationId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.SPECIFICATION_ID).toLong
 		authorizationManager.canMoveTestSuite(request, testSuiteId, specificationId).flatMap { _ =>
 			testSuiteManager.moveTestSuiteToSpecification(testSuiteId, specificationId).map { _ =>
 				ResponseConstructor.constructEmptyResponse

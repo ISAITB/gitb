@@ -15,7 +15,7 @@
 
 package controllers
 
-import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
+import controllers.util.{AuthorizedAction, ParameterExtractor, ParameterNames, ResponseConstructor}
 import exceptions.ErrorCodes
 import managers.{AuthorizationManager, LandingPageManager}
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
@@ -82,11 +82,11 @@ class LandingPageService @Inject() (authorizedAction: AuthorizedAction,
     */
   def updateLandingPage(pageId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canManageLandingPage(request, pageId).flatMap { _ =>
-      val name = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
-      val description = ParameterExtractor.optionalBodyParameter(request, Parameters.DESCRIPTION)
-      val content = HtmlUtil.sanitizeEditorContent(ParameterExtractor.requiredBodyParameter(request, Parameters.CONTENT))
-      val default = ParameterExtractor.requiredBodyParameter(request, Parameters.DEFAULT).toBoolean
-      val communityId = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
+      val name = ParameterExtractor.requiredBodyParameter(request, ParameterNames.NAME)
+      val description = ParameterExtractor.optionalBodyParameter(request, ParameterNames.DESCRIPTION)
+      val content = HtmlUtil.sanitizeEditorContent(ParameterExtractor.requiredBodyParameter(request, ParameterNames.CONTENT))
+      val default = ParameterExtractor.requiredBodyParameter(request, ParameterNames.DEFAULT).toBoolean
+      val communityId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.COMMUNITY_ID).toLong
       landingPageManager.checkUniqueName(pageId, name, communityId).flatMap { uniqueName =>
         if (uniqueName) {
           landingPageManager.updateLandingPage(pageId, name, description, content, default, communityId).map { _ =>
@@ -116,7 +116,7 @@ class LandingPageService @Inject() (authorizedAction: AuthorizedAction,
    * Gets the default landing page for given community
    */
   def getCommunityDefaultLandingPage(): Action[AnyContent] = authorizedAction.async { request =>
-    val communityId = ParameterExtractor.requiredQueryParameter(request, Parameters.COMMUNITY_ID).toLong
+    val communityId = ParameterExtractor.requiredQueryParameter(request, ParameterNames.COMMUNITY_ID).toLong
     authorizationManager.canViewDefaultLandingPage(request, communityId).flatMap { _ =>
       landingPageManager.getCommunityDefaultLandingPage(communityId).map { landingPage =>
         val json: String = JsonUtil.serializeLandingPage(landingPage)

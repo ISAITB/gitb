@@ -16,7 +16,7 @@
 package controllers
 
 import config.Configurations
-import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
+import controllers.util.{AuthorizedAction, ParameterExtractor, ParameterNames, ResponseConstructor}
 import exceptions.ErrorCodes
 import managers.{AuthorizationManager, DomainParameterManager}
 import models.TestServiceWithParameter
@@ -38,8 +38,8 @@ class DomainParameterService @Inject() (authorizedAction: AuthorizedAction,
   def getDomainParameters(domainId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canManageDomainParameters(request, domainId).flatMap { _ =>
       // Optionally skip loading values (if we only want to show the list of parameters)
-      val loadValues = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.VALUES).getOrElse(false)
-      val onlySimple = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.SIMPLE).getOrElse(false)
+      val loadValues = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.VALUES).getOrElse(false)
+      val onlySimple = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.SIMPLE).getOrElse(false)
       domainParameterManager.getDomainParameters(domainId, loadValues, None, onlySimple).map { result =>
         val json = JsonUtil.jsDomainParameters(result).toString()
         ResponseConstructor.constructJsonResponse(json)
@@ -49,8 +49,8 @@ class DomainParameterService @Inject() (authorizedAction: AuthorizedAction,
 
   def getDomainParametersOfCommunity(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewDomainParametersForCommunity(request, communityId).flatMap { _ =>
-      val loadValues = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.VALUES).getOrElse(false)
-      val onlySimple = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.SIMPLE).getOrElse(false)
+      val loadValues = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.VALUES).getOrElse(false)
+      val onlySimple = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.SIMPLE).getOrElse(false)
       domainParameterManager.getDomainParametersByCommunityId(communityId, onlySimple, loadValues).map { result =>
         val json = JsonUtil.jsDomainParameters(result).toString()
         ResponseConstructor.constructJsonResponse(json)
@@ -71,10 +71,10 @@ class DomainParameterService @Inject() (authorizedAction: AuthorizedAction,
     authorizationManager.canManageDomainParameters(request, domainId).flatMap { _ =>
       val paramMap = ParameterExtractor.paramMap(request)
       val files = ParameterExtractor.extractFiles(request)
-      val jsDomainParameter = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.CONFIG)
+      val jsDomainParameter = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.CONFIG)
       var fileToStore: Option[File] = None
-      if (files.contains(Parameters.FILE)) {
-        fileToStore = Some(files(Parameters.FILE).file)
+      if (files.contains(ParameterNames.FILE)) {
+        fileToStore = Some(files(ParameterNames.FILE).file)
       }
       val domainParameter = JsonUtil.parseJsDomainParameter(jsDomainParameter, None, domainId, isTestService = false)
       domainParameterManager.getDomainParameterByDomainAndName(domainId, domainParameter.name).flatMap { parameter =>
@@ -117,10 +117,10 @@ class DomainParameterService @Inject() (authorizedAction: AuthorizedAction,
     authorizationManager.canManageDomainParameters(request, domainId).flatMap { _ =>
       val paramMap = ParameterExtractor.paramMap(request)
       val files = ParameterExtractor.extractFiles(request)
-      val jsDomainParameter = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.CONFIG)
+      val jsDomainParameter = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.CONFIG)
       var fileToStore: Option[File] = None
-      if (files.contains(Parameters.FILE)) {
-        fileToStore = Some(files(Parameters.FILE).file)
+      if (files.contains(ParameterNames.FILE)) {
+        fileToStore = Some(files(ParameterNames.FILE).file)
       }
       val domainParameter = JsonUtil.parseJsDomainParameter(jsDomainParameter, Some(domainParameterId), domainId, isTestService = false)
       domainParameterManager.getDomainParameterByDomainAndName(domainId, domainParameter.name).flatMap { existingDomainParameter =>
@@ -197,7 +197,7 @@ class DomainParameterService @Inject() (authorizedAction: AuthorizedAction,
               Some(ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "A test service with this identifier already exists.", Some("name")))
             }
           } else {
-            val updateParameter = ParameterExtractor.optionalBodyParameter(request, Parameters.UPDATE).exists(_.toBoolean)
+            val updateParameter = ParameterExtractor.optionalBodyParameter(request, ParameterNames.UPDATE).exists(_.toBoolean)
             if (updateParameter) {
               // The name of the service matches a domain parameter and we have confirmation to update it.
               Future.successful(None)
@@ -266,7 +266,7 @@ class DomainParameterService @Inject() (authorizedAction: AuthorizedAction,
 
   def testTestService(domainId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canManageTestServices(request, domainId).flatMap { _ =>
-      val serviceId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.ID)
+      val serviceId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.ID)
       val testService = ParameterExtractor.extractTestServiceWithParameter(request, domainId, serviceId)
       domainParameterManager.testTestService(testService).map { result =>
         val json = JsonUtil.jsServiceTestResult(result).toString()

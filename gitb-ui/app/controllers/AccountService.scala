@@ -65,7 +65,7 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction,
   def updateVendorProfile(): Action[AnyContent] = authorizedAction.async { request =>
     (for {
       landingPageIdToUse <- {
-        val landingPageId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.LANDING_PAGE_ID)
+        val landingPageId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.LANDING_PAGE_ID)
         val landingPageIdToUse = if (landingPageId.isDefined) {
           authorizationManager.canUpdateOwnOrganisationAndLandingPage(request, landingPageId).map { _ =>
             if (landingPageId.get == -1) {
@@ -88,9 +88,9 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction,
         val adminId = ParameterExtractor.extractUserId(request)
         val paramMap = ParameterExtractor.paramMap(request)
 
-        val shortName = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.VENDOR_SNAME)
-        val fullName = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.VENDOR_FNAME)
-        val values = ParameterExtractor.extractOrganisationParameterValues(paramMap, Parameters.PROPERTIES, optional = true)
+        val shortName = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.VENDOR_SNAME)
+        val fullName = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.VENDOR_FNAME)
+        val values = ParameterExtractor.extractOrganisationParameterValues(paramMap, ParameterNames.PROPERTIES, optional = true)
         val files = ParameterExtractor.extractFiles(request).map {
           case (key, value) => (key.substring(key.indexOf('_')+1).toLong, value)
         }
@@ -128,7 +128,7 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction,
   def registerUser: Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canCreateUserInOwnOrganisation(request).flatMap { _ =>
       val adminId = ParameterExtractor.extractUserId(request)
-      val roleId = ParameterExtractor.requiredBodyParameter(request, Parameters.ROLE_ID).toShort
+      val roleId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.ROLE_ID).toShort
       val user = UserRole(roleId) match {
         case UserRole.VendorUser => ParameterExtractor.extractUserInfo(request)
         case UserRole.VendorAdmin => ParameterExtractor.extractAdminInfo(request)
@@ -159,9 +159,9 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction,
   def updateUserProfile(): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canUpdateOwnProfile(request).flatMap { _ =>
       val userId = ParameterExtractor.extractUserId(request)
-      val name:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.USER_NAME)
-      val passwd:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.PASSWORD)
-      val oldPasswd:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.OLD_PASSWORD)
+      val name:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.USER_NAME)
+      val passwd:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.PASSWORD)
+      val oldPasswd:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.OLD_PASSWORD)
 
       if (passwd.isDefined && !CryptoUtil.isAcceptedPassword(passwd.get)) {
         Future.successful {
@@ -219,10 +219,10 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction,
       if (Configurations.EMAIL_CONTACT_FORM_ENABLED.getOrElse(true)) {
         val paramMap = ParameterExtractor.paramMap(request)
         val userId = ParameterExtractor.extractOptionalUserId(request)
-        val userEmail: String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.USER_EMAIL)
-        val messageTypeId: String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.MESSAGE_TYPE_ID)
-        val messageTypeDescription: String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.MESSAGE_TYPE_DESCRIPTION)
-        val messageContent: String = HtmlUtil.sanitizeMinimalEditorContent(ParameterExtractor.requiredBodyParameter(paramMap, Parameters.MESSAGE_CONTENT))
+        val userEmail: String = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.USER_EMAIL)
+        val messageTypeId: String = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.MESSAGE_TYPE_ID)
+        val messageTypeDescription: String = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.MESSAGE_TYPE_DESCRIPTION)
+        val messageContent: String = HtmlUtil.sanitizeMinimalEditorContent(ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.MESSAGE_CONTENT))
         // Extract attachments
         val attachments = new mutable.LinkedHashMap[String, AttachmentType]()
         val files = ParameterExtractor.extractFiles(request)

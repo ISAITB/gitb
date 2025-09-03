@@ -62,8 +62,8 @@ class TestService @Inject() (authorizedAction: AuthorizedAction,
    */
   def getTestCaseDefinitionByStatement(testId:String): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewTestCase(request, testId).flatMap { _ =>
-      val actorId = ParameterExtractor.requiredQueryParameter(request, Parameters.ACTOR).toLong
-      val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM).toLong
+      val actorId = ParameterExtractor.requiredQueryParameter(request, ParameterNames.ACTOR).toLong
+      val systemId = ParameterExtractor.requiredQueryParameter(request, ParameterNames.SYSTEM).toLong
       getTestCasePresentationByStatement(testId, None, actorId, systemId).map { response =>
         val json = JacksonUtil.serializeTestCasePresentation(response.getTestcase)
         ResponseConstructor.constructJsonResponse(json)
@@ -76,7 +76,7 @@ class TestService @Inject() (authorizedAction: AuthorizedAction,
    */
   def getTestCaseDefinitionByDomain(testId:String): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewTestCase(request, testId).flatMap { _ =>
-      val domainId = ParameterExtractor.requiredQueryParameter(request, Parameters.DOMAIN).toLong
+      val domainId = ParameterExtractor.requiredQueryParameter(request, ParameterNames.DOMAIN).toLong
       getTestCasePresentationByDomain(testId, domainId).map { response =>
         val json = JacksonUtil.serializeTestCasePresentation(response.getTestcase)
         ResponseConstructor.constructJsonResponse(json)
@@ -88,7 +88,7 @@ class TestService @Inject() (authorizedAction: AuthorizedAction,
    * Gets the definition for a actor test
    */
   def getActorDefinitions: Action[AnyContent] = authorizedAction.async { request =>
-    val specId = ParameterExtractor.requiredQueryParameter(request, Parameters.SPECIFICATION_ID).toLong
+    val specId = ParameterExtractor.requiredQueryParameter(request, ParameterNames.SPECIFICATION_ID).toLong
     authorizationManager.canViewActorsBySpecificationId(request, specId).flatMap { _ =>
       actorManager.getActorsWithSpecificationId(None, Some(List(specId))).map { actors =>
         val json = JsonUtil.jsActorsNonCase(actors).toString()
@@ -145,8 +145,8 @@ class TestService @Inject() (authorizedAction: AuthorizedAction,
    */
   def configure(sessionId:String): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canExecuteTestSession(request, sessionId).flatMap { _ =>
-      val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
-      val actorId = ParameterExtractor.requiredQueryParameter(request, Parameters.ACTOR_ID).toLong
+      val systemId = ParameterExtractor.requiredQueryParameter(request, ParameterNames.SYSTEM_ID).toLong
+      val actorId = ParameterExtractor.requiredQueryParameter(request, ParameterNames.ACTOR_ID).toLong
       getSessionConfigurationData(systemId, actorId, onlySimple = false).flatMap { config =>
         testbedClient.configure(sessionId, config, None).map { _ =>
           ResponseConstructor.constructEmptyResponse
@@ -164,8 +164,8 @@ class TestService @Inject() (authorizedAction: AuthorizedAction,
       response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Provided file failed virus scan.")
     }
     if (response == null) {
-      val inputs = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.INPUTS)
-      val step   = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.TEST_STEP)
+      val inputs = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.INPUTS)
+      val step   = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.TEST_STEP)
       val userInputs = JsonUtil.parseJsUserInputs(inputs)
       // Set files to inputs.
       userInputs.foreach { userInput =>
@@ -308,11 +308,11 @@ class TestService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def startHeadlessTestSessions(): Action[AnyContent] = authorizedAction.async { request =>
-    val testCaseIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.TEST_CASE_IDS)
-    val specId = ParameterExtractor.requiredBodyParameter(request, Parameters.SPECIFICATION_ID).toLong
-    val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
-    val actorId = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID).toLong
-    val forceSequentialExecution = ParameterExtractor.optionalBodyParameter(request, Parameters.SEQUENTIAL).getOrElse("false").toBoolean
+    val testCaseIds = ParameterExtractor.optionalLongListBodyParameter(request, ParameterNames.TEST_CASE_IDS)
+    val specId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.SPECIFICATION_ID).toLong
+    val systemId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.SYSTEM_ID).toLong
+    val actorId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.ACTOR_ID).toLong
+    val forceSequentialExecution = ParameterExtractor.optionalBodyParameter(request, ParameterNames.SEQUENTIAL).getOrElse("false").toBoolean
     if (testCaseIds.isDefined && testCaseIds.get.nonEmpty) {
       authorizationManager.canExecuteTestCases(request, testCaseIds.get, specId, systemId, actorId).flatMap { _ =>
         testExecutionManager.startHeadlessTestSessions(testCaseIds.get, systemId, actorId, None, None, forceSequentialExecution).map { _ =>
