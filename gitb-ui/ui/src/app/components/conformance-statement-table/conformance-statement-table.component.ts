@@ -25,8 +25,6 @@ import {ConformanceStatementTableApi} from './conformance-statement-table-api';
 import {ConformanceResultFull} from '../../types/conformance-result-full';
 import {ConformanceService} from '../../services/conformance.service';
 import {ConformanceSnapshot} from '../../types/conformance-snapshot';
-import {ConformanceTestSuite} from '../../pages/organisation/conformance-statement/conformance-test-suite';
-import {StatementFilterState} from '../statement-controls/statement-filter-state';
 import {BaseComponent} from '../../pages/base-component.component';
 import {ReportSupportService} from '../../services/report-support.service';
 import {RoutingService} from '../../services/routing.service';
@@ -45,7 +43,6 @@ export class ConformanceStatementTableComponent extends BaseComponent implements
   @Input() organisationId?: number
   @Input() statementLoader!: (searchCriteria: TestResultSearchCriteria, pagingInfo: PagingEvent, fullResults: boolean, forExport: boolean, sortColumn: string, sortOrder: string) => Observable<ConformanceResultFullList>;
   @Input() snapshot?: ConformanceSnapshot
-  @Output() collapseChange = new EventEmitter<boolean>()
   @Output() exportChange = new EventEmitter<boolean>()
   @Output() searchChange = new EventEmitter<boolean>()
   @Output() communityChange = new EventEmitter<number|undefined>()
@@ -53,9 +50,6 @@ export class ConformanceStatementTableComponent extends BaseComponent implements
   @ViewChild("pagingControls") pagingControls?: PagingControlsApi
   readonly Constants = Constants
   dataStatus = {status: Constants.STATUS.PENDING}
-  expandedStatements: { [key: string]: any, count: number } = {
-    count: 0
-  }
   filterCommands = new EventEmitter<number>()
   conformanceStatements: ConformanceResultFullWithTestSuites[] = []
   sortOrder = Constants.ORDER.ASC
@@ -82,30 +76,30 @@ export class ConformanceStatementTableComponent extends BaseComponent implements
     if (this.organisationId == undefined) {
       this.filterState.filters = [ Constants.FILTER_TYPE.SPECIFICATION, Constants.FILTER_TYPE.SPECIFICATION_GROUP, Constants.FILTER_TYPE.ACTOR, Constants.FILTER_TYPE.ORGANISATION, Constants.FILTER_TYPE.SYSTEM, Constants.FILTER_TYPE.ORGANISATION_PROPERTY, Constants.FILTER_TYPE.SYSTEM_PROPERTY, Constants.FILTER_TYPE.RESULT, Constants.FILTER_TYPE.END_TIME ]
       if (this.dataService.isSystemAdmin) {
-        this.columnCount = 11
+        this.columnCount = 10
         this.filterState.filters.push(Constants.FILTER_TYPE.DOMAIN)
         this.filterState.filters.push(Constants.FILTER_TYPE.COMMUNITY)
       } else if (this.dataService.isCommunityAdmin) {
         this.sortColumn = Constants.FILTER_TYPE.ORGANISATION
         if (this.dataService.community!.domain == undefined) {
-          this.columnCount = 10
+          this.columnCount = 9
           this.filterState.filters.push(Constants.FILTER_TYPE.DOMAIN)
         } else {
-          this.columnCount = 9
+          this.columnCount = 8
         }
       }
     } else {
       this.filterState.filters = [ Constants.FILTER_TYPE.SPECIFICATION, Constants.FILTER_TYPE.SPECIFICATION_GROUP, Constants.FILTER_TYPE.ACTOR, Constants.FILTER_TYPE.SYSTEM, Constants.FILTER_TYPE.RESULT, Constants.FILTER_TYPE.END_TIME ]
       if (this.dataService.isSystemAdmin) {
-        this.columnCount = 9
+        this.columnCount = 8
         this.filterState.filters.push(Constants.FILTER_TYPE.DOMAIN)
       } else {
         this.sortColumn = Constants.FILTER_TYPE.SYSTEM
         if (this.dataService.community!.domain == undefined) {
-          this.columnCount = 9
+          this.columnCount = 8
           this.filterState.filters.push(Constants.FILTER_TYPE.DOMAIN)
         } else {
-          this.columnCount = 8
+          this.columnCount = 7
         }
       }
     }
@@ -126,7 +120,6 @@ export class ConformanceStatementTableComponent extends BaseComponent implements
       .subscribe((data) => {
         this.conformanceStatements = data.data
         this.pagingControls?.updateStatus(pagingInfo.targetPage, data.count)
-        this.collapseAll()
       }).add(() => {
       this.updateFilterState(false)
       this.dataStatus.status = Constants.STATUS.FINISHED
@@ -211,11 +204,6 @@ export class ConformanceStatementTableComponent extends BaseComponent implements
     })
   }
 
-  collapseAll() {
-    this.expandedStatements = { count: 0 }
-    this.collapseChange.emit(this.expandedStatements.count > 0)
-  }
-
   toggleFilters() {
     this.filterCommands.emit(Constants.FILTER_COMMAND.TOGGLE)
   }
@@ -231,65 +219,6 @@ export class ConformanceStatementTableComponent extends BaseComponent implements
 
   refreshFilters() {
     this.filterCommands.emit(Constants.FILTER_COMMAND.REFRESH)
-  }
-
-  isExpanded(statement: ConformanceResultFull) {
-    return this.expandedStatements[statement.systemId+"_"+statement.actorId] != undefined
-  }
-
-  collapse(statement: ConformanceResultFull) {
-    delete this.expandedStatements[statement.systemId+"_"+statement.actorId]
-    this.expandedStatements.count -= 1
-    this.notifyCollapseChange()
-  }
-
-  expand(statement: ConformanceResultFull) {
-    this.expandedStatements[statement.systemId+"_"+statement.actorId] = true
-    this.expandedStatements.count += 1
-    this.notifyCollapseChange()
-  }
-
-  setCollapseAllStatus(statement: ConformanceResultFullWithTestSuites) {
-    statement.hasExpandedTestSuites = this.hasExpandedTestSuite(statement)
-  }
-
-  private hasExpandedTestSuite(statement: ConformanceResultFullWithTestSuites) {
-    if (statement.displayedTestSuites) {
-      for (let testSuite of statement.displayedTestSuites) {
-        if (testSuite.expanded) {
-          return true
-        }
-      }
-    }
-    return false
-  }
-
-  onExpand(statement: ConformanceResultFullWithTestSuites) {
-    if (this.isExpanded(statement)) {
-      this.collapse(statement)
-    } else {
-      this.expand(statement)
-      if (statement.testSuites == undefined) {
-        statement.testSuitesLoaded = false
-        this.conformanceService.getConformanceStatus(statement.actorId, statement.systemId, this.snapshot?.id)
-          .subscribe((data) => {
-            if (data) {
-              this.dataService.organiseTestSuitesForDisplay(data.testSuites)
-              statement.hasBadge = data.summary.hasBadge
-              statement.testSuites = data.testSuites
-              statement.displayedTestSuites = data.testSuites
-              this.setCollapseAllStatus(statement)
-              statement.refreshTestSuites = new EventEmitter<void>()
-            }
-          }).add(() => {
-          statement.testSuitesLoaded = true
-        })
-      }
-    }
-  }
-
-  notifyCollapseChange() {
-    this.collapseChange.emit(this.expandedStatements.count > 0)
   }
 
   sort(column: string) {
@@ -310,29 +239,6 @@ export class ConformanceStatementTableComponent extends BaseComponent implements
     return `${statement.actorId}_${statement.systemId}_${this.snapshot?.id}`;
   }
 
-  applyStatementSearchFilters(statement: ConformanceResultFullWithTestSuites, state: StatementFilterState) {
-    if (statement.testSuites && statement.testSuites.length > 0) {
-      const testSuiteFilter = this.trimSearchString(state.testSuiteFilter)
-      const testCaseFilter = this.trimSearchString(state.testCaseFilter)
-      statement.displayedTestSuites = this.dataService.filterTestSuites(statement.testSuites, testSuiteFilter, testCaseFilter, state)
-      this.setCollapseAllStatus(statement)
-      setTimeout(() => {
-        if (statement.refreshTestSuites) {
-          statement.refreshTestSuites.emit()
-        }
-      })
-    }
-  }
-
-  collapseAllTestSuites(statement: ConformanceResultFullWithTestSuites) {
-    if (statement.displayedTestSuites) {
-      statement.displayedTestSuites.forEach((testSuite: ConformanceTestSuite) => {
-        testSuite.expanded = false
-      })
-      this.setCollapseAllStatus(statement)
-    }
-  }
-
   onExportConformanceStatement(statement: ConformanceResultFull, format: 'xml'|'pdf') {
     if (format == 'xml') {
       statement.exportXmlPending = true
@@ -351,10 +257,6 @@ export class ConformanceStatementTableComponent extends BaseComponent implements
           statement.exportPdfPending = false
         }
       })
-  }
-
-  toTestSession(sessionId: string) {
-    this.routingService.toSessionDashboard(sessionId)
   }
 
   exportAsCsv(): Observable<void> {
@@ -404,6 +306,10 @@ export class ConformanceStatementTableComponent extends BaseComponent implements
   reloadData() {
     this.dataStatus.status = Constants.STATUS.PENDING
     this.getConformanceStatements()
+  }
+
+  onStatementSelect(statement: ConformanceResultFullWithTestSuites) {
+    this.routingService.toConformanceStatement(statement.organizationId, statement.systemId, statement.actorId, statement.communityId, this.snapshot?.id, this.snapshot?.label)
   }
 
 }

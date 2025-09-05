@@ -257,26 +257,22 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 		DB.run(getTestSuiteOfTestCaseInternal(testCaseId))
 	}
 
-	def getTestSuiteWithTestCaseData(testSuiteId: Long): Future[TestSuite] = {
-		DB.run(
+	def getTestSuiteTestCasesWithPaging(testSuiteId: Long, filterText: Option[String], page: Long, limit: Long): Future[SearchResult[TestCases]] = {
+		val query = PersistenceSchema.testCases
+			.join(PersistenceSchema.testSuiteHasTestCases).on(_.id === _.testcase)
+			.filter(_._2.testsuite === testSuiteId)
+			.filterOpt(toLowercaseLikeParameter(filterText))((q, text) => q._1.shortname.toLowerCase.like(text))
+			.sortBy(_._1.testSuiteOrder)
+			.map(x => (x._1.id, x._1.identifier, x._1.shortname, x._1.fullname, x._1.description,
+				x._1.group, x._1.isOptional, x._1.isDisabled, x._1.tags, x._1.testSuiteOrder,
+				x._1.hasDocumentation, x._1.specReference, x._1.specDescription, x._1.specLink)
+			)
+		DB.run {
 			for {
-				testSuite <- PersistenceSchema.testSuites
-					.filter(_.id === testSuiteId)
-					.result.head
-				testCases <- PersistenceSchema.testCases
-					.join(PersistenceSchema.testSuiteHasTestCases).on(_.id === _.testcase)
-					.filter(_._2.testsuite === testSuiteId)
-					.sortBy(_._1.testSuiteOrder)
-					.map(x => (
-						x._1.id, x._1.identifier, x._1.shortname, x._1.fullname, x._1.description,
-						x._1.group, x._1.isOptional, x._1.isDisabled, x._1.tags, x._1.testSuiteOrder,
-						x._1.hasDocumentation, x._1.specReference, x._1.specDescription, x._1.specLink)
-					)
-					.result
-				testCaseGroups <- PersistenceSchema.testCaseGroups.filter(_.testSuite === testSuiteId).result
-				results <- {
-					val result = new TestSuite(testSuite = testSuite, actors = None,
-						testCases = Some(testCases.map { data =>
+				results <- query.drop((page - 1) * limit)
+					.take(limit)
+					.result.map { results =>
+						results.map { data =>
 							TestCases(
 								id = data._1, shortname = data._3, fullname = data._4, version = "",
 								authors = None, originalDate = None, modificationDate = None,
@@ -286,12 +282,30 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 								specReference = data._12, specDescription = data._13, specLink = data._14,
 								group = data._6
 							)
-						}.toList),
-						testCaseGroups = Some(testCaseGroups.toList)
-					)
-					DBIO.successful(result)
-				}
-			} yield results
+						}
+					}
+				resultCount <- query.size.result
+			} yield SearchResult(results, resultCount)
+		}
+	}
+
+	def getTestSuiteWithTestCaseData(testSuiteId: Long): Future[TestSuite] = {
+		DB.run(
+			for {
+				testCaseGroups <- PersistenceSchema.testCaseGroups.filter(_.testSuite === testSuiteId).result
+				testSuite <- PersistenceSchema.testSuites
+					.filter(_.id === testSuiteId)
+					.result
+					.head
+					.map { result =>
+						new TestSuite(
+							testSuite = result,
+							actors = None,
+							testCases = None,
+							testCaseGroups = Some(testCaseGroups.toList)
+						)
+					}
+			} yield testSuite
 		)
 	}
 
@@ -1687,7 +1701,7 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 		}).cleanUp(error => {
 			if (error.isDefined) {
 				onFailureCalls += (() => {
-					// Cleanup operations in case an error occurred (we only do this here for non-shared test suites).
+					// Clean-up operations in case an error occurred (we only do this here for non-shared test suites).
 					if (sharedTestSuiteInfo.isEmpty && testSuitePathsToUse.testSuiteFolder.exists()) {
 						FileUtils.deleteDirectory(testSuitePathsToUse.testSuiteFolder)
 					}

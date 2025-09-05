@@ -80,6 +80,8 @@ object ParameterNames {
   val SPEC_REFERENCE = "specReference"
   val SPEC_DESCRIPTION = "specDescription"
   val SPEC_LINK = "specLink"
+  val TEST_SUITE = "testSuite"
+  val TEST_CASE = "testCase"
 
   // Landing page Service
   val DEFAULT = "default_flag"

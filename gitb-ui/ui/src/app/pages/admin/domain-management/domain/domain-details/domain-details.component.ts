@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, OnInit, ViewChild} from '@angular/core';
+import {Component, EventEmitter, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {BsModalService} from 'ngx-bootstrap/modal';
 import {Constants} from 'src/app/common/constants';
@@ -52,6 +52,9 @@ import {FilterUpdate} from '../../../../../components/test-filter/filter-update'
 import {TestService} from '../../../../../types/test-service';
 import {PagingControlsApi} from '../../../../../components/paging-controls/paging-controls-api';
 import {PagingPlacement} from '../../../../../components/paging-controls/paging-placement';
+import {
+  DomainSpecificationDisplayComponentApi
+} from '../../../../../components/domain-specification-display/domain-specification-display-component-api';
 
 @Component({
     selector: 'app-domain-details',
@@ -67,6 +70,7 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
 
   @ViewChild("sharedTestSuiteTable") sharedTestSuiteTable?: TableApi
   @ViewChild("specificationPagingControls") specificationPagingControls?: PagingControlsApi
+  @ViewChildren("specificationDisplayComponent") specificationDisplayComponents?: QueryList<DomainSpecificationDisplayComponentApi>
 
   domain: Partial<Domain> = {}
   domainSpecifications: DomainSpecification[] = []
@@ -599,6 +603,12 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
       }
     }
     return guessedServiceType
+  }
+
+  onSpecificationDisplayControlSelected(selectedId: number) {
+    this.specificationDisplayComponents?.forEach((component) => {
+      component.otherControlSelected(selectedId)
+    })
   }
 
 }

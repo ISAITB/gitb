@@ -8,9 +8,6 @@
                     @if (showExport) {
                         <button type="button" class="btn btn-secondary"  (click)="onExportConformanceStatementsAsCsv()" [pending]="exportPending">Export CSV</button>
                     }
-                    @if (showCollapseAllStatements) {
-                        <button type="button" class="btn btn-secondary" (click)="onCollapseAll()">Collapse all</button>
-                    }
                 }
                 @if (conformanceSnapshots != undefined && conformanceSnapshots.length > 0) {
                     <div class="btn-group" dropdown placement="bottom right">
@@ -102,7 +99,14 @@
                                     }
                                 } @else {
                                     <div class="statement-container">
-                                        <app-conformance-statement-items-display #conformanceItemTree [items]="statements" [animated]="animated" [withCheck]="false" [withExport]="true" [withResults]="true" (selectionChanged)="onStatementSelect($event)" (export)="onExportConformanceOverview($event)"></app-conformance-statement-items-display>
+                                        <app-conformance-statement-items-display #conformanceItemTree
+                                                                                 [items]="statements"
+                                                                                 [animated]="animated"
+                                                                                 [withCheck]="false"
+                                                                                 [withExport]="true"
+                                                                                 [withResults]="true"
+                                                                                 (selectionChanged)="onStatementSelect($event)"
+                                                                                 (export)="onExportConformanceOverview($event)"></app-conformance-statement-items-display>
                                     </div>
                                 }
                             } @else {
@@ -132,8 +136,7 @@
                                              [statementLoader]="loadConformanceStatementsForListViewFactory()"
                                              [snapshot]="activeConformanceSnapshot"
                                              (searchChange)="listViewSearching($event)"
-                                             (exportChange)="listViewExportChange($event)"
-                                             (collapseChange)="listViewStatementCollapseChange($event)"></app-conformance-statement-table>
+                                             (exportChange)="listViewExportChange($event)"></app-conformance-statement-table>
         }
 		@if (showBack) {
 			<div class="card-footer">

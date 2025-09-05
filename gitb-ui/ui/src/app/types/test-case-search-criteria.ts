@@ -13,11 +13,14 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {TestCaseFilterState} from '../test-case-filter/test-case-filter-state';
+export interface TestCaseSearchCriteria {
 
-export interface StatementFilterState extends TestCaseFilterState {
-
-  testCaseFilter?: string
-  testSuiteFilter?: string
+  succeeded: boolean
+  failed: boolean
+  incomplete: boolean
+  optional: boolean
+  disabled: boolean
+  testSuiteId: number|undefined
+  testCaseFilterText: string|undefined
 
 }

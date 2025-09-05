@@ -20,7 +20,7 @@ import exceptions.{ErrorCodes, InvalidRequestException}
 import models.Enums._
 import controllers.util.ParameterNames
 import models.automation.TestServiceSearchCriteria
-import models.statement.{AvailableStatementsSearchCriteria, ConformanceStatementSearchCriteria}
+import models.statement.{AvailableStatementsSearchCriteria, ConformanceStatementSearchCriteria, ConformanceStatementTestSearchCriteria}
 import models.theme.{Theme, ThemeFiles}
 import models.{Actor, Badges, Communities, CommunityReportSettings, CommunityResources, Configs, Constants, Domain, DomainParameter, Endpoints, Enums, ErrorTemplates, FileInfo, LandingPages, LegalNotices, NamedFile, OrganisationParameterValues, Organizations, Parameters, SpecificationGroups, Specifications, SystemParameterValues, Systems, TestService, TestServiceWithParameter, Trigger, TriggerData, TriggerFireExpression, Triggers, Users}
 import org.apache.commons.lang3.StringUtils
@@ -1076,6 +1076,19 @@ object ParameterExtractor {
       selected = ParameterExtractor.optionalBodyParameter(request, ParameterNames.SELECTED).forall(_.toBoolean),
       unselected = ParameterExtractor.optionalBodyParameter(request, ParameterNames.UNSELECTED).forall(_.toBoolean),
       selectedIds = ParameterExtractor.extractIdsBodyParameter(request)
+    )
+  }
+
+  def extractConformanceStatementTestSearchCriteria(request: Request[AnyContent]): ConformanceStatementTestSearchCriteria = {
+    ConformanceStatementTestSearchCriteria(
+      succeeded = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.SUCCEEDED).getOrElse(true),
+      failed = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.FAILED).getOrElse(true),
+      incomplete = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.INCOMPLETE).getOrElse(true),
+      optional = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.OPTIONAL).getOrElse(true),
+      disabled = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.DISABLED).getOrElse(true),
+      testSuiteId = ParameterExtractor.optionalLongQueryParameter(request, ParameterNames.TEST_SUITE),
+      testSuiteFilterText = ParameterExtractor.optionalQueryParameter(request, ParameterNames.TEST_SUITE).filter(x => !x.isBlank),
+      testCaseFilterText = ParameterExtractor.optionalQueryParameter(request, ParameterNames.TEST_CASE).filter(x => !x.isBlank)
     )
   }
 

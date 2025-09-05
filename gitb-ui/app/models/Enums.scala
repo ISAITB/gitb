@@ -62,15 +62,15 @@ object Enums {
   }
 
   object TestResultStatus extends Enumeration {
-    val UNDEFINED = Value("UNDEFINED")
-    val SUCCESS = Value("SUCCESS")
-    val FAILURE = Value("FAILURE")
+    val UNDEFINED: Value = Value("UNDEFINED")
+    val SUCCESS: Value = Value("SUCCESS")
+    val FAILURE: Value = Value("FAILURE")
   }
 
   object TestSuiteReplacementChoice extends Enumeration {
     type TestSuiteReplacementChoice = Value
-    val PROCEED = Value(0)
-    val CANCEL = Value(1)
+    val PROCEED: Value = Value(0)
+    val CANCEL: Value = Value(1)
   }
 
   object LabelType extends Enumeration(1) {

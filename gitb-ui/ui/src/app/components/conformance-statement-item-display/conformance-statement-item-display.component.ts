@@ -19,12 +19,8 @@ import {ConformanceStatementItem} from 'src/app/types/conformance-statement-item
 import {ConformanceStatementResult} from 'src/app/types/conformance-statement-result';
 import {Counters} from '../test-status-icons/counters';
 import {DataService} from 'src/app/services/data.service';
-import {ConformanceStatus} from 'src/app/types/conformance-status';
-import {Observable} from 'rxjs';
-import {ConformanceTestSuite} from 'src/app/pages/organisation/conformance-statement/conformance-test-suite';
 import {ConformanceStatusSummary} from 'src/app/types/conformance-status-summary';
 import {ExportReportEvent} from 'src/app/types/export-report-event';
-import {StatementFilterState} from '../statement-controls/statement-filter-state';
 import {BaseComponent} from '../../pages/base-component.component';
 import {ConformanceStatementItemDisplayComponentApi} from './conformance-statement-item-display-component-api';
 import {
@@ -49,14 +45,6 @@ export class ConformanceStatementItemDisplayComponent extends BaseComponent impl
   @Input() withExport = false
   @Input() withResults = false
   @Input() filtering = true
-  @Input() withTestCases = false
-
-  // Inputs for when we display test cases
-  @Input() testSuiteLoader?: (item: ConformanceStatementItem) => Observable<ConformanceStatus|undefined>
-  @Input() communityId?: number
-  @Input() organisationId?: number
-  @Input() snapshotId?: number
-  @Input() snapshotLabel?: string
 
   @Output() selectionChanged = new EventEmitter<ConformanceStatementItem>()
   @Output() export = new EventEmitter<ExportReportEvent>()
@@ -68,19 +56,12 @@ export class ConformanceStatementItemDisplayComponent extends BaseComponent impl
   allChildrenHidden = false
   showCheck = false
   showResults = false
-  showTestCases = false
   results?: ConformanceStatementResult
   counters?: Counters
   status?: string
   updateTime?: string
-  testCasesOpen = false
-  testSuites: ConformanceTestSuite[]|undefined
-  displayedTestSuites: ConformanceTestSuite[] = []
   statementSummary?: ConformanceStatusSummary
-  hasBadge = false
   pending = false
-  refreshTestSuiteDisplay = new EventEmitter<void>()
-  hasExpandedTestSuites = false
   refreshCounters = new EventEmitter<Counters>()
 
   constructor(
@@ -110,36 +91,40 @@ export class ConformanceStatementItemDisplayComponent extends BaseComponent impl
     }
     this.showCheck = this.withCheck && (!this.hasChildren || this.allChildrenHidden)
     this.showResults = false
-    this.showTestCases = false
     this.results = undefined
     this.counters = undefined
     this.status = undefined
     this.updateTime = undefined
-    this.testCasesOpen = false
-    this.testSuites = undefined
-    this.displayedTestSuites = []
     this.statementSummary = undefined
-    this.hasBadge = false
     this.pending = false
-    this.hasExpandedTestSuites = false
     if (this.withResults && this.allChildrenHidden) {
       this.results = this.findResults(this.item)
       if (this.results) {
         this.showResults = true
-        this.showTestCases = this.withTestCases
-        this.counters = {
-          completed: this.results.completed,
-          failed: this.results.failed,
-          other: this.results.undefined,
-          completedOptional: this.results.completedOptional,
-          failedOptional: this.results.failedOptional,
-          otherOptional: this.results.undefinedOptional,
-          completedToConsider: this.results.completedToConsider,
-          failedToConsider: this.results.failedToConsider,
-          otherToConsider: this.results.undefinedToConsider,
-        }
-        this.updateTime = this.results.updateTime
-        this.status = this.dataService.conformanceStatusForTests(this.results.completedToConsider, this.results.failedToConsider, this.results.undefinedToConsider)
+        this.updateResults(false)
+      }
+    }
+  }
+
+  updateResults(signalUpdate: boolean) {
+    if (this.results) {
+      this.counters = {
+        completed: this.results.completed,
+        failed: this.results.failed,
+        other: this.results.undefined,
+        completedOptional: this.results.completedOptional,
+        failedOptional: this.results.failedOptional,
+        otherOptional: this.results.undefinedOptional,
+        completedToConsider: this.results.completedToConsider,
+        failedToConsider: this.results.failedToConsider,
+        otherToConsider: this.results.undefinedToConsider,
+      }
+      this.updateTime = this.results.updateTime
+      this.status = this.dataService.conformanceStatusForTests(this.results.completedToConsider, this.results.failedToConsider, this.results.undefinedToConsider)
+      if (signalUpdate) {
+        setTimeout(() => {
+          this.refreshCounters.emit(this.counters)
+        })
       }
     }
   }
@@ -173,39 +158,7 @@ export class ConformanceStatementItemDisplayComponent extends BaseComponent impl
   }
 
   itemSelected(otherItem?: ConformanceStatementItem) {
-    if (this.showTestCases) {
-      if (this.testCasesOpen) {
-        this.testCasesOpen = false
-      } else {
-        this.loadTestSuites(otherItem?otherItem:this.item)
-      }
-    }
     this.notifyForSelectionChange(otherItem)
-  }
-
-  private loadTestSuites(item: ConformanceStatementItem) {
-    if (this.testSuites) {
-      this.testCasesOpen = true
-    } else {
-      this.pending = true
-      this.testSuiteLoader!(item).subscribe((data) => {
-        if (data) {
-          this.dataService.organiseTestSuitesForDisplay(data.testSuites)
-          this.statementSummary = data.summary
-          this.hasBadge = data.summary.hasBadge
-          this.testSuites = data.testSuites
-          for (let testSuite of this.testSuites) {
-            testSuite.testCaseGroupMap = this.dataService.toTestCaseGroupMap(testSuite.testCaseGroups)
-          }
-          this.applySearchFilters()
-        }
-      }).add(() => {
-        setTimeout(() => {
-          this.testCasesOpen = true
-          this.pending = false
-        }, 1)
-      })
-    }
   }
 
   notifyForSelectionChange(otherItem?: ConformanceStatementItem) {
@@ -242,62 +195,12 @@ export class ConformanceStatementItemDisplayComponent extends BaseComponent impl
     this.notifyForSelectionChange(item)
   }
 
-  handleExportClick(statementReport: boolean, item: ConformanceStatementItem, format: 'xml'|'pdf') {
-    this.onExport({
-      item: item,
-      format: format,
-      statementReport: statementReport,
-    })
-  }
-
   onExport(event: ExportReportEvent) {
     this.export.emit(event)
   }
 
-  onViewTestSession(session: string) {
-    this.viewTestSession.emit(session)
-  }
+  showOptions() {
 
-  applySearchFilters(state?: StatementFilterState) {
-    if (state == undefined) {
-      state = {
-        showSuccessful: true,
-        showFailed: true,
-        showIncomplete: true,
-        showOptional: true,
-        showDisabled: true
-      }
-    }
-    if (this.testSuites) {
-      const testSuiteFilter = this.trimSearchString(state.testSuiteFilter)
-      const testCaseFilter = this.trimSearchString(state.testCaseFilter)
-      this.displayedTestSuites = this.dataService.filterTestSuites(this.testSuites, testSuiteFilter, testCaseFilter, state)
-      this.setCollapseAllStatus()
-      setTimeout(() => {
-        this.refreshTestSuiteDisplay.emit()
-      })
-    }
-
-  }
-
-  setCollapseAllStatus() {
-    this.hasExpandedTestSuites = this.hasExpandedTestSuite()
-  }
-
-  private hasExpandedTestSuite() {
-    for (let testSuite of this.displayedTestSuites) {
-      if (testSuite.expanded) {
-        return true
-      }
-    }
-    return false
-  }
-
-  collapseAllTestSuites() {
-    this.displayedTestSuites.forEach((testSuite: ConformanceTestSuite) => {
-      testSuite.expanded = false
-    })
-    this.setCollapseAllStatus()
   }
 
 }

@@ -23,19 +23,18 @@
                     <div class="testSuiteResult"><i containerClass="shortTooltip" [tooltip]="dataService.tooltipForTestResult(testSuite.result)" [ngClass]="dataService.iconForTestResult(testSuite.result)"></i></div>
                 </div>
             </div>
-            <div [collapse]="!testSuite.expanded" [isAnimated]="true">
+            <div [collapse]="!testSuite.expanded" [isAnimated]="animated">
                 <div class="collapsibleTestCaseDiv">
-                    <app-test-case-display
+                    <app-test-case-display #testCaseDisplayComponent
                         [testCases]="testSuite.testCases"
                         [testCaseGroups]="testSuite.testCaseGroupMap"
                         [testSuiteSpecificationReference]="testSuite"
-                        [hasOptional]="testSuite.hasOptionalTestCases"
-                        [hasDisabled]="testSuite.hasDisabledTestCases"
+                        [hasOptional]="testSuite.hasOptional"
+                        [hasDisabled]="testSuite.hasDisabled"
                         [showExecute]="showExecute"
                         [showExport]="showExport"
                         [showViewDocumentation]="showViewDocumentation"
                         [shaded]="!shaded"
-                        [refresh]="refresh"
                         [communityId]="communityId"
                         (viewTestSession)="propagateViewTestSession($event)"
                         (execute)="propagateExecuteTestSession($event)"

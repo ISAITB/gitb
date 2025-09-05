@@ -15,15 +15,15 @@
 
 export interface ConformanceStatementResult {
 
-  updateTime?: string
-  undefined: number,
   failed: number,
   completed: number,
-  undefinedOptional: number,
+  undefined: number,
   failedOptional: number,
   completedOptional: number,
-  undefinedToConsider: number,
+  undefinedOptional: number,
   failedToConsider: number,
   completedToConsider: number
+  undefinedToConsider: number,
+  updateTime?: string,
 
 }

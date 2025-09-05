@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import {mergeMap, of, share} from 'rxjs';
 import {Constants} from 'src/app/common/constants';
 import {ConformanceTestCase} from 'src/app/pages/organisation/conformance-statement/conformance-test-case';
@@ -27,6 +27,8 @@ import {ConformanceTestCaseGroup} from '../../pages/organisation/conformance-sta
 import {BaseComponent} from '../../pages/base-component.component';
 import {DataService} from '../../services/data.service';
 import {CloseEvent} from '../test-result-status-display/close-event';
+import {TestCaseDisplayComponentApi} from './test-case-display-component-api';
+import {TestResultStatusDisplayComponentApi} from '../test-result-status-display/test-result-status-display-component-api';
 
 @Component({
     selector: 'app-test-case-display',
@@ -34,7 +36,7 @@ import {CloseEvent} from '../test-result-status-display/close-event';
     styleUrls: ['./test-case-display.component.less'],
     standalone: false
 })
-export class TestCaseDisplayComponent extends BaseComponent implements OnInit {
+export class TestCaseDisplayComponent extends BaseComponent implements TestCaseDisplayComponentApi, OnInit {
 
   @Input() testCases!: ConformanceTestCase[]
   @Input() testCaseGroups?: Map<number, ConformanceTestCaseGroup>
@@ -48,11 +50,12 @@ export class TestCaseDisplayComponent extends BaseComponent implements OnInit {
   @Input() showEdit? = false
   @Input() shaded = true
   @Input() communityId?: number
-  @Input() refresh?: EventEmitter<void>
 
   @Output() viewTestSession = new EventEmitter<string>()
   @Output() execute = new EventEmitter<ConformanceTestCase>()
   @Output() edit = new EventEmitter<ConformanceTestCase>()
+
+  @ViewChildren("testResultStatusDisplayComponent") testResultStatusDisplayComponents?: QueryList<TestResultStatusDisplayComponentApi>
 
   Constants = Constants
   exportXmlPending: {[key:number]: boolean } = {}
@@ -63,6 +66,7 @@ export class TestCaseDisplayComponent extends BaseComponent implements OnInit {
   hasDescription: {[key:number]: boolean } = {}
   descriptionVisible: {[key:number]: boolean } = {}
   statusCloseEmitter = new EventEmitter<CloseEvent>()
+  animated = true
 
   constructor(
     private readonly reportService: ReportService,
@@ -73,11 +77,13 @@ export class TestCaseDisplayComponent extends BaseComponent implements OnInit {
 
   ngOnInit(): void {
     this.resetPresentation()
-    if (this.refresh) {
-      this.refresh.subscribe(() => {
-        this.resetPresentation()
-      })
-    }
+  }
+
+  refresh() {
+    this.resetPresentation()
+    this.testResultStatusDisplayComponents?.forEach((component) => {
+      component.refresh()
+    })
   }
 
   getParsedTags(testCase: ConformanceTestCase) {
@@ -88,15 +94,19 @@ export class TestCaseDisplayComponent extends BaseComponent implements OnInit {
   }
 
   private resetPresentation() {
-    for (let testCase of this.testCases) {
-      this.hasDescription[testCase.id] = testCase.description != undefined && testCase.description != ''
-      if (this.hasDescription[testCase.id] && !this.hasDescriptions) {
-        this.hasDescriptions = true
-      }
-      this.descriptionVisible[testCase.id] = false
-    }
+    this.animated = false
     setTimeout(() => {
-      this.dataService.prepareTestCaseGroupPresentation(this.testCases, this.testCaseGroups)
+      for (let testCase of this.testCases) {
+        this.hasDescription[testCase.id] = testCase.description != undefined && testCase.description != ''
+        if (this.hasDescription[testCase.id] && !this.hasDescriptions) {
+          this.hasDescriptions = true
+        }
+        this.descriptionVisible[testCase.id] = false
+      }
+      setTimeout(() => {
+        this.dataService.prepareTestCaseGroupPresentation(this.testCases, this.testCaseGroups)
+        this.animated = true
+      })
     })
   }
 

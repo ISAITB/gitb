@@ -36,5 +36,7 @@ class ConformanceStatus (
   var result: TestResultType,
   var updateTime: Option[Timestamp],
   var hasBadge: Boolean,
-  var testSuites: Iterable[ConformanceTestSuite]
+  var hasDisabled: Boolean,
+  var testSuites: Iterable[ConformanceTestSuite],
+  var testSuiteCount:Int
 ) {}

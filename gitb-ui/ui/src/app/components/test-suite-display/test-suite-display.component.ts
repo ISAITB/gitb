@@ -13,13 +13,15 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { Constants } from 'src/app/common/constants';
-import { ConformanceTestCase } from 'src/app/pages/organisation/conformance-statement/conformance-test-case';
-import { ConformanceTestSuite } from 'src/app/pages/organisation/conformance-statement/conformance-test-suite';
-import { ConformanceService } from 'src/app/services/conformance.service';
-import { DataService } from 'src/app/services/data.service';
-import { HtmlService } from 'src/app/services/html.service';
+import {Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
+import {Constants} from 'src/app/common/constants';
+import {ConformanceTestCase} from 'src/app/pages/organisation/conformance-statement/conformance-test-case';
+import {ConformanceTestSuite} from 'src/app/pages/organisation/conformance-statement/conformance-test-suite';
+import {ConformanceService} from 'src/app/services/conformance.service';
+import {DataService} from 'src/app/services/data.service';
+import {HtmlService} from 'src/app/services/html.service';
+import {TestSuiteDisplayComponentApi} from './test-suite-display-component-api';
+import {TestCaseDisplayComponentApi} from '../test-case-display/test-case-display-component-api';
 
 @Component({
     selector: 'app-test-suite-display',
@@ -27,7 +29,7 @@ import { HtmlService } from 'src/app/services/html.service';
     styleUrls: ['./test-suite-display.component.less'],
     standalone: false
 })
-export class TestSuiteDisplayComponent implements OnInit {
+export class TestSuiteDisplayComponent implements OnInit, TestSuiteDisplayComponentApi {
 
   @Input() testSuites?: ConformanceTestSuite[] = []
   @Input() showExecute? = true
@@ -35,7 +37,6 @@ export class TestSuiteDisplayComponent implements OnInit {
   @Input() showViewDocumentation? = true
   @Input() shaded = false
   @Input() communityId?: number
-  @Input() refresh?: EventEmitter<void>
 
   @Output() viewTestSession = new EventEmitter<string>()
   @Output() viewTestCaseDocumentation = new EventEmitter<number>()
@@ -43,10 +44,13 @@ export class TestSuiteDisplayComponent implements OnInit {
   @Output() executeTestSuite = new EventEmitter<ConformanceTestSuite>()
   @Output() toggleExpand = new EventEmitter<boolean>()
 
+  @ViewChildren("testCaseDisplayComponent") testCaseDisplayComponents?: QueryList<TestCaseDisplayComponentApi>
+
   hovering: {[key:number]: boolean } = {}
   viewDocumentationPending: {[key:number]: boolean } = {}
+  animated = true
 
-  Constants = Constants
+  protected readonly Constants = Constants
 
   constructor(
     private readonly conformanceService: ConformanceService,
@@ -56,11 +60,19 @@ export class TestSuiteDisplayComponent implements OnInit {
 
   ngOnInit(): void {
     this.prepareTestCaseGroupMaps()
-    if (this.refresh) {
-      this.refresh.subscribe(() => {
-        this.prepareTestCaseGroupMaps()
+  }
+
+  refresh() {
+    this.animated = false
+    setTimeout(() => {
+      this.prepareTestCaseGroupMaps()
+      this.testCaseDisplayComponents?.forEach((testCaseDisplayComponent) => {
+        testCaseDisplayComponent.refresh()
       })
-    }
+      setTimeout(() => {
+        this.animated = true
+      })
+    })
   }
 
   private prepareTestCaseGroupMaps(): void {

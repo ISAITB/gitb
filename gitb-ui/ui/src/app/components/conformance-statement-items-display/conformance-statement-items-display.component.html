@@ -10,14 +10,7 @@
         [withCheck]="withCheck"
         [withExport]="withExport"
         [withResults]="withResults"
-        [withTestCases]="withTestCases"
-        [testSuiteLoader]="testSuiteLoader"
-        [communityId]="communityId"
-        [organisationId]="organisationId"
-        [snapshotId]="snapshotId"
-        [snapshotLabel]="snapshotLabel"
         (selectionChanged)="childSelectionChanged($event)"
         (export)="childExported($event)"
-        (viewTestSession)="onViewTestSession($event)"
     ></app-conformance-statement-item-display>
 }

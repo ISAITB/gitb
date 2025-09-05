@@ -84,7 +84,7 @@
 		<tabset #tabs>
 			<tab (selectTab)="showTab(Constants.TAB.TEST_SUITE.TEST_CASES)" customClass="tabClass">
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-file-code" text="Test cases"></app-tab-title></ng-template>
-				<div class="tabPanel">
+				<div class="tabPanel" [class.disable-events]="testCasesRefreshing">
                     @if (dataStatus.status != Constants.STATUS.FINISHED) {
                         <div class="message-div">
                             <div class="pending-icon"><app-pending-block [pending]="true"></app-pending-block></div>
@@ -98,7 +98,7 @@
                         </div>
                         @if (testCasesToShow && testCasesToShow.length > 0) {
                             <div class="testCaseDisplayContainer">
-                                <app-test-case-display
+                                <app-test-case-display #testCaseDisplayComponent
                                     [testCases]="testCasesToShow"
                                     [testCaseGroups]="testCaseGroupMap"
                                     [hasOptional]="hasOptionalTestCases"
@@ -109,7 +109,6 @@
                                     [showViewDocumentation]="true"
                                     [showEdit]="true"
                                     [shaded]="false"
-                                    [refresh]="refreshTestCases"
                                     (edit)="onTestCaseSelect($event.id)"
                                 ></app-test-case-display>
                             </div>
@@ -119,6 +118,7 @@
                             </div>
                         }
                     }
+                    <app-paging-controls #pagingControls [placement]="PagingPlacement.tab" (navigation)="testCasePageNavigation($event)"></app-paging-controls>
 				</div>
 			</tab>
 			@if (testSuite.shared) {

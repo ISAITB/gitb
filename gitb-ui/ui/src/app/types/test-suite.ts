@@ -13,13 +13,12 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { EntityWithId } from "./entity-with-id"
-import { SpecificationReferenceInfo } from "./specification-reference-info"
+import {SpecificationReferenceInfo} from './specification-reference-info';
+import {TestSuiteMinimalInfo} from './test-suite-minimal-info';
 
-export interface TestSuite extends EntityWithId, SpecificationReferenceInfo {
+export interface TestSuite extends TestSuiteMinimalInfo, SpecificationReferenceInfo {
 
     identifier: string
-    sname: string
     version: string
     description?: string
     documentation?: string

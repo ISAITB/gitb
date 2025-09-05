@@ -37,7 +37,6 @@ import {saveAs} from 'file-saver';
 import {LogLevel} from '../types/log-level';
 import {Specification} from '../types/specification';
 import {DomainSpecification} from '../types/domain-specification';
-import {find} from 'lodash';
 import {PageChange} from '../types/page-change';
 import {BadgesInfo} from '../components/manage-badges/badges-info';
 import {BreadcrumbChange} from '../types/breadcrumb-change';
@@ -1434,8 +1433,6 @@ export class DataService {
   organiseTestSuitesForDisplay(testSuites: ConformanceTestSuite[]|undefined) {
     if (testSuites != undefined) {
       for (let testSuite of testSuites) {
-        testSuite.hasDisabledTestCases = find(testSuite.testCases, (testCase) => testCase.disabled) != undefined
-        testSuite.hasOptionalTestCases = find(testSuite.testCases, (testCase) => testCase.optional) != undefined
         testSuite.expanded = true
       }
     }
@@ -1846,48 +1843,48 @@ export class DataService {
   }
 
   filterTestSuites(testSuites: ConformanceTestSuite[], testSuiteFilter: string|undefined, testCaseFilter: string|undefined, testCaseFilterState: TestCaseFilterState): ConformanceTestSuite[] {
-    let filteredTestSuites: ConformanceTestSuite[] = []
-    for (let testSuite of testSuites) {
-      if (testSuiteFilter == undefined
-        || (testSuite.sname.toLocaleLowerCase().indexOf(testSuiteFilter) >= 0)
-        || (testSuite.description != undefined && testSuite.description.toLocaleLowerCase().indexOf(testSuiteFilter) >= 0)) {
-        let testCases: ConformanceTestCase[] = []
-        for (let testCase of testSuite.testCases) {
-          if ((testCase.result == Constants.TEST_CASE_RESULT.SUCCESS && testCaseFilterState.showSuccessful
-              || testCase.result == Constants.TEST_CASE_RESULT.FAILURE && testCaseFilterState.showFailed
-              || testCase.result == Constants.TEST_CASE_RESULT.UNDEFINED && testCaseFilterState.showIncomplete)
-            && (!testCase.optional || testCaseFilterState.showOptional)
-            && (!testCase.disabled || testCaseFilterState.showDisabled)
-            && (testCaseFilter == undefined
-              || (testCase.sname.toLocaleLowerCase().indexOf(testCaseFilter) >= 0)
-              || (testCase.description != undefined && testCase.description.toLocaleLowerCase().indexOf(testCaseFilter) >= 0))) {
-            testCases.push(testCase)
-          }
-        }
-        if (testCases.length > 0) {
-          filteredTestSuites.push({
-            id: testSuite.id,
-            sname: testSuite.sname,
-            result: testSuite.result,
-            hasDocumentation: testSuite.hasDocumentation,
-            expanded: true,
-            description: testSuite.description,
-            hasOptionalTestCases: testSuite.hasOptionalTestCases && testCaseFilterState.showOptional,
-            hasDisabledTestCases: testSuite.hasDisabledTestCases && testCaseFilterState.showDisabled,
-            testCases: testCases,
-            testCaseGroups: testSuite.testCaseGroups,
-            testCaseGroupMap: testSuite.testCaseGroupMap,
-            specReference: testSuite.specReference,
-            specDescription: testSuite.specDescription,
-            specLink: testSuite.specLink
-          })
-        }
-      }
-    }
-    for (let testSuite of filteredTestSuites) {
-      this.prepareTestCaseGroupPresentation(testSuite.testCases, testSuite.testCaseGroupMap)
-    }
-    return filteredTestSuites
+    // let filteredTestSuites: ConformanceTestSuite[] = []
+    // for (let testSuite of testSuites) {
+    //   if (testSuiteFilter == undefined
+    //     || (testSuite.sname.toLocaleLowerCase().indexOf(testSuiteFilter) >= 0)
+    //     || (testSuite.description != undefined && testSuite.description.toLocaleLowerCase().indexOf(testSuiteFilter) >= 0)) {
+    //     let testCases: ConformanceTestCase[] = []
+    //     for (let testCase of testSuite.testCases) {
+    //       if ((testCase.result == Constants.TEST_CASE_RESULT.SUCCESS && testCaseFilterState.showSuccessful
+    //           || testCase.result == Constants.TEST_CASE_RESULT.FAILURE && testCaseFilterState.showFailed
+    //           || testCase.result == Constants.TEST_CASE_RESULT.UNDEFINED && testCaseFilterState.showIncomplete)
+    //         && (!testCase.optional || testCaseFilterState.showOptional)
+    //         && (!testCase.disabled || testCaseFilterState.showDisabled)
+    //         && (testCaseFilter == undefined
+    //           || (testCase.sname.toLocaleLowerCase().indexOf(testCaseFilter) >= 0)
+    //           || (testCase.description != undefined && testCase.description.toLocaleLowerCase().indexOf(testCaseFilter) >= 0))) {
+    //         testCases.push(testCase)
+    //       }
+    //     }
+    //     if (testCases.length > 0) {
+    //       filteredTestSuites.push({
+    //         id: testSuite.id,
+    //         sname: testSuite.sname,
+    //         result: testSuite.result,
+    //         hasDocumentation: testSuite.hasDocumentation,
+    //         expanded: true,
+    //         description: testSuite.description,
+    //         hasOptionalTestCases: testSuite.hasOptionalTestCases && testCaseFilterState.showOptional,
+    //         hasDisabledTestCases: testSuite.hasDisabledTestCases && testCaseFilterState.showDisabled,
+    //         testCases: testCases,
+    //         testCaseGroups: testSuite.testCaseGroups,
+    //         testCaseGroupMap: testSuite.testCaseGroupMap,
+    //         specReference: testSuite.specReference,
+    //         specDescription: testSuite.specDescription,
+    //         specLink: testSuite.specLink
+    //       })
+    //     }
+    //   }
+    // }
+    // for (let testSuite of filteredTestSuites) {
+    //   this.prepareTestCaseGroupPresentation(testSuite.testCases, testSuite.testCaseGroupMap)
+    // }
+    return testSuites
   }
 
   testServiceTypeLabel(serviceType: number) {

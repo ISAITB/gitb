@@ -153,6 +153,18 @@ class TestSuiteService @Inject() (authorizedAction: AuthorizedAction,
 		}
 	}
 
+	def getTestSuiteTestCasesWithPaging(testSuiteId: Long): Action[AnyContent] = authorizedAction.async { request =>
+		authorizationManager.canViewTestSuite(request, testSuiteId).flatMap { _ =>
+			val filter = ParameterExtractor.optionalQueryParameter(request, ParameterNames.FILTER)
+			val page = ParameterExtractor.extractPageNumber(request)
+			val limit = ParameterExtractor.extractPageLimit(request)
+			testSuiteManager.getTestSuiteTestCasesWithPaging(testSuiteId, filter, page, limit).map { result =>
+				val json: String = JsonUtil.jsSearchResult(result, JsonUtil.jsTestSuiteTestCases).toString
+				ResponseConstructor.constructJsonResponse(json)
+			}
+		}
+	}
+
 	def getTestSuiteWithTestCases(testSuiteId: Long): Action[AnyContent] = authorizedAction.async { request =>
 		authorizationManager.canViewTestSuite(request, testSuiteId).flatMap { _ =>
 			testSuiteManager.getTestSuiteWithTestCaseData(testSuiteId).map { testSuite =>

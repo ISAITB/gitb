@@ -8,9 +8,6 @@
                     @if (showExport) {
                         <button type="button" class="btn btn-secondary"  (click)="onExportConformanceStatementsAsCsv()" [pending]="exportPending">Export CSV</button>
                     }
-                    @if (showCollapseAllStatements) {
-                        <button type="button" class="btn btn-secondary" (click)="onCollapseAll()">Collapse all</button>
-                    }
                 }
                 <div class="btn-group" dropdown [isDisabled]="selectedCommunityId == undefined" placement="bottom right">
                     <button id="button-snapshot" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-snapshot"><span class="me-2">{{snapshotButtonLabel}}</span></button>
@@ -72,7 +69,7 @@
                                 }
                             }
                         </div>
-                        @if (dataStatus.status == Constants.STATUS.FINISHED && (hasStatementsBeforeFiltering || statements.length > 0)) {
+                        @if ((selectedCommunityId != undefined && selectedOrganisationId != undefined && selectedSystemId != undefined) && dataStatus.status == Constants.STATUS.FINISHED && (hasStatementsBeforeFiltering || statements.length > 0)) {
                             <div #searchControls class="partyButtons">
                                 <div class="text-filter">
                                     <app-text-filter name="statementFilter" [width]="350" [placeholder]="'Search statements...'" [(ngModel)]="searchCriteria.filterText" (apply)="getConformanceStatementsForTreeView()"></app-text-filter>
@@ -134,13 +131,7 @@
                                     [withCheck]="false"
                                     [withExport]="true"
                                     [withResults]="true"
-                                    [withTestCases]="true"
-                                    [communityId]="selectedCommunityId"
-                                    [organisationId]="selectedOrganisationId"
-                                    [snapshotId]="activeConformanceSnapshot?.id"
-                                    [snapshotLabel]="activeConformanceSnapshot?.label"
-                                    [testSuiteLoader]="testSuiteLoader()"
-                                    (viewTestSession)="toTestSession($event)"
+                                    (selectionChanged)="onStatementSelect($event)"
                                     (export)="onExportConformanceItem($event)"
                                 ></app-conformance-statement-items-display>
                             </div>
@@ -161,8 +152,7 @@
                                              [snapshot]="activeConformanceSnapshot"
                                              (communityChange)="listViewCommunityChange($event)"
                                              (searchChange)="listViewSearching($event)"
-                                             (exportChange)="listViewExportChange($event)"
-                                             (collapseChange)="listViewStatementCollapseChange($event)"></app-conformance-statement-table>
+                                             (exportChange)="listViewExportChange($event)"></app-conformance-statement-table>
         }
     </div>
 </div>

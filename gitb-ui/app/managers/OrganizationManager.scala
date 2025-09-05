@@ -74,6 +74,7 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
   def searchOrganizations(communityIds: Option[List[Long]]): Future[List[Organizations]] = {
     DB.run(
       PersistenceSchema.organizations
+        .filter(_.adminOrganization === false)
         .filterOpt(communityIds)((q, ids) => q.community inSet ids)
         .sortBy(_.shortname.asc)
         .result

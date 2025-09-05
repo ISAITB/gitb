@@ -41,6 +41,7 @@ import java.util
 import scala.collection.mutable.ListBuffer
 import scala.collection.{immutable, mutable}
 import scala.jdk.CollectionConverters.{CollectionHasAsScala, IterableHasAsJava}
+import models.statement.TestSuiteMinimalInformation
 
 object JsonUtil {
 
@@ -439,6 +440,10 @@ object JsonUtil {
       json = json.append(jsTestSuite(testSuite, None, withDocumentation = false, withSpecReference = false))
     }
     json
+  }
+
+  def jsTestSuiteTestCases(testCases: Iterable[TestCases]): JsArray = {
+    jsTestCasesList(testCases, withSpecReference = true, withTags = true)
   }
 
   def jsTestSuite(testSuite: TestSuite, withDocumentation: Boolean, withSpecReference: Boolean, withGroups: Boolean, withTags: Boolean): JsObject = {
@@ -2192,7 +2197,7 @@ object JsonUtil {
    * @param list List of TestCases to be converted
    * @return JsArray
    */
-  def jsTestCasesList(list:List[TestCases], withSpecReference: Boolean = false, withTags: Boolean = false):JsArray = {
+  def jsTestCasesList(list: Iterable[TestCases], withSpecReference: Boolean = false, withTags: Boolean = false):JsArray = {
     var json = Json.arr()
     list.foreach{ testCase =>
       json = json.append(jsTestCases(testCase, withDocumentation = false, withTags, withSpecReference = withSpecReference))
@@ -3116,6 +3121,7 @@ object JsonUtil {
   def jsConformanceTestSuites(testSuites: Iterable[ConformanceTestSuite]): JsArray = {
     var json = Json.arr()
     testSuites.foreach { testSuite =>
+      val hasOptional = testSuite.completedOptional > 0 || testSuite.failedOptional > 0 || testSuite.undefinedOptional > 0
       var obj = Json.obj(
         "id" -> testSuite.id,
         "sname" -> testSuite.name,
@@ -3125,6 +3131,8 @@ object JsonUtil {
         "specDescription" -> (if (testSuite.specDescription.isDefined) testSuite.specDescription.get else JsNull),
         "specLink" -> (if (testSuite.specLink.isDefined) testSuite.specLink.get else JsNull),
         "result" -> testSuite.result.value(),
+        "hasOptional" -> hasOptional,
+        "hasDisabled" -> testSuite.hasDisabled,
         "testCases" -> jsConformanceTestCases(testSuite.testCases)
       )
       if (testSuite.testCaseGroups.nonEmpty) {
@@ -3164,13 +3172,21 @@ object JsonUtil {
     json
   }
 
-  def jsConformanceStatement(statement: ConformanceStatementItem, results: models.ConformanceStatus, systemInfo: models.System): JsObject = {
+  def jsConformanceStatement(statement: ConformanceStatementItem, results: SearchResult[models.ConformanceStatus], systemInfo: models.System): JsObject = {
     Json.obj(
       "statement" -> jsConformanceStatementItem(statement),
-      "results" -> jsConformanceStatus(results),
+      "results" -> jsSearchResult(results, jsConformanceStatusForPaging),
       "system" -> jsSystem(systemInfo.toCaseObject),
       "organisation" -> jsOrganization(systemInfo.owner.get) // This is always present.
     )
+  }
+
+  def jsConformanceStatusForPaging(list: Iterable[ConformanceStatus]): JsArray = {
+    var json = Json.arr()
+    list.foreach{ status =>
+      json = json.append(jsConformanceStatus(status))
+    }
+    json
   }
 
   def jsConformanceStatus(status: ConformanceStatus): JsObject = {
@@ -3185,6 +3201,7 @@ object JsonUtil {
         "failedToConsider"    -> status.failedToConsider,
         "completedToConsider"    -> status.completedToConsider,
         "undefinedToConsider"    -> status.undefinedToConsider,
+        "hasDisabled" -> status.hasDisabled,
         "result" -> status.result.value(),
         "hasBadge" -> status.hasBadge,
         "updateTime" -> (if (status.updateTime.isDefined) TimeUtil.serializeTimestamp(status.updateTime.get) else JsNull),
@@ -3193,7 +3210,8 @@ object JsonUtil {
         "specificationId" -> status.specificationId,
         "actorId" -> status.actorId
       ),
-      "testSuites" -> jsConformanceTestSuites(status.testSuites)
+      "testSuites" -> jsConformanceTestSuites(status.testSuites),
+      "testSuiteCount" -> status.testSuiteCount
     )
     json
   }
@@ -3836,6 +3854,18 @@ object JsonUtil {
       json = json + ("version" -> JsString(service.service.service.version.get))
     }
     json
+  }
+
+  def jsTestSuiteMinimalInformations(values: Iterable[TestSuiteMinimalInformation]): JsArray = {
+    JsArray(values.map(jsTestSuiteMinimalInformation(_)).toSeq)
+    
+  }
+
+  def jsTestSuiteMinimalInformation(value: TestSuiteMinimalInformation): JsObject = {
+    Json.obj(
+      "id" -> value.id,
+      "sname" -> value.shortName
+    )
   }
 
 }

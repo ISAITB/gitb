@@ -14,10 +14,8 @@
  */
 
 import {Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
-import {Observable} from 'rxjs';
 import {Constants} from 'src/app/common/constants';
 import {ConformanceStatementItem} from 'src/app/types/conformance-statement-item';
-import {ConformanceStatus} from 'src/app/types/conformance-status';
 import {ExportReportEvent} from 'src/app/types/export-report-event';
 import {ConformanceStatementItemsDisplayComponentApi} from './conformance-statement-items-display-component-api';
 import {
@@ -41,18 +39,9 @@ export class ConformanceStatementItemsDisplayComponent implements OnInit, Confor
   @Input() withExport = false
   @Input() withResults = false
   @Input() filtering = true
-  @Input() withTestCases = false
-
-  // Inputs for when we display test cases
-  @Input() testSuiteLoader?: (item: ConformanceStatementItem) => Observable<ConformanceStatus|undefined>
-  @Input() communityId?: number
-  @Input() organisationId?: number
-  @Input() snapshotId?: number
-  @Input() snapshotLabel?: string
 
   @Output() selectionChanged = new EventEmitter<ConformanceStatementItem>()
   @Output() export = new EventEmitter<ExportReportEvent>()
-  @Output() viewTestSession = new EventEmitter<string>()
 
   @ViewChildren('itemComponent') itemComponents?: QueryList<ConformanceStatementItemDisplayComponentApi>
 
@@ -71,10 +60,6 @@ export class ConformanceStatementItemsDisplayComponent implements OnInit, Confor
 
   childExported(event: ExportReportEvent) {
     this.export.emit(event)
-  }
-
-  onViewTestSession(session: string) {
-    this.viewTestSession.emit(session)
   }
 
   reset() {

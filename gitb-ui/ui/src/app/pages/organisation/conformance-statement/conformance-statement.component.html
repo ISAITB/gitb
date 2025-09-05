@@ -26,7 +26,12 @@
 								</div>
 							</div>
 						</div>
-						<app-conformance-statement-items-display [items]="[statement]" [wrapDescriptions]="true" [expandable]="false" [filtering]="false" [withCheck]="false" [withResults]="false"></app-conformance-statement-items-display>
+						<app-conformance-statement-items-display [items]="[statement]"
+                                                                 [wrapDescriptions]="true"
+                                                                 [expandable]="false"
+                                                                 [filtering]="false"
+                                                                 [withCheck]="false"
+                                                                 [withResults]="false"></app-conformance-statement-items-display>
 						@if (statusCounters && conformanceStatus) {
 							<div class="statementStatus" [class.wrapped]="resultsWrapped">
                                 <div #statusInfoContainer class="statusInfoContainer">
@@ -106,18 +111,15 @@
 	<tabset #tabs>
 		<tab (selectTab)="showTab(Constants.TAB.CONFORMANCE_STATEMENT.TESTS)" customClass="tabClass">
 			<ng-template tabHeading><app-tab-title icon="fa-solid fa-list-ul" text="Conformance tests"></app-tab-title></ng-template>
-			<div class="tabPanel">
+			<div class="tabPanel" [class.disable-events]="updatingTests">
 				<div class="tabControls">
                     <div class="testFilters">
                         <div class="btn-toolbar">
-                            @if (testSuites.length > 1) {
-                                <app-text-filter name="testSuiteFilter" [width]="250" [placeholder]="'Search test suites...'" [(ngModel)]="testSuiteFilter" (apply)="applySearchFilters()"></app-text-filter>
+                            @if (unfilteredTestSuiteCount > 1) {
+                                <app-multi-select-filter [(ngModel)]="selectedTestSuite" [config]="testSuiteSelectionConfig" (apply)="selectedTestSuiteChanged($event)"></app-multi-select-filter>
                             }
-                            <app-text-filter name="testCaseFilter" [width]="250" [placeholder]="'Search test cases...'" [(ngModel)]="testCaseFilter" (apply)="applySearchFilters()"></app-text-filter>
                             <app-test-case-filter #testCaseResultFilter [options]="testCaseFilterOptions" (apply)="resultFilterUpdated($event)"></app-test-case-filter>
-                            @if (testSuites.length > 1 && hasExpandedTestSuites) {
-                                <button type="button" class="btn btn-secondary" (click)="collapseAll()">Collapse all</button>
-                            }
+                            <app-text-filter name="testCaseFilter" [width]="250" [placeholder]="'Search tests...'" [(ngModel)]="testCaseSearchCriteria.testCaseFilterText" (apply)="applySearchFilters()"></app-text-filter>
                         </div>
                     </div>
                     @if (!isReadonly) {
@@ -136,28 +138,27 @@
                         </div>
                     }
 				</div>
-				@if (loadingTests) {
+				@if (loadingTests.status == Constants.STATUS.PENDING) {
 					<app-pending-block></app-pending-block>
 				} @else if (displayedTestSuites.length == 0) {
 					<div class="card card-body noTestCasesDiv">
-						@if (testSuites.length == 0) {
+						@if (unfilteredTestCaseCount == 0) {
 							<span>No test cases are defined in this conformance statement.</span>
 						} @else {
 							<span>No test cases were found matching your search criteria.</span>
 						}
 					</div>
 				} @else {
-					<app-test-suite-display
+					<app-test-suite-display #testSuiteDisplayComponent
 						[testSuites]="displayedTestSuites"
 						[showExecute]="!isReadonly"
                         [communityId]="communityIdOfStatement"
-                        [refresh]="refreshTestSuiteDisplay"
 						(viewTestSession)="toTestSession($event)"
 						(executeTestCase)="onTestSelect($event)"
 						(executeTestSuite)="onTestSuiteSelect($event)"
-                        (toggleExpand)="setTestSuiteExpandedStatus()"
 					></app-test-suite-display>
 				}
+                <app-paging-controls #pagingControls [placement]="PagingPlacement.tab" (navigation)="testSuitePageNavigation($event)"></app-paging-controls>
 			</div>
 		</tab>
 		@if (!isReadonly) {

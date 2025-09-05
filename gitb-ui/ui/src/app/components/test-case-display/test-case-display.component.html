@@ -1,5 +1,5 @@
 <div class="testCaseContainer" (click)="$event.stopPropagation()">
-    @for (testCase of testCases; track testCase.id; let first = $first, last = $last) {
+    @for (testCase of testCases; track testCase.id; let last = $last) {
         <div class="testCaseHolder"
              [class.inGroup]="testCase.group != undefined"
              [class.groupFirst]="testCase.groupFirst"
@@ -75,20 +75,19 @@
                         }
                         @if (showResults) {
                             <div class="testCaseStatus">
-                                <app-test-result-status-display
+                                <app-test-result-status-display #testResultStatusDisplayComponent
                                     [popupId]="testCase.id"
                                     [message]="testCase.outputMessage"
                                     [result]="testCase.result"
                                     [ignored]="testCase.result != testCase.resultToShow"
                                     [close]="statusCloseEmitter"
-                                    [refresh]="refresh"
                                     (open)="statusPopupOpened($event)"></app-test-result-status-display>
                             </div>
                         }
                     </div>
                 </div>
                 @if (hasDescription[testCase.id]) {
-                    <div [collapse]="!descriptionVisible[testCase.id]" [isAnimated]="true" class="testCaseDescriptionContainer">
+                    <div [collapse]="!descriptionVisible[testCase.id]" [isAnimated]="animated" class="testCaseDescriptionContainer">
                         <div class="testCaseDescription">{{testCase.description}}</div>
                         <app-specification-reference-display [reference]="testCase"></app-specification-reference-display>
                     </div>

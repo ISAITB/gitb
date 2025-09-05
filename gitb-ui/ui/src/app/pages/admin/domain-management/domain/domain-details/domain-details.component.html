@@ -94,7 +94,7 @@
                                 </div>
                             } @else {
                                 @for (spec of domainSpecifications; track spec.id; let firstGroup = $first, lastGroup = $last) {
-                                    <app-domain-specification-display
+                                    <app-domain-specification-display #specificationDisplayComponent
                                         [spec]="spec"
                                         [first]="firstGroup"
                                         [last]="lastGroup"
@@ -107,6 +107,7 @@
                                         (selectSpec)="onSpecificationSelect($event)"
                                         (dragging)="dragOngoing = $event"
                                         (click)="onSpecificationGroupSelect(spec)"
+                                        (controlSelected)="onSpecificationDisplayControlSelected($event)"
                                     ></app-domain-specification-display>
                                 }
                             }

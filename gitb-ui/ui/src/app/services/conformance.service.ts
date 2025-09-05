@@ -56,6 +56,8 @@ import {ConformanceStatementSearchResult} from '../types/conformance-statement-s
 import {DomainSpecification} from '../types/domain-specification';
 import {CreateConformanceStatementSearchResult} from '../types/create-conformance-statement-search-result';
 import {CreateStatementSearchCriteria} from '../pages/organisation/create-conformance-statement/create-statement-search-criteria';
+import {TestCaseSearchCriteria} from '../types/test-case-search-criteria';
+import {TestSuiteMinimalInfo} from '../types/test-suite-minimal-info';
 
 @Injectable({
   providedIn: 'root'
@@ -1167,6 +1169,39 @@ export class ConformanceService {
     }
     return this.restService.get<ConformanceStatementWithResults>({
       path: ROUTES.controllers.ConformanceService.getConformanceStatement(system, actor).url,
+      authenticate: true,
+      params: params
+    })
+  }
+
+  getConformanceStatementTestSuitesForFiltering(system: number, actor: number, snapshotId: number|undefined) {
+    let params: any = undefined
+    if (snapshotId != undefined) {
+      params = {}
+      params.snapshot = snapshotId
+    }
+    return this.restService.get<TestSuiteMinimalInfo[]>({
+      path: ROUTES.controllers.ConformanceService.getConformanceStatementTestSuitesForFiltering(system, actor).url,
+      authenticate: true,
+      params: params
+    })
+  }
+
+  getConformanceStatementTests(system: number, actor: number, snapshotId: number|undefined, searchCriteria: TestCaseSearchCriteria, page: number, limit: number) {
+    let params: any = {
+      succeeded: searchCriteria.succeeded,
+      failed: searchCriteria.failed,
+      incomplete: searchCriteria.incomplete,
+      optional: searchCriteria.optional,
+      disabled: searchCriteria.disabled,
+      page: page,
+      limit: limit
+    }
+    if (searchCriteria.testSuiteId != undefined) params.testSuite = searchCriteria.testSuiteId
+    if (searchCriteria.testCaseFilterText != undefined) params.testCase = searchCriteria.testCaseFilterText
+    if (snapshotId != undefined) params.snapshot = snapshotId
+    return this.restService.get<SearchResult<ConformanceStatus>>({
+      path: ROUTES.controllers.ConformanceService.getConformanceStatementTests(system, actor).url,
       authenticate: true,
       params: params
     })

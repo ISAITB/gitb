@@ -35,21 +35,35 @@ export class TestCaseFilterComponent implements TestCaseFilterApi, OnInit {
   testDisplayOptions!: CheckboxOption[][]
   refreshDisplayOptions = new EventEmitter<CheckboxOption[][]>()
 
+  private showSuccessful?: boolean
+  private showFailed?: boolean
+  private showIncomplete?: boolean
+  private showOptional?: boolean
+  private showDisabled?: boolean
+
   constructor(private readonly dataService: DataService) {
   }
 
   ngOnInit(): void {
-    this.updateOptions(this.options)
+    this.updateOptions(this.options, false)
   }
 
-  refreshOptions(options?: TestCaseFilterOptions): void {
-    this.updateOptions(options)
+  refreshOptions(options: TestCaseFilterOptions|undefined, keepCurrentState: boolean): void {
+    this.updateOptions(options, keepCurrentState)
   }
 
-  private updateOptions(options?: TestCaseFilterOptions): void {
-    const showSuccessfulDefault = options == undefined || options.initialState == undefined || options.initialState.showSuccessful
-    const showFailedDefault = options == undefined || options.initialState == undefined || options.initialState.showFailed
-    const showIncompleteDefault = options == undefined || options.initialState == undefined || options.initialState.showIncomplete
+  private updateOptions(options: TestCaseFilterOptions|undefined, keepCurrentState: boolean): void {
+    let showSuccessfulDefault: boolean|undefined
+    let showFailedDefault: boolean|undefined
+    let showIncompleteDefault: boolean|undefined
+    if (keepCurrentState) {
+      showSuccessfulDefault = this.showSuccessful
+      showFailedDefault = this.showFailed
+      showIncompleteDefault = this.showIncomplete
+    }
+    if (showSuccessfulDefault == undefined) showSuccessfulDefault = options == undefined || options.initialState == undefined || options.initialState.showSuccessful
+    if (showFailedDefault == undefined) showFailedDefault = options == undefined || options.initialState == undefined || options.initialState.showFailed
+    if (showIncompleteDefault == undefined) showIncompleteDefault = options == undefined || options.initialState == undefined || options.initialState.showIncomplete
     this.testDisplayOptions = [[
       {key: Constants.TEST_FILTER.SUCCEEDED, label: 'Succeeded tests', default: showSuccessfulDefault, iconClass: this.dataService.iconForTestResult(Constants.TEST_CASE_RESULT.SUCCESS)},
       {key: Constants.TEST_FILTER.FAILED, label: 'Failed tests', default: showFailedDefault, iconClass: this.dataService.iconForTestResult(Constants.TEST_CASE_RESULT.FAILURE)},
@@ -57,26 +71,39 @@ export class TestCaseFilterComponent implements TestCaseFilterApi, OnInit {
     ]]
     const otherOptions: CheckboxOption[] = []
     if (options?.showOptional) {
-      const showOptionalDefault = options.initialState == undefined || options.initialState.showOptional
+      let showOptionalDefault: boolean|undefined
+      if (keepCurrentState) {
+        showOptionalDefault = this.showOptional
+      }
+      if (showOptionalDefault == undefined) showOptionalDefault = options.initialState == undefined || options.initialState.showOptional
       otherOptions.push({key: Constants.TEST_FILTER.OPTIONAL, label: 'Optional tests', default: showOptionalDefault})
     }
     if (options?.showDisabled) {
-      const showDisabledDefault = options.initialState != undefined && options.initialState.showDisabled
+      let showDisabledDefault: boolean|undefined
+      if (keepCurrentState) {
+        showDisabledDefault = this.showDisabled
+      }
+      if (showDisabledDefault == undefined) showDisabledDefault = options.initialState != undefined && options.initialState.showDisabled
       otherOptions.push({key: Constants.TEST_FILTER.DISABLED, label: 'Disabled tests', default: showDisabledDefault})
     }
-    if (otherOptions.length > 1) {
+    if (otherOptions.length > 0) {
       this.testDisplayOptions.push(otherOptions)
     }
     this.refreshDisplayOptions.emit(this.testDisplayOptions)
   }
 
   resultFilterUpdated(choices: CheckboxOptionState) {
+    this.showSuccessful = choices[Constants.TEST_FILTER.SUCCEEDED]
+    this.showFailed = choices[Constants.TEST_FILTER.FAILED]
+    this.showIncomplete = choices[Constants.TEST_FILTER.INCOMPLETE]
+    this.showOptional = choices[Constants.TEST_FILTER.OPTIONAL]
+    this.showDisabled = choices[Constants.TEST_FILTER.DISABLED]
     this.apply.emit({
-      showSuccessful: choices[Constants.TEST_FILTER.SUCCEEDED],
-      showFailed: choices[Constants.TEST_FILTER.FAILED],
-      showIncomplete: choices[Constants.TEST_FILTER.INCOMPLETE],
-      showOptional: choices[Constants.TEST_FILTER.OPTIONAL],
-      showDisabled: choices[Constants.TEST_FILTER.DISABLED]
+      showSuccessful: this.showSuccessful,
+      showFailed: this.showFailed,
+      showIncomplete: this.showIncomplete,
+      showOptional: this.showOptional,
+      showDisabled: this.showDisabled
     })
   }
 

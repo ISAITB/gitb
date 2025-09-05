@@ -35,5 +35,6 @@ export interface MultiSelectConfig<T extends EntityWithId> {
   searchPlaceholder?: string
   eventsDisabled?: boolean
   initialValues?: T[]
+  maxWidth?: number
 
 }

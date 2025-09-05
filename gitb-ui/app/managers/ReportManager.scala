@@ -895,7 +895,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
           if (testSuite.isEmpty) {
             testSuite = Some(new ConformanceTestSuite(
               statement.testSuiteId.get, statement.testSuiteName.get, statement.testSuiteDescription, Some(statement.testSuiteVersion), false, statement.testSuiteSpecReference, statement.testSuiteSpecDescription, statement.testSuiteSpecLink,
-              TestResultType.UNDEFINED, 0, 0, 0, 0, 0, 0, 0, 0, 0, new ListBuffer[ConformanceTestCase], new ListBuffer[models.TestCaseGroup]),
+              TestResultType.UNDEFINED, 0, 0, 0, 0, 0, 0, 0, 0, 0, hasDisabled = false, new ListBuffer[ConformanceTestCase], new ListBuffer[models.TestCaseGroup]),
               new mutable.LinkedHashMap[Long, (TestCaseGroup, Counters)]()
             )
             actorTestSuites.get += (testSuite.get._1.id -> testSuite.get)
@@ -916,7 +916,9 @@ class ReportManager @Inject() (communityManager: CommunityManager,
           )
           testSuite.get._1.testCases.asInstanceOf[ListBuffer[ConformanceTestCase]] += testCase
           // Record result to counters
-          if (!testCase.disabled) {
+          if (testCase.disabled) {
+            testSuite.get._1.hasDisabled = true
+          } else {
             if (testCase.optional) {
               if (testCase.result == TestResultType.SUCCESS) {
                 testSuite.get._1.completedOptional += 1

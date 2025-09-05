@@ -20,9 +20,9 @@ import com.gitb.tr.TestResultType
 import config.Configurations
 import managers.ConformanceManager._
 import managers.triggers.TriggerHelper
-import models.Enums.{ConformanceStatementItemType, OrganizationType, UserRole}
+import models.Enums.{ConformanceStatementItemType, OrganizationType, TestResultStatus, UserRole}
 import models.snapshot._
-import models.statement.{AvailableStatementsSearchCriteria, ConformanceItemTreeData, ConformanceStatementResults, ConformanceStatementSearchCriteria}
+import models.statement.{AvailableStatementsSearchCriteria, ConformanceItemTreeData, ConformanceStatementResults, ConformanceStatementSearchCriteria, ConformanceStatementTestSearchCriteria}
 import models.{FileInfo, PagingStatus, _}
 import org.apache.commons.lang3.Strings
 import persistence.db.PersistenceSchema
@@ -38,6 +38,7 @@ import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, Future}
+import models.statement.TestSuiteMinimalInformation
 
 object ConformanceManager {
 
@@ -367,42 +368,163 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 		)
 	}
 
-	def getConformanceStatus(actorId: Long, sutId: Long, testSuiteId: Option[Long], includeDisabled: Boolean = true, snapshotId: Option[Long] = None): Future[Option[ConformanceStatus]] = {
+  private def getConformanceStatusItemsInternal(actorId: Long, systemId: Long, snapshotId: Option[Long], testSuiteId: Option[Long], includeDisabled: Boolean): DBIO[Iterable[ConformanceStatusItem]] = {
+    val query: ConformanceStatusDbQuery = if (snapshotId.isDefined) {
+      PersistenceSchema.conformanceSnapshotResults
+        .join(PersistenceSchema.conformanceSnapshotTestCases).on((q, tc) => q.snapshotId === tc.snapshotId && q.testCaseId === tc.id)
+        .join(PersistenceSchema.conformanceSnapshotTestSuites).on((q, ts) => q._1.snapshotId === ts.snapshotId && q._1.testSuiteId === ts.id)
+        .joinLeft(PersistenceSchema.conformanceSnapshotTestCaseGroups).on((q, tcg) => q._1._1.snapshotId === tcg.snapshotId && q._1._1.testCaseGroupId === tcg.id)
+        .filter(_._1._1._1.snapshotId === snapshotId.get)
+        .filter(_._1._1._1.actorId === actorId)
+        .filter(_._1._1._1.systemId === systemId)
+        .filterIf(!includeDisabled)(_._1._1._2.isDisabled === false)
+        .filterOpt(testSuiteId)((q, id) => q._1._1._1.testSuiteId === id)
+        .map(x => (
+          (x._1._2.id, x._1._2.shortname, x._1._2.description, false, x._1._2.specReference, x._1._2.specDescription, x._1._2.specLink), // Test suite
+          (x._1._1._2.id, x._1._1._2.shortname, x._1._1._2.description, false, x._1._1._2.isOptional, x._1._1._2.isDisabled, x._1._1._2.tags, x._1._1._2.testSuiteOrder, x._1._1._2.specReference, x._1._1._2.specDescription, x._1._1._2.specLink), // Test case
+          (x._2.map(_.id), x._2.map(_.identifier), x._2.map(_.name).flatten, x._2.map(_.description).flatten), // Test case group
+          (x._1._1._1.result, x._1._1._1.outputMessage, x._1._1._1.testSessionId, x._1._1._1.updateTime) // Result
+        ))
+    } else {
+      PersistenceSchema.conformanceResults
+        .join(PersistenceSchema.testCases).on(_.testcase === _.id)
+        .join(PersistenceSchema.testSuites).on(_._1.testsuite === _.id)
+        .joinLeft(PersistenceSchema.testCaseGroups).on((q, g) => q._1._2.group === g.id)
+        .filter(_._1._1._1.actor === actorId)
+        .filter(_._1._1._1.sut === systemId)
+        .filterIf(!includeDisabled)(_._1._1._2.isDisabled === false)
+        .filterOpt(testSuiteId)((q, id) => q._1._1._1.testsuite === id)
+        .map(x => (
+          (x._1._2.id, x._1._2.shortname, x._1._2.description, x._1._2.hasDocumentation, x._1._2.specReference, x._1._2.specDescription, x._1._2.specLink), // Test suite
+          (x._1._1._2.id, x._1._1._2.shortname, x._1._1._2.description, x._1._1._2.hasDocumentation, x._1._1._2.isOptional, x._1._1._2.isDisabled, x._1._1._2.tags, x._1._1._2.testSuiteOrder, x._1._1._2.specReference, x._1._1._2.specDescription, x._1._1._2.specLink), // Test case
+          (x._2.map(_.id), x._2.map(_.identifier), x._2.map(_.name).flatten, x._2.map(_.description).flatten), // Test case group
+          (x._1._1._1.result, x._1._1._1.outputMessage, x._1._1._1.testsession, x._1._1._1.updateTime) // Result
+        ))
+    }
+    query.sortBy(x => (x._1._2, x._2._8)).result.map { results =>
+      results.map { r =>
+        ConformanceStatusItem(
+          testSuiteId = r._1._1, testSuiteName = r._1._2, testSuiteDescription = r._1._3, testSuiteHasDocumentation = r._1._4, testSuiteSpecReference = r._1._5, testSuiteSpecDescription = r._1._6, testSuiteSpecLink = r._1._7,
+          testCaseId = r._2._1, testCaseName = r._2._2, testCaseDescription = r._2._3, testCaseHasDocumentation = r._2._4, testCaseSpecReference = r._2._9, testCaseSpecDescription = r._2._10, testCaseSpecLink = r._2._11,
+          testCaseGroup = r._3._1.map(TestCaseGroup(_, r._3._2.get, r._3._3, r._3._4, r._1._1)),
+          result = r._4._1, outputMessage = r._4._2, sessionId = r._4._3, sessionTime = r._4._4,
+          testCaseOptional = r._2._5, testCaseDisabled = r._2._6, testCaseTags = r._2._7
+        )
+      }
+    }
+  }
+
+  private def conformanceStatusItemsToStatus(items: Iterable[ConformanceStatusItem], systemId: Long, actorId: Long, hasBadge: Option[Boolean], domainId: Option[Long], specificationId: Option[Long]): ConformanceStatus = {
+    val status = new ConformanceStatus(systemId, domainId.getOrElse(-1), specificationId.getOrElse(-1), actorId, 0, 0, 0, 0, 0, 0, 0, 0, 0, TestResultType.UNDEFINED, None, hasBadge.getOrElse(false), hasDisabled = false, new ListBuffer[ConformanceTestSuite], 0)
+    val testCaseGroups = new mutable.HashMap[Long, ResultCounter]() // Group ID to group status.
+    val testSuiteMap = new mutable.LinkedHashMap[Long, ConformanceTestSuite]()
+    items.foreach { item =>
+      val testSuite = if (testSuiteMap.contains(item.testSuiteId)) {
+        testSuiteMap(item.testSuiteId)
+      } else {
+        // New test suite.
+        val newTestSuite = new ConformanceTestSuite(item.testSuiteId, item.testSuiteName, item.testSuiteDescription, None, item.testSuiteHasDocumentation, item.testSuiteSpecReference, item.testSuiteSpecDescription, item.testSuiteSpecLink, TestResultType.UNDEFINED, 0, 0, 0, 0, 0, 0, 0, 0, 0, hasDisabled = false, new ListBuffer[ConformanceTestCase], new mutable.HashSet[TestCaseGroup])
+        testSuiteMap += (item.testSuiteId -> newTestSuite)
+        newTestSuite
+      }
+      val testCase = new ConformanceTestCase(item.testCaseId, item.testCaseName, item.testCaseDescription, None, item.sessionId, item.sessionTime, item.outputMessage, item.testCaseHasDocumentation, item.testCaseOptional, item.testCaseDisabled, TestResultType.fromValue(item.result), item.testCaseTags, item.testCaseSpecReference, item.testCaseSpecDescription, item.testCaseSpecLink, item.testCaseGroup.map(_.id))
+      testSuite.testCases.asInstanceOf[ListBuffer[ConformanceTestCase]].append(testCase)
+      if (item.testCaseGroup.isDefined) {
+        testSuite.testCaseGroups.asInstanceOf[mutable.HashSet[TestCaseGroup]].add(item.testCaseGroup.get)
+      }
+      if (testCase.disabled) {
+        if (testCase.disabled) {
+          status.hasDisabled = true
+          testSuite.hasDisabled = true
+        }
+      } else {
+        // Update time.
+        if (testCase.updateTime.isDefined && (status.updateTime.isEmpty || status.updateTime.get.before(testCase.updateTime.get))) {
+          status.updateTime = testCase.updateTime
+        }
+        // Counters and overall status.
+        if (testCase.optional) {
+          if (testCase.result == TestResultType.SUCCESS) {
+            status.completedOptional += 1
+            testSuite.completedOptional += 1
+          } else if (testCase.result == TestResultType.FAILURE) {
+            status.failedOptional += 1
+            testSuite.failedOptional += 1
+          } else {
+            status.undefinedOptional += 1
+            testSuite.undefinedOptional += 1
+          }
+        } else {
+          if (testCase.result == TestResultType.SUCCESS) {
+            status.completed += 1
+            testSuite.completed += 1
+            if (item.testCaseGroup.isEmpty) {
+              status.completedToConsider += 1
+              testSuite.completedToConsider += 1
+            } else {
+              groupResult(testCaseGroups, item.testCaseGroup.get).completed += 1
+            }
+          } else if (testCase.result == TestResultType.FAILURE) {
+            status.failed += 1
+            testSuite.failed += 1
+            if (item.testCaseGroup.isEmpty) {
+              status.failedToConsider += 1
+              testSuite.failedToConsider += 1
+            } else {
+              groupResult(testCaseGroups, item.testCaseGroup.get).failed += 1
+            }
+          } else {
+            status.undefined += 1
+            testSuite.undefined += 1
+            if (item.testCaseGroup.isEmpty) {
+              status.undefinedToConsider += 1
+              testSuite.undefinedToConsider += 1
+            } else {
+              groupResult(testCaseGroups, item.testCaseGroup.get).undefined += 1
+            }
+          }
+        }
+      }
+    }
+    // Now process the results from test case groups
+    if (testCaseGroups.nonEmpty) {
+      val processedGroups = mutable.HashSet[Long]()
+      testSuiteMap.values.foreach { testSuite =>
+        testSuite.testCases.foreach { testCase =>
+          if (testCase.group.exists(!processedGroups.contains(_))) {
+            val groupResults = testCaseGroups.get(testCase.group.get)
+            if (groupResults.isDefined) {
+              if (groupResults.get.completed > 0) {
+                status.completedToConsider += 1
+                testSuite.completedToConsider += 1
+              } else if (groupResults.get.failed > 0) {
+                status.failedToConsider += 1
+                testSuite.failedToConsider += 1
+              } else {
+                status.undefinedToConsider += 1
+                testSuite.undefinedToConsider += 1
+              }
+            }
+            processedGroups += testCase.group.get
+          }
+        }
+      }
+    }
+    // Complete test suite results
+    testSuiteMap.values.foreach { testSuite =>
+      testSuite.result = resultStatus(testSuite.completedToConsider, testSuite.failedToConsider, testSuite.undefinedToConsider)
+    }
+    // Return test suites
+    status.testSuites = testSuiteMap.values
+    status.testSuiteCount = testSuiteMap.size
+    status.result = resultStatus(status.completedToConsider, status.failedToConsider, status.undefinedToConsider)
+    status
+  }
+
+  def getConformanceStatus(actorId: Long, sutId: Long, testSuiteId: Option[Long], includeDisabled: Boolean = true, snapshotId: Option[Long] = None): Future[Option[ConformanceStatus]] = {
 		if (snapshotId.isEmpty && (actorId < 0 || sutId < 0 || testSuiteId.isDefined && testSuiteId.get < 0)) {
 			Future.successful(None)
 		} else {
-			val query: ConformanceStatusDbQuery = if (snapshotId.isDefined) {
-				PersistenceSchema.conformanceSnapshotResults
-					.join(PersistenceSchema.conformanceSnapshotTestCases).on((q, tc) => q.snapshotId === tc.snapshotId && q.testCaseId === tc.id)
-					.join(PersistenceSchema.conformanceSnapshotTestSuites).on((q, ts) => q._1.snapshotId === ts.snapshotId && q._1.testSuiteId === ts.id)
-					.joinLeft(PersistenceSchema.conformanceSnapshotTestCaseGroups).on((q, tcg) => q._1._1.snapshotId === tcg.snapshotId && q._1._1.testCaseGroupId === tcg.id)
-					.filter(_._1._1._1.snapshotId === snapshotId.get)
-					.filter(_._1._1._1.actorId === actorId)
-					.filter(_._1._1._1.systemId === sutId)
-					.filterIf(!includeDisabled)(_._1._1._2.isDisabled === false)
-					.filterOpt(testSuiteId)((q, id) => q._1._1._1.testSuiteId === id)
-					.map(x => (
-						(x._1._2.id, x._1._2.shortname, x._1._2.description, false, x._1._2.specReference, x._1._2.specDescription, x._1._2.specLink), // Test suite
-						(x._1._1._2.id, x._1._1._2.shortname, x._1._1._2.description, false, x._1._1._2.isOptional, x._1._1._2.isDisabled, x._1._1._2.tags, x._1._1._2.testSuiteOrder, x._1._1._2.specReference, x._1._1._2.specDescription, x._1._1._2.specLink), // Test case
-						(x._2.map(_.id), x._2.map(_.identifier), x._2.map(_.name).flatten, x._2.map(_.description).flatten), // Test case group
-						(x._1._1._1.result, x._1._1._1.outputMessage, x._1._1._1.testSessionId, x._1._1._1.updateTime) // Result
-					))
-			} else {
-				PersistenceSchema.conformanceResults
-					.join(PersistenceSchema.testCases).on(_.testcase === _.id)
-					.join(PersistenceSchema.testSuites).on(_._1.testsuite === _.id)
-					.joinLeft(PersistenceSchema.testCaseGroups).on((q, g) => q._1._2.group === g.id)
-					.filter(_._1._1._1.actor === actorId)
-					.filter(_._1._1._1.sut === sutId)
-					.filterIf(!includeDisabled)(_._1._1._2.isDisabled === false)
-					.filterOpt(testSuiteId)((q, id) => q._1._1._1.testsuite === id)
-					.map(x => (
-						(x._1._2.id, x._1._2.shortname, x._1._2.description, x._1._2.hasDocumentation, x._1._2.specReference, x._1._2.specDescription, x._1._2.specLink), // Test suite
-						(x._1._1._2.id, x._1._1._2.shortname, x._1._1._2.description, x._1._1._2.hasDocumentation, x._1._1._2.isOptional, x._1._1._2.isDisabled, x._1._1._2.tags, x._1._1._2.testSuiteOrder, x._1._1._2.specReference, x._1._1._2.specDescription, x._1._1._2.specLink), // Test case
-						(x._2.map(_.id), x._2.map(_.identifier), x._2.map(_.name).flatten, x._2.map(_.description).flatten), // Test case group
-						(x._1._1._1.result, x._1._1._1.outputMessage, x._1._1._1.testsession, x._1._1._1.updateTime) // Result
-					))
-			}
 			val specificationIdsQuery = if (snapshotId.isDefined) {
 				PersistenceSchema.conformanceSnapshotResults
 					.filter(_.actorId === actorId)
@@ -417,122 +539,72 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 			}
 			DB.run(
 				for {
-					results <- query.sortBy(x => (x._1._2, x._2._8)).result
-						.map(_.map(r => {
-							ConformanceStatusItem(
-								testSuiteId = r._1._1, testSuiteName = r._1._2, testSuiteDescription = r._1._3, testSuiteHasDocumentation = r._1._4, testSuiteSpecReference = r._1._5, testSuiteSpecDescription = r._1._6, testSuiteSpecLink = r._1._7,
-								testCaseId = r._2._1, testCaseName = r._2._2, testCaseDescription = r._2._3, testCaseHasDocumentation = r._2._4, testCaseSpecReference = r._2._9, testCaseSpecDescription = r._2._10, testCaseSpecLink = r._2._11,
-								testCaseGroup = r._3._1.map(TestCaseGroup(_, r._3._2.get, r._3._3, r._3._4, r._1._1)),
-								result = r._4._1, outputMessage = r._4._2, sessionId = r._4._3, sessionTime = r._4._4,
-								testCaseOptional = r._2._5, testCaseDisabled = r._2._6, testCaseTags = r._2._7
-							)
-						}))
+					results <- getConformanceStatusItemsInternal(actorId, sutId, snapshotId, testSuiteId, includeDisabled)
 					specificationIds <- specificationIdsQuery
 				} yield (results, specificationIds)
 			).map { statusItems =>
 				// Check to see if we have badges. We use the SUCCESS badge as this will always be present if badges are defined.
 				val hasBadge = repositoryUtil.getConformanceBadge(statusItems._2._1, Some(actorId), snapshotId, TestResultType.SUCCESS.toString, exactMatch = false, forReport = false).isDefined
-				val status = new ConformanceStatus(sutId, statusItems._2._2, statusItems._2._1, actorId, 0, 0, 0, 0, 0, 0, 0, 0, 0, TestResultType.UNDEFINED, None, hasBadge, new ListBuffer[ConformanceTestSuite])
-				val testCaseGroups = new mutable.HashMap[Long, ResultCounter]() // Group ID to group status.
-				val testSuiteMap = new mutable.LinkedHashMap[Long, ConformanceTestSuite]()
-				statusItems._1.foreach { item =>
-					val testSuite = if (testSuiteMap.contains(item.testSuiteId)) {
-						testSuiteMap(item.testSuiteId)
-					} else {
-						// New test suite.
-						val newTestSuite = new ConformanceTestSuite(item.testSuiteId, item.testSuiteName, item.testSuiteDescription, None, item.testSuiteHasDocumentation, item.testSuiteSpecReference, item.testSuiteSpecDescription, item.testSuiteSpecLink, TestResultType.UNDEFINED, 0, 0, 0, 0, 0, 0, 0, 0, 0, new ListBuffer[ConformanceTestCase], new mutable.HashSet[TestCaseGroup])
-						testSuiteMap += (item.testSuiteId -> newTestSuite)
-						newTestSuite
-					}
-					val testCase = new ConformanceTestCase(item.testCaseId, item.testCaseName, item.testCaseDescription, None, item.sessionId, item.sessionTime, item.outputMessage, item.testCaseHasDocumentation, item.testCaseOptional, item.testCaseDisabled, TestResultType.fromValue(item.result), item.testCaseTags, item.testCaseSpecReference, item.testCaseSpecDescription, item.testCaseSpecLink, item.testCaseGroup.map(_.id))
-					testSuite.testCases.asInstanceOf[ListBuffer[ConformanceTestCase]].append(testCase)
-					if (item.testCaseGroup.isDefined) {
-						testSuite.testCaseGroups.asInstanceOf[mutable.HashSet[TestCaseGroup]].add(item.testCaseGroup.get)
-					}
-					if (!testCase.disabled) {
-						// Update time.
-						if (testCase.updateTime.isDefined && (status.updateTime.isEmpty || status.updateTime.get.before(testCase.updateTime.get))) {
-							status.updateTime = testCase.updateTime
-						}
-						// Counters and overall status.
-						if (testCase.optional) {
-							if (testCase.result == TestResultType.SUCCESS) {
-								status.completedOptional += 1
-								testSuite.completedOptional += 1
-							} else if (testCase.result == TestResultType.FAILURE) {
-								status.failedOptional += 1
-								testSuite.failedOptional += 1
-							} else {
-								status.undefinedOptional += 1
-								testSuite.undefinedOptional += 1
-							}
-						} else {
-							if (testCase.result == TestResultType.SUCCESS) {
-								status.completed += 1
-								testSuite.completed += 1
-								if (item.testCaseGroup.isEmpty) {
-									status.completedToConsider += 1
-									testSuite.completedToConsider += 1
-								} else {
-									groupResult(testCaseGroups, item.testCaseGroup.get).completed += 1
-								}
-							} else if (testCase.result == TestResultType.FAILURE) {
-								status.failed += 1
-								testSuite.failed += 1
-								if (item.testCaseGroup.isEmpty) {
-									status.failedToConsider += 1
-									testSuite.failedToConsider += 1
-								} else {
-									groupResult(testCaseGroups, item.testCaseGroup.get).failed += 1
-								}
-							} else {
-								status.undefined += 1
-								testSuite.undefined += 1
-								if (item.testCaseGroup.isEmpty) {
-									status.undefinedToConsider += 1
-									testSuite.undefinedToConsider += 1
-								} else {
-									groupResult(testCaseGroups, item.testCaseGroup.get).undefined += 1
-								}
-							}
-						}
-					}
-				}
-				// Now process the results from test case groups
-				if (testCaseGroups.nonEmpty) {
-					val processedGroups = mutable.HashSet[Long]()
-					testSuiteMap.values.foreach { testSuite =>
-						testSuite.testCases.foreach { testCase =>
-							if (testCase.group.exists(!processedGroups.contains(_))) {
-								val groupResults = testCaseGroups.get(testCase.group.get)
-								if (groupResults.isDefined) {
-									if (groupResults.get.completed > 0) {
-										status.completedToConsider += 1
-										testSuite.completedToConsider += 1
-									} else if (groupResults.get.failed > 0) {
-										status.failedToConsider += 1
-										testSuite.failedToConsider += 1
-									} else {
-										status.undefinedToConsider += 1
-										testSuite.undefinedToConsider += 1
-									}
-								}
-								processedGroups += testCase.group.get
-							}
-						}
-					}
-				}
-				// Complete test suite results
-				testSuiteMap.values.foreach { testSuite =>
-					testSuite.result = resultStatus(testSuite.completedToConsider, testSuite.failedToConsider, testSuite.undefinedToConsider)
-				}
-				// Complete overall results
-				status.testSuites = testSuiteMap.values
-				status.result = resultStatus(status.completedToConsider, status.failedToConsider, status.undefinedToConsider)
+        val status = conformanceStatusItemsToStatus(statusItems._1, sutId, actorId, Some(hasBadge), Some(statusItems._2._2), Some(statusItems._2._1))
 				Some(status)
 			}
 		}
 	}
+
+  def getConformanceStatusWithPagedTests(actorId: Long, sutId: Long, testSuiteId: Option[Long], snapshotId: Option[Long] = None): Future[Option[SearchResult[ConformanceStatus]]] = {
+    getConformanceStatus(actorId, sutId, testSuiteId, includeDisabled = false, snapshotId).map {
+      case Some(status) =>
+        val pagingInfo = new PagingStatus(1, Constants.defaultLimit)
+        status.testSuites = pageConformanceTestSuites(status.testSuites, pagingInfo)
+        Some(SearchResult(
+          List(status),
+          pagingInfo.count
+        ))
+      case None => None
+    }
+  }
+
+  def getConformanceStatementTests(actorId: Long, systemId: Long, snapshotId: Option[Long], criteria: ConformanceStatementTestSearchCriteria, page: Long, limit: Long): Future[SearchResult[ConformanceStatus]] = {
+    DB.run(getConformanceStatusItemsInternal(actorId, systemId, snapshotId, None, includeDisabled = true)).map { items =>
+      val status = conformanceStatusItemsToStatus(items, systemId, actorId, None, None, None)
+			status.testSuites = filterConformanceTestSuites(status.testSuites, criteria)
+      val pagingInfo = new PagingStatus(page, limit)
+      status.testSuites = pageConformanceTestSuites(status.testSuites, pagingInfo)
+      SearchResult(
+        List(status),
+        pagingInfo.count
+      )
+    }
+  }
+
+  private def filterConformanceTestSuites(testSuites: Iterable[ConformanceTestSuite], criteria: ConformanceStatementTestSearchCriteria): Iterable[ConformanceTestSuite] = {
+		testSuites.filter { childItem =>
+			filterConformanceTestSuite(childItem, criteria)
+		}
+  }
+
+	private def filterConformanceTestSuite(testSuite: ConformanceTestSuite, criteria: ConformanceStatementTestSearchCriteria): Boolean = {
+		var matches = criteria.matchesTestSuite(testSuite)
+		if (matches) {
+			testSuite.testCases = testSuite.testCases.filter(testCase => criteria.matchesTestCase(testCase))
+			matches = testSuite.testCases.nonEmpty
+		}
+		matches
+	}
+
+  private def pageConformanceTestSuites(testSuites: Iterable[ConformanceTestSuite], pagingInfo: PagingStatus): Iterable[ConformanceTestSuite] = {
+    testSuites.filter { childItem =>
+      pageConformanceTestSuite(childItem, pagingInfo)
+    }
+  }
+
+  private def pageConformanceTestSuite(testSuite: ConformanceTestSuite, pagingInfo: PagingStatus): Boolean = {
+    testSuite.testCases = testSuite.testCases.filter { testCase =>
+      pagingInfo.count += 1
+      pagingInfo.count >= pagingInfo.minIndex && pagingInfo.count <= pagingInfo.maxIndex
+    }
+    testSuite.testCases.nonEmpty
+  }
 
 	private def resultStatus(completed: Long, failed: Long, undefined: Long): TestResultType = {
 		if (failed > 0) {
@@ -1877,6 +1949,32 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 				toDBIO(actions)
 			}
 		} yield ()
+	}
+
+	def getConformanceStatementTestSuitesForFiltering(systemId: Long, actorId: Long, snapshotId: Option[Long]): Future[Iterable[TestSuiteMinimalInformation]] = {
+		DB.run {
+			val query = if (snapshotId.isDefined) {
+				PersistenceSchema.conformanceSnapshotResults
+					.join(PersistenceSchema.conformanceSnapshotTestSuites).on((t1, t2) => t1.snapshotId === t2.snapshotId && t1.testSuiteId === t2.id)
+					.filter(_._1.snapshotId === snapshotId.get)
+					.filter(_._1.systemId === systemId)
+					.filter(_._1.actorId === actorId)
+					.map(x => (x._2.id, x._2.shortname))
+					.distinct
+					.sortBy(_._2.asc)
+			} else {
+				PersistenceSchema.conformanceResults
+					.join(PersistenceSchema.testSuites).on(_.testsuite === _.id)
+					.filter(_._1.sut === systemId)
+					.filter(_._1.actor === actorId)
+					.map(x => (x._2.id, x._2.shortname))
+					.distinct
+					.sortBy(_._2.asc)
+			}
+			query.result.map { results =>
+				results.map(x => TestSuiteMinimalInformation(x._1, x._2))
+			}
+		}
 	}
 
 }

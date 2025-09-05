@@ -1555,7 +1555,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
       conformanceManager.getConformanceStatementsForSystem(systemId, Some(actorId), snapshotId, withDescriptions = true, withResults = false).flatMap { result =>
         val conformanceStatement = result.headOption
         if (conformanceStatement.isDefined) {
-          conformanceManager.getConformanceStatus(actorId, systemId, None, includeDisabled = true, snapshotId).flatMap { results =>
+          conformanceManager.getConformanceStatusWithPagedTests(actorId, systemId, None, snapshotId).flatMap { results =>
             if (results.isDefined) {
               val systemInfoTask = if (systemId >= 0) {
                 systemManager.getSystemProfile(systemId)
@@ -1580,6 +1580,29 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
             ResponseConstructor.constructEmptyResponse
           }
         }
+      }
+    }
+  }
+
+  def getConformanceStatementTests(systemId: Long, actorId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, ParameterNames.SNAPSHOT)
+    authorizationManager.canViewConformanceStatements(request, systemId, snapshotId).flatMap { _ =>
+      val searchCriteria = ParameterExtractor.extractConformanceStatementTestSearchCriteria(request)
+      val page = ParameterExtractor.extractPageNumber(request)
+      val limit = ParameterExtractor.extractPageLimit(request)
+      conformanceManager.getConformanceStatementTests(actorId, systemId, snapshotId, searchCriteria, page, limit).map { result =>
+        val json = JsonUtil.jsSearchResult(result, JsonUtil.jsConformanceStatusForPaging).toString()
+        ResponseConstructor.constructJsonResponse(json)
+      }
+    }
+  }
+
+  def getConformanceStatementTestSuitesForFiltering(systemId: Long, actorId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, ParameterNames.SNAPSHOT)
+    authorizationManager.canViewConformanceStatements(request, systemId, snapshotId).flatMap { _ =>
+      conformanceManager.getConformanceStatementTestSuitesForFiltering(systemId, actorId, snapshotId).map { results =>
+        val json = JsonUtil.jsTestSuiteMinimalInformations(results).toString()
+        ResponseConstructor.constructJsonResponse(json)
       }
     }
   }

@@ -79,7 +79,6 @@ export abstract class BaseConformanceItemDisplayComponent extends BaseComponent 
   activeConformanceSnapshot?: ConformanceSnapshot
   dataStatus = {status: Constants.STATUS.PENDING}
   filterCommands = new EventEmitter<number>()
-  showCollapseAllStatements = false
   showExport = false
   updatePending = false
   exportPending = false
@@ -162,19 +161,11 @@ export abstract class BaseConformanceItemDisplayComponent extends BaseComponent 
     this.listViewTable?.refreshFilters()
   }
 
-  onCollapseAll() {
-    this.listViewTable?.collapseAll()
-  }
-
   onExportConformanceStatementsAsCsv() {
     this.exportPending = true
     this.listViewTable?.exportAsCsv().subscribe().add(() => {
       this.exportPending = false
     })
-  }
-
-  listViewStatementCollapseChange(hasExpanded: boolean) {
-    this.showCollapseAllStatements = hasExpanded
   }
 
   listViewExportChange(showExport: boolean) {

@@ -121,12 +121,6 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     this.viewTypeToggled()
   }
 
-  testSuiteLoader() {
-    return ((item: ConformanceStatementItem) => {
-      return this.conformanceService.getConformanceStatus(item.id, this.selectedSystemId!, this.activeConformanceSnapshot?.id)
-    })
-  }
-
   private countTestCases(item: ConformanceStatementItem): number {
     if (item.results) {
       return item.results.completed + item.results.failed + item.results.undefined
@@ -164,10 +158,6 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
         event.item.exportPdfPending = false
       }
     })
-  }
-
-  toTestSession(sessionId: string) {
-    this.routingService.toSessionDashboard(sessionId)
   }
 
   manageConformanceSnapshots() {
@@ -423,6 +413,10 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
         this.selectedCommunityId = undefined
       }
     }
+  }
+
+  onStatementSelect(statement: ConformanceStatementItem) {
+    this.routingService.toConformanceStatement(this.selectedOrganisationId!, this.selectedSystemId!, statement.id, this.selectedCommunityId!, this.activeConformanceSnapshot?.id, this.activeConformanceSnapshot?.label)
   }
 
 }

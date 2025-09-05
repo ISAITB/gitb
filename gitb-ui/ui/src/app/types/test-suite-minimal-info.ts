@@ -13,26 +13,10 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {SpecificationReferenceInfo} from 'src/app/types/specification-reference-info';
-import {ConformanceTestCase} from './conformance-test-case';
-import {ConformanceTestCaseGroup} from './conformance-test-case-group';
+import {EntityWithId} from './entity-with-id';
 
-export interface ConformanceTestSuite extends SpecificationReferenceInfo {
+export interface TestSuiteMinimalInfo extends EntityWithId {
 
-  id: number;
-  sname: string;
-  description?: string;
-  result: string;
-  hasDocumentation: boolean;
-  hasOptional: boolean;
-  hasDisabled: boolean;
-  testCases: ConformanceTestCase[];
-  testCaseGroups?: ConformanceTestCaseGroup[];
-
-  expanded?: boolean;
-  hasOptionalTestCases?: boolean;
-  hasDisabledTestCases?: boolean;
-  executionPending?: boolean;
-  testCaseGroupMap?: Map<number, ConformanceTestCaseGroup>;
+    sname: string
 
 }

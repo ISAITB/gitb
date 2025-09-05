@@ -17,6 +17,6 @@ import {TestCaseFilterOptions} from './test-case-filter-options';
 
 export interface TestCaseFilterApi {
 
-  refreshOptions: (options?: TestCaseFilterOptions) => void
+  refreshOptions: (options: TestCaseFilterOptions|undefined, keepCurrentState: boolean) => void
 
 }

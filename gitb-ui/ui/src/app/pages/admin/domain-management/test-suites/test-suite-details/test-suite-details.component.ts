@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, OnInit} from '@angular/core';
+import {Component, EventEmitter, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {Constants} from 'src/app/common/constants';
 import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
@@ -31,12 +31,17 @@ import {Specification} from 'src/app/types/specification';
 import {BsModalService} from 'ngx-bootstrap/modal';
 import {LinkSharedTestSuiteModalComponent} from 'src/app/modals/link-shared-test-suite-modal/link-shared-test-suite-modal.component';
 import {filter, find} from 'lodash';
-import {forkJoin} from 'rxjs';
+import {finalize, forkJoin, Observable, tap} from 'rxjs';
 import {ConformanceTestCase} from '../../../../organisation/conformance-statement/conformance-test-case';
 import {ConformanceTestCaseGroup} from '../../../../organisation/conformance-statement/conformance-test-case-group';
 import {FilterUpdate} from '../../../../../components/test-filter/filter-update';
 import {MultiSelectConfig} from '../../../../../components/multi-select-filter/multi-select-config';
 import {BaseTabbedComponent} from '../../../../base-tabbed-component';
+import {TestCaseDisplayComponentApi} from '../../../../../components/test-case-display/test-case-display-component-api';
+import {PagingPlacement} from '../../../../../components/paging-controls/paging-placement';
+import {PagingEvent} from '../../../../../components/paging-controls/paging-event';
+import {share} from 'rxjs/operators';
+import {PagingControlsApi} from '../../../../../components/paging-controls/paging-controls-api';
 
 @Component({
     selector: 'app-test-suite-details',
@@ -45,6 +50,9 @@ import {BaseTabbedComponent} from '../../../../base-tabbed-component';
     standalone: false
 })
 export class TestSuiteDetailsComponent extends BaseTabbedComponent implements OnInit {
+
+  @ViewChildren("testCaseDisplayComponent") testCaseDisplayComponents?: QueryList<TestCaseDisplayComponentApi>
+  @ViewChild("pagingControls") pagingControls?: PagingControlsApi
 
   testSuite: Partial<TestSuiteWithTestCases> = {}
   domainId!: number
@@ -67,7 +75,6 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
   unlinkedSpecifications: Specification[] = []
   clearLinkedSpecificationsSelection = new EventEmitter<void>()
 
-  loadedTestCases?: ConformanceTestCase[]
   testCasesToShow?: ConformanceTestCase[]
   hasDisabledTestCases = false
   hasOptionalTestCases = false
@@ -77,9 +84,10 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
   movePending = false
   moveSelectionConfig!: MultiSelectConfig<Specification>
   convertPending = false
+  testCasesRefreshing = false
 
   testCaseFilter?: string
-  refreshTestCases = new EventEmitter<void>()
+  protected readonly PagingPlacement = PagingPlacement;
 
   constructor(
     public readonly dataService: DataService,
@@ -115,7 +123,7 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
       searchPlaceholder: 'Search ' + this.dataService.labelSpecificationsLower() + '...',
       loader: () => this.loadAvailableSpecificationsForMove()
     }
-    this.loadTestCases()
+    this.loadInitialData()
   }
 
   loadTab(tabIndex: number): void {
@@ -126,24 +134,55 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
     }
   }
 
-  loadTestCases() {
+  testCasePageNavigation(pagingInfo: PagingEvent) {
+    this.loadTestCasesInternal(pagingInfo)
+  }
+
+  loadInitialData(): void {
     if (this.dataStatus.status == Constants.STATUS.NONE) {
-      this.testSuiteService.getTestSuiteWithTestCases(this.testSuiteId)
-      .subscribe((data) => {
-        this.testSuite = data
-        this.testCaseGroupMap = this.dataService.toTestCaseGroupMap(this.testSuite.testCaseGroups)
-        this.loadedTestCases = this.toConformanceTestCases(data.testCases)
-        this.applySearchFilter()
-        if (this.specificationId) {
-          this.routingService.testSuiteBreadcrumbs(this.domainId, this.specificationId, this.testSuiteId, this.testSuite.identifier!)
-        } else {
-          this.routingService.sharedTestSuiteBreadcrumbs(this.domainId, this.testSuiteId, this.testSuite.identifier!)
-        }
-      }).add(() => {
-        this.dataStatus.status = Constants.STATUS.FINISHED
-        this.loaded = true
-      })
+      this.dataStatus.status = Constants.STATUS.PENDING
     }
+    this.testSuiteService.getTestSuiteWithTestCases(this.testSuiteId).subscribe((data) => {
+      this.testSuite = data
+      this.testCaseGroupMap = this.dataService.toTestCaseGroupMap(this.testSuite.testCaseGroups)
+      if (this.specificationId) {
+        this.routingService.testSuiteBreadcrumbs(this.domainId, this.specificationId, this.testSuiteId, this.testSuite.identifier!)
+      } else {
+        this.routingService.sharedTestSuiteBreadcrumbs(this.domainId, this.testSuiteId, this.testSuite.identifier!)
+      }
+    }).add(() => {
+      this.loaded = true
+    })
+  }
+
+  private loadTestCases(): Observable<any> {
+    return this.loadTestCasesInternal({ targetPage: 1, targetPageSize: Constants.TABLE_PAGE_SIZE })
+  }
+
+  private loadTestCasesInternal(pagingInfo: PagingEvent): Observable<any> {
+    if (this.dataStatus.status == Constants.STATUS.FINISHED) {
+      this.testCasesRefreshing = true
+    } else if (this.dataStatus.status == Constants.STATUS.NONE) {
+      this.dataStatus.status = Constants.STATUS.PENDING
+    }
+    const obs$ = this.testSuiteService.getTestSuiteTestCasesWithPaging(this.testSuiteId, this.testCaseFilter, pagingInfo.targetPage, pagingInfo.targetPageSize).pipe(
+      tap((data) => {
+        this.testCasesToShow = this.toConformanceTestCases(data.data)
+        this.pagingControls?.updateStatus(pagingInfo.targetPage, data.count)
+        setTimeout(() => {
+          this.testCaseDisplayComponents?.forEach((component) => {
+            component.refresh()
+          })
+        })
+      }),
+      finalize(() => {
+        this.testCasesRefreshing = false
+        this.dataStatus.status = Constants.STATUS.FINISHED
+      }),
+      share()
+    )
+    obs$.subscribe()
+    return obs$
   }
 
   loadLinkedSpecifications(forceLoad?: boolean) {
@@ -390,19 +429,7 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
   }
 
   applySearchFilter() {
-    if (this.loadedTestCases) {
-      let testCaseFilter = this.trimSearchString(this.testCaseFilter)
-      let testCases: ConformanceTestCase[] = []
-      for (let testCase of this.loadedTestCases) {
-        if ((testCaseFilter == undefined
-          || (testCase.sname.toLocaleLowerCase().indexOf(testCaseFilter) >= 0)
-          || (testCase.description != undefined && testCase.description.toLocaleLowerCase().indexOf(testCaseFilter) >= 0))) {
-          testCases.push(testCase)
-        }
-      }
-      this.testCasesToShow = testCases
-      this.refreshTestCases.emit()
-    }
+    this.loadTestCases()
   }
 
 }

@@ -20,7 +20,6 @@ export interface ConformanceStatementTableApi {
   toggleFilters: () => void
   clearFilters: () => void
   refreshFilters: () => void
-  collapseAll: () => void
   exportAsCsv: () => Observable<void>
   reloadData: () => void
   snapshotChanged: () => void
