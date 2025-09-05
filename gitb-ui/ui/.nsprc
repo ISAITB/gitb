@@ -18,5 +18,9 @@
   "1106983": {
     "active": true,
     "notes": "Mermaid is transitively used and never with user-provided content."
-  }
+  },
+  "1107247": {
+    "active": true,
+    "notes": "Mermaid is transitively used and never with user-provided content."
+  }  
 }
