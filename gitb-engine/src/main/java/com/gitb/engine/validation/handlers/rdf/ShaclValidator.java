@@ -142,33 +142,45 @@ public class ShaclValidator extends AbstractValidator {
                 .map(BooleanType::getValue)
                 .orElse(true);
         // Proceed with validation.
-        Model inputModel;
-        Model shapesModel;
-        Model reportModel;
-        if (shapes.isEmpty()) {
-            // No validation to carry out.
-            reportModel = emptyValidationReport();
-            shapesModel = ModelFactory.createDefaultModel();
-            inputModel = readModel(modelContent, modelLanguage);
-        } else {
-            shapesModel = getShapesModel(shapes);
-            inputModel = getInputModel(new ContentInfo(modelContent, modelLanguage), shapesModel, loadImports, mergeModelsBeforeValidation);
-            reportModel = ValidationUtil.validateModel(inputModel, shapesModel, false).getModel();
+        Model inputModel = null;
+        Model shapesModel = null;
+        Model reportModel = null;
+        try {
+            if (shapes.isEmpty()) {
+                // No validation to carry out.
+                reportModel = emptyValidationReport();
+                shapesModel = ModelFactory.createDefaultModel();
+                inputModel = readModel(modelContent, modelLanguage);
+            } else {
+                shapesModel = getShapesModel(shapes);
+                inputModel = getInputModel(new ContentInfo(modelContent, modelLanguage), shapesModel, loadImports, mergeModelsBeforeValidation);
+                reportModel = ValidationUtil.validateModel(inputModel, shapesModel, false).getModel();
+            }
+            reportModel.setNsPrefix("sh", NS_SHACL);
+            // Produce report.
+            Optional<ModelInfo> shapesToReport = Optional.empty();
+            if (showShapes) {
+                shapesToReport = Optional.of(new ModelInfo(shapesModel, shapes.stream().findFirst().map(ContentInfo::language).orElse(modelLanguage)));
+            }
+            return createReport(new ReportSpecs(
+                    new ModelInfo(inputModel, modelLanguage),
+                    shapesToReport,
+                    new ModelInfo(reportModel, reportContentType),
+                    showShapes,
+                    showReport,
+                    sortBySeverity
+            ));
+        } finally {
+            closeModel(inputModel);
+            closeModel(shapesModel);
+            closeModel(reportModel);
         }
-        reportModel.setNsPrefix("sh", NS_SHACL);
-        // Produce report.
-        Optional<ModelInfo> shapesToReport = Optional.empty();
-        if (showShapes) {
-            shapesToReport = Optional.of(new ModelInfo(shapesModel, shapes.stream().findFirst().map(ContentInfo::language).orElse(modelLanguage)));
+    }
+
+    private void closeModel(Model model) {
+        if (model != null && !model.isClosed()) {
+            model.close();
         }
-        return createReport(new ReportSpecs(
-                new ModelInfo(inputModel, modelLanguage),
-                shapesToReport,
-                new ModelInfo(reportModel, reportContentType),
-                showShapes,
-                showReport,
-                sortBySeverity
-        ));
     }
 
     private Model getInputModel(ContentInfo input, Model shapesModel, boolean loadImports, boolean mergeModelsBeforeValidation) {
