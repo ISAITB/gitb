@@ -1,0 +1,9 @@
+<app-checkbox-option-panel #optionButton
+                           label="Options"
+                           icon="fa-solid fa-bars"
+                           placement="left"
+                           [optionProvider]="loadAvailableOptionsFactory()"
+                           [singleSelection]="true"
+                           [pending]="pending == true"
+                           (updated)="handleOption($event)"
+                           (opening)="optionsOpening()"></app-checkbox-option-panel>

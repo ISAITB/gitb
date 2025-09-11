@@ -24,7 +24,9 @@
             <th class="th-min">Last update</th>
             <th class="th-min-centered">Test results</th>
             <th class="th-min-centered">Status</th>
-            <th class="th-min-centered"></th>
+            @if (showExportControls) {
+                <th class="th-min-centered"></th>
+            }
         </tr>
         </thead>
         @if (dataStatus.status != Constants.STATUS.FINISHED) {
@@ -46,7 +48,7 @@
                             <td>{{statement.organizationName}}</td>
                         }
                         <td>{{statement.systemName}}</td>
-                        @if (dataService.isSystemAdmin || (dataService.isCommunityAdmin && dataService.community!.domain == undefined)) {
+                        @if (dataService.isSystemAdmin || dataService.community!.domain == undefined) {
                             <td>{{statement.domainName}}</td>
                         }
                         <td>{{statement.specName}}</td>
@@ -58,12 +60,18 @@
                         </td>
                         <td class="td-min-centered"><app-test-status-icons [counters]="statement.counters!" [asLine]="true"></app-test-status-icons></td>
                         <td class="td-min-centered"><span><i containerClass="shortTooltip" [tooltip]="dataService.tooltipForTestResult(statement.overallStatus)" [ngClass]="dataService.iconForTestResult(statement.overallStatus)"></i></span></td>
-                        <td class="td-min-centered">
-                            <div class="btn-toolbar no-wrap">
-                                <button class="btn btn-secondary" (click)="onExportConformanceStatement(statement, 'xml'); $event.stopPropagation();" [pending]="statement.exportXmlPending" [icon]="true"  containerClass="shortTooltip" container="body" tooltip="Export (XML)" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-regular fa-file-lines"></i></button>
-                                <button class="btn btn-secondary" (click)="onExportConformanceStatement(statement, 'pdf'); $event.stopPropagation();" [pending]="statement.exportPdfPending" [icon]="true"  containerClass="shortTooltip" container="body" tooltip="Export (PDF)" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-regular fa-file-pdf"></i></button>
-                            </div>
-                        </td>
+                        @if (showExportControls) {
+                            <td class="td-min-centered">
+                                <app-statement-options-button #statementOptionsButton
+                                                              [item]="statement"
+                                                              [snapshotId]="snapshot?.id"
+                                                              [communityId]="communityId"
+                                                              [organisationId]="organisationId"
+                                                              [pending]="statement.exportPdfPending == true || statement.exportXmlPending == true || statement.optionPending"
+                                                              (export)="onExportConformanceStatement($event.item, $event.format)"
+                                                              (opening)="optionsOpening($event)"></app-statement-options-button>
+                            </td>
+                        }
                     </tr>
                 }
             </tbody>

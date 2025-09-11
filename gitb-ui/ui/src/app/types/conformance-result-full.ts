@@ -53,5 +53,7 @@ export interface ConformanceResultFull extends ConformanceIds {
   overallStatus?: string;
   exportPdfPending?: boolean;
   exportXmlPending?: boolean;
+  optionPending?: boolean;
+  showBadgeOptions?: boolean;
 
 }

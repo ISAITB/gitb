@@ -13,17 +13,8 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-export interface ConformanceStatementResult {
+export interface TableRowApi {
 
-  failed: number,
-  completed: number,
-  undefined: number,
-  failedOptional: number,
-  completedOptional: number,
-  undefinedOptional: number,
-  failedToConsider: number,
-  completedToConsider: number
-  undefinedToConsider: number,
-  updateTime?: string
+  optionsOpened: (source: any) => void
 
 }

@@ -80,15 +80,16 @@
                  [loadingStatus]="completedStatus"
 
                  [actionVisible]="true"
-                 [actionIcon]="'fa-regular fa-file-lines'"
-                 (onAction)="onReportExportXml($event)"
+                 [actionIcon]="'fa-solid fa-file-pdf'"
+                 (onAction)="onReportExportPdf($event)"
                  [actionVisibleForRow]="exportVisible"
-                 [actionTooltip]="'Export (XML)'"
+                 [actionTooltip]="'Download report'"
 
                  [exportVisible]="true"
-                 (onExport)="onReportExportPdf($event)"
+                 [exportIcon]="'fa-solid fa-file-lines'"
+                 (onExport)="onReportExportXml($event)"
                  [exportVisibleForRow]="exportVisible"
-                 [exportTooltip]="'Export (PDF)'"
+                 [exportTooltip]="'Download report as XML'"
 
                  (pageNavigation)="doCompletedPageNavigation($event)"
                  (onSort)="sortCompletedSessions($event)"

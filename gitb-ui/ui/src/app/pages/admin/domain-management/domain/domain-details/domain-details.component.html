@@ -81,7 +81,7 @@
                             }
                         </div>
                     </div>
-                    <div class="option-container" cdkDropList cdkDropListLockAxis="y" (cdkDropListDropped)="dropSpecification($event)" [class.disable-events]="specificationsRefreshing">
+                    <div class="option-container" cdkDropList cdkDropListLockAxis="y" (cdkDropListDropped)="dropSpecification($event)" [class.disable-events]="specificationsRefreshing" [class.dragging]="dragOngoing">
                         @if (specificationStatus && specificationStatus.status != Constants.STATUS.FINISHED) {
                             <div class="spec-message-div">
                                 <div class="pending-icon"><app-pending-block [pending]="true"></app-pending-block></div>

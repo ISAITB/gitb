@@ -13,17 +13,11 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-export interface ConformanceStatementResult {
+import {CheckboxOption} from './checkbox-option';
 
-  failed: number,
-  completed: number,
-  undefined: number,
-  failedOptional: number,
-  completedOptional: number,
-  undefinedOptional: number,
-  failedToConsider: number,
-  completedToConsider: number
-  undefinedToConsider: number,
-  updateTime?: string
+export interface CheckBoxOptionPanelComponentApi {
+
+  close: () => void
+  refresh: (options: CheckboxOption[][]) => void
 
 }

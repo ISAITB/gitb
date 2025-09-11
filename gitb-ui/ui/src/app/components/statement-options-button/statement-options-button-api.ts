@@ -13,17 +13,10 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-export interface ConformanceStatementResult {
+import {ConformanceIds} from '../../types/conformance-ids';
 
-  failed: number,
-  completed: number,
-  undefined: number,
-  failedOptional: number,
-  completedOptional: number,
-  undefinedOptional: number,
-  failedToConsider: number,
-  completedToConsider: number
-  undefinedToConsider: number,
-  updateTime?: string
+export interface StatementOptionsButtonApi<T extends ConformanceIds> {
+
+  close: (item?: T) => void
 
 }

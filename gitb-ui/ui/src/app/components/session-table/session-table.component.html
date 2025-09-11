@@ -45,7 +45,7 @@
                 </tr>
             }
             @for (row of data; let i = $index; track row.session) {
-                <tr table-row-directive
+                <tr table-row-directive #tableRowComponent
                     class="table-row-directive expandable-table-row-collapsed session-table-row"
                     [class.disable-events]="contentRefreshing"
                     [ngClass]="rowClass(row)"
@@ -65,6 +65,7 @@
                     (onDelete)="handleDelete($event)"
                     (onExport)="handleExport($event)"
                     (onCheck)="handleCheck($event)"
+                    (onOptionsOpening)="handleOptionsOpening($event)"
                     [deleteVisibleForRow]="deleteVisibleForRow"
                     [actionVisibleForRow]="actionVisibleForRow"
                     [actionPendingProperty]="actionPendingProperty"

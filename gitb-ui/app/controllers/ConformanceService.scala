@@ -41,6 +41,7 @@ import javax.inject.Inject
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Using
+import com.gitb.tr.TestResultType
 
 object ConformanceService {
 
@@ -826,6 +827,15 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
     } yield result
   }
 
+  def getConformanceBadgeStatus(actorId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    val specificationId = ParameterExtractor.requiredQueryParameter(request, ParameterNames.SPECIFICATION_ID).toLong
+    val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, ParameterNames.SNAPSHOT)
+    authorizationManager.canManageSpecification(request, specificationId).map { _ =>
+      // Check to see if we have badges. We use the SUCCESS badge as this will always be present if badges are defined.
+      val hasBadge = repositoryUtils.getConformanceBadge(specificationId, Some(actorId), snapshotId, TestResultType.SUCCESS.toString, exactMatch = false, forReport = false).isDefined
+      ResponseConstructor.constructJsonResponse(hasBadge.toString)
+    }
+  }
 
   def getConformanceOverview(): Action[AnyContent] = authorizedAction.async { request =>
     val communityIds = ParameterExtractor.optionalLongListBodyParameter(request, ParameterNames.COMMUNITY_IDS)

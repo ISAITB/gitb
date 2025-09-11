@@ -1,5 +1,6 @@
 @for (item of items; track item.id) {
-    <app-conformance-statement-item-display #itemComponent
+    <app-conformance-statement-item-display
+        #itemComponent
         [item]="item"
         [shade]="item.hidden?!shade:shade"
         [wrapDescriptions]="wrapDescriptions"
@@ -10,7 +11,15 @@
         [withCheck]="withCheck"
         [withExport]="withExport"
         [withResults]="withResults"
+        [withOptions]="withOptions"
+        [communityId]="communityId"
+        [organisationId]="organisationId"
+        [systemId]="systemId"
+        [domainId]="domainIdsToUse[$index]"
+        [parentItem]="parentItem"
+        [snapshotId]="snapshotId"
         (selectionChanged)="childSelectionChanged($event)"
         (export)="childExported($event)"
+        (selected)="childSelected($event)"
     ></app-conformance-statement-item-display>
 }

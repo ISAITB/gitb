@@ -13,11 +13,16 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
-import { isBoolean } from 'lodash'
-import { TableColumnData } from 'src/app/types/table-column-data.type';
-import { Constants } from 'src/app/common/constants';
+import {Component, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
+import {TableColumnDefinition} from 'src/app/types/table-column-definition.type';
+import {isBoolean} from 'lodash';
+import {TableColumnData} from 'src/app/types/table-column-data.type';
+import {Constants} from 'src/app/common/constants';
+import {Observable, of} from 'rxjs';
+import {CheckboxOption} from '../checkbox-option-panel/checkbox-option';
+import {CheckboxOptionState} from '../checkbox-option-panel/checkbox-option-state';
+import {CheckBoxOptionPanelComponentApi} from '../checkbox-option-panel/check-box-option-panel-component-api';
+import {TableRowApi} from './table-row-api';
 
 @Component({
     selector: '[table-row-directive]',
@@ -25,7 +30,7 @@ import { Constants } from 'src/app/common/constants';
     styles: ['div.btn-toolbar {display: flex; flex-wrap: nowrap; justify-content: right;}'],
     standalone: false
 })
-export class TableRowComponent implements OnInit {
+export class TableRowComponent implements OnInit, TableRowApi {
 
   @Input() data?: any
   @Input() columns: TableColumnDefinition[] = []
@@ -42,7 +47,7 @@ export class TableRowComponent implements OnInit {
   @Input() deletePendingProperty = 'deletePending'
   @Input() actionIcon = ''
   @Input() deleteIcon = 'fa-solid fa-trash'
-  @Input() exportIcon = 'fa-regular fa-file-pdf'
+  @Input() exportIcon = 'fa-solid fa-file-pdf'
   @Input() actionTooltip = ''
   @Input() deleteTooltip = 'Delete'
   @Input() exportTooltip = 'Export'
@@ -53,11 +58,19 @@ export class TableRowComponent implements OnInit {
   @Output() onExport: EventEmitter<any> = new EventEmitter()
   @Output() onCheck: EventEmitter<any> = new EventEmitter()
   @Output() onDelete: EventEmitter<any> = new EventEmitter()
+  @Output() onOptionsOpening: EventEmitter<any> = new EventEmitter()
+
+  @ViewChild("optionButton") optionButton?: CheckBoxOptionPanelComponentApi
 
   Constants = Constants
 
   columnDataItemsAtLeft: TableColumnData[] = []
   columnDataItemsAtRight: TableColumnData[] = []
+  showOptions = false
+
+  protected static EXPORT_OPTION = '0'
+  protected static ACTION_OPTION = '1'
+  protected static DELETE_OPTION = '2'
 
   constructor() { }
 
@@ -91,6 +104,9 @@ export class TableRowComponent implements OnInit {
         this.columnDataItemsAtLeft.push(columnDataItem)
       }
     }
+    this.showOptions = (this.actionVisible && (this.exportVisible || this.operationsVisible))
+      || (this.exportVisible && (this.actionVisible || this.operationsVisible))
+      || (this.operationsVisible && (this.actionVisible || this.exportVisible))
   }
 
   delete() {
@@ -114,6 +130,49 @@ export class TableRowComponent implements OnInit {
       return this.columns[index].iconFn!(this.columnDataItemsAtLeft[index])
     } else {
       return ''
+    }
+  }
+
+  loadAvailableOptionsFactory() {
+    return () => this.loadAvailableOptions()
+  }
+
+  private loadAvailableOptions(): Observable<CheckboxOption[][]> {
+    const options: CheckboxOption[] = []
+    if (this.actionVisible && (!this.actionVisibleForRow || this.actionVisibleForRow(this.data))) {
+      options.push({ key: TableRowComponent.ACTION_OPTION, label: this.actionTooltip, default: true, iconClass: this.actionIcon })
+    }
+    if (this.operationsVisible && (!this.deleteVisibleForRow || this.deleteVisibleForRow(this.data))) {
+      options.push({ key: TableRowComponent.DELETE_OPTION, label: this.deleteTooltip, default: true, iconClass: this.deleteIcon })
+    }
+    if (this.exportVisible && (!this.exportVisibleForRow || this.exportVisibleForRow(this.data))) {
+      options.push({ key: TableRowComponent.EXPORT_OPTION, label: this.exportTooltip, default: true, iconClass: this.exportIcon })
+    }
+    return of([options])
+  }
+
+  handleOption(event: CheckboxOptionState) {
+    if (event[TableRowComponent.ACTION_OPTION]) {
+      this.action()
+    } else if (event[TableRowComponent.DELETE_OPTION]) {
+      this.delete()
+    } else if (event[TableRowComponent.EXPORT_OPTION]) {
+      this.export()
+    }
+  }
+
+  optionsOpening() {
+    this.data.tableRowOptionsOpen = true
+    this.onOptionsOpening.emit(this.data)
+  }
+
+  optionsClosed() {
+    this.data.tableRowOptionsOpen = false
+  }
+
+  optionsOpened(source: any) {
+    if (this.optionButton && source !== this.data) {
+      this.optionButton.close()
     }
   }
 

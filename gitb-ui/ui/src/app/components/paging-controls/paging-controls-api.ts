@@ -19,5 +19,6 @@ export interface PagingControlsApi {
 
   getCurrentStatus(): PagingStatus
   updateStatus(currentPage?: number, totalCount?: number): PagingStatus
+  hide(): void
 
 }

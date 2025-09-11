@@ -127,7 +127,9 @@ export class DomainSpecificationDisplayComponent implements DomainSpecificationD
   }
 
   propagateSelect(event: DomainSpecification) {
-    this.selectSpec.emit(event)
+    if (!this.dragEnabled) {
+      this.selectSpec.emit(event)
+    }
   }
 
   dropSpecification(event: CdkDragDrop<any>) {

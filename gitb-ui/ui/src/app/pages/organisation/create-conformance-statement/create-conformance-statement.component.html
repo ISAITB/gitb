@@ -3,7 +3,7 @@
         <div class="card-header">
             <div class="card-title">Create conformance statements</div>
         </div>
-        <div class="card-body" [class.disable-events]="updatePending">
+        <div class="card-body">
             @if (dataStatus.status == Constants.STATUS.PENDING) {
                 <div class="pending-container">
                     <div class="pending-icon">
@@ -70,13 +70,15 @@
                             </div>
                         </div>
                     } @else {
-                        <div class="statement-container">
+                        <div class="statement-container" [class.disable-events]="updatePending">
                             <app-conformance-statement-items-display [items]="items" [animated]="animated" (selectionChanged)="selectionChanged($event)"></app-conformance-statement-items-display>
                         </div>
                     }
                 }
             }
-            <app-paging-controls #pagingControls [placement]="PagingPlacement.card" (navigation)="doPagingNavigation($event)"></app-paging-controls>
+            <div [class.disable-events]="updatePending">
+                <app-paging-controls #pagingControls [placement]="PagingPlacement.card" (navigation)="doPagingNavigation($event)"></app-paging-controls>
+            </div>
         </div>
         <div class="card-footer">
             <div class="btn-toolbar">

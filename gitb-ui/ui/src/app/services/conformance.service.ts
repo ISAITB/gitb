@@ -58,6 +58,9 @@ import {CreateConformanceStatementSearchResult} from '../types/create-conformanc
 import {CreateStatementSearchCriteria} from '../pages/organisation/create-conformance-statement/create-statement-search-criteria';
 import {TestCaseSearchCriteria} from '../types/test-case-search-criteria';
 import {TestSuiteMinimalInfo} from '../types/test-suite-minimal-info';
+import {Observable, tap} from 'rxjs';
+import {share} from 'rxjs/operators';
+import {PopupService} from './popup.service';
 
 @Injectable({
   providedIn: 'root'
@@ -66,7 +69,8 @@ export class ConformanceService {
 
   constructor(
     private readonly restService: RestService,
-    private readonly dataService: DataService
+    private readonly dataService: DataService,
+    private readonly popupService: PopupService
   ) { }
 
   getDomain(domainId: number) {
@@ -305,6 +309,18 @@ export class ConformanceService {
       params: {
         organization_id: organisationId
       }
+    })
+  }
+
+  getConformanceBadgeStatus(specificationId: number, actorId: number, snapshotId: number|undefined) {
+    const params: any = {
+      spec_id: specificationId,
+    }
+    if (snapshotId != undefined) params.snapshot = snapshotId
+    return this.restService.get<boolean>({
+      path: ROUTES.controllers.ConformanceService.getConformanceBadgeStatus(actorId).url,
+      authenticate: true,
+      params: params
     })
   }
 
@@ -1082,6 +1098,29 @@ export class ConformanceService {
       authenticate: true,
       text: true
     })
+  }
+
+  copyBadgeURL(systemId: number, actorId: number,snapshotId: number|undefined): Observable<any> {
+    const obs$ = this.conformanceBadgeUrl(systemId, actorId, snapshotId).pipe(
+      tap((data) => {
+        if (data) {
+          if (data.startsWith('/')) {
+            // Relative URL.
+            let prefix = window.location.origin
+            if (prefix.endsWith('/')) {
+              prefix = prefix.substring(0, prefix.length - 1)
+            }
+            data = prefix + data
+          }
+          this.dataService.copyToClipboard(data).subscribe(() => {
+            this.popupService.success('Badge URL copied.')
+          })
+        }
+      }),
+      share()
+    )
+    obs$.subscribe()
+    return obs$
   }
 
   replaceBadgePlaceholdersInCertificateMessage(message: string) {

@@ -15,30 +15,43 @@
 
 @import '../../../styles/less/_common.less';
 
-.caret {
-    display: inline-block;
-    width: 0;
-    height: 0;
-    vertical-align: middle;
-    border-top: 4px dashed;
-    border-top: 4px solid\9;
-    border-right: 4px solid var(--bs-secondary-color);
-    border-left: 4px solid var(--bs-secondary-color);
-}
 .optionForm {
     border-radius: @border-radius;
     position: absolute;
-    top: 100%;
-    left: 0;
     border: 1px solid rgba(0,0,0,.15);
     background-color: @white;
     background-clip: padding-box;
-    z-index: 1000;
+    z-index: 1100;
     padding: 5px 0;
     box-shadow: 2px 2px 5px 0 rgba(0,0,0,0.50);
     .itemContainer {
+        cursor: pointer;
         &:hover {
             background-color: @bs-background-highlight;
+        }
+    }
+    &.singleSelection {
+        .itemContainer {
+            &:active {
+                color: var(--itb-btn-primary-label-color);
+                text-decoration: none;
+                background-color: var(--itb-btn-primary-color);
+            }
+            .optionLabel {
+                display: flex;
+                align-items: center;
+                div {
+                    white-space: nowrap;
+                }
+                margin-left: -10px;
+                .optionIcon {
+                    display: flex;
+                    min-width: 20px;
+                    align-items: center;
+                    justify-content: center;
+                    margin-right: 10px;
+                }
+            }
         }
     }
 }
@@ -55,7 +68,7 @@ label {
 }
 .row > div.separator {
     border-top: 1px solid @gray-light;
-    padding: 0px 0px 3px 0px;
+    padding: 0 0 3px 0;
     margin-top: 3px;
     width: 100%;
     float: left;
@@ -66,5 +79,4 @@ label {
 }
 .optionLabel {
     margin-left: 10px;
-    cursor: pointer;
 }

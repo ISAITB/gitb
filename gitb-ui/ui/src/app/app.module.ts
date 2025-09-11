@@ -287,6 +287,7 @@ import {TestCaseFilterComponent} from './components/test-case-filter/test-case-f
 import {NavigationControlsComponent} from './components/navigation-controls/navigation-controls.component';
 import {ConformanceStatementTableComponent} from './components/conformance-statement-table/conformance-statement-table.component';
 import {CreateEditTestServiceModalComponent} from './modals/create-edit-test-service-modal/create-edit-test-service-modal.component';
+import { StatementOptionsButtonComponent } from './components/statement-options-button/statement-options-button.component';
 
 @NgModule({ declarations: [
         AppComponent,
@@ -483,7 +484,8 @@ import {CreateEditTestServiceModalComponent} from './modals/create-edit-test-ser
         TestCaseFilterComponent,
         NavigationControlsComponent,
         ConformanceStatementTableComponent,
-        CreateEditTestServiceModalComponent
+        CreateEditTestServiceModalComponent,
+        StatementOptionsButtonComponent
     ],
     bootstrap: [AppComponent], imports: [
     NgxColorPickerComponent,

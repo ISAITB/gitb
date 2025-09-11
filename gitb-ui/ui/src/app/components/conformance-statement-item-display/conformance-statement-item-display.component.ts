@@ -13,19 +13,24 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChild, ViewChildren} from '@angular/core';
 import {filter} from 'lodash';
 import {ConformanceStatementItem} from 'src/app/types/conformance-statement-item';
 import {ConformanceStatementResult} from 'src/app/types/conformance-statement-result';
 import {Counters} from '../test-status-icons/counters';
 import {DataService} from 'src/app/services/data.service';
-import {ConformanceStatusSummary} from 'src/app/types/conformance-status-summary';
 import {ExportReportEvent} from 'src/app/types/export-report-event';
 import {BaseComponent} from '../../pages/base-component.component';
 import {ConformanceStatementItemDisplayComponentApi} from './conformance-statement-item-display-component-api';
 import {
   ConformanceStatementItemsDisplayComponentApi
 } from '../conformance-statement-items-display/conformance-statement-items-display-component-api';
+import {CheckboxOptionState} from '../checkbox-option-panel/checkbox-option-state';
+import {CheckboxOption} from '../checkbox-option-panel/checkbox-option';
+import {CheckBoxOptionPanelComponentApi} from '../checkbox-option-panel/check-box-option-panel-component-api';
+import {Constants} from '../../common/constants';
+import {StatementOptionsButtonApi} from '../statement-options-button/statement-options-button-api';
+import {ConformanceIds} from '../../types/conformance-ids';
 
 @Component({
     selector: 'app-conformance-statement-item-display',
@@ -44,14 +49,29 @@ export class ConformanceStatementItemDisplayComponent extends BaseComponent impl
   @Input() withCheck = true
   @Input() withExport = false
   @Input() withResults = false
+  @Input() withOptions = false
   @Input() filtering = true
+
+  // Inputs needed when showing options
+  @Input() communityId?: number
+  @Input() organisationId?: number
+  @Input() systemId?: number
+  @Input() domainId?: number
+  @Input() parentItem?: ConformanceStatementItem
+  @Input() snapshotId?: number
 
   @Output() selectionChanged = new EventEmitter<ConformanceStatementItem>()
   @Output() export = new EventEmitter<ExportReportEvent>()
-  @Output() viewTestSession = new EventEmitter<string>()
+  @Output() selected = new EventEmitter<number>()
 
   @ViewChildren('itemsComponent') itemsComponents?: QueryList<ConformanceStatementItemsDisplayComponentApi>
+  @ViewChild('optionButton') optionButton?: CheckBoxOptionPanelComponentApi
+  @ViewChild('statementOptionsButton') statementOptionsButton?: StatementOptionsButtonApi<ConformanceIds>
 
+  protected static EXPORT_XML_OVERVIEW = '0'
+  protected static EXPORT_PDF_OVERVIEW = '1'
+
+  optionPending = false
   hasChildren = false
   allChildrenHidden = false
   showCheck = false
@@ -60,13 +80,27 @@ export class ConformanceStatementItemDisplayComponent extends BaseComponent impl
   counters?: Counters
   status?: string
   updateTime?: string
-  statementSummary?: ConformanceStatusSummary
   pending = false
   refreshCounters = new EventEmitter<Counters>()
+  actorId?: number
+  specificationId?: number
+  conformanceIds?: ConformanceIds
+
+  parentItemOptions?: CheckboxOption[][]
 
   constructor(
     public readonly dataService: DataService
   ) { super() }
+
+  statementSelected(source: number) {
+    if (this.item.id != source) {
+      if (this.optionButton) this.optionButton.close()
+      if (this.statementOptionsButton) this.statementOptionsButton.close()
+    }
+    this.itemsComponents?.forEach((item: ConformanceStatementItemDisplayComponentApi) => {
+      item.statementSelected(source)
+    })
+  }
 
   reset() {
     this.ngOnInit()
@@ -95,13 +129,33 @@ export class ConformanceStatementItemDisplayComponent extends BaseComponent impl
     this.counters = undefined
     this.status = undefined
     this.updateTime = undefined
-    this.statementSummary = undefined
     this.pending = false
     if (this.withResults && this.allChildrenHidden) {
       this.results = this.findResults(this.item)
       if (this.results) {
         this.showResults = true
         this.updateResults(false)
+      }
+    }
+    if (this.item.itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION && this.item.items && this.item.items.length > 0) {
+      this.actorId = this.item.items[0].id
+      this.specificationId = this.item.id
+    } else if (this.item.itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.ACTOR) {
+      this.actorId = this.item.id
+      this.specificationId = this.parentItem?.id
+    }
+    if (this.hasChildren && !this.item.hidden && this.withExport) {
+      this.parentItemOptions = [[
+        {key: ConformanceStatementItemDisplayComponent.EXPORT_PDF_OVERVIEW, label: 'Download overview report', default: true, iconClass: 'fa-solid fa-file-pdf'},
+        {key: ConformanceStatementItemDisplayComponent.EXPORT_XML_OVERVIEW, label: 'Download overview report as XML', default: true, iconClass: 'fa-solid fa-file-lines'}
+      ]]
+    }
+    if (this.withOptions) {
+      this.conformanceIds = {
+        systemId: this.systemId!,
+        actorId: this.actorId!,
+        specificationId: this.specificationId!,
+        domainId: this.domainId!,
       }
     }
   }
@@ -195,12 +249,24 @@ export class ConformanceStatementItemDisplayComponent extends BaseComponent impl
     this.notifyForSelectionChange(item)
   }
 
+  childSelected(event: number) {
+    this.selected.emit(event)
+  }
+
   onExport(event: ExportReportEvent) {
     this.export.emit(event)
   }
 
-  showOptions() {
+  handleOption(event: CheckboxOptionState) {
+    if (event[ConformanceStatementItemDisplayComponent.EXPORT_XML_OVERVIEW]) {
+      this.onExport({statementReport: false, item: this.item, format: 'xml'})
+    } else if (event[ConformanceStatementItemDisplayComponent.EXPORT_PDF_OVERVIEW]) {
+      this.onExport({statementReport: false, item: this.item, format: 'pdf'})
+    }
+  }
 
+  optionsOpening() {
+    this.selected.emit(this.item.id)
   }
 
 }

@@ -2,7 +2,7 @@
 	<div class="card mb-0">
 		<div class="card-header">
 			<div class="card-title">Conformance statements</div>
-            <div class="btn-toolbar" [class.disable-events]="updatePending">
+            <div class="btn-toolbar">
                 @if (listView) {
                     <app-filter-control #filterControl (toggle)="toggleFilters()" (refresh)="refreshFilters()" (clear)="clearFilters()"></app-filter-control>
                     @if (showExport) {
@@ -42,7 +42,7 @@
             </div>
 		</div>
         @if (!listView) {
-            <div class="card-body" [class.disable-events]="updatePending">
+            <div class="card-body">
                 @if (systemStatus.status == Constants.STATUS.FINISHED) {
                     @if (systems.length == 0) {
                         <div class="alert alert-info rounded mb-0">
@@ -98,7 +98,7 @@
                                         </div>
                                     }
                                 } @else {
-                                    <div class="statement-container">
+                                    <div class="statement-container" [class.disable-events]="updatePending">
                                         <app-conformance-statement-items-display #conformanceItemTree
                                                                                  [items]="statements"
                                                                                  [animated]="animated"
@@ -106,7 +106,8 @@
                                                                                  [withExport]="true"
                                                                                  [withResults]="true"
                                                                                  (selectionChanged)="onStatementSelect($event)"
-                                                                                 (export)="onExportConformanceOverview($event)"></app-conformance-statement-items-display>
+                                                                                 (export)="onExportConformanceOverview($event)"
+                                                                                 (selected)="onStatementOptionsActivated($event)"></app-conformance-statement-items-display>
                                     </div>
                                 }
                             } @else {
@@ -127,7 +128,9 @@
                         <div class="pending-message">Loading {{dataService.labelSystemsLower()}}...</div>
                     </div>
                 }
-                <app-paging-controls #pagingControls [placement]="PagingPlacement.card" (navigation)="doTreeViewPaging($event)"></app-paging-controls>
+                <div [class.disable-events]="updatePending">
+                    <app-paging-controls #pagingControls [placement]="PagingPlacement.card" (navigation)="doTreeViewPaging($event)"></app-paging-controls>
+                </div>
             </div>
         } @else {
             <app-conformance-statement-table #listViewTable
@@ -136,7 +139,8 @@
                                              [statementLoader]="loadConformanceStatementsForListViewFactory()"
                                              [snapshot]="activeConformanceSnapshot"
                                              (searchChange)="listViewSearching($event)"
-                                             (exportChange)="listViewExportChange($event)"></app-conformance-statement-table>
+                                             (exportChange)="listViewExportChange($event)"
+                                             (select)="onStatementSelectFromListView($event)"></app-conformance-statement-table>
         }
 		@if (showBack) {
 			<div class="card-footer">

@@ -39,6 +39,7 @@ import {
 } from 'src/app/components/base-conformance-item-display/base-conformance-item-display.component';
 import {PagingEvent} from '../../../components/paging-controls/paging-event';
 import {CheckboxOptionState} from '../../../components/checkbox-option-panel/checkbox-option-state';
+import {ConformanceResultFullWithTestSuites} from '../../../types/conformance-result-full-with-test-suites';
 
 @Component({
     selector: 'app-conformance-dashboard',
@@ -263,6 +264,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
 
   communityChanged(fromSnapshotChange: boolean, community?: FilterUpdate<Community>) {
     this.dataStatus.status = Constants.STATUS.PENDING
+    this.pagingControls?.hide()
     if (community && community.values.active.length > 0) {
       this.selectedCommunityId = community.values.active[0].id
     }
@@ -302,6 +304,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
 
   organisationChanged(organisation?: FilterUpdate<Organisation>) {
     this.dataStatus.status = Constants.STATUS.PENDING
+    this.pagingControls?.hide()
     if (organisation && organisation.values.active.length > 0) {
       this.selectedOrganisationId = organisation.values.active[0].id
     }
@@ -338,6 +341,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
 
   systemChanged(system?: FilterUpdate<System>) {
     this.dataStatus.status = Constants.STATUS.PENDING
+    this.pagingControls?.hide()
     if (system && system.values.active.length > 0) {
       this.selectedSystemId = system.values.active[0].id
     }
@@ -370,6 +374,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
         this.updatePending = true
       } else {
         this.dataStatus.status = Constants.STATUS.PENDING
+        this.pagingControls?.hide()
       }
       this.conformanceService.getConformanceStatementsForSystem(this.selectedSystemId, this.activeConformanceSnapshot?.id, pagingInfo.targetPage, pagingInfo.targetPageSize, this.searchCriteria)
       .subscribe((data) => {
@@ -417,6 +422,10 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
 
   onStatementSelect(statement: ConformanceStatementItem) {
     this.routingService.toConformanceStatement(this.selectedOrganisationId!, this.selectedSystemId!, statement.id, this.selectedCommunityId!, this.activeConformanceSnapshot?.id, this.activeConformanceSnapshot?.label)
+  }
+
+  onStatementSelectFromListView(statement: ConformanceResultFullWithTestSuites) {
+    this.routingService.toConformanceStatement(statement.organizationId, statement.systemId, statement.actorId, statement.communityId, this.activeConformanceSnapshot?.id, this.activeConformanceSnapshot?.label)
   }
 
 }

@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChild, ViewChildren} from '@angular/core';
 import {Constants} from '../../common/constants';
 import {DataService} from '../../services/data.service';
 import {PagingControlsApi} from '../paging-controls/paging-controls-api';
@@ -23,13 +23,12 @@ import {ConformanceResultFullList} from '../../types/conformance-result-full-lis
 import {Observable, ReplaySubject} from 'rxjs';
 import {ConformanceStatementTableApi} from './conformance-statement-table-api';
 import {ConformanceResultFull} from '../../types/conformance-result-full';
-import {ConformanceService} from '../../services/conformance.service';
 import {ConformanceSnapshot} from '../../types/conformance-snapshot';
 import {BaseComponent} from '../../pages/base-component.component';
 import {ReportSupportService} from '../../services/report-support.service';
-import {RoutingService} from '../../services/routing.service';
 import {FilterState} from '../../types/filter-state';
 import {TestResultSearchCriteria} from '../../types/test-result-search-criteria';
+import {StatementOptionsButtonApi} from '../statement-options-button/statement-options-button-api';
 
 @Component({
   selector: 'app-conformance-statement-table',
@@ -46,8 +45,10 @@ export class ConformanceStatementTableComponent extends BaseComponent implements
   @Output() exportChange = new EventEmitter<boolean>()
   @Output() searchChange = new EventEmitter<boolean>()
   @Output() communityChange = new EventEmitter<number|undefined>()
-
+  @Output() select = new EventEmitter<ConformanceResultFullWithTestSuites>
   @ViewChild("pagingControls") pagingControls?: PagingControlsApi
+  @ViewChildren("statementOptionsButton") statementOptionsButtons?: QueryList<StatementOptionsButtonApi<ConformanceResultFull>>
+
   readonly Constants = Constants
   dataStatus = {status: Constants.STATUS.PENDING}
   filterCommands = new EventEmitter<number>()
@@ -60,12 +61,11 @@ export class ConformanceStatementTableComponent extends BaseComponent implements
     updatePending: false,
     updateDisabled: false
   }
+  showExportControls = false
 
   constructor(
     protected readonly dataService: DataService,
-    private readonly conformanceService: ConformanceService,
-    private readonly reportSupportService: ReportSupportService,
-    private readonly routingService: RoutingService
+    private readonly reportSupportService: ReportSupportService
   ) { super() }
 
   ngOnInit(): void {
@@ -73,19 +73,30 @@ export class ConformanceStatementTableComponent extends BaseComponent implements
     this.filterState.names[Constants.FILTER_TYPE.RESULT] = 'Status'
     this.filterState.names[Constants.FILTER_TYPE.END_TIME] = 'Last update time'
     this.sortColumn = Constants.FILTER_TYPE.COMMUNITY
+    this.showExportControls = this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin
     if (this.organisationId == undefined) {
       this.filterState.filters = [ Constants.FILTER_TYPE.SPECIFICATION, Constants.FILTER_TYPE.SPECIFICATION_GROUP, Constants.FILTER_TYPE.ACTOR, Constants.FILTER_TYPE.ORGANISATION, Constants.FILTER_TYPE.SYSTEM, Constants.FILTER_TYPE.ORGANISATION_PROPERTY, Constants.FILTER_TYPE.SYSTEM_PROPERTY, Constants.FILTER_TYPE.RESULT, Constants.FILTER_TYPE.END_TIME ]
       if (this.dataService.isSystemAdmin) {
         this.columnCount = 10
         this.filterState.filters.push(Constants.FILTER_TYPE.DOMAIN)
         this.filterState.filters.push(Constants.FILTER_TYPE.COMMUNITY)
-      } else if (this.dataService.isCommunityAdmin) {
+      } else {
         this.sortColumn = Constants.FILTER_TYPE.ORGANISATION
         if (this.dataService.community!.domain == undefined) {
-          this.columnCount = 9
           this.filterState.filters.push(Constants.FILTER_TYPE.DOMAIN)
+        }
+        if (this.dataService.isCommunityAdmin) {
+          if (this.dataService.community!.domain == undefined) {
+            this.columnCount = 9
+          } else {
+            this.columnCount = 8
+          }
         } else {
-          this.columnCount = 8
+          if (this.dataService.community!.domain == undefined) {
+            this.columnCount = 8
+          } else {
+            this.columnCount = 7
+          }
         }
       }
     } else {
@@ -309,7 +320,13 @@ export class ConformanceStatementTableComponent extends BaseComponent implements
   }
 
   onStatementSelect(statement: ConformanceResultFullWithTestSuites) {
-    this.routingService.toConformanceStatement(statement.organizationId, statement.systemId, statement.actorId, statement.communityId, this.snapshot?.id, this.snapshot?.label)
+    this.select.emit(statement)
+  }
+
+  optionsOpening(source: ConformanceResultFull) {
+    this.statementOptionsButtons?.forEach(item => {
+      item.close(source)
+    })
   }
 
 }

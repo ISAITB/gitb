@@ -1,7 +1,8 @@
 @if (!filtering || item.filtered) {
     @if (hideSelf) {
         @if (item.items) {
-            <app-conformance-statement-items-display #itemsComponent
+            <app-conformance-statement-items-display
+                #itemsComponent
                 [items]="item.items"
                 [wrapDescriptions]="wrapDescriptions"
                 [expandable]="expandable"
@@ -11,8 +12,16 @@
                 [withCheck]="withCheck"
                 [withExport]="withExport"
                 [withResults]="withResults"
+                [withOptions]="withOptions"
+                [communityId]="communityId"
+                [organisationId]="organisationId"
+                [systemId]="systemId"
+                [parentItem]="item"
+                [domainId]="domainId"
+                [snapshotId]="snapshotId"
                 (selectionChanged)="childSelectionChanged($event)"
                 (export)="onExport($event)"
+                (selected)="childSelected($event)"
             ></app-conformance-statement-items-display>
         }
     } @else {
@@ -34,10 +43,15 @@
                 }
                 @if (withExport && expandable && hasChildren && !allChildrenHidden) {
                     <div class="item-controls">
-                        <div class="btn-toolbar">
-                            <button class="btn btn-secondary" (click)="onExport({statementReport: false, item: item, format: 'xml'}); $event.stopPropagation();" [pending]="item.exportXmlPending" [icon]="true"  containerClass="shortTooltip" container="body" tooltip="Export (XML)" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-regular fa-file-lines"></i></button>
-                            <button class="btn btn-secondary" (click)="onExport({statementReport: false, item: item, format: 'pdf'}); $event.stopPropagation();" [pending]="item.exportPdfPending" [icon]="true"  containerClass="shortTooltip" container="body" tooltip="Export (PDF)" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-regular fa-file-pdf"></i></button>
-                        </div>
+                        <app-checkbox-option-panel #optionButton
+                                                   label="Options"
+                                                   icon="fa-solid fa-bars"
+                                                   placement="left"
+                                                   [options]="parentItemOptions"
+                                                   [singleSelection]="true"
+                                                   [pending]="item.exportPdfPending == true || item.exportXmlPending == true || optionPending"
+                                                   (updated)="handleOption($event)"
+                                                   (opening)="optionsOpening()"></app-checkbox-option-panel>
                     </div>
                 }
                 @if (showResults) {
@@ -61,13 +75,26 @@
                         @if (status) {
                             <div class="item-status"><i containerClass="shortTooltip" [tooltip]="dataService.tooltipForTestResult(status)" [ngClass]="dataService.iconForTestResult(status)"></i></div>
                         }
-                        <button class="btn btn-secondary options-button" (click)="showOptions(); $event.stopPropagation();" containerClass="shortTooltip" container="body" tooltip="Options" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-bars"></i></button>
+                        @if (withOptions && conformanceIds) {
+                            <div class="options-button">
+                                <app-statement-options-button #statementOptionsButton
+                                                              [item]="conformanceIds"
+                                                              [snapshotId]="snapshotId"
+                                                              [communityId]="communityId"
+                                                              [organisationId]="organisationId"
+                                                              [pending]="item.exportPdfPending == true || item.exportXmlPending == true || optionPending"
+                                                              (export)="onExport({ statementReport: true, item: item, actorId: $event.item.actorId, format: $event.format})"
+                                                              (opening)="optionsOpening()"
+                                ></app-statement-options-button>
+                            </div>
+                        }
                     </div>
                 }
             </div>
             @if (item.items && item.items.length > 0) {
                 <div class="item-content-container item-content" [collapse]="item.collapsed!" [isAnimated]="expandable && animated" (expanded)="expanded()" (collapses)="collapses()">
-                    <app-conformance-statement-items-display #itemsComponent
+                    <app-conformance-statement-items-display
+                        #itemsComponent
                         [items]="item.items"
                         [wrapDescriptions]="wrapDescriptions"
                         [expandable]="expandable"
@@ -77,8 +104,16 @@
                         [withCheck]="withCheck"
                         [withExport]="withExport"
                         [withResults]="withResults"
+                        [withOptions]="withOptions"
+                        [communityId]="communityId"
+                        [organisationId]="organisationId"
+                        [systemId]="systemId"
+                        [domainId]="domainId"
+                        [snapshotId]="snapshotId"
+                        [parentItem]="item"
                         (selectionChanged)="childSelectionChanged($event)"
                         (export)="onExport($event)"
+                        (selected)="childSelected($event)"
                     ></app-conformance-statement-items-display>
                 </div>
             }

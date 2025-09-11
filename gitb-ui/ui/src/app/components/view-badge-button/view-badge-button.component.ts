@@ -15,10 +15,8 @@
 
 import {Component, Input} from '@angular/core';
 import {BsModalService} from 'ngx-bootstrap/modal';
-import {PreviewBadgeModalComponent} from 'src/app/modals/preview-badge-modal/preview-badge-modal.component';
 import {ConformanceService} from 'src/app/services/conformance.service';
-import {DataService} from 'src/app/services/data.service';
-import {PopupService} from 'src/app/services/popup.service';
+import {PreviewBadgeModalComponent} from '../../modals/preview-badge-modal/preview-badge-modal.component';
 
 @Component({
     selector: 'app-view-badge-button',
@@ -36,29 +34,12 @@ export class ViewBadgeButtonComponent {
 
   constructor(
     private readonly conformanceService: ConformanceService,
-    private readonly dataService: DataService,
-    private readonly modalService: BsModalService,
-    private readonly popupService: PopupService
+    private readonly modalService: BsModalService
   ) { }
 
   copyBadgeURL() {
     this.copyBadgePending = true
-    this.conformanceService.conformanceBadgeUrl(this.systemId, this.actorId, this.snapshotId)
-    .subscribe((data) => {
-      if (data) {
-        if (data.startsWith('/')) {
-          // Relative URL.
-          let prefix = window.location.origin
-          if (prefix.endsWith('/')) {
-            prefix = prefix.substring(0, prefix.length - 1)
-          }
-          data = prefix + data
-        }
-        this.dataService.copyToClipboard(data).subscribe(() => {
-          this.popupService.success('Badge URL copied.')
-        })
-      }
-    }).add(() => {
+    this.conformanceService.copyBadgeURL(this.systemId, this.actorId, this.snapshotId).subscribe(() => {
       this.copyBadgePending = false
     })
   }

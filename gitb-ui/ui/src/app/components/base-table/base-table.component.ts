@@ -13,11 +13,12 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {Component, EventEmitter, Input, Output, QueryList, ViewChildren} from '@angular/core';
 import {BaseComponent} from 'src/app/pages/base-component.component';
 import {LoadingStatus} from 'src/app/types/loading-status.type';
 import {TableColumnDefinition} from 'src/app/types/table-column-definition.type';
 import {PagingEvent} from '../paging-controls/paging-event';
+import {TableRowApi} from '../table-row/table-row-api';
 
 @Component({
     template: '',
@@ -36,7 +37,7 @@ export abstract class BaseTableComponent extends BaseComponent {
 	@Input() actionPendingProperty = 'actionPending'
 	@Input() actionIcon = ''
   @Input() deleteIcon = 'fa-solid fa-trash'
-  @Input() exportIcon = 'fa-regular fa-file-pdf'
+  @Input() exportIcon = 'fa-solid fa-file-pdf'
 	@Input() operationsVisible = false
 	@Input() deleteVisibleForRow?: (row: any) => boolean
 	@Input() deletePendingProperty = 'deletePending'
@@ -65,6 +66,8 @@ export abstract class BaseTableComponent extends BaseComponent {
   @Output() onDelete: EventEmitter<any> = new EventEmitter()
   @Output() pageNavigation: EventEmitter<PagingEvent> = new EventEmitter()
   @Output() onSort: EventEmitter<TableColumnDefinition> = new EventEmitter()
+
+  @ViewChildren("tableRowComponent") tableRowComponents?: QueryList<TableRowApi>
 
   tableCaptionVisible = false
   columnsLeft: TableColumnDefinition[] = []
@@ -119,6 +122,12 @@ export abstract class BaseTableComponent extends BaseComponent {
 
   doPageNavigation(event: PagingEvent) {
     this.pageNavigation.emit(event)
+  }
+
+  handleOptionsOpening(source: any) {
+    this.tableRowComponents?.forEach(row => {
+      row.optionsOpened(source)
+    })
   }
 
 }

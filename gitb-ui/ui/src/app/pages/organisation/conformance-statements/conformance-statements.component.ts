@@ -35,6 +35,7 @@ import {MultiSelectConfig} from '../../../components/multi-select-filter/multi-s
 import {FilterUpdate} from '../../../components/test-filter/filter-update';
 import {PagingEvent} from '../../../components/paging-controls/paging-event';
 import {CheckboxOptionState} from '../../../components/checkbox-option-panel/checkbox-option-state';
+import {ConformanceResultFullWithTestSuites} from '../../../types/conformance-result-full-with-test-suites';
 
 @Component({
     selector: 'app-conformance-statements',
@@ -200,6 +201,14 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
     }
   }
 
+  onStatementSelectFromListView(statement: ConformanceResultFullWithTestSuites) {
+    if (this.communityId == undefined) {
+      this.routingService.toOwnConformanceStatement(statement.organizationId, statement.systemId, statement.actorId, this.activeConformanceSnapshot?.id, this.activeConformanceSnapshot?.label)
+    } else {
+      this.routingService.toConformanceStatement(statement.organizationId, statement.systemId, statement.actorId, this.communityId, this.activeConformanceSnapshot?.id, this.activeConformanceSnapshot?.label)
+    }
+  }
+
   createStatement() {
     this.routingService.toCreateConformanceStatement(this.organisationId!, this.system!.id, this.communityId)
   }
@@ -227,6 +236,7 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
   snapshotSelected(snapshot?: ConformanceSnapshot) {
     const reloadNeeded = snapshot?.id != this.activeConformanceSnapshot?.id
     if (reloadNeeded) {
+      this.pagingControls?.hide()
       this.activeConformanceSnapshot = snapshot
       this.snapshotButtonLabel = (snapshot == undefined)?this.latestSnapshotButtonLabel:snapshot.label
       setTimeout(() => {

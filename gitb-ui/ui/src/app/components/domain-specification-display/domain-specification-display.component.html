@@ -1,12 +1,13 @@
-<div class="root-container drag-div"
+<div class="root-container"
     [class.not-first]="!first"
     [class.top-level]="spec.group || spec.groupId == undefined"
     [class.dragging]="dragOngoing"
+    [class.draggable]="dragEnabled"
     cdkDrag
     (cdkDragStarted)="startDrag()"
     (cdkDragEnded)="endDrag()"
     cdkDragPreviewContainer="parent"
-    [cdkDragDisabled]="first && last"
+    [cdkDragDisabled]="!dragEnabled || (first && last)"
     >
     <div class="spec-container">
         <app-collapsing-icon [hidden]="!spec.group" [padded]="false" [isCollapsed]="spec.collapsed == true" [asDiv]="true"></app-collapsing-icon>
@@ -18,46 +19,40 @@
             @if (spec.hidden) {
                 <div class="spec-hidden drag-hide"><app-hidden-icon></app-hidden-icon></div>
             }
-            <div class="btn-toolbar">
-                @if (dragEnabled && (!first || !last)) {
-                    <div class="btn-toolbar drag-handle">
-                        <button cdkDragHandle #pop="bs-tooltip" (mousedown)="pop.hide()" (click)="$event.stopPropagation();" class="btn btn-secondary" type="button" containerClass="shortTooltip" container="body" tooltip="Reorder" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrows-up-down"></i></span></button>
-                    </div>
-                } @else {
-                    @if (groups.length > 0) {
-                        @if (spec.group) {
-                            <button id="button-edit" class="btn btn-secondary drag-hide" (click)="editGroup();$event.stopPropagation();" containerClass="shortTooltip" container="body" [tooltip]="'Edit '+dataService.labelSpecificationGroupLower()" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-pencil"></i></span></button>
-                            <button id="button-add-option" class="btn btn-secondary drag-hide" (click)="createOption();$event.stopPropagation();" containerClass="shortTooltip" container="body" [tooltip]="'Add '+dataService.labelSpecificationInGroupLower()" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-plus"></i></span></button>
-                        } @else {
-                            @if (spec.groupId != undefined) {
-                                <button id="button-remove-option" [disable]="isPending()" [pending]="spec.removePending" [icon]="true" class="btn btn-secondary drag-hide" (click)="removeFromGroup();$event.stopPropagation();" containerClass="shortTooltip" container="body" tooltip="Ungroup" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrow-up-right-from-square"></i></span></button>
-                            }
-                            @if ((spec.groupId && groups.length > 1) || (!spec.groupId && groups.length > 0)) {
-                                <div class="btn-group drag-hide" #copyDropdown="bs-dropdown" dropdown [isDisabled]="isPending()" placement="bottom right" (onShown)="copyExpanded()">
-                                    <button id="button-copy" #copyPop="bs-tooltip" (click)="copyPop.hide();$event.stopPropagation()" [pending]="spec.copyPending" [icon]="true" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-copy" containerClass="shortTooltip" tooltip="Copy" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-clone me-2"></i></span></button>
-                                    <ul id="dropdown-copy" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-copy">
-                                        @for (group of groups; track group.id) {
-                                            @if (group.id != spec.groupId) {
-                                                <li role="menuitem"><a class="dropdown-item" href (click)="copyToGroup(group.id);$event.preventDefault();$event.stopPropagation()">Copy to {{group.sname}}</a></li>
-                                            }
+            @if (!dragEnabled && groups.length > 0) {
+                <div class="btn-toolbar">
+                    @if (spec.group) {
+                        <button id="button-edit" class="btn btn-secondary drag-hide" (click)="editGroup();$event.stopPropagation();" containerClass="shortTooltip" container="body" [tooltip]="'Edit '+dataService.labelSpecificationGroupLower()" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-pencil"></i></span></button>
+                        <button id="button-add-option" class="btn btn-secondary drag-hide" (click)="createOption();$event.stopPropagation();" containerClass="shortTooltip" container="body" [tooltip]="'Add '+dataService.labelSpecificationInGroupLower()" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-plus"></i></span></button>
+                    } @else {
+                        @if (spec.groupId != undefined) {
+                            <button id="button-remove-option" [disable]="isPending()" [pending]="spec.removePending" [icon]="true" class="btn btn-secondary drag-hide" (click)="removeFromGroup();$event.stopPropagation();" containerClass="shortTooltip" container="body" tooltip="Ungroup" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrow-up-right-from-square"></i></span></button>
+                        }
+                        @if ((spec.groupId && groups.length > 1) || (!spec.groupId && groups.length > 0)) {
+                            <div class="btn-group drag-hide" #copyDropdown="bs-dropdown" dropdown [isDisabled]="isPending()" placement="bottom right" (onShown)="copyExpanded()">
+                                <button id="button-copy" #copyPop="bs-tooltip" (click)="copyPop.hide();$event.stopPropagation()" [pending]="spec.copyPending" [icon]="true" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-copy" containerClass="shortTooltip" tooltip="Copy" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-clone me-2"></i></span></button>
+                                <ul id="dropdown-copy" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-copy">
+                                    @for (group of groups; track group.id) {
+                                        @if (group.id != spec.groupId) {
+                                            <li role="menuitem"><a class="dropdown-item" href (click)="copyToGroup(group.id);$event.preventDefault();$event.stopPropagation()">Copy to {{group.sname}}</a></li>
                                         }
-                                    </ul>
-                                </div>
-                                <div class="btn-group drag-hide" #moveDropdown="bs-dropdown" dropdown [isDisabled]="isPending()" placement="bottom right" (onShown)="moveExpanded()">
-                                    <button id="button-move" #movePop="bs-tooltip" (click)="movePop.hide();$event.stopPropagation()" [pending]="spec.movePending" [icon]="true" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-move" containerClass="shortTooltip" tooltip="Move" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrow-right me-2"></i></span></button>
-                                    <ul id="dropdown-move" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-move">
-                                        @for (group of groups; track group.id) {
-                                            @if (group.id != spec.groupId) {
-                                                <li role="menuitem"><a class="dropdown-item" href (click)="moveToGroup(group.id);$event.preventDefault();$event.stopPropagation()">Move to {{group.sname}}</a></li>
-                                            }
+                                    }
+                                </ul>
+                            </div>
+                            <div class="btn-group drag-hide" #moveDropdown="bs-dropdown" dropdown [isDisabled]="isPending()" placement="bottom right" (onShown)="moveExpanded()">
+                                <button id="button-move" #movePop="bs-tooltip" (click)="movePop.hide();$event.stopPropagation()" [pending]="spec.movePending" [icon]="true" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-move" containerClass="shortTooltip" tooltip="Move" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrow-right me-2"></i></span></button>
+                                <ul id="dropdown-move" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-move">
+                                    @for (group of groups; track group.id) {
+                                        @if (group.id != spec.groupId) {
+                                            <li role="menuitem"><a class="dropdown-item" href (click)="moveToGroup(group.id);$event.preventDefault();$event.stopPropagation()">Move to {{group.sname}}</a></li>
                                         }
-                                    </ul>
-                                </div>
-                            }
+                                    }
+                                </ul>
+                            </div>
                         }
                     }
-                }
-            </div>
+                </div>
+            }
         </div>
     </div>
     @if (spec.group) {

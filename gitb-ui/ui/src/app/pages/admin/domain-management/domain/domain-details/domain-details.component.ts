@@ -353,7 +353,9 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
   }
 
 	onSpecificationSelect(specification: DomainSpecification) {
-    this.routingService.toSpecification(this.domainId, specification.id)
+    if (!this.managingSpecificationOrder) {
+      this.routingService.toSpecification(this.domainId, specification.id)
+    }
   }
 
 	onSpecificationGroupSelect(groupOrOption: DomainSpecification) {

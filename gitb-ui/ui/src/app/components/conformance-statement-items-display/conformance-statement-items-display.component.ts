@@ -39,19 +39,41 @@ export class ConformanceStatementItemsDisplayComponent implements OnInit, Confor
   @Input() withExport = false
   @Input() withResults = false
   @Input() filtering = true
+  @Input() withOptions = false
+
+  // Inputs needed when showing options
+  @Input() communityId?: number
+  @Input() organisationId?: number
+  @Input() systemId?: number
+  @Input() domainId?: number
+  @Input() parentItem?: ConformanceStatementItem
+  @Input() snapshotId?: number
 
   @Output() selectionChanged = new EventEmitter<ConformanceStatementItem>()
   @Output() export = new EventEmitter<ExportReportEvent>()
+  @Output() selected = new EventEmitter<number>()
 
   @ViewChildren('itemComponent') itemComponents?: QueryList<ConformanceStatementItemDisplayComponentApi>
 
   hidden = false
+  domainIdsToUse!: Array<number|undefined>
 
   constructor() { }
 
   ngOnInit(): void {
     // If we have only one domain then we don't show it.
     this.hidden = (this.items.length == 1 && this.items[0].itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.DOMAIN)
+    this.domainIdsToUse = []
+    if (this.domainId != undefined) {
+      for (let i = 0; i < this.items.length; i++) {
+        this.domainIdsToUse.push(this.domainId)
+      }
+    } else {
+      // This would happen only if this is the root element (which always has domain children)
+      this.items.forEach((item) => {
+        this.domainIdsToUse!.push(item.id)
+      })
+    }
   }
 
   childSelectionChanged(childItem: ConformanceStatementItem) {
@@ -62,11 +84,21 @@ export class ConformanceStatementItemsDisplayComponent implements OnInit, Confor
     this.export.emit(event)
   }
 
+  childSelected(event: number) {
+    this.selected.emit(event)
+  }
+
   reset() {
     this.ngOnInit()
     if (this.itemComponents) {
       this.itemComponents.forEach(item => item.reset())
     }
+  }
+
+  statementSelected(statementId: number) {
+    this.itemComponents?.forEach(item => {
+      item.statementSelected(statementId)
+    })
   }
 
 }

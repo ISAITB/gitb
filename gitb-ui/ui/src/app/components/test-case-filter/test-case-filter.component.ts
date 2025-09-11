@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
 import {TestCaseFilterApi} from './test-case-filter-api';
 import {CheckboxOption} from '../checkbox-option-panel/checkbox-option';
 import {Constants} from '../../common/constants';
@@ -21,6 +21,7 @@ import {DataService} from '../../services/data.service';
 import {TestCaseFilterState} from './test-case-filter-state';
 import {CheckboxOptionState} from '../checkbox-option-panel/checkbox-option-state';
 import {TestCaseFilterOptions} from './test-case-filter-options';
+import {CheckBoxOptionPanelComponentApi} from '../checkbox-option-panel/check-box-option-panel-component-api';
 
 @Component({
   selector: 'app-test-case-filter',
@@ -31,9 +32,9 @@ export class TestCaseFilterComponent implements TestCaseFilterApi, OnInit {
 
   @Input() options?: TestCaseFilterOptions
   @Output() apply = new EventEmitter<TestCaseFilterState>()
+  @ViewChild('optionPanel') optionPanel?: CheckBoxOptionPanelComponentApi
 
   testDisplayOptions!: CheckboxOption[][]
-  refreshDisplayOptions = new EventEmitter<CheckboxOption[][]>()
 
   private showSuccessful?: boolean
   private showFailed?: boolean
@@ -89,7 +90,7 @@ export class TestCaseFilterComponent implements TestCaseFilterApi, OnInit {
     if (otherOptions.length > 0) {
       this.testDisplayOptions.push(otherOptions)
     }
-    this.refreshDisplayOptions.emit(this.testDisplayOptions)
+    this.optionPanel?.refresh(this.testDisplayOptions)
   }
 
   resultFilterUpdated(choices: CheckboxOptionState) {
