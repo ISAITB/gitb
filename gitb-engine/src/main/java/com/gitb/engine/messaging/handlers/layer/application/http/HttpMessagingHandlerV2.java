@@ -65,6 +65,7 @@ public class HttpMessagingHandlerV2 extends AbstractNonWorkerMessagingHandler {
     private static final String FOLLOW_REDIRECTS_ARGUMENT_NAME = "followRedirects";
     private static final String CONNECTION_TIMEOUT_ARGUMENT_NAME = "connectionTimeout";
     private static final String REQUEST_TIMEOUT_ARGUMENT_NAME = "requestTimeout";
+    private static final String VERSION_ARGUMENT_NAME = "version";
 
     public static final String REPORT_ITEM_REQUEST = "request";
     public static final String REPORT_ITEM_RESPONSE = "response";
@@ -100,6 +101,18 @@ public class HttpMessagingHandlerV2 extends AbstractNonWorkerMessagingHandler {
                 return HttpMethod.GET;
             }
         });
+        var httpVersion = Optional.ofNullable(getAndConvert(message.getFragments(), VERSION_ARGUMENT_NAME, DataType.STRING_DATA_TYPE, StringType.class))
+                .map(StringType::getValue)
+                .map(value -> {
+                    if ("1.1".equals(value)) {
+                        return HttpClient.Version.HTTP_1_1;
+                    } else if ("2".equals(value)) {
+                        return HttpClient.Version.HTTP_2;
+                    } else {
+                        throw new IllegalArgumentException("The [%s] input for must be either set to '1.1' or '2'.".formatted(VERSION_ARGUMENT_NAME));
+                    }
+                })
+                .orElse(HttpClient.Version.HTTP_2);
         // The HTTP headers.
         var headers = getMapOfValues(message.getFragments(), HEADERS_ARGUMENT_NAME);
         // The connection timeout.
@@ -202,6 +215,7 @@ public class HttpMessagingHandlerV2 extends AbstractNonWorkerMessagingHandler {
         // Make request.
         CompletableFuture<HttpResponse<byte[]>> asyncResponse;
         try (HttpClient client = HttpClient.newBuilder()
+                .version(httpVersion)
                 .connectTimeout(Duration.ofMillis(connectionTimeout))
                 .followRedirects(followRedirects?HttpClient.Redirect.ALWAYS:HttpClient.Redirect.NEVER)
                 .build()) {
