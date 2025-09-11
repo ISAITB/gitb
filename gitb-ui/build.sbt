@@ -1,14 +1,15 @@
 import sbtlicensereport.license.{LicenseCategory, LicenseInfo}
 
 scalaVersion := "2.13.16"
-val pekkoVersion = "1.1.4"
-val jacksonVersion = "2.19.1"
+val pekkoVersion = "1.2.0"
+val jacksonVersion = "2.20.0"
+val jacksonAnnotationsVersion = "2.20"
 val cxfVersion = "4.1.3"
 val gitbCommonsVersion = "1.28.0-SNAPSHOT"
 val gitbTypesVersion = "1.28.0-SNAPSHOT"
 val bouncyCastleVersion = "1.81"
-val commonsTextVersion = "1.13.1"
-val mySqlConnectorVersion = "9.3.0"
+val commonsTextVersion = "1.14.0"
+val mySqlConnectorVersion = "9.4.0"
 
 name := """GITB"""
 version := "1.0-SNAPSHOT"
@@ -50,7 +51,7 @@ libraryDependencies ++= Seq(
   "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion,
-  "com.fasterxml.jackson.core" % "jackson-annotations" % jacksonVersion,
+  "com.fasterxml.jackson.core" % "jackson-annotations" % jacksonAnnotationsVersion,
   "com.fasterxml.jackson.module" % "jackson-module-jakarta-xmlbind-annotations" % jacksonVersion,
   "com.password4j"  % "password4j" % "1.8.4",
   "net.debasishg" %% "redisclient" % "3.42",
@@ -61,10 +62,10 @@ libraryDependencies ++= Seq(
   // ---
   "org.apache.tika" % "tika-core" % "3.2.2",
   "org.webjars" % "jquery" % "3.7.1",
-  "org.webjars" % "bootstrap" % "5.3.7",
-  "org.webjars" % "swagger-ui" % "5.25.3",
-  "com.sun.mail" % "jakarta.mail" % "2.0.1",
-  "jakarta.activation" % "jakarta.activation-api" % "2.1.3",
+  "org.webjars" % "bootstrap" % "5.3.8",
+  "org.webjars" % "swagger-ui" % "5.28.1",
+  "com.sun.mail" % "jakarta.mail" % "2.0.2",
+  "jakarta.activation" % "jakarta.activation-api" % "2.1.4",
   "jakarta.xml.ws" % "jakarta.xml.ws-api" % "4.0.2",
   "jakarta.jws" % "jakarta.jws-api" % "3.0.0",
   "jakarta.xml.bind" % "jakarta.xml.bind-api" % "4.0.2",
@@ -77,7 +78,7 @@ libraryDependencies ++= Seq(
   "org.jasypt" % "jasypt" % "1.9.3",
   "org.apache.httpcomponents" % "httpclient" % "4.5.14",
   "org.flywaydb" %% "flyway-play" % "9.1.0",
-  "org.flywaydb" % "flyway-mysql" % "11.10.0",
+  "org.flywaydb" % "flyway-mysql" % "11.12.0",
   "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20240325.1",
   "net.lingala.zip4j" % "zip4j" % "2.11.5",
   "org.apache.commons" % "commons-text" % commonsTextVersion
