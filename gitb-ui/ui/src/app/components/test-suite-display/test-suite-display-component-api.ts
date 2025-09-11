@@ -13,8 +13,11 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
+import {ConformanceTestCase} from '../../pages/organisation/conformance-statement/conformance-test-case';
+
 export interface TestSuiteDisplayComponentApi {
 
   refresh: () => void
+  closeOptions: (source: ConformanceTestCase) => void
 
 }

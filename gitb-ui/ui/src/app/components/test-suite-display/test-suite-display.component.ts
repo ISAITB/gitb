@@ -43,6 +43,7 @@ export class TestSuiteDisplayComponent implements OnInit, TestSuiteDisplayCompon
   @Output() executeTestCase = new EventEmitter<ConformanceTestCase>()
   @Output() executeTestSuite = new EventEmitter<ConformanceTestSuite>()
   @Output() toggleExpand = new EventEmitter<boolean>()
+  @Output() optionsOpened = new EventEmitter<ConformanceTestCase>()
 
   @ViewChildren("testCaseDisplayComponent") testCaseDisplayComponents?: QueryList<TestCaseDisplayComponentApi>
 
@@ -60,6 +61,12 @@ export class TestSuiteDisplayComponent implements OnInit, TestSuiteDisplayCompon
 
   ngOnInit(): void {
     this.prepareTestCaseGroupMaps()
+  }
+
+  closeOptions(source: ConformanceTestCase): void {
+    this.testCaseDisplayComponents?.forEach((testCaseDisplayComponent) => {
+      testCaseDisplayComponent.closeOptions(source)
+    })
   }
 
   refresh() {
@@ -98,6 +105,10 @@ export class TestSuiteDisplayComponent implements OnInit, TestSuiteDisplayCompon
 
   propagateExecuteTestSession(testCase: ConformanceTestCase) {
     this.executeTestCase.emit(testCase)
+  }
+
+  propagateOptionsOpened(testCase: ConformanceTestCase) {
+    this.optionsOpened.emit(testCase)
   }
 
   showTestSuiteDocumentation(testSuite: ConformanceTestSuite) {

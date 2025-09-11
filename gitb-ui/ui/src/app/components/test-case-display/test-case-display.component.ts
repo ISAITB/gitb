@@ -29,6 +29,9 @@ import {DataService} from '../../services/data.service';
 import {CloseEvent} from '../test-result-status-display/close-event';
 import {TestCaseDisplayComponentApi} from './test-case-display-component-api';
 import {TestResultStatusDisplayComponentApi} from '../test-result-status-display/test-result-status-display-component-api';
+import {CheckBoxOptionPanelComponentApi} from '../checkbox-option-panel/check-box-option-panel-component-api';
+import {CheckboxOption} from '../checkbox-option-panel/checkbox-option';
+import {CheckboxOptionState} from '../checkbox-option-panel/checkbox-option-state';
 
 @Component({
     selector: 'app-test-case-display',
@@ -54,8 +57,14 @@ export class TestCaseDisplayComponent extends BaseComponent implements TestCaseD
   @Output() viewTestSession = new EventEmitter<string>()
   @Output() execute = new EventEmitter<ConformanceTestCase>()
   @Output() edit = new EventEmitter<ConformanceTestCase>()
+  @Output() optionsOpened = new EventEmitter<ConformanceTestCase>()
 
   @ViewChildren("testResultStatusDisplayComponent") testResultStatusDisplayComponents?: QueryList<TestResultStatusDisplayComponentApi>
+  @ViewChildren("optionButton") optionButtons?: QueryList<CheckBoxOptionPanelComponentApi>
+
+  protected static EXPORT_XML = '0'
+  protected static EXPORT_PDF = '1'
+  protected static VIEW_SESSION = '2'
 
   Constants = Constants
   exportXmlPending: {[key:number]: boolean } = {}
@@ -91,6 +100,46 @@ export class TestCaseDisplayComponent extends BaseComponent implements TestCaseD
       testCase.parsedTags = sortBy(JSON.parse(testCase.tags), ['name'])
     }
     return testCase.parsedTags
+  }
+
+  closeOptions(source: ConformanceTestCase) {
+    this.optionButtons?.forEach((optionButton) => {
+      if (optionButton.getReferenceItem() !== source) {
+        optionButton.close()
+      }
+    })
+  }
+
+  loadOptions(testCase: ConformanceTestCase) {
+    return () => {
+      const options: CheckboxOption[][] = []
+      if (testCase.sessionId != undefined) {
+        options.push([
+          { key: TestCaseDisplayComponent.VIEW_SESSION, label: "View test session", default: true, iconClass: "fa-solid fa-search"}
+        ])
+      }
+      if (this.showExportTestCase(testCase)) {
+        options.push([
+          { key: TestCaseDisplayComponent.EXPORT_PDF, label: "Download report", default: true, iconClass: "fa-solid fa-file-pdf"},
+          { key: TestCaseDisplayComponent.EXPORT_XML, label: "Download report as XML", default: true, iconClass: "fa-solid fa-file-lines"}
+        ])
+      }
+      return of(options)
+    }
+  }
+
+  handleOption(event: CheckboxOptionState, testCase: ConformanceTestCase) {
+    if (event[TestCaseDisplayComponent.EXPORT_PDF]) {
+      this.onExportTestCasePdf(testCase)
+    } else if (event[TestCaseDisplayComponent.EXPORT_XML]) {
+      this.onExportTestCaseXml(testCase)
+    } else if (event[TestCaseDisplayComponent.VIEW_SESSION]) {
+      this.viewTestCase(testCase)
+    }
+  }
+
+  optionsOpening(testCase: ConformanceTestCase) {
+    this.optionsOpened.emit(testCase)
   }
 
   private resetPresentation() {

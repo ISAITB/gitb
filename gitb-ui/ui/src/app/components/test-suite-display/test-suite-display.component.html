@@ -38,6 +38,7 @@
                         [communityId]="communityId"
                         (viewTestSession)="propagateViewTestSession($event)"
                         (execute)="propagateExecuteTestSession($event)"
+                        (optionsOpened)="propagateOptionsOpened($event)"
                     ></app-test-case-display>
                 </div>
             </div>

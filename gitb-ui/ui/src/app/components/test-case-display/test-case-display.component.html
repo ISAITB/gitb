@@ -55,15 +55,20 @@
                         }
                         @if (testCase.sessionId != undefined || (testCase.hasDocumentation && showViewDocumentation) || showExportTestCase(testCase) || showExecute || showEdit) {
                             <div class="btn-toolbar" (click)="$event.stopPropagation()">
-                                @if (testCase.sessionId != undefined) {
-                                    <button class="btn btn-secondary" (click)="viewTestCase(testCase)" containerClass="shortTooltip" container="body" tooltip="View session" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-search"></i></button>
+                                @if (testCase.sessionId != undefined || showExportTestCase(testCase)) {
+                                    <app-checkbox-option-panel #optionButton
+                                                               label="Options"
+                                                               icon="fa-solid fa-bars"
+                                                               placement="left"
+                                                               [referenceItem]="testCase"
+                                                               [optionProvider]="loadOptions(testCase)"
+                                                               [singleSelection]="true"
+                                                               [pending]="exportXmlPending[testCase.id] || exportPdfPending[testCase.id]"
+                                                               (updated)="handleOption($event, testCase)"
+                                                               (opening)="optionsOpening(testCase)"></app-checkbox-option-panel>
                                 }
                                 @if (testCase.hasDocumentation && showViewDocumentation) {
                                     <button type="button" class="btn btn-secondary" (click)="showTestCaseDocumentation(testCase)" [icon]="true" [pending]="viewDocumentationPending[testCase.id]" containerClass="shortTooltip" container="body"  tooltip="Documentation" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-info-circle"></i></button>
-                                }
-                                @if (showExportTestCase(testCase)) {
-                                    <button type="button" class="btn btn-secondary" [icon]="true" (click)="onExportTestCaseXml(testCase)" [pending]="exportXmlPending[testCase.id]" containerClass="shortTooltip" container="body"  tooltip="Export (XML)" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-regular fa-file-lines"></i></button>
-                                    <button type="button" class="btn btn-secondary" [icon]="true" (click)="onExportTestCasePdf(testCase)" [pending]="exportPdfPending[testCase.id]" containerClass="shortTooltip" container="body"  tooltip="Export (PDF)" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-regular fa-file-pdf"></i></button>
                                 }
                                 @if (showEdit) {
                                     <button type="button" class="btn btn-secondary" (click)="editTestcase(testCase)" containerClass="shortTooltip" container="body"  tooltip="Edit" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-pencil"></i></button>

@@ -51,6 +51,7 @@ export class CheckboxOptionPanelComponent implements OnInit, OnDestroy, CheckBox
   @Input() singleSelection = false
   @Input() pending = false
   @Input() placement: 'left'|'bottom' = 'bottom'
+  @Input() referenceItem?: any
   @Output() updated = new EventEmitter<CheckboxOptionState>()
   @Output() opening = new EventEmitter<void>()
   @Output() opened = new EventEmitter<void>()
@@ -72,6 +73,10 @@ export class CheckboxOptionPanelComponent implements OnInit, OnDestroy, CheckBox
     private viewContainerRef: ViewContainerRef,
     private renderer: Renderer2
   ) { }
+
+  getReferenceItem() {
+    return this.referenceItem
+  }
 
   close() {
     this.open = false;

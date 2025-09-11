@@ -741,4 +741,10 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
     this.applySearchFilters()
   }
 
+  onTestCaseOptionsOpened(testCase: ConformanceTestCase) {
+    this.testSuiteDisplayComponents?.forEach((component) => {
+      component.closeOptions(testCase)
+    })
+  }
+
 }

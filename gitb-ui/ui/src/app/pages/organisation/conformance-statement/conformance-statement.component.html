@@ -152,10 +152,12 @@
 					<app-test-suite-display #testSuiteDisplayComponent
 						[testSuites]="displayedTestSuites"
 						[showExecute]="!isReadonly"
+                        [showExport]="true"
                         [communityId]="communityIdOfStatement"
 						(viewTestSession)="toTestSession($event)"
 						(executeTestCase)="onTestSelect($event)"
 						(executeTestSuite)="onTestSuiteSelect($event)"
+                        (optionsOpened)="onTestCaseOptionsOpened($event)"
 					></app-test-suite-display>
 				}
                 <app-paging-controls #pagingControls [placement]="PagingPlacement.tab" (navigation)="testSuitePageNavigation($event)"></app-paging-controls>
