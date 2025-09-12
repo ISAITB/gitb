@@ -49,7 +49,6 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
 
   spinner = false
   createPending = false
-  rememberMe = false
   loginOption?: string
   selfRegData: SelfRegistrationModel = {}
 
@@ -230,7 +229,7 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
       userId: userId!,
       tokens: result.body,
       path: path,
-      remember: this.rememberMe
+      remember: false
     }
     this.authProvider.signalLogin(this.loginState)
   }
