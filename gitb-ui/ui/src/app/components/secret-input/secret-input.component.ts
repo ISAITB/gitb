@@ -38,6 +38,7 @@ export class SecretInputComponent implements OnInit, AfterViewInit,  ControlValu
   @Input() inputName!: string
   @Input() autoFocus = false
   @Input() validation?: ReplaySubject<InvalidFormControlConfig>
+  @Input() autocomplete: 'new-password' | 'current-password' = 'new-password'
   @Input() focusChange?: EventEmitter<boolean>
 
   @ViewChild("passwordField", { static: false }) passwordField?: ElementRef;
