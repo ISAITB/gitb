@@ -13,10 +13,10 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input, OnDestroy, OnInit } from '@angular/core';
-import { Subscription } from 'rxjs';
-import { DataService } from 'src/app/services/data.service';
-import { MenuItem } from 'src/app/types/menu-item.enum';
+import {Component, ContentChild, Input, OnDestroy, OnInit, TemplateRef} from '@angular/core';
+import {Subscription} from 'rxjs';
+import {DataService} from 'src/app/services/data.service';
+import {MenuItem} from 'src/app/types/menu-item.enum';
 
 @Component({
     selector: 'app-menu-item',
@@ -27,9 +27,11 @@ import { MenuItem } from 'src/app/types/menu-item.enum';
 export class MenuItemComponent implements OnInit, OnDestroy {
 
   @Input() label!: string
-  @Input() icon!: string
+  @Input() icon?: string
   @Input() expanded = false
   @Input() type!: MenuItem
+  @ContentChild(TemplateRef) customTemplate?: TemplateRef<any>;
+
   active = false
   pageChangeSubscription?: Subscription
 

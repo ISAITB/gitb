@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter, OnInit } from '@angular/core';
+import {AfterViewInit, Component, EventEmitter, Input, OnInit} from '@angular/core';
 import { forkJoin, mergeMap, Observable, of } from 'rxjs';
 import { CommunityService } from 'src/app/services/community.service';
 import { ConformanceService } from 'src/app/services/conformance.service';
@@ -35,7 +35,10 @@ import { Constants } from 'src/app/common/constants';
     styleUrls: ['./export.component.less'],
     standalone: false
 })
-export class ExportComponent extends BaseComponent implements OnInit {
+export class ExportComponent extends BaseComponent implements OnInit, AfterViewInit {
+
+  @Input() collapsed = true
+  @Input() animated = true
 
   showDomainOption = true
   includeDomainInCommunityExport = true
@@ -169,7 +172,12 @@ export class ExportComponent extends BaseComponent implements OnInit {
       }
       this.loaded = true
     })
-    this.routingService.exportBreadcrumbs()
+  }
+
+  ngAfterViewInit() {
+    setTimeout(() => {
+      this.collapsed = false
+    })
   }
 
   resetIncludes() {

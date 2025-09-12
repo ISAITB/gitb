@@ -1,10 +1,8 @@
-<div class="page">
-	<div class="card mb-0">
-		<div class="card-header">
-			<div class="card-title">Data import</div>
-		</div>
-		<form>
-            <div class="card-body">
+<div class="card mb-0 border-top-0">
+    <form>
+        <div [collapse]="collapsed" [isAnimated]="animated">
+            <div class="ms-3 me-3 mt-2 pt-2 border-top bg-transparent"></div>
+            <div class="card-body pt-0" [pending]="!loaded">
                 @if (importStep1) {
                     <div>
                         @if (showDomainOption || dataService.isSystemAdmin) {
@@ -132,7 +130,7 @@
                                             [maxSize]="52428800"
                                             [reset]="resetEmitter"
                                             [validation]="validation.get('archive')"
-                                            ></app-file-select>
+                                        ></app-file-select>
                                     </div>
                                     <div app-tooltip class="col-auto" tbTooltip="The archive containing the data to import."></div>
                                 </div>
@@ -190,21 +188,21 @@
                         }
                     </div>
                 }
-			</div>
-            <div class="card-footer">
-                @if (importStep1) {
-                    <div>
-                        <button class="btn btn-secondary" type="submit" (click)="import()" [disable]="importDisabled()" [pending]="pending">Import</button>
-                    </div>
-                } @else if (importStep2) {
-                    <div class="btn-toolbar">
-                        @if (importItemGroups && importItemGroups.length > 0) {
-                            <button class="btn btn-secondary" type="submit" (click)="confirm()" [disable]="cancelPending || importDisabled()" [pending]="pending">Confirm</button>
-                        }
-                        <button class="btn btn-secondary" type="button" (click)="cancel()" [disable]="pending" [pending]="cancelPending">Cancel</button>
-                    </div>
-                }
-			</div>
-		</form>
-	</div>
+            </div>
+        </div>
+        <div class="card-footer">
+            @if (importStep1) {
+                <div>
+                    <button class="btn btn-secondary" type="submit" (click)="import()" [disable]="importDisabled()" [pending]="pending">Proceed</button>
+                </div>
+            } @else if (importStep2) {
+                <div class="btn-toolbar">
+                    @if (importItemGroups && importItemGroups.length > 0) {
+                        <button class="btn btn-secondary" type="submit" (click)="confirm()" [disable]="cancelPending || importDisabled()" [pending]="pending">Confirm</button>
+                    }
+                    <button class="btn btn-secondary" type="button" (click)="cancel()" [disable]="pending" [pending]="cancelPending">Cancel</button>
+                </div>
+            }
+        </div>
+    </form>
 </div>

@@ -1,12 +1,20 @@
 <div class="menu-item-root" [class.active]="active">
     @if (expanded) {
         <div class="menu-item">
-            <span><i [ngClass]="icon" class="fa-xl"></i></span>
+            @if (customTemplate) {
+                <ng-container [ngTemplateOutlet]="customTemplate"></ng-container>
+            } @else {
+                <span><i [ngClass]="icon" class="fa-xl"></i></span>
+            }
         </div>
         <div class="menu-item-text">{{label}}</div>
     } @else {
         <div class="menu-item" (click)="popup.hide()" [tooltip]="label" [isDisabled]="expanded" placement="right" [delay]="500" #popup="bs-tooltip" containerClass="shortTooltip">
-            <span><i [ngClass]="icon" class="fa-xl"></i></span>
+            @if (customTemplate) {
+                <ng-container [ngTemplateOutlet]="customTemplate"></ng-container>
+            } @else {
+                <span><i [ngClass]="icon" class="fa-xl"></i></span>
+            }
         </div>
     }
 </div>

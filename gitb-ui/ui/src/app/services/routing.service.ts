@@ -78,10 +78,8 @@ export class RoutingService {
       this.dataService.changePage({ menuItem: MenuItem.domainManagement })
     } else if (url.startsWith('/admin/users')) {
       this.dataService.changePage({ menuItem: MenuItem.communityManagement })
-    } else if (url.startsWith('/admin/export')) {
-      this.dataService.changePage({ menuItem: MenuItem.dataExport })
-    } else if (url.startsWith('/admin/import')) {
-      this.dataService.changePage({ menuItem: MenuItem.dataImport })
+    } else if (url.startsWith('/admin/data')) {
+      this.dataService.changePage({ menuItem: MenuItem.dataManagement })
     } else if (url.startsWith('/admin/system')) {
       this.dataService.changePage({ menuItem: MenuItem.systemAdministration })
     } else if (url.startsWith('/organisation/conformance')) {
@@ -497,12 +495,8 @@ export class RoutingService {
     return this.navigate(MenuItem.conformanceDashboard, ['admin', 'conformance'])
   }
 
-  toDataImport() {
-    return this.navigate(MenuItem.dataImport, ['admin', 'import'])
-  }
-
-  toDataExport() {
-    return this.navigate(MenuItem.dataExport, ['admin', 'export'])
+  toDataManagement() {
+    return this.navigate(MenuItem.dataManagement, ['admin', 'data'])
   }
 
   toSystemAdministration(tab?: number) {
@@ -800,14 +794,8 @@ export class RoutingService {
     return crumbs
   }
 
-  exportBreadcrumbs(): BreadcrumbItem[] {
-    const crumbs = [{ type: BreadcrumbType.export, label: 'Data export', action: (() => this.toDataExport()) }]
-    this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
-    return crumbs
-  }
-
-  importBreadcrumbs(): BreadcrumbItem[] {
-    const crumbs = [{ type: BreadcrumbType.import, label: 'Data import', action: (() => this.toDataImport()) }]
+  dataManagementBreadcrumbs(): BreadcrumbItem[] {
+    const crumbs = [{ type: BreadcrumbType.dataManagement, label: 'Data management', action: (() => this.toDataManagement()) }]
     this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
     return crumbs
   }

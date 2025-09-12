@@ -13,19 +13,19 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, OnDestroy, OnInit, TemplateRef, ViewChild } from '@angular/core';
-import { DataService } from '../../services/data.service'
-import { UserGuideService } from '../../services/user-guide.service'
-import { HtmlService } from '../../services/html.service';
-import { LegalNoticeService } from '../../services/legal-notice.service';
-import { Observable, Subscription } from 'rxjs';
-import { Constants } from 'src/app/common/constants';
-import { AuthProviderService } from '../../services/auth-provider.service'
-import { BsModalRef, BsModalService } from 'ngx-bootstrap/modal';
-import { ContactSupportComponent } from 'src/app/modals/contact-support/contact-support.component';
-import { RoutingService } from 'src/app/services/routing.service';
-import { MenuItem } from 'src/app/types/menu-item.enum';
-import { PopupService } from 'src/app/services/popup.service';
+import {Component, OnDestroy, OnInit} from '@angular/core';
+import {DataService} from '../../services/data.service';
+import {UserGuideService} from '../../services/user-guide.service';
+import {HtmlService} from '../../services/html.service';
+import {LegalNoticeService} from '../../services/legal-notice.service';
+import {Observable, Subscription} from 'rxjs';
+import {Constants} from 'src/app/common/constants';
+import {AuthProviderService} from '../../services/auth-provider.service';
+import {BsModalService} from 'ngx-bootstrap/modal';
+import {ContactSupportComponent} from 'src/app/modals/contact-support/contact-support.component';
+import {RoutingService} from 'src/app/services/routing.service';
+import {MenuItem} from 'src/app/types/menu-item.enum';
+import {PopupService} from 'src/app/services/popup.service';
 
 @Component({
     selector: 'app-index',
@@ -34,9 +34,6 @@ import { PopupService } from 'src/app/services/popup.service';
     standalone: false
 })
 export class IndexComponent implements OnInit, OnDestroy {
-
-  @ViewChild('logoutTemplate', { read: TemplateRef }) logoutTemplate?: TemplateRef<any>
-  logoutModal?: BsModalRef<any>
 
   version?: string
   pageTitle = ''

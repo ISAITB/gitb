@@ -17,10 +17,7 @@
 
 .page-root {
     display: flex;
-    margin-top: @page-root-margin-top * 1px;
-    margin-left: 10px;
-    margin-bottom: @page-root-margin-top * 1px;
-    margin-right: 10px;
+    margin: @page-root-margin-top * 1px 10px;
     min-height: 200px;
     .page-menu {
         border: 1px solid @gray-dark-1;
@@ -37,7 +34,7 @@
         }
     }
     .page-content {
-        padding: 0px 0px 0px 0px;
+        padding: 0 0 0 0;
         width: 100%;
     }
 }
@@ -57,7 +54,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 10px 0px;
+    padding: 10px 0;
     position: absolute;
     left: 50%;
     top: 128px;
@@ -68,5 +65,13 @@
 }
 
 .initial-load-indicator {
-    margin: 30px 0px;
+    margin: 30px 0;
+}
+
+.menu-icon {
+    height: 25px;
+    width: 25px;
+    path {
+        fill: currentColor;
+    }
 }

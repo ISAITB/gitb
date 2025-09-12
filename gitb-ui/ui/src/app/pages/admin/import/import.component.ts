@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter, OnDestroy, OnInit } from '@angular/core';
+import {AfterViewInit, Component, EventEmitter, Input, OnDestroy, OnInit} from '@angular/core';
 import { forkJoin, mergeMap, Observable, of } from 'rxjs';
 import { Constants } from 'src/app/common/constants';
 import { CommunityService } from 'src/app/services/community.service';
@@ -41,7 +41,10 @@ import {FilterUpdate} from '../../../components/test-filter/filter-update';
     styles: [],
     standalone: false
 })
-export class ImportComponent extends BaseComponent implements OnInit, OnDestroy {
+export class ImportComponent extends BaseComponent implements OnInit, OnDestroy, AfterViewInit {
+
+  @Input() collapsed = true
+  @Input() animated = true
 
   itemId = 0
   pending = false
@@ -67,6 +70,7 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
   formAnimated = false
   validation = new ValidationState()
   resetEmitter = new EventEmitter<void>()
+  loaded = false
 
   domainSelectionConfig!: MultiSelectConfig<Domain>
   communitySelectionConfig!: MultiSelectConfig<Community>
@@ -121,8 +125,14 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
     forkJoin([communities$, domains$]).subscribe((data) => {
       this.communities = data[0]
       this.domains = data[1]
+      this.loaded = true
     })
-    this.routingService.importBreadcrumbs()
+  }
+
+  ngAfterViewInit() {
+    setTimeout(() => {
+      this.collapsed = false
+    })
   }
 
   ngOnDestroy(): void {

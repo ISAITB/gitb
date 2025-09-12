@@ -1,0 +1,40 @@
+@import "../../../../styles/less/_common.less";
+
+.operation-container {
+    display: flex;
+    .operation-card {
+        flex-grow: 1;
+        border: 1px solid @gray-dark-1;
+        border-radius: @border-radius;
+        margin-left: 16px;
+        padding: 16px;
+        cursor: pointer;
+        width: 50%;
+        input, label {
+            cursor: pointer;
+        }
+        &:hover {
+            background-color: @gray-light-1;
+        }
+        &.selected {
+            background-color: @gray-light-1;
+            border-color: @bs-input-focus-highlight;
+            outline: 0;
+            box-shadow: 0 0 0 @bs-input-focus-box-shadow-size @bs-input-focus-box-shadow-color;
+        }
+        &:first-of-type {
+            margin-left: 0;
+        }
+        .form-check-label {
+            font-weight: bold;
+        }
+        .operation-description {
+            border-top: 1px solid @gray-dark-1;
+            margin-top: 10px;
+            padding-top: 10px;
+        }
+    }
+}
+.form-container {
+    margin: 16px -17px -17px;
+}

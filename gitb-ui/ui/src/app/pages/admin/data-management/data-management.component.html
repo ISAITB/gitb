@@ -1,0 +1,39 @@
+<div class="page">
+    <div class="card mb-0">
+        <div class="card-header">
+            <div class="card-title">Data management</div>
+        </div>
+        <div class="card-body">
+            <div class="operation-container">
+                <div class="operation-card" (click)="setOperation(OPERATION_EXPORT)" [class.selected]="operationType == OPERATION_EXPORT">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" [(ngModel)]="operationType" name="operationType" id="operation_export" [value]="OPERATION_EXPORT">
+                        <label class="form-check-label ms-1" for="operation_export">Data export</label>
+                    </div>
+                    <div class="operation-description">Export selected data into a portable archive. Exported data archives can be stored as configuration backups, be used to import data in bulk, or serve to bootstrap preconfigured Test Bed instances.</div>
+                </div>
+                <div class="operation-card" (click)="setOperation(OPERATION_IMPORT)" [class.selected]="operationType == OPERATION_IMPORT" >
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" [(ngModel)]="operationType" name="operationType" id="operation_import" [value]="OPERATION_IMPORT">
+                        <label class="form-check-label ms-1" for="operation_import">Data import</label>
+                    </div>
+                    <div class="operation-description">Modify data in bulk by importing a data archive. Items created, updated and deleted based on the imported archive and current data, will be previewed for review and fine-tuning before proceeding.</div>
+                </div>
+            </div>
+            @if (operationSelected) {
+                <div class="form-container">
+                    @if (operationType == OPERATION_EXPORT) {
+                        <app-export [collapsed]="initialSelection" [animated]="initialSelection"></app-export>
+                    } @else if (operationType == OPERATION_IMPORT) {
+                        <app-import [collapsed]="initialSelection" [animated]="initialSelection"></app-import>
+                    }
+                </div>
+            }
+        </div>
+        @if (operationType == undefined) {
+            <div class="card-footer">
+                <button class="btn btn-secondary" type="button" disabled="disabled">Proceed</button>
+            </div>
+        }
+    </div>
+</div>

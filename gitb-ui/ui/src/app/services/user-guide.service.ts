@@ -109,8 +109,6 @@ export class UserGuideService {
     this.paths['/admin/users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/organisation/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID+'/system/create'] = this.setPath('', '', 'communityDashboard/index.html#create-a-new-system')
     this.paths['/admin/users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/organisation/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID+'/system/:'+Constants.NAVIGATION_PATH_PARAM.SYSTEM_ID] = this.setPath('', '', 'communityDashboard/index.html#edit-an-existing-system')
     this.paths['/admin/users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/organisation/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID+'/test/:'+Constants.NAVIGATION_PATH_PARAM.SYSTEM_ID+'/:actor_id/execute'] = this.setPath('', '', 'validateTestSetup/index.html#execute-tests')
-    this.paths['/admin/export'] = this.setPath('', '', 'exportimport/index.html#export-data')
-    this.paths['/admin/import'] = this.setPath('', '', 'exportimport/index.html#import-data')
     this.paths['/admin/system'] = this.setPath('', '', '', 'systemAdministration/index.html')
     this.paths['/admin/system/'] = this.setPath('', '', '', 'systemAdministration/index.html')
     this.paths['/admin/health'] = this.setPath('', '', '', 'serviceHealth/index.html')
