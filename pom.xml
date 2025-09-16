@@ -48,7 +48,7 @@
         <version.xerces>2.12.2</version.xerces>
         <version.jaxbApi>4.0.2</version.jaxbApi>
         <version.jaxbRuntime>4.0.4</version.jaxbRuntime>
-        <version.saxon>12.7</version.saxon>
+        <version.saxon>12.8</version.saxon>
         <version.jaxwsApi>4.0.2</version.jaxwsApi>
         <version.jwsApi>3.0.0</version.jwsApi>
         <version.activation>2.1.2</version.activation>
