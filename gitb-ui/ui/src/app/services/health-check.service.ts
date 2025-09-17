@@ -67,6 +67,13 @@ export class HealthCheckService {
     })
   }
 
+  checkSoftwareVersion(): Observable<HealthInfo> {
+    return this.restService.get<HealthInfo>({
+      path: ROUTES.controllers.HealthCheckService.checkSoftwareVersion().url,
+      authenticate: true,
+    })
+  }
+
   checkUserInterfaceCommunicationSuccessDetails(): Observable<HealthInfo> {
     return this.restService.get<HealthInfo>({
       path: ROUTES.controllers.HealthCheckService.checkUserInterfaceCommunicationSuccessDetails().url,

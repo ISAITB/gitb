@@ -36,6 +36,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
+import models.health.SoftwareVersionCheckSettings
 
 object SystemConfigurationManager {
 
@@ -55,13 +56,14 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
   private final val editableSystemConfigurationTypes = Set(
     Constants.SessionAliveTime, Constants.RestApiEnabled, Constants.RestApiAdminKey, Constants.SelfRegistrationEnabled,
     Constants.DemoAccount, Constants.WelcomeMessage, Constants.AccountRetentionPeriod,
-    Constants.EmailSettings
+    Constants.EmailSettings, Constants.SoftwareVersionCheck
   )
 
   private var activeThemeId: Option[Long] = None
   private var activeThemeCss: Option[String] = None
   private var activeThemeFavicon: Option[String] = None
   private var defaultEmailSettings: Option[EmailSettings] = None
+  private var defaultSoftwareVersionCheckSettings: Option[SoftwareVersionCheckSettings] = None
 
   private def constructLogoPath(themeId: Long, partialLogoPath: String): String = {
     // We go up two levels as URLs are relative to the CSS defining them which here is under "/api/theme/
@@ -228,6 +230,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
         val selfRegistrationConfig = persistedConfigs.find(config => config.config.name == Constants.SelfRegistrationEnabled)
         val welcomeMessageConfig = persistedConfigs.find(config => config.config.name == Constants.WelcomeMessage)
         val emailSettingsConfig = persistedConfigs.find(config => config.config.name == Constants.EmailSettings)
+        val softwareVersionCheckConfig = persistedConfigs.find(config => config.config.name == Constants.SoftwareVersionCheck)
         if (restApiEnabledConfig.isEmpty) {
           persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.RestApiEnabled, Some(Configurations.AUTOMATION_API_ENABLED.toString), None), defaultSetting = true, environmentSetting = sys.env.contains("AUTOMATION_API_ENABLED"))
         }
@@ -250,6 +253,9 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
         }
         if (emailSettingsConfig.isEmpty) {
           persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.EmailSettings, Some(JsonUtil.jsEmailSettings(EmailSettings.fromEnvironment()).toString()), None), defaultSetting = true, environmentSetting = sys.env.contains("EMAIL_ENABLED"))
+        }
+        if (softwareVersionCheckConfig.isEmpty) {
+          persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.SoftwareVersionCheck, Some(JsonUtil.jsSoftwareVersionCheckSettings(SoftwareVersionCheckSettings.fromEnvironment()).toString()), None), defaultSetting = true, environmentSetting = sys.env.contains("SOFTWARE_VERSION_CHECK_ENABLED"))
         }
       }
       persistedConfigs
@@ -297,7 +303,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
       exists <- PersistenceSchema.systemConfigurations.filter(_.name === name).exists.result
       _ <- {
         if (exists) {
-          if ((name == Constants.WelcomeMessage || name == Constants.EmailSettings || name == Constants.AccountRetentionPeriod) && value.isEmpty) {
+          if ((name == Constants.SoftwareVersionCheck || name == Constants.WelcomeMessage || name == Constants.EmailSettings || name == Constants.AccountRetentionPeriod) && value.isEmpty) {
             PersistenceSchema.systemConfigurations.filter(_.name === name).delete
           } else {
             PersistenceSchema.systemConfigurations.filter(_.name === name).map(_.parameter).update(value)
@@ -366,6 +372,20 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
                 SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.EmailSettings, Some(JsonUtil.jsEmailSettings(EmailSettings.fromEnvironment()).toString()), None), defaultSetting = true, environmentSetting = sys.env.contains("EMAIL_ENABLED"))
               ))
             }
+          case Constants.SoftwareVersionCheck =>
+            var fromDefault = false
+            var fromEnv = false
+            val settings = if (value.isDefined) {
+              JsonUtil.parseJsSoftwareVersionCheckSettings(value.get)
+            } else {
+              fromDefault = true
+              fromEnv = sys.env.contains("SOFTWARE_VERSION_CHECK_ENABLED")
+              defaultSoftwareVersionCheckSettings.get
+            }
+            settings.toEnvironment()
+            DBIO.successful(Some(
+              SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.SoftwareVersionCheck, Some(JsonUtil.jsSoftwareVersionCheckSettings(settings).toString()), None), fromDefault, fromEnv)
+            ))
           case _ => DBIO.successful(None)
         }
       } else {
@@ -816,6 +836,12 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
     // This is called before we adapt the settings based on stored values.
     defaultEmailSettings = Some(EmailSettings.fromEnvironment())
     defaultEmailSettings.get
+  }
+
+  def recordDefaultSoftwareVersionCheckSettings(): SoftwareVersionCheckSettings = {
+    // This is called before we adapt the settings based on stored values.
+    defaultSoftwareVersionCheckSettings = Some(SoftwareVersionCheckSettings.fromEnvironment())
+    defaultSoftwareVersionCheckSettings.get
   }
 
 }

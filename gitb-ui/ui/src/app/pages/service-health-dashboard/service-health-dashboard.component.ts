@@ -46,6 +46,11 @@ export class ServiceHealthDashboardComponent implements OnInit, AfterViewInit {
   ngOnInit(): void {
     this.cards = []
     this.cards.push({
+      type: HealthCardService.SOFTWARE_VERSION,
+      title: "Software version updates",
+      checkFunction: () => this.healthCheckService.checkSoftwareVersion()
+    })
+    this.cards.push({
       type: HealthCardService.USER_INTERFACE,
       title: "User interface communications",
       checkFunction: () => this.healthCheckService.checkUserInterfaceCommunication()

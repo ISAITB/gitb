@@ -1,0 +1,1 @@
+Release **%s**, published on **%s**, is available for you to use%s.

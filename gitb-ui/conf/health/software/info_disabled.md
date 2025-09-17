@@ -1,0 +1,1 @@
+To enable the check go to the [system administration screen](https://www.itb.ec.europa.eu/docs/itb-ta/latest/systemAdministration/index.html#manage-configuration-settings) and check the software update check settings.

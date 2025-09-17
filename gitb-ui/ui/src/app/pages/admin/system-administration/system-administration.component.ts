@@ -51,6 +51,8 @@ import {FilterUpdate} from '../../../components/test-filter/filter-update';
 import {SslProtocol} from '../../../types/ssl-protocol';
 import {MimeType} from '../../../types/mime-type';
 import {BaseTabbedComponent} from '../../base-tabbed-component';
+import {SoftwareVersionCheckSettings} from '../../../types/software-version-check-settings';
+import {ValidationState} from '../../../types/validation-state';
 
 @Component({
     selector: 'app-system-administration',
@@ -102,6 +104,16 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
   accountRetentionPeriodStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
   accountRetentionPeriodEnabled = false
   accountRetentionPeriodValue?: number
+
+  // Software version status check
+  softwareVersionCheckStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
+  softwareVersionCheckSettings: SoftwareVersionCheckSettings = {
+    enabled: false,
+    jws: '',
+    jwks: ''
+  }
+  softwareVersionCheckResetPending = false
+  softwareVersionCheckValidation = new ValidationState()
 
   // TTL
   ttlStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
@@ -251,6 +263,9 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
         this.ttlStatus.enabled = this.ttlEnabled
         this.ttlStatus.fromEnv = ttlConfig != undefined && ttlConfig.environment
         this.ttlStatus.fromDefault = ttlConfig != undefined && ttlConfig.default
+        // Software version status check.
+        const softwareVersionCheckConfig = find(data, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.SOFTWARE_VERSION_CHECK)
+        this.initialiseSoftwareVersionCheckSettings(softwareVersionCheckConfig)
         // REST API.
         const restApiConfig = find(data, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.REST_API_ENABLED)
         this.restApiEnabled = restApiConfig != undefined && restApiConfig.parameter != undefined && restApiConfig.parameter.toLowerCase() == 'true'
@@ -397,6 +412,19 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
 
   selectEmailAttachmentTypes(event: FilterUpdate<MimeType>) {
     this.emailSettings.allowedAttachmentTypes = event.values.active.map((value) => value.value)
+  }
+
+  private initialiseSoftwareVersionCheckSettings(settings: SystemConfiguration|undefined) {
+    if (settings != undefined) {
+      if (settings.parameter != undefined) {
+        this.softwareVersionCheckSettings = JSON.parse(settings.parameter)
+        this.softwareVersionCheckStatus.enabled = this.softwareVersionCheckSettings.enabled
+      } else {
+        this.softwareVersionCheckStatus.enabled = false
+      }
+      this.softwareVersionCheckStatus.fromDefault = settings.default
+      this.softwareVersionCheckStatus.fromEnv = settings.environment
+    }
   }
 
   private initialiseEmailSettings(emailSettingsConfig: SystemConfiguration|undefined) {
@@ -841,6 +869,10 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
     })
   }
 
+  softwareVersionCheckSettingsOk() {
+    return !this.softwareVersionCheckSettings.enabled || (this.textProvided(this.softwareVersionCheckSettings.jws) && this.textProvided(this.softwareVersionCheckSettings.jwks))
+  }
+
   emailSettingsOk() {
     return !this.emailSettings.enabled ||
       (
@@ -905,6 +937,44 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
     }
   }
 
+  saveSoftwareVersionCheckSettings() {
+    this.softwareVersionCheckValidation.clearErrors()
+    let proceed = true
+    if (this.softwareVersionCheckSettings.enabled) {
+      if (!this.isValidAbsoluteHttpUrl(this.softwareVersionCheckSettings.jws)) {
+        this.softwareVersionCheckValidation.apply("softwareCheckJws", "The value provided must be a valid absolute HTTP or HTTPS URL.")
+        proceed = false
+      }
+      if (!this.isValidAbsoluteHttpUrl(this.softwareVersionCheckSettings.jwks)) {
+        this.softwareVersionCheckValidation.apply("softwareCheckJwks", "The value provided must be a valid absolute HTTP or HTTPS URL.")
+        proceed = false
+      }
+    }
+    if (proceed) {
+      this.softwareVersionCheckStatus.pending = true
+      this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.SOFTWARE_VERSION_CHECK, JSON.stringify(this.softwareVersionCheckSettings))
+        .subscribe((appliedValue) => {
+          this.initialiseSoftwareVersionCheckSettings(appliedValue)
+          this.softwareVersionCheckStatus.collapsed = true
+          this.popupService.success('Updated software check settings.')
+        }).add(() => {
+        this.softwareVersionCheckStatus.pending = false
+      })
+    }
+  }
+
+  resetSoftwareVersionCheckSettings() {
+    this.softwareVersionCheckResetPending = true
+    this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.SOFTWARE_VERSION_CHECK)
+      .subscribe((appliedValue) => {
+        this.initialiseSoftwareVersionCheckSettings(appliedValue)
+        this.softwareVersionCheckStatus.collapsed = true
+        this.popupService.success('Software check settings reset to default.')
+      }).add(() => {
+      this.softwareVersionCheckResetPending = false
+    })
+  }
+
   saveEmailSettings() {
     this.emailSettingsStatus.pending = true
     const emailSettingsToPost = this.prepareEmailSettings()
@@ -930,7 +1000,6 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
     }).add(() => {
       this.emailResetPending = false
     })
-
   }
 
   testEmailSettings() {

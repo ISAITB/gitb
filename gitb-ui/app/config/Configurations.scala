@@ -190,6 +190,10 @@ object Configurations {
   var HEADER_NAME_ITB_API_KEY = ""
   var HEADERS_FOR_CORS_FILTERING = ""
 
+  var SOFTWARE_VERSION_CHECK_ENABLED: Boolean = true
+  var SOFTWARE_VERSION_CHECK_INFO_URL: String = ""
+  var SOFTWARE_VERSION_CHECK_JWKS_URL: String = ""
+
   def versionInfo(): String = {
     if (Constants.VersionNumber.toLowerCase.endsWith("snapshot")) {
       Constants.VersionNumber + " (" + Configurations.BUILD_TIMESTAMP + ")"
@@ -423,6 +427,11 @@ object Configurations {
       SESSION_COOKIE_SECURE = fromEnv("SESSION_SECURE", conf.getString("play.http.session.secure")).toBoolean
       // Max test cases to include in detailed conformance statement reports.
       CONFORMANCE_STATEMENT_REPORT_MAX_TEST_CASES = fromEnv("CONFORMANCE_STATEMENT_REPORT_MAX_TEST_CASES", "100").toInt
+      // Software version check - START
+      SOFTWARE_VERSION_CHECK_ENABLED = fromEnv("SOFTWARE_VERSION_CHECK_ENABLED", "true").toBoolean
+      SOFTWARE_VERSION_CHECK_INFO_URL = fromEnv("SOFTWARE_VERSION_CHECK_INFO_URL", conf.getString("softwareVersionCheck.statusUrl"))
+      SOFTWARE_VERSION_CHECK_JWKS_URL = fromEnv("SOFTWARE_VERSION_CHECK_JWKS_URL", conf.getString("softwareVersionCheck.jwksUrl"))
+      // Software version check - END
       _IS_LOADED = true
     }
   }

@@ -1040,7 +1040,7 @@ class TriggerManager @Inject()(env: Environment,
     for {
       payload <- Future.successful { fnPayloadProvider.apply() }
       response <- ws.url(url)
-        .addHttpHeaders("Content-Type" -> "application/json")
+        .addHttpHeaders("Content-Type" -> Constants.MimeTypeJSON)
         .withFollowRedirects(true)
         .post(payload)
         .map { response => ServiceTestResult(response.status < 400, Some(List(response.body)), response.headers.getOrElse("Content-Type", List("text/plain")).head)

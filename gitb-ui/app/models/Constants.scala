@@ -34,6 +34,7 @@ object Constants {
   val WelcomeMessage = "welcome"
   val AccountRetentionPeriod = "account_retention_period"
   val EmailSettings = "email_settings"
+  val SoftwareVersionCheck = "software_version_check"
 
   // env variables
   val EnvironmentTheme = "THEME"
@@ -72,6 +73,7 @@ object Constants {
   val MimeTypeAny = "*/*"
   val MimeTypePDF = "application/pdf"
   val MimeTypeXML = "application/xml"
+  val MimeTypeJSON = "application/json"
   val MimeTypeTextXML = "text/xml"
   val MimeTypeTextPlain = "text/plain"
 

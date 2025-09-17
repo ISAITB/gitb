@@ -15,10 +15,9 @@
 
 package com.gitb.engine.validation.handlers.schematron;
 
-import com.helger.commons.error.IError;
+import com.helger.diagnostics.error.IError;
 import com.helger.schematron.pure.errorhandler.LoggingPSErrorHandler;
-
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 public class PureSchematronErrorHandler extends LoggingPSErrorHandler {
 

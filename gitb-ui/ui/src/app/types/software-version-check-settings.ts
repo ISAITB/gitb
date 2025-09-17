@@ -13,14 +13,10 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-export enum HealthCardService {
+export interface SoftwareVersionCheckSettings {
 
-  ANTIVIRUS,
-  SMTP_SERVICE,
-  TSA_SERVICE,
-  USER_INTERFACE,
-  UI_SERVICE_COMMUNICATION,
-  HANDLER_CALLBACKS,
-  SOFTWARE_VERSION
+  enabled: boolean
+  jws: string
+  jwks: string
 
 }

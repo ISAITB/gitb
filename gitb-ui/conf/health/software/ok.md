@@ -1,0 +1,1 @@
+You are currently running the latest **%s** release, published on **%s**%s.

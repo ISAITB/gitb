@@ -378,6 +378,51 @@
                             </form>
                         </app-configuration-entry>
                     </div>
+                    <!-- Software version check, -->
+                    <div class="configContainer" >
+                        <app-configuration-entry
+                            configTitle="Software version check"
+                            configDescription="Check for software updates and reported issues through the service health dashboard."
+                            [(status)]="softwareVersionCheckStatus"
+                        >
+                            <form>
+                                <div class="row">
+                                    <div class="col-auto">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="softwareCheckEnabled" name="softwareCheckEnabled" [(ngModel)]="softwareVersionCheckSettings.enabled">
+                                            <label class="form-check-label" for="softwareCheckEnabled">Enabled?</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div [collapse]="!softwareVersionCheckSettings.enabled" [isAnimated]="true">
+                                    <div class="softwareVersionFormContainer mt-3">
+                                        <div class="row">
+                                            <div class="offset-1 col-11">
+                                                <div class="row">
+                                                    <label class="col-3 col-form-label text-end" for="softwareCheckJws">* Status check URL:</label>
+                                                    <div class="col-4 minimum-width-text"><input id="softwareCheckJws" name="softwareCheckJws" [(ngModel)]="softwareVersionCheckSettings.jws" class="form-control" type="text" [invalid]="softwareVersionCheckValidation.get('softwareCheckJws')"></div>
+                                                    <div class="col-auto" app-tooltip tbTooltip="URL from which to retrieve the Test Bed's software version status. The retrieved resource is expected to be a JSON Web Signature (JWS) with JSON serialisation, signed by a key defined in the expected JSON Web Key Set (JWKS)."></div>
+                                                </div>
+                                                <div class="row mt-3">
+                                                    <label class="col-3 col-form-label text-end" for="softwareCheckJwks">* Signature key URL:</label>
+                                                    <div class="col-4 minimum-width-text"><input id="softwareCheckJwks" name="softwareCheckJwks" [(ngModel)]="softwareVersionCheckSettings.jwks" class="form-control" type="text" [invalid]="softwareVersionCheckValidation.get('softwareCheckJwks')"></div>
+                                                    <div class="col-auto" app-tooltip tbTooltip="URL from which to retrieve the JSON Web Key Set (JWKS) that includes the key used to sign the software version status JWS content."></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mt-3">
+                                    <div class="col-auto">
+                                        <div class="btn-toolbar">
+                                            <button type="submit" class="btn btn-secondary" [disable]="softwareVersionCheckStatus.pending || !softwareVersionCheckSettingsOk()" [pending]="softwareVersionCheckStatus.pending" (click)="saveSoftwareVersionCheckSettings()">Save</button>
+                                            <button type="button" class="btn btn-secondary" [disable]="softwareVersionCheckStatus.fromDefault || softwareVersionCheckStatus.fromEnv || softwareVersionCheckStatus.pending" [pending]="softwareVersionCheckResetPending" (click)="resetSoftwareVersionCheckSettings()">Reset to default</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </app-configuration-entry>
+                    </div>
                     <!-- Idle session timeout. -->
                     <div class="configContainer" >
                         <app-configuration-entry

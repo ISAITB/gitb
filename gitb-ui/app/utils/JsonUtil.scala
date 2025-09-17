@@ -42,6 +42,12 @@ import scala.collection.mutable.ListBuffer
 import scala.collection.{immutable, mutable}
 import scala.jdk.CollectionConverters.{CollectionHasAsScala, IterableHasAsJava}
 import models.statement.TestSuiteMinimalInformation
+import models.health.SoftwareVersionInfo
+import models.health.ReleaseInfo
+import java.time.Instant
+import models.health.ReleaseMessages
+import models.health.ReleaseMessage
+import models.health.SoftwareVersionCheckSettings
 
 object JsonUtil {
 
@@ -3515,6 +3521,23 @@ object JsonUtil {
     json
   }
 
+  def jsSoftwareVersionCheckSettings(settings: SoftwareVersionCheckSettings): JsObject = {
+    Json.obj(
+      "enabled" -> JsBoolean(settings.enabled),
+      "jws" -> JsString(settings.jws),
+      "jwks" -> JsString(settings.jwks)
+    )
+  }
+
+  def parseJsSoftwareVersionCheckSettings(jsonString: String): SoftwareVersionCheckSettings = {
+    val json = Json.parse(jsonString)
+    SoftwareVersionCheckSettings(
+      enabled = (json \ "enabled").as[Boolean],
+      jws = (json \ "jws").as[String],
+      jwks = (json \ "jwks").as[String]
+    )
+  }
+
   def jsEmailSettings(settings: EmailSettings, maskPassword: Boolean = true): JsObject = {
     var json = Json.obj("enabled" -> JsBoolean(settings.enabled))
     if (settings.from.isDefined) json = json + ("from" -> JsString(settings.from.get))
@@ -3865,6 +3888,49 @@ object JsonUtil {
     Json.obj(
       "id" -> value.id,
       "sname" -> value.shortName
+    )
+  }
+
+  def parseJsSoftwareVersionInfo(json: JsValue): SoftwareVersionInfo = {
+    SoftwareVersionInfo(
+      latest = parseJsReleaseInfo((json \ "latest").get),
+      reports = (json \ "reports").asOpt[JsArray].map(parseJsReleaseMessagesList)
+    )
+  }
+
+  private def parseJsReleaseInfo(json: JsValue): ReleaseInfo = {
+    ReleaseInfo(
+      (json \ "releaseNumber").as[String],
+      (json \ "releaseDate").as[Instant],
+      (json \ "releaseNotes").asOpt[String]
+    )
+  }
+
+  private def parseJsReleaseMessagesList(json: JsArray): List[ReleaseMessages] = {
+    json.value.map { item =>
+      parseJsReleaseMessages(item)
+    }.toList
+  }
+
+  private def parseJsReleaseMessages(json: JsValue): ReleaseMessages = {
+    ReleaseMessages(
+      release = parseJsReleaseInfo((json \ "release").get),
+      messages = (json \ "messages").asOpt[JsArray].map(parseJsReleaseMessageList).getOrElse(List())
+    )
+  }
+
+  private def parseJsReleaseMessageList(json: JsArray): List[ReleaseMessage] = {
+    json.value.map { item =>
+      parseJsReleaseMessage(item)
+    }.toList
+  }
+
+  private def parseJsReleaseMessage(json: JsValue): ReleaseMessage = {
+    ReleaseMessage(
+      message = (json \ "message").as[String],
+      moreInformation = (json \ "moreInformation").asOpt[String],
+      messageSeverity = (json \ "severity").asOpt[String].map(ReleaseMessageSeverity.parse),
+      messageType = (json \ "type").asOpt[String].map(ReleaseMessageType.parse)
     )
   }
 

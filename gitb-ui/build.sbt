@@ -81,6 +81,7 @@ libraryDependencies ++= Seq(
   "org.flywaydb" % "flyway-mysql" % "11.12.0",
   "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20240325.1",
   "net.lingala.zip4j" % "zip4j" % "2.11.5",
+  "com.nimbusds" % "nimbus-jose-jwt" % "10.5",
   "org.apache.commons" % "commons-text" % commonsTextVersion
 )
 

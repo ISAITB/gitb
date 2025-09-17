@@ -36,6 +36,23 @@ import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Using
+import play.api.libs.ws.WSClient
+import controllers.HealthCheckService.ResponseInfo
+import com.nimbusds.jose.JWSObjectJSON
+import com.nimbusds.jose.jwk.JWKSet
+import java.util.Objects
+import com.nimbusds.jose.jwk.RSAKey
+import com.nimbusds.jose.crypto.RSASSAVerifier
+import com.nimbusds.jose.crypto.ECDSAVerifier
+import com.nimbusds.jose.JWSVerifier
+import com.nimbusds.jose.jwk.ECKey
+import java.time.format.DateTimeFormatter
+import java.time.LocalDateTime
+import java.time.ZoneOffset
+import models.health.ReleaseMessage
+import java.time.ZonedDateTime
+import models.Enums.ReleaseMessageSeverity
+import org.apache.commons.lang3.Strings
 
 object HealthCheckService {
 
@@ -47,12 +64,15 @@ object HealthCheckService {
 
   }
 
+  case class ResponseInfo(status: Int, payload: String) {}
+
 }
 
 class HealthCheckService @Inject()(authorizedAction: AuthorizedAction,
                                    cc: ControllerComponents,
                                    authorizationManager: AuthorizationManager,
                                    systemConfigurationManager: SystemConfigurationManager,
+                                   ws: WSClient,
                                    testbedClient: TestbedBackendClient)
                                   (implicit ec: ExecutionContext) extends AbstractController(cc) {
 
@@ -306,6 +326,125 @@ class HealthCheckService @Inject()(authorizedAction: AuthorizedAction,
         ResponseConstructor.constructJsonResponse(JsonUtil.jsServiceHealthInfo(healthInfo).toString)
       }
     }
+  }
+
+  def checkSoftwareVersion(): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canCheckCoreServiceHealth(request).flatMap { _ =>
+      val task = if (Configurations.SOFTWARE_VERSION_CHECK_ENABLED) {
+        for {
+          jwsContent <- ws.url(Configurations.SOFTWARE_VERSION_CHECK_INFO_URL)
+            .addHttpHeaders("Content-Type" -> Constants.MimeTypeJSON)
+            .withFollowRedirects(true)
+            .get()
+            .map(x => ResponseInfo(x.status, x.body))
+          jwksContent <- ws.url(Configurations.SOFTWARE_VERSION_CHECK_JWKS_URL)
+            .addHttpHeaders("Content-Type" -> Constants.MimeTypeJSON)
+            .withFollowRedirects(true)
+            .get()
+            .map(x => ResponseInfo(x.status, x.body))
+          healthInfo <- {
+            val healthInfo = if (jwsContent.status >= 400 || jwksContent.status >= 400) {
+              // Some error in the lookup occurred.
+              val details = new StringBuilder()
+              if (jwsContent.status >= 400) {
+                details.append("Status retrieval: GET to %s resulted in status %s\n".formatted(Configurations.SOFTWARE_VERSION_CHECK_INFO_URL, jwsContent.status))
+              }
+              if (jwksContent.status >= 400) {
+                details.append("Key retrieval: GET to %s resulted in status %s\n".formatted(Configurations.SOFTWARE_VERSION_CHECK_JWKS_URL, jwksContent.status))
+              }
+              details.deleteCharAt(details.length() - 1)
+              ServiceHealthInfo(ServiceHealthStatusType.Warning,
+                "The software version information could not be retrieved.",
+                readClasspathResource("health/software/warning_lookup.md").formatted(details)
+              )
+            } else {
+              // Load the JWS
+              val jwsObject = JWSObjectJSON.parse(jwsContent.payload);
+              // Load the JWKS
+              val jwkSet = JWKSet.parse(jwksContent.payload)
+              // Verify signature(s)
+              val verified = jwsObject.getSignatures().stream().allMatch(signature => {
+                val verifier: JWSVerifier = Objects.requireNonNull(jwkSet.getKeyByKeyId(signature.getHeader().getKeyID()), "Signature key not found in key set") match {
+                  case rsaKey: RSAKey => new RSASSAVerifier(rsaKey.toRSAPublicKey())
+                  case ecKey: ECKey => new ECDSAVerifier(ecKey.toECPublicKey())
+                  case _ => throw new IllegalStateException("Unsupported JWS key type")
+                }
+                signature.verify(verifier)
+              })
+              if (verified) {
+                // Extract software information
+                val softwareInfo = JsonUtil.parseJsSoftwareVersionInfo(Json.parse(jwsObject.getPayload().toString()))
+                val releaseNoteContent = softwareInfo.latest.releaseNotes.map(x => " (see [release notes](%s))".formatted(x)).getOrElse("")
+                val releaseDateContent = DateTimeFormatter.ofPattern("dd/MM/yyyy").format(ZonedDateTime.ofInstant(softwareInfo.latest.releaseDate, ZoneOffset.UTC))
+                // Parse current release's timestamp
+                val currentBuildTime = LocalDateTime.parse(Configurations.BUILD_TIMESTAMP, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")).toInstant(ZoneOffset.UTC)
+                if (currentBuildTime.isBefore(softwareInfo.latest.releaseDate)) {
+                  // A more recent stable release exists.
+                  val currentBaseVersion = Configurations.mainVersionNumber()
+                  // Get the reports (if any) that apply to the current version.
+                  val reports = softwareInfo.reports.flatMap { reports =>
+                    reports.find { releaseMessages =>
+                      releaseMessages.release.releaseNumber == currentBaseVersion
+                    }.map(_.messages)
+                  }
+                  if (reports.exists(_.nonEmpty)) {
+                    ServiceHealthInfo(ServiceHealthStatusType.Warning,
+                      "There are known issues affecting the Test Bed release you are using.",
+                      readClasspathResource("health/software/warning_reports.md").formatted(Constants.VersionNumber, buildReleaseReportList(reports.get), softwareInfo.latest.releaseNumber, releaseDateContent, releaseNoteContent)
+                    )
+                  } else {
+                    ServiceHealthInfo(ServiceHealthStatusType.Info,
+                      "A new Test Bed release is available.",
+                      readClasspathResource("health/software/info.md").formatted(softwareInfo.latest.releaseNumber, releaseDateContent, releaseNoteContent)
+                    )
+                  }
+                } else {
+                  ServiceHealthInfo(ServiceHealthStatusType.Ok,
+                    "The Test Bed software is up to date.",
+                    readClasspathResource("health/software/ok.md").formatted(softwareInfo.latest.releaseNumber, releaseDateContent, releaseNoteContent)
+                  )
+                }
+              } else {
+                ServiceHealthInfo(ServiceHealthStatusType.Warning,
+                  "The software version information could not be verified.",
+                  readClasspathResource("health/software/warning_integrity.md")
+                )
+              }
+            }
+            Future.successful(healthInfo)
+          }
+        } yield healthInfo
+      } else {
+        Future.successful {
+          ServiceHealthInfo(ServiceHealthStatusType.Info,
+            "The software version check has been disabled.",
+            readClasspathResource("health/software/info_disabled.md")
+          )
+        }
+      }
+      task.recover {
+        case e: Exception =>
+          LOGGER.warn("Unexpected error while checking the software version status", e)
+          val errors = errorsToString(systemConfigurationManager.extractFailureDetails(e))
+          ServiceHealthInfo(ServiceHealthStatusType.Warning,
+            "The software update information could not be retrieved.",
+            readClasspathResource("health/software/warning_failure.md").formatted(errors)
+          )              
+      }.map(x => ResponseConstructor.constructJsonResponse(JsonUtil.jsServiceHealthInfo(x).toString))
+    }
+  }
+
+  private def buildReleaseReportList(reports: Iterable[ReleaseMessage]): String = {
+    val msg = new StringBuilder()
+    reports.foreach { report =>
+      msg.append("- **[%s severity]** %s%s\n".formatted(
+          report.messageSeverity.getOrElse(ReleaseMessageSeverity.Low),
+          Strings.CS.removeEnd(report.message, "."),
+          report.moreInformation.map(x => " (see [details](%s)).".formatted(x)).getOrElse(".")
+        )
+      )
+    }
+    msg.toString()
   }
 
   private def hmacKeysMatchMessage(receivedHash: String): String = {

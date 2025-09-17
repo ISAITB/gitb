@@ -233,4 +233,29 @@ object Enums {
     }
   }
 
+  object ReleaseMessageSeverity extends Enumeration(1) {
+    type ReleaseMessageSeverity = Value
+    val High, Medium, Low = Value
+
+    def parse(value: String): ReleaseMessageSeverity = {
+      value match {
+        case "high" => ReleaseMessageSeverity.High
+        case "medium" => ReleaseMessageSeverity.Medium
+        case _ => ReleaseMessageSeverity.Low
+      }
+    }
+  }
+
+  object ReleaseMessageType extends Enumeration(1) {
+    type ReleaseMessageType = Value
+    val Other, Security = Value
+
+    def parse(value: String): ReleaseMessageType = {
+      value match {
+        case "security" => ReleaseMessageType.Security
+        case _ => ReleaseMessageType.Other
+      }
+    }
+  }
+
 }

@@ -13,14 +13,8 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-export enum HealthCardService {
+package models.health
 
-  ANTIVIRUS,
-  SMTP_SERVICE,
-  TSA_SERVICE,
-  USER_INTERFACE,
-  UI_SERVICE_COMMUNICATION,
-  HANDLER_CALLBACKS,
-  SOFTWARE_VERSION
+import models.Enums
 
-}
+case class ReleaseMessage(message: String, moreInformation: Option[String], messageSeverity: Option[Enums.ReleaseMessageSeverity.Value], messageType: Option[Enums.ReleaseMessageType.Value])
