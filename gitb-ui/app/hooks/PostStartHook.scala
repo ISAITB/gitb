@@ -155,7 +155,7 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
   private def adaptSystemConfiguration(): Future[Unit] = {
     // Record the default settings (from the config, fixed values and the environment).
     val defaultEmailSettings = systemConfigurationManager.recordDefaultEmailSettings()
-    val defaultSoftwareVersionCheckSettings = systemConfigurationManager.recordDefaultSoftwareVersionCheckSettings()
+    systemConfigurationManager.recordDefaultSoftwareVersionCheckSettings()
     // Load persisted configuration parameters.
     systemConfigurationManager.getEditableSystemConfigurationValues(onlyPersisted = true).flatMap { persistedConfigs =>
       // Check against environment settings.

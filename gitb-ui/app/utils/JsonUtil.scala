@@ -3893,7 +3893,9 @@ object JsonUtil {
 
   def parseJsSoftwareVersionInfo(json: JsValue): SoftwareVersionInfo = {
     SoftwareVersionInfo(
-      latest = parseJsReleaseInfo((json \ "latest").get),
+      latest = parseJsReleaseInfo((json \ "latest").toOption.getOrElse {
+        throw new IllegalArgumentException("The software version information is invalid (missing 'latest' field)")
+      }),
       reports = (json \ "reports").asOpt[JsArray].map(parseJsReleaseMessagesList)
     )
   }
