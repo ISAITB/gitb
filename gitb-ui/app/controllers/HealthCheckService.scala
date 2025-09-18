@@ -417,7 +417,7 @@ class HealthCheckService @Inject()(authorizedAction: AuthorizedAction,
       } else {
         Future.successful {
           ServiceHealthInfo(ServiceHealthStatusType.Info,
-            "The software version check has been disabled.",
+            "The software version check is disabled.",
             readClasspathResource("health/software/info_disabled.md")
           )
         }

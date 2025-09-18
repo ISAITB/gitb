@@ -31,7 +31,7 @@ object SoftwareVersionCheckSettings {
 
 case class SoftwareVersionCheckSettings(enabled: Boolean, jws: String, jwks: String) {
 
-    def toEnvironment() = {
+    def toEnvironment(): Unit = {
         Configurations.SOFTWARE_VERSION_CHECK_ENABLED = enabled
         if (enabled) {
             Configurations.SOFTWARE_VERSION_CHECK_INFO_URL = jws
