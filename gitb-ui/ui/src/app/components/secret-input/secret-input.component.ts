@@ -32,13 +32,13 @@ import { InvalidFormControlConfig } from 'src/app/types/invalid-form-control-con
     styles: ['button {box-shadow: none;outline: none !important; width: 43px; }'],
     standalone: false
 })
-export class SecretInputComponent implements OnInit, AfterViewInit,  ControlValueAccessor, OnDestroy {
+export class SecretInputComponent implements OnInit, AfterViewInit, ControlValueAccessor, OnDestroy {
 
   @Input() inputId!: string
   @Input() inputName!: string
   @Input() autoFocus = false
   @Input() validation?: ReplaySubject<InvalidFormControlConfig>
-  @Input() autocomplete: 'new-password' | 'current-password' = 'new-password'
+  @Input() autocomplete: 'new-password' | 'current-password' | 'off' = 'off'
   @Input() focusChange?: EventEmitter<boolean>
 
   @ViewChild("passwordField", { static: false }) passwordField?: ElementRef;
@@ -49,6 +49,8 @@ export class SecretInputComponent implements OnInit, AfterViewInit,  ControlValu
   onChange = (_: any) => {}
   onTouched = () => {}
   Constants = Constants
+  maskValue = false
+  maskedValue?: string
 
   constructor() { }
 
@@ -64,11 +66,63 @@ export class SecretInputComponent implements OnInit, AfterViewInit,  ControlValu
 
   set value(v: string|undefined) {
     this._value = v
+    this.maskedValue = this.maskIfNeeded(this._value)
     this.emitChanges()
   }
 
   get value() {
     return this._value
+  }
+
+  onMaskedValueBeforeInput(e: InputEvent) {
+    this._value = this._value ?? ''
+    const input = e.target as HTMLInputElement;
+    const start = input.selectionStart ?? 0;
+    const end = input.selectionEnd ?? start;
+    const inserted = e.data ?? '';
+
+    // Prevent the browser from applying the change automatically
+    e.preventDefault();
+
+    switch (e.inputType) {
+      case 'insertText':
+      case 'insertFromPaste':
+      case 'insertReplacementText':
+      case 'insertFromComposition':
+        // Replace selection or insert at caret
+        this._value = this._value.slice(0, start) + inserted + this._value.slice(end);
+        setTimeout(() => {
+          const el = this.passwordField!.nativeElement;
+          const caretPos = start + inserted.length;
+          el.setSelectionRange(caretPos, caretPos);
+        });
+        break;
+      case 'deleteContentBackward':
+        if (start === end && start > 0) {
+          this._value = this._value.slice(0, start - 1) + this._value.slice(end);
+          setTimeout(() => this.passwordField!.nativeElement.setSelectionRange(start - 1, start - 1));
+        } else {
+          this._value = this._value.slice(0, start) + this._value.slice(end);
+          setTimeout(() => this.passwordField!.nativeElement.setSelectionRange(start, start));
+        }
+        break;
+      case 'deleteContentForward':
+      case 'deleteByCut':
+        if (start === end && start < this._value.length) {
+          this._value = this._value.slice(0, start) + this._value.slice(start + 1);
+          setTimeout(() => this.passwordField!.nativeElement.setSelectionRange(start, start));
+        } else {
+          this._value = this._value.slice(0, start) + this._value.slice(end);
+          setTimeout(() => this.passwordField!.nativeElement.setSelectionRange(start, start));
+        }
+        break;
+    }
+
+    // update masked value
+    this.maskedValue = this.maskIfNeeded(this._value);
+
+    // emit changes
+    this.emitChanges();
   }
 
   emitChanges() {
@@ -78,6 +132,7 @@ export class SecretInputComponent implements OnInit, AfterViewInit,  ControlValu
 
   writeValue(v: string|undefined): void {
     this._value = v
+    this.maskedValue = this.maskIfNeeded(this._value)
   }
 
   registerOnChange(fn: any): void {
@@ -105,6 +160,9 @@ export class SecretInputComponent implements OnInit, AfterViewInit,  ControlValu
         this.hasValidation = status.invalid == true && status.feedback != undefined
       })
     }
+    if (this.autocomplete == 'off') {
+      this.maskValue = true
+    }
   }
 
   toggleDisplay() {
@@ -114,6 +172,18 @@ export class SecretInputComponent implements OnInit, AfterViewInit,  ControlValu
   ngOnDestroy(): void {
     if (this.validationStateSubscription) {
       this.validationStateSubscription.unsubscribe()
+    }
+  }
+
+  private maskIfNeeded(v: string|undefined): string|undefined {
+    if (v == undefined) {
+      return undefined
+    } else {
+      if (this.maskValue) {
+        return '•'.repeat(v.length)
+      } else {
+        return v
+      }
     }
   }
 
