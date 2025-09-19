@@ -8250,6 +8250,12 @@ Copyright (c) 2017 Steven Meister
 Copyright (c) 2017 Julio Cesar
 ```
 
+### Nimbus JOSE + JWT
+
+```
+Copyright 2012–2020 Connect2id Ltd.
+```
+
 ### Openhtmltopdf (io.github.openhtmltopdf.*)
 
 ```
