@@ -36,6 +36,7 @@ class PublicConfig(
   _releaseInfoEnabled: Boolean,
   _releaseInfoLink: String,
   _welcomeText: String,
+  _welcomeTitle: String,
   _internalContextPath: String,
   _restAPI: Option[String],
   _ssoType: String) {
@@ -60,10 +61,11 @@ class PublicConfig(
   var releaseInfoEnabled: Boolean = _releaseInfoEnabled
   var releaseInfoLink: String = _releaseInfoLink
   var welcomeText: String = _welcomeText
+  var welcomeTitle: String = _welcomeTitle
   var internalContextPath: String = _internalContextPath
   var restApi: Option[String] = _restAPI
   var ssoType: String = _ssoType
 
   def this(_resourceVersionNumber: String, _cookiePath: String, _contextPath: String, _internalContextPath: String) =
-    this(false, null, _resourceVersionNumber, false, null, false, false, null, false, null, null, _cookiePath, false, false, _contextPath, false, null, false, null, null, _internalContextPath, None, null)
+    this(false, null, _resourceVersionNumber, false, null, false, false, null, false, null, null, _cookiePath, false, false, _contextPath, false, null, false, null, null, null, _internalContextPath, None, null)
 }

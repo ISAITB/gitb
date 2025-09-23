@@ -208,6 +208,7 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction,
         configProperties.put("hasDefaultLegalNotice", legalNotice.exists(notice => StringUtils.isNotBlank(notice.content)).toString)
         configProperties.put("conformanceStatementReportMaxTestCases", String.valueOf(Configurations.CONFORMANCE_STATEMENT_REPORT_MAX_TEST_CASES))
         configProperties.put("headerNameAuthenticationCookiePath", String.valueOf(Configurations.HEADER_NAME_AUTHENTICATION_COOKIE_PATH))
+        configProperties.put("welcomePageTitle", String.valueOf(Configurations.WELCOME_TITLE))
         val json = JsonUtil.serializeConfigurationProperties(configProperties)
         ResponseConstructor.constructJsonResponse(json.toString())
       }

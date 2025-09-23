@@ -14,17 +14,25 @@
                     <!-- Welcome page. -->
                     <div class="configContainer">
                         <app-configuration-entry
-                            configTitle="Custom welcome page message"
-                            configDescription="Display a custom message on the Test Bed's welcome page."
+                            configTitle="Custom welcome page content"
+                            configDescription="Display a custom title and message on the Test Bed's welcome page."
                             [(status)]="welcomePageStatus"
                         >
                             <form>
+                                <div class="row mb-3">
+                                    <div class="col-6 minimum-width-text">
+                                        <div class="input-group">
+                                            <span class="input-group-text">Title</span>
+                                            <input type="text" id="welcomePageTitle" name="welcomePageTitle" class="form-control" [(ngModel)]="welcomePageTitle">
+                                        </div>
+                                    </div>
+                                </div>
                                 <app-placeholder-selector [systemResources]="true"></app-placeholder-selector>
-                                <div class="mt-3">
+                                <div class="row mt-3">
                                     <app-editor id="welcomePageMessage" name="welcomePageMessage" [(ngModel)]="welcomePageMessage" type="normal" [height]="200"></app-editor>
                                 </div>
                                 <div class="btn-toolbar mt-3">
-                                    <button type="submit" class="btn btn-secondary" [disable]="welcomePageResetPending || !textProvided(welcomePageMessage)" [pending]="welcomePageStatus.pending" (click)="saveWelcomePage()">Save</button>
+                                    <button type="submit" class="btn btn-secondary" [disable]="welcomePageResetPending || !textProvided(welcomePageMessage) || !textProvided(welcomePageTitle)" [pending]="welcomePageStatus.pending" (click)="saveWelcomePage()">Save</button>
                                     <button type="button" class="btn btn-secondary" [disable]="welcomePageStatus.fromDefault || welcomePageStatus.fromEnv || welcomePageStatus.pending" [pending]="welcomePageResetPending" (click)="resetWelcomePage()">Reset to default</button>
                                 </div>
                             </form>

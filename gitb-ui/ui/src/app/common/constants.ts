@@ -420,7 +420,8 @@ export class Constants {
 		WELCOME_MESSAGE: 'welcome',
 		ACCOUNT_RETENTION_PERIOD: 'account_retention_period',
 		EMAIL_SETTINGS: 'email_settings',
-    SOFTWARE_VERSION_CHECK: 'software_version_check'
+    SOFTWARE_VERSION_CHECK: 'software_version_check',
+    WELCOME_TITLE: 'welcome_title',
 	}
 
 	public static readonly USER_SSO_STATUS = {

@@ -59,6 +59,34 @@ class SystemConfigurationService @Inject()(authorizedAction: AuthorizedAction,
     }
   }
 
+  def updateConfigurationValues(): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canUpdateSystemConfigurationValues(request).flatMap { _ =>
+      val configs = JsonUtil.parseJsSystemConfigurations(ParameterExtractor.requiredBodyParameter(request, ParameterNames.VALUES))
+      var proceed = true
+      val configsToUse = configs.map { config =>
+        if (systemConfigurationManager.isEditableSystemParameter(config.name)) {
+          if (config.name == Constants.WelcomeMessage && config.parameter.isDefined) {
+            config.copy(parameter = Some(HtmlUtil.sanitizeEditorContent(config.parameter.get)))
+          } else {
+            config
+          }
+        } else {
+          proceed = false
+          config
+        }
+      }
+      if (proceed) {
+        systemConfigurationManager.updateSystemParameters(configsToUse).map { resultToReport =>
+          ResponseConstructor.constructJsonResponse(JsonUtil.jsSystemConfigurations(resultToReport).toString)
+        }
+      } else {
+        Future.successful {
+          ResponseConstructor.constructEmptyResponse
+        }
+      }
+    }
+  }
+
   def updateConfigurationValue(): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canUpdateSystemConfigurationValues(request).flatMap { _ =>
       val name = ParameterExtractor.requiredBodyParameter(request, ParameterNames.NAME)

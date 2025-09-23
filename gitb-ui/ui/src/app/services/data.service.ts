@@ -154,7 +154,8 @@ export class DataService {
       versionNumber: (this.configuration?.versionNumber != undefined)?this.configuration!.versionNumber:'',
       hasDefaultLegalNotice: (this.configuration?.hasDefaultLegalNotice != undefined)?this.configuration!.hasDefaultLegalNotice:false,
       conformanceStatementReportMaxTestCases: (this.configuration?.conformanceStatementReportMaxTestCases != undefined)?this.configuration!.conformanceStatementReportMaxTestCases:100,
-      headerNameAuthenticationCookiePath: (this.configuration?.headerNameAuthenticationCookiePath != undefined)?this.configuration!.headerNameAuthenticationCookiePath:"ITB-PATH"
+      headerNameAuthenticationCookiePath: (this.configuration?.headerNameAuthenticationCookiePath != undefined)?this.configuration!.headerNameAuthenticationCookiePath:"ITB-PATH",
+      welcomePageTitle: (this.configuration?.welcomePageTitle != undefined)?this.configuration!.welcomePageTitle:''
     }
   }
 

@@ -111,7 +111,7 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
         this.loginViaSelection(userIdToConnectWith)
       }
     }
-    this.dataService.changeBanner(this.loginInProgress?'Home':'Welcome to the Interoperability Test Bed')
+    this.dataService.changeBanner(this.loginInProgress?'Home':this.dataService.configuration.welcomePageTitle)
     this.dataService.breadcrumbUpdate({breadcrumbs: []})
   }
 

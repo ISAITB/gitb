@@ -32,6 +32,7 @@ object Constants {
   val MasterPassword = "master_password"
   val DemoAccount = "demo_account"
   val WelcomeMessage = "welcome"
+  val WelcomeTitle = "welcome_title"
   val AccountRetentionPeriod = "account_retention_period"
   val EmailSettings = "email_settings"
   val SoftwareVersionCheck = "software_version_check"

@@ -22,6 +22,7 @@ import { Theme } from '../types/theme';
 import { FileParam } from '../types/file-param.type';
 import { HttpResponse } from '@angular/common/http';
 import { EmailSettings } from '../types/email-settings';
+import {ConfigurationValue} from '../types/configuration-value';
 
 @Injectable({
   providedIn: 'root'
@@ -34,6 +35,24 @@ export class SystemConfigurationService {
     return this.restService.get<SystemConfiguration[]>({
       path: ROUTES.controllers.SystemConfigurationService.getConfigurationValues().url,
       authenticate: false
+    })
+  }
+
+  updateConfigurationValues(values: ConfigurationValue[]) {
+    const configs: ConfigurationValue[] = []
+    values.forEach(value => {
+      if (value.value == undefined) {
+        configs.push({ name: value.name })
+      } else {
+        configs.push({ name: value.name, value: value.value })
+      }
+    })
+    return this.restService.post<SystemConfiguration[]|undefined>({
+      path: ROUTES.controllers.SystemConfigurationService.updateConfigurationValues().url,
+      data: {
+        values: JSON.stringify(configs)
+      },
+      authenticate: true
     })
   }
 

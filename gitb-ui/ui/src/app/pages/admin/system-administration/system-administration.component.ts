@@ -150,6 +150,7 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
   welcomePageStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
   welcomePageResetPending = false
   welcomePageMessage?: string
+  welcomePageTitle?: string
 
   // Email settings
   emailSettingsStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
@@ -284,8 +285,12 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
         if (welcomeMessageConfig && welcomeMessageConfig.parameter) {
           this.welcomePageMessage = welcomeMessageConfig.parameter
         }
-        this.welcomePageStatus.fromEnv = welcomeMessageConfig != undefined && welcomeMessageConfig.environment
-        this.welcomePageStatus.fromDefault = welcomeMessageConfig != undefined && welcomeMessageConfig.default
+        const welcomeTitleConfig = find(data, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.WELCOME_TITLE)
+        if (welcomeTitleConfig && welcomeTitleConfig.parameter) {
+          this.welcomePageTitle = welcomeTitleConfig.parameter
+        }
+        this.welcomePageStatus.fromEnv = welcomeMessageConfig != undefined && welcomeMessageConfig.environment && welcomeTitleConfig != undefined && welcomeTitleConfig.environment
+        this.welcomePageStatus.fromDefault = welcomeMessageConfig != undefined && welcomeMessageConfig.default && welcomeTitleConfig != undefined && welcomeTitleConfig.default
         this.welcomePageStatus.enabled = !this.welcomePageStatus.fromDefault
         // Email settings.
         const emailSettingsConfig = find(data, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.EMAIL_SETTINGS)
@@ -834,15 +839,15 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
   }
 
   saveWelcomePage() {
-    if (this.welcomePageMessage) {
+    if (this.textProvided(this.welcomePageMessage) && this.textProvided(this.welcomePageTitle)) {
       this.welcomePageStatus.pending = true
-      this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.WELCOME_MESSAGE, this.welcomePageMessage)
+      this.systemConfigurationService.updateConfigurationValues([ { name: Constants.SYSTEM_CONFIG.WELCOME_MESSAGE, value: this.welcomePageMessage }, { name: Constants.SYSTEM_CONFIG.WELCOME_TITLE, value: this.welcomePageTitle } ])
       .subscribe(() => {
         this.welcomePageStatus.collapsed = true
         this.welcomePageStatus.enabled = true
         this.welcomePageStatus.fromDefault = false
         this.welcomePageStatus.fromEnv = false
-        this.popupService.success('Welcome page message set.')
+        this.popupService.success('Welcome page content set.')
       }).add(() => {
         this.welcomePageStatus.pending = false
       })
@@ -850,19 +855,26 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
   }
 
   resetWelcomePage() {
-    this.confirmationDialogService.confirmedDangerous("Confirm reset", "Are you sure you want to reset the welcome page message to its default?", "Reset", "Cancel")
+    this.confirmationDialogService.confirmedDangerous("Confirm reset", "Are you sure you want to reset the welcome page content to its default?", "Reset", "Cancel")
     .subscribe(() => {
       this.welcomePageResetPending = true
-      this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.WELCOME_MESSAGE)
-      .subscribe((appliedValue) => {
-        if (appliedValue) {
-          this.welcomePageMessage = appliedValue.parameter
-          this.welcomePageStatus.fromDefault = appliedValue.default
-          this.welcomePageStatus.fromEnv = appliedValue.environment
+      this.systemConfigurationService.updateConfigurationValues([ { name: Constants.SYSTEM_CONFIG.WELCOME_MESSAGE }, { name: Constants.SYSTEM_CONFIG.WELCOME_TITLE } ])
+      .subscribe((appliedValues) => {
+        if (appliedValues) {
+          const message = find(appliedValues, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.WELCOME_MESSAGE)
+          if (message != undefined) {
+            this.welcomePageMessage = message.parameter
+          }
+          const title = find(appliedValues, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.WELCOME_TITLE)
+          if (title != undefined) {
+            this.welcomePageTitle = title.parameter
+          }
+          this.welcomePageStatus.fromEnv = message != undefined && message.environment && title != undefined && title.environment
+          this.welcomePageStatus.fromDefault = message != undefined && message.default && title != undefined && title.default
           this.welcomePageStatus.enabled = false
         }
         this.welcomePageStatus.collapsed = true
-        this.popupService.success('Welcome page message reset to default.')
+        this.popupService.success('Welcome page content reset to default.')
       }).add(() => {
         this.welcomePageResetPending = false
       })

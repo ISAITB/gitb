@@ -42,5 +42,6 @@ export interface AppConfigurationProperties {
   hasDefaultLegalNotice: boolean
   conformanceStatementReportMaxTestCases: number
   headerNameAuthenticationCookiePath: string
+  welcomePageTitle: string
 
 }

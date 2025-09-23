@@ -56,7 +56,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
   private final val editableSystemConfigurationTypes = Set(
     Constants.SessionAliveTime, Constants.RestApiEnabled, Constants.RestApiAdminKey, Constants.SelfRegistrationEnabled,
     Constants.DemoAccount, Constants.WelcomeMessage, Constants.AccountRetentionPeriod,
-    Constants.EmailSettings, Constants.SoftwareVersionCheck
+    Constants.EmailSettings, Constants.SoftwareVersionCheck, Constants.WelcomeTitle
   )
 
   private var activeThemeId: Option[Long] = None
@@ -229,6 +229,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
         val demoAccountConfig = persistedConfigs.find(config => config.config.name == Constants.DemoAccount)
         val selfRegistrationConfig = persistedConfigs.find(config => config.config.name == Constants.SelfRegistrationEnabled)
         val welcomeMessageConfig = persistedConfigs.find(config => config.config.name == Constants.WelcomeMessage)
+        val welcomeTitleConfig = persistedConfigs.find(config => config.config.name == Constants.WelcomeTitle)
         val emailSettingsConfig = persistedConfigs.find(config => config.config.name == Constants.EmailSettings)
         val softwareVersionCheckConfig = persistedConfigs.find(config => config.config.name == Constants.SoftwareVersionCheck)
         if (restApiEnabledConfig.isEmpty) {
@@ -251,6 +252,9 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
         if (welcomeMessageConfig.isEmpty) {
           persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.WelcomeMessage, Some(Configurations.WELCOME_MESSAGE), None), defaultSetting = true, environmentSetting = false)
         }
+        if (welcomeTitleConfig.isEmpty) {
+          persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.WelcomeTitle, Some(Configurations.WELCOME_TITLE), None), defaultSetting = true, environmentSetting = false)
+        }
         if (emailSettingsConfig.isEmpty) {
           persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.EmailSettings, Some(JsonUtil.jsEmailSettings(EmailSettings.fromEnvironment()).toString()), None), defaultSetting = true, environmentSetting = sys.env.contains("EMAIL_ENABLED"))
         }
@@ -264,6 +268,19 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
 
   def isEditableSystemParameter(name: String): Boolean = {
     editableSystemConfigurationTypes.contains(name)
+  }
+
+  def updateSystemParameters(configs: Iterable[SystemConfigurations]): Future[Iterable[SystemConfigurationsWithEnvironment]] = {
+    val action = for {
+      updates <- DBIO.sequence {
+        configs.map { config =>
+          updateSystemParameterInternal(config.name, config.parameter, applySetting = true)
+        }
+      }
+    } yield updates
+    DB.run(action.transactionally).map { results =>
+      results.filter(result => result.isDefined).map(_.get)
+    }
   }
 
   /**
@@ -303,7 +320,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
       exists <- PersistenceSchema.systemConfigurations.filter(_.name === name).exists.result
       _ <- {
         if (exists) {
-          if ((name == Constants.SoftwareVersionCheck || name == Constants.WelcomeMessage || name == Constants.EmailSettings || name == Constants.AccountRetentionPeriod) && value.isEmpty) {
+          if ((name == Constants.SoftwareVersionCheck || name == Constants.WelcomeMessage || name == Constants.WelcomeTitle || name == Constants.EmailSettings || name == Constants.AccountRetentionPeriod) && value.isEmpty) {
             PersistenceSchema.systemConfigurations.filter(_.name === name).delete
           } else {
             PersistenceSchema.systemConfigurations.filter(_.name === name).map(_.parameter).update(value)
@@ -347,6 +364,16 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
               Configurations.WELCOME_MESSAGE = Configurations.WELCOME_MESSAGE_DEFAULT
               DBIO.successful(Some(
                 SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.WelcomeMessage, Some(Configurations.WELCOME_MESSAGE), None), defaultSetting = true, environmentSetting = false)
+              ))
+            }
+          case Constants.WelcomeTitle =>
+            if (value.isDefined) {
+              Configurations.WELCOME_TITLE = value.get
+              DBIO.successful(None)
+            } else {
+              Configurations.WELCOME_TITLE = Configurations.WELCOME_TITLE_DEFAULT
+              DBIO.successful(Some(
+                SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.WelcomeTitle, Some(Configurations.WELCOME_TITLE), None), defaultSetting = true, environmentSetting = false)
               ))
             }
           case Constants.AccountRetentionPeriod =>

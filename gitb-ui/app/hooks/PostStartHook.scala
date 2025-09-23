@@ -204,13 +204,23 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
             Future.successful(())
           }
         }
-        // Welcome message.
+        // Welcome page message.
         _ <- {
           val welcomeMessageConfig = persistedConfigs.find(config => config.config.name == Constants.WelcomeMessage).map(_.config)
           if (welcomeMessageConfig.nonEmpty && welcomeMessageConfig.get.parameter.nonEmpty) {
             Configurations.WELCOME_MESSAGE = welcomeMessageConfig.get.parameter.get
           } else {
             Configurations.WELCOME_MESSAGE = Configurations.WELCOME_MESSAGE_DEFAULT
+          }
+          Future.successful(())
+        }
+        // Welcome page title.
+        _ <- {
+          val welcomeTitleConfig = persistedConfigs.find(config => config.config.name == Constants.WelcomeTitle).map(_.config)
+          if (welcomeTitleConfig.nonEmpty && welcomeTitleConfig.get.parameter.nonEmpty) {
+            Configurations.WELCOME_TITLE = welcomeTitleConfig.get.parameter.get
+          } else {
+            Configurations.WELCOME_TITLE = Configurations.WELCOME_TITLE_DEFAULT
           }
           Future.successful(())
         }

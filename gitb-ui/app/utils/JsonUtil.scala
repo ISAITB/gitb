@@ -632,7 +632,7 @@ object JsonUtil {
     json
   }
 
-  def jsSystemConfigurations(configs: List[SystemConfigurationsWithEnvironment]): JsArray = {
+  def jsSystemConfigurations(configs: Iterable[SystemConfigurationsWithEnvironment]): JsArray = {
     var json = Json.arr()
     configs.foreach { config =>
       json = json.append(jsSystemConfiguration(config))
@@ -1682,6 +1682,16 @@ object JsonUtil {
     items
   }
 
+  def parseJsSystemConfigurations(json: String): Iterable[SystemConfigurations] = {
+    Json.parse(json).as[JsArray].value.map { value =>
+      SystemConfigurations(
+        (value \ "name").as[String],
+        (value \ "value").asOpt[String],
+        None
+      )
+    }
+  }
+
   def parseJsTags(json: String): List[TestCaseTag] = {
     val tags = new ListBuffer[TestCaseTag]
     Json.parse(json).as[JsArray].value.foreach { value =>
@@ -2581,7 +2591,8 @@ object JsonUtil {
       "versionNumber" -> config.get("versionNumber"),
       "hasDefaultLegalNotice" -> config.get("hasDefaultLegalNotice").toBoolean,
       "conformanceStatementReportMaxTestCases" -> config.get("conformanceStatementReportMaxTestCases").toInt,
-      "headerNameAuthenticationCookiePath" -> config.get("headerNameAuthenticationCookiePath")
+      "headerNameAuthenticationCookiePath" -> config.get("headerNameAuthenticationCookiePath"),
+      "welcomePageTitle" -> config.get("welcomePageTitle")
     )
     json
   }

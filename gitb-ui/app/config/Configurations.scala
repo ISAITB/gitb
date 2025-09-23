@@ -184,6 +184,9 @@ object Configurations {
 
   val WELCOME_MESSAGE_DEFAULT = "<h4>The Interoperability Test Bed is a platform for self-service conformance testing against semantic and technical specifications.</h4>"
   var WELCOME_MESSAGE: String = WELCOME_MESSAGE_DEFAULT
+  val WELCOME_TITLE_DEFAULT = "Welcome to the Interoperability Test Bed"
+  var WELCOME_TITLE: String = WELCOME_TITLE_DEFAULT
+
   var SESSION_COOKIE_SECURE: Boolean = false
 
   var HEADER_NAME_AUTHENTICATION_COOKIE_PATH = ""

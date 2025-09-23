@@ -200,6 +200,7 @@ POST    /api/dashboard/finished                 @controllers.ReportService.getFi
 
 GET     /api/system/configs                     @controllers.SystemConfigurationService.getConfigurationValues()
 POST    /api/system/configs                     @controllers.SystemConfigurationService.updateConfigurationValue()
+POST    /api/system/configsMultiple             @controllers.SystemConfigurationService.updateConfigurationValues()
 POST    /api/system/export                      @controllers.RepositoryService.exportSystemSettings()
 POST    /api/system/exportDeletions             @controllers.RepositoryService.exportDeletions()
 POST    /api/system/import/preview              @controllers.RepositoryService.uploadSystemSettingsExport()
