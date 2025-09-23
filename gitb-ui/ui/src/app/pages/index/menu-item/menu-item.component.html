@@ -9,7 +9,7 @@
         </div>
         <div class="menu-item-text">{{label}}</div>
     } @else {
-        <div class="menu-item" (click)="popup.hide()" [tooltip]="label" [isDisabled]="expanded" placement="right" [delay]="500" #popup="bs-tooltip" containerClass="shortTooltip">
+        <div class="menu-item" (click)="popup.hide()" [tooltip]="label" [isDisabled]="expanded" container="body" placement="right" [delay]="500" #popup="bs-tooltip" containerClass="menuItemTooltip">
             @if (customTemplate) {
                 <ng-container [ngTemplateOutlet]="customTemplate"></ng-container>
             } @else {
