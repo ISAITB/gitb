@@ -73,8 +73,8 @@ public abstract class AbstractIterationStepActor<T> extends AbstractTestStepActo
 		}
 		if (status == StepStatus.ERROR || status == StepStatus.WARNING || status == StepStatus.COMPLETED || status == StepStatus.SKIPPED) {
 			// Final state for the step.
-			boolean stopping = scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPING && scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPED;
-			boolean shouldContinue = !stopping && status != StepStatus.ERROR || !(step instanceof TestConstruct construct) || !Boolean.TRUE.equals(construct.isStopOnError());
+			boolean stopping = scope.getContext().getCurrentState() == TestCaseContext.TestCaseStateEnum.STOPPING || scope.getContext().getCurrentState() == TestCaseContext.TestCaseStateEnum.STOPPED;
+			boolean shouldContinue = !stopping && (status != StepStatus.ERROR || !(step instanceof TestConstruct construct) || !Boolean.TRUE.equals(construct.isStopOnError()));
 			if (shouldContinue) {
 				shouldContinue = handleStatusEventInternal(event);
 			}
