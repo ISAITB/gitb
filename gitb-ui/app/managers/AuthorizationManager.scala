@@ -1093,6 +1093,10 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     checkTestBedAdmin(request)
   }
 
+  def canCompleteStartupWizard(request: RequestWithAttributes[_]): Future[Boolean] = {
+    checkTestBedAdmin(request)
+  }
+
   def canAccessThemeData(request: RequestWithAttributes[_]): Future[Boolean] = {
     val check = Future.successful(true)
     check.map(setAuthResult(request, _, "User cannot access theme"))

@@ -18,6 +18,7 @@ package managers.export
 import com.gitb.xml.export.{ReportType, SelfRegistrationRestriction => _, _}
 import config.Configurations
 import managers._
+import managers.`export`.ImportCompleteManager.SandboxImportResultWithHash
 import managers.testsuite.TestSuitePaths
 import managers.triggers.TriggerHelper
 import models.Enums.ImportItemType.ImportItemType
@@ -42,6 +43,12 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Using
+
+object ImportCompleteManager {
+
+  case class SandboxImportResultWithHash(result: Option[SandboxImportResult], hash: Option[String])
+
+}
 
 @Singleton
 class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigurationManager,
@@ -3244,25 +3251,29 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     DB.run(PersistenceSchema.processedArchives.filter(_.hash === archiveHash).result.headOption)
   }
 
-  def importSandboxData(archive: File, archiveKey: String): Future[SandboxImportResult] = {
+  def importSandboxData(archive: File, archiveKey: String, checkArchiveHash: Boolean = true): Future[SandboxImportResult] = {
     val task = for {
       resultWithHash <- {
-        var archiveHash: Option[String] = None
-        Using.resource(Files.newInputStream(archive.toPath)) { inputStream =>
-          archiveHash = Some(DigestUtils.sha256Hex(inputStream))
-        }
-        findProcessedArchive(archiveHash.get).map { processedArchive =>
-          if (processedArchive.isDefined) {
-            logger.info("Skipping data archive ["+archive.getName+"] as it has already been processed on ["+TimeUtil.serializeTimestamp(processedArchive.get.processTime)+"]")
-            (Some(SandboxImportResult.incomplete()), archiveHash.get)
-          } else {
-            (None, archiveHash.get)
+        if (checkArchiveHash) {
+          var archiveHash: Option[String] = None
+          Using.resource(Files.newInputStream(archive.toPath)) { inputStream =>
+            archiveHash = Some(DigestUtils.sha256Hex(inputStream))
           }
+          findProcessedArchive(archiveHash.get).map { processedArchive =>
+            if (processedArchive.isDefined) {
+              logger.info("Skipping data archive ["+archive.getName+"] as it has already been processed on ["+TimeUtil.serializeTimestamp(processedArchive.get.processTime)+"]")
+              SandboxImportResultWithHash(Some(SandboxImportResult.incomplete()), archiveHash)
+            } else {
+              SandboxImportResultWithHash(None, archiveHash)
+            }
+          }
+        } else {
+          Future.successful(SandboxImportResultWithHash(None, None))
         }
       }
       result <- {
-        if (resultWithHash._1.isDefined) {
-          Future.successful(resultWithHash._1.get)
+        if (resultWithHash.result.isDefined) {
+          Future.successful(resultWithHash.result.get)
         } else {
           logger.info("Processing data archive [" + archive.getName + "]")
           val importSettings = new ImportSettings()
@@ -3368,10 +3379,10 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
           }
         }
       }
-    } yield (result, resultWithHash._2)
+    } yield (result, resultWithHash.hash)
     task.flatMap { taskOutput =>
-      val recordTask = if (taskOutput._1.processingComplete) {
-        recordProcessedArchive(taskOutput._2)
+      val recordTask = if (taskOutput._1.processingComplete && taskOutput._2.isDefined) {
+        recordProcessedArchive(taskOutput._2.get)
       } else {
         Future.successful(())
       }

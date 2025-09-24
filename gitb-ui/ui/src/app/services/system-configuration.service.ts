@@ -23,6 +23,7 @@ import { FileParam } from '../types/file-param.type';
 import { HttpResponse } from '@angular/common/http';
 import { EmailSettings } from '../types/email-settings';
 import {ConfigurationValue} from '../types/configuration-value';
+import {StartupWizardOptions} from '../types/startup-wizard-options';
 
 @Injectable({
   providedIn: 'root'
@@ -198,6 +199,19 @@ export class SystemConfigurationService {
     }
     return this.restService.post<{ success: boolean, messages?: string[] }>({
       path: ROUTES.controllers.SystemConfigurationService.testEmailSettings().url,
+      authenticate: true,
+      data: data
+    })
+  }
+
+  completeStartupWizard(options: StartupWizardOptions) {
+    const data: any = {
+      samples: options.importSamples === true,
+      api: options.enableRestApi === true,
+      updates: options.enableSoftwareChecks === true
+    }
+    return this.restService.post<void>({
+      path: ROUTES.controllers.SystemConfigurationService.completeStartupWizard().url,
       authenticate: true,
       data: data
     })

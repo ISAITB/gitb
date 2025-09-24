@@ -17,7 +17,7 @@ package controllers
 
 import controllers.util._
 import exceptions.ErrorCodes
-import managers.{AuthorizationManager, SystemConfigurationManager}
+import managers.{AuthorizationManager, StartupWizardManager, SystemConfigurationManager}
 import models.Constants
 import org.apache.commons.io.FileUtils
 import play.api.libs.json.{JsBoolean, Json}
@@ -31,6 +31,7 @@ class SystemConfigurationService @Inject()(authorizedAction: AuthorizedAction,
                                            cc: ControllerComponents,
                                            repositoryUtils: RepositoryUtils,
                                            systemConfigurationManager: SystemConfigurationManager,
+                                           startupWizardManager: StartupWizardManager,
                                            environment: play.api.Environment,
                                            authorizationManager: AuthorizationManager)
                                           (implicit ec: ExecutionContext) extends AbstractController(cc) {
@@ -264,6 +265,17 @@ class SystemConfigurationService @Inject()(authorizedAction: AuthorizedAction,
         } else {
           ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "The selected theme cannot be deleted.")
         }
+      }
+    }
+  }
+
+  def completeStartupWizard: Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canCompleteStartupWizard(request).flatMap { _ =>
+      val samples = ParameterExtractor.requiredBodyParameter(request, ParameterNames.SAMPLES).toBoolean
+      val updates = ParameterExtractor.requiredBodyParameter(request, ParameterNames.UPDATES).toBoolean
+      val api = ParameterExtractor.requiredBodyParameter(request, ParameterNames.API).toBoolean
+      startupWizardManager.completeStartupWizard(samples, updates, api).map { _ =>
+        ResponseConstructor.constructEmptyResponse
       }
     }
   }

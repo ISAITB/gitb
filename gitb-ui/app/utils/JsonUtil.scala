@@ -2585,6 +2585,7 @@ object JsonUtil {
       "demosEnabled" -> config.get("demos.enabled").toBoolean,
       "demosAccount" -> config.get("demos.account").toLong,
       "registrationEnabled" -> config.get("registration.enabled").toBoolean,
+      "startupWizardEnabled" -> config.get("startupWizardEnabled").toBoolean,
       "savedFileMaxSize" -> config.get("savedFile.maxSize").toLong,
       "mode" -> config.get("mode"),
       "automationApiEnabled" -> config.get("automationApi.enabled").toBoolean,

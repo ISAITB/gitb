@@ -443,6 +443,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
       case Constants.AccountRetentionPeriod => "Inactive account retention period"
       case Constants.EmailSettings => "Email settings"
       case Constants.SoftwareVersionCheck => "Software version check settings"
+      case Constants.StartupWizard => "Startup configuration wizard"
       case _ => setting
     }
   }

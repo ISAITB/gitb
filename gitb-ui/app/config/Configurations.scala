@@ -149,6 +149,7 @@ object Configurations {
   var DEMOS_ACCOUNT:Long = -1
 
   var REGISTRATION_ENABLED = true
+  var STARTUP_WIZARD_ENABLED = true
   var TESTBED_HOME_LINK: String = "/"
 
   // 5120 KB default (5 MBs)
@@ -373,6 +374,7 @@ object Configurations {
       DEMOS_ACCOUNT = fromEnv("DEMOS_ACCOUNT", conf.getString("demos.account")).toLong
 
       REGISTRATION_ENABLED = fromEnv("REGISTRATION_ENABLED", conf.getString("registration.enabled")).toBoolean
+      STARTUP_WIZARD_ENABLED = fromEnv("STARTUP_WIZARD_ENABLED", conf.getString("startupWizard.enabled")).toBoolean
       TESTBED_HOME_LINK = fromEnv("TESTBED_HOME_LINK", TESTBED_HOME_LINK)
 
       SAVED_FILE_MAX_SIZE = fromEnv("SAVED_FILE_MAX_SIZE", SAVED_FILE_MAX_SIZE.toString).toLong

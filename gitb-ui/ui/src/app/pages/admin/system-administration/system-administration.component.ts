@@ -124,6 +124,10 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
   selfRegistrationStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
   selfRegistrationEnabled = false
 
+  // Startup wizard
+  startupWizardStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
+  startupWizardEnabled = false
+
   // REST API
   restApiStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
   restApiEnabled = false
@@ -280,6 +284,12 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
         this.selfRegistrationStatus.enabled = this.selfRegistrationEnabled
         this.selfRegistrationStatus.fromEnv = selfRegistrationConfig != undefined && selfRegistrationConfig.environment
         this.selfRegistrationStatus.fromDefault = selfRegistrationConfig != undefined && selfRegistrationConfig.default
+        // Startup wizard.
+        const startupWizardConfig = find(data, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.STARTUP_WIZARD)
+        this.startupWizardEnabled = startupWizardConfig != undefined && startupWizardConfig.parameter != undefined && startupWizardConfig.parameter.toLowerCase() == 'true'
+        this.startupWizardStatus.enabled = this.startupWizardEnabled
+        this.startupWizardStatus.fromEnv = startupWizardConfig != undefined && startupWizardConfig.environment
+        this.startupWizardStatus.fromDefault = startupWizardConfig != undefined && startupWizardConfig.default
         // Welcome page message.
         const welcomeMessageConfig = find(data, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.WELCOME_MESSAGE)
         if (welcomeMessageConfig && welcomeMessageConfig.parameter) {
@@ -755,6 +765,29 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
         this.selfRegistrationStatus.pending = false
       })
     }
+  }
+
+  saveStartupWizardConfig() {
+    this.startupWizardStatus.pending = true
+    let valueToSave: string
+    let message: string
+    if (this.startupWizardEnabled) {
+      valueToSave = "true"
+      message = "Enabled startup configuration wizard."
+    } else {
+      valueToSave = "false"
+      message = "Disabled startup configuration wizard."
+    }
+    this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.STARTUP_WIZARD, valueToSave).subscribe(() => {
+      this.startupWizardStatus.collapsed = true
+      this.startupWizardStatus.enabled = this.startupWizardEnabled
+      this.startupWizardStatus.fromDefault = false
+      this.startupWizardStatus.fromEnv = false
+      this.dataService.configuration.startupWizardEnabled = this.startupWizardEnabled
+      this.popupService.success(message)
+    }).add(() => {
+      this.startupWizardStatus.pending = false
+    })
   }
 
   saveRestApi() {

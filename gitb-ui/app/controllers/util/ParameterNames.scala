@@ -34,6 +34,9 @@ object ParameterNames {
   val USE_CUSTOM_PDF_REPORTS = "useCustomPdfReports"
   val USE_CUSTOM_PDFS_WITH_CUSTOM_XML = "useCustomPdfReportsWithCustomXml"
   val CUSTOM_PDF_SERVICE = "customPdfService"
+  val SAMPLES = "samples"
+  val API = "api"
+  val UPDATES = "updates"
 
   //Dashboard filter parameters
   val COMMUNITY_IDS = "community_ids"

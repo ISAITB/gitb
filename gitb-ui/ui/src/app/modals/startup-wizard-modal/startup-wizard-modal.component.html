@@ -1,0 +1,147 @@
+<div class="modal-header">
+    <div class="modal-title">
+        Startup configuration wizard
+    </div>
+    <div class="wizard-status">
+        <div class="step completed" [class.active]="step == 0"></div>
+        <div class="step-spacer"></div>
+        <div class="step" [class.active]="step == 1" [class.completed]="options.importSamples != undefined"></div>
+        <div class="step-spacer"></div>
+        <div class="step" [class.active]="step == 2" [class.completed]="options.enableRestApi != undefined"></div>
+        <div class="step-spacer"></div>
+        <div class="step" [class.active]="step == 3" [class.completed]="options.enableSoftwareChecks != undefined"></div>
+        <div class="step-spacer"></div>
+        <div class="step" [class.active]="step == 4" [class.completed]="visitedEnd"></div>
+    </div>
+</div>
+<div class="modal-body">
+    @switch (steps[step]) {
+        @case (WizardStep.Introduction) {
+            <div class="alert alert-info">
+                Thank you for using the Interoperability Test Bed
+            </div>
+            <p>
+                This wizard takes you through a series of initial configuration steps to ensure this Test Bed instance
+                is configured to match your needs, be they experimentation, development or use in production.
+            </p>
+            <p class="mb-0">
+                Note that once the wizard is completed you can re-enable it through the <b>System administration</b> settings.
+            </p>
+        }
+        @case (WizardStep.ImportSamples) {
+            <div class="alert alert-info d-flex align-items-center pt-0 pb-0">
+                <div class="me-3"><i class="fa-solid fa-flask fs-3 step-icon"></i></div>
+                <div class="fw-bold text-nowrap">Step {{ step }}</div>
+                <div class="border-start border-info-subtle ms-3 ps-3 pt-2 pb-2 mt-2 mb-2">Sample test suites and test configuration for experimentation and inspiration</div>
+            </div>
+            <div>
+                <app-radio-card [radioValue]="true"
+                                [(ngModel)]="options.importSamples"
+                                radioId="samples_yes"
+                                radioName="samples"
+                                radioLabel="Import sample test suites">
+                    Select this option if the current instance will be used for development and experimentation. If selected, this will create
+                    sample domain and community data, including a series of <a href="https://www.itb.ec.europa.eu/docs/tdl/latest/examples/" target="_blank">sample test suites</a> ready for testing.
+                </app-radio-card>
+            </div>
+            <div class="mt-3">
+                <app-radio-card [radioValue]="false"
+                                [(ngModel)]="options.importSamples"
+                                radioId="samples_no"
+                                radioName="samples"
+                                radioLabel="Skip the samples">
+                    Select this option to skip creating a sample test configuration. Choose this if the current instance will be used in production, or if you
+                    want to create your own test configuration from scratch.
+                </app-radio-card>
+            </div>
+        }
+        @case (WizardStep.EnableRestApi) {
+            <div class="alert alert-info d-flex align-items-center pt-0 pb-0">
+                <div class="me-3"><i class="fa-solid fa-gear fs-3 step-icon"></i></div>
+                <div class="fw-bold text-nowrap">Step {{ step }}</div>
+                <div class="border-start border-info-subtle ms-3 ps-3 pt-2 pb-2 mt-2 mb-2">REST API for integrations, scripting and automation processes</div>
+            </div>
+            <div>
+                <app-radio-card [radioValue]="true"
+                                [(ngModel)]="options.enableRestApi"
+                                radioId="rest_yes"
+                                radioName="rest"
+                                radioLabel="Enable the REST API">
+                    Enabling the REST API allows integrations with this instance and use in automated processes. Having the
+                    REST API enabled is also recommended for a development instance as it enables streamlined test development.
+                </app-radio-card>
+            </div>
+            <div class="mt-3">
+                <app-radio-card [radioValue]="false"
+                                [(ngModel)]="options.enableRestApi"
+                                radioId="rest_no"
+                                radioName="rest"
+                                radioLabel="Disable the REST API">
+                    The REST API is typically disabled on a production Test Bed instance that is expected to be used for formal
+                    conformance testing. This ensures that such instances are not used for testing via automated processes.
+                </app-radio-card>
+            </div>
+        }
+        @case (WizardStep.CheckForUpdates) {
+            <div class="alert alert-info d-flex align-items-center pt-0 pb-0">
+                <div class="me-3"><i class="fa-solid fa-bell fs-3 step-icon"></i></div>
+                <div class="fw-bold text-nowrap">Step {{ step }}</div>
+                <div class="border-start border-info-subtle ms-3 ps-3 pt-2 pb-2 mt-2 mb-2">Updates for new software releases and security alerts</div>
+            </div>
+            <div>
+                <app-radio-card [radioValue]="true"
+                                [(ngModel)]="options.enableSoftwareChecks"
+                                radioId="rest_yes"
+                                radioName="rest"
+                                radioLabel="Enable software update checks">
+                    When enabled, this instance will check online for software updates and known security issues. This is
+                    advised for both production and development, unless this instance cannot or should not access online resources.
+                </app-radio-card>
+            </div>
+            <div class="mt-3">
+                <app-radio-card [radioValue]="false"
+                                [(ngModel)]="options.enableSoftwareChecks"
+                                radioId="rest_no"
+                                radioName="rest"
+                                radioLabel="Disable software update checks">
+                    When disabled, you will need to stay informed of software updates via other channels. Choose this option
+                    to prevent online checks in case you have networking restrictions or if this instance is expected to be short-lived.
+                </app-radio-card>
+            </div>
+        }
+        @default {
+            <div class="alert alert-info d-flex align-items-center pt-0 pb-0">
+                <div class="me-3"><i class="fa-solid fa-comment fs-3 step-icon"></i></div>
+                <div class="fw-bold text-nowrap">Step {{ step }}</div>
+                <div class="border-start border-info-subtle ms-3 ps-3 pt-2 pb-2 mt-2 mb-2">User survey to share use case and feedback</div>
+            </div>
+            <div>
+                <p>
+                    The Test Bed team would highly appreciate if you could take a couple minutes to complete a brief <b>feedback survey</b>.
+                    Doing so helps us get a better understanding of our users, and supports the continued development of the Test Bed.
+                </p>
+                <p class="mb-0">
+                    Click <a [href]="dataService.configuration.surveyAddress" target="blank">here</a> to open the survey in a separate window and get started.
+                </p>
+            </div>
+        }
+    }
+</div>
+<div class="modal-footer">
+    <div class="btn-toolbar">
+        @if (step > 0) {
+            <button class="btn btn-secondary" type="button" (click)="step = step - 1">
+                <span class="me-3"><i class="fa-solid fa-chevron-left"></i></span>
+                <span>Previous</span>
+            </button>
+        }
+        @if (step == steps.length - 1) {
+            <button class="btn btn-secondary" [pending]="pending" type="button" (click)="finish()">Apply configuration</button>
+        } @else {
+            <button class="btn btn-secondary" [disabled]="stepIncomplete()" type="button" (click)="next()">
+                <span>{{ nextLabel() }}</span>
+                <span class="ms-3"><i class="fa-solid fa-chevron-right"></i></span>
+            </button>
+        }
+    </div>
+</div>

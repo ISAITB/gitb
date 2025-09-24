@@ -386,7 +386,29 @@
                             </form>
                         </app-configuration-entry>
                     </div>
-                    <!-- Software version check, -->
+                    <!-- Startup wizard -->
+                    <div class="configContainer">
+                        <app-configuration-entry
+                            configTitle="Startup configuration wizard"
+                            configDescription="Enable the startup configuration wizard to run when the Test Bed administrator visits the home page."
+                            [(status)]="startupWizardStatus"
+                        >
+                            <form>
+                                <div class="row row-cols-auto align-items-center gx-3">
+                                    <div class="col-auto">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="startupWizardEnabled" name="startupWizardEnabled" [(ngModel)]="startupWizardEnabled">
+                                            <label class="form-check-label" for="startupWizardEnabled">Enabled?</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <button type="submit" class="btn btn-secondary" [pending]="startupWizardStatus.pending" (click)="saveStartupWizardConfig()">Save</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </app-configuration-entry>
+                    </div>
+                    <!-- Software version check -->
                     <div class="configContainer" >
                         <app-configuration-entry
                             configTitle="Software version check"

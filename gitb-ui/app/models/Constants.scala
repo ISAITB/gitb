@@ -36,6 +36,7 @@ object Constants {
   val AccountRetentionPeriod = "account_retention_period"
   val EmailSettings = "email_settings"
   val SoftwareVersionCheck = "software_version_check"
+  val StartupWizard = "startup_wizard"
 
   // env variables
   val EnvironmentTheme = "THEME"

@@ -289,6 +289,8 @@ import {ConformanceStatementTableComponent} from './components/conformance-state
 import {CreateEditTestServiceModalComponent} from './modals/create-edit-test-service-modal/create-edit-test-service-modal.component';
 import { StatementOptionsButtonComponent } from './components/statement-options-button/statement-options-button.component';
 import { DataManagementComponent } from './pages/admin/data-management/data-management.component';
+import { StartupWizardModalComponent } from './modals/startup-wizard-modal/startup-wizard-modal.component';
+import { RadioCardComponent } from './components/radio-card/radio-card.component';
 
 @NgModule({ declarations: [
         AppComponent,
@@ -487,7 +489,9 @@ import { DataManagementComponent } from './pages/admin/data-management/data-mana
         ConformanceStatementTableComponent,
         CreateEditTestServiceModalComponent,
         StatementOptionsButtonComponent,
-        DataManagementComponent
+        DataManagementComponent,
+        StartupWizardModalComponent,
+        RadioCardComponent
     ],
     bootstrap: [AppComponent], imports: [
     NgxColorPickerComponent,

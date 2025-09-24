@@ -1,0 +1,9 @@
+<div class="radio-card" (click)="activate()" [class.selected]="value === radioValue">
+    <div class="form-check form-check-inline">
+        <input class="form-check-input" type="radio" [checked]="value === radioValue" (change)="emitChanges()" [name]="radioName" [attr.id]="radioId" [value]="radioValue">
+        <label class="form-check-label ms-1" [for]="radioId">{{ radioLabel }}</label>
+    </div>
+    <div class="radio-description">
+        <ng-content></ng-content>
+    </div>
+</div>

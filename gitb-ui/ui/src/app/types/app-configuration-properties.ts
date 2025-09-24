@@ -34,6 +34,7 @@ export interface AppConfigurationProperties {
   ssoInMigration: boolean
   demosEnabled: boolean
   demosAccount: number
+  startupWizardEnabled: boolean
   registrationEnabled: boolean
   savedFileMaxSize: number
   mode: string

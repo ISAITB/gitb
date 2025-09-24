@@ -529,6 +529,7 @@ DELETE  /api/themes/:themeId                                     @controllers.Sy
 POST    /api/themes/:themeId/activate                            @controllers.SystemConfigurationService.activateTheme(themeId: Long)
 GET     /api/themes/resource/preview                             @controllers.SystemConfigurationService.previewThemeResource()
 POST    /api/system/configs/testEmail                            @controllers.SystemConfigurationService.testEmailSettings()
+POST    /api/system/configs/wizard                               @controllers.SystemConfigurationService.completeStartupWizard()
 
 # Service health check API
 GET     /api/health/antivirus                                    @controllers.HealthCheckService.checkAntivirusService()

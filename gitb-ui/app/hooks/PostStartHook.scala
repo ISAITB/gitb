@@ -182,6 +182,14 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
           }
           Future.successful(())
         }
+        // Startup wizard.
+        _ <- {
+          val wizardConfig = persistedConfigs.find(config => config.config.name == Constants.StartupWizard).map(_.config)
+          if (wizardConfig.nonEmpty && wizardConfig.get.parameter.nonEmpty) {
+            Configurations.STARTUP_WIZARD_ENABLED = wizardConfig.get.parameter.get.toBoolean
+          }
+          Future.successful(())
+        }
         // Demo account.
         _ <- {
           val demoAccountConfig = persistedConfigs.find(config => config.config.name == Constants.DemoAccount).map(_.config)
@@ -486,9 +494,15 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
           Future.successful(())
         } else {
           // We use foldLeft to ensure that the items are processed in sequence producing futures that execute before proceeding to the next one.
-          containedFiles.filter(_.getName.toLowerCase.endsWith(".zip")).foldLeft(Future.successful(())) { (previousFuture, currentArchive) =>
+          val dataArchives = containedFiles.filter(_.getName.toLowerCase.endsWith(".zip"))
+          dataArchives.foldLeft(Future.successful(())) { (previousFuture, currentArchive) =>
             previousFuture.flatMap { _ =>
               importCompleteManager.importSandboxData(currentArchive, archiveKey).map(_ => ())
+            }
+          }.andThen { _ =>
+            if (dataArchives.nonEmpty) {
+              // Make sure we disable the startup configuration wizard if sandbox data archives were processed.
+              systemConfigurationManager.disableStartupWizardIfNotTriggered()
             }
           }
         }

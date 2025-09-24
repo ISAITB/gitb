@@ -38,8 +38,7 @@ export class DataManagementComponent implements OnInit {
     this.routingService.dataManagementBreadcrumbs()
   }
 
-  setOperation(operation: number) {
-    this.operationType = operation
+  operationChanged() {
     if (this.operationSelected) {
       this.initialSelection = false
     } else {

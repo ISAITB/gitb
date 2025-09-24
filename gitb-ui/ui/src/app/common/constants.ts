@@ -422,6 +422,7 @@ export class Constants {
 		EMAIL_SETTINGS: 'email_settings',
     SOFTWARE_VERSION_CHECK: 'software_version_check',
     WELCOME_TITLE: 'welcome_title',
+    STARTUP_WIZARD: 'startup_wizard'
 	}
 
 	public static readonly USER_SSO_STATUS = {

@@ -19,6 +19,7 @@ import config.Configurations
 import managers.SystemConfigurationManager.ThemeStatus
 import models.Enums.UserRole
 import models._
+import models.health.SoftwareVersionCheckSettings
 import models.theme.{Theme, ThemeFiles}
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.lang3.{StringUtils, Strings}
@@ -36,7 +37,6 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
-import models.health.SoftwareVersionCheckSettings
 
 object SystemConfigurationManager {
 
@@ -56,7 +56,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
   private final val editableSystemConfigurationTypes = Set(
     Constants.SessionAliveTime, Constants.RestApiEnabled, Constants.RestApiAdminKey, Constants.SelfRegistrationEnabled,
     Constants.DemoAccount, Constants.WelcomeMessage, Constants.AccountRetentionPeriod,
-    Constants.EmailSettings, Constants.SoftwareVersionCheck, Constants.WelcomeTitle
+    Constants.EmailSettings, Constants.SoftwareVersionCheck, Constants.WelcomeTitle, Constants.StartupWizard
   )
 
   private var activeThemeId: Option[Long] = None
@@ -228,6 +228,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
         val restApiEnabledConfig = persistedConfigs.find(config => config.config.name == Constants.RestApiEnabled)
         val demoAccountConfig = persistedConfigs.find(config => config.config.name == Constants.DemoAccount)
         val selfRegistrationConfig = persistedConfigs.find(config => config.config.name == Constants.SelfRegistrationEnabled)
+        val startupWizardConfig = persistedConfigs.find(config => config.config.name == Constants.StartupWizard)
         val welcomeMessageConfig = persistedConfigs.find(config => config.config.name == Constants.WelcomeMessage)
         val welcomeTitleConfig = persistedConfigs.find(config => config.config.name == Constants.WelcomeTitle)
         val emailSettingsConfig = persistedConfigs.find(config => config.config.name == Constants.EmailSettings)
@@ -237,6 +238,9 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
         }
         if (selfRegistrationConfig.isEmpty) {
           persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.SelfRegistrationEnabled, Some(Configurations.REGISTRATION_ENABLED.toString), None), defaultSetting = true, environmentSetting = sys.env.contains("REGISTRATION_ENABLED"))
+        }
+        if (startupWizardConfig.isEmpty) {
+          persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.StartupWizard, Some(Configurations.STARTUP_WIZARD_ENABLED.toString), None), defaultSetting = true, environmentSetting = sys.env.contains("STARTUP_WIZARD_ENABLED"))
         }
         if (demoAccountConfig.isEmpty) {
           if (Configurations.DEMOS_ENABLED && Configurations.DEMOS_ACCOUNT != -1) {
@@ -305,7 +309,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
     settings
   }
 
-  def updateSystemParameterInternal(name: String, providedValue: Option[String] = None, applySetting: Boolean): DBIO[Option[SystemConfigurationsWithEnvironment]] = {
+  private [managers] def updateSystemParameterInternal(name: String, providedValue: Option[String] = None, applySetting: Boolean): DBIO[Option[SystemConfigurationsWithEnvironment]] = {
     // Do any pre-processing as needed.
     var parsedEmailSettings: Option[EmailSettings] = None
     val value = if (name == Constants.EmailSettings && providedValue.isDefined) {
@@ -347,6 +351,11 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
               Configurations.REGISTRATION_ENABLED = value.get.toBoolean
             }
             DBIO.successful(None)
+          case Constants.StartupWizard =>
+            Configurations.STARTUP_WIZARD_ENABLED = value.exists(_.toBoolean)
+            DBIO.successful(Some(
+              SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.StartupWizard, Some(Configurations.STARTUP_WIZARD_ENABLED.toString), None), defaultSetting = false, environmentSetting = sys.env.contains("STARTUP_WIZARD_ENABLED"))
+            ))
           case Constants.DemoAccount =>
             if (value.isDefined) {
               Configurations.DEMOS_ENABLED = true
@@ -869,6 +878,26 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
     // This is called before we adapt the settings based on stored values.
     defaultSoftwareVersionCheckSettings = Some(SoftwareVersionCheckSettings.fromEnvironment())
     defaultSoftwareVersionCheckSettings.get
+  }
+
+  def disableStartupWizardIfNotTriggered(): Future[Unit] = {
+    val task = for {
+      currentSetting <- PersistenceSchema.systemConfigurations
+        .filter(_.name === Constants.StartupWizard)
+        .map(_.parameter)
+        .result
+        .headOption.map { result =>
+          result.flatten
+        }
+      _ <- {
+        if (currentSetting.isEmpty) {
+          updateSystemParameterInternal(Constants.StartupWizard, Some("false"), applySetting = true)
+        } else {
+          DBIO.successful(())
+        }
+      }
+    } yield ()
+    DB.run(task.transactionally)
   }
 
 }

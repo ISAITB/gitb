@@ -13,23 +13,27 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, OnInit } from '@angular/core';
+import {AfterViewInit, Component, OnInit} from '@angular/core';
 import { mergeMap, Observable, of } from 'rxjs';
 import { AccountService } from 'src/app/services/account.service';
 import { DataService } from 'src/app/services/data.service';
+import {BsModalService} from 'ngx-bootstrap/modal';
+import {ServiceHealthModalComponent} from '../../modals/service-health-modal/service-health-modal.component';
+import {StartupWizardModalComponent} from '../../modals/startup-wizard-modal/startup-wizard-modal.component';
 
 @Component({
     selector: 'app-home',
     templateUrl: './home.component.html',
     standalone: false
 })
-export class HomeComponent implements OnInit {
+export class HomeComponent implements OnInit, AfterViewInit {
 
   pageContent?: string
 
   constructor(
     private readonly accountService: AccountService,
-    public readonly dataService: DataService
+    public readonly dataService: DataService,
+    private readonly modalService: BsModalService
   ) { }
 
   ngOnInit(): void {
@@ -53,6 +57,16 @@ export class HomeComponent implements OnInit {
       this.pageContent = data
     })
     this.dataService.breadcrumbUpdate({breadcrumbs: []})
+  }
+
+  ngAfterViewInit() {
+    if (this.dataService.isSystemAdmin && this.dataService.configuration.startupWizardEnabled) {
+      const modal = this.modalService.show(StartupWizardModalComponent, {
+        class: 'modal-lg',
+        keyboard: false,
+        backdrop: 'static'
+      })
+    }
   }
 
   private orEmptyString(content: string|undefined) {
