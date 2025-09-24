@@ -33,7 +33,7 @@
                     }
                     @if (showCheck) {
                         <div class="item-check">
-                            <input type="checkbox" class="form-check-input" name="itemCheck" [(ngModel)]="item.checked" (ngModelChange)="updateChecked()">
+                            <input type="checkbox" class="form-check-input" name="itemCheck" [(ngModel)]="item.checked" (click)="$event.stopPropagation()" (ngModelChange)="updateChecked()">
                         </div>
                     }
                     <div class="item-name">{{item.name}}</div>
