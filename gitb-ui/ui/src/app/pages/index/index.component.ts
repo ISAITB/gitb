@@ -26,6 +26,9 @@ import {ContactSupportComponent} from 'src/app/modals/contact-support/contact-su
 import {RoutingService} from 'src/app/services/routing.service';
 import {MenuItem} from 'src/app/types/menu-item.enum';
 import {PopupService} from 'src/app/services/popup.service';
+import {HealthCheckService} from '../../services/health-check.service';
+import {HealthStatus} from '../../types/health-status';
+import {MenuItemStatus} from '../../types/menu-item-status.enum';
 
 @Component({
     selector: 'app-index',
@@ -40,9 +43,12 @@ export class IndexComponent implements OnInit, OnDestroy {
   menuExpanded = false
   logoutInProgress = false
   MenuItem = MenuItem
+  loginSubscription?: Subscription
+  userLoadSubscription?: Subscription
   logoutSubscription?: Subscription
   logoutCompleteSubscription?: Subscription
   bannerSubscription?: Subscription
+  userPassedLogin = false
 
   constructor(
     public readonly dataService: DataService,
@@ -52,7 +58,8 @@ export class IndexComponent implements OnInit, OnDestroy {
     private readonly authProviderService: AuthProviderService,
     private readonly modalService: BsModalService,
     public readonly routingService: RoutingService,
-    private readonly popupService: PopupService
+    private readonly popupService: PopupService,
+    private readonly healthCheckService: HealthCheckService
   ) {}
 
   ngOnInit(): void {
@@ -69,9 +76,22 @@ export class IndexComponent implements OnInit, OnDestroy {
     this.logoutCompleteSubscription = this.authProviderService.onLogoutComplete$.subscribe(() => {
       this.logoutInProgress = false
     })
+    this.loginSubscription = this.authProviderService.afterLogin$.subscribe(() => {
+      this.userPassedLogin = true
+    })
+    this.userLoadSubscription = this.dataService.onUserLoaded$.subscribe(() => {
+      this.handlePostUserLoad()
+    })
+    if (sessionStorage) {
+      window.addEventListener("beforeunload", () => {
+        sessionStorage.setItem("menuItemStatusMap", JSON.stringify(Array.from(this.dataService.getMenuItemStatusMap())))
+      })
+    }
   }
 
   ngOnDestroy(): void {
+    if (this.loginSubscription) this.loginSubscription.unsubscribe()
+    if (this.userLoadSubscription) this.userLoadSubscription.unsubscribe()
     if (this.logoutSubscription) this.logoutSubscription.unsubscribe()
     if (this.bannerSubscription) this.bannerSubscription.unsubscribe()
   }
@@ -91,6 +111,42 @@ export class IndexComponent implements OnInit, OnDestroy {
 
 	userFullyLoaded(): boolean {
     return this.userLoaded() && this.dataService.vendor != undefined
+  }
+
+  handlePostUserLoad(): void {
+    if (this.dataService.isSystemAdmin) {
+      let statusLoaded = false
+      if (sessionStorage) {
+        if (!this.userPassedLogin) {
+          // This is a refresh
+          const serialisedStatusMap = sessionStorage.getItem("menuItemStatusMap")
+          if (serialisedStatusMap) {
+            const statusMap = new Map<MenuItem, MenuItemStatus>(JSON.parse(serialisedStatusMap))
+            statusMap.forEach((value, key) => {
+              this.dataService.updateMenuItemStatus(key, value)
+            })
+            statusLoaded = true
+          }
+        }
+        sessionStorage.removeItem("menuItemStatusMap")
+      }
+      if (!statusLoaded) {
+        this.healthCheckService.runPostLoginChecks().subscribe((status) => {
+          switch (status) {
+            case HealthStatus.ERROR:
+              this.dataService.updateMenuItemStatus(MenuItem.serviceHealthDashboard, MenuItemStatus.Error)
+              this.popupService.error("Service health errors reported.<br/>Check the health dashboard for details.", true)
+              break;
+            case HealthStatus.WARNING:
+              this.dataService.updateMenuItemStatus(MenuItem.serviceHealthDashboard, MenuItemStatus.Warning)
+              this.popupService.warning("Service health warnings reported.<br/>Check the health dashboard for details.", true)
+              break;
+            default:
+              this.dataService.updateMenuItemStatus(MenuItem.serviceHealthDashboard, MenuItemStatus.None)
+          }
+        })
+      }
+    }
   }
 
   showRestApi(): boolean {

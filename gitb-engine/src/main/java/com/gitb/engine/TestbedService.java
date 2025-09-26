@@ -260,8 +260,8 @@ public class TestbedService {
 		ITestCaseRepository repository = ModuleManager.getInstance().getTestCaseRepository();
         try {
             String result = repository.healthCheck("test");
-			if (logger.isInfoEnabled()) {
-				logger.info("Health check ping returned [{}]", result);
+			if (logger.isDebugEnabled()) {
+				logger.debug("Health check ping returned [{}]", result);
 			}
 			repoResult = HealthCheckResult.success("repo");
         } catch (Exception e) {

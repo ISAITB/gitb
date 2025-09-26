@@ -17,6 +17,7 @@ import {Component, ContentChild, Input, OnDestroy, OnInit, TemplateRef} from '@a
 import {Subscription} from 'rxjs';
 import {DataService} from 'src/app/services/data.service';
 import {MenuItem} from 'src/app/types/menu-item.enum';
+import {MenuItemStatus} from '../../../types/menu-item-status.enum';
 
 @Component({
     selector: 'app-menu-item',
@@ -34,6 +35,9 @@ export class MenuItemComponent implements OnInit, OnDestroy {
 
   active = false
   pageChangeSubscription?: Subscription
+  statusSubscription?: Subscription
+  status = MenuItemStatus.None
+  protected readonly MenuItemStatus = MenuItemStatus;
 
   constructor(private readonly dataService: DataService) { }
 
@@ -52,10 +56,18 @@ export class MenuItemComponent implements OnInit, OnDestroy {
         }, 1)
       }
     })
+    this.statusSubscription = this.dataService.onMenuItemStatusChange$.subscribe((event) => {
+      if (event.menuItem === this.type) {
+        setTimeout(() => {
+          this.status = event.status
+        })
+      }
+    })
   }
 
   ngOnDestroy(): void {
     if (this.pageChangeSubscription) this.pageChangeSubscription.unsubscribe()
+    if (this.statusSubscription) this.statusSubscription.unsubscribe()
   }
 
 }

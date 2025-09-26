@@ -21,6 +21,9 @@ import {HealthCardService} from '../../types/health-card-service';
 import {HealthCheckService} from '../../services/health-check.service';
 import {forkJoin} from 'rxjs';
 import {ServiceHealthCardComponentApi} from '../../components/service-health-card/service-health-card-component-api';
+import {DataService} from '../../services/data.service';
+import {MenuItem} from '../../types/menu-item.enum';
+import {MenuItemStatus} from '../../types/menu-item-status.enum';
 
 @Component({
   selector: 'app-service-health-dashboard',
@@ -40,7 +43,9 @@ export class ServiceHealthDashboardComponent implements OnInit, AfterViewInit {
 
   constructor(
     private readonly routingService: RoutingService,
-    private readonly healthCheckService: HealthCheckService) {
+    private readonly healthCheckService: HealthCheckService,
+    private readonly dataService: DataService
+  ) {
   }
 
   ngOnInit(): void {
@@ -96,7 +101,7 @@ export class ServiceHealthDashboardComponent implements OnInit, AfterViewInit {
         })
         this.checkAllPending = true
         forkJoin(tasks).subscribe(() => {
-          this.updateBanner()
+          this.updateStatus()
         }).add(() => {
           this.checkAllPending = false
         })
@@ -105,10 +110,10 @@ export class ServiceHealthDashboardComponent implements OnInit, AfterViewInit {
   }
 
   cardUpdated() {
-    this.updateBanner()
+    this.updateStatus()
   }
 
-  updateBanner() {
+  updateStatus() {
     let errorCount = 0
     let warningCount = 0
     let infoCount = 0
@@ -128,18 +133,23 @@ export class ServiceHealthDashboardComponent implements OnInit, AfterViewInit {
     if (errorCount > 0) {
       this.overviewMessage = "One or more service checks reported failures. Click the relevant cards for more details."
       this.overviewHealth = HealthStatus.ERROR
+      this.dataService.updateMenuItemStatus(MenuItem.serviceHealthDashboard, MenuItemStatus.Error)
     } else if (warningCount > 0) {
       this.overviewMessage = "One or more service checks reported warnings. Click the relevant cards for more details."
       this.overviewHealth = HealthStatus.WARNING
-    } else if (infoCount > 0) {
-      this.overviewMessage = "All services are working correctly with additional information available. Click the relevant cards for more details."
-      this.overviewHealth = HealthStatus.INFO
-    } else if (okCount == this.cards.length) {
-      this.overviewMessage = "All services are working correctly. Click the relevant cards for more details."
-      this.overviewHealth = HealthStatus.OK
+      this.dataService.updateMenuItemStatus(MenuItem.serviceHealthDashboard, MenuItemStatus.Warning)
     } else {
-      this.overviewMessage = "It was not possible to determine the status of internal services."
-      this.overviewHealth = HealthStatus.INFO
+      if (infoCount > 0) {
+        this.overviewMessage = "All services are working correctly with additional information available. Click the relevant cards for more details."
+        this.overviewHealth = HealthStatus.INFO
+      } else if (okCount == this.cards.length) {
+        this.overviewMessage = "All services are working correctly. Click the relevant cards for more details."
+        this.overviewHealth = HealthStatus.OK
+      } else {
+        this.overviewMessage = "It was not possible to determine the status of internal services."
+        this.overviewHealth = HealthStatus.INFO
+      }
+      this.dataService.updateMenuItemStatus(MenuItem.serviceHealthDashboard, MenuItemStatus.None)
     }
 
   }

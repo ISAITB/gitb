@@ -27,7 +27,7 @@ import {ServiceHealthModalComponent} from '../../modals/service-health-modal/ser
   templateUrl: './service-health-card.component.html',
   styleUrl: './service-health-card.component.less'
 })
-export class ServiceHealthCardComponent implements ServiceHealthCardComponentApi{
+export class ServiceHealthCardComponent implements ServiceHealthCardComponentApi {
 
   @Input() info!: HealthCardInfo
   @Output() updated = new EventEmitter<void>();

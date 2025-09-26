@@ -6,6 +6,9 @@
             } @else {
                 <span><i [ngClass]="icon" class="fa-xl"></i></span>
             }
+            @if (status != MenuItemStatus.None) {
+                <div class="status-indicator" [class.status-error]="status == MenuItemStatus.Error" [class.status-warning]="status == MenuItemStatus.Warning"></div>
+            }
         </div>
         <div class="menu-item-text">{{label}}</div>
     } @else {
@@ -14,6 +17,9 @@
                 <ng-container [ngTemplateOutlet]="customTemplate"></ng-container>
             } @else {
                 <span><i [ngClass]="icon" class="fa-xl"></i></span>
+            }
+            @if (status != MenuItemStatus.None) {
+                <div class="status-indicator" [class.status-error]="status == MenuItemStatus.Error" [class.status-warning]="status == MenuItemStatus.Warning"></div>
             }
         </div>
     }

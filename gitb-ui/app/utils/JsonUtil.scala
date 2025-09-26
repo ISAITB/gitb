@@ -27,7 +27,7 @@ import jakarta.xml.bind.JAXBElement
 import managers.breadcrumb.BreadcrumbLabelResponse
 import managers.export.{ExportSettings, ImportItem, ImportSettings}
 import models.Enums.TestSuiteReplacementChoice.TestSuiteReplacementChoice
-import models.Enums._
+import models.Enums.{ServiceHealthStatusType, _}
 import models._
 import models.TestCaseGroup
 import models.automation._
@@ -44,6 +44,7 @@ import scala.jdk.CollectionConverters.{CollectionHasAsScala, IterableHasAsJava}
 import models.statement.TestSuiteMinimalInformation
 import models.health.SoftwareVersionInfo
 import models.health.ReleaseInfo
+
 import java.time.Instant
 import models.health.ReleaseMessages
 import models.health.ReleaseMessage
@@ -2403,16 +2404,20 @@ object JsonUtil {
     json
   }
 
-  def jsServiceHealthInfo(info: ServiceHealthInfo): JsObject = {
-    val statusValue = info.status match {
+  def jsServiceHealthStatus(status: ServiceHealthStatusType.ServiceHealthStatusType): JsString = {
+    val statusValue = status match {
       case ServiceHealthStatusType.Ok => "ok"
       case ServiceHealthStatusType.Warning => "warning"
       case ServiceHealthStatusType.Error => "error"
       case ServiceHealthStatusType.Unknown => "unknown"
       case ServiceHealthStatusType.Info => "info"
     }
+    JsString(statusValue)
+  }
+
+  def jsServiceHealthInfo(info: ServiceHealthInfo): JsObject = {
     Json.obj(
-      "status" -> statusValue,
+      "status" -> jsServiceHealthStatus(info.status),
       "summary" -> info.summary,
       "details" -> info.details
     )

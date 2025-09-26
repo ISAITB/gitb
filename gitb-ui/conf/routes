@@ -532,6 +532,7 @@ POST    /api/system/configs/testEmail                            @controllers.Sy
 POST    /api/system/configs/wizard                               @controllers.SystemConfigurationService.completeStartupWizard()
 
 # Service health check API
+GET     /api/health/postLoginChecks                              @controllers.HealthCheckService.runPostLoginChecks()
 GET     /api/health/antivirus                                    @controllers.HealthCheckService.checkAntivirusService()
 GET     /api/health/email                                        @controllers.HealthCheckService.checkEmailService()
 GET     /api/health/tsa                                          @controllers.HealthCheckService.checkTrustedTimestampService()

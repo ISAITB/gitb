@@ -22,6 +22,7 @@
     border-radius: @border-radius;
     background-color: @gray-light-1;
     transition: background-color 0.2s ease;
+    position: relative;
     &:hover {
         background: @gray-light;
         cursor: pointer;
@@ -32,6 +33,19 @@
             cursor: pointer;
         }
     }
+    .status-indicator {
+        position: absolute;
+        right: 0;
+        width: 10px;
+        height: 10px;
+        border-radius: 5px;
+        &.status-error {
+            background-color: @red-error;
+        }
+        &.status-warning {
+            background-color: @orange-warning;
+        }
+    }
 }
 .menu-item-text {
     white-space: nowrap;
@@ -40,7 +54,7 @@
     justify-content: center;
     flex-wrap: wrap;
     font-size: small;
-    padding: 0px 10px;
+    padding: 0 10px;
     user-select: none;
 }
 .menu-item {
@@ -50,4 +64,5 @@
     align-content: center;
     justify-content: center;
     flex-wrap: wrap;
+    position: relative;
 }

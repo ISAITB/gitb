@@ -14,7 +14,7 @@
  */
 
 import {Injectable} from '@angular/core';
-import {mergeMap, Observable, of, Subject} from 'rxjs';
+import {mergeMap, Observable, of, ReplaySubject, Subject} from 'rxjs';
 import {Constants} from '../common/constants';
 import {ObjectWithId} from '../components/test-filter/object-with-id';
 import {ConformanceTestCase} from '../pages/organisation/conformance-statement/conformance-test-case';
@@ -49,6 +49,9 @@ import {CookieOptions, CookieService} from 'ngx-cookie-service';
 import {LocationData} from '../types/location-data';
 import {TestCaseTag} from '../types/test-case-tag';
 import {ConformanceTestCaseGroup} from '../pages/organisation/conformance-statement/conformance-test-case-group';
+import {MenuItemStatusChange} from '../types/menu-item-status-change';
+import {MenuItem} from '../types/menu-item.enum';
+import {MenuItemStatus} from '../types/menu-item-status.enum';
 
 @Injectable({
   providedIn: 'root'
@@ -85,6 +88,11 @@ export class DataService {
   public onPageChange$ = this.onPageChangeSource.asObservable()
   private onBreadcrumbChangeSource = new Subject<BreadcrumbChange>()
   public onBreadcrumbChange$ = this.onBreadcrumbChangeSource.asObservable()
+  private onUserLoaded = new ReplaySubject<void>()
+  public onUserLoaded$ = this.onUserLoaded.asObservable()
+  private onMenuItemStatusChangeSource = new ReplaySubject<MenuItemStatusChange>()
+  public onMenuItemStatusChange$ = this.onMenuItemStatusChangeSource.asObservable()
+  private menuItemStatus = new Map<MenuItem, MenuItemStatus>()
 
   triggerEventToDataTypeMap?: {[key: number]: { [key: number]: boolean } }
 
@@ -187,6 +195,7 @@ export class DataService {
       this.showSystemAdminMenu = this.isSystemAdmin
       this.showCommunityViewMenu = !this.isCommunityAdmin && !this.isSystemAdmin && this.community?.allowCommunityView == true
       this.showNavigationControls = true
+      this.onUserLoaded.next()
     })
   }
 
@@ -1866,6 +1875,18 @@ export class DataService {
       case Constants.TEST_SERVICE_AUTH_TOKEN_PASSWORD_TYPE.TEXT: return 'Text'
       default: throw new Error('Unknown service auth token password type ['+passwordType+']')
     }
+  }
+
+  updateMenuItemStatus(item: MenuItem, status: MenuItemStatus) {
+    this.menuItemStatus.set(item, status)
+    this.onMenuItemStatusChangeSource.next({
+      menuItem: item,
+      status: status
+    })
+  }
+
+  getMenuItemStatusMap() {
+    return this.menuItemStatus
   }
 
 }
