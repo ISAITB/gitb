@@ -125,11 +125,9 @@ export class DataService {
     this.latestPageChange = undefined
     this.currentLandingPageContent = undefined
     this.cookiePath = undefined
-    if (sessionStorage) {
-      sessionStorage.removeItem(DataService.STORAGE_TESTS)
-      if (full) {
-        this.removeLocationData()
-      }
+    if (full) {
+      this.clearTestsToExecute()
+      this.removeLocationData()
     }
   }
 
@@ -1099,7 +1097,7 @@ export class DataService {
 
   clearTestsToExecute() {
     if (sessionStorage) {
-      sessionStorage.removeItem('tests')
+      sessionStorage.removeItem(DataService.STORAGE_TESTS)
     }
     this.tests = undefined
   }
