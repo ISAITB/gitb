@@ -169,6 +169,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   resultsWrapped = false
   refreshPending = false
   refreshCounters = new EventEmitter<Counters>()
+  statementExecutionPending = false
 
   constructor(
     public readonly dataService: DataService,
@@ -484,6 +485,8 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
       testSuite.executionPending = true
     } else if (testCase) {
       testCase.executionPending = true
+    } else {
+      this.statementExecutionPending = true
     }
     // Check configurations
     const organisationParameterCheck = this.organisationService.checkOrganisationParameterValues(this.organisationId)
@@ -503,6 +506,8 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
           testSuite.executionPending = false
         } else if (testCase) {
           testCase.executionPending = false
+        } else {
+          this.statementExecutionPending = false
         }
         if (!configurationValid || !systemConfigurationValid || !organisationConfigurationValid) {
           // Missing configuration.
@@ -589,13 +594,13 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
     })
   }
 
-  onTestSuiteSelect(testSuite: ConformanceTestSuite) {
+  onMultipleTestSelect(testSuite?: ConformanceTestSuite) {
     // Check status once everything is loaded.
     this.validateConfiguration(testSuite, undefined).subscribe((proceed) => {
       if (proceed) {
         const searchCriteria = {...this.testCaseSearchCriteria}
         searchCriteria.disabled = false
-        searchCriteria.testSuiteId = testSuite.id
+        searchCriteria.testSuiteId = testSuite?.id
         this.conformanceService.getConformanceStatementTests(this.systemId, this.actorId, this.snapshotId, searchCriteria, 1, 1000000)
           .subscribe((data) => {
             const testsToExecute: ConformanceTestCase[] = []
@@ -605,9 +610,17 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
             if (this.executionMode == this.executionModeInteractive) {
               this.dataService.setTestsToExecute(testsToExecute)
               if (this.communityId == undefined) {
-                this.routingService.toOwnTestSuiteExecution(this.organisationId, this.systemId, this.actorId, testSuite.id)
+                if (testSuite) {
+                  this.routingService.toOwnTestSuiteExecution(this.organisationId, this.systemId, this.actorId, testSuite.id)
+                } else {
+                  this.routingService.toOwnStatementExecution(this.organisationId, this.systemId, this.actorId)
+                }
               } else {
-                this.routingService.toTestSuiteExecution(this.communityId, this.organisationId, this.systemId, this.actorId, testSuite.id)
+                if (testSuite) {
+                  this.routingService.toTestSuiteExecution(this.communityId, this.organisationId, this.systemId, this.actorId, testSuite.id)
+                } else {
+                  this.routingService.toStatementExecution(this.communityId, this.organisationId, this.systemId, this.actorId)
+                }
               }
             } else {
               this.executeHeadless(testsToExecute)

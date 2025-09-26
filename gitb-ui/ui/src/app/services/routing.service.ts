@@ -303,6 +303,14 @@ export class RoutingService {
     return this.navigate(MenuItem.myConformanceStatements, ['organisation', 'test', organisationId, systemId, actorId, 'execute'], { queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.TEST_SUITE_ID, testSuiteId)})
   }
 
+  toStatementExecution(communityId: number, organisationId: number, systemId: number, actorId: number) {
+    return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'organisation', organisationId, 'test', systemId, actorId, 'execute'])
+  }
+
+  toOwnStatementExecution(organisationId: number, systemId: number, actorId: number) {
+    return this.navigate(MenuItem.myConformanceStatements, ['organisation', 'test', organisationId, systemId, actorId, 'execute'])
+  }
+
   toCreateDomain() {
     return this.navigate(MenuItem.domainManagement, ['admin', 'domains', 'create'])
   }

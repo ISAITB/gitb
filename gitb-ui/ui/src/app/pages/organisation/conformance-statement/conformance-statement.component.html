@@ -134,6 +134,9 @@
                                         <li role="menuitem"><a class="dropdown-item" href (click)="executionMode = executionModeSequential; executionModeButton = executionModeLabelSequential; $event.preventDefault()">{{executionModeLabelSequential}}</a></li>
                                     </ul>
                                 </div>
+                                @if (displayedTestSuites.length > 1) {
+                                    <button class="btn btn-primary" (click)="onMultipleTestSelect(); $event.stopPropagation();" [pending]="statementExecutionPending" [icon]="true" containerClass="shortTooltip" container="body" tooltip="Run all" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-play"></i></button>
+                                }
                             </div>
                         </div>
                     }
@@ -156,7 +159,7 @@
                         [communityId]="communityIdOfStatement"
 						(viewTestSession)="toTestSession($event)"
 						(executeTestCase)="onTestSelect($event)"
-						(executeTestSuite)="onTestSuiteSelect($event)"
+						(executeTestSuite)="onMultipleTestSelect($event)"
                         (optionsOpened)="onTestCaseOptionsOpened($event)"
 					></app-test-suite-display>
 				}
