@@ -169,8 +169,11 @@ public class DataTypeUtils {
 						postProcessor.process(data);
 					}
 					case BASE_64 -> {
-						data.deserialize(Base64.decodeBase64(
-								EncodingUtils.extractBase64FromDataURL(anyContent.getValue())));
+                        if (EncodingUtils.isDataUrl(anyContent.getValue())) {
+                            data.deserialize(Base64.decodeBase64(EncodingUtils.extractBase64FromDataURL(anyContent.getValue())));
+                        } else {
+                            data.deserialize(Base64.decodeBase64(anyContent.getValue()));
+                        }
 						postProcessor.process(data);
 					}
 					case URI -> {
