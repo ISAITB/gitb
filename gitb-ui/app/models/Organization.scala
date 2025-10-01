@@ -15,19 +15,21 @@
 
 package models
 
-case class Organizations(id: Long = 0, shortname: String, fullname: String, organizationType: Short, adminOrganization: Boolean, landingPage: Option[Long], legalNotice: Option[Long], errorTemplate: Option[Long], template: Boolean, templateName: Option[String], apiKey: Option[String], community: Long) {
+case class Organizations(id: Long = 0, shortname: String, fullname: String, organizationType: Short, adminOrganization: Boolean, landingPage: Option[Long], legalNotice: Option[Long], errorTemplate: Option[Long], template: Boolean, templateName: Option[String], apiKey: Option[String], selfRegToken: Option[String], community: Long) {
 
   def withApiKey(apiKey: String): Organizations = {
-    Organizations(this.id, this.shortname, this.fullname, this.organizationType, this.adminOrganization,
-      this.landingPage, this.legalNotice, this.errorTemplate, this.template, this.templateName,
-      Some(apiKey), this.community)
+    this.copy(apiKey = Some(apiKey))
+  }
+
+  def withSelfRegistrationToken(token: String): Organizations = {
+    this.copy(selfRegToken = Some(token))
   }
 
 }
 
 class Organization(_id: Long, _sname: String, _fname: String, _otype: Short, _adminOrganization: Boolean,
                    _landingPage: Option[Long], _landingPageObj: Option[LandingPages], _legalNotice: Option[Long], _legalNoticeObj: Option[LegalNotices], _errorTemplate: Option[Long], _errorTemplateObj: Option[ErrorTemplates],
-                   _template: Boolean, _templateName: Option[String], _apiKey: Option[String], _communityId: Long, _communityLegalNoticeAppliesAndExists: Boolean) {
+                   _template: Boolean, _templateName: Option[String], _apiKey: Option[String], _selfRegToken: Option[String], _communityId: Long, _communityLegalNoticeAppliesAndExists: Boolean) {
   var id: Long = _id
   var shortname: String = _sname
   var fullname: String = _fname
@@ -42,14 +44,15 @@ class Organization(_id: Long, _sname: String, _fname: String, _otype: Short, _ad
   var template: Boolean = _template
   var templateName: Option[String] = _templateName
   var apiKey: Option[String] = _apiKey
+  var selfRegToken: Option[String] = _selfRegToken
   var communityId: Long = _communityId
   var communityLegalNoticeAppliesAndExists: Boolean = _communityLegalNoticeAppliesAndExists
 
   def this(_case: Organizations, _landingPageObj: LandingPages, _legalNoticeObj: LegalNotices, _errorTemplateObj: ErrorTemplates, _communityLegalNoticeAppliesAndExists: Boolean) =
-    this(_case.id, _case.shortname, _case.fullname, _case.organizationType, _case.adminOrganization, _case.landingPage, Option(_landingPageObj), _case.legalNotice, Option(_legalNoticeObj), _case.errorTemplate, Option(_errorTemplateObj), _case.template, _case.templateName, _case.apiKey, _case.community, _communityLegalNoticeAppliesAndExists)
+    this(_case.id, _case.shortname, _case.fullname, _case.organizationType, _case.adminOrganization, _case.landingPage, Option(_landingPageObj), _case.legalNotice, Option(_legalNoticeObj), _case.errorTemplate, Option(_errorTemplateObj), _case.template, _case.templateName, _case.apiKey, _case.selfRegToken, _case.community, _communityLegalNoticeAppliesAndExists)
 
   def toCaseObject: Organizations = {
-    Organizations(id, shortname, fullname, organizationType, adminOrganization, landingPage, legalNotice, errorTemplate, template, templateName, apiKey, communityId)
+    Organizations(id, shortname, fullname, organizationType, adminOrganization, landingPage, legalNotice, errorTemplate, template, templateName, apiKey, selfRegToken, communityId)
   }
 
 }

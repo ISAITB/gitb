@@ -55,6 +55,8 @@ export class SelfRegistrationComponent extends BaseComponent implements OnInit, 
   refreshSignal = new EventEmitter<{props?: CustomProperty[], asterisks: boolean}>()
   private viewReady = false
   private dataReady = false
+  organisationFormCollapsed = true
+  organisationFormAnimated = false
 
   constructor(
     public readonly dataService: DataService,
@@ -103,15 +105,39 @@ export class SelfRegistrationComponent extends BaseComponent implements OnInit, 
 
   communitySelected(option: SelfRegistrationOption) {
     this.model!.selfRegOption = option
+    this.organisationFormAnimated = false
+    if (option.organisationTokensEnabled) {
+      if (option.forceOrganisationTokenInput) {
+        this.model!.newOrganisation = false
+      } else {
+        this.model!.newOrganisation = undefined
+      }
+    } else {
+      this.model!.newOrganisation = true
+    }
+    setTimeout(() => {
+      this.organisationFormCollapsed = this.model!.newOrganisation === undefined
+        setTimeout(() => {
+          this.organisationFormAnimated = true
+        })
+    })
     this.communityChanged()
+  }
+
+  registrationTypeChanged() {
+    setTimeout(() => {
+      this.organisationFormCollapsed = false
+    })
   }
 
   setFormFocus() {
     if (this.model?.selfRegOption !== undefined) {
       if (this.model.selfRegOption.selfRegType == Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN) {
         this.dataService.focus('token', 200)
-      } else {
+      } else if (this.model.newOrganisation === true) {
         this.dataService.focus('orgShortName', 200)
+      } else if (this.model.newOrganisation === false) {
+        this.dataService.focus('orgToken', 200)
       }
     }
   }

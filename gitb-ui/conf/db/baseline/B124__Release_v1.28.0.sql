@@ -113,6 +113,9 @@ CREATE TABLE `communities` (
   `selfreg_token_help_text` text COLLATE utf8mb4_0900_ai_ci,
   `selfreg_force_template` tinyint NOT NULL DEFAULT '0',
   `selfreg_force_properties` tinyint NOT NULL DEFAULT '0',
+  `selfreg_allow_org_tokens` tinyint NOT NULL DEFAULT '0',
+  `selfreg_allow_org_token_management` tinyint NOT NULL DEFAULT '0',
+  `selfreg_force_org_token_input` tinyint NOT NULL DEFAULT '0',
   `allow_certificate_download` tinyint NOT NULL DEFAULT '0',
   `allow_system_management` tinyint NOT NULL DEFAULT '1',
   `allow_statement_management` tinyint NOT NULL DEFAULT '1',
@@ -121,6 +124,7 @@ CREATE TABLE `communities` (
   `allow_post_test_stm_updates` tinyint NOT NULL DEFAULT '1',
   `allow_automation_api` tinyint NOT NULL DEFAULT '0',
   `allow_community_view` tinyint NOT NULL DEFAULT '0',
+  `allow_user_management` tinyint NOT NULL DEFAULT '1',
   `api_key` varchar(255) COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `interaction_notification` tinyint NOT NULL DEFAULT '0',
   `latest_status_label` varchar(254) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
@@ -131,7 +135,7 @@ CREATE TABLE `communities` (
   CONSTRAINT `com_fk_dom` FOREIGN KEY (`domain`) REFERENCES `domains` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-INSERT INTO `communities` VALUES (0,'Default community','Default community',NULL,NULL,1,NULL,0,NULL,1,NULL,0,0,0,1,1,1,1,1,0,0,'225D4900X6DA6X4479X9BBFX32B50FB1B916',0,NULL);
+INSERT INTO `communities` VALUES (0,'Default community','Default community',NULL,NULL,1,NULL,0,NULL,1,NULL,0,0,0,0,0,0,1,1,1,1,1,0,0,1,'225D4900X6DA6X4479X9BBFX32B50FB1B916',0,NULL);
 UPDATE `communities` SET `id` = 0;
 
 --
@@ -662,6 +666,7 @@ CREATE TABLE `organizations` (
   `template` tinyint NOT NULL DEFAULT '0',
   `template_name` varchar(254) COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   `api_key` varchar(254) COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  `selfreg_token` varchar(254) COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   `updated_on` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `unique_api_key` (`api_key`),
@@ -670,13 +675,14 @@ CREATE TABLE `organizations` (
   KEY `org_fk_legnot` (`legal_notice`),
   KEY `org_fk_errtem` (`error_template`),
   KEY `org_idx_api_key` (`api_key`),
+  KEY `org_idx_selfreg_token` (`selfreg_token`),
   CONSTRAINT `org_fk_com` FOREIGN KEY (`community`) REFERENCES `communities` (`id`),
   CONSTRAINT `org_fk_errtem` FOREIGN KEY (`error_template`) REFERENCES `errortemplates` (`id`),
   CONSTRAINT `org_fk_lanpag` FOREIGN KEY (`landing_page`) REFERENCES `landingpages` (`id`),
   CONSTRAINT `org_fk_legnot` FOREIGN KEY (`legal_notice`) REFERENCES `legalnotices` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-INSERT INTO `organizations` VALUES (0,'Admin organisation','Admin organisation',1,1,NULL,NULL,0,NULL,0,NULL,NULL,CURRENT_TIMESTAMP());
+INSERT INTO `organizations` VALUES (0,'Admin organisation','Admin organisation',1,1,NULL,NULL,0,NULL,0,NULL,NULL,NULL,CURRENT_TIMESTAMP());
 UPDATE `organizations` SET `id` = 0;
 
 --
@@ -1491,4 +1497,5 @@ INSERT INTO `schema_version` VALUES
 (120,'120',"TPL storage as MEDIUMBLOB",'SQL','V120__TPL_storage_as_MEDIUMBLOB.sql',1107412605,'gitb',CURRENT_TIMESTAMP(), 1, 1),
 (121,'121',"Allow readonly community view for users",'SQL','V121__Allow_readonly_community_view_for_users.sql',-1480519436,'gitb',CURRENT_TIMESTAMP(), 1, 1),
 (122,'122','Custom test services','SQL','V122__Custom_test_services.sql',-1980490275,'gitb',CURRENT_TIMESTAMP(),1,1),
-(123,'123','Startup configuration wizard','SQL','V123__Startup_configuration_wizard.sql',1390514133,'gitb',CURRENT_TIMESTAMP(),1,1);
+(123,'123','Startup configuration wizard','SQL','V123__Startup_configuration_wizard.sql',1390514133,'gitb',CURRENT_TIMESTAMP(),1,1),
+(124,'124','New community permissions and self registration settings','SQL','V124__New_community_permissions_and_self_registration_settings.sql',-143118259,'gitb',CURRENT_TIMESTAMP(),1,1);

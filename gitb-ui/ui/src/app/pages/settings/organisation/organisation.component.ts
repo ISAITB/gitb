@@ -77,7 +77,7 @@ export class OrganisationComponent extends OrganisationDetailsComponent implemen
   }
 
   override isShowCreateUser() {
-    return this.dataService.isVendorAdmin
+    return this.dataService.isVendorAdmin && this.dataService.community!.allowUserManagement
   }
 
   override isShowCreateSystem() {

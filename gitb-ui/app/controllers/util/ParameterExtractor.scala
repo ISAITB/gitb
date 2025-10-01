@@ -339,8 +339,8 @@ object ParameterExtractor {
   }
 
   def extractOrganizationInfo(paramMap: Option[Map[String, Seq[String]]]): Organizations = {
-    val vendorSname = requiredBodyParameter(paramMap, ParameterNames.VENDOR_SNAME)
-    val vendorFname = requiredBodyParameter(paramMap, ParameterNames.VENDOR_FNAME)
+    val shortName = requiredBodyParameter(paramMap, ParameterNames.VENDOR_SNAME)
+    val fullName = requiredBodyParameter(paramMap, ParameterNames.VENDOR_FNAME)
     val communityId = requiredBodyParameter(paramMap, ParameterNames.COMMUNITY_ID).toLong
     val landingPageId:Option[Long] = optionalLongBodyParameter(paramMap, ParameterNames.LANDING_PAGE_ID)
     val legalNoticeId:Option[Long] = optionalLongBodyParameter(paramMap, ParameterNames.LEGAL_NOTICE_ID)
@@ -353,7 +353,7 @@ object ParameterExtractor {
         templateName = optionalBodyParameter(paramMap, ParameterNames.TEMPLATE_NAME)
       }
     }
-    Organizations(0L, vendorSname, vendorFname, OrganizationType.Vendor.id.toShort, adminOrganization = false, landingPageId, legalNoticeId, errorTemplateId, template = template, templateName, None, communityId)
+    Organizations(0L, shortName, fullName, OrganizationType.Vendor.id.toShort, adminOrganization = false, landingPageId, legalNoticeId, errorTemplateId, template = template, templateName, None, None, communityId)
   }
 
   def validCommunitySelfRegType(selfRegType: Short): Boolean = {
@@ -385,6 +385,7 @@ object ParameterExtractor {
       allowAutomationApi = requiredBodyParameter(request, ParameterNames.ALLOW_AUTOMATION_API).toBoolean
     }
     val allowCommunityView = requiredBodyParameter(request, ParameterNames.ALLOW_COMMUNITY_VIEW).toBoolean
+    val allowUserManagement = requiredBodyParameter(request, ParameterNames.ALLOW_USER_MANAGEMENT).toBoolean
     val interactionNotification = requiredBodyParameter(request, ParameterNames.COMMUNITY_INTERACTION_NOTIFICATION).toBoolean
     var selfRegType: Short = SelfRegistrationType.NotSupported.id.toShort
     var selfRegRestriction: Short = SelfRegistrationRestriction.NoRestriction.id.toShort
@@ -393,6 +394,9 @@ object ParameterExtractor {
     var selfRegNotification: Boolean = false
     var selfRegForceTemplateSelection: Boolean = false
     var selfRegForceRequiredProperties: Boolean = false
+    var selfRegAllowOrganisationTokens: Boolean = false
+    var selfRegAllowOrganisationTokenManagement: Boolean = false
+    var selfRegForceOrganisationTokenInput: Boolean = false
     if (Configurations.REGISTRATION_ENABLED) {
       selfRegType = requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_TYPE).toShort
       if (!validCommunitySelfRegType(selfRegType)) {
@@ -414,6 +418,11 @@ object ParameterExtractor {
       if (selfRegType != SelfRegistrationType.NotSupported.id.toShort) {
         selfRegForceTemplateSelection = requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_FORCE_TEMPLATE).toBoolean
         selfRegForceRequiredProperties = requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_FORCE_PROPERTIES).toBoolean
+        selfRegAllowOrganisationTokens = requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_ALLOW_ORGANISATION_TOKENS).toBoolean
+        if (selfRegAllowOrganisationTokens) {
+          selfRegAllowOrganisationTokenManagement = requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_ALLOW_ORGANISATION_TOKEN_MANAGEMENT).toBoolean
+          selfRegForceOrganisationTokenInput = requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_FORCE_ORGANISATION_TOKEN_INPUT).toBoolean
+        }
         if (Configurations.EMAIL_ENABLED) {
           selfRegNotification = requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_NOTIFICATION).toBoolean
         }
@@ -428,9 +437,9 @@ object ParameterExtractor {
     val domainId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.DOMAIN_ID)
     Communities(
       0L, sname, fname, email, selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification, interactionNotification, description,
-      selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties,
+      selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties, selfRegAllowOrganisationTokens, selfRegAllowOrganisationTokenManagement, selfRegForceOrganisationTokenInput,
       allowCertificateDownload, allowStatementManagement, allowSystemManagement,
-      allowPostTestOrganisationUpdate, allowPostTestSystemUpdate, allowPostTestStatementUpdate, allowAutomationApi, allowCommunityView,
+      allowPostTestOrganisationUpdate, allowPostTestSystemUpdate, allowPostTestStatementUpdate, allowAutomationApi, allowCommunityView, allowUserManagement,
       CryptoUtil.generateApiKey(), None, domainId
     )
   }
@@ -622,7 +631,7 @@ object ParameterExtractor {
     val adminOnly = ParameterExtractor.requiredBodyParameter(request, ParameterNames.ADMIN_ONLY).toBoolean
     val notForTests = ParameterExtractor.requiredBodyParameter(request, ParameterNames.NOT_FOR_TESTS).toBoolean
     val inExports:Boolean = (kind == "SIMPLE") && ParameterExtractor.requiredBodyParameter(request, ParameterNames.IN_EXPORTS).toBoolean
-    val inSelfRegistration: Boolean = Configurations.REGISTRATION_ENABLED && (!adminOnly) && ParameterExtractor.requiredBodyParameter(request, ParameterNames.IN_SELFREG).toBoolean
+    val inSelfRegistration: Boolean = Configurations.REGISTRATION_ENABLED && ParameterExtractor.requiredBodyParameter(request, ParameterNames.IN_SELFREG).toBoolean
     var hidden: Boolean = ParameterExtractor.requiredBodyParameter(request, ParameterNames.HIDDEN).toBoolean
     val allowedValues:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.ALLOWED_VALUES)
     var dependsOn:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.DEPENDS_ON)

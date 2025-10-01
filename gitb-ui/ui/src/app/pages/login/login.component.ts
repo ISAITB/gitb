@@ -13,37 +13,37 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { HttpClient, HttpResponse } from '@angular/common/http';
-import { AfterViewInit, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
-import { BsModalService } from 'ngx-bootstrap/modal';
-import { forkJoin, Observable, of, throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
-import { Constants } from 'src/app/common/constants';
-import { ROUTES } from 'src/app/common/global';
-import { Utils } from 'src/app/common/utils';
-import { PasswordChangeData } from 'src/app/components/change-password-form/password-change-data.type';
-import { LinkAccountComponent } from 'src/app/modals/link-account/link-account.component';
-import { AuthProviderService } from 'src/app/services/auth-provider.service';
-import { AuthService } from 'src/app/services/auth.service';
-import { CommunityService } from 'src/app/services/community.service';
-import { DataService } from 'src/app/services/data.service';
-import { ErrorService } from 'src/app/services/error.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { HttpRequestConfig } from 'src/app/types/http-request-config.type';
-import { LoginEventInfo } from 'src/app/types/login-event-info.type';
-import { LoginResultActionNeeded } from 'src/app/types/login-result-action-needed';
-import { LoginResultOk } from 'src/app/types/login-result-ok';
-import { SelfRegistrationModel } from 'src/app/types/self-registration-model.type';
-import { BaseComponent } from '../base-component.component';
-import { SelfRegistrationOption } from 'src/app/types/self-registration-option.type';
-import { ValidationState } from 'src/app/types/validation-state';
+import {HttpClient, HttpResponse} from '@angular/common/http';
+import {AfterViewInit, Component, ElementRef, OnInit, ViewChild} from '@angular/core';
+import {BsModalService} from 'ngx-bootstrap/modal';
+import {forkJoin, Observable, of, throwError} from 'rxjs';
+import {catchError} from 'rxjs/operators';
+import {Constants} from 'src/app/common/constants';
+import {ROUTES} from 'src/app/common/global';
+import {Utils} from 'src/app/common/utils';
+import {PasswordChangeData} from 'src/app/components/change-password-form/password-change-data.type';
+import {LinkAccountComponent} from 'src/app/modals/link-account/link-account.component';
+import {AuthProviderService} from 'src/app/services/auth-provider.service';
+import {AuthService} from 'src/app/services/auth.service';
+import {CommunityService} from 'src/app/services/community.service';
+import {DataService} from 'src/app/services/data.service';
+import {ErrorService} from 'src/app/services/error.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {HttpRequestConfig} from 'src/app/types/http-request-config.type';
+import {LoginEventInfo} from 'src/app/types/login-event-info.type';
+import {LoginResultActionNeeded} from 'src/app/types/login-result-action-needed';
+import {LoginResultOk} from 'src/app/types/login-result-ok';
+import {SelfRegistrationModel} from 'src/app/types/self-registration-model.type';
+import {SelfRegistrationOption} from 'src/app/types/self-registration-option.type';
+import {ValidationState} from 'src/app/types/validation-state';
+import {BaseSelfRegistrationPageComponent} from '../../components/self-registration/base-self-registration-page.component';
 
 @Component({
     selector: 'app-login',
     templateUrl: './login.component.html',
     standalone: false
 })
-export class LoginComponent extends BaseComponent implements OnInit, AfterViewInit {
+export class LoginComponent extends BaseSelfRegistrationPageComponent implements OnInit, AfterViewInit {
 
   @ViewChild("emailField", { static: false }) emailField?: ElementRef;
 
@@ -64,7 +64,7 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
 
   constructor(
     private readonly authProvider: AuthProviderService,
-    public readonly dataService: DataService,
+    dataService: DataService,
     private readonly httpClient: HttpClient,
     private readonly communityService: CommunityService,
     private readonly authService: AuthService,
@@ -72,7 +72,7 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
     private readonly popupService: PopupService,
     private readonly modalService: BsModalService
   ) {
-    super()
+    super(dataService)
   }
 
   ngOnInit(): void {
@@ -137,7 +137,7 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
       selfRegistrationOptionObservable
     ]).subscribe((data) => {
       const modalRef = this.modalService.show(LinkAccountComponent, {
-        class: 'modal-lg',
+        class: 'modal-xl',
         initialState: {
           linkedAccounts: data[0],
           createOption: loginOption,
@@ -266,15 +266,7 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
   }
 
 	registerDisabled(): boolean {
-    return this.spinner || !(
-			this.selfRegData.selfRegOption != undefined && this.selfRegData.selfRegOption.communityId &&
-			(this.selfRegData.selfRegOption.selfRegType != Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN || this.textProvided(this.selfRegData.selfRegToken)) &&
-			(!this.selfRegData.selfRegOption.forceTemplateSelection || (this.selfRegData.selfRegOption.templates == undefined || this.selfRegData.selfRegOption.templates.length == 0) || this.selfRegData.template != undefined) &&
-			(!this.selfRegData.selfRegOption.forceRequiredProperties || this.dataService.customPropertiesValid(this.selfRegData.selfRegOption.organisationProperties, true)) &&
-			this.textProvided(this.selfRegData.orgShortName) && this.textProvided(this.selfRegData.orgFullName) &&
-			this.textProvided(this.selfRegData.adminName) && this.textProvided(this.selfRegData.adminEmail) &&
-			this.textProvided(this.selfRegData.adminPassword)
-		)
+    return this.spinner || !this.selfRegDataOk(this.selfRegData)
   }
 
 	register() {
@@ -287,7 +279,7 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
       if (this.selfRegData.template) {
         templateId = this.selfRegData.template.id
       }
-      this.communityService.selfRegister(this.selfRegData.selfRegOption!.communityId!, token, this.selfRegData.orgShortName!, this.selfRegData.orgFullName!, templateId, this.selfRegData.selfRegOption!.organisationProperties, this.selfRegData.adminName!, this.selfRegData.adminEmail!, this.selfRegData.adminPassword!)
+      this.communityService.selfRegister(this.selfRegData.selfRegOption!.communityId!, token, this.selfRegData.newOrganisation === true, this.selfRegData.orgToken, this.selfRegData.orgShortName!, this.selfRegData.orgFullName!, templateId, this.selfRegData.selfRegOption!.organisationProperties, this.selfRegData.adminName!, this.selfRegData.adminEmail!, this.selfRegData.adminPassword!)
       .subscribe((data) => {
         if (this.isErrorDescription(data)) {
           this.validation.applyError(data)

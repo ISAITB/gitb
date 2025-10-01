@@ -15,7 +15,19 @@
 
 package models
 
-class SelfRegOption(_communityId: Long, _communityName: String, _communityDescription: Option[String], _selfRegTokenHelpText: Option[String], _selfRegType: Short, _templates: Option[List[SelfRegTemplate]], _labels: List[CommunityLabels], _customOrganisationProperties: List[OrganisationParameters], _forceTemplateSelection: Boolean, _forceRequiredProperties: Boolean) {
+class SelfRegOption(_communityId: Long,
+                    _communityName: String,
+                    _communityDescription: Option[String],
+                    _selfRegTokenHelpText: Option[String],
+                    _selfRegType: Short,
+                    _templates: Option[List[SelfRegTemplate]],
+                    _labels: List[CommunityLabels],
+                    _customOrganisationProperties: List[OrganisationParameters],
+                    _forceTemplateSelection: Boolean,
+                    _forceRequiredProperties: Boolean,
+                    _organisationTokensEnabled: Boolean,
+                    _forceOrganisationTokenInput: Boolean
+                   ) {
 
   var communityId: Long = _communityId
   var communityName: String = _communityName
@@ -27,5 +39,7 @@ class SelfRegOption(_communityId: Long, _communityName: String, _communityDescri
   var customOrganisationProperties: List[OrganisationParameters] = _customOrganisationProperties
   var forceTemplateSelection: Boolean = _forceTemplateSelection
   var forceRequiredProperties: Boolean = _forceRequiredProperties
+  var organisationTokensEnabled: Boolean = _organisationTokensEnabled
+  var forceOrganisationTokenInput: Boolean = _forceOrganisationTokenInput
 
 }

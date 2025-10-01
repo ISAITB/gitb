@@ -725,7 +725,8 @@ object JsonUtil {
       "template" -> organization.template,
       "templateName" -> (if(organization.templateName.isDefined) organization.templateName.get else JsNull),
       "community" -> organization.community,
-      "adminOrganization" -> organization.adminOrganization
+      "adminOrganization" -> organization.adminOrganization,
+      "selfRegistrationToken" -> (if(organization.selfRegToken.isDefined) organization.selfRegToken.get else JsNull),
     )
     json
   }
@@ -830,6 +831,7 @@ object JsonUtil {
       "allowPostTestStatementUpdates" -> community.allowPostTestStatementUpdates,
       "allowAutomationApi" -> community.allowAutomationApi,
       "allowCommunityView" -> community.allowCommunityView,
+      "allowUserManagement" -> community.allowUserManagement,
       "domainId" -> community.domain
     )
     if (includeAdminInfo) {
@@ -841,12 +843,15 @@ object JsonUtil {
       json = json.+("selfRegNotification" -> JsBoolean(community.selfRegNotification))
       json = json.+("selfRegForceTemplateSelection" -> JsBoolean(community.selfRegForceTemplateSelection))
       json = json.+("selfRegForceRequiredProperties" -> JsBoolean(community.selfRegForceRequiredProperties))
+      json = json.+("selfRegForceOrganisationTokenInput" -> JsBoolean(community.selfRegForceOrganisationTokenInput))
       json = json.+("description" -> (if(community.description.isDefined) JsString(community.description.get) else JsNull))
       json = json.+("interactionNotification" -> JsBoolean(community.interactionNotification))
       if (Configurations.AUTOMATION_API_ENABLED) {
         json = json.+("apiKey" -> JsString(community.apiKey))
       }
     }
+    json = json.+("selfRegAllowOrganisationTokens" -> JsBoolean(community.selfRegAllowOrganisationTokens))
+    json = json.+("selfRegAllowOrganisationTokenManagement" -> JsBoolean(community.selfRegAllowOrganisationTokenManagement))
     json
   }
 
@@ -2527,7 +2532,9 @@ object JsonUtil {
         "labels" -> jsCommunityLabels(option.labels),
         "organisationProperties" -> jsOrganisationParameters(option.customOrganisationProperties),
         "forceTemplateSelection" -> option.forceTemplateSelection,
-        "forceRequiredProperties" -> option.forceRequiredProperties
+        "forceRequiredProperties" -> option.forceRequiredProperties,
+        "organisationTokensEnabled" -> option.organisationTokensEnabled,
+        "forceOrganisationTokenInput" -> option.forceOrganisationTokenInput
     )
     json
   }

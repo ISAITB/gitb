@@ -29,6 +29,9 @@ case class Communities(
                         selfRegRestriction: Short,
                         selfRegForceTemplateSelection: Boolean,
                         selfRegForceRequiredProperties: Boolean,
+                        selfRegAllowOrganisationTokens: Boolean,
+                        selfRegAllowOrganisationTokenManagement: Boolean,
+                        selfRegForceOrganisationTokenInput: Boolean,
                         allowCertificateDownload: Boolean,
                         allowStatementManagement: Boolean,
                         allowSystemManagement: Boolean,
@@ -37,6 +40,7 @@ case class Communities(
                         allowPostTestStatementUpdates : Boolean,
                         allowAutomationApi : Boolean,
                         allowCommunityView : Boolean,
+                        allowUserManagement: Boolean,
                         apiKey: String,
                         latestStatusLabel: Option[String],
                         domain: Option[Long]) {
@@ -61,6 +65,9 @@ class Community(
                  _selfRegRestriction: Short,
                  _selfRegForceTemplateSelection: Boolean,
                  _selfRegForceRequiredProperties: Boolean,
+                 _selfRegAllowOrganisationTokens: Boolean,
+                 _selfRegAllowOrganisationTokenManagement: Boolean,
+                 _selfRegForceOrganisationTokenInput: Boolean,
                  _allowCertificateDownload: Boolean,
                  _allowStatementManagement: Boolean,
                  _allowSystemManagement: Boolean,
@@ -69,6 +76,7 @@ class Community(
                  _allowPostTestStatementUpdates : Boolean,
                  _allowAutomationApi: Boolean,
                  _allowCommunityView: Boolean,
+                 _allowUserManagement: Boolean,
                  _apiKey: String,
                  _domain:Option[Domain]) {
   var id:Long = _id
@@ -84,6 +92,9 @@ class Community(
   var selfRegRestriction:Short = _selfRegRestriction
   var selfRegForceTemplateSelection:Boolean = _selfRegForceTemplateSelection
   var selfRegForceRequiredProperties:Boolean = _selfRegForceRequiredProperties
+  var selfRegAllowOrganisationTokens:Boolean = _selfRegAllowOrganisationTokens
+  var selfRegAllowOrganisationTokenManagement:Boolean = _selfRegAllowOrganisationTokenManagement
+  var selfRegForceOrganisationTokenInput:Boolean = _selfRegForceOrganisationTokenInput
   var allowCertificateDownload: Boolean = _allowCertificateDownload
   var allowStatementManagement: Boolean = _allowStatementManagement
   var allowSystemManagement: Boolean = _allowSystemManagement
@@ -92,6 +103,7 @@ class Community(
   var allowPostTestStatementUpdates: Boolean = _allowPostTestStatementUpdates
   var allowAutomationApi: Boolean = _allowAutomationApi
   var allowCommunityView: Boolean = _allowCommunityView
+  var allowUserManagement: Boolean = _allowUserManagement
   var apiKey: String  = _apiKey
   var domain:Option[Domain] = _domain
 
@@ -110,6 +122,9 @@ class Community(
       _case.selfRegRestriction,
       _case.selfRegForceTemplateSelection,
       _case.selfRegForceRequiredProperties,
+      _case.selfRegAllowOrganisationTokens,
+      _case.selfRegAllowOrganisationTokenManagement,
+      _case.selfRegForceOrganisationTokenInput,
       _case.allowCertificateDownload,
       _case.allowStatementManagement,
       _case.allowSystemManagement,
@@ -118,6 +133,7 @@ class Community(
       _case.allowPostTestStatementUpdates,
       _case.allowAutomationApi,
       _case.allowCommunityView,
+      _case.allowUserManagement,
       _case.apiKey,
       _domain
     )
@@ -141,6 +157,9 @@ class Community(
       selfRegRestriction,
       selfRegForceTemplateSelection,
       selfRegForceRequiredProperties,
+      selfRegAllowOrganisationTokens,
+      selfRegAllowOrganisationTokenManagement,
+      selfRegForceOrganisationTokenInput,
       allowCertificateDownload,
       allowStatementManagement,
       allowSystemManagement,
@@ -149,6 +168,7 @@ class Community(
       allowPostTestStatementUpdates,
       allowAutomationApi,
       allowCommunityView,
+      allowUserManagement,
       apiKey,
       None,
       d

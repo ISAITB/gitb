@@ -256,6 +256,8 @@ GET     /api/organizations/orgparam/:orgId/parameters/:parameterId/download @con
 POST    /api/organizations/:id/apiKey           @controllers.OrganizationService.updateOrganisationApiKey(id: Long)
 DELETE  /api/organizations/:id/apiKey           @controllers.OrganizationService.deleteOrganisationApiKey(id: Long)
 GET     /api/organizations/:id/apiKey           @controllers.OrganizationService.getAutomationKeysForOrganisation(id: Long)
+POST    /api/organizations/:id/selfRegToken     @controllers.OrganizationService.updateSelfRegistrationToken(id: Long)
+DELETE  /api/organizations/:id/selfRegToken     @controllers.OrganizationService.deleteSelfRegistrationToken(id: Long)
 
 GET     /api/communities/all                    @controllers.CommunityService.getCommunities()
 GET     /api/communities/user                   @controllers.CommunityService.getUserCommunities()

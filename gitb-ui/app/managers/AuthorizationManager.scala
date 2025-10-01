@@ -86,6 +86,31 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     check.map(setAuthResult(request, _, "User not allowed to lookup conformance badges"))
   }
 
+  def canManageOrganisationSelfRegistrationToken(request: RequestWithAttributes[_], organisationId: Long): Future[Boolean] = {
+    val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
+      if (Configurations.REGISTRATION_ENABLED) {
+        if (isTestBedAdmin(userInfo)) {
+          Future.successful(true)
+        } else if (isCommunityAdmin(userInfo)) {
+          canManageOrganisationFull(request, userInfo, organisationId)
+        } else if (isOrganisationAdmin(userInfo)) {
+          if (userInfo.organization.exists(_.id == organisationId)) {
+            communityManager.getById(userInfo.organization.get.community).map { community =>
+              community.exists(x => x.selfRegType != SelfRegistrationType.NotSupported.id && x.selfRegAllowOrganisationTokens && x.selfRegAllowOrganisationTokenManagement)
+            }
+          } else {
+            Future.successful(false)
+          }
+        } else {
+          Future.successful(false)
+        }
+      } else {
+        Future.successful(false)
+      }
+    }
+    check.map(setAuthResult(request, _, "User not allowed to update self registration token"))
+  }
+
   private def checkApiKeyUpdateForOrganisation(request: RequestWithAttributes[_], organisation: Option[Organizations]): Future[Boolean] = {
     if (Configurations.AUTOMATION_API_ENABLED) {
       getUser(getRequestUserId(request)).flatMap { userInfo =>
@@ -341,10 +366,10 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     check.map(setAuthResult(request, _, "You are not allowed to manage test suites through the automation API"))
   }
 
-  def canSelfRegister(request: RequestWithAttributes[_], organisation: Organizations, selfRegToken: Option[String], templateId: Option[Long]): Future[Boolean] = {
+  def canSelfRegister(request: RequestWithAttributes[_], communityId: Long, selfRegToken: Option[String], templateId: Option[Long]): Future[Boolean] = {
     val check = checkHasPrincipal(request, skipForNonSSO = true).flatMap { hasPrincipal =>
       if (Configurations.REGISTRATION_ENABLED && hasPrincipal) {
-        communityManager.getById(organisation.community).flatMap { targetCommunity =>
+        communityManager.getById(communityId).flatMap { targetCommunity =>
           if (targetCommunity.isDefined) {
             var communityOk = false
             if (targetCommunity.get.selfRegType == SelfRegistrationType.PublicListing.id.toShort) {
@@ -517,6 +542,12 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     check.map(setAuthResult(request, _, "User cannot delete the requested administrator"))
   }
 
+  private def canUpdateOwnOrganisationUsers(userInfo: User): Future[Boolean] = {
+    communityManager.getById(userInfo.organization.get.community).map { community =>
+      community.exists(_.allowUserManagement)
+    }
+  }
+
   def canUpdateOrganisationUser(request: RequestWithAttributes[_], userId: Long): Future[Boolean] = {
     val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
       if (isTestBedAdmin(userInfo)) {
@@ -529,7 +560,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
         if (!Configurations.DEMOS_ENABLED || Configurations.DEMOS_ACCOUNT != userInfo.id) {
           userManager.getById(userId).flatMap { user =>
             if (userInfo.organization.isDefined && user.organization == userInfo.organization.get.id) {
-              canUpdateOwnOrganisation(request, ignoreExistingTests = true)
+              canUpdateOwnOrganisationUsers(userInfo)
             } else {
               Future.successful(false)
             }
@@ -566,6 +597,17 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   def canCreateOrganisationUser(request: RequestWithAttributes[_], orgId: Long): Future[Boolean] = {
     getUser(getRequestUserId(request)).flatMap { userInfo =>
+      if (isTestBedAdmin(userInfo)) {
+        Future.successful(true)
+      } else if (isCommunityAdmin(userInfo)) {
+        canManageOrganisationFull(request, userInfo, orgId)
+      } else if (isOrganisationAdmin(userInfo)) {
+        if (!Configurations.DEMOS_ENABLED || Configurations.DEMOS_ACCOUNT != userInfo.id) {
+          canUpdateOwnOrganisationUsers(userInfo)
+        } else {
+          Future.successful(false)
+        }
+      }
       canManageOrganisationFull(request, userInfo, orgId)
     }
   }

@@ -9,6 +9,12 @@
                 <label class="col-3 col-form-label text-end">Full name:</label>
                 <div class="col-7"><p class="form-control-plaintext">{{organisation.fname}}</p></div>
             </div>
+            @if (selfRegTokenEnabled && organisation.selfRegistrationToken != undefined) {
+                <div class="row mt-3">
+                    <label class="col-3 col-form-label text-end">Self-registration token:</label>
+                    <div class="col-7"><p class="form-control-plaintext"><app-copy-enabled-text [value]="organisation.selfRegistrationToken"></app-copy-enabled-text></p></div>
+                </div>
+            }
         </div>
     } @else {
         <div class="col-10 offset-1">
@@ -71,26 +77,49 @@
                             </div>
                         </div>
                     </div>
-                    @if (selfRegEnabled) {
-                        <div>
-                            <div class="row mt-3 pt-1">
-                                <label class="col-3 col-form-label text-end pt-0" for="asTemplate">Publish as template:</label>
-                                <div class="col-7">
-                                    <div class="form-check">
-                                        <input class="form-check-input" id="template" id="asTemplate" name="asTemplate" [(ngModel)]="organisation.template" type="checkbox">
-                                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [tbTooltip]="'You can define the configuration of this '+dataService.labelOrganisationLower()+' as a template that will be presented to users self-registering for the community (if self-registration is enabled). Do this to offer new users preconfigured '+dataService.labelSystemsLower()+' and conformance statements.'"></div>
-                                    </div>
-                                </div>
+                }
+            }
+            @if (selfRegEnabled) {
+                @if (selfRegTokenEnabled && organisation.id != undefined && !organisation.adminOrganization) {
+                    <div class="row mt-3">
+                        @if (organisation.selfRegistrationToken == undefined) {
+                            <legend class="col-3 col-form-label text-end">Self-registration token:</legend>
+                            <div class="col-auto">
+                                <button class="btn btn-secondary" (click)="updateSelfRegistrationToken()" [pending]="selfRegistrationTokenUpdatePending">Generate token</button>
                             </div>
-                            <div [collapse]="!organisation.template" [isAnimated]="true" (expanded)="templateChoiceChanged()">
-                                <div class="row mt-3">
-                                    <label class="col-3 col-form-label text-end" for="templateName">* Template name:</label>
-                                    <div class="col-7"><input id="templateName" name="templateName" [(ngModel)]="organisation.templateName" class="form-control" type="text" [invalid]="validation.get('template')"></div>
-                                    <div app-tooltip class="col-auto" tbTooltip="The name to display in the self-registration screen for this template configuration."></div>
-                                </div>
+                        } @else {
+                            <label class="col-3 col-form-label text-end" for="apiKey">Self-registration token:</label>
+                            <div class="col-7">
+                                <app-api-key-text idName="apiKey" name="apiKey"
+                                                  [key]="organisation.selfRegistrationToken"
+                                                  [supportDelete]="selfRegTokenUpdatable"
+                                                  [supportUpdate]="selfRegTokenUpdatable"
+                                                  [updatePending]="selfRegistrationTokenUpdatePending"
+                                                  [deletePending]="selfRegistrationTokenDeletePending"
+                                                  (update)="updateSelfRegistrationToken()"
+                                                  (delete)="deleteSelfRegistrationToken()"></app-api-key-text>
+                            </div>
+                        }
+                        <div app-tooltip class="col-auto" [tbTooltip]="'A token that can be used by a user during self-registration to register in this '+dataService.labelOrganisationLower()+'.'"></div>
+                    </div>
+                }
+                @if (showAdminInfo) {
+                    <div class="row mt-3 pt-1">
+                        <label class="col-3 col-form-label text-end pt-0" for="asTemplate">Publish as template:</label>
+                        <div class="col-7">
+                            <div class="form-check">
+                                <input class="form-check-input" id="asTemplate" name="asTemplate" [(ngModel)]="organisation.template" type="checkbox">
+                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [tbTooltip]="'You can define the configuration of this '+dataService.labelOrganisationLower()+' as a template that will be presented to users self-registering for the community (if self-registration is enabled). Do this to offer new users preconfigured '+dataService.labelSystemsLower()+' and conformance statements.'"></div>
                             </div>
                         </div>
-                    }
+                    </div>
+                    <div [collapse]="!organisation.template" [isAnimated]="true" (expanded)="templateChoiceChanged()">
+                        <div class="row mt-3">
+                            <label class="col-3 col-form-label text-end" for="templateName">* Template name:</label>
+                            <div class="col-7"><input id="templateName" name="templateName" [(ngModel)]="organisation.templateName" class="form-control" type="text" [invalid]="validation.get('template')"></div>
+                            <div app-tooltip class="col-auto" tbTooltip="The name to display in the self-registration screen for this template configuration."></div>
+                        </div>
+                    </div>
                 }
             }
         </div>

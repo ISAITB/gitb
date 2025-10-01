@@ -65,6 +65,7 @@
                 <xsd:attribute name="allowPostTestStatementUpdates" type="xsd:boolean" default="true"/>
                 <xsd:attribute name="allowAutomationApi" type="xsd:boolean" default="false"/>
                 <xsd:attribute name="allowCommunityView" type="xsd:boolean" default="false"/>
+                <xsd:attribute name="allowUserManagement" type="xsd:boolean" default="true"/>
                 <xsd:attribute name="interactionNotification" type="xsd:boolean" default="false"/>
             </xsd:extension>
         </xsd:complexContent>
@@ -153,6 +154,9 @@
         <xsd:attribute name="notifications" type="xsd:boolean" default="false"/>
         <xsd:attribute name="forceTemplateSelection" type="xsd:boolean" default="false"/>
         <xsd:attribute name="forceRequiredProperties" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="allowOrganisationTokens" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="allowOrganisationTokenManagement" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="forceOrganisationTokenInput" type="xsd:boolean" default="false"/>
     </xsd:complexType>
     <xsd:simpleType name="ConformanceOverviewCertificateMessageType">
         <xsd:restriction base="xsd:string">
@@ -418,6 +422,7 @@
                     <xsd:element name="fullName" type="xsd:string"/>
                     <xsd:element name="templateName" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="apiKey" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="selfRegistrationToken" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="propertyValues" type="OrganisationPropertyValues" minOccurs="0"/>
                     <xsd:element name="systems" type="Systems" minOccurs="0"/>
                     <xsd:element name="users" type="Users" minOccurs="0"/>

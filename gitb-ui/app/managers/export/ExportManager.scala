@@ -1343,6 +1343,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
         communityData.setAllowPostTestStatementUpdates(community.get.allowPostTestStatementUpdates)
         communityData.setAllowAutomationApi(community.get.allowAutomationApi)
         communityData.setAllowCommunityView(community.get.allowCommunityView)
+        communityData.setAllowUserManagement(community.get.allowUserManagement)
         communityData.setInteractionNotification(community.get.interactionNotification)
         // Self registration information.
         communityData.setSelfRegistrationSettings(new SelfRegistrationSettings)
@@ -1362,6 +1363,9 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
         }
         communityData.getSelfRegistrationSettings.setForceTemplateSelection(community.get.selfRegForceTemplateSelection)
         communityData.getSelfRegistrationSettings.setForceRequiredProperties(community.get.selfRegForceRequiredProperties)
+        communityData.getSelfRegistrationSettings.setAllowOrganisationTokens(community.get.selfRegAllowOrganisationTokens)
+        communityData.getSelfRegistrationSettings.setAllowOrganisationTokenManagement(community.get.selfRegAllowOrganisationTokenManagement)
+        communityData.getSelfRegistrationSettings.setForceOrganisationTokenInput(community.get.selfRegForceOrganisationTokenInput)
         // Administrators.
         if (exportSettings.communityAdministrators) {
           val administrators = data.administrators.get
@@ -1742,6 +1746,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
               exportedOrganisation.setTemplate(organisation.template)
               exportedOrganisation.setTemplateName(organisation.templateName.orNull)
               exportedOrganisation.setApiKey(organisation.apiKey.orNull)
+              exportedOrganisation.setSelfRegistrationToken(organisation.selfRegToken.orNull)
               if (exportSettings.organisationUsers && !organisation.adminOrganization && data.organisationUserMap.get.contains(organisation.id)) {
                 exportedOrganisation.setUsers(new com.gitb.xml.export.Users)
                 data.organisationUserMap.get(organisation.id).foreach { user =>

@@ -79,11 +79,12 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     ).map { results =>
       results.map(x => new UserAccount(
         Users(x._1, x._2, x._3, null, onetimePassword = false, x._4, x._5, None, None, UserSSOStatus.NotLinked.id.toShort),
-        Organizations(x._5, x._6, x._7, -1, x._8, null, null, null, template = false, None, None, x._9),
-        Communities(x._9, x._10, x._11, None, -1, None, None, selfRegNotification = false, interactionNotification = false, None, SelfRegistrationRestriction.NoRestriction.id.toShort, selfRegForceTemplateSelection = false, selfRegForceRequiredProperties = false,
+        Organizations(x._5, x._6, x._7, -1, x._8, null, null, null, template = false, None, None, None, x._9),
+        Communities(x._9, x._10, x._11, None, -1, None, None, selfRegNotification = false, interactionNotification = false, None, SelfRegistrationRestriction.NoRestriction.id.toShort,
+          selfRegForceTemplateSelection = false, selfRegForceRequiredProperties = false, selfRegAllowOrganisationTokens = false, selfRegAllowOrganisationTokenManagement = false, selfRegForceOrganisationTokenInput = false,
           allowCertificateDownload = false, allowStatementManagement = false, allowSystemManagement = false,
           allowPostTestOrganisationUpdates = false, allowPostTestSystemUpdates = false, allowPostTestStatementUpdates = false,
-          allowAutomationApi = false, allowCommunityView = false, "", None,
+          allowAutomationApi = false, allowCommunityView = false, allowUserManagement = true, "", None,
           None)
       )).sorted
     }
@@ -115,11 +116,12 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
       results
         .map(x => new UserAccount(
           Users(x._1, x._2, x._3, null, onetimePassword = false, x._4, x._5, None, None, UserSSOStatus.Linked.id.toShort),
-          Organizations(x._5, x._6, x._7, -1, x._8, null, null, null, template = false, None, None, x._9),
-          Communities(x._9, x._10, x._11, None, -1, None, None, selfRegNotification = false, interactionNotification = false, None, SelfRegistrationRestriction.NoRestriction.id.toShort, selfRegForceTemplateSelection = false, selfRegForceRequiredProperties = false,
+          Organizations(x._5, x._6, x._7, -1, x._8, null, null, null, template = false, None, None, None, x._9),
+          Communities(x._9, x._10, x._11, None, -1, None, None, selfRegNotification = false, interactionNotification = false, None, SelfRegistrationRestriction.NoRestriction.id.toShort,
+            selfRegForceTemplateSelection = false, selfRegForceRequiredProperties = false, selfRegAllowOrganisationTokens = false, selfRegAllowOrganisationTokenManagement = false, selfRegForceOrganisationTokenInput = false,
             allowCertificateDownload = false, allowStatementManagement = false, allowSystemManagement = false,
             allowPostTestOrganisationUpdates = false, allowPostTestSystemUpdates = false, allowPostTestStatementUpdates = false,
-            allowAutomationApi = false, allowCommunityView = false, "", None,
+            allowAutomationApi = false, allowCommunityView = false, allowUserManagement = true,"", None,
             None))
         ).sorted
     }

@@ -20,7 +20,7 @@ import controllers.CommunityService.SelfRegistrationInfo
 import controllers.util.ParameterExtractor.requiredBodyParameter
 import controllers.util.{AuthorizedAction, ParameterExtractor, ParameterNames, ResponseConstructor}
 import exceptions.ErrorCodes
-import managers.{AuthenticationManager, AuthorizationManager, CommunityManager}
+import managers.{AuthenticationManager, AuthorizationManager, CommunityManager, OrganizationManager}
 import models.Enums.{SelfRegistrationRestriction, SelfRegistrationType}
 import models.{ActualUserInfo, Communities, Organizations, Users}
 import org.apache.commons.io.FileUtils
@@ -37,27 +37,27 @@ object CommunityService {
   object SelfRegistrationInfo {
 
     def create(): SelfRegistrationInfo = {
-      SelfRegistrationInfo(None, None, None, None)
+      SelfRegistrationInfo(None, None, None, None, None)
     }
 
   }
 
-  case class SelfRegistrationInfo(failure: Option[Result], community: Option[Communities], actualUserInfo: Option[ActualUserInfo], organisationAdmin: Option[Users]) {
-
-    def withCommunity(community: Communities): SelfRegistrationInfo = {
-      SelfRegistrationInfo(failure, Some(community), actualUserInfo, organisationAdmin)
-    }
+  case class SelfRegistrationInfo(failure: Option[Result], community: Option[Communities], actualUserInfo: Option[ActualUserInfo], organisationAdmin: Option[Users], organisation: Option[Organizations]) {
 
     def withFailure(result: Result): SelfRegistrationInfo = {
-      SelfRegistrationInfo(Some(result), community, actualUserInfo, organisationAdmin)
+      this.copy(failure = Some(result))
     }
 
     def withFailure(result: Result, community: Communities): SelfRegistrationInfo = {
-      SelfRegistrationInfo(Some(result), Some(community), actualUserInfo, organisationAdmin)
+      this.copy(failure = Some(result), community = Some(community))
     }
 
     def withUser(actualUserInfo: Option[ActualUserInfo], organisationAdmin: Users): SelfRegistrationInfo = {
-      SelfRegistrationInfo(failure, community, actualUserInfo, Some(organisationAdmin))
+      this.copy(actualUserInfo = actualUserInfo, organisationAdmin = Some(organisationAdmin))
+    }
+
+    def withOrganisation(organisation: Organizations, community: Communities): SelfRegistrationInfo = {
+      this.copy(organisation = Some(organisation), community = Some(community))
     }
 
   }
@@ -67,6 +67,7 @@ object CommunityService {
 class CommunityService @Inject() (authorizedAction: AuthorizedAction,
                                   cc: ControllerComponents,
                                   communityManager: CommunityManager,
+                                  organisationManager: OrganizationManager,
                                   authorizationManager: AuthorizationManager,
                                   authenticationManager: AuthenticationManager)
                                  (implicit ec: ExecutionContext) extends AbstractController(cc) {
@@ -141,6 +142,7 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
         allowAutomationApi = Some(requiredBodyParameter(request, ParameterNames.ALLOW_AUTOMATION_API).toBoolean)
       }
       val allowCommunityView = requiredBodyParameter(request, ParameterNames.ALLOW_COMMUNITY_VIEW).toBoolean
+      val allowUserManagement = requiredBodyParameter(request, ParameterNames.ALLOW_USER_MANAGEMENT).toBoolean
       val interactionNotification = requiredBodyParameter(request, ParameterNames.COMMUNITY_INTERACTION_NOTIFICATION).toBoolean
       var selfRegType: Short = SelfRegistrationType.NotSupported.id.toShort
       var selfRegRestriction: Short = SelfRegistrationRestriction.NoRestriction.id.toShort
@@ -149,6 +151,9 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
       var selfRegNotification: Boolean = false
       var selfRegForceTemplateSelection: Boolean = false
       var selfRegForceRequiredProperties: Boolean = false
+      var selfRegAllowOrganisationTokens: Boolean = false
+      var selfRegAllowOrganisationTokenManagement: Boolean = false
+      var selfRegForceOrganisationTokenInput: Boolean = false
       if (Configurations.REGISTRATION_ENABLED) {
         selfRegType = ParameterExtractor.requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_TYPE).toShort
         if (!ParameterExtractor.validCommunitySelfRegType(selfRegType)) {
@@ -170,6 +175,11 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
         if (selfRegType != SelfRegistrationType.NotSupported.id.toShort) {
           selfRegForceTemplateSelection = requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_FORCE_TEMPLATE).toBoolean
           selfRegForceRequiredProperties = requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_FORCE_PROPERTIES).toBoolean
+          selfRegAllowOrganisationTokens = requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_ALLOW_ORGANISATION_TOKENS).toBoolean
+          if (selfRegAllowOrganisationTokens) {
+            selfRegAllowOrganisationTokenManagement = requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_ALLOW_ORGANISATION_TOKEN_MANAGEMENT).toBoolean
+            selfRegForceOrganisationTokenInput = requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_FORCE_ORGANISATION_TOKEN_INPUT).toBoolean
+          }
           if (Configurations.EMAIL_ENABLED) {
             selfRegNotification = requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_NOTIFICATION).toBoolean
           }
@@ -181,9 +191,9 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
       val domainId: Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.DOMAIN_ID)
       communityManager.updateCommunity(
         communityId, shortName, fullName, email, selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification,
-        interactionNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties,
+        interactionNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties, selfRegAllowOrganisationTokens, selfRegAllowOrganisationTokenManagement, selfRegForceOrganisationTokenInput,
         allowCertificateDownload, allowStatementManagement, allowSystemManagement,
-        allowPostTestOrganisationUpdate, allowPostTestSystemUpdate, allowPostTestStatementUpdate, allowAutomationApi, allowCommunityView,
+        allowPostTestOrganisationUpdate, allowPostTestSystemUpdate, allowPostTestStatementUpdate, allowAutomationApi, allowCommunityView, allowUserManagement,
         domainId
       ).map { _ =>
         ResponseConstructor.constructEmptyResponse
@@ -205,8 +215,16 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
   def selfRegister(): Action[AnyContent] = authorizedAction.async { request =>
     val task = for {
       paramMap <- Future.successful(ParameterExtractor.paramMap(request))
+      communityId <- Future.successful(ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.COMMUNITY_ID).toLong)
       selfRegToken <- Future.successful(ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.COMMUNITY_SELFREG_TOKEN))
-      organisation <- Future.successful(ParameterExtractor.extractOrganizationInfo(paramMap))
+      organisationToken <- Future.successful(ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.VENDOR_TOKEN))
+      organisation <- {
+        if (organisationToken.isDefined) {
+          Future.successful(None)
+        } else {
+          Future.successful(Some(ParameterExtractor.extractOrganizationInfo(paramMap)))
+        }
+      }
       templateId  <- Future.successful(ParameterExtractor.optionalLongBodyParameter(paramMap, ParameterNames.TEMPLATE_ID))
       info <- {
         if (Configurations.AUTHENTICATION_SSO_ENABLED) {
@@ -229,51 +247,104 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
       }
       info <- {
         if (info.failure.isEmpty) {
-          authorizationManager.canSelfRegister(request, organisation, selfRegToken, templateId).flatMap { _ =>
-            communityManager.getById(organisation.community).flatMap { community =>
+          authorizationManager.canSelfRegister(request, communityId, selfRegToken, templateId).flatMap { _ =>
+            communityManager.getById(communityId).flatMap { community =>
               if (community.isDefined) {
-                // Check in case template selection is required
-                if (community.get.selfRegForceTemplateSelection && templateId.isEmpty) {
+                // Check that the token (if required) matches
+                if (community.get.selfRegType == SelfRegistrationType.PublicListingWithToken.id.toShort
+                  && selfRegToken.isDefined && community.get.selfRegToken.isDefined
+                  && community.get.selfRegToken.get != selfRegToken.get) {
                   Future.successful {
-                    info.withFailure(ResponseConstructor.constructErrorResponse(ErrorCodes.MISSING_PARAMS, "A configuration template must be selected.", Some("template")), community.get)
+                    info.withFailure(ResponseConstructor.constructErrorResponse(ErrorCodes.INCORRECT_SELFREG_TOKEN, "The provided token is incorrect.", Some("token")), community.get)
                   }
                 } else {
-                  // Check that the token (if required) matches
-                  if (community.get.selfRegType == SelfRegistrationType.PublicListingWithToken.id.toShort
-                    && selfRegToken.isDefined && community.get.selfRegToken.isDefined
-                    && community.get.selfRegToken.get != selfRegToken.get) {
-                    Future.successful {
-                      info.withFailure(ResponseConstructor.constructErrorResponse(ErrorCodes.INCORRECT_SELFREG_TOKEN, "The provided token is incorrect.", Some("token")), community.get)
-                    }
-                  } else {
-                    if (Configurations.AUTHENTICATION_SSO_ENABLED) {
-                      // Check to see whether self-registration restrictions are in force (only if SSO)
-                      if (community.get.selfRegRestriction == SelfRegistrationRestriction.UserEmail.id.toShort) {
-                        communityManager.existsOrganisationWithSameUserEmail(community.get.id, info.actualUserInfo.get.email).map { exists =>
-                          if (exists) {
-                            info.withFailure(ResponseConstructor.constructErrorResponse(ErrorCodes.SELF_REG_RESTRICTION_USER_EMAIL, "You are already registered in this community.", Some("community")), community.get)
+                  // Check the target organisation details
+                  if (organisationToken.isDefined) {
+                    if (community.get.selfRegAllowOrganisationTokens) {
+                      // Check to see that the provided organisation token is valid and retrieve the referenced organisation.
+                      organisationManager.getBySelfRegistrationToken(communityId, organisationToken.get).flatMap { targetOrganisation =>
+                        if (targetOrganisation.isEmpty) {
+                          Future.successful {
+                            info.withFailure(ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_SELFREG_DATA, "The provided token is incorrect.", Some("orgToken")), community.get)
+                          }
+                        } else {
+                          // Check to see that the user is not already registered.
+                          if (Configurations.AUTHENTICATION_SSO_ENABLED) {
+                            // Check to see that the user is not already linked to the organisation
+                            organisationManager.ssoUserExistsInOrganisation(info.actualUserInfo.get.email, targetOrganisation.get.id).map { exists =>
+                              if (exists) {
+                                info.withFailure(ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_SELFREG_DATA, "Your account is already registered.", Some("orgToken")), community.get)
+                              } else {
+                                info.withOrganisation(targetOrganisation.get, community.get)
+                              }
+                            }
                           } else {
-                            info.withCommunity(community.get)
+                            // Check the user email (only if not SSO)
+                            authenticationManager.checkEmailAvailability(info.organisationAdmin.get.email, None, None, None).map { available =>
+                              if (!available) {
+                                info.withFailure(ResponseConstructor.constructErrorResponse(ErrorCodes.EMAIL_EXISTS, "The provided username is already defined.", Some("adminEmail")), community.get)
+                              } else {
+                                info.withOrganisation(targetOrganisation.get, community.get)
+                              }
+                            }
                           }
                         }
-                      } else if (community.get.selfRegRestriction == SelfRegistrationRestriction.UserEmailDomain.id.toShort) {
-                        communityManager.existsOrganisationWithSameUserEmailDomain(community.get.id, info.actualUserInfo.get.email).map { exists =>
-                          if (exists) {
-                            info.withFailure(ResponseConstructor.constructErrorResponse(ErrorCodes.SELF_REG_RESTRICTION_USER_EMAIL_DOMAIN, "Your organisation is already registered in this community.", Some("community")), community.get)
-                          } else {
-                            info.withCommunity(community.get)
-                          }
-                        }
-                      } else {
-                        Future.successful(info.withCommunity(community.get))
                       }
                     } else {
-                      // Check the user email (only if not SSO)
-                      authenticationManager.checkEmailAvailability(info.organisationAdmin.get.email, None, None, None).map { available =>
-                        if (!available) {
-                          info.withFailure(ResponseConstructor.constructErrorResponse(ErrorCodes.EMAIL_EXISTS, "The provided username is already defined.", Some("adminEmail")), community.get)
+                      Future.successful {
+                        info.withFailure(ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_SELFREG_DATA, "Use of registration tokens is not allowed.", Some("orgToken")), community.get)
+                      }
+                    }
+                  } else {
+                    if (community.get.selfRegForceOrganisationTokenInput) {
+                      Future.successful {
+                        info.withFailure(ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_SELFREG_DATA, "The registration token is required.", Some("orgToken")), community.get)
+                      }
+                    } else {
+                      if (organisation.isEmpty) {
+                        Future.successful {
+                          info.withFailure(ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_SELFREG_DATA, "The organisation details are required.", Some("orgToken")), community.get)
+                        }
+                      } else {
+                        // Check that a template was selected (if mandatory)
+                        if (community.get.selfRegForceTemplateSelection && templateId.isEmpty) {
+                          Future.successful {
+                            info.withFailure(ResponseConstructor.constructErrorResponse(ErrorCodes.MISSING_PARAMS, "A configuration template must be selected.", Some("template")), community.get)
+                          }
                         } else {
-                          info.withCommunity(community.get)
+                          if (Configurations.AUTHENTICATION_SSO_ENABLED) {
+                            // Check to see whether self-registration restrictions are in force (only if SSO)
+                            if (community.get.selfRegRestriction == SelfRegistrationRestriction.UserEmail.id.toShort) {
+                              communityManager.existsOrganisationWithSameUserEmail(community.get.id, info.actualUserInfo.get.email).map { exists =>
+                                if (exists) {
+                                  info.withFailure(ResponseConstructor.constructErrorResponse(ErrorCodes.SELF_REG_RESTRICTION_USER_EMAIL, "You are already registered in this community.", Some("community")), community.get)
+                                } else {
+                                  info.withOrganisation(organisation.get, community.get)
+                                }
+                              }
+                            } else if (community.get.selfRegRestriction == SelfRegistrationRestriction.UserEmailDomain.id.toShort) {
+                              communityManager.existsOrganisationWithSameUserEmailDomain(community.get.id, info.actualUserInfo.get.email).map { exists =>
+                                if (exists) {
+                                  info.withFailure(ResponseConstructor.constructErrorResponse(ErrorCodes.SELF_REG_RESTRICTION_USER_EMAIL_DOMAIN, "Your organisation is already registered in this community.", Some("community")), community.get)
+                                } else {
+                                  info.withOrganisation(organisation.get, community.get)
+                                }
+                              }
+                            } else {
+                              Future.successful {
+                                info.withOrganisation(organisation.get, community.get)
+                              }
+                            }
+                          } else {
+                            // Check the user email (only if not SSO)
+                            authenticationManager.checkEmailAvailability(info.organisationAdmin.get.email, None, None, None).map { available =>
+                              if (!available) {
+                                info.withFailure(ResponseConstructor.constructErrorResponse(ErrorCodes.EMAIL_EXISTS, "The provided username is already defined.", Some("adminEmail")), community.get)
+                              } else {
+                                info.withOrganisation(organisation.get, community.get)
+                              }
+                            }
+                          }
                         }
                       }
                     }
@@ -299,10 +370,10 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
               ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")
             }
           } else {
-            communityManager.selfRegister(organisation, info.organisationAdmin.get, templateId, info.actualUserInfo, customPropertyValues, Some(customPropertyFiles), info.community.get.selfRegForceRequiredProperties).flatMap { userId =>
+            communityManager.selfRegister(info.organisation.get, info.organisationAdmin.get, templateId, info.actualUserInfo, customPropertyValues, Some(customPropertyFiles), info.community.get.selfRegForceRequiredProperties).flatMap { userId =>
               // Self registration successful - notify support email if configured to do so.
               if (Configurations.EMAIL_ENABLED && info.community.get.selfRegNotification) {
-                notifyForSelfRegistration(info.community.get, organisation)
+                notifyForSelfRegistration(info.community.get, info.organisation.get)
               }
               if (Configurations.AUTHENTICATION_SSO_ENABLED) {
                 authorizationManager.getAccountInfo(request).map { accountInfo =>
@@ -330,13 +401,18 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
     if (Configurations.EMAIL_ENABLED && community.selfRegNotification && community.supportEmail.isDefined) {
       Future {
         val subject = "Test Bed self-registration notification"
-        var content = "<h2>New Test Bed community member</h2>"
+        var content = "<h2>New Test Bed registration</h2>"
         // User information not included to avoid data privacy statements
-        content +=
-          "A new organisation has joined your Test Bed community through the self-registration process.<br/>" +
-          "<br/><b>Organisation:</b> "+organisation.fullname +
-          "<br/><b>Community:</b> "+community.fullname +
-          "<br/><br/>Click <a href=\""+Configurations.TESTBED_HOME_LINK+"\">here</a> to connect and view the update on the Test Bed."
+        if (organisation.id == 0L) {
+          // New organisation
+          content += "A new organisation has joined your Test Bed community through the self-registration process.<br/>"
+        } else {
+          // Existing organisation
+          content += "A new user has joined an existing organisation through the self-registration process.<br/>"
+        }
+        content += "<br/><b>Organisation:</b> "+organisation.fullname +
+                   "<br/><b>Community:</b> "+community.fullname +
+                   "<br/><br/>Click <a href=\""+Configurations.TESTBED_HOME_LINK+"\">here</a> to connect and view the update on the Test Bed."
         try {
           EmailUtil.sendEmail(Array[String](community.supportEmail.get), null, subject, content, null)
         } catch {

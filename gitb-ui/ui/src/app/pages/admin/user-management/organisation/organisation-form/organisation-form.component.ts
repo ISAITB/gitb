@@ -26,6 +26,10 @@ import {MultiSelectConfig} from '../../../../../components/multi-select-filter/m
 import {FilterUpdate} from '../../../../../components/test-filter/filter-update';
 import {map, Observable, of} from 'rxjs';
 import {OrganisationService} from '../../../../../services/organisation.service';
+import {SystemService} from '../../../../../services/system.service';
+import {PopupService} from '../../../../../services/popup.service';
+import {LegalNoticeService} from '../../../../../services/legal-notice.service';
+import {ConfirmationDialogService} from '../../../../../services/confirmation-dialog.service';
 
 @Component({
     selector: 'app-organisation-form',
@@ -48,6 +52,10 @@ export class OrganisationFormComponent implements OnInit {
   otherOrganisations?: Organisation[]
 
   selfRegEnabled = false
+  selfRegTokenEnabled = false
+  selfRegTokenUpdatable = false
+  selfRegistrationTokenUpdatePending = false
+  selfRegistrationTokenDeletePending = false
   landingPageSelectionConfig!: MultiSelectConfig<LandingPage>
   legalNoticeSelectionConfig!: MultiSelectConfig<LegalNotice>
   errorTemplateSelectionConfig!: MultiSelectConfig<ErrorTemplate>
@@ -56,6 +64,8 @@ export class OrganisationFormComponent implements OnInit {
   constructor(
     public readonly dataService: DataService,
     private readonly organisationService: OrganisationService,
+    private readonly popupService: PopupService,
+    private readonly confirmationDialogService: ConfirmationDialogService
   ) { }
 
   ngOnInit(): void {
@@ -63,6 +73,8 @@ export class OrganisationFormComponent implements OnInit {
     this.organisation.copySystemParameters = false
     this.organisation.copyStatementParameters = false
     this.selfRegEnabled = this.dataService.configuration.registrationEnabled
+    this.selfRegTokenEnabled = this.selfRegEnabled && (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || this.dataService.community?.selfRegAllowOrganisationTokens === true)
+    this.selfRegTokenUpdatable = this.selfRegTokenEnabled && (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || (this.dataService.isVendorAdmin && this.dataService.community?.selfRegAllowOrganisationTokenManagement === true))
     this.landingPageSelectionConfig = {
       name: "landingPage",
       textField: "name",
@@ -106,6 +118,42 @@ export class OrganisationFormComponent implements OnInit {
       filterLabel: "Select source " + this.dataService.labelOrganisationLower() + "...",
       loader: () => this.loadOtherOrganisations()
     }
+  }
+
+  updateSelfRegistrationToken() {
+    let proceed$: Observable<any>
+    let isUpdate = true
+    if (this.organisation.selfRegistrationToken != undefined) {
+      proceed$ = this.confirmationDialogService.confirmed("Confirm update", "Are you sure you want to update the self-registration token?", "Update", "Cancel")
+    } else {
+      isUpdate = false
+      proceed$ = of(true)
+    }
+    proceed$.subscribe(() => {
+      if (this.organisation.id) {
+        this.selfRegistrationTokenUpdatePending = true
+        this.organisationService.updateSelfRegistrationToken(this.organisation.id).subscribe((data) => {
+          this.organisation.selfRegistrationToken = data
+          this.popupService.success("Token "+(isUpdate?"updated":"created")+".")
+        }).add(() => {
+          this.selfRegistrationTokenUpdatePending = false
+        })
+      }
+    })
+  }
+
+  deleteSelfRegistrationToken() {
+      this.confirmationDialogService.confirmed("Confirm delete", "Are you sure you want to delete the self-registration token?", "Delete", "Cancel").subscribe(() => {
+        if (this.organisation.id) {
+          this.selfRegistrationTokenDeletePending = true
+          this.organisationService.deleteSelfRegistrationToken(this.organisation.id).subscribe(() => {
+            this.organisation.selfRegistrationToken = undefined
+            this.popupService.success("Token deleted.")
+          }).add(() => {
+            this.selfRegistrationTokenDeletePending = false
+          })
+        }
+      })
   }
 
   loadOtherOrganisations(): Observable<Organisation[]> {
@@ -206,6 +254,5 @@ export class OrganisationFormComponent implements OnInit {
       this.propertyData.edit = false
     }
   }
-
 
 }

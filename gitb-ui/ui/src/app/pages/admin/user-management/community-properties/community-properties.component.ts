@@ -61,6 +61,8 @@ export class CommunityPropertiesComponent implements OnInit {
   organisationPropertiesCollapseFinished = false
   systemPropertiesCollapsed = false
   systemPropertiesCollapseFinished = false
+  previewOrganisationParametersPending = false
+  propertiesRequiredInRegistration: boolean|undefined = undefined
 
   Constants = Constants
 
@@ -145,18 +147,29 @@ export class CommunityPropertiesComponent implements OnInit {
 
   previewParameters<T extends CustomProperty>(title: string, parameters: T[], hasRegistrationCase: boolean, parameterType: 'organisation'|'system') {
     this.modalService.show(PreviewParametersModalComponent, {
-      class: 'modal-lg',
+      class: 'modal-xl',
       initialState: {
         modalTitle: title,
         parameters: parameters,
         hasRegistrationCase: hasRegistrationCase,
-        parameterType: parameterType
+        parameterType: parameterType,
+        propertiesRequiredInRegistration: this.propertiesRequiredInRegistration === true
       }
     })
   }
 
   previewOrganisationParameters() {
-    this.previewParameters(this.dataService.labelOrganisation()+" property form preview", this.organisationParameters, true, 'organisation')
+    if (this.propertiesRequiredInRegistration == undefined) {
+      this.previewOrganisationParametersPending = true
+      this.communityService.getCommunityById(this.communityId).subscribe((data) => {
+        this.propertiesRequiredInRegistration = data.selfRegForceRequiredProperties
+        this.previewParameters(this.dataService.labelOrganisation()+" property form preview", this.organisationParameters, true, 'organisation')
+      }).add(() => {
+        this.previewOrganisationParametersPending = false
+      })
+    } else {
+      this.previewParameters(this.dataService.labelOrganisation()+" property form preview", this.organisationParameters, true, 'organisation')
+    }
   }
 
   previewSystemParameters() {

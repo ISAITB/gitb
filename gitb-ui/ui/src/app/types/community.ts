@@ -28,6 +28,9 @@ export interface Community extends CommunityLimited {
   interactionNotification: boolean;
   selfRegForceTemplateSelection?: boolean;
   selfRegForceRequiredProperties?: boolean;
+  selfRegAllowOrganisationTokens?: boolean;
+  selfRegAllowOrganisationTokenManagement?: boolean;
+  selfRegForceOrganisationTokenInput?: boolean;
   email?: string;
   domain?: Domain;
   domainId?: number;
@@ -39,6 +42,7 @@ export interface Community extends CommunityLimited {
   allowPostTestStatementUpdates: boolean;
   allowAutomationApi?: boolean;
   allowCommunityView: boolean;
+  allowUserManagement: boolean;
   apiKey?: string;
 
   sameDescriptionAsDomain: boolean;

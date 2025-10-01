@@ -100,6 +100,7 @@ object ParameterNames {
   //Account Service parameters
   val VENDOR_SNAME = "vendor_sname"
   val VENDOR_FNAME = "vendor_fname"
+  val VENDOR_TOKEN = "vendor_token"
   val USER_NAME    = "user_name"
   val USER_EMAIL   = "user_email"
   val OLD_PASSWORD = "old_password"
@@ -163,7 +164,11 @@ object ParameterNames {
   val COMMUNITY_SELFREG_NOTIFICATION = "community_selfreg_notification"
   val COMMUNITY_SELFREG_FORCE_TEMPLATE = "community_selfreg_force_template"
   val COMMUNITY_SELFREG_FORCE_PROPERTIES = "community_selfreg_force_properties"
+  val COMMUNITY_SELFREG_ALLOW_ORGANISATION_TOKENS = "community_selfreg_allow_org_tokens"
+  val COMMUNITY_SELFREG_ALLOW_ORGANISATION_TOKEN_MANAGEMENT = "community_selfreg_allow_org_token_management"
+  val COMMUNITY_SELFREG_FORCE_ORGANISATION_TOKEN_INPUT = "community_selfreg_force_org_token_input"
   val COMMUNITY_INTERACTION_NOTIFICATION = "interaction_notification"
+  val SELFREG_TOKEN = "selfreg_token"
   val ALLOW_CERTIFICATE_DOWNLOAD = "allow_certificate_download"
   val ALLOW_STATEMENT_MANAGEMENT = "allow_statement_management"
   val ALLOW_SYSTEM_MANAGEMENT = "allow_system_management"
@@ -172,6 +177,7 @@ object ParameterNames {
   val ALLOW_POST_TEST_STM_UPDATE = "allow_post_test_stm_update"
   val ALLOW_AUTOMATION_API = "allow_automation_api"
   val ALLOW_COMMUNITY_VIEW = "allow_community_view"
+  val ALLOW_USER_MANAGEMENT = "allow_user_management"
   //TestService parameters
   val ACTOR_ID   = "actor_id"
   val ACTOR_DEFAULT   = "default"

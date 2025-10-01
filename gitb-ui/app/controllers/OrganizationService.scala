@@ -358,4 +358,20 @@ class OrganizationService @Inject() (repositoryUtils: RepositoryUtils,
     } yield result
   }
 
+  def updateSelfRegistrationToken(organisationId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageOrganisationSelfRegistrationToken(request, organisationId).flatMap { _ =>
+      organizationManager.updateSelfRegistrationToken(organisationId).map { newToken =>
+        ResponseConstructor.constructStringResponse(newToken)
+      }
+    }
+  }
+
+  def deleteSelfRegistrationToken(organisationId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageOrganisationSelfRegistrationToken(request, organisationId).flatMap { _ =>
+      organizationManager.deleteOrganisationApiKey(organisationId).map { _ =>
+        ResponseConstructor.constructEmptyResponse
+      }
+    }
+  }
+
 }

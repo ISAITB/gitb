@@ -68,6 +68,21 @@ export class OrganisationService {
     })
   }
 
+  updateSelfRegistrationToken(organisationId: number) {
+    return this.restService.post<string>({
+      path: ROUTES.controllers.OrganizationService.updateSelfRegistrationToken(organisationId).url,
+      authenticate: true,
+      text: true
+    })
+  }
+
+  deleteSelfRegistrationToken(organisationId: number) {
+    return this.restService.delete<void>({
+      path: ROUTES.controllers.OrganizationService.deleteSelfRegistrationToken(organisationId).url,
+      authenticate: true
+    })
+  }
+
   getOrganisationsByCommunity(communityId: number, includeAdminOrganisation?: boolean, snapshotId?: number) {
     const params: any = {}
     if (includeAdminOrganisation || snapshotId != undefined) {
