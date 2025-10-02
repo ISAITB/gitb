@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.5</version>
+        <version>3.5.6</version>
     </parent>
     <groupId>com.gitb</groupId>
     <artifactId>GITB</artifactId>
@@ -35,8 +35,8 @@
         <version.plugin.versions-maven-plugin>2.18.0</version.plugin.versions-maven-plugin>
         <!-- Dependency versions -->
         <version.gitbTypes>1.28.0-SNAPSHOT</version.gitbTypes>
-        <version.springBoot>3.5.5</version.springBoot> <!-- When upgrading adapt Tomcat version (below) as needed. -->
-        <tomcat.version>10.1.44</tomcat.version>
+        <version.springBoot>3.5.6</version.springBoot> <!-- When upgrading adapt Tomcat version (below) as needed. -->
+        <tomcat.version>10.1.46</tomcat.version>
         <version.bouncycastle>1.81</version.bouncycastle>
         <version.helgerSchematron>9.0.1</version.helgerSchematron>
         <version.metaInfServices>1.9</version.metaInfServices>
@@ -45,18 +45,18 @@
         <version.commonsCodec>1.18.0</version.commonsCodec>
         <version.reflections>0.10.2</version.reflections>
         <version.commonsIo>2.19.0</version.commonsIo>
-        <version.commonsLang3>3.18.0</version.commonsLang3>
-        <version.tika>3.2.2</version.tika>
+        <version.commonsLang3>3.19.0</version.commonsLang3>
+        <version.tika>3.2.3</version.tika>
         <version.xerces>2.12.2</version.xerces>
-        <version.jaxbApi>4.0.2</version.jaxbApi>
-        <version.jaxbRuntime>4.0.4</version.jaxbRuntime>
+        <version.jaxbApi>4.0.4</version.jaxbApi>
+        <version.jaxbRuntime>4.0.6</version.jaxbRuntime>
         <version.saxon>12.8</version.saxon>
         <version.jaxwsApi>4.0.2</version.jaxwsApi>
         <version.jwsApi>3.0.0</version.jwsApi>
         <version.activation>2.1.2</version.activation>
         <version.commonsConfiguration>2.12.0</version.commonsConfiguration>
         <version.commonsText>1.14.0</version.commonsText>
-        <version.pekko>1.1.4</version.pekko>
+        <version.pekko>1.2.1</version.pekko>
         <version.rgxgen>3.1</version.rgxgen>
         <version.saajImpl>3.0.4</version.saajImpl>
         <version.helgerCommons>12.0.0</version.helgerCommons>

@@ -1,13 +1,13 @@
 import sbtlicensereport.license.{LicenseCategory, LicenseInfo}
 
 scalaVersion := "2.13.16"
-val pekkoVersion = "1.2.0"
+val pekkoVersion = "1.2.1"
 val jacksonVersion = "2.20.0"
 val jacksonAnnotationsVersion = "2.20"
 val cxfVersion = "4.1.3"
 val gitbCommonsVersion = "1.28.0-SNAPSHOT"
 val gitbTypesVersion = "1.28.0-SNAPSHOT"
-val bouncyCastleVersion = "1.81"
+val bouncyCastleVersion = "1.82"
 val commonsTextVersion = "1.14.0"
 val mySqlConnectorVersion = "9.4.0"
 
@@ -47,7 +47,7 @@ libraryDependencies ++= Seq(
   "org.pac4j" %% "play-pac4j" % "12.0.2-PLAY3.0",
   "org.pac4j" % "pac4j-cas" % "6.1.3" exclude("org.bouncycastle", "bcpkix-jdk15on"),
   "org.pac4j" % "pac4j-oidc" % "6.1.3",
-  "org.apache.commons" % "commons-lang3" % "3.18.0",
+  "org.apache.commons" % "commons-lang3" % "3.19.0",
   "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion,
@@ -60,7 +60,7 @@ libraryDependencies ++= Seq(
   "org.apache.cxf" % "cxf-rt-transports-http" % cxfVersion,
   "org.apache.cxf" % "cxf-rt-transports-http-jetty" % cxfVersion,
   // ---
-  "org.apache.tika" % "tika-core" % "3.2.2",
+  "org.apache.tika" % "tika-core" % "3.2.3",
   "org.webjars" % "jquery" % "3.7.1",
   "org.webjars" % "bootstrap" % "5.3.8",
   "org.webjars" % "swagger-ui" % "5.28.1",
@@ -68,8 +68,8 @@ libraryDependencies ++= Seq(
   "jakarta.activation" % "jakarta.activation-api" % "2.1.4",
   "jakarta.xml.ws" % "jakarta.xml.ws-api" % "4.0.2",
   "jakarta.jws" % "jakarta.jws-api" % "3.0.0",
-  "jakarta.xml.bind" % "jakarta.xml.bind-api" % "4.0.2",
-  "com.sun.xml.bind" % "jaxb-impl" % "4.0.5",
+  "jakarta.xml.bind" % "jakarta.xml.bind-api" % "4.0.4",
+  "com.sun.xml.bind" % "jaxb-impl" % "4.0.6",
   "jakarta.xml.soap" % "jakarta.xml.soap-api" % "3.0.2",
   "com.sun.xml.messaging.saaj" % "saaj-impl" % "3.0.4", // Needed for SOAP exchanges
   "org.bouncycastle" % "bcmail-jdk18on" % bouncyCastleVersion,
@@ -78,7 +78,7 @@ libraryDependencies ++= Seq(
   "org.jasypt" % "jasypt" % "1.9.3",
   "org.apache.httpcomponents" % "httpclient" % "4.5.14",
   "org.flywaydb" %% "flyway-play" % "9.1.0",
-  "org.flywaydb" % "flyway-mysql" % "11.12.0",
+  "org.flywaydb" % "flyway-mysql" % "11.13.2",
   "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20240325.1",
   "net.lingala.zip4j" % "zip4j" % "2.11.5",
   "com.nimbusds" % "nimbus-jose-jwt" % "10.5",
