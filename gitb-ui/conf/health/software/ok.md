@@ -1,1 +1,1 @@
-You are currently running the latest **%s** release, published on **%s**%s.
+You are using the latest **%s** release, published on **%s**%s, or a later snapshot.
