@@ -13,19 +13,18 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, OnInit } from '@angular/core';
-import { BsModalRef } from 'ngx-bootstrap/modal';
-import { Constants } from 'src/app/common/constants';
-import { BaseComponent } from 'src/app/pages/base-component.component';
-import { AuthService } from 'src/app/services/auth.service';
-import { CommunityService } from 'src/app/services/community.service';
-import { DataService } from 'src/app/services/data.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { ActualUserInfo } from 'src/app/types/actual-user-info';
-import { SelfRegistrationModel } from 'src/app/types/self-registration-model.type';
-import { SelfRegistrationOption } from 'src/app/types/self-registration-option.type';
-import { UserAccount } from 'src/app/types/user-account';
-import { ValidationState } from 'src/app/types/validation-state';
+import {AfterViewInit, Component, OnInit} from '@angular/core';
+import {BsModalRef} from 'ngx-bootstrap/modal';
+import {Constants} from 'src/app/common/constants';
+import {AuthService} from 'src/app/services/auth.service';
+import {CommunityService} from 'src/app/services/community.service';
+import {DataService} from 'src/app/services/data.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {ActualUserInfo} from 'src/app/types/actual-user-info';
+import {SelfRegistrationModel} from 'src/app/types/self-registration-model.type';
+import {SelfRegistrationOption} from 'src/app/types/self-registration-option.type';
+import {UserAccount} from 'src/app/types/user-account';
+import {ValidationState} from 'src/app/types/validation-state';
 import {BaseSelfRegistrationPageComponent} from '../../components/self-registration/base-self-registration-page.component';
 
 @Component({
@@ -34,7 +33,7 @@ import {BaseSelfRegistrationPageComponent} from '../../components/self-registrat
     styles: [],
     standalone: false
 })
-export class LinkAccountComponent extends BaseSelfRegistrationPageComponent implements OnInit {
+export class LinkAccountComponent extends BaseSelfRegistrationPageComponent implements OnInit, AfterViewInit {
 
   createOption!: string
   selfRegOptions!: SelfRegistrationOption[]
@@ -63,6 +62,10 @@ export class LinkAccountComponent extends BaseSelfRegistrationPageComponent impl
     } else if (this.createOption == Constants.LOGIN_OPTION.LINK_ACCOUNT) {
       this.choice = Constants.CREATE_ACCOUNT_OPTION.LINK
     }
+  }
+
+  ngAfterViewInit() {
+    this.choiceChanged()
   }
 
   resetSelfRegOptions() {
