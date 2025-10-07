@@ -1,1 +1,1 @@
-FROM redis:7.2.7
+FROM redis:7.2.11
