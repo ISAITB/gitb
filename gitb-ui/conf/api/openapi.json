@@ -5084,7 +5084,11 @@
           }
         },
         "required": [
-          "key"
+          "key",
+          "domain",
+          "address",
+          "serviceType",
+          "apiType"
         ],
         "additionalProperties": false
       },
