@@ -3,7 +3,7 @@
         @if (reference.specLink || reference.specReference) {
             <span [class.me-2]="reference.specDescription">
             @if (reference.specLink) {
-                <a [href]="reference.specLink" target="_blank" (click)="$event.stopPropagation();">
+                <a [href]="reference.specLink" target="blank" (click)="$event.stopPropagation();">
                     @if (reference.specReference) {
                         <span class="ref-reference" containerClass="shortTooltip" container="body" tooltip="Visit" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">{{reference.specReference}}</span>
                     } @else {
