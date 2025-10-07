@@ -112,18 +112,10 @@ export class NavigationControlsComponent implements OnInit {
     this.communityNavigable = this.isNavigable(this.config.communityId) && this.config.communityId != Constants.DEFAULT_COMMUNITY_ID && (this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin)
     this.organisationNavigable = this.isNavigable(this.config.organisationId) && (this.isOwnOrganisation() || this.communityNavigable)
     this.systemNavigable = this.organisationNavigable && this.isNavigable(this.config.systemId)
-    if (this.config.snapshotId == undefined) {
-      this.statementNavigable = this.organisationNavigable
-        && this.systemNavigable
-        && this.actorNavigable
-        && (this.isOwnOrganisation() || this.communityNavigable)
-    } else {
-      this.statementNavigable = this.config.organisationId != undefined
-        && this.config.systemId != undefined
-        && this.config.actorId != undefined
-        && (this.isOwnOrganisation() || this.config.communityId != undefined)
-    }
-    this.statementNavigable = this.statementNavigable
+    this.statementNavigable = this.config.organisationId != undefined
+      && this.config.systemId != undefined
+      && this.config.actorId != undefined
+      && (this.isOwnOrganisation() || this.config.communityId != undefined)
       && (this.config.showStatement == undefined || this.config.showStatement)
   }
 
