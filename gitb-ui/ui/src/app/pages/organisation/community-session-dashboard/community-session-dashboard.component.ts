@@ -47,4 +47,8 @@ export class CommunitySessionDashboardComponent extends BaseSessionDashboardComp
     return true
   }
 
+  protected showDeleteObsolete() {
+    return false
+  }
+
 }

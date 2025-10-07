@@ -130,7 +130,7 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
     if (this.includeCustomPropertyFilters()) {
       this.filterState.filters.push(Constants.FILTER_TYPE.ORGANISATION_PROPERTY, Constants.FILTER_TYPE.SYSTEM_PROPERTY)
     }
-    this.showDeleteObsoleteControl = !this.dataService.isVendorUser
+    this.showDeleteObsoleteControl = this.showDeleteObsolete()
     this.setBreadcrumbs()
   }
 
@@ -709,4 +709,9 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
   protected showTestSessionDeleteControls() {
     return this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin
   }
+
+  protected showDeleteObsolete() {
+    return !this.dataService.isVendorUser
+  }
+
 }
