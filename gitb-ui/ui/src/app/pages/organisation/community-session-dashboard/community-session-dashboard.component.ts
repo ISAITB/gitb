@@ -39,4 +39,12 @@ export class CommunitySessionDashboardComponent extends BaseSessionDashboardComp
     this.routingService.communitySessionsBreadcrumbs()
   }
 
+  protected includeCustomPropertyFilters(): boolean {
+    return false
+  }
+
+  protected includeOrganisationFilter(): boolean {
+    return true
+  }
+
 }

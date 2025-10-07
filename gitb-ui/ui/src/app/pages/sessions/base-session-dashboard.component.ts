@@ -69,7 +69,7 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
   refreshActivePending = false
   refreshCompletedPending = false
   filterState: FilterState = {
-    filters: [ Constants.FILTER_TYPE.SPECIFICATION, Constants.FILTER_TYPE.SPECIFICATION_GROUP, Constants.FILTER_TYPE.ACTOR, Constants.FILTER_TYPE.TEST_SUITE, Constants.FILTER_TYPE.TEST_CASE, Constants.FILTER_TYPE.ORGANISATION, Constants.FILTER_TYPE.SYSTEM, Constants.FILTER_TYPE.RESULT, Constants.FILTER_TYPE.START_TIME, Constants.FILTER_TYPE.END_TIME, Constants.FILTER_TYPE.SESSION, Constants.FILTER_TYPE.ORGANISATION_PROPERTY, Constants.FILTER_TYPE.SYSTEM_PROPERTY ],
+    filters: [ Constants.FILTER_TYPE.SPECIFICATION, Constants.FILTER_TYPE.SPECIFICATION_GROUP, Constants.FILTER_TYPE.ACTOR, Constants.FILTER_TYPE.TEST_SUITE, Constants.FILTER_TYPE.TEST_CASE, Constants.FILTER_TYPE.SYSTEM, Constants.FILTER_TYPE.RESULT, Constants.FILTER_TYPE.START_TIME, Constants.FILTER_TYPE.END_TIME, Constants.FILTER_TYPE.SESSION ],
     updatePending: false,
     updateDisabled: false
   }
@@ -124,6 +124,12 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
     if (this.dataService.isSystemAdmin) {
       this.filterState.filters.push(Constants.FILTER_TYPE.COMMUNITY)
     }
+    if (this.includeOrganisationFilter()) {
+      this.filterState.filters.push(Constants.FILTER_TYPE.ORGANISATION)
+    }
+    if (this.includeCustomPropertyFilters()) {
+      this.filterState.filters.push(Constants.FILTER_TYPE.ORGANISATION_PROPERTY, Constants.FILTER_TYPE.SYSTEM_PROPERTY)
+    }
     this.showDeleteObsoleteControl = !this.dataService.isVendorUser
     this.setBreadcrumbs()
   }
@@ -133,6 +139,14 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
       this.filterState.updatePending = true
       this.applyFilters()
     })
+  }
+
+  protected includeOrganisationFilter(): boolean {
+    return true
+  }
+
+  protected includeCustomPropertyFilters(): boolean {
+    return true
   }
 
   protected showCopyForOtherRoleOption(): boolean {

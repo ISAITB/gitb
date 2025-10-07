@@ -66,6 +66,14 @@ export class OrganisationTestsComponent extends BaseSessionDashboardComponent im
     super.ngOnInit()
   }
 
+  protected includeCustomPropertyFilters(): boolean {
+    return false
+  }
+
+  protected includeOrganisationFilter(): boolean {
+    return false
+  }
+
   protected getActiveTestsColumns(): TableColumnDefinition[] {
     return [
       { field: 'specification', title: this.dataService.labelSpecification(), sortable: true },
