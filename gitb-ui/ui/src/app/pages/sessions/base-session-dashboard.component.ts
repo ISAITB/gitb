@@ -693,6 +693,6 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
   }
 
   protected showTestSessionDeleteControls() {
-    return true
+    return this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin
   }
 }
