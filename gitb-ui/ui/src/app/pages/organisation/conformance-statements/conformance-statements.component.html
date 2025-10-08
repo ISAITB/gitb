@@ -137,7 +137,7 @@
                                              [communityId]="communityId"
                                              [organisationId]="organisationId"
                                              [statementLoader]="loadConformanceStatementsForListViewFactory()"
-                                             [snapshot]="activeConformanceSnapshot"
+                                             [snapshotId]="activeConformanceSnapshot?.id"
                                              (searchChange)="listViewSearching($event)"
                                              (exportChange)="listViewExportChange($event)"
                                              (select)="onStatementSelectFromListView($event)"></app-conformance-statement-table>

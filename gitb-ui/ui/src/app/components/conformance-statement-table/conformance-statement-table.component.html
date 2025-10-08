@@ -3,7 +3,7 @@
                  [filterState]="filterState"
                  [communityId]="communityId"
                  [organisationId]="organisationId"
-                 [snapshotId]="snapshot?.id"
+                 [snapshotId]="snapshotId"
                  (onApply)="getConformanceStatements()"></app-test-filter>
 <div class="table-container rounded">
     <table class="table table-directive expandable-table">
@@ -64,7 +64,7 @@
                             <td class="td-min-centered">
                                 <app-statement-options-button #statementOptionsButton
                                                               [item]="statement"
-                                                              [snapshotId]="snapshot?.id"
+                                                              [snapshotId]="snapshotId"
                                                               [communityId]="communityId"
                                                               [organisationId]="organisationId"
                                                               [pending]="statement.exportPdfPending == true || statement.exportXmlPending == true || statement.optionPending"

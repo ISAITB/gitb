@@ -499,8 +499,16 @@ export class RoutingService {
     return this.navigate(MenuItem.serviceHealthDashboard, ['admin', 'health'])
   }
 
-  toConformanceDashboard() {
-    return this.navigate(MenuItem.conformanceDashboard, ['admin', 'conformance'])
+  toConformanceDashboard(communityId?: number, organisationId?: number, systemId?: number, snapshotId?: number, replaceUrl?: boolean) {
+    return this.navigate(MenuItem.conformanceDashboard, ['admin', 'conformance'], {
+      queryParams: this.createMultipleQueryParams([
+        {name: Constants.NAVIGATION_QUERY_PARAM.COMMUNITY_ID, value: communityId},
+        {name: Constants.NAVIGATION_QUERY_PARAM.ORGANISATION_ID, value: organisationId},
+        {name: Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID, value: systemId},
+        {name: Constants.NAVIGATION_QUERY_PARAM.SNAPSHOT_ID, value: snapshotId}
+      ]),
+      replaceUrl: replaceUrl
+    })
   }
 
   toDataManagement() {
@@ -648,19 +656,19 @@ export class RoutingService {
     return crumbs
   }
 
-  organisationBreadcrumbs(communityId: number, organisationId: number, label?: string): BreadcrumbItem[] {
+  organisationBreadcrumbs(communityId: number, organisationId: number, label?: string, skipUpdate?: boolean): BreadcrumbItem[] {
     const crumbs = this.communityBreadcrumbs(communityId)
     let action: Function|undefined
     if (organisationId >= 0) {
       action = (() => this.toOrganisationDetails(communityId, organisationId))
     }
     crumbs.push({ type: BreadcrumbType.organisation, typeId: organisationId, label: label, action: action })
-    if (label) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    if (label && !skipUpdate) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
     return crumbs
   }
 
   systemBreadcrumbs(communityId: number, organisationId: number, organisationLabel: string|undefined, systemId: number, label?: string, skipUpdate?: boolean): BreadcrumbItem[] {
-    const crumbs = this.organisationBreadcrumbs(communityId, organisationId, organisationLabel)
+    const crumbs = this.organisationBreadcrumbs(communityId, organisationId, organisationLabel, true)
     let action: Function|undefined
     if (systemId >= 0) {
       action = (() => this.toSystemDetails(communityId, organisationId, systemId))
@@ -715,7 +723,7 @@ export class RoutingService {
   conformanceStatementsBreadcrumbs(communityId: number, organisationId: number, organisationLabel?: string, systemId?: number, systemLabel?: string, snapshotId?:number, snapshotLabel?: string, skipUpdate?: boolean): BreadcrumbItem[] {
     let crumbs: BreadcrumbItem[]
     if (systemId == undefined) {
-      crumbs = this.organisationBreadcrumbs(communityId, organisationId, organisationLabel)
+      crumbs = this.organisationBreadcrumbs(communityId, organisationId, organisationLabel, true)
     } else {
       crumbs = this.systemBreadcrumbs(communityId, organisationId, organisationLabel, systemId, systemLabel, true)
     }

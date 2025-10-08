@@ -76,7 +76,7 @@ export abstract class BaseConformanceItemDisplayComponent extends BaseComponent 
   statements: ConformanceStatementItem[] = []
   latestSnapshotButtonLabel?: string
   snapshotButtonLabel?: string
-  activeConformanceSnapshot?: ConformanceSnapshot
+  activeConformanceSnapshot?: Partial<ConformanceSnapshot>
   dataStatus = {status: Constants.STATUS.PENDING}
   filterCommands = new EventEmitter<number>()
   showExport = false

@@ -222,6 +222,11 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
       this.snapshotId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.SNAPSHOT_ID))
     }
     this.isReadonly = this.snapshotId != undefined
+    // Remember where 'back' needs to take us
+    if (sessionStorage) {
+      const fromDashboard = sessionStorage.getItem(Constants.SESSION_DATA.FROM_DASHBOARD) === "true"
+      if (!fromDashboard) sessionStorage.setItem(Constants.SESSION_DATA.FROM_DASHBOARD, "false")
+    }
     this.loadInitialData()
   }
 
@@ -724,7 +729,20 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
     if (this.communityId == undefined) {
       this.routingService.toOwnConformanceStatements(this.organisationId, this.systemId, this.snapshotId)
     } else {
-      this.routingService.toConformanceStatements(this.communityId, this.organisationId, this.systemId, this.snapshotId)
+      let fromDashBoard = false
+      if (sessionStorage) {
+        fromDashBoard = sessionStorage.getItem(Constants.SESSION_DATA.FROM_DASHBOARD) === "true"
+        sessionStorage.removeItem(Constants.SESSION_DATA.FROM_DASHBOARD)
+      }
+      if (fromDashBoard) {
+        let communityId: number|undefined
+        if (this.dataService.isSystemAdmin) {
+          communityId = this.communityId
+        }
+        this.routingService.toConformanceDashboard(communityId, this.organisationId, this.systemId, this.snapshotId)
+      } else {
+        this.routingService.toConformanceStatements(this.communityId, this.organisationId, this.systemId, this.snapshotId)
+      }
     }
   }
 

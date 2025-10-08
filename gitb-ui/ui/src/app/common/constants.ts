@@ -37,6 +37,9 @@ export class Constants {
 	public static readonly ADMINISTRATOR_ACTOR_NAME = 'Administrator'
 
 	public static readonly LATEST_CONFORMANCE_STATUS_LABEL = 'Latest conformance status'
+  public static readonly SESSION_DATA = {
+    FROM_DASHBOARD: 'dashboard'
+  }
 
 	public static readonly EMBEDDING_METHOD = {
 		BASE64: 'BASE64',
@@ -376,6 +379,8 @@ export class Constants {
 		TEST_SESSION_ID: 'session',
 		SPECIFICATION_GROUP_ID: 'group',
 		VIEW_PROPERTIES: 'viewProperties',
+    COMMUNITY_ID: 'community',
+    ORGANISATION_ID: 'organisation',
 		SYSTEM_ID: 'system',
 		TEST_CASE_ID: 'tc',
 		TEST_SUITE_ID: 'ts',

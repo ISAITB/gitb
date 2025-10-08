@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, NgZone, OnInit} from '@angular/core';
+import {Component, NgZone, OnInit, ViewChild} from '@angular/core';
 import {BsModalService} from 'ngx-bootstrap/modal';
 import {Observable, of} from 'rxjs';
 import {Constants} from 'src/app/common/constants';
@@ -40,6 +40,8 @@ import {
 import {PagingEvent} from '../../../components/paging-controls/paging-event';
 import {CheckboxOptionState} from '../../../components/checkbox-option-panel/checkbox-option-state';
 import {ConformanceResultFullWithTestSuites} from '../../../types/conformance-result-full-with-test-suites';
+import {ActivatedRoute} from '@angular/router';
+import {MultiSelectFilterComponentApi} from '../../../components/multi-select-filter/multi-select-filter-component-api';
 
 @Component({
     selector: 'app-conformance-dashboard',
@@ -48,6 +50,10 @@ import {ConformanceResultFullWithTestSuites} from '../../../types/conformance-re
     standalone: false
 })
 export class ConformanceDashboardComponent extends BaseConformanceItemDisplayComponent implements OnInit {
+
+  @ViewChild("communityDropdown") communityDropdown?: MultiSelectFilterComponentApi<Community>
+  @ViewChild("organisationDropdown") organisationDropdown?: MultiSelectFilterComponentApi<Organisation>
+  @ViewChild("systemDropdown") systemDropdown?: MultiSelectFilterComponentApi<System>
 
   selectedCommunityId?: number
   selectedOrganisationId?: number
@@ -60,6 +66,8 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
   communitySelectConfig?: MultiSelectConfig<Community>
   organisationSelectConfig?: MultiSelectConfig<Organisation>
   systemSelectConfig?: MultiSelectConfig<System>
+  initialCommunityId?: number
+  initialisingSnapshots = false
 
   constructor(
     dataService: DataService,
@@ -71,14 +79,26 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     private readonly organisationService: OrganisationService,
     private readonly systemService: SystemService,
     private readonly reportSupportService: ReportSupportService,
+    private readonly route: ActivatedRoute
   ) { super(dataService, zone, conformanceService) }
 
   ngOnInit(): void {
     this.latestSnapshotButtonLabel = 'Latest conformance status'
     this.snapshotButtonLabel = this.latestSnapshotButtonLabel
-		if (!this.dataService.isSystemAdmin) {
+		if (this.dataService.isCommunityAdmin) {
 			this.communityId = this.dataService.community!.id
       this.selectedCommunityId = this.communityId
+      this.initialCommunityId = this.selectedCommunityId
+    } else {
+      if (this.route.snapshot.queryParamMap.has(Constants.NAVIGATION_QUERY_PARAM.COMMUNITY_ID)) {
+        this.initialCommunityId = Number(this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.COMMUNITY_ID))
+      }
+    }
+    if (this.route.snapshot.queryParamMap.has(Constants.NAVIGATION_QUERY_PARAM.ORGANISATION_ID)) {
+      this.selectedOrganisationId = Number(this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.ORGANISATION_ID))
+    }
+    if (this.route.snapshot.queryParamMap.has(Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID)) {
+      this.selectedSystemId = Number(this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID))
     }
     // Tree view selection configs - start
     if (this.dataService.isSystemAdmin) {
@@ -88,9 +108,6 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
         filterLabel: 'Select community',
         singleSelection: true,
         singleSelectionPersistent: true,
-        clearItems: new EventEmitter<void>(),
-        replaceItems: new EventEmitter<Community[]>(),
-        replaceSelectedItems: new EventEmitter<Community[]>()
       }
     }
     this.organisationSelectConfig = {
@@ -99,9 +116,6 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
       filterLabel: `Select ${this.dataService.labelOrganisationLower()}`,
       singleSelection: true,
       singleSelectionPersistent: true,
-      clearItems: new EventEmitter<void>(),
-      replaceItems: new EventEmitter<Organisation[]>(),
-      replaceSelectedItems: new EventEmitter<Organisation[]>()
     }
     this.systemSelectConfig = {
       name: 'availableSystems',
@@ -109,17 +123,28 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
       filterLabel: `Select ${this.dataService.labelSystemLower()}`,
       singleSelection: true,
       singleSelectionPersistent: true,
-      clearItems: new EventEmitter<void>(),
-      replaceItems: new EventEmitter<System[]>(),
-      replaceSelectedItems: new EventEmitter<System[]>()
     }
     // Tree view select configs - end
     this.routingService.conformanceDashboardBreadcrumbs()
+    if (this.route.snapshot.queryParamMap.has(Constants.NAVIGATION_QUERY_PARAM.SNAPSHOT_ID)) {
+      const initialSnapshotId = Number(this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.SNAPSHOT_ID))
+      this.activeConformanceSnapshot = {
+        id: initialSnapshotId
+      }
+      // Initialise snapshots if needed.
+      this.initialisingSnapshots = true
+      this.conformanceService.getConformanceSnapshot(initialSnapshotId).subscribe((selectedSnapshot) => {
+        this.snapshotButtonLabel = selectedSnapshot.label
+        this.activeConformanceSnapshot = selectedSnapshot
+      }).add(() => {
+        this.initialisingSnapshots = false
+      })
+    }
   }
 
   ngAfterViewInit() {
     super.ngAfterViewInit();
-    this.viewTypeToggled()
+    this.viewTypeToggled(true)
   }
 
   private countTestCases(item: ConformanceStatementItem): number {
@@ -145,10 +170,10 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     let reportObservable: Observable<any>
     if (event.statementReport) {
       const testCaseCount = this.countTestCases(event.item)
-      reportObservable = this.reportSupportService.handleConformanceStatementReport(this.selectedCommunityId!, event.actorId!, this.selectedSystemId!, this.activeConformanceSnapshot?.id, event.format, true, testCaseCount)
+      reportObservable = this.reportSupportService.handleConformanceStatementReport(this.selectedCommunityId!, event.actorId!, this.selectedSystemId!, this.snapshotIdToUse(), event.format, true, testCaseCount)
     } else {
       const reportLevel = this.determineReportLevel(event)
-      reportObservable = this.reportSupportService.handleConformanceOverviewReport(this.selectedCommunityId!, this.selectedSystemId!, event.item.id, reportLevel, this.activeConformanceSnapshot?.id, event.format, this.dataService.conformanceStatusForConformanceItem(event.item))
+      reportObservable = this.reportSupportService.handleConformanceOverviewReport(this.selectedCommunityId!, this.selectedSystemId!, event.item.id, reportLevel, this.snapshotIdToUse(), event.format, this.dataService.conformanceStatusForConformanceItem(event.item))
     }
     reportObservable.subscribe(() => {
       // Do nothing further
@@ -167,7 +192,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
         class: 'modal-lg',
         initialState: {
           communityId: this.selectedCommunityId!,
-          currentlySelectedSnapshot: this.activeConformanceSnapshot?.id
+          currentlySelectedSnapshot: this.snapshotIdToUse()
         }
       })
       modalRef.content!.select.subscribe((selectedSnapshot) => {
@@ -175,6 +200,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
           this.snapshotButtonLabel = selectedSnapshot.label
           if (this.activeConformanceSnapshot == undefined || this.activeConformanceSnapshot.id != selectedSnapshot.id) {
             this.activeConformanceSnapshot = selectedSnapshot
+            this.updateRouting()
             if (this.listView) {
               this.listViewTable?.reloadData()
             } else {
@@ -183,6 +209,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
           }
           this.activeConformanceSnapshot = selectedSnapshot
         } else {
+          this.updateRouting()
           this.viewLatestConformanceSnapshot()
         }
       })
@@ -209,7 +236,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     this.communityChanged(true)
   }
 
-  viewTypeToggled() {
+  viewTypeToggled(fromPageInit?: boolean) {
     if (this.listView) {
       this.selectedCommunityId = this.communityId
       this.selectedOrganisationId = undefined
@@ -241,19 +268,24 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
           let communityToApply: Community|undefined
           if (data.length == 1) {
             communityToApply = data[0]
-            this.selectedCommunityId = communityToApply.id
-          } else {
-            this.selectedCommunityId = undefined
+          } else if (this.initialCommunityId != undefined) {
+            communityToApply = data.find((c) => c.id == this.initialCommunityId)
+            this.initialCommunityId = undefined
           }
+          this.selectedCommunityId = communityToApply?.id
           if (this.communitySelectConfig) {
             setTimeout(() => {
-              this.communitySelectConfig!.replaceItems!.emit(this.availableCommunities)
-              this.communitySelectConfig!.replaceSelectedItems!.emit((communityToApply == undefined)?[]:[communityToApply])
+              this.communityDropdown?.replaceItems(this.availableCommunities!)
+              this.communityDropdown?.replaceSelectedItems((communityToApply == undefined)?[]:[communityToApply], true)
             }, 1)
           }
           if (this.dataService.isSystemAdmin) {
-            // Force a switch back to the latest snapshot and refresh
-            this.viewLatestConformanceSnapshot(true)
+            if (fromPageInit === true) {
+              this.communityChanged(true)
+            } else {
+              // Force a switch back to the latest snapshot and refresh
+              this.viewLatestConformanceSnapshot(true)
+            }
           } else {
             this.communityChanged(true)
           }
@@ -262,11 +294,24 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     }
   }
 
+  private updateRouting() {
+    let communityId: number|undefined
+    if (this.dataService.isSystemAdmin) {
+      communityId = this.selectedCommunityId
+    }
+    this.routingService.toConformanceDashboard(communityId, this.selectedOrganisationId, this.selectedSystemId, this.snapshotIdToUse(), true)
+  }
+
+  private snapshotIdToUse() {
+    return this.activeConformanceSnapshot?.id
+  }
+
   communityChanged(fromSnapshotChange: boolean, community?: FilterUpdate<Community>) {
     this.dataStatus.status = Constants.STATUS.PENDING
     this.pagingControls?.hide()
     if (community && community.values.active.length > 0) {
       this.selectedCommunityId = community.values.active[0].id
+      this.updateRouting()
     }
     if (!fromSnapshotChange) {
       this.activeConformanceSnapshot = undefined
@@ -275,7 +320,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     if (this.selectedCommunityId == undefined) {
       loadObservable = of([])
     } else {
-      loadObservable = this.organisationService.getOrganisationsByCommunity(this.selectedCommunityId, false, this.activeConformanceSnapshot?.id)
+      loadObservable = this.organisationService.getOrganisationsByCommunity(this.selectedCommunityId, false, this.snapshotIdToUse())
     }
     setTimeout(() => {
       this.availableOrganisations = undefined
@@ -294,8 +339,8 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
           this.selectedOrganisationId = undefined
         }
         setTimeout(() => {
-          this.organisationSelectConfig!.replaceItems!.emit(this.availableOrganisations)
-          this.organisationSelectConfig!.replaceSelectedItems!.emit((organisationToApply == undefined)?[]:[organisationToApply])
+          this.organisationDropdown?.replaceItems(this.availableOrganisations!)
+          this.organisationDropdown?.replaceSelectedItems((organisationToApply == undefined)?[]:[organisationToApply], true)
           this.organisationChanged()
         })
       })
@@ -307,12 +352,13 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     this.pagingControls?.hide()
     if (organisation && organisation.values.active.length > 0) {
       this.selectedOrganisationId = organisation.values.active[0].id
+      this.updateRouting()
     }
     let loadObservable: Observable<System[]>
     if (this.selectedOrganisationId == undefined) {
       loadObservable = of([])
     } else {
-      loadObservable = this.systemService.getSystemsByOrganisation(this.selectedOrganisationId, this.activeConformanceSnapshot?.id)
+      loadObservable = this.systemService.getSystemsByOrganisation(this.selectedOrganisationId, this.snapshotIdToUse())
     }
     setTimeout(() => {
       this.availableSystems = undefined
@@ -331,8 +377,8 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
           this.selectedSystemId = undefined
         }
         setTimeout(() => {
-          this.systemSelectConfig!.replaceItems!.emit(this.availableSystems)
-          this.systemSelectConfig!.replaceSelectedItems!.emit((systemToApply == undefined)?[]:[systemToApply])
+          this.systemDropdown?.replaceItems(this.availableSystems!)
+          this.systemDropdown?.replaceSelectedItems((systemToApply == undefined)?[]:[systemToApply], true)
           this.systemChanged()
         }, 1)
       })
@@ -344,6 +390,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     this.pagingControls?.hide()
     if (system && system.values.active.length > 0) {
       this.selectedSystemId = system.values.active[0].id
+      this.updateRouting()
     }
     setTimeout(() => {
       if (this.selectedSystemId == undefined) {
@@ -376,7 +423,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
         this.dataStatus.status = Constants.STATUS.PENDING
         this.pagingControls?.hide()
       }
-      this.conformanceService.getConformanceStatementsForSystem(this.selectedSystemId, this.activeConformanceSnapshot?.id, pagingInfo.targetPage, pagingInfo.targetPageSize, this.searchCriteria)
+      this.conformanceService.getConformanceStatementsForSystem(this.selectedSystemId, this.snapshotIdToUse(), pagingInfo.targetPage, pagingInfo.targetPageSize, this.searchCriteria)
       .subscribe((data) => {
         this.applyTreeViewSearchResult(data, pagingInfo)
       }).add(() => {
@@ -389,7 +436,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
   exportOverview(format: 'xml'|'pdf') {
     this.exportOverviewPending = true
     const overallStatus = this.dataService.conformanceStatusForConformanceItems(this.statements)
-    this.reportSupportService.handleConformanceOverviewReport(this.selectedCommunityId!, this.selectedSystemId!, undefined, "all", this.activeConformanceSnapshot?.id, format, overallStatus)
+    this.reportSupportService.handleConformanceOverviewReport(this.selectedCommunityId!, this.selectedSystemId!, undefined, "all", this.snapshotIdToUse(), format, overallStatus)
     .subscribe(() => {
       // Do nothing further
     }).add(() => {
@@ -421,11 +468,13 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
   }
 
   onStatementSelect(statement: ConformanceStatementItem) {
-    this.routingService.toConformanceStatement(this.selectedOrganisationId!, this.selectedSystemId!, statement.id, this.selectedCommunityId!, this.activeConformanceSnapshot?.id, this.activeConformanceSnapshot?.label)
+    if (sessionStorage) sessionStorage.setItem(Constants.SESSION_DATA.FROM_DASHBOARD, "true")
+    this.routingService.toConformanceStatement(this.selectedOrganisationId!, this.selectedSystemId!, statement.id, this.selectedCommunityId!, this.snapshotIdToUse(), this.activeConformanceSnapshot?.label)
   }
 
   onStatementSelectFromListView(statement: ConformanceResultFullWithTestSuites) {
-    this.routingService.toConformanceStatement(statement.organizationId, statement.systemId, statement.actorId, statement.communityId, this.activeConformanceSnapshot?.id, this.activeConformanceSnapshot?.label)
+    if (sessionStorage) sessionStorage.setItem(Constants.SESSION_DATA.FROM_DASHBOARD, "true")
+    this.routingService.toConformanceStatement(statement.organizationId, statement.systemId, statement.actorId, statement.communityId, this.snapshotIdToUse(), this.activeConformanceSnapshot?.label)
   }
 
 }

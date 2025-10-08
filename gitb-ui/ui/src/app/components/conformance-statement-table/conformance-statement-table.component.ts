@@ -40,8 +40,8 @@ export class ConformanceStatementTableComponent extends BaseComponent implements
 
   @Input() communityId?: number
   @Input() organisationId?: number
+  @Input() snapshotId?: number
   @Input() statementLoader!: (searchCriteria: TestResultSearchCriteria, pagingInfo: PagingEvent, fullResults: boolean, forExport: boolean, sortColumn: string, sortOrder: string) => Observable<ConformanceResultFullList>;
-  @Input() snapshot?: ConformanceSnapshot
   @Output() exportChange = new EventEmitter<boolean>()
   @Output() searchChange = new EventEmitter<boolean>()
   @Output() communityChange = new EventEmitter<number|undefined>()
@@ -247,7 +247,7 @@ export class ConformanceStatementTableComponent extends BaseComponent implements
   }
 
   trackStatement(index: number, statement: ConformanceResultFullWithTestSuites): string {
-    return `${statement.actorId}_${statement.systemId}_${this.snapshot?.id}`;
+    return `${statement.actorId}_${statement.systemId}_${this.snapshotId}`;
   }
 
   onExportConformanceStatement(statement: ConformanceResultFull, format: 'xml'|'pdf') {
@@ -257,7 +257,7 @@ export class ConformanceStatementTableComponent extends BaseComponent implements
       statement.exportPdfPending = true
     }
     const testCaseCount = statement.completed + statement.failed + statement.undefined
-    this.reportSupportService.handleConformanceStatementReport(statement.communityId, statement.actorId, statement.systemId, this.snapshot?.id, format, true, testCaseCount)
+    this.reportSupportService.handleConformanceStatementReport(statement.communityId, statement.actorId, statement.systemId, this.snapshotId, format, true, testCaseCount)
       .subscribe(() => {
         // Do nothing further
       })

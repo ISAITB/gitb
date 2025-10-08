@@ -9,8 +9,15 @@
                         <button type="button" class="btn btn-secondary"  (click)="onExportConformanceStatementsAsCsv()" [pending]="exportPending">Export CSV</button>
                     }
                 }
-                <div class="btn-group" dropdown [isDisabled]="selectedCommunityId == undefined" placement="bottom right">
-                    <button id="button-snapshot" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-snapshot"><span class="me-2">{{snapshotButtonLabel}}</span></button>
+                <div class="btn-group me-0" dropdown [isDisabled]="initialisingSnapshots || selectedCommunityId == undefined" placement="bottom right">
+                    <button id="button-snapshot" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-snapshot">
+                        <div class="me-2 d-inline-flex">
+                            {{snapshotButtonLabel}}
+                            @if (initialisingSnapshots) {
+                                <span class="ms-2"><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span>
+                            }
+                        </div>
+                    </button>
                     <ul id="dropdown-snapshot" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-snapshot">
                       <li role="menuitem"><a class="dropdown-item" href (click)="viewLatestConformanceSnapshot();$event.preventDefault()">{{latestSnapshotButtonLabel}}</a></li>
                       <li class="divider dropdown-divider"></li>
@@ -40,7 +47,7 @@
                                             <div class="pending-message">Loading communities...</div>
                                         </div>
                                     } @else if (availableCommunities.length > 0) {
-                                        <app-multi-select-filter [config]="communitySelectConfig!" (apply)="communityChanged(false, $event)"></app-multi-select-filter>
+                                        <app-multi-select-filter #communityDropdown [config]="communitySelectConfig!" (apply)="communityChanged(false, $event)"></app-multi-select-filter>
                                     }
                                 </div>
                             }
@@ -52,7 +59,7 @@
                                             <div class="pending-message">Loading {{dataService.labelOrganisationsLower()}}...</div>
                                         </div>
                                     } @else if (availableOrganisations.length > 0) {
-                                        <app-multi-select-filter [config]="organisationSelectConfig!" (apply)="organisationChanged($event)"></app-multi-select-filter>
+                                        <app-multi-select-filter #organisationDropdown [config]="organisationSelectConfig!" (apply)="organisationChanged($event)"></app-multi-select-filter>
                                     }
                                 </div>
                                 @if (selectedOrganisationId != undefined && availableOrganisations) {
@@ -63,7 +70,7 @@
                                                 <div class="pending-message">Loading {{dataService.labelSystemsLower()}}...</div>
                                             </div>
                                             } @else if (availableSystems.length > 0) {
-                                            <app-multi-select-filter [config]="systemSelectConfig!" (apply)="systemChanged($event)"></app-multi-select-filter>
+                                            <app-multi-select-filter #systemDropdown [config]="systemSelectConfig!" (apply)="systemChanged($event)"></app-multi-select-filter>
                                         }
                                     </div>
                                 }
@@ -157,7 +164,7 @@
             <app-conformance-statement-table #listViewTable
                                              [communityId]="communityId"
                                              [statementLoader]="loadConformanceStatementsForListViewFactory()"
-                                             [snapshot]="activeConformanceSnapshot"
+                                             [snapshotId]="activeConformanceSnapshot?.id"
                                              (communityChange)="listViewCommunityChange($event)"
                                              (searchChange)="listViewSearching($event)"
                                              (exportChange)="listViewExportChange($event)"
