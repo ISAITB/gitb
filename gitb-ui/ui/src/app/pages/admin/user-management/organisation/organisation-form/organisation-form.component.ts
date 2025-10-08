@@ -30,6 +30,7 @@ import {SystemService} from '../../../../../services/system.service';
 import {PopupService} from '../../../../../services/popup.service';
 import {LegalNoticeService} from '../../../../../services/legal-notice.service';
 import {ConfirmationDialogService} from '../../../../../services/confirmation-dialog.service';
+import {Constants} from '../../../../../common/constants';
 
 @Component({
     selector: 'app-organisation-form',
@@ -75,6 +76,10 @@ export class OrganisationFormComponent implements OnInit {
     this.selfRegEnabled = this.dataService.configuration.registrationEnabled
     this.selfRegTokenEnabled = this.selfRegEnabled && (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || this.dataService.community?.selfRegAllowOrganisationTokens === true)
     this.selfRegTokenUpdatable = this.selfRegTokenEnabled && (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || (this.dataService.isVendorAdmin && this.dataService.community?.selfRegAllowOrganisationTokenManagement === true))
+    let defaultLabel = "Use community default"
+    if (this.communityId == Constants.DEFAULT_COMMUNITY_ID) {
+      defaultLabel = "Use default"
+    }
     this.landingPageSelectionConfig = {
       name: "landingPage",
       textField: "name",
@@ -82,7 +87,7 @@ export class OrganisationFormComponent implements OnInit {
       singleSelectionPersistent: true,
       singleSelectionClearable: true,
       showAsFormControl: true,
-      filterLabel: "Use community default",
+      filterLabel: defaultLabel,
       replaceSelectedItems: new EventEmitter(),
       loader: () => of(this.landingPages)
     }
@@ -93,7 +98,7 @@ export class OrganisationFormComponent implements OnInit {
       singleSelectionPersistent: true,
       singleSelectionClearable: true,
       showAsFormControl: true,
-      filterLabel: "Use community default",
+      filterLabel: defaultLabel,
       replaceSelectedItems: new EventEmitter(),
       loader: () => of(this.legalNotices)
     }
@@ -104,7 +109,7 @@ export class OrganisationFormComponent implements OnInit {
       singleSelectionPersistent: true,
       singleSelectionClearable: true,
       showAsFormControl: true,
-      filterLabel: "Use community default",
+      filterLabel: defaultLabel,
       replaceSelectedItems: new EventEmitter(),
       loader: () => of(this.errorTemplates)
     }
