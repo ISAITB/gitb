@@ -92,7 +92,7 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
     { field: 'version', title: 'Version' }
   ]
   testServiceTableColumns: TableColumnDefinition[] = [
-    { field: 'name', title: 'Name' },
+    { field: 'name', title: 'ID' },
     { field: 'endpoint', title: 'Endpoint address' },
     { field: 'description', title: 'Description' },
     { field: 'serviceType', title: 'Service type' }
