@@ -209,6 +209,7 @@ export class ConformanceStatementItemDisplayComponent extends BaseComponent impl
         this.itemSelected()
       }
     }
+    this.selected.emit() // Call to make sure an open options popup is always closed
   }
 
   itemSelected(otherItem?: ConformanceStatementItem) {
