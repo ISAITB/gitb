@@ -93,7 +93,7 @@ export class OrganisationComponent extends OrganisationDetailsComponent implemen
   }
 
   override isApiInfoVisible() {
-    return super.isApiInfoVisible() && this.dataService.community?.allowAutomationApi == true
+    return super.isApiInfoVisible() && (this.dataService.isSystemAdmin || this.dataService.community?.allowAutomationApi == true)
   }
 
   override breadcrumbInit() {

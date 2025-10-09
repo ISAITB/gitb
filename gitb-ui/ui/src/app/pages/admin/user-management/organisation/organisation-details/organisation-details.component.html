@@ -18,7 +18,7 @@
                                        [errorTemplates]="errorTemplates"
                 ></app-organisation-form>
             </div>
-            @if (organisation.id) {
+            @if (organisation.id != undefined) {
                 <div class="card-footer button-container">
                     <div class="btn-toolbar">
                         @if (!readonly) {
