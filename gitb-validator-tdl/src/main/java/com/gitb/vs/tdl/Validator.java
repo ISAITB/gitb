@@ -51,7 +51,11 @@ public class Validator {
         String uuid = UUID.randomUUID().toString();
         File tempFolder = Paths.get(tmpFolderPath, uuid).toFile();
         tempFolder.mkdirs();
-        if (Utils.unzip(testSuite, tempFolder)) {
+        var unzipResult = Utils.unzip(testSuite, tempFolder);
+        if (unzipResult.hasConvertedSeparators()) {
+            LOG.warn("Test suite archive had entries with invalid ZIP path separators that were converted");
+        }
+        if (unzipResult.ok()) {
             return tempFolder.toPath();
         }
         return null;

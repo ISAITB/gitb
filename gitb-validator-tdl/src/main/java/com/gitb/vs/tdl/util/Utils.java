@@ -36,10 +36,10 @@ import javax.xml.stream.XMLStreamReader;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
@@ -65,17 +65,22 @@ public class Utils {
     public static final String VARIABLE_EXPRESSION = "\\$([a-zA-Z][a-zA-Z\\-_0-9]*)(?:\\{(?:[\\$\\{\\}a-zA-Z\\-\\._0-9]*)\\})*";
     public static final Pattern VARIABLE_EXPRESSION_PATTERN = Pattern.compile(VARIABLE_EXPRESSION);
 
-    public static boolean unzip(InputStream stream, File targetFolder) throws IOException {
+    public static ZipExtractionResult unzip(InputStream stream, File targetFolder) throws IOException {
         byte[] buffer = new byte[1024];
         ZipInputStream zis = new ZipInputStream(stream);
         ZipEntry zipEntry = zis.getNextEntry();
         boolean ok = false;
+        Path targetFolderPath = targetFolder.toPath().normalize();
+        boolean hasConvertedSeparators = false;
         while (zipEntry != null) {
             ok = true;
-            File newFile = newFile(targetFolder, zipEntry);
+            PathFromZipEntry newFile = newFile(targetFolderPath, zipEntry);
+            if (newFile.hasConvertedSeparators()) {
+                hasConvertedSeparators = true;
+            }
             if (!zipEntry.isDirectory()) {
-                newFile.getParentFile().mkdirs();
-                try (FileOutputStream fos = new FileOutputStream(newFile)) {
+                Files.createDirectories(newFile.path().getParent());
+                try (var fos = Files.newOutputStream(newFile.path())) {
                     int len;
                     while ((len = zis.read(buffer)) > 0) {
                         fos.write(buffer, 0, len);
@@ -86,17 +91,21 @@ public class Utils {
         }
         zis.closeEntry();
         zis.close();
-        return ok;
+        return new ZipExtractionResult(ok, hasConvertedSeparators);
     }
 
-    private static File newFile(File destinationDir, ZipEntry zipEntry) throws IOException {
-        File destFile = new File(destinationDir, zipEntry.getName());
-        String destDirPath = destinationDir.getCanonicalPath();
-        String destFilePath = destFile.getCanonicalPath();
-        if (!destFilePath.startsWith(destDirPath + File.separator)) {
-            throw new IllegalStateException("Entry is outside of the target dir: " + zipEntry.getName());
+    private static PathFromZipEntry newFile(Path destinationDir, ZipEntry zipEntry) {
+        String entryName = zipEntry.getName();
+        boolean hasBadSeparators = false;
+        if (entryName.contains("\\")) {
+            entryName = entryName.replace('\\', '/');
+            hasBadSeparators = true;
         }
-        return destFile;
+        Path destFile = destinationDir.resolve(entryName).normalize().toAbsolutePath();
+        if (!destFile.startsWith(destinationDir)) {
+            throw new IllegalStateException("Entry is outside of the target dir: " + entryName);
+        }
+        return new PathFromZipEntry(destFile, hasBadSeparators);
     }
 
     public static DocumentBuilderFactory getSecureDocumentBuilderFactory() throws ParserConfigurationException {
@@ -299,4 +308,6 @@ public class Utils {
     }
 
     public static class ScriptletOutputsMarker {}
+    private record PathFromZipEntry(Path path, boolean hasConvertedSeparators) {}
+    public record ZipExtractionResult(boolean ok, boolean hasConvertedSeparators) {}
 }
