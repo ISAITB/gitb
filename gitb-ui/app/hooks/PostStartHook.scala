@@ -502,7 +502,7 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
           }.andThen { _ =>
             if (dataArchives.nonEmpty) {
               // Make sure we disable the startup configuration wizard if sandbox data archives were processed.
-              systemConfigurationManager.disableStartupWizardIfNotTriggered()
+              systemConfigurationManager.disableStartupWizardIfNotTriggered().map(_ => ())
             }
           }
         }
