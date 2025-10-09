@@ -580,7 +580,12 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 		try {
 			zip.entries().asScala.foreach {
 				zipEntry =>
-					val newFile = new File(targetFolder, zipEntry.getName)
+          val zipEntryNameTouse = if (zipEntry.getName.contains('\\')) {
+            zipEntry.getName.replace('\\', '/')
+          } else {
+            zipEntry.getName
+          }
+					val newFile = new File(targetFolder, zipEntryNameTouse)
 
 					if (zipEntry.isDirectory) {
 						logger.debug("Creating folder ["+newFile+"]")
