@@ -43,8 +43,7 @@
                 }
                 @if (withExport && expandable && hasChildren && !allChildrenHidden) {
                     <div class="item-controls">
-                        <app-checkbox-option-panel #optionButton
-                                                   label="Options"
+                        <app-checkbox-option-panel label="Options"
                                                    icon="fa-solid fa-bars"
                                                    placement="left"
                                                    [options]="parentItemOptions"
@@ -77,8 +76,7 @@
                         }
                         @if (withOptions && conformanceIds) {
                             <div class="options-button">
-                                <app-statement-options-button #statementOptionsButton
-                                                              [item]="conformanceIds"
+                                <app-statement-options-button [item]="conformanceIds"
                                                               [snapshotId]="snapshotId"
                                                               [communityId]="communityId"
                                                               [organisationId]="organisationId"

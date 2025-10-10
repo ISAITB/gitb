@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChild, ViewChildren} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
 import {Constants} from '../../common/constants';
 import {DataService} from '../../services/data.service';
 import {PagingControlsApi} from '../paging-controls/paging-controls-api';
@@ -23,12 +23,10 @@ import {ConformanceResultFullList} from '../../types/conformance-result-full-lis
 import {Observable, ReplaySubject} from 'rxjs';
 import {ConformanceStatementTableApi} from './conformance-statement-table-api';
 import {ConformanceResultFull} from '../../types/conformance-result-full';
-import {ConformanceSnapshot} from '../../types/conformance-snapshot';
 import {BaseComponent} from '../../pages/base-component.component';
 import {ReportSupportService} from '../../services/report-support.service';
 import {FilterState} from '../../types/filter-state';
 import {TestResultSearchCriteria} from '../../types/test-result-search-criteria';
-import {StatementOptionsButtonApi} from '../statement-options-button/statement-options-button-api';
 
 @Component({
   selector: 'app-conformance-statement-table',
@@ -47,7 +45,6 @@ export class ConformanceStatementTableComponent extends BaseComponent implements
   @Output() communityChange = new EventEmitter<number|undefined>()
   @Output() select = new EventEmitter<ConformanceResultFullWithTestSuites>
   @ViewChild("pagingControls") pagingControls?: PagingControlsApi
-  @ViewChildren("statementOptionsButton") statementOptionsButtons?: QueryList<StatementOptionsButtonApi<ConformanceResultFull>>
 
   readonly Constants = Constants
   dataStatus = {status: Constants.STATUS.PENDING}
@@ -321,12 +318,6 @@ export class ConformanceStatementTableComponent extends BaseComponent implements
 
   onStatementSelect(statement: ConformanceResultFullWithTestSuites) {
     this.select.emit(statement)
-  }
-
-  optionsOpening(source: ConformanceResultFull) {
-    this.statementOptionsButtons?.forEach(item => {
-      item.close(source)
-    })
   }
 
 }

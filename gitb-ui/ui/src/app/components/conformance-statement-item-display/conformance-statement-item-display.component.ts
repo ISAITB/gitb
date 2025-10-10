@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChild, ViewChildren} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import {filter} from 'lodash';
 import {ConformanceStatementItem} from 'src/app/types/conformance-statement-item';
 import {ConformanceStatementResult} from 'src/app/types/conformance-statement-result';
@@ -27,9 +27,7 @@ import {
 } from '../conformance-statement-items-display/conformance-statement-items-display-component-api';
 import {CheckboxOptionState} from '../checkbox-option-panel/checkbox-option-state';
 import {CheckboxOption} from '../checkbox-option-panel/checkbox-option';
-import {CheckBoxOptionPanelComponentApi} from '../checkbox-option-panel/check-box-option-panel-component-api';
 import {Constants} from '../../common/constants';
-import {StatementOptionsButtonApi} from '../statement-options-button/statement-options-button-api';
 import {ConformanceIds} from '../../types/conformance-ids';
 
 @Component({
@@ -65,8 +63,6 @@ export class ConformanceStatementItemDisplayComponent extends BaseComponent impl
   @Output() selected = new EventEmitter<number>()
 
   @ViewChildren('itemsComponent') itemsComponents?: QueryList<ConformanceStatementItemsDisplayComponentApi>
-  @ViewChild('optionButton') optionButton?: CheckBoxOptionPanelComponentApi
-  @ViewChild('statementOptionsButton') statementOptionsButton?: StatementOptionsButtonApi<ConformanceIds>
 
   protected static EXPORT_XML_OVERVIEW = '0'
   protected static EXPORT_PDF_OVERVIEW = '1'
@@ -91,16 +87,6 @@ export class ConformanceStatementItemDisplayComponent extends BaseComponent impl
   constructor(
     public readonly dataService: DataService
   ) { super() }
-
-  statementSelected(source: number) {
-    if (this.item.id != source) {
-      if (this.optionButton) this.optionButton.close()
-      if (this.statementOptionsButton) this.statementOptionsButton.close()
-    }
-    this.itemsComponents?.forEach((item: ConformanceStatementItemDisplayComponentApi) => {
-      item.statementSelected(source)
-    })
-  }
 
   reset() {
     this.ngOnInit()
