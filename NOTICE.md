@@ -83,8 +83,8 @@ Library licences are organised in three sections:
 | Apache License, Version 2.0 | Apache Commons Logging | commons-logging:commons-logging | 1.3.5 | https://commons.apache.org/proper/commons-logging/ |
 | Apache License, Version 2.0 | PDFBox-Graphics2d | de.rototor.pdfbox:graphics2d | 3.0.1 | https://github.com/rototor/pdfbox-graphics2d/graphics2d |
 | The 3-Clause BSD License | dnsjava | dnsjava:dnsjava | 3.6.3 | https://github.com/dnsjava/dnsjava |
-| European Union Public Licence (EUPL) Version 1.2 | eu.europa.ec.itb:gitb-types-jakarta | eu.europa.ec.itb:gitb-types-jakarta | 1.28.0-SNAPSHOT | https://interoperable-europe.ec.europa.eu/collection/interoperability-test-bed-repository/solution/interoperability-test-bed/gitb-types-jakarta |
-| European Union Public Licence (EUPL) Version 1.2 | eu.europa.ec.itb:gitb-types-specs | eu.europa.ec.itb:gitb-types-specs | 1.28.0-SNAPSHOT | https://interoperable-europe.ec.europa.eu/collection/interoperability-test-bed-repository/solution/interoperability-test-bed/gitb-types-specs |
+| European Union Public Licence (EUPL) Version 1.2 | eu.europa.ec.itb:gitb-types-jakarta | eu.europa.ec.itb:gitb-types-jakarta | 1.28.0 | https://interoperable-europe.ec.europa.eu/collection/interoperability-test-bed-repository/solution/interoperability-test-bed/gitb-types-jakarta |
+| European Union Public Licence (EUPL) Version 1.2 | eu.europa.ec.itb:gitb-types-specs | eu.europa.ec.itb:gitb-types-specs | 1.28.0 | https://interoperable-europe.ec.europa.eu/collection/interoperability-test-bed-repository/solution/interoperability-test-bed/gitb-types-specs |
 | GNU Lesser General Public License (LGPL), Version 2.1 | Openhtmltopdf Core Renderer | io.github.openhtmltopdf:openhtmltopdf-core | 1.1.28 | https://github.com/openhtmltopdf/openhtmltopdf/openhtmltopdf-core |
 | GNU Lesser General Public License (LGPL), Version 2.1 | Openhtmltopdf PDF Rendering (Apache PDF-BOX 3) | io.github.openhtmltopdf:openhtmltopdf-pdfbox | 1.1.28 | https://github.com/openhtmltopdf/openhtmltopdf/openhtmltopdf-pdfbox |
 | GNU Lesser General Public License (LGPL), Version 2.1 | Openhtmltopdf slf4j Support | io.github.openhtmltopdf:openhtmltopdf-slf4j | 1.1.28 | https://github.com/openhtmltopdf/openhtmltopdf/openhtmltopdf-slf4j |
@@ -279,7 +279,6 @@ Library licences are organised in three sections:
 | Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [com.typesafe # ssl-config-core_2.13 # 0.6.1](https://github.com/lightbend/ssl-config) | <notextile></notextile> |
 | Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [commons-beanutils # commons-beanutils # 1.11.0](https://commons.apache.org/proper/commons-beanutils) | <notextile></notextile> |
 | Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [commons-codec # commons-codec # 1.18.0](https://commons.apache.org/proper/commons-codec/) | <notextile></notextile> |
-| Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [commons-io # commons-io # 2.20.0](https://commons.apache.org/proper/commons-io/) | <notextile></notextile> |
 | Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [commons-logging # commons-logging # 1.3.5](https://commons.apache.org/proper/commons-logging/) | <notextile></notextile> |
 | Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.commons # commons-configuration2 # 2.12.0](https://commons.apache.org/proper/commons-configuration/) | <notextile></notextile> |
 | Apache | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [org.apache.commons # commons-lang3 # 3.19.0](https://commons.apache.org/proper/commons-lang/) | <notextile></notextile> |
@@ -473,7 +472,7 @@ Library licences are organised in three sections:
 | MIT | [The MIT License](https://jsoup.org/license) | [org.jsoup # jsoup # 1.15.4](https://jsoup.org/) | <notextile></notextile> |
 | MIT | [The MIT License](https://projectlombok.org/LICENSE) | [org.projectlombok # lombok # 1.18.36](https://projectlombok.org) | <notextile></notextile> |
 | Mozilla | [MPL 1.1](http://www.mozilla.org/MPL/MPL-1.1.html) | [org.javassist # javassist # 3.28.0-GA](http://www.javassist.org/) | <notextile></notextile> |
-| Mozilla | [Mozilla Public License Version 2.0](http://www.mozilla.org/MPL/2.0/) | [net.sf.saxon # Saxon-HE # 12.7](http://www.saxonica.com/) | <notextile></notextile> |
+| Mozilla | [Mozilla Public License Version 2.0](http://www.mozilla.org/MPL/2.0/) | [net.sf.saxon # Saxon-HE # 12.8](http://www.saxonica.com/) | <notextile></notextile> |
 | Mozilla | [Mozilla Public License, Version 2.0](http://www.mozilla.org/MPL/2.0/index.txt) | [net.sourceforge.htmlunit # htmlunit-core-js # 2.70.0](http://htmlunit.sourceforge.net) | <notextile></notextile> |
 | Public Domain | [Public Domain](http://localhost) | [aopalliance # aopalliance # 1.0](http://aopalliance.sourceforge.net) | <notextile></notextile> |
 
