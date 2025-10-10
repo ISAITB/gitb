@@ -14,7 +14,4 @@
  */
 
 export interface TableRowApi {
-
-  optionsOpened: (source: any) => void
-
 }

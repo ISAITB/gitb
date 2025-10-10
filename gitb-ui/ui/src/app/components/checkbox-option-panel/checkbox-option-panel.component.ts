@@ -31,9 +31,10 @@ import {
 import {CheckboxOptionState} from './checkbox-option-state';
 import {CheckboxOption} from './checkbox-option';
 import {CheckBoxOptionPanelComponentApi} from './check-box-option-panel-component-api';
-import {Observable, of, tap} from 'rxjs';
+import {Observable, of, Subscription, tap} from 'rxjs';
 import {share} from 'rxjs/operators';
 import {Constants} from '../../common/constants';
+import {DataService} from '../../services/data.service';
 
 @Component({
     selector: 'app-checkbox-option-panel',
@@ -62,6 +63,7 @@ export class CheckboxOptionPanelComponent implements OnInit, OnDestroy, CheckBox
 
   private containerDiv?: HTMLElement;
   private embeddedView?: EmbeddedViewRef<any>;
+  private popupSubscription?: Subscription;
 
   currentState!: CheckboxOptionState
   open = false
@@ -71,7 +73,8 @@ export class CheckboxOptionPanelComponent implements OnInit, OnDestroy, CheckBox
   constructor(
     private readonly eRef: ElementRef,
     private viewContainerRef: ViewContainerRef,
-    private renderer: Renderer2
+    private renderer: Renderer2,
+    private readonly dataService: DataService
   ) { }
 
   getReferenceItem() {
@@ -146,6 +149,7 @@ export class CheckboxOptionPanelComponent implements OnInit, OnDestroy, CheckBox
       }, 0)
       window.addEventListener('scroll', this.updatePosition);
       window.addEventListener('resize', this.updatePosition);
+      this.dataService.signalButtonPopup(this)
     }
   }
 
@@ -191,10 +195,16 @@ export class CheckboxOptionPanelComponent implements OnInit, OnDestroy, CheckBox
   ngOnInit(): void {
     this.currentState = {}
     this.applyConfig()
+    this.popupSubscription = this.dataService.buttonPopupOpenSource$.subscribe((source => {
+      if (source !== this && this.open) {
+        this.close()
+      }
+    }))
   }
 
   ngOnDestroy() {
     this.close()
+    if (this.popupSubscription) this.popupSubscription.unsubscribe()
   }
 
   refresh(newConfig: CheckboxOption[][]) {

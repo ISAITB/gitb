@@ -62,14 +62,12 @@
                         <td class="td-min-centered"><span><i containerClass="shortTooltip" [tooltip]="dataService.tooltipForTestResult(statement.overallStatus)" [ngClass]="dataService.iconForTestResult(statement.overallStatus)"></i></span></td>
                         @if (showExportControls) {
                             <td class="td-min-centered">
-                                <app-statement-options-button #statementOptionsButton
-                                                              [item]="statement"
+                                <app-statement-options-button [item]="statement"
                                                               [snapshotId]="snapshotId"
                                                               [communityId]="communityId"
                                                               [organisationId]="organisationId"
                                                               [pending]="statement.exportPdfPending == true || statement.exportXmlPending == true || statement.optionPending"
-                                                              (export)="onExportConformanceStatement($event.item, $event.format)"
-                                                              (opening)="optionsOpening($event)"></app-statement-options-button>
+                                                              (export)="onExportConformanceStatement($event.item, $event.format)"></app-statement-options-button>
                             </td>
                         }
                     </tr>

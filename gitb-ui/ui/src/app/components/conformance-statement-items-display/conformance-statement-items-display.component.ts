@@ -95,10 +95,4 @@ export class ConformanceStatementItemsDisplayComponent implements OnInit, Confor
     }
   }
 
-  statementSelected(statementId: number) {
-    this.itemComponents?.forEach(item => {
-      item.statementSelected(statementId)
-    })
-  }
-
 }

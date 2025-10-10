@@ -93,6 +93,8 @@ export class DataService {
   private onMenuItemStatusChangeSource = new ReplaySubject<MenuItemStatusChange>()
   public onMenuItemStatusChange$ = this.onMenuItemStatusChangeSource.asObservable()
   private menuItemStatus = new Map<MenuItem, MenuItemStatus>()
+  private buttonPopupOpenSource = new Subject<any>()
+  public buttonPopupOpenSource$ = this.buttonPopupOpenSource.asObservable()
 
   triggerEventToDataTypeMap?: {[key: number]: { [key: number]: boolean } }
 
@@ -1885,6 +1887,10 @@ export class DataService {
 
   getMenuItemStatusMap() {
     return this.menuItemStatus
+  }
+
+  signalButtonPopup(source: any) {
+    this.buttonPopupOpenSource.next(source)
   }
 
 }

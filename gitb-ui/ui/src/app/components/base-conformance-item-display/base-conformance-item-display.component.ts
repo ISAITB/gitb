@@ -205,8 +205,4 @@ export abstract class BaseConformanceItemDisplayComponent extends BaseComponent 
     this.resetConformanceItemTree()
   }
 
-  onStatementOptionsActivated(statementId: number) {
-    this.conformanceItemTree?.statementSelected(statementId)
-  }
-
 }

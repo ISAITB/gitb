@@ -58,7 +58,6 @@ export class TableRowComponent implements OnInit, TableRowApi {
   @Output() onExport: EventEmitter<any> = new EventEmitter()
   @Output() onCheck: EventEmitter<any> = new EventEmitter()
   @Output() onDelete: EventEmitter<any> = new EventEmitter()
-  @Output() onOptionsOpening: EventEmitter<any> = new EventEmitter()
 
   @ViewChild("optionButton") optionButton?: CheckBoxOptionPanelComponentApi
 
@@ -158,21 +157,6 @@ export class TableRowComponent implements OnInit, TableRowApi {
       this.delete()
     } else if (event[TableRowComponent.EXPORT_OPTION]) {
       this.export()
-    }
-  }
-
-  optionsOpening() {
-    this.data.tableRowOptionsOpen = true
-    this.onOptionsOpening.emit(this.data)
-  }
-
-  optionsClosed() {
-    this.data.tableRowOptionsOpen = false
-  }
-
-  optionsOpened(source: any) {
-    if (this.optionButton && source !== this.data) {
-      this.optionButton.close()
     }
   }
 

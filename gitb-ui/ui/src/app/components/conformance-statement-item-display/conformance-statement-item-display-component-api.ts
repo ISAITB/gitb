@@ -16,6 +16,5 @@
 export interface ConformanceStatementItemDisplayComponentApi {
 
   reset: () => void
-  statementSelected: (source: number) => void
 
 }

@@ -124,10 +124,4 @@ export abstract class BaseTableComponent extends BaseComponent {
     this.pageNavigation.emit(event)
   }
 
-  handleOptionsOpening(source: any) {
-    this.tableRowComponents?.forEach(row => {
-      row.optionsOpened(source)
-    })
-  }
-
 }
