@@ -38,13 +38,9 @@ public class Tuple<T> {
 	public boolean equals(Object o) {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
-
-		Tuple tuple = (Tuple) o;
-
-		if (!Arrays.equals(contents, tuple.contents)) return false;
-
-		return true;
-	}
+        var tuple = (Tuple) o;
+        return Arrays.equals(contents, tuple.contents);
+    }
 
 	@Override
 	public int hashCode() {

@@ -13,19 +13,19 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { Constants } from 'src/app/common/constants';
-import { BaseComponent } from 'src/app/pages/base-component.component';
-import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
-import { ConformanceService } from 'src/app/services/conformance.service';
-import { DataService } from 'src/app/services/data.service';
-import { EndpointService } from 'src/app/services/endpoint.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { EndpointData } from './endpoint-data';
-import { EndpointParameter } from 'src/app/types/endpoint-parameter';
-import { RoutingService } from 'src/app/services/routing.service';
-import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
+import {Component, EventEmitter, OnInit} from '@angular/core';
+import {ActivatedRoute} from '@angular/router';
+import {Constants} from 'src/app/common/constants';
+import {BaseComponent} from 'src/app/pages/base-component.component';
+import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
+import {ConformanceService} from 'src/app/services/conformance.service';
+import {DataService} from 'src/app/services/data.service';
+import {EndpointService} from 'src/app/services/endpoint.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {EndpointData} from './endpoint-data';
+import {EndpointParameter} from 'src/app/types/endpoint-parameter';
+import {RoutingService} from 'src/app/services/routing.service';
+import {BreadcrumbType} from 'src/app/types/breadcrumb-type';
 
 @Component({
     selector: 'app-endpoint-details',
@@ -50,9 +50,9 @@ export class EndpointDetailsComponent extends BaseComponent implements OnInit {
     private readonly endpointService: EndpointService,
     private readonly confirmationDialogService: ConfirmationDialogService,
     private readonly routingService: RoutingService,
-    private readonly route: ActivatedRoute,
     public readonly dataService: DataService,
-    private readonly popupService: PopupService
+    private readonly popupService: PopupService,
+    private route: ActivatedRoute
   ) { super() }
 
   ngOnInit(): void {

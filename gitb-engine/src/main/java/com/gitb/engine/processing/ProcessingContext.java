@@ -15,11 +15,14 @@
 
 package com.gitb.engine.processing;
 
-import com.gitb.engine.ModuleManager;
 import com.gitb.core.ErrorCode;
-import com.gitb.engine.remote.processing.RemoteProcessingModuleClient;
+import com.gitb.engine.ModuleManager;
+import com.gitb.engine.SessionManager;
+import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.processing.IProcessingHandler;
+import com.gitb.remote.ClientConfiguration;
+import com.gitb.remote.processing.RemoteProcessingModuleClient;
 import com.gitb.utils.ErrorUtils;
 
 import java.net.MalformedURLException;
@@ -32,10 +35,12 @@ public final class ProcessingContext {
     private final IProcessingHandler handler;
     private String session;
     private final String testSessionId;
+    private final Long handlerTimeout;
 
-    public ProcessingContext(String handler, Properties transactionProperties, String testSessionId) {
-        this.handler = resolveHandler(handler, transactionProperties, testSessionId);
+    public ProcessingContext(String handler, String handlerDomainIdentifier, Properties transactionProperties, String testSessionId, Long handlerTimeout) {
+        this.handlerTimeout = handlerTimeout;
         this.testSessionId = testSessionId;
+        this.handler = resolveHandler(handler, handlerDomainIdentifier, transactionProperties, testSessionId);
     }
 
     public void setSession(String session) {
@@ -62,17 +67,24 @@ public final class ProcessingContext {
         return true;
     }
 
-    private IProcessingHandler resolveHandler(String handler, Properties transactionProperties, String testSessionId) {
+    private IProcessingHandler resolveHandler(String handler, String handlerDomainIdentifier, Properties transactionProperties, String testSessionId) {
         if (isURL(handler)) {
-            return getRemoteProcessor(handler, transactionProperties, testSessionId);
+            return getRemoteProcessor(handler, handlerDomainIdentifier, transactionProperties, testSessionId);
         } else {
             return ModuleManager.getInstance().getProcessingHandler(handler);
         }
     }
 
-    private IProcessingHandler getRemoteProcessor(String handler, Properties transactionProperties, String testSessionId) {
+    private IProcessingHandler getRemoteProcessor(String handler, String handlerDomainIdentifier, Properties transactionProperties, String testSessionId) {
+        TestCaseContext context = SessionManager.getInstance().getContext(testSessionId);
         try {
-            return new RemoteProcessingModuleClient(new URI(handler).toURL(), transactionProperties, testSessionId);
+            return new RemoteProcessingModuleClient(
+                    new URI(handler).toURL(),
+                    context.prepareRemoteServiceCallProperties(handlerDomainIdentifier, transactionProperties),
+                    testSessionId,
+                    context.getTestCaseIdentifier(),
+                    new ClientConfiguration(handlerTimeout)
+            );
         } catch (MalformedURLException e) {
             throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Remote processing module found with an malformed URL [" + handler + "]"), e);
         } catch (URISyntaxException e) {

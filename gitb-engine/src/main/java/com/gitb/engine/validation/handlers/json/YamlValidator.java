@@ -47,7 +47,7 @@ public class YamlValidator extends JsonValidator {
     @Override
     protected boolean supportsJson(Map<String, DataType> inputs) {
         return Optional.ofNullable(getAndConvert(inputs, SUPPORT_JSON_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class))
-                .map(value -> (Boolean) value.getValue())
+                .map(BooleanType::getValue)
                 .orElse(false);
     }
 

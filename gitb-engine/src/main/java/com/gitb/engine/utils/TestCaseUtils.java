@@ -20,10 +20,8 @@ import com.gitb.core.Configuration;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.StepStatus;
 import com.gitb.engine.ModuleManager;
-import com.gitb.engine.PropertyConstants;
 import com.gitb.engine.expr.StaticExpressionHandler;
 import com.gitb.engine.expr.resolvers.VariableResolver;
-import com.gitb.engine.remote.RemoteCallContext;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.repository.ITestCaseRepository;
@@ -42,10 +40,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
 
 import javax.xml.datatype.DatatypeConfigurationException;
-import java.io.IOException;
 import java.math.BigInteger;
-import java.net.Authenticator;
-import java.net.PasswordAuthentication;
 import java.util.*;
 import java.util.function.Supplier;
 
@@ -54,13 +49,8 @@ import java.util.function.Supplier;
  */
 public class TestCaseUtils {
 
-    public static final String TEST_ENGINE_VERSION;
     private static final ObjectFactory OBJECT_FACTORY_TR = new ObjectFactory();
     private static final Logger LOG = LoggerFactory.getLogger(TestCaseUtils.class);
-
-    static {
-        TEST_ENGINE_VERSION = getTestEngineVersion();
-    }
 
 	private static final Class<?>[] TEST_CONSTRUCTS_TO_REPORT = {
         com.gitb.tdl.MessagingStep.class, Verify.class, IfStep.class, RepeatUntilStep.class,
@@ -80,27 +70,6 @@ public class TestCaseUtils {
             }
         }
         return result;
-    }
-
-    public static void prepareRemoteServiceLookup(Properties stepProperties) {
-        if (stepProperties != null && !StringUtils.isBlank(stepProperties.getProperty(PropertyConstants.AUTH_BASIC_USERNAME))) {
-            /*
-            The configuration specifies that we have basic authentication. To allow this to go through even if
-            the WSDL is protected we use a thread-safe (via ThreadLocal) authenticator. This is because the
-            new MessagingServiceClient(getServiceURL()) call results in a call to the WSDL (that needs authentication).
-             */
-            Authenticator.setDefault(new Authenticator() {
-                @Override
-                protected PasswordAuthentication getPasswordAuthentication() {
-                    Properties callProperties = RemoteCallContext.getCallProperties();
-                    String username = callProperties.getProperty(PropertyConstants.AUTH_BASIC_USERNAME);
-                    String password = callProperties.getProperty(PropertyConstants.AUTH_BASIC_PASSWORD);
-                    return new PasswordAuthentication(
-                            username,
-                            password.toCharArray());
-                }
-            });
-        }
     }
 
 	public static boolean shouldBeReported(Class<?> stepClass) {
@@ -503,7 +472,7 @@ public class TestCaseUtils {
         if (VariableResolver.isVariableReference(stepLevel)) {
             var resolvedErrorLevel = resolver.resolveVariableAsString(stepLevel);
             try {
-                errorLevel = ErrorLevel.valueOf((String) resolvedErrorLevel.getValue());
+                errorLevel = ErrorLevel.valueOf(resolvedErrorLevel.getValue());
             } catch (NullPointerException e) {
                 LOG.warn(MarkerFactory.getDetachedMarker(sessionId), "Severity level for step could not be determined using expression [%s]. Using %s level instead.".formatted(stepLevel, ErrorLevel.ERROR));
             } catch (IllegalArgumentException e) {
@@ -634,27 +603,13 @@ public class TestCaseUtils {
         }
     }
 
-    private static String getTestEngineVersion() {
-        try (var stream = Thread.currentThread().getContextClassLoader().getResourceAsStream("core-module.properties")) {
-            var props = new Properties();
-            props.load(stream);
-            var version = props.getProperty("gitb.version");
-            if (version.toLowerCase(Locale.getDefault()).endsWith("snapshot")) {
-                version += " ("+props.getProperty("gitb.buildTimestamp")+")";
-            }
-            return version;
-        } catch (IOException e) {
-            throw new IllegalStateException("Unable to read core properties", e);
-        }
-    }
-
     public static boolean resolveBooleanFlag(String flagValue, boolean defaultIfEmpty, Supplier<VariableResolver> variableResolverSupplier) {
         if ("false".equalsIgnoreCase(flagValue)) {
             return false;
         } else if ("true".equalsIgnoreCase(flagValue)) {
             return true;
         } else if (VariableResolver.isVariableReference(flagValue)) {
-            return (boolean) variableResolverSupplier.get().resolveVariableAsBoolean(flagValue).getValue();
+            return variableResolverSupplier.get().resolveVariableAsBoolean(flagValue).getValue();
         } else {
             return defaultIfEmpty;
         }

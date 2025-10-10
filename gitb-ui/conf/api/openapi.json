@@ -123,6 +123,39 @@
             }
           }
         }
+      },
+      "get": {
+        "tags": [
+          "Domain management"
+        ],
+        "summary": "Get the domain linked to the community identified by the community API key provided for authorisation.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Domain retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Domain"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/domain/{domain}": {
@@ -197,6 +230,99 @@
         "responses": {
           "200": {
             "description": "Domain deleted."
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Domain management"
+        ],
+        "summary": "Get a domain.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "domain",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the domain."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Domain retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Domain"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/domains": {
+      "get": {
+        "tags": [
+          "Domain management"
+        ],
+        "summary": "Search for domains.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "name",
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "description": "An optional value to filter domains with based on their short and long names. The value is checked in a case-insensitive manner and using wildcard matching."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Domains retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Domain"
+                  }
+                }
+              }
+            }
           },
           "default": {
             "description": "The received request was invalid.",
@@ -340,6 +466,108 @@
             }
           }
         }
+      },
+      "get": {
+        "tags": [
+          "Domain management"
+        ],
+        "summary": "Get a specification group.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "group",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the specification group."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Specification group retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpecificationGroup"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/domain/{domain}/groups": {
+      "get": {
+        "tags": [
+          "Domain management"
+        ],
+        "summary": "Search for specification groups under a given domain.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "domain",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the domain within which to search."
+          },
+          {
+            "in": "query",
+            "name": "name",
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "description": "An optional value to filter specification groups with based on their short and long names. The value is checked in a case-insensitive manner and using wildcard matching."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Specification groups retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SpecificationGroup"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/specification": {
@@ -471,6 +699,166 @@
             }
           }
         }
+      },
+      "get": {
+        "tags": [
+          "Domain management"
+        ],
+        "summary": "Get a specification.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "specification",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the specification."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Specification retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Specification"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/domain/{domain}/specifications": {
+      "get": {
+        "tags": [
+          "Domain management"
+        ],
+        "summary": "Search for specifications under a given domain that are not defined within a group.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "domain",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the domain within which to search."
+          },
+          {
+            "in": "query",
+            "name": "name",
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "description": "An optional value to filter specifications with based on their short and long names. The value is checked in a case-insensitive manner and using wildcard matching."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Specifications retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Specification"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/group/{group}/specifications": {
+      "get": {
+        "tags": [
+          "Domain management"
+        ],
+        "summary": "Search for specifications under a given specification group.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "group",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the specification group within which to search."
+          },
+          {
+            "in": "query",
+            "name": "name",
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "description": "An optional value to filter specifications with based on their short and long names. The value is checked in a case-insensitive manner and using wildcard matching."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Specifications retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Specification"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/actor": {
@@ -590,6 +978,108 @@
         "responses": {
           "200": {
             "description": "Actor deleted."
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Domain management"
+        ],
+        "summary": "Get an actor.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "actor",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the actor."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Actor retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Actor"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/specification/{specification}/actors": {
+      "get": {
+        "tags": [
+          "Domain management"
+        ],
+        "summary": "Search for actors under a given specification.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "specification",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the specification within which to search."
+          },
+          {
+            "in": "query",
+            "name": "name",
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "description": "An optional value to filter actors with based on their identifiers and names. The value is checked in a case-insensitive manner and using wildcard matching."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Actors retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Actor"
+                  }
+                }
+              }
+            }
           },
           "default": {
             "description": "The received request was invalid.",
@@ -772,6 +1262,42 @@
       }
     },
     "/organisation": {
+      "get": {
+        "tags": [
+          "Community management"
+        ],
+        "summary": "Get the organisations of a given community.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The community's organisations.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Organisation"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      },
       "put": {
         "tags": [
           "Community management"
@@ -817,6 +1343,50 @@
       }
     },
     "/organisation/{organisation}": {
+      "get": {
+        "tags": [
+          "Community management"
+        ],
+        "summary": "Get a given organisation's data.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organisation",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the organisation."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The organisation's data.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Organisation"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      },
       "post": {
         "tags": [
           "Community management"
@@ -902,6 +1472,55 @@
         }
       }
     },
+    "/organisation/{organisation}/systems": {
+      "get": {
+        "tags": [
+          "Community management"
+        ],
+        "summary": "Get the systems of a given organisation.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organisation",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the organisation."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The organisation's systems.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/System"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/system": {
       "put": {
         "tags": [
@@ -948,6 +1567,50 @@
       }
     },
     "/system/{system}": {
+      "get": {
+        "tags": [
+          "Community management"
+        ],
+        "summary": "Get a given system's data.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "system",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the system."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The system's data.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/System"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      },
       "post": {
         "tags": [
           "Community management"
@@ -1225,6 +1888,261 @@
         "responses": {
           "200": {
             "description": "Parameter deleted."
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/configure/service": {
+      "get": {
+        "tags": [
+          "Configuration"
+        ],
+        "summary": "Search for test services.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "domain",
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "description": "The domain API key value to identify the domain within which to search for test services. If not provided, the domain used is the one linked to the community identified by the community API key provided for authentication."
+          },
+          {
+            "in": "query",
+            "name": "key",
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "description": "The service's key."
+          },
+          {
+            "in": "query",
+            "name": "identifier",
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "description": "The service's reference identifier. The value is checked in a case-insensitive manner and using wildcard matching."
+          },
+          {
+            "in": "query",
+            "name": "version",
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "description": "The service's version. The value is checked in a case-insensitive manner and using wildcard matching."
+          },
+          {
+            "in": "query",
+            "name": "serviceType",
+            "schema": {
+              "type": "string",
+              "enum": ["messaging", "validation", "processing"]
+            },
+            "required": false,
+            "description": "The service's type."
+          },
+          {
+            "in": "query",
+            "name": "apiType",
+            "schema": {
+              "type": "string",
+              "enum": ["soap", "rest"]
+            },
+            "required": false,
+            "description": "The service's API type."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Test services retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TestService"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Configuration"
+        ],
+        "summary": "Create a test service.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "The data for the new test service.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestServiceCreationInfo"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Test service created."
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Configuration"
+        ],
+        "summary": "Update a test service.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "The test service's identification and updates.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestServiceUpdateInfo"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Test service updated."
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/configure/service/{service}": {
+      "delete": {
+        "tags": [
+          "Configuration"
+        ],
+        "summary": "Delete a test service. The domain of the service is assumed to be the one linked to the community identified by the community API key used for authentication.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "service",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the test service."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Test service deleted."
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/configure/service/{domain}/{service}": {
+      "delete": {
+        "tags": [
+          "Configuration"
+        ],
+        "summary": "Delete a test service for a given domain.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "domain",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The domain API key for the service's domain."
+          },
+          {
+            "in": "path",
+            "name": "service",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the test service."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Test service deleted."
           },
           "default": {
             "description": "The received request was invalid.",
@@ -1602,6 +2520,160 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/conformance": {
+      "get": {
+        "tags": [
+          "Conformance statements"
+        ],
+        "summary": "Retrieve the conformance statements (system and actor API key combinations) for the organisation identified by the organisation API key provided for authorisation.",
+        "security": [
+          {
+            "OrganisationApiKeyAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The list of conformance statements.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConformanceStatementKeys"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/conformance/{system}": {
+      "get": {
+        "tags": [
+          "Conformance statements"
+        ],
+        "summary": "Retrieve the conformance statements (system and actor API key combinations) for a given system.",
+        "security": [
+          {
+            "OrganisationApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "system",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The API key identifying the conformance statement's system."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The list of conformance statements.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConformanceStatementKeys"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/conformance/snapshot/{snapshot}": {
+      "get": {
+        "tags": [
+          "Conformance statements"
+        ],
+        "summary": "Retrieve the conformance statements (system and actor API key combinations) for the organisation identified by the organisation API key provided for authorisation, in a given conformance snapshot.",
+        "security": [
+          {
+            "OrganisationApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "snapshot",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The API key identifying the relevant conformance snapshot."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The list of conformance statements.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConformanceStatementKeys"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/conformance/snapshot/{snapshot}/{system}": {
+      "get": {
+        "tags": [
+          "Conformance statements"
+        ],
+        "summary": "Retrieve the conformance statements (system and actor API key combinations) for a given system and conformance snapshot.",
+        "security": [
+          {
+            "OrganisationApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "snapshot",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The API key identifying the relevant conformance snapshot."
+          },
+          {
+            "in": "path",
+            "name": "system",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The API key identifying the conformance statement's system in the specific snapshot."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The list of conformance statements.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConformanceStatementKeys"
+                  }
                 }
               }
             }
@@ -3833,6 +4905,193 @@
         ],
         "additionalProperties": false
       },
+      "TestServiceCreationInfo": {
+        "description": "The data for the new test service.",
+        "type": "object",
+        "properties": {
+          "key": {
+            "description": "The unique key used to identify the service and its underlying domain parameter.",
+            "type": "string"
+          },
+          "address": {
+            "description": "The service's address as an absolute HTTP URL.",
+            "type": "string"
+          },
+          "description": {
+            "description": "The service's description.",
+            "type": "string"
+          },
+          "serviceType": {
+            "description": "The type of the service.",
+            "type": "string",
+            "enum": ["messaging", "validation", "processing"]
+          },
+          "apiType": {
+            "description": "The API type of the service.",
+            "type": "string",
+            "enum": ["soap", "rest"],
+            "default": "soap"
+          },
+          "authBasicUsername": {
+            "description": "When HTTP basic authentication is used, this is the username to use.",
+            "type": "string"
+          },
+          "authBasicPassword": {
+            "description": "When HTTP basic authentication is used, this is the password to use.",
+            "type": "string"
+          },
+          "authTokenUsername": {
+            "description": "When the WS-Security UsernameToken profile is used, this is the username to use.",
+            "type": "string"
+          },
+          "authTokenPassword": {
+            "description": "When the WS-Security UsernameToken profile is used, this is the password to use.",
+            "type": "string"
+          },
+          "authTokenPasswordType": {
+            "description": "When the WS-Security UsernameToken profile is used, this is the type of password provision to use.",
+            "type": "string",
+            "enum": ["digest", "text"]
+          },
+          "identifier": {
+            "description": "The service's reference identifier.",
+            "type": "string"
+          },
+          "version": {
+            "description": "The service's version.",
+            "type": "string"
+          },
+          "domain": {
+            "description": "The API key identifying the domain of the service. This is required if the community API key used for authentication refers to a community that is not linked to a specific domain.",
+            "type": "string"
+          },
+          "replaceExisting": {
+            "description": "In case the service information matches an existing domain parameter, this flag can be used to link the parameter with the service's definition.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "key",
+          "address",
+          "serviceType"
+        ],
+        "additionalProperties": false
+      },
+      "TestServiceUpdateInfo": {
+        "description": "The test service's identification and updates.",
+        "type": "object",
+        "properties": {
+          "key": {
+            "description": "The unique key used to identify the service and its underlying domain parameter.",
+            "type": "string"
+          },
+          "address": {
+            "description": "The new address to apply for the service. Skip this if no update should be made.",
+            "type": "string"
+          },
+          "description": {
+            "description": "The service's description. Skip this if no update should be made.",
+            "type": "string"
+          },
+          "serviceType": {
+            "description": "The type of the service. Skip this if no update should be made.",
+            "type": "string",
+            "enum": ["messaging", "validation", "processing"]
+          },
+          "apiType": {
+            "description": "The API type of the service. Skip this if no update should be made.",
+            "type": "string",
+            "enum": ["soap", "rest"],
+            "default": "soap"
+          },
+          "authBasicUsername": {
+            "description": "When HTTP basic authentication is used, this is the username to use. Skip this if no update should be made or set with an empty string to delete all basic authentication information.",
+            "type": "string"
+          },
+          "authBasicPassword": {
+            "description": "When HTTP basic authentication is used, this is the password to use. Skip this if no update should be made.",
+            "type": "string"
+          },
+          "authTokenUsername": {
+            "description": "When the WS-Security UsernameToken profile is used, this is the username to use. Skip this if no update should be made or set with an empty string to delete all token authentication information.",
+            "type": "string"
+          },
+          "authTokenPassword": {
+            "description": "When the WS-Security UsernameToken profile is used, this is the password to use. Skip this if no update should be made.",
+            "type": "string"
+          },
+          "authTokenPasswordType": {
+            "description": "When the WS-Security UsernameToken profile is used, this is the type of password provision to use. Skip this if no update should be made.",
+            "type": "string",
+            "enum": ["digest", "text"]
+          },
+          "identifier": {
+            "description": "The service's reference identifier. Skip this if no update should be made or set with an empty string to delete the existing value.",
+            "type": "string"
+          },
+          "version": {
+            "description": "The service's version. Skip this if no update should be made or set with an empty string to delete the existing value.",
+            "type": "string"
+          },
+          "domain": {
+            "description": "The API key identifying the domain of the service. This is required if the community API key used for authentication refers to a community that is not linked to a specific domain.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "additionalProperties": false
+      },
+      "TestService": {
+        "description": "A test service's information.",
+        "type": "object",
+        "properties": {
+          "key": {
+            "description": "The unique key used to identify the service and its underlying domain parameter.",
+            "type": "string"
+          },
+          "domain": {
+            "description": "The API key identifying the domain of the service.",
+            "type": "string"
+          },
+          "address": {
+            "description": "The service's address.",
+            "type": "string"
+          },
+          "serviceType": {
+            "description": "The type of the service.",
+            "type": "string",
+            "enum": ["messaging", "validation", "processing"]
+          },
+          "apiType": {
+            "description": "The API type of the service.",
+            "type": "string",
+            "enum": ["soap", "rest"],
+            "default": "soap"
+          },
+          "description": {
+            "description": "The service's description.",
+            "type": "string"
+          },
+          "identifier": {
+            "description": "The service's reference identifier.",
+            "type": "string"
+          },
+          "version": {
+            "description": "The service's version.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "domain",
+          "address",
+          "serviceType",
+          "apiType"
+        ],
+        "additionalProperties": false
+      },
       "AllowedPropertyValue": {
         "description": "An entry for a configuration property representing an allowed value and its display label.",
         "type": "object",
@@ -4152,6 +5411,30 @@
         },
         "additionalProperties": false
       },
+      "Organisation": {
+        "description": "An organisation.",
+        "type": "object",
+        "properties": {
+          "apiKey": {
+            "description": "The organisation's API key.",
+            "type": "string"
+          },
+          "shortName": {
+            "description": "The organisation's short name.",
+            "type": "string"
+          },
+          "fullName": {
+            "description": "The organisation's full name.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "apiKey",
+          "shortName",
+          "fullName"
+        ],
+        "additionalProperties": false
+      },
       "CreateOrganisationRequest": {
         "description": "The data used to create a new organisation.",
         "type": "object",
@@ -4188,6 +5471,40 @@
             "type": "string"
           }
         },
+        "additionalProperties": false
+      },
+      "System": {
+        "description": "A system.",
+        "type": "object",
+        "properties": {
+          "apiKey": {
+            "description": "The system's API key.",
+            "type": "string"
+          },
+          "shortName": {
+            "description": "The system's short name.",
+            "type": "string"
+          },
+          "fullName": {
+            "description": "The system's full name.",
+            "type": "string"
+          },
+          "description": {
+            "description": "The system's description.",
+            "type": "string"
+          },
+          "version": {
+            "description": "The system's version information.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "apiKey",
+          "shortName",
+          "fullName",
+          "description",
+          "version"
+        ],
         "additionalProperties": false
       },
       "CreateSystemRequest": {
@@ -4249,6 +5566,38 @@
         },
         "additionalProperties": false
       },
+      "Domain": {
+        "description": "A domain.",
+        "type": "object",
+        "properties": {
+          "shortName": {
+            "description": "The domain's short name.",
+            "type": "string"
+          },
+          "fullName": {
+            "description": "The domain's full name.",
+            "type": "string"
+          },
+          "description": {
+            "description": "The domain's description.",
+            "type": "string"
+          },
+          "reportMetadata": {
+            "description": "The domain's additional metadata for XML reports.",
+            "type": "string"
+          },
+          "apiKey": {
+            "description": "The domain's API key.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "shortName",
+          "fullName",
+          "apiKey"
+        ],
+        "additionalProperties": false
+      },
       "CreateDomainRequest": {
         "description": "The data used to create a new domain.",
         "type": "object",
@@ -4301,6 +5650,42 @@
             "type": "string"
           }
         },
+        "additionalProperties": false
+      },
+      "SpecificationGroup": {
+        "description": "A specification group.",
+        "type": "object",
+        "properties": {
+          "shortName": {
+            "description": "The group's short name.",
+            "type": "string"
+          },
+          "fullName": {
+            "description": "The group's full name.",
+            "type": "string"
+          },
+          "description": {
+            "description": "The group's description.",
+            "type": "string"
+          },
+          "reportMetadata": {
+            "description": "The group's additional metadata for XML reports.",
+            "type": "string"
+          },
+          "displayOrder": {
+            "description": "The group's display order relative to other groups and specifications.",
+            "type": "number"
+          },
+          "apiKey": {
+            "description": "The group's API key.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "shortName",
+          "fullName",
+          "apiKey"
+        ],
         "additionalProperties": false
       },
       "CreateSpecificationGroupRequest": {
@@ -4363,6 +5748,47 @@
             "type": "string"
           }
         },
+        "additionalProperties": false
+      },
+      "Specification": {
+        "description": "A specification.",
+        "type": "object",
+        "properties": {
+          "shortName": {
+            "description": "The specification's short name.",
+            "type": "string"
+          },
+          "fullName": {
+            "description": "The specification's full name.",
+            "type": "string"
+          },
+          "description": {
+            "description": "The specification's description.",
+            "type": "string"
+          },
+          "reportMetadata": {
+            "description": "The specification's additional metadata for XML reports.",
+            "type": "string"
+          },
+          "hidden": {
+            "description": "Whether the specification should be hidden.",
+            "type": "boolean",
+            "default": false
+          },
+          "displayOrder": {
+            "description": "The specification's display order relative to other groups and specifications.",
+            "type": "number"
+          },
+          "apiKey": {
+            "description": "The specification's API key.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "shortName",
+          "fullName",
+          "apiKey"
+        ],
         "additionalProperties": false
       },
       "CreateSpecificationRequest": {
@@ -4448,6 +5874,52 @@
         },
         "additionalProperties": false
       },
+      "Actor": {
+        "description": "An actor.",
+        "type": "object",
+        "properties": {
+          "identifier": {
+            "description": "The actor's unique identifier in the specification, used to refer to it from test cases.",
+            "type": "string"
+          },
+          "name": {
+            "description": "The actor's display name.",
+            "type": "string"
+          },
+          "description": {
+            "description": "The actor's description.",
+            "type": "string"
+          },
+          "reportMetadata": {
+            "description": "The actor's additional metadata for XML reports.",
+            "type": "string"
+          },
+          "default": {
+            "description": "Whether the actor should be considered as the default choice for new conformance statements within its specification.",
+            "type": "boolean",
+            "default": false
+          },
+          "hidden": {
+            "description": "Whether the actor should be hidden.",
+            "type": "boolean",
+            "default": false
+          },
+          "displayOrder": {
+            "description": "The actor's display order relative to other actors when presented in test execution diagrams.",
+            "type": "number"
+          },
+          "apiKey": {
+            "description": "The actor's API key.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "identifier",
+          "name",
+          "apiKey"
+        ],
+        "additionalProperties": false
+      },
       "CreateActorRequest": {
         "description": "The data used to create a new actor.",
         "type": "object",
@@ -4529,6 +6001,21 @@
           "displayOrder": {
             "description": "The actor's display order relative to other actors when presented in test execution diagrams. Skip this if no update should be made or set to a negative value to remove the ordering altogether.",
             "type": "number"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ConformanceStatementKeys": {
+        "description": "The API keys needed to identify a specific conformance statement.",
+        "type": "object",
+        "properties": {
+          "system": {
+            "description": "The API key of the statement's related system.",
+            "type": "string"
+          },
+          "actor": {
+            "description": "The API key of the statement's related actor.",
+            "type": "string"
           }
         },
         "additionalProperties": false

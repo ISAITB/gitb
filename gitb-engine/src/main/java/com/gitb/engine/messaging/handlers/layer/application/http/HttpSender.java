@@ -51,15 +51,16 @@ import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Created by serbay on 9/23/14.
  */
 public class HttpSender extends AbstractTransactionSender {
-    private Logger logger = LoggerFactory.getLogger(HttpSender.class);
+    private static final Logger logger = LoggerFactory.getLogger(HttpSender.class);
 
     private static final int BUFFER_SIZE = 8 * 1024;
-    private static HttpConnectionFactory<DefaultBHttpClientConnection> httpConnectionFactory;
+    private static final HttpConnectionFactory<DefaultBHttpClientConnection> httpConnectionFactory;
 
     static {
         ConnectionConfig connectionConfig = ConnectionConfig
@@ -91,12 +92,12 @@ public class HttpSender extends AbstractTransactionSender {
                 SSLContext sslContext = transaction.getParameter(SSLContext.class);
 
                 ActorConfiguration actorConfiguration = transaction.getWith();
-                Configuration ipAddressConfig = ConfigurationUtils.getConfiguration(actorConfiguration.getConfig(), ServerUtils.IP_ADDRESS_CONFIG_NAME);
-                Configuration portConfig = ConfigurationUtils.getConfiguration(actorConfiguration.getConfig(), ServerUtils.PORT_CONFIG_NAME);
+                Configuration ipAddressConfig = Objects.requireNonNull(ConfigurationUtils.getConfiguration(actorConfiguration.getConfig(), ServerUtils.IP_ADDRESS_CONFIG_NAME));
+                Configuration portConfig = Objects.requireNonNull(ConfigurationUtils.getConfiguration(actorConfiguration.getConfig(), ServerUtils.PORT_CONFIG_NAME));
 
                 SocketFactory sf = sslContext.getSocketFactory();
-                socket = sf.createSocket(InetAddress.getByName(ipAddressConfig.getValue()),
-                        Integer.parseInt(portConfig.getValue()));
+                socket = sf.createSocket(InetAddress.getByName(Objects.requireNonNull(ipAddressConfig).getValue()),
+                        Integer.parseInt(Objects.requireNonNull(portConfig).getValue()));
 
                 transaction.setParameter(Socket.class, socket);
             }
@@ -128,32 +129,32 @@ public class HttpSender extends AbstractTransactionSender {
     }
 
     private void sendHttpRequest(List<Configuration> configurations, Message message) throws Exception {
-        logger.debug(addMarker(), "Connection created: " + connection);
+        logger.debug(addMarker(), "Connection created: {}", connection);
 
         BasicHttpEntityEnclosingRequest request = createHttpRequest(configurations, message);
 
         ((DefaultBHttpClientConnection) connection).sendRequestHeader(request);
-        logger.debug(addMarker(), "Sent request: " + request);
+        logger.debug(addMarker(), "Sent request: {}", request);
         ((DefaultBHttpClientConnection) connection).flush();
 
         ((DefaultBHttpClientConnection) connection).sendRequestEntity(request);
-        logger.debug(addMarker(), "Sent entity: " + request + " - " + request.getEntity());
+        logger.debug(addMarker(), "Sent entity: {} - {}", request, request.getEntity());
 
         ((DefaultBHttpClientConnection) connection).flush();
-        logger.debug(addMarker(), "Flushed connection: " + connection);
+        logger.debug(addMarker(), "Flushed connection: {}", connection);
     }
 
     private void sendHttpResponse(List<Configuration> configurations, Message message) throws Exception {
         BasicHttpResponse response = createHttpResponse(configurations, message);
 
         ((DefaultBHttpServerConnection) connection).sendResponseHeader(response);
-        logger.debug(addMarker(), "Sent response: " + response);
+        logger.debug(addMarker(), "Sent response: {}", response);
 
         ((DefaultBHttpServerConnection) connection).sendResponseEntity(response);
-        logger.debug(addMarker(), "Sent response entity: " + response + " - " + response.getEntity());
+        logger.debug(addMarker(), "Sent response entity: {} - {}", response, response.getEntity());
 
         ((DefaultBHttpServerConnection) connection).flush();
-        logger.debug(addMarker(), "Flushed connection: " + connection);
+        logger.debug(addMarker(), "Flushed connection: {}", connection);
     }
 
     protected BasicHttpEntityEnclosingRequest createHttpRequest(List<Configuration> configurations, Message message) {
@@ -190,7 +191,7 @@ public class HttpSender extends AbstractTransactionSender {
                             entityBuilder.addTextBody(name, (String)content.getValue());
                         } else {
                             // Binary/File part.
-                            String fileNameValue = (String)(fileName).getValue();
+                            String fileNameValue = (fileName).getValue();
                             String contentType = (String)(partInfo.getItem("content_type")).getValue();
                             if (!(content instanceof BinaryType)) {
                                 content = content.convertTo(DataType.BINARY_DATA_TYPE);
@@ -222,7 +223,7 @@ public class HttpSender extends AbstractTransactionSender {
 
     protected BasicHttpResponse createHttpResponse(List<Configuration> configurations, Message message) {
         BasicHttpEntityEnclosingRequest request = createHttpRequest(configurations, message);
-        BasicHttpResponse response = null;
+        BasicHttpResponse response;
 
         Configuration statusCode = ConfigurationUtils.getConfiguration(configurations, HttpMessagingHandler.HTTP_STATUS_CODE_CONFIG_NAME);
         if (statusCode == null) { //send default response status code
@@ -241,7 +242,7 @@ public class HttpSender extends AbstractTransactionSender {
         BinaryType data = (BinaryType) message.getFragments().get(HttpMessagingHandler.HTTP_BODY_FIELD_NAME);
 
         if (data != null) {
-            return (byte[]) data.getValue();
+            return data.getValue();
         }
 
         return null;
@@ -258,7 +259,7 @@ public class HttpSender extends AbstractTransactionSender {
             for (Map.Entry<String, DataType> entry : elements.entrySet()) {
                 String name = entry.getKey();
                 StringType value = (StringType) entry.getValue();
-                headers.put(name, (String) value.getValue());
+                headers.put(name, value.getValue());
             }
         }
 
@@ -284,6 +285,10 @@ public class HttpSender extends AbstractTransactionSender {
         }
         Configuration httpPathExtensionConfig = ConfigurationUtils.getConfiguration(configurations, HttpMessagingHandler.HTTP_URI_EXTENSION_CONFIG_NAME);
 
+        return getPath(httpPathConfig, httpPathExtensionConfig);
+    }
+
+    private static String getPath(Configuration httpPathConfig, Configuration httpPathExtensionConfig) {
         String servicePath = "";
         if (httpPathConfig != null) {
             servicePath = httpPathConfig.getValue();
@@ -306,19 +311,18 @@ public class HttpSender extends AbstractTransactionSender {
         if(!uriExtension.contentEquals("")) {
             path = path + "/" + uriExtension;
         }
-
         return path;
     }
 
     protected String getHost() {
         ActorConfiguration actorConfiguration = transaction.getWith();
-        Configuration host = ConfigurationUtils.getConfiguration(actorConfiguration.getConfig(), ServerUtils.IP_ADDRESS_CONFIG_NAME);
-        return host.getValue();
+        Configuration host = Objects.requireNonNull(ConfigurationUtils.getConfiguration(actorConfiguration.getConfig(), ServerUtils.IP_ADDRESS_CONFIG_NAME));
+        return Objects.requireNonNull(host).getValue();
     }
 
     protected String getPort() {
         ActorConfiguration actorConfiguration = transaction.getWith();
-        Configuration port = ConfigurationUtils.getConfiguration(actorConfiguration.getConfig(), ServerUtils.PORT_CONFIG_NAME);
-        return port.getValue();
+        Configuration port = Objects.requireNonNull(ConfigurationUtils.getConfiguration(actorConfiguration.getConfig(), ServerUtils.PORT_CONFIG_NAME));
+        return Objects.requireNonNull(port).getValue();
     }
 }

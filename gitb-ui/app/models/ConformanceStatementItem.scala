@@ -18,18 +18,38 @@ package models
 import models.Enums.ConformanceStatementItemType.ConformanceStatementItemType
 import models.statement.ConformanceStatementResults
 
-case class ConformanceStatementItem(
-                                     id: Long,
-                                     name: String,
-                                     description: Option[String],
-                                     reportMetadata: Option[String],
-                                     itemType: ConformanceStatementItemType,
-                                     items: Option[Seq[ConformanceStatementItem]],
-                                     displayOrder: Short,
-                                     results: Option[ConformanceStatementResults] = None,
-                                     actorToShow: Boolean = true) {
+object ConformanceStatementItem {
 
-  def withChildren(children: Seq[ConformanceStatementItem]): ConformanceStatementItem = {
-    ConformanceStatementItem(this.id, this.name, this.description, this.reportMetadata, this.itemType, Some(children), this.displayOrder, this.results)
+  def apply(id: Long,
+            name: String,
+            description: Option[String],
+            reportMetadata: Option[String],
+            itemType: ConformanceStatementItemType,
+            items: Option[Iterable[ConformanceStatementItem]],
+            displayOrder: Short,
+            results: Option[ConformanceStatementResults] = None,
+            actorToShow: Boolean = true): ConformanceStatementItem = {
+    new ConformanceStatementItem(id, name, description, reportMetadata, itemType, items, displayOrder, results, actorToShow)
+  }
+
+}
+
+class ConformanceStatementItem(val id: Long,
+                               val name: String,
+                               val description: Option[String],
+                               val reportMetadata: Option[String],
+                               val itemType: ConformanceStatementItemType,
+                               var items: Option[Iterable[ConformanceStatementItem]],
+                               val displayOrder: Short,
+                               val results: Option[ConformanceStatementResults] = None,
+                               val actorToShow: Boolean = true) {
+
+  def withChildren(children: Iterable[ConformanceStatementItem]): ConformanceStatementItem = {
+    if (children.isEmpty) {
+      items = None
+    } else {
+      items = Some(children)
+    }
+    this
   }
 }

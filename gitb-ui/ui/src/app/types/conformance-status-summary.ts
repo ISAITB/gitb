@@ -14,20 +14,12 @@
  */
 
 import {ConformanceIds} from './conformance-ids';
+import {ConformanceStatementResult} from './conformance-statement-result';
 
-export interface ConformanceStatusSummary extends ConformanceIds {
+export interface ConformanceStatusSummary extends ConformanceStatementResult, ConformanceIds {
 
-  failed: number;
-  completed: number;
-  undefined: number;
-  failedOptional: number;
-  completedOptional: number;
-  undefinedOptional: number;
-  failedToConsider: number;
-  completedToConsider: number;
-  undefinedToConsider: number;
+  hasDisabled: boolean;
   result: string;
-  updateTime?: string;
   hasBadge: boolean;
 
 }

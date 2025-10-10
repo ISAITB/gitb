@@ -36,7 +36,7 @@
                     [tbSetDefaults]="true"
                     [tbAdmin]="false"></app-custom-property-form>
             } @else if (mode == 'admin') {
-                <app-custom-property-form 
+                <app-custom-property-form
                     [tbProperties]="parameters"
                     [tbPropertyType]="parameterType"
                     [tbShowFormHeader]="false"
@@ -48,6 +48,8 @@
                     [tbPropertyType]="parameterType"
                     [tbShowFormHeader]="false"
                     [tbSetDefaults]="true"
+                    [tbSelfRegistration]="true"
+                    [tbShowRequiredAsterisks]="propertiesRequiredInRegistration"
                     [tbAdmin]="false"></app-custom-property-form>
             }
             @if (!hasVisibleProperties()) {

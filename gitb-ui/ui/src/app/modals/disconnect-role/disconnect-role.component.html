@@ -9,14 +9,14 @@
                 <div class="form-check pb-2">
                     <input class="form-check-input" type="radio" [(ngModel)]="choice" name="choice" id="choice_partial" [value]="Constants.DISCONNECT_ROLE_OPTION.CURRENT_PARTIAL">
                     <label class="form-check-label" for="choice_partial">Deactivate current role
-                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" [tbTooltip]="'The current role will be disconnected from your EU Login account but can be linked to it again if you choose to do so.'"></div>
+                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" [tbTooltip]="'The current role will be disconnected from your account but can be linked to it again if you choose to do so.'"></div>
                     </label>
                 </div>
                 @if (!dataService.isSystemAdmin) {
                     <div class="form-check pb-2">
-                        <input class="form-check-input" type="radio" [(ngModel)]="choice" name="choice" id="choice_full" [value]="Constants.DISCONNECT_ROLE_OPTION.CURRENT_FULL">                    
+                        <input class="form-check-input" type="radio" [(ngModel)]="choice" name="choice" id="choice_full" [value]="Constants.DISCONNECT_ROLE_OPTION.CURRENT_FULL">
                         <label class="form-check-label" for="choice_full">Delete current role
-                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" [tbTooltip]="'The current role will be permanently removed from your EU Login account.'"></div>
+                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" [tbTooltip]="'The current role will be permanently removed from your account.'"></div>
                         </label>
                     </div>
                 }
@@ -24,11 +24,11 @@
                     <input class="form-check-input" type="radio" [(ngModel)]="choice" name="choice" id="choice_all" [value]="Constants.DISCONNECT_ROLE_OPTION.ALL">
                     @if (dataService.isSystemAdmin) {
                         <label class="form-check-label" for="choice_all">Delete all other roles
-                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" [tbTooltip]="'All other roles linked to your EU Login account (active and inactive) will be permanently removed.'"></div>
+                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" [tbTooltip]="'All other roles linked to your account (active and inactive) will be permanently removed.'"></div>
                         </label>
                     } @else {
                         <label class="form-check-label" for="choice_all">Delete all roles
-                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" [tbTooltip]="'All Test Bed roles linked to your EU Login account (active and inactive) will be permanently removed.'"></div>
+                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" [tbTooltip]="'All Test Bed roles linked to your account (active and inactive) will be permanently removed.'"></div>
                         </label>
                     }
                 </div>
@@ -43,5 +43,5 @@
             <button class="btn btn-secondary" type="button" (click)="cancel()">Cancel</button>
             <button class="btn btn-secondary" type="submit" (click)="disconnect()" [pending]="disconnectPending">Proceed</button>
         </div>
-    </div>    
+    </div>
 </form>

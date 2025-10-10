@@ -31,14 +31,14 @@ public class StoredStringType extends StringType {
     StoredStringType(Path sessionFolder, StringType wrappedType) {
         try {
             reference = Files.createFile(Path.of(sessionFolder.toString(), UUID.randomUUID().toString()));
-            Files.writeString(reference, (String) wrappedType.getValue(), Charset.forName(wrappedType.getEncoding()));
+            Files.writeString(reference, wrappedType.getValue(), Charset.forName(wrappedType.getEncoding()));
         } catch (IOException e) {
             throw new IllegalStateException("Error while storing session data to temporary filesystem", e);
         }
     }
 
     @Override
-    public Object getValue() {
+    public String getValue() {
         try {
             return new String(Files.readAllBytes(reference), getEncoding());
         } catch (IOException e) {

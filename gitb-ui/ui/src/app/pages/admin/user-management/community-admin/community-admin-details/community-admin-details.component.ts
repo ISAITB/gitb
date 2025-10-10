@@ -13,18 +13,17 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { BaseComponent } from 'src/app/pages/base-component.component';
-import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
-import { DataService } from 'src/app/services/data.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { RoutingService } from 'src/app/services/routing.service';
-import { UserService } from 'src/app/services/user.service';
-import { User } from 'src/app/types/user.type';
-import { CommunityTab } from '../../community/community-details/community-tab.enum';
-import { Constants } from 'src/app/common/constants';
-import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
+import {Component, OnInit} from '@angular/core';
+import {ActivatedRoute} from '@angular/router';
+import {BaseComponent} from 'src/app/pages/base-component.component';
+import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
+import {DataService} from 'src/app/services/data.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {RoutingService} from 'src/app/services/routing.service';
+import {UserService} from 'src/app/services/user.service';
+import {User} from 'src/app/types/user.type';
+import {Constants} from 'src/app/common/constants';
+import {BreadcrumbType} from 'src/app/types/breadcrumb-type';
 
 @Component({
     selector: 'app-community-admin-details',
@@ -111,7 +110,7 @@ export class CommunityAdminDetailsComponent extends BaseComponent implements OnI
   }
 
   cancelDetailAdmin() {
-    this.routingService.toCommunity(this.communityId, CommunityTab.administrators)
+    this.routingService.toCommunity(this.communityId, Constants.TAB.COMMUNITY.ADMINISTRATORS)
   }
 
 

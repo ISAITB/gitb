@@ -60,7 +60,7 @@ public class XsdValidator extends AbstractValidator {
         BooleanType showSchema = getAndConvert(inputs, SHOW_SCHEMA_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class);
         BooleanType sortBySeverity = getAndConvert(inputs, SORT_BY_SEVERITY_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class);
         // Create error handler.
-        XsdReportHandler handler = new XsdReportHandler(contentToProcess, (showSchema == null || (Boolean)showSchema.getValue())?xsd:null);
+        XsdReportHandler handler = new XsdReportHandler(contentToProcess, (showSchema == null || showSchema.getValue())?xsd:null);
         // Validate.
         try {
             XMLUtils.validateAgainstSchema(
@@ -75,7 +75,7 @@ public class XsdValidator extends AbstractValidator {
             throw new GITBEngineInternalError("Unable to read input as XML document.", e);
         }
         var report = handler.createReport();
-        if (sortBySeverity != null && ((Boolean) sortBySeverity.getValue()) && report.getReports() != null) {
+        if (sortBySeverity != null && sortBySeverity.getValue() && report.getReports() != null) {
             report.getReports().getInfoOrWarningOrError().sort(new ReportItemComparator(ReportItemComparator.SortType.SEVERITY_THEN_LOCATION));
         }
         return report;

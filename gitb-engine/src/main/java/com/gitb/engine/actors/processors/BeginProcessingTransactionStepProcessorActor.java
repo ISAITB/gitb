@@ -16,9 +16,11 @@
 package com.gitb.engine.actors.processors;
 
 import com.gitb.core.Configuration;
+import com.gitb.engine.expr.PossibleDomainIdentifier;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.processing.ProcessingContext;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.engine.utils.HandlerUtils;
 import com.gitb.engine.utils.StepContext;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.tdl.BeginProcessingTransaction;
@@ -37,16 +39,16 @@ public class BeginProcessingTransactionStepProcessorActor extends AbstractTestSt
     }
 
     @Override
-    protected void init() throws Exception {
+    protected void init() {
         // Do nothing.
     }
 
     @Override
-    protected void start() throws Exception {
+    protected void start() {
         processing();
 
         VariableResolver resolver = new VariableResolver(scope);
-        String handlerIdentifier = resolveProcessingHandler(step.getHandler(), () -> resolver);
+        PossibleDomainIdentifier handlerInfo = resolveProcessingHandler(step.getHandler(), () -> resolver);
         if (step.getConfig() != null) {
             for (Configuration config: step.getConfig()) {
                 if (VariableResolver.isVariableReference(config.getValue())) {
@@ -55,7 +57,13 @@ public class BeginProcessingTransactionStepProcessorActor extends AbstractTestSt
             }
         }
 
-        ProcessingContext context = new ProcessingContext(handlerIdentifier, TestCaseUtils.getStepProperties(step.getProperty(), resolver), scope.getContext().getSessionId());
+        ProcessingContext context = new ProcessingContext(
+                handlerInfo.value(),
+                handlerInfo.domainIdentifier(),
+                TestCaseUtils.getStepProperties(step.getProperty(), resolver),
+                scope.getContext().getSessionId(),
+                HandlerUtils.getHandlerTimeout(step.getHandlerTimeout(), resolver)
+        );
         String session = context.getHandler().beginTransaction(step.getId(), step.getConfig());
         if (session == null || session.isBlank()) {
             session = scope.getContext().getSessionId();

@@ -104,17 +104,31 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
     } yield ()
   }
 
-  def getSpecificationGroups(domainId: Long): Future[List[SpecificationGroups]] = {
-    getSpecificationGroupsByDomainIds(Some(List(domainId)))
+  def getSpecificationGroups(domainId: Long, snapshotId: Option[Long] = None): Future[List[SpecificationGroups]] = {
+    getSpecificationGroupsByDomainIds(Some(List(domainId)), snapshotId)
   }
 
-  def getSpecificationGroupsByDomainIds(domainIds: Option[List[Long]]): Future[List[SpecificationGroups]] = {
-    DB.run(
+  def getSpecificationGroupsByDomainIds(domainIds: Option[List[Long]], snapshotId: Option[Long] = None): Future[List[SpecificationGroups]] = {
+    val query = if (snapshotId.isDefined) {
+      PersistenceSchema.conformanceSnapshotResults
+        .join(PersistenceSchema.conformanceSnapshotSpecificationGroups).on((q, g) => q.snapshotId === g.snapshotId && q.specificationGroupId === g.id)
+        .filter(_._1.snapshotId === snapshotId.get)
+        .filterOpt(domainIds)((q, ids) => q._1.domainId inSet ids)
+        .map(_._2)
+        .sortBy(_.shortname.asc)
+        .result
+        .map { results =>
+          results.map { x =>
+            SpecificationGroups(x.id, x.shortname, x.fullname, x.description, x.reportMetadata, x.displayOrder, "", -1)
+          }
+        }
+    } else {
       PersistenceSchema.specificationGroups
         .filterOpt(domainIds)((q, ids) => q.domain inSet ids)
         .sortBy(_.shortname.asc)
         .result
-    ).map(_.toList)
+    }
+    DB.run(query).map(_.toList)
   }
 
   def getSpecificationGroupById(groupId: Long): Future[SpecificationGroups] = {
@@ -168,6 +182,102 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
       }
     } yield ()
     DB.run(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
+  }
+
+  def getSpecificationThroughAutomationApi(communityKey: String, specificationKey: String): Future[Specifications] = {
+    DB.run {
+      for {
+        communityDomain <- automationApiHelper.getDomainIdByCommunity(communityKey)
+        specification <- PersistenceSchema.specifications
+          .filter(_.apiKey === specificationKey)
+          .filterOpt(communityDomain)((q, domain) => q.domain === domain)
+          .result
+          .headOption
+        specificationToReturn <- {
+          if (specification.isEmpty) {
+            throw AutomationApiException(ErrorCodes.API_SPECIFICATION_NOT_FOUND, "No specification found for the provided API keys")
+          } else {
+            DBIO.successful(specification.get)
+          }
+        }
+      } yield specificationToReturn
+    }
+  }
+
+  def searchSpecificationsThroughAutomationApi(communityKey: String, domainKey: String, name: Option[String]): Future[Seq[Specifications]] = {
+    val param = toLowercaseLikeParameter(name)
+    DB.run {
+      for {
+        domainId <- automationApiHelper.getDomainIdByDomainApiKey(domainKey, Some(communityKey))
+        specifications <- PersistenceSchema.specifications
+          .filter(_.domain === domainId)
+          .filter(_.group.isEmpty)
+          .filterOpt(param)((q, p) => q.shortname.toLowerCase.like(p) || q.fullname.toLowerCase.like(p))
+          .sortBy(_.shortname.asc)
+          .result
+      } yield specifications
+    }
+  }
+
+  def searchSpecificationsInGroupThroughAutomationApi(communityKey: String, groupKey: String, name: Option[String]): Future[Seq[Specifications]] = {
+    val param = toLowercaseLikeParameter(name)
+    DB.run {
+      for {
+        communityDomainId <- automationApiHelper.getDomainIdByCommunity(communityKey)
+        groupId <- PersistenceSchema.specificationGroups
+          .filter(_.apiKey === groupKey)
+          .filterOpt(communityDomainId)((q, d) => q.domain === d)
+          .map(_.id)
+          .result
+          .headOption
+          .map { result =>
+            if (result.isDefined) {
+              result.get
+            } else {
+              throw AutomationApiException(ErrorCodes.API_SPECIFICATION_GROUP_NOT_FOUND, "No specification group found for the provided API keys")
+            }
+          }
+        specifications <- PersistenceSchema.specifications
+          .filter(_.group === groupId)
+          .filterOpt(param)((q, p) => q.shortname.toLowerCase.like(p) || q.fullname.toLowerCase.like(p))
+          .sortBy(_.shortname.asc)
+          .result
+      } yield specifications
+    }
+  }
+
+  def getSpecificationGroupThroughAutomationApi(communityKey: String, groupKey: String): Future[SpecificationGroups] = {
+    DB.run {
+      for {
+        communityDomain <- automationApiHelper.getDomainIdByCommunity(communityKey)
+        group <- PersistenceSchema.specificationGroups
+          .filter(_.apiKey === groupKey)
+          .filterOpt(communityDomain)((q, domain) => q.domain === domain)
+          .result
+          .headOption
+        groupToReturn <- {
+          if (group.isEmpty) {
+            throw AutomationApiException(ErrorCodes.API_SPECIFICATION_GROUP_NOT_FOUND, "No specification group found for the provided API keys")
+          } else {
+            DBIO.successful(group.get)
+          }
+        }
+      } yield groupToReturn
+    }
+  }
+
+  def searchSpecificationGroupsThroughAutomationApi(communityKey: String, domainKey: String, name: Option[String]): Future[Seq[SpecificationGroups]] = {
+    val param = toLowercaseLikeParameter(name)
+    DB.run {
+      for {
+        domainId <- automationApiHelper.getDomainIdByDomainApiKey(domainKey, Some(communityKey))
+        groups <- PersistenceSchema.specificationGroups
+          .filter(_.domain === domainId)
+          .filterOpt(param)((q, p) => q.shortname.toLowerCase.like(p) || q.fullname.toLowerCase.like(p))
+          .sortBy(_.shortname.asc)
+          .result
+      } yield groups
+    }
   }
 
   def createSpecificationGroupInternal(group: SpecificationGroups, checkApiKeyUniqueness: Boolean):DBIO[Long] = {
@@ -636,7 +746,7 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
     specsToReturn.toList
   }
 
-  def getSpecificationsInternal(ids: Option[Iterable[Long]] = None, domainIds: Option[List[Long]] = None, groupIds: Option[List[Long]] = None, withGroups: Boolean = false): DBIO[Seq[Specifications]] = {
+  def getSpecificationsInternal(ids: Option[Iterable[Long]] = None, domainIds: Option[List[Long]] = None, groupIds: Option[List[Long]] = None, withGroups: Boolean = false, snapshotId: Option[Long] = None): DBIO[Seq[Specifications]] = {
     if (withGroups) {
       for {
         specData <- PersistenceSchema.specifications
@@ -649,6 +759,27 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
         mergedData <- DBIO.successful(mergeSpecsWithGroups(specData))
       } yield mergedData
     } else {
+      getSpecificationsWithoutGroupsInternal(ids, domainIds, groupIds, snapshotId)
+    }
+  }
+
+  private def getSpecificationsWithoutGroupsInternal(ids: Option[Iterable[Long]] = None, domainIds: Option[List[Long]] = None, groupIds: Option[List[Long]] = None, snapshotId: Option[Long] = None): DBIO[Seq[Specifications]] = {
+    if (snapshotId.isDefined) {
+      PersistenceSchema.conformanceSnapshotResults
+        .join(PersistenceSchema.conformanceSnapshotSpecifications).on((q, s) => q.snapshotId === s.snapshotId && q.specificationId === s.id)
+        .filter(_._1.snapshotId === snapshotId.get)
+        .filterOpt(ids)((q, ids) => q._1.specificationId inSet ids)
+        .filterOpt(domainIds)((q, ids) => q._1.domainId inSet ids)
+        .filterOpt(groupIds)((q, ids) => q._1.specificationGroupId inSet ids)
+        .map(_._2)
+        .sortBy(x => (x.displayOrder.asc, x.shortname.asc))
+        .result
+        .map { results =>
+          results.map { x =>
+            Specifications(x.id, x.shortname, x.fullname, x.description, x.reportMetadata, hidden = false, "", -1, x.displayOrder, None)
+          }
+        }
+    } else {
       PersistenceSchema.specifications
         .filterOpt(ids)((q, ids) => q.id inSet ids)
         .filterOpt(domainIds)((q, domainIds) => q.domain inSet domainIds)
@@ -658,12 +789,12 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
     }
   }
 
-  def getSpecifications(ids: Option[Iterable[Long]] = None, domainIds: Option[List[Long]] = None, groupIds: Option[List[Long]] = None, withGroups: Boolean = false): Future[Seq[Specifications]] = {
-    DB.run(getSpecificationsInternal(ids, domainIds, groupIds, withGroups))
+  def getSpecifications(ids: Option[Iterable[Long]] = None, domainIds: Option[List[Long]] = None, groupIds: Option[List[Long]] = None, withGroups: Boolean = false, snapshotId: Option[Long] = None): Future[Seq[Specifications]] = {
+    DB.run(getSpecificationsInternal(ids, domainIds, groupIds, withGroups, snapshotId))
   }
 
-  def getSpecifications(domain: Long, withGroups: Boolean): Future[Seq[Specifications]] = {
-    val action = if (withGroups) {
+  def getSpecificationsWithGroups(domain: Long): Future[Seq[Specifications]] = {
+    DB.run {
       for {
         specData <- PersistenceSchema.specifications
           .joinLeft(PersistenceSchema.specificationGroups).on(_.group === _.id)
@@ -672,13 +803,120 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
           .result
         specsWithGroups <- DBIO.successful(mergeSpecsWithGroups(specData))
       } yield specsWithGroups
-    } else {
+    }
+  }
+
+  def getSpecificationsWithoutGroups(domain: Long): Future[Seq[Specifications]] = {
+    DB.run {
       PersistenceSchema.specifications
         .filter(_.domain === domain)
         .sortBy(x => (x.displayOrder.asc, x.shortname.asc))
         .result
     }
-    DB.run(action)
+  }
+
+  def getSpecificationsWithPaging(domain: Long, filter: Option[String], page: Long, limit: Long): Future[SearchResult[DomainSpecification]] = {
+    DB.run {
+      for {
+        groups <- PersistenceSchema.specificationGroups
+          .filter(_.domain === domain)
+          .sortBy(x => (x.displayOrder.asc, x.fullname.asc))
+          .result
+        specifications <- PersistenceSchema.specifications
+          .filter(_.domain === domain)
+          .sortBy(x => (x.displayOrder.asc, x.fullname.asc))
+          .result
+      } yield (groups, specifications)
+    }.map { data =>
+      val groups = data._1
+      val specifications = data._2
+      var results = ListBuffer[DomainSpecification]()
+      val groupMap = mutable.HashMap[Long, DomainSpecification]()
+      // Organise results.
+      groups.foreach { group =>
+        val result = DomainSpecification.forGroup(group)
+        results += result
+        groupMap += (result.id -> result)
+      }
+      specifications.foreach { specification =>
+        val result = DomainSpecification.forSpecification(specification)
+        if (result.groupId.isEmpty) {
+          results += result
+        } else {
+          groupMap(result.groupId.get).options.get += result
+        }
+      }
+      // Set visibility for groups.
+      groupMap.values.foreach { group =>
+        group.hidden = !group.options.exists(_.exists(spec => !spec.hidden))
+      }
+      // Apply sorting.
+      results = results.sortWith ((a, b) => {
+        if (a.displayOrder == b.displayOrder) {
+          a.fname.compareTo(b.fname) < 0
+        } else {
+          a.displayOrder < b.displayOrder
+        }
+      })
+      // Apply filtering.
+      if (filter.isDefined) {
+        results = filterDomainSpecifications(results, filter.get)
+      }
+      // Apply paging.
+      val pagingInfo = new PagingStatus(page, limit)
+      SearchResult(
+        pageDomainSpecifications(results, pagingInfo),
+        pagingInfo.count
+      )
+    }
+  }
+
+  private def filterDomainSpecifications(specs: ListBuffer[DomainSpecification], filterText: String): ListBuffer[DomainSpecification] = {
+    specs.filter { spec =>
+      filterDomainSpecification(spec, filterText)
+    }
+  }
+
+  private def filterDomainSpecification(spec: DomainSpecification, filterText: String): Boolean = {
+    val matches = spec.fname.toLowerCase().contains(filterText.toLowerCase)
+    if (spec.options.isEmpty || spec.options.get.isEmpty) {
+      matches
+    } else {
+      if (matches) {
+        true
+      } else {
+        val matchingOptions = filterDomainSpecifications(spec.options.get, filterText)
+        if (matchingOptions.isEmpty) {
+          spec.options = None
+        } else {
+          spec.options = Some(matchingOptions)
+        }
+        spec.options.isDefined
+      }
+    }
+  }
+
+  private def pageDomainSpecifications(specs: ListBuffer[DomainSpecification], pagingInfo: PagingStatus): ListBuffer[DomainSpecification] = {
+    specs.filter { spec =>
+      pageDomainSpecification(spec, pagingInfo)
+    }
+  }
+
+  private def pageDomainSpecification(spec: DomainSpecification, pagingInfo: PagingStatus): Boolean = {
+    if (spec.options.isEmpty || spec.options.get.isEmpty) {
+      // This is a leaf.
+      pagingInfo.count += 1
+      // Keep if within range.
+      pagingInfo.count >= pagingInfo.minIndex && pagingInfo.count <= pagingInfo.maxIndex
+    } else {
+      val retainedChildren = pageDomainSpecifications(spec.options.get, pagingInfo)
+      if (retainedChildren.isEmpty) {
+        spec.options = None
+      } else {
+        spec.options = Some(retainedChildren)
+      }
+      retainedChildren.nonEmpty
+    }
   }
 
   def getSpecificationsLinkedToTestSuite(testSuiteId: Long): Future[Seq[Specifications]] = {

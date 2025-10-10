@@ -29,7 +29,11 @@ import static com.gitb.utils.ConfigUtils.getPropertiesConfiguration;
  */
 public class CoreConfiguration {
 
-	public static String TEST_CASE_REPOSITORY;
+	public static final String TEST_ENGINE_VERSION;
+	public static final String BUILD_TIMESTAMP;
+    public static String MESSAGING_CALLBACK_URL;
+    public static String VALIDATION_CALLBACK_URL;
+    public static String PROCESSING_CALLBACK_URL;
 
     /*
      * Load the configurations from the configuration files
@@ -39,11 +43,12 @@ public class CoreConfiguration {
 			CompositeConfiguration config = new CompositeConfiguration();
 			config.addConfiguration(new SystemConfiguration());
 			config.addConfiguration(getPropertiesConfiguration("core-module.properties"));
-			TEST_CASE_REPOSITORY = config.getString("gitb.test-case-repository");
-			// TODO load configuration parameters
+			BUILD_TIMESTAMP  = config.getString("gitb.buildTimestamp");
+            String version  = config.getString("gitb.version");
+            TEST_ENGINE_VERSION = "%s (%s)".formatted(version, CoreConfiguration.BUILD_TIMESTAMP);
 		} catch (ConfigurationException | IOException e) {
 			throw new IllegalStateException("Error loading configuration", e);
 		}
-
 	}
+
 }

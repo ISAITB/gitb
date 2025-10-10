@@ -20,9 +20,17 @@ import javax.xml.xpath.XPathExpression;
 /**
  * Created by senan on 9/15/14.
  */
-public class NumberType extends PrimitiveType {
+public class NumberType extends PrimitiveType<Double> {
 
-    private Double value = (double) 0;
+    private Double value;
+
+    public NumberType() {
+        this(0.0);
+    }
+
+    public NumberType(Number value) {
+        this.value = value.doubleValue();
+    }
 
     @Override
     public String getType() {
@@ -48,20 +56,22 @@ public class NumberType extends PrimitiveType {
 
     @Override
     public void setValue(Object value) {
-        if(value instanceof String){
-            this.value = Double.parseDouble((String)value);
+        if (value instanceof String) {
+            this.value = Double.parseDouble((String) value);
+        } else if (value instanceof Number numberValue) {
+            this.value = numberValue.doubleValue();
         } else{
             this.value = (double) value;
         }
     }
 
     @Override
-    public Object getValue() {
+    public Double getValue() {
         return this.value;
     }
 
     public double doubleValue() {
-        return this.value.doubleValue();
+        return this.value;
     }
 
     public int intValue() {

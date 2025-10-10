@@ -17,14 +17,12 @@ package com.gitb.engine.messaging.handlers.layer.application.https;
 
 import com.gitb.core.ActorConfiguration;
 import com.gitb.core.Configuration;
-import com.gitb.messaging.Message;
 import com.gitb.engine.messaging.handlers.ServerUtils;
 import com.gitb.engine.messaging.handlers.layer.application.http.HttpSender;
 import com.gitb.engine.messaging.handlers.model.SessionContext;
 import com.gitb.engine.messaging.handlers.model.TransactionContext;
+import com.gitb.messaging.Message;
 import com.gitb.utils.ConfigurationUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLContext;
@@ -32,12 +30,12 @@ import javax.net.ssl.SSLSocket;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Created by senan on 07.11.2014.
  */
 public class HttpsSender extends HttpSender {
-    private Logger logger = LoggerFactory.getLogger(HttpsSender.class);
 
     public HttpsSender(SessionContext session, TransactionContext transaction) {
         super(session, transaction);
@@ -58,8 +56,8 @@ public class HttpsSender extends HttpSender {
             Configuration portConfig = ConfigurationUtils.getConfiguration(actorConfiguration.getConfig(), ServerUtils.PORT_CONFIG_NAME);
 
             SocketFactory sf = sslContext.getSocketFactory();
-            socket = sf.createSocket(InetAddress.getByName(ipAddressConfig.getValue()),
-                    Integer.parseInt(portConfig.getValue()));
+            socket = sf.createSocket(InetAddress.getByName(Objects.requireNonNull(ipAddressConfig).getValue()),
+                    Integer.parseInt(Objects.requireNonNull(portConfig).getValue()));
 
             transaction.setParameter(Socket.class, socket);
         }

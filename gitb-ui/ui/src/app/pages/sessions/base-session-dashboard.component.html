@@ -60,9 +60,9 @@
                         <button type="button" class="btn btn-outline-danger" (click)="confirmDeleteSessions();$event.stopPropagation()" [disable]="!testsChecked()" [pending]="deleteSessionsPending">Confirm</button>
                         <button type="button" class="btn btn-secondary" (click)="cancelDeleteSessions();$event.stopPropagation()" [disabled]="deleteSessionsPending">Cancel</button>
                     }
-                    @if (showDeleteObsoleteControl) {
-                        <button type="button" class="btn btn-secondary" (click)="deleteObsolete();$event.stopPropagation()" [disable]="selectingForDelete || deleteSessionsPending" [pending]="deletePending">Delete obsolete sessions</button>
-                    }
+                }
+                @if (showDeleteObsoleteControl) {
+                    <button type="button" class="btn btn-secondary" (click)="deleteObsolete();$event.stopPropagation()" [disable]="selectingForDelete || deleteSessionsPending" [pending]="deletePending">Delete obsolete sessions</button>
                 }
                 <button type="button" class="btn btn-secondary" (click)="exportCompletedSessionsToCsv();$event.stopPropagation()" [disable]="completedTests.length == 0 || selectingForDelete || deleteSessionsPending" [pending]="exportCompletedPending">Export CSV</button>
                 @if (showCollapseAll()) {
@@ -80,15 +80,16 @@
                  [loadingStatus]="completedStatus"
 
                  [actionVisible]="true"
-                 [actionIcon]="'fa-regular fa-file-lines'"
-                 (onAction)="onReportExportXml($event)"
+                 [actionIcon]="'fa-solid fa-file-pdf'"
+                 (onAction)="onReportExportPdf($event)"
                  [actionVisibleForRow]="exportVisible"
-                 [actionTooltip]="'Export (XML)'"
+                 [actionTooltip]="'Download report'"
 
                  [exportVisible]="true"
-                 (onExport)="onReportExportPdf($event)"
+                 [exportIcon]="'fa-solid fa-file-lines'"
+                 (onExport)="onReportExportXml($event)"
                  [exportVisibleForRow]="exportVisible"
-                 [exportTooltip]="'Export (PDF)'"
+                 [exportTooltip]="'Download report as XML'"
 
                  (pageNavigation)="doCompletedPageNavigation($event)"
                  (onSort)="sortCompletedSessions($event)"

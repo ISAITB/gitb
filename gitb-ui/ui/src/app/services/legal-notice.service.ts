@@ -13,13 +13,11 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Observable } from 'rxjs';
-import { Injectable } from '@angular/core';
-import { RestService } from './rest.service'
-import { ROUTES } from '../common/global';
-import { LegalNotice } from '../types/legal-notice';
-import { ErrorData } from '../types/error-data.type';
-import { ErrorDescription } from '../types/error-description';
+import {Injectable} from '@angular/core';
+import {RestService} from './rest.service';
+import {ROUTES} from '../common/global';
+import {LegalNotice} from '../types/legal-notice';
+import {ErrorDescription} from '../types/error-description';
 
 @Injectable({
   providedIn: 'root'

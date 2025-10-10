@@ -1,0 +1,41 @@
+<div class="page">
+    <div class="card mb-0">
+        <div class="card-header">
+            <div class="card-title">Data management</div>
+        </div>
+        <div class="card-body">
+            <div class="operation-container">
+                <app-radio-card [radioValue]="OPERATION_EXPORT"
+                                [(ngModel)]="operationType"
+                                (select)="operationChanged()"
+                                radioId="operation_export"
+                                radioName="operationType"
+                                radioLabel="Data export">
+                    Export selected data into a portable archive. Exported data archives can be stored as configuration backups, be used to import data in bulk, or serve to bootstrap preconfigured Test Bed instances.
+                </app-radio-card>
+                <app-radio-card [radioValue]="OPERATION_IMPORT"
+                                [(ngModel)]="operationType"
+                                (select)="operationChanged()"
+                                radioId="operation_import"
+                                radioName="operationType"
+                                radioLabel="Data import">
+                    Modify data in bulk by importing a data archive. Items created, updated and deleted based on the imported archive and current data, will be previewed for review and fine-tuning before proceeding.
+                </app-radio-card>
+            </div>
+            @if (operationSelected) {
+                <div class="form-container">
+                    @if (operationType == OPERATION_EXPORT) {
+                        <app-export [collapsed]="initialSelection" [animated]="initialSelection"></app-export>
+                    } @else if (operationType == OPERATION_IMPORT) {
+                        <app-import [collapsed]="initialSelection" [animated]="initialSelection"></app-import>
+                    }
+                </div>
+            }
+        </div>
+        @if (operationType == undefined) {
+            <div class="card-footer">
+                <button class="btn btn-secondary" type="button" disabled="disabled">Proceed</button>
+            </div>
+        }
+    </div>
+</div>

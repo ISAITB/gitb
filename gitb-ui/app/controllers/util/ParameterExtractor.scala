@@ -18,15 +18,18 @@ package controllers.util
 import config.Configurations
 import exceptions.{ErrorCodes, InvalidRequestException}
 import models.Enums._
-import controllers.util.Parameters
+import controllers.util.ParameterNames
+import models.automation.TestServiceSearchCriteria
+import models.statement.{AvailableStatementsSearchCriteria, ConformanceStatementSearchCriteria, ConformanceStatementTestSearchCriteria}
 import models.theme.{Theme, ThemeFiles}
-import models.{Actor, Badges, Communities, CommunityReportSettings, CommunityResources, Configs, Constants, Domain, Endpoints, ErrorTemplates, FileInfo, LandingPages, LegalNotices, NamedFile, OrganisationParameterValues, Organizations, SpecificationGroups, Specifications, SystemParameterValues, Systems, Trigger, TriggerData, TriggerFireExpression, Triggers, Users}
+import models.{Actor, Badges, Communities, CommunityReportSettings, CommunityResources, Configs, Constants, Domain, DomainParameter, Endpoints, Enums, ErrorTemplates, FileInfo, LandingPages, LegalNotices, NamedFile, OrganisationParameterValues, Organizations, Parameters, SpecificationGroups, Specifications, SystemParameterValues, Systems, TestService, TestServiceWithParameter, Trigger, TriggerData, TriggerFireExpression, Triggers, Users}
 import org.apache.commons.lang3.StringUtils
 import play.api.mvc._
 import utils.{ClamAVClient, CryptoUtil, HtmlUtil, JsonUtil, MimeUtil}
 
 import java.awt.Color
 import java.io.File
+import java.net.URI
 import java.util.concurrent.ThreadLocalRandom
 import scala.collection.mutable.ListBuffer
 
@@ -53,6 +56,29 @@ object ParameterExtractor {
       }
     }
     fileMap.iterator.toMap
+  }
+
+  def extractConformanceStatementSearchCriteria(request: Request[AnyContent]): ConformanceStatementSearchCriteria = {
+    ConformanceStatementSearchCriteria(
+      filterText = ParameterExtractor.optionalQueryParameter(request, ParameterNames.FILTER).filter(s => !s.isBlank),
+      succeeded = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.SUCCEEDED).getOrElse(true),
+      failed = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.FAILED).getOrElse(true),
+      incomplete = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.INCOMPLETE).getOrElse(true)
+    )
+  }
+
+  def extractPageNumber(request:Request[AnyContent]): Long = {
+    ParameterExtractor.optionalQueryParameter(request, ParameterNames.PAGE) match {
+      case Some(v) => v.toLong
+      case _ => 1L
+    }
+  }
+
+  def extractPageLimit(request:Request[AnyContent]): Long = {
+    ParameterExtractor.optionalQueryParameter(request, ParameterNames.LIMIT) match {
+      case Some(v) => v.toLong
+      case None => 10L
+    }
   }
 
   def requiredQueryParameter(request:Request[AnyContent], parameter:String):String = {
@@ -300,7 +326,7 @@ object ParameterExtractor {
   }
 
   def extractOptionalUserId(request:RequestHeader):Option[Long] = {
-    val userId = request.headers.get(Parameters.USER_ID)
+    val userId = request.headers.get(ParameterNames.USER_ID)
     if (userId.isDefined) {
       Some(userId.get.toLong)
     } else {
@@ -309,25 +335,25 @@ object ParameterExtractor {
   }
 
   def extractUserId(request:RequestHeader):Long = {
-    request.headers.get(Parameters.USER_ID).get.toLong
+    request.headers.get(ParameterNames.USER_ID).get.toLong
   }
 
   def extractOrganizationInfo(paramMap: Option[Map[String, Seq[String]]]): Organizations = {
-    val vendorSname = requiredBodyParameter(paramMap, Parameters.VENDOR_SNAME)
-    val vendorFname = requiredBodyParameter(paramMap, Parameters.VENDOR_FNAME)
-    val communityId = requiredBodyParameter(paramMap, Parameters.COMMUNITY_ID).toLong
-    val landingPageId:Option[Long] = optionalLongBodyParameter(paramMap, Parameters.LANDING_PAGE_ID)
-    val legalNoticeId:Option[Long] = optionalLongBodyParameter(paramMap, Parameters.LEGAL_NOTICE_ID)
-    val errorTemplateId:Option[Long] = optionalLongBodyParameter(paramMap, Parameters.ERROR_TEMPLATE_ID)
+    val shortName = requiredBodyParameter(paramMap, ParameterNames.VENDOR_SNAME)
+    val fullName = requiredBodyParameter(paramMap, ParameterNames.VENDOR_FNAME)
+    val communityId = requiredBodyParameter(paramMap, ParameterNames.COMMUNITY_ID).toLong
+    val landingPageId:Option[Long] = optionalLongBodyParameter(paramMap, ParameterNames.LANDING_PAGE_ID)
+    val legalNoticeId:Option[Long] = optionalLongBodyParameter(paramMap, ParameterNames.LEGAL_NOTICE_ID)
+    val errorTemplateId:Option[Long] = optionalLongBodyParameter(paramMap, ParameterNames.ERROR_TEMPLATE_ID)
     var template:Boolean = false
     var templateName: Option[String] = None
     if (Configurations.REGISTRATION_ENABLED) {
-      template = optionalBodyParameter(paramMap, Parameters.TEMPLATE).getOrElse("false").toBoolean
+      template = optionalBodyParameter(paramMap, ParameterNames.TEMPLATE).getOrElse("false").toBoolean
       if (template) {
-        templateName = optionalBodyParameter(paramMap, Parameters.TEMPLATE_NAME)
+        templateName = optionalBodyParameter(paramMap, ParameterNames.TEMPLATE_NAME)
       }
     }
-    Organizations(0L, vendorSname, vendorFname, OrganizationType.Vendor.id.toShort, adminOrganization = false, landingPageId, legalNoticeId, errorTemplateId, template = template, templateName, None, communityId)
+    Organizations(0L, shortName, fullName, OrganizationType.Vendor.id.toShort, adminOrganization = false, landingPageId, legalNoticeId, errorTemplateId, template = template, templateName, None, None, communityId)
   }
 
   def validCommunitySelfRegType(selfRegType: Short): Boolean = {
@@ -335,31 +361,32 @@ object ParameterExtractor {
   }
 
   def extractCommunityReportSettings(paramMap:  Option[Map[String, Seq[String]]], communityId: Long): CommunityReportSettings = {
-    val reportType = ReportType.apply(ParameterExtractor.requiredBodyParameter(paramMap, Parameters.TYPE).toShort)
-    val signPdfReports = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SIGN_PDF_REPORTS).toBoolean
-    val useCustomPdfReports = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.USE_CUSTOM_PDF_REPORTS).toBoolean
-    val useCustomPdfReportsWithCustomXml = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.USE_CUSTOM_PDFS_WITH_CUSTOM_XML).toBoolean
-    val customPdfService = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.CUSTOM_PDF_SERVICE)
+    val reportType = ReportType.apply(ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.TYPE).toShort)
+    val signPdfReports = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.SIGN_PDF_REPORTS).toBoolean
+    val useCustomPdfReports = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.USE_CUSTOM_PDF_REPORTS).toBoolean
+    val useCustomPdfReportsWithCustomXml = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.USE_CUSTOM_PDFS_WITH_CUSTOM_XML).toBoolean
+    val customPdfService = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.CUSTOM_PDF_SERVICE)
     CommunityReportSettings(reportType.id.toShort, signPdfReports, useCustomPdfReports, useCustomPdfReportsWithCustomXml, customPdfService.filter(StringUtils.isNotBlank), communityId)
   }
 
   def extractCommunityInfo(request:Request[AnyContent]):Communities = {
-    val sname = requiredBodyParameter(request, Parameters.COMMUNITY_SNAME)
-    val fname = requiredBodyParameter(request, Parameters.COMMUNITY_FNAME)
-    val email = optionalBodyParameter(request, Parameters.COMMUNITY_EMAIL)
-    val description = optionalBodyParameter(request, Parameters.DESCRIPTION)
-    val allowCertificateDownload = requiredBodyParameter(request, Parameters.ALLOW_CERTIFICATE_DOWNLOAD).toBoolean
-    val allowStatementManagement = requiredBodyParameter(request, Parameters.ALLOW_STATEMENT_MANAGEMENT).toBoolean
-    val allowSystemManagement = requiredBodyParameter(request, Parameters.ALLOW_SYSTEM_MANAGEMENT).toBoolean
-    val allowPostTestOrganisationUpdate = requiredBodyParameter(request, Parameters.ALLOW_POST_TEST_ORG_UPDATE).toBoolean
-    val allowPostTestSystemUpdate = requiredBodyParameter(request, Parameters.ALLOW_POST_TEST_SYS_UPDATE).toBoolean
-    val allowPostTestStatementUpdate = requiredBodyParameter(request, Parameters.ALLOW_POST_TEST_STM_UPDATE).toBoolean
+    val sname = requiredBodyParameter(request, ParameterNames.COMMUNITY_SNAME)
+    val fname = requiredBodyParameter(request, ParameterNames.COMMUNITY_FNAME)
+    val email = optionalBodyParameter(request, ParameterNames.COMMUNITY_EMAIL)
+    val description = optionalBodyParameter(request, ParameterNames.DESCRIPTION)
+    val allowCertificateDownload = requiredBodyParameter(request, ParameterNames.ALLOW_CERTIFICATE_DOWNLOAD).toBoolean
+    val allowStatementManagement = requiredBodyParameter(request, ParameterNames.ALLOW_STATEMENT_MANAGEMENT).toBoolean
+    val allowSystemManagement = requiredBodyParameter(request, ParameterNames.ALLOW_SYSTEM_MANAGEMENT).toBoolean
+    val allowPostTestOrganisationUpdate = requiredBodyParameter(request, ParameterNames.ALLOW_POST_TEST_ORG_UPDATE).toBoolean
+    val allowPostTestSystemUpdate = requiredBodyParameter(request, ParameterNames.ALLOW_POST_TEST_SYS_UPDATE).toBoolean
+    val allowPostTestStatementUpdate = requiredBodyParameter(request, ParameterNames.ALLOW_POST_TEST_STM_UPDATE).toBoolean
     var allowAutomationApi = false
     if (Configurations.AUTOMATION_API_ENABLED) {
-      allowAutomationApi = requiredBodyParameter(request, Parameters.ALLOW_AUTOMATION_API).toBoolean
+      allowAutomationApi = requiredBodyParameter(request, ParameterNames.ALLOW_AUTOMATION_API).toBoolean
     }
-    val allowCommunityView = requiredBodyParameter(request, Parameters.ALLOW_COMMUNITY_VIEW).toBoolean
-    val interactionNotification = requiredBodyParameter(request, Parameters.COMMUNITY_INTERACTION_NOTIFICATION).toBoolean
+    val allowCommunityView = requiredBodyParameter(request, ParameterNames.ALLOW_COMMUNITY_VIEW).toBoolean
+    val allowUserManagement = requiredBodyParameter(request, ParameterNames.ALLOW_USER_MANAGEMENT).toBoolean
+    val interactionNotification = requiredBodyParameter(request, ParameterNames.COMMUNITY_INTERACTION_NOTIFICATION).toBoolean
     var selfRegType: Short = SelfRegistrationType.NotSupported.id.toShort
     var selfRegRestriction: Short = SelfRegistrationRestriction.NoRestriction.id.toShort
     var selfRegToken: Option[String] = None
@@ -367,13 +394,16 @@ object ParameterExtractor {
     var selfRegNotification: Boolean = false
     var selfRegForceTemplateSelection: Boolean = false
     var selfRegForceRequiredProperties: Boolean = false
+    var selfRegAllowOrganisationTokens: Boolean = false
+    var selfRegAllowOrganisationTokenManagement: Boolean = false
+    var selfRegForceOrganisationTokenInput: Boolean = false
     if (Configurations.REGISTRATION_ENABLED) {
-      selfRegType = requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_TYPE).toShort
+      selfRegType = requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_TYPE).toShort
       if (!validCommunitySelfRegType(selfRegType)) {
         throw new IllegalArgumentException("Unsupported value ["+selfRegType+"] for self-registration type")
       }
-      selfRegToken = optionalBodyParameter(request, Parameters.COMMUNITY_SELFREG_TOKEN)
-      selfRegTokenHelpText = optionalBodyParameter(request, Parameters.COMMUNITY_SELFREG_TOKEN_HELP_TEXT)
+      selfRegToken = optionalBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_TOKEN)
+      selfRegTokenHelpText = optionalBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_TOKEN_HELP_TEXT)
       if (selfRegTokenHelpText.isDefined) {
         selfRegTokenHelpText = Some(HtmlUtil.sanitizeEditorContent(selfRegTokenHelpText.get))
       }
@@ -386,49 +416,54 @@ object ParameterExtractor {
         selfRegTokenHelpText = None
       }
       if (selfRegType != SelfRegistrationType.NotSupported.id.toShort) {
-        selfRegForceTemplateSelection = requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_FORCE_TEMPLATE).toBoolean
-        selfRegForceRequiredProperties = requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_FORCE_PROPERTIES).toBoolean
+        selfRegForceTemplateSelection = requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_FORCE_TEMPLATE).toBoolean
+        selfRegForceRequiredProperties = requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_FORCE_PROPERTIES).toBoolean
+        selfRegAllowOrganisationTokens = requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_ALLOW_ORGANISATION_TOKENS).toBoolean
+        if (selfRegAllowOrganisationTokens) {
+          selfRegAllowOrganisationTokenManagement = requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_ALLOW_ORGANISATION_TOKEN_MANAGEMENT).toBoolean
+          selfRegForceOrganisationTokenInput = requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_FORCE_ORGANISATION_TOKEN_INPUT).toBoolean
+        }
         if (Configurations.EMAIL_ENABLED) {
-          selfRegNotification = requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_NOTIFICATION).toBoolean
+          selfRegNotification = requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_NOTIFICATION).toBoolean
         }
         if (Configurations.AUTHENTICATION_SSO_ENABLED) {
-          selfRegRestriction = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_RESTRICTION).toShort
+          selfRegRestriction = ParameterExtractor.requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_RESTRICTION).toShort
         }
       }
     } else {
       selfRegType = SelfRegistrationType.NotSupported.id.toShort
     }
 
-    val domainId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
+    val domainId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.DOMAIN_ID)
     Communities(
       0L, sname, fname, email, selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification, interactionNotification, description,
-      selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties,
+      selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties, selfRegAllowOrganisationTokens, selfRegAllowOrganisationTokenManagement, selfRegForceOrganisationTokenInput,
       allowCertificateDownload, allowStatementManagement, allowSystemManagement,
-      allowPostTestOrganisationUpdate, allowPostTestSystemUpdate, allowPostTestStatementUpdate, allowAutomationApi, allowCommunityView,
+      allowPostTestOrganisationUpdate, allowPostTestSystemUpdate, allowPostTestStatementUpdate, allowAutomationApi, allowCommunityView, allowUserManagement,
       CryptoUtil.generateApiKey(), None, domainId
     )
   }
 
   def extractSystemAdminInfo(request:Request[AnyContent]):Users = {
     if (Configurations.AUTHENTICATION_SSO_ENABLED) {
-      val ssoEmail = requiredBodyParameter(request, Parameters.USER_EMAIL).trim
+      val ssoEmail = requiredBodyParameter(request, ParameterNames.USER_EMAIL).trim
       getUserInfoForSSO(ssoEmail, UserRole.SystemAdmin.id.toShort)
     } else {
-      val name = requiredBodyParameter(request, Parameters.USER_NAME)
-      val email = requiredBodyParameter(request, Parameters.USER_EMAIL).trim
-      val password = requiredBodyParameter(request, Parameters.PASSWORD).trim
+      val name = requiredBodyParameter(request, ParameterNames.USER_NAME)
+      val email = requiredBodyParameter(request, ParameterNames.USER_EMAIL).trim
+      val password = requiredBodyParameter(request, ParameterNames.PASSWORD).trim
       Users(0L, name, email, CryptoUtil.hashPassword(password), onetimePassword = true, UserRole.SystemAdmin.id.toShort, 0L, None, None, UserSSOStatus.NotMigrated.id.toShort)
     }
   }
 
   def extractCommunityAdminInfo(request:Request[AnyContent]):Users = {
     if (Configurations.AUTHENTICATION_SSO_ENABLED) {
-      val ssoEmail = requiredBodyParameter(request, Parameters.USER_EMAIL).trim
+      val ssoEmail = requiredBodyParameter(request, ParameterNames.USER_EMAIL).trim
       getUserInfoForSSO(ssoEmail, UserRole.CommunityAdmin.id.toShort)
     } else {
-      val name = requiredBodyParameter(request, Parameters.USER_NAME)
-      val email = requiredBodyParameter(request, Parameters.USER_EMAIL).trim
-      val password = requiredBodyParameter(request, Parameters.PASSWORD).trim
+      val name = requiredBodyParameter(request, ParameterNames.USER_NAME)
+      val email = requiredBodyParameter(request, ParameterNames.USER_EMAIL).trim
+      val password = requiredBodyParameter(request, ParameterNames.PASSWORD).trim
       Users(0L, name, email, CryptoUtil.hashPassword(password), onetimePassword = true, UserRole.CommunityAdmin.id.toShort, 0L, None, None, UserSSOStatus.NotMigrated.id.toShort)
     }
   }
@@ -439,13 +474,13 @@ object ParameterExtractor {
       if (ssoEmailToForce.isDefined) {
         ssoEmail = ssoEmailToForce.get.trim
       } else {
-        ssoEmail = requiredBodyParameter(paramMap, Parameters.USER_EMAIL).trim
+        ssoEmail = requiredBodyParameter(paramMap, ParameterNames.USER_EMAIL).trim
       }
       getUserInfoForSSO(ssoEmail, UserRole.VendorAdmin.id.toShort)
     } else {
-      val name = requiredBodyParameter(paramMap, Parameters.USER_NAME)
-      val email = requiredBodyParameter(paramMap, Parameters.USER_EMAIL).trim
-      val password = requiredBodyParameter(paramMap, Parameters.PASSWORD).trim
+      val name = requiredBodyParameter(paramMap, ParameterNames.USER_NAME)
+      val email = requiredBodyParameter(paramMap, ParameterNames.USER_EMAIL).trim
+      val password = requiredBodyParameter(paramMap, ParameterNames.PASSWORD).trim
       Users(0L, name, email, CryptoUtil.hashPassword(password), passwordIsOneTime.getOrElse(true), UserRole.VendorAdmin.id.toShort, 0L, None, None, UserSSOStatus.NotMigrated.id.toShort)
     }
   }
@@ -464,74 +499,74 @@ object ParameterExtractor {
 
   def extractUserInfo(request:Request[AnyContent]):Users = {
     if (Configurations.AUTHENTICATION_SSO_ENABLED) {
-      val ssoEmail = requiredBodyParameter(request, Parameters.USER_EMAIL).trim
+      val ssoEmail = requiredBodyParameter(request, ParameterNames.USER_EMAIL).trim
       getUserInfoForSSO(ssoEmail, UserRole.VendorUser.id.toShort)
     } else {
-      val name = requiredBodyParameter(request, Parameters.USER_NAME)
-      val email = requiredBodyParameter(request, Parameters.USER_EMAIL).trim
-      val password = requiredBodyParameter(request, Parameters.PASSWORD).trim
+      val name = requiredBodyParameter(request, ParameterNames.USER_NAME)
+      val email = requiredBodyParameter(request, ParameterNames.USER_EMAIL).trim
+      val password = requiredBodyParameter(request, ParameterNames.PASSWORD).trim
       Users(0L, name, email, CryptoUtil.hashPassword(password), onetimePassword = true, UserRole.VendorUser.id.toShort, 0L, None, None, UserSSOStatus.NotMigrated.id.toShort)
     }
   }
 
   def extractSystemWithOrganizationInfo(paramMap:Option[Map[String, Seq[String]]]):Systems = {
-    val sname = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SYSTEM_SNAME)
-    val fname = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SYSTEM_FNAME)
-    val descr = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.SYSTEM_DESC)
-    val version = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.SYSTEM_VERSION)
-    val owner:Long = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.ORGANIZATION_ID).toLong
+    val sname = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.SYSTEM_SNAME)
+    val fname = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.SYSTEM_FNAME)
+    val descr = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.SYSTEM_DESC)
+    val version = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.SYSTEM_VERSION)
+    val owner:Long = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.ORGANIZATION_ID).toLong
     Systems(0L, sname, fname, descr, version, CryptoUtil.generateApiKey(), "", owner)
   }
 
 	def extractDomain(request:Request[AnyContent]):Domain = {
-		val sname = ParameterExtractor.requiredBodyParameter(request, Parameters.SHORT_NAME)
-		val fname = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL_NAME)
-		val descr = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
-    val reportMetadata = ParameterExtractor.optionalBodyParameter(request, Parameters.METADATA)
+		val sname = ParameterExtractor.requiredBodyParameter(request, ParameterNames.SHORT_NAME)
+		val fname = ParameterExtractor.requiredBodyParameter(request, ParameterNames.FULL_NAME)
+		val descr = ParameterExtractor.optionalBodyParameter(request, ParameterNames.DESC)
+    val reportMetadata = ParameterExtractor.optionalBodyParameter(request, ParameterNames.METADATA)
 		Domain(0L, sname, fname, descr, reportMetadata, CryptoUtil.generateApiKey())
 	}
 
 	def extractSpecification(paramMap:Option[Map[String, Seq[String]]]): Specifications = {
-		val sname = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SHORT_NAME)
-		val fname = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.FULL_NAME)
-		val descr = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.DESC)
-    val reportMetadata = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.METADATA)
-    val hidden = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.HIDDEN).toBoolean
-		val domain = ParameterExtractor.optionalLongBodyParameter(paramMap, Parameters.DOMAIN_ID)
-    val group = ParameterExtractor.optionalLongBodyParameter(paramMap, Parameters.GROUP_ID)
+		val sname = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.SHORT_NAME)
+		val fname = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.FULL_NAME)
+		val descr = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.DESC)
+    val reportMetadata = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.METADATA)
+    val hidden = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.HIDDEN).toBoolean
+		val domain = ParameterExtractor.optionalLongBodyParameter(paramMap, ParameterNames.DOMAIN_ID)
+    val group = ParameterExtractor.optionalLongBodyParameter(paramMap, ParameterNames.GROUP_ID)
 
     Specifications(0L, sname, fname, descr, reportMetadata, hidden, CryptoUtil.generateApiKey(), domain.getOrElse(0L), 0, group)
 	}
 
   def extractSpecificationGroup(request: Request[AnyContent]): SpecificationGroups = {
-    val sname = ParameterExtractor.requiredBodyParameter(request, Parameters.SHORT_NAME)
-    val fname = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL_NAME)
-    val descr = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
-    val reportMetadata = ParameterExtractor.optionalBodyParameter(request, Parameters.METADATA)
-    val domain = ParameterExtractor.requiredBodyParameter(request, Parameters.DOMAIN_ID).toLong
+    val sname = ParameterExtractor.requiredBodyParameter(request, ParameterNames.SHORT_NAME)
+    val fname = ParameterExtractor.requiredBodyParameter(request, ParameterNames.FULL_NAME)
+    val descr = ParameterExtractor.optionalBodyParameter(request, ParameterNames.DESC)
+    val reportMetadata = ParameterExtractor.optionalBodyParameter(request, ParameterNames.METADATA)
+    val domain = ParameterExtractor.requiredBodyParameter(request, ParameterNames.DOMAIN_ID).toLong
 
     SpecificationGroups(0L, sname, fname, descr, reportMetadata, 0, CryptoUtil.generateApiKey(), domain)
   }
 
   def extractActor(paramMap:Option[Map[String, Seq[String]]]):Actor = {
-    val id:Long = ParameterExtractor. optionalBodyParameter(paramMap, Parameters.ID) match {
+    val id:Long = ParameterExtractor. optionalBodyParameter(paramMap, ParameterNames.ID) match {
       case Some(i) => i.toLong
       case _ => 0L
     }
-		val actorId:String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.ACTOR_ID)
-		val name:String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.NAME)
-		val description:Option[String] = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.DESCRIPTION)
-    val reportMetadata:Option[String] = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.METADATA)
+		val actorId:String = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.ACTOR_ID)
+		val name:String = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.NAME)
+		val description:Option[String] = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.DESCRIPTION)
+    val reportMetadata:Option[String] = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.METADATA)
     var default:Option[Boolean] = None
-    val defaultStr = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.ACTOR_DEFAULT)
+    val defaultStr = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.ACTOR_DEFAULT)
     if (defaultStr.isDefined) {
       default = Some(defaultStr.get.toBoolean)
     } else {
       default = Some(false)
     }
-    val hidden = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.HIDDEN).toBoolean
+    val hidden = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.HIDDEN).toBoolean
     var displayOrder:Option[Short] = None
-    val displayOrderStr = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.DISPLAY_ORDER)
+    val displayOrderStr = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.DISPLAY_ORDER)
     if (displayOrderStr.isDefined) {
       displayOrder = Some(displayOrderStr.get.toShort)
     }
@@ -539,38 +574,38 @@ object ParameterExtractor {
 	}
 
   def extractEndpoint(request:Request[AnyContent]):Endpoints = {
-    val id:Long = ParameterExtractor.optionalBodyParameter(request, Parameters.ID) match {
+    val id:Long = ParameterExtractor.optionalBodyParameter(request, ParameterNames.ID) match {
       case Some(i) => i.toLong
       case _ => 0L
     }
-    val name:String = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
-    val desc:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
-    val actorId:Long = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID).toLong
+    val name:String = ParameterExtractor.requiredBodyParameter(request, ParameterNames.NAME)
+    val desc:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.DESC)
+    val actorId:Long = ParameterExtractor.requiredBodyParameter(request, ParameterNames.ACTOR_ID).toLong
     Endpoints(id, name, desc, actorId)
   }
 
   def extractParameter(request:Request[AnyContent]):models.Parameters = {
-      val id:Long = ParameterExtractor.optionalBodyParameter(request, Parameters.ID) match {
+      val id:Long = ParameterExtractor.optionalBodyParameter(request, ParameterNames.ID) match {
       case Some(i) => i.toLong
       case _ => 0L
     }
-    val name:String = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
-    val testKey:String = ParameterExtractor.requiredBodyParameter(request, Parameters.TEST_KEY)
-    val desc:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
-    val use:String = ParameterExtractor.requiredBodyParameter(request, Parameters.USE)
-    val kind:String = ParameterExtractor.requiredBodyParameter(request, Parameters.KIND)
-    val endpointId:Long = ParameterExtractor.optionalBodyParameter(request, Parameters.ENDPOINT_ID).map(_.toLong).getOrElse(0L)
-    val adminOnly = ParameterExtractor.requiredBodyParameter(request, Parameters.ADMIN_ONLY).toBoolean
-    val notForTests = ParameterExtractor.requiredBodyParameter(request, Parameters.NOT_FOR_TESTS).toBoolean
-    var hidden = ParameterExtractor.requiredBodyParameter(request, Parameters.HIDDEN).toBoolean
-    val allowedValues:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.ALLOWED_VALUES)
-    var dependsOn:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DEPENDS_ON)
+    val name:String = ParameterExtractor.requiredBodyParameter(request, ParameterNames.NAME)
+    val testKey:String = ParameterExtractor.requiredBodyParameter(request, ParameterNames.TEST_KEY)
+    val desc:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.DESC)
+    val use:String = ParameterExtractor.requiredBodyParameter(request, ParameterNames.USE)
+    val kind:String = ParameterExtractor.requiredBodyParameter(request, ParameterNames.KIND)
+    val endpointId:Long = ParameterExtractor.optionalBodyParameter(request, ParameterNames.ENDPOINT_ID).map(_.toLong).getOrElse(0L)
+    val adminOnly = ParameterExtractor.requiredBodyParameter(request, ParameterNames.ADMIN_ONLY).toBoolean
+    val notForTests = ParameterExtractor.requiredBodyParameter(request, ParameterNames.NOT_FOR_TESTS).toBoolean
+    var hidden = ParameterExtractor.requiredBodyParameter(request, ParameterNames.HIDDEN).toBoolean
+    val allowedValues:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.ALLOWED_VALUES)
+    var dependsOn:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.DEPENDS_ON)
     var dependsOnValue:Option[String] = None
     if (dependsOn.isDefined && dependsOn.get.trim.isEmpty) {
       dependsOn = None
     }
     if (dependsOn.isDefined) {
-      dependsOnValue = ParameterExtractor.optionalBodyParameter(request, Parameters.DEPENDS_ON_VALUE)
+      dependsOnValue = ParameterExtractor.optionalBodyParameter(request, ParameterNames.DEPENDS_ON_VALUE)
     }
     if (dependsOnValue.isDefined && dependsOnValue.get.trim.isEmpty) {
       dependsOnValue = None
@@ -578,34 +613,34 @@ object ParameterExtractor {
     if (!adminOnly) {
       hidden = false
     }
-    val defaultValue = determineDefaultParameterValue(ParameterExtractor.optionalBodyParameter(request, Parameters.DEFAULT_VALUE), kind, allowedValues)
+    val defaultValue = determineDefaultParameterValue(ParameterExtractor.optionalBodyParameter(request, ParameterNames.DEFAULT_VALUE), kind, allowedValues)
     models.Parameters(id, name, testKey, desc, use, kind, adminOnly, notForTests, hidden, allowedValues, 0, dependsOn, dependsOnValue, defaultValue, endpointId)
   }
 
   def extractOrganisationParameter(request:Request[AnyContent]):models.OrganisationParameters = {
-    val id:Long = ParameterExtractor.optionalBodyParameter(request, Parameters.ID) match {
+    val id:Long = ParameterExtractor.optionalBodyParameter(request, ParameterNames.ID) match {
       case Some(i) => i.toLong
       case _ => 0L
     }
-    val name:String = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
-    val testKey:String = ParameterExtractor.requiredBodyParameter(request, Parameters.TEST_KEY)
-    val desc:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
-    val use:String = ParameterExtractor.requiredBodyParameter(request, Parameters.USE)
-    val kind:String = ParameterExtractor.requiredBodyParameter(request, Parameters.KIND)
-    val communityId:Long = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
-    val adminOnly = ParameterExtractor.requiredBodyParameter(request, Parameters.ADMIN_ONLY).toBoolean
-    val notForTests = ParameterExtractor.requiredBodyParameter(request, Parameters.NOT_FOR_TESTS).toBoolean
-    val inExports:Boolean = (kind == "SIMPLE") && ParameterExtractor.requiredBodyParameter(request, Parameters.IN_EXPORTS).toBoolean
-    val inSelfRegistration: Boolean = Configurations.REGISTRATION_ENABLED && (!adminOnly) && ParameterExtractor.requiredBodyParameter(request, Parameters.IN_SELFREG).toBoolean
-    var hidden: Boolean = ParameterExtractor.requiredBodyParameter(request, Parameters.HIDDEN).toBoolean
-    val allowedValues:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.ALLOWED_VALUES)
-    var dependsOn:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DEPENDS_ON)
+    val name:String = ParameterExtractor.requiredBodyParameter(request, ParameterNames.NAME)
+    val testKey:String = ParameterExtractor.requiredBodyParameter(request, ParameterNames.TEST_KEY)
+    val desc:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.DESC)
+    val use:String = ParameterExtractor.requiredBodyParameter(request, ParameterNames.USE)
+    val kind:String = ParameterExtractor.requiredBodyParameter(request, ParameterNames.KIND)
+    val communityId:Long = ParameterExtractor.requiredBodyParameter(request, ParameterNames.COMMUNITY_ID).toLong
+    val adminOnly = ParameterExtractor.requiredBodyParameter(request, ParameterNames.ADMIN_ONLY).toBoolean
+    val notForTests = ParameterExtractor.requiredBodyParameter(request, ParameterNames.NOT_FOR_TESTS).toBoolean
+    val inExports:Boolean = (kind == "SIMPLE") && ParameterExtractor.requiredBodyParameter(request, ParameterNames.IN_EXPORTS).toBoolean
+    val inSelfRegistration: Boolean = Configurations.REGISTRATION_ENABLED && ParameterExtractor.requiredBodyParameter(request, ParameterNames.IN_SELFREG).toBoolean
+    var hidden: Boolean = ParameterExtractor.requiredBodyParameter(request, ParameterNames.HIDDEN).toBoolean
+    val allowedValues:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.ALLOWED_VALUES)
+    var dependsOn:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.DEPENDS_ON)
     var dependsOnValue:Option[String] = None
     if (dependsOn.isDefined && dependsOn.get.trim.isEmpty) {
       dependsOn = None
     }
     if (dependsOn.isDefined) {
-      dependsOnValue = ParameterExtractor.optionalBodyParameter(request, Parameters.DEPENDS_ON_VALUE)
+      dependsOnValue = ParameterExtractor.optionalBodyParameter(request, ParameterNames.DEPENDS_ON_VALUE)
     }
     if (dependsOnValue.isDefined && dependsOnValue.get.trim.isEmpty) {
       dependsOnValue = None
@@ -613,7 +648,7 @@ object ParameterExtractor {
     if (!adminOnly) {
       hidden = false
     }
-    val defaultValue = determineDefaultParameterValue(ParameterExtractor.optionalBodyParameter(request, Parameters.DEFAULT_VALUE), kind, allowedValues)
+    val defaultValue = determineDefaultParameterValue(ParameterExtractor.optionalBodyParameter(request, ParameterNames.DEFAULT_VALUE), kind, allowedValues)
     models.OrganisationParameters(id, name, testKey, desc, use, kind, adminOnly, notForTests, inExports, inSelfRegistration, hidden, allowedValues, 0, dependsOn, dependsOnValue, defaultValue, communityId)
   }
 
@@ -634,28 +669,28 @@ object ParameterExtractor {
   }
 
   def extractSystemParameter(request:Request[AnyContent]):models.SystemParameters = {
-    val id:Long = ParameterExtractor.optionalBodyParameter(request, Parameters.ID) match {
+    val id:Long = ParameterExtractor.optionalBodyParameter(request, ParameterNames.ID) match {
       case Some(i) => i.toLong
       case _ => 0L
     }
-    val name:String = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
-    val testKey:String = ParameterExtractor.requiredBodyParameter(request, Parameters.TEST_KEY)
-    val desc:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
-    val use:String = ParameterExtractor.requiredBodyParameter(request, Parameters.USE)
-    val kind:String = ParameterExtractor.requiredBodyParameter(request, Parameters.KIND)
-    val communityId:Long = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
-    val adminOnly = ParameterExtractor.requiredBodyParameter(request, Parameters.ADMIN_ONLY).toBoolean
-    val notForTests = ParameterExtractor.requiredBodyParameter(request, Parameters.NOT_FOR_TESTS).toBoolean
-    val inExports = (kind == "SIMPLE") && ParameterExtractor.requiredBodyParameter(request, Parameters.IN_EXPORTS).toBoolean
-    var hidden = ParameterExtractor.requiredBodyParameter(request, Parameters.HIDDEN).toBoolean
-    val allowedValues:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.ALLOWED_VALUES)
-    var dependsOn:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DEPENDS_ON)
+    val name:String = ParameterExtractor.requiredBodyParameter(request, ParameterNames.NAME)
+    val testKey:String = ParameterExtractor.requiredBodyParameter(request, ParameterNames.TEST_KEY)
+    val desc:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.DESC)
+    val use:String = ParameterExtractor.requiredBodyParameter(request, ParameterNames.USE)
+    val kind:String = ParameterExtractor.requiredBodyParameter(request, ParameterNames.KIND)
+    val communityId:Long = ParameterExtractor.requiredBodyParameter(request, ParameterNames.COMMUNITY_ID).toLong
+    val adminOnly = ParameterExtractor.requiredBodyParameter(request, ParameterNames.ADMIN_ONLY).toBoolean
+    val notForTests = ParameterExtractor.requiredBodyParameter(request, ParameterNames.NOT_FOR_TESTS).toBoolean
+    val inExports = (kind == "SIMPLE") && ParameterExtractor.requiredBodyParameter(request, ParameterNames.IN_EXPORTS).toBoolean
+    var hidden = ParameterExtractor.requiredBodyParameter(request, ParameterNames.HIDDEN).toBoolean
+    val allowedValues:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.ALLOWED_VALUES)
+    var dependsOn:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.DEPENDS_ON)
     var dependsOnValue:Option[String] = None
     if (dependsOn.isDefined && dependsOn.get.trim.isEmpty) {
       dependsOn = None
     }
     if (dependsOn.isDefined) {
-      dependsOnValue = ParameterExtractor.optionalBodyParameter(request, Parameters.DEPENDS_ON_VALUE)
+      dependsOnValue = ParameterExtractor.optionalBodyParameter(request, ParameterNames.DEPENDS_ON_VALUE)
     }
     if (dependsOnValue.isDefined && dependsOnValue.get.trim.isEmpty) {
       dependsOnValue = None
@@ -663,16 +698,16 @@ object ParameterExtractor {
     if (!adminOnly) {
       hidden = false
     }
-    val defaultValue = determineDefaultParameterValue(ParameterExtractor.optionalBodyParameter(request, Parameters.DEFAULT_VALUE), kind, allowedValues)
+    val defaultValue = determineDefaultParameterValue(ParameterExtractor.optionalBodyParameter(request, ParameterNames.DEFAULT_VALUE), kind, allowedValues)
     models.SystemParameters(id, name, testKey, desc, use, kind, adminOnly, notForTests, inExports, hidden, allowedValues, 0, dependsOn, dependsOnValue, defaultValue, communityId)
   }
 
   def extractLandingPageInfo(request:Request[AnyContent]):LandingPages = {
-    val name = requiredBodyParameter(request, Parameters.NAME)
-    val desc = optionalBodyParameter(request, Parameters.DESCRIPTION)
-    val content = HtmlUtil.sanitizeEditorContent(requiredBodyParameter(request, Parameters.CONTENT))
-    val default = requiredBodyParameter(request, Parameters.DEFAULT).toBoolean
-    val communityId = requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
+    val name = requiredBodyParameter(request, ParameterNames.NAME)
+    val desc = optionalBodyParameter(request, ParameterNames.DESCRIPTION)
+    val content = HtmlUtil.sanitizeEditorContent(requiredBodyParameter(request, ParameterNames.CONTENT))
+    val default = requiredBodyParameter(request, ParameterNames.DEFAULT).toBoolean
+    val communityId = requiredBodyParameter(request, ParameterNames.COMMUNITY_ID).toLong
     LandingPages(0L, name, desc, content, default, communityId)
   }
 
@@ -695,50 +730,50 @@ object ParameterExtractor {
   }
 
   def extractCommunityResource(paramMap:Option[Map[String, Seq[String]]], communityId: Long): CommunityResources = {
-    val name = requiredBodyParameter(paramMap, Parameters.NAME)
-    val description = optionalBodyParameter(paramMap, Parameters.DESCRIPTION)
+    val name = requiredBodyParameter(paramMap, ParameterNames.NAME)
+    val description = optionalBodyParameter(paramMap, ParameterNames.DESCRIPTION)
     CommunityResources(0L, name, description, communityId)
   }
 
   def extractTriggerInfo(request:Request[AnyContent], triggerId: Option[Long]): Trigger = {
     // Trigger.
-    val name = requiredBodyParameter(request, Parameters.NAME)
-    val description = optionalBodyParameter(request, Parameters.DESCRIPTION)
-    val url = requiredBodyParameter(request, Parameters.URL)
-    val operation = optionalBodyParameter(request, Parameters.OPERATION)
-    val active = requiredBodyParameter(request, Parameters.ACTIVE).toBoolean
-    val eventType = requiredBodyParameter(request, Parameters.EVENT).toShort
-    val serviceType = requiredBodyParameter(request, Parameters.TYPE).toShort
+    val name = requiredBodyParameter(request, ParameterNames.NAME)
+    val description = optionalBodyParameter(request, ParameterNames.DESCRIPTION)
+    val url = requiredBodyParameter(request, ParameterNames.URL)
+    val operation = optionalBodyParameter(request, ParameterNames.OPERATION)
+    val active = requiredBodyParameter(request, ParameterNames.ACTIVE).toBoolean
+    val eventType = requiredBodyParameter(request, ParameterNames.EVENT).toShort
+    val serviceType = requiredBodyParameter(request, ParameterNames.TYPE).toShort
     // Check that this is a valid value (otherwise throw exception)
     TriggerEventType.apply(eventType)
-    val communityId = requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
+    val communityId = requiredBodyParameter(request, ParameterNames.COMMUNITY_ID).toLong
     new Trigger(
       Triggers(triggerId.getOrElse(0L), name, description, url, eventType, serviceType, operation, active, None, None, communityId),
-      extractTriggerDataItems(request, Parameters.DATA, triggerId),
-      extractTriggerFireExpressions(request, Parameters.EXPRESSIONS, triggerId)
+      extractTriggerDataItems(request, ParameterNames.DATA, triggerId),
+      extractTriggerFireExpressions(request, ParameterNames.EXPRESSIONS, triggerId)
     )
   }
 
   def extractLegalNoticeInfo(request:Request[AnyContent]):LegalNotices = {
-    val name = requiredBodyParameter(request, Parameters.NAME)
-    val desc = optionalBodyParameter(request, Parameters.DESCRIPTION)
-    val content = HtmlUtil.sanitizeEditorContent(requiredBodyParameter(request, Parameters.CONTENT))
-    val default = requiredBodyParameter(request, Parameters.DEFAULT).toBoolean
-    val communityId = requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
+    val name = requiredBodyParameter(request, ParameterNames.NAME)
+    val desc = optionalBodyParameter(request, ParameterNames.DESCRIPTION)
+    val content = HtmlUtil.sanitizeEditorContent(requiredBodyParameter(request, ParameterNames.CONTENT))
+    val default = requiredBodyParameter(request, ParameterNames.DEFAULT).toBoolean
+    val communityId = requiredBodyParameter(request, ParameterNames.COMMUNITY_ID).toLong
     LegalNotices(0L, name, desc, content, default, communityId)
   }
 
   def extractErrorTemplateInfo(request:Request[AnyContent]):ErrorTemplates = {
-    val name = requiredBodyParameter(request, Parameters.NAME)
-    val desc = optionalBodyParameter(request, Parameters.DESCRIPTION)
-    val content = HtmlUtil.sanitizeEditorContent(requiredBodyParameter(request, Parameters.CONTENT))
-    val default = requiredBodyParameter(request, Parameters.DEFAULT).toBoolean
-    val communityId = requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
+    val name = requiredBodyParameter(request, ParameterNames.NAME)
+    val desc = optionalBodyParameter(request, ParameterNames.DESCRIPTION)
+    val content = HtmlUtil.sanitizeEditorContent(requiredBodyParameter(request, ParameterNames.CONTENT))
+    val default = requiredBodyParameter(request, ParameterNames.DEFAULT).toBoolean
+    val communityId = requiredBodyParameter(request, ParameterNames.COMMUNITY_ID).toLong
     ErrorTemplates(0L, name, desc, content, default, communityId)
   }
 
 	def extractIdsQueryParameter(request:Request[AnyContent]): Option[List[String]] = {
-		val idsStr = ParameterExtractor.optionalQueryParameter(request, Parameters.IDS)
+		val idsStr = ParameterExtractor.optionalQueryParameter(request, ParameterNames.IDS)
 		val ids = idsStr match {
 			case Some(str) => Some(str.split(",").toList)
 			case None => None
@@ -747,7 +782,7 @@ object ParameterExtractor {
 	}
 
   def extractIdsBodyParameter(request: Request[AnyContent]): Set[Long] = {
-    val idsStr = ParameterExtractor.optionalBodyParameter(request, Parameters.IDS)
+    val idsStr = ParameterExtractor.optionalBodyParameter(request, ParameterNames.IDS)
     val ids = idsStr match {
       case Some(str) => str.split(",").map(x => x.toLong).toSet
       case None => Set.empty[Long]
@@ -756,7 +791,7 @@ object ParameterExtractor {
   }
 
   def extractLongIdsQueryParameter(request:Request[AnyContent]): Option[List[Long]] = {
-		val idsStr = ParameterExtractor.optionalQueryParameter(request, Parameters.IDS)
+		val idsStr = ParameterExtractor.optionalQueryParameter(request, ParameterNames.IDS)
 		val ids = idsStr match {
 			case Some(str) => Some(str.split(",").map(_.toLong).toList)
 			case None => None
@@ -765,7 +800,7 @@ object ParameterExtractor {
 	}
 
   def extractLongIdsBodyParameter(request:Request[AnyContent]): Option[List[Long]] = {
-    extractLongIdsBodyParameter(request, Parameters.IDS)
+    extractLongIdsBodyParameter(request, ParameterNames.IDS)
   }
 
   def extractLongIdsBodyParameter(request:Request[AnyContent], parameterName: String): Option[List[Long]] = {
@@ -832,16 +867,16 @@ object ParameterExtractor {
     var footerLogoFile: Option[NamedFile] = None
     var faviconFile: Option[NamedFile] = None
     val filesToScan = new ListBuffer[NamedFile]
-    if (files.contains(Parameters.HEADER_LOGO_FILE)) {
-      headerLogoFile = Some(NamedFile(files(Parameters.HEADER_LOGO_FILE).file, files(Parameters.HEADER_LOGO_FILE).name, Some(Parameters.HEADER_LOGO_FILE)))
+    if (files.contains(ParameterNames.HEADER_LOGO_FILE)) {
+      headerLogoFile = Some(NamedFile(files(ParameterNames.HEADER_LOGO_FILE).file, files(ParameterNames.HEADER_LOGO_FILE).name, Some(ParameterNames.HEADER_LOGO_FILE)))
       filesToScan += headerLogoFile.get
     }
-    if (files.contains(Parameters.FOOTER_LOGO_FILE)) {
-      footerLogoFile = Some(NamedFile(files(Parameters.FOOTER_LOGO_FILE).file, files(Parameters.FOOTER_LOGO_FILE).name, Some(Parameters.FOOTER_LOGO_FILE)))
+    if (files.contains(ParameterNames.FOOTER_LOGO_FILE)) {
+      footerLogoFile = Some(NamedFile(files(ParameterNames.FOOTER_LOGO_FILE).file, files(ParameterNames.FOOTER_LOGO_FILE).name, Some(ParameterNames.FOOTER_LOGO_FILE)))
       filesToScan += footerLogoFile.get
     }
-    if (files.contains(Parameters.FAVICON_FILE)) {
-      faviconFile = Some(NamedFile(files(Parameters.FAVICON_FILE).file, files(Parameters.FAVICON_FILE).name, Some(Parameters.FAVICON_FILE)))
+    if (files.contains(ParameterNames.FAVICON_FILE)) {
+      faviconFile = Some(NamedFile(files(ParameterNames.FAVICON_FILE).file, files(ParameterNames.FAVICON_FILE).name, Some(ParameterNames.FAVICON_FILE)))
       filesToScan += faviconFile.get
     }
     if (filesToScan.nonEmpty) {
@@ -858,12 +893,12 @@ object ParameterExtractor {
     if (resultToReturn.isEmpty) {
       themeFiles = Some(ThemeFiles(headerLogoFile, footerLogoFile, faviconFile))
       // Define calculated colours.
-      val primaryButtonColor = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.PRIMARY_BUTTON_COLOR)
-      var primaryButtonHoverColor = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.PRIMARY_BUTTON_HOVER_COLOR)
-      var primaryButtonActiveColor = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.PRIMARY_BUTTON_ACTIVE_COLOR)
-      val secondaryButtonColor = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SECONDARY_BUTTON_COLOR)
-      var secondaryButtonHoverColor = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SECONDARY_BUTTON_HOVER_COLOR)
-      var secondaryButtonActiveColor = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SECONDARY_BUTTON_ACTIVE_COLOR)
+      val primaryButtonColor = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.PRIMARY_BUTTON_COLOR)
+      var primaryButtonHoverColor = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.PRIMARY_BUTTON_HOVER_COLOR)
+      var primaryButtonActiveColor = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.PRIMARY_BUTTON_ACTIVE_COLOR)
+      val secondaryButtonColor = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.SECONDARY_BUTTON_COLOR)
+      var secondaryButtonHoverColor = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.SECONDARY_BUTTON_HOVER_COLOR)
+      var secondaryButtonActiveColor = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.SECONDARY_BUTTON_ACTIVE_COLOR)
       if (primaryButtonColor == primaryButtonHoverColor || primaryButtonColor == primaryButtonActiveColor) {
         primaryButtonHoverColor = darkenColor(primaryButtonColor)
         primaryButtonActiveColor = primaryButtonHoverColor
@@ -874,36 +909,36 @@ object ParameterExtractor {
       }
       theme = Some(Theme(
         themeIdToUse.getOrElse(0L),
-        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.KEY),
-        ParameterExtractor.optionalBodyParameter(paramMap, Parameters.DESCRIPTION),
-        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.ACTIVE).toBoolean,
+        ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.KEY),
+        ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.DESCRIPTION),
+        ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.ACTIVE).toBoolean,
         custom = true,
-        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SEPARATOR_TITLE_COLOR),
-        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.MODAL_TITLE_COLOR),
-        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.TABLE_TITLE_COLOR),
-        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.CARD_TILE_COLOR),
-        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.PAGE_TITLE_COLOR),
-        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.HEADING_COLOR),
-        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.TAB_LINK_COLOR),
-        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.FOOTER_TEXT_COLOR),
-        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.HEADER_BACKGROUND_COLOR),
-        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.HEADER_BORDER_COLOR),
-        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.HEADER_SEPARATOR_COLOR),
-        ParameterExtractor.optionalBodyParameter(paramMap, Parameters.HEADER_LOGO_PATH)
+        ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.SEPARATOR_TITLE_COLOR),
+        ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.MODAL_TITLE_COLOR),
+        ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.TABLE_TITLE_COLOR),
+        ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.CARD_TILE_COLOR),
+        ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.PAGE_TITLE_COLOR),
+        ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.HEADING_COLOR),
+        ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.TAB_LINK_COLOR),
+        ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.FOOTER_TEXT_COLOR),
+        ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.HEADER_BACKGROUND_COLOR),
+        ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.HEADER_BORDER_COLOR),
+        ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.HEADER_SEPARATOR_COLOR),
+        ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.HEADER_LOGO_PATH)
           .getOrElse(themeFiles.flatMap(_.headerLogo).map(_.name).getOrElse(throw new IllegalStateException("Missing header logo"))),
-        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.FOOTER_BACKGROUND_COLOR),
-        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.FOOTER_BORDER_COLOR),
-        ParameterExtractor.optionalBodyParameter(paramMap, Parameters.FOOTER_LOGO_PATH)
+        ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.FOOTER_BACKGROUND_COLOR),
+        ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.FOOTER_BORDER_COLOR),
+        ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.FOOTER_LOGO_PATH)
           .getOrElse(themeFiles.flatMap(_.footerLogo).map(_.name).getOrElse(throw new IllegalStateException("Missing footer logo"))),
-        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.FOOTER_LOGO_DISPLAY),
-        ParameterExtractor.optionalBodyParameter(paramMap, Parameters.FAVICON_PATH)
+        ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.FOOTER_LOGO_DISPLAY),
+        ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.FAVICON_PATH)
           .getOrElse(themeFiles.flatMap(_.faviconFile).map(_.name).getOrElse(throw new IllegalStateException("Missing favicon"))),
         primaryButtonColor,
-        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.PRIMARY_BUTTON_LABEL_COLOR),
+        ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.PRIMARY_BUTTON_LABEL_COLOR),
         primaryButtonHoverColor,
         primaryButtonActiveColor,
         secondaryButtonColor,
-        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SECONDARY_BUTTON_LABEL_COLOR),
+        ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.SECONDARY_BUTTON_LABEL_COLOR),
         secondaryButtonHoverColor,
         secondaryButtonActiveColor,
       ))
@@ -915,12 +950,12 @@ object ParameterExtractor {
   }
 
   def extractBadges(request: Request[AnyContent], paramMap: Option[Map[String, Seq[String]]], forReport: Boolean): (Option[Badges], Option[Result]) = {
-    val successBadgeEnabledParam = if (forReport) Parameters.SUCCESS_BADGE_REPORT_ENABLED else Parameters.SUCCESS_BADGE_ENABLED
-    val failureBadgeEnabledParam = if (forReport) Parameters.FAILURE_BADGE_REPORT_ENABLED else Parameters.FAILURE_BADGE_ENABLED
-    val otherBadgeEnabledParam = if (forReport) Parameters.OTHER_BADGE_REPORT_ENABLED else Parameters.OTHER_BADGE_ENABLED
-    val successBadgeParam = if (forReport) Parameters.SUCCESS_BADGE_REPORT else Parameters.SUCCESS_BADGE
-    val failureBadgeParam = if (forReport) Parameters.FAILURE_BADGE_REPORT else Parameters.FAILURE_BADGE
-    val otherBadgeParam = if (forReport) Parameters.OTHER_BADGE_REPORT else Parameters.OTHER_BADGE
+    val successBadgeEnabledParam = if (forReport) ParameterNames.SUCCESS_BADGE_REPORT_ENABLED else ParameterNames.SUCCESS_BADGE_ENABLED
+    val failureBadgeEnabledParam = if (forReport) ParameterNames.FAILURE_BADGE_REPORT_ENABLED else ParameterNames.FAILURE_BADGE_ENABLED
+    val otherBadgeEnabledParam = if (forReport) ParameterNames.OTHER_BADGE_REPORT_ENABLED else ParameterNames.OTHER_BADGE_ENABLED
+    val successBadgeParam = if (forReport) ParameterNames.SUCCESS_BADGE_REPORT else ParameterNames.SUCCESS_BADGE
+    val failureBadgeParam = if (forReport) ParameterNames.FAILURE_BADGE_REPORT else ParameterNames.FAILURE_BADGE
+    val otherBadgeParam = if (forReport) ParameterNames.OTHER_BADGE_REPORT else ParameterNames.OTHER_BADGE
 
     val files = ParameterExtractor.extractFiles(request)
     var resultToReturn: Option[Result] = None
@@ -958,8 +993,8 @@ object ParameterExtractor {
     var stylesheetFile: Option[File] = None
     var response: Option[Result] = None
     val files = ParameterExtractor.extractFiles(request)
-    if (files.contains(Parameters.FILE)) {
-      stylesheetFile = Some(files(Parameters.FILE).file)
+    if (files.contains(ParameterNames.FILE)) {
+      stylesheetFile = Some(files(ParameterNames.FILE).file)
       // Check for virus
       if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
         val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
@@ -977,6 +1012,112 @@ object ParameterExtractor {
       }
     }
     (stylesheetFile, response)
+  }
+
+  def extractTestServiceWithParameter(request: Request[AnyContent], domainId: Long, serviceId: Option[Long]): TestServiceWithParameter = {
+    val parameter = DomainParameter(
+      id = optionalLongBodyParameter(request, ParameterNames.PARAMETER).getOrElse(0L),
+      name = requiredBodyParameter(request, ParameterNames.NAME),
+      desc = optionalBodyParameter(request, ParameterNames.DESC),
+      kind = "SIMPLE",
+      value = Some(requiredBodyParameter(request, ParameterNames.VALUE)),
+      inTests = true,
+      contentType = None,
+      isTestService = true,
+      domain = domainId
+    )
+    var authBasicUsername = optionalBodyParameter(request, ParameterNames.AUTH_BASIC_USERNAME)
+    var authBasicPassword = optionalBodyParameter(request, ParameterNames.AUTH_BASIC_PASSWORD)
+    var authTokenPassword = optionalBodyParameter(request, ParameterNames.AUTH_TOKEN_PASSWORD)
+    var authTokenUsername = optionalBodyParameter(request, ParameterNames.AUTH_TOKEN_USERNAME)
+    var authTokenPasswordType = optionalShortBodyParameter(request, ParameterNames.AUTH_TOKEN_PASSWORD_TYPE).map(TestServiceAuthTokenPasswordType.apply(_).id.toShort)
+    if (serviceId.isEmpty) {
+      // This is a new test service - Ensure consistency of auth fields
+      if ((authBasicUsername.nonEmpty || authBasicPassword.nonEmpty) && (authBasicUsername.isEmpty || authBasicPassword.isEmpty)) {
+        authBasicUsername = None
+        authBasicPassword = None
+      }
+      if ((authTokenUsername.nonEmpty || authTokenPassword.nonEmpty || authTokenPasswordType.nonEmpty) && (authTokenUsername.isEmpty || authTokenPassword.isEmpty || authTokenPasswordType.isEmpty)) {
+        authTokenPassword = None
+        authTokenUsername = None
+        authTokenPasswordType = None
+      }
+    }
+    val service = TestService(
+      id = serviceId.getOrElse(optionalLongBodyParameter(request, ParameterNames.ID).getOrElse(0L)),
+      serviceType = TestServiceType.apply(requiredBodyParameter(request, ParameterNames.SERVICE_TYPE).toInt).id.toShort,
+      apiType = TestServiceApiType.apply(requiredBodyParameter(request, ParameterNames.API_TYPE).toInt).id.toShort,
+      identifier = optionalBodyParameter(request, ParameterNames.IDENTIFIER),
+      version = optionalBodyParameter(request, ParameterNames.VERSION),
+      authBasicUsername = authBasicUsername,
+      authBasicPassword = authBasicPassword,
+      authTokenUsername = authTokenUsername,
+      authTokenPassword = authTokenPassword,
+      authTokenPasswordType = authTokenPasswordType,
+      parameter = parameter.id
+    )
+    TestServiceWithParameter(service, parameter)
+  }
+
+  def extractApiKeyHeader(request: RequestHeader): Option[String] = {
+    var header = request.headers.get(Configurations.HEADER_NAME_ITB_API_KEY)
+    if (header.isEmpty) {
+      // Backwards compatibility.
+      header = request.headers.get("ITB_API_KEY")
+    }
+    header
+  }
+
+  def extractTestServiceSearchCriteria(request: Request[AnyContent]): TestServiceSearchCriteria = {
+    TestServiceSearchCriteria(
+      ParameterExtractor.optionalQueryParameter(request, ParameterNames.DOMAIN),
+      ParameterExtractor.optionalQueryParameter(request, ParameterNames.KEY),
+      ParameterExtractor.optionalQueryParameter(request, ParameterNames.IDENTIFIER),
+      ParameterExtractor.optionalQueryParameter(request, ParameterNames.VERSION),
+      ParameterExtractor.optionalQueryParameter(request, ParameterNames.SERVICE_TYPE).map(Enums.parseTestServiceTypeForApi),
+      ParameterExtractor.optionalQueryParameter(request, ParameterNames.API_TYPE).map(Enums.parseTestServiceApiTypeForApi)
+    )
+  }
+
+  def extractAvailableConformanceStatementSearchCriteria(request: Request[AnyContent]): AvailableStatementsSearchCriteria = {
+    AvailableStatementsSearchCriteria(
+      filterText = ParameterExtractor.optionalBodyParameter(request, ParameterNames.FILTER),
+      selected = ParameterExtractor.optionalBodyParameter(request, ParameterNames.SELECTED).forall(_.toBoolean),
+      unselected = ParameterExtractor.optionalBodyParameter(request, ParameterNames.UNSELECTED).forall(_.toBoolean),
+      selectedIds = ParameterExtractor.extractIdsBodyParameter(request)
+    )
+  }
+
+  def extractConformanceStatementTestSearchCriteria(request: Request[AnyContent]): ConformanceStatementTestSearchCriteria = {
+    ConformanceStatementTestSearchCriteria(
+      succeeded = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.SUCCEEDED).getOrElse(true),
+      failed = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.FAILED).getOrElse(true),
+      incomplete = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.INCOMPLETE).getOrElse(true),
+      optional = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.OPTIONAL).getOrElse(true),
+      disabled = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.DISABLED).getOrElse(true),
+      testSuiteId = ParameterExtractor.optionalLongQueryParameter(request, ParameterNames.TEST_SUITE),
+      testSuiteFilterText = ParameterExtractor.optionalQueryParameter(request, ParameterNames.TEST_SUITE).filter(x => !x.isBlank),
+      testCaseFilterText = ParameterExtractor.optionalQueryParameter(request, ParameterNames.TEST_CASE).filter(x => !x.isBlank)
+    )
+  }
+
+  def validHttpAbsoluteUrl(value: String): Boolean = {
+    var result = false
+    if (!value.isBlank && !value.matches(".*\\s+.*")) {
+      try {
+        val url = URI.create(value).toURL
+        val protocol = url.getProtocol
+        result = "http".equalsIgnoreCase(protocol) || "https".equalsIgnoreCase(protocol)
+      } catch {
+        case _: Exception =>
+          // Ignore error (result is false)
+      }
+    }
+    result
+  }
+
+  def validTestVariableName(value: String): Boolean = {
+    value.matches("^[a-zA-Z][a-zA-Z\\-_.0-9]*$")
   }
 
 }

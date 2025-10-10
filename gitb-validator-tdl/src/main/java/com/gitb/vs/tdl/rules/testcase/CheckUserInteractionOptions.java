@@ -22,6 +22,7 @@ import com.gitb.tdl.UserRequest;
 import com.gitb.vs.tdl.ErrorCode;
 import com.gitb.vs.tdl.util.Utils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 
 public class CheckUserInteractionOptions extends AbstractTestCaseObserver {
 
@@ -73,7 +74,7 @@ public class CheckUserInteractionOptions extends AbstractTestCaseObserver {
                     }
                 }
             }
-            if (StringUtils.equalsIgnoreCase("false", interaction.getHandlerEnabled())) {
+            if (Strings.CI.equals("false", interaction.getHandlerEnabled())) {
                 // We know we never delegate to a handler.
                 if (interaction.getHandler() != null) {
                     addReportItem(ErrorCode.INTERACTION_WITH_UNEXPECTED_HANDLER, currentTestCase.getId());

@@ -17,6 +17,7 @@ import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {Constants} from 'src/app/common/constants';
 import {DataService} from 'src/app/services/data.service';
 import {CloseEvent} from './close-event';
+import {TestResultStatusDisplayComponentApi} from './test-result-status-display-component-api';
 
 @Component({
     selector: 'app-test-result-status-display',
@@ -24,13 +25,12 @@ import {CloseEvent} from './close-event';
     styleUrls: ['./test-result-status-display.component.less'],
     standalone: false
 })
-export class TestResultStatusDisplayComponent implements OnInit {
+export class TestResultStatusDisplayComponent implements TestResultStatusDisplayComponentApi, OnInit {
 
   @Input() popupId!: number
   @Input() message?: string
   @Input() result?: string
   @Input() ignored = false
-  @Input() refresh?: EventEmitter<void>
   @Input() close?: EventEmitter<CloseEvent>
   @Output() open = new EventEmitter<number>()
   isOpen = false
@@ -53,11 +53,10 @@ export class TestResultStatusDisplayComponent implements OnInit {
         }
       })
     }
-    if (this.refresh) {
-      this.refresh.subscribe(() => {
-        this.initialise()
-      })
-    }
+  }
+
+  refresh() {
+    this.initialise()
   }
 
   private initialise() {

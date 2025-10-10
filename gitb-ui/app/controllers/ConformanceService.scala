@@ -17,7 +17,7 @@ package controllers
 
 import config.Configurations
 import controllers.ConformanceService.{KeystoreInfo, TestSuiteUploadInfo}
-import controllers.util.{Parameters, _}
+import controllers.util._
 import exceptions.{ErrorCodes, NotFoundException}
 import managers._
 import models.Enums.TestSuiteReplacementChoice.{PROCEED, TestSuiteReplacementChoice}
@@ -41,6 +41,7 @@ import javax.inject.Inject
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Using
+import com.gitb.tr.TestResultType
 
 object ConformanceService {
 
@@ -72,7 +73,6 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
                                     systemManager: SystemManager,
                                     endpointManager: EndPointManager,
                                     specificationManager: SpecificationManager,
-                                    domainParameterManager: DomainParameterManager,
                                     domainManager: DomainManager,
                                     communityManager: CommunityManager,
                                     conformanceManager: ConformanceManager,
@@ -102,11 +102,24 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
    */
   def getDomains: Action[AnyContent] = authorizedAction.async { request =>
     val ids = ParameterExtractor.extractLongIdsQueryParameter(request)
-    authorizationManager.canViewDomains(request, ids).flatMap { _ =>
-      domainManager.getDomains(ids).map { domains =>
-        val withApiKeys = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.KEYS)
+    val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, ParameterNames.SNAPSHOT)
+    authorizationManager.canViewDomains(request, ids, snapshotId).flatMap { _ =>
+      domainManager.getDomains(ids, snapshotId).map { domains =>
+        val withApiKeys = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.KEYS)
           .getOrElse(ids.exists(_.nonEmpty))
         val json = JsonUtil.jsDomains(domains, withApiKeys).toString()
+        ResponseConstructor.constructJsonResponse(json)
+      }
+    }
+  }
+
+  def searchDomains: Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canViewAllDomains(request).flatMap { _ =>
+      val filter = ParameterExtractor.optionalQueryParameter(request, ParameterNames.FILTER)
+      val page = ParameterExtractor.extractPageNumber(request)
+      val limit = ParameterExtractor.extractPageLimit(request)
+      domainManager.searchDomains(page, limit, filter).map { result =>
+        val json = JsonUtil.jsSearchResult(result, list => JsonUtil.jsDomains(list, withApiKeys = false)).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
     }
@@ -134,7 +147,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
    * Gets the domain of the given community
    */
   def getCommunityDomain: Action[AnyContent] = authorizedAction.async { request =>
-    val communityId = ParameterExtractor.requiredQueryParameter(request, Parameters.COMMUNITY_ID).toLong
+    val communityId = ParameterExtractor.requiredQueryParameter(request, ParameterNames.COMMUNITY_ID).toLong
     authorizationManager.canViewDomainByCommunityId(request, communityId).flatMap { _ =>
       domainManager.getCommunityDomain(communityId).map { domain =>
         if (domain.isDefined) {
@@ -151,7 +164,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
    * Gets the applicable domains for the given community (a specific domain or all domains).
    */
   def getCommunityDomains: Action[AnyContent] = authorizedAction.async { request =>
-    val communityId = ParameterExtractor.requiredQueryParameter(request, Parameters.COMMUNITY_ID).toLong
+    val communityId = ParameterExtractor.requiredQueryParameter(request, ParameterNames.COMMUNITY_ID).toLong
     authorizationManager.canViewDomainByCommunityId(request, communityId).flatMap { _ =>
       domainManager.getCommunityDomain(communityId).flatMap { communityDomain =>
         val domainLookup = if (communityDomain.isDefined) {
@@ -171,20 +184,34 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
     }
   }
 
+  def searchCommunityDomains: Action[AnyContent] = authorizedAction.async { request =>
+    val communityId = ParameterExtractor.requiredQueryParameter(request, ParameterNames.COMMUNITY_ID).toLong
+    authorizationManager.canViewDomainByCommunityId(request, communityId).flatMap { _ =>
+      val filter = ParameterExtractor.optionalQueryParameter(request, ParameterNames.FILTER)
+      val page = ParameterExtractor.extractPageNumber(request)
+      val limit = ParameterExtractor.extractPageLimit(request)
+      domainManager.searchCommunityDomains(page, limit, filter, communityId).map { result =>
+        val json = JsonUtil.jsSearchResult(result, list => JsonUtil.jsDomains(list, withApiKeys = false)).toString()
+        ResponseConstructor.constructJsonResponse(json)
+      }
+    }
+  }
+
   /**
    * Gets the list of specifications
    */
   def getSpecs: Action[AnyContent] = authorizedAction.async { request =>
     val ids = ParameterExtractor.extractLongIdsBodyParameter(request)
-    val domainIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.DOMAIN_IDS)
-    val groupIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.GROUP_IDS)
+    val domainIds = ParameterExtractor.extractLongIdsBodyParameter(request, ParameterNames.DOMAIN_IDS)
+    val groupIds = ParameterExtractor.extractLongIdsBodyParameter(request, ParameterNames.GROUP_IDS)
+    val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.SNAPSHOT)
     val auth = if (domainIds.isDefined && domainIds.get.nonEmpty) {
-      authorizationManager.canViewDomains(request, domainIds)
+      authorizationManager.canViewDomains(request, domainIds, snapshotId)
     } else {
-      authorizationManager.canViewSpecifications(request, ids)
+      authorizationManager.canViewSpecifications(request, ids, snapshotId)
     }
     auth.flatMap { _ =>
-      specificationManager.getSpecifications(ids, domainIds, groupIds).map { result =>
+      specificationManager.getSpecifications(ids, domainIds, groupIds, withGroups = false, snapshotId).map { result =>
         val json = JsonUtil.jsSpecifications(result).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
@@ -231,7 +258,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
   def getActors: Action[AnyContent] = authorizedAction.async { request =>
     val ids = ParameterExtractor.extractLongIdsBodyParameter(request)
     authorizationManager.canViewActors(request, ids).flatMap { _ =>
-      val specificationIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.SPEC_IDS)
+      val specificationIds = ParameterExtractor.extractLongIdsBodyParameter(request, ParameterNames.SPEC_IDS)
       actorManager.getActorsWithSpecificationId(ids, specificationIds).map { result =>
         val json = JsonUtil.jsActorsNonCase(result).toString()
         ResponseConstructor.constructJsonResponse(json)
@@ -241,7 +268,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
 
   def getActor(actorId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canManageActor(request, actorId).flatMap { _ =>
-      val specificationId = ParameterExtractor.requiredQueryParameter(request, Parameters.SPEC).toLong
+      val specificationId = ParameterExtractor.requiredQueryParameter(request, ParameterNames.SPEC).toLong
       actorManager.getActorsWithSpecificationId(Some(List(actorId)), Some(List(specificationId))).map { results =>
         val result = results.headOption
         if (result.isDefined) {
@@ -271,11 +298,12 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def searchActors(): Action[AnyContent] = authorizedAction.async { request =>
-    authorizationManager.canViewActors(request, None).flatMap { _ =>
-      val domainIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.DOMAIN_IDS)
-      val groupIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.GROUP_IDS)
-      val specificationIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.SPEC_IDS)
-      actorManager.searchActors(domainIds, specificationIds, groupIds).map { result =>
+    val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.SNAPSHOT)
+    authorizationManager.canViewActors(request, None, snapshotId).flatMap { _ =>
+      val domainIds = ParameterExtractor.extractLongIdsBodyParameter(request, ParameterNames.DOMAIN_IDS)
+      val groupIds = ParameterExtractor.extractLongIdsBodyParameter(request, ParameterNames.GROUP_IDS)
+      val specificationIds = ParameterExtractor.extractLongIdsBodyParameter(request, ParameterNames.SPEC_IDS)
+      actorManager.searchActors(domainIds, specificationIds, groupIds, snapshotId).map { result =>
         val json = JsonUtil.jsActorsNonCase(result).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
@@ -283,12 +311,24 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def searchActorsInDomain(): Action[AnyContent] = authorizedAction.async { request =>
-    val domainId = ParameterExtractor.requiredBodyParameter(request, Parameters.DOMAIN_ID).toLong
-    authorizationManager.canViewActorsByDomainId(request, domainId).flatMap { _ =>
-      val groupIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.GROUP_IDS)
-      val specificationIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.SPEC_IDS)
-      actorManager.searchActors(Some(List(domainId)), specificationIds, groupIds).map { result =>
+    val domainId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.DOMAIN_ID).toLong
+    val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.SNAPSHOT)
+    authorizationManager.canViewActorsByDomainId(request, domainId, snapshotId).flatMap { _ =>
+      val groupIds = ParameterExtractor.extractLongIdsBodyParameter(request, ParameterNames.GROUP_IDS)
+      val specificationIds = ParameterExtractor.extractLongIdsBodyParameter(request, ParameterNames.SPEC_IDS)
+      actorManager.searchActors(Some(List(domainId)), specificationIds, groupIds, snapshotId).map { result =>
         val json = JsonUtil.jsActorsNonCase(result).toString()
+        ResponseConstructor.constructJsonResponse(json)
+      }
+    }
+  }
+
+  def getAvailableConformanceStatementIds(systemId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageSystem(request, systemId).flatMap { _ =>
+      val domainId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.DOMAIN_ID)
+      val searchCriteria = ParameterExtractor.extractAvailableConformanceStatementSearchCriteria(request)
+      conformanceManager.getAvailableConformanceStatementIds(domainId, systemId, searchCriteria).map { result =>
+        val json = JsonUtil.jsNumberArray(result).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
     }
@@ -296,9 +336,13 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
 
   def getAvailableConformanceStatements(systemId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canManageSystem(request, systemId).flatMap { _ =>
-      val domainId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.DOMAIN_ID)
-      conformanceManager.getAvailableConformanceStatements(domainId, systemId).map { result =>
-        ResponseConstructor.constructJsonResponse(JsonUtil.jsConformanceStatementItemInfo(result).toString)
+      val domainId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.DOMAIN_ID)
+      val page = ParameterExtractor.extractPageNumber(request)
+      val limit = ParameterExtractor.extractPageLimit(request)
+      val searchCriteria = ParameterExtractor.extractAvailableConformanceStatementSearchCriteria(request)
+      conformanceManager.getAvailableConformanceStatements(domainId, systemId, searchCriteria, page, limit).map { result =>
+        val json = JsonUtil.jsSearchResult(result, JsonUtil.jsConformanceStatementItems).toString()
+        ResponseConstructor.constructJsonResponse(json)
       }
     }
   }
@@ -306,11 +350,22 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
   /**
    * Gets the specifications that are defined/tested in the platform
    */
-  def getDomainSpecs(domain_id: Long): Action[AnyContent] = authorizedAction.async { request =>
-    authorizationManager.canViewSpecificationsByDomainId(request, domain_id).flatMap { _ =>
-      val withGroups = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.GROUPS).getOrElse(true)
-      specificationManager.getSpecifications(domain_id, withGroups).map { specs =>
+  def getDomainSpecs(domainId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canViewSpecificationsByDomainId(request, domainId).flatMap { _ =>
+      specificationManager.getSpecificationsWithGroups(domainId).map { specs =>
         val json = JsonUtil.jsSpecifications(specs).toString()
+        ResponseConstructor.constructJsonResponse(json)
+      }
+    }
+  }
+
+  def getDomainSpecsWithPaging(domainId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canViewSpecificationsByDomainId(request, domainId).flatMap { _ =>
+      val filter = ParameterExtractor.optionalQueryParameter(request, ParameterNames.FILTER)
+      val page = ParameterExtractor.extractPageNumber(request)
+      val limit = ParameterExtractor.extractPageLimit(request)
+      specificationManager.getSpecificationsWithPaging(domainId, filter, page, limit).map { result =>
+        val json = JsonUtil.jsSearchResult(result, JsonUtil.jsDomainSpecifications).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
     }
@@ -319,19 +374,43 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
   /**
    * Gets actors defined  for the spec
    */
-  def getSpecActors(spec_id: Long): Action[AnyContent] = authorizedAction.async { request =>
-    authorizationManager.canManageSpecification(request, spec_id).flatMap { _ =>
-      actorManager.getActorsWithSpecificationId(None, Some(List(spec_id))).map { actors =>
+  def getSpecActors(specId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageSpecification(request, specId).flatMap { _ =>
+      actorManager.getActorsWithSpecificationId(None, Some(List(specId))).map { actors =>
         val json = JsonUtil.jsActorsNonCase(actors).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
     }
   }
 
-  def getSpecTestSuites(spec_id: Long): Action[AnyContent] = authorizedAction.async { request =>
-    authorizationManager.canManageSpecification(request, spec_id).flatMap { _ =>
-      testSuiteManager.getTestSuitesWithSpecificationId(spec_id).map { testSuites =>
-        val json = JsonUtil.jsTestSuitesList(testSuites).toString()
+  def getSpecTestSuites(specId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageSpecification(request, specId).flatMap { _ =>
+      val filter = ParameterExtractor.optionalQueryParameter(request, ParameterNames.FILTER)
+      val page = ParameterExtractor.extractPageNumber(request)
+      val limit = ParameterExtractor.extractPageLimit(request)
+      testSuiteManager.getTestSuitesWithSpecificationId(filter, page, limit, specId).map { result =>
+        val json = JsonUtil.jsSearchResult(result, JsonUtil.jsTestSuitesList).toString()
+        ResponseConstructor.constructJsonResponse(json)
+      }
+    }
+  }
+
+  def getSpecSharedTestSuites(specId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageSpecification(request, specId).flatMap { _ =>
+      testSuiteManager.getSharedTestSuitesWithSpecificationId(specId).map { result =>
+        val json = JsonUtil.jsTestSuitesList(result).toString()
+        ResponseConstructor.constructJsonResponse(json)
+      }
+    }
+  }
+
+  def searchSharedTestSuites(domainId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageDomain(request, domainId).flatMap { _ =>
+      val filter = ParameterExtractor.optionalQueryParameter(request, ParameterNames.FILTER)
+      val page = ParameterExtractor.extractPageNumber(request)
+      val limit = ParameterExtractor.extractPageLimit(request)
+      testSuiteManager.searchSharedTestSuitesWithDomainId(filter, page, limit, domainId).map { result =>
+        val json = JsonUtil.jsSearchResult(result, JsonUtil.jsTestSuitesList).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
     }
@@ -359,10 +438,10 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
     authorizationManager.canUpdateDomain(request, domainId).flatMap { _ =>
       domainManager.checkDomainExists(domainId).flatMap { domainExists =>
         if (domainExists) {
-          val shortName:String = ParameterExtractor.requiredBodyParameter(request, Parameters.SHORT_NAME)
-          val fullName:String = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL_NAME)
-          val description:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
-          val reportMetadata:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.METADATA)
+          val shortName:String = ParameterExtractor.requiredBodyParameter(request, ParameterNames.SHORT_NAME)
+          val fullName:String = ParameterExtractor.requiredBodyParameter(request, ParameterNames.FULL_NAME)
+          val description:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.DESC)
+          val reportMetadata:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.METADATA)
           domainManager.updateDomain(domainId, shortName, fullName, description, reportMetadata).map { _ =>
             ResponseConstructor.constructEmptyResponse
           }
@@ -377,7 +456,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
 
   def createActor(): Action[AnyContent] = authorizedAction.async { request =>
     val paramMap = ParameterExtractor.paramMap(request)
-    val specificationId = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SPECIFICATION_ID).toLong
+    val specificationId = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.SPECIFICATION_ID).toLong
     authorizationManager.canCreateActor(request, specificationId).flatMap { _ =>
       val actor = ParameterExtractor.extractActor(paramMap)
       actorManager.checkActorExistsInSpecification(actor.actorId, specificationId, None).flatMap { actorExists =>
@@ -394,7 +473,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
             if (badgeInfoForReport._2.nonEmpty) {
               Future.successful(badgeInfoForReport._2.get)
             } else {
-              val domainId = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.DOMAIN_ID).toLong
+              val domainId = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.DOMAIN_ID).toLong
               actorManager.createActorWrapper(actor.toCaseObject(CryptoUtil.generateApiKey(), domainId), specificationId, BadgeInfo(badgeInfo._1.get, badgeInfoForReport._1.get)).map { _ =>
                 ResponseConstructor.constructEmptyResponse
               }
@@ -423,7 +502,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def createParameter(): Action[AnyContent] = authorizedAction.async { request =>
-    val actorId = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID).toLong
+    val actorId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.ACTOR_ID).toLong
     authorizationManager.canManageActor(request, actorId).flatMap { _ =>
       val parameter = ParameterExtractor.extractParameter(request)
       if (parameter.endpoint == 0L) {
@@ -507,9 +586,9 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
   def resolvePendingTestSuites(): Action[AnyContent] = authorizedAction.async { request =>
     for {
       // Extract parameters and inputs.
-      domainId <- Future.successful(ParameterExtractor.requiredBodyParameter(request, Parameters.DOMAIN_ID).toLong)
-      specificationIds <- Future.successful(ParameterExtractor.optionalLongListBodyParameter(request, Parameters.SPEC_IDS))
-      pendingFolderId <- Future.successful(ParameterExtractor.requiredBodyParameter(request, Parameters.PENDING_ID))
+      domainId <- Future.successful(ParameterExtractor.requiredBodyParameter(request, ParameterNames.DOMAIN_ID).toLong)
+      specificationIds <- Future.successful(ParameterExtractor.optionalLongListBodyParameter(request, ParameterNames.SPEC_IDS))
+      pendingFolderId <- Future.successful(ParameterExtractor.requiredBodyParameter(request, ParameterNames.PENDING_ID))
       sharedTestSuite <- Future.successful(specificationIds.isEmpty || specificationIds.get.isEmpty)
       // Authorisation check.
       _ <- {
@@ -521,7 +600,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
       }
       // Initial checks and actions.
       uploadInfo <- {
-        val overallActionStr = ParameterExtractor.requiredBodyParameter(request, Parameters.PENDING_ACTION)
+        val overallActionStr = ParameterExtractor.requiredBodyParameter(request, ParameterNames.PENDING_ACTION)
         var overallAction: TestSuiteReplacementChoice = TestSuiteReplacementChoice.CANCEL
         if ("proceed".equals(overallActionStr)) {
           overallAction = TestSuiteReplacementChoice.PROCEED
@@ -531,7 +610,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
             TestSuiteUploadInfo.withResult(result)
           }
         } else {
-          val actionsStr = ParameterExtractor.optionalBodyParameter(request, Parameters.ACTIONS)
+          val actionsStr = ParameterExtractor.optionalBodyParameter(request, ParameterNames.ACTIONS)
           if (actionsStr.isDefined) {
             val actions = JsonUtil.parseJsPendingTestSuiteActions(actionsStr.get)
             if (!sharedTestSuite && !specsMatch(specificationIds.get.toSet, actions.filter(_.specification.isDefined))) {
@@ -603,9 +682,9 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
   def deployTestSuiteToSpecifications(): Action[AnyContent] = authorizedAction.async { request =>
     val action = for {
       paramMap <- Future.successful(ParameterExtractor.paramMap(request))
-      domainId <- Future.successful(ParameterExtractor.requiredBodyParameter(paramMap, Parameters.DOMAIN_ID).toLong)
-      specIds <- Future.successful(ParameterExtractor.optionalLongCommaListBodyParameter(paramMap, Parameters.SPEC_IDS))
-      sharedTestSuite <- Future.successful(ParameterExtractor.optionalBooleanBodyParameter(paramMap, Parameters.SHARED).getOrElse(false))
+      domainId <- Future.successful(ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.DOMAIN_ID).toLong)
+      specIds <- Future.successful(ParameterExtractor.optionalLongCommaListBodyParameter(paramMap, ParameterNames.SPEC_IDS))
+      sharedTestSuite <- Future.successful(ParameterExtractor.optionalBooleanBodyParameter(paramMap, ParameterNames.SHARED).getOrElse(false))
       _ <- {
         if (specIds.isDefined) {
           authorizationManager.canManageSpecifications(request, specIds.get)
@@ -616,7 +695,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
       response <- {
         var response:Result = null
         val testSuiteFileName = "ts_"+RandomStringUtils.secure().next(10, false, true)+".zip"
-        ParameterExtractor.extractFiles(request).get(Parameters.FILE) match {
+        ParameterExtractor.extractFiles(request).get(ParameterNames.FILE) match {
           case Some(testSuite) =>
             if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
               val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
@@ -644,7 +723,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
             }
           case None =>
             Future.successful {
-              ResponseConstructor.constructBadRequestResponse(ErrorCodes.MISSING_PARAMS, "[" + Parameters.FILE + "] parameter is missing.")
+              ResponseConstructor.constructBadRequestResponse(ErrorCodes.MISSING_PARAMS, "[" + ParameterNames.FILE + "] parameter is missing.")
             }
         }
       }
@@ -655,7 +734,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def getConformanceStatus(actorId: Long, sutId: Long): Action[AnyContent] = authorizedAction.async { request =>
-    val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SNAPSHOT)
+    val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, ParameterNames.SNAPSHOT)
     authorizationManager.canViewConformanceStatus(request, actorId, sutId, snapshotId).flatMap { _ =>
       conformanceManager.getConformanceStatus(actorId, sutId, None, includeDisabled = true, snapshotId).map { results =>
         if (results.isEmpty) {
@@ -696,132 +775,6 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
     }
   }
 
-  def getDomainParameters(domainId: Long): Action[AnyContent] = authorizedAction.async { request =>
-    authorizationManager.canManageDomainParameters(request, domainId).flatMap { _ =>
-      // Optionally skip loading values (if we only want to show the list of parameters)
-      val loadValues = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.VALUES).getOrElse(false)
-      val onlySimple = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.SIMPLE).getOrElse(false)
-      domainParameterManager.getDomainParameters(domainId, loadValues, None, onlySimple).map { result =>
-        val json = JsonUtil.jsDomainParameters(result).toString()
-        ResponseConstructor.constructJsonResponse(json)
-      }
-    }
-  }
-
-  def getDomainParametersOfCommunity(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
-    authorizationManager.canViewDomainParametersForCommunity(request, communityId).flatMap { _ =>
-      val loadValues = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.VALUES).getOrElse(false)
-      val onlySimple = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.SIMPLE).getOrElse(false)
-      domainParameterManager.getDomainParametersByCommunityId(communityId, onlySimple, loadValues).map { result =>
-        val json = JsonUtil.jsDomainParameters(result).toString()
-        ResponseConstructor.constructJsonResponse(json)
-      }
-    }
-  }
-
-  def getDomainParameter(domainId: Long, domainParameterId: Long): Action[AnyContent] = authorizedAction.async { request =>
-    authorizationManager.canManageDomainParameters(request, domainId).flatMap { _ =>
-      domainParameterManager.getDomainParameter(domainParameterId).map { result =>
-        val json = JsonUtil.jsDomainParameter(result).toString()
-        ResponseConstructor.constructJsonResponse(json)
-      }
-    }
-  }
-
-  def createDomainParameter(domainId: Long): Action[AnyContent] = authorizedAction.async { request =>
-    authorizationManager.canManageDomainParameters(request, domainId).flatMap { _ =>
-      val paramMap = ParameterExtractor.paramMap(request)
-      val files = ParameterExtractor.extractFiles(request)
-      val jsDomainParameter = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.CONFIG)
-      var fileToStore: Option[File] = None
-      if (files.contains(Parameters.FILE)) {
-        fileToStore = Some(files(Parameters.FILE).file)
-      }
-      val domainParameter = JsonUtil.parseJsDomainParameter(jsDomainParameter, None, domainId)
-      domainParameterManager.getDomainParameterByDomainAndName(domainId, domainParameter.name).flatMap { parameter =>
-        var response: Result = null
-        if (parameter.isDefined) {
-          response = ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "A parameter with this name already exists.", Some("name"))
-        } else {
-          if (domainParameter.kind == "BINARY") {
-            if (fileToStore.isDefined) {
-              if (Configurations.ANTIVIRUS_SERVER_ENABLED && ParameterExtractor.virusPresentInFiles(List(fileToStore.get))) {
-                response = ResponseConstructor.constructErrorResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.", Some("file"))
-              }
-            } else {
-              response = ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_REQUEST, "No file provided for binary parameter.", Some("file"))
-            }
-          }
-        }
-        if (response == null) {
-          domainParameterManager.createDomainParameter(domainParameter, fileToStore).map { _ =>
-            ResponseConstructor.constructEmptyResponse
-          }
-        } else {
-          Future.successful(response)
-        }
-      }
-    }.andThen { _ =>
-      if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
-    }
-  }
-
-  def deleteDomainParameter(domainId: Long, domainParameterId: Long): Action[AnyContent] = authorizedAction.async { request =>
-    authorizationManager.canManageDomainParameters(request, domainId).flatMap { _ =>
-      domainParameterManager.deleteDomainParameterWrapper(domainId, domainParameterId).map { _ =>
-        ResponseConstructor.constructEmptyResponse
-      }
-    }
-  }
-
-  def updateDomainParameter(domainId: Long, domainParameterId: Long): Action[AnyContent] = authorizedAction.async { request =>
-    authorizationManager.canManageDomainParameters(request, domainId).flatMap { _ =>
-      val paramMap = ParameterExtractor.paramMap(request)
-      val files = ParameterExtractor.extractFiles(request)
-      val jsDomainParameter = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.CONFIG)
-      var fileToStore: Option[File] = None
-      if (files.contains(Parameters.FILE)) {
-        fileToStore = Some(files(Parameters.FILE).file)
-      }
-      val domainParameter = JsonUtil.parseJsDomainParameter(jsDomainParameter, Some(domainParameterId), domainId)
-      domainParameterManager.getDomainParameterByDomainAndName(domainId, domainParameter.name).flatMap { existingDomainParameter =>
-        var result: Result = null
-        if (existingDomainParameter.isDefined && (existingDomainParameter.get.id != domainParameterId)) {
-          result = ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "A parameter with this name already exists.", Some("name"))
-        } else if (domainParameter.kind == "BINARY") {
-          if (fileToStore.isDefined) {
-            if (Configurations.ANTIVIRUS_SERVER_ENABLED && ParameterExtractor.virusPresentInFiles(List(fileToStore.get))) {
-              result = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")
-            }
-          }
-        }
-        if (result == null) {
-          domainParameterManager.updateDomainParameter(domainId, domainParameterId, domainParameter.name, domainParameter.desc, domainParameter.kind, domainParameter.value, domainParameter.inTests, domainParameter.contentType, fileToStore).map { _ =>
-            ResponseConstructor.constructEmptyResponse
-          }
-        } else {
-          Future.successful(result)
-        }
-      }
-    }.andThen { _ =>
-      if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
-    }
-  }
-
-  def downloadDomainParameterFile(domainId: Long, domainParameterId: Long): Action[AnyContent] = authorizedAction.async { request =>
-    authorizationManager.canManageDomainParameters(request, domainId).map { _ =>
-      val file = repositoryUtils.getDomainParameterFile(domainId, domainParameterId)
-      if (file.exists()) {
-        Ok.sendFile(
-          content = file,
-          inline = false
-        )
-      } else {
-        ResponseConstructor.constructNotFoundResponse(ErrorCodes.INVALID_PARAM, "Domain parameter was not found")
-      }
-    }
-  }
-
   private def getPageOrDefault(_page: Option[String] = None):Int = _page match {
     case Some(p) => p.toInt
     case None => Constants.defaultPage.toInt
@@ -832,44 +785,96 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
     case None => Constants.defaultLimit.toInt
   }
 
-  def getConformanceOverview(): Action[AnyContent] = authorizedAction.async { request =>
-    val page = getPageOrDefault(ParameterExtractor.optionalBodyParameter(request, Parameters.PAGE))
-    val limit = getLimitOrDefault(ParameterExtractor.optionalBodyParameter(request, Parameters.LIMIT))
-    val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SNAPSHOT)
-    val communityIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.COMMUNITY_IDS)
-    val organizationIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.ORG_IDS)
-    val systemIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.SYSTEM_IDS)
+
+  def getConformanceOverviewForOrganisation(organisationId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.SNAPSHOT)
     for {
-      _ <- authorizationManager.canViewConformanceOverview(request, communityIds)
+      _ <- authorizationManager.canViewConformanceOverviewForOrganisation(request, organisationId, snapshotId)
+      organisationIds <- Future.successful(Some(List(organisationId)))
+      systemIds <- Future.successful(ParameterExtractor.optionalLongListBodyParameter(request, ParameterNames.SYSTEM_IDS))
+      page <- Future.successful(getPageOrDefault(ParameterExtractor.optionalBodyParameter(request, ParameterNames.PAGE)))
+      limit <- Future.successful(getLimitOrDefault(ParameterExtractor.optionalBodyParameter(request, ParameterNames.LIMIT)))
       results <- {
-        val fullResults = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL).toBoolean
-        val domainIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.DOMAIN_IDS)
-        val specIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.SPEC_IDS)
-        val specGroupIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.GROUP_IDS)
-        val actorIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.ACTOR_IDS)
-        val orgParameters = JsonUtil.parseJsIdToValuesMap(ParameterExtractor.optionalBodyParameter(request, Parameters.ORGANISATION_PARAMETERS))
-        val sysParameters = JsonUtil.parseJsIdToValuesMap(ParameterExtractor.optionalBodyParameter(request, Parameters.SYSTEM_PARAMETERS))
-        val status = ParameterExtractor.optionalListBodyParameter(request, Parameters.STATUS)
-        val updateTimeBegin = ParameterExtractor.optionalBodyParameter(request, Parameters.UPDATE_TIME_BEGIN)
-        val updateTimeEnd = ParameterExtractor.optionalBodyParameter(request, Parameters.UPDATE_TIME_END)
-        val sortColumn = ParameterExtractor.optionalBodyParameter(request, Parameters.SORT_COLUMN)
-        val sortOrder = ParameterExtractor.optionalBodyParameter(request, Parameters.SORT_ORDER)
+        val fullResults = ParameterExtractor.requiredBodyParameter(request, ParameterNames.FULL).toBoolean
+        val domainIds = ParameterExtractor.optionalLongListBodyParameter(request, ParameterNames.DOMAIN_IDS)
+        val specIds = ParameterExtractor.optionalLongListBodyParameter(request, ParameterNames.SPEC_IDS)
+        val specGroupIds = ParameterExtractor.optionalLongListBodyParameter(request, ParameterNames.GROUP_IDS)
+        val actorIds = ParameterExtractor.optionalLongListBodyParameter(request, ParameterNames.ACTOR_IDS)
+        val status = ParameterExtractor.optionalListBodyParameter(request, ParameterNames.STATUS)
+        val updateTimeBegin = ParameterExtractor.optionalBodyParameter(request, ParameterNames.UPDATE_TIME_BEGIN)
+        val updateTimeEnd = ParameterExtractor.optionalBodyParameter(request, ParameterNames.UPDATE_TIME_END)
+        val sortColumn = ParameterExtractor.optionalBodyParameter(request, ParameterNames.SORT_COLUMN)
+        val sortOrder = ParameterExtractor.optionalBodyParameter(request, ParameterNames.SORT_ORDER)
         if (fullResults) {
           conformanceManager.getConformanceStatementsFull(domainIds, specIds, specGroupIds, actorIds,
-            communityIds, organizationIds, systemIds, orgParameters, sysParameters,
+            None, organisationIds, systemIds, None, None,
             status, updateTimeBegin, updateTimeEnd,
             sortColumn, sortOrder, snapshotId)
         } else {
           conformanceManager.getConformanceStatements(domainIds, specIds, specGroupIds, actorIds,
-            communityIds, organizationIds, systemIds, orgParameters, sysParameters,
+            None, organisationIds, systemIds, None, None,
+            status, updateTimeBegin, updateTimeEnd,
+            sortColumn, sortOrder, snapshotId)
+        }
+      }
+      result <- {
+        // Return only the requested page
+        val count = results.size
+        val pageResults = results.slice((page - 1) * limit, (page - 1) * limit + limit)
+        val json = JsonUtil.jsConformanceResultFullList(SearchResult(pageResults, count), None).toString()
+        Future.successful(ResponseConstructor.constructJsonResponse(json))
+      }
+    } yield result
+  }
+
+  def getConformanceBadgeStatus(actorId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    val specificationId = ParameterExtractor.requiredQueryParameter(request, ParameterNames.SPECIFICATION_ID).toLong
+    val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, ParameterNames.SNAPSHOT)
+    authorizationManager.canManageSpecification(request, specificationId).map { _ =>
+      // Check to see if we have badges. We use the SUCCESS badge as this will always be present if badges are defined.
+      val hasBadge = repositoryUtils.getConformanceBadge(specificationId, Some(actorId), snapshotId, TestResultType.SUCCESS.toString, exactMatch = false, forReport = false).isDefined
+      ResponseConstructor.constructJsonResponse(hasBadge.toString)
+    }
+  }
+
+  def getConformanceOverview(): Action[AnyContent] = authorizedAction.async { request =>
+    val communityIds = ParameterExtractor.optionalLongListBodyParameter(request, ParameterNames.COMMUNITY_IDS)
+    for {
+      _ <- authorizationManager.canViewConformanceOverview(request, communityIds)
+      organisationIds <- Future.successful(ParameterExtractor.optionalLongListBodyParameter(request, ParameterNames.ORG_IDS))
+      systemIds <- Future.successful(ParameterExtractor.optionalLongListBodyParameter(request, ParameterNames.SYSTEM_IDS))
+      page <- Future.successful(getPageOrDefault(ParameterExtractor.optionalBodyParameter(request, ParameterNames.PAGE)))
+      limit <- Future.successful(getLimitOrDefault(ParameterExtractor.optionalBodyParameter(request, ParameterNames.LIMIT)))
+      results <- {
+        val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.SNAPSHOT)
+        val fullResults = ParameterExtractor.requiredBodyParameter(request, ParameterNames.FULL).toBoolean
+        val domainIds = ParameterExtractor.optionalLongListBodyParameter(request, ParameterNames.DOMAIN_IDS)
+        val specIds = ParameterExtractor.optionalLongListBodyParameter(request, ParameterNames.SPEC_IDS)
+        val specGroupIds = ParameterExtractor.optionalLongListBodyParameter(request, ParameterNames.GROUP_IDS)
+        val actorIds = ParameterExtractor.optionalLongListBodyParameter(request, ParameterNames.ACTOR_IDS)
+        val orgParameters = JsonUtil.parseJsIdToValuesMap(ParameterExtractor.optionalBodyParameter(request, ParameterNames.ORGANISATION_PARAMETERS))
+        val sysParameters = JsonUtil.parseJsIdToValuesMap(ParameterExtractor.optionalBodyParameter(request, ParameterNames.SYSTEM_PARAMETERS))
+        val status = ParameterExtractor.optionalListBodyParameter(request, ParameterNames.STATUS)
+        val updateTimeBegin = ParameterExtractor.optionalBodyParameter(request, ParameterNames.UPDATE_TIME_BEGIN)
+        val updateTimeEnd = ParameterExtractor.optionalBodyParameter(request, ParameterNames.UPDATE_TIME_END)
+        val sortColumn = ParameterExtractor.optionalBodyParameter(request, ParameterNames.SORT_COLUMN)
+        val sortOrder = ParameterExtractor.optionalBodyParameter(request, ParameterNames.SORT_ORDER)
+        if (fullResults) {
+          conformanceManager.getConformanceStatementsFull(domainIds, specIds, specGroupIds, actorIds,
+            communityIds, organisationIds, systemIds, orgParameters, sysParameters,
+            status, updateTimeBegin, updateTimeEnd,
+            sortColumn, sortOrder, snapshotId)
+        } else {
+          conformanceManager.getConformanceStatements(domainIds, specIds, specGroupIds, actorIds,
+            communityIds, organisationIds, systemIds, orgParameters, sysParameters,
             status, updateTimeBegin, updateTimeEnd,
             sortColumn, sortOrder, snapshotId)
         }
       }
       parameterData <- {
-        val forExport = ParameterExtractor.optionalBodyParameter(request, Parameters.EXPORT).getOrElse("false").toBoolean
+        val forExport = ParameterExtractor.optionalBodyParameter(request, ParameterNames.EXPORT).getOrElse("false").toBoolean
         if (forExport && communityIds.isDefined && communityIds.get.size == 1) {
-          communityManager.getParameterInfo(communityIds.get.head, organizationIds, systemIds).map(Some(_))
+          communityManager.getParameterInfo(communityIds.get.head, organisationIds, systemIds).map(Some(_))
         } else {
           Future.successful(None)
         }
@@ -878,16 +883,16 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
         // Return only the requested page
         val count = results.size
         val pageResults = results.slice((page - 1) * limit, (page - 1) * limit + limit)
-        val json = JsonUtil.jsConformanceResultFullList(pageResults, parameterData, count).toString()
+        val json = JsonUtil.jsConformanceResultFullList(SearchResult(pageResults, count), parameterData).toString()
         Future.successful(ResponseConstructor.constructJsonResponse(json))
       }
     } yield result
   }
 
   def deleteTestResults(): Action[AnyContent] = authorizedAction.async { request =>
-    val communityId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.COMMUNITY_ID)
+    val communityId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.COMMUNITY_ID)
     authorizationManager.canDeleteTestResults(request, communityId).flatMap { _ =>
-      val sessionIds = JsonUtil.parseStringArray(ParameterExtractor.requiredBodyParameter(request, Parameters.SESSION_IDS))
+      val sessionIds = JsonUtil.parseStringArray(ParameterExtractor.requiredBodyParameter(request, ParameterNames.SESSION_IDS))
       testResultManager.deleteTestSessions(sessionIds).map { _ =>
         ResponseConstructor.constructEmptyResponse
       }
@@ -903,7 +908,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def deleteObsoleteTestResultsForOrganisation(): Action[AnyContent] = authorizedAction.async { request =>
-    val organisationId = ParameterExtractor.requiredQueryParameter(request, Parameters.ORGANIZATION_ID).toLong
+    val organisationId = ParameterExtractor.requiredQueryParameter(request, ParameterNames.ORGANIZATION_ID).toLong
     authorizationManager.canDeleteObsoleteTestResultsForOrganisation(request, organisationId).flatMap { _ =>
       testResultManager.deleteObsoleteTestResultsForOrganisationWrapper(organisationId).map { _ =>
         ResponseConstructor.constructEmptyResponse
@@ -912,7 +917,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def deleteObsoleteTestResultsForCommunity(): Action[AnyContent] = authorizedAction.async { request =>
-    val communityId = ParameterExtractor.requiredQueryParameter(request, Parameters.COMMUNITY_ID).toLong
+    val communityId = ParameterExtractor.requiredQueryParameter(request, ParameterNames.COMMUNITY_ID).toLong
     authorizationManager.canDeleteObsoleteTestResultsForCommunity(request, communityId).flatMap { _ =>
       testResultManager.deleteObsoleteTestResultsForCommunityWrapper(communityId).map { _ =>
         ResponseConstructor.constructEmptyResponse
@@ -979,9 +984,9 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
 
   def getConformanceOverviewCertificateSettingsWithApplicableMessage(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewConformanceCertificateSettings(request, communityId).flatMap { _ =>
-      val identifier = ParameterExtractor.optionalLongQueryParameter(request, Parameters.ID)
-      val level = OverviewLevelType.withName(ParameterExtractor.requiredQueryParameter(request, Parameters.LEVEL))
-      val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SNAPSHOT)
+      val identifier = ParameterExtractor.optionalLongQueryParameter(request, ParameterNames.ID)
+      val level = OverviewLevelType.withName(ParameterExtractor.requiredQueryParameter(request, ParameterNames.LEVEL))
+      val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, ParameterNames.SNAPSHOT)
       communityManager.getConformanceOverviewCertificateSettingsWrapper(communityId, defaultIfMissing = true, snapshotId, Some(level), identifier).map { settings =>
         if (settings.isDefined) {
           val json = JsonUtil.jsConformanceOverviewSettings(settings.get)
@@ -995,16 +1000,16 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
 
   def getResolvedMessageForConformanceOverviewCertificate(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewConformanceCertificateSettings(request, communityId).flatMap { _ =>
-      val id = ParameterExtractor.requiredQueryParameter(request, Parameters.ID).toLong
-      val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SNAPSHOT)
+      val id = ParameterExtractor.requiredQueryParameter(request, ParameterNames.ID).toLong
+      val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, ParameterNames.SNAPSHOT)
       communityManager.getConformanceOverviewCertificateMessage(snapshotId.isDefined, id).flatMap { message =>
         if (message.isDefined) {
           if (message.get.indexOf("$") > 0) {
             // Resolve placeholders for message
-            val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
-            val domainId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.DOMAIN_ID)
-            val groupId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.GROUP_ID)
-            val specificationId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SPECIFICATION_ID)
+            val systemId = ParameterExtractor.requiredQueryParameter(request, ParameterNames.SYSTEM_ID).toLong
+            val domainId = ParameterExtractor.optionalLongQueryParameter(request, ParameterNames.DOMAIN_ID)
+            val groupId = ParameterExtractor.optionalLongQueryParameter(request, ParameterNames.GROUP_ID)
+            val specificationId = ParameterExtractor.optionalLongQueryParameter(request, ParameterNames.SPECIFICATION_ID)
             reportManager.resolveConformanceOverviewCertificateMessage(message.get, systemId, domainId, groupId, specificationId, snapshotId, communityId).map { message =>
               ResponseConstructor.constructStringResponse(message)
             }
@@ -1024,13 +1029,13 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
 
   def getResolvedMessageForConformanceStatementCertificate(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewConformanceCertificateSettings(request, communityId).flatMap { _ =>
-      val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SNAPSHOT)
+      val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, ParameterNames.SNAPSHOT)
       communityManager.getConformanceStatementCertificateMessage(snapshotId, communityId).flatMap { message =>
         if (message.isDefined) {
           if (message.get.indexOf("$") > 0) {
             // Resolve placeholders for message
-            val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
-            val actorId = ParameterExtractor.requiredQueryParameter(request, Parameters.ACTOR_ID).toLong
+            val systemId = ParameterExtractor.requiredQueryParameter(request, ParameterNames.SYSTEM_ID).toLong
+            val actorId = ParameterExtractor.requiredQueryParameter(request, ParameterNames.ACTOR_ID).toLong
             reportManager.resolveConformanceStatementCertificateMessage(message.get, actorId, systemId, communityId, snapshotId).map { message =>
               ResponseConstructor.constructStringResponse(message)
             }
@@ -1069,25 +1074,25 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
         var response: Option[Result] = None
         val files = ParameterExtractor.extractFiles(request)
         var keystoreData: Option[String] = None
-        if (files.contains(Parameters.FILE)) {
+        if (files.contains(ParameterNames.FILE)) {
           if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
             val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
-            val scanResult = virusScanner.scan(files(Parameters.FILE).file)
+            val scanResult = virusScanner.scan(files(ParameterNames.FILE).file)
             if (!ClamAVClient.isCleanReply(scanResult)) {
               response = Some(ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Keystore file failed virus scan."))
             }
           }
           if (response.isEmpty) {
-            keystoreData = Some(MimeUtil.getFileAsDataURL(files(Parameters.FILE).file, "application/octet-stream"))
+            keystoreData = Some(MimeUtil.getFileAsDataURL(files(ParameterNames.FILE).file, "application/octet-stream"))
           }
         }
         Future.successful((response, keystoreData))
       }
       result <- {
         if (keystoreData._1.isEmpty) {
-          val keystorePassword = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.KEYSTORE_PASS)
-          val keyPassword = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.KEY_PASS)
-          val keystoreType = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.TYPE)
+          val keystorePassword = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.KEYSTORE_PASS)
+          val keyPassword = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.KEY_PASS)
+          val keystoreType = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.TYPE)
           communityManager.saveCommunityKeystore(communityId, keystoreType, keystoreData._2, keyPassword, keystorePassword).map { _ =>
             ResponseConstructor.constructEmptyResponse
           }
@@ -1103,7 +1108,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
 
   def conformanceOverviewCertificateEnabled(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewCommunityBasic(request, communityId).flatMap { _ =>
-      val reportLevel = OverviewLevelType.withName(ParameterExtractor.requiredQueryParameter(request, Parameters.LEVEL))
+      val reportLevel = OverviewLevelType.withName(ParameterExtractor.requiredQueryParameter(request, ParameterNames.LEVEL))
       communityManager.conformanceOverviewCertificateEnabled(communityId, reportLevel).map { checkResult =>
         ResponseConstructor.constructJsonResponse(JsonUtil.jsExists(checkResult).toString())
       }
@@ -1119,8 +1124,8 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
         var keystoreFile: Option[File] = None
         val files = ParameterExtractor.extractFiles(request)
         var response: Option[Result] = None
-        if (files.contains(Parameters.FILE)) {
-          keystoreFile = Some(files(Parameters.FILE).file)
+        if (files.contains(ParameterNames.FILE)) {
+          keystoreFile = Some(files(ParameterNames.FILE).file)
           if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
             val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
             val scanResult = virusScanner.scan(keystoreFile.get)
@@ -1135,8 +1140,8 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
       }
       keystoreInfoToUse <- {
         if (keystoreInfo.failure.isEmpty) {
-          val keystorePassword = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.KEYSTORE_PASS)
-          val keyPassword = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.KEY_PASS)
+          val keystorePassword = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.KEYSTORE_PASS)
+          val keyPassword = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.KEY_PASS)
           if (keystorePassword.isEmpty || keyPassword.isEmpty || keystoreInfo.keystoreFile.isEmpty) {
             communityManager.getCommunityKeystore(communityId, decryptKeys = true).map { storedSettings =>
               if (storedSettings.isEmpty) {
@@ -1164,7 +1169,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
           // We have all the information we need - proceed.
           var problem: Option[String] = None
           var level: Option[String] = None
-          val keystoreType = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.TYPE)
+          val keystoreType = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.TYPE)
           val keystore = KeyStore.getInstance(keystoreType)
           Using.resource(Files.newInputStream(keystoreInfoToUse.keystoreFile.get.toPath)) { input =>
             try {
@@ -1239,11 +1244,11 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
 
   def updateStatementConfiguration(): Action[AnyContent] = authorizedAction.async { request =>
     val paramMap = ParameterExtractor.paramMap(request)
-    val system = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SYSTEM_ID).toLong
-    val actor = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.ACTOR_ID).toLong
-    val organisationParameters = ParameterExtractor.extractOrganisationParameterValues(paramMap, Parameters.ORGANISATION_PARAMETERS, optional = true)
-    val systemParameters = ParameterExtractor.extractSystemParameterValues(paramMap, Parameters.SYSTEM_PARAMETERS, optional = true)
-    val statementParameters = ParameterExtractor.extractStatementParameterValues(paramMap, Parameters.STATEMENT_PARAMETERS, optional = true, system)
+    val system = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.SYSTEM_ID).toLong
+    val actor = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.ACTOR_ID).toLong
+    val organisationParameters = ParameterExtractor.extractOrganisationParameterValues(paramMap, ParameterNames.ORGANISATION_PARAMETERS, optional = true)
+    val systemParameters = ParameterExtractor.extractSystemParameterValues(paramMap, ParameterNames.SYSTEM_PARAMETERS, optional = true)
+    val statementParameters = ParameterExtractor.extractStatementParameterValues(paramMap, ParameterNames.STATEMENT_PARAMETERS, optional = true, system)
     val task = for {
       _ <- authorizationManager.canManageStatementConfiguration(request, system, actor, organisationParameters.exists(_.nonEmpty), systemParameters.exists(_.nonEmpty), statementParameters.exists(_.nonEmpty))
       result <- {
@@ -1282,9 +1287,9 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def getStatementParameterValues(): Action[AnyContent] = authorizedAction.async { request =>
-    val system = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
+    val system = ParameterExtractor.requiredQueryParameter(request, ParameterNames.SYSTEM_ID).toLong
     authorizationManager.canViewEndpointConfigurationsForSystem(request, system).flatMap { _ =>
-      val actor = ParameterExtractor.requiredQueryParameter(request, Parameters.ACTOR_ID).toLong
+      val actor = ParameterExtractor.requiredQueryParameter(request, ParameterNames.ACTOR_ID).toLong
       conformanceManager.getStatementParameterValues(system, actor).map { values =>
         val json: String = JsonUtil.jsParametersWithValues(values, includeValues = true).toString
         ResponseConstructor.constructJsonResponse(json)
@@ -1293,9 +1298,9 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def checkConfigurations(): Action[AnyContent] = authorizedAction.async { request =>
-    val system = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
+    val system = ParameterExtractor.requiredQueryParameter(request, ParameterNames.SYSTEM_ID).toLong
     authorizationManager.canViewEndpointConfigurationsForSystem(request, system).flatMap { _ =>
-      val actor = ParameterExtractor.requiredQueryParameter(request, Parameters.ACTOR_ID).toLong
+      val actor = ParameterExtractor.requiredQueryParameter(request, ParameterNames.ACTOR_ID).toLong
       conformanceManager.getSystemConfigurationStatus(system, actor).map { status =>
         status.map { configStatus =>
           if (configStatus.endpointParameters.isDefined) {
@@ -1312,7 +1317,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
 
   def getDocumentationForPreview(): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canPreviewDocumentation(request).map { _ =>
-      val documentation = HtmlUtil.sanitizeEditorContent(ParameterExtractor.requiredBodyParameter(request, Parameters.CONTENT))
+      val documentation = HtmlUtil.sanitizeEditorContent(ParameterExtractor.requiredBodyParameter(request, ParameterNames.CONTENT))
       ResponseConstructor.constructStringResponse(documentation)
     }
   }
@@ -1351,8 +1356,8 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def linkSharedTestSuite(): Action[AnyContent] = authorizedAction.async { request =>
-    val testSuiteId = ParameterExtractor.requiredBodyParameter(request, Parameters.TEST_SUITE_ID).toLong
-    val specificationIds = ParameterExtractor.requiredLongListBodyParameter(request, Parameters.SPEC_IDS)
+    val testSuiteId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.TEST_SUITE_ID).toLong
+    val specificationIds = ParameterExtractor.requiredLongListBodyParameter(request, ParameterNames.SPEC_IDS)
     authorizationManager.canManageSpecifications(request, specificationIds).flatMap { _ =>
       testSuiteManager.prepareSharedTestSuiteLink(testSuiteId, specificationIds).map { result =>
         ResponseConstructor.constructJsonResponse(JsonUtil.jsTestSuiteUploadResult(result).toString())
@@ -1361,10 +1366,10 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def confirmLinkSharedTestSuite(): Action[AnyContent] = authorizedAction.async { request =>
-    val testSuiteId = ParameterExtractor.requiredBodyParameter(request, Parameters.TEST_SUITE_ID).toLong
-    val specificationIds = ParameterExtractor.requiredLongListBodyParameter(request, Parameters.SPEC_IDS)
+    val testSuiteId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.TEST_SUITE_ID).toLong
+    val specificationIds = ParameterExtractor.requiredLongListBodyParameter(request, ParameterNames.SPEC_IDS)
     authorizationManager.canManageSpecifications(request, specificationIds).flatMap { _ =>
-      val actionsStr = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTIONS)
+      val actionsStr = ParameterExtractor.requiredBodyParameter(request, ParameterNames.ACTIONS)
       val actions = JsonUtil.parseJsPendingTestSuiteActions(actionsStr)
       if (!specsMatch(specificationIds.toSet, actions.filter(_.specification.isDefined))) {
         Future.successful {
@@ -1379,8 +1384,8 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def unlinkSharedTestSuite(): Action[AnyContent] = authorizedAction.async { request =>
-    val testSuiteId = ParameterExtractor.requiredBodyParameter(request, Parameters.TEST_SUITE_ID).toLong
-    val specificationIds = ParameterExtractor.requiredLongListBodyParameter(request, Parameters.SPEC_IDS)
+    val testSuiteId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.TEST_SUITE_ID).toLong
+    val specificationIds = ParameterExtractor.requiredLongListBodyParameter(request, ParameterNames.SPEC_IDS)
     authorizationManager.canManageSpecifications(request, specificationIds).flatMap { _ =>
       testSuiteManager.unlinkSharedTestSuite(testSuiteId, specificationIds).map { _ =>
         ResponseConstructor.constructEmptyResponse
@@ -1389,11 +1394,11 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def createConformanceSnapshot(): Action[AnyContent] = authorizedAction.async { request =>
-    val communityId = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
+    val communityId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.COMMUNITY_ID).toLong
     authorizationManager.canManageCommunity(request, communityId).flatMap { _ =>
-      val label = ParameterExtractor.requiredBodyParameter(request, Parameters.LABEL)
-      val publicLabel = ParameterExtractor.optionalBodyParameter(request, Parameters.PUBLIC_LABEL)
-      val isPublic = ParameterExtractor.requiredBodyParameter(request, Parameters.PUBLIC).toBoolean
+      val label = ParameterExtractor.requiredBodyParameter(request, ParameterNames.LABEL)
+      val publicLabel = ParameterExtractor.optionalBodyParameter(request, ParameterNames.PUBLIC_LABEL)
+      val isPublic = ParameterExtractor.requiredBodyParameter(request, ParameterNames.PUBLIC).toBoolean
       conformanceManager.createConformanceSnapshot(communityId, label, publicLabel, isPublic).map { snapshot =>
         ResponseConstructor.constructJsonResponse(JsonUtil.jsConformanceSnapshot(snapshot, public = false, withApiKey = true).toString)
       }
@@ -1401,7 +1406,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def getConformanceSnapshot(snapshotId: Long): Action[AnyContent] = authorizedAction.async { request =>
-    val public = ParameterExtractor.requiredQueryParameter(request, Parameters.PUBLIC).toBoolean
+    val public = ParameterExtractor.requiredQueryParameter(request, ParameterNames.PUBLIC).toBoolean
     val auth = if (public) {
       authorizationManager.canViewConformanceSnapshot(request, snapshotId)
     } else {
@@ -1415,8 +1420,8 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def getConformanceSnapshots(): Action[AnyContent] = authorizedAction.async { request =>
-    val communityId = ParameterExtractor.requiredQueryParameter(request, Parameters.COMMUNITY_ID).toLong
-    val public = ParameterExtractor.requiredQueryParameter(request, Parameters.PUBLIC).toBoolean
+    val communityId = ParameterExtractor.requiredQueryParameter(request, ParameterNames.COMMUNITY_ID).toLong
+    val public = ParameterExtractor.requiredQueryParameter(request, ParameterNames.PUBLIC).toBoolean
     for {
       _ <- {
         if (public) {
@@ -1426,7 +1431,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
         }
       }
       result <- {
-        val withApiKeys = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.KEYS).getOrElse(false)
+        val withApiKeys = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.KEYS).getOrElse(false)
         conformanceManager.getConformanceSnapshotsWithLatest(communityId, public).map { snapshotData =>
           ResponseConstructor.constructJsonResponse(JsonUtil.jsConformanceSnapshotList(snapshotData._2, snapshotData._1, public, withApiKeys).toString)
         }
@@ -1436,7 +1441,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
 
   def setLatestConformanceStatusLabel(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canManageCommunity(request, communityId).flatMap { _ =>
-      val label = ParameterExtractor.optionalBodyParameter(request, Parameters.LABEL)
+      val label = ParameterExtractor.optionalBodyParameter(request, ParameterNames.LABEL)
       conformanceManager.setLatestConformanceStatusLabel(communityId, label).map { _ =>
         ResponseConstructor.constructEmptyResponse
       }
@@ -1445,9 +1450,9 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
 
   def editConformanceSnapshot(snapshotId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canManageConformanceSnapshot(request, snapshotId).flatMap { _ =>
-      val label = ParameterExtractor.requiredBodyParameter(request, Parameters.LABEL)
-      val publicLabel = ParameterExtractor.optionalBodyParameter(request, Parameters.PUBLIC_LABEL)
-      val isPublic = ParameterExtractor.requiredBodyParameter(request, Parameters.PUBLIC).toBoolean
+      val label = ParameterExtractor.requiredBodyParameter(request, ParameterNames.LABEL)
+      val publicLabel = ParameterExtractor.optionalBodyParameter(request, ParameterNames.PUBLIC_LABEL)
+      val isPublic = ParameterExtractor.requiredBodyParameter(request, ParameterNames.PUBLIC).toBoolean
       conformanceManager.editConformanceSnapshot(snapshotId, label, publicLabel, isPublic).map { _ =>
         ResponseConstructor.constructEmptyResponse
       }
@@ -1496,8 +1501,8 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
 
   def conformanceBadgeByIds(systemId: Long, actorId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewSystem(request, systemId).flatMap { _ =>
-      val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SNAPSHOT)
-      val forReport = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.REPORT)
+      val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, ParameterNames.SNAPSHOT)
+      val forReport = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.REPORT)
       conformanceManager.getConformanceBadgeByIds(systemId, actorId, snapshotId, forReport.getOrElse(false)).map { badge =>
         if (badge.isDefined && badge.get.exists()) {
           Ok.sendFile(content = badge.get)
@@ -1530,7 +1535,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
 
   def conformanceBadgeUrl(systemId: Long, actorId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewSystem(request, systemId).flatMap { _ =>
-      val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SNAPSHOT)
+      val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, ParameterNames.SNAPSHOT)
       conformanceManager.getConformanceBadgeUrl(systemId, actorId, snapshotId).map { url =>
         if (url.isDefined) {
           ResponseConstructor.constructStringResponse(url.get)
@@ -1542,22 +1547,25 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def getConformanceStatementsForSystem(systemId: Long): Action[AnyContent] = authorizedAction.async { request =>
-    val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SNAPSHOT)
+    val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, ParameterNames.SNAPSHOT)
     authorizationManager.canViewConformanceStatements(request, systemId, snapshotId).flatMap { _ =>
-      conformanceManager.getConformanceStatementsForSystem(systemId, None, snapshotId).map { conformanceStatements =>
-        val json: String = JsonUtil.jsConformanceStatementItems(conformanceStatements).toString()
+      val page = ParameterExtractor.extractPageNumber(request)
+      val limit = ParameterExtractor.extractPageLimit(request)
+      val searchCriteria = ParameterExtractor.extractConformanceStatementSearchCriteria(request)
+      conformanceManager.getConformanceStatementsForSystemPaged(page, limit, searchCriteria, systemId, snapshotId).map { result =>
+        val json = JsonUtil.jsSearchResult(result, JsonUtil.jsConformanceStatementItems).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
     }
   }
 
   def getConformanceStatement(systemId: Long, actorId: Long): Action[AnyContent] = authorizedAction.async { request =>
-    val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SNAPSHOT)
+    val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, ParameterNames.SNAPSHOT)
     authorizationManager.canViewConformanceStatements(request, systemId, snapshotId).flatMap { _ =>
       conformanceManager.getConformanceStatementsForSystem(systemId, Some(actorId), snapshotId, withDescriptions = true, withResults = false).flatMap { result =>
         val conformanceStatement = result.headOption
         if (conformanceStatement.isDefined) {
-          conformanceManager.getConformanceStatus(actorId, systemId, None, includeDisabled = true, snapshotId).flatMap { results =>
+          conformanceManager.getConformanceStatusWithPagedTests(actorId, systemId, None, snapshotId).flatMap { results =>
             if (results.isDefined) {
               val systemInfoTask = if (systemId >= 0) {
                 systemManager.getSystemProfile(systemId)
@@ -1582,6 +1590,29 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
             ResponseConstructor.constructEmptyResponse
           }
         }
+      }
+    }
+  }
+
+  def getConformanceStatementTests(systemId: Long, actorId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, ParameterNames.SNAPSHOT)
+    authorizationManager.canViewConformanceStatements(request, systemId, snapshotId).flatMap { _ =>
+      val searchCriteria = ParameterExtractor.extractConformanceStatementTestSearchCriteria(request)
+      val page = ParameterExtractor.extractPageNumber(request)
+      val limit = ParameterExtractor.extractPageLimit(request)
+      conformanceManager.getConformanceStatementTests(actorId, systemId, snapshotId, searchCriteria, page, limit).map { result =>
+        val json = JsonUtil.jsSearchResult(result, JsonUtil.jsConformanceStatusForPaging).toString()
+        ResponseConstructor.constructJsonResponse(json)
+      }
+    }
+  }
+
+  def getConformanceStatementTestSuitesForFiltering(systemId: Long, actorId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, ParameterNames.SNAPSHOT)
+    authorizationManager.canViewConformanceStatements(request, systemId, snapshotId).flatMap { _ =>
+      conformanceManager.getConformanceStatementTestSuitesForFiltering(systemId, actorId, snapshotId).map { results =>
+        val json = JsonUtil.jsTestSuiteMinimalInformations(results).toString()
+        ResponseConstructor.constructJsonResponse(json)
       }
     }
   }

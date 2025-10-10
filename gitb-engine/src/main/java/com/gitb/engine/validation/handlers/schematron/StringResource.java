@@ -15,10 +15,11 @@
 
 package com.gitb.engine.validation.handlers.schematron;
 
-import com.helger.commons.io.resource.IReadableResource;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import com.helger.io.resource.IReadableResource;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;

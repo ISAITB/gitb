@@ -9,9 +9,9 @@
             <div app-tooltip class="col-auto" tbTooltip="An identifier for the parameter used to refer to it from within test cases."></div>
         </div>
         <div class="row mb-3">
-            <label class="col-3 col-form-label text-end" for="description">Description:</label>
+            <label class="col-3 col-form-label text-end" for="parameterDescription">Description:</label>
             <div class="col-7">
-                <textarea id="description" name="description" [(ngModel)]="domainParameter.description" class="form-control"></textarea>
+                <textarea id="parameterDescription" name="parameterDescription" [(ngModel)]="domainParameter.description" class="form-control"></textarea>
             </div>
             <div app-tooltip class="col-auto" tbTooltip="A text describing the purpose of this parameter."></div>
         </div>
@@ -68,7 +68,7 @@
                 <div class="row mt-3">
                     <label class="col-3 col-form-label text-end" for="value">* Value:</label>
                     <div class="col-7">
-                        <app-secret-input id="value" name="value" [(ngModel)]="formData.hiddenValue"></app-secret-input>
+                        <app-secret-input inputId="value" inputName="value" name="valueSecret" [(ngModel)]="formData.hiddenValue"></app-secret-input>
                     </div>
                     <div app-tooltip class="col-auto" tbTooltip="The value to consider for this parameter."></div>
                 </div>

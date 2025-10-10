@@ -35,6 +35,7 @@ class ExportSettings {
   var statementConfigurations: Boolean = false
   var domain: Boolean = false
   var domainParameters: Boolean = false
+  var testServices: Boolean = false
   var specifications: Boolean = false
   var actors: Boolean = false
   var endpoints: Boolean = false
@@ -75,6 +76,7 @@ class ExportSettings {
       copy.statementConfigurations = this.statementConfigurations
       copy.domain = this.domain
       copy.domainParameters = this.domainParameters
+      copy.testServices = this.testServices
       copy.specifications = this.specifications
       copy.actors = this.actors
       copy.endpoints = this.endpoints

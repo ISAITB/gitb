@@ -20,10 +20,10 @@ import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.IThrowableProxy;
 import ch.qos.logback.core.AppenderBase;
+import com.gitb.PropertyConstants;
 import com.gitb.core.AnyContent;
 import com.gitb.core.LogLevel;
 import com.gitb.core.StepStatus;
-import com.gitb.engine.PropertyConstants;
 import com.gitb.engine.TestEngine;
 import com.gitb.engine.actors.SessionActor;
 import com.gitb.engine.actors.processors.AbstractTestStepActor;
@@ -61,7 +61,7 @@ public class TestSessionAppender extends AppenderBase<ILoggingEvent> {
     protected void append(ILoggingEvent eventObject) {
         var markerList =  eventObject.getMarkerList();
         if (markerList != null && !markerList.isEmpty()) {
-            String sessionId = markerList.get(0).getName();
+            String sessionId = markerList.getFirst().getName();
             //Construct the Callback response
             TestStepStatus testStepStatus = new TestStepStatus();
             testStepStatus.setTcInstanceId(sessionId);

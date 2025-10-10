@@ -1,0 +1,29 @@
+@import "../../../styles/less/_common.less";
+
+.radio-card {
+    flex-grow: 1;
+    border: 1px solid @gray-dark-1;
+    border-radius: @border-radius;
+    padding: 16px;
+    cursor: pointer;
+    input, label {
+        cursor: pointer;
+    }
+    &:hover {
+        background-color: @gray-light-1;
+    }
+    &.selected {
+        background-color: @gray-light-1;
+        border-color: @bs-input-focus-highlight;
+        outline: 0;
+        box-shadow: 0 0 0 @bs-input-focus-box-shadow-size @bs-input-focus-box-shadow-color;
+    }
+    .form-check-label {
+        font-weight: bold;
+    }
+    .radio-description {
+        border-top: 1px solid @gray-dark-1;
+        margin-top: 10px;
+        padding-top: 10px;
+    }
+}

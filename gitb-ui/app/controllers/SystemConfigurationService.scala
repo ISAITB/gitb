@@ -17,7 +17,7 @@ package controllers
 
 import controllers.util._
 import exceptions.ErrorCodes
-import managers.{AuthorizationManager, SystemConfigurationManager}
+import managers.{AuthorizationManager, StartupWizardManager, SystemConfigurationManager}
 import models.Constants
 import org.apache.commons.io.FileUtils
 import play.api.libs.json.{JsBoolean, Json}
@@ -31,14 +31,15 @@ class SystemConfigurationService @Inject()(authorizedAction: AuthorizedAction,
                                            cc: ControllerComponents,
                                            repositoryUtils: RepositoryUtils,
                                            systemConfigurationManager: SystemConfigurationManager,
+                                           startupWizardManager: StartupWizardManager,
                                            environment: play.api.Environment,
                                            authorizationManager: AuthorizationManager)
                                           (implicit ec: ExecutionContext) extends AbstractController(cc) {
 
   def testEmailSettings(): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.checkTestBedAdmin(request).flatMap { _ =>
-      val toAddress = ParameterExtractor.requiredBodyParameter(request, Parameters.TO)
-      val settingsJson = ParameterExtractor.requiredBodyParameter(request, Parameters.SETTINGS)
+      val toAddress = ParameterExtractor.requiredBodyParameter(request, ParameterNames.TO)
+      val settingsJson = ParameterExtractor.requiredBodyParameter(request, ParameterNames.SETTINGS)
       val emailSettings = JsonUtil.parseJsEmailSettings(settingsJson)
       systemConfigurationManager.testEmailSettings(emailSettings, toAddress).map { errors =>
         var json = Json.obj("success" -> JsBoolean(errors.isEmpty))
@@ -59,10 +60,38 @@ class SystemConfigurationService @Inject()(authorizedAction: AuthorizedAction,
     }
   }
 
+  def updateConfigurationValues(): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canUpdateSystemConfigurationValues(request).flatMap { _ =>
+      val configs = JsonUtil.parseJsSystemConfigurations(ParameterExtractor.requiredBodyParameter(request, ParameterNames.VALUES))
+      var proceed = true
+      val configsToUse = configs.map { config =>
+        if (systemConfigurationManager.isEditableSystemParameter(config.name)) {
+          if (config.name == Constants.WelcomeMessage && config.parameter.isDefined) {
+            config.copy(parameter = Some(HtmlUtil.sanitizeEditorContent(config.parameter.get)))
+          } else {
+            config
+          }
+        } else {
+          proceed = false
+          config
+        }
+      }
+      if (proceed) {
+        systemConfigurationManager.updateSystemParameters(configsToUse).map { resultToReport =>
+          ResponseConstructor.constructJsonResponse(JsonUtil.jsSystemConfigurations(resultToReport).toString)
+        }
+      } else {
+        Future.successful {
+          ResponseConstructor.constructEmptyResponse
+        }
+      }
+    }
+  }
+
   def updateConfigurationValue(): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canUpdateSystemConfigurationValues(request).flatMap { _ =>
-      val name = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
-      var value = ParameterExtractor.optionalBodyParameter(request, Parameters.PARAMETER)
+      val name = ParameterExtractor.requiredBodyParameter(request, ParameterNames.NAME)
+      var value = ParameterExtractor.optionalBodyParameter(request, ParameterNames.PARAMETER)
       if (systemConfigurationManager.isEditableSystemParameter(name)) {
         if (name == Constants.WelcomeMessage && value.isDefined) {
           value = Some(HtmlUtil.sanitizeEditorContent(value.get))
@@ -127,8 +156,8 @@ class SystemConfigurationService @Inject()(authorizedAction: AuthorizedAction,
 
   def previewThemeResource: Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canManageThemes(request).map { _ =>
-      val themeId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.ID)
-      val resourcePath = ParameterExtractor.requiredQueryParameter(request, Parameters.NAME)
+      val themeId = ParameterExtractor.optionalLongQueryParameter(request, ParameterNames.ID)
+      val resourcePath = ParameterExtractor.requiredQueryParameter(request, ParameterNames.NAME)
       streamThemeResource(resourcePath, themeId)
     }
   }
@@ -174,7 +203,7 @@ class SystemConfigurationService @Inject()(authorizedAction: AuthorizedAction,
               ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "A theme with this key already exists.", Some("key"))
             }
           } else {
-            val referenceThemeId = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.REFERENCE).toLong
+            val referenceThemeId = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.REFERENCE).toLong
             systemConfigurationManager.createTheme(referenceThemeId, themeData._1.get, themeData._2.get).map { _ =>
               ResponseConstructor.constructEmptyResponse
             }
@@ -236,6 +265,17 @@ class SystemConfigurationService @Inject()(authorizedAction: AuthorizedAction,
         } else {
           ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "The selected theme cannot be deleted.")
         }
+      }
+    }
+  }
+
+  def completeStartupWizard: Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canCompleteStartupWizard(request).flatMap { _ =>
+      val samples = ParameterExtractor.requiredBodyParameter(request, ParameterNames.SAMPLES).toBoolean
+      val updates = ParameterExtractor.requiredBodyParameter(request, ParameterNames.UPDATES).toBoolean
+      val api = ParameterExtractor.requiredBodyParameter(request, ParameterNames.API).toBoolean
+      startupWizardManager.completeStartupWizard(samples, updates, api).map { _ =>
+        ResponseConstructor.constructEmptyResponse
       }
     }
   }

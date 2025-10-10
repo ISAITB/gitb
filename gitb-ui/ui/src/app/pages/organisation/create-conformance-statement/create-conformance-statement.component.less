@@ -13,14 +13,41 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
+@import "../../../../styles/less/_common.less";
+
 .control-container {
     display: flex;
-    flex-wrap: wrap
+    flex-wrap: wrap;
+    &.wrapped {
+        .btn-toolbar {
+            flex-grow: 1;
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid @gray-highlight;
+        }
+    }
+    &.not-wrapped {
+        .total-container {
+            margin-left: 30px;
+            padding-left: 30px;
+            border-left: 1px solid @gray-highlight;
+        }
+    }
+    &.wrapped {
+        .total-container {
+            margin-right: 100px;
+        }
+    }
 }
-.no-statements-visible {
-    margin-top: 15px;
-    opacity: 0.5;
-}
+
 .statement-container {
-    padding-top: 5px;
+    padding-top: 6px;
+}
+
+.total-container {
+    display: flex;
+    align-items: center;
+    span {
+        opacity: 0.5;
+    }
 }

@@ -26,7 +26,7 @@ import java.io.*;
  */
 public class BomStrippingReader extends Reader {
 
-    private InputStreamReader internal;
+    private final InputStreamReader internal;
 
     /**
      * Constructor.
@@ -39,7 +39,7 @@ public class BomStrippingReader extends Reader {
             PushbackInputStream pushbackStream = new PushbackInputStream(in, 4);
             byte[] buffer = new byte[4];
             int bytesRead = pushbackStream.read(buffer, 0, buffer.length);
-            int unread = 0;
+            int unread;
             if (bytesRead >= 4 &&
                     buffer[0] == (byte)0x00 && buffer[1] == (byte)0x00 && buffer[2] == (byte)0xFE && buffer[3] == (byte)0xFF) {
                 // 00 00 FE FF (UTF-32, big-endian).

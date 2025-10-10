@@ -13,47 +13,54 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Injectable } from '@angular/core';
-import { ROUTES } from '../common/global';
-import { PendingTestSuiteUploadChoice } from '../modals/test-suite-upload-modal/pending-test-suite-upload-choice';
-import { TestSuiteUploadResult } from '../modals/test-suite-upload-modal/test-suite-upload-result';
-import { ExportSettings } from '../types/export-settings';
-import { Actor } from '../types/actor';
-import { ConformanceCertificateSettings } from '../types/conformance-certificate-settings';
-import { ConformanceResultFullList } from '../types/conformance-result-full-list';
-import { Domain } from '../types/domain';
-import { DomainParameter } from '../types/domain-parameter';
-import { Endpoint } from '../types/endpoint';
-import { EndpointParameter } from '../types/endpoint-parameter';
-import { FileData } from '../types/file-data.type';
-import { ImportItem } from '../types/import-item';
-import { ImportPreview } from '../types/import-preview';
-import { ImportSettings } from '../types/import-settings';
-import { Specification } from '../types/specification';
-import { TestResultSearchCriteria } from '../types/test-result-search-criteria';
-import { TestSuite } from '../types/test-suite';
-import { DataService } from './data.service';
-import { RestService } from './rest.service';
-import { SystemConfigurationEndpoint } from '../types/system-configuration-endpoint';
-import { TestCase } from '../types/test-case';
-import { ConformanceStatus } from '../types/conformance-status';
-import { FileParam } from '../types/file-param.type';
-import { StatementParameterMinimal } from '../types/statement-parameter-minimal';
-import { ConformanceStatementItemInfo } from '../types/conformance-statement-item-info';
-import { ConformanceSnapshot } from '../types/conformance-snapshot';
-import { BadgesInfo } from '../components/manage-badges/badges-info';
-import { HttpResponse } from '@angular/common/http';
-import { ConformanceStatementItem } from '../types/conformance-statement-item';
-import { ConformanceStatementWithResults } from '../types/conformance-statement-with-results';
-import { ConformanceSnapshotList } from '../types/conformance-snapshot-list';
-import { CommunityKeystore } from '../types/community-keystore';
-import { ConformanceOverviewCertificateSettings } from '../types/conformance-overview-certificate-settings';
-import { BadgePlaceholderInfo } from '../modals/conformance-certificate-modal/badge-placeholder-info';
-import { Constants } from '../common/constants';
-import { SystemParameter } from '../types/system-parameter';
-import { OrganisationParameter } from '../types/organisation-parameter';
-import { ErrorDescription } from '../types/error-description';
-import {Observable} from 'rxjs';
+import {Injectable} from '@angular/core';
+import {ROUTES} from '../common/global';
+import {PendingTestSuiteUploadChoice} from '../modals/test-suite-upload-modal/pending-test-suite-upload-choice';
+import {TestSuiteUploadResult} from '../modals/test-suite-upload-modal/test-suite-upload-result';
+import {ExportSettings} from '../types/export-settings';
+import {Actor} from '../types/actor';
+import {ConformanceCertificateSettings} from '../types/conformance-certificate-settings';
+import {ConformanceResultFullList} from '../types/conformance-result-full-list';
+import {Domain} from '../types/domain';
+import {Endpoint} from '../types/endpoint';
+import {EndpointParameter} from '../types/endpoint-parameter';
+import {FileData} from '../types/file-data.type';
+import {ImportItem} from '../types/import-item';
+import {ImportPreview} from '../types/import-preview';
+import {ImportSettings} from '../types/import-settings';
+import {Specification} from '../types/specification';
+import {TestResultSearchCriteria} from '../types/test-result-search-criteria';
+import {TestSuite} from '../types/test-suite';
+import {DataService} from './data.service';
+import {RestService} from './rest.service';
+import {SystemConfigurationEndpoint} from '../types/system-configuration-endpoint';
+import {TestCase} from '../types/test-case';
+import {ConformanceStatus} from '../types/conformance-status';
+import {FileParam} from '../types/file-param.type';
+import {StatementParameterMinimal} from '../types/statement-parameter-minimal';
+import {ConformanceSnapshot} from '../types/conformance-snapshot';
+import {BadgesInfo} from '../components/manage-badges/badges-info';
+import {HttpResponse} from '@angular/common/http';
+import {ConformanceStatementWithResults} from '../types/conformance-statement-with-results';
+import {ConformanceSnapshotList} from '../types/conformance-snapshot-list';
+import {CommunityKeystore} from '../types/community-keystore';
+import {ConformanceOverviewCertificateSettings} from '../types/conformance-overview-certificate-settings';
+import {BadgePlaceholderInfo} from '../modals/conformance-certificate-modal/badge-placeholder-info';
+import {Constants} from '../common/constants';
+import {SystemParameter} from '../types/system-parameter';
+import {OrganisationParameter} from '../types/organisation-parameter';
+import {ErrorDescription} from '../types/error-description';
+import {SearchResult} from '../types/search-result';
+import {ConformanceStatementSearchCriteria} from '../types/conformance-statement-search-criteria';
+import {ConformanceStatementSearchResult} from '../types/conformance-statement-search-result';
+import {DomainSpecification} from '../types/domain-specification';
+import {CreateConformanceStatementSearchResult} from '../types/create-conformance-statement-search-result';
+import {CreateStatementSearchCriteria} from '../pages/organisation/create-conformance-statement/create-statement-search-criteria';
+import {TestCaseSearchCriteria} from '../types/test-case-search-criteria';
+import {TestSuiteMinimalInfo} from '../types/test-suite-minimal-info';
+import {Observable, tap} from 'rxjs';
+import {share} from 'rxjs/operators';
+import {PopupService} from './popup.service';
 
 @Injectable({
   providedIn: 'root'
@@ -62,7 +69,8 @@ export class ConformanceService {
 
   constructor(
     private readonly restService: RestService,
-    private readonly dataService: DataService
+    private readonly dataService: DataService,
+    private readonly popupService: PopupService
   ) { }
 
   getDomain(domainId: number) {
@@ -72,13 +80,16 @@ export class ConformanceService {
     })
   }
 
-  getDomains(ids?: number[], withApiKeys?: boolean) {
+  getDomains(ids?: number[], withApiKeys?: boolean, snapshotId?: number) {
     let params:any = {}
     if (ids !== undefined && ids.length > 0) {
       params['ids'] = ids.join(',')
     }
     if (withApiKeys != undefined) {
       params['keys'] = withApiKeys == true
+    }
+    if (snapshotId != undefined) {
+      params['snapshot'] = snapshotId
     }
     return this.restService.get<Domain[]>({
       path: ROUTES.controllers.ConformanceService.getDomains().url,
@@ -121,13 +132,46 @@ export class ConformanceService {
     })
   }
 
-  getDomainSpecifications(domainId: number, withGroups?: boolean) {
-    let params: any = {}
-    if (withGroups != undefined) {
-      params['groups'] = withGroups
-    }
+  searchDomains(filter: string|undefined, page: number|undefined, limit: number|undefined) {
+    return this.restService.get<SearchResult<Domain>>({
+      path: ROUTES.controllers.ConformanceService.searchDomains().url,
+      authenticate: true,
+      params: {
+        filter: filter,
+        page: page,
+        limit: limit,
+      }
+    })
+  }
+
+  searchCommunityDomains(communityId: number, filter: string|undefined, page: number|undefined, limit: number|undefined) {
+    return this.restService.get<SearchResult<Domain>>({
+      path: ROUTES.controllers.ConformanceService.searchCommunityDomains().url,
+      authenticate: true,
+      params: {
+        community_id: communityId,
+        filter: filter,
+        page: page,
+        limit: limit,
+      }
+    })
+  }
+
+  getDomainSpecifications(domainId: number) {
     return this.restService.get<Specification[]>({
       path: ROUTES.controllers.ConformanceService.getDomainSpecs(domainId).url,
+      authenticate: true
+    })
+  }
+
+  getDomainSpecificationsPaged(domainId: number, page: number, limit: number, filter: string|undefined) {
+    let params: any = {
+      page: page,
+      limit: limit
+    }
+    if (filter != undefined) params.filter = filter
+    return this.restService.get<SearchResult<DomainSpecification>>({
+      path: ROUTES.controllers.ConformanceService.getDomainSpecsWithPaging(domainId).url,
       authenticate: true,
       params: params
     })
@@ -140,7 +184,7 @@ export class ConformanceService {
     })
   }
 
-  getSpecificationsWithIds(ids?: number[], domainIds?: number[], groupIds?: number[]) {
+  getSpecificationsWithIds(ids?: number[], domainIds?: number[], groupIds?: number[], snapshotId?: number) {
     let params: any = {}
     if (ids != undefined && ids.length > 0) {
       params['ids'] = ids.join(',')
@@ -151,6 +195,9 @@ export class ConformanceService {
     if (groupIds != undefined && groupIds.length > 0) {
       params['group_ids'] = groupIds.join(',')
     }
+    if (snapshotId != undefined) {
+      params['snapshot'] = snapshotId
+    }
     return this.restService.post<Specification[]>({
       path: ROUTES.controllers.ConformanceService.getSpecs().url,
       authenticate: true,
@@ -158,7 +205,7 @@ export class ConformanceService {
     })
   }
 
-  searchActors(domainIds: number[]|undefined, specificationIds: number[]|undefined, specificationGroupIds: number[]|undefined) {
+  searchActors(domainIds: number[]|undefined, specificationIds: number[]|undefined, specificationGroupIds: number[]|undefined, snapshotId?: number) {
     const data: any = {}
     if (domainIds && domainIds.length > 0) {
       data["domain_ids"] = domainIds.join(',')
@@ -169,6 +216,9 @@ export class ConformanceService {
     if (specificationGroupIds != undefined && specificationGroupIds.length > 0) {
       data['group_ids'] = specificationGroupIds.join(',')
     }
+    if (snapshotId != undefined) {
+      data['snapshot'] = snapshotId
+    }
     return this.restService.post<Actor[]>({
       path: ROUTES.controllers.ConformanceService.searchActors().url,
       authenticate: true,
@@ -176,7 +226,7 @@ export class ConformanceService {
     })
   }
 
-  searchActorsInDomain(domainId: number, specificationIds: number[]|undefined, specificationGroupIds: number[]|undefined) {
+  searchActorsInDomain(domainId: number, specificationIds: number[]|undefined, specificationGroupIds: number[]|undefined, snapshotId?: number) {
     const data: any = {
       domain_id: domainId
     }
@@ -185,6 +235,9 @@ export class ConformanceService {
     }
     if (specificationGroupIds != undefined && specificationGroupIds.length > 0) {
       data['group_ids'] = specificationGroupIds.join(',')
+    }
+    if (snapshotId != undefined) {
+      data['snapshot'] = snapshotId
     }
     return this.restService.post<Actor[]>({
       path: ROUTES.controllers.ConformanceService.searchActorsInDomain().url,
@@ -259,7 +312,19 @@ export class ConformanceService {
     })
   }
 
-  getConformanceOverview(criteria: TestResultSearchCriteria, snapshotId: number|undefined, fullResults: boolean, forExport: boolean, sortColumn: string, sortOrder: string, page: number, limit: number) {
+  getConformanceBadgeStatus(specificationId: number, actorId: number, snapshotId: number|undefined) {
+    const params: any = {
+      spec_id: specificationId,
+    }
+    if (snapshotId != undefined) params.snapshot = snapshotId
+    return this.restService.get<boolean>({
+      path: ROUTES.controllers.ConformanceService.getConformanceBadgeStatus(actorId).url,
+      authenticate: true,
+      params: params
+    })
+  }
+
+  getConformanceOverview(criteria: TestResultSearchCriteria, snapshotId: number|undefined, fullResults: boolean, forExport: boolean, sortColumn: string, sortOrder: string, page: number, limit: number, organisationId: number|undefined) {
     let params: any = {}
     params.full = fullResults
     params.page = page
@@ -306,8 +371,14 @@ export class ConformanceService {
     params.export = forExport != undefined && forExport
     params.sort_column = sortColumn
     params.sort_order = sortOrder
+    let pathToUse: string
+    if (organisationId == undefined) {
+      pathToUse = ROUTES.controllers.ConformanceService.getConformanceOverview().url
+    } else {
+      pathToUse = ROUTES.controllers.ConformanceService.getConformanceOverviewForOrganisation(organisationId).url
+    }
     return this.restService.post<ConformanceResultFullList>({
-      path: ROUTES.controllers.ConformanceService.getConformanceOverview().url,
+      path: pathToUse,
       authenticate: true,
       data: params
     })
@@ -498,112 +569,6 @@ export class ConformanceService {
     })
   }
 
-  getDomainParameters(domainId: number, loadValues?: boolean, onlySimple?: boolean) {
-    const params: any = {}
-    if (loadValues != undefined) {
-      params.values = loadValues
-    }
-    if (onlySimple != undefined) {
-      params.simple = onlySimple
-    }
-    return this.restService.get<DomainParameter[]>({
-      path: ROUTES.controllers.ConformanceService.getDomainParameters(domainId).url,
-      authenticate: true,
-      params: params
-    })
-  }
-
-  getDomainParametersOfCommunity(communityId: number, loadValues?: boolean, onlySimple?: boolean) {
-    const params: any = {}
-    if (loadValues != undefined) {
-      params.values = loadValues
-    }
-    if (onlySimple != undefined) {
-      params.simple = onlySimple
-    }
-    return this.restService.get<DomainParameter[]>({
-      path: ROUTES.controllers.ConformanceService.getDomainParametersOfCommunity(communityId).url,
-      authenticate: true,
-      params: params
-    })
-  }
-
-  downloadDomainParameterFile(domainId: number, domainParameterId: number) {
-		return this.restService.get<ArrayBuffer>({
-			path: ROUTES.controllers.ConformanceService.downloadDomainParameterFile(domainId, domainParameterId).url,
-			authenticate: true,
-			arrayBuffer: true
-		})
-  }
-
-  updateDomainParameter(domainParameterId: number, domainParameterName: string, domainParameterDescription: string|undefined, domainParameterValue: string|File|undefined, domainParameterKind: string, inTests: boolean|undefined, domainId: number) {
-    const params: any = {
-      name: domainParameterName,
-      kind: domainParameterKind
-    }
-    if (domainParameterDescription != undefined) {
-      params.desc = domainParameterDescription
-    }
-    if (inTests != undefined) {
-      params.inTests = inTests
-    } else {
-      params.inTests = false
-    }
-    let files: FileParam[]|undefined
-    if (domainParameterKind == 'BINARY') {
-      if (domainParameterValue != undefined) {
-        params.contentType = (domainParameterValue as File).type
-        files = [{param: 'file', data: domainParameterValue as File}]
-      }
-    } else {
-      params.value = domainParameterValue
-    }
-    return this.restService.post<ErrorDescription|void>({
-      path: ROUTES.controllers.ConformanceService.updateDomainParameter(domainId, domainParameterId).url,
-      authenticate: true,
-      data: {
-        config: JSON.stringify(params)
-      },
-      files: files
-    })
-  }
-
-  createDomainParameter(domainParameterName: string, domainParameterDescription: string|undefined, domainParameterValue: string|File, domainParameterKind: string, inTests: boolean|undefined, domainId: number) {
-    const params: any = {
-      name: domainParameterName,
-      kind: domainParameterKind
-    }
-    if (domainParameterDescription != undefined) {
-      params.desc = domainParameterDescription
-    }
-    if (inTests != undefined) {
-      params.inTests = inTests
-    } else {
-      params.inTests = false
-    }
-    let files: FileParam[]|undefined
-    if (domainParameterKind == 'BINARY') {
-      params.contentType = (domainParameterValue as File).type
-      files = [{param: 'file', data: domainParameterValue as File}]
-    } else {
-      params.value = domainParameterValue as string
-    }
-    return this.restService.post<ErrorDescription|void>({
-      path: ROUTES.controllers.ConformanceService.createDomainParameter(domainId).url,
-      authenticate: true,
-      data: {
-        config: JSON.stringify(params)
-      },
-      files: files
-    })
-  }
-
-  deleteDomainParameter(domainParameterId: number, domainId: number) {
-    return this.restService.delete<void>({
-      path: ROUTES.controllers.ConformanceService.deleteDomainParameter(domainId, domainParameterId).url,
-      authenticate: true
-    })
-  }
 
   deployTestSuite(domainId: number, specificationIds: number[], sharedTestSuite: boolean, file: File) {
     return this.restService.post<TestSuiteUploadResult>({
@@ -670,9 +635,21 @@ export class ConformanceService {
     })
   }
 
-  getTestSuites(specificationId: number) {
-    return this.restService.get<TestSuite[]>({
+  getTestSuites(specificationId: number, filter: string|undefined, page: number|undefined, limit: number|undefined) {
+    return this.restService.get<SearchResult<TestSuite>>({
       path: ROUTES.controllers.ConformanceService.getSpecTestSuites(specificationId).url,
+      authenticate: true,
+      params: {
+        filter: filter,
+        page: page,
+        limit: limit,
+      }
+    })
+  }
+
+  getSpecSharedTestSuites(specificationId: number) {
+    return this.restService.get<TestSuite[]>({
+      path: ROUTES.controllers.ConformanceService.getSpecSharedTestSuites(specificationId).url,
       authenticate: true
     })
   }
@@ -681,6 +658,18 @@ export class ConformanceService {
     return this.restService.get<TestSuite[]>({
       path: ROUTES.controllers.ConformanceService.getSharedTestSuites(domainId).url,
       authenticate: true
+    })
+  }
+
+  searchSharedTestSuites(domainId: number, filter: string|undefined, page: number|undefined, limit: number|undefined) {
+    return this.restService.get<SearchResult<TestSuite>>({
+      path: ROUTES.controllers.ConformanceService.searchSharedTestSuites(domainId).url,
+      authenticate: true,
+      params: {
+        filter: filter,
+        page: page,
+        limit: limit,
+      }
     })
   }
 
@@ -972,14 +961,32 @@ export class ConformanceService {
     })
   }
 
-  getAvailableConformanceStatements(domainId: number|undefined, systemId: number) {
-    let params:any = {}
-    if (domainId) {
-      params.domain_id = domainId
-    }
-    return this.restService.get<ConformanceStatementItemInfo>({
+  private payloadFromCreateStatementSearchCriteria(domainId: number|undefined, searchCriteria: CreateStatementSearchCriteria) {
+    let data: any = {}
+    if (domainId != undefined) data.domain_id = domainId
+    if (searchCriteria.filterText != undefined) data.filter = searchCriteria.filterText
+    data.selected = searchCriteria.selected
+    data.unselected = searchCriteria.unselected
+    if (searchCriteria.selectedIds) data.ids = searchCriteria.selectedIds.join(",")
+    return data
+  }
+
+  getAvailableConformanceStatementIds(domainId: number|undefined, systemId: number, searchCriteria: CreateStatementSearchCriteria) {
+    return this.restService.post<number[]>({
+      path: ROUTES.controllers.ConformanceService.getAvailableConformanceStatementIds(systemId).url,
+      authenticate: true,
+      data: this.payloadFromCreateStatementSearchCriteria(domainId, searchCriteria)
+    })
+  }
+
+  getAvailableConformanceStatements(domainId: number|undefined, systemId: number, searchCriteria: CreateStatementSearchCriteria, page: number|undefined, limit: number|undefined) {
+    let params: any = {}
+    if (page != undefined) params.page = page
+    if (limit != undefined) params.limit = limit
+    return this.restService.post<CreateConformanceStatementSearchResult>({
       path: ROUTES.controllers.ConformanceService.getAvailableConformanceStatements(systemId).url,
       authenticate: true,
+      data: this.payloadFromCreateStatementSearchCriteria(domainId, searchCriteria),
       params: params
     })
   }
@@ -1093,6 +1100,29 @@ export class ConformanceService {
     })
   }
 
+  copyBadgeURL(systemId: number, actorId: number,snapshotId: number|undefined): Observable<any> {
+    const obs$ = this.conformanceBadgeUrl(systemId, actorId, snapshotId).pipe(
+      tap((data) => {
+        if (data) {
+          if (data.startsWith('/')) {
+            // Relative URL.
+            let prefix = window.location.origin
+            if (prefix.endsWith('/')) {
+              prefix = prefix.substring(0, prefix.length - 1)
+            }
+            data = prefix + data
+          }
+          this.dataService.copyToClipboard(data).subscribe(() => {
+            this.popupService.success('Badge URL copied.')
+          })
+        }
+      }),
+      share()
+    )
+    obs$.subscribe()
+    return obs$
+  }
+
   replaceBadgePlaceholdersInCertificateMessage(message: string) {
     // Find placeholders.
     const placeholders: BadgePlaceholderInfo[] = []
@@ -1145,14 +1175,24 @@ export class ConformanceService {
     })
   }
 
-  getConformanceStatementsForSystem(system: number, snapshotId?: number) {
-    let params: any = undefined
-    if (snapshotId != undefined) {
-      params = {
-        snapshot: snapshotId
-      }
+  private toPayload(searchCriteria: ConformanceStatementSearchCriteria): any {
+    const payload: any = {
+      succeeded: searchCriteria.succeeded,
+      failed: searchCriteria.failed,
+      incomplete: searchCriteria.incomplete
     }
-    return this.restService.get<ConformanceStatementItem[]>({
+    if (searchCriteria.filterText != undefined && searchCriteria.filterText.trim().length > 0) {
+      payload.filter = searchCriteria.filterText
+    }
+    return payload
+  }
+
+  getConformanceStatementsForSystem(system: number, snapshotId: number|undefined, page: number|undefined, limit: number|undefined, searchCriteria: ConformanceStatementSearchCriteria) {
+    const params = this.toPayload(searchCriteria)
+    if (snapshotId != undefined) params.snapshot = snapshotId
+    if (page != undefined) params.page = page
+    if (limit != undefined) params.limit = limit
+    return this.restService.get<ConformanceStatementSearchResult>({
       path: ROUTES.controllers.ConformanceService.getConformanceStatementsForSystem(system).url,
       authenticate: true,
       params: params
@@ -1168,6 +1208,39 @@ export class ConformanceService {
     }
     return this.restService.get<ConformanceStatementWithResults>({
       path: ROUTES.controllers.ConformanceService.getConformanceStatement(system, actor).url,
+      authenticate: true,
+      params: params
+    })
+  }
+
+  getConformanceStatementTestSuitesForFiltering(system: number, actor: number, snapshotId: number|undefined) {
+    let params: any = undefined
+    if (snapshotId != undefined) {
+      params = {}
+      params.snapshot = snapshotId
+    }
+    return this.restService.get<TestSuiteMinimalInfo[]>({
+      path: ROUTES.controllers.ConformanceService.getConformanceStatementTestSuitesForFiltering(system, actor).url,
+      authenticate: true,
+      params: params
+    })
+  }
+
+  getConformanceStatementTests(system: number, actor: number, snapshotId: number|undefined, searchCriteria: TestCaseSearchCriteria, page: number, limit: number) {
+    let params: any = {
+      succeeded: searchCriteria.succeeded,
+      failed: searchCriteria.failed,
+      incomplete: searchCriteria.incomplete,
+      optional: searchCriteria.optional,
+      disabled: searchCriteria.disabled,
+      page: page,
+      limit: limit
+    }
+    if (searchCriteria.testSuiteId != undefined) params.testSuite = searchCriteria.testSuiteId
+    if (searchCriteria.testCaseFilterText != undefined) params.testCase = searchCriteria.testCaseFilterText
+    if (snapshotId != undefined) params.snapshot = snapshotId
+    return this.restService.get<SearchResult<ConformanceStatus>>({
+      path: ROUTES.controllers.ConformanceService.getConformanceStatementTests(system, actor).url,
       authenticate: true,
       params: params
     })

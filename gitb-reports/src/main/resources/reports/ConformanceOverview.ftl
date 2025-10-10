@@ -86,7 +86,7 @@
     </head>
     <body>
         <#if data.title??><div class="title">${escape(data.title)}</div></#if>
-        <#if data.includeMessage?? && data.includeMessage>
+        <#if data.includeMessage?? && data.includeMessage && data.message??>
             <div class="report-message">
                 ${data.message}
             </div>

@@ -16,7 +16,6 @@
 import {AfterViewInit, Component, EventEmitter, OnInit, ViewChild} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {Constants} from 'src/app/common/constants';
-import {BaseComponent} from 'src/app/pages/base-component.component';
 import {CommunityService} from 'src/app/services/community.service';
 import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
 import {ConformanceService} from 'src/app/services/conformance.service';
@@ -38,16 +37,15 @@ import {Organisation} from 'src/app/types/organisation.type';
 import {TableColumnDefinition} from 'src/app/types/table-column-definition.type';
 import {Trigger} from 'src/app/types/trigger';
 import {User} from 'src/app/types/user.type';
-import {TabsetComponent} from 'ngx-bootstrap/tabs';
-import {CommunityTab} from './community-tab.enum';
 import {BreadcrumbType} from 'src/app/types/breadcrumb-type';
 import {ValidationState} from 'src/app/types/validation-state';
 import {Observable, of} from 'rxjs';
 import {ResourceActions} from '../../../../../components/resource-management-tab/resource-actions';
 import {FileData} from '../../../../../types/file-data.type';
 import {CommunityResourceService} from '../../../../../services/community-resource.service';
-import {TableComponent} from '../../../../../components/table/table.component';
 import {PagingEvent} from '../../../../../components/paging-controls/paging-event';
+import {TableApi} from '../../../../../components/table/table-api';
+import {BaseTabbedComponent} from '../../../../base-tabbed-component';
 
 @Component({
     selector: 'app-community-details',
@@ -55,9 +53,9 @@ import {PagingEvent} from '../../../../../components/paging-controls/paging-even
     styleUrls: ['./community-details.component.less'],
     standalone: false
 })
-export class CommunityDetailsComponent extends BaseComponent implements OnInit, AfterViewInit {
+export class CommunityDetailsComponent extends BaseTabbedComponent implements OnInit, AfterViewInit {
 
-  @ViewChild("organisationTable") organisationTable?: TableComponent
+  @ViewChild("organisationTable") organisationTable?: TableApi
 
   community!: Community
   adminStatus = {status: Constants.STATUS.NONE}
@@ -108,9 +106,6 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   testBedLegalNotice?: LegalNotice
   testBedLandingPage?: LandingPage
   testBedErrorTemplate?: ErrorTemplate
-  tabToShow = CommunityTab.organisations
-  tabTriggers!: Record<CommunityTab, {index: number, loader: () => any}>
-  @ViewChild('tabs', { static: false }) tabs?: TabsetComponent;
 
   organisationFilter?: string
   organisationSortOrder = 'asc'
@@ -134,8 +129,6 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   constructor(
     public readonly dataService: DataService,
     private readonly routingService: RoutingService,
-    private readonly route: ActivatedRoute,
-    router: Router,
     private readonly userService: UserService,
     private readonly landingPageService: LandingPageService,
     private readonly legalNoticeService: LegalNoticeService,
@@ -146,14 +139,11 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
     private readonly communityService: CommunityService,
     private readonly conformanceService: ConformanceService,
     private readonly communityResourceService: CommunityResourceService,
-    private readonly popupService: PopupService
+    private readonly popupService: PopupService,
+    route: ActivatedRoute,
+    router: Router,
   ) {
-    super()
-    // Access the tab to show via router state to have it cleared upon refresh.
-    const tabParam = router.getCurrentNavigation()?.extras?.state?.tab
-    if (tabParam != undefined) {
-      this.tabToShow = CommunityTab[tabParam as keyof typeof CommunityTab]
-    }
+    super(router, route)
   }
 
   ngOnInit(): void {
@@ -176,8 +166,6 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
     }
     this.resourceActions = this.createCommunityResourceActions()
     this.routingService.communityBreadcrumbs(this.communityId, this.community.sname)
-    // Setup tab triggers
-    this.setupTabs()
     let domains$: Observable<Domain[]> = of([])
     if (this.dataService.isSystemAdmin) {
       domains$ = this.conformanceService.getDomains()
@@ -192,27 +180,19 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
     })
   }
 
-  ngAfterViewInit(): void {
-    setTimeout(() => {
-      this.triggerTab(this.tabToShow)
-    })
-  }
-
-  private setupTabs() {
-    const temp: Partial<Record<CommunityTab, {index: number, loader: () => any}>> = {}
-    temp[CommunityTab.organisations] = {index: 0, loader: () => {this.showOrganisations()}}
-    temp[CommunityTab.administrators] = {index: 1, loader: () => {this.showAdministrators()}}
-    temp[CommunityTab.landingPages] = {index: 2, loader: () => {this.showLandingPages()}}
-    temp[CommunityTab.legalNotices] = {index: 3, loader: () => {this.showLegalNotices()}}
-    temp[CommunityTab.errorTemplates] = {index: 4, loader: () => {this.showErrorTemplates()}}
-    temp[CommunityTab.triggers] = {index: 5, loader: () => {this.showTriggers()}}
-    this.tabTriggers = temp as Record<CommunityTab, {index: number, loader: () => any}>
-  }
-
-  triggerTab(tab: CommunityTab) {
-    this.tabTriggers[tab].loader()
-    if (this.tabs) {
-      this.tabs.tabs[this.tabTriggers[tab].index].active = true
+  loadTab(tabIndex: number) {
+    if (tabIndex == Constants.TAB.COMMUNITY.ORGANISATIONS) {
+      this.showOrganisations()
+    } else if (tabIndex == Constants.TAB.COMMUNITY.ADMINISTRATORS) {
+      this.showAdministrators()
+    } else if (tabIndex == Constants.TAB.COMMUNITY.LANDING_PAGES) {
+      this.showLandingPages()
+    } else if (tabIndex == Constants.TAB.COMMUNITY.LEGAL_NOTICES) {
+      this.showLegalNotices()
+    } else if (tabIndex == Constants.TAB.COMMUNITY.ERROR_TEMPLATES) {
+      this.showErrorTemplates()
+    } else {
+      this.showResources()
     }
   }
 
@@ -349,8 +329,9 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
     this.communityService.updateCommunity(this.communityId, this.community.sname!, this.community.fname!, this.community.email,
       this.community.selfRegType!, this.community.selfRegRestriction!, this.community.selfRegToken, this.community.selfRegTokenHelpText, this.community.selfRegNotification,
       this.community.interactionNotification, descriptionToUse, this.community.selfRegForceTemplateSelection, this.community.selfRegForceRequiredProperties,
+      this.community.selfRegAllowOrganisationTokens, this.community.selfRegAllowOrganisationTokenManagement, this.community.selfRegForceOrganisationTokenInput,
       this.community.allowCertificateDownload!, this.community.allowStatementManagement!, this.community.allowSystemManagement!, this.community.allowPostTestOrganisationUpdates!,
-      this.community.allowPostTestSystemUpdates!, this.community.allowPostTestStatementUpdates!, this.community.allowAutomationApi, this.community.allowCommunityView,
+      this.community.allowPostTestSystemUpdates!, this.community.allowPostTestStatementUpdates!, this.community.allowAutomationApi, this.community.allowCommunityView, this.community.allowUserManagement,
       this.community.domain?.id)
     .subscribe(() => {
       this.originalDomainId = this.community.domain?.id
@@ -476,11 +457,11 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   }
 
   refreshOrganisations() {
-    this.queryOrganisations({ targetPage: 1, targetPageSize: this.organisationTable?.pagingControls?.getCurrentStatus().pageSize! })
+    this.queryOrganisations({ targetPage: 1, targetPageSize: this.organisationTable?.getPagingControls()?.getCurrentStatus().pageSize! })
   }
 
   private updateOrganisationPagination(page: number, count: number) {
-    this.organisationTable?.pagingControls?.updateStatus(page, count)
+    this.organisationTable?.getPagingControls()?.updateStatus(page, count)
   }
 
   sortOrganisations(column: TableColumnDefinition) {

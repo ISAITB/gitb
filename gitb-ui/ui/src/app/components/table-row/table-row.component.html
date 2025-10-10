@@ -13,7 +13,20 @@
         <app-table-column-content [item]="item" [column]="columns[i]"></app-table-column-content>
     </td>
 }
-@if (actionVisible || operationsVisible || exportVisible) {
+@if (showOptions) {
+    <td class="td-min-centered">
+        <app-checkbox-option-panel #optionButton
+                                   label="Options"
+                                   icon="fa-solid fa-bars"
+                                   placement="left"
+                                   [optionProvider]="loadAvailableOptionsFactory()"
+                                   [singleSelection]="true"
+                                   [pending]="data[actionPendingProperty] || data[deletePendingProperty] || data[exportPendingProperty]"
+                                   (updated)="handleOption($event)"
+                                   (opening)="optionsOpening()"
+                                   (closed)="optionsClosed()"></app-checkbox-option-panel>
+    </td>
+} @else if (actionVisible || operationsVisible || exportVisible) {
     <td class="td-min-centered">
         <div class="btn-toolbar">
             @if (actionVisible && (!actionVisibleForRow || actionVisibleForRow(data))) {

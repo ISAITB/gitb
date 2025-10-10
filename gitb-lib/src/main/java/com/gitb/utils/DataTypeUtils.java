@@ -169,8 +169,11 @@ public class DataTypeUtils {
 						postProcessor.process(data);
 					}
 					case BASE_64 -> {
-						data.deserialize(Base64.decodeBase64(
-								EncodingUtils.extractBase64FromDataURL(anyContent.getValue())));
+                        if (EncodingUtils.isDataUrl(anyContent.getValue())) {
+                            data.deserialize(Base64.decodeBase64(EncodingUtils.extractBase64FromDataURL(anyContent.getValue())));
+                        } else {
+                            data.deserialize(Base64.decodeBase64(anyContent.getValue()));
+                        }
 						postProcessor.process(data);
 					}
 					case URI -> {
@@ -181,9 +184,11 @@ public class DataTypeUtils {
 									.header("Accept", "*/*")
 									.GET()
 									.build();
-							var content = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString()).body();
-							data.deserialize(content.getBytes());
-							postProcessor.process(data);
+                            try (var client = HttpClient.newHttpClient()) {
+                                var content = client.send(request, HttpResponse.BodyHandlers.ofString()).body();
+                                data.deserialize(content.getBytes());
+                                postProcessor.process(data);
+                            }
 						} catch (URISyntaxException e) {
 							throw new IllegalStateException("URI had invalid syntax ["+anyContent.getValue()+"]", e);
 						} catch (InterruptedException e) {

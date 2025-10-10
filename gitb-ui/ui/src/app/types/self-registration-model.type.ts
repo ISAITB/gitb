@@ -23,8 +23,10 @@ export interface SelfRegistrationModel {
     template?: SelfRegistrationTemplate,
     orgFullName?: string,
     orgShortName?: string,
+    orgToken?: string,
     adminName?: string,
     adminEmail?: string,
     adminPassword?: string,
+    newOrganisation?: boolean
 
 }

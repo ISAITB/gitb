@@ -13,13 +13,13 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Injectable } from '@angular/core';
-import { ActivatedRouteSnapshot, RouterStateSnapshot, UrlTree } from '@angular/router';
-import { mergeMap, Observable, of, share } from 'rxjs';
-import { AuthProviderService } from '../services/auth-provider.service';
-import { DataService } from '../services/data.service';
-import { RoutingService } from '../services/routing.service';
-import { ProfileResolver } from './profile-resolver';
+import {Injectable} from '@angular/core';
+import {ActivatedRouteSnapshot, RouterStateSnapshot, UrlTree} from '@angular/router';
+import {mergeMap, Observable, of} from 'rxjs';
+import {AuthProviderService} from '../services/auth-provider.service';
+import {DataService} from '../services/data.service';
+import {RoutingService} from '../services/routing.service';
+import {ProfileResolver} from './profile-resolver';
 
 @Injectable({
   providedIn: 'root'

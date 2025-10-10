@@ -53,7 +53,7 @@ public class DNSSender extends UDPSender {
 		DatagramPacket incomingPacket = transaction.getParameter(DatagramPacket.class);
 		DNSReceiver.DNSRequestMetadata metadata = transaction.getParameter(DNSReceiver.DNSRequestMetadata.class);
 
-		DNSRecord dnsRecord = new DNSRecord(metadata.getDomain().getValue(), (String) address.getValue());
+		DNSRecord dnsRecord = new DNSRecord(metadata.getDomain().getValue(), address.getValue());
 
 		transaction.setParameter(DNSRecord.class, dnsRecord);
 
@@ -74,7 +74,7 @@ public class DNSSender extends UDPSender {
 				query = query.substring(0, query.length()-1);
 			}
 
-			String value = domain.getValue().toString();
+			String value = domain.getValue();
 			if(value.endsWith(".")) {
 				value = value.substring(0, value.length()-1);
 			}
@@ -101,10 +101,10 @@ public class DNSSender extends UDPSender {
 		Name name = queryRecord.getName();
 		int type = queryRecord.getType();
 
-		logger.debug(addMarker(), "Generating response for the domain name: ["+name+"]");
+        logger.debug(addMarker(), "Generating response for the domain name: [{}]", name);
 
 		if(query.getTSIG() != null) {
-			logger.debug(addMarker(), "TSIG is not null. Returning error response for the query ["+name+"]");
+            logger.debug(addMarker(), "TSIG is not null. Returning error response for the query [{}]", name);
 			return ErrorMessages.makeErrorMessage(query, Rcode.NOTIMP);
 		}
 
@@ -114,17 +114,17 @@ public class DNSSender extends UDPSender {
 		response.addRecord(queryRecord, Section.QUESTION);
 
 		if(type == Type.AXFR) {
-			logger.debug(addMarker(), "Record type is AXFR. Returning error response for the query ["+name+"]");
+            logger.debug(addMarker(), "Record type is AXFR. Returning error response for the query [{}]", name);
 			return ErrorMessages.makeErrorMessage(query, Rcode.REFUSED);
 		}
 
 		if(!Type.isRR(type) && type != Type.ANY) {
-			logger.debug(addMarker(), "Record type is not RR or ANY. Returning error response for the query ["+name+"]");
+            logger.debug(addMarker(), "Record type is not RR or ANY. Returning error response for the query [{}]", name);
 			return ErrorMessages.makeErrorMessage(query, Rcode.NOTIMP);
 		}
 
 		if(type == Type.SIG) {
-			logger.debug(addMarker(), "Record type is SIG. Returning error response for the query ["+name+"]");
+            logger.debug(addMarker(), "Record type is SIG. Returning error response for the query [{}]", name);
 			return ErrorMessages.makeErrorMessage(query, Rcode.NOTIMP);
 		}
 
@@ -132,13 +132,13 @@ public class DNSSender extends UDPSender {
 
 		RRset rrsetResponse = findMatchingDNSRecords(name);
 
-		logger.debug(addMarker(), "Found rrset for the query ["+name+"]: ["+rrsetResponse+"]");
+        logger.debug(addMarker(), "Found rrset for the query [{}]: [{}]", name, rrsetResponse);
 
-		if(rrsetResponse != null && rrsetResponse.size() > 0) {
+		if(rrsetResponse != null && !rrsetResponse.isEmpty()) {
 			Record record = rrsetResponse.first();
 
 			if(!response.findRecord(record)) {
-				logger.debug(addMarker(), "Found record for the query ["+name+"]: ["+record+"]");
+                logger.debug(addMarker(), "Found record for the query [{}]: [{}]", name, record);
 				response.addRecord(record, Section.ANSWER);
 			}
 		}
@@ -146,7 +146,7 @@ public class DNSSender extends UDPSender {
 		return response;
 	}
 
-	private RRset findMatchingDNSRecords(Name name) throws TextParseException, UnknownHostException {
+	private RRset findMatchingDNSRecords(Name name) throws UnknownHostException {
 		DNSRecord dnsRecord = transaction.getParameter(DNSRecord.class);
 
 		InetAddress address = null;
@@ -159,14 +159,14 @@ public class DNSSender extends UDPSender {
 
 			if(registeredDomain.equals(queryName)) {
 				address = InetAddress.getByName(dnsRecord.getAddress());
-				logger.debug(addMarker(), "Found matching record for ["+name+"]: ["+address+"]");
+                logger.debug(addMarker(), "Found matching record for [{}]: [{}]", name, address);
 			} else {
-				logger.debug(addMarker(), "Cannot find a registered DNS record for ["+name+"] asking configured DNS server");
+                logger.debug(addMarker(), "Cannot find a registered DNS record for [{}] asking configured DNS server", name);
 				try {
 					address = InetAddress.getByName(name.toString());
 
 				} catch (UnknownHostException e) {
-					logger.debug(addMarker(), "Configured DNS server could not find the domain ["+name+"]");
+                    logger.debug(addMarker(), "Configured DNS server could not find the domain [{}]", name);
 				}
 			}
 		}

@@ -30,25 +30,28 @@
     </div>
     <div>
         <tabset #tabs>
-            <tab (selectTab)="loadSpecifications()" customClass="tabClass">
+            <tab (selectTab)="showTab(Constants.TAB.DOMAIN.SPECIFICATIONS)" customClass="tabClass">
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-list-check" [text]="dataService.labelSpecifications()"></app-tab-title></ng-template>
                 <div class="tabPanel">
                     <div class="tabControls">
                         <div class="btn-toolbar">
-                            @if (specifications.length > 0) {
-                                <button type="button" class="btn btn-secondary" (click)="uploadTestSuite()">Upload test suite</button>
+                            @if (!managingSpecificationOrder) {
+                                <app-text-filter name="specificationFilter" [width]="300" [placeholder]="'Search '+dataService.labelSpecificationsLower()+'...'" [(ngModel)]="specificationFilter" (apply)="applySpecificationFilter()"></app-text-filter>
+                                @if (specifications.length > 0) {
+                                    <button type="button" class="btn btn-secondary" (click)="uploadTestSuite()">Upload test suite</button>
+                                }
+                                <div class="btn-group" dropdown>
+                                    <button type="button" class="btn btn-secondary" (click)="createSpecification()">Create {{dataService.labelSpecificationLower()}}</button>
+                                    <button id="button-create-spec" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+                                        <span class="caret"></span>
+                                        <span class="sr-only visually-hidden">Create {{dataService.labelSpecificationLower()}}</span>
+                                    </button>
+                                    <ul id="dropdown-create-spec" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-create-spec">
+                                        <li role="menuitem"><a class="dropdown-item" href (click)="createSpecificationGroup();$event.preventDefault();">Create {{dataService.labelSpecificationGroupLower()}}</a></li>
+                                    </ul>
+                                </div>
                             }
-                            <div class="btn-group" dropdown>
-                                <button type="button" class="btn btn-secondary" (click)="createSpecification()">Create {{dataService.labelSpecificationLower()}}</button>
-                                <button id="button-create-spec" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
-                                    <span class="caret"></span>
-                                    <span class="sr-only visually-hidden">Create {{dataService.labelSpecificationLower()}}</span>
-                                </button>
-                                <ul id="dropdown-create-spec" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-create-spec">
-                                    <li role="menuitem"><a class="dropdown-item" href (click)="createSpecificationGroup();$event.preventDefault();">Create {{dataService.labelSpecificationGroupLower()}}</a></li>
-                                </ul>
-                            </div>
-                            @if (specificationGroups.length > 0) {
+                            @if (specificationGroups.length > 0 && managingSpecificationOrder) {
                                 <div class="btn-group" dropdown>
                                     <button id="button-option-visibility" (click)="$event.stopPropagation()" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-option-visibility"><span class="me-2">View {{dataService.labelSpecificationInGroupsLower()}}</span></button>
                                     <ul id="dropdown-option-visibility" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-option-visibility">
@@ -57,9 +60,13 @@
                                     </ul>
                                 </div>
                             }
-                            @if (specifications.length > 1) {
+                            @if (hasMultipleSpecifications) {
                                 <div class="btn-group" dropdown>
-                                    <button [pending]="saveOrderPending" type="button" class="btn btn-secondary" (click)="saveOrdering()">Save {{dataService.labelSpecificationLower()}} order</button>
+                                    @if (managingSpecificationOrder) {
+                                        <button [pending]="saveOrderPending" type="button" class="btn btn-secondary" (click)="saveOrdering()">Save {{dataService.labelSpecificationLower()}} order</button>
+                                    } @else {
+                                        <button type="button" class="btn btn-secondary" (click)="manageOrdering()">Manage {{dataService.labelSpecificationLower()}} order</button>
+                                    }
                                     <button id="button-order" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
                                         <span class="caret"></span>
                                         <span class="sr-only visually-hidden">Reset {{dataService.labelSpecificationLower()}} order</span>
@@ -68,10 +75,13 @@
                                         <li role="menuitem"><a class="dropdown-item" href (click)="resetOrdering();$event.preventDefault();">Reset {{dataService.labelSpecificationLower()}} order</a></li>
                                     </ul>
                                 </div>
+                                @if (managingSpecificationOrder) {
+                                    <button type="button" class="btn btn-secondary" (click)="cancelManageOrdering()">Cancel</button>
+                                }
                             }
                         </div>
                     </div>
-                    <div class="option-container" cdkDropList cdkDropListLockAxis="y" (cdkDropListDropped)="dropSpecification($event)" >
+                    <div class="option-container" cdkDropList cdkDropListLockAxis="y" (cdkDropListDropped)="dropSpecification($event)" [class.disable-events]="specificationsRefreshing" [class.dragging]="dragOngoing">
                         @if (specificationStatus && specificationStatus.status != Constants.STATUS.FINISHED) {
                             <div class="spec-message-div">
                                 <div class="pending-icon"><app-pending-block [pending]="true"></app-pending-block></div>
@@ -84,48 +94,57 @@
                                 </div>
                             } @else {
                                 @for (spec of domainSpecifications; track spec.id; let firstGroup = $first, lastGroup = $last) {
-                                    <app-domain-specification-display
+                                    <app-domain-specification-display #specificationDisplayComponent
                                         [spec]="spec"
                                         [first]="firstGroup"
                                         [last]="lastGroup"
                                         [groups]="specificationGroups"
                                         [dragOngoing]="dragOngoing"
-                                        (removeSpec)="removeSpecificationFromGroup($event[0], $event[1])"
-                                        (moveSpec)="moveSpecificationToGroup($event[0], $event[1], $event[2])"
-                                        (copySpec)="copySpecificationToGroup($event[0], $event[1], $event[2])"
+                                        [dragEnabled]="managingSpecificationOrder"
+                                        (removeSpec)="removeSpecificationFromGroup($event[0])"
+                                        (moveSpec)="moveSpecificationToGroup($event[0], $event[2])"
+                                        (copySpec)="copySpecificationToGroup($event[0], $event[2])"
                                         (selectSpec)="onSpecificationSelect($event)"
                                         (dragging)="dragOngoing = $event"
                                         (click)="onSpecificationGroupSelect(spec)"
+                                        (controlSelected)="onSpecificationDisplayControlSelected($event)"
                                     ></app-domain-specification-display>
                                 }
                             }
+                        }
+                        @if (!managingSpecificationOrder) {
+                            <app-paging-controls #specificationPagingControls [placement]="PagingPlacement.tab" (navigation)="doSpecificationPaging($event)"></app-paging-controls>
                         }
                     </div>
                 </div>
             </tab>
 
-            <tab (selectTab)="loadSharedTestSuites()" customClass="tabClass">
+            <tab (selectTab)="showTab(Constants.TAB.DOMAIN.TEST_SUITES)" customClass="tabClass">
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-box-archive" text="Shared test suites"></app-tab-title></ng-template>
                 <div class="tabPanel">
                     <div class="tabControls">
                         <div class="btn-toolbar">
+                            <app-text-filter name="sharedTestSuiteFilter" [width]="300" [placeholder]="'Search test suites...'" [(ngModel)]="sharedTestSuiteFilter" (apply)="applySharedTestSuiteFilter()"></app-text-filter>
                             <button type="button" class="btn btn-secondary" (click)="uploadSharedTestSuite()">Upload shared test suite</button>
                         </div>
                     </div>
                     <div class="card">
-                        <div table-directive
+                        <div #sharedTestSuiteTable table-directive
                             [columns]="sharedTestSuiteTableColumns"
                             [data]="sharedTestSuites"
                             [noDataMessage]="'No shared test suites found'"
                             [loadingStatus]="sharedTestSuiteStatus"
                             [allowSelect]="true"
+                            [contentRefreshing]="sharedTestSuitesRefreshing"
+                            [supportPaging]="true"
+                            (pageNavigation)="doSharedTestSuitePaging($event)"
                             (onSelect)="onSharedTestSuiteSelect($event)">
                         </div>
                     </div>
                 </div>
             </tab>
 
-            <tab (selectTab)="loadDomainParameters()" customClass="tabClass">
+            <tab (selectTab)="showTab(Constants.TAB.DOMAIN.PARAMETERS)" customClass="tabClass">
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-sliders" text="Parameters"></app-tab-title></ng-template>
                 <div class="tabPanel">
                     <div class="tabControls">
@@ -140,14 +159,17 @@
                                     <th>Name</th>
                                     <th>Value</th>
                                     <th>Description</th>
-                                    <th>In&nbsp;tests</th>
+                                    <th class="th-min-centered">In&nbsp;tests</th>
+                                    @if (hasTestServices) {
+                                        <th></th>
+                                    }
                                 </tr>
                             </thead>
                             <tbody>
                                 @if (parameterStatus.status == Constants.STATUS.FINISHED) {
                                     @if (domainParameters.length == 0) {
                                         <tr>
-                                            <td colspan="4" class="td-no-data"><span>No parameters found</span></td>
+                                            <td [attr.colspan]="domainParameterColumnCount" class="td-no-data"><span>No parameters found</span></td>
                                         </tr>
                                     } @else {
                                         @for (parameter of domainParameters; track parameter.id) {
@@ -159,7 +181,16 @@
                                                     <td>{{parameter.valueToShow}}</td>
                                                 }
                                                 <td>{{parameter.description}}</td>
-                                                <td><div><span><i class="fa" [ngClass]="{'fa-check': parameter.inTests, 'fa-times': !parameter.inTests}"></i></span></div></td>
+                                                <td class="td-min-centered">
+                                                    <div><i class="fa-solid" [ngClass]="{'fa-check': parameter.inTests, 'fa-times': !parameter.inTests}"></i></div>
+                                                </td>
+                                                @if (hasTestServices) {
+                                                    <td class="td-min-centered">
+                                                    @if (parameter.isTestService) {
+                                                        <div class="ms-4 me-2" tooltip="Corresponds to a registered test service" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" container="body"><i class="fa-solid fa-gears standalone-icon"></i></div>
+                                                    }
+                                                    </td>
+                                                }
                                             </tr>
                                         }
                                     }
@@ -170,6 +201,29 @@
                                 }
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            </tab>
+
+            <tab (selectTab)="showTab(Constants.TAB.DOMAIN.TEST_SERVICES)" customClass="tabClass">
+                <ng-template tabHeading><app-tab-title icon="fa-solid fa-gears" text="Test services"></app-tab-title></ng-template>
+                <div class="tabPanel">
+                    <div class="tabControls">
+                        <div class="btn-toolbar">
+                            <button type="button" class="btn btn-secondary" (click)="createTestService()">Register service</button>
+                            <app-multi-select-filter [config]="convertParameterSelectionConfig" (apply)="convertParameterToTestService($event)" [pending]="convertPending"></app-multi-select-filter>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div table-directive
+                             [columns]="testServiceTableColumns"
+                             [data]="testServices"
+                             [noDataMessage]="'No services found'"
+                             [loadingStatus]="testServiceStatus"
+                             [allowSelect]="true"
+                             [persistentSelection]="false"
+                             (onSelect)="onTestServiceSelect($event)">
+                        </div>
                     </div>
                 </div>
             </tab>

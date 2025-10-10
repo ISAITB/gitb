@@ -13,13 +13,15 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { Constants } from 'src/app/common/constants';
-import { ConformanceTestCase } from 'src/app/pages/organisation/conformance-statement/conformance-test-case';
-import { ConformanceTestSuite } from 'src/app/pages/organisation/conformance-statement/conformance-test-suite';
-import { ConformanceService } from 'src/app/services/conformance.service';
-import { DataService } from 'src/app/services/data.service';
-import { HtmlService } from 'src/app/services/html.service';
+import {Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
+import {Constants} from 'src/app/common/constants';
+import {ConformanceTestCase} from 'src/app/pages/organisation/conformance-statement/conformance-test-case';
+import {ConformanceTestSuite} from 'src/app/pages/organisation/conformance-statement/conformance-test-suite';
+import {ConformanceService} from 'src/app/services/conformance.service';
+import {DataService} from 'src/app/services/data.service';
+import {HtmlService} from 'src/app/services/html.service';
+import {TestSuiteDisplayComponentApi} from './test-suite-display-component-api';
+import {TestCaseDisplayComponentApi} from '../test-case-display/test-case-display-component-api';
 
 @Component({
     selector: 'app-test-suite-display',
@@ -27,7 +29,7 @@ import { HtmlService } from 'src/app/services/html.service';
     styleUrls: ['./test-suite-display.component.less'],
     standalone: false
 })
-export class TestSuiteDisplayComponent implements OnInit {
+export class TestSuiteDisplayComponent implements OnInit, TestSuiteDisplayComponentApi {
 
   @Input() testSuites?: ConformanceTestSuite[] = []
   @Input() showExecute? = true
@@ -35,17 +37,21 @@ export class TestSuiteDisplayComponent implements OnInit {
   @Input() showViewDocumentation? = true
   @Input() shaded = false
   @Input() communityId?: number
-  @Input() refresh?: EventEmitter<void>
 
   @Output() viewTestSession = new EventEmitter<string>()
   @Output() viewTestCaseDocumentation = new EventEmitter<number>()
   @Output() executeTestCase = new EventEmitter<ConformanceTestCase>()
   @Output() executeTestSuite = new EventEmitter<ConformanceTestSuite>()
+  @Output() toggleExpand = new EventEmitter<boolean>()
+  @Output() optionsOpened = new EventEmitter<ConformanceTestCase>()
+
+  @ViewChildren("testCaseDisplayComponent") testCaseDisplayComponents?: QueryList<TestCaseDisplayComponentApi>
 
   hovering: {[key:number]: boolean } = {}
   viewDocumentationPending: {[key:number]: boolean } = {}
+  animated = true
 
-  Constants = Constants
+  protected readonly Constants = Constants
 
   constructor(
     private readonly conformanceService: ConformanceService,
@@ -55,18 +61,34 @@ export class TestSuiteDisplayComponent implements OnInit {
 
   ngOnInit(): void {
     this.prepareTestCaseGroupMaps()
-    if (this.refresh) {
-      this.refresh.subscribe(() => {
-        this.prepareTestCaseGroupMaps()
+  }
+
+  closeOptions(source: ConformanceTestCase): void {
+    this.testCaseDisplayComponents?.forEach((testCaseDisplayComponent) => {
+      testCaseDisplayComponent.closeOptions(source)
+    })
+  }
+
+  refresh() {
+    this.animated = false
+    setTimeout(() => {
+      this.prepareTestCaseGroupMaps()
+      this.testCaseDisplayComponents?.forEach((testCaseDisplayComponent) => {
+        testCaseDisplayComponent.refresh()
       })
-    }
+      setTimeout(() => {
+        this.animated = true
+      })
+    })
   }
 
   private prepareTestCaseGroupMaps(): void {
     if (this.testSuites) {
       for (let testSuite of this.testSuites) {
-        if (testSuite.testCaseGroups && !testSuite.testCaseGroupMap) {
-          testSuite.testCaseGroupMap = this.dataService.toTestCaseGroupMap(testSuite.testCaseGroups)
+        if (testSuite.testCaseGroups) {
+          if (!testSuite.testCaseGroupMap) {
+            testSuite.testCaseGroupMap = this.dataService.toTestCaseGroupMap(testSuite.testCaseGroups)
+          }
         }
       }
     }
@@ -74,6 +96,7 @@ export class TestSuiteDisplayComponent implements OnInit {
 
   onExpand(testSuite: ConformanceTestSuite) {
     testSuite.expanded = !testSuite.expanded
+    this.toggleExpand.emit(testSuite.expanded)
   }
 
   propagateViewTestSession(sessionId: string) {
@@ -82,6 +105,10 @@ export class TestSuiteDisplayComponent implements OnInit {
 
   propagateExecuteTestSession(testCase: ConformanceTestCase) {
     this.executeTestCase.emit(testCase)
+  }
+
+  propagateOptionsOpened(testCase: ConformanceTestCase) {
+    this.optionsOpened.emit(testCase)
   }
 
   showTestSuiteDocumentation(testSuite: ConformanceTestSuite) {

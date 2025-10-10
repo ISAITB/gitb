@@ -19,9 +19,10 @@ import config.Configurations
 import managers.SystemConfigurationManager.ThemeStatus
 import models.Enums.UserRole
 import models._
+import models.health.SoftwareVersionCheckSettings
 import models.theme.{Theme, ThemeFiles}
 import org.apache.commons.io.FilenameUtils
-import org.apache.commons.lang3.StringUtils
+import org.apache.commons.lang3.{StringUtils, Strings}
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
@@ -55,13 +56,14 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
   private final val editableSystemConfigurationTypes = Set(
     Constants.SessionAliveTime, Constants.RestApiEnabled, Constants.RestApiAdminKey, Constants.SelfRegistrationEnabled,
     Constants.DemoAccount, Constants.WelcomeMessage, Constants.AccountRetentionPeriod,
-    Constants.EmailSettings
+    Constants.EmailSettings, Constants.SoftwareVersionCheck, Constants.WelcomeTitle, Constants.StartupWizard
   )
 
   private var activeThemeId: Option[Long] = None
   private var activeThemeCss: Option[String] = None
   private var activeThemeFavicon: Option[String] = None
   private var defaultEmailSettings: Option[EmailSettings] = None
+  private var defaultSoftwareVersionCheckSettings: Option[SoftwareVersionCheckSettings] = None
 
   private def constructLogoPath(themeId: Long, partialLogoPath: String): String = {
     // We go up two levels as URLs are relative to the CSS defining them which here is under "/api/theme/
@@ -69,7 +71,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
     if (!isBuiltInThemeResource(partialLogoPath)) {
       path.append("api/theme/resource/").append(themeId).append("/")
     }
-    path.append(StringUtils.removeStart(partialLogoPath, "/"))
+    path.append(Strings.CS.removeStart(partialLogoPath, "/"))
       .append("')")
       .toString()
   }
@@ -226,13 +228,19 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
         val restApiEnabledConfig = persistedConfigs.find(config => config.config.name == Constants.RestApiEnabled)
         val demoAccountConfig = persistedConfigs.find(config => config.config.name == Constants.DemoAccount)
         val selfRegistrationConfig = persistedConfigs.find(config => config.config.name == Constants.SelfRegistrationEnabled)
+        val startupWizardConfig = persistedConfigs.find(config => config.config.name == Constants.StartupWizard)
         val welcomeMessageConfig = persistedConfigs.find(config => config.config.name == Constants.WelcomeMessage)
+        val welcomeTitleConfig = persistedConfigs.find(config => config.config.name == Constants.WelcomeTitle)
         val emailSettingsConfig = persistedConfigs.find(config => config.config.name == Constants.EmailSettings)
+        val softwareVersionCheckConfig = persistedConfigs.find(config => config.config.name == Constants.SoftwareVersionCheck)
         if (restApiEnabledConfig.isEmpty) {
           persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.RestApiEnabled, Some(Configurations.AUTOMATION_API_ENABLED.toString), None), defaultSetting = true, environmentSetting = sys.env.contains("AUTOMATION_API_ENABLED"))
         }
         if (selfRegistrationConfig.isEmpty) {
           persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.SelfRegistrationEnabled, Some(Configurations.REGISTRATION_ENABLED.toString), None), defaultSetting = true, environmentSetting = sys.env.contains("REGISTRATION_ENABLED"))
+        }
+        if (startupWizardConfig.isEmpty) {
+          persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.StartupWizard, Some(Configurations.STARTUP_WIZARD_ENABLED.toString), None), defaultSetting = true, environmentSetting = sys.env.contains("STARTUP_WIZARD_ENABLED"))
         }
         if (demoAccountConfig.isEmpty) {
           if (Configurations.DEMOS_ENABLED && Configurations.DEMOS_ACCOUNT != -1) {
@@ -248,8 +256,14 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
         if (welcomeMessageConfig.isEmpty) {
           persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.WelcomeMessage, Some(Configurations.WELCOME_MESSAGE), None), defaultSetting = true, environmentSetting = false)
         }
+        if (welcomeTitleConfig.isEmpty) {
+          persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.WelcomeTitle, Some(Configurations.WELCOME_TITLE), None), defaultSetting = true, environmentSetting = false)
+        }
         if (emailSettingsConfig.isEmpty) {
           persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.EmailSettings, Some(JsonUtil.jsEmailSettings(EmailSettings.fromEnvironment()).toString()), None), defaultSetting = true, environmentSetting = sys.env.contains("EMAIL_ENABLED"))
+        }
+        if (softwareVersionCheckConfig.isEmpty) {
+          persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.SoftwareVersionCheck, Some(JsonUtil.jsSoftwareVersionCheckSettings(SoftwareVersionCheckSettings.fromEnvironment()).toString()), None), defaultSetting = true, environmentSetting = sys.env.contains("SOFTWARE_VERSION_CHECK_ENABLED"))
         }
       }
       persistedConfigs
@@ -258,6 +272,19 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
 
   def isEditableSystemParameter(name: String): Boolean = {
     editableSystemConfigurationTypes.contains(name)
+  }
+
+  def updateSystemParameters(configs: Iterable[SystemConfigurations]): Future[Iterable[SystemConfigurationsWithEnvironment]] = {
+    val action = for {
+      updates <- DBIO.sequence {
+        configs.map { config =>
+          updateSystemParameterInternal(config.name, config.parameter, applySetting = true)
+        }
+      }
+    } yield updates
+    DB.run(action.transactionally).map { results =>
+      results.filter(result => result.isDefined).map(_.get)
+    }
   }
 
   /**
@@ -282,7 +309,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
     settings
   }
 
-  def updateSystemParameterInternal(name: String, providedValue: Option[String] = None, applySetting: Boolean): DBIO[Option[SystemConfigurationsWithEnvironment]] = {
+  private [managers] def updateSystemParameterInternal(name: String, providedValue: Option[String] = None, applySetting: Boolean): DBIO[Option[SystemConfigurationsWithEnvironment]] = {
     // Do any pre-processing as needed.
     var parsedEmailSettings: Option[EmailSettings] = None
     val value = if (name == Constants.EmailSettings && providedValue.isDefined) {
@@ -297,7 +324,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
       exists <- PersistenceSchema.systemConfigurations.filter(_.name === name).exists.result
       _ <- {
         if (exists) {
-          if ((name == Constants.WelcomeMessage || name == Constants.EmailSettings || name == Constants.AccountRetentionPeriod) && value.isEmpty) {
+          if ((name == Constants.SoftwareVersionCheck || name == Constants.WelcomeMessage || name == Constants.WelcomeTitle || name == Constants.EmailSettings || name == Constants.AccountRetentionPeriod) && value.isEmpty) {
             PersistenceSchema.systemConfigurations.filter(_.name === name).delete
           } else {
             PersistenceSchema.systemConfigurations.filter(_.name === name).map(_.parameter).update(value)
@@ -324,6 +351,11 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
               Configurations.REGISTRATION_ENABLED = value.get.toBoolean
             }
             DBIO.successful(None)
+          case Constants.StartupWizard =>
+            Configurations.STARTUP_WIZARD_ENABLED = value.exists(_.toBoolean)
+            DBIO.successful(Some(
+              SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.StartupWizard, Some(Configurations.STARTUP_WIZARD_ENABLED.toString), None), defaultSetting = false, environmentSetting = sys.env.contains("STARTUP_WIZARD_ENABLED"))
+            ))
           case Constants.DemoAccount =>
             if (value.isDefined) {
               Configurations.DEMOS_ENABLED = true
@@ -341,6 +373,16 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
               Configurations.WELCOME_MESSAGE = Configurations.WELCOME_MESSAGE_DEFAULT
               DBIO.successful(Some(
                 SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.WelcomeMessage, Some(Configurations.WELCOME_MESSAGE), None), defaultSetting = true, environmentSetting = false)
+              ))
+            }
+          case Constants.WelcomeTitle =>
+            if (value.isDefined) {
+              Configurations.WELCOME_TITLE = value.get
+              DBIO.successful(None)
+            } else {
+              Configurations.WELCOME_TITLE = Configurations.WELCOME_TITLE_DEFAULT
+              DBIO.successful(Some(
+                SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.WelcomeTitle, Some(Configurations.WELCOME_TITLE), None), defaultSetting = true, environmentSetting = false)
               ))
             }
           case Constants.AccountRetentionPeriod =>
@@ -366,6 +408,20 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
                 SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.EmailSettings, Some(JsonUtil.jsEmailSettings(EmailSettings.fromEnvironment()).toString()), None), defaultSetting = true, environmentSetting = sys.env.contains("EMAIL_ENABLED"))
               ))
             }
+          case Constants.SoftwareVersionCheck =>
+            var fromDefault = false
+            var fromEnv = false
+            val settings = if (value.isDefined) {
+              JsonUtil.parseJsSoftwareVersionCheckSettings(value.get)
+            } else {
+              fromDefault = true
+              fromEnv = sys.env.contains("SOFTWARE_VERSION_CHECK_ENABLED")
+              defaultSoftwareVersionCheckSettings.get
+            }
+            settings.toEnvironment()
+            DBIO.successful(Some(
+              SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.SoftwareVersionCheck, Some(JsonUtil.jsSoftwareVersionCheckSettings(settings).toString()), None), fromDefault, fromEnv)
+            ))
           case _ => DBIO.successful(None)
         }
       } else {
@@ -596,12 +652,12 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
   }
 
   def isBuiltInThemeResource(resourcePath: String): Boolean = {
-    StringUtils.startsWithIgnoreCase(resourcePath, "/assets/")
+    Strings.CI.startsWith(resourcePath, "/assets/")
   }
 
   def adaptBuiltInThemeResourcePathForClasspathLookup(resourcePath: String): String = {
     // Built-in resource. This is exposed as "/assets/*" but to look it up on the classpath we use "public/*".
-    "public/" + StringUtils.removeStartIgnoreCase(resourcePath, "/assets/")
+    "public/" + Strings.CI.removeStart(resourcePath, "/assets/")
   }
 
   def updateTheme(theme: Theme, themeFiles: ThemeFiles): Future[Unit] = {
@@ -816,6 +872,16 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
     // This is called before we adapt the settings based on stored values.
     defaultEmailSettings = Some(EmailSettings.fromEnvironment())
     defaultEmailSettings.get
+  }
+
+  def recordDefaultSoftwareVersionCheckSettings(): SoftwareVersionCheckSettings = {
+    // This is called before we adapt the settings based on stored values.
+    defaultSoftwareVersionCheckSettings = Some(SoftwareVersionCheckSettings.fromEnvironment())
+    defaultSoftwareVersionCheckSettings.get
+  }
+
+  def disableStartupWizard(): Future[Unit] = {
+    DB.run(updateSystemParameterInternal(Constants.StartupWizard, Some("false"), applySetting = true).transactionally).map(() => _)
   }
 
 }

@@ -50,8 +50,8 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
     public static final String PRELIMINARY_STEP_ID = "0";
 	public static final String TEST_SESSION_END_STEP_ID = "-1";
     public static final String TEST_SESSION_END_EXTERNAL_STEP_ID = "-2";
-    Logger logger = LoggerFactory.getLogger(TestCaseProcessorActor.class);
     public static final String NAME = "tc-p";
+    private static final Logger logger = LoggerFactory.getLogger(TestCaseProcessorActor.class);
     //Test Case Execution identifier
     private final String sessionId;
     //Test Case Definition

@@ -23,5 +23,6 @@ case class DomainImportPreviewData(specificationGroupMap: Map[String, models.Spe
                                    specificationActorMap: Map[Long, Map[String, models.Actors]],
                                    actorEndpointMap: Map[Long, Map[String, models.Endpoints]],
                                    endpointParameterMap: Map[Long, Map[String, models.Parameters]],
-                                   domainParametersMap: Map[String, models.DomainParameter]
+                                   domainParametersMap: Map[String, models.DomainParameter],
+                                   testServicesMap: Map[String, models.TestServiceWithParameter]
                                   )

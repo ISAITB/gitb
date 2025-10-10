@@ -13,11 +13,8 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, EventEmitter, OnInit, ViewChild} from '@angular/core';
-import {TabsetComponent} from 'ngx-bootstrap/tabs';
-import {SystemAdministrationTab} from './system-administration-tab.enum';
-import {BaseComponent} from '../../base-component.component';
-import {Router} from '@angular/router';
+import {Component, EventEmitter, OnInit} from '@angular/core';
+import {ActivatedRoute, Router} from '@angular/router';
 import {Constants} from 'src/app/common/constants';
 import {UserService} from 'src/app/services/user.service';
 import {DataService} from 'src/app/services/data.service';
@@ -53,6 +50,9 @@ import {UserBasic} from '../../../types/user-basic.type';
 import {FilterUpdate} from '../../../components/test-filter/filter-update';
 import {SslProtocol} from '../../../types/ssl-protocol';
 import {MimeType} from '../../../types/mime-type';
+import {BaseTabbedComponent} from '../../base-tabbed-component';
+import {SoftwareVersionCheckSettings} from '../../../types/software-version-check-settings';
+import {ValidationState} from '../../../types/validation-state';
 
 @Component({
     selector: 'app-system-administration',
@@ -60,17 +60,13 @@ import {MimeType} from '../../../types/mime-type';
     styleUrls: ['./system-administration.component.less'],
     standalone: false
 })
-export class SystemAdministrationComponent extends BaseComponent implements OnInit, AfterViewInit {
+export class SystemAdministrationComponent extends BaseTabbedComponent implements OnInit {
 
   adminStatus = {status: Constants.STATUS.NONE}
   landingPageStatus = {status: Constants.STATUS.NONE}
   errorTemplateStatus = {status: Constants.STATUS.NONE}
   legalNoticeStatus = {status: Constants.STATUS.NONE}
   themeStatus = {status: Constants.STATUS.NONE}
-
-  tabToShow = SystemAdministrationTab.administrators
-  tabTriggers!: Record<SystemAdministrationTab, {index: number, loader: () => any}>
-  @ViewChild('tabs', { static: false }) tabs?: TabsetComponent;
 
   adminColumns: TableColumnDefinition[] = []
   landingPagesColumns: TableColumnDefinition[] = [
@@ -109,6 +105,16 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
   accountRetentionPeriodEnabled = false
   accountRetentionPeriodValue?: number
 
+  // Software version status check
+  softwareVersionCheckStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
+  softwareVersionCheckSettings: SoftwareVersionCheckSettings = {
+    enabled: false,
+    jws: '',
+    jwks: ''
+  }
+  softwareVersionCheckResetPending = false
+  softwareVersionCheckValidation = new ValidationState()
+
   // TTL
   ttlStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
   ttlEnabled = false
@@ -117,6 +123,10 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
   // Self-registration
   selfRegistrationStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
   selfRegistrationEnabled = false
+
+  // Startup wizard
+  startupWizardStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
+  startupWizardEnabled = false
 
   // REST API
   restApiStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
@@ -144,6 +154,7 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
   welcomePageStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
   welcomePageResetPending = false
   welcomePageMessage?: string
+  welcomePageTitle?: string
 
   // Email settings
   emailSettingsStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
@@ -177,6 +188,7 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
   resourceEmitter = new EventEmitter<void>()
 
   constructor(
+    route: ActivatedRoute,
     router: Router,
     private readonly userService: UserService,
     public readonly dataService: DataService,
@@ -192,18 +204,24 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
     private readonly confirmationDialogService: ConfirmationDialogService,
     private readonly modalService: BsModalService
   ) {
-    super()
-    // Access the tab to show via router state to have it cleared upon refresh.
-    const tabParam = router.getCurrentNavigation()?.extras?.state?.tab
-    if (tabParam != undefined) {
-      this.tabToShow = SystemAdministrationTab[tabParam as keyof typeof SystemAdministrationTab]
-    }
+    super(router, route)
   }
 
-  ngAfterViewInit(): void {
-    setTimeout(() => {
-      this.triggerTab(this.tabToShow)
-    })  }
+  loadTab(tabIndex: number) {
+    if (tabIndex == Constants.TAB.SYSTEM_ADMINISTRATION.ADMINISTRATORS) {
+      this.showAdministrators()
+    } else if (tabIndex == Constants.TAB.SYSTEM_ADMINISTRATION.LANDING_PAGES) {
+      this.showLandingPages()
+    } else if (tabIndex == Constants.TAB.SYSTEM_ADMINISTRATION.LEGAL_NOTICES) {
+      this.showLegalNotices()
+    } else if (tabIndex == Constants.TAB.SYSTEM_ADMINISTRATION.ERROR_TEMPLATES) {
+      this.showErrorTemplates()
+    } else if (tabIndex == Constants.TAB.SYSTEM_ADMINISTRATION.THEMES) {
+      this.showThemes()
+    } else {
+      this.showResources()
+    }
+  }
 
   ngOnInit(): void {
     this.adminColumns.push({ field: 'name', title: 'Name' })
@@ -250,6 +268,9 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
         this.ttlStatus.enabled = this.ttlEnabled
         this.ttlStatus.fromEnv = ttlConfig != undefined && ttlConfig.environment
         this.ttlStatus.fromDefault = ttlConfig != undefined && ttlConfig.default
+        // Software version status check.
+        const softwareVersionCheckConfig = find(data, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.SOFTWARE_VERSION_CHECK)
+        this.initialiseSoftwareVersionCheckSettings(softwareVersionCheckConfig)
         // REST API.
         const restApiConfig = find(data, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.REST_API_ENABLED)
         this.restApiEnabled = restApiConfig != undefined && restApiConfig.parameter != undefined && restApiConfig.parameter.toLowerCase() == 'true'
@@ -263,13 +284,23 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
         this.selfRegistrationStatus.enabled = this.selfRegistrationEnabled
         this.selfRegistrationStatus.fromEnv = selfRegistrationConfig != undefined && selfRegistrationConfig.environment
         this.selfRegistrationStatus.fromDefault = selfRegistrationConfig != undefined && selfRegistrationConfig.default
+        // Startup wizard.
+        const startupWizardConfig = find(data, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.STARTUP_WIZARD)
+        this.startupWizardEnabled = startupWizardConfig != undefined && startupWizardConfig.parameter != undefined && startupWizardConfig.parameter.toLowerCase() == 'true'
+        this.startupWizardStatus.enabled = this.startupWizardEnabled
+        this.startupWizardStatus.fromEnv = startupWizardConfig != undefined && startupWizardConfig.environment
+        this.startupWizardStatus.fromDefault = startupWizardConfig != undefined && startupWizardConfig.default
         // Welcome page message.
         const welcomeMessageConfig = find(data, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.WELCOME_MESSAGE)
         if (welcomeMessageConfig && welcomeMessageConfig.parameter) {
           this.welcomePageMessage = welcomeMessageConfig.parameter
         }
-        this.welcomePageStatus.fromEnv = welcomeMessageConfig != undefined && welcomeMessageConfig.environment
-        this.welcomePageStatus.fromDefault = welcomeMessageConfig != undefined && welcomeMessageConfig.default
+        const welcomeTitleConfig = find(data, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.WELCOME_TITLE)
+        if (welcomeTitleConfig && welcomeTitleConfig.parameter) {
+          this.welcomePageTitle = welcomeTitleConfig.parameter
+        }
+        this.welcomePageStatus.fromEnv = welcomeMessageConfig != undefined && welcomeMessageConfig.environment && welcomeTitleConfig != undefined && welcomeTitleConfig.environment
+        this.welcomePageStatus.fromDefault = welcomeMessageConfig != undefined && welcomeMessageConfig.default && welcomeTitleConfig != undefined && welcomeTitleConfig.default
         this.welcomePageStatus.enabled = !this.welcomePageStatus.fromDefault
         // Email settings.
         const emailSettingsConfig = find(data, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.EMAIL_SETTINGS)
@@ -367,7 +398,6 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
       this.configValuesPending = false
     })
     // Setup tab triggers
-    this.setupTabs()
     this.routingService.systemConfigurationBreadcrumbs()
   }
 
@@ -397,6 +427,19 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
 
   selectEmailAttachmentTypes(event: FilterUpdate<MimeType>) {
     this.emailSettings.allowedAttachmentTypes = event.values.active.map((value) => value.value)
+  }
+
+  private initialiseSoftwareVersionCheckSettings(settings: SystemConfiguration|undefined) {
+    if (settings != undefined) {
+      if (settings.parameter != undefined) {
+        this.softwareVersionCheckSettings = JSON.parse(settings.parameter)
+        this.softwareVersionCheckStatus.enabled = this.softwareVersionCheckSettings.enabled
+      } else {
+        this.softwareVersionCheckStatus.enabled = false
+      }
+      this.softwareVersionCheckStatus.fromDefault = settings.default
+      this.softwareVersionCheckStatus.fromEnv = settings.environment
+    }
   }
 
   private initialiseEmailSettings(emailSettingsConfig: SystemConfiguration|undefined) {
@@ -525,23 +568,6 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
     } else {
       return of(false)
     }
-  }
-
-  private triggerTab(tab: SystemAdministrationTab) {
-    this.tabTriggers[tab].loader()
-    if (this.tabs) {
-      this.tabs.tabs[this.tabTriggers[tab].index].active = true
-    }
-  }
-
-  private setupTabs() {
-    const temp: Partial<Record<SystemAdministrationTab, {index: number, loader: () => any}>> = {}
-    temp[SystemAdministrationTab.administrators] = {index: 0, loader: () => {this.showAdministrators()}}
-    temp[SystemAdministrationTab.landingPages] = {index: 1, loader: () => {this.showLandingPages()}}
-    temp[SystemAdministrationTab.legalNotices] = {index: 2, loader: () => {this.showLegalNotices()}}
-    temp[SystemAdministrationTab.errorTemplates] = {index: 3, loader: () => {this.showErrorTemplates()}}
-    temp[SystemAdministrationTab.themes] = {index: 4, loader: () => {this.showThemes()}}
-    this.tabTriggers = temp as Record<SystemAdministrationTab, {index: number, loader: () => any}>
   }
 
   showAdministrators() {
@@ -741,6 +767,29 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
     }
   }
 
+  saveStartupWizardConfig() {
+    this.startupWizardStatus.pending = true
+    let valueToSave: string
+    let message: string
+    if (this.startupWizardEnabled) {
+      valueToSave = "true"
+      message = "Enabled startup configuration wizard."
+    } else {
+      valueToSave = "false"
+      message = "Disabled startup configuration wizard."
+    }
+    this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.STARTUP_WIZARD, valueToSave).subscribe(() => {
+      this.startupWizardStatus.collapsed = true
+      this.startupWizardStatus.enabled = this.startupWizardEnabled
+      this.startupWizardStatus.fromDefault = false
+      this.startupWizardStatus.fromEnv = false
+      this.dataService.configuration.startupWizardEnabled = this.startupWizardEnabled
+      this.popupService.success(message)
+    }).add(() => {
+      this.startupWizardStatus.pending = false
+    })
+  }
+
   saveRestApi() {
     this.restApiStatus.pending = true
     if (this.restApiEnabled) {
@@ -823,15 +872,15 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
   }
 
   saveWelcomePage() {
-    if (this.welcomePageMessage) {
+    if (this.textProvided(this.welcomePageMessage) && this.textProvided(this.welcomePageTitle)) {
       this.welcomePageStatus.pending = true
-      this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.WELCOME_MESSAGE, this.welcomePageMessage)
+      this.systemConfigurationService.updateConfigurationValues([ { name: Constants.SYSTEM_CONFIG.WELCOME_MESSAGE, value: this.welcomePageMessage }, { name: Constants.SYSTEM_CONFIG.WELCOME_TITLE, value: this.welcomePageTitle } ])
       .subscribe(() => {
         this.welcomePageStatus.collapsed = true
         this.welcomePageStatus.enabled = true
         this.welcomePageStatus.fromDefault = false
         this.welcomePageStatus.fromEnv = false
-        this.popupService.success('Welcome page message set.')
+        this.popupService.success('Welcome page content set.')
       }).add(() => {
         this.welcomePageStatus.pending = false
       })
@@ -839,23 +888,34 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
   }
 
   resetWelcomePage() {
-    this.confirmationDialogService.confirmedDangerous("Confirm reset", "Are you sure you want to reset the welcome page message to its default?", "Reset", "Cancel")
+    this.confirmationDialogService.confirmedDangerous("Confirm reset", "Are you sure you want to reset the welcome page content to its default?", "Reset", "Cancel")
     .subscribe(() => {
       this.welcomePageResetPending = true
-      this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.WELCOME_MESSAGE)
-      .subscribe((appliedValue) => {
-        if (appliedValue) {
-          this.welcomePageMessage = appliedValue.parameter
-          this.welcomePageStatus.fromDefault = appliedValue.default
-          this.welcomePageStatus.fromEnv = appliedValue.environment
+      this.systemConfigurationService.updateConfigurationValues([ { name: Constants.SYSTEM_CONFIG.WELCOME_MESSAGE }, { name: Constants.SYSTEM_CONFIG.WELCOME_TITLE } ])
+      .subscribe((appliedValues) => {
+        if (appliedValues) {
+          const message = find(appliedValues, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.WELCOME_MESSAGE)
+          if (message != undefined) {
+            this.welcomePageMessage = message.parameter
+          }
+          const title = find(appliedValues, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.WELCOME_TITLE)
+          if (title != undefined) {
+            this.welcomePageTitle = title.parameter
+          }
+          this.welcomePageStatus.fromEnv = message != undefined && message.environment && title != undefined && title.environment
+          this.welcomePageStatus.fromDefault = message != undefined && message.default && title != undefined && title.default
           this.welcomePageStatus.enabled = false
         }
         this.welcomePageStatus.collapsed = true
-        this.popupService.success('Welcome page message reset to default.')
+        this.popupService.success('Welcome page content reset to default.')
       }).add(() => {
         this.welcomePageResetPending = false
       })
     })
+  }
+
+  softwareVersionCheckSettingsOk() {
+    return !this.softwareVersionCheckSettings.enabled || (this.textProvided(this.softwareVersionCheckSettings.jws) && this.textProvided(this.softwareVersionCheckSettings.jwks))
   }
 
   emailSettingsOk() {
@@ -922,6 +982,44 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
     }
   }
 
+  saveSoftwareVersionCheckSettings() {
+    this.softwareVersionCheckValidation.clearErrors()
+    let proceed = true
+    if (this.softwareVersionCheckSettings.enabled) {
+      if (!this.isValidAbsoluteHttpUrl(this.softwareVersionCheckSettings.jws)) {
+        this.softwareVersionCheckValidation.apply("softwareCheckJws", "The value provided must be a valid absolute HTTP or HTTPS URL.")
+        proceed = false
+      }
+      if (!this.isValidAbsoluteHttpUrl(this.softwareVersionCheckSettings.jwks)) {
+        this.softwareVersionCheckValidation.apply("softwareCheckJwks", "The value provided must be a valid absolute HTTP or HTTPS URL.")
+        proceed = false
+      }
+    }
+    if (proceed) {
+      this.softwareVersionCheckStatus.pending = true
+      this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.SOFTWARE_VERSION_CHECK, JSON.stringify(this.softwareVersionCheckSettings))
+        .subscribe((appliedValue) => {
+          this.initialiseSoftwareVersionCheckSettings(appliedValue)
+          this.softwareVersionCheckStatus.collapsed = true
+          this.popupService.success('Updated software check settings.')
+        }).add(() => {
+        this.softwareVersionCheckStatus.pending = false
+      })
+    }
+  }
+
+  resetSoftwareVersionCheckSettings() {
+    this.softwareVersionCheckResetPending = true
+    this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.SOFTWARE_VERSION_CHECK)
+      .subscribe((appliedValue) => {
+        this.initialiseSoftwareVersionCheckSettings(appliedValue)
+        this.softwareVersionCheckStatus.collapsed = true
+        this.popupService.success('Software check settings reset to default.')
+      }).add(() => {
+      this.softwareVersionCheckResetPending = false
+    })
+  }
+
   saveEmailSettings() {
     this.emailSettingsStatus.pending = true
     const emailSettingsToPost = this.prepareEmailSettings()
@@ -947,7 +1045,6 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
     }).add(() => {
       this.emailResetPending = false
     })
-
   }
 
   testEmailSettings() {

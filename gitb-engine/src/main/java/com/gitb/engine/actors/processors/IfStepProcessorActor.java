@@ -35,7 +35,7 @@ import javax.xml.datatype.DatatypeConfigurationException;
 
 /**
  * Created by serbay on 9/11/14.
- *
+ * <p>
  * If step executor actor
  */
 public class IfStepProcessorActor extends AbstractTestStepActor<IfStep> {
@@ -95,7 +95,7 @@ public class IfStepProcessorActor extends AbstractTestStepActor<IfStep> {
     }
 
 	@Override
-	protected void handleStatusEvent(StatusEvent event) throws Exception {
+	protected void handleStatusEvent(StatusEvent event) {
         StepStatus status = event.getStatus();
 		if(status == StepStatus.COMPLETED) {
 			completed();

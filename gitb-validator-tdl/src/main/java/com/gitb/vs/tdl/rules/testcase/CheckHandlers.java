@@ -62,6 +62,9 @@ public class CheckHandlers extends AbstractTestCaseObserver {
             String handler;
             // Checking that the handler is defined once and is correct is none in CheckTransactions.
             if (messagingStep.getTxnId() != null) {
+                if (messagingStep.getHandlerTimeout() != null) {
+                    addReportItem(ErrorCode.HANDLER_TIMEOUT_DEFINED_WHEN_USING_TRANSACTION, currentTestCase.getId(), Utils.getStepName(currentStep));
+                }
                 handler = messagingTxToHandler.get(messagingStep.getTxnId());
             } else {
                 handler = messagingStep.getHandler();
@@ -92,6 +95,9 @@ public class CheckHandlers extends AbstractTestCaseObserver {
             String handler;
             // Checking that the handler is defined once and is correct is none in CheckTransactions.
             if (messagingStep.getTxnId() != null) {
+                if (messagingStep.getHandlerTimeout() != null) {
+                    addReportItem(ErrorCode.HANDLER_TIMEOUT_DEFINED_WHEN_USING_TRANSACTION, currentTestCase.getId(), Utils.getStepName(currentStep));
+                }
                 handler = messagingTxToHandler.get(messagingStep.getTxnId());
             } else {
                 handler = messagingStep.getHandler();
@@ -138,6 +144,9 @@ public class CheckHandlers extends AbstractTestCaseObserver {
             }
             if (!processStep.getInput().isEmpty() && processStep.getInputAttribute() != null) {
                 addReportItem(ErrorCode.DOUBLE_PROCESSING_INPUTS, currentTestCase.getId(), processStep.getOperationAttribute());
+            }
+            if (processStep.getTxnId() != null && processStep.getHandlerTimeout() != null) {
+                addReportItem(ErrorCode.HANDLER_TIMEOUT_DEFINED_WHEN_USING_TRANSACTION, currentTestCase.getId(), Utils.getStepName(currentStep));
             }
             String handler;
             if (processStep.getTxnId() != null && processingTxToHandler.containsKey(processStep.getTxnId())) {

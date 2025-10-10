@@ -46,7 +46,7 @@ public class XPathValidator extends SimpleValidator {
         ObjectType contentToProcess = getAndConvert(inputs, XML_ARGUMENT_NAME, DataType.OBJECT_DATA_TYPE, ObjectType.class);
         StringType expression = getAndConvert(inputs, EXPRESSION_ARGUMENT_NAME, DataType.STRING_DATA_TYPE, StringType.class);
         MapType namespaces = getAndConvert(inputs, HandlerUtils.NAMESPACE_MAP_INPUT, DataType.MAP_DATA_TYPE, MapType.class);
-        String sessionId = (String) getAndConvert(inputs, HandlerUtils.SESSION_INPUT, DataType.STRING_DATA_TYPE, StringType.class).getValue();
+        String sessionId = getAndConvert(inputs, HandlerUtils.SESSION_INPUT, DataType.STRING_DATA_TYPE, StringType.class).getValue();
 
         // Compile expression
         XPathExpression xPathExpr = HandlerUtils.compileXPathExpression(namespaces, expression, new VariableResolver(getScope(sessionId)));

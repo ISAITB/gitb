@@ -22,6 +22,8 @@ import { Theme } from '../types/theme';
 import { FileParam } from '../types/file-param.type';
 import { HttpResponse } from '@angular/common/http';
 import { EmailSettings } from '../types/email-settings';
+import {ConfigurationValue} from '../types/configuration-value';
+import {StartupWizardOptions} from '../types/startup-wizard-options';
 
 @Injectable({
   providedIn: 'root'
@@ -34,6 +36,24 @@ export class SystemConfigurationService {
     return this.restService.get<SystemConfiguration[]>({
       path: ROUTES.controllers.SystemConfigurationService.getConfigurationValues().url,
       authenticate: false
+    })
+  }
+
+  updateConfigurationValues(values: ConfigurationValue[]) {
+    const configs: ConfigurationValue[] = []
+    values.forEach(value => {
+      if (value.value == undefined) {
+        configs.push({ name: value.name })
+      } else {
+        configs.push({ name: value.name, value: value.value })
+      }
+    })
+    return this.restService.post<SystemConfiguration[]|undefined>({
+      path: ROUTES.controllers.SystemConfigurationService.updateConfigurationValues().url,
+      data: {
+        values: JSON.stringify(configs)
+      },
+      authenticate: true
     })
   }
 
@@ -179,6 +199,19 @@ export class SystemConfigurationService {
     }
     return this.restService.post<{ success: boolean, messages?: string[] }>({
       path: ROUTES.controllers.SystemConfigurationService.testEmailSettings().url,
+      authenticate: true,
+      data: data
+    })
+  }
+
+  completeStartupWizard(options: StartupWizardOptions) {
+    const data: any = {
+      samples: options.importSamples === true,
+      api: options.enableRestApi === true,
+      updates: options.enableSoftwareChecks === true
+    }
+    return this.restService.post<void>({
+      path: ROUTES.controllers.SystemConfigurationService.completeStartupWizard().url,
       authenticate: true,
       data: data
     })

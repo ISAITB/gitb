@@ -1,0 +1,81 @@
+<app-test-filter [embedded]="true"
+                 [commands]="filterCommands"
+                 [filterState]="filterState"
+                 [communityId]="communityId"
+                 [organisationId]="organisationId"
+                 [snapshotId]="snapshotId"
+                 (onApply)="getConformanceStatements()"></app-test-filter>
+<div class="table-container rounded">
+    <table class="table table-directive expandable-table">
+        <thead>
+        <tr>
+            @if (organisationId == undefined) {
+                @if (!dataService.isCommunityAdmin) {
+                    <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.COMMUNITY)">Community<app-sort-indicator [columnType]="Constants.FILTER_TYPE.COMMUNITY" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></th>
+                }
+                <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.ORGANISATION)">{{dataService.labelOrganisation()}}<app-sort-indicator [columnType]="Constants.FILTER_TYPE.ORGANISATION" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></th>
+            }
+            <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.SYSTEM)">{{dataService.labelSystem()}}<app-sort-indicator [columnType]="Constants.FILTER_TYPE.SYSTEM" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></th>
+            @if (dataService.isSystemAdmin || dataService.community!.domain == undefined) {
+                <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.DOMAIN)">{{dataService.labelDomain()}}<app-sort-indicator [columnType]="Constants.FILTER_TYPE.DOMAIN" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></th>
+            }
+            <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.SPECIFICATION)">{{dataService.labelSpecification()}}<app-sort-indicator [columnType]="Constants.FILTER_TYPE.SPECIFICATION" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></th>
+            <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.ACTOR)">{{dataService.labelActor()}}<app-sort-indicator [columnType]="Constants.FILTER_TYPE.ACTOR" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></th>
+            <th class="th-min">Last update</th>
+            <th class="th-min-centered">Test results</th>
+            <th class="th-min-centered">Status</th>
+            @if (showExportControls) {
+                <th class="th-min-centered"></th>
+            }
+        </tr>
+        </thead>
+        @if (dataStatus.status != Constants.STATUS.FINISHED) {
+            <tbody>
+            <tr><td [attr.colspan]="columnCount" class="td-data-loading"><span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></td></tr>
+            </tbody>
+        } @else if (dataStatus.status == Constants.STATUS.FINISHED && conformanceStatements.length == 0) {
+            <tbody>
+            <tr><td [attr.colspan]="columnCount" class="td-no-data"><span>No conformance data found</span></td></tr>
+            </tbody>
+        } @else if (conformanceStatements.length > 0) {
+            <tbody [class.disable-events]="filterState.updatePending">
+                @for (statement of conformanceStatements; track trackStatement($index, statement)) {
+                    <tr (click)="onStatementSelect(statement)" class="table-row-directive selectable">
+                        @if (organisationId == undefined) {
+                            @if (!dataService.isCommunityAdmin) {
+                                <td>{{statement.communityName}}</td>
+                            }
+                            <td>{{statement.organizationName}}</td>
+                        }
+                        <td>{{statement.systemName}}</td>
+                        @if (dataService.isSystemAdmin || dataService.community!.domain == undefined) {
+                            <td>{{statement.domainName}}</td>
+                        }
+                        <td>{{statement.specName}}</td>
+                        <td>{{statement.actorName}}</td>
+                        <td class="td-min">
+                            @if (statement.updateTime) {
+                                <app-tag label="fa-solid fa-clock" [icon]="true" tooltipText="Last update time" [value]="statement.updateTime"></app-tag>
+                            }
+                        </td>
+                        <td class="td-min-centered"><app-test-status-icons [counters]="statement.counters!" [asLine]="true"></app-test-status-icons></td>
+                        <td class="td-min-centered"><span><i containerClass="shortTooltip" [tooltip]="dataService.tooltipForTestResult(statement.overallStatus)" [ngClass]="dataService.iconForTestResult(statement.overallStatus)"></i></span></td>
+                        @if (showExportControls) {
+                            <td class="td-min-centered">
+                                <app-statement-options-button #statementOptionsButton
+                                                              [item]="statement"
+                                                              [snapshotId]="snapshotId"
+                                                              [communityId]="communityId"
+                                                              [organisationId]="organisationId"
+                                                              [pending]="statement.exportPdfPending == true || statement.exportXmlPending == true || statement.optionPending"
+                                                              (export)="onExportConformanceStatement($event.item, $event.format)"
+                                                              (opening)="optionsOpening($event)"></app-statement-options-button>
+                            </td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        }
+    </table>
+    <app-paging-controls #pagingControls [refreshing]="filterState.updatePending" (navigation)="doPageNavigation($event)"></app-paging-controls>
+</div>

@@ -46,7 +46,7 @@ public class HttpProxyMessagingHandler extends AbstractMessagingHandler {
 
 	public static final String MODULE_DEFINITION_XML = "/messaging/http-proxy-messaging-definition.xml";
 
-	private static MessagingModule module = MessagingHandlerUtils.readModuleDefinition(MODULE_DEFINITION_XML);
+	private static final MessagingModule module = MessagingHandlerUtils.readModuleDefinition(MODULE_DEFINITION_XML);
 
 	@Override
 	public MessagingModule getModuleDefinition() {
@@ -54,7 +54,7 @@ public class HttpProxyMessagingHandler extends AbstractMessagingHandler {
 	}
 
 	@Override
-	public ITransactionReceiver getReceiver(SessionContext sessionContext, TransactionContext transactionContext) throws IOException {
+	public ITransactionReceiver getReceiver(SessionContext sessionContext, TransactionContext transactionContext) {
 		return new HttpProxyReceiver(sessionContext, transactionContext);
 	}
 

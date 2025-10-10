@@ -21,12 +21,13 @@ import com.gitb.tbs.UserInput
 import com.gitb.tr._
 import config.Configurations
 import controllers.dto.ParameterInfo
-import exceptions.JsonValidationException
+import controllers.util.ParameterExtractor
+import exceptions.{AutomationApiException, ErrorCodes, JsonValidationException}
 import jakarta.xml.bind.JAXBElement
 import managers.breadcrumb.BreadcrumbLabelResponse
 import managers.export.{ExportSettings, ImportItem, ImportSettings}
 import models.Enums.TestSuiteReplacementChoice.TestSuiteReplacementChoice
-import models.Enums._
+import models.Enums.{ServiceHealthStatusType, _}
 import models._
 import models.TestCaseGroup
 import models.automation._
@@ -40,6 +41,14 @@ import java.util
 import scala.collection.mutable.ListBuffer
 import scala.collection.{immutable, mutable}
 import scala.jdk.CollectionConverters.{CollectionHasAsScala, IterableHasAsJava}
+import models.statement.TestSuiteMinimalInformation
+import models.health.SoftwareVersionInfo
+import models.health.ReleaseInfo
+
+import java.time.Instant
+import models.health.ReleaseMessages
+import models.health.ReleaseMessage
+import models.health.SoftwareVersionCheckSettings
 
 object JsonUtil {
 
@@ -93,7 +102,14 @@ object JsonUtil {
     json
   }
 
-  def jsTextArray(texts: List[String]): JsObject = {
+  def jsServiceTestResult(result: ServiceTestResult): JsObject = {
+    var json = JsonUtil.jsTextArray(result.errorMessages.getOrElse(List.empty))
+    json = json + ("success", JsBoolean(result.success))
+    json = json + ("contentType", JsString(result.contentType))
+    json
+  }
+
+  def jsTextArray(texts: Iterable[String]): JsObject = {
     var textArray = Json.arr()
     texts.foreach { text =>
       textArray = textArray.append(JsString(text))
@@ -112,12 +128,12 @@ object JsonUtil {
     json
   }
 
-  def jsStringArray(texts: Iterable[String]): JsValue = {
-    var textArray = Json.arr()
-    texts.foreach { text =>
-      textArray = textArray.append(JsString(text))
-    }
-    textArray
+  def jsNumberArray(values: Iterable[Long]): JsArray = {
+    JsArray(values.map(JsNumber(_)).toSeq)
+  }
+
+  def jsStringArray(values: Iterable[String]): JsArray = {
+    JsArray(values.map(JsString(_)).toSeq)
   }
 
   def jsApiKeyInfo(apiKeyInfo: ApiKeyInfo): JsObject = {
@@ -274,13 +290,6 @@ object JsonUtil {
     json
   }
 
-  def jsConformanceStatementItemInfo(info: (Boolean, Iterable[ConformanceStatementItem])): JsObject = {
-    Json.obj(
-      "existing" -> info._1,
-      "items" -> jsConformanceStatementItems(info._2)
-    )
-  }
-
   def jsConformanceStatementItems(items: Iterable[ConformanceStatementItem]): JsArray = {
     var json = Json.arr()
     items.foreach { item =>
@@ -321,14 +330,6 @@ object JsonUtil {
       )
     }
     json
-  }
-
-  def jsCommunityResourceSearchResult(list: Iterable[CommunityResources], resultCount: Int): JsObject = {
-    val jsonResult = Json.obj(
-      "data" -> jsCommunityResources(list),
-      "count" -> resultCount
-    )
-    jsonResult
   }
 
   def jsCommunityResources(resources: Iterable[CommunityResources]): JsArray = {
@@ -427,12 +428,29 @@ object JsonUtil {
     json
   }
 
-  def jsTestSuitesList(list: List[TestSuites]): JsArray = {
+  def jsSearchResult[T](result: SearchResult[T], dataFn: Iterable[T] => JsArray): JsObject = {
+    var json = Json.obj(
+      "data" -> dataFn.apply(result.data),
+      "count" -> result.count
+    )
+    if (result.extraPropertyProvider.isDefined) {
+      result.extraPropertyProvider.get.apply().foreach { entry =>
+        json = json + (entry._1 -> entry._2)
+      }
+    }
+    json
+  }
+
+  def jsTestSuitesList(list: Iterable[TestSuites]): JsArray = {
     var json = Json.arr()
     list.foreach { testSuite =>
       json = json.append(jsTestSuite(testSuite, None, withDocumentation = false, withSpecReference = false))
     }
     json
+  }
+
+  def jsTestSuiteTestCases(testCases: Iterable[TestCases]): JsArray = {
+    jsTestCasesList(testCases, withSpecReference = true, withTags = true)
   }
 
   def jsTestSuite(testSuite: TestSuite, withDocumentation: Boolean, withSpecReference: Boolean, withGroups: Boolean, withTags: Boolean): JsObject = {
@@ -615,7 +633,7 @@ object JsonUtil {
     json
   }
 
-  def jsSystemConfigurations(configs: List[SystemConfigurationsWithEnvironment]): JsArray = {
+  def jsSystemConfigurations(configs: Iterable[SystemConfigurationsWithEnvironment]): JsArray = {
     var json = Json.arr()
     configs.foreach { config =>
       json = json.append(jsSystemConfiguration(config))
@@ -683,8 +701,7 @@ object JsonUtil {
     val json = Json.obj(
       "uid" -> userInfo.uid,
       "email" -> userInfo.email,
-      "firstName" -> userInfo.firstName,
-      "lastName" -> userInfo.lastName,
+      "name" -> userInfo.name,
       "accounts" -> jsUserAccounts(userInfo.accounts)
     )
     json
@@ -708,7 +725,8 @@ object JsonUtil {
       "template" -> organization.template,
       "templateName" -> (if(organization.templateName.isDefined) organization.templateName.get else JsNull),
       "community" -> organization.community,
-      "adminOrganization" -> organization.adminOrganization
+      "adminOrganization" -> organization.adminOrganization,
+      "selfRegistrationToken" -> (if(organization.selfRegToken.isDefined) organization.selfRegToken.get else JsNull),
     )
     json
   }
@@ -719,24 +737,12 @@ object JsonUtil {
    * @param list List of Organizations to be convert
    * @return JsArray
    */
-  def jsOrganizations(list:List[Organizations]):JsArray = {
+  def jsOrganizations(list: Iterable[Organizations]):JsArray = {
     var json = Json.arr()
     list.foreach{ organization =>
       json = json.append(jsOrganization(organization))
     }
     json
-  }
-
-  def jsOrganizationSearchResults(list: Iterable[Organizations], resultCount: Int): JsObject = {
-    var json = Json.arr()
-    list.foreach { organisation =>
-      json = json.append(jsOrganization(organisation))
-    }
-    val jsonResult = Json.obj(
-      "data" -> json,
-      "count" -> resultCount
-    )
-    jsonResult
   }
 
   /**
@@ -788,12 +794,28 @@ object JsonUtil {
     json
   }
 
+  def jsCommunitiesLimited(list: Iterable[CommunityLimited]):JsArray = {
+    var json = Json.arr()
+    list.foreach{ community =>
+      json = json.append(jsCommunityLimited(community))
+    }
+    json
+  }
+
   def jsCommunities(list:List[Communities]):JsArray = {
     var json = Json.arr()
     list.foreach{ community =>
       json = json.append(jsCommunity(community, includeAdminInfo = true))
     }
     json
+  }
+
+  def jsCommunityLimited(community: CommunityLimited):JsObject = {
+    Json.obj(
+      "id"    -> community.id,
+      "sname" -> community.shortname,
+      "fname" -> community.fullname
+    )
   }
 
   def jsCommunity(community:Communities, includeAdminInfo: Boolean):JsObject = {
@@ -809,6 +831,7 @@ object JsonUtil {
       "allowPostTestStatementUpdates" -> community.allowPostTestStatementUpdates,
       "allowAutomationApi" -> community.allowAutomationApi,
       "allowCommunityView" -> community.allowCommunityView,
+      "allowUserManagement" -> community.allowUserManagement,
       "domainId" -> community.domain
     )
     if (includeAdminInfo) {
@@ -820,12 +843,15 @@ object JsonUtil {
       json = json.+("selfRegNotification" -> JsBoolean(community.selfRegNotification))
       json = json.+("selfRegForceTemplateSelection" -> JsBoolean(community.selfRegForceTemplateSelection))
       json = json.+("selfRegForceRequiredProperties" -> JsBoolean(community.selfRegForceRequiredProperties))
+      json = json.+("selfRegForceOrganisationTokenInput" -> JsBoolean(community.selfRegForceOrganisationTokenInput))
       json = json.+("description" -> (if(community.description.isDefined) JsString(community.description.get) else JsNull))
       json = json.+("interactionNotification" -> JsBoolean(community.interactionNotification))
       if (Configurations.AUTOMATION_API_ENABLED) {
         json = json.+("apiKey" -> JsString(community.apiKey))
       }
     }
+    json = json.+("selfRegAllowOrganisationTokens" -> JsBoolean(community.selfRegAllowOrganisationTokens))
+    json = json.+("selfRegAllowOrganisationTokenManagement" -> JsBoolean(community.selfRegAllowOrganisationTokenManagement))
     json
   }
 
@@ -861,7 +887,37 @@ object JsonUtil {
     json
   }
 
-  def jsDomainParameters(list:List[DomainParameter]):JsArray = {
+  def jsTestServicesWithParameters(list: Iterable[TestServiceWithParameter]):JsArray = {
+    var json = Json.arr()
+    list.foreach{ service =>
+      json = json.append(jsTestServiceWithParameter(service))
+    }
+    json
+  }
+
+  def jsTestServiceWithParameter(service: TestServiceWithParameter): JsObject = {
+    Json.obj(
+      "service" -> jsTestService(service.service),
+      "parameter" -> jsDomainParameter(service.parameter)
+    )
+  }
+
+  def jsTestService(service: TestService): JsObject = {
+    Json.obj(
+      "id" -> service.id,
+      "identifier" -> service.identifier,
+      "version" -> service.version,
+      "serviceType" -> service.serviceType,
+      "apiType" -> service.apiType,
+      "parameter" -> service.parameter,
+      // Passwords are never sent to the UI
+      "authBasicUsername" -> service.authBasicUsername,
+      "authTokenUsername" -> service.authTokenUsername,
+      "authTokenPasswordType" -> service.authTokenPasswordType
+    )
+  }
+
+  def jsDomainParameters(list: Iterable[DomainParameter]):JsArray = {
     var json = Json.arr()
     list.foreach{ parameter =>
       json = json.append(jsDomainParameter(parameter))
@@ -880,6 +936,7 @@ object JsonUtil {
       "description" -> domainParameter.desc,
       "kind" -> domainParameter.kind,
       "inTests" -> domainParameter.inTests,
+      "isTestService" -> domainParameter.isTestService,
       "contentType" -> (if(domainParameter.contentType.isDefined) JsString(domainParameter.contentType.get) else JsNull),
       "value" -> valueToUse
     )
@@ -891,7 +948,7 @@ object JsonUtil {
    * @param list List of Domains to be converted
    * @return JsArray
    */
-  def jsDomains(list:List[Domain], withApiKeys: Boolean):JsArray = {
+  def jsDomains(list: Iterable[Domain], withApiKeys: Boolean):JsArray = {
     var json = Json.arr()
     list.foreach{ domain =>
       json = json.append(jsDomain(domain, withApiKeys))
@@ -999,7 +1056,42 @@ object JsonUtil {
     json
   }
 
-  def jsSpecificationGroups(list: List[SpecificationGroups]): JsArray = {
+  def jsSpecificationsWithoutApiKeys(list:Iterable[Specifications]):JsArray = {
+    jsSpecifications(list)
+  }
+
+  def jsDomainSpecifications(specs: Iterable[DomainSpecification]): JsArray = {
+    var json = Json.arr()
+    specs.foreach{ spec =>
+      json = json.append(jsDomainSpecification(spec))
+    }
+    json
+  }
+
+  def jsDomainSpecification(spec: DomainSpecification): JsObject = {
+    var json = Json.obj(
+      "id" -> spec.id,
+      "sname" -> spec.sname,
+      "fname"   -> spec.fname,
+      "hidden" -> spec.hidden,
+      "group" -> spec.group,
+      "hidden" -> spec.hidden,
+      "domain"  -> spec.domain,
+      "order" -> spec.displayOrder
+    )
+    if (spec.description.isDefined) {
+      json = json + ("description" -> JsString(spec.description.get))
+    }
+    if (spec.groupId.isDefined) {
+      json = json + ("groupId" -> JsNumber(spec.groupId.get))
+    }
+    if (spec.options.exists(_.nonEmpty)) {
+      json = json + ("options" -> jsDomainSpecifications(spec.options.get))
+    }
+    json
+  }
+
+  def jsSpecificationGroups(list: Iterable[SpecificationGroups]): JsArray = {
     var json = Json.arr()
     list.foreach { group =>
       json = json.append(jsSpecificationGroup(group, withApiKeys = false))
@@ -1386,20 +1478,28 @@ object JsonUtil {
 
   private def parseJsStatementConfigurationArray(jsonArray: JsArray): List[StatementConfiguration] = {
     jsonArray.value.map { json =>
-      StatementConfiguration(
+      val config = StatementConfiguration(
         (json \ "system").as[String],
         (json \ "actor").as[String],
         parseJsKeyValueArray((json \ "properties").asOpt[JsArray].getOrElse(JsArray.empty))
       )
+      if (config.properties.exists(v => !ParameterExtractor.validTestVariableName(v.key))) {
+        throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "Keys must begin with a character followed by zero or more characters, digits, or one of ['.', '_', '-']")
+      }
+      config
     }.toList
   }
 
   private def parseJsPartyConfigurationArray(jsonArray: JsArray, partyPropertyName: String): List[PartyConfiguration] = {
     jsonArray.value.map { json =>
-      PartyConfiguration(
+      val config = PartyConfiguration(
         (json \ partyPropertyName).as[String],
         parseJsKeyValueArray((json \ "properties").asOpt[JsArray].getOrElse(JsArray.empty))
       )
+      if (config.properties.exists(v => !ParameterExtractor.validTestVariableName(v.key))) {
+        throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "Keys must begin with a character followed by zero or more characters, digits, or one of ['.', '_', '-']")
+      }
+      config
     }.toList
   }
 
@@ -1419,7 +1519,7 @@ object JsonUtil {
   }
 
   def parseJsCustomPropertyInfo(json: JsValue): CustomPropertyInfo = {
-    CustomPropertyInfo(
+    val info = CustomPropertyInfo(
       (json \ "key").as[String],
       (json \ "name").asOpt[String],
       (json \ "description").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
@@ -1435,6 +1535,10 @@ object JsonUtil {
       (json \ "dependsOnValue").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
       (json \ "defaultValue").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x))
     )
+    if (!ParameterExtractor.validTestVariableName(info.key)) {
+      throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "Keys must begin with a character followed by zero or more characters, digits, or one of ['.', '_', '-']")
+    }
+    info
   }
 
   def parseJsAllowedPropertyValues(jsonContent: String): List[KeyValueRequired] = {
@@ -1455,7 +1559,7 @@ object JsonUtil {
   }
 
   def parseJsDomainParameterConfiguration(json: JsValue, domainApiKey: Option[String] = None, parameterKey: Option[String] = None): DomainParameterInfo = {
-    DomainParameterInfo(
+    val info = DomainParameterInfo(
       KeyValue(
         parameterKey.getOrElse((json \ "key").as[String]),
         (json \ "value").asOpt[String]
@@ -1464,6 +1568,76 @@ object JsonUtil {
       (json \ "inTests").asOpt[Boolean],
       domainApiKey.orElse((json \ "domain").asOpt[String])
     )
+    if (!ParameterExtractor.validTestVariableName(info.parameterInfo.key)) {
+      throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "Keys must begin with a character followed by zero or more characters, digits, or one of ['.', '_', '-']")
+    }
+    info
+  }
+
+  def parseJsTestServiceConfiguration(json: JsValue, isNew: Boolean): TestServiceInfo = {
+    val info = TestServiceInfo(
+      KeyValue(
+        (json \ "key").as[String],
+        (json \ "address").asOpt[String]
+      ),
+      (json \ "description").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      (json \ "serviceType").asOpt[String].map(Enums.parseTestServiceTypeForApi),
+      (json \ "apiType").asOpt[String].map(Enums.parseTestServiceApiTypeForApi),
+      (json \ "authBasicUsername").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      (json \ "authBasicPassword").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(MimeUtil.encryptString(x))),
+      (json \ "authTokenUsername").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      (json \ "authTokenPassword").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(MimeUtil.encryptString(x))),
+      (json \ "authTokenPasswordType").asOpt[String].map(x => Some(Enums.parseTestServiceAuthTokenPasswordTypeForApi(x))),
+      (json \ "identifier").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      (json \ "version").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      (json \ "domain").asOpt[String],
+      (json \ "replaceExisting").asOpt[Boolean].getOrElse(false)
+    )
+    // Consistency checks
+    if (!ParameterExtractor.validTestVariableName(info.parameterInfo.key)) {
+      throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "The service key must begin with a character followed by zero or more characters, digits, or one of ['.', '_', '-']")
+    }
+    if (info.parameterInfo.value.exists(v => !ParameterExtractor.validHttpAbsoluteUrl(v))) {
+      throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "The service address must be a valid absolute HTTP URL")
+    }
+    if (info.apiType.exists(t => t != TestServiceApiType.SoapApi)) {
+      throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "Only services with a SOAP API are currently supported")
+    }
+    if (isNew) {
+      if (info.parameterInfo.value.isEmpty) {
+        throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "The service address is required")
+      }
+      if (info.serviceType.isEmpty) {
+        throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "The service type is required")
+      }
+      if (info.authBasicUsername.flatten.isDefined && info.authBasicPassword.flatten.isEmpty) {
+        throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "When a basic authentication username is set you must also set the basic authentication password")
+      }
+      if (info.authBasicUsername.flatten.isEmpty && info.authBasicPassword.flatten.isDefined) {
+        throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "Provided a basic authentication password but no username")
+      }
+      if (info.authTokenUsername.flatten.isDefined && (info.authTokenPassword.flatten.isEmpty || info.authTokenPasswordType.flatten.isEmpty)) {
+        throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "When a token username is set you must also set the token password and password type")
+      }
+      if (info.authTokenUsername.flatten.isEmpty && (info.authTokenPassword.flatten.isDefined || info.authTokenPasswordType.flatten.isDefined)) {
+        throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "Provided a token authentication password but no username")
+      }
+    } else {
+      // Provided empty usernames means that we delete the relevant password information.
+      if (info.authBasicUsername.exists(_.isEmpty) && info.authBasicPassword.exists(_.isDefined)) {
+        throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "When removing basic authentication you must not specify the password")
+      }
+      if ((info.authBasicUsername.exists(_.isDefined) || info.authBasicUsername.isEmpty) && info.authBasicPassword.exists(_.isEmpty)) {
+        throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "When basic authentication is used a password is required")
+      }
+      if (info.authTokenUsername.exists(_.isEmpty) && (info.authTokenPassword.exists(_.isDefined) || info.authTokenPasswordType.exists(_.isDefined))) {
+        throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "When removing token authentication you must not specify the password and password type")
+      }
+      if ((info.authTokenUsername.exists(_.isDefined) || info.authTokenUsername.isEmpty) && (info.authTokenPassword.exists(_.isEmpty) || info.authTokenPasswordType.exists(_.isEmpty))) {
+        throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "When token authentication is used the password and password type are required")
+      }
+    }
+    info
   }
 
   private def parseJsKeyValueArray(jsonArray: JsArray): List[KeyValue] = {
@@ -1512,6 +1686,16 @@ object JsonUtil {
       items = items.append(item)
     }
     items
+  }
+
+  def parseJsSystemConfigurations(json: String): Iterable[SystemConfigurations] = {
+    Json.parse(json).as[JsArray].value.map { value =>
+      SystemConfigurations(
+        (value \ "name").as[String],
+        (value \ "value").asOpt[String],
+        None
+      )
+    }
   }
 
   def parseJsTags(json: String): List[TestCaseTag] = {
@@ -1775,6 +1959,7 @@ object JsonUtil {
     settings.statementConfigurations = (jsonConfig \ "statementConfigurations").as[Boolean]
     settings.domain = (jsonConfig \ "domain").as[Boolean]
     settings.domainParameters = (jsonConfig \ "domainParameters").as[Boolean]
+    settings.testServices = (jsonConfig \ "testServices").as[Boolean]
     settings.specifications = (jsonConfig \ "specifications").as[Boolean]
     settings.actors = (jsonConfig \ "actors").as[Boolean]
     settings.endpoints = (jsonConfig \ "endpoints").as[Boolean]
@@ -1864,13 +2049,17 @@ object JsonUtil {
     list.toList
   }
 
-  def parseJsDomainParameter(json:String, domainParameterId: Option[Long], domainId: Long): DomainParameter = {
+  def parseJsDomainParameter(json:String, domainParameterId: Option[Long], domainId: Long, isTestService: Boolean): DomainParameter = {
     val jsonConfig = Json.parse(json).as[JsObject]
     var idToUse = 0L
     if (domainParameterId.isDefined) {
       idToUse = domainParameterId.get
     }
-    val kind = (jsonConfig \ "kind").as[String]
+    val kind = if (isTestService) {
+      "SIMPLE"
+    } else {
+      (jsonConfig \ "kind").as[String]
+    }
     var value: Option[String] = None
     var contentType: Option[String] = None
     if (kind.equals("HIDDEN")) {
@@ -1884,14 +2073,20 @@ object JsonUtil {
       value = Some("")
       contentType = (jsonConfig \ "contentType").asOpt[String]
     }
+    val inTests = if (isTestService) {
+      true
+    } else {
+      (jsonConfig \ "inTests").as[Boolean]
+    }
     DomainParameter(
       idToUse,
       (jsonConfig \ "name").as[String],
       (jsonConfig \ "desc").asOpt[String],
       kind,
       value,
-      (jsonConfig \ "inTests").as[Boolean],
+      inTests,
       contentType,
+      isTestService,
       domainId
     )
   }
@@ -2024,7 +2219,7 @@ object JsonUtil {
    * @param list List of TestCases to be converted
    * @return JsArray
    */
-  def jsTestCasesList(list:List[TestCases], withSpecReference: Boolean = false, withTags: Boolean = false):JsArray = {
+  def jsTestCasesList(list: Iterable[TestCases], withSpecReference: Boolean = false, withTags: Boolean = false):JsArray = {
     var json = Json.arr()
     list.foreach{ testCase =>
       json = json.append(jsTestCases(testCase, withDocumentation = false, withTags, withSpecReference = withSpecReference))
@@ -2083,27 +2278,22 @@ object JsonUtil {
     json
   }
 
-  def jsTestResultReports(list: Iterable[TestResult], resultCount: Option[Int]): JsObject = {
+  def jsTestResultReports(list: Iterable[TestResult]): JsArray = {
     var json = Json.arr()
     list.foreach { report =>
       json = json.append(jsTestResultReport(report, None))
     }
-    val jsonResult = Json.obj(
-      "data" -> json,
-      "count" -> (if (resultCount.isDefined) resultCount.get else JsNull)
-    )
-    jsonResult
+    json
   }
 
-  def jsTestResultSessionReports(list: Iterable[TestResult], parameterInfo: Option[ParameterInfo], resultCount: Option[Int]): JsObject = {
-    var json = Json.arr()
-    list.foreach { report =>
-      json = json.append(jsTestResultReport(report, parameterInfo))
-    }
-    var jsonResult = Json.obj(
-      "data" -> json,
-      "count" -> (if (resultCount.isDefined) resultCount.get else JsNull)
-    )
+  def jsTestResultSessionReports(result: SearchResult[TestResult], parameterInfo: Option[ParameterInfo]): JsObject = {
+    var jsonResult = jsSearchResult(result, (list: Iterable[TestResult]) => {
+      var json = Json.arr()
+      list.foreach { report =>
+        json = json.append(jsTestResultReport(report, parameterInfo))
+      }
+      json
+    })
     if (parameterInfo.isDefined) {
       var orgParameters = Json.arr()
       parameterInfo.get.orgDefinitions.foreach{ param =>
@@ -2219,16 +2409,20 @@ object JsonUtil {
     json
   }
 
-  def jsServiceHealthInfo(info: ServiceHealthInfo): JsObject = {
-    val statusValue = info.status match {
+  def jsServiceHealthStatus(status: ServiceHealthStatusType.ServiceHealthStatusType): JsString = {
+    val statusValue = status match {
       case ServiceHealthStatusType.Ok => "ok"
       case ServiceHealthStatusType.Warning => "warning"
       case ServiceHealthStatusType.Error => "error"
       case ServiceHealthStatusType.Unknown => "unknown"
       case ServiceHealthStatusType.Info => "info"
     }
+    JsString(statusValue)
+  }
+
+  def jsServiceHealthInfo(info: ServiceHealthInfo): JsObject = {
     Json.obj(
-      "status" -> statusValue,
+      "status" -> jsServiceHealthStatus(info.status),
       "summary" -> info.summary,
       "details" -> info.details
     )
@@ -2338,7 +2532,9 @@ object JsonUtil {
         "labels" -> jsCommunityLabels(option.labels),
         "organisationProperties" -> jsOrganisationParameters(option.customOrganisationProperties),
         "forceTemplateSelection" -> option.forceTemplateSelection,
-        "forceRequiredProperties" -> option.forceRequiredProperties
+        "forceRequiredProperties" -> option.forceRequiredProperties,
+        "organisationTokensEnabled" -> option.organisationTokensEnabled,
+        "forceOrganisationTokenInput" -> option.forceOrganisationTokenInput
     )
     json
   }
@@ -2401,12 +2597,15 @@ object JsonUtil {
       "demosEnabled" -> config.get("demos.enabled").toBoolean,
       "demosAccount" -> config.get("demos.account").toLong,
       "registrationEnabled" -> config.get("registration.enabled").toBoolean,
+      "startupWizardEnabled" -> config.get("startupWizardEnabled").toBoolean,
       "savedFileMaxSize" -> config.get("savedFile.maxSize").toLong,
       "mode" -> config.get("mode"),
       "automationApiEnabled" -> config.get("automationApi.enabled").toBoolean,
       "versionNumber" -> config.get("versionNumber"),
       "hasDefaultLegalNotice" -> config.get("hasDefaultLegalNotice").toBoolean,
-      "conformanceStatementReportMaxTestCases" -> config.get("conformanceStatementReportMaxTestCases").toInt
+      "conformanceStatementReportMaxTestCases" -> config.get("conformanceStatementReportMaxTestCases").toInt,
+      "headerNameAuthenticationCookiePath" -> config.get("headerNameAuthenticationCookiePath"),
+      "welcomePageTitle" -> config.get("welcomePageTitle")
     )
     json
   }
@@ -2952,6 +3151,7 @@ object JsonUtil {
   def jsConformanceTestSuites(testSuites: Iterable[ConformanceTestSuite]): JsArray = {
     var json = Json.arr()
     testSuites.foreach { testSuite =>
+      val hasOptional = testSuite.completedOptional > 0 || testSuite.failedOptional > 0 || testSuite.undefinedOptional > 0
       var obj = Json.obj(
         "id" -> testSuite.id,
         "sname" -> testSuite.name,
@@ -2961,6 +3161,8 @@ object JsonUtil {
         "specDescription" -> (if (testSuite.specDescription.isDefined) testSuite.specDescription.get else JsNull),
         "specLink" -> (if (testSuite.specLink.isDefined) testSuite.specLink.get else JsNull),
         "result" -> testSuite.result.value(),
+        "hasOptional" -> hasOptional,
+        "hasDisabled" -> testSuite.hasDisabled,
         "testCases" -> jsConformanceTestCases(testSuite.testCases)
       )
       if (testSuite.testCaseGroups.nonEmpty) {
@@ -3000,13 +3202,21 @@ object JsonUtil {
     json
   }
 
-  def jsConformanceStatement(statement: ConformanceStatementItem, results: models.ConformanceStatus, systemInfo: models.System): JsObject = {
+  def jsConformanceStatement(statement: ConformanceStatementItem, results: SearchResult[models.ConformanceStatus], systemInfo: models.System): JsObject = {
     Json.obj(
       "statement" -> jsConformanceStatementItem(statement),
-      "results" -> jsConformanceStatus(results),
+      "results" -> jsSearchResult(results, jsConformanceStatusForPaging),
       "system" -> jsSystem(systemInfo.toCaseObject),
       "organisation" -> jsOrganization(systemInfo.owner.get) // This is always present.
     )
+  }
+
+  def jsConformanceStatusForPaging(list: Iterable[ConformanceStatus]): JsArray = {
+    var json = Json.arr()
+    list.foreach{ status =>
+      json = json.append(jsConformanceStatus(status))
+    }
+    json
   }
 
   def jsConformanceStatus(status: ConformanceStatus): JsObject = {
@@ -3021,6 +3231,7 @@ object JsonUtil {
         "failedToConsider"    -> status.failedToConsider,
         "completedToConsider"    -> status.completedToConsider,
         "undefinedToConsider"    -> status.undefinedToConsider,
+        "hasDisabled" -> status.hasDisabled,
         "result" -> status.result.value(),
         "hasBadge" -> status.hasBadge,
         "updateTime" -> (if (status.updateTime.isDefined) TimeUtil.serializeTimestamp(status.updateTime.get) else JsNull),
@@ -3029,20 +3240,20 @@ object JsonUtil {
         "specificationId" -> status.specificationId,
         "actorId" -> status.actorId
       ),
-      "testSuites" -> jsConformanceTestSuites(status.testSuites)
+      "testSuites" -> jsConformanceTestSuites(status.testSuites),
+      "testSuiteCount" -> status.testSuiteCount
     )
     json
   }
 
-  def jsConformanceResultFullList(list: List[ConformanceStatementFull], parameterInfo: Option[ParameterInfo], count: Int): JsObject = {
-    var json = Json.arr()
-    list.foreach{ info =>
-      json = json.append(jsConformanceResultFull(info, parameterInfo))
-    }
-    var jsonResult = Json.obj(
-      "data" -> json,
-      "count" -> count
-    )
+  def jsConformanceResultFullList(result: SearchResult[ConformanceStatementFull], parameterInfo: Option[ParameterInfo]): JsObject = {
+    var jsonResult = jsSearchResult(result, (list: Iterable[ConformanceStatementFull]) => {
+      var json = Json.arr()
+      list.foreach{ info =>
+        json = json.append(jsConformanceResultFull(info, parameterInfo))
+      }
+      json
+    })
     if (parameterInfo.isDefined) {
       var orgParameters = Json.arr()
       parameterInfo.get.orgDefinitions.foreach{ param =>
@@ -3069,7 +3280,7 @@ object JsonUtil {
       "systemName"    -> item.systemName,
       "domainId"    -> item.domainId,
       "domainName"    -> item.domainName,
-      "specId"    -> item.specificationId,
+      "specificationId"    -> item.specificationId,
       "specName"    -> item.specificationName,
       "specGroupName"    -> (if(item.specificationGroupName.isDefined) item.specificationGroupName.get else JsNull),
       "specGroupOptionName"    -> item.specificationGroupOptionName,
@@ -3334,6 +3545,23 @@ object JsonUtil {
     json
   }
 
+  def jsSoftwareVersionCheckSettings(settings: SoftwareVersionCheckSettings): JsObject = {
+    Json.obj(
+      "enabled" -> JsBoolean(settings.enabled),
+      "jws" -> JsString(settings.jws),
+      "jwks" -> JsString(settings.jwks)
+    )
+  }
+
+  def parseJsSoftwareVersionCheckSettings(jsonString: String): SoftwareVersionCheckSettings = {
+    val json = Json.parse(jsonString)
+    SoftwareVersionCheckSettings(
+      enabled = (json \ "enabled").as[Boolean],
+      jws = (json \ "jws").as[String],
+      jwks = (json \ "jwks").as[String]
+    )
+  }
+
   def jsEmailSettings(settings: EmailSettings, maskPassword: Boolean = true): JsObject = {
     var json = Json.obj("enabled" -> JsBoolean(settings.enabled))
     if (settings.from.isDefined) json = json + ("from" -> JsString(settings.from.get))
@@ -3491,6 +3719,245 @@ object JsonUtil {
         (value \ "message").asOpt[String].flatMap(Option(_))
       )
     }.toList
+  }
+
+  def jsDomainsForAutomationApi(domains: Iterable[Domain]): JsArray = {
+    var json = Json.arr()
+    domains.foreach { domain =>
+      json = json.append(jsDomainForAutomationApi(domain))
+    }
+    json
+  }
+
+  def jsDomainForAutomationApi(domain: Domain): JsObject = {
+    var json = Json.obj(
+      "apiKey" -> domain.apiKey,
+      "shortName" -> domain.shortname,
+      "fullName" -> domain.fullname
+    )
+    if (domain.description.isDefined) {
+      json = json + ("description" -> JsString(domain.description.get))
+    }
+    if (domain.reportMetadata.isDefined) {
+      json = json + ("reportMetadata" -> JsString(domain.reportMetadata.get))
+    }
+    json
+  }
+
+  def jsSpecificationGroupsForAutomationApi(groups: Iterable[SpecificationGroups]): JsArray = {
+    var json = Json.arr()
+    groups.foreach { group =>
+      json = json.append(jsSpecificationGroupForAutomationApi(group))
+    }
+    json
+  }
+
+  def jsSpecificationGroupForAutomationApi(group: SpecificationGroups): JsObject = {
+    var json = Json.obj(
+      "apiKey" -> group.apiKey,
+      "shortName" -> group.shortname,
+      "fullName" -> group.fullname,
+      "displayOrder" -> group.displayOrder,
+    )
+    if (group.description.isDefined) {
+      json = json + ("description" -> JsString(group.description.get))
+    }
+    if (group.reportMetadata.isDefined) {
+      json = json + ("reportMetadata" -> JsString(group.reportMetadata.get))
+    }
+    json
+  }
+
+  def jsSpecificationsForAutomationApi(specifications: Iterable[Specifications]): JsArray = {
+    var json = Json.arr()
+    specifications.foreach { specification =>
+      json = json.append(jsSpecificationForAutomationApi(specification))
+    }
+    json
+  }
+
+  def jsSpecificationForAutomationApi(specification: Specifications): JsObject = {
+    var json = Json.obj(
+      "apiKey" -> specification.apiKey,
+      "shortName" -> specification.shortname,
+      "fullName" -> specification.fullname,
+      "hidden" -> specification.hidden,
+      "displayOrder" -> specification.displayOrder
+    )
+    if (specification.description.isDefined) {
+      json = json + ("description" -> JsString(specification.description.get))
+    }
+    if (specification.reportMetadata.isDefined) {
+      json = json + ("reportMetadata" -> JsString(specification.reportMetadata.get))
+    }
+    json
+  }
+
+  def jsActorsForAutomationApi(actors: Iterable[Actors]): JsArray = {
+    var json = Json.arr()
+    actors.foreach { actor =>
+      json = json.append(jsActorForAutomationApi(actor))
+    }
+    json
+  }
+
+  def jsActorForAutomationApi(actor: Actors): JsObject = {
+    var json = Json.obj(
+      "apiKey" -> actor.apiKey,
+      "identifier" -> actor.actorId,
+      "name" -> actor.name,
+      "hidden" -> actor.hidden,
+      "displayOrder" -> actor.displayOrder
+    )
+    if (actor.default.isDefined) {
+      json = json + ("default" -> JsBoolean(actor.default.get))
+    }
+    if (actor.description.isDefined) {
+      json = json + ("description" -> JsString(actor.description.get))
+    }
+    if (actor.reportMetadata.isDefined) {
+      json = json + ("reportMetadata" -> JsString(actor.reportMetadata.get))
+    }
+    json
+  }
+
+  def jsOrganisationsForAutomationApi(organisations: Iterable[Organizations]): JsArray = {
+    var json = Json.arr()
+    organisations.foreach { organisation =>
+      json = json.append(jsOrganisationForAutomationApi(organisation))
+    }
+    json
+  }
+
+  def jsOrganisationForAutomationApi(organisation: Organizations): JsObject = {
+    Json.obj(
+      "apiKey" -> organisation.apiKey,
+      "shortName" -> organisation.shortname,
+      "fullName" -> organisation.shortname
+    )
+  }
+
+  def jsSystemsForAutomationApi(systems: Iterable[Systems]): JsArray = {
+    var json = Json.arr()
+    systems.foreach { system =>
+      json = json.append(jsSystemForAutomationApi(system))
+    }
+    json
+  }
+
+  def jsSystemForAutomationApi(system: Systems): JsObject = {
+    var json = Json.obj(
+      "apiKey" -> system.apiKey,
+      "shortName" -> system.shortname,
+      "fullName" -> system.fullname
+    )
+    if (system.description.isDefined) {
+      json = json + ("description" -> JsString(system.description.get))
+    }
+    if (system.version.isDefined) {
+      json = json + ("version" -> JsString(system.version.get))
+    }
+    json
+  }
+
+  def jsStatementsForAutomationApi(statements: Iterable[ConformanceStatementKeys]): JsArray = {
+    var json = Json.arr()
+    statements.foreach { statement =>
+      json = json.append(jsStatementForAutomationApi(statement))
+    }
+    json
+  }
+
+  def jsStatementForAutomationApi(statement: ConformanceStatementKeys): JsObject = {
+    Json.obj(
+      "system" -> statement.systemKey,
+      "actor" -> statement.actorKey
+    )
+  }
+
+  def jsTestServicesForAutomationApi(services: Iterable[TestServiceWithParameterAndDomainKey]): JsArray = {
+    var json = Json.arr()
+    services.foreach { service =>
+      json = json.append(jsTestServiceForAutomationApi(service))
+    }
+    json
+  }
+
+  def jsTestServiceForAutomationApi(service: TestServiceWithParameterAndDomainKey): JsObject = {
+    var json = Json.obj(
+      "key" -> service.service.parameter.name,
+      "domain" -> service.domainKey,
+      "address" -> service.service.parameter.value.get,
+      "serviceType" -> Enums.toTestServiceTypeForApi(TestServiceType.apply(service.service.service.serviceType)),
+      "apiType" -> Enums.toTestServiceApiTypeForApi(TestServiceApiType.apply(service.service.service.apiType))
+    )
+    if (service.service.parameter.desc.isDefined) {
+      json = json + ("description" -> JsString(service.service.parameter.desc.get))
+    }
+    if (service.service.service.identifier.isDefined) {
+      json = json + ("identifier" -> JsString(service.service.service.identifier.get))
+    }
+    if (service.service.service.version.isDefined) {
+      json = json + ("version" -> JsString(service.service.service.version.get))
+    }
+    json
+  }
+
+  def jsTestSuiteMinimalInformations(values: Iterable[TestSuiteMinimalInformation]): JsArray = {
+    JsArray(values.map(jsTestSuiteMinimalInformation(_)).toSeq)
+    
+  }
+
+  def jsTestSuiteMinimalInformation(value: TestSuiteMinimalInformation): JsObject = {
+    Json.obj(
+      "id" -> value.id,
+      "sname" -> value.shortName
+    )
+  }
+
+  def parseJsSoftwareVersionInfo(json: JsValue): SoftwareVersionInfo = {
+    SoftwareVersionInfo(
+      latest = parseJsReleaseInfo((json \ "latest").toOption.getOrElse {
+        throw new IllegalArgumentException("The software version information is invalid (missing 'latest' field)")
+      }),
+      reports = (json \ "reports").asOpt[JsArray].map(parseJsReleaseMessagesList)
+    )
+  }
+
+  private def parseJsReleaseInfo(json: JsValue): ReleaseInfo = {
+    ReleaseInfo(
+      (json \ "releaseNumber").as[String],
+      (json \ "releaseDate").as[Instant],
+      (json \ "releaseNotes").asOpt[String]
+    )
+  }
+
+  private def parseJsReleaseMessagesList(json: JsArray): List[ReleaseMessages] = {
+    json.value.map { item =>
+      parseJsReleaseMessages(item)
+    }.toList
+  }
+
+  private def parseJsReleaseMessages(json: JsValue): ReleaseMessages = {
+    ReleaseMessages(
+      release = parseJsReleaseInfo((json \ "release").get),
+      messages = (json \ "messages").asOpt[JsArray].map(parseJsReleaseMessageList).getOrElse(List())
+    )
+  }
+
+  private def parseJsReleaseMessageList(json: JsArray): List[ReleaseMessage] = {
+    json.value.map { item =>
+      parseJsReleaseMessage(item)
+    }.toList
+  }
+
+  private def parseJsReleaseMessage(json: JsValue): ReleaseMessage = {
+    ReleaseMessage(
+      message = (json \ "message").as[String],
+      moreInformation = (json \ "moreInformation").asOpt[String],
+      messageSeverity = (json \ "severity").asOpt[String].map(ReleaseMessageSeverity.parse),
+      messageType = (json \ "type").asOpt[String].map(ReleaseMessageType.parse)
+    )
   }
 
 }

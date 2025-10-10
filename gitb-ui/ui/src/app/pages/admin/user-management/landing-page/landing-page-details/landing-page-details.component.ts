@@ -13,22 +13,20 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { BaseComponent } from 'src/app/pages/base-component.component';
-import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
-import { DataService } from 'src/app/services/data.service';
-import { LandingPageService } from 'src/app/services/landing-page.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { RoutingService } from 'src/app/services/routing.service';
-import { LandingPage } from 'src/app/types/landing-page';
-import { CommunityTab } from '../../community/community-details/community-tab.enum';
-import { Constants } from 'src/app/common/constants';
-import { SystemAdministrationTab } from '../../../system-administration/system-administration-tab.enum';
-import { BsModalService } from 'ngx-bootstrap/modal';
-import { PreviewLandingPageComponent } from '../preview-landing-page/preview-landing-page.component';
-import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
-import { ValidationState } from 'src/app/types/validation-state';
+import {Component, OnInit} from '@angular/core';
+import {ActivatedRoute} from '@angular/router';
+import {BaseComponent} from 'src/app/pages/base-component.component';
+import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
+import {DataService} from 'src/app/services/data.service';
+import {LandingPageService} from 'src/app/services/landing-page.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {RoutingService} from 'src/app/services/routing.service';
+import {LandingPage} from 'src/app/types/landing-page';
+import {Constants} from 'src/app/common/constants';
+import {BsModalService} from 'ngx-bootstrap/modal';
+import {PreviewLandingPageComponent} from '../preview-landing-page/preview-landing-page.component';
+import {BreadcrumbType} from 'src/app/types/breadcrumb-type';
+import {ValidationState} from 'src/app/types/validation-state';
 
 @Component({
     selector: 'app-landing-page-details',
@@ -165,9 +163,9 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
 
   cancelDetailLandingPage() {
     if (this.communityId == Constants.DEFAULT_COMMUNITY_ID) {
-      this.routingService.toSystemAdministration(SystemAdministrationTab.landingPages)
+      this.routingService.toSystemAdministration(Constants.TAB.SYSTEM_ADMINISTRATION.LANDING_PAGES)
     } else {
-      this.routingService.toCommunity(this.communityId, CommunityTab.landingPages)
+      this.routingService.toCommunity(this.communityId, Constants.TAB.COMMUNITY.LANDING_PAGES)
     }
   }
 

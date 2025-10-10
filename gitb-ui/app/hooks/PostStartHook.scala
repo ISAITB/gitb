@@ -85,6 +85,7 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
             _ <- prepareTheme()
             _ <- setupAdministratorOneTimePassword()
             _ <- setupInteractionNotifications()
+            _ <- setupSsoMigrationModeIfNeeded()
             _ <- removeOverrideConfiguration()
           } yield ()
         ).recover {
@@ -154,6 +155,7 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
   private def adaptSystemConfiguration(): Future[Unit] = {
     // Record the default settings (from the config, fixed values and the environment).
     val defaultEmailSettings = systemConfigurationManager.recordDefaultEmailSettings()
+    systemConfigurationManager.recordDefaultSoftwareVersionCheckSettings()
     // Load persisted configuration parameters.
     systemConfigurationManager.getEditableSystemConfigurationValues(onlyPersisted = true).flatMap { persistedConfigs =>
       // Check against environment settings.
@@ -180,6 +182,14 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
           }
           Future.successful(())
         }
+        // Startup wizard.
+        _ <- {
+          val wizardConfig = persistedConfigs.find(config => config.config.name == Constants.StartupWizard).map(_.config)
+          if (wizardConfig.nonEmpty && wizardConfig.get.parameter.nonEmpty) {
+            Configurations.STARTUP_WIZARD_ENABLED = wizardConfig.get.parameter.get.toBoolean
+          }
+          Future.successful(())
+        }
         // Demo account.
         _ <- {
           val demoAccountConfig = persistedConfigs.find(config => config.config.name == Constants.DemoAccount).map(_.config)
@@ -202,7 +212,7 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
             Future.successful(())
           }
         }
-        // Welcome message.
+        // Welcome page message.
         _ <- {
           val welcomeMessageConfig = persistedConfigs.find(config => config.config.name == Constants.WelcomeMessage).map(_.config)
           if (welcomeMessageConfig.nonEmpty && welcomeMessageConfig.get.parameter.nonEmpty) {
@@ -212,11 +222,29 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
           }
           Future.successful(())
         }
+        // Welcome page title.
+        _ <- {
+          val welcomeTitleConfig = persistedConfigs.find(config => config.config.name == Constants.WelcomeTitle).map(_.config)
+          if (welcomeTitleConfig.nonEmpty && welcomeTitleConfig.get.parameter.nonEmpty) {
+            Configurations.WELCOME_TITLE = welcomeTitleConfig.get.parameter.get
+          } else {
+            Configurations.WELCOME_TITLE = Configurations.WELCOME_TITLE_DEFAULT
+          }
+          Future.successful(())
+        }
         // Email settings.
         _ <- {
           val emailSettings = persistedConfigs.find(config => config.config.name == Constants.EmailSettings).map(_.config)
           if (emailSettings.nonEmpty && emailSettings.get.parameter.nonEmpty) {
             JsonUtil.parseJsEmailSettings(emailSettings.get.parameter.get).toEnvironment(Some(defaultEmailSettings))
+          }
+          Future.successful(())
+        }
+        // Software version check settings.
+        _ <- {
+          val checkSettings = persistedConfigs.find(config => config.config.name == Constants.SoftwareVersionCheck).map(_.config)
+          if (checkSettings.nonEmpty && checkSettings.get.parameter.nonEmpty) {
+            JsonUtil.parseJsSoftwareVersionCheckSettings(checkSettings.get.parameter.get).toEnvironment()
           }
           Future.successful(())
         }
@@ -331,6 +359,20 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
   private def setupInteractionNotifications(): Future[Unit] = {
     Future.successful {
       testResultManager.schedulePendingTestInteractionNotifications()
+    }
+  }
+
+  private def setupSsoMigrationModeIfNeeded(): Future[Unit] = {
+    if (Configurations.AUTHENTICATION_SSO_ENABLED && !Configurations.AUTHENTICATION_SSO_IN_MIGRATION_PERIOD) {
+      userManager.migratedAdministratorsExist().map { exist =>
+        if (!exist) {
+          // We force migration mode because otherwise the ITB instance is unusable without being manually set to migration mode.
+          logger.info("SSO is enabled without any SSO-enabled accounts. Forcing SSO migration mode until an initial account is migrated.")
+          Configurations.AUTHENTICATION_SSO_IN_MIGRATION_PERIOD = true
+        }
+      }
+    } else {
+      Future.successful(())
     }
   }
 
@@ -452,11 +494,20 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
           Future.successful(())
         } else {
           // We use foldLeft to ensure that the items are processed in sequence producing futures that execute before proceeding to the next one.
-          containedFiles.filter(_.getName.toLowerCase.endsWith(".zip")).foldLeft(Future.successful(())) { (previousFuture, currentArchive) =>
-            previousFuture.flatMap { _ =>
-              importCompleteManager.importSandboxData(currentArchive, archiveKey).map(_ => ())
+          val dataArchives = containedFiles.filter(_.getName.toLowerCase.endsWith(".zip"))
+          for {
+            _ <- {
+              dataArchives.foldLeft(Future.successful(())) { (previousFuture, currentArchive) =>
+                previousFuture.flatMap { _ =>
+                  importCompleteManager.importSandboxData(currentArchive, archiveKey).map(_ => ())
+                }
+              }
             }
-          }
+            _ <- {
+              // Make sure we disable the startup configuration wizard if sandbox data archives are present.
+              systemConfigurationManager.disableStartupWizard()
+            }
+          } yield ()
         }
       } else {
         Future.successful(())

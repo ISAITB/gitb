@@ -16,6 +16,8 @@
 import {AfterViewInit, Component, ElementRef, EventEmitter, Input, NgZone, OnInit, Output, ViewChild} from '@angular/core';
 import {PagingStatus} from './paging-status';
 import {PagingEvent} from './paging-event';
+import {PagingPlacement} from './paging-placement';
+import {PagingControlsApi} from './paging-controls-api';
 
 @Component({
   selector: 'app-paging-controls',
@@ -23,9 +25,10 @@ import {PagingEvent} from './paging-event';
   templateUrl: './paging-controls.component.html',
   styleUrl: './paging-controls.component.less'
 })
-export class PagingControlsComponent implements OnInit, AfterViewInit {
+export class PagingControlsComponent implements OnInit, AfterViewInit, PagingControlsApi {
 
   @Input() refreshing = false
+  @Input() placement: PagingPlacement = PagingPlacement.table
   @Output() navigation = new EventEmitter<PagingEvent>();
   @ViewChild("pagingContainer") pagingContainer?: ElementRef
   @ViewChild("lastButton") lastButton?: ElementRef
@@ -38,6 +41,7 @@ export class PagingControlsComponent implements OnInit, AfterViewInit {
   controlsWrapped = false
   wrapWidth?: number
   numberFormat = new Intl.NumberFormat('en-GB')
+  protected readonly PagingPlacement = PagingPlacement;
 
   constructor(private readonly zone: NgZone) {
   }
@@ -109,6 +113,10 @@ export class PagingControlsComponent implements OnInit, AfterViewInit {
 
     this.updateSummaryMessage()
     return this.status;
+  }
+
+  hide(): void {
+    this.updateStatus(0, 0)
   }
 
   private updateSummaryMessage() {

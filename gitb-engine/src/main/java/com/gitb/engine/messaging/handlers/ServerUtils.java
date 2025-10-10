@@ -23,7 +23,6 @@ import com.gitb.types.StringType;
 import com.gitb.utils.ConfigurationUtils;
 
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -52,14 +51,12 @@ public class ServerUtils {
 
     public static String getHeader(MapType headers, String header) {
         Map<String, DataType> headerMap = (Map<String, DataType>) headers.getValue();
-        Iterator iterator = headerMap.entrySet().iterator();
 
-        while (iterator.hasNext()) {
-            Map.Entry pair  = (Map.Entry)iterator.next();
-            String headerName  = (String) pair.getKey();
-            if(headerName.equalsIgnoreCase(header)) {
-                StringType headerType  = ((StringType) pair.getValue());
-                return (String) headerType.getValue();
+        for (Map.Entry<String, DataType> pair : headerMap.entrySet()) {
+            String headerName = pair.getKey();
+            if (headerName.equalsIgnoreCase(header)) {
+                StringType headerType = ((StringType) pair.getValue());
+                return headerType.getValue();
             }
         }
 

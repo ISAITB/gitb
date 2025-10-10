@@ -13,20 +13,19 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { AfterViewInit, Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { EMPTY } from 'rxjs';
-import { map, mergeMap, share } from 'rxjs/operators';
-import { BaseComponent } from 'src/app/pages/base-component.component';
-import { AuthService } from 'src/app/services/auth.service';
-import { DataService } from 'src/app/services/data.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { RoutingService } from 'src/app/services/routing.service';
-import { UserService } from 'src/app/services/user.service';
-import { User } from 'src/app/types/user.type';
-import { CommunityTab } from '../../community/community-details/community-tab.enum';
-import { Constants } from 'src/app/common/constants';
-import { ValidationState } from 'src/app/types/validation-state';
+import {AfterViewInit, Component, OnInit} from '@angular/core';
+import {ActivatedRoute} from '@angular/router';
+import {EMPTY} from 'rxjs';
+import {map, mergeMap, share} from 'rxjs/operators';
+import {BaseComponent} from 'src/app/pages/base-component.component';
+import {AuthService} from 'src/app/services/auth.service';
+import {DataService} from 'src/app/services/data.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {RoutingService} from 'src/app/services/routing.service';
+import {UserService} from 'src/app/services/user.service';
+import {User} from 'src/app/types/user.type';
+import {Constants} from 'src/app/common/constants';
+import {ValidationState} from 'src/app/types/validation-state';
 
 @Component({
     selector: 'app-create-community-admin',
@@ -130,7 +129,7 @@ export class CreateCommunityAdminComponent extends BaseComponent implements OnIn
   }
 
   cancelCreateAdmin() {
-    this.routingService.toCommunity(this.communityId, CommunityTab.administrators)
+    this.routingService.toCommunity(this.communityId, Constants.TAB.COMMUNITY.ADMINISTRATORS)
   }
 
 }

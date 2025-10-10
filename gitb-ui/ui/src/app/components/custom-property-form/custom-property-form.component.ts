@@ -42,6 +42,7 @@ export class CustomPropertyFormComponent implements OnInit {
   @Input() tbShowFormHeader = true
   @Input() tbShowRequiredAsterisks = true
   @Input() tbAdmin?: boolean
+  @Input() tbSelfRegistration: boolean = false
   @Input() tbPropertyType!: 'organisation'|'system'|'statement'
   @Input() tbOwner?: number
   @Input() tbExpandable = false

@@ -18,5 +18,5 @@ package models
 /**
  * Created by simatosc.
  */
-case class DomainParameter(id: Long, name: String, desc: Option[String], kind: String, value: Option[String], inTests: Boolean, contentType: Option[String], domain: Long) {
+case class DomainParameter(id: Long, name: String, desc: Option[String], kind: String, value: Option[String], inTests: Boolean, contentType: Option[String], isTestService: Boolean, domain: Long) {
 }

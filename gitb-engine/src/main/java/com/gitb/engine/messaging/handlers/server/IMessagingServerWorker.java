@@ -21,9 +21,9 @@ import java.io.IOException;
  * Created by serbay.
  */
 public interface IMessagingServerWorker {
-	public void start() throws IOException;
-	public void stop();
-	public boolean isActive();
-	public int getPort();
-	public NetworkingSessionManager getNetworkingSessionManager();
+	void start() throws IOException;
+	void stop();
+	boolean isActive();
+	int getPort();
+	NetworkingSessionManager getNetworkingSessionManager();
 }

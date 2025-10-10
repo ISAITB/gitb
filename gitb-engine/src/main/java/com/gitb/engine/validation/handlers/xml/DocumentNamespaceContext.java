@@ -24,15 +24,15 @@ import java.util.Iterator;
 import java.util.Map;
 
 /**
- * Implementation based on source found here: http://www.ibm.com/developerworks/library/x-nmspccontext/
- *
+ * Implementation based on source found here: <a href="http://www.ibm.com/developerworks/library/x-nmspccontext/">...</a>
+ * <p>
  * Created by simatosc on 09/08/2016.
  */
 public class DocumentNamespaceContext implements NamespaceContext {
 
     public static final String DEFAULT_NS = "default";
-    private Map<String, String> prefix2Uri = new HashMap<>();
-    private Map<String, String> uri2Prefix = new HashMap<>();
+    private final Map<String, String> prefix2Uri = new HashMap<>();
+    private final Map<String, String> uri2Prefix = new HashMap<>();
 
     /**
      * This constructor parses the document and stores all namespaces it can

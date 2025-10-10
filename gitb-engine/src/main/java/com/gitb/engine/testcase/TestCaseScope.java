@@ -34,13 +34,11 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import static com.gitb.engine.PropertyConstants.isBuiltInProperty;
-
 /**
  * Created by serbay on 9/3/14.
- *
+ * <p>
  * Class that contains variable bindings contained in an execution block.
- *
+ * <p>
  * Works in a similar fashion to Java scoping.
  */
 public class TestCaseScope {

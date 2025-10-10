@@ -13,22 +13,21 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { AfterViewInit, Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { EMPTY, Observable } from 'rxjs';
-import { map, mergeMap, share } from 'rxjs/operators';
-import { Constants } from 'src/app/common/constants';
-import { BaseComponent } from 'src/app/pages/base-component.component';
-import { AccountService } from 'src/app/services/account.service';
-import { AuthService } from 'src/app/services/auth.service';
-import { DataService } from 'src/app/services/data.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { RoutingService } from 'src/app/services/routing.service';
-import { UserService } from 'src/app/services/user.service';
-import { IdLabel } from 'src/app/types/id-label';
-import { User } from 'src/app/types/user.type';
-import { OrganisationTab } from '../../organisation/organisation-details/OrganisationTab';
-import { ValidationState } from 'src/app/types/validation-state';
+import {AfterViewInit, Component, OnInit} from '@angular/core';
+import {ActivatedRoute} from '@angular/router';
+import {EMPTY, Observable} from 'rxjs';
+import {map, mergeMap, share} from 'rxjs/operators';
+import {Constants} from 'src/app/common/constants';
+import {BaseComponent} from 'src/app/pages/base-component.component';
+import {AccountService} from 'src/app/services/account.service';
+import {AuthService} from 'src/app/services/auth.service';
+import {DataService} from 'src/app/services/data.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {RoutingService} from 'src/app/services/routing.service';
+import {UserService} from 'src/app/services/user.service';
+import {IdLabel} from 'src/app/types/id-label';
+import {User} from 'src/app/types/user.type';
+import {ValidationState} from 'src/app/types/validation-state';
 
 @Component({
     selector: 'app-create-user',
@@ -140,9 +139,9 @@ export class CreateUserComponent extends BaseComponent implements OnInit, AfterV
 
   cancelCreateUser() {
     if (this.fromCommunityManagement) {
-      this.routingService.toOrganisationDetails(this.communityId!, this.orgId!, OrganisationTab.users)
+      this.routingService.toOrganisationDetails(this.communityId!, this.orgId!, Constants.TAB.ORGANISATION.USERS)
     } else {
-      this.routingService.toOwnOrganisationDetails(OrganisationTab.users)
+      this.routingService.toOwnOrganisationDetails(Constants.TAB.ORGANISATION.USERS)
     }
   }
 

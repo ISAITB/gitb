@@ -13,23 +13,22 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { Constants } from 'src/app/common/constants';
-import { BaseComponent } from 'src/app/pages/base-component.component';
-import { ActorService } from 'src/app/services/actor.service';
-import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
-import { ConformanceService } from 'src/app/services/conformance.service';
-import { DataService } from 'src/app/services/data.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { RoutingService } from 'src/app/services/routing.service';
-import { Actor } from 'src/app/types/actor';
-import { Endpoint } from 'src/app/types/endpoint';
-import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
-import { EndpointRepresentation } from './endpoint-representation';
-import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
-import { EndpointParameter } from 'src/app/types/endpoint-parameter';
-import { forkJoin } from 'rxjs';
+import {Component, EventEmitter, OnInit} from '@angular/core';
+import {ActivatedRoute, Router} from '@angular/router';
+import {Constants} from 'src/app/common/constants';
+import {ActorService} from 'src/app/services/actor.service';
+import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
+import {ConformanceService} from 'src/app/services/conformance.service';
+import {DataService} from 'src/app/services/data.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {RoutingService} from 'src/app/services/routing.service';
+import {Actor} from 'src/app/types/actor';
+import {Endpoint} from 'src/app/types/endpoint';
+import {TableColumnDefinition} from 'src/app/types/table-column-definition.type';
+import {EndpointRepresentation} from './endpoint-representation';
+import {BreadcrumbType} from 'src/app/types/breadcrumb-type';
+import {EndpointParameter} from 'src/app/types/endpoint-parameter';
+import {BaseTabbedComponent} from '../../../../base-tabbed-component';
 
 @Component({
     selector: 'app-actor-details',
@@ -37,12 +36,13 @@ import { forkJoin } from 'rxjs';
     styles: [],
     standalone: false
 })
-export class ActorDetailsComponent extends BaseComponent implements OnInit {
+export class ActorDetailsComponent extends BaseTabbedComponent implements OnInit {
 
   actor: Partial<Actor> = {}
   endpoints: Endpoint[] = []
   endpointRepresentations: EndpointRepresentation[] = []
   dataStatus = {status: Constants.STATUS.PENDING}
+  parameterStatus = {status: Constants.STATUS.NONE}
   domainId!: number
   specificationId!: number
   actorId!: number
@@ -61,21 +61,24 @@ export class ActorDetailsComponent extends BaseComponent implements OnInit {
     private readonly actorService: ActorService,
     private readonly confirmationDialogService: ConfirmationDialogService,
     private readonly routingService: RoutingService,
-    private readonly route: ActivatedRoute,
     private readonly popupService: PopupService,
-    public readonly dataService: DataService
-  ) { super() }
+    public readonly dataService: DataService,
+    router: Router,
+    route: ActivatedRoute,
+  ) { super(router, route) }
+
+  loadTab(tabIndex: number) {
+    if (tabIndex == Constants.TAB.ACTOR.PARAMETERS) {
+      this.loadParameters()
+    }
+  }
 
   ngOnInit(): void {
     this.domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
     this.specificationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID))
     this.actorId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ACTOR_ID))
-
-    const actor$ = this.conformanceService.getActor(this.actorId, this.specificationId)
-    const endpoints$ = this.conformanceService.getEndpointsForActor(this.actorId)
-
-    forkJoin([actor$, endpoints$]).subscribe((data) => {
-      this.actor = data[0]
+    this.conformanceService.getActor(this.actorId, this.specificationId).subscribe((data) => {
+      this.actor = data
       if (this.actor.badges) {
         this.actor.badges.specificationId = this.specificationId
         this.actor.badges.actorId = this.actorId
@@ -86,32 +89,42 @@ export class ActorDetailsComponent extends BaseComponent implements OnInit {
         this.actor.badges.otherBadgeForReportActive = this.actor.badges.otherForReport != undefined && this.actor.badges.otherForReport.enabled!
         this.actor.badges.failureBadgeForReportActive = this.actor.badges.failureForReport != undefined && this.actor.badges.failureForReport.enabled!
       }
-      this.endpoints = data[1]
-      this.endpointRepresentations = this.endpoints.map((endpoint) => {
-        const parameters = endpoint.parameters.map((parameter) => {
-          return parameter.name
-        })
-        return {
-          'id': endpoint.id,
-          'name': endpoint.name,
-          'desc': endpoint.description,
-          'parameters': parameters.join(', ')
-        }
-      })
-      if (this.endpoints.length == 0) {
-        setTimeout(() => {
-          this.parametersLoaded.emit([])
-        }, 1)
-      } else if (this.endpoints.length == 1) {
-        setTimeout(() => {
-          this.parametersLoaded.emit(this.endpoints[0].parameters)
-        }, 1)
-      }
       this.routingService.actorBreadcrumbs(this.domainId, this.specificationId, this.actorId, this.actor.actorId)
     }).add(() => {
       this.dataStatus.status = Constants.STATUS.FINISHED
       this.loaded = true
     })
+  }
+
+  private loadParameters() {
+    if (this.parameterStatus.status == Constants.STATUS.NONE) {
+      this.parameterStatus.status = Constants.STATUS.PENDING
+      this.conformanceService.getEndpointsForActor(this.actorId).subscribe((data) => {
+        this.endpoints = data
+        this.endpointRepresentations = this.endpoints.map((endpoint) => {
+          const parameters = endpoint.parameters.map((parameter) => {
+            return parameter.name
+          })
+          return {
+            'id': endpoint.id,
+            'name': endpoint.name,
+            'desc': endpoint.description,
+            'parameters': parameters.join(', ')
+          }
+        })
+        if (this.endpoints.length == 0) {
+          setTimeout(() => {
+            this.parametersLoaded.emit([])
+          }, 1)
+        } else if (this.endpoints.length == 1) {
+          setTimeout(() => {
+            this.parametersLoaded.emit(this.endpoints[0].parameters)
+          }, 1)
+        }
+      }).add(() => {
+        this.parameterStatus.status = Constants.STATUS.FINISHED
+      })
+    }
   }
 
   delete() {

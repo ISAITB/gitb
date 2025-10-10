@@ -37,6 +37,7 @@ class ConformanceTestSuite(
   var failedToConsider: Long,
   var completedToConsider:Long,
   var undefinedToConsider:Long,
+  var hasDisabled: Boolean,
   var testCases: Iterable[ConformanceTestCase],
   var testCaseGroups: Iterable[TestCaseGroup]
 ) extends ResultCountHolder {

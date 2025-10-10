@@ -13,16 +13,13 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, ElementRef, EventEmitter, NgZone, OnInit, ViewChild} from '@angular/core';
+import {Component, ElementRef, EventEmitter, NgZone, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {saveAs} from 'file-saver';
-import {find, map} from 'lodash';
+import {map} from 'lodash';
 import {BsModalService} from 'ngx-bootstrap/modal';
-import {TabsetComponent} from 'ngx-bootstrap/tabs';
 import {finalize, forkJoin, mergeMap, Observable, of, tap} from 'rxjs';
 import {Constants} from 'src/app/common/constants';
-import {CheckboxOption} from 'src/app/components/checkbox-option-panel/checkbox-option';
-import {CheckboxOptionState} from 'src/app/components/checkbox-option-panel/checkbox-option-state';
 import {Counters} from 'src/app/components/test-status-icons/counters';
 import {MissingConfigurationAction} from 'src/app/modals/missing-configuration-modal/missing-configuration-action';
 import {MissingConfigurationModalComponent} from 'src/app/modals/missing-configuration-modal/missing-configuration-modal.component';
@@ -42,14 +39,25 @@ import {EndpointParameter} from 'src/app/types/endpoint-parameter';
 import {LoadingStatus} from 'src/app/types/loading-status.type';
 import {OrganisationParameter} from 'src/app/types/organisation-parameter';
 import {SystemParameter} from 'src/app/types/system-parameter';
-import {ConformanceStatementTab} from './conformance-statement-tab';
 import {ConformanceTestCase} from './conformance-test-case';
 import {ConformanceTestSuite} from './conformance-test-suite';
 import {ConfigurationPropertyVisibility} from 'src/app/types/configuration-property-visibility';
 import {CustomProperty} from 'src/app/types/custom-property.type';
-import {BaseComponent} from '../../base-component.component';
 import {ValidationState} from 'src/app/types/validation-state';
 import {share} from 'rxjs/operators';
+import {TestCaseFilterState} from '../../../components/test-case-filter/test-case-filter-state';
+import {TestCaseFilterOptions} from '../../../components/test-case-filter/test-case-filter-options';
+import {TestCaseFilterApi} from '../../../components/test-case-filter/test-case-filter-api';
+import {NavigationControlsConfig} from '../../../components/navigation-controls/navigation-controls-config';
+import {BaseTabbedComponent} from '../../base-tabbed-component';
+import {PagingEvent} from '../../../components/paging-controls/paging-event';
+import {TestCaseSearchCriteria} from '../../../types/test-case-search-criteria';
+import {ConformanceStatus} from '../../../types/conformance-status';
+import {PagingPlacement} from '../../../components/paging-controls/paging-placement';
+import {PagingControlsApi} from '../../../components/paging-controls/paging-controls-api';
+import {TestSuiteMinimalInfo} from '../../../types/test-suite-minimal-info';
+import {FilterUpdate} from '../../../components/test-filter/filter-update';
+import {TestSuiteDisplayComponentApi} from '../../../components/test-suite-display/test-suite-display-component-api';
 
 @Component({
     selector: 'app-conformance-statement',
@@ -57,7 +65,14 @@ import {share} from 'rxjs/operators';
     styleUrls: ['./conformance-statement.component.less'],
     standalone: false
 })
-export class ConformanceStatementComponent extends BaseComponent implements OnInit, AfterViewInit {
+export class ConformanceStatementComponent extends BaseTabbedComponent implements OnInit {
+
+  @ViewChild('testCaseResultFilter') testCaseResultFilter?: TestCaseFilterApi
+  @ViewChild("pagingControls") pagingControls?: PagingControlsApi
+  @ViewChildren("testSuiteDisplayComponent") testSuiteDisplayComponents?: QueryList<TestSuiteDisplayComponentApi>
+  @ViewChild('conformanceDetailPage') conformanceDetailPage?: ElementRef
+  @ViewChild('statusInfoContainer') statusInfoContainer?: ElementRef
+  @ViewChild('resultsContainer') resultsContainer?: ElementRef
 
   communityId?: number
   communityIdOfStatement!: number
@@ -67,12 +82,14 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
   domainId?: number
   specId?: number
   actorId!: number
-  loadingTests = true
+  updatingTests = true
+  loadingTests: LoadingStatus = {status: Constants.STATUS.NONE}
   loadingConfiguration: LoadingStatus = {status: Constants.STATUS.NONE}
   Constants = Constants
   hasTests = false
+  unfilteredTestCaseCount = 0
+  unfilteredTestSuiteCount = 0
   displayedTestSuites: ConformanceTestSuite[] = []
-  testSuites: ConformanceTestSuite[] = []
   statusCounters?: Counters
   lastUpdate?: string
   conformanceStatus = ''
@@ -80,8 +97,6 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
   deletePending = false
   exportPending = false
   updateConfigurationPending = false
-  tabToShow = ConformanceStatementTab.tests
-  @ViewChild('tabs', { static: false }) tabs?: TabsetComponent;
   collapsedDetails = false
   collapsedDetailsFinished = false
   hasBadge = false
@@ -90,10 +105,38 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
   canEditOrganisationConfiguration = false
   canEditSystemConfiguration = false
   canEditStatementConfiguration = false
+  navigationConfig?: NavigationControlsConfig
+  protected readonly PagingPlacement = PagingPlacement;
 
-  showResults = new Set<string>([Constants.TEST_CASE_RESULT.SUCCESS, Constants.TEST_CASE_RESULT.FAILURE, Constants.TEST_CASE_RESULT.UNDEFINED]);
-  showOptional = true
-  showDisabled = false
+  testSuiteSelectionConfig = {
+    name: "testSuiteChoice",
+    singleSelection: true,
+    singleSelectionClearable: true,
+    singleSelectionPersistent: false,
+    textField: "sname",
+    filterLabel: "Show test suite...",
+    loader: () => this.loadStatementTestSuites()
+  }
+  selectedTestSuite: TestSuiteMinimalInfo|undefined
+
+  testCaseSearchCriteria: TestCaseSearchCriteria = {
+    succeeded: true,
+    failed: true,
+    incomplete: true,
+    optional: true,
+    disabled: false,
+    testSuiteId: undefined,
+    testCaseFilterText: undefined
+  }
+
+  testCaseFilterOptions?: TestCaseFilterOptions
+  testCaseFilterState: TestCaseFilterState = {
+    showSuccessful: this.testCaseSearchCriteria.succeeded,
+    showFailed: this.testCaseSearchCriteria.failed,
+    showIncomplete: this.testCaseSearchCriteria.incomplete,
+    showOptional: this.testCaseSearchCriteria.optional,
+    showDisabled: this.testCaseSearchCriteria.disabled
+  }
 
   executionModeSequential = "backgroundSequential"
   executionModeParallel = "backgroundParallel"
@@ -104,15 +147,6 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
 
   executionMode = this.executionModeInteractive
   executionModeButton = this.executionModeLabelInteractive
-  testCaseFilter?: string
-  private static SHOW_SUCCEEDED = '0'
-  private static SHOW_FAILED = '1'
-  private static SHOW_INCOMPLETE = '2'
-  private static SHOW_OPTIONAL = '3'
-  private static SHOW_DISABLED = '4'
-  testDisplayOptions!: CheckboxOption[][]
-  refreshDisplayOptions = new EventEmitter<CheckboxOption[][]>()
-  refreshTestSuiteDisplay = new EventEmitter<void>()
 
   statement?: ConformanceStatementItem
   systemName?: string
@@ -131,17 +165,15 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
   statementPropertyVisibility?: ConfigurationPropertyVisibility
   propertyValidation = new ValidationState()
 
-  @ViewChild('conformanceDetailPage') conformanceDetailPage?: ElementRef
-  @ViewChild('statusInfoContainer') statusInfoContainer?: ElementRef
-  @ViewChild('resultsContainer') resultsContainer?: ElementRef
   resizeObserver!: ResizeObserver
   resultsWrapped = false
   refreshPending = false
   refreshCounters = new EventEmitter<Counters>()
+  statementExecutionPending = false
 
   constructor(
     public readonly dataService: DataService,
-    private readonly route: ActivatedRoute,
+    route: ActivatedRoute,
     router: Router,
     private readonly conformanceService: ConformanceService,
     private readonly modalService: BsModalService,
@@ -156,19 +188,19 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
     private readonly communityService: CommunityService,
     private readonly zone: NgZone
   ) {
-    super()
-    // Access the tab to show via router state to have it cleared upon refresh.
+    super(router, route)
     const navigation = router.getCurrentNavigation()
     if (navigation?.extras?.state) {
-      const tabParam = navigation.extras.state[Constants.NAVIGATION_PATH_PARAM.TAB]
-      if (tabParam != undefined) {
-        this.tabToShow = ConformanceStatementTab[tabParam as keyof typeof ConformanceStatementTab]
-      }
       this.snapshotLabel = navigation.extras.state[Constants.NAVIGATION_PATH_PARAM.SNAPSHOT_LABEL]
     }
   }
 
   ngAfterViewInit(): void {
+    super.ngAfterViewInit()
+    this.pagingControls?.updateStatus(1, this.unfilteredTestCaseCount)
+    setTimeout(() => {
+      this.updateTestCaseFilterOptions()
+    })
     this.resizeObserver = new ResizeObserver(() => {
       this.zone.run(() => {
         this.calculateWrapping()
@@ -177,11 +209,6 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
     if (this.conformanceDetailPage) {
       this.resizeObserver.observe(this.conformanceDetailPage.nativeElement)
     }
-    setTimeout(() => {
-      if (this.tabToShow == ConformanceStatementTab.configuration) {
-        this.showConfigurationTab()
-      }
-    })
   }
 
   ngOnInit(): void {
@@ -195,17 +222,22 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
       this.snapshotId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.SNAPSHOT_ID))
     }
     this.isReadonly = this.snapshotId != undefined
-    this.prepareTestFilter()
-    this.loadData()
+    // Remember where 'back' needs to take us
+    if (sessionStorage) {
+      const fromDashboard = sessionStorage.getItem(Constants.SESSION_DATA.FROM_DASHBOARD) === "true"
+      if (!fromDashboard) sessionStorage.setItem(Constants.SESSION_DATA.FROM_DASHBOARD, "false")
+    }
+    this.loadInitialData()
   }
 
-  private loadData(): Observable<any> {
+  private loadInitialData(): Observable<any> {
     // Load conformance statement and its results.
     const statementsLoaded = this.conformanceService.getConformanceStatement(this.systemId, this.actorId, this.snapshotId)
     const snapshotLabelLoaded = this.retrieveSnapshotLabel(this.snapshotId, this.snapshotLabel)
     const obs$ = forkJoin([statementsLoaded, snapshotLabelLoaded]).pipe(
       tap((results) => {
         const statementData = results[0]
+        const status = statementData.results.data[0]
         let snapshotLabel: string|undefined
         if (results[1]) {
           snapshotLabel = results[1]
@@ -227,52 +259,120 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
         // IDs.
         this.domainId = this.findByType([this.statement]!, Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.DOMAIN)!.id
         this.specId = this.findByType([this.statement]!, Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION)!.id
-        // Test results.
-        for (let testSuite of statementData.results.testSuites) {
-          testSuite.hasDisabledTestCases = find(testSuite.testCases, (testCase) => testCase.disabled) != undefined
-          testSuite.hasOptionalTestCases = find(testSuite.testCases, (testCase) => testCase.optional) != undefined
-          if (!this.hasDisabledTests && testSuite.hasDisabledTestCases) {
-            this.hasDisabledTests = true
-          }
-          if (!this.hasOptionalTests && testSuite.hasOptionalTestCases) {
-            this.hasOptionalTests = true
-          }
-          testSuite.testCaseGroupMap = this.dataService.toTestCaseGroupMap(testSuite.testCaseGroups)
-        }
-        this.testSuites = statementData.results.testSuites
-        this.displayedTestSuites = this.testSuites
-        this.statusCounters = {
-          completed: statementData.results.summary.completed,
-          failed: statementData.results.summary.failed,
-          other: statementData.results.summary.undefined,
-          completedOptional: statementData.results.summary.completedOptional,
-          failedOptional: statementData.results.summary.failedOptional,
-          otherOptional: statementData.results.summary.undefinedOptional,
-          completedToConsider: statementData.results.summary.completedToConsider,
-          failedToConsider: statementData.results.summary.failedToConsider,
-          otherToConsider: statementData.results.summary.undefinedToConsider
-        }
-        this.lastUpdate = statementData.results.summary.updateTime
-        if (this.lastUpdate) {
-          this.hasTests = true
-        }
-        this.conformanceStatus = statementData.results.summary.result
-        this.allTestsSuccessful = this.conformanceStatus == Constants.TEST_CASE_RESULT.SUCCESS
-        this.hasBadge = statementData.results.summary.hasBadge
+        this.prepareNavigationConfig()
+        this.hasBadge = status.summary.hasBadge
         this.canEditOrganisationConfiguration = this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || (this.dataService.isVendorAdmin && (this.dataService.community!.allowPostTestOrganisationUpdates || !this.hasTests))
         this.canEditSystemConfiguration = this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || (this.dataService.isVendorAdmin && (this.dataService.community!.allowPostTestSystemUpdates || !this.hasTests))
         this.canEditStatementConfiguration = this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || (this.dataService.isVendorAdmin && (this.dataService.community!.allowPostTestStatementUpdates || !this.hasTests))
-        this.prepareTestFilter()
-        this.applySearchFilters()
-        this.loadingTests = false
+        // Test results.
+        this.processTestResults(status)
+        this.unfilteredTestCaseCount = statementData.results.count
+        this.unfilteredTestSuiteCount = status.testSuiteCount
+        this.pagingControls?.updateStatus(1, statementData.results.count)
       }),
       finalize(() => {
-        this.loadingTests = false
+        this.updatingTests = false
+        this.loadingTests.status = Constants.STATUS.FINISHED
       }),
       share()
     )
     obs$.subscribe()
     return obs$
+  }
+
+  private processTestResults(status: ConformanceStatus) {
+    this.hasDisabledTests = status.summary.hasDisabled
+    this.hasOptionalTests = status.summary.completedOptional > 0 || status.summary.failedOptional > 0 || status.summary.undefinedOptional > 0
+    for (let testSuite of status.testSuites) {
+      testSuite.testCaseGroupMap = this.dataService.toTestCaseGroupMap(testSuite.testCaseGroups)
+    }
+    this.displayedTestSuites = status.testSuites
+    this.displayedTestSuites.forEach(testSuite => {
+      testSuite.expanded = true
+    })
+    this.statusCounters = {
+      completed: status.summary.completed,
+      failed: status.summary.failed,
+      other: status.summary.undefined,
+      completedOptional: status.summary.completedOptional,
+      failedOptional: status.summary.failedOptional,
+      otherOptional: status.summary.undefinedOptional,
+      completedToConsider: status.summary.completedToConsider,
+      failedToConsider: status.summary.failedToConsider,
+      otherToConsider: status.summary.undefinedToConsider
+    }
+    this.lastUpdate = status.summary.updateTime
+    if (this.lastUpdate) {
+      this.hasTests = true
+    }
+    this.conformanceStatus = status.summary.result
+    this.allTestsSuccessful = this.conformanceStatus == Constants.TEST_CASE_RESULT.SUCCESS
+    this.updateTestCaseFilterOptions()
+  }
+
+  private updateTestCaseFilterOptions() {
+    this.testCaseFilterOptions = {
+      initialState: {
+        showOptional: true,
+        showDisabled: false,
+        showSuccessful: true,
+        showFailed: true,
+        showIncomplete: true
+      },
+      showOptional: this.hasOptionalTests,
+      showDisabled: this.hasDisabledTests
+    }
+    this.testCaseResultFilter?.refreshOptions(this.testCaseFilterOptions, true)
+  }
+
+  loadTab(tabIndex: number) {
+    if (tabIndex == Constants.TAB.CONFORMANCE_STATEMENT.CONFIGURATION) {
+      this.showConfigurationTab()
+    }
+  }
+
+  testSuitePageNavigation(pagingInfo: PagingEvent) {
+    this.loadConformanceTestsInternal(pagingInfo)
+  }
+
+  private loadConformanceTests() {
+    return this.loadConformanceTestsInternal({ targetPage: 1, targetPageSize: Constants.TABLE_PAGE_SIZE })
+  }
+
+  private loadConformanceTestsInternal(pagingInfo: PagingEvent): Observable<any> {
+    this.updatingTests = true
+    const obs$ = this.conformanceService.getConformanceStatementTests(this.systemId, this.actorId, this.snapshotId, this.testCaseSearchCriteria, pagingInfo.targetPage, pagingInfo.targetPageSize).pipe(
+      tap((data) => {
+        this.processTestResults(data.data[0])
+        setTimeout(() => {
+          this.testSuiteDisplayComponents?.forEach((component) => {
+            component.refresh()
+          })
+          if (this.statusCounters) {
+            this.refreshCounters.emit(this.statusCounters)
+          }
+          this.pagingControls?.updateStatus(pagingInfo.targetPage, data.count)
+        })
+      }),
+      finalize(() => {
+        this.updatingTests = false
+      }),
+      share()
+    )
+    obs$.subscribe()
+    return obs$
+  }
+
+  private prepareNavigationConfig() {
+    this.navigationConfig = {
+      systemId: this.systemId,
+      organisationId: this.organisationId,
+      communityId: this.communityIdOfStatement,
+      actorId: this.actorId,
+      specificationId: this.specId,
+      domainId: this.domainId,
+      showStatement: false
+    }
   }
 
   private retrieveSnapshotLabel(snapshotId: number|undefined, labelFromNavigation: string|undefined): Observable<string|null> {
@@ -317,21 +417,6 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
     if (this.tabs) {
       this.tabs.tabs[1].active = true
     }
-  }
-
-  private prepareTestFilter(): void {
-    this.testDisplayOptions = [[
-        {key: ConformanceStatementComponent.SHOW_SUCCEEDED, label: 'Succeeded tests', default: true, iconClass: this.dataService.iconForTestResult(Constants.TEST_CASE_RESULT.SUCCESS)},
-        {key: ConformanceStatementComponent.SHOW_FAILED, label: 'Failed tests', default: true, iconClass: this.dataService.iconForTestResult(Constants.TEST_CASE_RESULT.FAILURE)},
-        {key: ConformanceStatementComponent.SHOW_INCOMPLETE, label: 'Incomplete tests', default: true, iconClass: this.dataService.iconForTestResult(Constants.TEST_CASE_RESULT.UNDEFINED)}
-    ]]
-    if (this.hasOptionalTests) {
-      this.testDisplayOptions.push([{key: ConformanceStatementComponent.SHOW_OPTIONAL, label: 'Optional tests', default: true}])
-    }
-    if (this.hasDisabledTests) {
-      this.testDisplayOptions.push([{key: ConformanceStatementComponent.SHOW_DISABLED, label: 'Disabled tests', default: false}])
-    }
-    this.refreshDisplayOptions.emit(this.testDisplayOptions)
   }
 
   private findByType(items: ConformanceStatementItem[], itemType: number): ConformanceStatementItem|undefined {
@@ -386,76 +471,18 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
     }
   }
 
-  resultFilterUpdated(choices: CheckboxOptionState) {
-    this.showOptional = choices[ConformanceStatementComponent.SHOW_OPTIONAL]
-    this.showDisabled = choices[ConformanceStatementComponent.SHOW_DISABLED]
-    if (choices[ConformanceStatementComponent.SHOW_SUCCEEDED]) {
-      this.showResults.add(Constants.TEST_CASE_RESULT.SUCCESS)
-    } else {
-      this.showResults.delete(Constants.TEST_CASE_RESULT.SUCCESS)
-    }
-    if (choices[ConformanceStatementComponent.SHOW_FAILED]) {
-      this.showResults.add(Constants.TEST_CASE_RESULT.FAILURE)
-    } else {
-      this.showResults.delete(Constants.TEST_CASE_RESULT.FAILURE)
-    }
-    if (choices[ConformanceStatementComponent.SHOW_INCOMPLETE]) {
-      this.showResults.add(Constants.TEST_CASE_RESULT.UNDEFINED)
-    } else {
-      this.showResults.delete(Constants.TEST_CASE_RESULT.UNDEFINED)
-    }
+  resultFilterUpdated(choices: TestCaseFilterState) {
+    this.testCaseFilterState = choices
+    this.testCaseSearchCriteria.succeeded = choices.showSuccessful
+    this.testCaseSearchCriteria.failed = choices.showFailed
+    this.testCaseSearchCriteria.incomplete = choices.showIncomplete
+    this.testCaseSearchCriteria.optional = choices.showOptional
+    this.testCaseSearchCriteria.disabled = choices.showDisabled
     this.applySearchFilters()
   }
 
   applySearchFilters() {
-    let testCaseFilter = this.testCaseFilter
-    if (testCaseFilter != undefined) {
-      testCaseFilter = testCaseFilter.trim()
-      if (testCaseFilter.length == 0) {
-        testCaseFilter = undefined
-      } else {
-        testCaseFilter = testCaseFilter.toLocaleLowerCase()
-      }
-    }
-    let filteredTestSuites: ConformanceTestSuite[] = []
-    for (let testSuite of this.testSuites) {
-      let testCases: ConformanceTestCase[] = []
-      for (let testCase of testSuite.testCases) {
-        if (this.showResults.has(testCase.result)
-          && (!testCase.optional || this.showOptional)
-          && (!testCase.disabled || this.showDisabled)
-          && (testCaseFilter == undefined ||
-              (testCase.sname.toLocaleLowerCase().indexOf(testCaseFilter) >= 0) ||
-              (testCase.description != undefined && testCase.description.toLocaleLowerCase().indexOf(testCaseFilter) >= 0))) {
-          testCases.push(testCase)
-        }
-      }
-      if (testCases.length > 0) {
-        filteredTestSuites.push({
-          id: testSuite.id,
-          sname: testSuite.sname,
-          result: testSuite.result,
-          hasDocumentation: testSuite.hasDocumentation,
-          expanded: true,
-          description: testSuite.description,
-          hasOptionalTestCases: testSuite.hasOptionalTestCases && this.showOptional,
-          hasDisabledTestCases: testSuite.hasDisabledTestCases && this.showDisabled,
-          testCases: testCases,
-          testCaseGroups: testSuite.testCaseGroups,
-          testCaseGroupMap: testSuite.testCaseGroupMap,
-          specReference: testSuite.specReference,
-          specDescription: testSuite.specDescription,
-          specLink: testSuite.specLink
-        })
-      }
-    }
-    this.displayedTestSuites = filteredTestSuites
-    for (let testSuite of this.displayedTestSuites) {
-      this.dataService.prepareTestCaseGroupPresentation(testSuite.testCases, testSuite.testCaseGroupMap)
-    }
-    setTimeout(() => {
-      this.refreshTestSuiteDisplay.emit()
-    })
+    this.loadConformanceTests()
   }
 
   private validateConfiguration(testSuite: ConformanceTestSuite|undefined, testCase: ConformanceTestCase|undefined): Observable<boolean> {
@@ -463,6 +490,8 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
       testSuite.executionPending = true
     } else if (testCase) {
       testCase.executionPending = true
+    } else {
+      this.statementExecutionPending = true
     }
     // Check configurations
     const organisationParameterCheck = this.organisationService.checkOrganisationParameterValues(this.organisationId)
@@ -482,6 +511,8 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
           testSuite.executionPending = false
         } else if (testCase) {
           testCase.executionPending = false
+        } else {
+          this.statementExecutionPending = false
         }
         if (!configurationValid || !systemConfigurationValid || !organisationConfigurationValid) {
           // Missing configuration.
@@ -568,27 +599,38 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
     })
   }
 
-  onTestSuiteSelect(testSuite: ConformanceTestSuite) {
+  onMultipleTestSelect(testSuite?: ConformanceTestSuite) {
     // Check status once everything is loaded.
     this.validateConfiguration(testSuite, undefined).subscribe((proceed) => {
       if (proceed) {
-        // Proceed with execution.
-        const testsToExecute: ConformanceTestCase[] = []
-        for (let testCase of testSuite.testCases) {
-          if (!testCase.disabled) {
-            testsToExecute.push(testCase)
-          }
-        }
-        if (this.executionMode == this.executionModeInteractive) {
-          this.dataService.setTestsToExecute(testsToExecute)
-          if (this.communityId == undefined) {
-            this.routingService.toOwnTestSuiteExecution(this.organisationId, this.systemId, this.actorId, testSuite.id)
-          } else {
-            this.routingService.toTestSuiteExecution(this.communityId, this.organisationId, this.systemId, this.actorId, testSuite.id)
-          }
-        } else {
-          this.executeHeadless(testsToExecute)
-        }
+        const searchCriteria = {...this.testCaseSearchCriteria}
+        searchCriteria.disabled = false
+        searchCriteria.testSuiteId = testSuite?.id
+        this.conformanceService.getConformanceStatementTests(this.systemId, this.actorId, this.snapshotId, searchCriteria, 1, 1000000)
+          .subscribe((data) => {
+            const testsToExecute: ConformanceTestCase[] = []
+            data.data[0].testSuites.forEach(testSuite => {
+              testsToExecute.push(...testSuite.testCases)
+            })
+            if (this.executionMode == this.executionModeInteractive) {
+              this.dataService.setTestsToExecute(testsToExecute)
+              if (this.communityId == undefined) {
+                if (testSuite) {
+                  this.routingService.toOwnTestSuiteExecution(this.organisationId, this.systemId, this.actorId, testSuite.id)
+                } else {
+                  this.routingService.toOwnStatementExecution(this.organisationId, this.systemId, this.actorId)
+                }
+              } else {
+                if (testSuite) {
+                  this.routingService.toTestSuiteExecution(this.communityId, this.organisationId, this.systemId, this.actorId, testSuite.id)
+                } else {
+                  this.routingService.toStatementExecution(this.communityId, this.organisationId, this.systemId, this.actorId)
+                }
+              }
+            } else {
+              this.executeHeadless(testsToExecute)
+            }
+          })
       }
     })
   }
@@ -677,58 +719,6 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
     }
   }
 
-  toCommunity() {
-    this.routingService.toCommunity(this.communityId!)
-  }
-
-  toOrganisation() {
-    if (this.communityId == undefined || this.organisationId == this.dataService.vendor!.id) {
-      this.routingService.toOwnOrganisationDetails()
-    } else {
-      this.routingService.toOrganisationDetails(this.communityId!, this.organisationId)
-    }
-  }
-
-  toSystem() {
-    if (this.communityId == undefined || this.organisationId == this.dataService.vendor!.id) {
-      this.routingService.toOwnSystemDetails(this.systemId)
-    } else {
-      this.routingService.toSystemDetails(this.communityId!, this.organisationId, this.systemId)
-    }
-  }
-
-  toDomain() {
-    this.routingService.toDomain(this.domainId!)
-  }
-
-  toSpecification() {
-    this.routingService.toSpecification(this.domainId!, this.specId!)
-  }
-
-  toActor() {
-    this.routingService.toActor(this.domainId!, this.specId!, this.actorId)
-  }
-
-  showToCommunity() {
-    return this.communityId != undefined && (this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin)
-  }
-
-  showToDomain() {
-    return this.domainId != undefined && this.domainId >= 0 && (
-      this.dataService.isSystemAdmin || (
-        this.dataService.isCommunityAdmin && this.dataService.community?.domain != undefined
-      )
-    )
-  }
-
-  showToSpecification() {
-    return this.showToDomain() && this.specId != undefined && this.specId >= 0
-  }
-
-  showToActor() {
-    return this.showToSpecification() && this.actorId >= 0
-  }
-
   toggleOverviewCollapse(value: boolean) {
     setTimeout(() => {
       this.collapsedDetailsFinished = value
@@ -739,7 +729,20 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
     if (this.communityId == undefined) {
       this.routingService.toOwnConformanceStatements(this.organisationId, this.systemId, this.snapshotId)
     } else {
-      this.routingService.toConformanceStatements(this.communityId, this.organisationId, this.systemId, this.snapshotId)
+      let fromDashBoard = false
+      if (sessionStorage) {
+        fromDashBoard = sessionStorage.getItem(Constants.SESSION_DATA.FROM_DASHBOARD) === "true"
+        sessionStorage.removeItem(Constants.SESSION_DATA.FROM_DASHBOARD)
+      }
+      if (fromDashBoard) {
+        let communityId: number|undefined
+        if (this.dataService.isSystemAdmin) {
+          communityId = this.communityId
+        }
+        this.routingService.toConformanceDashboard(communityId, this.organisationId, this.systemId, this.snapshotId)
+      } else {
+        this.routingService.toConformanceStatements(this.communityId, this.organisationId, this.systemId, this.snapshotId)
+      }
     }
   }
 
@@ -751,12 +754,28 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
 
   refresh() {
     this.refreshPending = true
-    this.loadData().subscribe(() => {
-      if (this.statusCounters) {
-        this.refreshCounters.emit(this.statusCounters)
-      }
-      this.refreshTestSuiteDisplay.emit()
-      this.refreshPending = false
+    this.loadConformanceTests().subscribe(() => {
+        this.refreshPending = false
     })
   }
+
+  private loadStatementTestSuites(): Observable<TestSuiteMinimalInfo[]> {
+    return this.conformanceService.getConformanceStatementTestSuitesForFiltering(this.systemId, this.actorId, this.snapshotId)
+  }
+
+  selectedTestSuiteChanged(event: FilterUpdate<TestSuiteMinimalInfo>) {
+    if (event.values.active.length == 0) {
+      this.testCaseSearchCriteria.testSuiteId = undefined
+    } else {
+      this.testCaseSearchCriteria.testSuiteId = event.values.active[0].id
+    }
+    this.applySearchFilters()
+  }
+
+  onTestCaseOptionsOpened(testCase: ConformanceTestCase) {
+    this.testSuiteDisplayComponents?.forEach((component) => {
+      component.closeOptions(testCase)
+    })
+  }
+
 }

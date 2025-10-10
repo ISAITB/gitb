@@ -140,22 +140,24 @@ class SessionLaunchState {
     if (onlySimple) {
       // Include only the configuration values that are simple texts
       SessionConfigurationData(
-        Some(data.get.statementParameters.map { x =>
+        statementParameters = Some(data.get.statementParameters.map { x =>
           TypedActorConfiguration(x.actor, x.endpoint, x.config.filter(_.kind == "SIMPLE"))
         }),
-        data.get.domainParameters.map { x =>
+        domainParameters = data.get.domainParameters.map { x =>
           TypedActorConfiguration(x.actor, x.endpoint, x.config.filter(_.kind == "SIMPLE"))
         },
-        Some(TypedActorConfiguration(data.get.organisationParameters.actor, data.get.organisationParameters.endpoint, data.get.organisationParameters.config.filter(_.kind == "SIMPLE"))),
-        Some(TypedActorConfiguration(data.get.systemParameters.actor, data.get.systemParameters.endpoint, data.get.systemParameters.config.filter(_.kind == "SIMPLE")))
+        organisationParameters = Some(TypedActorConfiguration(data.get.organisationParameters.actor, data.get.organisationParameters.endpoint, data.get.organisationParameters.config.filter(_.kind == "SIMPLE"))),
+        systemParameters = Some(TypedActorConfiguration(data.get.systemParameters.actor, data.get.systemParameters.endpoint, data.get.systemParameters.config.filter(_.kind == "SIMPLE"))),
+        testServiceParameters = data.get.testServiceParameters
       )
     } else {
       // Include all configuration values
       SessionConfigurationData(
-        Some(data.get.statementParameters),
-        data.get.domainParameters,
-        Some(data.get.organisationParameters),
-        Some(data.get.systemParameters)
+        statementParameters = Some(data.get.statementParameters),
+        domainParameters = data.get.domainParameters,
+        organisationParameters = Some(data.get.organisationParameters),
+        systemParameters = Some(data.get.systemParameters),
+        testServiceParameters = data.get.testServiceParameters
       )
     }
   }

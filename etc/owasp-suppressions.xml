@@ -121,43 +121,22 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
-        file name: commons-lang3-3.17.0.jar
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.apache\.commons/commons-lang3@.*$</packageUrl>
-        <vulnerabilityName>CVE-2025-48924</vulnerabilityName>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-    file name: tomcat-embed-core-10.1.42.jar
-    ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/tomcat-embed-.*@.*$</packageUrl>
-        <cve>CVE-2025-52520</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-    file name: tomcat-embed-core-10.1.42.jar
-    ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/tomcat-embed-.*@.*$</packageUrl>
-        <cve>CVE-2025-53506</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-    file name: jena-core-5.2.0.jar
-    ]]></notes>
+   file name: jena-core-5.2.0.jar
+   ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.apache\.jena/jena-.*@.*$</packageUrl>
         <cve>CVE-2025-50151</cve>
     </suppress>
     <suppress>
         <notes><![CDATA[
-    file name: jena-core-5.2.0.jar
-    ]]></notes>
+   file name: jena-core-5.2.0.jar
+   ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.apache\.jena/jena-.*@.*$</packageUrl>
         <cve>CVE-2025-49656</cve>
     </suppress>
     <suppress>
         <notes><![CDATA[
-    file name: protobuf-java-4.28.2.jar
-    ]]></notes>
+   file name: protobuf-java-4.28.2.jar
+   ]]></notes>
         <packageUrl regex="true">^pkg:maven/com\.google\.protobuf/protobuf-java@.*$</packageUrl>
         <cve>CVE-2024-7254</cve>
     </suppress>
@@ -167,13 +146,6 @@
     ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty/jetty-.*@.*$</packageUrl>
         <cve>CVE-2025-1948</cve>
-    </suppress>    
-    <suppress>
-        <notes><![CDATA[
-    file name: cxf-core-4.1.2.jar
-    ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.apache\.cxf/cxf-.*@.*$</packageUrl>
-        <cve>CVE-2025-48913</cve>
     </suppress>
     <suppress>
         <notes><![CDATA[
@@ -181,20 +153,6 @@
     ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.springframework/spring-.*@.*$</packageUrl>
         <vulnerabilityName>CVE-2025-41242</vulnerabilityName>
-    </suppress>
-   <suppress>
-        <notes><![CDATA[
-   file name: tomcat-embed-core-10.1.42.jar
-   ]]></notes>
-       <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/tomcat-embed-.*@.*$</packageUrl>
-       <cve>CVE-2025-48989</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-    file name: tika-core-3.1.0.jar
-    ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.apache\.tika/tika-core@.*$</packageUrl>
-        <cve>CVE-2025-54988</cve>
     </suppress>
     <suppress>
         <notes><![CDATA[
@@ -216,5 +174,12 @@
    ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.springframework\.security/spring-.*@.*$</packageUrl>
         <vulnerabilityName>CVE-2025-41248</vulnerabilityName>
-    </suppress>    
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: logback-core-1.5.18.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/ch\.qos\.logback/logback-.*@.*$</packageUrl>
+        <vulnerabilityName>CVE-2025-11226</vulnerabilityName>
+    </suppress>
 </suppressions>

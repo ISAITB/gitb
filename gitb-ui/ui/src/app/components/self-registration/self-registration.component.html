@@ -11,12 +11,14 @@
         <div>
             <div [ngClass]="{'link-account-separator': sso, 'mb-0': !sso}">
                 <div class="alert alert-info rounded">
-                    <p>Select the community you want to register for and provide the requested information. If your community is not listed you need to request from an administrator to register you on your behalf.</p>
+                    <p class="mb-0">Select the community you want to register for and provide the requested information. If your community is not listed you need to request from an administrator to register you on your behalf.</p>
+                    <p class="mb-0 mt-2">
                     @if (sso) {
-                        <span><b>Privacy note:</b> By registering you grant your consent to link your name, email and EU Login user ID to your new administrator account.</span>
+                        <span><b>Privacy note:</b> By registering you grant your consent to link your name, email and user ID to your new account.</span>
                     } @else {
-                        <span><b>Privacy note:</b> By registering you grant your consent to link the provided information to your new administrator account.</span>
+                        <span><b>Privacy note:</b> By registering you grant your consent to link the provided information to your new account.</span>
                     }
+                    </p>
                 </div>
             </div>
             <app-form-section sectionTitle="Community">
@@ -34,7 +36,7 @@
                     @if (model.selfRegOption?.selfRegType == Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN) {
                         <div>
                             <div class="row mt-3">
-                                <label class="col-3 col-form-label text-end" for="token">* Registration token:</label>
+                                <label class="col-3 col-form-label text-end" for="token">* Token:</label>
                                 <div class="col-7">
                                     <input id="token" [(ngModel)]="model.selfRegToken" class="form-control" type="text" [invalid]="validation?.get('token')"/>
                                 </div>
@@ -53,74 +55,106 @@
             </app-form-section>
             @if (model && model.selfRegOption) {
                 <app-form-section [sectionTitle]="dataService.labelOrganisation() + ' details'" [marginBefore]="true" [marginAfter]="!sso" titleTooltip="This information defines the member of the selected community through which will you be testing for conformance.">
-                    <div class="row mt-3">
-                        <label class="col-3 col-form-label text-end" for="orgShortName">* Short name:</label>
-                        <div class="col-7">
-                            <input id="orgShortName" [(ngModel)]="model.orgShortName" class="form-control" type="text"/>
-                        </div>
-                        <div app-tooltip class="col-auto" tbTooltip="A short name for your {{dataService.labelOrganisationLower()}} to appear in reports."></div>
-                    </div>
-                    <div class="row mt-3">
-                        <label class="col-3 col-form-label text-end" for="orgFullName">* Full name:</label>
-                        <div class="col-7">
-                            <input id="orgFullName" [(ngModel)]="model.orgFullName" class="form-control" type="text"/>
-                        </div>
-                        <div app-tooltip class="col-auto" tbTooltip="The complete name of your {{dataService.labelOrganisationLower()}}."></div>
-                    </div>
-                    @if (model.selfRegOption.templates && model.selfRegOption!.templates!.length > 0) {
-                        <div class="row mt-3">
-                            <label class="col-3 col-form-label text-end" for="template"><span [hidden]="!model.selfRegOption.forceTemplateSelection">* </span>Configuration:</label>
+                    @if (model.selfRegOption.organisationTokensEnabled && !model.selfRegOption.forceOrganisationTokenInput) {
+                        <div class="row mt-3 pt-1">
+                            <legend class="col-3 col-form-label text-end pt-0">* Registration:</legend>
                             <div class="col-7">
-                                <select id="template" name="template" class="form-select" [disabled]="templateReadonly" [(ngModel)]="model.template" [invalid]="validation?.get('template')">
-                                    <option value="" disabled></option>
-                                    @for (template of model.selfRegOption.templates; track template.id) {
-                                        <option [ngValue]="template">{{template.name}}</option>
-                                    }
-                                </select>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" [(ngModel)]="model.newOrganisation" name="newOrganisation" id="type_new" [value]="true" (change)="registrationTypeChanged()">
+                                    <label class="form-check-label" for="type_new">In new {{ dataService.labelOrganisationLower() }}
+                                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" [tbTooltip]="`Register a new ${dataService.labelOrganisationLower()}.`"></div>
+                                    </label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" [(ngModel)]="model.newOrganisation" name="newOrganisation" id="type_existing" [value]="false" (change)="registrationTypeChanged()">
+                                    <label class="form-check-label" for="type_existing">In existing {{ dataService.labelOrganisationLower() }}
+                                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" [tbTooltip]="`Register in an existing ${dataService.labelOrganisationLower()}.`"></div>
+                                    </label>
+                                </div>
                             </div>
-                            <div app-tooltip class="col-auto" tbTooltip="Predefined test configuration(s) curated by the community administrator."></div>
                         </div>
                     }
-                    @if (model.selfRegOption.organisationProperties && model.selfRegOption!.organisationProperties!.length > 0) {
-                        <div class="row">
-                          <div class="col-12">
-                            <div class="form-separator mt-3 mb-0"></div>
-                          </div>
-                        </div>
-                    }
-                    @if (model.selfRegOption) {
-                        <app-custom-property-form
-                            [refresh]="refreshSignal"
-                            [tbProperties]="model.selfRegOption!.organisationProperties"
-                            [tbShowFormHeader]="false"
-                            [tbFormPadded]="false"
-                            [tbColInputLess]="1"
-                            [tbShowRequiredAsterisks]="model.selfRegOption!.forceRequiredProperties"
-                            [tbForceEditable]="true"
-                            [tbSetDefaults]="true"
-                            [tbPropertyType]="'organisation'"></app-custom-property-form>
-                    }
+                    <div [collapse]="organisationFormCollapsed" [isAnimated]="organisationFormAnimated">
+                        @if (model.newOrganisation === false) {
+                            <div class="row mt-3">
+                                <label class="col-3 col-form-label text-end" for="orgToken">* Token:</label>
+                                <div class="col-7">
+                                    <input id="orgToken" [(ngModel)]="model.orgToken" class="form-control" type="text" [invalid]="validation?.get('orgToken')">
+                                </div>
+                                <div app-tooltip class="col-auto" tbTooltip="The token used to directly register in a specific, existing {{dataService.labelOrganisationLower()}}. You need to request this from the community or {{dataService.labelOrganisationLower()}} administrator."></div>
+                            </div>
+                        } @else if (model.newOrganisation === true) {
+                            <div class="row mt-3">
+                                <label class="col-3 col-form-label text-end" for="orgShortName">* Short name:</label>
+                                <div class="col-7">
+                                    <input id="orgShortName" name="orgShortName" [(ngModel)]="model.orgShortName" class="form-control" type="text"/>
+                                </div>
+                                <div app-tooltip class="col-auto" tbTooltip="A short name for your {{dataService.labelOrganisationLower()}} to appear in reports."></div>
+                            </div>
+                            <div class="row mt-3">
+                                <label class="col-3 col-form-label text-end" for="orgFullName">* Full name:</label>
+                                <div class="col-7">
+                                    <input id="orgFullName" name="orgFullName" [(ngModel)]="model.orgFullName" class="form-control" type="text"/>
+                                </div>
+                                <div app-tooltip class="col-auto" tbTooltip="The complete name of your {{dataService.labelOrganisationLower()}}."></div>
+                            </div>
+                            @if (model.selfRegOption.templates && model.selfRegOption!.templates!.length > 0) {
+                                <div class="row mt-3">
+                                    <label class="col-3 col-form-label text-end" for="template"><span [hidden]="!model.selfRegOption.forceTemplateSelection">* </span>Configuration:</label>
+                                    <div class="col-7">
+                                        <select id="template" name="template" class="form-select" [disabled]="templateReadonly" [(ngModel)]="model.template" [invalid]="validation?.get('template')">
+                                            <option value="" disabled></option>
+                                            @for (template of model.selfRegOption.templates; track template.id) {
+                                                <option [ngValue]="template">{{template.name}}</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div app-tooltip class="col-auto" tbTooltip="Predefined test configuration(s) curated by the community administrator."></div>
+                                </div>
+                            }
+                            @if (model.selfRegOption.organisationProperties && model.selfRegOption!.organisationProperties!.length > 0) {
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="form-separator mt-3 mb-0"></div>
+                                    </div>
+                                </div>
+                            }
+                            @if (model.selfRegOption) {
+                                <app-custom-property-form
+                                    [refresh]="refreshSignal"
+                                    [tbProperties]="model.selfRegOption!.organisationProperties"
+                                    [tbShowFormHeader]="false"
+                                    [tbFormPadded]="false"
+                                    [tbColInputLess]="1"
+                                    [tbShowRequiredAsterisks]="model.selfRegOption!.forceRequiredProperties"
+                                    [tbForceEditable]="true"
+                                    [tbSelfRegistration]="true"
+                                    [tbSetDefaults]="true"
+                                    [tbPropertyType]="'organisation'"></app-custom-property-form>
+                            }
+                        }
+                    </div>
                 </app-form-section>
                 @if (!sso) {
-                    <app-form-section [marginAfter]="false" sectionTitle="Administrator account details" [titleTooltip]="'Through your administrator account you can manage your ' + dataService.labelOrganisationLower() + ' users, configure your conformance statements and execute tests.'">
+                    <app-form-section [marginAfter]="false" sectionTitle="Account details" [titleTooltip]="'Through your account you can manage your ' + dataService.labelOrganisationLower() + ' users, configure your conformance statements and execute tests.'">
                         <div class="row my-3">
                             <label class="col-3 col-form-label text-end" for="adminName">* Name:</label>
                             <div class="col-7">
-                                <input id="adminName" [(ngModel)]="model.adminName" class="form-control" type="text"/>
+                                <input id="adminName" name="adminName" [(ngModel)]="model.adminName" class="form-control" type="text"/>
                             </div>
                             <div app-tooltip class="col-auto" tbTooltip="This may be your name or a description in case this account will be shared by multiple people."></div>
                         </div>
                         <div class="row mb-3">
                             <label class="col-3 col-form-label text-end" for="adminEmail">* Username:</label>
                             <div class="col-7">
-                                <input id="adminEmail" [(ngModel)]="model.adminEmail" class="form-control" type="text" [invalid]="validation?.get('adminEmail')"/>
+                                <input id="adminEmail" name="adminEmail" [(ngModel)]="model.adminEmail" class="form-control" type="text" [invalid]="validation?.get('adminEmail')"/>
                             </div>
                             <div app-tooltip class="col-auto" tbTooltip="This is your account's username."></div>
                         </div>
                         <div class="row">
                             <label class="col-3 col-form-label text-end" for="adminPassword">* Password:</label>
                             <div class="col-7">
-                                <app-secret-input id="adminPassword" name="adminPassword" [(ngModel)]="model.adminPassword" [validation]="validation?.get('new')"></app-secret-input>
+                                <app-secret-input inputId="adminPassword" inputName="adminPassword" name="adminPasswordSecret" [autocomplete]="'new-password'" [(ngModel)]="model.adminPassword" [validation]="validation?.get('new')"></app-secret-input>
                             </div>
                             <div app-tooltip class="col-auto" tbTooltip="The account's password, to be provided with the username when logging in."></div>
                         </div>

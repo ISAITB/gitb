@@ -13,18 +13,24 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { filter } from 'lodash';
-import { ConformanceStatementItem } from 'src/app/types/conformance-statement-item';
-import { ConformanceStatementResult } from 'src/app/types/conformance-statement-result';
-import { Counters } from '../test-status-icons/counters';
-import { DataService } from 'src/app/services/data.service';
-import { Constants } from 'src/app/common/constants';
-import { ConformanceStatus } from 'src/app/types/conformance-status';
-import { Observable } from 'rxjs';
-import { ConformanceTestSuite } from 'src/app/pages/organisation/conformance-statement/conformance-test-suite';
-import { ConformanceStatusSummary } from 'src/app/types/conformance-status-summary';
-import { ExportReportEvent } from 'src/app/types/export-report-event';
+import {Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChild, ViewChildren} from '@angular/core';
+import {filter} from 'lodash';
+import {ConformanceStatementItem} from 'src/app/types/conformance-statement-item';
+import {ConformanceStatementResult} from 'src/app/types/conformance-statement-result';
+import {Counters} from '../test-status-icons/counters';
+import {DataService} from 'src/app/services/data.service';
+import {ExportReportEvent} from 'src/app/types/export-report-event';
+import {BaseComponent} from '../../pages/base-component.component';
+import {ConformanceStatementItemDisplayComponentApi} from './conformance-statement-item-display-component-api';
+import {
+  ConformanceStatementItemsDisplayComponentApi
+} from '../conformance-statement-items-display/conformance-statement-items-display-component-api';
+import {CheckboxOptionState} from '../checkbox-option-panel/checkbox-option-state';
+import {CheckboxOption} from '../checkbox-option-panel/checkbox-option';
+import {CheckBoxOptionPanelComponentApi} from '../checkbox-option-panel/check-box-option-panel-component-api';
+import {Constants} from '../../common/constants';
+import {StatementOptionsButtonApi} from '../statement-options-button/statement-options-button-api';
+import {ConformanceIds} from '../../types/conformance-ids';
 
 @Component({
     selector: 'app-conformance-statement-item-display',
@@ -32,7 +38,7 @@ import { ExportReportEvent } from 'src/app/types/export-report-event';
     styleUrls: ['./conformance-statement-item-display.component.less'],
     standalone: false
 })
-export class ConformanceStatementItemDisplayComponent implements OnInit {
+export class ConformanceStatementItemDisplayComponent extends BaseComponent implements OnInit, ConformanceStatementItemDisplayComponentApi {
 
   @Input() item!: ConformanceStatementItem
   @Input() shade = false
@@ -43,42 +49,72 @@ export class ConformanceStatementItemDisplayComponent implements OnInit {
   @Input() withCheck = true
   @Input() withExport = false
   @Input() withResults = false
+  @Input() withOptions = false
   @Input() filtering = true
-  @Input() withTestCases = false
 
-  // Inputs for when we display test cases
-  @Input() testSuiteLoader?: (item: ConformanceStatementItem) => Observable<ConformanceStatus|undefined>
+  // Inputs needed when showing options
   @Input() communityId?: number
   @Input() organisationId?: number
+  @Input() systemId?: number
+  @Input() domainId?: number
+  @Input() parentItem?: ConformanceStatementItem
   @Input() snapshotId?: number
-  @Input() snapshotLabel?: string
 
   @Output() selectionChanged = new EventEmitter<ConformanceStatementItem>()
   @Output() export = new EventEmitter<ExportReportEvent>()
-  @Output() viewTestSession = new EventEmitter<string>()
+  @Output() selected = new EventEmitter<number>()
 
+  @ViewChildren('itemsComponent') itemsComponents?: QueryList<ConformanceStatementItemsDisplayComponentApi>
+  @ViewChild('optionButton') optionButton?: CheckBoxOptionPanelComponentApi
+  @ViewChild('statementOptionsButton') statementOptionsButton?: StatementOptionsButtonApi<ConformanceIds>
+
+  protected static EXPORT_XML_OVERVIEW = '0'
+  protected static EXPORT_PDF_OVERVIEW = '1'
+
+  optionPending = false
   hasChildren = false
   allChildrenHidden = false
   showCheck = false
   showResults = false
-  showTestCases = false
   results?: ConformanceStatementResult
   counters?: Counters
   status?: string
   updateTime?: string
-  testCasesOpen = false
-  testSuites: ConformanceTestSuite[]|undefined
-  statementSummary?: ConformanceStatusSummary
-  hasBadge = false
   pending = false
-  Constants = Constants
+  refreshCounters = new EventEmitter<Counters>()
+  actorId?: number
+  specificationId?: number
+  conformanceIds?: ConformanceIds
+
+  parentItemOptions?: CheckboxOption[][]
 
   constructor(
     public readonly dataService: DataService
-  ) { }
+  ) { super() }
+
+  statementSelected(source: number) {
+    if (this.item.id != source) {
+      if (this.optionButton) this.optionButton.close()
+      if (this.statementOptionsButton) this.statementOptionsButton.close()
+    }
+    this.itemsComponents?.forEach((item: ConformanceStatementItemDisplayComponentApi) => {
+      item.statementSelected(source)
+    })
+  }
+
+  reset() {
+    this.ngOnInit()
+    if (this.itemsComponents) {
+      this.itemsComponents.forEach(item => item.reset())
+    }
+    if (this.counters) {
+      this.refreshCounters.emit(this.counters)
+    }
+  }
 
   ngOnInit(): void {
     this.hasChildren = this.item.items != undefined && this.item.items.length > 0
+    this.allChildrenHidden = false
     if (this.hasChildren) {
       const hiddenChildren = filter(this.item.items, (item) => {
         return item.hidden == true
@@ -88,24 +124,61 @@ export class ConformanceStatementItemDisplayComponent implements OnInit {
       this.allChildrenHidden = true
     }
     this.showCheck = this.withCheck && (!this.hasChildren || this.allChildrenHidden)
+    this.showResults = false
+    this.results = undefined
+    this.counters = undefined
+    this.status = undefined
+    this.updateTime = undefined
+    this.pending = false
     if (this.withResults && this.allChildrenHidden) {
       this.results = this.findResults(this.item)
       if (this.results) {
         this.showResults = true
-        this.showTestCases = this.withTestCases
-        this.counters = {
-          completed: this.results.completed,
-          failed: this.results.failed,
-          other: this.results.undefined,
-          completedOptional: this.results.completedOptional,
-          failedOptional: this.results.failedOptional,
-          otherOptional: this.results.undefinedOptional,
-          completedToConsider: this.results.completedToConsider,
-          failedToConsider: this.results.failedToConsider,
-          otherToConsider: this.results.undefinedToConsider,
-        }
-        this.updateTime = this.results.updateTime
-        this.status = this.dataService.conformanceStatusForTests(this.results.completedToConsider, this.results.failedToConsider, this.results.undefinedToConsider)
+        this.updateResults(false)
+      }
+    }
+    if (this.item.itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION && this.item.items && this.item.items.length > 0) {
+      this.actorId = this.item.items[0].id
+      this.specificationId = this.item.id
+    } else if (this.item.itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.ACTOR) {
+      this.actorId = this.item.id
+      this.specificationId = this.parentItem?.id
+    }
+    if (this.hasChildren && !this.item.hidden && this.withExport) {
+      this.parentItemOptions = [[
+        {key: ConformanceStatementItemDisplayComponent.EXPORT_PDF_OVERVIEW, label: 'Download overview report', default: true, iconClass: 'fa-solid fa-file-pdf'},
+        {key: ConformanceStatementItemDisplayComponent.EXPORT_XML_OVERVIEW, label: 'Download overview report as XML', default: true, iconClass: 'fa-solid fa-file-lines'}
+      ]]
+    }
+    if (this.withOptions) {
+      this.conformanceIds = {
+        systemId: this.systemId!,
+        actorId: this.actorId!,
+        specificationId: this.specificationId!,
+        domainId: this.domainId!,
+      }
+    }
+  }
+
+  updateResults(signalUpdate: boolean) {
+    if (this.results) {
+      this.counters = {
+        completed: this.results.completed,
+        failed: this.results.failed,
+        other: this.results.undefined,
+        completedOptional: this.results.completedOptional,
+        failedOptional: this.results.failedOptional,
+        otherOptional: this.results.undefinedOptional,
+        completedToConsider: this.results.completedToConsider,
+        failedToConsider: this.results.failedToConsider,
+        otherToConsider: this.results.undefinedToConsider,
+      }
+      this.updateTime = this.results.updateTime
+      this.status = this.dataService.conformanceStatusForTests(this.results.completedToConsider, this.results.failedToConsider, this.results.undefinedToConsider)
+      if (signalUpdate) {
+        setTimeout(() => {
+          this.refreshCounters.emit(this.counters)
+        })
       }
     }
   }
@@ -136,38 +209,11 @@ export class ConformanceStatementItemDisplayComponent implements OnInit {
         this.itemSelected()
       }
     }
+    this.selected.emit() // Call to make sure an open options popup is always closed
   }
 
   itemSelected(otherItem?: ConformanceStatementItem) {
-    if (this.showTestCases) {
-      if (this.testCasesOpen) {
-        this.testCasesOpen = false
-      } else {
-        this.loadTestSuites(otherItem?otherItem:this.item)
-      }
-    }
     this.notifyForSelectionChange(otherItem)
-  }
-
-  private loadTestSuites(item: ConformanceStatementItem) {
-    if (this.testSuites) {
-      this.testCasesOpen = true
-    } else {
-      this.pending = true
-      this.testSuiteLoader!(item).subscribe((data) => {
-        if (data) {
-          this.dataService.organiseTestSuitesForDisplay(data.testSuites)
-          this.statementSummary = data.summary
-          this.hasBadge = data.summary.hasBadge
-          this.testSuites = data.testSuites
-        }
-      }).add(() => {
-        setTimeout(() => {
-          this.testCasesOpen = true
-          this.pending = false
-        }, 1)
-      })
-    }
   }
 
   notifyForSelectionChange(otherItem?: ConformanceStatementItem) {
@@ -204,19 +250,24 @@ export class ConformanceStatementItemDisplayComponent implements OnInit {
     this.notifyForSelectionChange(item)
   }
 
-  handleExportClick(statementReport: boolean, item: ConformanceStatementItem, format: 'xml'|'pdf') {
-    this.onExport({
-      item: item,
-      format: format,
-      statementReport: statementReport,
-    })
+  childSelected(event: number) {
+    this.selected.emit(event)
   }
 
   onExport(event: ExportReportEvent) {
     this.export.emit(event)
   }
 
-  onViewTestSession(session: string) {
-    this.viewTestSession.emit(session)
+  handleOption(event: CheckboxOptionState) {
+    if (event[ConformanceStatementItemDisplayComponent.EXPORT_XML_OVERVIEW]) {
+      this.onExport({statementReport: false, item: this.item, format: 'xml'})
+    } else if (event[ConformanceStatementItemDisplayComponent.EXPORT_PDF_OVERVIEW]) {
+      this.onExport({statementReport: false, item: this.item, format: 'pdf'})
+    }
   }
+
+  optionsOpening() {
+    this.selected.emit(this.item.id)
+  }
+
 }

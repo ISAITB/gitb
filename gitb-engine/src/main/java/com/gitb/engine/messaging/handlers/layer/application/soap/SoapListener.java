@@ -41,13 +41,13 @@ public class SoapListener extends AbstractTransactionListener {
 
         StringType httpPath = (StringType) incomingMessage.getFragments().get(SoapMessagingHandler.HTTP_PATH_FIELD_NAME);
 
-        transformed.add(ConfigurationUtils.constructConfiguration(SoapMessagingHandler.HTTP_URI_CONFIG_NAME, (String) httpPath.getValue()));
+        transformed.add(ConfigurationUtils.constructConfiguration(SoapMessagingHandler.HTTP_URI_CONFIG_NAME, httpPath.getValue()));
 
         return transformed;
     }
 
     @Override
-    public Message transformMessage(Message incomingMessage) throws Exception{
+    public Message transformMessage(Message incomingMessage) {
         Message message = new Message();
 
         message.getFragments()

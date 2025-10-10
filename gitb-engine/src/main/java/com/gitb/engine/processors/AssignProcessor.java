@@ -43,7 +43,7 @@ public class AssignProcessor implements IProcessor {
     }
 
     @Override
-    public TestStepReportType process(Object object) throws Exception {
+    public TestStepReportType process(Object object) {
 	    Assign assign = (Assign) object;
 		String toExpression = assign.getTo();
 		boolean respectScopeIsolation = false;

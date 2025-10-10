@@ -13,8 +13,6 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Specification } from "./specification"
-
 export interface DomainSpecification {
 
     id: number
@@ -26,10 +24,10 @@ export interface DomainSpecification {
     option: boolean
     groupId?: number
     options?: DomainSpecification[]
-    collapsed: boolean
     domain: number
     order: number
 
+    collapsed?: boolean
     movePending?: boolean
     copyPending?: boolean
     removePending?: boolean

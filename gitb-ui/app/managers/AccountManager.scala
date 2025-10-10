@@ -44,12 +44,22 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     DB.run(q.update(None, UserSSOStatus.NotLinked.id.toShort).transactionally)
   }
 
-  def migrateAccount(userId: Long, userInfo: ActualUserInfo): Future[Int] = {
+  def migrateAccount(userId: Long, userInfo: ActualUserInfo): Future[Unit] = {
     val dbAction = PersistenceSchema.users
         .filter(_.id === userId)
         .map(x => (x.ssoUid, x.ssoEmail, x.name, x.ssoStatus, x.onetimePassword))
-        .update((Some(userInfo.uid), Some(userInfo.email), userInfo.firstName+" "+userInfo.lastName, UserSSOStatus.Linked.id.toShort, false))
-    DB.run(dbAction.transactionally)
+        .update((Some(userInfo.uid), Some(userInfo.email), userInfo.name, UserSSOStatus.Linked.id.toShort, false))
+    DB.run(dbAction.transactionally).map { _ =>
+      if (Configurations.AUTHENTICATION_SSO_IN_MIGRATION_PERIOD && !Configurations.AUTHENTICATION_SSO_IN_MIGRATION_PERIOD_ORIGINAL) {
+        /*
+         * The Test Bed was started in non-migration mode but was forced to migration mode because no migrated accounts
+         * existed. In this case, upon migration of a first account, the forced migration mode is reset. The point of
+         * this is essentially to allow a initial installation to be done with SSO without needing to set and then unset
+         * the migration mode to migrate the initial administrator.
+         */
+        Configurations.AUTHENTICATION_SSO_IN_MIGRATION_PERIOD = false
+      }
+    }
   }
 
   def getUnlinkedUserAccountsForEmail(email: String): Future[List[UserAccount]] = {
@@ -69,11 +79,12 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     ).map { results =>
       results.map(x => new UserAccount(
         Users(x._1, x._2, x._3, null, onetimePassword = false, x._4, x._5, None, None, UserSSOStatus.NotLinked.id.toShort),
-        Organizations(x._5, x._6, x._7, -1, x._8, null, null, null, template = false, None, None, x._9),
-        Communities(x._9, x._10, x._11, None, -1, None, None, selfRegNotification = false, interactionNotification = false, None, SelfRegistrationRestriction.NoRestriction.id.toShort, selfRegForceTemplateSelection = false, selfRegForceRequiredProperties = false,
+        Organizations(x._5, x._6, x._7, -1, x._8, null, null, null, template = false, None, None, None, x._9),
+        Communities(x._9, x._10, x._11, None, -1, None, None, selfRegNotification = false, interactionNotification = false, None, SelfRegistrationRestriction.NoRestriction.id.toShort,
+          selfRegForceTemplateSelection = false, selfRegForceRequiredProperties = false, selfRegAllowOrganisationTokens = false, selfRegAllowOrganisationTokenManagement = false, selfRegForceOrganisationTokenInput = false,
           allowCertificateDownload = false, allowStatementManagement = false, allowSystemManagement = false,
           allowPostTestOrganisationUpdates = false, allowPostTestSystemUpdates = false, allowPostTestStatementUpdates = false,
-          allowAutomationApi = false, allowCommunityView = false, "", None,
+          allowAutomationApi = false, allowCommunityView = false, allowUserManagement = true, "", None,
           None)
       )).sorted
     }
@@ -81,7 +92,7 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   def linkAccountInternal(userId: Long, userInfo: ActualUserInfo): DBIO[_] = {
     val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.ssoUid, u.name, u.ssoStatus)
-    q.update(Some(userInfo.uid), userInfo.firstName+" "+userInfo.lastName, UserSSOStatus.Linked.id.toShort)
+    q.update(Some(userInfo.uid), userInfo.name, UserSSOStatus.Linked.id.toShort)
   }
 
   def linkAccount(userId: Long, userInfo: ActualUserInfo): Future[Unit] = {
@@ -105,11 +116,12 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
       results
         .map(x => new UserAccount(
           Users(x._1, x._2, x._3, null, onetimePassword = false, x._4, x._5, None, None, UserSSOStatus.Linked.id.toShort),
-          Organizations(x._5, x._6, x._7, -1, x._8, null, null, null, template = false, None, None, x._9),
-          Communities(x._9, x._10, x._11, None, -1, None, None, selfRegNotification = false, interactionNotification = false, None, SelfRegistrationRestriction.NoRestriction.id.toShort, selfRegForceTemplateSelection = false, selfRegForceRequiredProperties = false,
+          Organizations(x._5, x._6, x._7, -1, x._8, null, null, null, template = false, None, None, None, x._9),
+          Communities(x._9, x._10, x._11, None, -1, None, None, selfRegNotification = false, interactionNotification = false, None, SelfRegistrationRestriction.NoRestriction.id.toShort,
+            selfRegForceTemplateSelection = false, selfRegForceRequiredProperties = false, selfRegAllowOrganisationTokens = false, selfRegAllowOrganisationTokenManagement = false, selfRegForceOrganisationTokenInput = false,
             allowCertificateDownload = false, allowStatementManagement = false, allowSystemManagement = false,
             allowPostTestOrganisationUpdates = false, allowPostTestSystemUpdates = false, allowPostTestStatementUpdates = false,
-            allowAutomationApi = false, allowCommunityView = false, "", None,
+            allowAutomationApi = false, allowCommunityView = false, allowUserManagement = true,"", None,
             None))
         ).sorted
     }

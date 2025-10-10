@@ -45,6 +45,8 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import static com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils.*;
+import static com.gitb.utils.MessagingReportUtils.generateErrorReport;
+import static com.gitb.utils.MessagingReportUtils.generateSuccessReport;
 
 @MessagingHandler(name="SoapMessagingV2")
 public class SoapMessagingHandlerV2 extends AbstractNonWorkerMessagingHandler {
@@ -94,7 +96,7 @@ public class SoapMessagingHandlerV2 extends AbstractNonWorkerMessagingHandler {
         Optional<List<AttachmentInfo>> attachments = getSoapAttachments(message.getFragments(), ATTACHMENTS_ARGUMENT_NAME);
         // Tolerate non-SOAP responses.
         boolean tolerateNonSoapResponse = Optional.ofNullable(getAndConvert(message.getFragments(), TOLERATE_NON_SOAP_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class))
-                .map(value -> (Boolean) value.getValue())
+                .map(BooleanType::getValue)
                 .orElse(false);
         /*
          * Create SOAP message.
@@ -181,9 +183,9 @@ public class SoapMessagingHandlerV2 extends AbstractNonWorkerMessagingHandler {
             }
             MessagingReport messagingReport;
             if (!errorRaised || tolerateNonSoapResponse) {
-                messagingReport = MessagingHandlerUtils.generateSuccessReport(messageForReport);
+                messagingReport = generateSuccessReport(messageForReport);
             } else {
-                messagingReport = MessagingHandlerUtils.generateErrorReport(messageForReport);
+                messagingReport = generateErrorReport(messageForReport);
             }
             new ReportVisibilitySettings(message).apply(messagingReport);
             return messagingReport;

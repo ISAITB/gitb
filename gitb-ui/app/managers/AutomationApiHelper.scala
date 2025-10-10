@@ -199,21 +199,62 @@ class AutomationApiHelper @Inject()(dbConfigProvider: DatabaseConfigProvider)
     } yield communityIds._1
   }
 
-  def getDomainIdByDomainApiKey(domainApiKey: String): DBIO[Long] = {
+  def getOrganisationIdsByOrganisationApiKey(organisationApiKey: String): DBIO[(Long, Long)] = {
+    for {
+      organisationIds <- PersistenceSchema.organizations
+        .filter(_.apiKey === organisationApiKey)
+        .map(x => (x.id, x.community))
+        .result
+        .headOption
+        .map { result =>
+          result.getOrElse(throw AutomationApiException(ErrorCodes.API_ORGANISATION_NOT_FOUND, "No organisation found for the provided API key"))
+        }
+    } yield organisationIds
+  }
+
+  def getOrganisationByOrganisationApiKey(communityId: Long, organisationApiKey: String): DBIO[Long] = {
+    for {
+      organisationId <- PersistenceSchema.organizations
+        .filter(_.community === communityId)
+        .filter(_.apiKey === organisationApiKey)
+        .map(_.id)
+        .result
+        .headOption
+        .map { result =>
+          result.getOrElse(throw AutomationApiException(ErrorCodes.API_ORGANISATION_NOT_FOUND, "No organisation found for the provided API key"))
+        }
+    } yield organisationId
+  }
+
+  def getDomainIdByDomainApiKey(domainApiKey: String, communityKeyToCheckAgainst: Option[String] = None): DBIO[Long] = {
     for {
       newDomainId <- PersistenceSchema.domains
         .filter(_.apiKey === domainApiKey)
         .map(_.id)
         .result
         .headOption
-      _ <- {
+      domainIdToUse <- {
         if (newDomainId.isEmpty) {
           throw AutomationApiException(ErrorCodes.API_DOMAIN_NOT_FOUND, "No domain found for the provided API key")
+        } else {
+          DBIO.successful(newDomainId.get)
+        }
+      }
+      communityDomainIdToMatch <- {
+        if (communityKeyToCheckAgainst.isDefined) {
+          getDomainIdByCommunity(communityKeyToCheckAgainst.get)
+        } else {
+          DBIO.successful(None)
+        }
+      }
+      _ <- {
+        if (communityDomainIdToMatch.isDefined && communityDomainIdToMatch.get != domainIdToUse) {
+          throw AutomationApiException(ErrorCodes.API_DOMAIN_NOT_FOUND, "No domain found for the provided API keys")
         } else {
           DBIO.successful(())
         }
       }
-    } yield newDomainId.get
+    } yield domainIdToUse
   }
 
   def getDomainIdByCommunity(communityApiKey: String): DBIO[Option[Long]] = {

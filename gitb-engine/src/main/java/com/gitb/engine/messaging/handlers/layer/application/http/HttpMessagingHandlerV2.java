@@ -19,7 +19,6 @@ import com.gitb.core.Configuration;
 import com.gitb.engine.CallbackManager;
 import com.gitb.engine.messaging.MessagingHandler;
 import com.gitb.engine.messaging.handlers.layer.AbstractNonWorkerMessagingHandler;
-import com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils;
 import com.gitb.messaging.DeferredMessagingReport;
 import com.gitb.messaging.Message;
 import com.gitb.messaging.MessagingReport;
@@ -28,6 +27,7 @@ import com.gitb.messaging.callback.CallbackType;
 import com.gitb.tdl.MessagingStep;
 import com.gitb.types.*;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
@@ -46,6 +46,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 import static com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils.*;
+import static com.gitb.utils.MessagingReportUtils.generateSuccessReport;
 
 @MessagingHandler(name="HttpMessagingV2")
 public class HttpMessagingHandlerV2 extends AbstractNonWorkerMessagingHandler {
@@ -64,6 +65,7 @@ public class HttpMessagingHandlerV2 extends AbstractNonWorkerMessagingHandler {
     private static final String FOLLOW_REDIRECTS_ARGUMENT_NAME = "followRedirects";
     private static final String CONNECTION_TIMEOUT_ARGUMENT_NAME = "connectionTimeout";
     private static final String REQUEST_TIMEOUT_ARGUMENT_NAME = "requestTimeout";
+    private static final String VERSION_ARGUMENT_NAME = "version";
 
     public static final String REPORT_ITEM_REQUEST = "request";
     public static final String REPORT_ITEM_RESPONSE = "response";
@@ -87,7 +89,7 @@ public class HttpMessagingHandlerV2 extends AbstractNonWorkerMessagingHandler {
         var body = Optional.ofNullable(message.getFragments().get(BODY_ARGUMENT_NAME));
         // Follow redirects.
         var followRedirects = Optional.ofNullable(getAndConvert(message.getFragments(), FOLLOW_REDIRECTS_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class))
-                .map(value -> (Boolean) value.getValue())
+                .map(BooleanType::getValue)
                 .orElse(Boolean.TRUE);
         // Multipart form parts.
         var parts = Optional.ofNullable(getAndConvert(message.getFragments(), PARTS_ARGUMENT_NAME, DataType.LIST_DATA_TYPE, ListType.class));
@@ -99,6 +101,18 @@ public class HttpMessagingHandlerV2 extends AbstractNonWorkerMessagingHandler {
                 return HttpMethod.GET;
             }
         });
+        var httpVersion = Optional.ofNullable(getAndConvert(message.getFragments(), VERSION_ARGUMENT_NAME, DataType.STRING_DATA_TYPE, StringType.class))
+                .map(StringType::getValue)
+                .map(value -> {
+                    if ("1.1".equals(value)) {
+                        return HttpClient.Version.HTTP_1_1;
+                    } else if ("2".equals(value)) {
+                        return HttpClient.Version.HTTP_2;
+                    } else {
+                        throw new IllegalArgumentException("The [%s] input for must be either set to '1.1' or '2'.".formatted(VERSION_ARGUMENT_NAME));
+                    }
+                })
+                .orElse(HttpClient.Version.HTTP_2);
         // The HTTP headers.
         var headers = getMapOfValues(message.getFragments(), HEADERS_ARGUMENT_NAME);
         // The connection timeout.
@@ -201,6 +215,7 @@ public class HttpMessagingHandlerV2 extends AbstractNonWorkerMessagingHandler {
         // Make request.
         CompletableFuture<HttpResponse<byte[]>> asyncResponse;
         try (HttpClient client = HttpClient.newBuilder()
+                .version(httpVersion)
                 .connectTimeout(Duration.ofMillis(connectionTimeout))
                 .followRedirects(followRedirects?HttpClient.Redirect.ALWAYS:HttpClient.Redirect.NEVER)
                 .build()) {
@@ -232,7 +247,7 @@ public class HttpMessagingHandlerV2 extends AbstractNonWorkerMessagingHandler {
             // Body
             getResponseBody(response).ifPresent(item -> responseItem.addItem(REPORT_ITEM_BODY, item));
             messageForReport.getFragments().put(REPORT_ITEM_RESPONSE, responseItem);
-            MessagingReport messagingReport = MessagingHandlerUtils.generateSuccessReport(messageForReport);
+            MessagingReport messagingReport = generateSuccessReport(messageForReport);
             new ReportVisibilitySettings(message).apply(messagingReport);
             return messagingReport;
         });
@@ -280,7 +295,7 @@ public class HttpMessagingHandlerV2 extends AbstractNonWorkerMessagingHandler {
             if (uri.endsWith("?")) {
                 return uri + queryStringParameters;
             } else if (uri.indexOf('?') != -1) {
-                return StringUtils.appendIfMissing(uri, "&") + queryStringParameters;
+                return Strings.CS.appendIfMissing(uri, "&") + queryStringParameters;
             } else {
                 return uri + "?" + queryStringParameters;
             }

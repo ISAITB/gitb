@@ -18,7 +18,8 @@ import { ConformanceStatusSummary } from "./conformance-status-summary";
 
 export interface ConformanceStatus {
 
-    summary: ConformanceStatusSummary
-    testSuites: ConformanceTestSuite[]
+  summary: ConformanceStatusSummary
+  testSuites: ConformanceTestSuite[]
+  testSuiteCount: number
 
 }

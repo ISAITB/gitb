@@ -27,5 +27,7 @@ export interface SelfRegistrationOption {
     templates?: SelfRegistrationTemplate[],
     organisationProperties?: CustomProperty[],
     selfRegTokenHelpText?: string
+    organisationTokensEnabled: boolean
+    forceOrganisationTokenInput: boolean
 
 }

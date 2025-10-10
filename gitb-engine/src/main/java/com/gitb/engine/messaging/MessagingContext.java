@@ -26,7 +26,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Created by serbay on 9/29/14.
- *
+ * <p>
  * Class that encapsulates objects related to messaging sessions opened with each messaging handler
  * within a test execution.
  */

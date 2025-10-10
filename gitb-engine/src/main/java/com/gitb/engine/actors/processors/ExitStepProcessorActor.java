@@ -32,7 +32,7 @@ import org.apache.pekko.actor.ActorRef;
 
 /**
  * Created by serbay on 9/15/14.
- *
+ * <p>
  * Exit step executor actor
  */
 public class ExitStepProcessorActor extends AbstractTestStepActor<ExitStep> {
@@ -49,13 +49,13 @@ public class ExitStepProcessorActor extends AbstractTestStepActor<ExitStep> {
 		VariableResolver resolver = new VariableResolver(scope);
 		boolean isSuccess;
 		if (VariableResolver.isVariableReference(step.getSuccess())) {
-			isSuccess = (Boolean)resolver.resolveVariableAsBoolean(step.getSuccess()).getValue();
+			isSuccess = resolver.resolveVariableAsBoolean(step.getSuccess()).getValue();
 		} else {
 			isSuccess = Boolean.parseBoolean(step.getSuccess());
 		}
 		boolean isUndefined;
 		if (VariableResolver.isVariableReference(step.getUndefined())) {
-			isUndefined = (Boolean)resolver.resolveVariableAsBoolean(step.getUndefined()).getValue();
+			isUndefined = resolver.resolveVariableAsBoolean(step.getUndefined()).getValue();
 		} else {
 			isUndefined = Boolean.parseBoolean(step.getUndefined());
 		}

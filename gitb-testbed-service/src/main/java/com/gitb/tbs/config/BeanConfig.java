@@ -15,7 +15,6 @@
 
 package com.gitb.tbs.config;
 
-import com.gitb.engine.TestEngineConfiguration;
 import com.gitb.tbs.impl.MessagingClientImpl;
 import com.gitb.tbs.impl.ProcessingClientImpl;
 import com.gitb.tbs.impl.TestbedServiceImpl;
@@ -34,6 +33,7 @@ import org.springframework.web.servlet.DispatcherServlet;
 
 import javax.xml.namespace.QName;
 
+import static com.gitb.CoreConfiguration.*;
 import static com.gitb.engine.TestEngineConfiguration.HANDLER_API_SEGMENT;
 
 @Configuration
@@ -76,7 +76,7 @@ public class BeanConfig {
         EndpointImpl endpoint = new EndpointImpl(cxfBus, messagingClientImpl);
         endpoint.setServiceName(new QName("http://www.gitb.com/ms/v1/", "MessagingClientService"));
         endpoint.setEndpointName(new QName("http://www.gitb.com/ms/v1/", "MessagingClientPort"));
-        endpoint.setPublishedEndpointUrl(TestEngineConfiguration.MESSAGING_CALLBACK_URL);
+        endpoint.setPublishedEndpointUrl(MESSAGING_CALLBACK_URL);
         endpoint.publish("/MessagingClient");
         return endpoint;
     }
@@ -86,7 +86,7 @@ public class BeanConfig {
         EndpointImpl endpoint = new EndpointImpl(cxfBus, validationClientImpl);
         endpoint.setServiceName(new QName("http://www.gitb.com/vs/v1/", "ValidationClientService"));
         endpoint.setEndpointName(new QName("http://www.gitb.com/vs/v1/", "ValidationClientPort"));
-        endpoint.setPublishedEndpointUrl(TestEngineConfiguration.VALIDATION_CALLBACK_URL);
+        endpoint.setPublishedEndpointUrl(VALIDATION_CALLBACK_URL);
         endpoint.publish("/ValidationClient");
         return endpoint;
     }
@@ -96,7 +96,7 @@ public class BeanConfig {
         EndpointImpl endpoint = new EndpointImpl(cxfBus, processingClientImpl);
         endpoint.setServiceName(new QName("http://www.gitb.com/ps/v1/", "ProcessingClientService"));
         endpoint.setEndpointName(new QName("http://www.gitb.com/ps/v1/", "ProcessingClientPort"));
-        endpoint.setPublishedEndpointUrl(TestEngineConfiguration.PROCESSING_CALLBACK_URL);
+        endpoint.setPublishedEndpointUrl(PROCESSING_CALLBACK_URL);
         endpoint.publish("/ProcessingClient");
         return endpoint;
     }

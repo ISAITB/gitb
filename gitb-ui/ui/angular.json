@@ -42,7 +42,7 @@
             "assets": [
               "src/favicon.ico",
               "src/assets",
-              { "glob": "**/*", "input": "node_modules/tinymce", "output": "/tinymce/" }
+              { "glob": "**/*", "input": "node_modules/hugerte", "output": "/hugerte/" }
             ],
             "styles": [
               "src/styles/styles.scss",
@@ -55,7 +55,7 @@
               "src/styles/styles.less"
             ],
             "scripts": [
-              "node_modules/tinymce/tinymce.min.js"
+              "node_modules/hugerte/hugerte.min.js"
             ],
             "allowedCommonJsDependencies": [
               "file-saver",

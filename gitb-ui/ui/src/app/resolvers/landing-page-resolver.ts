@@ -13,13 +13,12 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Injectable } from "@angular/core";
-import { ActivatedRouteSnapshot, RouterStateSnapshot } from "@angular/router";
-import { Observable, Subscriber } from "rxjs";
-import { mergeMap } from "rxjs/operators";
-import { Constants } from "../common/constants";
-import { LandingPageService } from "../services/landing-page.service";
-import { LandingPage } from "../types/landing-page";
+import {Injectable} from '@angular/core';
+import {ActivatedRouteSnapshot, RouterStateSnapshot} from '@angular/router';
+import {Observable, Subscriber} from 'rxjs';
+import {Constants} from '../common/constants';
+import {LandingPageService} from '../services/landing-page.service';
+import {LandingPage} from '../types/landing-page';
 
 @Injectable({
     providedIn: "root"
@@ -37,7 +36,7 @@ export class LandingPageResolver  {
             } else if (route.queryParamMap.has(Constants.NAVIGATION_QUERY_PARAM.COPY)) {
                 this.handleResult(subscriber, this.landingPageService.getLandingPageById(Number(route.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.COPY))))
             } else {
-                subscriber.next()
+                subscriber.next(undefined)
                 subscriber.complete()
             }
         })
@@ -49,7 +48,7 @@ export class LandingPageResolver  {
                 data.name += ' COPY'
                 subscriber.next(data)
             } else {
-                subscriber.next()
+                subscriber.next(undefined)
             }
         }).add(() => {
             subscriber.complete()

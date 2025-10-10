@@ -119,11 +119,11 @@ public class TemplateProcessor extends AbstractProcessingHandler {
         var syntax = Syntax.GITB;
         var syntaxInput = getInputForName(input, INPUT_SYNTAX, StringType.class);
         if (syntaxInput != null) {
-            var syntaxInputValue = ((String) syntaxInput.getValue()).toLowerCase(Locale.ROOT);
+            var syntaxInputValue = syntaxInput.getValue().toLowerCase(Locale.ROOT);
             if (INPUT_SYNTAX_FREEMARKER.equals(syntaxInputValue)) {
                 syntax = Syntax.FREEMARKER;
             } else if (!INPUT_SYNTAX_GITB.equals(syntaxInputValue)) {
-                LOG.warn(MarkerFactory.getDetachedMarker(sessionId), "Unsupported template syntax type ["+ syntaxInput.getValue() +"]. Considering ["+ INPUT_SYNTAX_GITB +"] instead.");
+                LOG.warn(MarkerFactory.getDetachedMarker(sessionId), "Unsupported template syntax type [{}]. Considering [" + INPUT_SYNTAX_GITB + "] instead.", syntaxInput.getValue());
             }
         }
         return syntax;
@@ -180,7 +180,7 @@ public class TemplateProcessor extends AbstractProcessingHandler {
         @Override
         public Reader getReader(Object o, String s) throws IOException {
             closeReader();
-            templateReader = new StringReader((String)templateData.getValue());
+            templateReader = new StringReader(templateData.getValue());
             return templateReader;
         }
 

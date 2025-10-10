@@ -224,6 +224,16 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
     ).map(_.toSet)
   }
 
+  def getActorDomainId(actorId: Long): Future[Long] = {
+    DB.run(
+      PersistenceSchema.actors
+        .filter(_.id === actorId)
+        .map(_.domain)
+        .result
+        .head
+    )
+  }
+
   private def setOtherActorsAsNonDefault(defaultActorId: Long, specificationId: Long) = {
     val actions = (for {
       actorIds <- PersistenceSchema.specificationHasActors
@@ -265,6 +275,56 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
         }
       }
     } yield ()
+  }
+
+  def getActorThroughAutomationApi(communityKey: String, actorKey: String): Future[Actors] = {
+    DB.run {
+      for {
+        communityDomain <- automationApiHelper.getDomainIdByCommunity(communityKey)
+        actor <- PersistenceSchema.actors
+          .filter(_.apiKey === actorKey)
+          .filterOpt(communityDomain)((q, domain) => q.domain === domain)
+          .result
+          .headOption
+        actorToReturn <- {
+          if (actor.isEmpty) {
+            throw AutomationApiException(ErrorCodes.API_ACTOR_NOT_FOUND, "No actor found for the provided API keys")
+          } else {
+            DBIO.successful(actor.get)
+          }
+        }
+      } yield actorToReturn
+    }
+  }
+
+  def searchActorsThroughAutomationApi(communityKey: String, specificationKey: String, name: Option[String]): Future[Seq[Actors]] = {
+    val param = toLowercaseLikeParameter(name)
+    DB.run {
+      for {
+        domainId <- automationApiHelper.getDomainIdByCommunity(communityKey)
+        specificationId <- PersistenceSchema.specifications
+          .filter(_.apiKey === specificationKey)
+          .filterOpt(domainId)((q, d) => q.domain === d)
+          .map(_.id)
+          .result
+          .headOption
+          .map { result =>
+            if (result.isEmpty) {
+              throw AutomationApiException(ErrorCodes.API_SPECIFICATION_NOT_FOUND, "No specification found for the provided API keys")
+            } else {
+              result.get
+            }
+          }
+        actors <- PersistenceSchema.actors
+          .join(PersistenceSchema.specificationHasActors).on(_.id === _.actorId)
+          .filter(_._2.specId === specificationId)
+          .filter(_._1.domain === domainId)
+          .filterOpt(param)((q, p) => q._1.actorId.toLowerCase.like(p) || q._1.name.toLowerCase.like(p))
+          .map(_._1)
+          .sortBy(_.actorId.asc)
+          .result
+      } yield actors
+    }
   }
 
   def createActorThroughAutomationApi(input: CreateActorRequest): Future[String] = {
@@ -370,8 +430,23 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
     if (badges.failure.isDefined) repositoryUtils.setActorBadge(specId, actorId, badges.failure.get, TestResultStatus.FAILURE.toString, forReport)
   }
 
-  def searchActors(domainIds: Option[List[Long]], specificationIds: Option[List[Long]], specificationGroupIds: Option[List[Long]]): Future[List[Actor]] = {
-    DB.run(
+  def searchActors(domainIds: Option[List[Long]], specificationIds: Option[List[Long]], specificationGroupIds: Option[List[Long]], snapshotId: Option[Long] = None): Future[List[Actor]] = {
+    val query = if (snapshotId.isDefined) {
+      PersistenceSchema.conformanceSnapshotResults
+        .join(PersistenceSchema.conformanceSnapshotActors).on((q, a) => q.snapshotId === a.snapshotId && q.actorId === a.id)
+        .filter(_._1.snapshotId === snapshotId.get)
+        .filterOpt(domainIds)((q, ids) => q._1.domainId inSet ids)
+        .filterOpt(specificationIds)((q, ids) => q._1.specificationId inSet ids)
+        .filterOpt(specificationGroupIds)((q, ids) => q._1.specificationGroupId inSet ids)
+        .map(_._2)
+        .sortBy(_.actorId.asc)
+        .result
+        .map { results =>
+          results.map { x =>
+            new Actor(Actors(x.id, x.actorId, x.name, x.description, x.reportMetadata, None, hidden = false, None, "", -1), null, null, -1)
+          }
+        }
+    } else {
       PersistenceSchema.actors
         .join(PersistenceSchema.specificationHasActors).on(_.id === _.actorId)
         .join(PersistenceSchema.specifications).on(_._2.specId === _.id)
@@ -381,9 +456,13 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
         .sortBy(_._1._1.actorId.asc)
         .map(x => (x._1._1, x._1._2.specId))
         .result
-    ).map { results =>
-      results.map(x => new Actor(x._1, null, null, x._2)).toList
+        .map { results =>
+          results.map { x =>
+            new Actor(x._1, null, null, x._2)
+          }
+        }
     }
+    DB.run(query).map(_.toList)
   }
 
   def getActorIdsOfSpecifications(specIds: List[Long]): Future[Map[Long, Set[String]]] = {

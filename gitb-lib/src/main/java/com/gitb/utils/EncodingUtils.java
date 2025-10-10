@@ -15,10 +15,18 @@
 
 package com.gitb.utils;
 
+import java.util.regex.Pattern;
+
 /**
  * Created by senan on 03.12.2014.
  */
 public class EncodingUtils {
+
+    private static final Pattern DATA_URL_PATTERN = Pattern.compile("^data:.+/(.+);base64,(.*)$");
+
+    public static boolean isDataUrl(String content) {
+        return content != null && DATA_URL_PATTERN.matcher(content).matches();
+    }
 
     public static String extractBase64FromDataURL(String dataURL) {
         if (dataURL != null) {

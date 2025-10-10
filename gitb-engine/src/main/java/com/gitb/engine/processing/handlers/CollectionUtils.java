@@ -44,6 +44,9 @@ public class CollectionUtils extends AbstractProcessingHandler {
     private static final String OPERATION_REMOVE = "remove";
     private static final String OPERATION_APPEND = "append";
     private static final String OPERATION_FIND = "find";
+    private static final String OPERATION_KEYS = "keys";
+    private static final String OPERATION_VALUES = "values";
+    private static final String OPERATION_ENTRIES = "entries";
     private static final String INPUT_LIST = "list";
     private static final String INPUT_MAP = "map";
     private static final String INPUT_VALUE = "value";
@@ -136,6 +139,18 @@ public class CollectionUtils extends AbstractProcessingHandler {
                 List.of(
                         createParameter(OUTPUT_OUTPUT, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, "The located entry (if found).")
                 )
+        ));
+        module.getOperation().add(createProcessingOperation(OPERATION_KEYS,
+                List.of(createParameter(INPUT_MAP, "map", UsageEnumeration.R, ConfigurationType.SIMPLE, "The map to consider.")),
+                List.of(createParameter(OUTPUT_OUTPUT, "list", UsageEnumeration.O, ConfigurationType.SIMPLE, "The map's keys as a list of strings."))
+        ));
+        module.getOperation().add(createProcessingOperation(OPERATION_VALUES,
+                List.of(createParameter(INPUT_MAP, "map", UsageEnumeration.R, ConfigurationType.SIMPLE, "The map to consider.")),
+                List.of(createParameter(OUTPUT_OUTPUT, "list", UsageEnumeration.O, ConfigurationType.SIMPLE, "The map's values as a list."))
+        ));
+        module.getOperation().add(createProcessingOperation(OPERATION_ENTRIES,
+                List.of(createParameter(INPUT_MAP, "map", UsageEnumeration.R, ConfigurationType.SIMPLE, "The map to consider.")),
+                List.of(createParameter(OUTPUT_OUTPUT, "list", UsageEnumeration.O, ConfigurationType.SIMPLE, "The map's entries as a list of maps (with 'key' and 'value' entries)."))
         ));
         return module;
     }
@@ -264,10 +279,10 @@ public class CollectionUtils extends AbstractProcessingHandler {
                 throw new IllegalArgumentException("You must provide either [%s] and [%s] inputs, or [%s] and [%s] inputs for the [%s] operation".formatted(INPUT_FROM_LIST, INPUT_TO_LIST, INPUT_FROM_MAP, INPUT_TO_MAP, operation));
             }
             boolean onlyMissing = Optional.ofNullable(getInputForName(input, INPUT_ONLY_MISSING, BooleanType.class))
-                    .map(flag -> (Boolean) flag.getValue())
+                    .map(BooleanType::getValue)
                     .orElse(false);
             boolean caseInsensitive = Optional.ofNullable(getInputForName(input, INPUT_CASE_INSENSITIVE, BooleanType.class))
-                    .map(flag -> (Boolean) flag.getValue())
+                    .map(BooleanType::getValue)
                     .orElse(false);
             if (listPair != null) {
                 List<DataType> toList = (List<DataType>) listPair.getRight().getValue();
@@ -336,6 +351,26 @@ public class CollectionUtils extends AbstractProcessingHandler {
                     }
                 }
             }
+        } else if (OPERATION_KEYS.equalsIgnoreCase(operation)) {
+            MapType inputMap = getRequiredInputForName(input, INPUT_MAP, MapType.class);
+            ListType outputList = new ListType();
+            inputMap.getItems().keySet().forEach(key -> outputList.append(new StringType(key)));
+            data.getData().put(OUTPUT_OUTPUT, outputList);
+        } else if (OPERATION_VALUES.equalsIgnoreCase(operation)) {
+            MapType inputMap = getRequiredInputForName(input, INPUT_MAP, MapType.class);
+            ListType outputList = new ListType();
+            inputMap.getItems().values().forEach(outputList::append);
+            data.getData().put(OUTPUT_OUTPUT, outputList);
+        } else if (OPERATION_ENTRIES.equalsIgnoreCase(operation)) {
+            MapType inputMap = getRequiredInputForName(input, INPUT_MAP, MapType.class);
+            ListType outputList = new ListType();
+            inputMap.getItems().forEach((key, value) -> {
+                var entryMap = new MapType();
+                entryMap.addItem("key", new StringType(key));
+                entryMap.addItem("value", value);
+                outputList.append(entryMap);
+            });
+            data.getData().put(OUTPUT_OUTPUT, outputList);
         } else {
             throw new IllegalArgumentException("Unknown operation [%s]".formatted(operation));
         }

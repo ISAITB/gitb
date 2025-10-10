@@ -40,7 +40,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
@@ -219,20 +222,9 @@ public class RdfUtils extends AbstractProcessingHandler {
             data.getData().put(OUTPUT_OUTPUT, new BooleanType(result));
         } else if (OPERATION_SELECT.equalsIgnoreCase(operation)) {
             var outputContentType = Optional.ofNullable(getInputForName(input, INPUT_OUTPUT_CONTENT_TYPE, StringType.class))
-                    .map(type -> ContentType.create((String) type.getValue()))
+                    .map(type -> ContentType.create(type.getValue()))
                     .orElse(APPLICATION_XML);
-            BiConsumer<ByteArrayOutputStream, ResultSet> resultSetConsumer;
-            if (APPLICATION_XML.equals(outputContentType) || TEXT_XML.equals(outputContentType) || APPLICATION_SPARQL_RESULTS_XML.equals(outputContentType)) {
-                resultSetConsumer = ResultSetFormatter::outputAsXML;
-            } else if (APPLICATION_JSON.equals(outputContentType) || APPLICATION_SPARQL_RESULTS_JSON.equals(outputContentType)) {
-                resultSetConsumer = ResultSetFormatter::outputAsJSON;
-            } else if (TEXT_TSV.equals(outputContentType)) {
-                resultSetConsumer = ResultSetFormatter::outputAsTSV;
-            } else if (TEXT_CSV.equals(outputContentType)) {
-                resultSetConsumer = ResultSetFormatter::outputAsCSV;
-            } else {
-                throw new IllegalArgumentException("Provided content type [%s] is not supported for SPARQL result sets.".formatted(outputContentType.getContentTypeStr()));
-            }
+            BiConsumer<ByteArrayOutputStream, ResultSet> resultSetConsumer = getResultSetConsumer(outputContentType);
             QueryOperationInput inputs = parseQueryOperationInputs(input, QueryType.SELECT);
             var buffer = new ByteArrayOutputStream();
             try (QueryExecution queryExecution = QueryExecutionFactory.create(inputs.query, inputs.inputModel)) {
@@ -247,6 +239,22 @@ public class RdfUtils extends AbstractProcessingHandler {
         return new ProcessingReport(createReport(TestResultType.SUCCESS), data);
     }
 
+    private BiConsumer<ByteArrayOutputStream, ResultSet> getResultSetConsumer(ContentType outputContentType) {
+        BiConsumer<ByteArrayOutputStream, ResultSet> resultSetConsumer;
+        if (APPLICATION_XML.equals(outputContentType) || TEXT_XML.equals(outputContentType) || APPLICATION_SPARQL_RESULTS_XML.equals(outputContentType)) {
+            resultSetConsumer = ResultSetFormatter::outputAsXML;
+        } else if (APPLICATION_JSON.equals(outputContentType) || APPLICATION_SPARQL_RESULTS_JSON.equals(outputContentType)) {
+            resultSetConsumer = ResultSetFormatter::outputAsJSON;
+        } else if (TEXT_TSV.equals(outputContentType)) {
+            resultSetConsumer = ResultSetFormatter::outputAsTSV;
+        } else if (TEXT_CSV.equals(outputContentType)) {
+            resultSetConsumer = ResultSetFormatter::outputAsCSV;
+        } else {
+            throw new IllegalArgumentException("Provided content type [%s] is not supported for SPARQL result sets.".formatted(outputContentType.getContentTypeStr()));
+        }
+        return resultSetConsumer;
+    }
+
     private QueryOperationInput parseQueryOperationInputs(ProcessingData input, QueryType expectedQueryType) {
         var inputModel = getRequiredInputForName(input, INPUT_MODEL, StringType.class);
         var queryString = getRequiredInputForName(input, INPUT_QUERY, StringType.class);
@@ -258,7 +266,7 @@ public class RdfUtils extends AbstractProcessingHandler {
     }
 
     private Query parseQuery(StringType queryString, QueryType expectedQueryType) {
-        Query query = QueryFactory.create((String) queryString.getValue());
+        Query query = QueryFactory.create(queryString.getValue());
         if (query.queryType() != expectedQueryType) {
             throw new IllegalArgumentException("Unexpected query type [%s]".formatted(query.queryType().name()));
         }
@@ -266,7 +274,7 @@ public class RdfUtils extends AbstractProcessingHandler {
     }
 
     private Lang parseLanguage(StringType syntax, Supplier<String> messageSupplier) {
-        var contentType = ContentType.create((String) syntax.getValue());
+        var contentType = ContentType.create(syntax.getValue());
         Lang rdfLanguage = RDFLanguages.contentTypeToLang(contentType);
         if (rdfLanguage == null) {
             rdfLanguage = EQUIVALENT_CONTENT_TYPES.get(contentType.getContentTypeStr());
@@ -279,7 +287,7 @@ public class RdfUtils extends AbstractProcessingHandler {
 
     private Model parseModel(StringType modelContent, Lang modeLanguage) {
         Model model = ModelFactory.createDefaultModel();
-        model.read(new StringReader((String) modelContent.getValue()), null, modeLanguage.getName());
+        model.read(new StringReader(modelContent.getValue()), null, modeLanguage.getName());
         return model;
     }
 

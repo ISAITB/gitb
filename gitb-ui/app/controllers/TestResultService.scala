@@ -15,7 +15,7 @@
 
 package controllers
 
-import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
+import controllers.util.{AuthorizedAction, ParameterExtractor, ParameterNames, ResponseConstructor}
 
 import javax.inject.Inject
 import managers.AuthorizationManager
@@ -32,8 +32,8 @@ class TestResultService @Inject() (authorizedAction: AuthorizedAction,
 
   def getBinaryMetadata: Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canGetBinaryFileMetadata(request).map { _ =>
-      val data:String= ParameterExtractor.requiredBodyParameter(request, Parameters.DATA)
-      val isBase64:Boolean = java.lang.Boolean.valueOf(ParameterExtractor.requiredBodyParameter(request, Parameters.IS_BASE64))
+      val data:String= ParameterExtractor.requiredBodyParameter(request, ParameterNames.DATA)
+      val isBase64:Boolean = java.lang.Boolean.valueOf(ParameterExtractor.requiredBodyParameter(request, ParameterNames.IS_BASE64))
       val mimeType = MimeUtil.getMimeType(data, !isBase64)
       val extension = MimeUtil.getExtensionFromMimeType(mimeType)
       val json = JsonUtil.jsBinaryMetadata(mimeType, extension).toString()

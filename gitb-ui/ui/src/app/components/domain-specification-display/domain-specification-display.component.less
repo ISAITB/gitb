@@ -30,6 +30,17 @@
     &.top-level {
         background-color: @white;
     }
+    &.draggable {
+        cursor: move !important;
+        min-height: inherit;
+        .spec-container {
+            min-height: inherit;
+            .spec-description {
+                padding-top: inherit;
+                padding-bottom: inherit;
+            }
+        }
+    }
     &:hover {
         &:not(.dragging) {
             cursor: pointer;
@@ -49,6 +60,7 @@
         display: flex;
         align-items: center;
         width: 100%;
+        min-height: 35px;
         .spec-name {
             font-weight: bold;
         }

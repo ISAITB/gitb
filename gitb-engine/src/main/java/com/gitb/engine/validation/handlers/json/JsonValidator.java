@@ -26,15 +26,11 @@ import com.gitb.engine.validation.ValidationHandler;
 import com.gitb.engine.validation.handlers.common.AbstractValidator;
 import com.gitb.tr.*;
 import com.gitb.types.*;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonSyntaxException;
 import com.networknt.schema.*;
 import com.networknt.schema.i18n.ResourceBundleMessageSource;
 import com.networknt.schema.serialization.JsonNodeReader;
 import com.networknt.schema.utils.JsonNodes;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.springframework.http.MediaType;
 import org.springframework.util.MimeType;
 
@@ -45,6 +41,8 @@ import java.math.BigInteger;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static com.gitb.engine.utils.HandlerUtils.prettyPrintJson;
 
 @ValidationHandler(name="JsonValidator")
 public class JsonValidator extends AbstractValidator {
@@ -70,7 +68,7 @@ public class JsonValidator extends AbstractValidator {
     @Override
     public TestStepReportType validate(List<Configuration> configurations, Map<String, DataType> inputs) {
         // Retrieve and check inputs.
-        String content = (String) Objects.requireNonNull(getAndConvert(inputs, getInputArgumentName(), DataType.STRING_DATA_TYPE, StringType.class), "Input [%s] must be provided".formatted(getInputArgumentName())).getValue();
+        String content = Objects.requireNonNull(getAndConvert(inputs, getInputArgumentName(), DataType.STRING_DATA_TYPE, StringType.class), "Input [%s] must be provided".formatted(getInputArgumentName())).getValue();
         List<MapType> schemas = Optional.ofNullable(getAndConvert(inputs, SCHEMA_ARGUMENT_NAME, DataType.LIST_DATA_TYPE, ListType.class))
                 .map(list -> list.getElements().stream()
                         .map(schemaData -> {
@@ -91,12 +89,12 @@ public class JsonValidator extends AbstractValidator {
                 )
                 .orElseGet(Collections::emptyList);
         boolean showSchemas = Optional.ofNullable(getAndConvert(inputs, SHOW_SCHEMA_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class))
-                .map(v -> (Boolean) v.getValue())
+                .map(BooleanType::getValue)
                 .orElse(true);
         boolean supportYaml = supportsYaml(inputs);
         boolean supportJson = supportsJson(inputs);
         SchemaCombinationApproach schemaCombinationApproach = Optional.ofNullable(getAndConvert(inputs, SCHEMA_COMBINATION_APPROACH_ARGUMENT_NAME, DataType.STRING_DATA_TYPE, StringType.class))
-                .map(value -> SchemaCombinationApproach.byName((String) value.getValue()))
+                .map(value -> SchemaCombinationApproach.byName(value.getValue()))
                 .orElse(SchemaCombinationApproach.ALL);
         String testCaseId = getTestCaseId(inputs);
         String sessionId = (String) inputs.get(HandlerUtils.SESSION_INPUT).getValue();
@@ -112,7 +110,7 @@ public class JsonValidator extends AbstractValidator {
 
     protected boolean supportsYaml(Map<String, DataType> inputs) {
         return Optional.ofNullable(getAndConvert(inputs, SUPPORT_YAML_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class))
-                .map(value -> (Boolean) value.getValue())
+                .map(BooleanType::getValue)
                 .orElse(false);
     }
 
@@ -133,19 +131,6 @@ public class JsonValidator extends AbstractValidator {
             } else {
                 return new InputInfo(prettyPrintJson(input), false);
             }
-        }
-    }
-
-    private String prettyPrintJson(String input) {
-        try (StringReader in = new StringReader(input)) {
-            JsonElement json = com.google.gson.JsonParser.parseReader(in);
-            Gson gson = new GsonBuilder()
-                    .setPrettyPrinting()
-                    .serializeNulls()
-                    .create();
-            return gson.toJson(json);
-        } catch (JsonSyntaxException e) {
-            throw new IllegalStateException("Unable to parse provided input as a JSON document", e);
         }
     }
 
@@ -209,7 +194,7 @@ public class JsonValidator extends AbstractValidator {
     private List<Message> validateAgainstSchema(JsonNode contentNode, MapType schema, JsonNodeReader jsonReader, String testCaseId, String sessionId) {
         JsonSchema parsedSchema = readSchema(schema, jsonReader, testCaseId, sessionId);
         var locationMapper = getLocationMapper();
-        return parsedSchema.validate(contentNode).stream().map((message) -> new Message(StringUtils.removeStart(message.getMessage(), "[] "), locationMapper.apply(message))).collect(Collectors.toList());
+        return parsedSchema.validate(contentNode).stream().map((message) -> new Message(Strings.CS.removeStart(message.getMessage(), "[] "), locationMapper.apply(message))).collect(Collectors.toList());
     }
 
     private void addBranchErrors(List<Message> aggregatedMessages, List<Message> branchMessages, int branchCounter) {

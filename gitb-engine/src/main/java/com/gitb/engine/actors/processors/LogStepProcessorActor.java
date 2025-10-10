@@ -49,7 +49,7 @@ public class LogStepProcessorActor extends AbstractTestStepActor<Log> {
         StringType result = (StringType) exprHandler.processExpression(step).convertTo(DataType.STRING_DATA_TYPE);
         if (result != null) {
             var marker = MarkerFactory.getDetachedMarker(scope.getContext().getSessionId());
-            var message = (String)result.getValue();
+            var message = result.getValue();
             var variableResolver = new VariableResolver(scope);
             var level = LogLevel.INFO;
             try {

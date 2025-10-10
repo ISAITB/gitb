@@ -25,16 +25,14 @@ import java.util.Optional;
  */
 public class MapType extends ContainerType {
     //Elements of the map
-    private Map<String, DataType> elements;
+    private final Map<String, DataType> elements;
 
 	public MapType() {
 		elements = new LinkedHashMap<>();
 	}
 
 	public void addItem(String key, DataType element){
-        if(elements != null){
-            elements.put(key, element);
-        }
+        elements.put(key, element);
     }
 
 	public DataType removeItem(String key) {
@@ -94,18 +92,14 @@ public class MapType extends ContainerType {
     @Override
     protected MapType toMapType() {
         MapType map = new MapType();
-        if (elements != null) {
-            for (Map.Entry<String, DataType> entry: elements.entrySet()) {
-                map.addItem(entry.getKey(), entry.getValue());
-            }
+        for (Map.Entry<String, DataType> entry : elements.entrySet()) {
+            map.addItem(entry.getKey(), entry.getValue());
         }
         return map;
     }
 
     public void clear() {
-	    if (elements != null) {
-	        elements.clear();
-        }
+        elements.clear();
     }
 
     @Override

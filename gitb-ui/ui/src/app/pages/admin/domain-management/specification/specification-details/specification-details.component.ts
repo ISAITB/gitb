@@ -13,36 +13,40 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, EventEmitter, OnInit} from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
-import { filter, find } from 'lodash';
-import { BsModalService } from 'ngx-bootstrap/modal';
-import {forkJoin, map, mergeMap, Observable, of, share, tap} from 'rxjs';
-import { Constants } from 'src/app/common/constants';
-import { LinkSharedTestSuiteModalComponent } from 'src/app/modals/link-shared-test-suite-modal/link-shared-test-suite-modal.component';
-import { TestSuiteUploadModalComponent } from 'src/app/modals/test-suite-upload-modal/test-suite-upload-modal.component';
-import { TestSuiteUploadResult } from 'src/app/modals/test-suite-upload-modal/test-suite-upload-result';
-import { BaseTabbedComponent } from 'src/app/pages/base-tabbed-component';
-import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
-import { ConformanceService } from 'src/app/services/conformance.service';
-import { DataService } from 'src/app/services/data.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { RoutingService } from 'src/app/services/routing.service';
-import { SpecificationService } from 'src/app/services/specification.service';
-import { Actor } from 'src/app/types/actor';
-import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
-import { Specification } from 'src/app/types/specification';
-import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
-import { TestSuite } from 'src/app/types/test-suite';
+import {Component, EventEmitter, OnInit, ViewChild} from '@angular/core';
+import {ActivatedRoute, Router} from '@angular/router';
+import {filter, find} from 'lodash';
+import {BsModalService} from 'ngx-bootstrap/modal';
+import {finalize, forkJoin, map, mergeMap, Observable, of, share, Subject, tap} from 'rxjs';
+import {Constants} from 'src/app/common/constants';
+import {LinkSharedTestSuiteModalComponent} from 'src/app/modals/link-shared-test-suite-modal/link-shared-test-suite-modal.component';
+import {TestSuiteUploadModalComponent} from 'src/app/modals/test-suite-upload-modal/test-suite-upload-modal.component';
+import {TestSuiteUploadResult} from 'src/app/modals/test-suite-upload-modal/test-suite-upload-result';
+import {BaseTabbedComponent} from 'src/app/pages/base-tabbed-component';
+import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
+import {ConformanceService} from 'src/app/services/conformance.service';
+import {DataService} from 'src/app/services/data.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {RoutingService} from 'src/app/services/routing.service';
+import {SpecificationService} from 'src/app/services/specification.service';
+import {Actor} from 'src/app/types/actor';
+import {BreadcrumbType} from 'src/app/types/breadcrumb-type';
+import {Specification} from 'src/app/types/specification';
+import {TableColumnDefinition} from 'src/app/types/table-column-definition.type';
+import {TestSuite} from 'src/app/types/test-suite';
 import {FilterUpdate} from '../../../../../components/test-filter/filter-update';
 import {MultiSelectConfig} from '../../../../../components/multi-select-filter/multi-select-config';
+import {PagingEvent} from '../../../../../components/paging-controls/paging-event';
+import {TableApi} from '../../../../../components/table/table-api';
 
 @Component({
     selector: 'app-specification-details',
     templateUrl: './specification-details.component.html',
     standalone: false
 })
-export class SpecificationDetailsComponent extends BaseTabbedComponent implements OnInit, AfterViewInit {
+export class SpecificationDetailsComponent extends BaseTabbedComponent implements OnInit {
+
+  @ViewChild("testSuiteTable") testSuiteTable?: TableApi
 
   sharedTestSuiteId?: number
   specification: Partial<Specification> = {}
@@ -73,6 +77,8 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
   linkPending = false
   unlinkPending = false
   loaded = false
+  testSuitesRefreshing = false
+  testSuiteFilter?: string
 
   linkSharedSelectionConfig!: MultiSelectConfig<TestSuite>
   unlinkSharedSelectionConfig!: MultiSelectConfig<TestSuite>
@@ -83,11 +89,11 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
     private readonly confirmationDialogService: ConfirmationDialogService,
     private readonly specificationService: SpecificationService,
     private readonly routingService: RoutingService,
-    private readonly route: ActivatedRoute,
+    route: ActivatedRoute,
     router: Router,
     private readonly popupService: PopupService,
     private readonly modalService: BsModalService
-  ) { super(router) }
+  ) { super(router, route) }
 
   loadTab(tabIndex: number): void {
     if (tabIndex == Constants.TAB.SPECIFICATION.TEST_SUITES) {
@@ -95,10 +101,6 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
     } else {
       this.loadActors()
     }
-  }
-
-  ngAfterViewInit(): void {
-    this.showTab()
   }
 
   ngOnInit(): void {
@@ -192,23 +194,19 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
 
   loadTestSuitesInternal(forceLoad?: boolean): Observable<{all: TestSuite[], shared: TestSuite[]}> {
     if (this.testSuiteStatus.status == Constants.STATUS.NONE || forceLoad) {
-      this.testSuiteStatus.status = Constants.STATUS.PENDING
       this.testSuites = []
       this.sharedTestSuites = []
-      return this.conformanceService.getTestSuites(this.specificationId).pipe(
+      const specTestSuites$ = this.refreshTestSuites()
+      const sharedTestSuites$ = this.conformanceService.getSpecSharedTestSuites(this.specificationId)
+      return forkJoin([specTestSuites$, sharedTestSuites$]).pipe(
         mergeMap((data) => {
-          this.testSuites = data
-          this.sharedTestSuites = filter(this.testSuites, (ts) => ts.shared)
+          this.sharedTestSuites = data[1]
+          this.availableSharedTestSuitesLoaded = false
           return of({
             all: this.testSuites,
             shared: this.sharedTestSuites
           })
-        }),
-        tap(() => {
-          this.availableSharedTestSuitesLoaded = false
-          this.testSuiteStatus.status = Constants.STATUS.FINISHED
-        }),
-        share()
+        })
       )
     } else {
       return of({
@@ -216,6 +214,44 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
         shared: this.sharedTestSuites
       })
     }
+  }
+
+  applyFilter() {
+    this.refreshTestSuites()
+  }
+
+  refreshTestSuites() {
+    return this.loadSpecificationTestSuites({ targetPage: 1, targetPageSize: this.testSuiteTable?.getPagingControls()?.getCurrentStatus().pageSize! })
+  }
+
+  doTestSuitePaging(event: PagingEvent) {
+    this.loadSpecificationTestSuites(event)
+  }
+
+  private updatePagination(page: number, count: number) {
+    this.testSuiteTable?.getPagingControls()?.updateStatus(page, count)
+  }
+
+  loadSpecificationTestSuites(pagingInfo: PagingEvent) {
+    if (this.testSuiteStatus.status == Constants.STATUS.FINISHED) {
+      this.testSuitesRefreshing = true
+    } else {
+      this.testSuiteStatus.status = Constants.STATUS.PENDING
+    }
+    const finished$ = new Subject<void>();
+    this.conformanceService.getTestSuites(this.specificationId, this.testSuiteFilter, pagingInfo.targetPage, pagingInfo.targetPageSize).pipe(
+      tap((data) => {
+        this.testSuites = data.data
+        this.updatePagination(pagingInfo.targetPage, data.count!)
+      }),
+      finalize(() => {
+        this.testSuitesRefreshing = false
+        this.testSuiteStatus.status = Constants.STATUS.FINISHED
+        finished$.next()
+        finished$.complete()
+      })
+    ).subscribe()
+    return finished$.asObservable()
   }
 
   createActor() {

@@ -125,6 +125,25 @@
                         </div>
                     }
                     <div class="mt-3 row">
+                        <legend class="col-3 col-form-label text-end pt-0">{{dataService.labelOrganisation()}} tokens:</legend>
+                        <div class="col-7">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="selfRegAllowOrganisationTokens" name="selfRegAllowOrganisationTokens" [(ngModel)]="community.selfRegAllowOrganisationTokens">
+                                <label class="form-check-label" for="selfRegAllowOrganisationTokens">Enabled
+                                    <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Check this to allow self-registering users to enter a token for direct registration in a specific {{dataService.labelOrganisation()}}."></div>
+                                </label>
+                            </div>
+                            <div [collapse]="community.selfRegAllowOrganisationTokens === false" [isAnimated]="true">
+                                <div class="form-check pt-2">
+                                    <input class="form-check-input" type="checkbox" id="selfRegAllowOrganisationTokenManagement" name="selfRegAllowOrganisationTokenManagement" [(ngModel)]="community.selfRegAllowOrganisationTokenManagement">
+                                    <label class="form-check-label" for="selfRegAllowOrganisationTokenManagement">Allow self-management of {{dataService.labelOrganisationLower()}} tokens
+                                        <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Check this to allow {{dataService.labelOrganisationLower()}} tokens to be managed by {{dataService.labelOrganisationLower()}} administrators. Otherwise existing tokens can only be created, updated and removed by community administrators."></div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3 row">
                         <legend class="col-3 col-form-label text-end pt-0">Require from users:</legend>
                         <div class="col-7">
                             <div class="form-check pb-2">
@@ -138,6 +157,14 @@
                                 <label class="form-check-label" for="forceRequiredProperties">Complete custom properties defined as required
                                      <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to force users to complete required custom '+dataService.labelOrganisationLower()+' properties on the self-registration screen. This option applies only if such properties are defined.'"></div>
                                 </label>
+                            </div>
+                            <div [collapse]="community.selfRegAllowOrganisationTokens === false" [isAnimated]="true">
+                                <div class="form-check pt-2">
+                                    <input class="form-check-input" type="checkbox" id="selfRegForceOrganisationTokenInput" name="selfRegForceOrganisationTokenInput" [(ngModel)]="community.selfRegForceOrganisationTokenInput">
+                                    <label class="form-check-label" for="selfRegForceOrganisationTokenInput">Enter a valid {{dataService.labelOrganisationLower()}} token
+                                        <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to force users to enter a valid '+dataService.labelOrganisationLower()+' token on the self-registration screen. Doing so ensures that self-registrations only happen for existing '+dataService.labelOrganisationsLower()+'.'"></div>
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -156,6 +183,12 @@
                         <input class="form-check-input" type="checkbox" id="allowCertificateDownload" name="allowCertificateDownload" [(ngModel)]="community.allowCertificateDownload">
                         <label class="form-check-label" for="allowCertificateDownload">Download conformance certificates
                              <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' users to download a conformance certificate if they have successfully passed their tests. Otherwise only community administrators may create and share such certificates.'"></div>
+                        </label>
+                    </div>
+                    <div class="form-check pb-2">
+                        <input class="form-check-input" type="checkbox" id="allowUserManagement" name="allowUserManagement" [(ngModel)]="community.allowUserManagement">
+                        <label class="form-check-label" for="allowUserManagement">Manage {{ dataService.labelOrganisationLower()}} users
+                            <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' administrators to manage users within their own '+dataService.labelOrganisationLower()+'. Otherwise only community administrators may manage '+dataService.labelOrganisationLower()+' users.'"></div>
                         </label>
                     </div>
                     <div class="form-check pb-2">

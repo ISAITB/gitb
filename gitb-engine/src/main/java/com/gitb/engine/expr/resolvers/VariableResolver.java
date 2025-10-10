@@ -16,6 +16,7 @@
 package com.gitb.engine.expr.resolvers;
 
 import com.gitb.core.ErrorCode;
+import com.gitb.engine.expr.PossibleDomainIdentifier;
 import com.gitb.engine.testcase.StepStatusMapType;
 import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.engine.testcase.TestCaseScope;
@@ -45,6 +46,8 @@ import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static com.gitb.PropertyConstants.DOMAIN_MAP;
 
 /**
  * Created by senan on 9/8/14.
@@ -99,7 +102,6 @@ public class VariableResolver implements XPathVariableResolver{
 
     /**
      * Used by XPath Expression Evaluator to resolve the values of the variables referred in the XPath itself
-     * @param name
      * @return
      *      Returns Java correspondents for GITB Primitive types.
      *      Return Node for Object Type
@@ -125,18 +127,21 @@ public class VariableResolver implements XPathVariableResolver{
                 itemValues.add(list.getItem(i).getValue());
             }
             NodeList result;
-            switch (list.getContainedType()){
-                case DataType.NUMBER_DATA_TYPE:
-                case DataType.STRING_DATA_TYPE:
-                case DataType.BOOLEAN_DATA_TYPE:
-                    result = convertPrimitiveListToNodeList(itemValues);
-                    break;
-                case DataType.OBJECT_DATA_TYPE:
-                    result = convertListOfNodesToNodeList(itemValues);
-                    break;
-                default:
-                    List<DataType> objects = (List<DataType>)list.getValue();
-                    result = convertListOfNodesToNodeList(convertListOfOthersToListOfNodes(objects));
+            if (list.getContainedType() != null) {
+                switch (list.getContainedType()) {
+                    case DataType.NUMBER_DATA_TYPE:
+                    case DataType.STRING_DATA_TYPE:
+                    case DataType.BOOLEAN_DATA_TYPE:
+                        result = convertPrimitiveListToNodeList(itemValues);
+                        break;
+                    case DataType.OBJECT_DATA_TYPE:
+                        result = convertListOfNodesToNodeList(itemValues);
+                        break;
+                    default:
+                        result = convertListOfNodesToNodeList(convertListOfOthersToListOfNodes((List<DataType>)list.getValue()));
+                }
+            } else {
+                result = convertListOfNodesToNodeList(convertListOfOthersToListOfNodes((List<DataType>)list.getValue()));
             }
             return result;
         } else if(value instanceof  MapType){
@@ -203,12 +208,19 @@ public class VariableResolver implements XPathVariableResolver{
 	/**
 	 * Resolve variable value from the given variable expression ex: $x{2}, $y
 	 * This can be used externally by other types if they write their own implementation for Expression evaluation
-	 * @param variableExpression
-	 * @return
-	 */
+     */
 	public DataType resolveVariable(String variableExpression) {
 	    return resolveVariable(variableExpression, false).orElseThrow();
 	}
+
+    public PossibleDomainIdentifier resolveAsPossibleDomainIdentifier(String variableExpression) {
+        String value = resolveVariableAsString(variableExpression).getValue();
+        String domainIdentifier = null;
+        if (variableExpression.startsWith("$"+DOMAIN_MAP+"{") && variableExpression.endsWith("}")) {
+            domainIdentifier = variableExpression.substring(variableExpression.indexOf("{")+1, variableExpression.lastIndexOf("}"));
+        }
+        return new PossibleDomainIdentifier(domainIdentifier, value);
+    }
 
     public StringType resolveVariableAsString(String variableExpression) {
         return (StringType)resolveVariable(variableExpression).convertTo(DataType.STRING_DATA_TYPE);
@@ -231,8 +243,6 @@ public class VariableResolver implements XPathVariableResolver{
 
     /**
      * Try to convert list of other types to NodeList
-     * @param list
-     * @return
      */
     private List<Node> convertListOfOthersToListOfNodes(List<DataType> list) {
         List<Node> nodeList = new ArrayList<Node>();
@@ -247,8 +257,6 @@ public class VariableResolver implements XPathVariableResolver{
 
     /**
      * Convert List of Nodes into a NodeList
-     * @param listOfNodes
-     * @return
      */
     private NodeList convertListOfNodesToNodeList(List listOfNodes){
         Document temp = documentBuilder.newDocument();
@@ -262,8 +270,6 @@ public class VariableResolver implements XPathVariableResolver{
 
     /**
      * Convert a primitive List into a NodeList with Text nodes
-     * @param primitiveList
-     * @return
      */
     private NodeList convertPrimitiveListToNodeList(List primitiveList){
         Document temp = documentBuilder.newDocument();
@@ -277,8 +283,6 @@ public class VariableResolver implements XPathVariableResolver{
 
     /**
      * Resolve an index expression embedded in a variable expression
-     * @param indexOrKeyExpression
-     * @return
      */
     private String resolveIndexOrKeyExpression(String indexOrKeyExpression){
 	    Matcher variableExpressionMatcher = VARIABLE_EXPRESSION_PATTERN.matcher(indexOrKeyExpression);
@@ -328,7 +332,6 @@ public class VariableResolver implements XPathVariableResolver{
      * Resolve item in a container by giving the index or key
      * @param container List or Map type object
      * @param keyOrIndex Numeric index for list type or string keys for map type
-     * @return
      */
     private DataType resolveItemInContainer(DataType container, String keyOrIndex){
         if(!(container instanceof ContainerType)){

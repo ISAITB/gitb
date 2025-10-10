@@ -48,7 +48,7 @@ public class ExpressionValidator extends SimpleValidator {
     static class ExpressionReportHandler extends AbstractReportHandler {
 
         ExpressionReportHandler(BooleanType result) {
-            if ((boolean) result.getValue()) {
+            if (result.getValue()) {
                 report.setResult(TestResultType.SUCCESS);
             } else {
                 report.setResult(TestResultType.FAILURE);

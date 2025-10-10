@@ -25,7 +25,7 @@ import com.gitb.utils.{XMLDateTimeUtils, XMLUtils}
 import managers.TestCaseReportProducer.ReportGenerationInput
 import models.{CommunityLabels, Constants, SessionReportPath}
 import org.apache.commons.codec.net.URLCodec
-import org.apache.commons.lang3.StringUtils
+import org.apache.commons.lang3.{StringUtils, Strings}
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
@@ -374,7 +374,7 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper,
   }
 
   private def replaceIdPrefix(step: TestStep, prefixToLookFor: String, prefixToUse: String): Unit = {
-    step.setId(prefixToUse+StringUtils.removeStart(step.getId, prefixToLookFor))
+    step.setId(prefixToUse+ Strings.CS.removeStart(step.getId, prefixToLookFor))
     step match {
       case step: GroupStep =>
         replaceIdPrefixForSequence(step, prefixToLookFor, prefixToUse)

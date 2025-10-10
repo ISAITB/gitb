@@ -139,6 +139,10 @@
         width: 16px;
         margin-top: -4px;
     }
+    .icon-img {
+        width: 16px;
+        margin-top: -4px;
+    }
     .separator {
         margin-top: 10px;
         margin-left: 10px;

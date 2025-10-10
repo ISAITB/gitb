@@ -74,7 +74,8 @@
                 <input class="form-check-input" type="checkbox" id="hidden" name="hidden" [(ngModel)]="parameter.hidden">
                 <label class="form-check-label" for="hidden">Hidden</label>
             </div>
-        } @else if (!hideInRegistration) {
+        }
+        @if (!hideInRegistration && !parameter.hidden) {
             <div class="form-check form-check-inline">
                 <input class="form-check-input" type="checkbox" id="inSelfRegistration" name="inSelfRegistration" [(ngModel)]="parameter.inSelfRegistration">
                 <label class="form-check-label" for="inSelfRegistration">Requested in self-registration</label>

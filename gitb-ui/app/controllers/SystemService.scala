@@ -50,10 +50,10 @@ class SystemService @Inject() (repositoryUtils: RepositoryUtils,
     val userId = ParameterExtractor.extractUserId(request)
     val system:Systems = ParameterExtractor.extractSystemWithOrganizationInfo(paramMap)
     authorizationManager.canCreateSystem(request, system.owner).flatMap { _ =>
-      val otherSystem = ParameterExtractor.optionalLongBodyParameter(paramMap, Parameters.OTHER_SYSTEM)
-      val copySystemParameters = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.SYSTEM_PARAMETERS).getOrElse("false").toBoolean
-      val copyStatementParameters = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.STATEMENT_PARAMETERS).getOrElse("false").toBoolean
-      val values = ParameterExtractor.extractSystemParameterValues(paramMap, Parameters.PROPERTIES, optional = true)
+      val otherSystem = ParameterExtractor.optionalLongBodyParameter(paramMap, ParameterNames.OTHER_SYSTEM)
+      val copySystemParameters = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.SYSTEM_PARAMETERS).getOrElse("false").toBoolean
+      val copyStatementParameters = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.STATEMENT_PARAMETERS).getOrElse("false").toBoolean
+      val values = ParameterExtractor.extractSystemParameterValues(paramMap, ParameterNames.PROPERTIES, optional = true)
       val files = ParameterExtractor.extractFiles(request).map {
         case (key, value) => (key.substring(key.indexOf('_')+1).toLong, value)
       }
@@ -74,17 +74,17 @@ class SystemService @Inject() (repositoryUtils: RepositoryUtils,
   /**
    * Updates the profile of a system
    */
-  def updateSystemProfile(sut_id:Long): Action[AnyContent] = authorizedAction.async { request =>
-    authorizationManager.canUpdateSystem(request, sut_id).flatMap { _ =>
+  def updateSystemProfile(sutId:Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canUpdateSystem(request, sutId).flatMap { _ =>
       val paramMap = ParameterExtractor.paramMap(request)
-      val sname = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SYSTEM_SNAME)
-      val fname = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SYSTEM_FNAME)
-      val descr = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.SYSTEM_DESC)
-      val version = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.SYSTEM_VERSION)
-      val otherSystem = ParameterExtractor.optionalLongBodyParameter(paramMap, Parameters.OTHER_SYSTEM)
-      val copySystemParameters = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.SYSTEM_PARAMETERS).getOrElse("false").toBoolean
-      val copyStatementParameters = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.STATEMENT_PARAMETERS).getOrElse("false").toBoolean
-      val values = ParameterExtractor.extractSystemParameterValues(paramMap, Parameters.PROPERTIES, optional = true)
+      val sname = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.SYSTEM_SNAME)
+      val fname = ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.SYSTEM_FNAME)
+      val descr = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.SYSTEM_DESC)
+      val version = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.SYSTEM_VERSION)
+      val otherSystem = ParameterExtractor.optionalLongBodyParameter(paramMap, ParameterNames.OTHER_SYSTEM)
+      val copySystemParameters = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.SYSTEM_PARAMETERS).getOrElse("false").toBoolean
+      val copyStatementParameters = ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.STATEMENT_PARAMETERS).getOrElse("false").toBoolean
+      val values = ParameterExtractor.extractSystemParameterValues(paramMap, ParameterNames.PROPERTIES, optional = true)
       val files = ParameterExtractor.extractFiles(request).map {
         case (key, value) => (key.substring(key.indexOf('_')+1).toLong, value)
       }
@@ -94,7 +94,7 @@ class SystemService @Inject() (repositoryUtils: RepositoryUtils,
         }
       } else {
         val userId = ParameterExtractor.extractUserId(request)
-        systemManager.updateSystemProfile(userId, sut_id, sname, fname, descr, version, otherSystem, values, Some(files), copySystemParameters, copyStatementParameters).map { _ =>
+        systemManager.updateSystemProfile(userId, sutId, sname, fname, descr, version, otherSystem, values, Some(files), copySystemParameters, copyStatementParameters).map { _ =>
           ResponseConstructor.constructEmptyResponse
         }
       }
@@ -122,9 +122,9 @@ class SystemService @Inject() (repositoryUtils: RepositoryUtils,
   /**
    * Gets the system profile for the specific system
    */
-  def getSystemProfile(sut_id:Long): Action[AnyContent] = authorizedAction.async { request =>
-    authorizationManager.canViewSystem(request, sut_id).flatMap { _ =>
-      systemManager.getSystemProfile(sut_id).map { system =>
+  def getSystemProfile(sutId:Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canViewSystem(request, sutId).flatMap { _ =>
+      systemManager.getSystemProfile(sutId).map { system =>
         val json:String = JsonUtil.serializeSystem(system)
         ResponseConstructor.constructJsonResponse(json)
       }
@@ -143,9 +143,9 @@ class SystemService @Inject() (repositoryUtils: RepositoryUtils,
     }
   }
 
-	def deleteConformanceStatement(sut_id: Long): Action[AnyContent] = authorizedAction.async { request =>
+	def deleteConformanceStatement(sutId: Long): Action[AnyContent] = authorizedAction.async { request =>
     val actorIds = ParameterExtractor.extractLongIdsQueryParameter(request)
-    authorizationManager.canDeleteConformanceStatement(request, sut_id, actorIds).flatMap { _ =>
+    authorizationManager.canDeleteConformanceStatement(request, sutId, actorIds).flatMap { _ =>
       actorIds match {
         case Some(actorIds) =>
           if (actorIds.isEmpty) {
@@ -153,7 +153,7 @@ class SystemService @Inject() (repositoryUtils: RepositoryUtils,
               ResponseConstructor.constructBadRequestResponse(ErrorCodes.MISSING_PARAMS, "'ids' parameter should be non-empty")
             }
           } else {
-            systemManager.deleteConformanceStatementsWrapper(sut_id, actorIds).map { _ =>
+            systemManager.deleteConformanceStatementsWrapper(sutId, actorIds).map { _ =>
               ResponseConstructor.constructEmptyResponse
             }
           }
@@ -166,9 +166,9 @@ class SystemService @Inject() (repositoryUtils: RepositoryUtils,
 	}
 
   def downloadEndpointConfigurationFile(): Action[AnyContent] = authorizedAction.async { request =>
-    val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
+    val systemId = ParameterExtractor.requiredQueryParameter(request, ParameterNames.SYSTEM_ID).toLong
     authorizationManager.canViewEndpointConfigurationsForSystem(request, systemId).flatMap { _ =>
-      val parameterId = ParameterExtractor.requiredQueryParameter(request, Parameters.PARAMETER_ID).toLong
+      val parameterId = ParameterExtractor.requiredQueryParameter(request, ParameterNames.PARAMETER_ID).toLong
       Future.successful {
         repositoryUtils.getStatementParameterFile(parameterId, systemId)
       }.map { file =>
@@ -185,11 +185,11 @@ class SystemService @Inject() (repositoryUtils: RepositoryUtils,
   }
 
   def getSystemsByOrganization(): Action[AnyContent] = authorizedAction.async { request =>
-    val orgId = ParameterExtractor.requiredQueryParameter(request, Parameters.ORGANIZATION_ID).toLong
-    val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SNAPSHOT)
+    val orgId = ParameterExtractor.requiredQueryParameter(request, ParameterNames.ORGANIZATION_ID).toLong
+    val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, ParameterNames.SNAPSHOT)
     authorizationManager.canViewSystems(request, orgId, snapshotId).flatMap { _ =>
       systemManager.getSystemsByOrganization(orgId, snapshotId).flatMap { list =>
-        val checkIfHasTests = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.CHECK_HAS_TESTS)
+        val checkIfHasTests = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.CHECK_HAS_TESTS)
         val systemsWithTests = if (checkIfHasTests.isDefined && checkIfHasTests.get) {
           systemManager.checkIfSystemsHaveTests(list.map(x => x.id).toSet).map { hasTests =>
             Some(hasTests)
@@ -216,10 +216,11 @@ class SystemService @Inject() (repositoryUtils: RepositoryUtils,
   }
 
   def searchSystems(): Action[AnyContent] = authorizedAction.async { request =>
-    authorizationManager.canViewSystemsById(request, None).flatMap { _ =>
-      val communityIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.COMMUNITY_IDS)
-      val organisationIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.ORG_IDS)
-      systemManager.searchSystems(communityIds, organisationIds).map { systems =>
+    val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.SNAPSHOT)
+    authorizationManager.canViewSystemsById(request, None, snapshotId).flatMap { _ =>
+      val communityIds = ParameterExtractor.extractLongIdsBodyParameter(request, ParameterNames.COMMUNITY_IDS)
+      val organisationIds = ParameterExtractor.extractLongIdsBodyParameter(request, ParameterNames.ORG_IDS)
+      systemManager.searchSystems(communityIds, organisationIds, snapshotId).map { systems =>
         val json = JsonUtil.jsSystems(systems).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
@@ -227,10 +228,11 @@ class SystemService @Inject() (repositoryUtils: RepositoryUtils,
   }
 
   def searchSystemsInCommunity(): Action[AnyContent] = authorizedAction.async { request =>
-    val communityId = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
-    authorizationManager.canViewSystemsByCommunityId(request, communityId).flatMap { _ =>
-      val organisationIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.ORG_IDS)
-      systemManager.searchSystems(Some(List(communityId)), organisationIds).map { systems =>
+    val communityId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.COMMUNITY_ID).toLong
+    val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.SNAPSHOT)
+    authorizationManager.canViewSystemsByCommunityId(request, communityId, snapshotId).flatMap { _ =>
+      val organisationIds = ParameterExtractor.extractLongIdsBodyParameter(request, ParameterNames.ORG_IDS)
+      systemManager.searchSystems(Some(List(communityId)), organisationIds, snapshotId).map { systems =>
         val json = JsonUtil.jsSystems(systems).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
@@ -239,7 +241,7 @@ class SystemService @Inject() (repositoryUtils: RepositoryUtils,
 
   def getSystemParameterValues(systemId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewSystemsById(request, Some(List(systemId))).flatMap { _ =>
-      val onlySimple = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.SIMPLE)
+      val onlySimple = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.SIMPLE)
       systemManager.getSystemParameterValues(systemId, onlySimple).map { values =>
         val json: String = JsonUtil.jsSystemParametersWithValues(values, includeValues = true).toString
         ResponseConstructor.constructJsonResponse(json)

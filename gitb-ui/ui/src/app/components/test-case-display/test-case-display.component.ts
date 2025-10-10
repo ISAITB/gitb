@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, HostListener, Input, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import {mergeMap, of, share} from 'rxjs';
 import {Constants} from 'src/app/common/constants';
 import {ConformanceTestCase} from 'src/app/pages/organisation/conformance-statement/conformance-test-case';
@@ -27,6 +27,11 @@ import {ConformanceTestCaseGroup} from '../../pages/organisation/conformance-sta
 import {BaseComponent} from '../../pages/base-component.component';
 import {DataService} from '../../services/data.service';
 import {CloseEvent} from '../test-result-status-display/close-event';
+import {TestCaseDisplayComponentApi} from './test-case-display-component-api';
+import {TestResultStatusDisplayComponentApi} from '../test-result-status-display/test-result-status-display-component-api';
+import {CheckBoxOptionPanelComponentApi} from '../checkbox-option-panel/check-box-option-panel-component-api';
+import {CheckboxOption} from '../checkbox-option-panel/checkbox-option';
+import {CheckboxOptionState} from '../checkbox-option-panel/checkbox-option-state';
 
 @Component({
     selector: 'app-test-case-display',
@@ -34,7 +39,7 @@ import {CloseEvent} from '../test-result-status-display/close-event';
     styleUrls: ['./test-case-display.component.less'],
     standalone: false
 })
-export class TestCaseDisplayComponent extends BaseComponent implements OnInit {
+export class TestCaseDisplayComponent extends BaseComponent implements TestCaseDisplayComponentApi, OnInit {
 
   @Input() testCases!: ConformanceTestCase[]
   @Input() testCaseGroups?: Map<number, ConformanceTestCaseGroup>
@@ -48,11 +53,18 @@ export class TestCaseDisplayComponent extends BaseComponent implements OnInit {
   @Input() showEdit? = false
   @Input() shaded = true
   @Input() communityId?: number
-  @Input() refresh?: EventEmitter<void>
 
   @Output() viewTestSession = new EventEmitter<string>()
   @Output() execute = new EventEmitter<ConformanceTestCase>()
   @Output() edit = new EventEmitter<ConformanceTestCase>()
+  @Output() optionsOpened = new EventEmitter<ConformanceTestCase>()
+
+  @ViewChildren("testResultStatusDisplayComponent") testResultStatusDisplayComponents?: QueryList<TestResultStatusDisplayComponentApi>
+  @ViewChildren("optionButton") optionButtons?: QueryList<CheckBoxOptionPanelComponentApi>
+
+  protected static EXPORT_XML = '0'
+  protected static EXPORT_PDF = '1'
+  protected static VIEW_SESSION = '2'
 
   Constants = Constants
   exportXmlPending: {[key:number]: boolean } = {}
@@ -63,6 +75,7 @@ export class TestCaseDisplayComponent extends BaseComponent implements OnInit {
   hasDescription: {[key:number]: boolean } = {}
   descriptionVisible: {[key:number]: boolean } = {}
   statusCloseEmitter = new EventEmitter<CloseEvent>()
+  animated = true
 
   constructor(
     private readonly reportService: ReportService,
@@ -72,27 +85,78 @@ export class TestCaseDisplayComponent extends BaseComponent implements OnInit {
   ) { super() }
 
   ngOnInit(): void {
-    if (this.refresh) {
-      this.refresh.subscribe(() => {
-        this.resetPresentation()
-      })
-    } else {
-      this.resetPresentation()
-      this.dataService.prepareTestCaseGroupPresentation(this.testCases, this.testCaseGroups)
+    this.resetPresentation()
+  }
+
+  refresh() {
+    this.resetPresentation()
+    this.testResultStatusDisplayComponents?.forEach((component) => {
+      component.refresh()
+    })
+  }
+
+  getParsedTags(testCase: ConformanceTestCase) {
+    if (testCase.tags != undefined && testCase.parsedTags == undefined) {
+      testCase.parsedTags = sortBy(JSON.parse(testCase.tags), ['name'])
+    }
+    return testCase.parsedTags
+  }
+
+  closeOptions(source: ConformanceTestCase) {
+    this.optionButtons?.forEach((optionButton) => {
+      if (optionButton.getReferenceItem() !== source) {
+        optionButton.close()
+      }
+    })
+  }
+
+  loadOptions(testCase: ConformanceTestCase) {
+    return () => {
+      const options: CheckboxOption[][] = []
+      if (testCase.sessionId != undefined) {
+        options.push([
+          { key: TestCaseDisplayComponent.VIEW_SESSION, label: "View test session", default: true, iconClass: "fa-solid fa-search"}
+        ])
+      }
+      if (this.showExportTestCase(testCase)) {
+        options.push([
+          { key: TestCaseDisplayComponent.EXPORT_PDF, label: "Download report", default: true, iconClass: "fa-solid fa-file-pdf"},
+          { key: TestCaseDisplayComponent.EXPORT_XML, label: "Download report as XML", default: true, iconClass: "fa-solid fa-file-lines"}
+        ])
+      }
+      return of(options)
     }
   }
 
-  private resetPresentation() {
-    for (let testCase of this.testCases) {
-      if (testCase.tags != undefined && testCase.parsedTags == undefined) {
-        testCase.parsedTags = sortBy(JSON.parse(testCase.tags), ['name'])
-      }
-      this.hasDescription[testCase.id] = testCase.description != undefined && testCase.description != ''
-      if (this.hasDescription[testCase.id] && !this.hasDescriptions) {
-        this.hasDescriptions = true
-      }
-      this.descriptionVisible[testCase.id] = false
+  handleOption(event: CheckboxOptionState, testCase: ConformanceTestCase) {
+    if (event[TestCaseDisplayComponent.EXPORT_PDF]) {
+      this.onExportTestCasePdf(testCase)
+    } else if (event[TestCaseDisplayComponent.EXPORT_XML]) {
+      this.onExportTestCaseXml(testCase)
+    } else if (event[TestCaseDisplayComponent.VIEW_SESSION]) {
+      this.viewTestCase(testCase)
     }
+  }
+
+  optionsOpening(testCase: ConformanceTestCase) {
+    this.optionsOpened.emit(testCase)
+  }
+
+  private resetPresentation() {
+    this.animated = false
+    setTimeout(() => {
+      for (let testCase of this.testCases) {
+        this.hasDescription[testCase.id] = testCase.description != undefined && testCase.description != ''
+        if (this.hasDescription[testCase.id] && !this.hasDescriptions) {
+          this.hasDescriptions = true
+        }
+        this.descriptionVisible[testCase.id] = false
+      }
+      setTimeout(() => {
+        this.dataService.prepareTestCaseGroupPresentation(this.testCases, this.testCaseGroups)
+        this.animated = true
+      })
+    })
   }
 
   viewTestCase(testCase: ConformanceTestCase) {

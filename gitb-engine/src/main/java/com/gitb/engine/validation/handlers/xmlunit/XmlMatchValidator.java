@@ -108,7 +108,7 @@ public class XmlMatchValidator extends AbstractValidator {
             }
             for (Object path: ((List)listType.getValue())) {
                 if (path instanceof StringType) {
-                    pathsToIgnore.add((String)((StringType)path).getValue());
+                    pathsToIgnore.add(((StringType)path).getValue());
                 } else {
                     throw new IllegalArgumentException("The items of input ["+ INPUT_IGNORED_PATHS +"] must be of type string.");
                 }

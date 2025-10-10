@@ -43,7 +43,7 @@ import java.util.List;
 @Addressing(required = true)
 public class TestbedServiceImpl implements TestbedService {
 
-    private static final Logger logger = LoggerFactory.getLogger(TestbedService.class);
+    private static final Logger logger = LoggerFactory.getLogger(TestbedServiceImpl.class);
 
     @Resource
     private WebServiceContext wsc;

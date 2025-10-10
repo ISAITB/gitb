@@ -11,7 +11,7 @@
                 <div class="card-header clickable" (click)="organisationPropertiesCollapsed = !organisationPropertiesCollapsed" [class.collapsed]="organisationPropertiesCollapseFinished">
                     <div class="table-title"><app-collapsing-icon [isCollapsed]="organisationPropertiesCollapsed"></app-collapsing-icon>{{dataService.labelOrganisation()}} level properties</div>
                     <div class="btn-toolbar">
-                        <button type="button" class="btn btn-secondary" (click)="previewOrganisationParameters();$event.stopPropagation()">Preview</button>
+                        <button type="button" class="btn btn-secondary" [pending]="previewOrganisationParametersPending" (click)="previewOrganisationParameters();$event.stopPropagation()">Preview</button>
                         <button type="button" class="btn btn-secondary" [disable]="orderOrganisationParametersDisabled" [pending]="orderOrganisationParametersPending" (click)="orderOrganisationParameters();$event.stopPropagation()">Save property order</button>
                         <button type="button" class="btn btn-secondary" (click)="addOrganisationParameter();$event.stopPropagation()">Create property</button>
                     </div>

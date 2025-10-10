@@ -17,11 +17,12 @@ import { ConformanceStatementItem } from "./conformance-statement-item";
 import { ConformanceStatus } from "./conformance-status";
 import { Organisation } from "./organisation.type";
 import { System } from "./system";
+import {SearchResult} from './search-result';
 
 export interface ConformanceStatementWithResults {
 
     statement: ConformanceStatementItem
-    results: ConformanceStatus
+    results: SearchResult<ConformanceStatus>
     system: System
     organisation: Organisation
 

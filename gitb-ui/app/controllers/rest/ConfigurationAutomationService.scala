@@ -15,9 +15,8 @@
 
 package controllers.rest
 
-import controllers.util.{AuthorizedAction, RequestWithAttributes, ResponseConstructor}
+import controllers.util.{AuthorizedAction, ParameterExtractor, RequestWithAttributes, ResponseConstructor}
 import managers.{AuthorizationManager, CommunityManager, DomainParameterManager, ParameterManager}
-import models.Constants
 import models.automation.DomainParameterInfo
 import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
 import utils.JsonUtil
@@ -36,7 +35,7 @@ class ConfigurationAutomationService @Inject() (authorizedAction: AuthorizedActi
 
   def configure(): Action[AnyContent] = authorizedAction.async { request =>
     processAsJson(request, () => authorizationManager.canManageConfigurationThroughAutomationApi(request), { body =>
-      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       val input = JsonUtil.parseJsConfigurationRequest(body)
       communityManager.applyConfigurationViaAutomationApi(communityKey, input).map { warnings =>
         ResponseConstructor.constructJsonResponse(JsonUtil.jsMessages(warnings).toString())
@@ -46,7 +45,7 @@ class ConfigurationAutomationService @Inject() (authorizedAction: AuthorizedActi
 
   def createDomainParameter(): Action[AnyContent] = authorizedAction.async { request =>
     processAsJson(request, () => authorizationManager.canManageConfigurationThroughAutomationApi(request), { body =>
-      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       val input = JsonUtil.parseJsDomainParameterConfiguration(body)
       domainParameterManager.createDomainParameterThroughAutomationApi(communityKey, input).map { _ =>
         ResponseConstructor.constructEmptyResponse
@@ -64,7 +63,7 @@ class ConfigurationAutomationService @Inject() (authorizedAction: AuthorizedActi
 
   private def deleteDomainParameterInternal(domain: Option[String], parameter: String, request: RequestWithAttributes[AnyContent]): Future[Result] = {
     process(() => authorizationManager.canManageConfigurationThroughAutomationApi(request), { _ =>
-      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       domainParameterManager.deleteDomainParameterThroughAutomationApi(communityKey, DomainParameterInfo(parameter, domain)).map { _ =>
         ResponseConstructor.constructEmptyResponse
       }
@@ -73,7 +72,7 @@ class ConfigurationAutomationService @Inject() (authorizedAction: AuthorizedActi
 
   def updateDomainParameter(): Action[AnyContent] = authorizedAction.async { request =>
     processAsJson(request, () => authorizationManager.canManageConfigurationThroughAutomationApi(request), { body =>
-      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       val input = JsonUtil.parseJsDomainParameterConfiguration(body)
       domainParameterManager.updateDomainParameterThroughAutomationApi(communityKey, input).map { _ =>
         ResponseConstructor.constructEmptyResponse
@@ -81,9 +80,56 @@ class ConfigurationAutomationService @Inject() (authorizedAction: AuthorizedActi
     })
   }
 
+  def createTestService(): Action[AnyContent] = authorizedAction.async { request =>
+    processAsJson(request, () => authorizationManager.canManageConfigurationThroughAutomationApi(request), { body =>
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
+      val input = JsonUtil.parseJsTestServiceConfiguration(body, isNew = true)
+      domainParameterManager.createTestServiceThroughAutomationApi(communityKey, input).map { _ =>
+        ResponseConstructor.constructEmptyResponse
+      }
+    })
+  }
+
+  def updateTestService(): Action[AnyContent] = authorizedAction.async { request =>
+    processAsJson(request, () => authorizationManager.canManageConfigurationThroughAutomationApi(request), { body =>
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
+      val input = JsonUtil.parseJsTestServiceConfiguration(body, isNew = false)
+      domainParameterManager.updateTestServiceThroughAutomationApi(communityKey, input).map { _ =>
+        ResponseConstructor.constructEmptyResponse
+      }
+    })
+  }
+
+  def deleteTestService(parameter: String): Action[AnyContent] = authorizedAction.async { request =>
+    deleteTestServiceInternal(None, parameter, request)
+  }
+
+  def deleteTestServiceForDomain(domain: String, parameter: String): Action[AnyContent] = authorizedAction.async { request =>
+    deleteTestServiceInternal(Some(domain), parameter, request)
+  }
+
+  private def deleteTestServiceInternal(domain: Option[String], parameter: String, request: RequestWithAttributes[AnyContent]): Future[Result] = {
+    process(() => authorizationManager.canManageConfigurationThroughAutomationApi(request), { _ =>
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
+      domainParameterManager.deleteTestServiceThroughAutomationApi(communityKey, domain, parameter).map { _ =>
+        ResponseConstructor.constructEmptyResponse
+      }
+    })
+  }
+
+  def searchTestServices(): Action[AnyContent] = authorizedAction.async { request =>
+    process(() => authorizationManager.canManageConfigurationThroughAutomationApi(request), { _ =>
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
+      val searchCriteria = ParameterExtractor.extractTestServiceSearchCriteria(request)
+      domainParameterManager.searchTestServicesThroughAutomationApi(communityKey, searchCriteria).map { results =>
+        ResponseConstructor.constructJsonResponse(JsonUtil.jsTestServicesForAutomationApi(results).toString())
+      }
+    })
+  }
+
   def createOrganisationProperty(): Action[AnyContent] = authorizedAction.async { request =>
     processAsJson(request, () => authorizationManager.canManageConfigurationThroughAutomationApi(request), { body =>
-      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       val input = JsonUtil.parseJsCustomPropertyInfo(body)
       communityManager.createOrganisationParameterDefinitionThroughAutomationApi(communityKey, input).map { _ =>
         ResponseConstructor.constructEmptyResponse
@@ -93,7 +139,7 @@ class ConfigurationAutomationService @Inject() (authorizedAction: AuthorizedActi
 
   def deleteOrganisationProperty(property: String): Action[AnyContent] = authorizedAction.async { request =>
     process(() => authorizationManager.canManageConfigurationThroughAutomationApi(request), { _ =>
-      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       communityManager.deleteOrganisationParameterDefinitionThroughAutomationApi(communityKey, property).map { _ =>
         ResponseConstructor.constructEmptyResponse
       }
@@ -102,7 +148,7 @@ class ConfigurationAutomationService @Inject() (authorizedAction: AuthorizedActi
 
   def updateOrganisationProperty(): Action[AnyContent] = authorizedAction.async { request =>
     processAsJson(request, () => authorizationManager.canManageConfigurationThroughAutomationApi(request), { body =>
-      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       val input = JsonUtil.parseJsCustomPropertyInfo(body)
       communityManager.updateOrganisationParameterDefinitionThroughAutomationApi(communityKey, input).map { _ =>
         ResponseConstructor.constructEmptyResponse
@@ -112,7 +158,7 @@ class ConfigurationAutomationService @Inject() (authorizedAction: AuthorizedActi
 
   def createSystemProperty(): Action[AnyContent] = authorizedAction.async { request =>
     processAsJson(request, () => authorizationManager.canManageConfigurationThroughAutomationApi(request), { body =>
-      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       val input = JsonUtil.parseJsCustomPropertyInfo(body)
       communityManager.createSystemParameterDefinitionThroughAutomationApi(communityKey, input).map { _ =>
         ResponseConstructor.constructEmptyResponse
@@ -122,7 +168,7 @@ class ConfigurationAutomationService @Inject() (authorizedAction: AuthorizedActi
 
   def deleteSystemProperty(propertyKey: String): Action[AnyContent] = authorizedAction.async { request =>
     process(() => authorizationManager.canManageConfigurationThroughAutomationApi(request), { _ =>
-      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       communityManager.deleteSystemParameterDefinitionThroughAutomationApi(communityKey, propertyKey).map { _ =>
         ResponseConstructor.constructEmptyResponse
       }
@@ -131,7 +177,7 @@ class ConfigurationAutomationService @Inject() (authorizedAction: AuthorizedActi
 
   def updateSystemProperty(): Action[AnyContent] = authorizedAction.async { request =>
     processAsJson(request, () => authorizationManager.canManageConfigurationThroughAutomationApi(request), { body =>
-      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       val input = JsonUtil.parseJsCustomPropertyInfo(body)
       communityManager.updateSystemParameterDefinitionThroughAutomationApi(communityKey, input).map { _ =>
         ResponseConstructor.constructEmptyResponse
@@ -141,7 +187,7 @@ class ConfigurationAutomationService @Inject() (authorizedAction: AuthorizedActi
 
   def createStatementProperty(actor: String): Action[AnyContent] = authorizedAction.async { request =>
     processAsJson(request, () => authorizationManager.canManageConfigurationThroughAutomationApi(request), { body =>
-      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       val input = JsonUtil.parseJsCustomPropertyInfo(body)
       parameterManager.createParameterDefinitionThroughAutomationApi(communityKey, actor, input).map { _ =>
         ResponseConstructor.constructEmptyResponse
@@ -151,7 +197,7 @@ class ConfigurationAutomationService @Inject() (authorizedAction: AuthorizedActi
 
   def deleteStatementProperty(actor: String, property: String): Action[AnyContent] = authorizedAction.async { request =>
     process(() => authorizationManager.canManageConfigurationThroughAutomationApi(request), { _ =>
-      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       parameterManager.deleteParameterDefinitionThroughAutomationApi(communityKey, actor, property).map { _ =>
         ResponseConstructor.constructEmptyResponse
       }
@@ -160,7 +206,7 @@ class ConfigurationAutomationService @Inject() (authorizedAction: AuthorizedActi
 
   def updateStatementProperty(actor: String): Action[AnyContent] = authorizedAction.async { request =>
     processAsJson(request, () => authorizationManager.canManageConfigurationThroughAutomationApi(request), { body =>
-      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       val input = JsonUtil.parseJsCustomPropertyInfo(body)
       parameterManager.updateParameterDefinitionThroughAutomationApi(communityKey, actor, input).map { _ =>
         ResponseConstructor.constructEmptyResponse

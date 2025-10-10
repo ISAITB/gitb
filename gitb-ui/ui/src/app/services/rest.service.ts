@@ -13,16 +13,16 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Injectable } from '@angular/core';
-import { Observable, of, throwError } from 'rxjs';
+import {Injectable} from '@angular/core';
+import {Observable, throwError} from 'rxjs';
 
-import { HttpRequestConfig } from '../types/http-request-config.type'
-import { catchError, map, mergeMap, share } from 'rxjs/operators';
-import { AuthProviderService } from './auth-provider.service'
-import { ErrorService } from './error.service';
-import { BaseRestService } from './base-rest.service';
-import { DataService } from './data.service';
-import { RoutingService } from './routing.service';
+import {HttpRequestConfig} from '../types/http-request-config.type';
+import {catchError, mergeMap, share} from 'rxjs/operators';
+import {AuthProviderService} from './auth-provider.service';
+import {ErrorService} from './error.service';
+import {BaseRestService} from './base-rest.service';
+import {DataService} from './data.service';
+import {RoutingService} from './routing.service';
 
 @Injectable({
   providedIn: 'root'
@@ -97,19 +97,19 @@ export class RestService {
           this.authProviderService.logoutSignalled = true
           if (this.errorDueToSsoExpiryAfterPageRefresh(error)) {
             this.authProviderService.signalLogout({full: true, fromExpiry: true})
-            observer.next()
+            observer.next(undefined)
             observer.complete()
           } else {
             this.errorService.showInvalidSessionNotification().subscribe((processed) => {
               if (processed) {
                 this.authProviderService.signalLogout({full: true, fromExpiry: true})
               }
-              observer.next()
+              observer.next(undefined)
               observer.complete()
             })
           }
         } else {
-          observer.next()
+          observer.next(undefined)
           observer.complete()
         }
       })

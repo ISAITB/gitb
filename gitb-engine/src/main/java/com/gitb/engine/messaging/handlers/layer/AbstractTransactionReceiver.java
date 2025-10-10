@@ -32,7 +32,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * Created by serbay on 9/25/14.
  */
 public abstract class AbstractTransactionReceiver implements ITransactionReceiver {
-	private static Logger logger = LoggerFactory.getLogger(AbstractTransactionReceiver.class);
+	private static final Logger logger = LoggerFactory.getLogger(AbstractTransactionReceiver.class);
 
 	protected Socket socket;
 
@@ -102,7 +102,7 @@ public abstract class AbstractTransactionReceiver implements ITransactionReceive
 	@Override
 	public void onEnd() throws Exception {
 		if(socket != null && !socket.isClosed()) {
-			logger.debug(addMarker(), "Closing socket: " + socket);
+            logger.debug(addMarker(), "Closing socket: {}", socket);
 			socket.close();
 		}
 	}

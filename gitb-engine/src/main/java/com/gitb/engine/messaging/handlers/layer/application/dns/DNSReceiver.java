@@ -16,11 +16,11 @@
 package com.gitb.engine.messaging.handlers.layer.application.dns;
 
 import com.gitb.core.Configuration;
-import com.gitb.messaging.Message;
 import com.gitb.engine.messaging.handlers.layer.transport.udp.UDPMessagingHandler;
 import com.gitb.engine.messaging.handlers.layer.transport.udp.UDPReceiver;
 import com.gitb.engine.messaging.handlers.model.SessionContext;
 import com.gitb.engine.messaging.handlers.model.TransactionContext;
+import com.gitb.messaging.Message;
 import com.gitb.types.BinaryType;
 import com.gitb.types.DataType;
 import com.gitb.types.DataTypeFactory;
@@ -49,32 +49,18 @@ public class DNSReceiver extends UDPReceiver {
 		logger.debug(addMarker(), "Received a message.");
 
         Configuration domainConfiguration = ConfigurationUtils.getConfiguration(configurations, DNSMessagingHandler.DNS_DOMAIN_CONFIG_NAME);
-//      Configuration addressConfiguration = ConfigurationUtils.getConfiguration(configurations, DNSMessagingHandler.DNS_ADDRESS_FIELD_NAME);
-
-//      DNSRecord dnsRecord = new DNSRecord(domainConfiguration.getValue(), addressConfiguration.getValue());
-
 		BinaryType binaryData = (BinaryType) udpMessage.getFragments().get(UDPMessagingHandler.CONTENT_MESSAGE_FIELD_NAME);
-
-		byte[] data = (byte[]) binaryData.getValue();
-
+		byte[] data = binaryData.getValue();
 		org.xbill.DNS.Message query = new org.xbill.DNS.Message(data);
-
-//		transaction.setParameter(org.xbill.DNS.Message.class, query);
-//      transaction.setParameter(DNSRecord.class, dnsRecord);
-
 		DNSRequestMetadata metadata = new DNSRequestMetadata(domainConfiguration, query);
-
 		transaction.setParameter(DNSRequestMetadata.class, metadata);
-
 		DataTypeFactory factory = DataTypeFactory.getInstance();
-
 		StringType domain = (StringType) factory.create(DataType.STRING_DATA_TYPE);
 		domain.setValue(query.getQuestion().getName().toString());
 
 		Message message = new Message();
 		message.getFragments()
 			.put(DNSMessagingHandler.DNS_DOMAIN_CONFIG_NAME, domain);
-
 
 		return message;
 	}

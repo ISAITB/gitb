@@ -55,7 +55,7 @@ public class StringReportHandler extends AbstractReportHandler {
         expectedItem.setValue(new String(expected.serializeByDefaultEncoding()));
         attachment.getItem().add(expectedItem);
 
-        if ((boolean) result.getValue()) {
+        if (result.getValue()) {
             report.setResult(TestResultType.SUCCESS);
         } else {
             report.setResult(TestResultType.FAILURE);

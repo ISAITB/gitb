@@ -40,11 +40,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * UDP messaging server worker used by UDP messaging server.
  */
 public class UDPMessagingServerWorker extends AbstractMessagingServerWorker {
-    private static Logger logger = LoggerFactory.getLogger(UDPMessagingServerWorker.class);
+    private static final Logger logger = LoggerFactory.getLogger(UDPMessagingServerWorker.class);
     private final boolean allowAllConnections;
 
     private UDPListenerThread listenerThread;
-    private AtomicBoolean active;
+    private final AtomicBoolean active;
 
 
     public UDPMessagingServerWorker(int port, boolean allowAllConnections) {
@@ -88,7 +88,7 @@ public class UDPMessagingServerWorker extends AbstractMessagingServerWorker {
 
         public static final int BUFFER_SIZE = 32 * 1024; // 32K
 
-        private int port;
+        private final int port;
         private DatagramSocket datagramSocket;
 
         private UDPListenerThread(int port) {
@@ -100,7 +100,7 @@ public class UDPMessagingServerWorker extends AbstractMessagingServerWorker {
             if (datagramSocket == null) {
                 datagramSocket = new DatagramSocket(port);
 
-                logger.debug("New server created on [" + datagramSocket.getLocalPort() + "]");
+                logger.debug("New server created on [{}]", datagramSocket.getLocalPort());
             }
         }
 
@@ -120,7 +120,7 @@ public class UDPMessagingServerWorker extends AbstractMessagingServerWorker {
 
                     datagramSocket.receive(datagramPacket);
 
-                    logger.debug("New message received from [" + datagramPacket.getAddress() + "]");
+                    logger.debug("New message received from [{}]", datagramPacket.getAddress());
 
                     UDPReceiverThread receiverThread = new UDPReceiverThread(datagramSocket, datagramPacket, allowAllConnections);
                     receiverThread.start();
@@ -130,7 +130,7 @@ public class UDPMessagingServerWorker extends AbstractMessagingServerWorker {
                     logger.error("Exception in ListenerThread", e);
                 }
             } finally {
-                logger.debug("Closing server created on: " + datagramSocket);
+                logger.debug("Closing server created on: {}", datagramSocket);
                 if (datagramSocket != null && !datagramSocket.isClosed()) {
                     datagramSocket.close();
                 }
@@ -166,7 +166,7 @@ public class UDPMessagingServerWorker extends AbstractMessagingServerWorker {
 
                 receiver.onReceive(socket, datagramPacket);
             } else {
-                logger.warn("No session resolved for ["+address.toString()+"]");
+                logger.warn("No session resolved for [{}]", address.toString());
             }
         }
     }

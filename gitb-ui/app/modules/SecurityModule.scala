@@ -15,32 +15,41 @@
 
 package modules
 
+import authentication.builtin.BasicAuthorizer
+import authentication.ecas.ExtendedCasConfiguration
+import authentication.{BaseProfileResolver, CustomCallbackLogic, CustomPlayEhCacheSessionStore, ProfileResolver}
 import com.google.inject.{AbstractModule, Provides}
+import com.nimbusds.oauth2.sdk.auth.ClientAuthenticationMethod
 import config.Configurations
-import config.Configurations.{API_ROOT, WEB_CONTEXT_ROOT, WEB_CONTEXT_ROOT_WITH_SLASH}
-import ecas.ExtendedCasConfiguration
-import org.apache.commons.lang3.StringUtils
+import config.Configurations._
+import models.{ActualUserInfo, Constants}
+import org.apache.commons.lang3.Strings
 import org.pac4j.cas.client.{CasClient, CasProxyReceptor}
 import org.pac4j.cas.config.CasProtocol
-import org.pac4j.core.authorization.authorizer.IsAuthenticatedAuthorizer
+import org.pac4j.core.authorization.authorizer.{Authorizer, IsAuthenticatedAuthorizer}
 import org.pac4j.core.client.Clients
 import org.pac4j.core.client.direct.AnonymousClient
 import org.pac4j.core.config.Config
 import org.pac4j.core.context.FrameworkParameters
 import org.pac4j.core.context.session.SessionStore
 import org.pac4j.core.http.ajax.DefaultAjaxRequestResolver
-import org.pac4j.core.http.callback.QueryParameterCallbackUrlResolver
+import org.pac4j.core.http.callback.{CallbackUrlResolver, NoParameterCallbackUrlResolver, QueryParameterCallbackUrlResolver}
 import org.pac4j.core.matching.matcher.PathMatcher
+import org.pac4j.core.profile.UserProfile
 import org.pac4j.core.util.Pac4jConstants
+import org.pac4j.oidc.client.OidcClient
+import org.pac4j.oidc.config.OidcConfiguration
+import org.pac4j.oidc.profile.OidcProfile
 import org.pac4j.play.http.PlayHttpActionAdapter
 import org.pac4j.play.{CallbackController, LogoutController}
 import play.cache.SyncCacheApi
 
 import java.util
+import javax.inject.Singleton
 
 class SecurityModule extends AbstractModule {
 
-  private val CLIENT_NAME: String = "euLoginCASClient"
+  private val CLIENT_NAME: String = "activeClient"
 
   override def configure(): Unit = {
     // Make sure the configuration is loaded
@@ -67,23 +76,16 @@ class SecurityModule extends AbstractModule {
 
     // logout
     val logoutController = new LogoutController()
-    logoutController.setDefaultUrl(StringUtils.appendIfMissing(Configurations.TESTBED_HOME_LINK, "/"))
+    logoutController.setDefaultUrl(Strings.CS.appendIfMissing(Configurations.TESTBED_HOME_LINK, "/"))
     bind(classOf[LogoutController]).toInstance(logoutController)
   }
 
   private def buildDefaultCallbackUrl(): String = {
-    val homeWithSlash = StringUtils.appendIfMissing(Configurations.TESTBED_HOME_LINK, "/")
-    StringUtils.appendIfMissing(homeWithSlash, "app")
+    val homeWithSlash = Strings.CS.appendIfMissing(Configurations.TESTBED_HOME_LINK, "/")
+    Strings.CS.appendIfMissing(homeWithSlash, "app")
   }
 
-  @Provides
-  def provideCasProxyReceptor() = {
-    val casProxyReceptor: CasProxyReceptor = new CasProxyReceptor()
-    casProxyReceptor
-  }
-
-  @Provides
-  def provideCasClient() = {
+  private def createCasClient(): CasClient = {
     val casConfiguration = new ExtendedCasConfiguration()
     // The login URL is used for the initial redirect.
     casConfiguration.setLoginUrl(buildLoginUrl())
@@ -101,6 +103,36 @@ class SecurityModule extends AbstractModule {
     casClient
   }
 
+  private def createOidcClient(): OidcClient = {
+    val oidcConfiguration = new OidcConfiguration()
+    oidcConfiguration.setClientId(Configurations.AUTHENTICATION_SSO_CLIENT_ID)
+    oidcConfiguration.setSecret(Configurations.AUTHENTICATION_SSO_CLIENT_SECRET)
+    oidcConfiguration.setDiscoveryURI(Configurations.AUTHENTICATION_SSO_DISCOVERY_URI)
+    oidcConfiguration.setClientAuthenticationMethod(ClientAuthenticationMethod.parse(Configurations.AUTHENTICATION_SSO_CLIENT_AUTHENTICATION_METHOD))
+    oidcConfiguration.setScope(Configurations.AUTHENTICATION_SSO_SCOPE)
+    /*
+     * Up to v6.1.2 Pac4j has a bug in the token renewal process (see https://groups.google.com/g/pac4j-dev/c/NJpqBQHoiM4).
+     * If nonces are set as required they should normally be included and checked only in the initial login. However,
+     * Pac4j erroneously forces the nonce check also in renewal requests which the server may not include (actually the
+     * OIDC spec suggests to not include them). To avoid the renewal failing, nonce checking is forcibly set to false
+     * until this is resolved in Pac4j.
+     */
+    oidcConfiguration.setUseNonce(false)
+    /*
+     * The preferred JWS signing algorithm is optional but if not set means that the supported algorithms will be attempted
+     * in sequence when validating tokens. It is best to select one specific algorithm and configure this based on the
+     * server's supported ones as published on the discovery URI. This would need to be set per installation depending on
+     * the server and user preferences.
+     */
+    Configurations.AUTHENTICATION_SSO_PREFERRED_JWS_ALGORITHM.foreach(oidcConfiguration.setPreferredJwsAlgorithmAsString)
+    Configurations.AUTHENTICATION_SSO_RESPONSE_TYPE.foreach(oidcConfiguration.setResponseType)
+    Configurations.AUTHENTICATION_SSO_RESPONSE_MODE.foreach(oidcConfiguration.setResponseMode)
+    val oidcClient = new OidcClient(oidcConfiguration)
+    oidcClient.setName(CLIENT_NAME)
+    oidcClient.setAjaxRequestResolver(new DefaultAjaxRequestResolver)
+    oidcClient
+  }
+
   private def buildLoginUrl(): String = {
     // If an authentication level is specified we append it to the login URL.
     if (Configurations.AUTHENTICATION_SSO_AUTHENTICATION_LEVEL.nonEmpty) {
@@ -115,31 +147,91 @@ class SecurityModule extends AbstractModule {
     Configurations.AUTHENTICATION_SSO_PREFIX_URL.getOrElse(Configurations.AUTHENTICATION_SSO_LOGIN_URL.replaceFirst("/login$", "/"))
   }
 
-  @Provides
-  def provideCallbackUrlResolver() = {
-    val params = new util.HashMap[String, String]()
-    params.put(Pac4jConstants.DEFAULT_FORCE_CLIENT_PARAMETER, CLIENT_NAME)
-    val resolver = new QueryParameterCallbackUrlResolver(params)
-    resolver
-  }
-
-  @Provides
-  def provideConfig(casClient: CasClient, casProxyReceptor: CasProxyReceptor, callbackUrlResolver: QueryParameterCallbackUrlResolver, sessionStore: SessionStore): Config = {
-    var clients: Clients = null
-    if (Configurations.AUTHENTICATION_SSO_ENABLED) {
-      clients = new Clients(Configurations.AUTHENTICATION_SSO_CALLBACK_URL, casClient, casProxyReceptor)
-      clients.setCallbackUrlResolver(callbackUrlResolver)
+  private def createClients(): Clients = {
+    val clients = if (Configurations.AUTHENTICATION_SSO_ENABLED) {
+      if (Configurations.AUTHENTICATION_SSO_TYPE == Constants.SsoTypeEcas) {
+        new Clients(Configurations.AUTHENTICATION_SSO_CALLBACK_URL, createCasClient(), new CasProxyReceptor())
+      } else if (Configurations.AUTHENTICATION_SSO_TYPE == Constants.SsoTypeOidc) {
+        new Clients(Configurations.AUTHENTICATION_SSO_CALLBACK_URL, createOidcClient())
+      } else {
+        throw new IllegalStateException("Unsupported value for AUTHENTICATION_SSO_TYPE: " + Configurations.AUTHENTICATION_SSO_TYPE)
+      }
     } else {
       val anonymousClient = new AnonymousClient()
       anonymousClient.setName(CLIENT_NAME)
-      clients = new Clients(anonymousClient)
+      new Clients(anonymousClient)
     }
-    val config = new Config(clients)
-    if (Configurations.AUTHENTICATION_SSO_ENABLED) {
-      config.addAuthorizer("_authenticated_", new IsAuthenticatedAuthorizer)
+    clients.setCallbackUrlResolver(createCallbackUrlResolver())
+    clients
+  }
+
+  private def createCallbackUrlResolver(): CallbackUrlResolver = {
+    if (AUTHENTICATION_SSO_ENABLED && AUTHENTICATION_SSO_TYPE == Constants.SsoTypeEcas) {
+      val params = new util.HashMap[String, String]()
+      params.put(Pac4jConstants.DEFAULT_FORCE_CLIENT_PARAMETER, CLIENT_NAME)
+      new QueryParameterCallbackUrlResolver(params)
     } else {
-      config.addAuthorizer("_authenticated_", new BasicAuthorizer)
+      new NoParameterCallbackUrlResolver()
     }
+  }
+
+  private def createAuthorizer(): Authorizer = {
+    if (Configurations.AUTHENTICATION_SSO_ENABLED) {
+      new IsAuthenticatedAuthorizer
+    } else {
+      new BasicAuthorizer
+    }
+  }
+
+  @Provides
+  @Singleton
+  def provideProfileResolver(playSessionStore: SessionStore): ProfileResolver = {
+    if (Configurations.AUTHENTICATION_SSO_ENABLED) {
+      if (Configurations.AUTHENTICATION_SSO_TYPE == Constants.SsoTypeEcas) {
+        new BaseProfileResolver(playSessionStore) {
+          override def extractUserInfo(profile: UserProfile): Option[ActualUserInfo] = {
+            Option(profile.getAttributes).map { userAttributes =>
+              ActualUserInfo.fromAttributes(
+                uid = profile.getId,
+                email = userAttributes.get(Constants.UserAttributeEmail).asInstanceOf[String],
+                name = None,
+                firstName = Option(userAttributes.get(Constants.UserAttributeFirstName).asInstanceOf[String]),
+                lastName = Option(userAttributes.get(Constants.UserAttributeLastName).asInstanceOf[String])
+              )
+            }
+          }
+        }
+      } else if (Configurations.AUTHENTICATION_SSO_TYPE == Constants.SsoTypeOidc) {
+        new BaseProfileResolver(playSessionStore) {
+          override def extractUserInfo(profile: UserProfile): Option[ActualUserInfo] = {
+            Option(profile.asInstanceOf[OidcProfile]).map { oidcProfile =>
+              ActualUserInfo.fromAttributes(
+                uid = oidcProfile.getId,
+                email = oidcProfile.getEmail,
+                name = Option(oidcProfile.getDisplayName),
+                firstName = Option(oidcProfile.getFirstName),
+                lastName = Option(oidcProfile.getFamilyName)
+              )
+            }
+          }
+        }
+      } else {
+        throw new IllegalStateException("Unsupported value for AUTHENTICATION_SSO_TYPE: " + Configurations.AUTHENTICATION_SSO_TYPE)
+      }
+    } else {
+      new BaseProfileResolver(playSessionStore) {
+        override def extractUserInfo(profile: UserProfile): Option[ActualUserInfo] = {
+          // Not applicable
+          None
+        }
+      }
+    }
+  }
+
+  @Provides
+  def provideConfig(sessionStore: SessionStore): Config = {
+    val config = new Config(createClients())
+    config.addAuthorizer("_authenticated_", createAuthorizer())
     config.setCallbackLogic(new CustomCallbackLogic)
     config.setSessionStoreFactory((_: FrameworkParameters) => sessionStore);
     config.setHttpActionAdapter(new PlayHttpActionAdapter())
@@ -162,4 +254,5 @@ class SecurityModule extends AbstractModule {
     )
     config
   }
+
 }

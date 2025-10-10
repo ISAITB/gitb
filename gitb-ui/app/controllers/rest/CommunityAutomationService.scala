@@ -15,9 +15,8 @@
 
 package controllers.rest
 
-import controllers.util.{AuthorizedAction, ResponseConstructor}
+import controllers.util.{AuthorizedAction, ParameterExtractor, ResponseConstructor}
 import managers.{AuthorizationManager, CommunityManager, OrganizationManager, SystemManager}
-import models.Constants
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import utils.JsonUtil
 
@@ -61,7 +60,7 @@ class CommunityAutomationService @Inject() (authorizedAction: AuthorizedAction,
 
   def updateOwnCommunity(): Action[AnyContent] = authorizedAction.async { request =>
     processAsJson(request, () => authorizationManager.canManageCommunityThroughAutomationApi(request), { body =>
-      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       val input = JsonUtil.parseJsUpdateCommunityRequest(body, communityKey)
       communityManager.updateCommunityThroughAutomationApi(input, allowDomainChange = false).map { _ =>
         ResponseConstructor.constructEmptyResponse
@@ -69,9 +68,27 @@ class CommunityAutomationService @Inject() (authorizedAction: AuthorizedAction,
     })
   }
 
+  def getOrganisations(): Action[AnyContent] = authorizedAction.async { request =>
+    process(() => authorizationManager.canManageOrganisationThroughAutomationApi(request), { _ =>
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
+      organisationManager.getOrganisationsThroughAutomationApi(communityKey).map { result =>
+        ResponseConstructor.constructJsonResponse(JsonUtil.jsOrganisationsForAutomationApi(result).toString())
+      }
+    })
+  }
+
+  def getOrganisation(organisationKey: String): Action[AnyContent] = authorizedAction.async { request =>
+    process(() => authorizationManager.canManageOrganisationThroughAutomationApi(request), { _ =>
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
+      organisationManager.getOrganisationThroughAutomationApi(communityKey, organisationKey).map { result =>
+        ResponseConstructor.constructJsonResponse(JsonUtil.jsOrganisationForAutomationApi(result).toString())
+      }
+    })
+  }
+
   def createOrganisation(): Action[AnyContent] = authorizedAction.async { request =>
     processAsJson(request, () => authorizationManager.canManageOrganisationThroughAutomationApi(request), { body =>
-      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       val input = JsonUtil.parseJsCreateOrganisationRequest(body, communityKey)
       organisationManager.createOrganisationThroughAutomationApi(input).map { savedApiKey =>
         ResponseConstructor.constructJsonResponse(JsonUtil.jsApiKey(savedApiKey).toString())
@@ -81,7 +98,7 @@ class CommunityAutomationService @Inject() (authorizedAction: AuthorizedAction,
 
   def deleteOrganisation(organisation: String): Action[AnyContent] = authorizedAction.async { request =>
     process(() => authorizationManager.canManageOrganisationThroughAutomationApi(request), { _ =>
-      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       organisationManager.deleteOrganisationThroughAutomationApi(organisation, communityKey).map { _ =>
         ResponseConstructor.constructEmptyResponse
       }
@@ -90,7 +107,7 @@ class CommunityAutomationService @Inject() (authorizedAction: AuthorizedAction,
 
   def updateOrganisation(organisation: String): Action[AnyContent] = authorizedAction.async { request =>
     processAsJson(request, () => authorizationManager.canManageOrganisationThroughAutomationApi(request), { body =>
-      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       val input = JsonUtil.parseJsUpdateOrganisationRequest(body, organisation, communityKey)
       organisationManager.updateOrganisationThroughAutomationApi(input).map { _ =>
         ResponseConstructor.constructEmptyResponse
@@ -98,9 +115,27 @@ class CommunityAutomationService @Inject() (authorizedAction: AuthorizedAction,
     })
   }
 
+  def getSystems(organisationKey: String): Action[AnyContent] = authorizedAction.async { request =>
+    process(() => authorizationManager.canManageSystemThroughAutomationApi(request), { _ =>
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
+      systemManager.getSystemsThroughAutomationApi(communityKey, organisationKey).map { result =>
+        ResponseConstructor.constructJsonResponse(JsonUtil.jsSystemsForAutomationApi(result).toString())
+      }
+    })
+  }
+
+  def getSystem(systemKey: String): Action[AnyContent] = authorizedAction.async { request =>
+    process(() => authorizationManager.canManageSystemThroughAutomationApi(request), { _ =>
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
+      systemManager.getSystemThroughAutomationApi(communityKey, systemKey).map { result =>
+        ResponseConstructor.constructJsonResponse(JsonUtil.jsSystemForAutomationApi(result).toString())
+      }
+    })
+  }
+
   def createSystem(): Action[AnyContent] = authorizedAction.async { request =>
     processAsJson(request, () => authorizationManager.canManageSystemThroughAutomationApi(request), { body =>
-      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       val input = JsonUtil.parseJsCreateSystemRequest(body, communityKey)
       systemManager.createSystemThroughAutomationApi(input).map { savedApiKey =>
         ResponseConstructor.constructJsonResponse(JsonUtil.jsApiKey(savedApiKey).toString())
@@ -110,7 +145,7 @@ class CommunityAutomationService @Inject() (authorizedAction: AuthorizedAction,
 
   def deleteSystem(system: String): Action[AnyContent] = authorizedAction.async { request =>
     process(() => authorizationManager.canManageSystemThroughAutomationApi(request), { _ =>
-      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       systemManager.deleteSystemThroughAutomationApi(system, communityKey).map { _ =>
         ResponseConstructor.constructEmptyResponse
       }
@@ -119,7 +154,7 @@ class CommunityAutomationService @Inject() (authorizedAction: AuthorizedAction,
 
   def updateSystem(system: String): Action[AnyContent] = authorizedAction.async { request =>
     processAsJson(request, () => authorizationManager.canManageSystemThroughAutomationApi(request), { body =>
-      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
       val input = JsonUtil.parseJsUpdateSystemRequest(body, system, communityKey)
       systemManager.updateSystemThroughAutomationApi(input).map { _ =>
         ResponseConstructor.constructEmptyResponse

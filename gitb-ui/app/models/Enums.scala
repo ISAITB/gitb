@@ -15,6 +15,11 @@
 
 package models
 
+import exceptions.{AutomationApiException, ErrorCodes}
+import models.Enums.TestServiceApiType.TestServiceApiType
+import models.Enums.TestServiceAuthTokenPasswordType.TestServiceAuthTokenPasswordType
+import models.Enums.TestServiceType.TestServiceType
+
 object Enums {
   object OrganizationType extends Enumeration(1) {
     type OrganizationType = Value
@@ -57,15 +62,15 @@ object Enums {
   }
 
   object TestResultStatus extends Enumeration {
-    val UNDEFINED = Value("UNDEFINED")
-    val SUCCESS = Value("SUCCESS")
-    val FAILURE = Value("FAILURE")
+    val UNDEFINED: Value = Value("UNDEFINED")
+    val SUCCESS: Value = Value("SUCCESS")
+    val FAILURE: Value = Value("FAILURE")
   }
 
   object TestSuiteReplacementChoice extends Enumeration {
     type TestSuiteReplacementChoice = Value
-    val PROCEED = Value(0)
-    val CANCEL = Value(1)
+    val PROCEED: Value = Value(0)
+    val CANCEL: Value = Value(1)
   }
 
   object LabelType extends Enumeration(1) {
@@ -79,7 +84,8 @@ object Enums {
     Community, Administrator, CustomLabel, OrganisationProperty, SystemProperty, LandingPage, LegalNotice, ErrorTemplate,
     Organisation, OrganisationUser, OrganisationPropertyValue, System, SystemPropertyValue,
     Statement, StatementConfiguration, Trigger, CommunityResource, SpecificationGroup, Settings, Theme,
-    DefaultLandingPage, DefaultLegalNotice, DefaultErrorTemplate, SystemAdministrator, SystemConfiguration, SystemResource = Value
+    DefaultLandingPage, DefaultLegalNotice, DefaultErrorTemplate, SystemAdministrator, SystemConfiguration, SystemResource,
+    TestService = Value
   }
 
   object ImportItemMatch extends Enumeration(1) {
@@ -163,6 +169,93 @@ object Enums {
   object ServiceHealthStatusType extends Enumeration(1) {
     type ServiceHealthStatusType = Value
     val Ok, Warning, Error, Info, Unknown = Value
+  }
+
+  object TestServiceType extends Enumeration(1) {
+    type TestServiceType = Value
+    val ValidationService, ProcessingService, MessagingService = Value
+  }
+
+  object TestServiceApiType extends Enumeration(1) {
+    type TestServiceApiType = Value
+    val SoapApi, RestApi = Value
+  }
+
+  object TestServiceAuthTokenPasswordType extends Enumeration(1) {
+    type TestServiceAuthTokenPasswordType = Value
+    val Digest, Text = Value
+  }
+
+  def parseTestServiceTypeForApi(value: String): TestServiceType = {
+    value match {
+      case "messaging" => TestServiceType.MessagingService
+      case "validation" => TestServiceType.ValidationService
+      case "processing" => TestServiceType.ProcessingService
+      case _ => throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "Invalid value provided for service type")
+    }
+  }
+
+  def toTestServiceTypeForApi(value: TestServiceType): String = {
+    value match {
+      case TestServiceType.MessagingService => "messaging"
+      case TestServiceType.ValidationService => "validation"
+      case _ => "processing"
+    }
+  }
+
+  def parseTestServiceApiTypeForApi(value: String): TestServiceApiType = {
+    value match {
+      case "soap" => TestServiceApiType.SoapApi
+      case "rest" => TestServiceApiType.RestApi
+      case _ => throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "Invalid value provided for service API type")
+    }
+  }
+
+  def toTestServiceApiTypeForApi(value: TestServiceApiType): String = {
+    value match {
+      case TestServiceApiType.RestApi => "rest"
+      case _ => "soap"
+    }
+  }
+
+  def parseTestServiceAuthTokenPasswordTypeForApi(value: String): TestServiceAuthTokenPasswordType = {
+    value match {
+      case "digest" => TestServiceAuthTokenPasswordType.Digest
+      case "text" => TestServiceAuthTokenPasswordType.Text
+      case _ => throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "Invalid value provided for token password type")
+    }
+  }
+
+  def toTestServiceAuthTokenPasswordTypeForApi(value: TestServiceAuthTokenPasswordType): String = {
+    value match {
+      case TestServiceAuthTokenPasswordType.Digest => "digest"
+      case _ => "text"
+    }
+  }
+
+  object ReleaseMessageSeverity extends Enumeration(1) {
+    type ReleaseMessageSeverity = Value
+    val High, Medium, Low = Value
+
+    def parse(value: String): ReleaseMessageSeverity = {
+      value match {
+        case "high" => ReleaseMessageSeverity.High
+        case "medium" => ReleaseMessageSeverity.Medium
+        case _ => ReleaseMessageSeverity.Low
+      }
+    }
+  }
+
+  object ReleaseMessageType extends Enumeration(1) {
+    type ReleaseMessageType = Value
+    val Other, Security = Value
+
+    def parse(value: String): ReleaseMessageType = {
+      value match {
+        case "security" => ReleaseMessageType.Security
+        case _ => ReleaseMessageType.Other
+      }
+    }
   }
 
 }

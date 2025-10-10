@@ -21,7 +21,7 @@ import java.util.UUID;
 
 public class UpdateMessage {
 
-    String uuid;
+    private final String uuid;
     private final TestStepStatus statusMessage;
 
     public UpdateMessage(TestStepStatus statusMessage) {

@@ -47,7 +47,7 @@
                 }
             }
             @for (row of data; track row; let i = $index) {
-                <tr table-row-directive
+                <tr table-row-directive #tableRowComponent
                     class="table-row-directive"
                     [ngClass]="rowClass(i)"
                     [class.selected]="row._selected"
@@ -67,6 +67,7 @@
                     (onDelete)="handleDelete($event)"
                     (onExport)="handleExport($event)"
                     (onCheck)="handleCheck($event)"
+                    (onOptionsOpening)="handleOptionsOpening($event)"
                     [deleteVisibleForRow]="deleteVisibleForRow"
                     [actionVisibleForRow]="actionVisibleForRow"
                     [actionPendingProperty]="actionPendingProperty"

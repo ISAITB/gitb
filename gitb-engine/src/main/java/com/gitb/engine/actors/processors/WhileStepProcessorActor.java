@@ -29,7 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by serbay on 9/12/14.
- *
+ * <p>
  * While step executor actor
  */
 public class WhileStepProcessorActor extends AbstractIterationStepActor<WhileStep> {
@@ -38,17 +38,15 @@ public class WhileStepProcessorActor extends AbstractIterationStepActor<WhileSte
 
 	private ExpressionHandler expressionHandler;
 	private Map<Integer, Integer> childActorUidIndexMap;
-	private Map<Integer, ActorRef> iterationIndexActorMap;
 
 	public WhileStepProcessorActor(WhileStep step, TestCaseScope scope, String stepId, StepContext stepContext){
 		super(step, scope, stepId, stepContext);
 	}
 
 	@Override
-	protected void init() throws Exception {
+	protected void init() {
 		expressionHandler = new ExpressionHandler(scope);
 		childActorUidIndexMap = new ConcurrentHashMap<>();
-		iterationIndexActorMap = new ConcurrentHashMap<>();
 	}
 
 	@Override
@@ -76,7 +74,6 @@ public class WhileStepProcessorActor extends AbstractIterationStepActor<WhileSte
 			ActorRef iterationActor = SequenceProcessorActor.create(getContext(), step.getDo(), scope, stepId + ITERATION_OPENING_TAG + (iteration + 1) + ITERATION_CLOSING_TAG, stepContext);
 
 			childActorUidIndexMap.put(iterationActor.path().uid(), iteration);
-			iterationIndexActorMap.put(iteration, iterationActor);
 
 			StartCommand command = new StartCommand(scope.getContext().getSessionId());
 			iterationActor.tell(command, self());

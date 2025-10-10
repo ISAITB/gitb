@@ -32,6 +32,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Created by serbay.
@@ -53,22 +54,22 @@ public class UDPSender extends AbstractDatagramSender {
         Configuration ipAddressConfig = ConfigurationUtils.getConfiguration(actorConfiguration.getConfig(), ServerUtils.IP_ADDRESS_CONFIG_NAME);
         Configuration portConfig = ConfigurationUtils.getConfiguration(actorConfiguration.getConfig(), ServerUtils.PORT_CONFIG_NAME);
 
-        logger.debug(addMarker(), "Sending a datagram message to [" + ipAddressConfig.getValue() + ":" + portConfig.getValue() + "].");
+        logger.debug(addMarker(), "Sending a datagram message to [{}:{}].", Objects.requireNonNull(ipAddressConfig).getValue(), Objects.requireNonNull(portConfig).getValue());
 
         DatagramSocket socket = transaction.getParameter(DatagramSocket.class);
         DatagramPacket packet = transaction.getParameter(DatagramPacket.class);
 
         BinaryType binaryData = (BinaryType) message.getFragments().get(TCPMessagingHandler.CONTENT_MESSAGE_FIELD_NAME);
-        byte[] data = (byte[]) binaryData.getValue();
+        byte[] data = binaryData.getValue();
 
         packet.setAddress(InetAddress.getByName(ipAddressConfig.getValue()));
-        packet.setPort(Integer.valueOf(portConfig.getValue()));
+        packet.setPort(Integer.parseInt(portConfig.getValue()));
         packet.setData(data);
         packet.setLength(data.length);
 
         socket.send(packet);
 
-        logger.debug(addMarker(), "Sent [" + packet.getData().length + "] bytes to [" + packet.getAddress() + ":" + packet.getPort() + "]");
+        logger.debug(addMarker(), "Sent [{}] bytes to [{}:{}]", packet.getData().length, packet.getAddress(), packet.getPort());
 
         return message;
     }

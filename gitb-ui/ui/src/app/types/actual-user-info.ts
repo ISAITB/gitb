@@ -17,10 +17,9 @@ import { UserAccount } from "./user-account";
 
 export interface ActualUserInfo {
 
-    uid: string
-    email: string
-    firstName: string
-    lastName: string
-    accounts: UserAccount[]
+  uid: string
+  email: string
+  name: string
+  accounts: UserAccount[]
 
 }

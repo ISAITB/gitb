@@ -14,7 +14,7 @@
                                 @if (testSuite.hasDocumentation && showViewDocumentation) {
                                     <button type="button" class="btn btn-secondary" (click)="showTestSuiteDocumentation(testSuite); $event.stopPropagation();" [icon]="true" [pending]="viewDocumentationPending[testSuite.id]" containerClass="shortTooltip" container="body"  tooltip="Documentation" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-info-circle"></i></button>
                                 }
-                                @if (showExecute) {
+                                @if (showExecute && testSuite.testCases.length > 1) {
                                     <button class="btn btn-primary" (click)="onTestSuiteSelect(testSuite); $event.stopPropagation();" [pending]="testSuite.executionPending" [icon]="true" containerClass="shortTooltip" container="body" tooltip="Run all" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-play"></i></button>
                                 }
                             </div>
@@ -23,22 +23,22 @@
                     <div class="testSuiteResult"><i containerClass="shortTooltip" [tooltip]="dataService.tooltipForTestResult(testSuite.result)" [ngClass]="dataService.iconForTestResult(testSuite.result)"></i></div>
                 </div>
             </div>
-            <div [collapse]="!testSuite.expanded" [isAnimated]="true">
+            <div [collapse]="!testSuite.expanded" [isAnimated]="animated">
                 <div class="collapsibleTestCaseDiv">
-                    <app-test-case-display
+                    <app-test-case-display #testCaseDisplayComponent
                         [testCases]="testSuite.testCases"
                         [testCaseGroups]="testSuite.testCaseGroupMap"
                         [testSuiteSpecificationReference]="testSuite"
-                        [hasOptional]="testSuite.hasOptionalTestCases"
-                        [hasDisabled]="testSuite.hasDisabledTestCases"
+                        [hasOptional]="testSuite.hasOptional"
+                        [hasDisabled]="testSuite.hasDisabled"
                         [showExecute]="showExecute"
                         [showExport]="showExport"
                         [showViewDocumentation]="showViewDocumentation"
                         [shaded]="!shaded"
-                        [refresh]="refresh"
                         [communityId]="communityId"
                         (viewTestSession)="propagateViewTestSession($event)"
                         (execute)="propagateExecuteTestSession($event)"
+                        (optionsOpened)="propagateOptionsOpened($event)"
                     ></app-test-case-display>
                 </div>
             </div>

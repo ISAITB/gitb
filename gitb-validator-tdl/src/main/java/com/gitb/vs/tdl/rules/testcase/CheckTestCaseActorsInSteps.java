@@ -51,9 +51,15 @@ public class CheckTestCaseActorsInSteps extends AbstractTestCaseObserver {
                     validateActorReference(ir.getWith(), TestRoleEnumeration.SUT, currentStep);
                 }
             }
-        } else if (currentStep instanceof BeginTransaction) {
-            validateActorReference(((BeginTransaction)currentStep).getFrom(), null, currentStep);
-            validateActorReference(((BeginTransaction)currentStep).getTo(), null, currentStep);
+        } else if (currentStep instanceof BeginTransaction beginTransactionStep) {
+            String fromValue = beginTransactionStep.getFrom();
+            String toValue = beginTransactionStep.getTo();
+            validateActorReference(fromValue, null, currentStep);
+            validateActorReference(toValue, null, currentStep);
+            int actorCount = countTestCaseActors();
+            if ((fromValue == null || toValue == null) && actorCount > 2) {
+                addReportItem(ErrorCode.MISSING_ACTOR_REFERENCE_IN_TRANSACTION, currentTestCase.getId());
+            }
         } else if (currentStep instanceof MessagingStep messagingStep) {
             String fromValue = messagingStep.getFrom();
             String toValue = messagingStep.getTo();
@@ -75,6 +81,10 @@ public class CheckTestCaseActorsInSteps extends AbstractTestCaseObserver {
                 }
             }
         }
+    }
+
+    private int countTestCaseActors() {
+        return currentTestCase.getActors().getActor().size();
     }
 
     private long countSimulatedActors() {

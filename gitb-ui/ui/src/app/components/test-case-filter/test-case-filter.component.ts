@@ -1,0 +1,111 @@
+/*
+ * Copyright (C) 2025 European Union
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
+ * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
+ *
+ * You may obtain a copy of the Licence at:
+ *
+ * https://interoperable-europe.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the Licence is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the Licence for
+ * the specific language governing permissions and limitations under the Licence.
+ */
+
+import {Component, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
+import {TestCaseFilterApi} from './test-case-filter-api';
+import {CheckboxOption} from '../checkbox-option-panel/checkbox-option';
+import {Constants} from '../../common/constants';
+import {DataService} from '../../services/data.service';
+import {TestCaseFilterState} from './test-case-filter-state';
+import {CheckboxOptionState} from '../checkbox-option-panel/checkbox-option-state';
+import {TestCaseFilterOptions} from './test-case-filter-options';
+import {CheckBoxOptionPanelComponentApi} from '../checkbox-option-panel/check-box-option-panel-component-api';
+
+@Component({
+  selector: 'app-test-case-filter',
+  standalone: false,
+  templateUrl: './test-case-filter.component.html'
+})
+export class TestCaseFilterComponent implements TestCaseFilterApi, OnInit {
+
+  @Input() options?: TestCaseFilterOptions
+  @Output() apply = new EventEmitter<TestCaseFilterState>()
+  @ViewChild('optionPanel') optionPanel?: CheckBoxOptionPanelComponentApi
+
+  testDisplayOptions!: CheckboxOption[][]
+
+  private showSuccessful?: boolean
+  private showFailed?: boolean
+  private showIncomplete?: boolean
+  private showOptional?: boolean
+  private showDisabled?: boolean
+
+  constructor(private readonly dataService: DataService) {
+  }
+
+  ngOnInit(): void {
+    this.updateOptions(this.options, false)
+  }
+
+  refreshOptions(options: TestCaseFilterOptions|undefined, keepCurrentState: boolean): void {
+    this.updateOptions(options, keepCurrentState)
+  }
+
+  private updateOptions(options: TestCaseFilterOptions|undefined, keepCurrentState: boolean): void {
+    let showSuccessfulDefault: boolean|undefined
+    let showFailedDefault: boolean|undefined
+    let showIncompleteDefault: boolean|undefined
+    if (keepCurrentState) {
+      showSuccessfulDefault = this.showSuccessful
+      showFailedDefault = this.showFailed
+      showIncompleteDefault = this.showIncomplete
+    }
+    if (showSuccessfulDefault == undefined) showSuccessfulDefault = options == undefined || options.initialState == undefined || options.initialState.showSuccessful
+    if (showFailedDefault == undefined) showFailedDefault = options == undefined || options.initialState == undefined || options.initialState.showFailed
+    if (showIncompleteDefault == undefined) showIncompleteDefault = options == undefined || options.initialState == undefined || options.initialState.showIncomplete
+    this.testDisplayOptions = [[
+      {key: Constants.TEST_FILTER.SUCCEEDED, label: 'Succeeded tests', default: showSuccessfulDefault, iconClass: this.dataService.iconForTestResult(Constants.TEST_CASE_RESULT.SUCCESS)},
+      {key: Constants.TEST_FILTER.FAILED, label: 'Failed tests', default: showFailedDefault, iconClass: this.dataService.iconForTestResult(Constants.TEST_CASE_RESULT.FAILURE)},
+      {key: Constants.TEST_FILTER.INCOMPLETE, label: 'Incomplete tests', default: showIncompleteDefault, iconClass: this.dataService.iconForTestResult(Constants.TEST_CASE_RESULT.UNDEFINED)}
+    ]]
+    const otherOptions: CheckboxOption[] = []
+    if (options?.showOptional) {
+      let showOptionalDefault: boolean|undefined
+      if (keepCurrentState) {
+        showOptionalDefault = this.showOptional
+      }
+      if (showOptionalDefault == undefined) showOptionalDefault = options.initialState == undefined || options.initialState.showOptional
+      otherOptions.push({key: Constants.TEST_FILTER.OPTIONAL, label: 'Optional tests', default: showOptionalDefault})
+    }
+    if (options?.showDisabled) {
+      let showDisabledDefault: boolean|undefined
+      if (keepCurrentState) {
+        showDisabledDefault = this.showDisabled
+      }
+      if (showDisabledDefault == undefined) showDisabledDefault = options.initialState != undefined && options.initialState.showDisabled
+      otherOptions.push({key: Constants.TEST_FILTER.DISABLED, label: 'Disabled tests', default: showDisabledDefault})
+    }
+    if (otherOptions.length > 0) {
+      this.testDisplayOptions.push(otherOptions)
+    }
+    this.optionPanel?.refresh(this.testDisplayOptions)
+  }
+
+  resultFilterUpdated(choices: CheckboxOptionState) {
+    this.showSuccessful = choices[Constants.TEST_FILTER.SUCCEEDED]
+    this.showFailed = choices[Constants.TEST_FILTER.FAILED]
+    this.showIncomplete = choices[Constants.TEST_FILTER.INCOMPLETE]
+    this.showOptional = choices[Constants.TEST_FILTER.OPTIONAL]
+    this.showDisabled = choices[Constants.TEST_FILTER.DISABLED]
+    this.apply.emit({
+      showSuccessful: this.showSuccessful,
+      showFailed: this.showFailed,
+      showIncomplete: this.showIncomplete,
+      showOptional: this.showOptional,
+      showDisabled: this.showDisabled
+    })
+  }
+
+}

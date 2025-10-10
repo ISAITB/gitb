@@ -24,7 +24,7 @@ import java.util.List;
  * Created by serbay.
  */
 public interface IReceiver {
-	public Message receive(List<Configuration> configurations, Message inputs) throws Exception;
-	public void onError(Exception cause);
-	public void onEnd() throws Exception;
+	Message receive(List<Configuration> configurations, Message inputs) throws Exception;
+	void onError(Exception cause);
+	void onEnd() throws Exception;
 }

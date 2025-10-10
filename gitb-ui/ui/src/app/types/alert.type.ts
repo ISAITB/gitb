@@ -15,7 +15,7 @@
 
 export interface Alert {
 
-    type: string,
+    type: "info"|"danger"|"warning"|"success",
     msg: string
 
 }

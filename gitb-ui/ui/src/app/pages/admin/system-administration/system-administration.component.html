@@ -14,17 +14,25 @@
                     <!-- Welcome page. -->
                     <div class="configContainer">
                         <app-configuration-entry
-                            configTitle="Custom welcome page message"
-                            configDescription="Display a custom message on the Test Bed's welcome page."
+                            configTitle="Custom welcome page content"
+                            configDescription="Display a custom title and message on the Test Bed's welcome page."
                             [(status)]="welcomePageStatus"
                         >
                             <form>
+                                <div class="row mb-3">
+                                    <div class="col-6 minimum-width-text">
+                                        <div class="input-group">
+                                            <span class="input-group-text">Title</span>
+                                            <input type="text" id="welcomePageTitle" name="welcomePageTitle" class="form-control" [(ngModel)]="welcomePageTitle">
+                                        </div>
+                                    </div>
+                                </div>
                                 <app-placeholder-selector [systemResources]="true"></app-placeholder-selector>
-                                <div class="mt-3">
+                                <div class="row mt-3">
                                     <app-editor id="welcomePageMessage" name="welcomePageMessage" [(ngModel)]="welcomePageMessage" type="normal" [height]="200"></app-editor>
                                 </div>
                                 <div class="btn-toolbar mt-3">
-                                    <button type="submit" class="btn btn-secondary" [disable]="welcomePageResetPending || !textProvided(welcomePageMessage)" [pending]="welcomePageStatus.pending" (click)="saveWelcomePage()">Save</button>
+                                    <button type="submit" class="btn btn-secondary" [disable]="welcomePageResetPending || !textProvided(welcomePageMessage) || !textProvided(welcomePageTitle)" [pending]="welcomePageStatus.pending" (click)="saveWelcomePage()">Save</button>
                                     <button type="button" class="btn btn-secondary" [disable]="welcomePageStatus.fromDefault || welcomePageStatus.fromEnv || welcomePageStatus.pending" [pending]="welcomePageResetPending" (click)="resetWelcomePage()">Reset to default</button>
                                 </div>
                             </form>
@@ -163,7 +171,7 @@
                                                         <legend class="col-3 col-form-label text-end">* Password:</legend>
                                                         <div class="col-4 minimum-width-text">
                                                             @if (emailSettings.password == undefined) {
-                                                                <app-secret-input id="emailPassword" name="emailPassword" [(ngModel)]="emailSettings.newPassword"></app-secret-input>
+                                                                <app-secret-input inputId="emailPassword" inputName="emailPassword" name="emailPasswordSecret" [(ngModel)]="emailSettings.newPassword"></app-secret-input>
                                                             } @else {
                                                                 <div class="row row-cols-auto align-items-center gx-3">
                                                                     <div class="col-auto">
@@ -174,7 +182,7 @@
                                                                     </div>
                                                                     <div class="col-auto flex-grow-1">
                                                                         @if (emailSettings.updatePassword) {
-                                                                            <app-secret-input id="updatePassword" name="updatePassword" [(ngModel)]="emailSettings.newPassword"></app-secret-input>
+                                                                            <app-secret-input inputId="updatePassword" inputName="updatePassword" input="updatePasswordSecret" [(ngModel)]="emailSettings.newPassword"></app-secret-input>
                                                                         }
                                                                     </div>
                                                                 </div>
@@ -378,6 +386,73 @@
                             </form>
                         </app-configuration-entry>
                     </div>
+                    <!-- Startup wizard -->
+                    <div class="configContainer">
+                        <app-configuration-entry
+                            configTitle="Startup configuration wizard"
+                            configDescription="Enable the startup configuration wizard to run when the Test Bed administrator visits the home page."
+                            [(status)]="startupWizardStatus"
+                        >
+                            <form>
+                                <div class="row row-cols-auto align-items-center gx-3">
+                                    <div class="col-auto">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="startupWizardEnabled" name="startupWizardEnabled" [(ngModel)]="startupWizardEnabled">
+                                            <label class="form-check-label" for="startupWizardEnabled">Enabled?</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <button type="submit" class="btn btn-secondary" [pending]="startupWizardStatus.pending" (click)="saveStartupWizardConfig()">Save</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </app-configuration-entry>
+                    </div>
+                    <!-- Software version check -->
+                    <div class="configContainer" >
+                        <app-configuration-entry
+                            configTitle="Software version check"
+                            configDescription="Check for software updates and reported issues through the service health dashboard."
+                            [(status)]="softwareVersionCheckStatus"
+                        >
+                            <form>
+                                <div class="row">
+                                    <div class="col-auto">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="softwareCheckEnabled" name="softwareCheckEnabled" [(ngModel)]="softwareVersionCheckSettings.enabled">
+                                            <label class="form-check-label" for="softwareCheckEnabled">Enabled?</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div [collapse]="!softwareVersionCheckSettings.enabled" [isAnimated]="true">
+                                    <div class="softwareVersionFormContainer mt-3">
+                                        <div class="row">
+                                            <div class="offset-1 col-11">
+                                                <div class="row">
+                                                    <label class="col-3 col-form-label text-end" for="softwareCheckJws">* Status check URL:</label>
+                                                    <div class="col-4 minimum-width-text"><input id="softwareCheckJws" name="softwareCheckJws" [(ngModel)]="softwareVersionCheckSettings.jws" class="form-control" type="text" [invalid]="softwareVersionCheckValidation.get('softwareCheckJws')"></div>
+                                                    <div class="col-auto" app-tooltip tbTooltip="URL from which to retrieve the Test Bed's software version status. The retrieved resource is expected to be a JSON Web Signature (JWS) with JSON serialisation, signed by a key defined in the expected JSON Web Key Set (JWKS)."></div>
+                                                </div>
+                                                <div class="row mt-3">
+                                                    <label class="col-3 col-form-label text-end" for="softwareCheckJwks">* Signature key URL:</label>
+                                                    <div class="col-4 minimum-width-text"><input id="softwareCheckJwks" name="softwareCheckJwks" [(ngModel)]="softwareVersionCheckSettings.jwks" class="form-control" type="text" [invalid]="softwareVersionCheckValidation.get('softwareCheckJwks')"></div>
+                                                    <div class="col-auto" app-tooltip tbTooltip="URL from which to retrieve the JSON Web Key Set (JWKS) that includes the key used to sign the software version status JWS content."></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mt-3">
+                                    <div class="col-auto">
+                                        <div class="btn-toolbar">
+                                            <button type="submit" class="btn btn-secondary" [disable]="softwareVersionCheckStatus.pending || !softwareVersionCheckSettingsOk()" [pending]="softwareVersionCheckStatus.pending" (click)="saveSoftwareVersionCheckSettings()">Save</button>
+                                            <button type="button" class="btn btn-secondary" [disable]="softwareVersionCheckStatus.fromDefault || softwareVersionCheckStatus.fromEnv || softwareVersionCheckStatus.pending" [pending]="softwareVersionCheckResetPending" (click)="resetSoftwareVersionCheckSettings()">Reset to default</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </app-configuration-entry>
+                    </div>
                     <!-- Idle session timeout. -->
                     <div class="configContainer" >
                         <app-configuration-entry
@@ -413,7 +488,7 @@
     </div>
     <div>
         <tabset #tabs>
-            <tab (selectTab)="showAdministrators()" customClass="tabClass">
+            <tab (selectTab)="showTab(Constants.TAB.SYSTEM_ADMINISTRATION.ADMINISTRATORS)" customClass="tabClass">
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-user" text="Administrators"></app-tab-title></ng-template>
                 <!-- Administrators -->
                 <div class="tabPanel">
@@ -434,7 +509,7 @@
                     </div>
                 </div>
             </tab>
-            <tab (selectTab)="showLandingPages()" customClass="tabClass">
+            <tab (selectTab)="showTab(Constants.TAB.SYSTEM_ADMINISTRATION.LANDING_PAGES)" customClass="tabClass">
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-house" text="Default landing pages"></app-tab-title></ng-template>
                 <!-- Landing pages -->
                 <div class="tabPanel">
@@ -455,7 +530,7 @@
                     </div>
                 </div>
             </tab>
-            <tab (selectTab)="showLegalNotices()" customClass="tabClass">
+            <tab (selectTab)="showTab(Constants.TAB.SYSTEM_ADMINISTRATION.LEGAL_NOTICES)" customClass="tabClass">
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-scale-balanced" text="Default legal notices"></app-tab-title></ng-template>
                 <!-- Legal notices -->
                 <div class="tabPanel">
@@ -476,7 +551,7 @@
                     </div>
                 </div>
             </tab>
-            <tab (selectTab)="showErrorTemplates()" customClass="tabClass">
+            <tab (selectTab)="showTab(Constants.TAB.SYSTEM_ADMINISTRATION.ERROR_TEMPLATES)" customClass="tabClass">
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-bug" text="Default error templates"></app-tab-title></ng-template>
                 <!-- error templates -->
                 <div class="tabPanel">
@@ -497,7 +572,7 @@
                     </div>
                 </div>
             </tab>
-            <tab (selectTab)="showThemes()" customClass="tabClass">
+            <tab (selectTab)="showTab(Constants.TAB.SYSTEM_ADMINISTRATION.THEMES)" customClass="tabClass">
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-palette" text="Themes"></app-tab-title></ng-template>
                 <!-- Themes -->
                 <div class="tabPanel">
@@ -518,7 +593,7 @@
                     </div>
                 </div>
             </tab>
-            <tab (selectTab)="showResources()" customClass="tabClass">
+            <tab (selectTab)="showTab(Constants.TAB.SYSTEM_ADMINISTRATION.RESOURCES)" customClass="tabClass">
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-image" text="Resources"></app-tab-title></ng-template>
                 <!-- System-wide resources -->
                 <app-resource-management-tab [actions]="resourceActions" [deferredActivation]="resourceEmitter"></app-resource-management-tab>

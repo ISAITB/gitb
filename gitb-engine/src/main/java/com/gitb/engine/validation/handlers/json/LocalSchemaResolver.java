@@ -24,7 +24,7 @@ import com.networknt.schema.AbsoluteIri;
 import com.networknt.schema.resource.InputStreamSource;
 import com.networknt.schema.resource.SchemaLoader;
 import com.networknt.schema.resource.UriSchemaLoader;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,7 +65,7 @@ public class LocalSchemaResolver implements SchemaLoader {
     }
 
     private String schemaIdToUse(String uri) {
-        return StringUtils.appendIfMissing(uri, "#");
+        return Strings.CS.appendIfMissing(uri, "#");
     }
 
     private Supplier<Map<String, ResourceInfo>> createCacheLoader(SharedSchemaInfo sharedSchemaInfo) {

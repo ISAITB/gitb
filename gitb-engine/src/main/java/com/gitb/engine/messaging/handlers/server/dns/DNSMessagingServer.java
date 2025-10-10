@@ -28,7 +28,7 @@ import static com.gitb.engine.TestEngineConfiguration.DEFAULT_MESSAGING_CONFIGUR
 public class DNSMessagingServer extends UDPMessagingServer {
 	private static final int DNS_MESSAGING_SERVER_PORT = 53;
 
-	public DNSMessagingServer() throws IOException {
+	public DNSMessagingServer() {
 		super(new Configuration(
 			DNS_MESSAGING_SERVER_PORT, DNS_MESSAGING_SERVER_PORT,
 			DEFAULT_MESSAGING_CONFIGURATION.getIpAddress(), DEFAULT_MESSAGING_CONFIGURATION.getActorName()));

@@ -10,7 +10,7 @@
                 @if (show) {
                     <div class="btn-toolbar" (click)="$event.stopPropagation()">
                         @if (showUpdateDefinition && showResetTestHistory) {
-                            <div class="btn-group" dropdown [isDisabled]="hasAllTestCaseDataChoice(true) && hasAllTestCaseHistoryChoice(true)">
+                            <div class="btn-group" dropdown [isDisabled]="hasAllTestCaseDataChoice(true) && hasAllTestCaseHistoryChoice(true)" placement="bottom right">
                                 <button type="button" class="btn btn-secondary btn-sm" (click)="toggleTestCaseChoices(true)" [disabled]="hasAllTestCaseDataChoice(true) && hasAllTestCaseHistoryChoice(true)">Select all options</button>
                                 <button id="button-all" dropdownToggle type="button" class="btn btn-secondary btn-sm dropdown-toggle dropdown-toggle-split" aria-controls="dropdown-all"><span class="caret"></span></button>
                                 <ul id="dropdownType-all" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-all">
@@ -18,7 +18,7 @@
                                     <li role="menuitem" [class.disabled]="hasAllTestCaseHistoryChoice(true)"><a class="dropdown-item" href (click)="toggleTestCaseHistoryChoice(true); $event.preventDefault()">Select all history reset options</a></li>
                                 </ul>
                             </div>
-                            <div class="btn-group" dropdown [isDisabled]="hasAllTestCaseDataChoice(false) && hasAllTestCaseHistoryChoice(false)">
+                            <div class="btn-group" dropdown [isDisabled]="hasAllTestCaseDataChoice(false) && hasAllTestCaseHistoryChoice(false)" placement="bottom right">
                                 <button type="button" class="btn btn-secondary btn-sm" (click)="toggleTestCaseChoices(false)" [disabled]="hasAllTestCaseDataChoice(false) && hasAllTestCaseHistoryChoice(false)">Clear all options</button>
                                 <button id="button-none" dropdownToggle type="button" class="btn btn-secondary btn-sm dropdown-toggle dropdown-toggle-split" aria-controls="dropdown-all"><span class="caret"></span></button>
                                 <ul id="dropdownType-none" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-none">

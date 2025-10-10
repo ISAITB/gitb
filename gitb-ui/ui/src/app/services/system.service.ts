@@ -62,7 +62,7 @@ export class SystemService {
     })
   }
 
-  searchSystems(communityIds: number[]|undefined, organisationIds: number[]|undefined) {
+  searchSystems(communityIds: number[]|undefined, organisationIds: number[]|undefined, snapshotId?: number) {
 		const data: any = {}
 		if (communityIds && communityIds.length > 0) {
 		  data["community_ids"] = communityIds.join(',')
@@ -70,6 +70,9 @@ export class SystemService {
 		if (organisationIds && organisationIds.length > 0) {
 		  data["organization_ids"] = organisationIds.join(',')
 		}
+    if (snapshotId != undefined) {
+      data["snapshot"] = snapshotId
+    }
     return this.restService.post<System[]>({
       path: ROUTES.controllers.SystemService.searchSystems().url,
       authenticate: true,
@@ -77,13 +80,16 @@ export class SystemService {
     })
   }
 
-  searchSystemsInCommunity(communityId: number, organisationIds: number[]|undefined) {
+  searchSystemsInCommunity(communityId: number, organisationIds: number[]|undefined, snapshotId?: number) {
 		const data: any = {
       community_id: communityId
     }
 		if (organisationIds && organisationIds.length > 0) {
 		  data["organization_ids"] = organisationIds.join(',')
 		}
+    if (snapshotId != undefined) {
+      data['snapshot'] = snapshotId
+    }
     return this.restService.post<System[]>({
       path: ROUTES.controllers.SystemService.searchSystemsInCommunity().url,
       authenticate: true,
@@ -197,11 +203,11 @@ export class SystemService {
     })
   }
 
-  defineConformanceStatements(system: number, actorIds: number[]) {
+  defineConformanceStatements(system: number, actorIds: Set<number>) {
     return this.restService.post<void>({
       path: ROUTES.controllers.SystemService.defineConformanceStatements(system).url,
       data: {
-        ids: actorIds.join(',')
+        ids: [...actorIds].join(',')
       },
       authenticate: true
     })

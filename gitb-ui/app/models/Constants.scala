@@ -32,20 +32,15 @@ object Constants {
   val MasterPassword = "master_password"
   val DemoAccount = "demo_account"
   val WelcomeMessage = "welcome"
+  val WelcomeTitle = "welcome_title"
   val AccountRetentionPeriod = "account_retention_period"
   val EmailSettings = "email_settings"
+  val SoftwareVersionCheck = "software_version_check"
+  val StartupWizard = "startup_wizard"
 
   // env variables
   val EnvironmentTheme = "THEME"
   val DefaultTheme = "gitb"
-
-  val domainTestVariable = "DOMAIN"
-  val organisationTestVariable = "ORGANISATION"
-  val systemTestVariable = "SYSTEM"
-
-  val domainConfigurationName: String = "com.gitb."+domainTestVariable
-  val organisationConfigurationName: String = "com.gitb."+organisationTestVariable
-  val systemConfigurationName: String = "com.gitb."+systemTestVariable
 
   val organisationConfiguration_shortName = "shortName"
   val organisationConfiguration_fullName = "fullName"
@@ -80,15 +75,20 @@ object Constants {
   val MimeTypeAny = "*/*"
   val MimeTypePDF = "application/pdf"
   val MimeTypeXML = "application/xml"
+  val MimeTypeJSON = "application/json"
   val MimeTypeTextXML = "text/xml"
+  val MimeTypeTextPlain = "text/plain"
 
   val UserAttributeEmail = "email"
   val UserAttributeFirstName = "firstName"
   val UserAttributeLastName = "lastName"
   val UserAttributeAuthenticationLevel = "authLevel"
 
+  val SsoTypeEcas = "ecas"
+  val SsoTypeOidc = "oidc"
+
   // When ending in "-snapshot", this is considered a non-published release.
-  val VersionNumber = "1.27.4"
+  val VersionNumber = "1.28.0"
   val VersionNumberPostfixForResources = ""
 
 }

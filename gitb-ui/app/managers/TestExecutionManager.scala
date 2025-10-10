@@ -18,11 +18,12 @@ package managers
 import actors.SessionManagerActor
 import actors.events.sessions.{PrepareTestSessionsEvent, TerminateSessionsEvent}
 import actors.events.{ConformanceStatementSucceededEvent, TestSessionFailedEvent, TestSessionSucceededEvent}
+import com.gitb.PropertyConstants
 import com.gitb.core.{AnyContent, Configuration, ValueEmbeddingEnumeration}
 import com.gitb.tr.TestResultType
 import exceptions.{AutomationApiException, ErrorCodes, MissingRequiredParameterException}
 import managers.triggers.TriggerHelper
-import models.Enums.InputMappingMatchType
+import models.Enums.{InputMappingMatchType, TestServiceAuthTokenPasswordType}
 import models._
 import models.automation.{InputMappingContent, TestSessionLaunchInfo, TestSessionLaunchRequest}
 import models.prerequisites.PrerequisiteUtil
@@ -41,8 +42,8 @@ import java.util.concurrent.TimeUnit
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClient,
@@ -63,8 +64,8 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
   private val LOGGER = LoggerFactory.getLogger(classOf[TestExecutionManager])
   private var sessionManagerActor: Option[ActorRef] = None
   private final val reservedInputNames = Set(
-    Constants.systemTestVariable, Constants.organisationTestVariable, Constants.domainTestVariable,
-    Constants.systemConfigurationName, Constants.organisationConfigurationName, Constants.domainConfigurationName
+    PropertyConstants.SYSTEM_MAP, PropertyConstants.ORGANISATION_MAP, PropertyConstants.DOMAIN_MAP,
+    PropertyConstants.ACTOR_CONFIG_SYSTEM, PropertyConstants.ACTOR_CONFIG_ORGANISATION, PropertyConstants.ACTOR_CONFIG_DOMAIN
   )
 
   def startHeadlessTestSessions(testCaseIds: List[Long], systemId: Long, actorId: Long, testCaseToInputMap: Option[Map[Long, List[AnyContent]]], sessionIdsToAssign: Option[Map[Long, String]], forceSequentialExecution: Boolean): Future[Unit] = {
@@ -73,18 +74,21 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
       loadConformanceStatementParameters(systemId, actorId, onlySimple = false).zip(
         loadDomainParametersByActorId(actorId, onlySimple = false).zip(
           loadOrganisationParameters(systemId, onlySimple = false).zip(
-            loadSystemParameters(systemId, onlySimple = false)
+            loadSystemParameters(systemId, onlySimple = false).zip(
+              loadTestServicesByActorId(actorId)
+            )
           )
         )
       ).map { results =>
         val statementParameters = results._1
         val domainParameters = results._2._1
         val organisationData = results._2._2._1
-        val systemParameters = results._2._2._2
+        val systemParameters = results._2._2._2._1
+        val testServiceParameters = results._2._2._2._2
         // Schedule test sessions
         val launchInfo = PrepareTestSessionsEvent(TestSessionLaunchData(
           organisationData._1.community, organisationData._1.id, systemId, actorId, testCaseIds,
-          statementParameters, domainParameters, organisationData._2, systemParameters,
+          statementParameters, domainParameters, organisationData._2, systemParameters, testServiceParameters,
           testCaseToInputMap, sessionIdsToAssign, forceSequentialExecution))
         getSessionManagerActor().tell(launchInfo, ActorRef.noSender)
       }
@@ -158,6 +162,45 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
     }
   }
 
+  def loadTestServicesByDomainId(domainId: Long): Future[Option[List[TypedActorConfiguration]]] = {
+    DB.run {
+      PersistenceSchema.domainParameters
+        .join(PersistenceSchema.testServices).on(_.id === _.parameter)
+        .filter(_._1.domain === domainId)
+        .filter(x => x._2.authBasicUsername.isDefined || x._2.authTokenUsername.isDefined)
+        .map(x => (x._1.name, x._2.authBasicUsername, x._2.authBasicPassword, x._2.authTokenUsername, x._2.authTokenPassword, x._2.authTokenPasswordType))
+        .result
+        .map { results =>
+          Some(results.map { result =>
+            val testKey = result._1
+            val authBasicUsername = result._2
+            val authBasicPassword = result._3
+            val authTokenUsername = result._4
+            val authTokenPassword = result._5
+            val authTokenPasswordType = result._6
+            val configs = new ListBuffer[TypedConfiguration]
+            if (authBasicUsername.isDefined && authBasicPassword.isDefined) {
+              configs += toTypedConfig(PropertyConstants.AUTH_BASIC_USERNAME, authBasicUsername.get, "SIMPLE")
+              configs += toTypedConfig(PropertyConstants.AUTH_BASIC_PASSWORD, MimeUtil.decryptString(authBasicPassword.get), "SIMPLE")
+            }
+            if (authTokenUsername.isDefined && authTokenPassword.isDefined && authTokenPasswordType.isDefined) {
+              configs += toTypedConfig(PropertyConstants.AUTH_USERNAMETOKEN_USERNAME, authTokenUsername.get, "SIMPLE")
+              configs += toTypedConfig(PropertyConstants.AUTH_USERNAMETOKEN_PASSWORD, MimeUtil.decryptString(authTokenPassword.get), "SIMPLE")
+              TestServiceAuthTokenPasswordType.apply(authTokenPasswordType.get) match {
+                case TestServiceAuthTokenPasswordType.Digest =>
+                  configs += toTypedConfig(PropertyConstants.AUTH_USERNAMETOKEN_PASSWORDTYPE, PropertyConstants.AUTH_USERNAMETOKEN_PASSWORDTYPE_VALUE_DIGEST, "SIMPLE")
+                case TestServiceAuthTokenPasswordType.Text =>
+                  configs += toTypedConfig(PropertyConstants.AUTH_USERNAMETOKEN_PASSWORDTYPE, PropertyConstants.AUTH_USERNAMETOKEN_PASSWORDTYPE_VALUE_TEXT, "SIMPLE")
+                case _ => throw new IllegalStateException("Unknown token password type [%s]".formatted(authTokenPasswordType.get))
+              }
+            }
+            val actorKey = "%s%s%s".formatted(PropertyConstants.ACTOR_CONFIG_TEST_SERVICE, PropertyConstants.ACTOR_CONFIG_TEST_SERVICE_SEPARATOR, testKey)
+            TypedActorConfiguration(actorKey, actorKey, configs.toList)
+          }.toList)
+        }
+    }
+  }
+
   def loadDomainParametersByDomainId(domainId: Long, onlySimple: Boolean): Future[Option[TypedActorConfiguration]] = {
     domainParameterManager.getDomainParameters(domainId, loadValues = true, Some(true), onlySimple = onlySimple).map { parameters =>
       if (parameters.nonEmpty) {
@@ -170,7 +213,7 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
             toTypedConfig(parameter.name, parameter.value.get, parameter.kind)
           }
         })
-        Some(TypedActorConfiguration(Constants.domainConfigurationName, Constants.domainConfigurationName, configs))
+        Some(TypedActorConfiguration(PropertyConstants.ACTOR_CONFIG_DOMAIN, PropertyConstants.ACTOR_CONFIG_DOMAIN, configs))
       } else {
         None
       }
@@ -178,9 +221,14 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
   }
 
   def loadDomainParametersByActorId(actorId: Long, onlySimple: Boolean): Future[Option[TypedActorConfiguration]] = {
-    actorManager.getById(actorId).flatMap { actor =>
-      val domainId = actor.get.domain
+    actorManager.getActorDomainId(actorId).flatMap { domainId =>
       loadDomainParametersByDomainId(domainId, onlySimple)
+    }
+  }
+
+  def loadTestServicesByActorId(actorId: Long): Future[Option[List[TypedActorConfiguration]]] = {
+    actorManager.getActorDomainId(actorId).flatMap { domainId =>
+      loadTestServicesByDomainId(domainId)
     }
   }
 
@@ -207,7 +255,7 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
             }
           }
         }
-        (organisation, TypedActorConfiguration(Constants.organisationConfigurationName, Constants.organisationConfigurationName, configs.toList))
+        (organisation, TypedActorConfiguration(PropertyConstants.ACTOR_CONFIG_ORGANISATION, PropertyConstants.ACTOR_CONFIG_ORGANISATION, configs.toList))
       }
     }
   }
@@ -240,7 +288,7 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
             }
           }
         }
-        TypedActorConfiguration(Constants.systemConfigurationName, Constants.systemConfigurationName, configs.toList)
+        TypedActorConfiguration(PropertyConstants.ACTOR_CONFIG_SYSTEM, PropertyConstants.ACTOR_CONFIG_SYSTEM, configs.toList)
       }
     }
   }

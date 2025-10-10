@@ -95,25 +95,23 @@ class TriggerService @Inject()(authorizedAction: AuthorizedAction,
   }
 
   def testTriggerEndpoint(): Action[AnyContent] = authorizedAction.async { request =>
-    val communityId = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
+    val communityId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.COMMUNITY_ID).toLong
     authorizationManager.canManageCommunity(request, communityId).flatMap { _ =>
-      val url = ParameterExtractor.requiredBodyParameter(request, Parameters.URL)
-      val serviceType = TriggerServiceType.apply(ParameterExtractor.requiredBodyParameter(request, Parameters.TYPE).toInt)
+      val url = ParameterExtractor.requiredBodyParameter(request, ParameterNames.URL)
+      val serviceType = TriggerServiceType.apply(ParameterExtractor.requiredBodyParameter(request, ParameterNames.TYPE).toInt)
       triggerManager.testTriggerEndpoint(url, serviceType).map { result =>
-        var json = JsonUtil.jsTextArray(result._2)
-        json = json+("success", JsBoolean(result._1))
-        json = json+("contentType", JsString(result._3))
+        val json = JsonUtil.jsServiceTestResult(result)
         ResponseConstructor.constructJsonResponse(json.toString())
       }
     }
   }
 
   def previewTriggerCall(): Action[AnyContent] = authorizedAction.async { request =>
-    val communityId = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
+    val communityId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.COMMUNITY_ID).toLong
     authorizationManager.canManageCommunity(request, communityId).flatMap { _ =>
-      val operation = ParameterExtractor.optionalBodyParameter(request, Parameters.OPERATION)
-      val serviceType = TriggerServiceType.apply(ParameterExtractor.requiredBodyParameter(request, Parameters.TYPE).toInt)
-      val data = ParameterExtractor.extractTriggerDataItems(request, Parameters.DATA, None)
+      val operation = ParameterExtractor.optionalBodyParameter(request, ParameterNames.OPERATION)
+      val serviceType = TriggerServiceType.apply(ParameterExtractor.requiredBodyParameter(request, ParameterNames.TYPE).toInt)
+      val data = ParameterExtractor.extractTriggerDataItems(request, ParameterNames.DATA, None)
       triggerManager.previewTriggerCall(communityId, operation, serviceType, data).map { message =>
         val json = Json.obj(
           "message"    -> message
@@ -124,15 +122,13 @@ class TriggerService @Inject()(authorizedAction: AuthorizedAction,
   }
 
   def testTriggerCall(): Action[AnyContent] = authorizedAction.async { request =>
-    val communityId = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
+    val communityId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.COMMUNITY_ID).toLong
     authorizationManager.canManageCommunity(request, communityId).flatMap { _ =>
-      val url = ParameterExtractor.requiredBodyParameter(request, Parameters.URL)
-      val serviceType = TriggerServiceType.apply(ParameterExtractor.requiredBodyParameter(request, Parameters.TYPE).toInt)
-      val payloadString = ParameterExtractor.requiredBodyParameter(request, Parameters.PAYLOAD)
+      val url = ParameterExtractor.requiredBodyParameter(request, ParameterNames.URL)
+      val serviceType = TriggerServiceType.apply(ParameterExtractor.requiredBodyParameter(request, ParameterNames.TYPE).toInt)
+      val payloadString = ParameterExtractor.requiredBodyParameter(request, ParameterNames.PAYLOAD)
       triggerManager.testTriggerCall(url, serviceType, payloadString).map { result =>
-        var json = JsonUtil.jsTextArray(result._2)
-        json = json + ("success", JsBoolean(result._1))
-        json = json+("contentType", JsString(result._3))
+        val json = JsonUtil.jsServiceTestResult(result)
         ResponseConstructor.constructJsonResponse(json.toString())
       }
     }

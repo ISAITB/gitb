@@ -15,14 +15,13 @@
 
 package filters
 
-import org.apache.pekko.stream.Materializer
 import com.gitb.utils.HmacUtils
 import config.Configurations
 import config.Configurations.{API_ROOT, WEB_CONTEXT_ROOT, WEB_CONTEXT_ROOT_WITH_SLASH}
 import controllers.util.ResponseConstructor.NotFound
-import controllers.util.{Parameters, ResponseConstructor}
+import controllers.util.{ParameterExtractor, ParameterNames, ResponseConstructor}
 import exceptions._
-import models.Constants
+import org.apache.pekko.stream.Materializer
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.cache.TokenCache
 import play.api.mvc.Results.Unauthorized
@@ -44,7 +43,7 @@ class AuthenticationFilter @Inject() (router: Router)
     // Check if access token exists for any user
     val userId = TokenCache.checkAccessToken(accessToken)
     // A workaround of customizing request headers to add our userId data, so that controllers can process it
-    val customHeaders = originalRequest.headers.add((Parameters.USER_ID, "" + userId))
+    val customHeaders = originalRequest.headers.add((ParameterNames.USER_ID, "" + userId))
     val customRequestHeader = originalRequest.withHeaders(customHeaders)
     customRequestHeader
   }
@@ -116,7 +115,7 @@ class AuthenticationFilter @Inject() (router: Router)
                 if (isPublicAutomationAccessAllowed(requestHeader)) {
                   next(requestHeader)
                 } else {
-                  val apiKeyHeader = requestHeader.headers.get(Constants.AutomationHeader)
+                  val apiKeyHeader = ParameterExtractor.extractApiKeyHeader(requestHeader)
                   if (apiKeyHeader.isDefined) {
                     next(requestHeader)
                   } else {

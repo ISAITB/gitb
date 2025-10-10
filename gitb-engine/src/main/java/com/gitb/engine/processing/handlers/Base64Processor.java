@@ -80,7 +80,7 @@ public class Base64Processor extends AbstractProcessingHandler {
         if (OPERATION_ENCODE.equalsIgnoreCase(operation)) {
             byte[] binaryContent = getInputForName(input, INPUT_INPUT, BinaryType.class).serializeByDefaultEncoding();
             BooleanType asDataUrl = getInputForName(input, INPUT_DATA_URL, BooleanType.class);
-            boolean dataUrl = (asDataUrl != null)?((Boolean)asDataUrl.getValue()):false;
+            boolean dataUrl = (asDataUrl != null)? asDataUrl.getValue() :false;
             String outputValue = org.apache.commons.codec.binary.Base64.encodeBase64String(binaryContent);
             if (dataUrl) {
                 String mimeType = getMimeType(binaryContent);

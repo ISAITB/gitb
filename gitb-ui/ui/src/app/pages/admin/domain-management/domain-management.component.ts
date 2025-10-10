@@ -13,13 +13,17 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, OnInit } from '@angular/core';
-import { Constants } from 'src/app/common/constants';
-import { ConformanceService } from 'src/app/services/conformance.service';
-import { DataService } from 'src/app/services/data.service';
-import { RoutingService } from 'src/app/services/routing.service';
-import { Domain } from 'src/app/types/domain';
-import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
+import {Component, OnInit, ViewChild} from '@angular/core';
+import {Constants} from 'src/app/common/constants';
+import {ConformanceService} from 'src/app/services/conformance.service';
+import {DataService} from 'src/app/services/data.service';
+import {RoutingService} from 'src/app/services/routing.service';
+import {Domain} from 'src/app/types/domain';
+import {TableColumnDefinition} from 'src/app/types/table-column-definition.type';
+import {TableApi} from '../../../components/table/table-api';
+import {PagingEvent} from '../../../components/paging-controls/paging-event';
+import {Observable, of} from 'rxjs';
+import {SearchResult} from '../../../types/search-result';
 
 @Component({
     selector: 'app-domain-management',
@@ -29,14 +33,17 @@ import { TableColumnDefinition } from 'src/app/types/table-column-definition.typ
 })
 export class DomainManagementComponent implements OnInit {
 
-  dataStatus = {status: Constants.STATUS.PENDING}
+  @ViewChild("domainTable") domainTable?: TableApi
+
+  domainStatus = {status: Constants.STATUS.PENDING}
   tableColumns: TableColumnDefinition[] = [
     { field: 'sname', title: 'Short name' },
     { field: 'fname', title: 'Full name' },
     { field: 'description', title: 'Description'}
   ]
   domains: Domain[] = []
-
+  domainFilter?: string
+  domainsRefreshing = false
 
   constructor(
     public readonly dataService: DataService,
@@ -45,29 +52,8 @@ export class DomainManagementComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-		this.getDomains()
+		this.refreshDomains()
     this.routingService.domainsBreadcrumbs()
-  }
-
-	getDomains() {
-		if (this.dataService.isSystemAdmin) {
-			this.conformanceService.getDomains()
-			.subscribe((data) => {
-				this.domains = data
-				this.dataStatus.status = Constants.STATUS.FINISHED
-      }).add(() => {
-				this.dataStatus.status = Constants.STATUS.FINISHED
-      })
-    } else if (this.dataService.isCommunityAdmin) {
-			this.conformanceService.getCommunityDomains(this.dataService.community!.id)
-			.subscribe((data) => {
-        if (data) {
-          this.domains = data.domains
-        }
-      }).add(() => {
-        this.dataStatus.status = Constants.STATUS.FINISHED
-      })
-    }
   }
 
 	onDomainSelect(domain: Domain) {
@@ -76,6 +62,45 @@ export class DomainManagementComponent implements OnInit {
 
   create() {
     this.routingService.toCreateDomain()
+  }
+
+  applyFilter() {
+    this.refreshDomains()
+  }
+
+  loadDomains(pagingInfo: PagingEvent) {
+    if (this.domainStatus.status == Constants.STATUS.FINISHED) {
+      this.domainsRefreshing = true
+    } else {
+      this.domainStatus.status = Constants.STATUS.PENDING
+    }
+    let $domains: Observable<SearchResult<Domain>>
+    if (this.dataService.isSystemAdmin) {
+      $domains = this.conformanceService.searchDomains(this.domainFilter, pagingInfo.targetPage, pagingInfo.targetPageSize)
+    } else if (this.dataService.isCommunityAdmin) {
+      $domains = this.conformanceService.searchCommunityDomains(this.dataService.community!.id, this.domainFilter, pagingInfo.targetPage, pagingInfo.targetPageSize)
+    } else {
+      $domains = of({ data: [], count: 0 })
+    }
+    $domains.subscribe((data: SearchResult<Domain>) => {
+      this.domains = data.data
+      this.updatePagination(pagingInfo.targetPage, data.count!)
+    }).add(() => {
+      this.domainsRefreshing = false
+      this.domainStatus.status = Constants.STATUS.FINISHED
+    })
+  }
+
+  refreshDomains() {
+    this.loadDomains({ targetPage: 1, targetPageSize: this.domainTable?.getPagingControls()?.getCurrentStatus().pageSize! })
+  }
+
+  doDomainPaging(event: PagingEvent) {
+    this.loadDomains(event)
+  }
+
+  private updatePagination(page: number, count: number) {
+    this.domainTable?.getPagingControls()?.updateStatus(page, count)
   }
 
 }

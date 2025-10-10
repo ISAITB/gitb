@@ -15,8 +15,8 @@
 
 package com.gitb.engine.actors.processors;
 
+import com.gitb.PropertyConstants;
 import com.gitb.core.StepStatus;
-import com.gitb.engine.PropertyConstants;
 import com.gitb.engine.events.model.StatusEvent;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.engine.utils.StepContext;
@@ -48,7 +48,7 @@ public class RootSequenceProcessorActor<T extends Sequence> extends SequenceProc
             if (forcedResult == TestResultType.SUCCESS) {
                 currentValue.setValue(true);
             } else {
-                currentValue.setValue(forcedResult == null && ((Boolean)currentValue.getValue()) && (event.getStatus() == StepStatus.COMPLETED || event.getStatus() == StepStatus.WARNING));
+                currentValue.setValue(forcedResult == null && currentValue.getValue() && (event.getStatus() == StepStatus.COMPLETED || event.getStatus() == StepStatus.WARNING));
             }
         }
         // Handle regular processing.

@@ -1,0 +1,1 @@
+You are using the latest **%s** release, published on **%s**%s, or a later snapshot.

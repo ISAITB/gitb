@@ -15,12 +15,12 @@
 
 package com.gitb.engine.actors.processors;
 
+import com.gitb.PropertyConstants;
 import com.gitb.core.AnyContent;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.InputRequestInputType;
 import com.gitb.core.ValueEmbeddingEnumeration;
 import com.gitb.engine.CallbackManager;
-import com.gitb.engine.PropertyConstants;
 import com.gitb.engine.TestbedService;
 import com.gitb.engine.commands.messaging.NotificationReceived;
 import com.gitb.engine.commands.messaging.TimeoutExpired;
@@ -31,6 +31,7 @@ import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.messaging.MessagingContext;
 import com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.engine.utils.HandlerUtils;
 import com.gitb.engine.utils.StepContext;
 import com.gitb.engine.utils.TemplateUtils;
 import com.gitb.engine.utils.TestCaseUtils;
@@ -40,6 +41,7 @@ import com.gitb.messaging.IMessagingHandler;
 import com.gitb.messaging.Message;
 import com.gitb.messaging.MessagingReport;
 import com.gitb.messaging.callback.SessionCallbackData;
+import com.gitb.remote.HandlerTimeoutException;
 import com.gitb.tbs.InputRequest;
 import com.gitb.tbs.Instruction;
 import com.gitb.tbs.UserInput;
@@ -142,9 +144,23 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         }, getContext().dispatcher());
     }
 
+    @Override
+    protected void completed(TestStepReportType testStepReport) {
+        HandlerUtils.recordHandlerTimeout(step.getHandlerTimeoutFlag(), scope, false);
+        super.completed(testStepReport);
+    }
+
+    @Override
+    protected void handleFutureFailure(Throwable failure) {
+        if (failure instanceof HandlerTimeoutException) {
+            HandlerUtils.recordHandlerTimeout(step.getHandlerTimeoutFlag(), scope, true);
+        }
+        super.handleFutureFailure(failure);
+    }
+
     private String fixedValueOrVariable(String value, VariableResolver variableResolver, String defaultValue) {
         if (VariableResolver.isVariableReference(value)) {
-            value = (String) variableResolver.resolveVariableAsString(value).getValue();
+            value = variableResolver.resolveVariableAsString(value).getValue();
         }
         if (StringUtils.isBlank(value) && StringUtils.isNotBlank(defaultValue)) {
             value = defaultValue;
@@ -411,7 +427,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
           blocking = true;
         } else {
             if (VariableResolver.isVariableReference(step.getBlocking())) {
-                blocking = (Boolean) resolver.resolveVariableAsBoolean(step.getBlocking()).getValue();
+                blocking = resolver.resolveVariableAsBoolean(step.getBlocking()).getValue();
             } else {
                 blocking = step.getBlocking() != null && Boolean.parseBoolean(step.getBlocking());
             }
@@ -495,7 +511,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                     }
                 } else {
                     if (VariableResolver.isVariableReference(request.getMultiple())) {
-                        inputRequest.setMultiple((Boolean)(variableResolver.resolveVariableAsBoolean(request.getMultiple()).getValue()));
+                        inputRequest.setMultiple(variableResolver.resolveVariableAsBoolean(request.getMultiple()).getValue());
                     } else {
                         inputRequest.setMultiple(Boolean.parseBoolean(request.getMultiple()));
                     }
@@ -575,19 +591,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                             requiredInputIndexes.remove(stepIndex - 1);
                             if (requestInfo.isReport()) {
                                 // Construct the value to return for the step's report.
-                                var reportItem = new AnyContent();
-                                if (requestInfo.getInputType() == InputRequestInputType.SECRET) {
-                                    reportItem.setValue("**********");
-                                } else {
-                                    reportItem.setValue(userInput.getValue());
-                                }
-                                reportItem.setName(requestInfo.getDesc());
-                                if (reportItem.getName() == null) {
-                                    reportItem.setName(requestInfo.getName());
-                                }
-                                reportItem.setEmbeddingMethod(userInput.getEmbeddingMethod());
-                                reportItem.setMimeType(requestInfo.getMimeType());
-                                report.getContext().getItem().add(reportItem);
+                                report.getContext().getItem().add(getAnyContent(userInput, requestInfo));
                             }
                         }
                         if (StringUtils.isNotBlank(targetRequest.getValue())) {
@@ -644,6 +648,22 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
             }
             promise.trySuccess(report);
         }
+    }
+
+    private AnyContent getAnyContent(UserInput userInput, UserRequest requestInfo) {
+        var reportItem = new AnyContent();
+        if (requestInfo.getInputType() == InputRequestInputType.SECRET) {
+            reportItem.setValue("**********");
+        } else {
+            reportItem.setValue(userInput.getValue());
+        }
+        reportItem.setName(requestInfo.getDesc());
+        if (reportItem.getName() == null) {
+            reportItem.setName(requestInfo.getName());
+        }
+        reportItem.setEmbeddingMethod(userInput.getEmbeddingMethod());
+        reportItem.setMimeType(requestInfo.getMimeType());
+        return reportItem;
     }
 
     @Override

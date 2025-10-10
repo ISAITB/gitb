@@ -58,7 +58,7 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 	}
 
 	@Override
-	protected void init() throws Exception {
+	protected void init() {
 		ScriptletInfo scriptletInfo = findScriptlet();
 		scriptlet = scriptletInfo.scriptlet();
 		standaloneScriptlet = scriptletInfo.isStandalone();
@@ -82,7 +82,7 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
     }
 
 	@Override
-	protected void handleStatusEvent(StatusEvent event) throws Exception {
+	protected void handleStatusEvent(StatusEvent event) {
 		StepStatus status = event.getStatus();
 		if (status == StepStatus.COMPLETED || status == StepStatus.ERROR || status == StepStatus.WARNING) {
 			generateOutput();

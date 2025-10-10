@@ -16,8 +16,8 @@
 package managers
 
 import exceptions.{AutomationApiException, ErrorCodes}
-import models.Domain
 import models.automation.UpdateDomainRequest
+import models.{Domain, SearchResult}
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import utils.{CryptoUtil, RepositoryUtils}
@@ -64,25 +64,77 @@ class DomainManager @Inject() (domainParameterManager: DomainParameterManager,
     )
   }
 
-  def getDomains(ids: Option[List[Long]] = None): Future[List[Domain]] = {
-    DB.run(
+  def getDomains(ids: Option[List[Long]] = None, snapshotId: Option[Long] = None): Future[List[Domain]] = {
+    val query = if (snapshotId.isDefined) {
+      PersistenceSchema.conformanceSnapshotDomains
+        .filterOpt(ids)((q, ids) => q.id inSet ids)
+        .filter(_.snapshotId === snapshotId.get)
+        .sortBy(_.shortname.asc)
+        .result
+        .map { results =>
+          results.map { x =>
+            Domain(x.id, x.shortname, x.fullname, x.description, x.reportMetadata, "")
+          }.toList
+        }
+    } else {
       PersistenceSchema.domains
         .filterOpt(ids)((q, ids) => q.id inSet ids)
         .sortBy(_.shortname.asc)
         .result
         .map(_.toList)
-    )
+    }
+    DB.run(query)
+  }
+
+  def searchDomains(page: Long, limit: Long, filter: Option[String]): Future[SearchResult[Domain]] = {
+    DB.run(searchDomainsInternal(page, limit, filter))
+  }
+
+  private def searchDomainsInternal(page: Long, limit: Long, filter: Option[String]): DBIO[SearchResult[Domain]] = {
+    val query = PersistenceSchema.domains
+      .filterOpt(filter)((table, filterValue) => {
+        val filterValueToUse = toLowercaseLikeParameter(filterValue)
+        table.shortname.toLowerCase.like(filterValueToUse) || table.fullname.toLowerCase.like(filterValueToUse) || table.description.getOrElse("").toLowerCase.like(filterValueToUse)
+      })
+      .sortBy(_.shortname.asc)
+    for {
+      results <- query.drop((page - 1) * limit).take(limit).result
+      resultCount <- query.size.result
+    } yield SearchResult(results, resultCount)
+  }
+
+  def searchCommunityDomains(page: Long, limit: Long, filter: Option[String], communityId: Long): Future[SearchResult[Domain]] = {
+    DB.run {
+      for {
+        communityDomain <- getCommunityDomainInternal(communityId)
+        domains <- {
+          if (communityDomain.isDefined) {
+            val filterValueToUse = filter.map(_.toLowerCase)
+            if (filterValueToUse.isEmpty || communityDomain.get.shortname.toLowerCase.contains(filterValueToUse) || communityDomain.get.fullname.toLowerCase.contains(filterValueToUse) || communityDomain.get.description.getOrElse("").toLowerCase.contains(filterValueToUse)) {
+              DBIO.successful(SearchResult(List(communityDomain.get), 1))
+            } else {
+              DBIO.successful(SearchResult(List[Domain](), 0))
+            }
+          } else {
+            // Community has access to all domains.
+            searchDomainsInternal(page, limit, filter)
+          }
+        }
+      } yield domains
+    }
   }
 
   def getCommunityDomain(communityId: Long): Future[Option[Domain]] = {
-    DB.run(
-      PersistenceSchema.communities
+    DB.run(getCommunityDomainInternal(communityId))
+  }
+
+  private def getCommunityDomainInternal(communityId: Long): DBIO[Option[Domain]] = {
+    PersistenceSchema.communities
       .join(PersistenceSchema.domains).on(_.domain === _.id)
       .filter(_._1.id === communityId)
       .map(_._2)
       .result
       .headOption
-    )
   }
 
   def getDomainOfActor(actorId: Long): Future[Domain] = {
@@ -239,6 +291,7 @@ class DomainManager @Inject() (domainParameterManager: DomainParameterManager,
       _ <- DBIO.seq(sharedTestSuiteIds.map(testSuiteManager.undeployTestSuite(_, onSuccessCalls)): _*)
       _ <- deleteTransactionByDomain(domain)
       _ <- testResultManager.updateForDeletedDomain(domain)
+      _ <- domainParameterManager.deleteTestServices(domain)
       _ <- domainParameterManager.deleteDomainParameters(domain, onSuccessCalls)
       _ <- PersistenceSchema.conformanceOverviewCertificateMessages.filter(row => row.domain.isDefined && row.domain === domain).delete
       _ <- PersistenceSchema.conformanceSnapshotResults.filter(_.domainId === domain).map(_.domainId).update(domain * -1)
@@ -276,4 +329,57 @@ class DomainManager @Inject() (domainParameterManager: DomainParameterManager,
     PersistenceSchema.transactions.filter(_.domain === domainId).delete
   }
 
+  def getDomainThroughAutomationApi(communityKey: String, domainKey: String): Future[Domain] = {
+    DB.run {
+      for {
+        communityDomain <- automationApiHelper.getDomainIdByCommunity(communityKey)
+        domain <- PersistenceSchema.domains
+          .filter(_.apiKey === domainKey)
+          .result
+          .headOption
+        domainToReturn <- {
+          if (domain.isEmpty || (communityDomain.isDefined && domain.get.id != communityDomain.get)) {
+            throw AutomationApiException(ErrorCodes.API_DOMAIN_NOT_FOUND, "Unable to find a domain with the provided API key")
+          } else {
+            DBIO.successful(domain.get)
+          }
+        }
+      } yield domainToReturn
+    }
+  }
+
+  def getCommunityDomainThroughAutomationApi(communityKey: String): Future[Domain] = {
+    DB.run {
+      for {
+        communityDomain <- automationApiHelper.getDomainIdByCommunity(communityKey)
+        domains <- PersistenceSchema.domains
+          .filterOpt(communityDomain)((q, domainId) => q.id === domainId)
+          .sortBy(_.shortname.asc)
+          .result
+        domain <- {
+          if (domains.isEmpty) {
+            throw AutomationApiException(ErrorCodes.API_DOMAIN_NOT_FOUND, "Unable to find a domain linked to the community")
+          } else if (domains.size > 1) {
+            throw AutomationApiException(ErrorCodes.API_MULTIPLE_DOMAINS_FOUND, "Multiple domains found for the community - retrieve a specific one by providing its API key")
+          } else {
+            DBIO.successful(domains.head)
+          }
+        }
+      } yield domain
+    }
+  }
+
+  def searchDomainsThroughAutomationApi(communityKey: String, name: Option[String]): Future[Seq[Domain]] = {
+    val pattern = toLowercaseLikeParameter(name)
+    DB.run {
+      for {
+        communityDomain <- automationApiHelper.getDomainIdByCommunity(communityKey)
+        domains <- PersistenceSchema.domains
+          .filterOpt(communityDomain)((q, domainId) => q.id === domainId)
+          .filterOpt(pattern)((q, p) => q.shortname.toLowerCase.like(p) || q.fullname.toLowerCase.like(p))
+          .sortBy(_.shortname.asc)
+          .result
+      } yield domains
+    }
+  }
 }

@@ -39,9 +39,9 @@ public class TCPMessagingServer implements IMessagingServer {
     // initial configuration for the messaging server
     private final Configuration configuration;
     // port -> listener thread map
-    private Map<Integer, IMessagingServerWorker> workers;
+    private final Map<Integer, IMessagingServerWorker> workers;
 
-    public TCPMessagingServer(Configuration configuration) throws IOException {
+    public TCPMessagingServer(Configuration configuration) {
         this.configuration = configuration;
         this.workers = new ConcurrentHashMap<>();
     }
@@ -49,13 +49,12 @@ public class TCPMessagingServer implements IMessagingServer {
     /**
      * Starts to listen the next available port
      * @return port number
-     * @throws IOException
      */
     @Override
     public synchronized IMessagingServerWorker listenNextAvailablePort() {
         for (int port = configuration.getStart(); port <= configuration.getEnd(); port++) {
             if(!workers.containsKey(port)) {
-	            TCPMessagingServerWorker worker = null;
+	            TCPMessagingServerWorker worker;
 	            try {
 		            worker = listen(port);
 	            } catch (IOException e) {
@@ -97,7 +96,7 @@ public class TCPMessagingServer implements IMessagingServer {
         return configuration;
     }
 
-    private static TCPMessagingServer getInstance(Configuration configuration) throws IOException {
+    private static TCPMessagingServer getInstance(Configuration configuration) {
         if(instance == null) {
             instance = new TCPMessagingServer(configuration);
         }

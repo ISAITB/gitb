@@ -86,18 +86,29 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
   def selfRegister(organisation: Organizations, organisationAdmin: Users, templateId: Option[Long], actualUserInfo: Option[ActualUserInfo], customPropertyValues: Option[List[OrganisationParameterValues]], customPropertyFiles: Option[Map[Long, FileInfo]], requireMandatoryPropertyValues: Boolean): Future[Long] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction: DBIO[(Long, OrganisationCreationDbInfo)] = for {
-      // Save organisation
-      organisationInfo <- organizationManager.createOrganizationWithRelatedData(organisation, templateId, None, None, copyOrganisationParameters = true, copySystemParameters = true, copyStatementParameters = true, checkApiKeyUniqueness = false, setDefaultPropertyValues = false, onSuccessCalls)
-      // Save custom organisation property values
-      _ <- {
-        if (customPropertyValues.isDefined && customPropertyFiles.isDefined) {
-          organizationManager.saveOrganisationParameterValues(organisationInfo.organisationId, organisation.community, isAdmin = false, isSelfRegistration = true, customPropertyValues.get, customPropertyFiles.get, requireMandatoryPropertyValues, onSuccessCalls)
+      // Process organisation data
+      organisationInfo <- {
+        if (organisation.id == 0L) {
+          // New organisation
+          for {
+            // Save organisation
+            newOrganisationInfo <- organizationManager.createOrganizationWithRelatedData(organisation, templateId, None, None, copyOrganisationParameters = true, copySystemParameters = true, copyStatementParameters = true, checkApiKeyUniqueness = false, setDefaultPropertyValues = false, onSuccessCalls)
+            // Save custom organisation property values
+            _ <- {
+              if (customPropertyValues.isDefined && customPropertyFiles.isDefined) {
+                organizationManager.saveOrganisationParameterValues(newOrganisationInfo.organisationId, organisation.community, isAdmin = false, isSelfRegistration = true, customPropertyValues.get, customPropertyFiles.get, requireMandatoryPropertyValues, onSuccessCalls)
+              } else {
+                DBIO.successful(())
+              }
+            }
+            // Apply property defaults.
+            _ <- organizationManager.applyDefaultPropertyValues(newOrganisationInfo.organisationId, organisation.community)
+          } yield newOrganisationInfo
         } else {
-          DBIO.successful(())
+          // Existing organisation
+          DBIO.successful(new OrganisationCreationDbInfo(organisation.id, None))
         }
       }
-      // Apply property defaults.
-      _ <- organizationManager.applyDefaultPropertyValues(organisationInfo.organisationId, organisation.community)
       // Save admin user account
       userId <- PersistenceSchema.insertUser += organisationAdmin.withOrganizationId(organisationInfo.organisationId)
       // Link current session user with created admin user account
@@ -109,7 +120,10 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
         }
     } yield (userId, organisationInfo)
     DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally).map { ids =>
-    triggerHelper.triggersFor(organisation.community, ids._2)
+      if (organisation.id == 0L) {
+        // Only fire triggers if we created a new organisation
+        triggerHelper.triggersFor(organisation.community, ids._2)
+      }
       ids._1
     }
   }
@@ -131,6 +145,27 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
       q.sortBy(_.shortname.asc)
         .result
         .map(_.toList)
+    )
+  }
+
+  def searchCommunities(page: Long, limit: Long, filter: Option[String]): Future[SearchResult[CommunityLimited]] = {
+    val query = PersistenceSchema.communities
+      .filter(_.id =!= Constants.DefaultCommunityId)
+      .filterOpt(filter)((table, filterValue) => {
+        val filterValueToUse = toLowercaseLikeParameter(filterValue)
+        table.shortname.toLowerCase.like(filterValueToUse) || table.fullname.toLowerCase.like(filterValueToUse)
+      })
+      .map(x => (x.id, x.shortname, x.fullname))
+      .sortBy(_._2.asc)
+    DB.run(
+      for {
+        results <- query.drop((page - 1) * limit).take(limit).result.map { results =>
+          results.map { result =>
+            CommunityLimited(result._1, result._2, result._3)
+          }
+        }
+        resultCount <- query.size.result
+      } yield SearchResult(results, resultCount)
     )
   }
 
@@ -215,7 +250,9 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
           results._3.getOrElse(community._1.id, List()), // Labels
           results._4.getOrElse(community._1.id, List()), // Organisation parameters
           community._1.selfRegForceTemplateSelection,
-          community._1.selfRegForceRequiredProperties
+          community._1.selfRegForceRequiredProperties,
+          community._1.selfRegAllowOrganisationTokens,
+          community._1.selfRegForceOrganisationTokenInput
         )
       }
       buffer.toList
@@ -322,10 +359,10 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
         createCommunityInternal(Communities(0L, input.shortName, input.fullName, input.supportEmail,
           SelfRegistrationType.NotSupported.id.toShort, None, None, selfRegNotification = false,
           interactionNotification = input.interactionNotifications.getOrElse(false), input.description, SelfRegistrationRestriction.NoRestriction.id.toShort,
-          selfRegForceTemplateSelection = false, selfRegForceRequiredProperties = false, allowCertificateDownload = false,
-          allowStatementManagement = true, allowSystemManagement = true, allowPostTestOrganisationUpdates = true,
+          selfRegForceTemplateSelection = false, selfRegForceRequiredProperties = false, selfRegAllowOrganisationTokens = false, selfRegAllowOrganisationTokenManagement = false, selfRegForceOrganisationTokenInput = false,
+          allowCertificateDownload = false, allowStatementManagement = true, allowSystemManagement = true, allowPostTestOrganisationUpdates = true,
           allowPostTestSystemUpdates = true, allowPostTestStatementUpdates = true,
-          allowAutomationApi = true, allowCommunityView = false, apiKeyToUse, None, domainId
+          allowAutomationApi = true, allowCommunityView = false, allowUserManagement = true, apiKeyToUse, None, domainId
         ))
       }
     } yield apiKeyToUse
@@ -348,7 +385,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
         PersistenceSchema.insertCommunity += communityToUse
       }
       adminOrganisationId <- {
-        organizationManager.createOrganizationInTrans(Organizations(0L, Constants.AdminOrganizationName, Constants.AdminOrganizationName, OrganizationType.Vendor.id.toShort, adminOrganization = true, None, None, None, template = false, None, None, communityId))
+        organizationManager.createOrganizationInTrans(Organizations(0L, Constants.AdminOrganizationName, Constants.AdminOrganizationName, OrganizationType.Vendor.id.toShort, adminOrganization = true, None, None, None, template = false, None, None, None, communityId))
       }
     } yield (communityId, adminOrganisationId)
   }
@@ -430,8 +467,9 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
   private[managers] def updateCommunityInternal(community: Communities, shortName: String, fullName: String, supportEmail: Option[String],
                                                 selfRegType: Short, selfRegToken: Option[String], selfRegTokenHelpText: Option[String], selfRegNotification: Boolean, interactionNotification: Boolean,
                                                 description: Option[String], selfRegRestriction: Short, selfRegForceTemplateSelection: Boolean, selfRegForceRequiredProperties: Boolean,
+                                                selfRegAllowOrganisationTokens: Boolean, selfRegAllowOrganisationTokenManagement: Boolean, selfRegForceOrganisationTokenInput: Boolean,
                                                 allowCertificateDownload: Boolean, allowStatementManagement: Boolean, allowSystemManagement: Boolean,
-                                                allowPostTestOrganisationUpdates: Boolean, allowPostTestSystemUpdates: Boolean, allowPostTestStatementUpdates: Boolean, allowAutomationApi: Option[Boolean], allowCommunityView: Boolean,
+                                                allowPostTestOrganisationUpdates: Boolean, allowPostTestSystemUpdates: Boolean, allowPostTestStatementUpdates: Boolean, allowAutomationApi: Option[Boolean], allowCommunityView: Boolean, allowUserManagement: Boolean,
                                                 apiKey: Option[String], domainId: Option[Long], checkApiKeyUniqueness: Boolean, onSuccess: mutable.ListBuffer[() => _]) = {
     for {
       // Update short name.
@@ -460,10 +498,10 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
         .filter(_.id === community.id)
         .map(c => (
           c.supportEmail, c.domain, c.description, c.allowCertificateDownload, c.allowStatementManagement, c.allowSystemManagement,
-          c.allowPostTestOrganisationUpdates, c.allowPostTestSystemUpdates, c.allowPostTestStatementUpdates, c.allowCommunityView, c.interactionNotification
+          c.allowPostTestOrganisationUpdates, c.allowPostTestSystemUpdates, c.allowPostTestStatementUpdates, c.allowCommunityView, c.allowUserManagement, c.interactionNotification
         ))
         .update(supportEmail, domainId, description, allowCertificateDownload, allowStatementManagement, allowSystemManagement,
-          allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, allowCommunityView, interactionNotification
+          allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, allowCommunityView, allowUserManagement, interactionNotification
         )
       // Update self-registration properties.
       _ <- {
@@ -472,10 +510,12 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
             .filter(_.id === community.id)
             .map(c => (
               c.selfRegType, c.selfRegToken, c.selfRegTokenHelpText, c.selfRegNotification,
-              c.selfRegRestriction, c.selfRegForceTemplateSelection, c.selfRegForceRequiredProperties
+              c.selfRegRestriction, c.selfRegForceTemplateSelection, c.selfRegForceRequiredProperties,
+              c.selfRegAllowOrganisationTokens, c.selfRegAllowOrganisationTokenManagement, c.selfRegForceOrganisationTokenInput,
             ))
             .update(selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification,
-              selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties
+              selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties,
+              selfRegAllowOrganisationTokens, selfRegAllowOrganisationTokens && selfRegAllowOrganisationTokenManagement, selfRegAllowOrganisationTokens && selfRegForceOrganisationTokenInput,
             )
         } else {
           DBIO.successful(())
@@ -579,9 +619,10 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
           updateRequest.interactionNotifications.getOrElse(community.interactionNotification),
           updateRequest.description.getOrElse(community.description),
           community.selfRegRestriction, community.selfRegForceTemplateSelection, community.selfRegForceRequiredProperties,
+          community.selfRegAllowOrganisationTokens, community.selfRegAllowOrganisationTokenManagement, community.selfRegForceOrganisationTokenInput,
           community.allowCertificateDownload, community.allowStatementManagement, community.allowSystemManagement,
           community.allowPostTestOrganisationUpdates, community.allowPostTestSystemUpdates, community.allowPostTestStatementUpdates,
-          Some(community.allowAutomationApi), community.allowCommunityView, None, domainIdToUse, checkApiKeyUniqueness = false, onSuccess
+          Some(community.allowAutomationApi), community.allowCommunityView, community.allowUserManagement, None, domainIdToUse, checkApiKeyUniqueness = false, onSuccess
         )
       }
     } yield ()
@@ -595,9 +636,10 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
                       selfRegType: Short, selfRegToken: Option[String], selfRegTokenHelpText: Option[String],
                       selfRegNotification: Boolean, interactionNotification: Boolean, description: Option[String], selfRegRestriction: Short,
                       selfRegForceTemplateSelection: Boolean, selfRegForceRequiredProperties: Boolean,
+                      selfRegAllowOrganisationTokens: Boolean, selfRegAllowOrganisationTokenManagement: Boolean, selfRegForceOrganisationTokenInput: Boolean,
                       allowCertificateDownload: Boolean, allowStatementManagement: Boolean, allowSystemManagement: Boolean,
                       allowPostTestOrganisationUpdates: Boolean, allowPostTestSystemUpdates: Boolean,
-                      allowPostTestStatementUpdates: Boolean, allowAutomationApi: Option[Boolean], allowCommunityView: Boolean,
+                      allowPostTestStatementUpdates: Boolean, allowAutomationApi: Option[Boolean], allowCommunityView: Boolean, allowUserManagement: Boolean,
                       domainId: Option[Long]): Future[Unit] = {
 
     val onSuccess = ListBuffer[() => _]()
@@ -608,8 +650,9 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
           updateCommunityInternal(
             community.get, shortName, fullName, supportEmail, selfRegType, selfRegToken, selfRegTokenHelpText,
             selfRegNotification, interactionNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties,
+            selfRegAllowOrganisationTokens, selfRegAllowOrganisationTokenManagement, selfRegForceOrganisationTokenInput,
             allowCertificateDownload, allowStatementManagement, allowSystemManagement,
-            allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, allowAutomationApi, allowCommunityView, None,
+            allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, allowAutomationApi, allowCommunityView, allowUserManagement, None,
             domainId, checkApiKeyUniqueness = false, onSuccess
           )
         } else {

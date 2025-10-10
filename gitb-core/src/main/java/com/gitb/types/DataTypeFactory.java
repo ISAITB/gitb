@@ -45,8 +45,6 @@ public class DataTypeFactory {
 
     /**
      * Check if a type identifier indicates a container type
-     * @param type
-     * @return
      */
     public static boolean isContainerType(String type){
         return containerTypePattern.matcher(type).matches();
@@ -54,8 +52,6 @@ public class DataTypeFactory {
 
     /**
      * Take the container name from the whole type
-     * @param type
-     * @return
      */
     private static String parseContainerType(String type) {
         Matcher matcher = containerTypePattern.matcher(type);
@@ -65,8 +61,6 @@ public class DataTypeFactory {
 
     /**
      * Take the child type identifier from the whole type
-     * @param type
-     * @return
      */
     private static String parseContainedType(String type) {
         Matcher matcher = containerTypePattern.matcher(type);
@@ -82,8 +76,6 @@ public class DataTypeFactory {
 
     /**
      * Initialize an empty value from the type identifier
-     * @param type
-     * @return
      */
     public DataType create(String type){
         DataType data;
@@ -134,10 +126,6 @@ public class DataTypeFactory {
 
     /**
      * Initialize
-     * @param content
-     * @param type
-     * @param encoding
-     * @return
      */
     public DataType create(byte[] content, String type, String encoding){
         //Create the empty value
@@ -181,7 +169,7 @@ public class DataTypeFactory {
         if (content != null) {
             declaredType = content.getType();
             if (declaredType == null) {
-                if (content.getItem().size() > 0) {
+                if (!content.getItem().isEmpty()) {
                     boolean namedChildren = false;
                     for (AnyContent child: content.getItem()) {
                         if (child.getName() != null) {
@@ -269,8 +257,6 @@ public class DataTypeFactory {
 
     /**
      * Initialize a value from the Variable definition
-     * @param variable
-     * @return
      */
     public DataType create(Variable variable) {
         String type = variable.getType();

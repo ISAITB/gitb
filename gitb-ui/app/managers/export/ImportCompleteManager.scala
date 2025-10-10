@@ -18,6 +18,7 @@ package managers.export
 import com.gitb.xml.export.{ReportType, SelfRegistrationRestriction => _, _}
 import config.Configurations
 import managers._
+import managers.`export`.ImportCompleteManager.SandboxImportResultWithHash
 import managers.testsuite.TestSuitePaths
 import managers.triggers.TriggerHelper
 import models.Enums.ImportItemType.ImportItemType
@@ -42,6 +43,12 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Using
+
+object ImportCompleteManager {
+
+  case class SandboxImportResultWithHash(result: Option[SandboxImportResult], hash: Option[String])
+
+}
 
 @Singleton
 class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigurationManager,
@@ -314,9 +321,12 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                   } else {
                     // Default handling methods.
                     // Assign the ID generated for this from the DB. This will be used for FK associations from children.
-                    importItem.get.targetKey = Some(newId.toString)
-                    // Add to processed ID map.
-                    addIdToProcessedIdMap(itemType, itemId, newId.toString, ctx)
+                    val idAsString = newId.toString
+                    if (idAsString.nonEmpty) {
+                      importItem.get.targetKey = Some(idAsString)
+                      // Add to processed ID map.
+                      addIdToProcessedIdMap(itemType, itemId, idAsString, ctx)
+                    }
                   }
                   // Custom post-create method.
                   if (importCallbacks.fnPostCreate.isDefined) {
@@ -671,6 +681,41 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
 
   private def toModelReportSetting(data: com.gitb.xml.export.CommunityReportSetting, communityId: Long): models.CommunityReportSettings = {
     models.CommunityReportSettings(toModelReportType(data.getReportType).id.toShort, data.isSignPdfs, data.isCustomPdfs, data.isCustomPdfsWithCustomXml, Option(data.getCustomPdfService), communityId)
+  }
+
+  private def toModelTestServiceType(data: com.gitb.xml.export.TestServiceType): models.Enums.TestServiceType.TestServiceType = {
+    data match {
+      case com.gitb.xml.export.TestServiceType.MESSAGING => models.Enums.TestServiceType.MessagingService
+      case com.gitb.xml.export.TestServiceType.PROCESSING => models.Enums.TestServiceType.ProcessingService
+      case com.gitb.xml.export.TestServiceType.VALIDATION => models.Enums.TestServiceType.ValidationService
+      case _ => throw new IllegalArgumentException("Unknown test service type [%s]".formatted(data.value()))
+    }
+  }
+
+  private def toModelTestServiceApiType(data: com.gitb.xml.export.TestServiceApiType): models.Enums.TestServiceApiType.TestServiceApiType = {
+    data match {
+      case com.gitb.xml.export.TestServiceApiType.SOAP => models.Enums.TestServiceApiType.SoapApi
+      case com.gitb.xml.export.TestServiceApiType.REST => models.Enums.TestServiceApiType.RestApi
+      case _ => throw new IllegalArgumentException("Unknown test service API type [%s]".formatted(data.value()))
+    }
+  }
+
+  private def toModelTestServiceAuthTokenPasswordType(data: com.gitb.xml.export.TestServiceAuthTokenPasswordType): models.Enums.TestServiceAuthTokenPasswordType.TestServiceAuthTokenPasswordType = {
+    data match {
+      case com.gitb.xml.export.TestServiceAuthTokenPasswordType.DIGEST => models.Enums.TestServiceAuthTokenPasswordType.Digest
+      case com.gitb.xml.export.TestServiceAuthTokenPasswordType.TEXT => models.Enums.TestServiceAuthTokenPasswordType.Text
+      case _ => throw new IllegalArgumentException("Unknown test service auth token password type [%s]".formatted(data.value()))
+    }
+  }
+
+  private def toModelTestService(data: com.gitb.xml.export.TestService, parameterId: Long, serviceId: Option[Long], importSettings: ImportSettings): models.TestService = {
+    models.TestService(serviceId.getOrElse(0L), toModelTestServiceType(data.getServiceType).id.toShort,
+      toModelTestServiceApiType(data.getApiType).id.toShort, Option(data.getIdentifier), Option(data.getVersion),
+      Option(data.getAuthBasicUsername), Option(data.getAuthBasicPassword).map(decrypt(importSettings, _)),
+      Option(data.getAuthTokenUsername), Option(data.getAuthTokenPassword).map(decrypt(importSettings, _)),
+      Option(data.getAuthTokenPasswordType).map(toModelTestServiceAuthTokenPasswordType(_).id.toShort),
+      parameterId
+    )
   }
 
   private def toModelReportType(data: com.gitb.xml.export.ReportType): models.Enums.ReportType.ReportType = {
@@ -1139,12 +1184,12 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
             exportedSettings.getResources.getResource.asScala.foreach { exportedContent =>
               dbActions += processFromArchive(ImportItemType.SystemResource, exportedContent, exportedContent.getId, ctx,
                 ImportCallbacks.set(
-                  (data: com.gitb.xml.export.CommunityResource, item: ImportItem) => {
+                  (data: com.gitb.xml.export.CommunityResource, _: ImportItem) => {
                     val fileToStore = dataUrlToTempFile(data.getContent)
                     ctx.onFailureCalls += (() => if (fileToStore.exists()) { FileUtils.deleteQuietly(fileToStore) })
                     communityResourceManager.createCommunityResourceInternal(toModelCommunityResource(data, Constants.DefaultCommunityId), fileToStore, ctx.onSuccessCalls)
                   },
-                  (data: com.gitb.xml.export.CommunityResource, targetKey: String, item: ImportItem) => {
+                  (data: com.gitb.xml.export.CommunityResource, targetKey: String, _: ImportItem) => {
                     val fileToStore = dataUrlToTempFile(data.getContent)
                     ctx.onFailureCalls += (() => if (fileToStore.exists()) { FileUtils.deleteQuietly(fileToStore) })
                     communityResourceManager.updateCommunityResourceInternal(Some(Constants.DefaultCommunityId), targetKey.toLong, Some(data.getName), Some(Option(data.getDescription)), Some(fileToStore), ctx.onSuccessCalls)
@@ -1157,7 +1202,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
         }
         _ <- {
           processRemaining(ImportItemType.SystemResource, ctx,
-            (targetKey: String, item: ImportItem) => {
+            (targetKey: String, _: ImportItem) => {
               communityResourceManager.deleteCommunityResourceInternal(Some(Constants.DefaultCommunityId), targetKey.toLong, ctx.onSuccessCalls)
             }
           )
@@ -1169,11 +1214,11 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
             exportedSettings.getThemes.getTheme.asScala.foreach { theme =>
               dbActions += processFromArchive(ImportItemType.Theme, theme, theme.getId, ctx,
                 ImportCallbacks.set(
-                  (data: com.gitb.xml.export.Theme, item: ImportItem) => {
+                  (data: com.gitb.xml.export.Theme, _: ImportItem) => {
                     // Only allow the active theme to be changed if this is a sandbox import
                     systemConfigurationManager.createThemeInternal(None, toModelTheme(None, data), toModelThemeFiles(data, ctx), canActivateTheme = ctx.importSettings.sandboxImport, ctx.onSuccessCalls)
                   },
-                  (data: com.gitb.xml.export.Theme, targetKey: String, item: ImportItem) => {
+                  (data: com.gitb.xml.export.Theme, targetKey: String, _: ImportItem) => {
                     // Only allow the active theme to be changed if this is a sandbox import
                     systemConfigurationManager.updateThemeInternal(toModelTheme(Some(targetKey.toLong), data), toModelThemeFiles(data, ctx), canActivateTheme = ctx.importSettings.sandboxImport, ctx.onSuccessCalls)
                   }
@@ -1185,7 +1230,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
         }
         _ <- {
           processRemaining(ImportItemType.Theme, ctx,
-            (targetKey: String, item: ImportItem) => {
+            (targetKey: String, _: ImportItem) => {
               systemConfigurationManager.deleteThemeInternal(targetKey.toLong, ctx.onSuccessCalls)
             }
           )
@@ -1197,10 +1242,10 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
             exportedSettings.getLandingPages.getLandingPage.asScala.foreach { exportedContent =>
               dbActions += processFromArchive(ImportItemType.DefaultLandingPage, exportedContent, exportedContent.getId, ctx,
                 ImportCallbacks.set(
-                  (data: com.gitb.xml.export.LandingPage, item: ImportItem) => {
+                  (data: com.gitb.xml.export.LandingPage, _: ImportItem) => {
                     landingPageManager.createLandingPageInternal(toModelLandingPage(data, Constants.DefaultCommunityId))
                   },
-                  (data: com.gitb.xml.export.LandingPage, targetKey: String, item: ImportItem) => {
+                  (data: com.gitb.xml.export.LandingPage, targetKey: String, _: ImportItem) => {
                     landingPageManager.updateLandingPageInternal(targetKey.toLong, data.getName, Option(data.getDescription), data.getContent, data.isDefault, Constants.DefaultCommunityId)
                   }
                 )
@@ -1211,7 +1256,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
         }
         _ <- {
           processRemaining(ImportItemType.DefaultLandingPage, ctx,
-            (targetKey: String, item: ImportItem) => {
+            (targetKey: String, _: ImportItem) => {
               landingPageManager.deleteLandingPageInternal(targetKey.toLong)
             }
           )
@@ -1223,10 +1268,10 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
             exportedSettings.getLegalNotices.getLegalNotice.asScala.foreach { exportedContent =>
               dbActions += processFromArchive(ImportItemType.DefaultLegalNotice, exportedContent, exportedContent.getId, ctx,
                 ImportCallbacks.set(
-                  (data: com.gitb.xml.export.LegalNotice, item: ImportItem) => {
+                  (data: com.gitb.xml.export.LegalNotice, _: ImportItem) => {
                     legalNoticeManager.createLegalNoticeInternal(toModelLegalNotice(data, Constants.DefaultCommunityId))
                   },
-                  (data: com.gitb.xml.export.LegalNotice, targetKey: String, item: ImportItem) => {
+                  (data: com.gitb.xml.export.LegalNotice, targetKey: String, _: ImportItem) => {
                     legalNoticeManager.updateLegalNoticeInternal(targetKey.toLong, data.getName, Option(data.getDescription), data.getContent, data.isDefault, Constants.DefaultCommunityId)
                   }
                 )
@@ -1237,7 +1282,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
         }
         _ <- {
           processRemaining(ImportItemType.DefaultLegalNotice, ctx,
-            (targetKey: String, item: ImportItem) => {
+            (targetKey: String, _: ImportItem) => {
               legalNoticeManager.deleteLegalNoticeInternal(targetKey.toLong)
             }
           )
@@ -1249,10 +1294,10 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
             exportedSettings.getErrorTemplates.getErrorTemplate.asScala.foreach { exportedContent =>
               dbActions += processFromArchive(ImportItemType.DefaultErrorTemplate, exportedContent, exportedContent.getId, ctx,
                 ImportCallbacks.set(
-                  (data: com.gitb.xml.export.ErrorTemplate, item: ImportItem) => {
+                  (data: com.gitb.xml.export.ErrorTemplate, _: ImportItem) => {
                     errorTemplateManager.createErrorTemplateInternal(toModelErrorTemplate(data, Constants.DefaultCommunityId))
                   },
-                  (data: com.gitb.xml.export.ErrorTemplate, targetKey: String, item: ImportItem) => {
+                  (data: com.gitb.xml.export.ErrorTemplate, targetKey: String, _: ImportItem) => {
                     errorTemplateManager.updateErrorTemplateInternal(targetKey.toLong, data.getName, Option(data.getDescription), data.getContent, data.isDefault, Constants.DefaultCommunityId)
                   }
                 )
@@ -1263,7 +1308,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
         }
         _ <- {
           processRemaining(ImportItemType.DefaultErrorTemplate, ctx,
-            (targetKey: String, item: ImportItem) => {
+            (targetKey: String, _: ImportItem) => {
               errorTemplateManager.deleteErrorTemplateInternal(targetKey.toLong)
             }
           )
@@ -1275,7 +1320,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
             exportedSettings.getAdministrators.getAdministrator.asScala.foreach { exportedUser =>
               dbActions += processFromArchive(ImportItemType.SystemAdministrator, exportedUser, exportedUser.getId, ctx,
                 ImportCallbacks.set(
-                  (data: com.gitb.xml.export.SystemAdministrator, item: ImportItem) => {
+                  (data: com.gitb.xml.export.SystemAdministrator, _: ImportItem) => {
                     if (!referenceUserEmails.contains(exportedUser.getEmail.toLowerCase) && systemAdminOrganisationId.isDefined) {
                       referenceUserEmails += exportedUser.getEmail.toLowerCase
                       PersistenceSchema.insertUser += toModelSystemAdministrator(data, None, systemAdminOrganisationId.get, ctx.importSettings)
@@ -1283,7 +1328,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                       DBIO.successful(())
                     }
                   },
-                  (data: com.gitb.xml.export.SystemAdministrator, targetKey: String, item: ImportItem) => {
+                  (data: com.gitb.xml.export.SystemAdministrator, targetKey: String, _: ImportItem) => {
                     /*
                       We don't update the email as this must anyway be already matching (this was how the user was found
                       to be existing). Not updating the email avoids the need to check that the email is unique with respect
@@ -1303,7 +1348,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
         _ <- {
           if (!Configurations.AUTHENTICATION_SSO_ENABLED) {
             processRemaining(ImportItemType.SystemAdministrator, ctx,
-              (targetKey: String, item: ImportItem) => {
+              (targetKey: String, _: ImportItem) => {
                 val userId = targetKey.toLong
                 if (ownUserId.isDefined && ownUserId.get.longValue() != userId) {
                   // Avoid deleting self
@@ -1324,10 +1369,10 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
             exportedSettings.getSystemConfigurations.getConfig.asScala.foreach { config =>
               dbActions += processFromArchive(ImportItemType.SystemConfiguration, config, config.getName, ctx,
                 ImportCallbacks.set(
-                  (data: com.gitb.xml.export.SystemConfiguration, item: ImportItem) => {
+                  (data: com.gitb.xml.export.SystemConfiguration, _: ImportItem) => {
                     handleSystemParameter(data, ctx)
                   },
-                  (data: com.gitb.xml.export.SystemConfiguration, targetKey: String, item: ImportItem) => {
+                  (data: com.gitb.xml.export.SystemConfiguration, _: String, _: ImportItem) => {
                     handleSystemParameter(data, ctx)
                   }
                 )
@@ -1338,7 +1383,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
         }
         _ <- {
           processRemaining(ImportItemType.SystemConfiguration, ctx,
-            (targetKey: String, item: ImportItem) => {
+            (targetKey: String, _: ImportItem) => {
               if (systemConfigurationManager.isEditableSystemParameter(targetKey)) {
                 systemConfigurationManager.updateSystemParameterInternal(targetKey, None, applySetting = true)
               } else {
@@ -1441,16 +1486,24 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
       loadIfApplicable(ctx.importTargets.hasDomainParameters,
         () => DB.run(PersistenceSchema.domainParameters.filter(_.domain === domainId).map(_.id).result)
       )
+    ).zip(
+      // Test services
+      loadIfApplicable(ctx.importTargets.hasTestServices,
+        () => DB.run(PersistenceSchema.testServices
+          .join(PersistenceSchema.domainParameters).on(_.parameter === _.id)
+          .filter(_._2.domain === domainId).map(_._1.id).result)
+      )
     ).map { results =>
-      val domain =              results._1._1._1._1._1._1._1._1
-      val sharedTestSuites =    results._1._1._1._1._1._1._1._2
-      val specifications =      results._1._1._1._1._1._1._2
-      val specificationGroups = results._1._1._1._1._1._2
-      val testSuites =          results._1._1._1._1._2
-      val actors =              results._1._1._1._2
-      val endpoints =           results._1._1._2
-      val endpointParameters =  results._1._2
-      val domainParameters =    results._2
+      val domain =              results._1._1._1._1._1._1._1._1._1
+      val sharedTestSuites =    results._1._1._1._1._1._1._1._1._2
+      val specifications =      results._1._1._1._1._1._1._1._2
+      val specificationGroups = results._1._1._1._1._1._1._2
+      val testSuites =          results._1._1._1._1._1._2
+      val actors =              results._1._1._1._1._2
+      val endpoints =           results._1._1._1._2
+      val endpointParameters =  results._1._1._2
+      val domainParameters =    results._1._2
+      val testServices =        results._2
       domain.foreach(x => ctx.existingIds.map(ImportItemType.Domain) += x.toString)
       sharedTestSuites.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.TestSuite) += x.toString))
       specifications.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.Specification) += x.toString))
@@ -1460,6 +1513,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
       endpoints.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.Endpoint) += x.toString))
       endpointParameters.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.EndpointParameter) += x.toString))
       domainParameters.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.DomainParameter) += x.toString))
+      testServices.foreach(_.foreach(x => ctx.existingIds.map(ImportItemType.TestService) += x.toString))
       ctx
     }
   }
@@ -1487,7 +1541,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
         // Domain
         processFromArchive(ImportItemType.Domain, exportedDomain, exportedDomain.getId, ctx,
           ImportCallbacks.set(
-            (data: com.gitb.xml.export.Domain, item: ImportItem) => {
+            (data: com.gitb.xml.export.Domain, _: ImportItem) => {
               val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
               val shortNameToUse = if (!linkedToCommunity && ctx.importSettings.shortNameReplacement.isDefined) {
                 ctx.importSettings.shortNameReplacement.get
@@ -1504,11 +1558,11 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                 fullNameToUse,
                 Option(data.getDescription), Option(data.getReportMetadata), apiKey))
             },
-            (data: com.gitb.xml.export.Domain, targetKey: String, item: ImportItem) => {
+            (data: com.gitb.xml.export.Domain, targetKey: String, _: ImportItem) => {
               val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
               domainManager.updateDomainInternal(targetKey.toLong, data.getShortName, data.getFullName, Option(data.getDescription), Option(data.getReportMetadata), Some(apiKey))
             },
-            (data: com.gitb.xml.export.Domain, targetKey: Any, item: ImportItem) => {
+            (_: com.gitb.xml.export.Domain, targetKey: Any, _: ImportItem) => {
               // Record this in case we need to do a global cleanup.
               createdDomainId = Some(targetKey.asInstanceOf[Long])
               // In case of a failure delete the created domain test suite folder (if one was created later on).
@@ -1524,7 +1578,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
       }
       _ <- {
         processRemaining(ImportItemType.Domain, ctx,
-          (targetKey: String, item: ImportItem) => {
+          (targetKey: String, _: ImportItem) => {
             domainManager.deleteDomainInternal(targetKey.toLong, ctx.onSuccessCalls)
           }
         )
@@ -1542,14 +1596,14 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                   domainParameterManager.createDomainParameterInternal(
                     models.DomainParameter(0L, data.getName, Option(data.getDescription),
                       fileData._1, manageEncryptionIfNeeded(ctx.importSettings, data.getType, Option(data.getValue)), data.isInTests,
-                      fileData._2, domainId), fileData._3, ctx.onSuccessCalls)
+                      fileData._2, data.isTestService, domainId), fileData._3, ctx.onSuccessCalls)
                 },
                 (data: com.gitb.xml.export.DomainParameter, targetKey: String, item: ImportItem) => {
                   val domainId = getDomainIdFromParentItem(item)
                   val fileData = parameterFileMetadata(ctx, data.getType, isDomainParameter = true, data.getValue)
                   domainParameterManager.updateDomainParameterInternal(domainId,
                     targetKey.toLong, data.getName, Option(data.getDescription), fileData._1,
-                    manageEncryptionIfNeeded(ctx.importSettings, data.getType, Option(data.getValue)), data.isInTests,
+                    manageEncryptionIfNeeded(ctx.importSettings, data.getType, Option(data.getValue)), data.isInTests, data.isTestService,
                     fileData._2, fileData._3, ctx.onSuccessCalls)
                 }
               )
@@ -1562,9 +1616,74 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
         processRemaining(ImportItemType.DomainParameter, ctx,
           (targetKey: String, item: ImportItem) => {
             val domainId = getDomainIdFromParentItem(item)
-            domainParameterManager.deleteDomainParameter(domainId, targetKey.toLong, ctx.onSuccessCalls)
+            domainParameterManager.deleteDomainParameter(domainId, targetKey.toLong, checkToDeleteLinkedTestService = true, ctx.onSuccessCalls)
           }
         )
+      }
+      _ <- {
+        // Test services
+        val dbActions = ListBuffer[DBIO[_]]()
+        if (exportedDomain.getTestServices != null) {
+          exportedDomain.getTestServices.getService.asScala.foreach { testService =>
+            dbActions += processFromArchive(ImportItemType.TestService, testService, testService.getId, ctx,
+              ImportCallbacks.set(
+                (data: com.gitb.xml.export.TestService, _: ImportItem) => {
+                  val processedDomainParameterId = ctx.processedIdMap(ImportItemType.DomainParameter).get(data.getParameter.getId).map(_.toLong)
+                  if (processedDomainParameterId.isDefined) {
+                    domainParameterManager.createTestServiceInternal(toModelTestService(data, processedDomainParameterId.get, None, ctx.importSettings))
+                  } else {
+                    DBIO.successful("")
+                  }
+                },
+                (data: com.gitb.xml.export.TestService, targetKey: String, _: ImportItem) => {
+                  val processedDomainParameterId = ctx.processedIdMap(ImportItemType.DomainParameter).get(data.getParameter.getId).map(_.toLong)
+                  if (processedDomainParameterId.isDefined) {
+                    domainParameterManager.updateTestServiceInternal(toModelTestService(data, processedDomainParameterId.get, Some(targetKey.toLong), ctx.importSettings))
+                  } else {
+                    DBIO.successful(())
+                  }
+                }
+              )
+            )
+          }
+        }
+        toDBIO(dbActions)
+      }
+      _ <- {
+        processRemaining(ImportItemType.TestService, ctx,
+          (targetKey: String, _: ImportItem) => {
+            domainParameterManager.deleteTestServiceInternal(targetKey.toLong)
+          }
+        )
+      }
+      _ <- {
+        // Post-processing consistency steps for domain parameters and test services.
+        val domainId = ctx.processedIdMap(ImportItemType.Domain).get(exportedDomain.getId).map(_.toLong)
+        if (domainId.isDefined) {
+          for {
+            // Get the parameter IDs that are linked to test services.
+            testServiceParametersId <- PersistenceSchema.testServices
+              .join(PersistenceSchema.domainParameters).on(_.parameter === _.id)
+              .filter(_._2.domain === domainId.get)
+              .map(_._2.id)
+              .result
+            // Any parameters with other IDs that are flagged as linked to test services should be set as not being services.
+            _ <- PersistenceSchema.domainParameters
+              .filter(_.domain === domainId.get)
+              .filter(_.isTestService)
+              .filterNot(_.id inSet testServiceParametersId)
+              .map(_.isTestService)
+              .update(false)
+            // The parameters linked with test services flagged as not included in tests should be force-included.
+            _ <- PersistenceSchema.domainParameters
+              .filter(_.id inSet testServiceParametersId)
+              .filterNot(_.inTests)
+              .map(_.inTests)
+              .update(true)
+          } yield ()
+        } else {
+          DBIO.successful(())
+        }
       }
       _ <- {
         // Shared test suites
@@ -1576,7 +1695,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                 (data: com.gitb.xml.export.TestSuite, item: ImportItem) => {
                   createSharedTestSuite(data, ctx, item)
                 },
-                (data: com.gitb.xml.export.TestSuite, targetKey: String, item: ImportItem) => {
+                (data: com.gitb.xml.export.TestSuite, _: String, item: ImportItem) => {
                   updateSharedTestSuite(data, ctx, item)
                 }
               )
@@ -1596,11 +1715,11 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                   val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
                   specificationManager.createSpecificationGroupInternal(models.SpecificationGroups(0L, data.getShortName, data.getFullName, Option(data.getDescription), Option(data.getReportMetadata), data.getDisplayOrder, apiKey, getDomainIdFromParentItem(item)), checkApiKeyUniqueness = true)
                 },
-                (data: com.gitb.xml.export.SpecificationGroup, targetKey: String, item: ImportItem) => {
+                (data: com.gitb.xml.export.SpecificationGroup, targetKey: String, _: ImportItem) => {
                   val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
                   specificationManager.updateSpecificationGroupInternal(targetKey.toLong, data.getShortName, data.getFullName, Option(data.getDescription), Option(data.getReportMetadata), Some(data.getDisplayOrder), Some(apiKey), checkApiKeyUniqueness = true)
                 },
-                (data: com.gitb.xml.export.SpecificationGroup, targetKey: Any, item: ImportItem) => {
+                (_: com.gitb.xml.export.SpecificationGroup, _: Any, _: ImportItem) => {
                   // No action.
                 }
               )
@@ -1611,7 +1730,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
       }
       _ <- {
         processRemaining(ImportItemType.SpecificationGroup, ctx,
-          (targetKey: String, item: ImportItem) => {
+          (targetKey: String, _: ImportItem) => {
             specificationManager.deleteSpecificationGroupInternal(targetKey.toLong, deleteSpecifications = false, ctx.onSuccessCalls)
           }
         )
@@ -1633,7 +1752,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                     DBIO.successful(())
                   }
                 },
-                (data: com.gitb.xml.export.Specification, targetKey: String, item: ImportItem) => {
+                (data: com.gitb.xml.export.Specification, targetKey: String, _: ImportItem) => {
                   val relatedGroupId = getProcessedDbId(data.getGroup, ImportItemType.SpecificationGroup, ctx)
                   if (data.getGroup == null || relatedGroupId.nonEmpty) {
                     val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
@@ -1643,7 +1762,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                     DBIO.successful(())
                   }
                 },
-                (data: com.gitb.xml.export.Specification, targetKey: Any, item: ImportItem) => {
+                (_: com.gitb.xml.export.Specification, _: Any, _: ImportItem) => {
                   // No action.
                 }
               )
@@ -1654,7 +1773,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
       }
       _ <- {
         processRemaining(ImportItemType.Specification, ctx,
-          (targetKey: String, item: ImportItem) => {
+          (targetKey: String, _: ImportItem) => {
             specificationManager.deleteSpecificationInternal(targetKey.toLong, ctx.onSuccessCalls)
           }
         )
@@ -1713,7 +1832,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
       }
       _ <- {
         processRemaining(ImportItemType.Actor, ctx,
-          (targetKey: String, item: ImportItem) => {
+          (targetKey: String, _: ImportItem) => {
             actorManager.deleteActor(targetKey.toLong, ctx.onSuccessCalls)
           }
         )
@@ -1732,7 +1851,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                         (data: com.gitb.xml.export.Endpoint, item: ImportItem) => {
                           endpointManager.createEndpoint(models.Endpoints(0L, data.getName, Option(data.getDescription), item.parentItem.get.targetKey.get.toLong))
                         },
-                        (data: com.gitb.xml.export.Endpoint, targetKey: String, item: ImportItem) => {
+                        (data: com.gitb.xml.export.Endpoint, targetKey: String, _: ImportItem) => {
                           endpointManager.updateEndPoint(targetKey.toLong, data.getName, Option(data.getDescription))
                         }
                       )
@@ -1745,9 +1864,9 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
         }
         toDBIO(dbActions)
       }
-      - <- {
+      _ <- {
         processRemaining(ImportItemType.Endpoint, ctx,
-          (targetKey: String, item: ImportItem) => {
+          (targetKey: String, _: ImportItem) => {
             endpointManager.delete(targetKey.toLong, ctx.onSuccessCalls)
           }
         )
@@ -1781,7 +1900,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                                 Option(data.getAllowedValues), displayOrderToUse.toShort, Option(data.getDependsOn), Option(data.getDependsOnValue), Option(data.getDefaultValue),
                                 item.parentItem.get.targetKey.get.toLong))
                             },
-                            (data: com.gitb.xml.export.EndpointParameter, targetKey: String, item: ImportItem) => {
+                            (data: com.gitb.xml.export.EndpointParameter, targetKey: String, _: ImportItem) => {
                               var labelToUse = data.getLabel
                               if (labelToUse == null) {
                                 labelToUse = data.getName
@@ -1805,7 +1924,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
       }
       _ <- {
         processRemaining(ImportItemType.EndpointParameter, ctx,
-          (targetKey: String, item: ImportItem) => {
+          (targetKey: String, _: ImportItem) => {
             parameterManager.delete(targetKey.toLong, ctx.onSuccessCalls)
           }
         )
@@ -1821,7 +1940,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                 val id = exportedSpecification.getId+"|"+exportedTestSuite.getId
                 dbActions += processFromArchive(ImportItemType.TestSuite, exportedTestSuite, id, ctx,
                   ImportCallbacks.set(
-                    (data: com.gitb.xml.export.TestSuite, item: ImportItem) => {
+                    (_: com.gitb.xml.export.TestSuite, _: ImportItem) => {
                       val relatedSpecificationId = getProcessedDbId(exportedSpecification, ImportItemType.Specification, ctx)
                       val relatedTestSuiteId = getProcessedDbId(exportedTestSuite, ImportItemType.TestSuite, ctx)
                       if (relatedSpecificationId.isDefined && relatedTestSuiteId.isDefined) {
@@ -1837,7 +1956,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                         DBIO.successful(())
                       }
                     },
-                    (data: com.gitb.xml.export.TestSuite, targetKey: String, item: ImportItem) => {
+                    (_: com.gitb.xml.export.TestSuite, _: String, _: ImportItem) => {
                       // Update not needed. Test case links and updates to conformance statements will have happened in the test suite update.
                       DBIO.successful(())
                     }
@@ -1853,7 +1972,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                     (data: com.gitb.xml.export.TestSuite, item: ImportItem) => {
                       createTestSuite(data, ctx, item)
                     },
-                    (data: com.gitb.xml.export.TestSuite, targetKey: String, item: ImportItem) => {
+                    (data: com.gitb.xml.export.TestSuite, _: String, item: ImportItem) => {
                       updateTestSuite(data, ctx, item)
                     }
                   )
@@ -2160,7 +2279,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
         }
       }
       // Load existing data
-      data <- {
+      _ <- {
         if (targetCommunity.isDefined) {
           loadExistingCommunityData(ctx, targetCommunity.get.id, targetCommunity.get.domain)
         } else {
@@ -2264,7 +2383,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
           _ <- {
             processFromArchive(ImportItemType.Community, exportedCommunity, exportedCommunity.getId, ctx,
               ImportCallbacks.set(
-                (data: com.gitb.xml.export.Community, item: ImportItem) => {
+                (data: com.gitb.xml.export.Community, _: ImportItem) => {
                   val domainId = determineDomainIdForCommunityUpdate(exportedCommunity, None, ctx)
                   val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
                   // This returns a tuple: (community ID, admin organisation ID)
@@ -2274,26 +2393,26 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                     Option(data.getSupportEmail),
                     selfRegistrationMethodToModel(data.getSelfRegistrationSettings.getMethod), Option(data.getSelfRegistrationSettings.getToken), Option(data.getSelfRegistrationSettings.getTokenHelpText),
                     data.getSelfRegistrationSettings.isNotifications, data.isInteractionNotification, Option(data.getDescription), selfRegistrationRestrictionToModel(data.getSelfRegistrationSettings.getRestriction),
-                    data.getSelfRegistrationSettings.isForceTemplateSelection, data.getSelfRegistrationSettings.isForceRequiredProperties,
+                    data.getSelfRegistrationSettings.isForceTemplateSelection, data.getSelfRegistrationSettings.isForceRequiredProperties, data.getSelfRegistrationSettings.isAllowOrganisationTokens, data.getSelfRegistrationSettings.isAllowOrganisationTokenManagement, data.getSelfRegistrationSettings.isForceOrganisationTokenInput,
                     data.isAllowCertificateDownload, data.isAllowStatementManagement, data.isAllowSystemManagement,
-                    data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates, data.isAllowAutomationApi, data.isAllowCommunityView,
+                    data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates, data.isAllowAutomationApi, data.isAllowCommunityView, data.isAllowUserManagement,
                     apiKey, None, domainId
                   ), checkApiKeyUniqueness = true)
                 },
-                (data: com.gitb.xml.export.Community, targetKey: String, item: ImportItem) => {
+                (data: com.gitb.xml.export.Community, _: String, _: ImportItem) => {
                   val domainId = determineDomainIdForCommunityUpdate(exportedCommunity, targetCommunity, ctx)
                   val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
                   communityManager.updateCommunityInternal(targetCommunity.get, data.getShortName, data.getFullName, Option(data.getSupportEmail),
                     selfRegistrationMethodToModel(data.getSelfRegistrationSettings.getMethod), Option(data.getSelfRegistrationSettings.getToken), Option(data.getSelfRegistrationSettings.getTokenHelpText), data.getSelfRegistrationSettings.isNotifications,
                     data.isInteractionNotification, Option(data.getDescription), selfRegistrationRestrictionToModel(data.getSelfRegistrationSettings.getRestriction),
-                    data.getSelfRegistrationSettings.isForceTemplateSelection, data.getSelfRegistrationSettings.isForceRequiredProperties,
+                    data.getSelfRegistrationSettings.isForceTemplateSelection, data.getSelfRegistrationSettings.isForceRequiredProperties, data.getSelfRegistrationSettings.isAllowOrganisationTokens, data.getSelfRegistrationSettings.isAllowOrganisationTokenManagement, data.getSelfRegistrationSettings.isForceOrganisationTokenInput,
                     data.isAllowCertificateDownload, data.isAllowStatementManagement, data.isAllowSystemManagement,
-                    data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates, Some(data.isAllowAutomationApi), data.isAllowCommunityView, Some(apiKey),
+                    data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates, Some(data.isAllowAutomationApi), data.isAllowCommunityView, data.isAllowUserManagement, Some(apiKey),
                     domainId, checkApiKeyUniqueness = true, ctx.onSuccessCalls
                   )
                 },
                 None,
-                (data: com.gitb.xml.export.Community, targetKey: String, newId: Any, item: ImportItem) => {
+                (data: com.gitb.xml.export.Community, _: String, newId: Any, item: ImportItem) => {
                   val ids: (Long, Long) = newId.asInstanceOf[(Long, Long)] // (community ID, admin organisation ID)
                   // Set on import item.
                   item.targetKey = Some(ids._1.toString)
@@ -2302,7 +2421,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                   // Record admin organisation ID.
                   communityAdminOrganisationId = Some(ids._2)
                 }
-              ).withFnForSkipButProcessChildren((data: com.gitb.xml.export.Community, targetKey: String, item: ImportItem) => {
+              ).withFnForSkipButProcessChildren((_: com.gitb.xml.export.Community, _: String, _: ImportItem) => {
                 /*
                  Exceptional case for community import to make sure we always update its domain. Not doing so would create problems for
                  triggers with domain parameters and conformance statements. We cannot do these checks using a normal approach on the ID
@@ -2461,7 +2580,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
           }
           _ <- {
             processRemaining(ImportItemType.CustomLabel, ctx,
-              (targetKey: String, item: ImportItem) => {
+              (targetKey: String, _: ImportItem) => {
                 val keyParts = StringUtils.split(targetKey, "_") // [community_id]_[label_type]
                 communityManager.deleteCommunityLabel(keyParts(0).toLong, keyParts(1).toShort)
               }
@@ -2488,7 +2607,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
           }
           _ <- {
             processRemaining(ImportItemType.OrganisationProperty, ctx,
-              (targetKey: String, item: ImportItem) => {
+              (targetKey: String, _: ImportItem) => {
                 communityManager.deleteOrganisationParameter(targetKey.toLong, ctx.onSuccessCalls)
               }
             )
@@ -2514,7 +2633,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
           }
           _ <- {
             processRemaining(ImportItemType.SystemProperty, ctx,
-              (targetKey: String, item: ImportItem) => {
+              (targetKey: String, _: ImportItem) => {
                 communityManager.deleteSystemParameter(targetKey.toLong, ctx.onSuccessCalls)
               }
             )
@@ -2540,7 +2659,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
           }
           _ <- {
             processRemaining(ImportItemType.LandingPage, ctx,
-              (targetKey: String, item: ImportItem) => {
+              (targetKey: String, _: ImportItem) => {
                 landingPageManager.deleteLandingPageInternal(targetKey.toLong)
               }
             )
@@ -2566,7 +2685,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
           }
           _ <- {
             processRemaining(ImportItemType.LegalNotice, ctx,
-              (targetKey: String, item: ImportItem) => {
+              (targetKey: String, _: ImportItem) => {
                 legalNoticeManager.deleteLegalNoticeInternal(targetKey.toLong)
               }
             )
@@ -2592,7 +2711,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
           }
           _ <- {
             processRemaining(ImportItemType.ErrorTemplate, ctx,
-              (targetKey: String, item: ImportItem) => {
+              (targetKey: String, _: ImportItem) => {
                 errorTemplateManager.deleteErrorTemplateInternal(targetKey.toLong)
               }
             )
@@ -2618,7 +2737,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
           }
           _ <- {
             processRemaining(ImportItemType.Trigger, ctx,
-              (targetKey: String, item: ImportItem) => {
+              (targetKey: String, _: ImportItem) => {
                 triggerHelper.deleteTriggerInternal(targetKey.toLong)
               }
             )
@@ -2660,7 +2779,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
               exportedCommunity.getAdministrators.getAdministrator.asScala.foreach { exportedUser =>
                 dbActions += processFromArchive(ImportItemType.Administrator, exportedUser, exportedUser.getId, ctx,
                   ImportCallbacks.set(
-                    (data: com.gitb.xml.export.CommunityAdministrator, item: ImportItem) => {
+                    (data: com.gitb.xml.export.CommunityAdministrator, _: ImportItem) => {
                       if (!referenceUserEmails.contains(exportedUser.getEmail.toLowerCase)) {
                         referenceUserEmails += exportedUser.getEmail.toLowerCase
                         PersistenceSchema.insertUser += toModelAdministrator(data, None, communityAdminOrganisationId.get, ctx.importSettings)
@@ -2668,7 +2787,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                         DBIO.successful(())
                       }
                     },
-                    (data: com.gitb.xml.export.CommunityAdministrator, targetKey: String, item: ImportItem) => {
+                    (data: com.gitb.xml.export.CommunityAdministrator, targetKey: String, _: ImportItem) => {
                       /*
                         We don't update the email as this must anyway be already matching (this was how the user was found
                         to be existing). Not updating the email avoids the need to check that the email is unique with respect
@@ -2688,7 +2807,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
           _ <- {
             if (!Configurations.AUTHENTICATION_SSO_ENABLED) {
               processRemaining(ImportItemType.Administrator, ctx,
-                (targetKey: String, item: ImportItem) => {
+                (targetKey: String, _: ImportItem) => {
                   val userId = targetKey.toLong
                   if (ownUserId.isDefined && ownUserId.get.longValue() != userId) {
                     // Avoid deleting self
@@ -2718,14 +2837,14 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                               getProcessedDbId(data.getLandingPage, ImportItemType.LandingPage, ctx),
                               getProcessedDbId(data.getLegalNotice, ImportItemType.LegalNotice, ctx),
                               getProcessedDbId(data.getErrorTemplate, ImportItemType.ErrorTemplate, ctx),
-                              template = data.isTemplate, Option(data.getTemplateName), Option(data.getApiKey), item.parentItem.get.targetKey.get.toLong
+                              template = data.isTemplate, Option(data.getTemplateName), Option(data.getApiKey), Option(data.getSelfRegistrationToken), item.parentItem.get.targetKey.get.toLong
                             ), None, None, None, copyOrganisationParameters = false, copySystemParameters = false, copyStatementParameters = false,
                             checkApiKeyUniqueness = true, setDefaultPropertyValues = false, ctx.onSuccessCalls
                           )
                         }
                       } yield orgInfo.organisationId
                     },
-                    (data: com.gitb.xml.export.Organisation, targetKey: String, item: ImportItem) => {
+                    (data: com.gitb.xml.export.Organisation, targetKey: String, _: ImportItem) => {
                       if (communityAdminOrganisationId.get.longValue() == targetKey.toLong.longValue()) {
                         // Prevent updating the community's admin organisation.
                         DBIO.successful(())
@@ -2734,7 +2853,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                           getProcessedDbId(data.getLandingPage, ImportItemType.LandingPage, ctx),
                           getProcessedDbId(data.getLegalNotice, ImportItemType.LegalNotice, ctx),
                           getProcessedDbId(data.getErrorTemplate, ImportItemType.ErrorTemplate, ctx),
-                          None, data.isTemplate, Option(data.getTemplateName), Some(Option(data.getApiKey)), None, None,
+                          None, data.isTemplate, Option(data.getTemplateName), Some(Option(data.getApiKey)), Some(Option(data.getSelfRegistrationToken)), None, None,
                           copyOrganisationParameters = false, copySystemParameters = false, copyStatementParameters = false,
                           checkApiKeyUniqueness = true, ctx.onSuccessCalls
                         )
@@ -2748,7 +2867,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
           }
           _ <- {
             processRemaining(ImportItemType.Organisation, ctx,
-              (targetKey: String, item: ImportItem) => {
+              (targetKey: String, _: ImportItem) => {
                 if (communityAdminOrganisationId.get.longValue() == targetKey.toLong.longValue()) {
                   // Prevent deleting the community's admin organisation.
                   DBIO.successful(())
@@ -2775,7 +2894,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                             DBIO.successful(())
                           }
                         },
-                        (data: com.gitb.xml.export.OrganisationUser, targetKey: String, item: ImportItem) => {
+                        (data: com.gitb.xml.export.OrganisationUser, targetKey: String, _: ImportItem) => {
                           /*
                             We don't update the email as this must anyway be already matching (this was how the user was found
                             to be existing). Not updating the email avoids the need to check that the email is unique with respect
@@ -2795,7 +2914,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
           _ <- {
             if (!Configurations.AUTHENTICATION_SSO_ENABLED) {
               processRemaining(ImportItemType.OrganisationUser, ctx,
-                (targetKey: String, item: ImportItem) => {
+                (targetKey: String, _: ImportItem) => {
                   PersistenceSchema.users.filter(_.id === targetKey.toLong).delete
                 }
               )
@@ -2834,7 +2953,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                             DBIO.successful(())
                           }
                         },
-                        (data: com.gitb.xml.export.OrganisationPropertyValue, targetKey: String, item: ImportItem) => {
+                        (data: com.gitb.xml.export.OrganisationPropertyValue, targetKey: String, _: ImportItem) => {
                           val keyParts = StringUtils.split(targetKey, "_") // target key: [organisation ID]_[property ID]
                           val organisationId = keyParts(0).toLong
                           val propertyId = keyParts(1).toLong
@@ -2859,7 +2978,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
           }
           _ <- {
             processRemaining(ImportItemType.OrganisationPropertyValue, ctx,
-              (targetKey: String, item: ImportItem) => {
+              (targetKey: String, _: ImportItem) => {
                 val keyParts = StringUtils.split(targetKey, "_") // target key: [organisation ID]_[property ID]
                 val organisationId = keyParts(0).toLong
                 val propertyId = keyParts(1).toLong
@@ -2880,7 +2999,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                         (data: com.gitb.xml.export.System, item: ImportItem) => {
                           systemManager.registerSystemInternal(models.Systems(0L, data.getShortName, data.getFullName, Option(data.getDescription), Option(data.getVersion), Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey()), Option(data.getBadgeKey).getOrElse(CryptoUtil.generateApiKey()), item.parentItem.get.targetKey.get.toLong), checkApiKeyUniqueness = true)
                         },
-                        (data: com.gitb.xml.export.System, targetKey: String, item: ImportItem) => {
+                        (data: com.gitb.xml.export.System, _: String, item: ImportItem) => {
                           systemManager.updateSystemProfileInternal(None, targetCommunityId, item.targetKey.get.toLong, data.getShortName, data.getFullName, Option(data.getDescription), Option(data.getVersion), Option(data.getApiKey), Option(data.getBadgeKey),
                             None, None, None, copySystemParameters = false, copyStatementParameters = false,
                             checkApiKeyUniqueness = true, ctx.onSuccessCalls
@@ -2896,7 +3015,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
           }
           _ <- {
             processRemaining(ImportItemType.System, ctx,
-              (targetKey: String, item: ImportItem) => {
+              (targetKey: String, _: ImportItem) => {
                 systemManager.deleteSystem(targetKey.toLong, ctx.onSuccessCalls)
               }
             )
@@ -2934,7 +3053,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                                 DBIO.successful(())
                               }
                             },
-                            (data: com.gitb.xml.export.SystemPropertyValue, targetKey: String, item: ImportItem) => {
+                            (data: com.gitb.xml.export.SystemPropertyValue, targetKey: String, _: ImportItem) => {
                               val keyParts = StringUtils.split(targetKey, "_") // target key: [system ID]_[property ID]
                               val systemId = keyParts(0).toLong
                               val propertyId = keyParts(1).toLong
@@ -2961,7 +3080,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
           }
           _ <- {
             processRemaining(ImportItemType.SystemPropertyValue, ctx,
-              (targetKey: String, item: ImportItem) => {
+              (targetKey: String, _: ImportItem) => {
                 val keyParts = StringUtils.split(targetKey, "_") // target key: [system ID]_[property ID]
                 val systemId = keyParts(0).toLong
                 val propertyId = keyParts(1).toLong
@@ -3002,7 +3121,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                                 DBIO.successful(())
                               }
                             },
-                            (data: com.gitb.xml.export.ConformanceStatement, targetKey: String, item: ImportItem) => {
+                            (_: com.gitb.xml.export.ConformanceStatement, _: String, _: ImportItem) => {
                               // Nothing to update.
                               DBIO.successful(())
                             }
@@ -3018,7 +3137,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
           }
           _ <- {
             processRemaining(ImportItemType.Statement, ctx,
-              (targetKey: String, item: ImportItem) => {
+              (targetKey: String, _: ImportItem) => {
                 // Key: [System ID]_[actor ID]
                 val keyParts = StringUtils.split(targetKey, "_")
                 val systemId = keyParts(0).toLong
@@ -3099,7 +3218,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
           }
           _ <- {
             processRemaining(ImportItemType.StatementConfiguration, ctx,
-              (targetKey: String, item: ImportItem) => {
+              (targetKey: String, _: ImportItem) => {
                 // Key: [Actor ID]_[Endpoint ID]_[System ID]_[Endpoint parameter ID]
                 val keyParts = StringUtils.split(targetKey, "_")
                 val endpointId = keyParts(1).toLong
@@ -3132,25 +3251,29 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     DB.run(PersistenceSchema.processedArchives.filter(_.hash === archiveHash).result.headOption)
   }
 
-  def importSandboxData(archive: File, archiveKey: String): Future[SandboxImportResult] = {
+  def importSandboxData(archive: File, archiveKey: String, checkArchiveHash: Boolean = true): Future[SandboxImportResult] = {
     val task = for {
       resultWithHash <- {
-        var archiveHash: Option[String] = None
-        Using.resource(Files.newInputStream(archive.toPath)) { inputStream =>
-          archiveHash = Some(DigestUtils.sha256Hex(inputStream))
-        }
-        findProcessedArchive(archiveHash.get).map { processedArchive =>
-          if (processedArchive.isDefined) {
-            logger.info("Skipping data archive ["+archive.getName+"] as it has already been processed on ["+TimeUtil.serializeTimestamp(processedArchive.get.processTime)+"]")
-            (Some(SandboxImportResult.incomplete()), archiveHash.get)
-          } else {
-            (None, archiveHash.get)
+        if (checkArchiveHash) {
+          var archiveHash: Option[String] = None
+          Using.resource(Files.newInputStream(archive.toPath)) { inputStream =>
+            archiveHash = Some(DigestUtils.sha256Hex(inputStream))
           }
+          findProcessedArchive(archiveHash.get).map { processedArchive =>
+            if (processedArchive.isDefined) {
+              logger.info("Skipping data archive ["+archive.getName+"] as it has already been processed on ["+TimeUtil.serializeTimestamp(processedArchive.get.processTime)+"]")
+              SandboxImportResultWithHash(Some(SandboxImportResult.incomplete()), archiveHash)
+            } else {
+              SandboxImportResultWithHash(None, archiveHash)
+            }
+          }
+        } else {
+          Future.successful(SandboxImportResultWithHash(None, None))
         }
       }
       result <- {
-        if (resultWithHash._1.isDefined) {
-          Future.successful(resultWithHash._1.get)
+        if (resultWithHash.result.isDefined) {
+          Future.successful(resultWithHash.result.get)
         } else {
           logger.info("Processing data archive [" + archive.getName + "]")
           val importSettings = new ImportSettings()
@@ -3256,10 +3379,10 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
           }
         }
       }
-    } yield (result, resultWithHash._2)
+    } yield (result, resultWithHash.hash)
     task.flatMap { taskOutput =>
-      val recordTask = if (taskOutput._1.processingComplete) {
-        recordProcessedArchive(taskOutput._2)
+      val recordTask = if (taskOutput._1.processingComplete && taskOutput._2.isDefined) {
+        recordProcessedArchive(taskOutput._2.get)
       } else {
         Future.successful(())
       }

@@ -25,6 +25,7 @@ import com.gitb.utils.XMLUtils;
 import org.apache.commons.codec.EncoderException;
 import org.apache.commons.codec.net.URLCodec;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -64,7 +65,7 @@ public class RemoteTestCaseRepository implements ITestCaseRepository {
 		try {
 			return getTestResource(toLocationKey(from, testCaseId), artifactPath);
 		} catch (Exception e) {
-			throw new GITBEngineInternalError(e);
+			throw new GITBEngineInternalError("Unable to look up artifact at path [%s] from %s".formatted(artifactPath, (from == null)?"current test suite":"test suite [%s]".formatted(from)), e);
 		}
 	}
 
@@ -92,6 +93,7 @@ public class RemoteTestCaseRepository implements ITestCaseRepository {
 				return null;
 			}
 		} catch (Exception e) {
+            logger.error("Failed to look up resource path [{}] for test case [{}] from test suite [{}]", resourcePath, testCaseId, StringUtils.defaultString(from));
 			throw new GITBEngineInternalError(e);
 		}
 	}
@@ -104,9 +106,7 @@ public class RemoteTestCaseRepository implements ITestCaseRepository {
 			InputStream inputStream = retrieveRemoteTestResource(testCaseId, uri);
 
 			if (inputStream != null) {
-				TestCase resource = XMLUtils.unmarshal(TestCase.class, new StreamSource(inputStream));
-
-				return resource;
+                return XMLUtils.unmarshal(TestCase.class, new StreamSource(inputStream));
 			} else {
 				return null;
 			}

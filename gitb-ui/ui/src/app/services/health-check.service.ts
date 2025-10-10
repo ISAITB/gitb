@@ -20,6 +20,7 @@ import {RestService} from './rest.service';
 import {ROUTES} from '../common/global';
 import {WebSocketService} from './web-socket.service';
 import {WebSocketSubject} from 'rxjs/webSocket';
+import {HealthStatus} from '../types/health-status';
 
 @Injectable({
   providedIn: 'root'
@@ -29,7 +30,13 @@ export class HealthCheckService {
   constructor(
     private readonly restService: RestService,
     private readonly webSocketService: WebSocketService
-  ) {
+  ) { }
+
+  runPostLoginChecks(): Observable<HealthStatus> {
+    return this.restService.get<HealthStatus>({
+      path: ROUTES.controllers.HealthCheckService.runPostLoginChecks().url,
+      authenticate: true,
+    })
   }
 
   checkTestEngineCallbacks(): Observable<HealthInfo> {
@@ -63,6 +70,13 @@ export class HealthCheckService {
   checkTestEngineCommunication(): Observable<HealthInfo> {
     return this.restService.get<HealthInfo>({
       path: ROUTES.controllers.HealthCheckService.checkTestEngineCommunication().url,
+      authenticate: true,
+    })
+  }
+
+  checkSoftwareVersion(): Observable<HealthInfo> {
+    return this.restService.get<HealthInfo>({
+      path: ROUTES.controllers.HealthCheckService.checkSoftwareVersion().url,
       authenticate: true,
     })
   }

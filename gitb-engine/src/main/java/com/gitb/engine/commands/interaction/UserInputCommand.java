@@ -18,7 +18,6 @@ package com.gitb.engine.commands.interaction;
 import com.gitb.engine.commands.common.SessionCommand;
 import com.gitb.tbs.UserInput;
 
-import java.io.InputStream;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 

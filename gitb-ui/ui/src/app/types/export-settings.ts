@@ -31,6 +31,7 @@ export interface ExportSettings {
   statementConfigurations: boolean
   domain: boolean
   domainParameters: boolean
+  testServices: boolean
   specifications: boolean
   actors: boolean
   endpoints: boolean

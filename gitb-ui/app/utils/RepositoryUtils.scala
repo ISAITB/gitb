@@ -26,7 +26,7 @@ import models.Enums.{ReportType, TestResultStatus}
 import models._
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.io.{FileUtils, FilenameUtils, IOUtils}
-import org.apache.commons.lang3.{RandomStringUtils, StringUtils}
+import org.apache.commons.lang3.{RandomStringUtils, StringUtils, Strings}
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
@@ -62,6 +62,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 																(implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
 	import dbConfig.profile.api._
+
 	import scala.jdk.CollectionConverters._
 
 	private final val logger = LoggerFactory.getLogger("RepositoryUtils")
@@ -579,7 +580,12 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 		try {
 			zip.entries().asScala.foreach {
 				zipEntry =>
-					val newFile = new File(targetFolder, zipEntry.getName)
+          val zipEntryNameTouse = if (zipEntry.getName.contains('\\')) {
+            zipEntry.getName.replace('\\', '/')
+          } else {
+            zipEntry.getName
+          }
+					val newFile = new File(targetFolder, zipEntryNameTouse)
 
 					if (zipEntry.isDirectory) {
 						logger.debug("Creating folder ["+newFile+"]")
@@ -596,7 +602,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 								testCasePaths.update(testCase.getId, targetFolder.getParentFile.toURI.relativize(newFile.toURI).getPath)
 							} else if (isTestSuite(zip, zipEntry)) {
 								logger.debug("File ["+newFile+"] is a test suite file")
-								val path = StringUtils.removeStart(targetFolder.getParentFile.toURI.relativize(newFile.toURI).getPath, targetFolder.getName+"/")
+								val path = Strings.CS.removeStart(targetFolder.getParentFile.toURI.relativize(newFile.toURI).getPath, targetFolder.getName+"/")
 								testSuitePath = Some(path)
 							}
 
@@ -661,7 +667,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 												filePathToAlsoCheck = None
 											} else {
 												filePathToAlsoCheck = Some(testSuite.get.filename + "/" + filePathToLookup)
-												filePathToLookup = StringUtils.replaceOnce(filePathToLookup, testSuite.get.identifier, testSuite.get.filename)
+												filePathToLookup = Strings.CS.replaceOnce(filePathToLookup, testSuite.get.identifier, testSuite.get.filename)
 											}
 											val testSuiteFolder = getTestSuitesResource(domain, testSuite.get.filename, None)
 											val file = getTestSuitesResource(domain, filePathToLookup, filePathToAlsoCheck)
@@ -783,9 +789,9 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 						val groupMap = parseTestCaseGroupInfo(tdlTestSuite.get, tdlTestCaseEntries)
 						// Read test cases and order them considering their groups
 						val testCases = parseTestCases(tdlTestCases, tdlTestCaseEntries, groupMap)
-                        /*
-                         * Process test cases
-                         */
+            /*
+             * Process test cases
+             */
 						for {
 							testCasesWithDocumentation <- addDocumentationToTestCases(tdlTestSuite.get, testCases, zip, specificationId, domainId)
 							testCaseInfoToReturn <- Future.successful {
@@ -881,10 +887,10 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 						}
 					}
 					testCase <- Future.successful {
-						testCaseInfo.copy(
-							testCase = testCaseInfo.testCase.copy(hasDocumentation = documentation.isDefined, documentation = documentation)
-						)
-					}
+              testCaseInfo.copy(
+                testCase = testCaseInfo.testCase.copy(hasDocumentation = documentation.isDefined, documentation = documentation)
+              )
+            }
 				} yield testCase
 			}
 		}

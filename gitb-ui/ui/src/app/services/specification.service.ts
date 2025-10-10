@@ -77,10 +77,13 @@ export class SpecificationService {
     })
   }
 
-  getSpecificationGroupsOfDomains(domainIds: number[]|undefined) {
+  getSpecificationGroupsOfDomains(domainIds: number[]|undefined, snapshotId?: number) {
     let params: any = {}
     if (domainIds != undefined && domainIds.length > 0) {
       params['domain_ids'] = domainIds.join(',')
+    }
+    if (snapshotId != undefined) {
+      params['snapshot'] = snapshotId
     }
     return this.restService.post<SpecificationGroup[]>({
       path: ROUTES.controllers.SpecificationService.getSpecificationGroupsOfDomains().url,
@@ -96,12 +99,16 @@ export class SpecificationService {
     })
   }
 
-  getSpecificationGroups(domainId: number) {
+  getSpecificationGroups(domainId: number, snapshotId?: number) {
+    const params: any = {
+      domain_id: domainId
+    }
+    if (snapshotId != undefined) {
+      params.snapshot = snapshotId
+    }
     return this.restService.get<SpecificationGroup[]>({
       path: ROUTES.controllers.SpecificationService.getSpecificationGroups().url,
-      params: {
-        domain_id: domainId
-      },
+      params: params,
       authenticate: true
     })
   }

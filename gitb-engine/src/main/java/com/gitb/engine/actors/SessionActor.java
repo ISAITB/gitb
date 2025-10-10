@@ -15,7 +15,7 @@
 
 package com.gitb.engine.actors;
 
-import com.gitb.engine.PropertyConstants;
+import com.gitb.PropertyConstants;
 import org.apache.pekko.actor.AbstractActor;
 import org.apache.pekko.actor.ActorRef;
 import org.apache.pekko.actor.PoisonPill;
@@ -52,7 +52,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-import static com.gitb.engine.PropertyConstants.*;
+import static com.gitb.PropertyConstants.*;
 import static com.gitb.engine.actors.processors.TestCaseProcessorActor.TEST_SESSION_END_EXTERNAL_STEP_ID;
 import static com.gitb.engine.actors.processors.TestCaseProcessorActor.TEST_SESSION_END_STEP_ID;
 import static com.gitb.engine.testcase.TestCaseContext.TestCaseStateEnum.*;
@@ -166,7 +166,8 @@ public class SessionActor extends AbstractActor {
                         ctx.message().getActorConfigurations(),
                         ctx.message().getDomainConfiguration(),
                         ctx.message().getOrganisationConfiguration(),
-                        ctx.message().getSystemConfiguration()
+                        ctx.message().getSystemConfiguration(),
+                        ctx.message().getTestServiceConfigurations()
                 );
                 setInputsToSessionContext(context, ctx.message().getInputs());
                 if (context.getTestCase().getPreliminary() != null) {

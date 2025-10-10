@@ -66,7 +66,7 @@ public class ActorUtils {
 		for(ActorConfiguration actorConfiguration : actorConfigurations) {
 			if((endpoint == null && actorConfiguration.getActor().equals(name))
                     || (actorConfiguration.getEndpoint() == null && actorConfiguration.getActor().equals(name))
-				    || (endpoint != null && actorConfiguration.getEndpoint() != null && actorConfiguration.getActor().equals(name) && actorConfiguration.getEndpoint().equals(endpoint))) {
+				    || (actorConfiguration.getEndpoint() != null && actorConfiguration.getActor().equals(name) && actorConfiguration.getEndpoint().equals(endpoint))) {
 				return actorConfiguration;
 			}
 		}

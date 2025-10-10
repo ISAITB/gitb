@@ -1,13 +1,15 @@
 import sbtlicensereport.license.{LicenseCategory, LicenseInfo}
 
-scalaVersion := "2.13.14"
-val pekkoVersion = "1.1.3"
-val jacksonVersion = "2.18.3"
-val cxfVersion = "4.1.2"
-val gitbCommonsVersion = "1.27.4"
-val gitbTypesVersion = "1.27.4"
-val bouncyCastleVersion = "1.80"
-val commonsTextVersion = "1.13.1"
+scalaVersion := "2.13.16"
+val pekkoVersion = "1.2.1"
+val jacksonVersion = "2.20.0"
+val jacksonAnnotationsVersion = "2.20"
+val cxfVersion = "4.1.3"
+val gitbCommonsVersion = "1.28.0"
+val gitbTypesVersion = "1.28.0"
+val bouncyCastleVersion = "1.82"
+val commonsTextVersion = "1.14.0"
+val mySqlConnectorVersion = "9.4.0"
 
 name := """GITB"""
 version := "1.0-SNAPSHOT"
@@ -33,7 +35,8 @@ libraryDependencies ++= Seq(
   "com.gitb" % "gitb-reports" % gitbCommonsVersion exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
   "com.gitb" % "gitb-validator-tdl" % gitbCommonsVersion exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
   "com.gitb" % "gitb-xml-resources" % gitbCommonsVersion exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
-  "com.mysql" % "mysql-connector-j" % "9.2.0" exclude("com.google.protobuf", "protobuf-java"), // Exclude protobuf as we don't need the X DevAPI.
+  "com.gitb" % "gitb-remote" % gitbCommonsVersion exclude("eu.europa.ec.itb", "gitb-types-jakarta") exclude("eu.europa.ec.itb", "gitb-types-specs"),
+  "com.mysql" % "mysql-connector-j" % mySqlConnectorVersion exclude("com.google.protobuf", "protobuf-java"), // Exclude protobuf as we don't need the X DevAPI.
   "org.apache.pekko" %% "pekko-actor" % pekkoVersion,
   "org.apache.pekko" %% "pekko-actor-typed" % pekkoVersion,
   "org.apache.pekko" %% "pekko-remote" % pekkoVersion,
@@ -42,41 +45,43 @@ libraryDependencies ++= Seq(
   "org.apache.pekko" %% "pekko-serialization-jackson" % pekkoVersion,
   "org.playframework" %% "play-slick" % "6.2.0",
   "org.pac4j" %% "play-pac4j" % "12.0.2-PLAY3.0",
-  "org.pac4j" % "pac4j-cas" % "6.1.2" exclude("org.bouncycastle", "bcpkix-jdk15on"),
-  "org.apache.commons" % "commons-lang3" % "3.17.0",
+  "org.pac4j" % "pac4j-cas" % "6.1.3" exclude("org.bouncycastle", "bcpkix-jdk15on"),
+  "org.pac4j" % "pac4j-oidc" % "6.1.3",
+  "org.apache.commons" % "commons-lang3" % "3.19.0",
   "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion,
-  "com.fasterxml.jackson.core" % "jackson-annotations" % jacksonVersion,
+  "com.fasterxml.jackson.core" % "jackson-annotations" % jacksonAnnotationsVersion,
   "com.fasterxml.jackson.module" % "jackson-module-jakarta-xmlbind-annotations" % jacksonVersion,
-  "com.password4j"  % "password4j" % "1.8.2",
+  "com.password4j"  % "password4j" % "1.8.4",
   "net.debasishg" %% "redisclient" % "3.42",
   // For calling and exporting JAX-WS services.
   "org.apache.cxf" % "cxf-rt-frontend-jaxws" % cxfVersion,
   "org.apache.cxf" % "cxf-rt-transports-http" % cxfVersion,
   "org.apache.cxf" % "cxf-rt-transports-http-jetty" % cxfVersion,
   // ---
-  "org.apache.tika" % "tika-core" % "3.1.0",
+  "org.apache.tika" % "tika-core" % "3.2.3",
   "org.webjars" % "jquery" % "3.7.1",
-  "org.webjars" % "bootstrap" % "5.3.5",
-  "org.webjars" % "swagger-ui" % "5.21.0",
-  "com.sun.mail" % "jakarta.mail" % "2.0.1",
-  "jakarta.activation" % "jakarta.activation-api" % "2.1.3",
+  "org.webjars" % "bootstrap" % "5.3.8",
+  "org.webjars" % "swagger-ui" % "5.28.1",
+  "com.sun.mail" % "jakarta.mail" % "2.0.2",
+  "jakarta.activation" % "jakarta.activation-api" % "2.1.4",
   "jakarta.xml.ws" % "jakarta.xml.ws-api" % "4.0.2",
   "jakarta.jws" % "jakarta.jws-api" % "3.0.0",
-  "jakarta.xml.bind" % "jakarta.xml.bind-api" % "4.0.2",
-  "com.sun.xml.bind" % "jaxb-impl" % "4.0.5",
+  "jakarta.xml.bind" % "jakarta.xml.bind-api" % "4.0.4",
+  "com.sun.xml.bind" % "jaxb-impl" % "4.0.6",
   "jakarta.xml.soap" % "jakarta.xml.soap-api" % "3.0.2",
   "com.sun.xml.messaging.saaj" % "saaj-impl" % "3.0.4", // Needed for SOAP exchanges
   "org.bouncycastle" % "bcmail-jdk18on" % bouncyCastleVersion,
   "org.bouncycastle" % "bcpkix-jdk18on" % bouncyCastleVersion,
-  "org.apache.pdfbox" % "pdfbox" % "2.0.31",
+  "org.apache.pdfbox" % "pdfbox" % "3.0.5",
   "org.jasypt" % "jasypt" % "1.9.3",
   "org.apache.httpcomponents" % "httpclient" % "4.5.14",
   "org.flywaydb" %% "flyway-play" % "9.1.0",
-  "org.flywaydb" % "flyway-mysql" % "11.7.2",
+  "org.flywaydb" % "flyway-mysql" % "11.13.2",
   "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20240325.1",
   "net.lingala.zip4j" % "zip4j" % "2.11.5",
+  "com.nimbusds" % "nimbus-jose-jwt" % "10.5",
   "org.apache.commons" % "commons-text" % commonsTextVersion
 )
 
@@ -131,14 +136,14 @@ licenseDepExclusions := {
   case DepModuleInfo("org.scala-sbt", "test-interface", _) => true
   case DepModuleInfo("org.jline", "jline", _) => true
   case DepModuleInfo("com.github.sbt", "junit-interface", _) => true
-  case DepModuleInfo("commons-io", "commons-io", "2.17.0") => true // This is evicted but appears in the licence report
+  case DepModuleInfo("commons-io", "commons-io", "2.19.0") => true // This is evicted but appears in the licence report
 }
 licenseCheckExclusions := {
-  case DepModuleInfo("com.mysql", "mysql-connector-j", "9.2.0") => true
+  case DepModuleInfo("com.mysql", "mysql-connector-j", mySqlConnectorVersion) => true
   case DepModuleInfo("wsdl4j", "wsdl4j", "1.6.3") => true
 }
 licenseReportNotes := {
-  case DepModuleInfo("com.mysql", "mysql-connector-j", "9.2.0") => "The Universal FOSS Exception allows its usage as it is used unchanged."
+  case DepModuleInfo("com.mysql", "mysql-connector-j", mySqlConnectorVersion) => "The Universal FOSS Exception allows its usage as it is used unchanged."
   case DepModuleInfo("wsdl4j", "wsdl4j", "1.6.3") => "Used transitively by CXF, see (https://www.apache.org/legal/resolved.html#category-b)."
 }
 licenseConfigurations := Set("compile", "provided")

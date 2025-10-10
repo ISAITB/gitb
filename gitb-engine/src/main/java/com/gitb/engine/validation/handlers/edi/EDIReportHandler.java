@@ -46,7 +46,7 @@ public class EDIReportHandler extends AbstractReportHandler{
 	    ediAttachment.setName(EDI_ITEM_NAME);
 	    ediAttachment.setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
 	    ediAttachment.setType(DataType.STRING_DATA_TYPE);
-	    ediAttachment.setValue((String)edi.getValue());
+	    ediAttachment.setValue(edi.getValue());
 	    attachment.getItem().add(ediAttachment);
 	    
 	    report.setName("EDI Document Validation");

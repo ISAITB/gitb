@@ -29,13 +29,13 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by serbay on 9/24/14.
- *
+ * <p>
  * Class that keeps the session information related to each messaging server worker instance.
  */
 public class NetworkingSessionManager {
 
     private static final Logger logger = LoggerFactory.getLogger(NetworkingSessionManager.class);
-	private Map<InetAddress, SessionInfo> sessions;
+	private final Map<InetAddress, SessionInfo> sessions;
 	private final int port;
 
 	public NetworkingSessionManager(int port) {
@@ -47,7 +47,7 @@ public class NetworkingSessionManager {
 		if(sessions.containsKey(address)) {
 			throw new ExistingSessionException(address, messagingSessionId);
 		} else {
-		    logger.info(MarkerFactory.getDetachedMarker(testSessionId), "Test session ["+testSessionId+"] listening on port ["+port+"] for connections from ["+address+"]");
+            logger.info(MarkerFactory.getDetachedMarker(testSessionId), "Test session [{}] listening on port [{}] for connections from [{}]", testSessionId, port, address);
 			sessions.put(address, new SessionInfo(messagingSessionId, testSessionId));
 			return messagingSessionId;
 		}
@@ -88,12 +88,10 @@ public class NetworkingSessionManager {
 
 	public List<String> getSessions() {
 		List<String> addresses = new ArrayList<String>();
-		if (sessions != null) {
-			for (InetAddress address: sessions.keySet()) {
-				addresses.add(address.getHostName());
-			}
-		}
-		return Collections.unmodifiableList(addresses);
+        for (InetAddress address : sessions.keySet()) {
+            addresses.add(address.getHostName());
+        }
+        return Collections.unmodifiableList(addresses);
 	}
 
 	public static class SessionInfo {

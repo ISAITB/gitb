@@ -24,6 +24,7 @@ import {FilterUpdate} from '../test-filter/filter-update';
 import {map, Observable, of, share, Subscription} from 'rxjs';
 import {Constants} from '../../common/constants';
 import {ControlValueAccessor, NG_VALUE_ACCESSOR} from '@angular/forms';
+import {MultiSelectFilterComponentApi} from './multi-select-filter-component-api';
 
 @Component({
   selector: 'app-multi-select-filter',
@@ -38,7 +39,7 @@ import {ControlValueAccessor, NG_VALUE_ACCESSOR} from '@angular/forms';
   ],
     standalone: false
 })
-export class MultiSelectFilterComponent<T extends EntityWithId> implements OnInit, OnDestroy, ControlValueAccessor {
+export class MultiSelectFilterComponent<T extends EntityWithId> implements OnInit, OnDestroy, ControlValueAccessor, MultiSelectFilterComponentApi<T> {
 
   @Input() config!: MultiSelectConfig<T>
   @Input() typeahead = true
@@ -118,20 +119,12 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
     }
     if (this.config.clearItems) {
       this.clearItemsSubscription = this.config.clearItems.subscribe(() => {
-        this.selectedSelectedItems = {}
-        this.selectedItems = []
-        this.updateCheckFlag(false)
-        this.updateLabel()
+        this.clearItems()
       })
     }
     if (this.config.replaceItems) {
       this.replaceItemsSubscription = this.config.replaceItems.subscribe((newItems) => {
-        this.selectedSelectedItems = {}
-        this.updateCheckFlag(false)
-        this.updateLabel()
-        this.selectedItems = []
-        this.availableItems = newItems
-        this.visibleAvailableItems = this.availableItems
+        this.replaceItems(newItems)
       })
     }
     if (this.config.replaceSelectedItems) {
@@ -143,6 +136,22 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
       this.replaceSelectedItems(this.config.initialValues)
     }
     this.ready.emit(this.config.name)
+  }
+
+  clearItems(): void {
+    this.selectedSelectedItems = {}
+    this.selectedItems = []
+    this.updateCheckFlag(false)
+    this.updateLabel()
+  }
+
+  replaceItems(items: T[]): void {
+    this.selectedSelectedItems = {}
+    this.updateCheckFlag(false)
+    this.updateLabel()
+    this.selectedItems = []
+    this.availableItems = items
+    this.visibleAvailableItems = this.availableItems
   }
 
   writeValue(v: T|T[]|undefined): void {
@@ -181,7 +190,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
     this.onTouched()
   }
 
-  private replaceSelectedItems(newItems: T[]) {
+  replaceSelectedItems(newItems: T[], skipApply?: boolean) {
     if (this.config.singleSelection == true) {
       for (let item of newItems) {
         this.selectedSelectedItems[item.id] = { selected: true, item: item }
@@ -233,7 +242,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
     this.selectedItems = this.sortItems(newItemsToSet)
     this.updateCheckFlag()
     this.updateLabel()
-    this.applyItems(true)
+    this.applyItems(true, skipApply)
   }
 
   ngOnDestroy(): void {
@@ -679,7 +688,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
     return items
   }
 
-  applyItems(skipRefresh?: boolean) {
+  applyItems(skipRefresh?: boolean, skipApply?: boolean) {
     this.formVisible = false
     // Remove previously selected items that were unchecked.
     for (let itemId in this.selectedSelectedItems) {
@@ -721,7 +730,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
       this._value = selectedItemsToReport.active
     }
     this.emitChanges()
-    if (this.config.eventsDisabled != true) {
+    if (this.config.eventsDisabled != true && (skipApply == undefined || !skipApply)) {
       this.apply.emit({ values: selectedItemsToReport, applyFilters: skipRefresh == undefined || !skipRefresh })
     }
   }

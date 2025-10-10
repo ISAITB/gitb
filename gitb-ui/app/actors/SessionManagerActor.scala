@@ -16,10 +16,9 @@
 package actors
 
 import actors.events.sessions.{PrepareTestSessionsEvent, TerminateSessionsEvent, TestSessionConfiguredEvent}
-import org.apache.pekko.actor.{Actor, ActorContext, ActorRef}
 import com.gitb.tbs.{ConfigurationCompleteRequest, InteractWithUsersRequest, TestStepStatus}
-import org.apache.commons.lang3.StringUtils
 import org.apache.pekko.actor.Status.Failure
+import org.apache.pekko.actor.{Actor, ActorContext, ActorRef}
 import org.slf4j.LoggerFactory
 import play.api.libs.concurrent.InjectedActorSupport
 import utils.JacksonUtil
@@ -94,7 +93,7 @@ class SessionManagerActor @Inject() (sessionUpdateActorFactory: SessionUpdateAct
   }
 
   private def terminateSessions(event: TerminateSessionsEvent): Unit = {
-    this.context.children.filter(x => StringUtils.startsWith(x.path.name, LAUNCH_ACTOR_PREFIX)).foreach { actor =>
+    this.context.children.filter(_.path.name.startsWith(LAUNCH_ACTOR_PREFIX)).foreach { actor =>
       actor.tell(event, this.self)
     }
   }

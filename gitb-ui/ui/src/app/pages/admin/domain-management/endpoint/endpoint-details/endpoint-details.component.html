@@ -23,13 +23,13 @@
 		</form>
 	</div>
 	<div>
-		<tabset>
+		<tabset #tabs>
 			<tab customClass="tabClass">
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-sliders" text="Parameters"></app-tab-title></ng-template>
 				<div class="tabPanel">
-					<app-endpoint-parameter-tab-content 
+					<app-endpoint-parameter-tab-content
 						[actorId]="actorId"
-						[endpointId]="endpointId" 
+						[endpointId]="endpointId"
 						[parametersLoaded]="parametersLoaded"></app-endpoint-parameter-tab-content>
 				</div>
 			</tab>

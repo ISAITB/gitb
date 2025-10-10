@@ -1,26 +1,2 @@
 {
-  "1096815": {
-    "active": true,
-    "notes": "The patch stated as of TinyMCE v6.8.1+ has been applied."
-  },
-  "1106952": {
-    "active": true,
-    "notes": "Mermaid is transitively used and never with user-provided content."
-  },
-  "1106953": {
-    "active": true,
-    "notes": "Mermaid is transitively used and never with user-provided content."
-  },
-  "1106961": {
-    "active": true,
-    "notes": "Mermaid is transitively used and never with user-provided content."
-  },
-  "1106983": {
-    "active": true,
-    "notes": "Mermaid is transitively used and never with user-provided content."
-  },
-  "1107247": {
-    "active": true,
-    "notes": "Mermaid is transitively used and never with user-provided content."
-  }  
 }

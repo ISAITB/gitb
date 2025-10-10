@@ -13,41 +13,43 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter, OnDestroy, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { saveAs } from 'file-saver';
-import { cloneDeep, filter, find, map as lmap, remove } from 'lodash';
-import { BsModalRef, BsModalService } from 'ngx-bootstrap/modal';
-import { Observable, of, Subscription, throwError, timer } from 'rxjs';
-import { catchError, map, mergeMap, share } from 'rxjs/operators';
-import { WebSocketSubject } from 'rxjs/webSocket';
-import { Constants } from 'src/app/common/constants';
-import { CheckboxOption } from 'src/app/components/checkbox-option-panel/checkbox-option';
-import { CheckboxOptionState } from 'src/app/components/checkbox-option-panel/checkbox-option-state';
-import { ActorInfo } from 'src/app/components/diagram/actor-info';
-import { DiagramEvents } from 'src/app/components/diagram/diagram-events';
-import { StepReport } from 'src/app/components/diagram/report/step-report';
-import { StepData } from 'src/app/components/diagram/step-data';
-import { SessionLogModalComponent } from 'src/app/components/session-log-modal/session-log-modal.component';
-import { SimulatedConfigurationDisplayModalComponent } from 'src/app/components/simulated-configuration-display-modal/simulated-configuration-display-modal.component';
-import { ProvideInputModalComponent } from 'src/app/modals/provide-input-modal/provide-input-modal.component';
-import { ConformanceService } from 'src/app/services/conformance.service';
-import { DataService } from 'src/app/services/data.service';
-import { ErrorService } from 'src/app/services/error.service';
-import { HtmlService } from 'src/app/services/html.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { ReportService } from 'src/app/services/report.service';
-import { RoutingService } from 'src/app/services/routing.service';
-import { SpecificationService } from 'src/app/services/specification.service';
-import { TestService } from 'src/app/services/test.service';
-import { WebSocketService } from 'src/app/services/web-socket.service';
-import { LoadingStatus } from 'src/app/types/loading-status.type';
-import { LogLevel } from 'src/app/types/log-level';
-import { SUTConfiguration } from 'src/app/types/sutconfiguration';
-import { TestInteractionData } from 'src/app/types/test-interaction-data';
-import { UserInteraction } from 'src/app/types/user-interaction';
-import { WebSocketMessage } from 'src/app/types/web-socket-message';
-import { ConformanceTestCase } from '../organisation/conformance-statement/conformance-test-case';
+import {Component, EventEmitter, OnDestroy, OnInit} from '@angular/core';
+import {ActivatedRoute, NavigationStart, Router} from '@angular/router';
+import {saveAs} from 'file-saver';
+import {cloneDeep, filter, find, map as lmap, remove} from 'lodash';
+import {BsModalRef, BsModalService} from 'ngx-bootstrap/modal';
+import {Observable, of, Subscription, throwError, timer} from 'rxjs';
+import {catchError, map, mergeMap, share} from 'rxjs/operators';
+import {WebSocketSubject} from 'rxjs/webSocket';
+import {Constants} from 'src/app/common/constants';
+import {CheckboxOption} from 'src/app/components/checkbox-option-panel/checkbox-option';
+import {CheckboxOptionState} from 'src/app/components/checkbox-option-panel/checkbox-option-state';
+import {ActorInfo} from 'src/app/components/diagram/actor-info';
+import {DiagramEvents} from 'src/app/components/diagram/diagram-events';
+import {StepReport} from 'src/app/components/diagram/report/step-report';
+import {StepData} from 'src/app/components/diagram/step-data';
+import {SessionLogModalComponent} from 'src/app/components/session-log-modal/session-log-modal.component';
+import {
+  SimulatedConfigurationDisplayModalComponent
+} from 'src/app/components/simulated-configuration-display-modal/simulated-configuration-display-modal.component';
+import {ProvideInputModalComponent} from 'src/app/modals/provide-input-modal/provide-input-modal.component';
+import {ConformanceService} from 'src/app/services/conformance.service';
+import {DataService} from 'src/app/services/data.service';
+import {ErrorService} from 'src/app/services/error.service';
+import {HtmlService} from 'src/app/services/html.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {ReportService} from 'src/app/services/report.service';
+import {RoutingService} from 'src/app/services/routing.service';
+import {SpecificationService} from 'src/app/services/specification.service';
+import {TestService} from 'src/app/services/test.service';
+import {WebSocketService} from 'src/app/services/web-socket.service';
+import {LoadingStatus} from 'src/app/types/loading-status.type';
+import {LogLevel} from 'src/app/types/log-level';
+import {SUTConfiguration} from 'src/app/types/sutconfiguration';
+import {TestInteractionData} from 'src/app/types/test-interaction-data';
+import {UserInteraction} from 'src/app/types/user-interaction';
+import {WebSocketMessage} from 'src/app/types/web-socket-message';
+import {ConformanceTestCase} from '../organisation/conformance-statement/conformance-test-case';
 
 @Component({
     selector: 'app-test-execution',
@@ -67,6 +69,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   organisationId!: number
   isAdmin = false
   documentationExists = false
+  cleanupComplete = false
 
   showCompleted = false
   showPending = true
@@ -131,9 +134,11 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
       {key: TestExecutionComponent.CONTINUE_AUTOMATICALLY, label: 'Continue automatically', default: true }
     ]
   ]
+  navigationSubscription?: Subscription
 
   constructor(
     private readonly route: ActivatedRoute,
+    private readonly router: Router,
     private readonly modalService: BsModalService,
     private readonly testService: TestService,
     private readonly conformanceService: ConformanceService,
@@ -193,6 +198,12 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
       this.initialiseState()
       this.initialiseTestCases()
     })
+    this.navigationSubscription = this.router.events.subscribe(event => {
+      if (event instanceof NavigationStart) {
+        // Remove recorded test cases because the user explicitly navigated away.
+        this.leavingTestExecutionPage(true)
+      }
+    })
   }
 
   private initialiseTestMaps() {
@@ -207,7 +218,8 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.leavingTestExecutionPage()
+    // We keep recorded tests because this may be because of a page refresh.
+    this.leavingTestExecutionPage(false)
   }
 
   private initialiseState() {
@@ -1180,30 +1192,36 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     return this.dataService.determineOutputMessageType(resultType)
   }
 
-  leavingTestExecutionPage() {
-    this.popupService.closeAll()
-    this.dataService.clearTestsToExecute()
-    if (this.firstTestStarted && !this.allStopped) {
-      this.closeWebSocket()
-      const pendingTests = filter(this.testsToExecute, (test) => {
-        return this.testCaseStatus[test.id] == Constants.TEST_CASE_STATUS.READY || this.testCaseStatus[test.id] == Constants.TEST_CASE_STATUS.PENDING || this.testCaseStatus[test.id] == Constants.TEST_CASE_STATUS.CONFIGURING
-      })
-      const pendingTestIds = lmap(pendingTests, (test) => { return test.id } )
-      if (pendingTestIds.length > 0) {
-        this.testService.startHeadlessTestSessions(pendingTestIds, this.specificationId!, this.systemId, this.actorId, false).subscribe(() => {})
-        this.popupService.success('Continuing test execution in background.')
-      } else {
-        if (this.testCaseStatus[this.currentTest!.id] == Constants.TEST_CASE_STATUS.PROCESSING) {
+  leavingTestExecutionPage(removeAlsoRecordedTests: boolean) {
+    if (!this.cleanupComplete) {
+      this.cleanupComplete = true
+      this.popupService.closeAll()
+      if (removeAlsoRecordedTests) {
+        this.dataService.clearTestsToExecute()
+      }
+      if (this.firstTestStarted && !this.allStopped) {
+        this.closeWebSocket()
+        const pendingTests = filter(this.testsToExecute, (test) => {
+          return this.testCaseStatus[test.id] == Constants.TEST_CASE_STATUS.READY || this.testCaseStatus[test.id] == Constants.TEST_CASE_STATUS.PENDING || this.testCaseStatus[test.id] == Constants.TEST_CASE_STATUS.CONFIGURING
+        })
+        const pendingTestIds = lmap(pendingTests, (test) => { return test.id } )
+        if (pendingTestIds.length > 0) {
+          this.testService.startHeadlessTestSessions(pendingTestIds, this.specificationId!, this.systemId, this.actorId, false).subscribe(() => {})
           this.popupService.success('Continuing test execution in background.')
+        } else {
+          if (this.testCaseStatus[this.currentTest!.id] == Constants.TEST_CASE_STATUS.PROCESSING) {
+            this.popupService.success('Continuing test execution in background.')
+          }
+        }
+      } else {
+        if (this.ws != undefined && this.session != undefined) {
+          this.stopAll()
         }
       }
-    } else {
-      if (this.ws != undefined && this.session != undefined) {
-        this.stopAll()
-      }
+      if (this.messageProcessing) this.messageProcessing.unsubscribe()
+      if (this.heartbeat) this.heartbeat.unsubscribe()
+      if (this.navigationSubscription) this.navigationSubscription.unsubscribe()
     }
-    if (this.messageProcessing) this.messageProcessing.unsubscribe()
-    if (this.heartbeat) this.heartbeat.unsubscribe()
   }
 
   private closeWebSocket() {

@@ -20,7 +20,7 @@ import com.gitb.engine.actors.supervisors.SessionSupervisor;
 
 /**
  * Created by serbay on 9/4/14.
- *
+ * <p>
  * Test engine Akka actor system management & accessor class
  */
 public class ActorSystem {
@@ -29,7 +29,7 @@ public class ActorSystem {
 	public static final String BLOCKING_DISPATCHER = "blocking-processor-dispatcher";
 	public static final String BLOCKING_IO_DISPATCHER = "blocking-io-dispatcher";
 
-	private org.apache.pekko.actor.ActorSystem system;
+	private final org.apache.pekko.actor.ActorSystem system;
 
 	private ActorRef sessionSupervisor;
 

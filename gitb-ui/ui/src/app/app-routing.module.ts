@@ -85,6 +85,7 @@ import { SystemAdminViewGuard } from './resolvers/system-admin-view-guard';
 import {ImplicitCommunityResolver} from './resolvers/implicit-community-resolver';
 import {CommunitySessionDashboardComponent} from './pages/organisation/community-session-dashboard/community-session-dashboard.component';
 import {ServiceHealthDashboardComponent} from './pages/service-health-dashboard/service-health-dashboard.component';
+import {DataManagementComponent} from './pages/admin/data-management/data-management.component';
 
 const themeResolver: ResolveFn<Theme> = (route: ActivatedRouteSnapshot, state: RouterStateSnapshot) => {
   return inject(SystemConfigurationService).getTheme(Number(route.paramMap.get(Constants.NAVIGATION_PATH_PARAM.THEME_ID)!))
@@ -164,9 +165,8 @@ const routes: Routes = [
           { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/organisation/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID+'/system/create', component: CreateSystemComponent },
           { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/organisation/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID+'/system/:'+Constants.NAVIGATION_PATH_PARAM.SYSTEM_ID, component: SystemDetailsComponent },
           { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/organisation/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID+'/test/:'+Constants.NAVIGATION_PATH_PARAM.SYSTEM_ID+'/:actor_id/execute', component: TestExecutionComponent, resolve: { implicitCommunityId: ImplicitCommunityResolver } },
-          // Data import/export
-          { path: 'export', component: ExportComponent },
-          { path: 'import', component: ImportComponent },
+          // Data management
+          { path: 'data', component: DataManagementComponent },
           // System administration
           { path: 'system', canActivate: [SystemAdminViewGuard], children: [
             { path: '' , component: SystemAdministrationComponent },

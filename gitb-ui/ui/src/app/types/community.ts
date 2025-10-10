@@ -14,13 +14,11 @@
  */
 
 import {Domain} from './domain';
-import {EntityWithId} from './entity-with-id';
 import {TypedLabelConfig} from './typed-label-config.type';
+import {CommunityLimited} from './community-limited';
 
-export interface Community extends EntityWithId {
+export interface Community extends CommunityLimited {
 
-  sname: string;
-  fname: string;
   description?: string;
   selfRegType: number;
   selfRegRestriction: number;
@@ -30,6 +28,9 @@ export interface Community extends EntityWithId {
   interactionNotification: boolean;
   selfRegForceTemplateSelection?: boolean;
   selfRegForceRequiredProperties?: boolean;
+  selfRegAllowOrganisationTokens?: boolean;
+  selfRegAllowOrganisationTokenManagement?: boolean;
+  selfRegForceOrganisationTokenInput?: boolean;
   email?: string;
   domain?: Domain;
   domainId?: number;
@@ -41,6 +42,7 @@ export interface Community extends EntityWithId {
   allowPostTestStatementUpdates: boolean;
   allowAutomationApi?: boolean;
   allowCommunityView: boolean;
+  allowUserManagement: boolean;
   apiKey?: string;
 
   sameDescriptionAsDomain: boolean;

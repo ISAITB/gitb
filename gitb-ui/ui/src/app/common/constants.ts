@@ -18,33 +18,36 @@ import {LabelConfig} from '../types/label-config.type';
 
 export class Constants {
 
-	public static THEME_CSS_LINK_ID = "themeCssLink"
-	public static THEME_FAVICON_LINK_ID = "themeFaviconLink"
+	public static readonly THEME_CSS_LINK_ID = "themeCssLink"
+	public static readonly THEME_FAVICON_LINK_ID = "themeFaviconLink"
 
-  public static TABLE_PAGE_SIZE = 10
-  public static DEFAULT_LOGO = '/assets/images/gitb.png'
-	public static DEFAULT_COMMUNITY_ID = 0
-	public static TOOLTIP_DELAY = 500
+  public static readonly TABLE_PAGE_SIZE = 10
+  public static readonly DEFAULT_LOGO = '/assets/images/gitb.png'
+	public static readonly DEFAULT_COMMUNITY_ID = 0
+	public static readonly TOOLTIP_DELAY = 500
 
-	public static TOKEN_COOKIE_EXPIRE = 2592000000 // 1 month in millis
-	public static ACCESS_TOKEN_COOKIE_KEY = 'tat'
+	public static readonly TOKEN_COOKIE_EXPIRE = 2592000000 // 1 month in millis
+	public static readonly ACCESS_TOKEN_COOKIE_KEY = 'tat'
 
-	public static TEST_ENGINE_ACTOR_ID = 'com.gitb.TestEngine'
-	public static TESTER_ACTOR_ID = 'com.gitb.Operator'
-	public static ADMINISTRATOR_ACTOR_ID = 'com.gitb.Administrator'
-	public static TEST_ENGINE_ACTOR_NAME = 'Test Engine'
-	public static TESTER_ACTOR_NAME = 'Operator'
-	public static ADMINISTRATOR_ACTOR_NAME = 'Administrator'
+	public static readonly TEST_ENGINE_ACTOR_ID = 'com.gitb.TestEngine'
+	public static readonly TESTER_ACTOR_ID = 'com.gitb.Operator'
+	public static readonly ADMINISTRATOR_ACTOR_ID = 'com.gitb.Administrator'
+	public static readonly TEST_ENGINE_ACTOR_NAME = 'Test Engine'
+	public static readonly TESTER_ACTOR_NAME = 'Operator'
+	public static readonly ADMINISTRATOR_ACTOR_NAME = 'Administrator'
 
-	public static LATEST_CONFORMANCE_STATUS_LABEL = 'Latest conformance status'
+	public static readonly LATEST_CONFORMANCE_STATUS_LABEL = 'Latest conformance status'
+  public static readonly SESSION_DATA = {
+    FROM_DASHBOARD: 'dashboard'
+  }
 
-	public static EMBEDDING_METHOD = {
+	public static readonly EMBEDDING_METHOD = {
 		BASE64: 'BASE64',
 		STRING: 'STRING',
 		URI: 'URI'
 	}
 
-	public static FILTER_TYPE = {
+	public static readonly FILTER_TYPE = {
 		DOMAIN: 'domain',
 		SPECIFICATION: 'specification',
 		ACTOR: 'actor',
@@ -62,12 +65,12 @@ export class Constants {
 		SPECIFICATION_GROUP: 'specification_group',
 	}
 
-	public static ORDER = {
+	public static readonly ORDER = {
 		ASC: 'asc',
 		DESC: 'desc'
 	}
 
-    public static USER_ROLE = {
+    public static readonly USER_ROLE = {
 		VENDOR_ADMIN: 1,
 		VENDOR_USER : 2,
 		DOMAIN_USER : 3,
@@ -75,7 +78,7 @@ export class Constants {
 		COMMUNITY_ADMIN: 5
     }
 
-	public static USER_ROLE_LABEL: {[key: number]: string} = {
+	public static readonly USER_ROLE_LABEL: {[key: number]: string} = {
 		1 : "Administrator",
 		2 : "User",
 		3 : "Domain user",
@@ -83,7 +86,7 @@ export class Constants {
 		5 : "Community administrator"
 	}
 
-	public static VENDOR_USER_ROLES: IdLabel[] = [
+	public static readonly VENDOR_USER_ROLES: IdLabel[] = [
 		{
 			id: Constants.USER_ROLE.VENDOR_ADMIN,
 			label: Constants.USER_ROLE_LABEL[Constants.USER_ROLE.VENDOR_ADMIN]
@@ -94,7 +97,7 @@ export class Constants {
 		}
 	]
 
-	public static LABEL_TYPE = {
+	public static readonly LABEL_TYPE = {
 		DOMAIN: 1,
 		SPECIFICATION: 2,
 		ACTOR: 3,
@@ -105,7 +108,7 @@ export class Constants {
 		SPECIFICATION_GROUP: 8
     }
 
-	public static LABEL_TYPE_LABEL: {[key: number]:string} = {
+	public static readonly LABEL_TYPE_LABEL: {[key: number]:string} = {
 		1: "Domain",
 		2: "Specification",
 		3: "Actor",
@@ -116,7 +119,7 @@ export class Constants {
 		8: "Specification group"
   }
 
-	public static LABEL_DEFAULT: {[key: number]: LabelConfig} = {
+	public static readonly LABEL_DEFAULT: {[key: number]: LabelConfig} = {
 		1: {singularForm: "Domain", pluralForm: "Domains", fixedCase: false},
 		2: {singularForm: "Specification", pluralForm: "Specifications", fixedCase: false},
 		3: {singularForm: "Actor", pluralForm: "Actors", fixedCase: false},
@@ -127,20 +130,20 @@ export class Constants {
 		8: {singularForm: "Specification group", pluralForm: "Specification groups", fixedCase: false}
 	}
 
-	public static SELF_REGISTRATION_TYPE = {
+	public static readonly SELF_REGISTRATION_TYPE = {
 		NOT_SUPPORTED: 1,
 		PUBLIC_LISTING: 2,
 		PUBLIC_LISTING_WITH_TOKEN: 3,
 		TOKEN: 4
 	}
 
-	public static SELF_REGISTRATION_RESTRICTION = {
+	public static readonly SELF_REGISTRATION_RESTRICTION = {
 		NO_RESTRICTION: 1,
 		USER_EMAIL: 2,
 		USER_EMAIL_DOMAIN: 3
 	}
 
-	public static LOGIN_OPTION = {
+	public static readonly LOGIN_OPTION = {
 		NONE: "none",
 		REGISTER: "register",
 		DEMO: "demo",
@@ -149,22 +152,22 @@ export class Constants {
 		FORCE_CHOICE: "force"
 	}
 
-	public static PLACEHOLDER__ERROR_DESCRIPTION = "$ERROR_DESCRIPTION"
-	public static PLACEHOLDER__ERROR_ID = "$ERROR_ID"
-	public static PLACEHOLDER__ORGANISATION = "$ORGANISATION"
-	public static PLACEHOLDER__SYSTEM = "$SYSTEM"
-	public static PLACEHOLDER__SPECIFICATION = "$SPECIFICATION"
-	public static PLACEHOLDER__SPECIFICATION_GROUP = "$SPECIFICATION_GROUP"
-	public static PLACEHOLDER__SPECIFICATION_GROUP_OPTION = "$SPECIFICATION_GROUP_OPTION"
-	public static PLACEHOLDER__ACTOR = "$ACTOR"
-	public static PLACEHOLDER__DOMAIN = "$DOMAIN"
-	public static PLACEHOLDER__BADGE = "$BADGE"
-	public static PLACEHOLDER__BADGES = "$BADGES"
-  public static PLACEHOLDER__LAST_UPDATE_DATE = "$LAST_UPDATE_DATE"
-  public static PLACEHOLDER__REPORT_DATE = "$REPORT_DATE"
-  public static PLACEHOLDER__SNAPSHOT = "$SNAPSHOT"
+	public static readonly PLACEHOLDER__ERROR_DESCRIPTION = "$ERROR_DESCRIPTION"
+	public static readonly PLACEHOLDER__ERROR_ID = "$ERROR_ID"
+	public static readonly PLACEHOLDER__ORGANISATION = "$ORGANISATION"
+	public static readonly PLACEHOLDER__SYSTEM = "$SYSTEM"
+	public static readonly PLACEHOLDER__SPECIFICATION = "$SPECIFICATION"
+	public static readonly PLACEHOLDER__SPECIFICATION_GROUP = "$SPECIFICATION_GROUP"
+	public static readonly PLACEHOLDER__SPECIFICATION_GROUP_OPTION = "$SPECIFICATION_GROUP_OPTION"
+	public static readonly PLACEHOLDER__ACTOR = "$ACTOR"
+	public static readonly PLACEHOLDER__DOMAIN = "$DOMAIN"
+	public static readonly PLACEHOLDER__BADGE = "$BADGE"
+	public static readonly PLACEHOLDER__BADGES = "$BADGES"
+  public static readonly PLACEHOLDER__LAST_UPDATE_DATE = "$LAST_UPDATE_DATE"
+  public static readonly PLACEHOLDER__REPORT_DATE = "$REPORT_DATE"
+  public static readonly PLACEHOLDER__SNAPSHOT = "$SNAPSHOT"
 
-	public static TEST_STATUS = {
+	public static readonly TEST_STATUS = {
 		UNKNOWN: null,
 		PROCESSING : 0,
 		SKIPPED : 1,
@@ -174,7 +177,7 @@ export class Constants {
 		COMPLETED: 5
 	}
 
-	public static TEST_CASE_STATUS = {
+	public static readonly TEST_CASE_STATUS = {
 		READY: 0,
 		PROCESSING: 1,
 		PENDING : 2,
@@ -184,47 +187,47 @@ export class Constants {
 		CONFIGURING: 6
 	}
 
-	public static TEST_CASE_RESULT = {
+	public static readonly TEST_CASE_RESULT = {
 		SUCCESS : "SUCCESS",
 		FAILURE : "FAILURE",
 		UNDEFINED : "UNDEFINED",
 		WARNING : "WARNING"
 	}
 
-	public static STATUS = {
+	public static readonly STATUS = {
 		NONE: 0,
 		PENDING: 1,
 		FINISHED: 2
 	}
 
-	public static REPORT_OPTION_CHOICE = {
+	public static readonly REPORT_OPTION_CHOICE = {
 		CERTIFICATE: 1,
 		REPORT: 2,
 		DETAILED_REPORT: 3
 	}
 
-	public static CREATE_ACCOUNT_OPTION = {
+	public static readonly CREATE_ACCOUNT_OPTION = {
 		LINK: 1,
 		SELF_REGISTER: 2,
 		MIGRATE: 3
 	}
 
-	public static DISCONNECT_ROLE_OPTION = {
+	public static readonly DISCONNECT_ROLE_OPTION = {
 		CURRENT_PARTIAL: 1,
 		CURRENT_FULL: 2,
 		ALL: 3
 	}
 
-	public static ERROR_CODES = {
+	public static readonly ERROR_CODES = {
 		INVALID_CREDENTIALS: 104
 	}
 
-	public static TRIGGER_SERVICE_TYPE = {
+	public static readonly TRIGGER_SERVICE_TYPE = {
 		GITB: 1,
 		JSON: 2
 	}
 
-	public static TRIGGER_EVENT_TYPE = {
+	public static readonly TRIGGER_EVENT_TYPE = {
 		ORGANISATION_CREATED: 1,
 		SYSTEM_CREATED: 2,
 		CONFORMANCE_STATEMENT_CREATED: 3,
@@ -237,7 +240,7 @@ export class Constants {
 		TEST_SESSION_STARTED: 10,
 	}
 
-	public static TRIGGER_DATA_TYPE = {
+	public static readonly TRIGGER_DATA_TYPE = {
 		COMMUNITY: 1,
 		ORGANISATION: 2,
 		SYSTEM: 3,
@@ -251,7 +254,7 @@ export class Constants {
 		TEST_REPORT: 11
 	}
 
-	public static IMPORT_ITEM_TYPE = {
+	public static readonly IMPORT_ITEM_TYPE = {
 		DOMAIN: 1,
 		DOMAIN_PARAMETER: 2,
 		SPECIFICATION: 3,
@@ -284,72 +287,110 @@ export class Constants {
 		DEFAULT_ERROR_TEMPLATE: 30,
 		SYSTEM_ADMINISTRATOR: 31,
 		SYSTEM_CONFIGURATION: 32,
-    SYSTEM_RESOURCE: 33
+    SYSTEM_RESOURCE: 33,
+    TEST_SERVICE: 34
 	}
 
-	public static IMPORT_ITEM_MATCH = {
+	public static readonly IMPORT_ITEM_MATCH = {
 		ARCHIVE_ONLY: 1,
 		BOTH: 2,
 		DB_ONLY: 3
 	}
 
-	public static IMPORT_ITEM_CHOICE = {
+	public static readonly IMPORT_ITEM_CHOICE = {
 		SKIP: 1,
 		SKIP_PROCESS_CHILDREN: 2,
 		SKIP_DUE_TO_PARENT: 3,
 		PROCEED: 4
 	}
 
-	public static OPERATION = {
+	public static readonly OPERATION = {
 		UPDATE: 1,
 		ADD: 2,
 		DELETE: 3
 	}
 
-	public static WEB_SOCKET_COMMAND = {
+	public static readonly WEB_SOCKET_COMMAND = {
 		REGISTER: "register",
 		NOTIFY: "notify",
 		PING: "ping"
 	}
 
-	public static TAB = {
+	public static readonly TAB = {
 		DOMAIN: {
 			SPECIFICATIONS: 0,
 			TEST_SUITES: 1,
-			PARAMETERS: 2
+			PARAMETERS: 2,
+      TEST_SERVICES: 3
 		},
 		SPECIFICATION: {
 			TEST_SUITES: 0,
 			ACTORS: 1
-		}
+		},
+    TEST_SUITE: {
+      TEST_CASES: 0,
+      SPECIFICATIONS: 1
+    },
+    ACTOR: {
+      PARAMETERS: 0
+    },
+    COMMUNITY: {
+      ORGANISATIONS: 0,
+      ADMINISTRATORS: 1,
+      LANDING_PAGES: 2,
+      LEGAL_NOTICES: 3,
+      ERROR_TEMPLATES: 4,
+      TRIGGERS: 5,
+      RESOURCES: 6
+    },
+    ORGANISATION: {
+      SYSTEMS: 0,
+      USERS: 1,
+      API_KEYS: 2
+    },
+    SYSTEM_ADMINISTRATION: {
+      ADMINISTRATORS: 0,
+      LANDING_PAGES: 1,
+      LEGAL_NOTICES: 2,
+      ERROR_TEMPLATES: 3,
+      THEMES: 4,
+      RESOURCES: 5
+    },
+    CONFORMANCE_STATEMENT: {
+      TESTS: 0,
+      CONFIGURATION: 1
+    }
 	}
 
-	public static TEST_CASE_UPLOAD_MATCH = {
+	public static readonly TEST_CASE_UPLOAD_MATCH = {
 		IN_ARCHIVE_ONLY: 1,
 		IN_DB_ONLY: 2,
 		IN_ARCHIVE_AND_DB : 3
 	}
 
-	public static CONFORMANCE_STATEMENT_ITEM_TYPE = {
+	public static readonly CONFORMANCE_STATEMENT_ITEM_TYPE = {
 		DOMAIN: 1,
 		SPECIFICATION_GROUP: 2,
 		SPECIFICATION: 3,
 		ACTOR: 4
 	}
 
-	public static NAVIGATION_QUERY_PARAM = {
+	public static readonly NAVIGATION_QUERY_PARAM = {
 		TEST_SESSION_ID: 'session',
 		SPECIFICATION_GROUP_ID: 'group',
 		VIEW_PROPERTIES: 'viewProperties',
+    COMMUNITY_ID: 'community',
+    ORGANISATION_ID: 'organisation',
 		SYSTEM_ID: 'system',
 		TEST_CASE_ID: 'tc',
 		TEST_SUITE_ID: 'ts',
 		COPY: 'copy',
 		COPY_DEFAULT: 'copyDefault',
-		SNAPSHOT_ID: 'snapshot'
+		SNAPSHOT_ID: 'snapshot',
+    TAB: 'tab'
 	}
 
-	public static NAVIGATION_PATH_PARAM = {
+	public static readonly NAVIGATION_PATH_PARAM = {
 		DOMAIN_ID: 'domain_id',
 		SPECIFICATION_GROUP_ID: 'group_id',
 		SPECIFICATION_ID: 'spec_id',
@@ -371,11 +412,11 @@ export class Constants {
 		TAB: 'snapshot_id'
 	}
 
-  public static NAVIGATION_DATA = {
+  public static readonly NAVIGATION_DATA = {
     IMPLICIT_COMMUNITY_ID: 'implicitCommunityId'
   }
 
-	public static SYSTEM_CONFIG = {
+	public static readonly SYSTEM_CONFIG = {
 		SESSION_ALIVE_TIME: 'session_alive_time',
 		REST_API_ENABLED: 'rest_api_enabled',
 		REST_API_ADMIN_KEY: 'rest_api_admin_key',
@@ -384,15 +425,18 @@ export class Constants {
 		WELCOME_MESSAGE: 'welcome',
 		ACCOUNT_RETENTION_PERIOD: 'account_retention_period',
 		EMAIL_SETTINGS: 'email_settings',
+    SOFTWARE_VERSION_CHECK: 'software_version_check',
+    WELCOME_TITLE: 'welcome_title',
+    STARTUP_WIZARD: 'startup_wizard'
 	}
 
-	public static USER_SSO_STATUS = {
+	public static readonly USER_SSO_STATUS = {
 		NOT_MIGRATED: 1,
 		NOT_LINKED: 2,
 		LINKED: 3
 	}
 
-	public static REPORT_TYPE = {
+	public static readonly REPORT_TYPE = {
 		CONFORMANCE_STATEMENT_REPORT: 1,
 		CONFORMANCE_OVERVIEW_REPORT: 2,
 		TEST_CASE_REPORT: 3,
@@ -401,7 +445,7 @@ export class Constants {
 		CONFORMANCE_OVERVIEW_CERTIFICATE: 6
 	}
 
-  public static TRIGGER_FIRE_EXPRESSION_TYPE = {
+  public static readonly TRIGGER_FIRE_EXPRESSION_TYPE = {
     TEST_CASE_IDENTIFIER: 1,
     TEST_SUITE_IDENTIFIER: 2,
     ACTOR_IDENTIFIER: 3,
@@ -410,22 +454,46 @@ export class Constants {
     ORGANISATION_NAME: 6
   }
 
-	public static FILTER_COMMAND = {
+	public static readonly FILTER_COMMAND = {
 		TOGGLE: 1,
 		CLEAR: 2,
 		REFRESH: 3,
-    HIDE_PENDING_INDICATOR: 4
+    HIDE_PENDING_INDICATOR: 4,
+    CLEAR_WITHOUT_RELOAD: 5,
 	}
 
-	public static PASSWORD_REGEX = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[\!\@\#\&\(\)\[\{\}\]\:\;\'\"\,\?\/\\\*\~\$\^\+\=\<\>\_\-]).{8,}$/
-	public static END_OF_TEST_STEP = "-1"
-	public static END_OF_TEST_STEP_EXTERNAL = "-2"
-	public static LOG_EVENT_TEST_STEP = "-999"
-	public static EMAIL_REGEX = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-	public static DATA_URL_REGEX = /^data:.+\/(.+);base64,(.*)$/
-	public static VARIABLE_NAME_REGEX = /^[a-zA-Z][a-zA-Z\-_\.0-9]*$/
-	public static LOG_LEVEL_REGEX = /^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\] (DEBUG|ERROR|WARN|INFO) /
-	public static BADGE_PLACEHOLDER_REGEX = /(\$com\.gitb\.placeholder\.BadgeUrl\{[A-Z]+\|\-?\d+\|\-?\d+\|\-?\d+\|\-?\d+\})/g
+  public static readonly TEST_FILTER = {
+    SUCCEEDED: '0',
+    FAILED: '1',
+    INCOMPLETE: '2',
+    OPTIONAL: '3',
+    DISABLED: '4'
+  }
 
+  public static readonly TEST_SERVICE_TYPE = {
+    VALIDATION: 1,
+    PROCESSING: 2,
+    MESSAGING: 3
+  }
+
+  public static readonly TEST_SERVICE_API_TYPE = {
+    SOAP: 1,
+    REST: 2
+  }
+
+  public static readonly TEST_SERVICE_AUTH_TOKEN_PASSWORD_TYPE = {
+    DIGEST: 1,
+    TEXT: 2
+  }
+
+	public static readonly PASSWORD_REGEX = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[\!\@\#\&\(\)\[\{\}\]\:\;\'\"\,\?\/\\\*\~\$\^\+\=\<\>\_\-]).{8,}$/
+	public static readonly END_OF_TEST_STEP = "-1"
+	public static readonly END_OF_TEST_STEP_EXTERNAL = "-2"
+	public static readonly LOG_EVENT_TEST_STEP = "-999"
+	public static readonly EMAIL_REGEX = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+	public static readonly DATA_URL_REGEX = /^data:.+\/(.+);base64,(.*)$/
+	public static readonly VARIABLE_NAME_REGEX = /^[a-zA-Z][a-zA-Z\-_\.0-9]*$/
+	public static readonly LOG_LEVEL_REGEX = /^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\] (DEBUG|ERROR|WARN|INFO) /
+	public static readonly BADGE_PLACEHOLDER_REGEX = /(\$com\.gitb\.placeholder\.BadgeUrl\{[A-Z]+\|\-?\d+\|\-?\d+\|\-?\d+\|\-?\d+\})/g
 
 }

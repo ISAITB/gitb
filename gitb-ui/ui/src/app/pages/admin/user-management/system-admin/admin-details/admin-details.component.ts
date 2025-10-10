@@ -23,7 +23,6 @@ import {PopupService} from 'src/app/services/popup.service';
 import {RoutingService} from 'src/app/services/routing.service';
 import {UserService} from 'src/app/services/user.service';
 import {User} from 'src/app/types/user.type';
-import {SystemAdministrationTab} from '../../../system-administration/system-administration-tab.enum';
 import {BreadcrumbType} from 'src/app/types/breadcrumb-type';
 
 @Component({
@@ -109,7 +108,7 @@ export class AdminDetailsComponent extends BaseComponent implements OnInit {
   }
 
   cancelDetailAdmin() {
-    this.routingService.toSystemAdministration(SystemAdministrationTab.administrators)
+    this.routingService.toSystemAdministration(Constants.TAB.SYSTEM_ADMINISTRATION.ADMINISTRATORS)
   }
 
 }

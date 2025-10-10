@@ -31,7 +31,8 @@ import {LogLevel} from 'src/app/types/log-level';
 import {TestInteractionData} from 'src/app/types/test-interaction-data';
 import {filter, find} from 'lodash';
 import {PopupService} from 'src/app/services/popup.service';
-import {PagingControlsComponent} from '../paging-controls/paging-controls.component';
+import {PagingControlsApi} from '../paging-controls/paging-controls-api';
+import {NavigationControlsConfig} from '../navigation-controls/navigation-controls-config';
 
 @Component({
     selector: '[app-session-table]',
@@ -49,7 +50,7 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
   @Input() showCheckbox?: EventEmitter<boolean>
   @Input() showNavigationControls = true
   @Output() onRefresh = new EventEmitter<TestResultForDisplay>()
-  @ViewChild("pagingControls") pagingControls?: PagingControlsComponent
+  @ViewChild("pagingControls") pagingControls?: PagingControlsApi
 
   Constants = Constants
   columnCount = 0
@@ -386,6 +387,19 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
         this.popupService.success("Link copied to clipboard.")
       }
     })
+  }
+
+  toNavigationConfig(row: TestResultForDisplay): NavigationControlsConfig {
+    return {
+      systemId: row.systemId,
+      organisationId: row.organizationId,
+      communityId: row.communityId,
+      actorId: row.actorId,
+      specificationId: row.specificationId,
+      domainId: row.domainId,
+      testCaseId: row.testCaseId,
+      testSuiteId: row.testSuiteId,
+    }
   }
 
 }

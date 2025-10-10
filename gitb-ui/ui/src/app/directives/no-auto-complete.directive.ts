@@ -24,7 +24,9 @@ export class NoAutoCompleteDirective implements OnInit {
   constructor(private readonly renderer: Renderer2, private readonly element: ElementRef) { }
 
   ngOnInit(): void {
-    this.renderer.setAttribute(this.element.nativeElement, 'autocomplete', 'off')
+    if (!this.element.nativeElement.getAttribute('autocomplete')) {
+      this.renderer.setAttribute(this.element.nativeElement, 'autocomplete', 'off')
+    }
   }
 
 }

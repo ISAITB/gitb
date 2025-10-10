@@ -13,27 +13,27 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Subject } from 'rxjs';
-import { LogoutEventInfo } from '../types/logout-event-info.type'
-import { LoginEventInfo } from "../types/login-event-info.type";
-import { Constants } from './../common/constants'
-import { CookieService } from 'ngx-cookie-service'
-import { DataService } from './data.service'
-import { Utils } from '../common/utils';
-import { ROUTES } from '../common/global';
-import { RoutingService } from './routing.service';
+import {Injectable} from '@angular/core';
+import {HttpClient} from '@angular/common/http';
+import {ReplaySubject} from 'rxjs';
+import {LogoutEventInfo} from '../types/logout-event-info.type';
+import {LoginEventInfo} from '../types/login-event-info.type';
+import {Constants} from '../common/constants';
+import {CookieService} from 'ngx-cookie-service';
+import {DataService} from './data.service';
+import {Utils} from '../common/utils';
+import {ROUTES} from '../common/global';
+import {RoutingService} from './routing.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthProviderService {
 
-  private onLoginSource = new Subject<LoginEventInfo>()
-  private afterLoginSource = new Subject<LoginEventInfo>()
-  private onLogoutSource = new Subject<LogoutEventInfo>()
-  private onLogoutCompleteSource = new Subject<void>()
+  private onLoginSource = new ReplaySubject<LoginEventInfo>()
+  private afterLoginSource = new ReplaySubject<LoginEventInfo>()
+  private onLogoutSource = new ReplaySubject<LogoutEventInfo>()
+  private onLogoutCompleteSource = new ReplaySubject<void>()
   private authenticated: boolean = false
   public logoutSignalled: boolean = false
   private logoutOngoing: boolean = false

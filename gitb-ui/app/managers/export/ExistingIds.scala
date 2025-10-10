@@ -25,6 +25,7 @@ object ExistingIds {
     val map = mutable.Map[ImportItemType, mutable.Set[String]]()
     map += (ImportItemType.Domain -> mutable.Set[String]())
     map += (ImportItemType.DomainParameter -> mutable.Set[String]())
+    map += (ImportItemType.TestService -> mutable.Set[String]())
     map += (ImportItemType.Specification -> mutable.Set[String]())
     map += (ImportItemType.SpecificationGroup -> mutable.Set[String]())
     map += (ImportItemType.Actor -> mutable.Set[String]())

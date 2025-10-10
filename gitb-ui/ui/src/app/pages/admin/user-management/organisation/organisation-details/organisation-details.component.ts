@@ -13,11 +13,10 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, EventEmitter, OnInit, ViewChild} from '@angular/core';
+import {Component, EventEmitter, OnInit, ViewChild} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {Constants} from 'src/app/common/constants';
 import {OptionalCustomPropertyFormData} from 'src/app/components/optional-custom-property-form/optional-custom-property-form-data.type';
-import {BaseComponent} from 'src/app/pages/base-component.component';
 import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
 import {DataService} from 'src/app/services/data.service';
 import {OrganisationService} from 'src/app/services/organisation.service';
@@ -26,10 +25,7 @@ import {RoutingService} from 'src/app/services/routing.service';
 import {UserService} from 'src/app/services/user.service';
 import {TableColumnDefinition} from 'src/app/types/table-column-definition.type';
 import {User} from 'src/app/types/user.type';
-import {CommunityTab} from '../../community/community-details/community-tab.enum';
 import {OrganisationFormData} from '../organisation-form/organisation-form-data';
-import {OrganisationTab} from './OrganisationTab';
-import {TabsetComponent} from 'ngx-bootstrap/tabs';
 import {SystemService} from 'src/app/services/system.service';
 import {System} from 'src/app/types/system';
 import {BreadcrumbType} from 'src/app/types/breadcrumb-type';
@@ -43,13 +39,14 @@ import {LandingPageService} from 'src/app/services/landing-page.service';
 import {LegalNoticeService} from 'src/app/services/legal-notice.service';
 import {ErrorTemplateService} from 'src/app/services/error-template.service';
 import {OrganisationFormComponent} from '../organisation-form/organisation-form.component';
+import {BaseTabbedComponent} from '../../../../base-tabbed-component';
 
 @Component({
     selector: 'app-organisation-details',
     templateUrl: './organisation-details.component.html',
     standalone: false
 })
-export class OrganisationDetailsComponent extends BaseComponent implements OnInit, AfterViewInit {
+export class OrganisationDetailsComponent extends BaseTabbedComponent implements OnInit {
 
   orgId!: number
   communityId!: number
@@ -76,9 +73,6 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
   loaded = false
   savePending = false
   deletePending = false
-  tabToShow = OrganisationTab.systems
-  tabTriggers!: Record<OrganisationTab, {index: number, loader: () => any}>
-  @ViewChild('tabs', { static: false }) tabs?: TabsetComponent;
   @ViewChild('form') form?: OrganisationFormComponent
   showAdminInfo!: boolean
   showLandingPage!: boolean
@@ -95,7 +89,6 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
   loadApiInfo = new EventEmitter<void>()
 
   constructor(
-    protected readonly route: ActivatedRoute,
     private readonly confirmationDialogService: ConfirmationDialogService,
     private readonly organisationService: OrganisationService,
     private readonly userService: UserService,
@@ -107,21 +100,25 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
     private readonly landingPageService: LandingPageService,
     private readonly legalNoticeService: LegalNoticeService,
     private readonly errorTemplateService: ErrorTemplateService,
-    router: Router
+    router: Router,
+    route: ActivatedRoute
   ) {
-    super()
-    // Access the tab to show via router state to have it cleared upon refresh.
-    const tabParam = router.getCurrentNavigation()?.extras?.state?.tab
-    if (tabParam != undefined) {
-      this.tabToShow = OrganisationTab[tabParam as keyof typeof OrganisationTab]
-    }
+    super(router, route)
   }
 
   ngAfterViewInit(): void {
+    super.ngAfterViewInit()
     this.updateFormData()
-    setTimeout(() => {
-      this.triggerTab(this.tabToShow)
-    })
+  }
+
+  loadTab(tabIndex: number) {
+    if (tabIndex == Constants.TAB.ORGANISATION.SYSTEMS) {
+      this.showSystems();
+    } else if (tabIndex == Constants.TAB.ORGANISATION.USERS) {
+      this.showUsers();
+    } else {
+      this.showApiInfo()
+    }
   }
 
   private updateFormData() {
@@ -203,8 +200,6 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
     }
     this.propertyData.owner = this.organisation.id
     this.apiInfoVisible = this.isApiInfoVisible()
-    // Setup tab triggers
-    this.setupTabs()
     // Load form data
     const organisation$ = this.organisationService.getOrganisationById(this.orgId)
     const properties$ = this.communityService.getOrganisationParameterValues(this.organisation.id)
@@ -235,21 +230,6 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
     })
   }
 
-  private setupTabs() {
-    const temp: Partial<Record<OrganisationTab, {index: number, loader: () => any}>> = {}
-    temp[OrganisationTab.systems] = {index: 0, loader: () => {this.showSystems()}}
-    temp[OrganisationTab.users] = {index: 1, loader: () => {this.showUsers()}}
-    temp[OrganisationTab.apiKeys] = {index: 2, loader: () => {this.showApiInfo()}}
-    this.tabTriggers = temp as Record<OrganisationTab, {index: number, loader: () => any}>
-  }
-
-  triggerTab(tab: OrganisationTab) {
-    this.tabTriggers[tab].loader()
-    if (this.tabs) {
-      this.tabs.tabs[this.tabTriggers[tab].index].active = true
-    }
-  }
-
   protected getUsers() {
     return this.userService.getUsersByOrganisation(this.orgId)
   }
@@ -257,7 +237,6 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
   showUsers() {
     if (this.usersStatus.status == Constants.STATUS.NONE) {
       this.usersStatus.status = Constants.STATUS.PENDING
-
       this.getUsers().subscribe((data) => {
         for (let user of data) {
           user.ssoStatusText = this.dataService.userStatus(user.ssoStatus)
@@ -340,7 +319,7 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
   }
 
   cancelDetailOrganisation() {
-    this.routingService.toCommunity(this.communityId, CommunityTab.organisations)
+    this.routingService.toCommunity(this.communityId, Constants.TAB.COMMUNITY.ORGANISATIONS)
   }
 
   manageOrganisationTests() {

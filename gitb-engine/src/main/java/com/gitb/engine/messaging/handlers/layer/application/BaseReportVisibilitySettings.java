@@ -51,7 +51,7 @@ public abstract class BaseReportVisibilitySettings {
 
     protected boolean parseFlag(String name, Message message) {
         return Optional.ofNullable(getAndConvert(message.getFragments(), name, DataType.BOOLEAN_DATA_TYPE, BooleanType.class))
-                .map(value -> (Boolean) value.getValue())
+                .map(BooleanType::getValue)
                 .orElse(Boolean.TRUE);
     }
 

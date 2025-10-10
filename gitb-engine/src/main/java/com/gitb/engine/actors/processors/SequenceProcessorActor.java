@@ -64,7 +64,7 @@ public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStep
     }
 
     @Override
-    protected void init() throws Exception {
+    protected void init() {
 
         this.childActorUidIndexMap = new ConcurrentHashMap<>();
         this.childStepStatuses = new ConcurrentHashMap<>();
@@ -258,11 +258,6 @@ public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStep
                 completed();
             }
         }
-    }
-
-    @Override
-    public void postStop() throws Exception {
-        super.postStop();
     }
 
     private ActorRef startTestStepAtIndex(int index) {

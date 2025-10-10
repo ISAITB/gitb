@@ -25,7 +25,7 @@ class ConformanceDataLocator(val data: ConformanceData) {
 
   private var itemsPerType: Option[mutable.HashMap[ConformanceStatementItemType, ListBuffer[ConformanceStatementItem]]] = None
 
-  private def parseItems(items: Seq[ConformanceStatementItem]): Unit = {
+  private def parseItems(items: Iterable[ConformanceStatementItem]): Unit = {
     items.foreach { item =>
       if (!itemsPerType.get.contains(item.itemType)) {
         itemsPerType.get += (item.itemType -> new ListBuffer[ConformanceStatementItem])

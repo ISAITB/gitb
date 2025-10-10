@@ -15,13 +15,9 @@
 
 import {Injectable} from '@angular/core';
 import {NavigationEnd, NavigationExtras, NavigationStart, Router} from '@angular/router';
-import {CommunityTab} from '../pages/admin/user-management/community/community-details/community-tab.enum';
-import {ConformanceStatementTab} from '../pages/organisation/conformance-statement/conformance-statement-tab';
-import {OrganisationTab} from '../pages/admin/user-management/organisation/organisation-details/OrganisationTab';
 import {Constants} from '../common/constants';
 import {DataService} from './data.service';
 import {MenuItem} from '../types/menu-item.enum';
-import {SystemAdministrationTab} from '../pages/admin/system-administration/system-administration-tab.enum';
 import {BreadcrumbItem} from '../components/breadcrumb/breadcrumb-item';
 import {BreadcrumbType} from '../types/breadcrumb-type';
 
@@ -82,10 +78,8 @@ export class RoutingService {
       this.dataService.changePage({ menuItem: MenuItem.domainManagement })
     } else if (url.startsWith('/admin/users')) {
       this.dataService.changePage({ menuItem: MenuItem.communityManagement })
-    } else if (url.startsWith('/admin/export')) {
-      this.dataService.changePage({ menuItem: MenuItem.dataExport })
-    } else if (url.startsWith('/admin/import')) {
-      this.dataService.changePage({ menuItem: MenuItem.dataImport })
+    } else if (url.startsWith('/admin/data')) {
+      this.dataService.changePage({ menuItem: MenuItem.dataManagement })
     } else if (url.startsWith('/admin/system')) {
       this.dataService.changePage({ menuItem: MenuItem.systemAdministration })
     } else if (url.startsWith('/organisation/conformance')) {
@@ -150,7 +144,7 @@ export class RoutingService {
     }
   }
 
-  toOwnConformanceStatement(organisationId: number, systemId: number, actorId: number, snapshotId?: number, snapshotLabel?: string, tab?: ConformanceStatementTab) {
+  toOwnConformanceStatement(organisationId: number, systemId: number, actorId: number, snapshotId?: number, snapshotLabel?: string, tab?: number) {
     const pathParts = ['organisation', 'conformance', organisationId, 'system', systemId, 'actor', actorId]
     if (snapshotId != undefined) {
       pathParts.push('snapshot', snapshotId)
@@ -158,7 +152,7 @@ export class RoutingService {
     return this.navigate(MenuItem.myConformanceStatements, pathParts, this.addConformanceStatementExtras(tab, snapshotLabel))
   }
 
-  toConformanceStatement(organisationId: number, systemId: number, actorId: number, communityId: number, snapshotId?: number, snapshotLabel?: string, tab?: ConformanceStatementTab) {
+  toConformanceStatement(organisationId: number, systemId: number, actorId: number, communityId: number, snapshotId?: number, snapshotLabel?: string, tab?: number) {
     const pathParts = ['admin', 'users', 'community', communityId, 'organisation', organisationId, 'conformance', 'system', systemId, 'actor', actorId]
     if (snapshotId != undefined) {
       pathParts.push('snapshot', snapshotId)
@@ -166,15 +160,16 @@ export class RoutingService {
     return this.navigate(MenuItem.communityManagement, pathParts, this.addConformanceStatementExtras(tab, snapshotLabel))
   }
 
-  private addConformanceStatementExtras(tab?: ConformanceStatementTab, snapshotLabel?: string) {
-    let extras: NavigationExtras|undefined = undefined
-    if (tab != undefined || snapshotLabel != undefined) {
-      extras = {}
-      extras.state = {}
-      if (tab != undefined) {
-        extras.state[Constants.NAVIGATION_PATH_PARAM.TAB] = ConformanceStatementTab[tab]
+  private addConformanceStatementExtras(tab?: number, snapshotLabel?: string) {
+    let extras: NavigationExtras|undefined = this.addTabExtras(tab)
+    if (snapshotLabel != undefined) {
+      if (extras == undefined) {
+        extras = {}
+        if (extras.state == undefined) {
+          extras.state = {}
+        }
       }
-      if (snapshotLabel != undefined) {
+      if (extras.state != undefined) {
         extras.state[Constants.NAVIGATION_PATH_PARAM.SNAPSHOT_LABEL] = snapshotLabel
       }
     }
@@ -222,34 +217,38 @@ export class RoutingService {
     return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'organisation', 'create'])
   }
 
-  toOwnOrganisationDetails(tab?: OrganisationTab, viewProperties?: boolean) {
+  toOwnOrganisationDetails(tab?: number, viewProperties?: boolean) {
     const navigationPaths = ['settings', 'organisation']
     if (viewProperties == true) {
       if (tab != undefined) {
-        return this.navigate(MenuItem.myOrganisation, navigationPaths, { state: { tab: OrganisationTab[tab] }, queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.VIEW_PROPERTIES, true) })
+        const extras = this.addTabExtras(tab)!
+        extras.queryParams = this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.VIEW_PROPERTIES, true)
+        return this.navigate(MenuItem.myOrganisation, navigationPaths, extras)
       } else {
         return this.navigate(MenuItem.myOrganisation, navigationPaths, { queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.VIEW_PROPERTIES, true) })
       }
     } else {
       if (tab != undefined) {
-        return this.navigate(MenuItem.myOrganisation, navigationPaths, { state: { tab: OrganisationTab[tab] } })
+        return this.navigate(MenuItem.myOrganisation, navigationPaths, this.addTabExtras(tab))
       } else {
         return this.navigate(MenuItem.myOrganisation, navigationPaths)
       }
     }
   }
 
-  toOrganisationDetails(communityId: number, organisationId: number, tab?: OrganisationTab, viewProperties?: boolean) {
+  toOrganisationDetails(communityId: number, organisationId: number, tab?: number, viewProperties?: boolean) {
     let navigationPaths = ['admin', 'users', 'community', communityId, 'organisation', organisationId]
     if (viewProperties == true) {
       if (tab != undefined) {
-        return this.navigate(MenuItem.communityManagement, navigationPaths, { state: { tab: OrganisationTab[tab] }, queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.VIEW_PROPERTIES, true) })
+        const extras = this.addTabExtras(tab)!
+        extras.queryParams = this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.VIEW_PROPERTIES, true)
+        return this.navigate(MenuItem.communityManagement, navigationPaths, extras)
       } else {
         return this.navigate(MenuItem.communityManagement, navigationPaths, { queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.VIEW_PROPERTIES, true) })
       }
     } else {
       if (tab != undefined) {
-        return this.navigate(MenuItem.communityManagement, navigationPaths, { state: { tab: OrganisationTab[tab] } })
+        return this.navigate(MenuItem.communityManagement, navigationPaths, this.addTabExtras(tab))
       } else {
         return this.navigate(MenuItem.communityManagement, navigationPaths)
       }
@@ -302,6 +301,14 @@ export class RoutingService {
 
   toOwnTestSuiteExecution(organisationId: number, systemId: number, actorId: number, testSuiteId: number) {
     return this.navigate(MenuItem.myConformanceStatements, ['organisation', 'test', organisationId, systemId, actorId, 'execute'], { queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.TEST_SUITE_ID, testSuiteId)})
+  }
+
+  toStatementExecution(communityId: number, organisationId: number, systemId: number, actorId: number) {
+    return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'organisation', organisationId, 'test', systemId, actorId, 'execute'])
+  }
+
+  toOwnStatementExecution(organisationId: number, systemId: number, actorId: number) {
+    return this.navigate(MenuItem.myConformanceStatements, ['organisation', 'test', organisationId, systemId, actorId, 'execute'])
   }
 
   toCreateDomain() {
@@ -372,9 +379,9 @@ export class RoutingService {
     return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', 'create'])
   }
 
-  toCommunity(communityId: number, tab?: CommunityTab) {
+  toCommunity(communityId: number, tab?: number) {
     if (tab != undefined) {
-      return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId], { state: { tab: CommunityTab[tab] } })
+      return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId], this.addTabExtras(tab))
     } else {
       return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId])
     }
@@ -492,21 +499,25 @@ export class RoutingService {
     return this.navigate(MenuItem.serviceHealthDashboard, ['admin', 'health'])
   }
 
-  toConformanceDashboard() {
-    return this.navigate(MenuItem.conformanceDashboard, ['admin', 'conformance'])
+  toConformanceDashboard(communityId?: number, organisationId?: number, systemId?: number, snapshotId?: number, replaceUrl?: boolean) {
+    return this.navigate(MenuItem.conformanceDashboard, ['admin', 'conformance'], {
+      queryParams: this.createMultipleQueryParams([
+        {name: Constants.NAVIGATION_QUERY_PARAM.COMMUNITY_ID, value: communityId},
+        {name: Constants.NAVIGATION_QUERY_PARAM.ORGANISATION_ID, value: organisationId},
+        {name: Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID, value: systemId},
+        {name: Constants.NAVIGATION_QUERY_PARAM.SNAPSHOT_ID, value: snapshotId}
+      ]),
+      replaceUrl: replaceUrl
+    })
   }
 
-  toDataImport() {
-    return this.navigate(MenuItem.dataImport, ['admin', 'import'])
+  toDataManagement() {
+    return this.navigate(MenuItem.dataManagement, ['admin', 'data'])
   }
 
-  toDataExport() {
-    return this.navigate(MenuItem.dataExport, ['admin', 'export'])
-  }
-
-  toSystemAdministration(tab?: SystemAdministrationTab) {
+  toSystemAdministration(tab?: number) {
     if (tab != undefined) {
-      return this.navigate(MenuItem.systemAdministration, [ 'admin', 'system' ], { state: { tab: SystemAdministrationTab[tab] } })
+      return this.navigate(MenuItem.systemAdministration, [ 'admin', 'system' ], this.addTabExtras(tab))
     } else {
       return this.navigate(MenuItem.systemAdministration, [ 'admin', 'system' ])
     }
@@ -523,7 +534,11 @@ export class RoutingService {
   private addTabExtras(tabIndex?: number) {
     let extras: NavigationExtras|undefined = undefined
     if (tabIndex != undefined) {
-      extras = { state: { tab: tabIndex }}
+      extras = {
+        queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.TAB, tabIndex),
+        state: { tab: tabIndex },
+        replaceUrl: true
+      }
     }
     return extras
   }
@@ -641,19 +656,19 @@ export class RoutingService {
     return crumbs
   }
 
-  organisationBreadcrumbs(communityId: number, organisationId: number, label?: string): BreadcrumbItem[] {
+  organisationBreadcrumbs(communityId: number, organisationId: number, label?: string, skipUpdate?: boolean): BreadcrumbItem[] {
     const crumbs = this.communityBreadcrumbs(communityId)
     let action: Function|undefined
     if (organisationId >= 0) {
       action = (() => this.toOrganisationDetails(communityId, organisationId))
     }
     crumbs.push({ type: BreadcrumbType.organisation, typeId: organisationId, label: label, action: action })
-    if (label) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    if (label && !skipUpdate) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
     return crumbs
   }
 
   systemBreadcrumbs(communityId: number, organisationId: number, organisationLabel: string|undefined, systemId: number, label?: string, skipUpdate?: boolean): BreadcrumbItem[] {
-    const crumbs = this.organisationBreadcrumbs(communityId, organisationId, organisationLabel)
+    const crumbs = this.organisationBreadcrumbs(communityId, organisationId, organisationLabel, true)
     let action: Function|undefined
     if (systemId >= 0) {
       action = (() => this.toSystemDetails(communityId, organisationId, systemId))
@@ -708,7 +723,7 @@ export class RoutingService {
   conformanceStatementsBreadcrumbs(communityId: number, organisationId: number, organisationLabel?: string, systemId?: number, systemLabel?: string, snapshotId?:number, snapshotLabel?: string, skipUpdate?: boolean): BreadcrumbItem[] {
     let crumbs: BreadcrumbItem[]
     if (systemId == undefined) {
-      crumbs = this.organisationBreadcrumbs(communityId, organisationId, organisationLabel)
+      crumbs = this.organisationBreadcrumbs(communityId, organisationId, organisationLabel, true)
     } else {
       crumbs = this.systemBreadcrumbs(communityId, organisationId, organisationLabel, systemId, systemLabel, true)
     }
@@ -795,14 +810,8 @@ export class RoutingService {
     return crumbs
   }
 
-  exportBreadcrumbs(): BreadcrumbItem[] {
-    const crumbs = [{ type: BreadcrumbType.export, label: 'Data export', action: (() => this.toDataExport()) }]
-    this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
-    return crumbs
-  }
-
-  importBreadcrumbs(): BreadcrumbItem[] {
-    const crumbs = [{ type: BreadcrumbType.import, label: 'Data import', action: (() => this.toDataImport()) }]
+  dataManagementBreadcrumbs(): BreadcrumbItem[] {
+    const crumbs = [{ type: BreadcrumbType.dataManagement, label: 'Data management', action: (() => this.toDataManagement()) }]
     this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
     return crumbs
   }

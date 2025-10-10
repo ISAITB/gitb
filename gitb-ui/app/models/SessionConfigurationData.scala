@@ -22,7 +22,8 @@ import java.util
 case class SessionConfigurationData(statementParameters: Option[List[TypedActorConfiguration]],
                                     domainParameters: Option[TypedActorConfiguration],
                                     organisationParameters: Option[TypedActorConfiguration],
-                                    systemParameters: Option[TypedActorConfiguration]) {
+                                    systemParameters: Option[TypedActorConfiguration],
+                                    testServiceParameters: Option[List[TypedActorConfiguration]]) {
 
   def apply(aggregatedConfiguration: util.List[ActorConfiguration]): Unit = {
     import scala.jdk.CollectionConverters._
@@ -38,7 +39,9 @@ case class SessionConfigurationData(statementParameters: Option[List[TypedActorC
     if (systemParameters.nonEmpty) {
       aggregatedConfiguration.add(toActorConfiguration(systemParameters.get))
     }
-
+    if (testServiceParameters.nonEmpty) {
+      aggregatedConfiguration.addAll(testServiceParameters.get.map(toActorConfiguration).asJava)
+    }
   }
 
   private def toActorConfiguration(typedActorConfiguration: TypedActorConfiguration) = {

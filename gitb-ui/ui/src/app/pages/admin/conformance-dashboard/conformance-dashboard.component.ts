@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, NgZone, OnInit, ViewChild} from '@angular/core';
+import {Component, NgZone, OnInit, ViewChild} from '@angular/core';
 import {BsModalService} from 'ngx-bootstrap/modal';
 import {Observable, of} from 'rxjs';
 import {Constants} from 'src/app/common/constants';
@@ -21,12 +21,6 @@ import {ConformanceService} from 'src/app/services/conformance.service';
 import {DataService} from 'src/app/services/data.service';
 import {RoutingService} from 'src/app/services/routing.service';
 import {ConformanceCertificateSettings} from 'src/app/types/conformance-certificate-settings';
-import {ConformanceResultFull} from 'src/app/types/conformance-result-full';
-import {ConformanceResultFullList} from 'src/app/types/conformance-result-full-list';
-import {ConformanceResultFullWithTestSuites} from 'src/app/types/conformance-result-full-with-test-suites';
-import {FilterState} from 'src/app/types/filter-state';
-import {TestResultSearchCriteria} from 'src/app/types/test-result-search-criteria';
-import {ConformanceSnapshot} from 'src/app/types/conformance-snapshot';
 import {ConformanceSnapshotsModalComponent} from 'src/app/modals/conformance-snapshots-modal/conformance-snapshots-modal.component';
 import {Community} from 'src/app/types/community';
 import {Organisation} from 'src/app/types/organisation.type';
@@ -43,8 +37,11 @@ import {FilterUpdate} from 'src/app/components/test-filter/filter-update';
 import {
   BaseConformanceItemDisplayComponent
 } from 'src/app/components/base-conformance-item-display/base-conformance-item-display.component';
-import {PagingControlsComponent} from '../../../components/paging-controls/paging-controls.component';
 import {PagingEvent} from '../../../components/paging-controls/paging-event';
+import {CheckboxOptionState} from '../../../components/checkbox-option-panel/checkbox-option-state';
+import {ConformanceResultFullWithTestSuites} from '../../../types/conformance-result-full-with-test-suites';
+import {ActivatedRoute} from '@angular/router';
+import {MultiSelectFilterComponentApi} from '../../../components/multi-select-filter/multi-select-filter-component-api';
 
 @Component({
     selector: 'app-conformance-dashboard',
@@ -54,77 +51,56 @@ import {PagingEvent} from '../../../components/paging-controls/paging-event';
 })
 export class ConformanceDashboardComponent extends BaseConformanceItemDisplayComponent implements OnInit {
 
-  @ViewChild("pagingControls") pagingControls?: PagingControlsComponent
+  @ViewChild("communityDropdown") communityDropdown?: MultiSelectFilterComponentApi<Community>
+  @ViewChild("organisationDropdown") organisationDropdown?: MultiSelectFilterComponentApi<Organisation>
+  @ViewChild("systemDropdown") systemDropdown?: MultiSelectFilterComponentApi<System>
 
-  exportPending = false
-  dataStatus = {status: Constants.STATUS.PENDING}
-  filterState: FilterState = {
-    filters: [ Constants.FILTER_TYPE.SPECIFICATION, Constants.FILTER_TYPE.SPECIFICATION_GROUP, Constants.FILTER_TYPE.ACTOR, Constants.FILTER_TYPE.ORGANISATION, Constants.FILTER_TYPE.SYSTEM, Constants.FILTER_TYPE.ORGANISATION_PROPERTY, Constants.FILTER_TYPE.SYSTEM_PROPERTY, Constants.FILTER_TYPE.RESULT, Constants.FILTER_TYPE.END_TIME ],
-    updatePending: false,
-    updateDisabled: false
-  }
-  communityId?: number
   selectedCommunityId?: number
   selectedOrganisationId?: number
   selectedSystemId?: number
-  columnCount!: number
-  expandedStatements: { [key: string]: any, count: number } = {
-    count: 0
-  }
-  conformanceStatements: ConformanceResultFullWithTestSuites[] = []
   settings?: Partial<ConformanceCertificateSettings>
-  Constants = Constants
-  filtersVisible = false
-
-  sortOrder = Constants.ORDER.ASC
-  sortColumn = Constants.FILTER_TYPE.COMMUNITY
-
-  latestSnapshotButtonLabel = 'Latest conformance status'
-  snapshotButtonLabel = this.latestSnapshotButtonLabel
-  activeConformanceSnapshot?: ConformanceSnapshot
-
-  treeView = true
   availableCommunities?: Community[]
   availableOrganisations?: Organisation[]
   availableSystems?: System[]
-  filterCommands = new EventEmitter<number>()
   exportOverviewPending = false
   communitySelectConfig?: MultiSelectConfig<Community>
   organisationSelectConfig?: MultiSelectConfig<Organisation>
   systemSelectConfig?: MultiSelectConfig<System>
+  initialCommunityId?: number
+  initialisingSnapshots = false
 
   constructor(
     dataService: DataService,
     zone: NgZone,
-    private readonly conformanceService: ConformanceService,
+    conformanceService: ConformanceService,
     private readonly modalService: BsModalService,
     private readonly routingService: RoutingService,
     private readonly communityService: CommunityService,
     private readonly organisationService: OrganisationService,
     private readonly systemService: SystemService,
     private readonly reportSupportService: ReportSupportService,
-  ) { super(dataService, zone) }
+    private readonly route: ActivatedRoute
+  ) { super(dataService, zone, conformanceService) }
 
   ngOnInit(): void {
-    this.filterState.names = {}
-    this.filterState.names[Constants.FILTER_TYPE.RESULT] = 'Status'
-    this.filterState.names[Constants.FILTER_TYPE.END_TIME] = 'Last update time'
-		if (this.dataService.isSystemAdmin) {
-			this.columnCount = 11
-			this.filterState.filters.push(Constants.FILTER_TYPE.DOMAIN)
-			this.filterState.filters.push(Constants.FILTER_TYPE.COMMUNITY)
-    } else if (this.dataService.isCommunityAdmin) {
-      this.sortColumn = Constants.FILTER_TYPE.ORGANISATION
+    this.latestSnapshotButtonLabel = 'Latest conformance status'
+    this.snapshotButtonLabel = this.latestSnapshotButtonLabel
+		if (this.dataService.isCommunityAdmin) {
 			this.communityId = this.dataService.community!.id
       this.selectedCommunityId = this.communityId
-			if (this.dataService.community!.domain == undefined) {
-				this.columnCount = 10
-				this.filterState.filters.push(Constants.FILTER_TYPE.DOMAIN)
-      } else {
-				this.columnCount = 9
+      this.initialCommunityId = this.selectedCommunityId
+    } else {
+      if (this.route.snapshot.queryParamMap.has(Constants.NAVIGATION_QUERY_PARAM.COMMUNITY_ID)) {
+        this.initialCommunityId = Number(this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.COMMUNITY_ID))
       }
     }
-    // Tree view select configs - start
+    if (this.route.snapshot.queryParamMap.has(Constants.NAVIGATION_QUERY_PARAM.ORGANISATION_ID)) {
+      this.selectedOrganisationId = Number(this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.ORGANISATION_ID))
+    }
+    if (this.route.snapshot.queryParamMap.has(Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID)) {
+      this.selectedSystemId = Number(this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID))
+    }
+    // Tree view selection configs - start
     if (this.dataService.isSystemAdmin) {
       this.communitySelectConfig = {
         name: 'availableCommunities',
@@ -132,9 +108,6 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
         filterLabel: 'Select community',
         singleSelection: true,
         singleSelectionPersistent: true,
-        clearItems: new EventEmitter<void>(),
-        replaceItems: new EventEmitter<Community[]>(),
-        replaceSelectedItems: new EventEmitter<Community[]>()
       }
     }
     this.organisationSelectConfig = {
@@ -143,9 +116,6 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
       filterLabel: `Select ${this.dataService.labelOrganisationLower()}`,
       singleSelection: true,
       singleSelectionPersistent: true,
-      clearItems: new EventEmitter<void>(),
-      replaceItems: new EventEmitter<Organisation[]>(),
-      replaceSelectedItems: new EventEmitter<Organisation[]>()
     }
     this.systemSelectConfig = {
       name: 'availableSystems',
@@ -153,205 +123,28 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
       filterLabel: `Select ${this.dataService.labelSystemLower()}`,
       singleSelection: true,
       singleSelectionPersistent: true,
-      clearItems: new EventEmitter<void>(),
-      replaceItems: new EventEmitter<System[]>(),
-      replaceSelectedItems: new EventEmitter<System[]>()
     }
     // Tree view select configs - end
     this.routingService.conformanceDashboardBreadcrumbs()
+    if (this.route.snapshot.queryParamMap.has(Constants.NAVIGATION_QUERY_PARAM.SNAPSHOT_ID)) {
+      const initialSnapshotId = Number(this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.SNAPSHOT_ID))
+      this.activeConformanceSnapshot = {
+        id: initialSnapshotId
+      }
+      // Initialise snapshots if needed.
+      this.initialisingSnapshots = true
+      this.conformanceService.getConformanceSnapshot(initialSnapshotId).subscribe((selectedSnapshot) => {
+        this.snapshotButtonLabel = selectedSnapshot.label
+        this.activeConformanceSnapshot = selectedSnapshot
+      }).add(() => {
+        this.initialisingSnapshots = false
+      })
+    }
   }
 
   ngAfterViewInit() {
     super.ngAfterViewInit();
-    this.treeViewToggled()
-  }
-
-  toggleFilters() {
-    this.filtersVisible = !this.filtersVisible
-    this.filterCommands.emit(Constants.FILTER_COMMAND.TOGGLE)
-  }
-
-  clearFilters() {
-    this.filtersVisible = false
-    this.filterCommands.emit(Constants.FILTER_COMMAND.CLEAR)
-  }
-
-  refreshFilters() {
-    this.filterCommands.emit(Constants.FILTER_COMMAND.REFRESH)
-  }
-
-	getCurrentSearchCriteria() {
-    let searchCriteria: TestResultSearchCriteria = {}
-    if (this.dataService.isCommunityAdmin) {
-      searchCriteria.communityIds = [this.dataService.community!.id]
-      if (this.dataService.community!.domain != undefined) {
-        searchCriteria.domainIds = [this.dataService.community!.domain.id]
-      }
-    }
-    let filterData:{[key: string]: any}|undefined = undefined
-    if (this.filterState?.filterData) {
-      filterData = this.filterState.filterData()
-    }
-    if (filterData) {
-      if (this.dataService.isSystemAdmin) {
-        searchCriteria.communityIds = filterData[Constants.FILTER_TYPE.COMMUNITY]
-        searchCriteria.domainIds = filterData[Constants.FILTER_TYPE.DOMAIN]
-      } else {
-        if (this.dataService.community!.domain == undefined) {
-          searchCriteria.domainIds = filterData[Constants.FILTER_TYPE.DOMAIN]
-        }
-      }
-      searchCriteria.specIds = filterData[Constants.FILTER_TYPE.SPECIFICATION]
-      searchCriteria.specGroupIds = filterData[Constants.FILTER_TYPE.SPECIFICATION_GROUP]
-      searchCriteria.actorIds = filterData[Constants.FILTER_TYPE.ACTOR]
-      searchCriteria.organisationIds = filterData[Constants.FILTER_TYPE.ORGANISATION]
-      searchCriteria.systemIds = filterData[Constants.FILTER_TYPE.SYSTEM]
-      searchCriteria.results = filterData[Constants.FILTER_TYPE.RESULT]
-      searchCriteria.endTimeBeginStr = filterData.endTimeBeginStr
-      searchCriteria.endTimeEndStr = filterData.endTimeEndStr
-      searchCriteria.organisationProperties = filterData.organisationProperties
-      searchCriteria.systemProperties = filterData.systemProperties
-    }
-    if (this.communityId == undefined) {
-      if (searchCriteria.communityIds != undefined && searchCriteria.communityIds.length == 1) {
-        const communityIdFromFilters = searchCriteria.communityIds[0]
-        if (communityIdFromFilters != this.selectedCommunityId) {
-          this.snapshotButtonLabel = this.latestSnapshotButtonLabel
-          this.activeConformanceSnapshot = undefined
-          this.selectedCommunityId = communityIdFromFilters
-        }
-      } else {
-        this.snapshotButtonLabel = this.latestSnapshotButtonLabel
-        this.activeConformanceSnapshot = undefined
-        this.selectedCommunityId = undefined
-      }
-    }
-		return searchCriteria
-  }
-
-	private getConformanceStatementsInternal(pagingInfo: PagingEvent, fullResults: boolean, forExport: boolean) {
-    return new Observable<ConformanceResultFullList>((subscriber) => {
-      let params = this.getCurrentSearchCriteria()
-      this.conformanceService.getConformanceOverview(params, this.activeConformanceSnapshot?.id, fullResults, forExport, this.sortColumn, this.sortOrder, pagingInfo.targetPage, pagingInfo.targetPageSize)
-        .subscribe((data: ConformanceResultFullList) => {
-          for (let conformanceStatement of data.data) {
-            const completedCountToConsider = Number(conformanceStatement.completedToConsider)
-            const failedCountToConsider = Number(conformanceStatement.failedToConsider)
-            const undefinedCountToConsider = Number(conformanceStatement.undefinedToConsider)
-            conformanceStatement.counters = {
-              completed: Number(conformanceStatement.completed),
-              failed: Number(conformanceStatement.failed),
-              other: Number(conformanceStatement.undefined),
-              completedOptional: Number(conformanceStatement.completedOptional),
-              failedOptional: Number(conformanceStatement.failedOptional),
-              otherOptional: Number(conformanceStatement.undefinedOptional),
-              completedToConsider: completedCountToConsider,
-              failedToConsider: failedCountToConsider,
-              otherToConsider: undefinedCountToConsider
-            }
-            conformanceStatement.overallStatus = this.dataService.conformanceStatusForTests(completedCountToConsider, failedCountToConsider, undefinedCountToConsider)
-          }
-          subscriber.next(data)
-        }).add(() => {
-        this.dataStatus = {status: Constants.STATUS.FINISHED}
-        subscriber.complete()
-      })
-    })
-  }
-
-	getConformanceStatements() {
-    this.selectPage({ targetPage: 1, targetPageSize: this.pagingControls?.getCurrentStatus().pageSize! })
-  }
-
-  testSuiteLoader() {
-    return ((item: ConformanceStatementItem) => {
-      return this.conformanceService.getConformanceStatus(item.id, this.selectedSystemId!, this.activeConformanceSnapshot?.id)
-    })
-  }
-
-	onExpand(statement: ConformanceResultFull) {
-		if (this.isExpanded(statement)) {
-			this.collapse(statement)
-    } else {
-      this.expand(statement)
-      if (statement.testSuites == undefined) {
-        statement.testSuitesLoaded = false
-        this.conformanceService.getConformanceStatus(statement.actorId, statement.systemId, this.activeConformanceSnapshot?.id)
-        .subscribe((data) => {
-          if (data) {
-            this.dataService.organiseTestSuitesForDisplay(data.testSuites)
-            statement.hasBadge = data.summary.hasBadge
-            statement.testSuites = data.testSuites
-          }
-        }).add(() => {
-          statement.testSuitesLoaded = true
-        })
-      }
-    }
-  }
-
-	collapse(statement: ConformanceResultFull) {
-		delete this.expandedStatements[statement.systemId+"_"+statement.actorId]
-		this.expandedStatements.count -= 1
-  }
-
-	expand(statement: ConformanceResultFull) {
-		this.expandedStatements[statement.systemId+"_"+statement.actorId] = true
-		this.expandedStatements.count += 1
-  }
-
-	isExpanded(statement: ConformanceResultFull) {
-		return this.expandedStatements[statement.systemId+"_"+statement.actorId] != undefined
-  }
-
-	showCollapseAll() {
-		return this.expandedStatements.count > 0
-  }
-
-	onCollapseAll() {
-		this.expandedStatements = { count: 0 }
-  }
-
-	onExportConformanceStatementsAsCsv() {
-		this.exportPending = true
-    const pagingInfo = {
-      targetPage: 1,
-      targetPageSize: 100000000
-    }
-		this.getConformanceStatementsInternal(pagingInfo, true, true)
-		.subscribe((data) => {
-			let headers: string[] = []
-			let columnMap: string[] = []
-			if (!this.dataService.isCommunityAdmin) {
-				headers.push("Community")
-				columnMap.push("communityName")
-      }
-			headers.push(this.dataService.labelOrganisation())
-			columnMap.push("organizationName")
-			if (data.orgParameters != undefined) {
-				for (let param of data.orgParameters) {
-					headers.push(this.dataService.labelOrganisation() + " ("+param+")")
-					columnMap.push("orgparam_"+param)
-        }
-      }
-			headers.push(this.dataService.labelSystem())
-			columnMap.push("systemName")
-			if (data.sysParameters != undefined) {
-				for (let param of data.sysParameters) {
-					headers.push(this.dataService.labelSystem() + " ("+param+")")
-					columnMap.push("sysparam_"+param)
-        }
-      }
-			if (!this.dataService.isCommunityAdmin || this.dataService.isCommunityAdmin && this.dataService.community!.domain == undefined) {
-				headers.push(this.dataService.labelDomain())
-				columnMap.push("domainName")
-      }
-			headers = headers.concat([this.dataService.labelSpecification(), this.dataService.labelActor(), "Test suite", "Test case", "Result"])
-			columnMap = columnMap.concat(["specName", "actorName", "testSuiteName", "testCaseName", "result"])
-			this.dataService.exportPropertiesAsCsv(headers, columnMap, data.data)
-    }).add(() => {
-      this.exportPending = false
-    })
+    this.viewTypeToggled(true)
   }
 
   private countTestCases(item: ConformanceStatementItem): number {
@@ -377,10 +170,10 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     let reportObservable: Observable<any>
     if (event.statementReport) {
       const testCaseCount = this.countTestCases(event.item)
-      reportObservable = this.reportSupportService.handleConformanceStatementReport(this.selectedCommunityId!, event.actorId!, this.selectedSystemId!, this.activeConformanceSnapshot?.id, event.format, true, testCaseCount)
+      reportObservable = this.reportSupportService.handleConformanceStatementReport(this.selectedCommunityId!, event.actorId!, this.selectedSystemId!, this.snapshotIdToUse(), event.format, true, testCaseCount)
     } else {
       const reportLevel = this.determineReportLevel(event)
-      reportObservable = this.reportSupportService.handleConformanceOverviewReport(this.selectedCommunityId!, this.selectedSystemId!, event.item.id, reportLevel, this.activeConformanceSnapshot?.id, event.format, this.dataService.conformanceStatusForConformanceItem(event.item))
+      reportObservable = this.reportSupportService.handleConformanceOverviewReport(this.selectedCommunityId!, this.selectedSystemId!, event.item.id, reportLevel, this.snapshotIdToUse(), event.format, this.dataService.conformanceStatusForConformanceItem(event.item))
     }
     reportObservable.subscribe(() => {
       // Do nothing further
@@ -393,67 +186,13 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     })
   }
 
-	onExportConformanceStatement(statement: ConformanceResultFull, format: 'xml'|'pdf') {
-    if (format == 'xml') {
-      statement.exportXmlPending = true
-    } else {
-      statement.exportPdfPending = true
-    }
-    const testCaseCount = statement.completed + statement.failed + statement.undefined
-    this.reportSupportService.handleConformanceStatementReport(statement.communityId, statement.actorId, statement.systemId, this.activeConformanceSnapshot?.id, format, true, testCaseCount)
-    .subscribe(() => {
-      // Do nothing further
-    })
-    .add(() => {
-      if (format == 'xml') {
-        statement.exportXmlPending = false
-      } else {
-        statement.exportPdfPending = false
-      }
-    })
-  }
-
-  toTestSession(sessionId: string) {
-    this.routingService.toSessionDashboard(sessionId)
-  }
-
-  doPageNavigation(event: PagingEvent) {
-    this.selectPage(event)
-  }
-
-  private selectPage(pagingInfo: PagingEvent) {
-    this.filterState.updatePending = true
-    this.getConformanceStatementsInternal(pagingInfo, false, false)
-    .subscribe((data) => {
-			this.conformanceStatements = data.data
-      this.pagingControls?.updateStatus(pagingInfo.targetPage, data.count)
-			this.onCollapseAll()
-    }).add(() => {
-			this.filterState.updatePending = false
-    })
-  }
-
-  sort(column: string) {
-    if (column == this.sortColumn) {
-      if (this.sortOrder == Constants.ORDER.DESC) {
-        this.sortOrder = Constants.ORDER.ASC
-      } else {
-        this.sortOrder = Constants.ORDER.DESC
-      }
-    } else {
-      this.sortColumn = column
-      this.sortOrder = Constants.ORDER.DESC
-    }
-    this.getConformanceStatements()
-  }
-
   manageConformanceSnapshots() {
     if (this.selectedCommunityId != undefined) {
       const modalRef = this.modalService.show(ConformanceSnapshotsModalComponent, {
         class: 'modal-lg',
         initialState: {
           communityId: this.selectedCommunityId!,
-          currentlySelectedSnapshot: this.activeConformanceSnapshot?.id
+          currentlySelectedSnapshot: this.snapshotIdToUse()
         }
       })
       modalRef.content!.select.subscribe((selectedSnapshot) => {
@@ -461,14 +200,16 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
           this.snapshotButtonLabel = selectedSnapshot.label
           if (this.activeConformanceSnapshot == undefined || this.activeConformanceSnapshot.id != selectedSnapshot.id) {
             this.activeConformanceSnapshot = selectedSnapshot
-            if (this.treeView) {
-              this.updateTreeViewForSnapshotChange()
+            this.updateRouting()
+            if (this.listView) {
+              this.listViewTable?.reloadData()
             } else {
-              this.getConformanceStatements()
+              this.updateTreeViewForSnapshotChange()
             }
           }
           this.activeConformanceSnapshot = selectedSnapshot
         } else {
+          this.updateRouting()
           this.viewLatestConformanceSnapshot()
         }
       })
@@ -482,10 +223,10 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
       reload = true
     }
     if (reload) {
-      if (this.treeView) {
-        this.updateTreeViewForSnapshotChange()
+      if (this.listView) {
+        this.listViewTable?.reloadData()
       } else {
-        this.getConformanceStatements()
+        this.updateTreeViewForSnapshotChange()
       }
     }
     this.snapshotButtonLabel = this.latestSnapshotButtonLabel
@@ -495,8 +236,19 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     this.communityChanged(true)
   }
 
-  treeViewToggled() {
-    if (this.treeView) {
+  viewTypeToggled(fromPageInit?: boolean) {
+    if (this.listView) {
+      this.selectedCommunityId = this.communityId
+      this.selectedOrganisationId = undefined
+      this.selectedSystemId = undefined
+      this.availableOrganisations = undefined
+      this.availableSystems = undefined
+      this.statements = []
+      if (this.dataService.isSystemAdmin) {
+        // Force a switch back to the latest snapshot and refresh
+        this.viewLatestConformanceSnapshot(true)
+      }
+    } else {
       this.resetStatementFilters()
       let observable: Observable<Community[]>
       if (this.availableCommunities == undefined) {
@@ -511,49 +263,55 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
         observable = of(this.availableCommunities)
       }
       observable.subscribe((data) => {
-        this.availableCommunities = data
-        let communityToApply: Community|undefined
-        if (data.length == 1) {
-          communityToApply = data[0]
-          this.selectedCommunityId = communityToApply.id
-        } else {
-          this.selectedCommunityId = undefined
-        }
-        if (this.communitySelectConfig) {
-          setTimeout(() => {
-            this.communitySelectConfig!.replaceItems!.emit(this.availableCommunities)
-            this.communitySelectConfig!.replaceSelectedItems!.emit((communityToApply == undefined)?[]:[communityToApply])
-          }, 1)
-        }
-        if (this.dataService.isSystemAdmin) {
-          // Force a switch back to the latest snapshot and refresh
-          this.viewLatestConformanceSnapshot(true)
-        } else {
-          this.communityChanged(true)
-        }
+        setTimeout(() => {
+          this.availableCommunities = data
+          let communityToApply: Community|undefined
+          if (data.length == 1) {
+            communityToApply = data[0]
+          } else if (this.initialCommunityId != undefined) {
+            communityToApply = data.find((c) => c.id == this.initialCommunityId)
+            this.initialCommunityId = undefined
+          }
+          this.selectedCommunityId = communityToApply?.id
+          if (this.communitySelectConfig) {
+            setTimeout(() => {
+              this.communityDropdown?.replaceItems(this.availableCommunities!)
+              this.communityDropdown?.replaceSelectedItems((communityToApply == undefined)?[]:[communityToApply], true)
+            }, 1)
+          }
+          if (this.dataService.isSystemAdmin) {
+            if (fromPageInit === true) {
+              this.communityChanged(true)
+            } else {
+              // Force a switch back to the latest snapshot and refresh
+              this.viewLatestConformanceSnapshot(true)
+            }
+          } else {
+            this.communityChanged(true)
+          }
+        })
       })
-    } else {
-      this.selectedCommunityId = this.communityId
-      this.selectedOrganisationId = undefined
-      this.selectedSystemId = undefined
-      this.itemsByType = undefined
-      this.availableOrganisations = undefined
-      this.availableSystems = undefined
-      this.statements = []
-      if (this.dataService.isSystemAdmin) {
-        // Force a switch back to the latest snapshot and refresh
-        this.viewLatestConformanceSnapshot(true)
-      } else {
-        // Refresh search results
-        this.getConformanceStatements()
-      }
     }
+  }
+
+  private updateRouting() {
+    let communityId: number|undefined
+    if (this.dataService.isSystemAdmin) {
+      communityId = this.selectedCommunityId
+    }
+    this.routingService.toConformanceDashboard(communityId, this.selectedOrganisationId, this.selectedSystemId, this.snapshotIdToUse(), true)
+  }
+
+  private snapshotIdToUse() {
+    return this.activeConformanceSnapshot?.id
   }
 
   communityChanged(fromSnapshotChange: boolean, community?: FilterUpdate<Community>) {
     this.dataStatus.status = Constants.STATUS.PENDING
+    this.pagingControls?.hide()
     if (community && community.values.active.length > 0) {
       this.selectedCommunityId = community.values.active[0].id
+      this.updateRouting()
     }
     if (!fromSnapshotChange) {
       this.activeConformanceSnapshot = undefined
@@ -562,88 +320,114 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     if (this.selectedCommunityId == undefined) {
       loadObservable = of([])
     } else {
-      loadObservable = this.organisationService.getOrganisationsByCommunity(this.selectedCommunityId, false, this.activeConformanceSnapshot?.id)
+      loadObservable = this.organisationService.getOrganisationsByCommunity(this.selectedCommunityId, false, this.snapshotIdToUse())
     }
-    this.availableOrganisations = undefined
-    loadObservable.subscribe((data) => {
-      this.availableOrganisations = data
-      let organisationToApply: Organisation|undefined
-      if (data.length == 1) {
-        organisationToApply = data[0]
-        this.selectedOrganisationId = organisationToApply.id
-      } else if (data.length > 1 && this.selectedOrganisationId != undefined) {
-        organisationToApply = find(data, (org) => org.id == this.selectedOrganisationId)
-        if (organisationToApply == undefined) {
+    setTimeout(() => {
+      this.availableOrganisations = undefined
+      loadObservable.subscribe((data) => {
+        this.availableOrganisations = data
+        let organisationToApply: Organisation|undefined
+        if (data.length == 1) {
+          organisationToApply = data[0]
+          this.selectedOrganisationId = organisationToApply.id
+        } else if (data.length > 1 && this.selectedOrganisationId != undefined) {
+          organisationToApply = find(data, (org) => org.id == this.selectedOrganisationId)
+          if (organisationToApply == undefined) {
+            this.selectedOrganisationId = undefined
+          }
+        } else {
           this.selectedOrganisationId = undefined
         }
-      } else {
-        this.selectedOrganisationId = undefined
-      }
-      setTimeout(() => {
-        this.organisationSelectConfig!.replaceItems!.emit(this.availableOrganisations)
-        this.organisationSelectConfig!.replaceSelectedItems!.emit((organisationToApply == undefined)?[]:[organisationToApply])
-        this.organisationChanged()
+        setTimeout(() => {
+          this.organisationDropdown?.replaceItems(this.availableOrganisations!)
+          this.organisationDropdown?.replaceSelectedItems((organisationToApply == undefined)?[]:[organisationToApply], true)
+          this.organisationChanged()
+        })
       })
     })
   }
 
   organisationChanged(organisation?: FilterUpdate<Organisation>) {
     this.dataStatus.status = Constants.STATUS.PENDING
+    this.pagingControls?.hide()
     if (organisation && organisation.values.active.length > 0) {
       this.selectedOrganisationId = organisation.values.active[0].id
+      this.updateRouting()
     }
     let loadObservable: Observable<System[]>
     if (this.selectedOrganisationId == undefined) {
       loadObservable = of([])
     } else {
-      loadObservable = this.systemService.getSystemsByOrganisation(this.selectedOrganisationId, this.activeConformanceSnapshot?.id)
+      loadObservable = this.systemService.getSystemsByOrganisation(this.selectedOrganisationId, this.snapshotIdToUse())
     }
-    this.availableSystems = undefined
-    loadObservable.subscribe((data) => {
-      this.availableSystems = data
-      let systemToApply: System|undefined
-      if (data.length == 1) {
-        systemToApply = data[0]
-        this.selectedSystemId = systemToApply.id
-      } else if (data.length > 1 && this.selectedSystemId != undefined) {
-        systemToApply = find(data, (sys) => sys.id == this.selectedSystemId)
-        if (systemToApply == undefined) {
+    setTimeout(() => {
+      this.availableSystems = undefined
+      loadObservable.subscribe((data) => {
+        this.availableSystems = data
+        let systemToApply: System|undefined
+        if (data.length == 1) {
+          systemToApply = data[0]
+          this.selectedSystemId = systemToApply.id
+        } else if (data.length > 1 && this.selectedSystemId != undefined) {
+          systemToApply = find(data, (sys) => sys.id == this.selectedSystemId)
+          if (systemToApply == undefined) {
+            this.selectedSystemId = undefined
+          }
+        } else {
           this.selectedSystemId = undefined
         }
-      } else {
-        this.selectedSystemId = undefined
-      }
-      setTimeout(() => {
-        this.systemSelectConfig!.replaceItems!.emit(this.availableSystems)
-        this.systemSelectConfig!.replaceSelectedItems!.emit((systemToApply == undefined)?[]:[systemToApply])
-        this.systemChanged()
-      }, 1)
+        setTimeout(() => {
+          this.systemDropdown?.replaceItems(this.availableSystems!)
+          this.systemDropdown?.replaceSelectedItems((systemToApply == undefined)?[]:[systemToApply], true)
+          this.systemChanged()
+        }, 1)
+      })
     })
   }
 
   systemChanged(system?: FilterUpdate<System>) {
     this.dataStatus.status = Constants.STATUS.PENDING
+    this.pagingControls?.hide()
     if (system && system.values.active.length > 0) {
       this.selectedSystemId = system.values.active[0].id
+      this.updateRouting()
     }
-    if (this.selectedSystemId == undefined) {
-      this.dataStatus.status = Constants.STATUS.FINISHED
-      this.itemsByType = undefined
-      this.statements = []
-    } else {
-      this.getConformanceStatementsForTreeView()
-    }
+    setTimeout(() => {
+      if (this.selectedSystemId == undefined) {
+        this.dataStatus.status = Constants.STATUS.FINISHED
+        this.statements = []
+      } else {
+        this.getConformanceStatementsForTreeView()
+      }
+    })
+  }
+
+  filterByStatus(choices: CheckboxOptionState) {
+    super.filterByStatus(choices);
+    this.getConformanceStatementsForTreeView()
+  }
+
+  doTreeViewPaging(event: PagingEvent) {
+    this.getConformanceStatementsForTreeViewInternal(event)
   }
 
   getConformanceStatementsForTreeView() {
+    this.getConformanceStatementsForTreeViewInternal({ targetPage: 1, targetPageSize: 10 })
+  }
+
+  getConformanceStatementsForTreeViewInternal(pagingInfo: PagingEvent) {
     if (this.selectedSystemId != undefined) {
-      this.dataStatus.status = Constants.STATUS.PENDING
-      this.conformanceService.getConformanceStatementsForSystem(this.selectedSystemId, this.activeConformanceSnapshot?.id)
+      if (this.dataStatus.status == Constants.STATUS.FINISHED) {
+        this.updatePending = true
+      } else {
+        this.dataStatus.status = Constants.STATUS.PENDING
+        this.pagingControls?.hide()
+      }
+      this.conformanceService.getConformanceStatementsForSystem(this.selectedSystemId, this.snapshotIdToUse(), pagingInfo.targetPage, pagingInfo.targetPageSize, this.searchCriteria)
       .subscribe((data) => {
-        this.itemsByType = this.dataService.organiseConformanceItemsByType(data)
-        this.statements = this.dataService.prepareConformanceStatementItemsForDisplay(data)
-        this.filterStatements()
+        this.applyTreeViewSearchResult(data, pagingInfo)
       }).add(() => {
+        this.updatePending = false
         this.dataStatus.status = Constants.STATUS.FINISHED
       })
     }
@@ -652,7 +436,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
   exportOverview(format: 'xml'|'pdf') {
     this.exportOverviewPending = true
     const overallStatus = this.dataService.conformanceStatusForConformanceItems(this.statements)
-    this.reportSupportService.handleConformanceOverviewReport(this.selectedCommunityId!, this.selectedSystemId!, undefined, "all", this.activeConformanceSnapshot?.id, format, overallStatus)
+    this.reportSupportService.handleConformanceOverviewReport(this.selectedCommunityId!, this.selectedSystemId!, undefined, "all", this.snapshotIdToUse(), format, overallStatus)
     .subscribe(() => {
       // Do nothing further
     }).add(() => {
@@ -662,9 +446,35 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
 
   treeControlsExist() {
     return (this.communityId == undefined && (this.availableCommunities == undefined || this.availableCommunities.length > 0)) ||
-    ((this.selectedCommunityId != undefined && this.availableCommunities) && (this.availableOrganisations == undefined || this.availableOrganisations.length > 0)) ||
-    ((this.selectedOrganisationId != undefined && this.availableOrganisations) && (this.availableSystems == undefined || this.availableSystems.length > 0)) ||
-    (this.statements.length > 0)
+      ((this.selectedCommunityId != undefined && this.availableCommunities) && (this.availableOrganisations == undefined || this.availableOrganisations.length > 0)) ||
+      ((this.selectedOrganisationId != undefined && this.availableOrganisations) && (this.availableSystems == undefined || this.availableSystems.length > 0)) ||
+      (this.statements.length > 0)
+  }
+
+  listViewCommunityChange(newCommunityId: number|undefined) {
+    if (this.communityId == undefined) {
+      if (newCommunityId != undefined) {
+        if (newCommunityId != this.selectedCommunityId) {
+          this.snapshotButtonLabel = this.latestSnapshotButtonLabel
+          this.activeConformanceSnapshot = undefined
+          this.selectedCommunityId = newCommunityId
+        }
+      } else {
+        this.snapshotButtonLabel = this.latestSnapshotButtonLabel
+        this.activeConformanceSnapshot = undefined
+        this.selectedCommunityId = undefined
+      }
+    }
+  }
+
+  onStatementSelect(statement: ConformanceStatementItem) {
+    if (sessionStorage) sessionStorage.setItem(Constants.SESSION_DATA.FROM_DASHBOARD, "true")
+    this.routingService.toConformanceStatement(this.selectedOrganisationId!, this.selectedSystemId!, statement.id, this.selectedCommunityId!, this.snapshotIdToUse(), this.activeConformanceSnapshot?.label)
+  }
+
+  onStatementSelectFromListView(statement: ConformanceResultFullWithTestSuites) {
+    if (sessionStorage) sessionStorage.setItem(Constants.SESSION_DATA.FROM_DASHBOARD, "true")
+    this.routingService.toConformanceStatement(statement.organizationId, statement.systemId, statement.actorId, statement.communityId, this.snapshotIdToUse(), this.activeConformanceSnapshot?.label)
   }
 
 }

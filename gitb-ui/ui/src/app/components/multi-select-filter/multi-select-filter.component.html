@@ -4,7 +4,7 @@
             @if (pending) {
                 <app-pending-block></app-pending-block>
             }
-            <div class="button-label-text">{{filterLabel}}</div>
+            <div class="button-label-text" [style.max-width]="config.maxWidth?(config.maxWidth+'px'):null">{{filterLabel}}</div>
         </div>
     </button>
     @if (formVisible) {

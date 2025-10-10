@@ -15,7 +15,7 @@
 
 package models
 
-import com.gitb.core.{ActorConfiguration, AnyContent}
+import com.gitb.core.AnyContent
 
 case class TestSessionLaunchData(
                                   communityId: Long,
@@ -27,19 +27,8 @@ case class TestSessionLaunchData(
                                   domainParameters: Option[TypedActorConfiguration],
                                   organisationParameters: TypedActorConfiguration,
                                   systemParameters: TypedActorConfiguration,
+                                  testServiceParameters: Option[List[TypedActorConfiguration]],
                                   testCaseToInputMap: Option[Map[Long, List[AnyContent]]],
                                   sessionIdsToAssign: Option[Map[Long, String]],
                                   forceSequentialExecution: Boolean) {
-
-  def newWithoutTestCaseIds(testCaseIds: Set[Long]): TestSessionLaunchData = {
-    TestSessionLaunchData(
-      communityId, organisationId, systemId, actorId,
-      testCases.filterNot(testCaseIds.contains),
-      statementParameters, domainParameters, organisationParameters, systemParameters,
-      testCaseToInputMap.map(_.removedAll(testCaseIds)),
-      sessionIdsToAssign.map(_.removedAll(testCaseIds)),
-      forceSequentialExecution
-    )
-  }
-
 }

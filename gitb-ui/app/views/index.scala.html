@@ -30,7 +30,7 @@
 					<div class="container">
 						<div class="row">
 							<div class="col-12">
-								<div class="page-title">Welcome to the Interoperability Test Bed</div>
+								<div class="page-title">@config.welcomeTitle</div>
 							</div>
 						</div>
 					</div>
@@ -66,7 +66,7 @@
 									</div>
 								</div>
 								<div class="alert alert-info rounded padded mt-3 mb-0">
-									@if(config.ssoEnabled) {
+									@if(config.ssoEnabled && config.ssoType == models.Constants.SsoTypeEcas) {
 									<p class="mb-2">To connect to the Test Bed you need to first authenticate using your EU Login account. If you are new to EU Login follow <a href="@config.euLoginUseGuideLink" target="blank">this tutorial</a> to get started.</p>
 									}
 									<p class="mb-0"><b>Privacy note:</b> By connecting you consent to the use of cookies to manage your session.
@@ -75,7 +75,7 @@
 										}
 									</p>
 									@if(config.ssoEnabled && config.inMigrationPeriod) {
-									<p class="mt-2 mb-0"><b>Migration note:</b> If you have been using a functional account to log in click <a id="migrateOption" href="#">here</a> to migrate it to EU Login. Step-by-step instructions are available in <a href="@config.euLoginMigrationGuideLink" target="blank">this guide</a>.</p>
+									<p class="mt-2 mb-0"><b>Migration note:</b> If you have been using a functional account to log in click <a id="migrateOption" href="#">here</a> to migrate it. Step-by-step instructions are available in <a href="@config.euLoginMigrationGuideLink" target="blank">this guide</a>.</p>
 									}
 								</div>
 							</div>
@@ -148,7 +148,7 @@
 						<div class="modal-header">
 							<div class="modal-title">Initial setup</div>
 						</div>
-						<form id="initForm" enctype="multipart/form-data">
+						<form id="initForm" method="POST" enctype="multipart/form-data">
 							<div class="modal-body">
 								<div class="alert alert-info rounded div-padded">
 									<span>Please provide the data archive and its password to initialise the Test Bed's configuration. If you would prefer to proceed with an empty installation close this dialog and make an initial login.</span>
@@ -171,7 +171,7 @@
 									<label class="col-3 col-form-label d-flex justify-content-end" for="encryptionPassword">* Archive password:</label>
 									<div class="col-5">
 										<input id="encryptionPasswordVisible" name="passwordVisible" type="text" class="form-control"/>
-										<input id="encryptionPassword" name="passwordHidden" type="password" class="form-control"/>
+										<input id="encryptionPassword" name="passwordHidden" type="password" autocomplete="new-password" class="form-control"/>
 									</div>
 									<div class="col-auto">
 										<div class="form-check">

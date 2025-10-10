@@ -71,7 +71,7 @@ public abstract class AbstractTransactionListener implements ITransactionListene
     }
 
     @Override
-    public Message transformMessage(Message incomingMessage) throws Exception {
+    public Message transformMessage(Message incomingMessage) {
         return incomingMessage;
     }
 

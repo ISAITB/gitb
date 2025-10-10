@@ -24,7 +24,7 @@ import java.util.Map;
 
 public abstract class AbstractHandler {
 
-    protected ObjectFactory objectFactory = new ObjectFactory();
+    protected final ObjectFactory objectFactory = new ObjectFactory();
 
     protected TestCaseScope getScope(String sessionId) {
         return SessionManager.getInstance().getContext(sessionId).getScope();

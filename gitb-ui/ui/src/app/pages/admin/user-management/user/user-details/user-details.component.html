@@ -4,16 +4,16 @@
             <div class="card-title">User details</div>
         </div>
         <form>
-            <div class="card-body" [pending]="!loaded" [focus]="focusField">
+            <div class="card-body" [class.pb-0]="dataService.configuration.ssoEnabled" [pending]="!loaded" [focus]="focusField">
                 <!-- Error messages -->
                 <app-alert-display [alerts]="alerts" innerClass="col-10 offset-1"></app-alert-display>
                 <div class="row">
                     <div class="col-11">
-                        <app-user-form 
-                            [user]="user" 
-                            [new]="false" 
-                            [admin]="false" 
-                            [roles]="roleChoices" 
+                        <app-user-form
+                            [user]="user"
+                            [new]="false"
+                            [admin]="false"
+                            [roles]="roleChoices"
                             [sso]="dataService.configuration.ssoEnabled"
                             [showOrganisation]="fromCommunityManagement"
                             [roleReadonly]="isSelf"

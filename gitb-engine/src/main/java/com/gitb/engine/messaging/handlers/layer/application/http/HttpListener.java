@@ -42,8 +42,8 @@ public class HttpListener extends AbstractTransactionListener {
         StringType method = (StringType) incomingMessage.getFragments().get(HttpMessagingHandler.HTTP_METHOD_FIELD_NAME);
         StringType path = (StringType) incomingMessage.getFragments().get(HttpMessagingHandler.HTTP_PATH_FIELD_NAME);
 
-        transformed.add(ConfigurationUtils.constructConfiguration(HttpMessagingHandler.HTTP_METHOD_CONFIG_NAME, (String) method.getValue()));
-        transformed.add(ConfigurationUtils.constructConfiguration(HttpMessagingHandler.HTTP_URI_CONFIG_NAME, (String) path.getValue()));
+        transformed.add(ConfigurationUtils.constructConfiguration(HttpMessagingHandler.HTTP_METHOD_CONFIG_NAME, method.getValue()));
+        transformed.add(ConfigurationUtils.constructConfiguration(HttpMessagingHandler.HTTP_URI_CONFIG_NAME, path.getValue()));
 
         return transformed;
     }

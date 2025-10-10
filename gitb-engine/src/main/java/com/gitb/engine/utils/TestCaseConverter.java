@@ -76,7 +76,7 @@ public class TestCaseConverter {
     private TestCaseContext createTestCaseContext(com.gitb.tdl.TestCase testCase, List<ActorConfiguration> configs) {
         var context = new StaticTestCaseContext(testCase);
         var configData = new SessionConfigurationData(configs);
-        context.configure(configData.getActorConfigurations(), configData.getDomainConfiguration(), configData.getOrganisationConfiguration(), configData.getSystemConfiguration());
+        context.configure(configData.getActorConfigurations(), configData.getDomainConfiguration(), configData.getOrganisationConfiguration(), configData.getSystemConfiguration(), configData.getTestServiceConfigurations());
         return context;
     }
 

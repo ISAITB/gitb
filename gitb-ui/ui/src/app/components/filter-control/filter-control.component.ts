@@ -1,0 +1,51 @@
+/*
+ * Copyright (C) 2025 European Union
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
+ * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
+ *
+ * You may obtain a copy of the Licence at:
+ *
+ * https://interoperable-europe.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the Licence is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the Licence for
+ * the specific language governing permissions and limitations under the Licence.
+ */
+
+import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {FilterControlApi} from './filter-control-api';
+
+@Component({
+  selector: 'app-filter-control',
+  standalone: false,
+  templateUrl: './filter-control.component.html'
+})
+export class FilterControlComponent implements FilterControlApi {
+
+  @Input() showRefresh = true
+  @Input() showClear = true
+  @Output() toggle = new EventEmitter<boolean>();
+  @Output() refresh = new EventEmitter<void>();
+  @Output() clear = new EventEmitter<void>();
+  visible = false
+
+  setToggleState(state: boolean): void  {
+    this.visible = state
+  }
+
+  doClear() {
+    this.visible = false
+    this.clear.emit();
+  }
+
+  doRefresh() {
+    this.refresh.emit();
+  }
+
+  doToggle() {
+    this.visible = !this.visible;
+    this.toggle.emit(this.visible);
+  }
+
+}

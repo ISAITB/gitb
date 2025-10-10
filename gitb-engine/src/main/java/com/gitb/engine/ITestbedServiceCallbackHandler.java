@@ -23,13 +23,11 @@ import com.gitb.tbs.TestbedClient;
 public interface ITestbedServiceCallbackHandler {
     /**
      * Returns the Client object to handle TBS callbacks
-     * @return
      */
     TestbedClient getTestbedClient(String sessionId);
 
     /**
      * Release the resources related with the TestbedClient
-     * @param sessionId
      */
     void releaseTestbedClient(String sessionId);
 }

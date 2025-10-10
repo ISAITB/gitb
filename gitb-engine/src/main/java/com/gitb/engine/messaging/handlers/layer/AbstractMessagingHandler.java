@@ -28,7 +28,6 @@ import com.gitb.engine.messaging.handlers.model.udp.IDatagramReceiver;
 import com.gitb.engine.messaging.handlers.model.udp.IDatagramSender;
 import com.gitb.engine.messaging.handlers.server.IMessagingServer;
 import com.gitb.engine.messaging.handlers.server.tcp.TCPMessagingServer;
-import com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.DeferredMessagingReport;
 import com.gitb.messaging.IMessagingHandler;
@@ -47,9 +46,11 @@ import org.slf4j.MarkerFactory;
 import java.io.IOException;
 import java.util.*;
 
+import static com.gitb.utils.MessagingReportUtils.*;
+
 /**
  * Created by serbay on 9/25/14.
- *
+ * <p>
  * Abstract Messaging Handler class that provides several utilities to handle the session and transaction configuration
  */
 public abstract class AbstractMessagingHandler extends AbstractHandler implements IMessagingHandler {
@@ -211,7 +212,7 @@ public abstract class AbstractMessagingHandler extends AbstractHandler implement
         ITransactionListener transactionListener = getListener(sessionContext, receiverTransactionContext, senderTransactionContext);
         IDatagramListener datagramListener = getDatagramListener(sessionContext, receiverTransactionContext, senderTransactionContext);
 
-        IListener listener = null;
+        IListener listener;
         if(transactionListener != null) {
             listener = transactionListener;
         } else if(datagramListener != null) {
@@ -324,9 +325,7 @@ public abstract class AbstractMessagingHandler extends AbstractHandler implement
             if(requiredActorConfigurations.isEmpty()) {
                 break;
             }
-            if(requiredActorConfigurations.contains(configuration.getName())) {
-                requiredActorConfigurations.remove(configuration.getName());
-            }
+            requiredActorConfigurations.remove(configuration.getName());
         }
 
         if(!requiredActorConfigurations.isEmpty()) {
@@ -374,20 +373,20 @@ public abstract class AbstractMessagingHandler extends AbstractHandler implement
 	}
 
     protected MessagingReport onSkip() {
-        return MessagingHandlerUtils.generateSkipReport();
+        return generateSkipReport();
     }
 
     protected MessagingReport onError(GITBEngineInternalError error, String sessionId) {
         logger.error(addMarker(sessionId), "An error occurred", error);
-        return MessagingHandlerUtils.generateErrorReport(error);
+        return generateErrorReport(error);
     }
 
     protected MessagingReport onError(Message message, Collection<Exception> nonCriticalErrors) {
-        return MessagingHandlerUtils.generateErrorReport(message, nonCriticalErrors);
+        return generateErrorReport(message, nonCriticalErrors);
     }
 
     protected MessagingReport onSuccess(Message message) {
-        return MessagingHandlerUtils.generateSuccessReport(message);
+        return generateSuccessReport(message);
     }
 
 	static class ReceiveRunner implements Runnable {

@@ -46,6 +46,7 @@ import freemarker.template.TemplateMethodModelEx;
 import jakarta.xml.bind.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jsoup.Jsoup;
 import org.jsoup.helper.W3CDom;
 import org.slf4j.Logger;
@@ -163,7 +164,7 @@ public class ReportGenerator {
                 public String resolveURI(String baseUri, String uri) {
                     if (uri.startsWith("classpath:")) {
                         // A predefined image.
-                        return Objects.requireNonNull(Thread.currentThread().getContextClassLoader().getResource(StringUtils.removeStart(uri, "classpath:"))).toString();
+                        return Objects.requireNonNull(Thread.currentThread().getContextClassLoader().getResource(Strings.CS.removeStart(uri, "classpath:"))).toString();
                     } else if (specsToUse.getResourceResolver() != null) {
                         // Check if this is a community-specific resource.
                         String resolvedResource = specsToUse.getResourceResolver().apply(uri);
@@ -281,7 +282,7 @@ public class ReportGenerator {
     }
 
     private String contextValueAsString(String value) {
-        if (StringUtils.startsWith(value, "___[[") && StringUtils.endsWith(value, "]]___")) {
+        if (Strings.CS.startsWith(value, "___[[") && Strings.CS.endsWith(value, "]]___")) {
             // This is a pointer to a large file.
             value = "[File content]";
         }

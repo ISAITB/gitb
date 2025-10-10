@@ -13,8 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { TestResult } from "./test-result";
-import { TestResultReport } from "./test-result-report";
+import {TestResultReport} from './test-result-report';
 
 export interface TestResultData {
 

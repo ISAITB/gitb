@@ -77,12 +77,8 @@ public class DNSMessagingHandler extends AbstractMessagingHandler {
 
 	private static IMessagingServer getInstance() {
 		if (dnsServer == null) {
-			try {
-				dnsServer = new DNSMessagingServer();
-			} catch (IOException e) {
-				throw new GITBEngineInternalError("An error occurred while creating a DNS server instance", e);
-			}
-		}
+            dnsServer = new DNSMessagingServer();
+        }
 		return dnsServer;
 	}
 

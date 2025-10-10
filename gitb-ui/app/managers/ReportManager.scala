@@ -838,15 +838,13 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     )
     val signer = new CreateSignature(keystore, communityKeystore.keyPassword.toCharArray)
     try {
-      Using.resource(Files.newInputStream(tempPdfPath)) { input =>
-        Using.resource(Files.newOutputStream(finalPdfPath)) { output =>
-          var tsaUrl: String = null
-          if (Configurations.TSA_SERVER_ENABLED) {
-            tsaUrl = Configurations.TSA_SERVER_URL
-          }
-          signer.signDetached(input, output, tsaUrl)
-          output.flush()
+      Using.resource(Files.newOutputStream(finalPdfPath)) { output =>
+        var tsaUrl: String = null
+        if (Configurations.TSA_SERVER_ENABLED) {
+          tsaUrl = Configurations.TSA_SERVER_URL
         }
+        signer.signDetached(tempPdfPath, output, tsaUrl)
+        output.flush()
       }
     } finally {
       FileUtils.deleteQuietly(tempPdfPath.toFile)
@@ -897,7 +895,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
           if (testSuite.isEmpty) {
             testSuite = Some(new ConformanceTestSuite(
               statement.testSuiteId.get, statement.testSuiteName.get, statement.testSuiteDescription, Some(statement.testSuiteVersion), false, statement.testSuiteSpecReference, statement.testSuiteSpecDescription, statement.testSuiteSpecLink,
-              TestResultType.UNDEFINED, 0, 0, 0, 0, 0, 0, 0, 0, 0, new ListBuffer[ConformanceTestCase], new ListBuffer[models.TestCaseGroup]),
+              TestResultType.UNDEFINED, 0, 0, 0, 0, 0, 0, 0, 0, 0, hasDisabled = false, new ListBuffer[ConformanceTestCase], new ListBuffer[models.TestCaseGroup]),
               new mutable.LinkedHashMap[Long, (TestCaseGroup, Counters)]()
             )
             actorTestSuites.get += (testSuite.get._1.id -> testSuite.get)
@@ -918,7 +916,9 @@ class ReportManager @Inject() (communityManager: CommunityManager,
           )
           testSuite.get._1.testCases.asInstanceOf[ListBuffer[ConformanceTestCase]] += testCase
           // Record result to counters
-          if (!testCase.disabled) {
+          if (testCase.disabled) {
+            testSuite.get._1.hasDisabled = true
+          } else {
             if (testCase.optional) {
               if (testCase.result == TestResultType.SUCCESS) {
                 testSuite.get._1.completedOptional += 1
@@ -2069,6 +2069,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
         item.results.get.testSuites.get.foreach { testSuite =>
           val testSuiteOverview = new com.gitb.reports.dto.TestSuiteOverview()
           newItem.getData.getTestSuites.add(testSuiteOverview)
+          testSuiteOverview.setTestSuiteId(testSuite.id)
           testSuiteOverview.setOverallStatus(testSuite.result.value())
           testSuiteOverview.setTestSuiteName(testSuite.name)
           testSuiteOverview.setTestSuiteDescription(testSuite.description.orNull)

@@ -14,12 +14,14 @@
  */
 
 import {CdkDragDrop} from '@angular/cdk/drag-drop';
-import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {Component, EventEmitter, Input, Output, QueryList, ViewChild, ViewChildren} from '@angular/core';
 import {Constants} from 'src/app/common/constants';
 import {DataService} from 'src/app/services/data.service';
 import {RoutingService} from 'src/app/services/routing.service';
 import {DomainSpecification} from 'src/app/types/domain-specification';
 import {SpecificationGroup} from 'src/app/types/specification-group';
+import {BsDropdownDirective} from 'ngx-bootstrap/dropdown';
+import {DomainSpecificationDisplayComponentApi} from './domain-specification-display-component-api';
 
 @Component({
     selector: 'app-domain-specification-display',
@@ -27,18 +29,23 @@ import {SpecificationGroup} from 'src/app/types/specification-group';
     styleUrls: ['./domain-specification-display.component.less'],
     standalone: false
 })
-export class DomainSpecificationDisplayComponent {
+export class DomainSpecificationDisplayComponent implements DomainSpecificationDisplayComponentApi {
 
   @Input() spec!: DomainSpecification
   @Input() groups: SpecificationGroup[] = []
   @Input() first = false
   @Input() last = false
   @Input() dragOngoing = false
+  @Input() dragEnabled = false
   @Output() selectSpec = new EventEmitter<DomainSpecification>()
   @Output() removeSpec = new EventEmitter<[number, number]>()
   @Output() moveSpec = new EventEmitter<[number, number|undefined, number]>()
   @Output() copySpec = new EventEmitter<[number, number|undefined, number]>()
   @Output() dragging = new EventEmitter<boolean>()
+  @Output() controlSelected = new EventEmitter<number>()
+  @ViewChild("moveDropdown") moveDropdown?: BsDropdownDirective
+  @ViewChild("copyDropdown") copyDropdown?: BsDropdownDirective
+  @ViewChildren("childComponent") childComponents?: QueryList<DomainSpecificationDisplayComponentApi>
   Constants = Constants
 
   copyPending = false
@@ -55,11 +62,31 @@ export class DomainSpecificationDisplayComponent {
     }
   }
 
+  otherControlSelected(selectedId: number) {
+    if (selectedId != this.spec.id) {
+      this.copyDropdown?.hide()
+      this.moveDropdown?.hide()
+    }
+    this.childComponents?.forEach((component) => {
+      component.otherControlSelected(selectedId)
+    })
+  }
+
+  moveExpanded() {
+    this.copyDropdown?.hide()
+    this.controlSelected.emit(this.spec.id)
+  }
+
   moveToGroup(groupId: number) {
     if (!this.spec.movePending) {
       this.spec.movePending = true
       this.moveSpec.emit([this.spec.id, this.spec.groupId, groupId])
     }
+  }
+
+  copyExpanded() {
+    this.moveDropdown?.hide()
+    this.controlSelected.emit(this.spec.id)
   }
 
   copyToGroup(groupId: number) {
@@ -100,7 +127,9 @@ export class DomainSpecificationDisplayComponent {
   }
 
   propagateSelect(event: DomainSpecification) {
-    this.selectSpec.emit(event)
+    if (!this.dragEnabled) {
+      this.selectSpec.emit(event)
+    }
   }
 
   dropSpecification(event: CdkDragDrop<any>) {
@@ -119,6 +148,10 @@ export class DomainSpecificationDisplayComponent {
 
   endDrag() {
     this.dragging.emit(false)
+  }
+
+  propagateControlSelected(selected: number) {
+    this.controlSelected.emit(selected)
   }
 
 }

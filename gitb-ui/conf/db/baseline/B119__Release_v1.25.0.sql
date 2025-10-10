@@ -829,7 +829,7 @@ CREATE TABLE `users` (
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` VALUES (1,'Administrator','admin@itb','$2a$10$uMPniYxO/NJIQiJA/q8kseF5N3KRxXM3bHPnRC0ZyIzvBZ.u6Edha',4,0,1,NULL,NULL,1);
+INSERT INTO `users` VALUES (1,'Administrator','admin@itb','',4,0,1,NULL,NULL,1);
 
 --
 -- Table structure for table `systemhasadmins`

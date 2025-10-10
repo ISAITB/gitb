@@ -4,7 +4,7 @@
             <div class="card-title">Community administrator details</div>
         </div>
         <form>
-            <div class="card-body" [pending]="!loaded" [focus]="focusField">
+            <div class="card-body" [class.pb-0]="dataService.configuration.ssoEnabled" [pending]="!loaded" [focus]="focusField">
                 <!-- Error messages -->
                 <app-alert-display [alerts]="alerts" innerClass="col-10 offset-1"></app-alert-display>
                 <div class="row">

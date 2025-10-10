@@ -1,0 +1,28 @@
+@import "../../../styles/less/_common.less";
+
+.step-icon {
+    width: 25px;
+}
+.wizard-status {
+    margin-left: auto;
+    display: flex;
+    .step {
+        width: 20px;
+        height: 20px;
+        border-radius: 10px;
+        background-color: @gray-medium;
+        &.completed {
+            background-color: @gray;
+        }
+        &.active {
+            border-color: @bs-input-focus-highlight;
+            outline: 0;
+            box-shadow: 0 0 0 @bs-input-focus-box-shadow-size @bs-input-focus-box-shadow-color;
+        }
+    }
+    .step-spacer {
+        width: 30px;
+        border-top: 2px solid @gray-medium;
+        margin-top: 9px;
+    }
+}

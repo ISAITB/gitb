@@ -13,10 +13,11 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input, OnDestroy, OnInit } from '@angular/core';
-import { Subscription } from 'rxjs';
-import { DataService } from 'src/app/services/data.service';
-import { MenuItem } from 'src/app/types/menu-item.enum';
+import {Component, ContentChild, Input, OnDestroy, OnInit, TemplateRef} from '@angular/core';
+import {Subscription} from 'rxjs';
+import {DataService} from 'src/app/services/data.service';
+import {MenuItem} from 'src/app/types/menu-item.enum';
+import {MenuItemStatus} from '../../../types/menu-item-status.enum';
 
 @Component({
     selector: 'app-menu-item',
@@ -27,11 +28,16 @@ import { MenuItem } from 'src/app/types/menu-item.enum';
 export class MenuItemComponent implements OnInit, OnDestroy {
 
   @Input() label!: string
-  @Input() icon!: string
+  @Input() icon?: string
   @Input() expanded = false
   @Input() type!: MenuItem
+  @ContentChild(TemplateRef) customTemplate?: TemplateRef<any>;
+
   active = false
   pageChangeSubscription?: Subscription
+  statusSubscription?: Subscription
+  status = MenuItemStatus.None
+  protected readonly MenuItemStatus = MenuItemStatus;
 
   constructor(private readonly dataService: DataService) { }
 
@@ -50,10 +56,18 @@ export class MenuItemComponent implements OnInit, OnDestroy {
         }, 1)
       }
     })
+    this.statusSubscription = this.dataService.onMenuItemStatusChange$.subscribe((event) => {
+      if (event.menuItem === this.type) {
+        setTimeout(() => {
+          this.status = event.status
+        })
+      }
+    })
   }
 
   ngOnDestroy(): void {
     if (this.pageChangeSubscription) this.pageChangeSubscription.unsubscribe()
+    if (this.statusSubscription) this.statusSubscription.unsubscribe()
   }
 
 }

@@ -16,7 +16,7 @@
 package managers
 
 import com.gitb.reports.ReportSpecs
-import org.apache.commons.lang3.StringUtils
+import org.apache.commons.lang3.Strings
 import org.slf4j.{Logger, LoggerFactory}
 import utils.RepositoryUtils
 
@@ -40,7 +40,7 @@ class ReportHelper @Inject()(repositoryUtils: RepositoryUtils, communityResource
       if (resourceUri != null) {
         if (communityId.isDefined && resourceUri.startsWith("resources/")) {
           // Community-specific resource
-          val resourceName = URLDecoder.decode(StringUtils.removeStart(resourceUri, "resources/"), StandardCharsets.UTF_8)
+          val resourceName = URLDecoder.decode(Strings.CS.removeStart(resourceUri, "resources/"), StandardCharsets.UTF_8)
           // We cannot work with async tasks at this point - do a synchronous lookup of the file
           val file = Await.result(communityResourceManager.getCommunityResourceFileByNameAndCommunity(communityId.get, resourceName), Duration(30, SECONDS))
           if (file.nonEmpty) {
@@ -48,7 +48,7 @@ class ReportHelper @Inject()(repositoryUtils: RepositoryUtils, communityResource
           }
         } else if (resourceUri.startsWith("systemResources/")) {
           // System resource
-          val resourceName = URLDecoder.decode(StringUtils.removeStart(resourceUri, "systemResources/"), StandardCharsets.UTF_8)
+          val resourceName = URLDecoder.decode(Strings.CS.removeStart(resourceUri, "systemResources/"), StandardCharsets.UTF_8)
           // We cannot work with async tasks at this point - do a synchronous lookup of the file
           val file = Await.result(communityResourceManager.getSystemResourceFileByName(resourceName), Duration(30, SECONDS))
           if (file.nonEmpty) {

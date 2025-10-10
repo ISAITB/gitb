@@ -178,10 +178,10 @@ public class CallbackManager {
                         LOG.debug(MarkerFactory.getDetachedMarker(testSessionId), message);
                     }
                 } else {
-                    LOG.warn(String.format("Received blank log message for test session [%s]", testSessionId));
+                    LOG.warn("Received blank log message for test session [{}]", testSessionId);
                 }
             } else {
-                LOG.warn(String.format("Received log message for unknown session ID [%s]", testSessionId));
+                LOG.warn("Received log message for unknown session ID [{}]", testSessionId);
             }
         }
     }

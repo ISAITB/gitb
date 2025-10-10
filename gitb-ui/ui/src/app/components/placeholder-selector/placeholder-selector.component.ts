@@ -13,21 +13,22 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter, Input, OnInit } from '@angular/core';
-import { Observable, forkJoin, mergeMap, of, share } from 'rxjs';
-import { CommunityService } from 'src/app/services/community.service';
-import { ConformanceService } from 'src/app/services/conformance.service';
-import { DataService } from 'src/app/services/data.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { CommunityResource } from 'src/app/types/community-resource';
-import { KeyValue } from 'src/app/types/key-value';
-import { FilterUpdate } from '../test-filter/filter-update';
-import { MultiSelectConfig } from '../multi-select-filter/multi-select-config';
-import { PlaceholderInfo } from './placeholder-info';
-import { OrganisationParameter } from 'src/app/types/organisation-parameter';
-import { SystemParameter } from 'src/app/types/system-parameter';
-import { Constants } from 'src/app/common/constants';
+import {Component, EventEmitter, Input, OnInit} from '@angular/core';
+import {forkJoin, mergeMap, Observable, of, share} from 'rxjs';
+import {CommunityService} from 'src/app/services/community.service';
+import {ConformanceService} from 'src/app/services/conformance.service';
+import {DataService} from 'src/app/services/data.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {CommunityResource} from 'src/app/types/community-resource';
+import {KeyValue} from 'src/app/types/key-value';
+import {FilterUpdate} from '../test-filter/filter-update';
+import {MultiSelectConfig} from '../multi-select-filter/multi-select-config';
+import {PlaceholderInfo} from './placeholder-info';
+import {OrganisationParameter} from 'src/app/types/organisation-parameter';
+import {SystemParameter} from 'src/app/types/system-parameter';
+import {Constants} from 'src/app/common/constants';
 import {CommunityResourceService} from '../../services/community-resource.service';
+import {DomainParameterService} from '../../services/domain-parameter.service';
 
 @Component({
     selector: 'app-placeholder-selector',
@@ -57,6 +58,7 @@ export class PlaceholderSelectorComponent implements OnInit {
   constructor(
     private readonly dataService: DataService,
     private readonly popupService: PopupService,
+    private readonly domainParameterService: DomainParameterService,
     private readonly conformanceService: ConformanceService,
     private readonly communityService: CommunityService,
     private readonly communityResourceService: CommunityResourceService
@@ -159,7 +161,7 @@ export class PlaceholderSelectorComponent implements OnInit {
       if (this.domainParameterCache.has(domainId)) {
         return of(this.domainParameterCache.get(domainId)!)
       } else {
-        return this.conformanceService.getDomainParameters(domainId, false, true)
+        return this.domainParameterService.getDomainParameters(domainId, false, true)
           .pipe(
             mergeMap((data) => {
               const domainParameterPlaceholders = []

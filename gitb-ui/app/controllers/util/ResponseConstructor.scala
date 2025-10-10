@@ -83,7 +83,7 @@ object ResponseConstructor extends Results{
     Ok("{" +
       "\"user_id\":"+userId+"," +
       "\"path\":\"" + Configurations.PUBLIC_CONTEXT_ROOT + "\"," +
-      "\"access_token\":\"" + tokens.access_token + "\"," +
+      "\"access_token\":\"" + tokens.accessToken + "\"," +
       "\"token_type\":\"Bearer\"," +
       "\"expires_in\":" + Configurations.AUTHENTICATION_SESSION_MAX_IDLE_TIME + "," + //in seconds ~ 30 days
       "\"registered\":true" +

@@ -22,10 +22,12 @@ import com.gitb.engine.messaging.MessagingContext;
 import com.gitb.engine.messaging.TransactionContext;
 import com.gitb.engine.messaging.handlers.layer.AbstractMessagingHandler;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.engine.utils.HandlerUtils;
 import com.gitb.engine.utils.StepContext;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.IMessagingHandler;
 import com.gitb.messaging.Message;
+import com.gitb.remote.HandlerTimeoutException;
 import com.gitb.tdl.Binding;
 import com.gitb.tdl.MessagingStep;
 import com.gitb.tr.TestResultType;
@@ -47,7 +49,7 @@ import java.util.Optional;
 
 /**
  * Created by serbay.
- *
+ * <p>
  * Base class for providing utility methods for messaging step processor
  * actors.
  */
@@ -207,7 +209,15 @@ public abstract class AbstractMessagingStepProcessorActor<T extends MessagingSte
         };
     }
 
+    protected void handleFutureFailure(Throwable failure) {
+        if (failure instanceof HandlerTimeoutException) {
+            HandlerUtils.recordHandlerTimeout(step.getHandlerTimeoutFlag(), scope, true);
+        }
+        super.handleFutureFailure(failure);
+    }
+
     protected void signalStepStatus(TestStepReportType result) {
+        HandlerUtils.recordHandlerTimeout(step.getHandlerTimeoutFlag(), scope, false);
         if (result != null) {
             if (result.getResult() == TestResultType.SUCCESS) {
                 updateTestStepStatus(getContext(), StepStatus.COMPLETED, result);

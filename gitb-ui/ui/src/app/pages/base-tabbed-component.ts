@@ -13,26 +13,35 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, ViewChild } from "@angular/core";
-import { Router } from "@angular/router";
-import { TabsetComponent } from "ngx-bootstrap/tabs";
-import { BaseComponent } from "./base-component.component";
+import {AfterViewInit, Component, ViewChild} from '@angular/core';
+import {ActivatedRoute, Router} from '@angular/router';
+import {TabsetComponent} from 'ngx-bootstrap/tabs';
+import {BaseComponent} from './base-component.component';
+import {Constants} from '../common/constants';
 
 @Component({
     template: '',
     standalone: false
 })
-export abstract class BaseTabbedComponent extends BaseComponent {
+export abstract class BaseTabbedComponent extends BaseComponent implements AfterViewInit {
 
     @ViewChild('tabs', { static: false }) tabs?: TabsetComponent;
     tabIndexToShow = 0
 
-    constructor(router: Router) {
-        super()
-        const tabParam = router.getCurrentNavigation()?.extras?.state?.tab
-        if (tabParam != undefined) {
-            this.tabIndexToShow = tabParam as number
-        }
+    constructor(
+      protected readonly router: Router,
+      protected readonly route: ActivatedRoute) {
+      super()
+      const navigation = router.getCurrentNavigation()
+      let tabParam: any
+      if (navigation) {
+        tabParam = navigation.extras.state?.tab
+      } else if (route.snapshot.queryParamMap.has(Constants.NAVIGATION_QUERY_PARAM.TAB)) {
+        tabParam = route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.TAB)
+      }
+      if (tabParam != undefined) {
+        this.tabIndexToShow = tabParam as number
+      }
     }
 
     abstract loadTab(tabIndex: number): void
@@ -46,8 +55,17 @@ export abstract class BaseTabbedComponent extends BaseComponent {
             this.loadTab(tabToShow)
             if (this.tabs) {
                 this.tabs.tabs[tabToShow].active = true
+                this.router.navigate([], {
+                    queryParams: { tab: tabToShow },
+                    queryParamsHandling: 'merge',
+                    replaceUrl: true
+                })
             }
         })
     }
+
+  ngAfterViewInit(): void {
+     this.showTab()
+  }
 
 }

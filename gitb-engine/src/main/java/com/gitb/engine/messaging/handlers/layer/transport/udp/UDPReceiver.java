@@ -44,9 +44,9 @@ public class UDPReceiver extends AbstractDatagramReceiver {
 
 		DatagramPacket packet = transaction.getParameter(DatagramPacket.class);
 
-		logger.debug(addMarker(), "Message received: " + packet);
+        logger.debug(addMarker(), "Message received: {}", packet);
 
-		byte data[] = new byte[packet.getData().length];
+		byte[] data = new byte[packet.getData().length];
 		System.arraycopy(packet.getData(), 0, data, 0, packet.getData().length);
 
 		BinaryType binaryData = new BinaryType();

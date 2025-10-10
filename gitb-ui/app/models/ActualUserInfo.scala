@@ -15,15 +15,29 @@
 
 package models
 
-class ActualUserInfo(_uid: String, _email: String, _firstName: String, _lastName: String, _accounts: List[UserAccount]) {
+object ActualUserInfo {
+
+  def fromAttributes(uid: String, email: String, name: Option[String], firstName: Option[String], lastName: Option[String]): ActualUserInfo = {
+    val nameToUse = if (firstName.isDefined && lastName.isDefined) {
+      firstName.get + " " + lastName.get
+    } else if (name.isDefined) {
+      name.get
+    } else {
+      email
+    }
+    new ActualUserInfo(uid, email, nameToUse)
+  }
+
+}
+
+class ActualUserInfo(_uid: String, _email: String, _name: String, _accounts: List[UserAccount]) {
 
   var uid: String = _uid
   var email: String = _email
-  var firstName: String = _firstName
-  var lastName: String = _lastName
+  var name: String = _name
   var accounts: List[UserAccount] = _accounts
 
-  def this(_uid: String, _email: String, _firstName: String, _lastName: String) =
-    this(_uid, _email, _firstName, _lastName, null)
+  def this(_uid: String, _email: String, _name: String) =
+    this(_uid, _email, _name, null)
 
 }

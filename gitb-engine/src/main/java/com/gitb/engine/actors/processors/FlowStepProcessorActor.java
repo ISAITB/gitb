@@ -64,7 +64,7 @@ public class FlowStepProcessorActor extends AbstractTestStepActor<FlowStep> {
 	}
 
 	@Override
-	protected void start() throws Exception {
+	protected void start() {
 		for (ActorRef child : childMap.values()) {
 			child.tell(new StartCommand(scope.getContext().getSessionId()), self());
 		}

@@ -14,7 +14,7 @@
  */
 
 import {Injectable} from '@angular/core';
-import {mergeMap, Observable, of, Subject} from 'rxjs';
+import {mergeMap, Observable, of, ReplaySubject, Subject} from 'rxjs';
 import {Constants} from '../common/constants';
 import {ObjectWithId} from '../components/test-filter/object-with-id';
 import {ConformanceTestCase} from '../pages/organisation/conformance-statement/conformance-test-case';
@@ -35,16 +35,13 @@ import {UserAccount} from '../types/user-account';
 import {User} from '../types/user.type';
 import {saveAs} from 'file-saver';
 import {LogLevel} from '../types/log-level';
-import {SpecificationGroup} from '../types/specification-group';
 import {Specification} from '../types/specification';
 import {DomainSpecification} from '../types/domain-specification';
-import {find} from 'lodash';
 import {PageChange} from '../types/page-change';
 import {BadgesInfo} from '../components/manage-badges/badges-info';
 import {BreadcrumbChange} from '../types/breadcrumb-change';
 import {FieldInfo} from '../types/field-info';
 import {HttpResponse} from '@angular/common/http';
-import {EntityWithId} from '../types/entity-with-id';
 import {ConformanceTestSuite} from '../pages/organisation/conformance-statement/conformance-test-suite';
 import {ConformanceStatementItem} from '../types/conformance-statement-item';
 import {EndpointParameter} from '../types/endpoint-parameter';
@@ -52,6 +49,9 @@ import {CookieOptions, CookieService} from 'ngx-cookie-service';
 import {LocationData} from '../types/location-data';
 import {TestCaseTag} from '../types/test-case-tag';
 import {ConformanceTestCaseGroup} from '../pages/organisation/conformance-statement/conformance-test-case-group';
+import {MenuItemStatusChange} from '../types/menu-item-status-change';
+import {MenuItem} from '../types/menu-item.enum';
+import {MenuItemStatus} from '../types/menu-item-status.enum';
 
 @Injectable({
   providedIn: 'root'
@@ -77,7 +77,6 @@ export class DataService {
   public showCommunityViewMenu = false
   private tests?: ConformanceTestCase[]
   public currentLandingPageContent?: string
-  private apiRoot?: string
   public cookiePath?: string
   private locationData?: LocationData
   private loginOption?: string
@@ -89,6 +88,11 @@ export class DataService {
   public onPageChange$ = this.onPageChangeSource.asObservable()
   private onBreadcrumbChangeSource = new Subject<BreadcrumbChange>()
   public onBreadcrumbChange$ = this.onBreadcrumbChangeSource.asObservable()
+  private onUserLoaded = new ReplaySubject<void>()
+  public onUserLoaded$ = this.onUserLoaded.asObservable()
+  private onMenuItemStatusChangeSource = new ReplaySubject<MenuItemStatusChange>()
+  public onMenuItemStatusChange$ = this.onMenuItemStatusChangeSource.asObservable()
+  private menuItemStatus = new Map<MenuItem, MenuItemStatus>()
 
   triggerEventToDataTypeMap?: {[key: number]: { [key: number]: boolean } }
 
@@ -121,11 +125,9 @@ export class DataService {
     this.latestPageChange = undefined
     this.currentLandingPageContent = undefined
     this.cookiePath = undefined
-    if (sessionStorage) {
-      sessionStorage.removeItem(DataService.STORAGE_TESTS)
-      if (full) {
-        this.removeLocationData()
-      }
+    if (full) {
+      this.clearTestsToExecute()
+      this.removeLocationData()
     }
   }
 
@@ -152,12 +154,15 @@ export class DataService {
       demosEnabled: (this.configuration?.demosEnabled != undefined)?this.configuration!.demosEnabled:false,
       demosAccount: (this.configuration?.demosAccount != undefined)?this.configuration!.demosAccount:-1,
       registrationEnabled: (this.configuration?.registrationEnabled != undefined)?this.configuration!.registrationEnabled:false,
+      startupWizardEnabled: (this.configuration?.startupWizardEnabled != undefined)?this.configuration!.startupWizardEnabled:false,
       savedFileMaxSize: (this.configuration?.savedFileMaxSize != undefined)?this.configuration!.savedFileMaxSize:5,
       mode: (this.configuration?.mode != undefined)?this.configuration!.mode:'development',
       automationApiEnabled: (this.configuration?.automationApiEnabled != undefined)?this.configuration!.automationApiEnabled:false,
       versionNumber: (this.configuration?.versionNumber != undefined)?this.configuration!.versionNumber:'',
       hasDefaultLegalNotice: (this.configuration?.hasDefaultLegalNotice != undefined)?this.configuration!.hasDefaultLegalNotice:false,
-      conformanceStatementReportMaxTestCases: (this.configuration?.conformanceStatementReportMaxTestCases != undefined)?this.configuration!.conformanceStatementReportMaxTestCases:100
+      conformanceStatementReportMaxTestCases: (this.configuration?.conformanceStatementReportMaxTestCases != undefined)?this.configuration!.conformanceStatementReportMaxTestCases:100,
+      headerNameAuthenticationCookiePath: (this.configuration?.headerNameAuthenticationCookiePath != undefined)?this.configuration!.headerNameAuthenticationCookiePath:"ITB-PATH",
+      welcomePageTitle: (this.configuration?.welcomePageTitle != undefined)?this.configuration!.welcomePageTitle:''
     }
   }
 
@@ -166,7 +171,7 @@ export class DataService {
     if (!this.user) {
       this.user = {}
     }
-    this.user.name = actualUser.firstName + ' ' + actualUser.lastName
+    this.user.name = actualUser.name
     this.user.email = actualUser.email
   }
 
@@ -188,6 +193,7 @@ export class DataService {
       this.showSystemAdminMenu = this.isSystemAdmin
       this.showCommunityViewMenu = !this.isCommunityAdmin && !this.isSystemAdmin && this.community?.allowCommunityView == true
       this.showNavigationControls = true
+      this.onUserLoaded.next()
     })
   }
 
@@ -236,7 +242,7 @@ export class DataService {
         community = account.communityShortName
       }
     }
-    let description = ''
+    let description: string
     if (role == Constants.USER_ROLE.SYSTEM_ADMIN) {
       description = 'Test Bed administrator'
     } else if (role == Constants.USER_ROLE.COMMUNITY_ADMIN) {
@@ -1091,7 +1097,7 @@ export class DataService {
 
   clearTestsToExecute() {
     if (sessionStorage) {
-      sessionStorage.removeItem('tests')
+      sessionStorage.removeItem(DataService.STORAGE_TESTS)
     }
     this.tests = undefined
   }
@@ -1117,7 +1123,7 @@ export class DataService {
           header += arr[i].toString(16)
         }
         let type: string|undefined
-        let extension: string|undefined = undefined
+        let extension: string|undefined
         if (header.startsWith('89504e47')) {
           type = "image/png"
           extension = "png"
@@ -1194,7 +1200,7 @@ export class DataService {
           }
         }
       } else {
-        observer.next()
+        observer.next(undefined)
         observer.complete()
       }
     })
@@ -1288,80 +1294,6 @@ export class DataService {
     } else {
       return left + "/" + right
     }
-  }
-
-  private specToDomainSpecification(specification: Specification): DomainSpecification {
-    return {
-      id: specification.id,
-      sname: specification.sname,
-      fname: specification.fname,
-      description: specification.description,
-      hidden: specification.hidden,
-      groupId: specification.group,
-      option: specification.group != undefined,
-      collapsed: false,
-      group: false,
-      order: specification.order,
-      domain: specification.domain,
-    }
-  }
-
-  private specGroupToDomainSpecification(group: SpecificationGroup): DomainSpecification {
-    return {
-      id: group.id,
-      sname: group.sname,
-      fname: group.fname,
-      description: group.description,
-      hidden: false,
-      group: true,
-      option: false,
-      collapsed: true,
-      domain: group.domain,
-      order: group.order,
-      options: []
-    }
-  }
-
-  toDomainSpecifications(groups: SpecificationGroup[], specs: Specification[]): DomainSpecification[] {
-    const groupMap: {[id: number]: DomainSpecification} = {}
-    let results: DomainSpecification[] = []
-    for (let group of groups) {
-      const groupAsDomainSpecification = this.specGroupToDomainSpecification(group)
-      results.push(groupAsDomainSpecification)
-      groupMap[group.id] = groupAsDomainSpecification
-    }
-    for (let spec of specs) {
-      if (spec.group == undefined) {
-        results.push(this.specToDomainSpecification(spec))
-      } else {
-        if (groupMap[spec.group]) {
-          groupMap[spec.group].options!.push(this.specToDomainSpecification(spec))
-        }
-      }
-    }
-    for (let key in groupMap) {
-      this.setSpecificationGroupVisibility(groupMap[key])
-    }
-    return this.sortDomainSpecifications(results)
-  }
-
-  setSpecificationGroupVisibility(group: DomainSpecification) {
-    if (group.group) {
-      const hasVisible = find(group.options, (s) => !s.hidden)
-      group.hidden = !hasVisible
-    }
-  }
-
-  sortDomainSpecifications(specs: DomainSpecification[]) {
-    // Apply sorting.
-    specs.sort((a, b) => a.order - b.order || a.fname.localeCompare(b.fname))
-    // Sort also options.
-    specs.forEach(spec => {
-      if (spec.options) {
-        spec.options.sort((a, b) => a.order - b.order || a.fname.localeCompare(b.fname))
-      }
-    })
-    return specs
   }
 
   toSpecifications(domainSpecifications: DomainSpecification[]) {
@@ -1506,49 +1438,11 @@ export class DataService {
     return valid
   }
 
-  sameId(a: EntityWithId, b: EntityWithId) {
-    return a == undefined && b == undefined || a != undefined && b != undefined && a.id == b.id
-  }
-
   organiseTestSuitesForDisplay(testSuites: ConformanceTestSuite[]|undefined) {
     if (testSuites != undefined) {
       for (let testSuite of testSuites) {
-        testSuite.hasDisabledTestCases = find(testSuite.testCases, (testCase) => testCase.disabled) != undefined
-        testSuite.hasOptionalTestCases = find(testSuite.testCases, (testCase) => testCase.optional) != undefined
         testSuite.expanded = true
       }
-    }
-  }
-
-  organiseConformanceItemsByType(items: ConformanceStatementItem[]): { groups: ConformanceStatementItem[], specs: ConformanceStatementItem[], actors: ConformanceStatementItem[] } {
-    let groups: ConformanceStatementItem[] = []
-    let specs: ConformanceStatementItem[] = []
-    let actors: ConformanceStatementItem[] = []
-    for (let domain of items) {
-      if (domain.items) {
-        for (let specOrGroup of domain.items) {
-          if (specOrGroup.itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION_GROUP) {
-            groups.push(specOrGroup)
-            // Specifications in group
-            if (specOrGroup.items) {
-              specOrGroup.items.forEach((item) => specs.push(item))
-            }
-          } else {
-            // Specification in domain
-            specs.push(specOrGroup)
-          }
-        }
-      }
-    }
-    for (let spec of specs) {
-      if (spec.items) {
-        spec.items.forEach((item) => actors.push(item))
-      }
-    }
-    return {
-      groups: groups,
-      specs: specs,
-      actors: actors
     }
   }
 
@@ -1954,6 +1848,43 @@ export class DataService {
     if (this.isSystemAdmin && communityId != undefined) {
       this.setCookie("implicitCommunity", communityId.toString())
     }
+  }
+
+  testServiceTypeLabel(serviceType: number) {
+    switch (serviceType) {
+      case Constants.TEST_SERVICE_TYPE.MESSAGING: return 'Messaging'
+      case Constants.TEST_SERVICE_TYPE.PROCESSING: return 'Processing'
+      case Constants.TEST_SERVICE_TYPE.VALIDATION: return 'Validation'
+      default: throw new Error('Unknown service type ['+serviceType+']')
+    }
+  }
+
+  testServiceApiTypeLabel(apiType: number) {
+    switch (apiType) {
+      case Constants.TEST_SERVICE_API_TYPE.SOAP: return 'SOAP'
+      case Constants.TEST_SERVICE_API_TYPE.REST: return 'REST'
+      default: throw new Error('Unknown service API type ['+apiType+']')
+    }
+  }
+
+  testServiceAuthTokenPasswordType(passwordType: number) {
+    switch (passwordType) {
+      case Constants.TEST_SERVICE_AUTH_TOKEN_PASSWORD_TYPE.DIGEST: return 'Digest'
+      case Constants.TEST_SERVICE_AUTH_TOKEN_PASSWORD_TYPE.TEXT: return 'Text'
+      default: throw new Error('Unknown service auth token password type ['+passwordType+']')
+    }
+  }
+
+  updateMenuItemStatus(item: MenuItem, status: MenuItemStatus) {
+    this.menuItemStatus.set(item, status)
+    this.onMenuItemStatusChangeSource.next({
+      menuItem: item,
+      status: status
+    })
+  }
+
+  getMenuItemStatusMap() {
+    return this.menuItemStatus
   }
 
 }

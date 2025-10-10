@@ -74,6 +74,7 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
   def searchOrganizations(communityIds: Option[List[Long]]): Future[List[Organizations]] = {
     DB.run(
       PersistenceSchema.organizations
+        .filter(_.adminOrganization === false)
         .filterOpt(communityIds)((q, ids) => q.community inSet ids)
         .sortBy(_.shortname.asc)
         .result
@@ -95,7 +96,7 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
           .map(_._1)
           .result
       ).map { results =>
-        results.map(x => Organizations(x.id, x.shortname, x.fullname, OrganizationType.Vendor.id.toShort, adminOrganization = false, None, None, None, template = false, None, x.apiKey, communityId)).toList
+        results.map(x => Organizations(x.id, x.shortname, x.fullname, OrganizationType.Vendor.id.toShort, adminOrganization = false, None, None, None, template = false, None, x.apiKey, None, communityId)).toList
       }
     } else {
       DB.run(
@@ -109,12 +110,12 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
     organizations
   }
 
-  def searchOrganizationsByCommunity(communityId: Long, page: Long, limit: Long, filter: Option[String], sortOrder: Option[String], sortColumn: Option[String], creationOrderSort: Option[String]): Future[(Iterable[Organizations], Int)] = {
+  def searchOrganizationsByCommunity(communityId: Long, page: Long, limit: Long, filter: Option[String], sortOrder: Option[String], sortColumn: Option[String], creationOrderSort: Option[String]): Future[SearchResult[Organizations]] = {
     var query = PersistenceSchema.organizations
       .filter(_.adminOrganization === false)
       .filter(_.community === communityId)
       .filterOpt(filter)((table, filterValue) => {
-        val filterValueToUse = s"%${filterValue.toLowerCase}%"
+        val filterValueToUse = toLowercaseLikeParameter(filterValue)
         table.shortname.toLowerCase.like(filterValueToUse) || table.fullname.toLowerCase.like(filterValueToUse)
       })
     if (creationOrderSort.nonEmpty) {
@@ -142,7 +143,7 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
       for {
         results <- query.drop((page - 1) * limit).take(limit).result
         resultCount <- query.size.result
-      } yield (results, resultCount)
+      } yield SearchResult(results, resultCount)
     )
   }
 
@@ -230,8 +231,14 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
       } else {
         DBIO.successful(false)
       }
+      replaceSelfRegistrationToken <- if (checkApiKeyUniqueness && organization.selfRegToken.isDefined) {
+        PersistenceSchema.organizations.filter(_.selfRegToken === organization.selfRegToken).exists.result
+      } else {
+        DBIO.successful(false)
+      }
       newOrgId <- {
-        val orgToUse = if (replaceApiKey) organization.withApiKey(CryptoUtil.generateApiKey()) else organization
+        var orgToUse = if (replaceApiKey) organization.withApiKey(CryptoUtil.generateApiKey()) else organization
+        orgToUse = if (replaceSelfRegistrationToken) organization.withSelfRegistrationToken(CryptoUtil.generateApiKey()) else organization
         PersistenceSchema.insertOrganization += orgToUse
       }
     } yield newOrgId
@@ -270,6 +277,16 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
         toDBIO(actions)
       }
     } yield ()
+  }
+
+  def ssoUserExistsInOrganisation(ssoEmail: String, organisationId: Long): Future[Boolean] = {
+    DB.run {
+      PersistenceSchema.users
+        .filter(_.organization === organisationId)
+        .filter(_.ssoEmail.toLowerCase === ssoEmail.toLowerCase)
+        .exists
+        .result
+    }
   }
 
   def createOrganizationWithRelatedData(organization: Organizations, otherOrganisationId: Option[Long], propertyValues: Option[List[OrganisationParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copyOrganisationParameters: Boolean, copySystemParameters: Boolean, copyStatementParameters: Boolean, checkApiKeyUniqueness: Boolean, setDefaultPropertyValues: Boolean, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[OrganisationCreationDbInfo] = {
@@ -311,6 +328,34 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
     }
   }
 
+  def getOrganisationsThroughAutomationApi(communityApiKey: String): Future[Seq[Organizations]] = {
+    DB.run {
+      for {
+        communityId <- automationApiHelper.getCommunityByCommunityApiKey(communityApiKey)
+        organisations <- PersistenceSchema.organizations
+          .filter(_.community === communityId)
+          .filter(_.adminOrganization === false)
+          .result
+      } yield organisations
+    }
+  }
+
+  def getOrganisationThroughAutomationApi(communityApiKey: String, organisationApiKey: String): Future[Organizations] = {
+    DB.run {
+      for {
+        communityId <- automationApiHelper.getCommunityByCommunityApiKey(communityApiKey)
+        organisation <- PersistenceSchema.organizations
+          .filter(_.community === communityId)
+          .filter(_.apiKey === organisationApiKey)
+          .result
+          .headOption
+          .map { result =>
+            result.getOrElse(throw AutomationApiException(ErrorCodes.API_ORGANISATION_NOT_FOUND, "No organisation found for the provided API key"))
+          }
+      } yield organisation
+    }
+  }
+
   def createOrganisationThroughAutomationApi(input: CreateOrganisationRequest): Future[String] = {
     val action = for {
       communityId <- automationApiHelper.getCommunityByCommunityApiKey(input.communityApiKey)
@@ -330,7 +375,7 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
       }
       createdOrganisationId <- createOrganizationInTrans(Organizations(0L, input.shortName, input.fullName,
         OrganizationType.Vendor.id.toShort, adminOrganization = false, None, None, None, template = false, None,
-        Some(apiKeyToUse), communityId
+        Some(apiKeyToUse), None, communityId
       ))
     } yield (communityId, apiKeyToUse, new OrganisationCreationDbInfo(createdOrganisationId, None))
     DB.run(action.transactionally).map { result =>
@@ -384,7 +429,7 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
     }
   }
 
-  def updateOrganizationInternal(orgId: Long, shortName: String, fullName: String, landingPageId: Option[Long], legalNoticeId: Option[Long], errorTemplateId: Option[Long], otherOrganisation: Option[Long], template: Boolean, templateName: Option[String], apiKey: Option[Option[String]], propertyValues: Option[List[OrganisationParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copyOrganisationParameters: Boolean, copySystemParameters: Boolean, copyStatementParameters: Boolean, checkApiKeyUniqueness: Boolean, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Option[List[SystemCreationDbInfo]]] = {
+  def updateOrganizationInternal(orgId: Long, shortName: String, fullName: String, landingPageId: Option[Long], legalNoticeId: Option[Long], errorTemplateId: Option[Long], otherOrganisation: Option[Long], template: Boolean, templateName: Option[String], apiKey: Option[Option[String]], selfRegistrationToken: Option[Option[String]], propertyValues: Option[List[OrganisationParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copyOrganisationParameters: Boolean, copySystemParameters: Boolean, copyStatementParameters: Boolean, checkApiKeyUniqueness: Boolean, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Option[List[SystemCreationDbInfo]]] = {
     for {
       org <- PersistenceSchema.organizations.filter(_.id === orgId).result.headOption
       _ <- {
@@ -396,8 +441,8 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
           } else {
             templateNameToSet = None
           }
-          if (apiKey.isDefined) {
-            // We only optionally update the API key
+          if (apiKey.isDefined || selfRegistrationToken.isDefined) {
+            // We only optionally update the API key and self registration token
             actions += (for {
               replaceApiKey <- {
                 if (apiKey.isDefined && apiKey.get.isDefined && checkApiKeyUniqueness) {
@@ -406,10 +451,18 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
                   DBIO.successful(false)
                 }
               }
+              replaceSelfRegistrationToken <- {
+                if (selfRegistrationToken.isDefined && selfRegistrationToken.get.isDefined && checkApiKeyUniqueness) {
+                  PersistenceSchema.organizations.filter(_.selfRegToken === selfRegistrationToken.get.get).filter(_.id =!= orgId).exists.result
+                } else {
+                  DBIO.successful(false)
+                }
+              }
               _ <- {
                 val apiKeyToUse = if (replaceApiKey) Some(CryptoUtil.generateApiKey()) else apiKey.get
-                val q = for {o <- PersistenceSchema.organizations if o.id === orgId} yield (o.shortname, o.fullname, o.landingPage, o.legalNotice, o.errorTemplate, o.template, o.templateName, o.apiKey)
-                q.update(shortName, fullName, landingPageId, legalNoticeId, errorTemplateId, template, templateNameToSet, apiKeyToUse)
+                val selfRegTokenToUse = if (replaceSelfRegistrationToken) Some(CryptoUtil.generateApiKey()) else selfRegistrationToken.get
+                val q = for {o <- PersistenceSchema.organizations if o.id === orgId} yield (o.shortname, o.fullname, o.landingPage, o.legalNotice, o.errorTemplate, o.template, o.templateName, o.apiKey, o.selfRegToken)
+                q.update(shortName, fullName, landingPageId, legalNoticeId, errorTemplateId, template, templateNameToSet, apiKeyToUse, selfRegTokenToUse)
               }
             } yield ())
           } else {
@@ -471,7 +524,7 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
         updateRequest.shortName.getOrElse(organisation.shortname),
         updateRequest.fullName.getOrElse(organisation.fullname),
         organisation.landingPage, organisation.legalNotice, organisation.errorTemplate,
-        None, organisation.template, organisation.templateName, None, None, None,
+        None, organisation.template, organisation.templateName, None, None, None, None,
         copyOrganisationParameters = false, copySystemParameters = false, copyStatementParameters = false,
         checkApiKeyUniqueness = false, onSuccessCalls
       )
@@ -487,7 +540,7 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = for {
       communityId <- getCommunityIdByOrganisationId(orgId)
-      createdSystemInfo <- updateOrganizationInternal(orgId, shortName, fullName, landingPageId, legalNoticeId, errorTemplateId, otherOrganisation, template, templateName, None, propertyValues, propertyFiles, copyOrganisationParameters, copySystemParameters, copyStatementParameters, checkApiKeyUniqueness = false, onSuccessCalls)
+      createdSystemInfo <- updateOrganizationInternal(orgId, shortName, fullName, landingPageId, legalNoticeId, errorTemplateId, otherOrganisation, template, templateName, None, None, propertyValues, propertyFiles, copyOrganisationParameters, copySystemParameters, copyStatementParameters, checkApiKeyUniqueness = false, onSuccessCalls)
     } yield (communityId, createdSystemInfo)
     DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally).map { result =>
       triggerHelper.publishTriggerEvent(new OrganisationUpdatedEvent(result._1, orgId))
@@ -666,7 +719,7 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
               throw new IllegalStateException("Required parameter ["+parameterDefinition.testKey+"] missing")
             }
           }
-          if ((!parameterDefinition.adminOnly && !parameterDefinition.hidden) || isAdmin) {
+          if (isAdmin || (!parameterDefinition.hidden && (!parameterDefinition.adminOnly || (parameterDefinition.inSelfRegistration && isSelfRegistration)))) {
             val matchedProvidedParameter = providedParameters.get(parameterDefinition.id)
             if (matchedProvidedParameter.isDefined) {
               // Create or update
@@ -720,6 +773,27 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
     DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally).map(_ => ())
   }
 
+  def getBySelfRegistrationToken(communityId: Long, token: String): Future[Option[Organizations]] = {
+    DB.run {
+      PersistenceSchema.organizations
+        .filter(_.community === communityId)
+        .filter(_.selfRegToken === token)
+        .result
+        .headOption
+    }
+  }
+
+  def updateSelfRegistrationToken(organisationId: Long): Future[String] = {
+    val newApiKey = CryptoUtil.generateApiKey()
+    updateOrganisationSelfRegistrationTokenInternal(organisationId, Some(newApiKey)).map { _ =>
+      newApiKey
+    }
+  }
+
+  def deleteSelfRegistrationToken(organisationId: Long): Future[Unit] = {
+    updateOrganisationSelfRegistrationTokenInternal(organisationId, None)
+  }
+
   def updateOrganisationApiKey(organisationId: Long): Future[String] = {
     val newApiKey = CryptoUtil.generateApiKey()
     updateOrganisationApiKeyInternal(organisationId, Some(newApiKey)).map { _ =>
@@ -729,6 +803,10 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
 
   def deleteOrganisationApiKey(organisationId: Long): Future[Unit] = {
     updateOrganisationApiKeyInternal(organisationId, None)
+  }
+
+  private def updateOrganisationSelfRegistrationTokenInternal(organisationId: Long, token: Option[String]): Future[Unit] = {
+    DB.run(PersistenceSchema.organizations.filter(_.id === organisationId).map(_.selfRegToken).update(token).transactionally).map(_ => ())
   }
 
   private def updateOrganisationApiKeyInternal(organisationId: Long, apiKey: Option[String]): Future[Unit] = {

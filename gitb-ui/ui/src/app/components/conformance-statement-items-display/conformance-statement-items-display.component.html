@@ -1,5 +1,6 @@
 @for (item of items; track item.id) {
     <app-conformance-statement-item-display
+        #itemComponent
         [item]="item"
         [shade]="item.hidden?!shade:shade"
         [wrapDescriptions]="wrapDescriptions"
@@ -10,14 +11,15 @@
         [withCheck]="withCheck"
         [withExport]="withExport"
         [withResults]="withResults"
-        [withTestCases]="withTestCases"
-        [testSuiteLoader]="testSuiteLoader"
+        [withOptions]="withOptions"
         [communityId]="communityId"
         [organisationId]="organisationId"
+        [systemId]="systemId"
+        [domainId]="domainIdsToUse[$index]"
+        [parentItem]="parentItem"
         [snapshotId]="snapshotId"
-        [snapshotLabel]="snapshotLabel"
         (selectionChanged)="childSelectionChanged($event)"
         (export)="childExported($event)"
-        (viewTestSession)="onViewTestSession($event)"
+        (selected)="childSelected($event)"
     ></app-conformance-statement-item-display>
 }

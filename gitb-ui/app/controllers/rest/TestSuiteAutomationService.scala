@@ -19,8 +19,8 @@ import config.Configurations
 import controllers.util.{AuthorizedAction, ParameterExtractor, RequestWithAttributes, ResponseConstructor}
 import exceptions.ErrorCodes
 import managers.{AuthorizationManager, SpecificationManager, TestSuiteManager}
+import models.TestCaseDeploymentAction
 import models.automation.TestSuiteDeployRequest
-import models.{Constants, TestCaseDeploymentAction}
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.{RandomStringUtils, StringUtils}
 import play.api.mvc._
@@ -44,7 +44,7 @@ class TestSuiteAutomationService @Inject() (authorizedAction: AuthorizedAction,
                                            (implicit ec: ExecutionContext) extends BaseAutomationService(cc) {
 
   private def deployInternal(input: TestSuiteDeployRequest, testSuiteArchive: File, request: Request[AnyContent]): Future[Result] = {
-    val communityKey = request.headers.get(Constants.AutomationHeader).get
+    val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
     specificationManager.getSpecificationInfoByApiKeys(input.specification, communityKey).flatMap { ids =>
       var response: Result = null
       if (input.specification.isEmpty && !input.sharedTestSuite) {
@@ -164,7 +164,7 @@ class TestSuiteAutomationService @Inject() (authorizedAction: AuthorizedAction,
 
   private def handleUndeploy(request: RequestWithAttributes[AnyContent], sharedTestSuite: Boolean): Future[Result] = {
     processAsJson(request, () => authorizationManager.canManageTestSuitesThroughAutomationApi(request), { body =>
-        val communityKey = request.headers.get(Constants.AutomationHeader).get
+        val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
         val input = JsonUtil.parseJsTestSuiteUndeployRequest(body, sharedTestSuite)
         testSuiteManager.getTestSuiteInfoByApiKeys(communityKey, input.specification, input.testSuite).flatMap { testSuiteInfo =>
           if (testSuiteInfo.isDefined) {
@@ -195,7 +195,7 @@ class TestSuiteAutomationService @Inject() (authorizedAction: AuthorizedAction,
 
   def linkShared: Action[AnyContent] = authorizedAction.async { request =>
     processAsJson(request, () => authorizationManager.canManageTestSuitesThroughAutomationApi(request), { body =>
-        val communityKey = request.headers.get(Constants.AutomationHeader).get
+        val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
         val input = JsonUtil.parseJsTestSuiteLinkRequest(body)
         testSuiteManager.getTestSuiteInfoByApiKeys(communityKey, None, input.testSuite).flatMap { testSuiteInfo =>
           if (testSuiteInfo.isDefined) {
@@ -216,7 +216,7 @@ class TestSuiteAutomationService @Inject() (authorizedAction: AuthorizedAction,
 
   def unlinkShared: Action[AnyContent] = authorizedAction.async { request =>
     processAsJson(request, () => authorizationManager.canManageTestSuitesThroughAutomationApi(request), { body =>
-        val communityKey = request.headers.get(Constants.AutomationHeader).get
+        val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
         val input = JsonUtil.parseJsTestSuiteUnlinkRequest(body)
         testSuiteManager.getTestSuiteInfoByApiKeys(communityKey, None, input.testSuite).flatMap { testSuiteInfo =>
           if (testSuiteInfo.isDefined) {

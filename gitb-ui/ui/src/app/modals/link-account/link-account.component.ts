@@ -13,19 +13,19 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, OnInit } from '@angular/core';
-import { BsModalRef } from 'ngx-bootstrap/modal';
-import { Constants } from 'src/app/common/constants';
-import { BaseComponent } from 'src/app/pages/base-component.component';
-import { AuthService } from 'src/app/services/auth.service';
-import { CommunityService } from 'src/app/services/community.service';
-import { DataService } from 'src/app/services/data.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { ActualUserInfo } from 'src/app/types/actual-user-info';
-import { SelfRegistrationModel } from 'src/app/types/self-registration-model.type';
-import { SelfRegistrationOption } from 'src/app/types/self-registration-option.type';
-import { UserAccount } from 'src/app/types/user-account';
-import { ValidationState } from 'src/app/types/validation-state';
+import {AfterViewInit, Component, OnInit} from '@angular/core';
+import {BsModalRef} from 'ngx-bootstrap/modal';
+import {Constants} from 'src/app/common/constants';
+import {AuthService} from 'src/app/services/auth.service';
+import {CommunityService} from 'src/app/services/community.service';
+import {DataService} from 'src/app/services/data.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {ActualUserInfo} from 'src/app/types/actual-user-info';
+import {SelfRegistrationModel} from 'src/app/types/self-registration-model.type';
+import {SelfRegistrationOption} from 'src/app/types/self-registration-option.type';
+import {UserAccount} from 'src/app/types/user-account';
+import {ValidationState} from 'src/app/types/validation-state';
+import {BaseSelfRegistrationPageComponent} from '../../components/self-registration/base-self-registration-page.component';
 
 @Component({
     selector: 'app-link-account',
@@ -33,7 +33,7 @@ import { ValidationState } from 'src/app/types/validation-state';
     styles: [],
     standalone: false
 })
-export class LinkAccountComponent extends BaseComponent implements OnInit {
+export class LinkAccountComponent extends BaseSelfRegistrationPageComponent implements OnInit, AfterViewInit {
 
   createOption!: string
   selfRegOptions!: SelfRegistrationOption[]
@@ -47,12 +47,12 @@ export class LinkAccountComponent extends BaseComponent implements OnInit {
   validation = new ValidationState()
 
   constructor(
-    public readonly dataService: DataService,
+    dataService: DataService,
     private readonly authService: AuthService,
     private readonly communityService: CommunityService,
     public readonly modalRef: BsModalRef,
     private readonly popupService: PopupService
-  ) { super() }
+  ) { super(dataService) }
 
   ngOnInit(): void {
     if (this.createOption == Constants.LOGIN_OPTION.REGISTER) {
@@ -62,6 +62,10 @@ export class LinkAccountComponent extends BaseComponent implements OnInit {
     } else if (this.createOption == Constants.LOGIN_OPTION.LINK_ACCOUNT) {
       this.choice = Constants.CREATE_ACCOUNT_OPTION.LINK
     }
+  }
+
+  ngAfterViewInit() {
+    this.choiceChanged()
   }
 
   resetSelfRegOptions() {
@@ -85,11 +89,7 @@ export class LinkAccountComponent extends BaseComponent implements OnInit {
     } else if (this.choice == Constants.CREATE_ACCOUNT_OPTION.MIGRATE) {
         return this.textProvided(this.email) && this.textProvided(this.password)
     } else if (this.choice == Constants.CREATE_ACCOUNT_OPTION.SELF_REGISTER) {
-        return this.selfRegData.selfRegOption?.communityId != undefined &&
-            (this.selfRegData.selfRegOption.selfRegType != Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN || this.textProvided(this.selfRegData.selfRegToken)) &&
-            (!this.selfRegData.selfRegOption.forceTemplateSelection || (this.selfRegData.selfRegOption.templates == undefined || this.selfRegData.selfRegOption.templates.length == 0) || this.selfRegData.template != undefined) &&
-            (!this.selfRegData.selfRegOption.forceRequiredProperties || this.dataService.customPropertiesValid(this.selfRegData.selfRegOption.organisationProperties, true)) &&
-            this.textProvided(this.selfRegData.orgShortName) && this.textProvided(this.selfRegData.orgFullName)
+        return this.selfRegDataOk(this.selfRegData)
     } else {
         return false
     }
@@ -137,7 +137,7 @@ export class LinkAccountComponent extends BaseComponent implements OnInit {
       if (this.selfRegData.template) {
         templateId = this.selfRegData.template.id
       }
-      this.communityService.selfRegister(this.selfRegData.selfRegOption!.communityId!, token, this.selfRegData.orgShortName!, this.selfRegData.orgFullName!, templateId, this.selfRegData.selfRegOption!.organisationProperties, undefined, undefined, undefined)
+      this.communityService.selfRegister(this.selfRegData.selfRegOption!.communityId!, token, this.selfRegData.newOrganisation === true, this.selfRegData.orgToken, this.selfRegData.orgShortName!, this.selfRegData.orgFullName!, templateId, this.selfRegData.selfRegOption!.organisationProperties, undefined, undefined, undefined)
       .subscribe((data) => {
         if (this.isErrorDescription(data)) {
           this.validation.applyError(data)

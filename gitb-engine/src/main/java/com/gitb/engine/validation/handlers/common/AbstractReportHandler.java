@@ -24,8 +24,8 @@ import com.gitb.tr.TAR;
  */
 public abstract class AbstractReportHandler {
 
-    protected TAR report;
-    protected ObjectFactory objectFactory;
+    protected final TAR report;
+    protected final ObjectFactory objectFactory;
 
     protected AbstractReportHandler() {
         objectFactory = new ObjectFactory();

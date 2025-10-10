@@ -38,7 +38,7 @@ public class XmlValidator extends AbstractValidator {
     private static final String XML_ARGUMENT_NAME = "xml";
     private static final String XSD_ARGUMENT_NAME = "xsd";
     private static final String SCHEMATRON_ARGUMENT_NAME = "schematron";
-    private static final String SCHEMATRON_TYPE_ARGUMENT_NAME = "schematronType";
+    public static final String SCHEMATRON_TYPE_ARGUMENT_NAME = "schematronType";
     private static final String STOP_ON_XSD_ERRORS_ARGUMENT_NAME = "stopOnXsdErrors";
     private static final String SHOW_ARTEFACTS_ARGUMENT_NAME = "showValidationArtefacts";
     private static final String SHOW_SCHEMATRON_TESTS_ARGUMENT_NAME = "showSchematronTests";
@@ -91,6 +91,7 @@ public class XmlValidator extends AbstractValidator {
                 putIfNotNull(map, SchematronValidator.SHOW_SCHEMATRON_ARGUMENT_NAME, showArtefacts);
                 putIfNotNull(map, SchematronValidator.SHOW_TESTS_ARGUMENT_NAME, showTests);
                 putIfNotNull(map, SchematronValidator.SHOW_PATHS_ARGUMENT_NAME, showPaths);
+                map.put(SchematronValidator.FROM_XML_VALIDATOR_ARGUMENT_NAME,new BooleanType(true));
                 schematronReports.add((TAR)schematronValidator.validate(configurations, map));
             }
             allReports.addAll(schematronReports);
@@ -101,7 +102,7 @@ public class XmlValidator extends AbstractValidator {
             var context = new AnyContent();
             context.getItem().add(TestCaseUtils.getInputFor(report.getContext().getItem(), XsdReportHandler.XML_ITEM_NAME).get(0));
             // Add validation artefacts.
-            if (showArtefacts == null || ((Boolean) showArtefacts.getValue())) {
+            if (showArtefacts == null || showArtefacts.getValue()) {
                 // Add XSD.
                 if (xsdReport != null) {
                     context.getItem().add(TestCaseUtils.getInputFor(xsdReport.getContext().getItem(), XsdReportHandler.XSD_ITEM_NAME).get(0));
@@ -128,7 +129,7 @@ public class XmlValidator extends AbstractValidator {
             report.setContext(context);
             if (report.getReports() != null) {
                 var sortType = ReportItemComparator.SortType.LOCATION_THEN_SEVERITY;
-                if (sortBySeverity != null && ((Boolean) sortBySeverity.getValue())) {
+                if (sortBySeverity != null && sortBySeverity.getValue()) {
                     sortType = ReportItemComparator.SortType.SEVERITY_THEN_LOCATION;
                 }
                 report.getReports().getInfoOrWarningOrError().sort(new ReportItemComparator(sortType));

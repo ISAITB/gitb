@@ -26,7 +26,7 @@ import scala.concurrent.ExecutionContext;
 
 /**
  * Created by serbay on 9/10/14.
- *
+ * <p>
  * Verify test step executor actor
  */
 public class VerifyStepProcessorActor extends AbstractProcessorActor<Verify> {

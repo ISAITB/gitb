@@ -24,7 +24,8 @@ import java.util.Objects;
 /**
  * Created by senan on 9/8/14.
  */
-public class StringType extends PrimitiveType {
+public class StringType extends PrimitiveType<String> {
+
     private String data;
     private String encoding;
 
@@ -65,14 +66,14 @@ public class StringType extends PrimitiveType {
     @Override
     public byte[] serialize(String encoding) {
         try {
-            return ((String) getValue()).getBytes(encoding);
+            return getValue().getBytes(encoding);
         } catch (UnsupportedEncodingException e) {
             throw new GITBEngineInternalError(e);
         }
     }
 
     @Override
-    public Object getValue() {
+    public String getValue() {
         return this.data;
     }
 
@@ -83,7 +84,7 @@ public class StringType extends PrimitiveType {
 
     @Override
     public String toString() {
-        return (String) this.getValue();
+        return this.getValue();
     }
 
     @Override
@@ -103,7 +104,7 @@ public class StringType extends PrimitiveType {
     @Override
     protected BooleanType toBooleanType() {
         BooleanType type = new BooleanType();
-        type.setValue(Boolean.valueOf((String) getValue()));
+        type.setValue(Boolean.valueOf(getValue()));
         return type;
     }
 
@@ -123,7 +124,7 @@ public class StringType extends PrimitiveType {
 
     @Override
     protected StringType toStringType() {
-	    return new StringType((String) this.getValue(), this.encoding);
+	    return new StringType(this.getValue(), this.encoding);
     }
 
     public String getEncoding() {

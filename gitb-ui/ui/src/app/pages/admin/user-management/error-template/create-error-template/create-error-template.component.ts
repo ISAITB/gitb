@@ -13,22 +13,20 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { AfterViewInit, Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { BaseComponent } from 'src/app/pages/base-component.component';
-import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
-import { DataService } from 'src/app/services/data.service';
-import { ErrorTemplateService } from 'src/app/services/error-template.service';
-import { ErrorService } from 'src/app/services/error.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { RoutingService } from 'src/app/services/routing.service';
-import { ErrorData } from 'src/app/types/error-data.type';
-import { ErrorTemplate } from 'src/app/types/error-template';
-import { CommunityTab } from '../../community/community-details/community-tab.enum';
-import { KeyValue } from 'src/app/types/key-value';
-import { Constants } from 'src/app/common/constants';
-import { SystemAdministrationTab } from '../../../system-administration/system-administration-tab.enum';
-import { ValidationState } from 'src/app/types/validation-state';
+import {AfterViewInit, Component, OnInit} from '@angular/core';
+import {ActivatedRoute} from '@angular/router';
+import {BaseComponent} from 'src/app/pages/base-component.component';
+import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
+import {DataService} from 'src/app/services/data.service';
+import {ErrorTemplateService} from 'src/app/services/error-template.service';
+import {ErrorService} from 'src/app/services/error.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {RoutingService} from 'src/app/services/routing.service';
+import {ErrorData} from 'src/app/types/error-data.type';
+import {ErrorTemplate} from 'src/app/types/error-template';
+import {KeyValue} from 'src/app/types/key-value';
+import {Constants} from 'src/app/common/constants';
+import {ValidationState} from 'src/app/types/validation-state';
 
 @Component({
     selector: 'app-create-error-template',
@@ -115,9 +113,9 @@ export class CreateErrorTemplateComponent extends BaseComponent implements OnIni
 
   cancelCreateErrorTemplate() {
     if (this.communityId == Constants.DEFAULT_COMMUNITY_ID) {
-      this.routingService.toSystemAdministration(SystemAdministrationTab.errorTemplates)
+      this.routingService.toSystemAdministration(Constants.TAB.SYSTEM_ADMINISTRATION.ERROR_TEMPLATES)
     } else {
-      this.routingService.toCommunity(this.communityId, CommunityTab.errorTemplates)
+      this.routingService.toCommunity(this.communityId, Constants.TAB.COMMUNITY.ERROR_TEMPLATES)
     }
   }
 

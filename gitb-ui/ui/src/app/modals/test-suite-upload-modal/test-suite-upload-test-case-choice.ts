@@ -13,8 +13,6 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { TestSuiteUploadTestCase } from "./test-suite-upload-test-case"
-
 export interface TestSuiteUploadTestCaseChoice {
 
     identifier: string

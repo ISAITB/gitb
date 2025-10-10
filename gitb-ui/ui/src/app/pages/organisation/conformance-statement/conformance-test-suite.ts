@@ -24,6 +24,8 @@ export interface ConformanceTestSuite extends SpecificationReferenceInfo {
   description?: string;
   result: string;
   hasDocumentation: boolean;
+  hasOptional: boolean;
+  hasDisabled: boolean;
   testCases: ConformanceTestCase[];
   testCaseGroups?: ConformanceTestCaseGroup[];
 

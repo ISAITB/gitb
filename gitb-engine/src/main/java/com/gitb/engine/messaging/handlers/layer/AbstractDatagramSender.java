@@ -56,9 +56,7 @@ public abstract class AbstractDatagramSender implements IDatagramSender {
 	}
 
 	@Override
-	public void onEnd() throws Exception {
-		/*DatagramSocket socket = transaction.getParameter(DatagramSocket.class);
-
-		socket.close();*/
+	public void onEnd() {
+        // Do nothing
 	}
 }
