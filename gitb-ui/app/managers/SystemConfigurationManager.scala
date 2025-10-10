@@ -880,24 +880,8 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
     defaultSoftwareVersionCheckSettings.get
   }
 
-  def disableStartupWizardIfNotTriggered(): Future[Unit] = {
-    val task = for {
-      currentSetting <- PersistenceSchema.systemConfigurations
-        .filter(_.name === Constants.StartupWizard)
-        .map(_.parameter)
-        .result
-        .headOption.map { result =>
-          result.flatten
-        }
-      _ <- {
-        if (currentSetting.isEmpty) {
-          updateSystemParameterInternal(Constants.StartupWizard, Some("false"), applySetting = true)
-        } else {
-          DBIO.successful(())
-        }
-      }
-    } yield ()
-    DB.run(task.transactionally)
+  def disableStartupWizard(): Future[Unit] = {
+    DB.run(updateSystemParameterInternal(Constants.StartupWizard, Some("false"), applySetting = true).transactionally).map(() => _)
   }
 
 }

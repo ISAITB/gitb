@@ -495,16 +495,19 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
         } else {
           // We use foldLeft to ensure that the items are processed in sequence producing futures that execute before proceeding to the next one.
           val dataArchives = containedFiles.filter(_.getName.toLowerCase.endsWith(".zip"))
-          dataArchives.foldLeft(Future.successful(())) { (previousFuture, currentArchive) =>
-            previousFuture.flatMap { _ =>
-              importCompleteManager.importSandboxData(currentArchive, archiveKey).map(_ => ())
+          for {
+            _ <- {
+              dataArchives.foldLeft(Future.successful(())) { (previousFuture, currentArchive) =>
+                previousFuture.flatMap { _ =>
+                  importCompleteManager.importSandboxData(currentArchive, archiveKey).map(_ => ())
+                }
+              }
             }
-          }.andThen { _ =>
-            if (dataArchives.nonEmpty) {
-              // Make sure we disable the startup configuration wizard if sandbox data archives were processed.
-              systemConfigurationManager.disableStartupWizardIfNotTriggered().map(_ => ())
+            _ <- {
+              // Make sure we disable the startup configuration wizard if sandbox data archives are present.
+              systemConfigurationManager.disableStartupWizard()
             }
-          }
+          } yield ()
         }
       } else {
         Future.successful(())
