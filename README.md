@@ -8,7 +8,7 @@
 [![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=ISAITB_gitb&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=ISAITB_gitb)
 [![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=ISAITB_gitb&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=ISAITB_gitb)
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=ISAITB_gitb&metric=bugs)](https://sonarcloud.io/summary/new_code?id=ISAITB_gitb)
-[![licence](https://img.shields.io/github/license/ISAITB/gitb.svg?color=blue)](https://github.com/ISAITB/csv-validator/blob/master/LICENCE.txt)
+[![licence](https://img.shields.io/github/license/ISAITB/gitb.svg?color=blue)](https://github.com/ISAITB/gitb/blob/master/LICENCE.txt)
 [![docs](https://img.shields.io/static/v1?label=docs&message=Interoperable%20Europe%20Portal&color=blue)](https://www.itb.ec.europa.eu)
 [![docs](https://img.shields.io/static/v1?label=docs&message=Test%20Bed%20guides&color=blue)](https://www.itb.ec.europa.eu/docs/guides/latest/)
 [![docs](https://img.shields.io/static/v1?label=docs&message=GITB%20TDL%20&color=blue)](https://www.itb.ec.europa.eu/docs/tdl/latest/)
