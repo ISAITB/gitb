@@ -656,7 +656,7 @@ export class DataService {
 
   b64toBlob(b64Data: string, contentType = '', sliceSize = 512): Blob {
     const byteCharacters = atob(b64Data)
-    let byteArrays: Uint8Array[] = []
+    let byteArrays: BlobPart[] = []
     let offset = 0
     while (offset < byteCharacters.length) {
       let slice = byteCharacters.slice(offset, offset + sliceSize)

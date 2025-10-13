@@ -189,7 +189,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
     private readonly zone: NgZone
   ) {
     super(router, route)
-    const navigation = router.getCurrentNavigation()
+    const navigation = router.currentNavigation()
     if (navigation?.extras?.state) {
       this.snapshotLabel = navigation.extras.state[Constants.NAVIGATION_PATH_PARAM.SNAPSHOT_LABEL]
     }
