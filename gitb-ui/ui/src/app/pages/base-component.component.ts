@@ -23,11 +23,11 @@ export abstract class BaseComponent {
     alerts: Alert[] = []
 
     numberOrEmpty(value: any): boolean {
-        return value == undefined || !isNaN(value)
+        return value == undefined || !Number.isNaN(value)
     }
 
     numberProvided(value: any, minimum?: number): boolean {
-        return value != undefined && !isNaN(value) && (minimum == undefined || minimum <= value)
+        return value != undefined && !Number.isNaN(value) && (minimum == undefined || minimum <= value)
     }
 
     textProvided(value: string|undefined): boolean {

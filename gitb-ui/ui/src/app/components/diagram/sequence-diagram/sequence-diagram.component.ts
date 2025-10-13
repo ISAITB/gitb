@@ -151,7 +151,7 @@ export class SequenceDiagramComponent implements OnInit {
         return actor
       }
     }
-    throw Error("Test case without SUT actor")
+    throw new Error("Test case without SUT actor")
   }
 
   getTesterActorName() {

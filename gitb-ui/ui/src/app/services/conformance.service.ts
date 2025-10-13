@@ -1136,12 +1136,12 @@ export class ConformanceService {
         const placeholder: BadgePlaceholderInfo = {
           placeholder: match,
           status: parts[0],
-          systemId: parseInt(parts[1]),
-          specificationId: parseInt(parts[2]),
-          actorId: parseInt(parts[3])
+          systemId: Number.parseInt(parts[1]),
+          specificationId: Number.parseInt(parts[2]),
+          actorId: Number.parseInt(parts[3])
         }
         if (parts[4] != "0") {
-          placeholder.snapshotId = parseInt(parts[4])
+          placeholder.snapshotId = Number.parseInt(parts[4])
         }
         placeholders.push(placeholder)
       })
