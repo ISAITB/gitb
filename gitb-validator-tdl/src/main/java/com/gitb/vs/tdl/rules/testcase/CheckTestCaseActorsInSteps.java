@@ -56,9 +56,15 @@ public class CheckTestCaseActorsInSteps extends AbstractTestCaseObserver {
             String toValue = beginTransactionStep.getTo();
             validateActorReference(fromValue, null, currentStep);
             validateActorReference(toValue, null, currentStep);
-            int actorCount = countTestCaseActors();
-            if ((fromValue == null || toValue == null) && actorCount > 2) {
-                addReportItem(ErrorCode.MISSING_ACTOR_REFERENCE_IN_TRANSACTION, currentTestCase.getId());
+            if (fromValue == null || toValue == null) {
+                if (testCaseIsWrappedScriptlet) {
+                    scriptletsWithMissingActorReferences = true;
+                } else {
+                    int actorCount = countTestCaseActors();
+                    if (actorCount > 2) {
+                        addReportItem(ErrorCode.MISSING_ACTOR_REFERENCE_IN_TRANSACTION, currentTestCase.getId());
+                    }
+                }
             }
         } else if (currentStep instanceof MessagingStep messagingStep) {
             String fromValue = messagingStep.getFrom();
@@ -84,14 +90,22 @@ public class CheckTestCaseActorsInSteps extends AbstractTestCaseObserver {
     }
 
     private int countTestCaseActors() {
-        return currentTestCase.getActors().getActor().size();
+        if (currentTestCase != null && currentTestCase.getActors() != null) {
+            return currentTestCase.getActors().getActor().size();
+        } else {
+            return 0;
+        }
     }
 
     private long countSimulatedActors() {
         if (simulatorActorCount == null) {
-            simulatorActorCount = currentTestCase.getActors().getActor().stream()
-                    .filter(role -> role.getRole() == null || role.getRole() == TestRoleEnumeration.SIMULATED)
-                    .count();
+            if (currentTestCase != null && currentTestCase.getActors() != null) {
+                simulatorActorCount = currentTestCase.getActors().getActor().stream()
+                        .filter(role -> role.getRole() == null || role.getRole() == TestRoleEnumeration.SIMULATED)
+                        .count();
+            } else {
+                simulatorActorCount = 0L;
+            }
         }
         return simulatorActorCount;
     }
