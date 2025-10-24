@@ -10,6 +10,7 @@ val gitbTypesVersion = "1.29.0-SNAPSHOT"
 val bouncyCastleVersion = "1.82"
 val commonsTextVersion = "1.14.0"
 val mySqlConnectorVersion = "9.4.0"
+val pac4jVersion = "6.2.2"
 
 name := """GITB"""
 version := "1.0-SNAPSHOT"
@@ -44,9 +45,9 @@ libraryDependencies ++= Seq(
   "org.apache.pekko" %% "pekko-slf4j" % pekkoVersion,
   "org.apache.pekko" %% "pekko-serialization-jackson" % pekkoVersion,
   "org.playframework" %% "play-slick" % "6.2.0",
-  "org.pac4j" %% "play-pac4j" % "12.0.2-PLAY3.0",
-  "org.pac4j" % "pac4j-cas" % "6.1.3" exclude("org.bouncycastle", "bcpkix-jdk15on"),
-  "org.pac4j" % "pac4j-oidc" % "6.1.3",
+  "org.pac4j" %% "play-pac4j" % "13.0.0-PLAY3.0",
+  "org.pac4j" % "pac4j-cas" % pac4jVersion exclude("org.bouncycastle", "bcpkix-jdk15on"),
+  "org.pac4j" % "pac4j-oidc" % pac4jVersion,
   "org.apache.commons" % "commons-lang3" % "3.19.0",
   "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
