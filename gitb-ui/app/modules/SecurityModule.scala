@@ -245,6 +245,7 @@ class SecurityModule extends AbstractModule {
       .excludeBranch("%stemplate".formatted(WEB_CONTEXT_ROOT_WITH_SLASH))
       .excludePath("%sfavicon.ico".formatted(WEB_CONTEXT_ROOT_WITH_SLASH))
       .excludeBranch("%scallback".formatted(WEB_CONTEXT_ROOT_WITH_SLASH))
+      .excludeBranch("%s/repository/healthCheck".formatted(API_ROOT))
       .excludeBranch("%s/repository/tests".formatted(API_ROOT))
       .excludeBranch("%s/repository/resource".formatted(API_ROOT))
       .excludeBranch("%s/rest".formatted(API_ROOT))
