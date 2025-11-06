@@ -22,8 +22,8 @@ import com.gitb.repository.ITestCaseRepository;
 import com.google.gson.JsonParser;
 import com.networknt.schema.AbsoluteIri;
 import com.networknt.schema.resource.InputStreamSource;
-import com.networknt.schema.resource.SchemaLoader;
-import com.networknt.schema.resource.UriSchemaLoader;
+import com.networknt.schema.resource.IriResourceLoader;
+import com.networknt.schema.resource.ResourceLoader;
 import org.apache.commons.lang3.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,11 +35,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-public class LocalSchemaResolver implements SchemaLoader {
+public class LocalSchemaResolver implements ResourceLoader {
 
     private static final Logger LOG = LoggerFactory.getLogger(LocalSchemaResolver.class);
 
-    private final UriSchemaLoader uriSchemaLoader = new UriSchemaLoader();
     private final ITestCaseRepository repository = ModuleManager.getInstance().getTestCaseRepository();
     private final TestCaseContext testCaseContext;
     private final SharedSchemaInfo sharedSchemaInfo;
@@ -52,12 +51,12 @@ public class LocalSchemaResolver implements SchemaLoader {
     }
 
     @Override
-    public InputStreamSource getSchema(AbsoluteIri absoluteIri) {
+    public InputStreamSource getResource(AbsoluteIri absoluteIri) {
         String idToCheck = schemaIdToUse(absoluteIri.toString());
         Optional<ResourceInfo> schemaInfo = testCaseContext.getCachedResource(idToCheck, cacheLoader);
         if (schemaInfo.isEmpty()) {
             LOG.debug("Schema with URI {} not found locally. Looking up remotely.", absoluteIri);
-            return uriSchemaLoader.getSchema(absoluteIri);
+            return IriResourceLoader.getInstance().getResource(absoluteIri);
         } else {
             LOG.debug("Schema with URI {} found locally.", absoluteIri);
             return () -> repository.getTestArtifact(schemaInfo.get().testSuiteId().orElse(null), sharedSchemaInfo.testCaseId(), schemaInfo.get().resourcePath());

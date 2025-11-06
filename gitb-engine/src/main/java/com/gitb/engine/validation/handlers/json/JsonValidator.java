@@ -27,10 +27,14 @@ import com.gitb.engine.validation.handlers.common.AbstractValidator;
 import com.gitb.tr.*;
 import com.gitb.types.*;
 import com.networknt.schema.*;
+import com.networknt.schema.Error;
+import com.networknt.schema.dialect.Dialects;
 import com.networknt.schema.i18n.ResourceBundleMessageSource;
-import com.networknt.schema.serialization.JsonNodeReader;
+import com.networknt.schema.path.PathType;
+import com.networknt.schema.serialization.DefaultNodeReader;
+import com.networknt.schema.serialization.NodeReader;
 import com.networknt.schema.utils.JsonNodes;
-import org.apache.commons.lang3.Strings;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
 import org.springframework.util.MimeType;
 
@@ -144,7 +148,7 @@ public class JsonValidator extends AbstractValidator {
     }
 
     private List<Message> validateAgainstSetOfSchemas(InputInfo contentInfo, List<MapType> schemas, SchemaCombinationApproach combinationApproach, String testCaseId, String sessionId) {
-        JsonNodeReader jsonReader = getJsonReader();
+        NodeReader jsonReader = getJsonReader();
         JsonNode contentNode = getContentNode(contentInfo, jsonReader);
         var aggregatedMessages = new LinkedList<Message>();
         if (combinationApproach == SchemaCombinationApproach.ALL) {
@@ -191,10 +195,22 @@ public class JsonValidator extends AbstractValidator {
         return aggregatedMessages;
     }
 
-    private List<Message> validateAgainstSchema(JsonNode contentNode, MapType schema, JsonNodeReader jsonReader, String testCaseId, String sessionId) {
-        JsonSchema parsedSchema = readSchema(schema, jsonReader, testCaseId, sessionId);
+    private List<Message> validateAgainstSchema(JsonNode contentNode, MapType schema, NodeReader jsonReader, String testCaseId, String sessionId) {
+        Schema parsedSchema = readSchema(schema, jsonReader, testCaseId, sessionId);
         var locationMapper = getLocationMapper();
-        return parsedSchema.validate(contentNode).stream().map((message) -> new Message(Strings.CS.removeStart(message.getMessage(), "[] "), locationMapper.apply(message))).collect(Collectors.toList());
+        return parsedSchema.validate(contentNode).stream().map((error) -> {
+            String pathPrefix = null;
+            if (error.getInstanceLocation() != null) {
+                pathPrefix = error.getInstanceLocation().toString();
+            } else if (error.getSchemaLocation() != null) {
+                pathPrefix = error.getSchemaLocation().toString();
+            }
+            if (StringUtils.isNotEmpty(pathPrefix)) {
+                return new Message("["+pathPrefix+"] "+error.getMessage(), locationMapper.apply(error));
+            } else {
+                return new Message(error.getMessage(), locationMapper.apply(error));
+            }
+        }).collect(Collectors.toList());
     }
 
     private void addBranchErrors(List<Message> aggregatedMessages, List<Message> branchMessages, int branchCounter) {
@@ -204,9 +220,9 @@ public class JsonValidator extends AbstractValidator {
         }
     }
 
-    private Function<ValidationMessage, String> getLocationMapper() {
+    private Function<Error, String> getLocationMapper() {
         return (msg) -> {
-            var nodeLocation = JsonNodes.tokenLocationOf(msg.getInstanceNode());
+            var nodeLocation = JsonNodes.tokenStreamLocationOf(msg.getInstanceNode());
             int lineNumber = 0;
             if (nodeLocation != null && nodeLocation.getLineNr() > 0) {
                 lineNumber = nodeLocation.getLineNr();
@@ -215,11 +231,9 @@ public class JsonValidator extends AbstractValidator {
         };
     }
 
-    private JsonSchema readSchema(MapType schema, JsonNodeReader jsonReader, String testCaseId, String sessionId) {
+    private Schema readSchema(MapType schema, NodeReader jsonReader, String testCaseId, String sessionId) {
         try {
             var jsonNode = objectMapper.readTree((String) schema.getItem(SCHEMA_ARGUMENT_NAME).convertTo(DataType.STRING_DATA_TYPE).getValue());
-            var jsonSchemaVersion = JsonSchemaFactory.checkVersion(SpecVersionDetector.detect(jsonNode));
-            var metaSchema = jsonSchemaVersion.getInstance();
             /*
              * The schema factory is created per validation. This is done to avoid caching of schemas across validations that
              * may be remotely loaded or schemas that are user-provided. In addition, it allows us to treat schemas that
@@ -234,24 +248,26 @@ public class JsonValidator extends AbstractValidator {
                                     .toList()
                             ).orElseGet(Collections::emptyList)
             );
-            var schemaFactory = JsonSchemaFactory.builder()
-                    .schemaLoaders(schemaLoaders -> schemaLoaders.add(new LocalSchemaResolver(sharedSchemaInfo, getScope(sessionId).getContext())))
-                    .metaSchema(metaSchema)
-                    .defaultMetaSchemaIri(metaSchema.getIri())
-                    .jsonNodeReader(jsonReader)
-                    .build();
-            var schemaConfig = SchemaValidatorsConfig.builder()
+            var registryConfig = SchemaRegistryConfig.builder()
+                    .cacheRefs(false)
                     .pathType(PathType.JSON_POINTER)
                     .locale(Locale.ENGLISH)
                     .messageSource(new ResourceBundleMessageSource("com.gitb.i18n.jsv-messages"))
                     .build();
-            return schemaFactory.getSchema(jsonNode, schemaConfig);
+            var registry = SchemaRegistry.builder()
+                    .defaultDialectId(Dialects.getDraft202012().getId())
+                    .schemaRegistryConfig(registryConfig)
+                    .schemaCacheEnabled(false)
+                    .nodeReader(jsonReader)
+                    .resourceLoaders(builder -> builder.add(new LocalSchemaResolver(sharedSchemaInfo, getScope(sessionId).getContext())))
+                    .build();
+            return registry.getSchema(jsonNode);
         } catch (IOException e) {
             throw new IllegalStateException("Error while parsing JSON schema: %s".formatted(e.getMessage()), e);
         }
     }
 
-    private JsonNode getContentNode(InputInfo inputInfo, JsonNodeReader reader) {
+    private JsonNode getContentNode(InputInfo inputInfo, NodeReader reader) {
         try {
             return reader.readTree(inputInfo.content(), inputInfo.isYaml()?InputFormat.YAML:InputFormat.JSON);
         } catch (IOException e) {
@@ -259,8 +275,8 @@ public class JsonValidator extends AbstractValidator {
         }
     }
 
-    private JsonNodeReader getJsonReader() {
-        var jsonReaderBuilder = JsonNodeReader.builder();
+    private NodeReader getJsonReader() {
+        var jsonReaderBuilder = DefaultNodeReader.builder();
         jsonReaderBuilder = jsonReaderBuilder.locationAware();
         return jsonReaderBuilder.build();
     }
