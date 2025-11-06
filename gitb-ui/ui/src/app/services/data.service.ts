@@ -152,6 +152,7 @@ export class DataService {
       userGuideCA: (this.configuration?.userGuideCA != undefined)?this.configuration!.userGuideCA:'',
       userGuideTA: (this.configuration?.userGuideTA != undefined)?this.configuration!.userGuideTA:'',
       ssoEnabled: (this.configuration?.ssoEnabled != undefined)?this.configuration!.ssoEnabled:false,
+      ssoWithNativeLogin: (this.configuration?.ssoWithNativeLogin != undefined)?this.configuration!.ssoWithNativeLogin:false,
       ssoInMigration: (this.configuration?.ssoInMigration != undefined)?this.configuration!.ssoInMigration:false,
       demosEnabled: (this.configuration?.demosEnabled != undefined)?this.configuration!.demosEnabled:false,
       demosAccount: (this.configuration?.demosAccount != undefined)?this.configuration!.demosAccount:-1,
@@ -1657,7 +1658,7 @@ export class DataService {
     return this.locationData
   }
 
-  private removeLocationData(): void {
+  removeLocationData(): void {
     this.locationData = {}
     if (sessionStorage) {
       sessionStorage.removeItem(DataService.STORAGE_LOCATION)
@@ -1696,15 +1697,10 @@ export class DataService {
     let optionToReturn: string|undefined
     if (this.loginOption) {
       optionToReturn = this.loginOption
-      this.loginOption = undefined
-      if (sessionStorage) {
-        sessionStorage.removeItem(DataService.STORAGE_LOGIN_OPTION)
-      }
     } else if (sessionStorage) {
       const option = sessionStorage.getItem(DataService.STORAGE_LOGIN_OPTION)
       if (option) {
         optionToReturn = option
-        sessionStorage.removeItem(DataService.STORAGE_LOGIN_OPTION)
       }
     }
     return optionToReturn

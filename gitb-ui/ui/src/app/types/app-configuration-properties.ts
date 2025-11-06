@@ -31,6 +31,7 @@ export interface AppConfigurationProperties {
   userGuideCA: string
   userGuideTA: string
   ssoEnabled: boolean
+  ssoWithNativeLogin: boolean
   ssoInMigration: boolean
   demosEnabled: boolean
   demosAccount: number

@@ -52,5 +52,9 @@ if [[ -n "$AUTHENTICATION_SSO_CLIENT_SECRET_FILE" ]] ; then
     echo -n $(cat $AUTHENTICATION_SSO_CLIENT_SECRET_FILE) >> /usr/local/gitb-ui/conf/overrides.conf;
     echo '"""' >> /usr/local/gitb-ui/conf/overrides.conf;
 fi
-
+if [[ -n "$AUTHENTICATION_SSO_CONNECTION_PASSWORD_FILE" ]] ; then
+    echo -n 'authentication.sso.connectionPassword="""' >> /usr/local/gitb-ui/conf/overrides.conf;
+    echo -n $(cat $AUTHENTICATION_SSO_CONNECTION_PASSWORD_FILE) >> /usr/local/gitb-ui/conf/overrides.conf;
+    echo '"""' >> /usr/local/gitb-ui/conf/overrides.conf;
+fi
 exec gitb -Dconfig.file=/usr/local/gitb-ui/conf/overrides.conf

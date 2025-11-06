@@ -20,6 +20,11 @@ import controllers.util._
 import exceptions._
 import managers.{AccountManager, AuthenticationManager, AuthorizationManager, UserManager}
 import models.Enums
+import org.pac4j.core.context.session.SessionStore
+import org.pac4j.core.context.{CallContext, WebContext}
+import org.pac4j.core.credentials.UsernamePasswordCredentials
+import org.pac4j.core.profile.ProfileManager
+import org.pac4j.play.PlayWebContext
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.cache.TokenCache
 import play.api.mvc._
@@ -27,6 +32,8 @@ import utils.{CryptoUtil, JsonUtil, RepositoryUtils}
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
+import scala.jdk.CollectionConverters.MapHasAsScala
+import scala.jdk.OptionConverters._
 
 class AuthenticationService @Inject() (authorizedAction: AuthorizedAction,
                                        cc: ControllerComponents,
@@ -34,7 +41,9 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction,
                                        authManager: AuthenticationManager,
                                        authorizationManager: AuthorizationManager,
                                        userManager: UserManager,
-                                       repositoryUtils: RepositoryUtils)
+                                       repositoryUtils: RepositoryUtils,
+                                       config: org.pac4j.core.config.Config,
+                                       playSessionStore: SessionStore)
                                       (implicit ec: ExecutionContext) extends AbstractController(cc) {
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[AuthenticationService])
@@ -42,10 +51,14 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction,
 
   def getUserFunctionalAccounts: Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewUserFunctionalAccounts(request).flatMap { _ =>
-      authorizationManager.getAccountInfo(request).map { accountInfo =>
-        val json: String = JsonUtil.jsActualUserInfo(accountInfo).toString
-        ResponseConstructor.constructJsonResponse(json)
-      }
+      getUserFunctionalAccountsInternal(request)
+    }
+  }
+
+  private def getUserFunctionalAccountsInternal(request: RequestWithAttributes[_], context: Option[WebContext] = None): Future[Result] = {
+    authorizationManager.getAccountInfo(request, context).map { accountInfo =>
+      val json: String = JsonUtil.jsActualUserInfo(accountInfo).toString
+      ResponseConstructor.constructJsonResponse(json)
     }
   }
 
@@ -171,6 +184,28 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction,
     }
   }
 
+  def ssoLoginViaNativeForm: Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canLogin(request).flatMap { _ =>
+      val email = ParameterExtractor.requiredBodyParameter(request, ParameterNames.EMAIL)
+      val passwd = ParameterExtractor.requiredBodyParameter(request, ParameterNames.PASSWORD)
+      val credentials = new UsernamePasswordCredentials(email, passwd)
+      val webContext = new PlayWebContext(request)
+      val callContext = new CallContext(webContext, playSessionStore)
+      val validationResult = config.getClients.getClients.getFirst.validateCredentials(callContext, credentials).toScala
+      validationResult match {
+        case Some(credentials) =>
+          val profileManager = new ProfileManager(webContext, playSessionStore)
+          profileManager.save(true, credentials.getUserProfile, false)
+          getUserFunctionalAccountsInternal(request, Some(webContext)).map { result =>
+            playSessionStore.renewSession(webContext)
+            val session = webContext.getNativeSession
+            result.withSession(Session(session.data().asScala.toMap))
+          }
+        case None => Future.successful(ResponseConstructor.constructUnauthorizedResponse(ErrorCodes.INVALID_CREDENTIALS, "Invalid credentials"))
+      }
+    }
+  }
+
   /**
     * OAuth2.0 request (Resource Owner Password Credentials Grant) for getting or refreshing access token
     */
@@ -289,6 +324,7 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction,
         }
       }
       if (isFullLogout) {
+        playSessionStore.destroySession(new PlayWebContext(request))
         ResponseConstructor.constructEmptyResponse.withNewSession
       } else {
         ResponseConstructor.constructEmptyResponse

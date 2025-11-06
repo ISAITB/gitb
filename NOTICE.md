@@ -221,6 +221,7 @@ Library licences are organised in three sections:
 | Apache | [Apache]() | org.apereo.cas.client # cas-client-support-saml # 4.0.4 | <notextile></notextile> |
 | Apache | [Apache]() | [xml-resolver # xml-resolver # 1.2](http://xml.apache.org/commons/components/resolver/) | <notextile></notextile> |
 | Apache | [Apache 2](http://www.apache.org/licenses/LICENSE-2.0.txt) | io.fluentlenium # fluentlenium-core # 6.0.0 | <notextile></notextile> |
+| Apache | [Apache 2](https://www.apache.org/licenses/LICENSE-2.0.txt) | org.ldaptive # ldaptive # 2.4.2 | <notextile></notextile> |
 | Apache | [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt) | [com.google.auto.service # auto-service-annotations # 1.1.1](https://github.com/google/auto/tree/main/service) | <notextile></notextile> |
 | Apache | [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt) | com.google.errorprone # error_prone_annotations # 2.36.0 | <notextile></notextile> |
 | Apache | [Apache 2.0 License](http://www.apache.org/licenses/LICENSE-2.0.html) | [net.debasishg # redisclient_2.13 # 3.42](https://github.com/debasishg/scala-redis) | <notextile></notextile> |
@@ -242,6 +243,17 @@ Library licences are organised in three sections:
 | Apache | [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0) | io.jsonwebtoken # jjwt-api # 0.11.5 | <notextile></notextile> |
 | Apache | [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0) | io.jsonwebtoken # jjwt-impl # 0.11.5 | <notextile></notextile> |
 | Apache | [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0) | io.jsonwebtoken # jjwt-jackson # 0.11.5 | <notextile></notextile> |
+| Apache | [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0) | io.netty # netty-buffer # 4.1.123.Final | <notextile></notextile> |
+| Apache | [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0) | io.netty # netty-codec # 4.1.123.Final | <notextile></notextile> |
+| Apache | [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0) | io.netty # netty-common # 4.1.123.Final | <notextile></notextile> |
+| Apache | [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0) | io.netty # netty-handler # 4.1.123.Final | <notextile></notextile> |
+| Apache | [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0) | io.netty # netty-resolver # 4.1.123.Final | <notextile></notextile> |
+| Apache | [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0) | io.netty # netty-transport # 4.1.123.Final | <notextile></notextile> |
+| Apache | [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0) | io.netty # netty-transport-classes-epoll # 4.1.123.Final | <notextile></notextile> |
+| Apache | [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0) | io.netty # netty-transport-classes-kqueue # 4.1.123.Final | <notextile></notextile> |
+| Apache | [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0) | io.netty # netty-transport-native-epoll # 4.1.123.Final | <notextile></notextile> |
+| Apache | [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0) | io.netty # netty-transport-native-kqueue # 4.1.123.Final | <notextile></notextile> |
+| Apache | [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0) | io.netty # netty-transport-native-unix-common # 4.1.123.Final | <notextile></notextile> |
 | Apache | [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [javax.cache # cache-api # 1.1.1](https://github.com/jsr107/jsr107spec) | <notextile></notextile> |
 | Apache | [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | net.bytebuddy # byte-buddy # 1.17.7 | <notextile></notextile> |
 | Apache | [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) | [net.lingala.zip4j # zip4j # 2.11.5](https://github.com/srikanth-lingala/zip4j) | <notextile></notextile> |
@@ -260,9 +272,9 @@ Library licences are organised in three sections:
 | Apache | [Apache License, Version 2.0](https://flywaydb.org/licenses/flyway-oss) | org.flywaydb # flyway-mysql # 11.13.2 | <notextile></notextile> |
 | Apache | [Apache License, Version 2.0](https://github.com/flyway/flyway-play/blob/master/LICENSE.txt) | [org.flywaydb # flyway-play_2.13 # 9.1.0](https://github.com/flyway/flyway-play) | <notextile></notextile> |
 | Apache | [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt) | [org.freemarker # freemarker # 2.3.34](https://freemarker.apache.org/) | <notextile></notextile> |
-| Apache | [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0) | [org.springframework # spring-core # 6.2.7](https://github.com/spring-projects/spring-framework) | <notextile></notextile> |
+| Apache | [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0) | [org.springframework # spring-core # 6.2.11](https://github.com/spring-projects/spring-framework) | <notextile></notextile> |
 | Apache | [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0) | [org.webjars # bootstrap # 5.3.8](http://webjars.org) | <notextile></notextile> |
-| Apache | [Apache License, version 2.0](https://www.apache.org/licenses/LICENSE-2.0.html) | [com.nimbusds # oauth2-oidc-sdk # 11.25](https://bitbucket.org/connect2id/oauth-2.0-sdk-with-openid-connect-extensions) | <notextile></notextile> |
+| Apache | [Apache License, version 2.0](https://www.apache.org/licenses/LICENSE-2.0.html) | [com.nimbusds # oauth2-oidc-sdk # 11.28](https://bitbucket.org/connect2id/oauth-2.0-sdk-with-openid-connect-extensions) | <notextile></notextile> |
 | Apache | [Apache Software License - Version 2.0](http://www.apache.org/licenses/LICENSE-2.0) | org.eclipse.jetty # jetty-client # 9.4.50.v20221201 | <notextile></notextile> |
 | Apache | [Apache Software License - Version 2.0](https://www.apache.org/licenses/LICENSE-2.0) | org.eclipse.jetty # jetty-http # 12.0.23 | <notextile></notextile> |
 | Apache | [Apache Software License - Version 2.0](https://www.apache.org/licenses/LICENSE-2.0) | org.eclipse.jetty # jetty-io # 12.0.23 | <notextile></notextile> |
@@ -408,10 +420,12 @@ Library licences are organised in three sections:
 | Apache | [The Apache Software License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt) | org.ehcache # jcache # 1.0.1 | <notextile></notextile> |
 | Apache | [The Apache Software License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt) | [org.jasypt # jasypt # 1.9.3](http://www.jasypt.org) | <notextile></notextile> |
 | Apache | [The Apache Software License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt) | [org.lz4 # lz4-java # 1.8.0](https://github.com/lz4/lz4-java) | <notextile></notextile> |
-| Apache | [The Apache Software License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt) | org.pac4j # pac4j-cas # 6.1.3 | <notextile></notextile> |
-| Apache | [The Apache Software License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt) | org.pac4j # pac4j-core # 6.1.3 | <notextile></notextile> |
-| Apache | [The Apache Software License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt) | org.pac4j # pac4j-oidc # 6.1.3 | <notextile></notextile> |
-| Apache | [The Apache Software License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt) | org.pac4j # play-pac4j_2.13 # 12.0.2-PLAY3.0 | <notextile></notextile> |
+| Apache | [The Apache Software License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt) | org.pac4j # pac4j-cas # 6.2.2 | <notextile></notextile> |
+| Apache | [The Apache Software License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt) | org.pac4j # pac4j-core # 6.2.2 | <notextile></notextile> |
+| Apache | [The Apache Software License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt) | org.pac4j # pac4j-http # 6.2.2 | <notextile></notextile> |
+| Apache | [The Apache Software License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt) | org.pac4j # pac4j-ldap # 6.2.2 | <notextile></notextile> |
+| Apache | [The Apache Software License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt) | org.pac4j # pac4j-oidc # 6.2.2 | <notextile></notextile> |
+| Apache | [The Apache Software License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt) | org.pac4j # play-pac4j_2.13 # 13.0.0-PLAY3.0 | <notextile></notextile> |
 | Apache | [The Apache Software License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt) | [org.reflections # reflections # 0.10.2](http://github.com/ronmamo/reflections) | <notextile></notextile> |
 | Apache | [The Apache Software License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt) | [org.seleniumhq.selenium # htmlunit-driver # 4.13.0](https://github.com/SeleniumHQ/htmlunit-driver) | <notextile></notextile> |
 | Apache | [The Apache Software License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt) | [org.seleniumhq.selenium # selenium-api # 4.14.1](https://selenium.dev/) | <notextile></notextile> |
@@ -470,7 +484,7 @@ Library licences are organised in three sections:
 | MIT | [MIT License](https://github.com/jquery/jquery/blob/master/MIT-LICENSE.txt) | [org.webjars # jquery # 3.7.1](http://webjars.org) | <notextile></notextile> |
 | MIT | [MIT-0](https://spdx.org/licenses/MIT-0.html) | [org.reactivestreams # reactive-streams # 1.0.4](http://www.reactive-streams.org/) | <notextile></notextile> |
 | MIT | [The MIT License](https://jsoup.org/license) | [org.jsoup # jsoup # 1.15.4](https://jsoup.org/) | <notextile></notextile> |
-| MIT | [The MIT License](https://projectlombok.org/LICENSE) | [org.projectlombok # lombok # 1.18.36](https://projectlombok.org) | <notextile></notextile> |
+| MIT | [The MIT License](https://projectlombok.org/LICENSE) | [org.projectlombok # lombok # 1.18.38](https://projectlombok.org) | <notextile></notextile> |
 | Mozilla | [MPL 1.1](http://www.mozilla.org/MPL/MPL-1.1.html) | [org.javassist # javassist # 3.28.0-GA](http://www.javassist.org/) | <notextile></notextile> |
 | Mozilla | [Mozilla Public License Version 2.0](http://www.mozilla.org/MPL/2.0/) | [net.sf.saxon # Saxon-HE # 12.8](http://www.saxonica.com/) | <notextile></notextile> |
 | Mozilla | [Mozilla Public License, Version 2.0](http://www.mozilla.org/MPL/2.0/index.txt) | [net.sourceforge.htmlunit # htmlunit-core-js # 2.70.0](http://htmlunit.sourceforge.net) | <notextile></notextile> |
@@ -478,33 +492,33 @@ Library licences are organised in three sections:
 
 ### Component gitb-ui frontend (user interface frontend)
 
-| License type                    | Name                              | Installed version | Link                                                        |
-| :------------------------------ | :-------------------------------- | :---------------- | :---------------------------------------------------------- |
-| MIT                             | @angular/animations               | 19.2.15           | git+https://github.com/angular/angular.git                  |
-| MIT                             | @angular/cdk                      | 19.2.19           | git+https://github.com/angular/components.git               |
-| MIT                             | @angular/common                   | 19.2.15           | git+https://github.com/angular/angular.git                  |
-| MIT                             | @angular/compiler                 | 19.2.15           | git+https://github.com/angular/angular.git                  |
-| MIT                             | @angular/core                     | 19.2.15           | git+https://github.com/angular/angular.git                  |
-| MIT                             | @angular/forms                    | 19.2.15           | git+https://github.com/angular/angular.git                  |
-| MIT                             | @angular/platform-browser         | 19.2.15           | git+https://github.com/angular/angular.git                  |
-| MIT                             | @angular/platform-browser-dynamic | 19.2.15           | git+https://github.com/angular/angular.git                  |
-| MIT                             | @angular/router                   | 19.2.15           | git+https://github.com/angular/angular.git                  |
-| MIT                             | @ctrl/ngx-codemirror              | 7.0.0             | git+https://github.com/scttcper/ngx-codemirror.git          |
-| (CC-BY-4.0 AND OFL-1.1 AND MIT) | @fortawesome/fontawesome-free     | 6.7.2             | git+https://github.com/FortAwesome/Font-Awesome.git         |
-| MIT                             | @hugerte/hugerte-angular          | 1.0.2             | git+https://github.com/hugerte/hugerte-angular.git          |
-| MIT                             | angular2-notifications            | 16.0.1            | git+https://github.com/flauc/angular2-notifications.git     |
-| MIT                             | bootstrap                         | 5.3.7             | git+https://github.com/twbs/bootstrap.git                   |
-| MIT                             | codemirror                        | 5.65.19           | git+https://github.com/codemirror/CodeMirror.git            |
-| MIT                             | file-saver                        | 2.0.5             | git+https://github.com/eligrey/FileSaver.js.git             |
-| MIT                             | hugerte                           | 1.0.9             | git+https://github.com/hugerte/hugerte.git                  |
-| MIT                             | lodash                            | 4.17.21           | git+https://github.com/lodash/lodash.git                    |
-| MIT                             | marked                            | 15.0.12           | git://github.com/markedjs/marked.git                        |
-| MIT                             | ngx-bootstrap                     | 19.0.2            | git+ssh://git@github.com/valor-software/ngx-bootstrap.git   |
-| MIT                             | ngx-color-picker                  | 19.0.0            | git+https://github.com/zefoy/ngx-color-picker.git           |
-| MIT                             | ngx-cookie-service                | 19.1.2            | git+https://github.com/stevermeister/ngx-cookie-service.git |
-| MIT                             | ngx-markdown                      | 19.1.1            | git+https://github.com/jfcere/ngx-markdown.git              |
-| Apache-2.0                      | rxjs                              | 7.8.2             | git+https://github.com/reactivex/rxjs.git                   |
-| MIT                             | zone.js                           | 0.15.1            | git://github.com/angular/angular.git                        |
+| License type                    | Name                              | Installed version | Link  |
+| :------------------------------ | :-------------------------------- | :---------------- | :---- |
+| MIT                             | @angular/animations               | 20.3.4            | n/a   |
+| MIT                             | @angular/cdk                      | 20.2.8            | n/a   |
+| MIT                             | @angular/common                   | 20.3.4            | n/a   |
+| MIT                             | @angular/compiler                 | 20.3.4            | n/a   |
+| MIT                             | @angular/core                     | 20.3.4            | n/a   |
+| MIT                             | @angular/forms                    | 20.3.4            | n/a   |
+| MIT                             | @angular/platform-browser         | 20.3.4            | n/a   |
+| MIT                             | @angular/platform-browser-dynamic | 20.3.4            | n/a   |
+| MIT                             | @angular/router                   | 20.3.4            | n/a   |
+| MIT                             | @ctrl/ngx-codemirror              | 7.0.0             | n/a   |
+| (CC-BY-4.0 AND OFL-1.1 AND MIT) | @fortawesome/fontawesome-free     | 6.7.2             | n/a   |
+| MIT                             | @hugerte/hugerte-angular          | 1.0.2             | n/a   |
+| MIT                             | angular2-notifications            | 16.0.1            | n/a   |
+| MIT                             | bootstrap                         | 5.3.8             | n/a   |
+| MIT                             | codemirror                        | 5.65.20           | n/a   |
+| MIT                             | file-saver                        | 2.0.5             | n/a   |
+| MIT                             | hugerte                           | 1.0.9             | n/a   |
+| MIT                             | lodash                            | 4.17.21           | n/a   |
+| MIT                             | marked                            | 16.4.0            | n/a   |
+| MIT                             | ngx-bootstrap                     | 20.0.2            | n/a   |
+| MIT                             | ngx-color-picker                  | 20.1.1            | n/a   |
+| MIT                             | ngx-cookie-service                | 20.1.0            | n/a   |
+| MIT                             | ngx-markdown                      | 20.1.0            | n/a   |
+| Apache-2.0                      | rxjs                              | 7.8.2             | n/a   |
+| MIT                             | zone.js                           | 0.15.1            | n/a   |
 
 ## Third-party library licences
 
@@ -8644,6 +8658,12 @@ The Apache Software Foundation (http://www.apache.org/).
 
 ```
 Copyright (c) 2009-2025 Jonathan Hedley <https://jsoup.org/>
+```
+
+### ldaptive
+
+```
+Copyright (c) 2025 Virginia Tech
 ```
 
 ### lodash

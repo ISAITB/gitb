@@ -8208,6 +8208,12 @@ The Apache Software Foundation (http://www.apache.org/).
 Copyright (c) 2009-2025 Jonathan Hedley <https://jsoup.org/>
 ```
 
+### ldaptive
+
+```
+Copyright (c) 2025 Virginia Tech
+```
+
 ### lodash
 
 ```

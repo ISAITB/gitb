@@ -19,7 +19,6 @@ import {UserGuideService} from '../../services/user-guide.service';
 import {HtmlService} from '../../services/html.service';
 import {LegalNoticeService} from '../../services/legal-notice.service';
 import {Observable, Subscription} from 'rxjs';
-import {Constants} from 'src/app/common/constants';
 import {AuthProviderService} from '../../services/auth-provider.service';
 import {BsModalService} from 'ngx-bootstrap/modal';
 import {ContactSupportComponent} from 'src/app/modals/contact-support/contact-support.component';
@@ -94,23 +93,6 @@ export class IndexComponent implements OnInit, OnDestroy {
     if (this.userLoadSubscription) this.userLoadSubscription.unsubscribe()
     if (this.logoutSubscription) this.logoutSubscription.unsubscribe()
     if (this.bannerSubscription) this.bannerSubscription.unsubscribe()
-  }
-
-	switchAccount() {
-    this.dataService.recordLoginOption(Constants.LOGIN_OPTION.FORCE_CHOICE)
-    this.authProviderService.signalLogout({full: false, keepLoginOption: true})
-  }
-
-	logout() {
-    this.authProviderService.signalLogout({full: true})
-  }
-
-	userLoaded(): boolean {
-		return this.dataService.user !== undefined && this.dataService.user.name != undefined
-  }
-
-	userFullyLoaded(): boolean {
-    return this.userLoaded() && this.dataService.vendor != undefined
   }
 
   handlePostUserLoad(): void {

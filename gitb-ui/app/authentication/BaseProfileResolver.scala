@@ -16,6 +16,7 @@
 package authentication
 
 import models.ActualUserInfo
+import org.pac4j.core.context.WebContext
 import org.pac4j.core.context.session.SessionStore
 import org.pac4j.core.profile.{ProfileManager, UserProfile}
 import org.pac4j.play.PlayWebContext
@@ -26,9 +27,8 @@ abstract class BaseProfileResolver(playSessionStore: SessionStore) extends Profi
 
   private val logger = LoggerFactory.getLogger(classOf[BaseProfileResolver])
 
-  override def resolveUserInfo(request: RequestHeader): Option[ActualUserInfo] = {
-    val webContext = new PlayWebContext(request)
-    val profileManager = new ProfileManager(webContext, playSessionStore)
+  override def resolveUserInfo(request: RequestHeader, context: Option[WebContext] = None): Option[ActualUserInfo] = {
+    val profileManager = new ProfileManager(context.getOrElse(new PlayWebContext(request)), playSessionStore)
     val profile = profileManager.getProfile()
     val userInfo = if (profile.isEmpty) {
       logger.error("Lookup for a real user's data failed due to a missing profile.")

@@ -118,7 +118,7 @@ object Configurations {
   var AUTHENTICATION_SSO_IN_MIGRATION_PERIOD = false
   var AUTHENTICATION_SSO_IN_MIGRATION_PERIOD_ORIGINAL = false
   var AUTHENTICATION_SSO_CALLBACK_URL = ""
-  var AUTHENTICATION_SSO_TYPE: String = Constants.SsoTypeEcas
+  var AUTHENTICATION_SSO_TYPE: String = Constants.SsoTypeNone
   // CAS-specific properties (EU Login)
   var AUTHENTICATION_SSO_LOGIN_URL = ""
   var AUTHENTICATION_SSO_PREFIX_URL: Option[String] = None
@@ -141,6 +141,15 @@ object Configurations {
   var AUTHENTICATION_SSO_PREFERRED_JWS_ALGORITHM: Option[String] = None
   var AUTHENTICATION_SSO_RESPONSE_TYPE: Option[String] = None // code (default), id_token, token, code id_token, code token
   var AUTHENTICATION_SSO_RESPONSE_MODE: Option[String] = None // query, fragment, form_post
+  // LDAP-specific properties
+  var AUTHENTICATION_SSO_SERVER_URL = ""
+  var AUTHENTICATION_SSO_CONNECTION_DN = ""
+  var AUTHENTICATION_SSO_CONNECTION_PASSWORD = ""
+  var AUTHENTICATION_SSO_USER_DN = ""
+  var AUTHENTICATION_SSO_ATTRIBUTE_FIRST_NAME = ""
+  var AUTHENTICATION_SSO_ATTRIBUTE_LAST_NAME = ""
+  var AUTHENTICATION_SSO_ATTRIBUTE_USER_ID = ""
+  var AUTHENTICATION_SSO_ATTRIBUTE_EMAIL = ""
   /*
    * SSO related configuration - END
    */
@@ -329,7 +338,7 @@ object Configurations {
        * SSO related configuration - START
        */
       AUTHENTICATION_SSO_ENABLED = fromEnv("AUTHENTICATION_SSO_ENABLED", conf.getString("authentication.sso.enabled")).toBoolean
-      AUTHENTICATION_SSO_TYPE = fromEnv("AUTHENTICATION_SSO_TYPE", Constants.SsoTypeEcas)
+      AUTHENTICATION_SSO_TYPE = fromEnv("AUTHENTICATION_SSO_TYPE", if (AUTHENTICATION_SSO_ENABLED) Constants.SsoTypeEcas else Constants.SsoTypeNone)
       AUTHENTICATION_SSO_IN_MIGRATION_PERIOD = fromEnv("AUTHENTICATION_SSO_IN_MIGRATION_PERIOD", conf.getString("authentication.sso.inMigrationPeriod")).toBoolean
       AUTHENTICATION_SSO_IN_MIGRATION_PERIOD_ORIGINAL = AUTHENTICATION_SSO_IN_MIGRATION_PERIOD
       AUTHENTICATION_SSO_CALLBACK_URL = fromEnv("AUTHENTICATION_SSO_CALLBACK_URL", conf.getString("authentication.sso.url.callback"))
@@ -355,6 +364,15 @@ object Configurations {
       AUTHENTICATION_SSO_PREFERRED_JWS_ALGORITHM = Option(fromEnv("AUTHENTICATION_SSO_PREFERRED_JWS_ALGORITHM", "")).filter(StringUtils.isNotBlank)
       AUTHENTICATION_SSO_RESPONSE_TYPE = Option(fromEnv("AUTHENTICATION_SSO_RESPONSE_TYPE", "")).filter(StringUtils.isNotBlank)
       AUTHENTICATION_SSO_RESPONSE_MODE = Option(fromEnv("AUTHENTICATION_SSO_RESPONSE_MODE", "")).filter(StringUtils.isNotBlank)
+      // LDAP-specific properties
+      AUTHENTICATION_SSO_SERVER_URL = fromEnv("AUTHENTICATION_SSO_SERVER_URL", conf.getString("authentication.sso.serverUrl"))
+      AUTHENTICATION_SSO_CONNECTION_DN = fromEnv("AUTHENTICATION_SSO_CONNECTION_DN", conf.getString("authentication.sso.connectionDn"))
+      AUTHENTICATION_SSO_CONNECTION_PASSWORD = fromEnv("AUTHENTICATION_SSO_CONNECTION_PASSWORD", conf.getString("authentication.sso.connectionPassword"))
+      AUTHENTICATION_SSO_USER_DN = fromEnv("AUTHENTICATION_SSO_USER_DN", conf.getString("authentication.sso.userDn"))
+      AUTHENTICATION_SSO_ATTRIBUTE_FIRST_NAME = fromEnv("AUTHENTICATION_SSO_ATTRIBUTE_FIRST_NAME", conf.getString("authentication.sso.attributeFirstName"))
+      AUTHENTICATION_SSO_ATTRIBUTE_LAST_NAME = fromEnv("AUTHENTICATION_SSO_ATTRIBUTE_LAST_NAME", conf.getString("authentication.sso.attributeLastName"))
+      AUTHENTICATION_SSO_ATTRIBUTE_USER_ID = fromEnv("AUTHENTICATION_SSO_ATTRIBUTE_USER_ID", conf.getString("authentication.sso.attributeUserId"))
+      AUTHENTICATION_SSO_ATTRIBUTE_EMAIL = fromEnv("AUTHENTICATION_SSO_ATTRIBUTE_EMAIL", conf.getString("authentication.sso.attributeEmail"))
       /*
        * SSO related configuration - END
        */

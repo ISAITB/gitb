@@ -141,13 +141,12 @@ class HealthCheckService @Inject()(authorizedAction: AuthorizedAction,
   def runPostLoginChecks(): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canCheckCoreServiceHealth(request).flatMap { _ =>
       val cachedStatus = lastOverallStatusCalculationTime.get()
-      // Instant.now().minus(1, ChronoUnit.HOURS))
       val task = if (cachedStatus.exists(calculationTime => calculationTime.isAfter(Instant.now().minus(1, ChronoUnit.HOURS)))) {
         // Within 1 hour of cached status update time - use cached status
-        LOGGER.info("Returning cached")
+        LOGGER.debug("Returning cached")
         Future.successful(determineCachedOverallStatus())
       } else {
-        LOGGER.info("Calculating status")
+        LOGGER.debug("Calculating status")
         // Recalculate status
         val checks = List(
           checkAntivirusServiceInternal(),

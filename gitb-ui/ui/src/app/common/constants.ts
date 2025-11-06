@@ -146,9 +146,11 @@ export class Constants {
 	public static readonly LOGIN_OPTION = {
 		NONE: "none",
 		REGISTER: "register",
+    REGISTER_INTERNAL: "register_internal", // In case the user is already authenticated
 		DEMO: "demo",
 		MIGRATE: "migrate",
 		LINK_ACCOUNT: "link",
+    LINK_ACCOUNT_INTERNAL: "link_internal", // In case the user is already authenticated
 		FORCE_CHOICE: "force"
 	}
 

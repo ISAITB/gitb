@@ -21,6 +21,7 @@ import config.Configurations.{API_ROOT, WEB_CONTEXT_ROOT, WEB_CONTEXT_ROOT_WITH_
 import controllers.util.ResponseConstructor.NotFound
 import controllers.util.{ParameterExtractor, ParameterNames, ResponseConstructor}
 import exceptions._
+import models.Constants
 import org.apache.pekko.stream.Materializer
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.cache.TokenCache
@@ -172,7 +173,7 @@ class AuthenticationFilter @Inject() (router: Router)
 
   def isPublic(request:RequestHeader):Boolean = {
     //public services
-    request.method.equals("OPTIONS") ||
+    var result = request.method.equals("OPTIONS") ||
       request.path.equals(WEB_CONTEXT_ROOT) ||
       request.path.equals(WEB_CONTEXT_ROOT_WITH_SLASH) ||
       request.path.equals("%sapp".formatted(WEB_CONTEXT_ROOT_WITH_SLASH)) ||
@@ -194,6 +195,10 @@ class AuthenticationFilter @Inject() (router: Router)
       request.path.equals("%sfavicon.ico".formatted(WEB_CONTEXT_ROOT_WITH_SLASH)) ||
       // CAS callback
       request.path.equals("%scallback".formatted(WEB_CONTEXT_ROOT_WITH_SLASH))
+    if (!result && Configurations.AUTHENTICATION_SSO_ENABLED && Configurations.AUTHENTICATION_SSO_TYPE == Constants.SsoTypeLdap) {
+      result = request.path.equals("%s/sso/login".formatted(API_ROOT))
+    }
+    result
   }
 
   def isPublicWithOptionalAuthentication(request:RequestHeader):Boolean = {

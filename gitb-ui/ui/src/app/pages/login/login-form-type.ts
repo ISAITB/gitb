@@ -13,14 +13,11 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-package authentication
+export enum LoginFormType {
 
-import models.ActualUserInfo
-import org.pac4j.core.context.WebContext
-import play.api.mvc.RequestHeader
-
-trait ProfileResolver {
-
-  def resolveUserInfo(request: RequestHeader, context: Option[WebContext] = None): Option[ActualUserInfo]
+  Login,
+  SelectAccount,
+  ChangePassword,
+  SelfRegister
 
 }

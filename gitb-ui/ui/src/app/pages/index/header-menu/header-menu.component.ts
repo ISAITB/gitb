@@ -57,6 +57,7 @@ export class HeaderMenuComponent {
 
 	switchAccount() {
     this.dataService.recordLoginOption(Constants.LOGIN_OPTION.FORCE_CHOICE)
+    this.dataService.removeLocationData()
     this.authProviderService.signalLogout({full: false, keepLoginOption: true})
   }
 

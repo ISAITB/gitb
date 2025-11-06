@@ -22,6 +22,7 @@ import controllers.util.{ParameterExtractor, RequestWithAttributes}
 import exceptions.UnauthorizedAccessException
 import models.Enums.{SelfRegistrationType, UserRole}
 import models._
+import org.pac4j.core.context.WebContext
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.Files
@@ -2424,17 +2425,17 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     checkAuthResult(ok, message)
   }
 
-  def getAccountInfo(request: RequestWithAttributes[_]): Future[ActualUserInfo] = {
-    getPrincipal(request).flatMap { accountInfo =>
+  def getAccountInfo(request: RequestWithAttributes[_], context: Option[WebContext] = None): Future[ActualUserInfo] = {
+    getPrincipal(request, context).flatMap { accountInfo =>
       accountManager.getUserAccountsForUid(accountInfo.uid).map { userAccounts =>
         new ActualUserInfo(accountInfo.uid, accountInfo.email, accountInfo.name, userAccounts)
       }
     }
   }
 
-  def getPrincipal(request: RequestWithAttributes[_]): Future[ActualUserInfo] = {
+  def getPrincipal(request: RequestWithAttributes[_], context: Option[WebContext] = None): Future[ActualUserInfo] = {
     Future.successful {
-      profileResolver.resolveUserInfo(request).orNull
+      profileResolver.resolveUserInfo(request, context).orNull
     }
   }
 

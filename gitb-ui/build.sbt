@@ -48,6 +48,8 @@ libraryDependencies ++= Seq(
   "org.pac4j" %% "play-pac4j" % "13.0.0-PLAY3.0",
   "org.pac4j" % "pac4j-cas" % pac4jVersion exclude("org.bouncycastle", "bcpkix-jdk15on"),
   "org.pac4j" % "pac4j-oidc" % pac4jVersion,
+  "org.pac4j" % "pac4j-http" % pac4jVersion,
+  "org.pac4j" % "pac4j-ldap" % pac4jVersion,
   "org.apache.commons" % "commons-lang3" % "3.19.0",
   "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,

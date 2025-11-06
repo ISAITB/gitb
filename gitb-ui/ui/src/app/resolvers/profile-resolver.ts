@@ -23,6 +23,7 @@ import { DataService } from '../services/data.service'
 import { UserGuideService } from '../services/user-guide.service'
 import { CommunityService } from '../services/community.service'
 import { AuthService } from '../services/auth.service'
+import {Constants} from '../common/constants';
 
 @Injectable({
     providedIn: "root"
@@ -120,7 +121,7 @@ export class ProfileResolver  {
                     }
                     return forkJoin([userObservable, vendorObservable, communityObservable])
                 } else {
-                    if (this.dataService.configuration.ssoEnabled && !this.dataService.actualUser) {
+                    if (this.loadAccountsForSelection()) {
                         return this.authService.getUserFunctionalAccounts()
                             .pipe(
                                 map((data) => {
@@ -135,6 +136,18 @@ export class ProfileResolver  {
             })
         )
         return result
+    }
+
+    private loadAccountsForSelection(): boolean {
+      let result = this.dataService.configuration.ssoEnabled && !this.dataService.actualUser
+      if (result && this.dataService.configuration.ssoWithNativeLogin) {
+        const loginOption = this.dataService.retrieveLoginOption()
+        if (loginOption !== Constants.LOGIN_OPTION.REGISTER_INTERNAL && loginOption !== Constants.LOGIN_OPTION.LINK_ACCOUNT_INTERNAL && loginOption !== Constants.LOGIN_OPTION.FORCE_CHOICE) {
+          // We need to present the login form.
+          result = false
+        }
+      }
+      return result
     }
 
     resolve(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<void> {

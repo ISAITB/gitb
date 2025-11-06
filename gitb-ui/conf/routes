@@ -24,6 +24,7 @@ GET     /api/theme/resource/:themeId/:resourceName @controllers.SystemConfigurat
 POST    /api/oauth/access_token                 @controllers.AuthenticationService.accessToken()
 POST    /api/oauth/replacePassword              @controllers.AuthenticationService.replaceOnetimePassword()
 POST    /api/oauth/logout                       @controllers.AuthenticationService.logout()
+POST    /api/sso/login                          @controllers.AuthenticationService.ssoLoginViaNativeForm()
 GET     /api/check/email                        @controllers.AuthenticationService.checkEmail()
 GET     /api/check/memberemail                  @controllers.AuthenticationService.checkEmailOfOrganisationMember()
 GET     /api/check/sysadminemail                @controllers.AuthenticationService.checkEmailOfSystemAdmin()

@@ -55,11 +55,11 @@ export class LinkAccountComponent extends BaseSelfRegistrationPageComponent impl
   ) { super(dataService) }
 
   ngOnInit(): void {
-    if (this.createOption == Constants.LOGIN_OPTION.REGISTER) {
+    if (this.createOption == Constants.LOGIN_OPTION.REGISTER || this.createOption == Constants.LOGIN_OPTION.REGISTER_INTERNAL) {
       this.choice = Constants.CREATE_ACCOUNT_OPTION.SELF_REGISTER
     } else if (this.createOption == Constants.LOGIN_OPTION.MIGRATE) {
       this.choice = Constants.CREATE_ACCOUNT_OPTION.MIGRATE
-    } else if (this.createOption == Constants.LOGIN_OPTION.LINK_ACCOUNT) {
+    } else if (this.createOption == Constants.LOGIN_OPTION.LINK_ACCOUNT || this.createOption == Constants.LOGIN_OPTION.LINK_ACCOUNT_INTERNAL) {
       this.choice = Constants.CREATE_ACCOUNT_OPTION.LINK
     }
   }
