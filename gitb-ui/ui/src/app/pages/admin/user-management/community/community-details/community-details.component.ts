@@ -191,7 +191,9 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
       this.showLegalNotices()
     } else if (tabIndex == Constants.TAB.COMMUNITY.ERROR_TEMPLATES) {
       this.showErrorTemplates()
-    } else {
+    } else if (tabIndex == Constants.TAB.COMMUNITY.TRIGGERS) {
+      this.showTriggers()
+    } else if (tabIndex == Constants.TAB.COMMUNITY.RESOURCES) {
       this.showResources()
     }
   }

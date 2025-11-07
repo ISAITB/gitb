@@ -26,7 +26,7 @@ import {Constants} from '../common/constants';
 export abstract class BaseTabbedComponent extends BaseComponent implements AfterViewInit {
 
     @ViewChild('tabs', { static: false }) tabs?: TabsetComponent;
-    tabIndexToShow = 0
+    tabIdToShow = 0
 
     constructor(
       protected readonly router: Router,
@@ -40,21 +40,29 @@ export abstract class BaseTabbedComponent extends BaseComponent implements After
         tabParam = route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.TAB)
       }
       if (tabParam != undefined) {
-        this.tabIndexToShow = tabParam as number
+        this.tabIdToShow = Number(tabParam)
       }
     }
 
     abstract loadTab(tabIndex: number): void
 
-    showTab(tabIndex?: number) {
+    showTab(tabId?: number) {
         setTimeout(() => {
-            let tabToShow = tabIndex
+            let tabToShow = tabId
             if (tabToShow == undefined) {
-                tabToShow = this.tabIndexToShow
+                tabToShow = this.tabIdToShow
             }
             this.loadTab(tabToShow)
-            if (this.tabs) {
-                this.tabs.tabs[tabToShow].active = true
+            const tabIndex = this.tabIdToTabIndex(tabToShow)
+            if (this.tabs && tabIndex < this.tabs.tabs.length && this.tabs.tabs[tabIndex]) {
+                if (tabId == undefined) {
+                    /*
+                     * Set the tab to active only if this was called through ngAfterViewInit(). This avoid calling twice the event method in subclasses.
+                     * If a tab was activated because a tab was clicked, the tab is already active and the event method is already called.
+                     */
+                    this.tabs.tabs[tabIndex].active = true
+                }
+                // Set the tab ID as a URL query parameter. This ensures we don't lose the tab upon refresh.
                 this.router.navigate([], {
                     queryParams: { tab: tabToShow },
                     queryParamsHandling: 'merge',
@@ -63,6 +71,14 @@ export abstract class BaseTabbedComponent extends BaseComponent implements After
             }
         })
     }
+
+  protected tabIdToTabIndex(tabId: number) {
+    /*
+     * This can be extended in subclasses in case tabs appear conditionally. In such a case
+     * the tab index may differ from the tab identifier.
+     */
+    return tabId
+  }
 
   ngAfterViewInit(): void {
      this.showTab()
