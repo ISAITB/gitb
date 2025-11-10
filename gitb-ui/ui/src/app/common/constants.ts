@@ -154,6 +154,12 @@ export class Constants {
 		FORCE_CHOICE: "force"
 	}
 
+  public static readonly DISPLAY_STATE_KEY = {
+    CONFORMANCE_STATEMENT: "ConformanceStatement",
+    CONFORMANCE_STATEMENTS: "ConformanceStatements",
+    CONFORMANCE_DASHBOARD: "ConformanceDashboard"
+  }
+
 	public static readonly PLACEHOLDER__ERROR_DESCRIPTION = "$ERROR_DESCRIPTION"
 	public static readonly PLACEHOLDER__ERROR_ID = "$ERROR_ID"
 	public static readonly PLACEHOLDER__ORGANISATION = "$ORGANISATION"

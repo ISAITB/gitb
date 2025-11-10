@@ -124,6 +124,8 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
       singleSelection: true,
       singleSelectionPersistent: true,
     }
+    this.restoreState()
+    this.createStatusOptions()
     // Tree view select configs - end
     this.routingService.conformanceDashboardBreadcrumbs()
     if (this.route.snapshot.queryParamMap.has(Constants.NAVIGATION_QUERY_PARAM.SNAPSHOT_ID)) {
@@ -249,7 +251,9 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
         this.viewLatestConformanceSnapshot(true)
       }
     } else {
-      this.resetStatementFilters()
+      if (!fromPageInit) {
+        this.resetStatementFilters()
+      }
       let observable: Observable<Community[]>
       if (this.availableCommunities == undefined) {
         if (this.dataService.isSystemAdmin) {
@@ -412,7 +416,12 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
   }
 
   getConformanceStatementsForTreeView() {
-    this.getConformanceStatementsForTreeViewInternal({ targetPage: 1, targetPageSize: 10 })
+    let pagingEvent: PagingEvent = { targetPage: 1, targetPageSize: Constants.TABLE_PAGE_SIZE }
+    if (this.initialPagingStatus != undefined) {
+      pagingEvent = { targetPage: this.initialPagingStatus.currentPage, targetPageSize: this.initialPagingStatus.pageSize }
+      this.initialPagingStatus = undefined
+    }
+    this.getConformanceStatementsForTreeViewInternal(pagingEvent)
   }
 
   getConformanceStatementsForTreeViewInternal(pagingInfo: PagingEvent) {
@@ -469,12 +478,17 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
 
   onStatementSelect(statement: ConformanceStatementItem) {
     if (sessionStorage) sessionStorage.setItem(Constants.SESSION_DATA.FROM_DASHBOARD, "true")
+    this.saveState()
     this.routingService.toConformanceStatement(this.selectedOrganisationId!, this.selectedSystemId!, statement.id, this.selectedCommunityId!, this.snapshotIdToUse(), this.activeConformanceSnapshot?.label)
   }
 
   onStatementSelectFromListView(statement: ConformanceResultFullWithTestSuites) {
     if (sessionStorage) sessionStorage.setItem(Constants.SESSION_DATA.FROM_DASHBOARD, "true")
     this.routingService.toConformanceStatement(statement.organizationId, statement.systemId, statement.actorId, statement.communityId, this.snapshotIdToUse(), this.activeConformanceSnapshot?.label)
+  }
+
+  protected displayStateKey() {
+    return Constants.DISPLAY_STATE_KEY.CONFORMANCE_DASHBOARD
   }
 
 }

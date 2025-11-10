@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, ElementRef, EventEmitter, NgZone, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
+import {Component, ElementRef, EventEmitter, NgZone, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {saveAs} from 'file-saver';
 import {map} from 'lodash';
@@ -46,7 +46,6 @@ import {CustomProperty} from 'src/app/types/custom-property.type';
 import {ValidationState} from 'src/app/types/validation-state';
 import {share} from 'rxjs/operators';
 import {TestCaseFilterState} from '../../../components/test-case-filter/test-case-filter-state';
-import {TestCaseFilterOptions} from '../../../components/test-case-filter/test-case-filter-options';
 import {TestCaseFilterApi} from '../../../components/test-case-filter/test-case-filter-api';
 import {NavigationControlsConfig} from '../../../components/navigation-controls/navigation-controls-config';
 import {BaseTabbedComponent} from '../../base-tabbed-component';
@@ -58,6 +57,8 @@ import {PagingControlsApi} from '../../../components/paging-controls/paging-cont
 import {TestSuiteMinimalInfo} from '../../../types/test-suite-minimal-info';
 import {FilterUpdate} from '../../../components/test-filter/filter-update';
 import {TestSuiteDisplayComponentApi} from '../../../components/test-suite-display/test-suite-display-component-api';
+import {DisplayState} from '../../../types/display-state';
+import {StatementTestCaseSearchCriteria} from './statement-test-case-search-criteria';
 
 @Component({
     selector: 'app-conformance-statement',
@@ -65,7 +66,7 @@ import {TestSuiteDisplayComponentApi} from '../../../components/test-suite-displ
     styleUrls: ['./conformance-statement.component.less'],
     standalone: false
 })
-export class ConformanceStatementComponent extends BaseTabbedComponent implements OnInit {
+export class ConformanceStatementComponent extends BaseTabbedComponent implements OnInit, OnDestroy {
 
   @ViewChild('testCaseResultFilter') testCaseResultFilter?: TestCaseFilterApi
   @ViewChild("pagingControls") pagingControls?: PagingControlsApi
@@ -117,25 +118,25 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
     filterLabel: "Show test suite...",
     loader: () => this.loadStatementTestSuites()
   }
-  selectedTestSuite: TestSuiteMinimalInfo|undefined
 
-  testCaseSearchCriteria: TestCaseSearchCriteria = {
+  testCaseSearchCriteria: StatementTestCaseSearchCriteria = {
     succeeded: true,
     failed: true,
     incomplete: true,
     optional: true,
     disabled: false,
     testSuiteId: undefined,
-    testCaseFilterText: undefined
-  }
-
-  testCaseFilterOptions?: TestCaseFilterOptions
-  testCaseFilterState: TestCaseFilterState = {
-    showSuccessful: this.testCaseSearchCriteria.succeeded,
-    showFailed: this.testCaseSearchCriteria.failed,
-    showIncomplete: this.testCaseSearchCriteria.incomplete,
-    showOptional: this.testCaseSearchCriteria.optional,
-    showDisabled: this.testCaseSearchCriteria.disabled
+    testCaseFilterText: undefined,
+    selectedTestSuite: undefined,
+    testCaseFilterOptions: {
+      initialState: {
+        showOptional: true,
+        showDisabled: false,
+        showSuccessful: true,
+        showFailed: true,
+        showIncomplete: true
+      }
+    }
   }
 
   executionModeSequential = "backgroundSequential"
@@ -170,6 +171,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   refreshPending = false
   refreshCounters = new EventEmitter<Counters>()
   statementExecutionPending = false
+  keepStatementListState = false
 
   constructor(
     public readonly dataService: DataService,
@@ -227,11 +229,44 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
       const fromDashboard = sessionStorage.getItem(Constants.SESSION_DATA.FROM_DASHBOARD) === "true"
       if (!fromDashboard) sessionStorage.setItem(Constants.SESSION_DATA.FROM_DASHBOARD, "false")
     }
-    this.loadInitialData()
+    this.loadInitialData().pipe(
+      mergeMap(() => {
+        const existingDisplayState = this.getDisplayState<TestCaseSearchCriteria>(Constants.DISPLAY_STATE_KEY.CONFORMANCE_STATEMENT, true)
+        if (existingDisplayState) {
+          if (existingDisplayState.state) {
+            // Restore search criteria
+            this.testCaseSearchCriteria = existingDisplayState.state
+          }
+          return this.loadConformanceTestsInternal({
+            targetPage: (existingDisplayState.paging != undefined)?existingDisplayState.paging.currentPage:1,
+            targetPageSize: (existingDisplayState.paging != undefined)?existingDisplayState.paging.pageSize:Constants.TABLE_PAGE_SIZE
+          })
+        } else {
+          this.pagingControls?.updateStatus(1, this.unfilteredTestCaseCount)
+          return of(true)
+        }
+      }),
+      finalize(() => {
+        this.updatingTests = false
+        this.loadingTests.status = Constants.STATUS.FINISHED
+      })
+    ).subscribe(() => {})
+  }
+
+  ngOnDestroy() {
+    this.leavingPage()
+  }
+
+  private leavingPage() {
+    if (!this.keepStatementListState) {
+      this.clearDisplayState(Constants.DISPLAY_STATE_KEY.CONFORMANCE_DASHBOARD, Constants.DISPLAY_STATE_KEY.CONFORMANCE_STATEMENTS)
+    }
+    this.keepStatementListState = false
   }
 
   private loadInitialData(): Observable<any> {
     // Load conformance statement and its results.
+    this.loadingTests.status = Constants.STATUS.PENDING
     const statementsLoaded = this.conformanceService.getConformanceStatement(this.systemId, this.actorId, this.snapshotId)
     const snapshotLabelLoaded = this.retrieveSnapshotLabel(this.snapshotId, this.snapshotLabel)
     const obs$ = forkJoin([statementsLoaded, snapshotLabelLoaded]).pipe(
@@ -268,11 +303,6 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
         this.processTestResults(status)
         this.unfilteredTestCaseCount = statementData.results.count
         this.unfilteredTestSuiteCount = status.testSuiteCount
-        this.pagingControls?.updateStatus(1, statementData.results.count)
-      }),
-      finalize(() => {
-        this.updatingTests = false
-        this.loadingTests.status = Constants.STATUS.FINISHED
       }),
       share()
     )
@@ -311,18 +341,11 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   }
 
   private updateTestCaseFilterOptions() {
-    this.testCaseFilterOptions = {
-      initialState: {
-        showOptional: true,
-        showDisabled: false,
-        showSuccessful: true,
-        showFailed: true,
-        showIncomplete: true
-      },
-      showOptional: this.hasOptionalTests,
-      showDisabled: this.hasDisabledTests
+    if (this.testCaseSearchCriteria.testCaseFilterOptions) {
+      this.testCaseSearchCriteria.testCaseFilterOptions.showOptional = this.hasOptionalTests
+      this.testCaseSearchCriteria.testCaseFilterOptions.showDisabled = this.hasDisabledTests
     }
-    this.testCaseResultFilter?.refreshOptions(this.testCaseFilterOptions, true)
+    this.testCaseResultFilter?.refreshOptions(this.testCaseSearchCriteria.testCaseFilterOptions, true)
   }
 
   loadTab(tabIndex: number) {
@@ -472,7 +495,6 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   }
 
   resultFilterUpdated(choices: TestCaseFilterState) {
-    this.testCaseFilterState = choices
     this.testCaseSearchCriteria.succeeded = choices.showSuccessful
     this.testCaseSearchCriteria.failed = choices.showFailed
     this.testCaseSearchCriteria.incomplete = choices.showIncomplete
@@ -587,6 +609,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
         // Proceed with execution.
         if (this.executionMode == this.executionModeInteractive) {
             this.dataService.setTestsToExecute([test])
+            this.saveState()
             if (this.communityId == undefined) {
               this.routingService.toOwnTestCaseExecution(this.organisationId, this.systemId, this.actorId, test.id)
             } else {
@@ -597,6 +620,32 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
         }
       }
     })
+  }
+
+  private saveState() {
+    this.keepStatementListState = true
+    const activeFiltering = !this.testCaseSearchCriteria.failed
+      || !this.testCaseSearchCriteria.incomplete
+      || !this.testCaseSearchCriteria.optional
+      || this.testCaseSearchCriteria.disabled
+      || this.testCaseSearchCriteria.testSuiteId != undefined
+      || this.textProvided(this.testCaseSearchCriteria.testCaseFilterText)
+    const pagingStatus = this.pagingControls?.getCurrentStatus()
+    const activePaging = pagingStatus != undefined && pagingStatus.currentPage > 1
+    if (activeFiltering || activePaging) {
+      const state: DisplayState<StatementTestCaseSearchCriteria> = {
+        state: this.testCaseSearchCriteria,
+        paging: pagingStatus
+      }
+      if (state.state?.testCaseFilterOptions?.initialState) {
+        state.state.testCaseFilterOptions.initialState.showIncomplete = state.state.incomplete
+        state.state.testCaseFilterOptions.initialState.showFailed = state.state.failed
+        state.state.testCaseFilterOptions.initialState.showSuccessful = state.state.succeeded
+        state.state.testCaseFilterOptions.initialState.showOptional = state.state.optional
+        state.state.testCaseFilterOptions.initialState.showDisabled = state.state.disabled
+      }
+      this.saveDisplayState(Constants.DISPLAY_STATE_KEY.CONFORMANCE_STATEMENT, state)
+    }
   }
 
   onMultipleTestSelect(testSuite?: ConformanceTestSuite) {
@@ -726,6 +775,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   }
 
   back() {
+    this.keepStatementListState = true
     if (this.communityId == undefined) {
       this.routingService.toOwnConformanceStatements(this.organisationId, this.systemId, this.snapshotId)
     } else {

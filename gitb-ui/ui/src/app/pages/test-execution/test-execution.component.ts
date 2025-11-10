@@ -14,7 +14,7 @@
  */
 
 import {Component, EventEmitter, OnDestroy, OnInit} from '@angular/core';
-import {ActivatedRoute, NavigationStart, Router} from '@angular/router';
+import {ActivatedRoute, Router} from '@angular/router';
 import {saveAs} from 'file-saver';
 import {cloneDeep, filter, find, map as lmap, remove} from 'lodash';
 import {BsModalRef, BsModalService} from 'ngx-bootstrap/modal';
@@ -50,6 +50,7 @@ import {TestInteractionData} from 'src/app/types/test-interaction-data';
 import {UserInteraction} from 'src/app/types/user-interaction';
 import {WebSocketMessage} from 'src/app/types/web-socket-message';
 import {ConformanceTestCase} from '../organisation/conformance-statement/conformance-test-case';
+import {BaseComponent} from '../base-component.component';
 
 @Component({
     selector: 'app-test-execution',
@@ -57,7 +58,7 @@ import {ConformanceTestCase} from '../organisation/conformance-statement/conform
     styleUrls: ['./test-execution.component.less'],
     standalone: false
 })
-export class TestExecutionComponent implements OnInit, OnDestroy {
+export class TestExecutionComponent extends BaseComponent implements OnInit, OnDestroy {
 
   updateTick = 20
 
@@ -134,7 +135,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
       {key: TestExecutionComponent.CONTINUE_AUTOMATICALLY, label: 'Continue automatically', default: true }
     ]
   ]
-  navigationSubscription?: Subscription
+  goingToStatement = false
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -150,7 +151,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     private readonly errorService: ErrorService,
     private readonly routingService: RoutingService,
     private readonly specificationService: SpecificationService
-  ) { }
+  ) { super() }
 
   private queryParamToNumber(paramName: string): number|undefined {
     const value = this.route.snapshot.queryParamMap.get(paramName)
@@ -198,12 +199,6 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
       this.initialiseState()
       this.initialiseTestCases()
     })
-    this.navigationSubscription = this.router.events.subscribe(event => {
-      if (event instanceof NavigationStart) {
-        // Remove recorded test cases because the user explicitly navigated away.
-        this.leavingTestExecutionPage(true)
-      }
-    })
   }
 
   private initialiseTestMaps() {
@@ -218,8 +213,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    // We keep recorded tests because this may be because of a page refresh.
-    this.leavingTestExecutionPage(false)
+    this.leavingTestExecutionPage()
   }
 
   private initialiseState() {
@@ -1118,6 +1112,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   }
 
   back() {
+    this.goingToStatement = true
     if (this.communityId == undefined) {
       this.routingService.toOwnConformanceStatement(this.organisationId, this.systemId, this.actorId)
     } else {
@@ -1192,12 +1187,13 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     return this.dataService.determineOutputMessageType(resultType)
   }
 
-  leavingTestExecutionPage(removeAlsoRecordedTests: boolean) {
+  leavingTestExecutionPage() {
     if (!this.cleanupComplete) {
       this.cleanupComplete = true
       this.popupService.closeAll()
-      if (removeAlsoRecordedTests) {
-        this.dataService.clearTestsToExecute()
+      this.dataService.clearTestsToExecute()
+      if (!this.goingToStatement) {
+        this.clearDisplayState(Constants.DISPLAY_STATE_KEY.CONFORMANCE_STATEMENT, Constants.DISPLAY_STATE_KEY.CONFORMANCE_DASHBOARD, Constants.DISPLAY_STATE_KEY.CONFORMANCE_STATEMENTS)
       }
       if (this.firstTestStarted && !this.allStopped) {
         this.closeWebSocket()
@@ -1220,7 +1216,6 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
       }
       if (this.messageProcessing) this.messageProcessing.unsubscribe()
       if (this.heartbeat) this.heartbeat.unsubscribe()
-      if (this.navigationSubscription) this.navigationSubscription.unsubscribe()
     }
   }
 

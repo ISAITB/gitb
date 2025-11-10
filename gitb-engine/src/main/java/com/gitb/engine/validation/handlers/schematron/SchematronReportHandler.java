@@ -183,10 +183,12 @@ public class SchematronReportHandler extends AbstractReportHandler {
         XPath xPath = new net.sf.saxon.xpath.XPathFactoryImpl().newXPath();
         xPath.setNamespaceContext(getNamespaceContext());
         Node node;
-        String lineNumber;
+        String lineNumber = "0";
         try {
             node = (Node) xPath.evaluate(xpathExpressionConverted, this.node, XPathConstants.NODE);
-            lineNumber = (String) node.getUserData("lineNumber");
+            if (node != null) {
+                lineNumber = (String) node.getUserData("lineNumber");
+            }
         } catch (XPathExpressionException e) {
             logger.debug(e.getMessage());
             lineNumber = "0";
