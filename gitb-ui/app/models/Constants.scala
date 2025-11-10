@@ -88,7 +88,7 @@ object Constants {
   val SsoTypeOidc = "oidc"
 
   // When ending in "-snapshot", this is considered a non-published release.
-  val VersionNumber = "1.28.1"
+  val VersionNumber = "1.28.2"
   val VersionNumberPostfixForResources = ""
 
 }
