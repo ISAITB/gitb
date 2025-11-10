@@ -881,7 +881,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
   }
 
   def disableStartupWizard(): Future[Unit] = {
-    DB.run(updateSystemParameterInternal(Constants.StartupWizard, Some("false"), applySetting = true).transactionally).map(() => _)
+    DB.run(updateSystemParameterInternal(Constants.StartupWizard, Some("false"), applySetting = true).transactionally).map(_ => ())
   }
 
 }
