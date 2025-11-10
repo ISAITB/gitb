@@ -11,6 +11,7 @@ val bouncyCastleVersion = "1.82"
 val commonsTextVersion = "1.14.0"
 val mySqlConnectorVersion = "9.4.0"
 val pac4jVersion = "6.2.2"
+val nettyVersion = "4.1.128.Final"
 
 name := """GITB"""
 version := "1.0-SNAPSHOT"
@@ -50,6 +51,11 @@ libraryDependencies ++= Seq(
   "org.pac4j" % "pac4j-oidc" % pac4jVersion,
   "org.pac4j" % "pac4j-http" % pac4jVersion,
   "org.pac4j" % "pac4j-ldap" % pac4jVersion,
+  // Override the netty version used to establish connections. These should be aligned with the major version brought in by ldaptive (dependency of pac4j-ldap) - START
+  "io.netty" % "netty-handler" % nettyVersion,
+  "io.netty" % "netty-transport-native-epoll" % nettyVersion,
+  "io.netty" % "netty-transport-native-kqueue" % nettyVersion,
+  // - END.
   "org.apache.commons" % "commons-lang3" % "3.19.0",
   "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
