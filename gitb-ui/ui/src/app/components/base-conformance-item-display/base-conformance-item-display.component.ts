@@ -36,6 +36,8 @@ import {
 } from '../conformance-statement-items-display/conformance-statement-items-display-component-api';
 import {ConformanceStatementSearchResult} from '../../types/conformance-statement-search-result';
 import {PagingPlacement} from '../paging-controls/paging-placement';
+import {DisplayState} from '../../types/display-state';
+import {PagingStatus} from '../paging-controls/paging-status';
 
 @Component({
     template: '',
@@ -62,13 +64,7 @@ export abstract class BaseConformanceItemDisplayComponent extends BaseComponent 
     failed: true,
     incomplete: true
   }
-  statusOptions: CheckboxOption[][] = [
-    [
-      {key: BaseConformanceItemDisplayComponent.SHOW_SUCCEEDED, label: 'Succeeded statements', default: this.searchCriteria.succeeded, iconClass: this.dataService.iconForTestResult(Constants.TEST_CASE_RESULT.SUCCESS)},
-      {key: BaseConformanceItemDisplayComponent.SHOW_FAILED, label: 'Failed statements', default: this.searchCriteria.failed, iconClass: this.dataService.iconForTestResult(Constants.TEST_CASE_RESULT.FAILURE)},
-      {key: BaseConformanceItemDisplayComponent.SHOW_INCOMPLETE, label: 'Incomplete statements', default: this.searchCriteria.incomplete, iconClass: this.dataService.iconForTestResult(Constants.TEST_CASE_RESULT.UNDEFINED)},
-    ]
-  ]
+  statusOptions: CheckboxOption[][] = []
   hasStatementsBeforeFiltering = false
   animated = true
   resizeObserver!: ResizeObserver
@@ -85,6 +81,7 @@ export abstract class BaseConformanceItemDisplayComponent extends BaseComponent 
   organisationId?: number
   communityId?: number
   listView = false
+  initialPagingStatus?: PagingStatus
 
   protected constructor(
     public readonly dataService: DataService,
@@ -103,6 +100,16 @@ export abstract class BaseConformanceItemDisplayComponent extends BaseComponent 
     if (this.conformanceItemPage) {
       this.resizeObserver.observe(this.conformanceItemPage.nativeElement)
     }
+  }
+
+  protected createStatusOptions(): void {
+    this.statusOptions = [
+      [
+        {key: BaseConformanceItemDisplayComponent.SHOW_SUCCEEDED, label: 'Succeeded statements', default: this.searchCriteria.succeeded, iconClass: this.dataService.iconForTestResult(Constants.TEST_CASE_RESULT.SUCCESS)},
+        {key: BaseConformanceItemDisplayComponent.SHOW_FAILED, label: 'Failed statements', default: this.searchCriteria.failed, iconClass: this.dataService.iconForTestResult(Constants.TEST_CASE_RESULT.FAILURE)},
+        {key: BaseConformanceItemDisplayComponent.SHOW_INCOMPLETE, label: 'Incomplete statements', default: this.searchCriteria.incomplete, iconClass: this.dataService.iconForTestResult(Constants.TEST_CASE_RESULT.UNDEFINED)},
+      ]
+    ]
   }
 
   resetStatementFilters() {
@@ -203,6 +210,41 @@ export abstract class BaseConformanceItemDisplayComponent extends BaseComponent 
     this.hasStatementsBeforeFiltering = data.hasStatements
     this.updateTreeViewPagination(pagingInfo.targetPage, data.count)
     this.resetConformanceItemTree()
+  }
+
+  protected restoreState() {
+    if (this.listView) {
+    } else {
+      const existingDisplayState = this.getDisplayState<ConformanceStatementSearchCriteria>(this.displayStateKey(), true)
+      if (existingDisplayState) {
+        if (existingDisplayState.state) {
+          this.searchCriteria = existingDisplayState.state
+        }
+        this.initialPagingStatus = existingDisplayState.paging
+      }
+    }
+  }
+
+  protected saveState() {
+    if (!this.listView) {
+      const activeFiltering = !this.searchCriteria.failed
+        || !this.searchCriteria.succeeded
+        || !this.searchCriteria.incomplete
+        || this.textProvided(this.searchCriteria.filterText)
+      const pagingStatus = this.pagingControls?.getCurrentStatus()
+      const activePaging = pagingStatus != undefined && pagingStatus.currentPage > 1
+      if (activeFiltering || activePaging) {
+        const state: DisplayState<ConformanceStatementSearchCriteria> = {
+          state: this.searchCriteria,
+          paging: pagingStatus
+        }
+        this.saveDisplayState(this.displayStateKey(), state)
+      }
+    }
+  }
+
+  protected displayStateKey() {
+    return Constants.DISPLAY_STATE_KEY.CONFORMANCE_STATEMENTS
   }
 
 }

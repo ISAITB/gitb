@@ -95,6 +95,9 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
       replaceSelectedItems: new EventEmitter(),
       replaceItems: new EventEmitter()
     }
+    this.restoreState()
+    this.createStatusOptions()
+    // Load data
     const systemsLoaded = this.getSystems(snapshotId)
     let snapshotsLoaded: Observable<ConformanceSnapshotList>
     if (isOwnConformanceStatements && (this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin)) {
@@ -166,7 +169,12 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
   }
 
   getConformanceStatements() {
-    this.getConformanceStatementsInternal({ targetPage: 1, targetPageSize: 10 })
+    let pagingEvent: PagingEvent = { targetPage: 1, targetPageSize: Constants.TABLE_PAGE_SIZE }
+    if (this.initialPagingStatus != undefined) {
+      pagingEvent = { targetPage: this.initialPagingStatus.currentPage, targetPageSize: this.initialPagingStatus.pageSize }
+      this.initialPagingStatus = undefined
+    }
+    this.getConformanceStatementsInternal(pagingEvent)
   }
 
   filterByStatus(choices: CheckboxOptionState) {
@@ -194,6 +202,7 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
   }
 
   onStatementSelect(statement: ConformanceStatementItem) {
+    this.saveState()
     if (this.communityId == undefined) {
       this.routingService.toOwnConformanceStatement(this.organisationId!, this.system!.id, statement.id, this.activeConformanceSnapshot?.id, this.activeConformanceSnapshot?.label)
     } else {

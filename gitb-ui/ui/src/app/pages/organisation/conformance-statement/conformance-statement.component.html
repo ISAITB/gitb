@@ -116,9 +116,9 @@
                     <div class="testFilters">
                         <div class="btn-toolbar">
                             @if (unfilteredTestSuiteCount > 1) {
-                                <app-multi-select-filter [(ngModel)]="selectedTestSuite" [config]="testSuiteSelectionConfig" (apply)="selectedTestSuiteChanged($event)"></app-multi-select-filter>
+                                <app-multi-select-filter [(ngModel)]="testCaseSearchCriteria.selectedTestSuite" [config]="testSuiteSelectionConfig" (apply)="selectedTestSuiteChanged($event)"></app-multi-select-filter>
                             }
-                            <app-test-case-filter #testCaseResultFilter [options]="testCaseFilterOptions" (apply)="resultFilterUpdated($event)"></app-test-case-filter>
+                            <app-test-case-filter #testCaseResultFilter [options]="testCaseSearchCriteria.testCaseFilterOptions" (apply)="resultFilterUpdated($event)"></app-test-case-filter>
                             <app-text-filter name="testCaseFilter" [width]="250" [placeholder]="'Search tests...'" [(ngModel)]="testCaseSearchCriteria.testCaseFilterText" (apply)="applySearchFilters()"></app-text-filter>
                         </div>
                     </div>

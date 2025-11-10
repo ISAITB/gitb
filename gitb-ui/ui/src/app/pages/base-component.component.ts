@@ -13,9 +13,10 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Constants } from "../common/constants"
-import { Alert } from "../types/alert.type"
-import { ErrorDescription } from "../types/error-description"
+import {Constants} from '../common/constants';
+import {Alert} from '../types/alert.type';
+import {ErrorDescription} from '../types/error-description';
+import {DisplayState} from '../types/display-state';
 
 export abstract class BaseComponent {
 
@@ -136,6 +137,32 @@ export abstract class BaseComponent {
 
   protected isErrorDescription(obj: ErrorDescription|any): obj is ErrorDescription {
       return obj != undefined && ((obj as ErrorDescription).error_description != undefined || (obj as ErrorDescription).error_id != undefined)
+  }
+
+  protected saveDisplayState<T>(key: string, state: DisplayState<T>): void {
+    if (sessionStorage) {
+      sessionStorage.setItem('state|'+key, JSON.stringify(state))
+    }
+  }
+
+  protected clearDisplayState(...keys: string[]) {
+    if (sessionStorage) {
+      keys.forEach(key => sessionStorage.removeItem('state|'+key))
+    }
+  }
+
+  protected getDisplayState<T>(key: string, clear?: boolean): DisplayState<T>|null {
+    if (sessionStorage) {
+      const storageKey = 'state|'+key
+      const state = sessionStorage.getItem(storageKey)
+      if (clear) {
+        sessionStorage.removeItem(storageKey)
+      }
+      if (state) {
+        return JSON.parse(state)
+      }
+    }
+    return null
   }
 
 }
