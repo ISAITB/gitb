@@ -70,4 +70,8 @@ export class MenuItemComponent implements OnInit, OnDestroy {
     if (this.statusSubscription) this.statusSubscription.unsubscribe()
   }
 
+  itemClicked() {
+    this.dataService.clearAllDisplayStates()
+  }
+
 }

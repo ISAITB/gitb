@@ -124,7 +124,6 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
       singleSelection: true,
       singleSelectionPersistent: true,
     }
-    this.restoreState()
     this.createStatusOptions()
     // Tree view select configs - end
     this.routingService.conformanceDashboardBreadcrumbs()
@@ -416,6 +415,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
   }
 
   getConformanceStatementsForTreeView() {
+    this.restoreState()
     let pagingEvent: PagingEvent = { targetPage: 1, targetPageSize: Constants.TABLE_PAGE_SIZE }
     if (this.initialPagingStatus != undefined) {
       pagingEvent = { targetPage: this.initialPagingStatus.currentPage, targetPageSize: this.initialPagingStatus.pageSize }
@@ -478,7 +478,6 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
 
   onStatementSelect(statement: ConformanceStatementItem) {
     if (sessionStorage) sessionStorage.setItem(Constants.SESSION_DATA.FROM_DASHBOARD, "true")
-    this.saveState()
     this.routingService.toConformanceStatement(this.selectedOrganisationId!, this.selectedSystemId!, statement.id, this.selectedCommunityId!, this.snapshotIdToUse(), this.activeConformanceSnapshot?.label)
   }
 
@@ -487,8 +486,12 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     this.routingService.toConformanceStatement(statement.organizationId, statement.systemId, statement.actorId, statement.communityId, this.snapshotIdToUse(), this.activeConformanceSnapshot?.label)
   }
 
-  protected displayStateKey() {
+  protected displayStateKey(): string {
     return Constants.DISPLAY_STATE_KEY.CONFORMANCE_DASHBOARD
+  }
+
+  protected displayStateDataKey(): string {
+    return `${this.selectedSystemId}|${this.snapshotIdToUse()}`
   }
 
 }

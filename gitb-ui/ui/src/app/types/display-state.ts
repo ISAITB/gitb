@@ -17,6 +17,7 @@ import {PagingStatus} from '../components/paging-controls/paging-status';
 
 export interface DisplayState <T> {
 
+  key: string
   state?: T
   paging?: PagingStatus
 

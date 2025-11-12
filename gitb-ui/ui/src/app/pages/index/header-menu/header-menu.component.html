@@ -17,15 +17,15 @@
                   @if (!logoutInProgress) {
                     <div class="header-popup-options">
                       @if (!dataService.isDemoAccount() && (dataService.configuration.ssoEnabled || !dataService.user?.onetime) && isAuthenticated()) {
-                        <div class="profile-option" (click)="routingService.toProfile(); expanded = false"><span class="icon"><i class="fa-solid fa-user-pen"></i></span><span>My profile</span></div>
+                        <div class="profile-option" (click)="toProfile()"><span class="icon"><i class="fa-solid fa-user-pen"></i></span><span>My profile</span></div>
                       }
                       @if (dataService.configuration.ssoEnabled && isAuthenticated()) {
-                        <div class="profile-option" (click)="switchAccount(); expanded = false"><span class="icon"><i class="fa-solid fa-arrows-rotate"></i></span><span>Switch role</span></div>
+                        <div class="profile-option" (click)="switchAccount()"><span class="icon"><i class="fa-solid fa-arrows-rotate"></i></span><span>Switch role</span></div>
                       }
                       @if (!dataService.isDemoAccount() && !dataService.configuration.ssoEnabled) {
-                        <div class="profile-option" (click)="routingService.toChangePassword(); expanded = false"><span class="icon"><i class="fa-solid fa-key"></i></span><span>Change password</span></div>
+                        <div class="profile-option" (click)="toChangePassword()"><span class="icon"><i class="fa-solid fa-key"></i></span><span>Change password</span></div>
                       }
-                      <div class="profile-option" (click)="logout(); expanded = false"><span class="icon"><i class="fa-solid fa-power-off"></i></span><span>Logout</span></div>
+                      <div class="profile-option" (click)="logout()"><span class="icon"><i class="fa-solid fa-power-off"></i></span><span>Logout</span></div>
                     </div>
                   }
               </div>

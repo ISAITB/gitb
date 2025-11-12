@@ -152,6 +152,7 @@ export class Constants {
 		FORCE_CHOICE: "force"
 	}
 
+  public static readonly DISPLAY_STATE_KEY_PREFIX: string = "state|";
   public static readonly DISPLAY_STATE_KEY = {
     CONFORMANCE_STATEMENT: "ConformanceStatement",
     CONFORMANCE_STATEMENTS: "ConformanceStatements",
