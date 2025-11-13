@@ -149,22 +149,29 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
   }
 
   def searchCommunities(page: Long, limit: Long, filter: Option[String]): Future[SearchResult[CommunityLimited]] = {
-    val query = PersistenceSchema.communities
-      .filter(_.id =!= Constants.DefaultCommunityId)
-      .filterOpt(filter)((table, filterValue) => {
-        val filterValueToUse = toLowercaseLikeParameter(filterValue)
-        table.shortname.toLowerCase.like(filterValueToUse) || table.fullname.toLowerCase.like(filterValueToUse)
-      })
-      .map(x => (x.id, x.shortname, x.fullname))
-      .sortBy(_._2.asc)
+    val queryBuilder = (forCount: Boolean) => {
+      val baseQuery = PersistenceSchema.communities
+        .filter(_.id =!= Constants.DefaultCommunityId)
+        .filterOpt(filter)((table, filterValue) => {
+          val filterValueToUse = toLowercaseLikeParameter(filterValue)
+          table.shortname.toLowerCase.like(filterValueToUse) || table.fullname.toLowerCase.like(filterValueToUse)
+        })
+      if (!forCount) {
+        baseQuery.map(x => (x.id, x.shortname, x.fullname))
+          .sortBy(_._2.asc)
+      } else {
+        baseQuery
+      }
+    }
     DB.run(
       for {
-        results <- query.drop((page - 1) * limit).take(limit).result.map { results =>
-          results.map { result =>
+        results <- queryBuilder(false).drop((page - 1) * limit).take(limit).result.map { results =>
+          results.map { r =>
+            val result = r.asInstanceOf[(Long, String, String)]
             CommunityLimited(result._1, result._2, result._3)
           }
         }
-        resultCount <- query.size.result
+        resultCount <- queryBuilder(true).size.result
       } yield SearchResult(results, resultCount)
     )
   }

@@ -132,17 +132,23 @@ class CommunityResourceManager @Inject()(repositoryUtils: RepositoryUtils,
   }
 
   def searchCommunityResources(communityId: Long, page: Long, limit: Long, filter: Option[String]): Future[SearchResult[CommunityResources]] = {
-    val query = PersistenceSchema.communityResources
-      .filter(_.community === communityId)
-      .filterOpt(filter)((table, filterValue) => {
-        val filterValueToUse = toLowercaseLikeParameter(filterValue)
-        table.name.toLowerCase.like(filterValueToUse) || table.description.toLowerCase.like(filterValueToUse)
-      })
-      .sortBy(_.name.asc)
+    val queryBuilder = (forCount: Boolean) => {
+      val baseQuery = PersistenceSchema.communityResources
+        .filter(_.community === communityId)
+        .filterOpt(filter)((table, filterValue) => {
+          val filterValueToUse = toLowercaseLikeParameter(filterValue)
+          table.name.toLowerCase.like(filterValueToUse) || table.description.toLowerCase.like(filterValueToUse)
+        })
+        if (!forCount) {
+          baseQuery.sortBy(_.name.asc)
+        } else {
+          baseQuery
+        }
+    }
     DB.run(
       for {
-        results <- query.drop((page - 1) * limit).take(limit).result
-        resultCount <- query.size.result
+        results <- queryBuilder(false).drop((page - 1) * limit).take(limit).result
+        resultCount <- queryBuilder(true).size.result
       } yield SearchResult(results, resultCount)
     )
   }

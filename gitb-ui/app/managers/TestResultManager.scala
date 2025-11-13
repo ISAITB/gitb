@@ -720,11 +720,11 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
                                        sortColumn: Option[String],
                                        sortOrder: Option[String]): Future[SearchResult[TestResult]] = {
     getSpecIdsCriterionToUse(specIds, specGroupIds).flatMap { specIds =>
-      val query = getTestResultsQuery(None, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, Some(List(organisationId)), systemIds, None, startTimeBegin, startTimeEnd, None, None, sessionId, Some(false), sortColumn, sortOrder, pendingAdministratorInteraction = false)
+      val queryBuilder = (skipSorting: Boolean) => getTestResultsQuery(None, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, Some(List(organisationId)), systemIds, None, startTimeBegin, startTimeEnd, None, None, sessionId, Some(false), sortColumn, sortOrder, pendingAdministratorInteraction = false, skipSorting)
       DB.run(
         for {
-          results <- query.drop((page - 1) * limit).take(limit).result
-          resultCount <- query.size.result
+          results <- queryBuilder(false).drop((page - 1) * limit).take(limit).result
+          resultCount <- queryBuilder(true).size.result
         } yield SearchResult(results, resultCount)
       )
     }
@@ -750,11 +750,11 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
                      sortOrder: Option[String]): Future[SearchResult[TestResult]] = {
 
     getSpecIdsCriterionToUse(specIds, specGroupIds).flatMap { specIds =>
-      val query = getTestResultsQuery(None, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, Some(List(organisationId)), systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder, pendingAdministratorInteraction = false)
+      val queryBuilder = (skipSorting: Boolean) => getTestResultsQuery(None, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, Some(List(organisationId)), systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder, pendingAdministratorInteraction = false, skipSorting)
       DB.run(
         for {
-          results <- query.drop((page - 1) * limit).take(limit).result
-          resultCount <- query.size.result
+          results <- queryBuilder(false).drop((page - 1) * limit).take(limit).result
+          resultCount <- queryBuilder(true).size.result
         } yield SearchResult(results, resultCount)
       )
     }
@@ -784,14 +784,14 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
     ).flatMap { data =>
       val memberIds = data._1
       val specIds = data._2
-      val query = getTestResultsQuery(communityIds, domainIds, specIds, actorIds, testSuiteIds, testCaseIds,
+      val queryBuilder = (skipSorting: Boolean) => getTestResultsQuery(communityIds, domainIds, specIds, actorIds, testSuiteIds, testCaseIds,
         memberIds.organisationIds, memberIds.systemIds, None,
-        startTimeBegin, startTimeEnd, None, None, sessionId, Some(false), sortColumn, sortOrder, pendingAdminInteraction
+        startTimeBegin, startTimeEnd, None, None, sessionId, Some(false), sortColumn, sortOrder, pendingAdminInteraction, skipSorting
       )
       DB.run(
         for {
-          results <- query.drop((page - 1) * limit).take(limit).result
-          resultCount <- query.size.result
+          results <- queryBuilder(false).drop((page - 1) * limit).take(limit).result
+          resultCount <- queryBuilder(true).size.result
         } yield SearchResult(results, resultCount)
       )
     }
@@ -823,21 +823,21 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
     ).flatMap { data =>
       val memberIds = data._1
       val specsIds = data._2
-      val query = getTestResultsQuery(communityIds, domainIds, specIds,
+      val queryBuilder = (skipSorting: Boolean) => getTestResultsQuery(communityIds, domainIds, specIds,
         actorIds, testSuiteIds, testCaseIds, memberIds.organisationIds, memberIds.systemIds,
-        results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder, pendingAdministratorInteraction = false
+        results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder, pendingAdministratorInteraction = false, skipSorting
       )
       DB.run(
         for {
-          results <- query.drop((page - 1) * limit).take(limit).result
-          resultCount <- query.size.result
+          results <- queryBuilder(false).drop((page - 1) * limit).take(limit).result
+          resultCount <- queryBuilder(true).size.result
         } yield SearchResult(results, resultCount)
       )
     }
   }
 
   def getTestResult(sessionId: String): Future[Option[TestResult]] = {
-    val query = getTestResultsQuery(None, None, None, None, None, None, None, None, None, None, None, None, None, Some(sessionId), None, None, None, pendingAdministratorInteraction = false)
+    val query = getTestResultsQuery(None, None, None, None, None, None, None, None, None, None, None, None, None, Some(sessionId), None, None, None, pendingAdministratorInteraction = false, skipSorting = false)
     DB.run(query.result.headOption)
   }
 
@@ -870,7 +870,8 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
                                   completedStatus: Option[Boolean],
                                   sortColumn: Option[String],
                                   sortOrder: Option[String],
-                                  pendingAdministratorInteraction: Boolean) = {
+                                  pendingAdministratorInteraction: Boolean,
+                                  skipSorting: Boolean) = {
     var query = if (pendingAdministratorInteraction) {
       PersistenceSchema.testResults
         .join(PersistenceSchema.testInteractions).on(_.testSessionId === _.testSessionId)
@@ -911,7 +912,7 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
         .filterOpt(completedStatus)((table, completed) => if (completed) table.endTime.isDefined else table.endTime.isEmpty)
     }
     // Apply sorting
-    if (sortColumn.isDefined && sortOrder.isDefined) {
+    if (!skipSorting && sortColumn.isDefined && sortOrder.isDefined) {
       if (sortOrder.get == "asc") {
         query = sortColumn.get match {
           case "specification" => query.sortBy(_.specification)

@@ -91,15 +91,21 @@ class DomainManager @Inject() (domainParameterManager: DomainParameterManager,
   }
 
   private def searchDomainsInternal(page: Long, limit: Long, filter: Option[String]): DBIO[SearchResult[Domain]] = {
-    val query = PersistenceSchema.domains
-      .filterOpt(filter)((table, filterValue) => {
-        val filterValueToUse = toLowercaseLikeParameter(filterValue)
-        table.shortname.toLowerCase.like(filterValueToUse) || table.fullname.toLowerCase.like(filterValueToUse) || table.description.getOrElse("").toLowerCase.like(filterValueToUse)
-      })
-      .sortBy(_.shortname.asc)
+    val queryBuilder = (forCount: Boolean) => {
+      val baseQuery = PersistenceSchema.domains
+        .filterOpt(filter)((table, filterValue) => {
+          val filterValueToUse = toLowercaseLikeParameter(filterValue)
+          table.shortname.toLowerCase.like(filterValueToUse) || table.fullname.toLowerCase.like(filterValueToUse) || table.description.getOrElse("").toLowerCase.like(filterValueToUse)
+        })
+        if (!forCount) {
+          baseQuery.sortBy(_.shortname.asc)
+        } else {
+          baseQuery
+        }
+    }
     for {
-      results <- query.drop((page - 1) * limit).take(limit).result
-      resultCount <- query.size.result
+      results <- queryBuilder(false).drop((page - 1) * limit).take(limit).result
+      resultCount <- queryBuilder(true).size.result
     } yield SearchResult(results, resultCount)
   }
 
