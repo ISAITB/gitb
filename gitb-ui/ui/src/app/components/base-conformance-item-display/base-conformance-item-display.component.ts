@@ -131,6 +131,7 @@ export abstract class BaseConformanceItemDisplayComponent extends BaseComponent 
         this.resizeObserver.unobserve(this.conformanceItemPage.nativeElement)
       }
     }
+    this.saveState()
   }
 
   protected calculateWrapping() {
@@ -213,10 +214,9 @@ export abstract class BaseConformanceItemDisplayComponent extends BaseComponent 
   }
 
   protected restoreState() {
-    if (this.listView) {
-    } else {
+    if (!this.listView) {
       const existingDisplayState = this.getDisplayState<ConformanceStatementSearchCriteria>(this.displayStateKey(), true)
-      if (existingDisplayState) {
+      if (existingDisplayState && existingDisplayState.key == this.displayStateDataKey()) {
         if (existingDisplayState.state) {
           this.searchCriteria = existingDisplayState.state
         }
@@ -235,16 +235,18 @@ export abstract class BaseConformanceItemDisplayComponent extends BaseComponent 
       const activePaging = pagingStatus != undefined && pagingStatus.currentPage > 1
       if (activeFiltering || activePaging) {
         const state: DisplayState<ConformanceStatementSearchCriteria> = {
+          key: this.displayStateDataKey(),
           state: this.searchCriteria,
           paging: pagingStatus
         }
         this.saveDisplayState(this.displayStateKey(), state)
+      } else {
+        this.clearDisplayState(this.displayStateKey())
       }
     }
   }
 
-  protected displayStateKey() {
-    return Constants.DISPLAY_STATE_KEY.CONFORMANCE_STATEMENTS
-  }
+  protected abstract displayStateKey(): string
+  protected abstract displayStateDataKey(): string
 
 }

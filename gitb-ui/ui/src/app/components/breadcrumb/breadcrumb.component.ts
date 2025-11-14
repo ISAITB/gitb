@@ -171,6 +171,7 @@ export class BreadcrumbComponent implements OnInit, OnDestroy {
 
   breadcrumbClicked(crumb: BreadcrumbItem) {
     if (crumb.action) {
+      this.dataService.clearAllDisplayStates()
       crumb.action()
     }
   }

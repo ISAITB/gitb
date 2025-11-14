@@ -111,38 +111,43 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
   }
 
   def searchOrganizationsByCommunity(communityId: Long, page: Long, limit: Long, filter: Option[String], sortOrder: Option[String], sortColumn: Option[String], creationOrderSort: Option[String]): Future[SearchResult[Organizations]] = {
-    var query = PersistenceSchema.organizations
-      .filter(_.adminOrganization === false)
-      .filter(_.community === communityId)
-      .filterOpt(filter)((table, filterValue) => {
-        val filterValueToUse = toLowercaseLikeParameter(filterValue)
-        table.shortname.toLowerCase.like(filterValueToUse) || table.fullname.toLowerCase.like(filterValueToUse)
-      })
-    if (creationOrderSort.nonEmpty) {
-      if (creationOrderSort.getOrElse("asc") == "asc") {
-        query = query.sortBy(_.id)
-      } else {
-        query = query.sortBy(_.id.desc)
-      }
-    } else {
-      if (sortOrder.getOrElse("asc") == "asc") {
-        query = sortColumn.getOrElse("shortname") match {
-          case "fullname" => query.sortBy(_.fullname)
-          case "template" => query.sortBy(_.templateName)
-          case _ => query.sortBy(_.shortname)
+    val queryBuilder = (forCount: Boolean) => {
+      var baseQuery = PersistenceSchema.organizations
+        .filter(_.adminOrganization === false)
+        .filter(_.community === communityId)
+        .filterOpt(filter)((table, filterValue) => {
+          val filterValueToUse = toLowercaseLikeParameter(filterValue)
+          table.shortname.toLowerCase.like(filterValueToUse) || table.fullname.toLowerCase.like(filterValueToUse)
+        })
+      if (!forCount) {
+        if (creationOrderSort.nonEmpty) {
+          if (creationOrderSort.getOrElse("asc") == "asc") {
+            baseQuery = baseQuery.sortBy(_.id)
+          } else {
+            baseQuery = baseQuery.sortBy(_.id.desc)
+          }
+        } else {
+          if (sortOrder.getOrElse("asc") == "asc") {
+            baseQuery = sortColumn.getOrElse("shortname") match {
+              case "fullname" => baseQuery.sortBy(_.fullname)
+              case "template" => baseQuery.sortBy(_.templateName)
+              case _ => baseQuery.sortBy(_.shortname)
+            }
+          } else {
+            baseQuery = sortColumn.getOrElse("shortname") match {
+              case "fullname" => baseQuery.sortBy(_.fullname.desc)
+              case "template" => baseQuery.sortBy(_.templateName.desc)
+              case _ => baseQuery.sortBy(_.shortname.desc)
+            }
+          }
         }
-      } else {
-        query = sortColumn.getOrElse("shortname") match {
-          case "fullname" => query.sortBy(_.fullname.desc)
-          case "template" => query.sortBy(_.templateName.desc)
-          case _ => query.sortBy(_.shortname.desc)
-        }
       }
+      baseQuery
     }
     DB.run(
       for {
-        results <- query.drop((page - 1) * limit).take(limit).result
-        resultCount <- query.size.result
+        results <- queryBuilder(false).drop((page - 1) * limit).take(limit).result
+        resultCount <- queryBuilder(true).size.result
       } yield SearchResult(results, resultCount)
     )
   }

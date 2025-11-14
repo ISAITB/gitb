@@ -141,19 +141,19 @@ export abstract class BaseComponent {
 
   protected saveDisplayState<T>(key: string, state: DisplayState<T>): void {
     if (sessionStorage) {
-      sessionStorage.setItem('state|'+key, JSON.stringify(state))
+      sessionStorage.setItem(Constants.DISPLAY_STATE_KEY_PREFIX+key, JSON.stringify(state))
     }
   }
 
   protected clearDisplayState(...keys: string[]) {
     if (sessionStorage) {
-      keys.forEach(key => sessionStorage.removeItem('state|'+key))
+      keys.forEach(key => sessionStorage.removeItem(Constants.DISPLAY_STATE_KEY_PREFIX+key))
     }
   }
 
   protected getDisplayState<T>(key: string, clear?: boolean): DisplayState<T>|null {
     if (sessionStorage) {
-      const storageKey = 'state|'+key
+      const storageKey = Constants.DISPLAY_STATE_KEY_PREFIX+key
       const state = sessionStorage.getItem(storageKey)
       if (clear) {
         sessionStorage.removeItem(storageKey)

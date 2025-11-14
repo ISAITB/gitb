@@ -128,6 +128,7 @@ export class DataService {
     this.currentLandingPageContent = undefined
     this.cookiePath = undefined
     if (full) {
+      this.clearAllDisplayStates()
       this.clearTestsToExecute()
       this.removeLocationData()
     }
@@ -1887,6 +1888,21 @@ export class DataService {
 
   signalButtonPopup(source: any) {
     this.buttonPopupOpenSource.next(source)
+  }
+
+  clearAllDisplayStates() {
+    if (sessionStorage) {
+      const keySet = new Set<string>()
+      for (let i= 0; i < sessionStorage.length; i++) {
+        const key = sessionStorage.key(i)
+        if (key && key.startsWith(Constants.DISPLAY_STATE_KEY_PREFIX)) {
+          keySet.add(key)
+        }
+      }
+      keySet.forEach(key => {
+        sessionStorage.removeItem(key)
+      })
+    }
   }
 
 }

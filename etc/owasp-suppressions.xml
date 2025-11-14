@@ -182,4 +182,11 @@
         <packageUrl regex="true">^pkg:maven/ch\.qos\.logback/logback-.*@.*$</packageUrl>
         <vulnerabilityName>CVE-2025-11226</vulnerabilityName>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: angus-mail-2.0.3.jar (shaded: org.eclipse.angus:pop3:2.0.3)
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.eclipse\.angus/.*@.*$</packageUrl>
+        <cve>CVE-2025-7962</cve>
+    </suppress>
 </suppressions>

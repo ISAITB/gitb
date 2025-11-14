@@ -135,7 +135,6 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
       {key: TestExecutionComponent.CONTINUE_AUTOMATICALLY, label: 'Continue automatically', default: true }
     ]
   ]
-  goingToStatement = false
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -1112,7 +1111,6 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
   }
 
   back() {
-    this.goingToStatement = true
     if (this.communityId == undefined) {
       this.routingService.toOwnConformanceStatement(this.organisationId, this.systemId, this.actorId)
     } else {
@@ -1192,9 +1190,6 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
       this.cleanupComplete = true
       this.popupService.closeAll()
       this.dataService.clearTestsToExecute()
-      if (!this.goingToStatement) {
-        this.clearDisplayState(Constants.DISPLAY_STATE_KEY.CONFORMANCE_STATEMENT, Constants.DISPLAY_STATE_KEY.CONFORMANCE_DASHBOARD, Constants.DISPLAY_STATE_KEY.CONFORMANCE_STATEMENTS)
-      }
       if (this.firstTestStarted && !this.allStopped) {
         this.closeWebSocket()
         const pendingTests = filter(this.testsToExecute, (test) => {

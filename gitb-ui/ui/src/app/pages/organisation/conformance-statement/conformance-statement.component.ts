@@ -171,7 +171,6 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   refreshPending = false
   refreshCounters = new EventEmitter<Counters>()
   statementExecutionPending = false
-  keepStatementListState = false
 
   constructor(
     public readonly dataService: DataService,
@@ -232,7 +231,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
     this.loadInitialData().pipe(
       mergeMap(() => {
         const existingDisplayState = this.getDisplayState<TestCaseSearchCriteria>(Constants.DISPLAY_STATE_KEY.CONFORMANCE_STATEMENT, true)
-        if (existingDisplayState) {
+        if (existingDisplayState && existingDisplayState.key == this.stateKey()) {
           if (existingDisplayState.state) {
             // Restore search criteria
             this.testCaseSearchCriteria = existingDisplayState.state
@@ -253,15 +252,8 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
     ).subscribe(() => {})
   }
 
-  ngOnDestroy() {
-    this.leavingPage()
-  }
-
-  private leavingPage() {
-    if (!this.keepStatementListState) {
-      this.clearDisplayState(Constants.DISPLAY_STATE_KEY.CONFORMANCE_DASHBOARD, Constants.DISPLAY_STATE_KEY.CONFORMANCE_STATEMENTS)
-    }
-    this.keepStatementListState = false
+  ngOnDestroy(): void {
+    this.saveState()
   }
 
   private loadInitialData(): Observable<any> {
@@ -609,7 +601,6 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
         // Proceed with execution.
         if (this.executionMode == this.executionModeInteractive) {
             this.dataService.setTestsToExecute([test])
-            this.saveState()
             if (this.communityId == undefined) {
               this.routingService.toOwnTestCaseExecution(this.organisationId, this.systemId, this.actorId, test.id)
             } else {
@@ -622,8 +613,11 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
     })
   }
 
+  private stateKey(): string {
+    return `${this.systemId}|${this.actorId}|${this.snapshotId}`
+  }
+
   private saveState() {
-    this.keepStatementListState = true
     const activeFiltering = !this.testCaseSearchCriteria.failed
       || !this.testCaseSearchCriteria.incomplete
       || !this.testCaseSearchCriteria.optional
@@ -634,6 +628,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
     const activePaging = pagingStatus != undefined && pagingStatus.currentPage > 1
     if (activeFiltering || activePaging) {
       const state: DisplayState<StatementTestCaseSearchCriteria> = {
+        key: this.stateKey(),
         state: this.testCaseSearchCriteria,
         paging: pagingStatus
       }
@@ -645,6 +640,8 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
         state.state.testCaseFilterOptions.initialState.showDisabled = state.state.disabled
       }
       this.saveDisplayState(Constants.DISPLAY_STATE_KEY.CONFORMANCE_STATEMENT, state)
+    } else {
+      this.clearDisplayState(Constants.DISPLAY_STATE_KEY.CONFORMANCE_STATEMENT)
     }
   }
 
@@ -775,7 +772,6 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   }
 
   back() {
-    this.keepStatementListState = true
     if (this.communityId == undefined) {
       this.routingService.toOwnConformanceStatements(this.organisationId, this.systemId, this.snapshotId)
     } else {

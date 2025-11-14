@@ -52,13 +52,29 @@ export class HeaderMenuComponent {
   }
 
 	logout() {
+    this.dataService.clearAllDisplayStates()
     this.authProviderService.signalLogout({full: true})
+    this.expanded = false
+  }
+
+  toProfile() {
+    this.dataService.clearAllDisplayStates()
+    this.routingService.toProfile()
+    this.expanded = false
+  }
+
+  toChangePassword() {
+    this.dataService.clearAllDisplayStates()
+    this.routingService.toChangePassword()
+    this.expanded = false
   }
 
 	switchAccount() {
+    this.dataService.clearAllDisplayStates()
     this.dataService.recordLoginOption(Constants.LOGIN_OPTION.FORCE_CHOICE)
     this.dataService.removeLocationData()
     this.authProviderService.signalLogout({full: false, keepLoginOption: true})
+    this.expanded = false
   }
 
   overHeader() {

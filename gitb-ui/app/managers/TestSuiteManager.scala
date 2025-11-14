@@ -18,7 +18,7 @@ package managers
 import com.gitb.core.TestCaseType
 import com.gitb.tr.{TAR, TestResultType}
 import exceptions.{ErrorCodes, UserException}
-import managers.TestSuiteManager.{TestCaseForTestSuite, TestCasesForTestSuiteWithActorCount, TestSuiteSharedInfo}
+import managers.TestSuiteManager.{TestCaseForTestSuite, TestCasesForTestSuiteWithActorCount, TestSuiteSharedInfo, TestSuiteTestCaseValueTuple, TestSuiteValueTuple}
 import managers.testsuite.{TestSuitePaths, TestSuiteSaveResult}
 import models.Enums.TestSuiteReplacementChoice.{PROCEED, TestSuiteReplacementChoice}
 import models.Enums.{TestCaseUploadMatchType, TestResultStatus, TestSuiteReplacementChoice}
@@ -59,6 +59,12 @@ object TestSuiteManager {
 			Option[String], Long, String, Boolean, Boolean, String, Option[String],
 			Option[String], Option[String], Option[String]
 		)
+
+  private type TestSuiteTestCaseValueTuple = (
+    Long, String, String, String,
+      Option[String], Option[Long], Boolean, Boolean, Option[String],
+      Short, Boolean, Option[String], Option[String], Option[String]
+    )
 
 	private def withoutDocumentation(dbTestSuite: PersistenceSchema.TestSuitesTable): TestSuiteDbTuple = {
 		(dbTestSuite.id, dbTestSuite.shortname, dbTestSuite.fullname, dbTestSuite.version,
@@ -165,19 +171,25 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 	}
 
 	def searchSharedTestSuitesWithDomainId(filter: Option[String], page: Long, limit: Long, domain: Long): Future[SearchResult[TestSuites]] = {
-		val query = PersistenceSchema.testSuites
-			.filter(_.domain === domain)
-			.filter(_.shared === true)
-			.filterOpt(filter)((table, filterValue) => {
-        val filterValueToUse = toLowercaseLikeParameter(filterValue)
-				table.identifier.toLowerCase.like(filterValueToUse) || table.shortname.toLowerCase.like(filterValueToUse) || table.description.getOrElse("").toLowerCase.like(filterValueToUse)
-			})
-			.sortBy(_.shortname.asc)
-			.map(TestSuiteManager.withoutDocumentation)
+		val queryBuilder = (forCount: Boolean) => {
+      val baseQuery = PersistenceSchema.testSuites
+        .filter(_.domain === domain)
+        .filter(_.shared === true)
+        .filterOpt(filter)((table, filterValue) => {
+          val filterValueToUse = toLowercaseLikeParameter(filterValue)
+          table.identifier.toLowerCase.like(filterValueToUse) || table.shortname.toLowerCase.like(filterValueToUse) || table.description.getOrElse("").toLowerCase.like(filterValueToUse)
+        })
+        if (!forCount) {
+          baseQuery.sortBy(_.shortname.asc)
+            .map(TestSuiteManager.withoutDocumentation)
+        } else {
+          baseQuery
+        }
+    }
 		DB.run {
 			for {
-				results <- query.drop((page - 1) * limit).take(limit).result.map(x => x.map(TestSuiteManager.tupleToTestSuite))
-				resultCount <- query.size.result
+				results <- queryBuilder(false).drop((page - 1) * limit).take(limit).result.map(x => x.map(t => TestSuiteManager.tupleToTestSuite(t.asInstanceOf[TestSuiteValueTuple])))
+				resultCount <- queryBuilder(true).size.result
 			} yield SearchResult(results, resultCount)
 		}
 	}
@@ -208,19 +220,25 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 	}
 
 	def getTestSuitesWithSpecificationId(filter: Option[String], page: Long, limit: Long, specification: Long): Future[SearchResult[TestSuites]] = {
-		val query = PersistenceSchema.testSuites
-			.join(PersistenceSchema.specificationHasTestSuites).on(_.id === _.testSuiteId)
-			.filter(_._2.specId === specification)
-			.filterOpt(filter)((table, filterValue) => {
-        val filterValueToUse = toLowercaseLikeParameter(filterValue)
-				table._1.identifier.toLowerCase.like(filterValueToUse) || table._1.shortname.toLowerCase.like(filterValueToUse) || table._1.description.getOrElse("").toLowerCase.like(filterValueToUse)
-			})
-			.sortBy(_._1.shortname.asc)
-			.map(x => TestSuiteManager.withoutDocumentation(x._1))
+		val queryBuilder = (forCount: Boolean) => {
+      val baseQuery = PersistenceSchema.testSuites
+        .join(PersistenceSchema.specificationHasTestSuites).on(_.id === _.testSuiteId)
+        .filter(_._2.specId === specification)
+        .filterOpt(filter)((table, filterValue) => {
+          val filterValueToUse = toLowercaseLikeParameter(filterValue)
+          table._1.identifier.toLowerCase.like(filterValueToUse) || table._1.shortname.toLowerCase.like(filterValueToUse) || table._1.description.getOrElse("").toLowerCase.like(filterValueToUse)
+        })
+        if (!forCount) {
+          baseQuery.sortBy(_._1.shortname.asc)
+            .map(x => TestSuiteManager.withoutDocumentation(x._1))
+        } else {
+          baseQuery
+        }
+    }
 		DB.run {
 			for {
-				results <- query.drop((page - 1) * limit).take(limit).result.map(x => x.map(TestSuiteManager.tupleToTestSuite))
-				resultCount <- query.size.result
+				results <- queryBuilder(false).drop((page - 1) * limit).take(limit).result.map(x => x.map(t => TestSuiteManager.tupleToTestSuite(t.asInstanceOf[TestSuiteValueTuple])))
+				resultCount <- queryBuilder(true).size.result
 			} yield SearchResult(results, resultCount)
 		}
 	}
@@ -258,21 +276,27 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 	}
 
 	def getTestSuiteTestCasesWithPaging(testSuiteId: Long, filterText: Option[String], page: Long, limit: Long): Future[SearchResult[TestCases]] = {
-		val query = PersistenceSchema.testCases
-			.join(PersistenceSchema.testSuiteHasTestCases).on(_.id === _.testcase)
-			.filter(_._2.testsuite === testSuiteId)
-			.filterOpt(toLowercaseLikeParameter(filterText))((q, text) => q._1.shortname.toLowerCase.like(text))
-			.sortBy(_._1.testSuiteOrder)
-			.map(x => (x._1.id, x._1.identifier, x._1.shortname, x._1.fullname, x._1.description,
-				x._1.group, x._1.isOptional, x._1.isDisabled, x._1.tags, x._1.testSuiteOrder,
-				x._1.hasDocumentation, x._1.specReference, x._1.specDescription, x._1.specLink)
-			)
+		val queryBuilder = (forCount: Boolean) => {
+      val baseQuery = PersistenceSchema.testCases
+        .join(PersistenceSchema.testSuiteHasTestCases).on(_.id === _.testcase)
+        .filter(_._2.testsuite === testSuiteId)
+        .filterOpt(toLowercaseLikeParameter(filterText))((q, text) => q._1.shortname.toLowerCase.like(text))
+        if (!forCount) {
+          baseQuery.sortBy(_._1.testSuiteOrder)
+            .map(x => (x._1.id, x._1.identifier, x._1.shortname, x._1.fullname, x._1.description,
+              x._1.group, x._1.isOptional, x._1.isDisabled, x._1.tags, x._1.testSuiteOrder,
+              x._1.hasDocumentation, x._1.specReference, x._1.specDescription, x._1.specLink)
+            )
+        } else {
+          baseQuery
+        }
+    }
 		DB.run {
 			for {
-				results <- query.drop((page - 1) * limit)
-					.take(limit)
+				results <- queryBuilder(false).drop((page - 1) * limit).take(limit)
 					.result.map { results =>
-						results.map { data =>
+						results.map { d =>
+              val data = d.asInstanceOf[TestSuiteTestCaseValueTuple]
 							TestCases(
 								id = data._1, shortname = data._3, fullname = data._4, version = "",
 								authors = None, originalDate = None, modificationDate = None,
@@ -284,7 +308,7 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 							)
 						}
 					}
-				resultCount <- query.size.result
+				resultCount <- queryBuilder(true).size.result
 			} yield SearchResult(results, resultCount)
 		}
 	}

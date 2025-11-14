@@ -1,4 +1,4 @@
-<div class="menu-item-root" [class.active]="active">
+<div class="menu-item-root" [class.active]="active" (click)="itemClicked()">
     @if (expanded) {
         <div class="menu-item">
             @if (customTemplate) {

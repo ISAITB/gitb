@@ -95,7 +95,6 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
       replaceSelectedItems: new EventEmitter(),
       replaceItems: new EventEmitter()
     }
-    this.restoreState()
     this.createStatusOptions()
     // Load data
     const systemsLoaded = this.getSystems(snapshotId)
@@ -169,6 +168,7 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
   }
 
   getConformanceStatements() {
+    this.restoreState()
     let pagingEvent: PagingEvent = { targetPage: 1, targetPageSize: Constants.TABLE_PAGE_SIZE }
     if (this.initialPagingStatus != undefined) {
       pagingEvent = { targetPage: this.initialPagingStatus.currentPage, targetPageSize: this.initialPagingStatus.pageSize }
@@ -202,7 +202,6 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
   }
 
   onStatementSelect(statement: ConformanceStatementItem) {
-    this.saveState()
     if (this.communityId == undefined) {
       this.routingService.toOwnConformanceStatement(this.organisationId!, this.system!.id, statement.id, this.activeConformanceSnapshot?.id, this.activeConformanceSnapshot?.label)
     } else {
@@ -309,6 +308,14 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
       snapshotIdToUse = this.activeConformanceSnapshot?.id
     }
     return this.systemService.getSystemsByOrganisation(this.organisationId!, snapshotIdToUse)
+  }
+
+  protected displayStateKey(): string {
+    return Constants.DISPLAY_STATE_KEY.CONFORMANCE_STATEMENTS
+  }
+
+  protected displayStateDataKey(): string {
+    return `${this.system?.id}|${this.activeConformanceSnapshot?.id}`
   }
 
 }
