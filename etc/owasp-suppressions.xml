@@ -186,7 +186,7 @@
         <notes><![CDATA[
    file name: angus-mail-2.0.3.jar (shaded: org.eclipse.angus:angus-core:2.0.3)
    ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.eclipse\.angus/angus-core@.*$</packageUrl>
+        <packageUrl regex="true">^pkg:maven/org\.eclipse\.angus/angus-.*@.*$</packageUrl>
         <cve>CVE-2025-7962</cve>
     </suppress>
 </suppressions>
