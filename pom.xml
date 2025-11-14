@@ -11,7 +11,7 @@
     </parent>
     <groupId>com.gitb</groupId>
     <artifactId>GITB</artifactId>
-    <version>1.28.2</version>
+    <version>1.28.3</version>
     <name>GITB</name>
     <packaging>pom</packaging>
 
@@ -34,7 +34,7 @@
         <version.plugin.antrun-plugin>3.1.0</version.plugin.antrun-plugin>
         <version.plugin.versions-maven-plugin>2.18.0</version.plugin.versions-maven-plugin>
         <!-- Dependency versions -->
-        <version.gitbTypes>1.28.2</version.gitbTypes>
+        <version.gitbTypes>1.28.3</version.gitbTypes>
         <version.springBoot>3.5.6</version.springBoot> <!-- When upgrading adapt Tomcat version (below) as needed. -->
         <tomcat.version>10.1.46</tomcat.version>
         <version.bouncycastle>1.81</version.bouncycastle>
@@ -219,7 +219,7 @@
                         <execution>
                             <phase>none</phase>
                             <!--
-                                Run manually with `mvn versions:set -DnewVersion=1.28.2`
+                                Run manually with `mvn versions:set -DnewVersion=1.28.3`
                                 For a new development cycle run `mvn versions:set -DnewVersion=1.29.0-SNAPSHOT`
                                 The version number should be aligned with the gitb-types-jakarta dependency.
                             -->
