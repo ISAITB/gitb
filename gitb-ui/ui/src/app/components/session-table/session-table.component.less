@@ -15,6 +15,22 @@
 
 @import '../../../styles/less/_common.less';
 
+.test-case-session {
+    border: 1px solid @gray-dark-1;
+    border-radius: @border-radius;
+    background-color: @white;
+    margin-top: 10px;
+    .session-execution-info {
+        display: flex;
+        width: 100%;
+        border-bottom: 1px solid @gray-dark-1;
+    }
+    .session-execution-diagram {
+        display: block;
+        min-width: 0;
+    }
+}
+
 .sessionControls {
     margin-bottom: 10px;
     display: flex;

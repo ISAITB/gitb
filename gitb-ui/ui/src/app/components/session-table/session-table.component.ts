@@ -13,7 +13,19 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  EventEmitter,
+  HostListener,
+  Input,
+  OnInit,
+  Output,
+  QueryList,
+  Renderer2,
+  ViewChild,
+  ViewChildren
+} from '@angular/core';
 import {BsModalService} from 'ngx-bootstrap/modal';
 import {Constants} from 'src/app/common/constants';
 import {DataService} from 'src/app/services/data.service';
@@ -51,6 +63,8 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
   @Input() showNavigationControls = true
   @Output() onRefresh = new EventEmitter<TestResultForDisplay>()
   @ViewChild("pagingControls") pagingControls?: PagingControlsApi
+  @ViewChild("tableContainer") tableContainer?: ElementRef
+  @ViewChildren("sessionContainer") sessionContainers?: QueryList<ElementRef>
 
   Constants = Constants
   columnCount = 0
@@ -65,7 +79,8 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
     private readonly routingService: RoutingService,
     private readonly testService: TestService,
     public readonly dataService: DataService,
-    private readonly popupService: PopupService
+    private readonly popupService: PopupService,
+    private renderer: Renderer2
   ) { super() }
 
   ngOnInit(): void {
@@ -108,6 +123,23 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
     }
   }
 
+  @HostListener('window:resize')
+  onWindowResize() {
+    this.updateSessionWidths();
+  }
+
+  private updateSessionWidths() {
+    if (!this.tableContainer || !this.sessionContainers) return;
+
+    const tableWidth = this.tableContainer.nativeElement.offsetWidth;
+    const padding = 16; // 2 * 8px
+    const targetWidth = tableWidth - padding;
+
+    this.sessionContainers.forEach(sessionEl => {
+      this.renderer.setStyle(sessionEl.nativeElement, 'width', `${targetWidth}px`);
+    });
+  }
+
   diagramReady(test: SessionData) {
     if (test.diagramState?.interactions) {
       test.diagramState.interactions = this.extractApplicableInteractions(test.diagramState.interactions)
@@ -115,6 +147,7 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
     test.diagramLoaded = true
     this.updateButtonBadges(test)
     setTimeout(() => {
+      this.updateSessionWidths()
       test.hideLoadingIcon = true
       test.diagramExpanded = true
     }, 200)

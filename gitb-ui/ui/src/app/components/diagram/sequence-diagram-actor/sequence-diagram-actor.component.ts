@@ -25,6 +25,7 @@ import { ActorInfo } from '../actor-info';
 export class SequenceDiagramActorComponent implements OnInit {
 
   @Input() actor!: string
+  @Input() index!: number
   @Input() actorInfo!: ActorInfo[]
 
   actorForDisplay!: string

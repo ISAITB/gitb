@@ -16,7 +16,7 @@
 import {Component, Input, OnInit} from '@angular/core';
 import {ActorInfo} from '../actor-info';
 import {StepData} from '../step-data';
-import {filter, find, flatten, forEach, indexOf, map, maxBy, minBy, sortBy, uniq} from 'lodash';
+import {filter, find, flatten, forEach, indexOf, map, minBy, reduce, sortBy, uniq} from 'lodash';
 import {Constants} from 'src/app/common/constants';
 import {DiagramEvents} from '../diagram-events';
 
@@ -38,6 +38,8 @@ export class SequenceDiagramComponent implements OnInit {
   actors: string[] = []
   messages: StepData[] = []
   includesNonSpecificationActor = true
+  lastActorHasDisplayedSteps = false
+  actorStyleCount!: number
 
   constructor() { }
 
@@ -48,10 +50,6 @@ export class SequenceDiagramComponent implements OnInit {
       }
     })
     this.updateState()
-  }
-
-  classValue() {
-    return 'sequence-diagram actor-diagram-' + (this.includesNonSpecificationActor?this.actors.length:(this.actors.length-1))
   }
 
   updateState() {
@@ -65,7 +63,12 @@ export class SequenceDiagramComponent implements OnInit {
     if (steps != undefined) {
       this.messages = this.extractSteps(steps, this.actorInfo, 0)
       this.actors = this.extractActors(this.messages, this.actorInfo)
+      const lastActor = this.actors[this.actors.length-1]
+      this.lastActorHasDisplayedSteps = steps.find((step) => {
+        return step.from == lastActor && step.to == lastActor
+      }) != undefined
       this.setStepIndexes(this.messages)
+      this.actorStyleCount = this.includesNonSpecificationActor?this.actors.length:(this.actors.length-1)
     }
   }
 
@@ -301,7 +304,12 @@ export class SequenceDiagramComponent implements OnInit {
     return step.fromIndex! > step.toIndex!
   }
 
-  private setMessageSpan(message: StepData, firstChild: StepData, lastChild: StepData, extend: boolean) {
+  private stepTypeExpandsRightContainerBound(step: StepData) {
+    // These are the types of steps that can display a report or other information in their own swimlane.
+    return step.type != "interact" && (step.type != "msg" || (step.from == step.to))
+  }
+
+  private setMessageSpan(message: StepData, firstChild: StepData, lastChild: StepData) {
     if (this.isRightToLeft(firstChild)) {
       message.from = firstChild.to
       message.fromIndex = firstChild.toIndex
@@ -317,11 +325,11 @@ export class SequenceDiagramComponent implements OnInit {
       message.toIndex = lastChild.toIndex
     }
     let span = Math.abs(message.fromIndex! - message.toIndex!)
-    if (extend) {
-      if (message.from == Constants.TEST_ENGINE_ACTOR_ID || message.to == Constants.TEST_ENGINE_ACTOR_ID) {
-        // Extend the span because we may have here validation or processing with a message and a report.
-        span += 1
-      }
+    if (this.stepTypeExpandsRightContainerBound(lastChild)) {
+      span += 1
+    }
+    if (lastChild.span != undefined && lastChild.span > span) {
+      span = lastChild.span
     }
     if (span == 0) {
       span = 1
@@ -347,24 +355,36 @@ export class SequenceDiagramComponent implements OnInit {
     }
   }
 
-  setLoopStepChildIndexes(message: StepData) {
-    this.setStepIndexes(message.steps)
-    let firstChild = minBy(message.steps, this.leftMostStepActorIndex.bind(this))
-    let lastChild = maxBy(message.steps, this.rightMostStepActorIndex.bind(this))
-    this.setMessageSpan(message, firstChild!, lastChild!, true)
-    if (message.sequences != undefined) {
-      for (let sequence of message.sequences) {
-        this.setLoopStepChildIndexes(sequence)
+  private leftMostStep(steps: StepData[]) {
+    return minBy(steps, this.leftMostStepActorIndex.bind(this))
+  }
+
+  private rightMostStep(steps: StepData[]) {
+    return reduce(steps, (best: StepData|null, step: StepData): StepData => {
+      if (!best) return step;
+      const bestIndex = this.rightMostStepActorIndex(best)
+      const currentIndex = this.rightMostStepActorIndex(step)
+      if (currentIndex > bestIndex) {
+        return step
+      } else if (currentIndex < bestIndex) {
+        return best
+      } else {
+        // Prefer steps with a report on the actor's lifeline.
+        if (this.stepTypeExpandsRightContainerBound(step)) {
+          return step
+        } else {
+          return best
+        }
       }
-    }
+    }, null);
   }
 
   setGroupStepChildIndexes(message: StepData) {
     let childSteps = message.steps
     this.setStepIndexes(childSteps)
-    let firstChild = minBy(childSteps, this.leftMostStepActorIndex.bind(this))
-    let lastChild = maxBy(childSteps, this.rightMostStepActorIndex.bind(this))
-    this.setMessageSpan(message, firstChild!, lastChild!, true)
+    let firstChild = this.leftMostStep(childSteps)
+    let lastChild = this.rightMostStep(childSteps)
+    this.setMessageSpan(message, firstChild!, lastChild!)
   }
 
   setDecisionStepChildIndexes(message: StepData) {
@@ -373,16 +393,29 @@ export class SequenceDiagramComponent implements OnInit {
       childSteps = childSteps.concat(message.else)
     }
     this.setStepIndexes(childSteps)
-    let firstChild = minBy(childSteps, this.leftMostStepActorIndex.bind(this))
-    let lastChild = maxBy(childSteps, this.rightMostStepActorIndex.bind(this))
-    this.setMessageSpan(message, firstChild!, lastChild!, true)
+    let firstChild = this.leftMostStep(childSteps)
+    let lastChild = this.rightMostStep(childSteps)
+    this.setMessageSpan(message, firstChild!, lastChild!)
   }
 
   setFlowStepChildIndexes(message: StepData) {
     forEach(message.threads, this.setStepIndexes.bind(this))
-    let firstChild = minBy(flatten(message.threads), this.leftMostStepActorIndex.bind(this))
-    let lastChild = maxBy(flatten(message.threads), this.rightMostStepActorIndex.bind(this))
-    this.setMessageSpan(message, firstChild!, lastChild!, true)
+    const childSteps = flatten(message.threads)
+    let firstChild = this.leftMostStep(childSteps)
+    let lastChild = this.rightMostStep(childSteps)
+    this.setMessageSpan(message, firstChild!, lastChild!)
+  }
+
+  setLoopStepChildIndexes(message: StepData) {
+    this.setStepIndexes(message.steps)
+    let firstChild = this.leftMostStep(message.steps)
+    let lastChild = this.rightMostStep(message.steps)
+    this.setMessageSpan(message, firstChild!, lastChild!)
+    if (message.sequences != undefined) {
+      for (let sequence of message.sequences) {
+        this.setLoopStepChildIndexes(sequence)
+      }
+    }
   }
 
 }

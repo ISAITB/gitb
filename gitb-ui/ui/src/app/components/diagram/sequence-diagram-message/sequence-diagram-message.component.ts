@@ -13,18 +13,18 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input, OnDestroy, OnInit } from '@angular/core';
-import { Constants } from 'src/app/common/constants';
-import { ActorInfo } from '../actor-info';
-import { StepData } from '../step-data';
-import { map, max, flatten } from 'lodash'
-import { ReportService } from 'src/app/services/report.service';
-import { BsModalService } from 'ngx-bootstrap/modal';
-import { TestStepReportModalComponent } from '../test-step-report-modal/test-step-report-modal.component';
-import { HtmlService } from 'src/app/services/html.service';
-import { DiagramEvents } from '../diagram-events';
-import { Subscription } from 'rxjs';
-import { StepReport } from '../report/step-report';
+import {Component, Input, OnDestroy, OnInit} from '@angular/core';
+import {Constants} from 'src/app/common/constants';
+import {ActorInfo} from '../actor-info';
+import {StepData} from '../step-data';
+import {flatten, map, max} from 'lodash';
+import {ReportService} from 'src/app/services/report.service';
+import {BsModalService} from 'ngx-bootstrap/modal';
+import {TestStepReportModalComponent} from '../test-step-report-modal/test-step-report-modal.component';
+import {HtmlService} from 'src/app/services/html.service';
+import {DiagramEvents} from '../diagram-events';
+import {Subscription} from 'rxjs';
+import {StepReport} from '../report/step-report';
 
 @Component({
     selector: 'app-sequence-diagram-message',
@@ -46,7 +46,8 @@ export class SequenceDiagramMessageComponent implements OnInit, OnDestroy {
   eventSubscription?: Subscription
   expanded = true
   hoveringTitle = false
-  hoveringReport = false
+  containerMessage = false
+  reportableMessage = false
 
   constructor(
     private readonly reportService: ReportService,
@@ -60,6 +61,8 @@ export class SequenceDiagramMessageComponent implements OnInit, OnDestroy {
     this.classForMessageFixed = this.calculateFixedMessageClass()
     this.classForWrapper = 'message-wrapper msg-offset-'+this.message.fromIndex+' '+this.message.type+'-type'
     this.classForReverseOffset = 'reverse-offset-'+this.message.fromIndex
+    this.containerMessage = this.message.type == 'loop' || this.message.type == 'decision' || this.message.type == 'flow' || this.message.type == 'group'
+    this.reportableMessage = this.message.type == 'exit' || this.message.type == 'verify' || this.message.type == 'process'
     if (this.message.type == 'loop') {
       this.onSequenceChange(false)
       this.eventSubscription = this.events.subscribeToLoopSequenceUpdate((event: {stepId: string}) => {
@@ -141,7 +144,7 @@ export class SequenceDiagramMessageComponent implements OnInit, OnDestroy {
     } else if (message.type == 'instruction' || message.type == 'request') {
       return 1
     } else {
-      return message.level!
+      return 1
     }
   }
 
@@ -157,7 +160,7 @@ export class SequenceDiagramMessageComponent implements OnInit, OnDestroy {
   }
 
   showReport() {
-    if (this.message.report != undefined) {
+    if (this.message.report != undefined && !this.containerMessage) {
       if (this.message.report.tcInstanceId != undefined && this.message.report.path != undefined && this.message.report.result == undefined) {
         this.reportService.getTestStepReport(this.message.report.tcInstanceId, this.message.report.path)
         .subscribe((report) => {
