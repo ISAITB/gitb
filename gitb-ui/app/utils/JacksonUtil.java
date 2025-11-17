@@ -350,8 +350,13 @@ public class JacksonUtil {
                     }
                     jsonGenerator.writeEndArray();
                 });
-                case ExitStep ignored -> writeStep(jsonGenerator, step, () ->
-                    jsonGenerator.writeStringField("type", "exit"));
+                case ExitStep exitStep -> writeStep(jsonGenerator, step, () -> {
+                    if (exitStep.getActor() != null && !exitStep.getActor().isEmpty()) {
+                        jsonGenerator.writeStringField("from", exitStep.getActor());
+                        jsonGenerator.writeStringField("to", exitStep.getActor());
+                    }
+                    jsonGenerator.writeStringField("type", "exit");
+                });
                 case UserInteractionStep userInteractionStep -> writeStep(jsonGenerator, step, () -> {
                     jsonGenerator.writeStringField("type", "interact");
                     jsonGenerator.writeStringField("title", userInteractionStep.getTitle());
@@ -375,12 +380,26 @@ public class JacksonUtil {
                         jsonGenerator.writeEndObject();
                     }
                     jsonGenerator.writeEndArray();
-                    jsonGenerator.writeStringField("with", ((UserInteractionStep) step).getWith());
+                    jsonGenerator.writeStringField("with", userInteractionStep.getWith());
+                    if (userInteractionStep.getActor() != null && !userInteractionStep.getActor().isEmpty()) {
+                        jsonGenerator.writeStringField("from", userInteractionStep.getActor());
+                        jsonGenerator.writeStringField("to", userInteractionStep.getActor());
+                    }
                 });
-                case VerifyStep ignored -> writeStep(jsonGenerator, step, () ->
-                    jsonGenerator.writeStringField("type", "verify"));
-                case ProcessStep ignored -> writeStep(jsonGenerator, step, () ->
-                    jsonGenerator.writeStringField("type", "process"));
+                case VerifyStep verifyStep -> writeStep(jsonGenerator, step, () -> {
+                    if (verifyStep.getActor() != null && !verifyStep.getActor().isEmpty()) {
+                        jsonGenerator.writeStringField("from", verifyStep.getActor());
+                        jsonGenerator.writeStringField("to", verifyStep.getActor());
+                    }
+                    jsonGenerator.writeStringField("type", "verify");
+                });
+                case ProcessStep processStep -> writeStep(jsonGenerator, step, () -> {
+                    if (processStep.getActor() != null && !processStep.getActor().isEmpty()) {
+                        jsonGenerator.writeStringField("from", processStep.getActor());
+                        jsonGenerator.writeStringField("to", processStep.getActor());
+                    }
+                    jsonGenerator.writeStringField("type", "process");
+                });
                 case Sequence sequence -> {
                     jsonGenerator.writeStartArray();
                     for (TestStep testStep : sequence.getSteps()) {

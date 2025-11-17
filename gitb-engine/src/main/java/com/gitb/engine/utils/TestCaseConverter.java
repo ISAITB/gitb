@@ -229,6 +229,7 @@ public class TestCaseConverter {
     private com.gitb.tpl.VerifyStep convertVerifyStep(String testCaseId, String id, Verify description) {
         com.gitb.tpl.VerifyStep verify = new com.gitb.tpl.VerifyStep();
         verify.setId(id);
+        verify.setActor(fixedOrVariableValueAsString(description.getActor()));
         verify.setDesc(fixedOrVariableValueAsString(description.getDesc()));
         verify.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
         verify.setHidden(hiddenValueToUse(description.getHidden(), false));
@@ -238,6 +239,7 @@ public class TestCaseConverter {
     private com.gitb.tpl.ProcessStep convertProcessStep(String testCaseId, String id, Process description) {
         com.gitb.tpl.ProcessStep process = new com.gitb.tpl.ProcessStep();
         process.setId(id);
+        process.setActor(fixedOrVariableValueAsString(description.getActor()));
         process.setDesc(fixedOrVariableValueAsString(description.getDesc()));
         process.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
         // Process steps are by default hidden.
@@ -432,6 +434,7 @@ public class TestCaseConverter {
         interactionStep.setCollapsed(description.isCollapsed());
         interactionStep.setWith(description.getWith());
         interactionStep.setAdmin(description.isAdmin());
+        interactionStep.setActor(fixedOrVariableValueAsString(description.getActor()));
 
         int childIndex = 1;
 
@@ -457,6 +460,7 @@ public class TestCaseConverter {
     private com.gitb.tpl.ExitStep convertExitStep(String testCaseId, String id, com.gitb.tdl.ExitStep description) {
         com.gitb.tpl.ExitStep exit = new com.gitb.tpl.ExitStep();
         exit.setId(id);
+        exit.setActor(fixedOrVariableValueAsString(description.getActor()));
         exit.setDesc(fixedOrVariableValueAsString(description.getDesc()));
         exit.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
         exit.setHidden(hiddenValueToUse(description.getHidden(), false));

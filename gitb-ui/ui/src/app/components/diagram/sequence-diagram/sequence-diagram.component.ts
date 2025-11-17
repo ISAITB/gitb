@@ -84,8 +84,20 @@ export class SequenceDiagramComponent implements OnInit {
   processStep(step: StepData, actorInfo: ActorInfo[], currentLevel: number) {
     step.level = currentLevel
     if (step.type == 'verify' || step.type == 'process' || step.type == 'exit') {
-      step.from = Constants.TEST_ENGINE_ACTOR_ID
-      step.to = Constants.TEST_ENGINE_ACTOR_ID
+      if (step.from == undefined) {
+        if (step.to == undefined) {
+          step.from = Constants.TEST_ENGINE_ACTOR_ID
+        } else {
+          step.from = step.to
+        }
+      }
+      if (step.to == undefined) {
+        if (step.from == undefined) {
+          step.to = Constants.TEST_ENGINE_ACTOR_ID
+        } else {
+          step.to = step.from
+        }
+      }
     } else if (step.type == 'group') {
       step.steps = this.extractSteps(step.steps, actorInfo, currentLevel)
     } else if (step.type == 'loop') {
@@ -108,14 +120,24 @@ export class SequenceDiagramComponent implements OnInit {
       const hasRequests = this.hasRequests(step.interactions)
       if (hasRequests && step.admin) {
         step.from = Constants.ADMINISTRATOR_ACTOR_ID
-        step.to = Constants.TEST_ENGINE_ACTOR_ID
+        if (step.to == undefined) {
+          step.to = Constants.TEST_ENGINE_ACTOR_ID
+        }
       } else if (hasRequests && !step.admin) {
         step.from = Constants.TESTER_ACTOR_ID
-        step.to = Constants.TEST_ENGINE_ACTOR_ID
+        if (step.to == undefined) {
+          step.to = Constants.TEST_ENGINE_ACTOR_ID
+        }
       } else if (!hasRequests && step.admin) {
+        if (step.from == undefined) {
+          step.from = Constants.TEST_ENGINE_ACTOR_ID
+        }
         step.from = Constants.TEST_ENGINE_ACTOR_ID
         step.to = Constants.ADMINISTRATOR_ACTOR_ID
       } else {
+        if (step.from == undefined) {
+          step.from = Constants.TEST_ENGINE_ACTOR_ID
+        }
         step.from = Constants.TEST_ENGINE_ACTOR_ID
         step.to = Constants.TESTER_ACTOR_ID
       }

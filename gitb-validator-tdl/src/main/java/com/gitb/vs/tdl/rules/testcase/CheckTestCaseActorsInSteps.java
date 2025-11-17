@@ -18,6 +18,8 @@ package com.gitb.vs.tdl.rules.testcase;
 import com.gitb.core.TestRole;
 import com.gitb.core.TestRoleEnumeration;
 import com.gitb.tdl.*;
+import com.gitb.tdl.Process;
+import com.gitb.tpl.VerifyStep;
 import com.gitb.vs.tdl.Context;
 import com.gitb.vs.tdl.ErrorCode;
 import com.gitb.vs.tdl.ValidationReport;
@@ -51,6 +53,7 @@ public class CheckTestCaseActorsInSteps extends AbstractTestCaseObserver {
                     validateActorReference(ir.getWith(), TestRoleEnumeration.SUT, currentStep);
                 }
             }
+            validateActorReference(interaction.getActor(), null, currentStep);
         } else if (currentStep instanceof BeginTransaction beginTransactionStep) {
             String fromValue = beginTransactionStep.getFrom();
             String toValue = beginTransactionStep.getTo();
@@ -86,6 +89,12 @@ public class CheckTestCaseActorsInSteps extends AbstractTestCaseObserver {
                     addReportItem(ErrorCode.MISSING_ACTOR_REFERENCE, currentTestCase.getId(), Utils.getStepName(currentStep), "from");
                 }
             }
+        } else if (currentStep instanceof VerifyStep verifyStep) {
+            validateActorReference(verifyStep.getActor(), null, currentStep);
+        } else if (currentStep instanceof Process processStep) {
+            validateActorReference(processStep.getActor(), null, currentStep);
+        } else if (currentStep instanceof ExitStep exitStep) {
+            validateActorReference(exitStep.getActor(), null, currentStep);
         }
     }
 
