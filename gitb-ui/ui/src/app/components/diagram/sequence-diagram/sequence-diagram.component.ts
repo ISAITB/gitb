@@ -17,9 +17,10 @@ import {Component, Input, OnInit} from '@angular/core';
 import {ActorInfo} from '../actor-info';
 import {StepData} from '../step-data';
 import {filter, flatten, minBy, reduce, uniq} from 'lodash';
+import {ActorRole} from '../../../types/actor-role';
 import {Constants} from 'src/app/common/constants';
 import {DiagramEvents} from '../diagram-events';
-import {ActorRole} from '../../../types/actor-role';
+import {TestCaseDefinitionActors} from '../../../types/test-case-definition-actors';
 
 @Component({
     selector: 'app-sequence-diagram',
@@ -31,7 +32,7 @@ export class SequenceDiagramComponent implements OnInit {
 
   @Input() stepsOfTests!: {[key: string]: StepData[]}
   @Input() test!: string
-  @Input() actorInfoOfTests!: {[key: string]: ActorInfo[]}
+  @Input() actorInfoOfTests!: {[key: string]: TestCaseDefinitionActors}
   @Input() events!: DiagramEvents
 
   actorInfo?: ActorInfo[]
@@ -62,8 +63,9 @@ export class SequenceDiagramComponent implements OnInit {
     }
   }
 
-  private prepareActorInfo() {
-    this.actorInfoOfTests[this.test].forEach(actor => {
+  private prepareActorInfo(): ActorInfo[] {
+    const actorDefinition = this.actorInfoOfTests[this.test]
+    actorDefinition.actor.forEach(actor => {
       if (actor.role == "SUT") {
         actor.diagramRole = ActorRole.SystemUnderTest
         // Extract the SUT actor.
@@ -76,10 +78,25 @@ export class SequenceDiagramComponent implements OnInit {
       throw new Error("Test case without SUT actor")
     }
     // Add built-in actors.
-    return this.actorInfoOfTests[this.test].concat([
-      {id: Constants.TEST_ENGINE_ACTOR_ID, name: Constants.TEST_ENGINE_ACTOR_NAME, diagramRole: ActorRole.TestEngine},
-      {id: Constants.TESTER_ACTOR_ID, name: this.getTesterActorName(), diagramRole: ActorRole.User},
-      {id: Constants.ADMINISTRATOR_ACTOR_ID, name: Constants.ADMINISTRATOR_ACTOR_NAME, diagramRole: ActorRole.Administrator},
+    return actorDefinition.actor.concat([
+      {
+        id: Constants.TEST_ENGINE_ACTOR_ID,
+        name: (actorDefinition.engineName == undefined)?Constants.TEST_ENGINE_ACTOR_NAME:actorDefinition.engineName,
+        diagramRole: ActorRole.TestEngine,
+        displayOrder: actorDefinition.engineDisplayOrder
+      },
+      {
+        id: Constants.TESTER_ACTOR_ID,
+        name: (actorDefinition.userName == undefined)?this.getTesterActorName():actorDefinition.userName,
+        diagramRole: ActorRole.User,
+        displayOrder: actorDefinition.userDisplayOrder
+      },
+      {
+        id: Constants.ADMINISTRATOR_ACTOR_ID,
+        name: (actorDefinition.adminName == undefined)?Constants.ADMINISTRATOR_ACTOR_NAME:actorDefinition.adminName,
+        diagramRole: ActorRole.Administrator,
+        displayOrder: actorDefinition.adminDisplayOrder
+      }
     ])
   }
 
@@ -193,9 +210,9 @@ export class SequenceDiagramComponent implements OnInit {
     // Get actor identifiers from steps.
     const actorIdentifiers = this.extractActorsInternal(messages, actorInfo)
     // Determine sorted list of actors.
-    let userActor: ActorInfo|undefined
-    let administratorActor: ActorInfo|undefined
-    let testEngineActor: ActorInfo|undefined
+    let userActorToAppend: ActorInfo|undefined
+    let administratorActorToAppend: ActorInfo|undefined
+    let testEngineActorToAppend: ActorInfo|undefined
     const specificationActors: ActorInfo[] = []
     let actorsNeedSorting = false
     // Map actors to actor identifiers.
@@ -205,11 +222,26 @@ export class SequenceDiagramComponent implements OnInit {
         throw new Error(`Unable to retrieve actor definition based on identifier [${actorIdentifier}]`)
       }
       if (matchedActor.diagramRole === ActorRole.User) {
-        userActor = matchedActor
+        if (matchedActor.displayOrder == undefined) {
+          userActorToAppend = matchedActor
+        } else {
+          specificationActors.push(matchedActor)
+          actorsNeedSorting = true
+        }
       } else if (matchedActor.diagramRole === ActorRole.Administrator) {
-        administratorActor = matchedActor
+        if (matchedActor.displayOrder == undefined) {
+          administratorActorToAppend = matchedActor
+        } else {
+          specificationActors.push(matchedActor)
+          actorsNeedSorting = true
+        }
       } else if (matchedActor.diagramRole === ActorRole.TestEngine) {
-        testEngineActor = matchedActor
+        if (matchedActor.displayOrder == undefined) {
+          testEngineActorToAppend = matchedActor
+        } else {
+          specificationActors.push(matchedActor)
+          actorsNeedSorting = true
+        }
       } else {
         if (matchedActor.displayOrder != undefined) {
           actorsNeedSorting = true
@@ -233,9 +265,9 @@ export class SequenceDiagramComponent implements OnInit {
     }
     // If in use, add the special built-in actors at the end.
     let allActors = specificationActors
-    if (userActor) allActors.push(userActor)
-    if (administratorActor) allActors.push(administratorActor)
-    if (testEngineActor) allActors.push(testEngineActor)
+    if (userActorToAppend) allActors.push(userActorToAppend)
+    if (administratorActorToAppend) allActors.push(administratorActorToAppend)
+    if (testEngineActorToAppend) allActors.push(testEngineActorToAppend)
     return allActors
   }
 

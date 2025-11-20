@@ -13,16 +13,16 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { TestStepResult } from "src/app/types/test-step-result";
-import { ActorInfo } from "../actor-info";
-import { DiagramEvents } from "../diagram-events";
-import { StepData } from "../step-data";
-import { TestInteractionData } from "src/app/types/test-interaction-data";
+import {TestStepResult} from 'src/app/types/test-step-result';
+import {DiagramEvents} from '../diagram-events';
+import {StepData} from '../step-data';
+import {TestInteractionData} from 'src/app/types/test-interaction-data';
+import {TestCaseDefinitionActors} from '../../../types/test-case-definition-actors';
 
 export interface SessionPresentationData {
 
     stepsOfTests: {[key: string]: StepData[]}
-    actorInfoOfTests: {[key: string]: ActorInfo[]}
+    actorInfoOfTests: {[key: string]: TestCaseDefinitionActors}
     outputMessage?: string
     outputMessageType?: string
     events: DiagramEvents

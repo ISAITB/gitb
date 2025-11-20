@@ -13,16 +13,16 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Injectable } from '@angular/core';
-import { find } from 'lodash';
-import { map, mergeMap, Observable, of, share } from 'rxjs';
-import { ROUTES } from '../common/global';
-import { ActorInfo } from '../components/diagram/actor-info';
-import { Actor } from '../types/actor';
-import { FileParam } from '../types/file-param.type';
-import { TestCaseDefinition } from '../types/test-case-definition';
-import { UserInteractionInput } from '../types/user-interaction-input';
-import { RestService } from './rest.service';
+import {Injectable} from '@angular/core';
+import {find} from 'lodash';
+import {map, mergeMap, Observable, of, share} from 'rxjs';
+import {ROUTES} from '../common/global';
+import {Actor} from '../types/actor';
+import {FileParam} from '../types/file-param.type';
+import {TestCaseDefinition} from '../types/test-case-definition';
+import {UserInteractionInput} from '../types/user-interaction-input';
+import {RestService} from './rest.service';
+import {TestCaseDefinitionActors} from '../types/test-case-definition-actors';
 
 @Injectable({
   providedIn: 'root'
@@ -154,13 +154,6 @@ export class TestService {
     })
   }
 
-  restart(session: string) {
-    return this.restService.post<void>({
-        path: ROUTES.controllers.TestService.restart(session).url,
-        authenticate: true
-    })
-  }
-
   provideInput(session: string, step: string, inputs: UserInteractionInput[], admin?: boolean) {
     const inputsToSend: any[] = []
     let files: FileParam[] = []
@@ -195,10 +188,10 @@ export class TestService {
     })
   }
 
-  prepareTestCaseDisplayActors(testCase: TestCaseDefinition, specificationId: number|undefined): Observable<ActorInfo[]> {
-    let actorData: Observable<ActorInfo[]>
+  prepareTestCaseDisplayActors(testCase: TestCaseDefinition, specificationId: number|undefined): Observable<TestCaseDefinitionActors> {
+    let actorData: Observable<TestCaseDefinitionActors>
     if (specificationId == undefined) {
-      actorData = of(testCase.actors.actor)
+      actorData = of(testCase.actors)
     } else {
       actorData = this.getActorDefinitions(specificationId).pipe(map((domainActors) => {
         for (let testCaseActor of testCase.actors.actor) {
@@ -215,12 +208,12 @@ export class TestService {
             }
           }
         }
-        return testCase.actors.actor
+        return testCase.actors
       }), share())
     }
     return actorData.pipe(
       mergeMap((actorDataToUse) => {
-        actorDataToUse = actorDataToUse.sort((a, b) => {
+        actorDataToUse.actor.sort((a, b) => {
           if (a.displayOrder == undefined && b.displayOrder == undefined) return 0
           else if (a.displayOrder != undefined && b.displayOrder == undefined) return -1
           else if (a.displayOrder == undefined && b.displayOrder != undefined) return 1

@@ -13,29 +13,16 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {StepData} from '../components/diagram/step-data';
-import {UserInteraction} from './user-interaction';
-import {TestCaseDefinitionActors} from './test-case-definition-actors';
+import {ActorInfo} from '../components/diagram/actor-info';
 
-export interface TestCaseDefinition {
-    metadata: {
-        authors?: string
-        description?: string
-        documentation?: {
-            encoding?: string
-            from?: string
-            import?: string
-            value?: string
-        }
-        lastModified?: string
-        name: string
-        published?: string
-        version: string
-        type: number
-    }
-    actors: TestCaseDefinitionActors
-    preliminary?: UserInteraction[]
-    steps: StepData[]
-    output?: string
+export interface TestCaseDefinitionActors {
+
+  actor: ActorInfo[]
+  engineDisplayOrder?: number
+  userDisplayOrder?: number
+  adminDisplayOrder?: number
+  engineName?: string
+  userName?: string
+  adminName?: string
 
 }

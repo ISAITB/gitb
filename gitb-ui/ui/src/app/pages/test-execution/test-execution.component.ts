@@ -24,7 +24,6 @@ import {WebSocketSubject} from 'rxjs/webSocket';
 import {Constants} from 'src/app/common/constants';
 import {CheckboxOption} from 'src/app/components/checkbox-option-panel/checkbox-option';
 import {CheckboxOptionState} from 'src/app/components/checkbox-option-panel/checkbox-option-state';
-import {ActorInfo} from 'src/app/components/diagram/actor-info';
 import {DiagramEvents} from 'src/app/components/diagram/diagram-events';
 import {StepReport} from 'src/app/components/diagram/report/step-report';
 import {StepData} from 'src/app/components/diagram/step-data';
@@ -51,6 +50,7 @@ import {UserInteraction} from 'src/app/types/user-interaction';
 import {WebSocketMessage} from 'src/app/types/web-socket-message';
 import {ConformanceTestCase} from '../organisation/conformance-statement/conformance-test-case';
 import {BaseComponent} from '../base-component.component';
+import {TestCaseDefinitionActors} from '../../types/test-case-definition-actors';
 
 @Component({
     selector: 'app-test-execution',
@@ -93,7 +93,7 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
   testCaseVisible: {[key: number]: boolean} = {}
   testCaseCounter: {[key: number]: number} = {}
   stepsOfTests: {[key: number]: StepData[]} = {}
-  actorInfoOfTests: {[key: string]: ActorInfo[]} = {}
+  actorInfoOfTests: {[key: string]: TestCaseDefinitionActors} = {}
   interactionStepsOfTests: {[key: number]: TestInteractionData[]} = {}
   interactionsToIgnore: {[key: number]: Set<string>} = {}
   logMessages: {[key: number]: string[]} = {}
@@ -179,7 +179,9 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
     // Start initialisation
     for (let test of this.testsToExecute) {
       this.updateTestCaseStatus(test.id, Constants.TEST_CASE_STATUS.PENDING)
-      this.actorInfoOfTests[test.id] = []
+      if (this.actorInfoOfTests[test.id]) {
+        this.actorInfoOfTests[test.id].actor = []
+      }
     }
     this.updateTestCaseVisibility()
   }
@@ -440,7 +442,7 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
       const modalRef = this.modalService.show(SimulatedConfigurationDisplayModalComponent, {
         initialState: {
           configurations: this.simulatedConfigs,
-          actorInfo: this.actorInfoOfTests[this.currentTest!.id]
+          actorInfo: this.actorInfoOfTests[this.currentTest!.id].actor
         }
       })
       if (modalRef.onHidden) {

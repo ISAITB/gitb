@@ -27,6 +27,7 @@ import { TestStepResult } from 'src/app/types/test-step-result';
 import { DiagramEvents } from '../diagram-events';
 import { TestInteractionData } from 'src/app/types/test-interaction-data';
 import {DataService} from '../../../services/data.service';
+import {TestCaseDefinitionActors} from '../../../types/test-case-definition-actors';
 
 @Injectable({
   providedIn: 'root'
@@ -139,7 +140,7 @@ export class DiagramLoaderService {
         let testcase = JSON.parse(result.tpl!) as TestCaseDefinition
         return this.testService.prepareTestCaseDisplayActors(testcase, result.specificationId).pipe(
           mergeMap((actorDataToUse) => {
-            let actorInfoOfTests: {[key: string]: ActorInfo[]} = {}
+            let actorInfoOfTests: {[key: string]: TestCaseDefinitionActors} = {}
             let stepsOfTests: {[key: string]: StepData[]} = {}
             actorInfoOfTests[session.session] = actorDataToUse
             stepsOfTests[session.session] = testcase.steps

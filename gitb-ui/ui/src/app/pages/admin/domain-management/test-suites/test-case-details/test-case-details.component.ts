@@ -13,28 +13,28 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { mergeMap, Observable, share, map } from 'rxjs';
-import { find, remove, sortBy } from 'lodash';
-import { ActorInfo } from 'src/app/components/diagram/actor-info';
-import { DiagramEvents } from 'src/app/components/diagram/diagram-events';
-import { StepData } from 'src/app/components/diagram/step-data';
-import { BaseComponent } from 'src/app/pages/base-component.component';
-import { ConformanceService } from 'src/app/services/conformance.service';
-import { DataService } from 'src/app/services/data.service';
-import { HtmlService } from 'src/app/services/html.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { ReportService } from 'src/app/services/report.service';
-import { RoutingService } from 'src/app/services/routing.service';
-import { TestSuiteService } from 'src/app/services/test-suite.service';
-import { TestService } from 'src/app/services/test.service';
-import { TestCase } from 'src/app/types/test-case';
-import { saveAs } from 'file-saver'
-import { Constants } from 'src/app/common/constants';
-import { BsModalService } from 'ngx-bootstrap/modal';
-import { CreateEditTagComponent } from 'src/app/modals/create-edit-tag/create-edit-tag.component';
-import { TestCaseTag } from 'src/app/types/test-case-tag';
+import {Component, OnInit} from '@angular/core';
+import {ActivatedRoute} from '@angular/router';
+import {map, mergeMap, Observable, share} from 'rxjs';
+import {find, remove, sortBy} from 'lodash';
+import {DiagramEvents} from 'src/app/components/diagram/diagram-events';
+import {StepData} from 'src/app/components/diagram/step-data';
+import {BaseComponent} from 'src/app/pages/base-component.component';
+import {ConformanceService} from 'src/app/services/conformance.service';
+import {DataService} from 'src/app/services/data.service';
+import {HtmlService} from 'src/app/services/html.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {ReportService} from 'src/app/services/report.service';
+import {RoutingService} from 'src/app/services/routing.service';
+import {TestSuiteService} from 'src/app/services/test-suite.service';
+import {TestService} from 'src/app/services/test.service';
+import {TestCase} from 'src/app/types/test-case';
+import {saveAs} from 'file-saver';
+import {Constants} from 'src/app/common/constants';
+import {BsModalService} from 'ngx-bootstrap/modal';
+import {CreateEditTagComponent} from 'src/app/modals/create-edit-tag/create-edit-tag.component';
+import {TestCaseTag} from 'src/app/types/test-case-tag';
+import {TestCaseDefinitionActors} from '../../../../../types/test-case-definition-actors';
 
 @Component({
     selector: 'app-test-case-details',
@@ -53,7 +53,7 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit {
   pending = false
   diagramLoaded = false
   steps: {[key: string]: StepData[]} = {}
-  actorInfo: {[key: string]: ActorInfo[]} = {}
+  actorInfo: {[key: string]: TestCaseDefinitionActors} = {}
   testEvents: {[key: number]: DiagramEvents} = {}
   previewPending = false
   private tagCounter = 0
