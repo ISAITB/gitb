@@ -823,7 +823,7 @@ class TestResultManager @Inject() (actorSystem: ActorSystem,
     ).flatMap { data =>
       val memberIds = data._1
       val specsIds = data._2
-      val queryBuilder = (skipSorting: Boolean) => getTestResultsQuery(communityIds, domainIds, specIds,
+      val queryBuilder = (skipSorting: Boolean) => getTestResultsQuery(communityIds, domainIds, specsIds,
         actorIds, testSuiteIds, testCaseIds, memberIds.organisationIds, memberIds.systemIds,
         results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder, pendingAdministratorInteraction = false, skipSorting
       )
