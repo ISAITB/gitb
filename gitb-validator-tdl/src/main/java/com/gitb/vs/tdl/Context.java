@@ -24,6 +24,8 @@ import com.gitb.tdl.TestCaseEntry;
 import com.gitb.tdl.TestSuite;
 import com.gitb.vs.tdl.util.ResourceResolver;
 import com.gitb.vs.tdl.util.Utils;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBException;
 import org.apache.commons.lang3.StringUtils;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
@@ -31,8 +33,6 @@ import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import javax.xml.XMLConstants;
-import jakarta.xml.bind.JAXBContext;
-import jakarta.xml.bind.JAXBException;
 import javax.xml.namespace.QName;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
@@ -148,7 +148,7 @@ public class Context {
                 Path testSuitePath = getTestSuitePaths().values().iterator().next().get(0);
                 try (InputStream in = Files.newInputStream(testSuitePath)) {
                     testSuite = Utils.unmarshal(in, TestSuite.class, getJAXBContext(), null, null).getValue();
-                } catch (IOException | JAXBException e) {
+                } catch (Exception e) {
                     // Ignore parsing errors.
                 }
             }
@@ -181,7 +181,7 @@ public class Context {
                     for (Path testCasePath: entry.getValue()) {
                         try (InputStream in = Files.newInputStream(testCasePath)) {
                             addTestCaseInternal(Utils.unmarshal(in, TestCase.class, getJAXBContext(), null, null).getValue());
-                        } catch (IOException | JAXBException e) {
+                        } catch (Exception e) {
                             // Ignore parsing errors.
                         }
                     }
