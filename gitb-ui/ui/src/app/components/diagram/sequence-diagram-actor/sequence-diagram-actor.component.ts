@@ -15,37 +15,32 @@
 
 import { Component, Input, OnInit } from '@angular/core';
 import { ActorInfo } from '../actor-info';
+import {ActorRole} from '../../../types/actor-role';
+import {Constants} from '../../../common/constants';
 
 @Component({
     selector: 'app-sequence-diagram-actor',
     templateUrl: './sequence-diagram-actor.component.html',
-    styles: [],
+    styleUrl: './sequence-diagram-actor.component.less',
     standalone: false
 })
 export class SequenceDiagramActorComponent implements OnInit {
 
-  @Input() actor!: string
+  @Input() actor!: ActorInfo
   @Input() index!: number
-  @Input() actorInfo!: ActorInfo[]
 
   actorForDisplay!: string
 
   constructor() { }
 
   ngOnInit(): void {
-    this.actorForDisplay = this.actor
-    for (let info of this.actorInfo) {
-      if (this.actor == info.id) {
-        if (info.name != undefined) {
-          this.actorForDisplay = info.name
-        } else {
-          this.actorForDisplay = info.id
-        }
-        if (info.role != undefined) {
-          this.actorForDisplay += " (" + info.role + ")"
-        }
-      }
+    if (this.actor.name != undefined) {
+      this.actorForDisplay = this.actor.name
+    } else {
+      this.actorForDisplay = this.actor.id
     }
   }
 
+  protected readonly ActorRole = ActorRole;
+  protected readonly Constants = Constants;
 }

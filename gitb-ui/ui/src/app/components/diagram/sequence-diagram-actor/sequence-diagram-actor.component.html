@@ -1,3 +1,10 @@
 <div class="actor" [ngClass]="'actor-offset-'+index">
-    <span class="name">{{actorForDisplay}}</span>
+    <div class="name">
+        {{actorForDisplay}}
+        @if (actor.diagramRole == ActorRole.SystemUnderTest) {
+            <div class="actor-role-pill" tooltip="The System Under Test (SUT)" containerClass="shortTooltip" container="body" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">SUT</div>
+        } @else if (actor.diagramRole == ActorRole.User) {
+            <div class="actor-role-pill" tooltip="User for manual test interactions" containerClass="shortTooltip" container="body" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">USER</div>
+        }
+    </div>
 </div>

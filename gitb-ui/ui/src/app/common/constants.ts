@@ -33,7 +33,6 @@ export class Constants {
 	public static readonly TESTER_ACTOR_ID = 'com.gitb.Operator'
 	public static readonly ADMINISTRATOR_ACTOR_ID = 'com.gitb.Administrator'
 	public static readonly TEST_ENGINE_ACTOR_NAME = 'Test Engine'
-	public static readonly TESTER_ACTOR_NAME = 'Operator'
 	public static readonly ADMINISTRATOR_ACTOR_NAME = 'Administrator'
 
 	public static readonly LATEST_CONFORMANCE_STATUS_LABEL = 'Latest conformance status'

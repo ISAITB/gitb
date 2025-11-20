@@ -13,15 +13,12 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {ActorRole} from '../../types/actor-role';
+export enum ActorRole {
 
-export interface ActorInfo {
-
-  id: string;
-  name?: string;
-  role?: string;
-  displayOrder?: number;
-
-  diagramRole?: ActorRole
+  SystemUnderTest,
+  Simulated,
+  User,
+  Administrator,
+  TestEngine
 
 }

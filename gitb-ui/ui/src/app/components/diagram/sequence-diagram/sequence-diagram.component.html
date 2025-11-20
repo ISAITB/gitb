@@ -1,9 +1,9 @@
 <div class="diagram-container-outer">
-    <div class="diagram-container" [class.last-actor-with-steps]="lastActorHasDisplayedSteps" [ngClass]="'actors-'+actorStyleCount">
+    <div class="diagram-container" [ngClass]="'actors-'+actorStyleCount">
         <div class="diagram-container-inner" [ngClass]="'sequence-diagram actor-diagram-'+actorStyleCount">
             <div class="actor-container">
-                @for (actor of actors; track $index) {
-                    <app-sequence-diagram-actor [actor]="actor" [index]="$index" [actorInfo]="actorInfo!"></app-sequence-diagram-actor>
+                @for (actor of actors!; track $index) {
+                    <app-sequence-diagram-actor [actor]="actor" [index]="$index"></app-sequence-diagram-actor>
                 }
             </div>
             <div class="lifeline-container" [ngClass]="'actor-diagram-'+actorStyleCount">
