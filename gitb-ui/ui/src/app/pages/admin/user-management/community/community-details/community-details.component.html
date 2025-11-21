@@ -10,9 +10,9 @@
             <div class="card-footer button-container">
                 <div class="btn-toolbar">
                     <button class="btn btn-secondary" type="submit" (click)="updateCommunity()" [disable]="!loaded || deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
-                    <button class="btn btn-secondary" type="button" (click)="updateReportSettings()" [disabled]="!loaded || savePending || deletePending">Edit report settings</button>
-                    <button class="btn btn-secondary" type="button" (click)="updateParameters()" [disabled]="!loaded || savePending || deletePending">Edit custom member properties</button>
-                    <button class="btn btn-secondary" type="button" (click)="editLabels()" [disabled]="!loaded || savePending || deletePending">Edit labels</button>
+                    <button class="btn btn-secondary" type="button" (click)="updateReportSettings()" [disabled]="!loaded || savePending || deletePending">Manage report settings</button>
+                    <button class="btn btn-secondary" type="button" (click)="updateParameters()" [disabled]="!loaded || savePending || deletePending">Manage configuration properties</button>
+                    <button class="btn btn-secondary" type="button" (click)="editLabels()" [disabled]="!loaded || savePending || deletePending">Manage labels</button>
                     @if (dataService.isSystemAdmin) {
                         <button class="btn btn-secondary" type="button" (click)="cancelCommunityDetail()">Back</button>
                     }
