@@ -251,12 +251,13 @@
             .message {
                 padding: 10px 0;
                 position: relative;
-                border: 1px solid transparent;
                 min-height: 40px;
                 &.with-report {
                     cursor: pointer;
                     &:hover {
                         border-radius: @border-radius;
+                        outline-style: solid;
+                        outline-width: 1px;
                         .message-report {
                             display: block;
                             .status-background-icon {
@@ -264,7 +265,7 @@
                             }
                         }
                         &.error, &.error .title {
-                            border-color: @red-error-border;
+                            outline-color: @red-error-border;
                             background-color: @red-error-background;
                             color: @red-error-text;
                             .message-report {
@@ -280,7 +281,7 @@
                             }
                         }
                         &.warning, &.warning .title {
-                            border-color: @orange-warning-border;
+                            outline-color: @orange-warning-border;
                             background-color: @orange-warning-background;
                             color: @orange-warning-text;
                             .message-report {
@@ -296,7 +297,7 @@
                             }
                         }
                         &.completed, &.completed .title {
-                            border-color: @green-success-border;
+                            outline-color: @green-success-border;
                             background-color: @green-success-background;
                             color: @green-success-text;
                             .message-report {
