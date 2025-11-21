@@ -189,4 +189,11 @@
         <packageUrl regex="true">^pkg:maven/org\.eclipse\.angus/.*@.*$</packageUrl>
         <cve>CVE-2025-7962</cve>
     </suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: tomcat-embed-core-10.1.46.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/tomcat-embed-.*@.*$</packageUrl>
+   <cve>CVE-2025-61795</cve>
+</suppress>    
 </suppressions>
