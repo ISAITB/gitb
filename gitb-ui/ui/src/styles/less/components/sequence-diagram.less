@@ -16,7 +16,7 @@
 @import "../_common.less";
 
 @actor-name-width: 260px;
-
+@left-spacing: 142px;
 @line-color: @gray;
 @line-height: 16px;
 @macro-limit: 10;
@@ -183,19 +183,21 @@
     .generate-actor-width-classes(@macro-limit);
 
     .actor-container {
+        @computed-padding: (@left-spacing - (@actor-name-width / 2));
         padding-top: 20px;
-        padding-left: var(--left-spacing);
+        padding-left: @computed-padding;
         display: flex;
-        align-items: end;
 
         .actor {
             display: inline-block;
-            width: var(--actor-width);
+            margin-left: calc(var(--actor-width) - @actor-name-width);
+            &.actor-offset-0 {
+                margin-left: 0;
+            }
             .name {
                 display: block;
                 width: @actor-name-width;
                 position: relative;
-                margin-left: -(@actor-name-width / 2);
                 border: 1px solid @gray-medium;
                 border-radius: @border-radius;
                 padding: 10px;
@@ -213,7 +215,7 @@
         .generate-actor-width-classes(@macro-limit);
         .lifeline-container-inner {
             position: absolute;
-            left: var(--left-spacing);
+            left: @left-spacing;
             height: 100%;
             z-index: 200;
             pointer-events: none;
@@ -238,7 +240,7 @@
     .message-container {
         @arrow-size: 12px;
         display: inline-block;
-        padding-left: var(--left-spacing);
+        padding-left: @left-spacing;
         padding-top: 20px;
         padding-bottom: 20px;
         .message-wrapper {

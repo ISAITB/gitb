@@ -41,7 +41,7 @@ import {TestService} from 'src/app/services/test.service';
 import {TestResultReport} from 'src/app/types/test-result-report';
 import {LogLevel} from 'src/app/types/log-level';
 import {TestInteractionData} from 'src/app/types/test-interaction-data';
-import {filter, find} from 'lodash';
+import {filter, find, update} from 'lodash';
 import {PopupService} from 'src/app/services/popup.service';
 import {PagingControlsApi} from '../paging-controls/paging-controls-api';
 import {NavigationControlsConfig} from '../navigation-controls/navigation-controls-config';
@@ -126,6 +126,12 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
   @HostListener('window:resize')
   onWindowResize() {
     this.updateSessionWidths();
+  }
+
+  updateSessionWidthsWrapper() {
+    setTimeout(() => {
+      this.updateSessionWidths()
+    }, 1)
   }
 
   private updateSessionWidths() {
@@ -401,6 +407,7 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
   toggleDiagramCollapsedFinished(session: string, value: boolean) {
     setTimeout(() => {
       this.diagramCollapsedFinished[session] = value
+      this.updateSessionWidths()
     }, 1)
   }
 
@@ -435,4 +442,5 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
     }
   }
 
+  protected readonly update = update;
 }

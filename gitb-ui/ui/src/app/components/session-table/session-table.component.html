@@ -76,7 +76,7 @@
                     [expandableRowProperty]="'expanded'"></tr>
                 <tr class="expandable-table-row-expanded">
                     <td [attr.colspan]="columnCount" class="expandable-table-expandable-cell">
-                        <div [collapse]="!row.expanded" [isAnimated]="true">
+                        <div [collapse]="!row.expanded" [isAnimated]="true" (collapsed)="updateSessionWidthsWrapper()" (expanded)="updateSessionWidthsWrapper()">
                             <div class="collapsing-div">
                                 <div class="sessionControls">
                                     <div class="btn-toolbar">
@@ -155,14 +155,14 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div [collapse]="diagramCollapsed[row.session]" [isAnimated]="true" (collapsed)="toggleDiagramCollapsedFinished(row.session, true)" (expands)="toggleDiagramCollapsedFinished(row.session, false)">
+                                    <div [collapse]="diagramCollapsed[row.session]" [isAnimated]="true" (collapsed)="toggleDiagramCollapsedFinished(row.session, true)" (expands)="toggleDiagramCollapsedFinished(row.session, false)" (expanded)="updateSessionWidthsWrapper()">
                                         <div class="session-execution-diagram" [class.disable-events]="sessionBeingRefreshed?.session == row.session" style="overflow-x: auto; overflow-y: hidden;">
                                             @if (!row.hideLoadingIcon) {
                                                 <div class="p-3">
                                                     <app-pending-block></app-pending-block>
                                                 </div>
                                             }
-                                            <div [collapse]="!row.diagramExpanded" [isAnimated]="true">
+                                            <div [collapse]="!row.diagramExpanded" [isAnimated]="true" (collapsed)="updateSessionWidthsWrapper()" (expanded)="updateSessionWidthsWrapper()">
                                                 @if (row.expanded || row.diagramLoaded) {
                                                     <div>
                                                         <app-test-session-presentation
