@@ -117,7 +117,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
   private val PLACEHOLDER_BADGE_LIST_REGEXP = Pattern.compile("(\\"+Constants.PlaceholderBadges+"\\{((?:horizontal)|(?:vertical))(?:\\|(\\d+))?\\})")
   private val PLACEHOLDER_LAST_UPDATE_DATE_REGEXP = Pattern.compile("(\\"+Constants.PlaceholderLastUpdateDate+"\\{(.+)\\})")
   private val PLACEHOLDER_REPORT_DATE_REGEXP = Pattern.compile("(\\"+Constants.PlaceholderReportDate+"\\{(.+)\\})")
-  private val BADGE_PREVIEW_URL_REGEXP = Pattern.compile("['\"](\\S*/badgereportpreview/([A-Z]+)/(-?\\d+)/(-?\\d+)/(-?\\d+)(?:/(\\d+))?)['\"]")
+  private val BADGE_PREVIEW_URL_REGEXP = Pattern.compile("['\"](\\S*/?badgereportpreview/([A-Z]+)/(-?\\d+)/(-?\\d+)/(-?\\d+)(?:/(\\d+))?)['\"]")
   private val gitbTrObjectFactory = new com.gitb.tr.ObjectFactory
   private val gitbTplObjectFactory = new com.gitb.tpl.ObjectFactory
   private val gitbTbsObjectFactory = new com.gitb.tbs.ObjectFactory
