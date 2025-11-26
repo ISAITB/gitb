@@ -80,15 +80,13 @@ export class SecretInputComponent implements OnInit, AfterViewInit, ControlValue
     const start = input.selectionStart ?? 0;
     const end = input.selectionEnd ?? start;
     const inserted = e.data ?? '';
-
-    // Prevent the browser from applying the change automatically
-    e.preventDefault();
-
+    let preventDefaultBehaviour = false;
     switch (e.inputType) {
       case 'insertText':
       case 'insertFromPaste':
       case 'insertReplacementText':
       case 'insertFromComposition':
+        preventDefaultBehaviour = true
         // Replace selection or insert at caret
         this._value = this._value.slice(0, start) + inserted + this._value.slice(end);
         setTimeout(() => {
@@ -98,6 +96,7 @@ export class SecretInputComponent implements OnInit, AfterViewInit, ControlValue
         });
         break;
       case 'deleteContentBackward':
+        preventDefaultBehaviour = true
         if (start === end && start > 0) {
           this._value = this._value.slice(0, start - 1) + this._value.slice(end);
           setTimeout(() => this.passwordField!.nativeElement.setSelectionRange(start - 1, start - 1));
@@ -108,6 +107,7 @@ export class SecretInputComponent implements OnInit, AfterViewInit, ControlValue
         break;
       case 'deleteContentForward':
       case 'deleteByCut':
+        preventDefaultBehaviour = true
         if (start === end && start < this._value.length) {
           this._value = this._value.slice(0, start) + this._value.slice(start + 1);
           setTimeout(() => this.passwordField!.nativeElement.setSelectionRange(start, start));
@@ -116,6 +116,10 @@ export class SecretInputComponent implements OnInit, AfterViewInit, ControlValue
           setTimeout(() => this.passwordField!.nativeElement.setSelectionRange(start, start));
         }
         break;
+    }
+    if (preventDefaultBehaviour) {
+      // Prevent the browser from applying the change automatically
+      e.preventDefault();
     }
 
     // update masked value

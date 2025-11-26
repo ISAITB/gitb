@@ -17,7 +17,6 @@
     <div [collapse]="tbCollapsed!" [isAnimated]="true">
       <div [ngClass]="{'row': tbFormPadded}">
         <div [ngClass]="innerDivStyle">
-          <form>
             @for (property of tbProperties; track $index) {
               @if ((isAdmin || (!property.hidden && (!tbSelfRegistration || property.inSelfRegistration))) && property.prerequisiteOk) {
                 <div class="row mt-3">
@@ -116,7 +115,6 @@
                 </div>
               }
             }
-          </form>
         </div>
       </div>
     </div>
