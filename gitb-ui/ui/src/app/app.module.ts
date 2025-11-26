@@ -291,6 +291,7 @@ import { StatementOptionsButtonComponent } from './components/statement-options-
 import { DataManagementComponent } from './pages/admin/data-management/data-management.component';
 import { StartupWizardModalComponent } from './modals/startup-wizard-modal/startup-wizard-modal.component';
 import { RadioCardComponent } from './components/radio-card/radio-card.component';
+import { UsageTipModalComponent } from './modals/usage-tip-modal/usage-tip-modal.component';
 
 @NgModule({ declarations: [
         AppComponent,
@@ -491,7 +492,8 @@ import { RadioCardComponent } from './components/radio-card/radio-card.component
         StatementOptionsButtonComponent,
         DataManagementComponent,
         StartupWizardModalComponent,
-        RadioCardComponent
+        RadioCardComponent,
+        UsageTipModalComponent
     ],
     bootstrap: [AppComponent], imports: [
     NgxColorPickerComponent,

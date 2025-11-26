@@ -1,0 +1,97 @@
+<div class="modal-header">
+    <div class="modal-title"><span class="me-3"><i class="fa-solid fa-lightbulb"></i></span>
+        @switch (tip) {
+            @case (Constants.USAGE_TIP.TEST_BED_ADMIN_CREATE_CONFORMANCE_STATEMENT) {
+                <span>Testing as the Test Bed administrator</span>
+            }
+            @case (Constants.USAGE_TIP.TEST_BED_ADMIN_CREATE_SYSTEM) {
+                <span>Testing as the Test Bed administrator</span>
+            }
+            @case (Constants.USAGE_TIP.TEST_BED_LANDING_PAGE) {
+                <span>Test Bed landing page</span>
+            }
+        }
+    </div>
+</div>
+<div class="modal-body">
+    @switch (tip) {
+        @case (Constants.USAGE_TIP.TEST_BED_ADMIN_CREATE_CONFORMANCE_STATEMENT) {
+            <p>
+                You are about to create a conformance statement in the Test Bed administrator's organisation.
+            </p>
+            <p>
+                Conformance statements are normally created for organisations belonging to a <b>community</b> as this
+                enables use of <b>organisation-level</b> and <b>system-level configuration properties</b>, and ensures community
+                settings are applied. If your goal is to verify developed tests, you should do this through a community administrator account, or
+                by using the "Manage tests" feature for a specific organisation in a community.
+            </p>
+            <p class="mb-0">
+                Nonetheless, conformance statements for the Test Bed administrator's organisation can still be useful for
+                experimentation purposes, and as tests to ensure that your overall setup is working correctly.
+            </p>
+        }
+        @case (Constants.USAGE_TIP.TEST_BED_ADMIN_CREATE_SYSTEM) {
+            <p>
+                You are about to create a system under the Test Bed administrator's organisation. You typically do this
+                to test the system as part of one or more conformance statements.
+            </p>
+            <p>
+                Conformance statements are normally created for organisations belonging to a <b>community</b> as this
+                enables use of <b>organisation-level</b> and <b>system-level configuration properties</b>, and ensures community
+                settings are applied. If your goal is to verify developed tests, you should do this through a community administrator account, or
+                by using the "Manage tests" feature for a specific organisation in a community.
+            </p>
+            <p class="mb-0">
+                Nonetheless, conformance statements for the Test Bed administrator's organisation can still be useful for
+                experimentation purposes, and as tests to ensure that your overall setup is working correctly.
+            </p>
+        }
+        @case (Constants.USAGE_TIP.TEST_BED_LANDING_PAGE) {
+            <p>
+                There is currently no default landing page set up.
+            </p>
+            <p class="mb-0">
+                The landing page is the first screen to greet users when they log in. It can be defined at the level of
+                the <b>overall Test Bed instance</b> (in the system settings) or for a <b>specific community</b> (in the community settings).
+                In terms of content, it can include text but also images and links to resources defined as system or community resources.
+            </p>
+        }
+    }
+    <form>
+        <div class="disable-check-separator mt-4 pt-4">
+            <div class="row row-cols-auto align-items-center gx-3">
+                <div class="col-auto">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="disableUsageTip" name="disableUsageTip" [(ngModel)]="disableUsageTip" [disabled]="disableUsageTips">
+                        <label class="form-check-label" for="disableUsageTip">Don't show this tip again</label>
+                    </div>
+                </div>
+                @if (disableUsageTip) {
+                    <div class="col-auto">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="disableUsageTips" name="disableUsageTips" [(ngModel)]="disableUsageTips">
+                            <label class="form-check-label" for="disableUsageTips">Disable all tips</label>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </form>
+</div>
+<div class="modal-footer">
+    <div class="btn-toolbar">
+        @switch (tip) {
+            @case (Constants.USAGE_TIP.TEST_BED_ADMIN_CREATE_CONFORMANCE_STATEMENT) {
+                <button class="btn btn-secondary" [pending]="goToCommunityManagementPending" type="button" (click)="toCommunityManagement()">Go to community management</button>
+            }
+            @case (Constants.USAGE_TIP.TEST_BED_ADMIN_CREATE_SYSTEM) {
+                <button class="btn btn-secondary" [pending]="goToCommunityManagementPending" type="button" (click)="toCommunityManagement()">Go to community management</button>
+            }
+            @case (Constants.USAGE_TIP.TEST_BED_LANDING_PAGE) {
+                <button class="btn btn-secondary" [pending]="goToSystemAdministrationPending" type="button" (click)="toSystemAdministration()">Go to system administration</button>
+                <button class="btn btn-secondary" [pending]="goToCommunityManagementPending" type="button" (click)="toCommunityManagement()">Go to community management</button>
+            }
+        }
+        <button class="btn btn-secondary" [pending]="closePending" type="button" (click)="close()">Close</button>
+    </div>
+</div>

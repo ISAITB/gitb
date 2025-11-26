@@ -444,6 +444,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager,
       case Constants.EmailSettings => "Email settings"
       case Constants.SoftwareVersionCheck => "Software version check settings"
       case Constants.StartupWizard => "Startup configuration wizard"
+      case Constants.UsageTips => "Usage tips"
       case _ => setting
     }
   }

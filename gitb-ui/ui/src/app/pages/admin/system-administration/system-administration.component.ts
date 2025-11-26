@@ -53,6 +53,7 @@ import {MimeType} from '../../../types/mime-type';
 import {BaseTabbedComponent} from '../../base-tabbed-component';
 import {SoftwareVersionCheckSettings} from '../../../types/software-version-check-settings';
 import {ValidationState} from '../../../types/validation-state';
+import {UsageTipsConfiguration} from '../../../types/usage-tips-configuration';
 
 @Component({
     selector: 'app-system-administration',
@@ -127,6 +128,13 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
   // Startup wizard
   startupWizardStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
   startupWizardEnabled = false
+
+  // Usage tips
+  usageTipsStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
+  usageTipsValue: UsageTipsConfiguration = {
+    enabled: false,
+    disabledForScreens: []
+  }
 
   // REST API
   restApiStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
@@ -290,6 +298,16 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
         this.startupWizardStatus.enabled = this.startupWizardEnabled
         this.startupWizardStatus.fromEnv = startupWizardConfig != undefined && startupWizardConfig.environment
         this.startupWizardStatus.fromDefault = startupWizardConfig != undefined && startupWizardConfig.default
+        // Usage tips.
+        const usageTipsConfig = find(data, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.USAGE_TIPS)
+        if (usageTipsConfig && usageTipsConfig.parameter) {
+          this.usageTipsValue = JSON.parse(usageTipsConfig.parameter)
+        } else {
+          this.usageTipsValue = { enabled: true, disabledForScreens: [] }
+        }
+        this.usageTipsStatus.enabled = this.usageTipsValue.enabled
+        this.usageTipsStatus.fromEnv = usageTipsConfig != undefined && usageTipsConfig.environment
+        this.usageTipsStatus.fromDefault = usageTipsConfig != undefined && usageTipsConfig.default
         // Welcome page message.
         const welcomeMessageConfig = find(data, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.WELCOME_MESSAGE)
         if (welcomeMessageConfig && welcomeMessageConfig.parameter) {
@@ -787,6 +805,29 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
       this.popupService.success(message)
     }).add(() => {
       this.startupWizardStatus.pending = false
+    })
+  }
+
+  saveUsageTipsConfig() {
+    this.usageTipsStatus.pending = true
+    let message: string
+    if (this.usageTipsValue?.enabled) {
+      message = "Enabled usage tips."
+    } else {
+      message = "Disabled usage tips."
+    }
+    this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.USAGE_TIPS, JSON.stringify(this.usageTipsValue)).subscribe(() => {
+      this.usageTipsStatus.collapsed = true
+      this.usageTipsStatus.enabled = this.usageTipsValue?.enabled === true
+      this.usageTipsStatus.fromDefault = false
+      this.usageTipsStatus.fromEnv = false
+      this.dataService.configuration.usageTipsEnabled = this.usageTipsValue?.enabled === true
+      if (!this.dataService.configuration.usageTipsEnabled) {
+        this.dataService.configuration.usageTipsDisabledForScreens = []
+      }
+      this.popupService.success(message)
+    }).add(() => {
+      this.usageTipsStatus.pending = false
     })
   }
 

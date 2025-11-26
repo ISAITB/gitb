@@ -2600,6 +2600,8 @@ object JsonUtil {
       "demosAccount" -> Configurations.DEMOS_ACCOUNT,
       "registrationEnabled" -> Configurations.REGISTRATION_ENABLED,
       "startupWizardEnabled" -> Configurations.STARTUP_WIZARD_ENABLED,
+      "usageTipsEnabled" -> Configurations.USAGE_TIPS_CONFIGURATION.enabled,
+      "usageTipsDisabledForScreens" -> Configurations.USAGE_TIPS_CONFIGURATION.disabledForScreens,
       "savedFileMaxSize" -> Configurations.SAVED_FILE_MAX_SIZE,
       "mode" -> Configurations.TESTBED_MODE,
       "automationApiEnabled" -> Configurations.AUTOMATION_API_ENABLED,
@@ -2610,6 +2612,21 @@ object JsonUtil {
       "welcomePageTitle" -> Configurations.WELCOME_TITLE
     )
     json
+  }
+
+  def serializeUsageTipsConfiguration(config: UsageTipsConfiguration): JsValue = {
+    Json.obj(
+      "enabled" -> config.enabled,
+      "disabledForScreens" -> config.disabledForScreens
+    )
+  }
+
+  def parseJsUsageTipsConfiguration(json: String): UsageTipsConfiguration = {
+    val jsonObject = Json.parse(json)
+    UsageTipsConfiguration(
+      enabled = (jsonObject \ "enabled").as[Boolean],
+      disabledForScreens = (jsonObject \ "disabledForScreens").as[JsArray].value.map(_.as[Short]).toSet
+    )
   }
 
   /**

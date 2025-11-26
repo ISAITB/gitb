@@ -159,6 +159,8 @@ export class DataService {
       demosAccount: (this.configuration?.demosAccount != undefined)?this.configuration!.demosAccount:-1,
       registrationEnabled: (this.configuration?.registrationEnabled != undefined)?this.configuration!.registrationEnabled:false,
       startupWizardEnabled: (this.configuration?.startupWizardEnabled != undefined)?this.configuration!.startupWizardEnabled:false,
+      usageTipsEnabled: (this.configuration?.usageTipsEnabled != undefined)?this.configuration!.usageTipsEnabled:false,
+      usageTipsDisabledForScreens: (this.configuration?.usageTipsDisabledForScreens != undefined)?this.configuration!.usageTipsDisabledForScreens:[],
       savedFileMaxSize: (this.configuration?.savedFileMaxSize != undefined)?this.configuration!.savedFileMaxSize:5,
       mode: (this.configuration?.mode != undefined)?this.configuration!.mode:'development',
       automationApiEnabled: (this.configuration?.automationApiEnabled != undefined)?this.configuration!.automationApiEnabled:false,

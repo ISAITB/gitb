@@ -56,7 +56,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
   private final val editableSystemConfigurationTypes = Set(
     Constants.SessionAliveTime, Constants.RestApiEnabled, Constants.RestApiAdminKey, Constants.SelfRegistrationEnabled,
     Constants.DemoAccount, Constants.WelcomeMessage, Constants.AccountRetentionPeriod,
-    Constants.EmailSettings, Constants.SoftwareVersionCheck, Constants.WelcomeTitle, Constants.StartupWizard
+    Constants.EmailSettings, Constants.SoftwareVersionCheck, Constants.WelcomeTitle, Constants.StartupWizard, Constants.UsageTips
   )
 
   private var activeThemeId: Option[Long] = None
@@ -229,6 +229,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
         val demoAccountConfig = persistedConfigs.find(config => config.config.name == Constants.DemoAccount)
         val selfRegistrationConfig = persistedConfigs.find(config => config.config.name == Constants.SelfRegistrationEnabled)
         val startupWizardConfig = persistedConfigs.find(config => config.config.name == Constants.StartupWizard)
+        val usageTipsConfig = persistedConfigs.find(config => config.config.name == Constants.UsageTips)
         val welcomeMessageConfig = persistedConfigs.find(config => config.config.name == Constants.WelcomeMessage)
         val welcomeTitleConfig = persistedConfigs.find(config => config.config.name == Constants.WelcomeTitle)
         val emailSettingsConfig = persistedConfigs.find(config => config.config.name == Constants.EmailSettings)
@@ -241,6 +242,9 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
         }
         if (startupWizardConfig.isEmpty) {
           persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.StartupWizard, Some(Configurations.STARTUP_WIZARD_ENABLED.toString), None), defaultSetting = true, environmentSetting = sys.env.contains("STARTUP_WIZARD_ENABLED"))
+        }
+        if (usageTipsConfig.isEmpty) {
+          persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.UsageTips, Some(JsonUtil.serializeUsageTipsConfiguration(Configurations.USAGE_TIPS_CONFIGURATION).toString), None), defaultSetting = true, environmentSetting = sys.env.contains("USAGE_TIPS_ENABLED"))
         }
         if (demoAccountConfig.isEmpty) {
           if (Configurations.DEMOS_ENABLED && Configurations.DEMOS_ACCOUNT != -1) {
@@ -314,8 +318,14 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
     var parsedEmailSettings: Option[EmailSettings] = None
     val value = if (name == Constants.EmailSettings && providedValue.isDefined) {
       Some(JsonUtil.jsEmailSettings(processReceivedEmailSettings(providedValue.get), maskPassword = false).toString())
-    } else if (name == Constants.RestApiAdminKey  && providedValue.isEmpty) {
+    } else if (name == Constants.RestApiAdminKey && providedValue.isEmpty) {
       Some(CryptoUtil.generateApiKey())
+    } else if (name == Constants.UsageTips && providedValue.isDefined) {
+      var config = JsonUtil.parseJsUsageTipsConfiguration(providedValue.get)
+      if (!config.enabled) {
+        config = config.copy(disabledForScreens = Set())
+      }
+      Some(JsonUtil.serializeUsageTipsConfiguration(config).toString())
     } else {
       providedValue
     }
@@ -355,6 +365,15 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
             Configurations.STARTUP_WIZARD_ENABLED = value.exists(_.toBoolean)
             DBIO.successful(Some(
               SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.StartupWizard, Some(Configurations.STARTUP_WIZARD_ENABLED.toString), None), defaultSetting = false, environmentSetting = sys.env.contains("STARTUP_WIZARD_ENABLED"))
+            ))
+          case Constants.UsageTips =>
+            if (value.isDefined) {
+              Configurations.USAGE_TIPS_CONFIGURATION = JsonUtil.parseJsUsageTipsConfiguration(value.get)
+            } else {
+              Configurations.USAGE_TIPS_CONFIGURATION = UsageTipsConfiguration.defaultConfiguration()
+            }
+            DBIO.successful(Some(
+              SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.UsageTips, Some(JsonUtil.serializeUsageTipsConfiguration(Configurations.USAGE_TIPS_CONFIGURATION).toString()), None), defaultSetting = false, environmentSetting = sys.env.contains("USAGE_TIPS_ENABLED"))
             ))
           case Constants.DemoAccount =>
             if (value.isDefined) {

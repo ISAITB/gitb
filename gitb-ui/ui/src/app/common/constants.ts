@@ -435,8 +435,15 @@ export class Constants {
 		EMAIL_SETTINGS: 'email_settings',
     SOFTWARE_VERSION_CHECK: 'software_version_check',
     WELCOME_TITLE: 'welcome_title',
-    STARTUP_WIZARD: 'startup_wizard'
+    STARTUP_WIZARD: 'startup_wizard',
+    USAGE_TIPS: 'usage_tips'
 	}
+
+  public static readonly USAGE_TIP = {
+    TEST_BED_ADMIN_CREATE_CONFORMANCE_STATEMENT: 1,
+    TEST_BED_ADMIN_CREATE_SYSTEM: 2,
+    TEST_BED_LANDING_PAGE: 3
+  }
 
 	public static readonly USER_SSO_STATUS = {
 		NOT_MIGRATED: 1,

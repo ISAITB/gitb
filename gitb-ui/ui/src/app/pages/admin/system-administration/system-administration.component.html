@@ -482,6 +482,28 @@
                             </form>
                         </app-configuration-entry>
                     </div>
+                    <!-- Usage tips -->
+                    <div class="configContainer">
+                        <app-configuration-entry
+                            configTitle="Usage tips"
+                            configDescription="Display usage tip popups in screens where such tips exist."
+                            [(status)]="usageTipsStatus"
+                        >
+                            <form>
+                                <div class="row row-cols-auto align-items-center gx-3">
+                                    <div class="col-auto">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="usageTipsEnabled" name="usageTipsEnabled" [(ngModel)]="usageTipsValue.enabled">
+                                            <label class="form-check-label" for="usageTipsEnabled">Enabled?</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <button type="submit" class="btn btn-secondary" [pending]="usageTipsStatus.pending" (click)="saveUsageTipsConfig()">Save</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </app-configuration-entry>
+                    </div>
                 }
             </div>
         </div>

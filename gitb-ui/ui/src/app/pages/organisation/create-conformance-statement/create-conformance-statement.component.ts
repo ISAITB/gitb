@@ -29,6 +29,7 @@ import {PagingPlacement} from '../../../components/paging-controls/paging-placem
 import {CheckboxOption} from '../../../components/checkbox-option-panel/checkbox-option';
 import {CreateStatementSearchCriteria} from './create-statement-search-criteria';
 import {CheckboxOptionState} from '../../../components/checkbox-option-panel/checkbox-option-state';
+import {UsageTipService} from '../../../services/usage-tip.service';
 
 @Component({
     selector: 'app-create-conformance-statement',
@@ -79,6 +80,7 @@ export class CreateConformanceStatementComponent implements OnInit, AfterViewIni
     private readonly conformanceService: ConformanceService,
     private readonly systemService: SystemService,
     private readonly routingService: RoutingService,
+    private readonly usageTipService: UsageTipService,
     private readonly zone: NgZone
   ) { }
 
@@ -115,6 +117,9 @@ export class CreateConformanceStatementComponent implements OnInit, AfterViewIni
     })
     if (this.conformanceItemPage) {
       this.resizeObserver.observe(this.conformanceItemPage.nativeElement)
+    }
+    if (this.dataService.isSystemAdmin && this.dataService.vendor?.id === this.organisationId) {
+      this.usageTipService.showUsageTip(Constants.USAGE_TIP.TEST_BED_ADMIN_CREATE_CONFORMANCE_STATEMENT)
     }
   }
 

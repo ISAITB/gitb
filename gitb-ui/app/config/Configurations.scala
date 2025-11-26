@@ -18,7 +18,7 @@ package config
 import authentication.ecas.AuthenticationLevel
 import com.gitb.utils.HmacUtils
 import com.typesafe.config.{Config, ConfigFactory}
-import models.Constants
+import models.{Constants, UsageTipsConfiguration}
 import org.apache.commons.lang3.{StringUtils, Strings}
 
 import java.util.Locale
@@ -159,6 +159,7 @@ object Configurations {
 
   var REGISTRATION_ENABLED = true
   var STARTUP_WIZARD_ENABLED = true
+  var USAGE_TIPS_CONFIGURATION: UsageTipsConfiguration = UsageTipsConfiguration.defaultConfiguration()
   var TESTBED_HOME_LINK: String = "/"
 
   // 5120 KB default (5 MBs)
@@ -393,6 +394,7 @@ object Configurations {
 
       REGISTRATION_ENABLED = fromEnv("REGISTRATION_ENABLED", conf.getString("registration.enabled")).toBoolean
       STARTUP_WIZARD_ENABLED = fromEnv("STARTUP_WIZARD_ENABLED", conf.getString("startupWizard.enabled")).toBoolean
+      USAGE_TIPS_CONFIGURATION = USAGE_TIPS_CONFIGURATION.copy(enabled = fromEnv("USAGE_TIPS_ENABLED", conf.getString("usageTips.enabled")).toBoolean)
       TESTBED_HOME_LINK = fromEnv("TESTBED_HOME_LINK", TESTBED_HOME_LINK)
 
       SAVED_FILE_MAX_SIZE = fromEnv("SAVED_FILE_MAX_SIZE", SAVED_FILE_MAX_SIZE.toString).toLong

@@ -13,15 +13,15 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Injectable } from '@angular/core';
-import { RestService } from './rest.service'
-import { ROUTES } from '../common/global';
-import { SystemConfiguration } from '../types/system-configuration';
-import { ErrorDescription } from '../types/error-description';
-import { Theme } from '../types/theme';
-import { FileParam } from '../types/file-param.type';
-import { HttpResponse } from '@angular/common/http';
-import { EmailSettings } from '../types/email-settings';
+import {Injectable} from '@angular/core';
+import {RestService} from './rest.service';
+import {ROUTES} from '../common/global';
+import {SystemConfiguration} from '../types/system-configuration';
+import {ErrorDescription} from '../types/error-description';
+import {Theme} from '../types/theme';
+import {FileParam} from '../types/file-param.type';
+import {HttpResponse} from '@angular/common/http';
+import {EmailSettings} from '../types/email-settings';
 import {ConfigurationValue} from '../types/configuration-value';
 import {StartupWizardOptions} from '../types/startup-wizard-options';
 
@@ -66,18 +66,6 @@ export class SystemConfigurationService {
     }
     return this.restService.post<SystemConfiguration|undefined>({
       path: ROUTES.controllers.SystemConfigurationService.updateConfigurationValue().url,
-      data: data,
-      authenticate: true
-    })
-  }
-
-  updateSessionAliveTime(value?: number) {
-    const data: any = {}
-    if (value !== undefined) {
-      data.parameter = value
-    }
-    return this.restService.post<ErrorDescription|undefined>({
-      path: ROUTES.controllers.SystemConfigurationService.updateSessionAliveTime().url,
       data: data,
       authenticate: true
     })

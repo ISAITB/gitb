@@ -190,6 +190,14 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
           }
           Future.successful(())
         }
+        // Usage tips.
+        _ <- {
+          val usageTipsConfig = persistedConfigs.find(config => config.config.name == Constants.UsageTips).map(_.config)
+          if (usageTipsConfig.nonEmpty && usageTipsConfig.get.parameter.nonEmpty) {
+            Configurations.USAGE_TIPS_CONFIGURATION = JsonUtil.parseJsUsageTipsConfiguration(usageTipsConfig.get.parameter.get)
+          }
+          Future.successful(())
+        }
         // Demo account.
         _ <- {
           val demoAccountConfig = persistedConfigs.find(config => config.config.name == Constants.DemoAccount).map(_.config)

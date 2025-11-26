@@ -36,6 +36,8 @@ export interface AppConfigurationProperties {
   demosEnabled: boolean
   demosAccount: number
   startupWizardEnabled: boolean
+  usageTipsEnabled: boolean
+  usageTipsDisabledForScreens: number[]
   registrationEnabled: boolean
   savedFileMaxSize: number
   mode: string

@@ -20,6 +20,8 @@ import { DataService } from 'src/app/services/data.service';
 import {BsModalService} from 'ngx-bootstrap/modal';
 import {ServiceHealthModalComponent} from '../../modals/service-health-modal/service-health-modal.component';
 import {StartupWizardModalComponent} from '../../modals/startup-wizard-modal/startup-wizard-modal.component';
+import {UsageTipService} from '../../services/usage-tip.service';
+import {Constants} from '../../common/constants';
 
 @Component({
     selector: 'app-home',
@@ -29,11 +31,14 @@ import {StartupWizardModalComponent} from '../../modals/startup-wizard-modal/sta
 export class HomeComponent implements OnInit, AfterViewInit {
 
   pageContent?: string
+  startupWizardActive = false
+  viewInitialized = false
 
   constructor(
     private readonly accountService: AccountService,
     public readonly dataService: DataService,
-    private readonly modalService: BsModalService
+    private readonly modalService: BsModalService,
+    private readonly usageTipService: UsageTipService
   ) { }
 
   ngOnInit(): void {
@@ -55,17 +60,27 @@ export class HomeComponent implements OnInit, AfterViewInit {
     }
     page$.subscribe((data) => {
       this.pageContent = data
+      this.showMessageForMissingLandingPage()
     })
     this.dataService.breadcrumbUpdate({breadcrumbs: []})
   }
 
   ngAfterViewInit() {
     if (this.dataService.isSystemAdmin && this.dataService.configuration.startupWizardEnabled) {
-      const modal = this.modalService.show(StartupWizardModalComponent, {
+      this.startupWizardActive = true
+      this.modalService.show(StartupWizardModalComponent, {
         class: 'modal-lg',
         keyboard: false,
         backdrop: 'static'
       })
+    }
+    this.viewInitialized = true
+    this.showMessageForMissingLandingPage()
+  }
+
+  showMessageForMissingLandingPage() {
+    if (this.dataService.isSystemAdmin && this.viewInitialized && !this.startupWizardActive && this.pageContent != undefined  && this.pageContent == '') {
+      this.usageTipService.showUsageTip(Constants.USAGE_TIP.TEST_BED_LANDING_PAGE)
     }
   }
 
