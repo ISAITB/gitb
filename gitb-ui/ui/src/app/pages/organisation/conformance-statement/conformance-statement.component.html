@@ -178,46 +178,48 @@
 								<span>No configuration properties are foreseen for this conformance statement.</span>
 							</div>
 						} @else {
-							@if (canEditOrganisationConfiguration || canEditSystemConfiguration || canEditStatementConfiguration) {
-								<div class="tabControls">
-                                    <div class="btn-toolbar">
-                                        <button type="button" class="btn btn-secondary" (click)="updateConfiguration()" [disable]="updateConfigurationPending || updateConfigurationDisabled()" [pending]="updateConfigurationPending">Update configuration</button>
+                            <form>
+                                @if (canEditOrganisationConfiguration || canEditSystemConfiguration || canEditStatementConfiguration) {
+                                    <div class="tabControls">
+                                        <div class="btn-toolbar">
+                                            <button type="submit" class="btn btn-secondary" (click)="updateConfiguration()" [disable]="updateConfigurationPending || updateConfigurationDisabled()" [pending]="updateConfigurationPending">Update configuration</button>
+                                        </div>
                                     </div>
-								</div>
-							}
-							@if (organisationPropertyVisibility.hasVisibleProperties) {
-								<app-custom-property-panel
-									[properties]="organisationProperties"
-									[propertyType]="'organisation'"
-									[owner]="organisationId"
-									[header]="dataService.labelOrganisation()+' properties'"
-									[collapsed]="organisationPropertiesCollapsed"
-									[validation]="propertyValidation"
-									[topMargin]="canEditOrganisationConfiguration || canEditSystemConfiguration || canEditStatementConfiguration"
-									[readonly]="!dataService.isCommunityAdmin && !dataService.isSystemAdmin && !canEditOrganisationConfiguration"></app-custom-property-panel>
-							}
-							@if (systemPropertyVisibility.hasVisibleProperties) {
-								<app-custom-property-panel
-									[properties]="systemProperties"
-									[propertyType]="'system'"
-									[owner]="systemId"
-									[header]="dataService.labelSystem()+' properties'"
-									[collapsed]="systemPropertiesCollapsed"
-									[validation]="propertyValidation"
-									[topMargin]="canEditOrganisationConfiguration || canEditSystemConfiguration || canEditStatementConfiguration || (organisationPropertyVisibility.hasVisibleProperties)"
-									[readonly]="!dataService.isCommunityAdmin && !dataService.isSystemAdmin && !canEditSystemConfiguration"></app-custom-property-panel>
-							}
-							@if (statementPropertyVisibility.hasVisibleProperties) {
-								<app-custom-property-panel
-									[properties]="statementProperties"
-									[propertyType]="'statement'"
-									[owner]="systemId"
-									[header]="'Conformance statement properties'"
-									[collapsed]="statementPropertiesCollapsed"
-									[validation]="propertyValidation"
-									[topMargin]="canEditOrganisationConfiguration || canEditSystemConfiguration || canEditStatementConfiguration || organisationPropertyVisibility.hasVisibleProperties || systemPropertyVisibility.hasVisibleProperties"
-									[readonly]="!dataService.isCommunityAdmin && !dataService.isSystemAdmin && !canEditStatementConfiguration"></app-custom-property-panel>
-							}
+                                }
+                                @if (organisationPropertyVisibility.hasVisibleProperties) {
+                                    <app-custom-property-panel
+                                        [properties]="organisationProperties"
+                                        [propertyType]="'organisation'"
+                                        [owner]="organisationId"
+                                        [header]="dataService.labelOrganisation()+' properties'"
+                                        [collapsed]="organisationPropertiesCollapsed"
+                                        [validation]="propertyValidation"
+                                        [topMargin]="canEditOrganisationConfiguration || canEditSystemConfiguration || canEditStatementConfiguration"
+                                        [readonly]="!dataService.isCommunityAdmin && !dataService.isSystemAdmin && !canEditOrganisationConfiguration"></app-custom-property-panel>
+                                }
+                                @if (systemPropertyVisibility.hasVisibleProperties) {
+                                    <app-custom-property-panel
+                                        [properties]="systemProperties"
+                                        [propertyType]="'system'"
+                                        [owner]="systemId"
+                                        [header]="dataService.labelSystem()+' properties'"
+                                        [collapsed]="systemPropertiesCollapsed"
+                                        [validation]="propertyValidation"
+                                        [topMargin]="canEditOrganisationConfiguration || canEditSystemConfiguration || canEditStatementConfiguration || (organisationPropertyVisibility.hasVisibleProperties)"
+                                        [readonly]="!dataService.isCommunityAdmin && !dataService.isSystemAdmin && !canEditSystemConfiguration"></app-custom-property-panel>
+                                }
+                                @if (statementPropertyVisibility.hasVisibleProperties) {
+                                    <app-custom-property-panel
+                                        [properties]="statementProperties"
+                                        [propertyType]="'statement'"
+                                        [owner]="systemId"
+                                        [header]="'Conformance statement properties'"
+                                        [collapsed]="statementPropertiesCollapsed"
+                                        [validation]="propertyValidation"
+                                        [topMargin]="canEditOrganisationConfiguration || canEditSystemConfiguration || canEditStatementConfiguration || organisationPropertyVisibility.hasVisibleProperties || systemPropertyVisibility.hasVisibleProperties"
+                                        [readonly]="!dataService.isCommunityAdmin && !dataService.isSystemAdmin && !canEditStatementConfiguration"></app-custom-property-panel>
+                                }
+                            </form>
 						}
 					}
 				</div>
