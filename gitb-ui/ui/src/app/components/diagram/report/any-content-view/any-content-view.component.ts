@@ -44,6 +44,7 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
   @Input() root = true
   @Input() forceDisplay = false
   @Input() preserveName = true
+  @Input() showControls = true
 
   Constants = Constants
 

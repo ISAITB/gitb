@@ -452,6 +452,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         instruction.setEncoding(instructionCommand.getEncoding());
         instruction.setMimeType(fixedValueOrVariable(instructionCommand.getMimeType(), expressionHandler.getVariableResolver(), null));
         instruction.setForceDisplay(instructionCommand.isForceDisplay());
+        instruction.setShowControls(instructionCommand.isShowControls());
 
         ExpressionHandler exprHandler = new ExpressionHandler(this.scope);
         DataType computedValue = exprHandler.processExpression(instructionCommand, instructionCommand.getType());

@@ -281,6 +281,10 @@ public class JacksonUtil {
                     if (instruction.isForceDisplay()) {
                         json.writeBooleanField("forceDisplay", instruction.isForceDisplay());
                     }
+                    if (!instruction.isShowControls()) {
+                        // true is the default
+                        json.writeBooleanField("showControls", instruction.isShowControls());
+                    }
                     json.writeEndObject();
                 }
             }

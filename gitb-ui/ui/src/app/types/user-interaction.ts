@@ -40,6 +40,7 @@ export interface UserInteraction {
   forceDisplay?: boolean;
   required?: boolean;
   rows?: number;
+  showControls?: boolean;
 
   reset?: EventEmitter<void>;
 
