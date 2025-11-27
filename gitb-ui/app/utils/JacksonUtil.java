@@ -244,6 +244,9 @@ public class JacksonUtil {
                     if (inputRequest.isRequired()) {
                         json.writeBooleanField("required", inputRequest.isRequired());
                     }
+                    if (inputRequest.getRows() != null) {
+                        json.writeNumberField("rows", inputRequest.getRows());
+                    }
                     json.writeEndObject();
                 } else if (ior instanceof com.gitb.tbs.Instruction instruction) {
                     json.writeStartObject();

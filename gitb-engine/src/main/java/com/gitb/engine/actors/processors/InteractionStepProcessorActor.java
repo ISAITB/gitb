@@ -73,6 +73,7 @@ import scala.concurrent.Future;
 import scala.concurrent.Promise;
 
 import javax.xml.datatype.DatatypeConfigurationException;
+import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -525,7 +526,30 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
             if (inputRequest.getInputType() == null) {
                 inputRequest.setInputType(InputRequestInputType.TEXT);
             }
-            // Set this on the original object as we have now resolved any option-related expressions as well.
+            // Rows for multiline text.
+            if (inputRequest.getInputType() == InputRequestInputType.MULTILINE_TEXT) {
+                if (request.getRows() != null) {
+                    Integer rowsToSet = null;
+                    if (VariableResolver.isVariableReference(request.getRows())) {
+                        rowsToSet = variableResolver.resolveVariableAsNumber(request.getRows()).intValue();
+                    } else {
+                        try {
+                            rowsToSet = Integer.parseInt(request.getRows());
+                        } catch (NumberFormatException e) {
+                            logger.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), "Ignoring 'rows' on interaction step request as it was not a valid number");
+                        }
+                    }
+                    if (rowsToSet != null && rowsToSet < 1) {
+                        // Ignore if not at least 1.
+                        logger.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), "Ignoring 'rows' on interaction step request as it was not a positive integer");
+                        rowsToSet = null;
+                    }
+                    if (rowsToSet != null) {
+                        inputRequest.setRows(BigInteger.valueOf(rowsToSet));
+                    }
+                }
+            }
+            // Set this on the original object as we have now resolved any expressions as well.
             request.setInputType(inputRequest.getInputType());
         }
         return inputRequest;

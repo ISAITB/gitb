@@ -359,6 +359,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
                         checkToken(userRequest.getMultiple(), TokenType.STRING_OR_VARIABLE_REFERENCE);
                         checkToken(userRequest.getFileName(), TokenType.STRING_OR_VARIABLE_REFERENCE);
                         checkToken(userRequest.getRequired(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+                        checkToken(userRequest.getRows(), TokenType.STRING_OR_VARIABLE_REFERENCE);
                     } else {
                         checkExpression(ir);
                     }

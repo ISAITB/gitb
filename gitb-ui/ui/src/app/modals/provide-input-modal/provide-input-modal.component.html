@@ -46,7 +46,7 @@
 									}
 									@case ("MULTILINE_TEXT") {
 										<!-- Text area -->
-										<textarea [name]="'input-'+index" [attr.id]="'input-'+index" class="form-control" [(ngModel)]="interaction.data" [invalid]="validation.get('input_'+index)"></textarea>
+										<textarea [name]="'input-'+index" [attr.id]="'input-'+index" class="form-control" [attr.rows]="(interaction.rows != undefined && interaction.rows > 1)?interaction.rows:null" [(ngModel)]="interaction.data" [invalid]="validation.get('input_'+index)"></textarea>
 									}
 									@case ("SECRET") {
 										<!-- Secret -->
