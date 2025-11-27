@@ -16,10 +16,7 @@
 package com.gitb.engine.actors.processors;
 
 import com.gitb.PropertyConstants;
-import com.gitb.core.AnyContent;
-import com.gitb.core.ErrorCode;
-import com.gitb.core.InputRequestInputType;
-import com.gitb.core.ValueEmbeddingEnumeration;
+import com.gitb.core.*;
 import com.gitb.engine.CallbackManager;
 import com.gitb.engine.TestbedService;
 import com.gitb.engine.commands.messaging.NotificationReceived;
@@ -453,6 +450,23 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         instruction.setMimeType(fixedValueOrVariable(instructionCommand.getMimeType(), expressionHandler.getVariableResolver(), null));
         instruction.setForceDisplay(instructionCommand.isForceDisplay());
         instruction.setShowControls(instructionCommand.isShowControls());
+        if (instructionCommand.getLevel() != null) {
+            String level;
+            if (VariableResolver.isVariableReference(instructionCommand.getLevel())) {
+                level = expressionHandler.getVariableResolver().resolveVariableAsString(instructionCommand.getLevel()).getValue();
+            } else {
+                level = instructionCommand.getLevel();
+            }
+            InstructionLevel levelToSet = null;
+            try {
+                levelToSet = InstructionLevel.fromValue(level);
+            } catch (Exception e) {
+                logger.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), "Ignoring 'level' on interaction step instruction as it was invalid");
+            }
+            if (levelToSet != null && levelToSet != InstructionLevel.NONE) {
+                instruction.setLevel(levelToSet);
+            }
+        }
 
         ExpressionHandler exprHandler = new ExpressionHandler(this.scope);
         DataType computedValue = exprHandler.processExpression(instructionCommand, instructionCommand.getType());

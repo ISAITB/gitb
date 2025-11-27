@@ -285,6 +285,9 @@ public class JacksonUtil {
                         // true is the default
                         json.writeBooleanField("showControls", instruction.isShowControls());
                     }
+                    if (instruction.getLevel() != null) {
+                        json.writeStringField("level", instruction.getLevel().value());
+                    }
                     json.writeEndObject();
                 }
             }

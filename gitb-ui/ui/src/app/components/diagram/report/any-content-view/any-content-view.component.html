@@ -1,5 +1,12 @@
 @if (context != undefined) {
-    <div class="any-content-view" [class.no-margin]="noMargin" [class.no-border]="noBorder"
+    <div class="any-content-view"
+         [class.no-margin]="noMargin"
+         [class.no-border]="noBorder"
+         [class.alert]="level != undefined && level !== 'NONE'"
+         [class.alert-info]="level === 'INFO'"
+         [class.alert-success]="level === 'SUCCESS'"
+         [class.alert-warning]="level === 'WARNING'"
+         [class.alert-danger]="level === 'ERROR'"
          [class.hovering]="hoveringTitle && withItems">
         @if (withName || withValue) {
             <div class="any-content-view-container">
@@ -53,7 +60,7 @@
                 <div class="content-items" [class.with-name]="withName">
                     @for (item of context!.item!; track $index) {
                         <app-any-content-view [context]="item" [report]="report" [sessionId]="sessionId"
-                                              [root]="false"></app-any-content-view>
+                                              [root]="false" [showControls]="showControls" [level]="level"></app-any-content-view>
                     }
                 </div>
             </div>

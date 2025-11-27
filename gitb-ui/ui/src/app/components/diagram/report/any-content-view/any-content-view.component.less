@@ -59,20 +59,24 @@
 
 .any-content-view {
     &.no-border {
-        padding: 0;
-        border: 0;
+        padding: 0 !important;
+        border: 0 !important;
     }
     &.hovering {
-        background-color: @white-hover;
+        &:not(.alert) {
+            background-color: @white-hover;
+        }
         cursor: pointer;
     }
-    background-color: @white;
+    &:not(.alert) {
+        background-color: @white;
+        border: 1px solid @gray-light;
+    }
     padding: 0 10px;
     margin: 10px 0;
     &.no-margin {
         margin: 0;
     }
-    border: 1px solid @gray-light;
     border-radius: @border-radius;
 }
 

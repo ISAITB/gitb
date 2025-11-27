@@ -61,7 +61,14 @@
 						 } @else if (interaction.type == 'instruction') {
 							 <!-- instruction interaction: server shows a message -->
 							 <div>
-								 <app-any-content-view [context]="instructionAsAnyContent(interaction)" [forceDisplay]="interaction.forceDisplay == true" [showControls]="interaction.showControls == undefined || interaction.showControls" [preserveName]="false" [fileNameDownload]="interaction.name" [sessionId]="sessionId" [noMargin]="true"></app-any-content-view>
+								 <app-any-content-view [context]="instructionAsAnyContent(interaction)"
+                                                       [forceDisplay]="interaction.forceDisplay == true"
+                                                       [showControls]="interaction.showControls == undefined || interaction.showControls"
+                                                       [level]="interaction.level"
+                                                       [preserveName]="false"
+                                                       [fileNameDownload]="interaction.name"
+                                                       [sessionId]="sessionId"
+                                                       [noMargin]="true"></app-any-content-view>
 							 </div>
 						 }
 					</div>

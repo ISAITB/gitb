@@ -41,6 +41,7 @@ export interface UserInteraction {
   required?: boolean;
   rows?: number;
   showControls?: boolean;
+  level?: 'ERROR' | 'WARNING' | 'INFO' | 'SUCCESS' | 'NONE';
 
   reset?: EventEmitter<void>;
 

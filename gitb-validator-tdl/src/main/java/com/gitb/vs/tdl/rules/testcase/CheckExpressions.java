@@ -360,7 +360,8 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
                         checkToken(userRequest.getFileName(), TokenType.STRING_OR_VARIABLE_REFERENCE);
                         checkToken(userRequest.getRequired(), TokenType.STRING_OR_VARIABLE_REFERENCE);
                         checkToken(userRequest.getRows(), TokenType.STRING_OR_VARIABLE_REFERENCE);
-                    } else {
+                    } else if (ir instanceof Instruction instruction) {
+                        checkToken(instruction.getLevel(), TokenType.INSTRUCTION_LEVEL_OR_VARIABLE_REFERENCE);
                         checkExpression(ir);
                     }
                 }
@@ -434,6 +435,10 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
                         variableResolver.checkVariablesInToken(token);
                     }
                 } else if (expectedType == TokenType.LOG_LEVEL_OR_VARIABLE_REFERENCE) {
+                    if (isVariableExpression) {
+                        variableResolver.checkVariablesInToken(token);
+                    }
+                } else if (expectedType == TokenType.INSTRUCTION_LEVEL_OR_VARIABLE_REFERENCE) {
                     if (isVariableExpression) {
                         variableResolver.checkVariablesInToken(token);
                     }
@@ -542,6 +547,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
         STRING_OR_VARIABLE_REFERENCE,
         ERROR_LEVEL_OR_VARIABLE_REFERENCE,
         LOG_LEVEL_OR_VARIABLE_REFERENCE,
+        INSTRUCTION_LEVEL_OR_VARIABLE_REFERENCE,
         VARIABLE_REFERENCE,
         EXPRESSION
     }
