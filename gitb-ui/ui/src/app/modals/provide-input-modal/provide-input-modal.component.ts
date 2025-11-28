@@ -76,10 +76,38 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
               j += 1
             }
           }
+          // Handle default value(s).
+          if (interaction.default != undefined && interaction.optionData) {
+            if (interaction.inputType == 'SELECT_SINGLE') {
+              const defaultOption = interaction.optionData.find((option) => {
+                return option.value == interaction.default
+              })
+              if (defaultOption != undefined) {
+                interaction.selectedOption = defaultOption
+              }
+            } else {
+              // Multiple select
+              const defaultOptions = interaction.default.split(",")
+              defaultOptions.forEach((defaultOption) => {
+                const matchedOption = interaction.optionData!.find((option) => {
+                  return option.value == defaultOption
+                })
+                if (matchedOption != undefined) {
+                  if (interaction.selectedOptions == undefined) {
+                    interaction.selectedOptions = []
+                  }
+                  interaction.selectedOptions.push(matchedOption)
+                }
+              })
+            }
+          }
         } else if (interaction.inputType == 'CODE') {
           this.editorFocus['input-'+i] = false
           if (this.firstCodeIndex == undefined) {
             this.firstCodeIndex = i
+          }
+          if (interaction.default != undefined) {
+            interaction.data = interaction.default
           }
           if (interaction.data == undefined) {
             interaction.data = ''
@@ -87,8 +115,12 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
         } else if (interaction.inputType == 'UPLOAD') {
           interaction.reset = new EventEmitter<void>()
         } else {
+          // Basic text inputs (secret, text, multiline)
           if (this.firstTextIndex == undefined) {
             this.firstTextIndex = i
+          }
+          if (interaction.default != undefined) {
+            interaction.data = interaction.default
           }
         }
       }

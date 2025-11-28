@@ -244,8 +244,11 @@ public class JacksonUtil {
                     if (inputRequest.isRequired()) {
                         json.writeBooleanField("required", inputRequest.isRequired());
                     }
-                    if (inputRequest.getRows() != null) {
-                        json.writeNumberField("rows", inputRequest.getRows());
+                    if (inputRequest.getSize() != null) {
+                        json.writeNumberField("size", inputRequest.getSize());
+                    }
+                    if (inputRequest.getDefault() != null && !inputRequest.getDefault().isEmpty()) {
+                        json.writeStringField("default", inputRequest.getDefault());
                     }
                     json.writeEndObject();
                 } else if (ior instanceof com.gitb.tbs.Instruction instruction) {

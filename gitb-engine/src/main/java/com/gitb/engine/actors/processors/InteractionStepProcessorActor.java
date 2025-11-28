@@ -541,28 +541,38 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
             if (inputRequest.getInputType() == null) {
                 inputRequest.setInputType(InputRequestInputType.TEXT);
             }
-            // Rows for multiline text.
-            if (inputRequest.getInputType() == InputRequestInputType.MULTILINE_TEXT) {
-                if (request.getRows() != null) {
+            // Rows for multiline text and select multiple.
+            if (inputRequest.getInputType() == InputRequestInputType.MULTILINE_TEXT || inputRequest.getInputType() == InputRequestInputType.SELECT_MULTIPLE) {
+                if (request.getSize() != null) {
                     Integer rowsToSet = null;
-                    if (VariableResolver.isVariableReference(request.getRows())) {
-                        rowsToSet = variableResolver.resolveVariableAsNumber(request.getRows()).intValue();
+                    if (VariableResolver.isVariableReference(request.getSize())) {
+                        rowsToSet = variableResolver.resolveVariableAsNumber(request.getSize()).intValue();
                     } else {
                         try {
-                            rowsToSet = Integer.parseInt(request.getRows());
+                            rowsToSet = Integer.parseInt(request.getSize());
                         } catch (NumberFormatException e) {
-                            logger.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), "Ignoring 'rows' on interaction step request as it was not a valid number");
+                            logger.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), "Ignoring 'size' on interaction step request as it was not a valid number");
                         }
                     }
                     if (rowsToSet != null && rowsToSet < 1) {
                         // Ignore if not at least 1.
-                        logger.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), "Ignoring 'rows' on interaction step request as it was not a positive integer");
+                        logger.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), "Ignoring 'size' on interaction step request as it was not a positive integer");
                         rowsToSet = null;
                     }
                     if (rowsToSet != null) {
-                        inputRequest.setRows(BigInteger.valueOf(rowsToSet));
+                        inputRequest.setSize(BigInteger.valueOf(rowsToSet));
                     }
                 }
+            }
+            // Default value(s)
+            if (request.getDefault() != null) {
+                String defaultValue;
+                if (VariableResolver.isVariableReference(request.getDefault())) {
+                    defaultValue = variableResolver.resolveVariableAsString(request.getDefault()).getValue();
+                } else {
+                    defaultValue = request.getDefault();
+                }
+                inputRequest.setDefault(defaultValue);
             }
             // Set this on the original object as we have now resolved any expressions as well.
             request.setInputType(inputRequest.getInputType());

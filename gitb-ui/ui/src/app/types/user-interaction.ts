@@ -39,9 +39,10 @@ export interface UserInteraction {
   mimeType?: string;
   forceDisplay?: boolean;
   required?: boolean;
-  rows?: number;
+  size?: number;
   showControls?: boolean;
   level?: 'ERROR' | 'WARNING' | 'INFO' | 'SUCCESS' | 'NONE';
+  default?: string;
 
   reset?: EventEmitter<void>;
 
