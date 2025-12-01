@@ -238,4 +238,12 @@
         <packageUrl regex="true">^pkg:maven/org\.eclipse\.angus/.*@.*$</packageUrl>
         <cve>CVE-2025-7962</cve>
     </suppress>
+    <!-- Non-applicable as 'allowTextIn' is never used. -->
+    <suppress>
+        <notes><![CDATA[
+        file name: owasp-java-html-sanitizer-20240325.1.jar
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.googlecode\.owasp-java-html-sanitizer/owasp-java-html-sanitizer@.*$</packageUrl>
+        <vulnerabilityName>CVE-2025-66021</vulnerabilityName>
+    </suppress>    
 </suppressions>
