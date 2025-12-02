@@ -541,8 +541,10 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
             if (inputRequest.getInputType() == null) {
                 inputRequest.setInputType(InputRequestInputType.TEXT);
             }
-            // Rows for multiline text and select multiple.
-            if (inputRequest.getInputType() == InputRequestInputType.MULTILINE_TEXT || inputRequest.getInputType() == InputRequestInputType.SELECT_MULTIPLE) {
+            // Rows for multiline text, code editors and select multiple.
+            if (inputRequest.getInputType() == InputRequestInputType.MULTILINE_TEXT
+                    || inputRequest.getInputType() == InputRequestInputType.CODE
+                    || inputRequest.getInputType() == InputRequestInputType.SELECT_MULTIPLE) {
                 if (request.getSize() != null) {
                     Integer rowsToSet = null;
                     if (VariableResolver.isVariableReference(request.getSize())) {

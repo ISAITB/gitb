@@ -296,8 +296,16 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
     return false
   }
 
-  editorInitialized(editor: CodemirrorComponent) {
+  editorInitialized(editor: CodemirrorComponent, interaction: UserInteraction) {
     this.dataService.addControlSubmitBehaviourToCodeEditor(editor)
+    if (interaction.size != undefined && interaction.size > 0) {
+      let sizeToSet = interaction.size
+      if (sizeToSet < 30) {
+        sizeToSet = 30
+      }
+      // Minimum height is 50px.
+      editor.codeMirror?.setSize(null, sizeToSet)
+    }
   }
 
 }
