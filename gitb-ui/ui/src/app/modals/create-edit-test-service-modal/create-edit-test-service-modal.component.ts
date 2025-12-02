@@ -115,7 +115,7 @@ export class CreateEditTestServiceModalComponent extends BaseComponent implement
   }
 
   saveAllowed() {
-    return this.textProvided(this.testService.parameter!.name) && this.serviceSettingsOk()
+    return !this.pending && this.textProvided(this.testService.parameter!.name) && this.serviceSettingsOk()
   }
 
   serviceSettingsOk() {
@@ -211,17 +211,19 @@ export class CreateEditTestServiceModalComponent extends BaseComponent implement
   }
 
   save() {
-    this.validation.clearErrors()
-    if (this.saveAllowed() && this.validateData(this.testService)) {
-      const serviceData = this.prepareServiceDataForSubmission()
-      this.pending = true
-      this.savePending = true
-      if (this.testService.service!.id != 0) {
-        // Update
-        this.doUpdate(serviceData, this.updateMatching)
-      } else {
-        // Create
-        this.doCreate(serviceData, this.updateMatching)
+    if (this.saveAllowed()) {
+      this.validation.clearErrors()
+      if (this.validateData(this.testService)) {
+        const serviceData = this.prepareServiceDataForSubmission()
+        this.pending = true
+        this.savePending = true
+        if (this.testService.service!.id != 0) {
+          // Update
+          this.doUpdate(serviceData, this.updateMatching)
+        } else {
+          // Create
+          this.doCreate(serviceData, this.updateMatching)
+        }
       }
     }
   }

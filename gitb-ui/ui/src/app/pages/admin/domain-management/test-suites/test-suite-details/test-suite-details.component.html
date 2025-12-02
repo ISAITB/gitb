@@ -3,7 +3,7 @@
 		<div class="card-header">
 			<div class="card-title">Test suite details</div>
 		</div>
-		<form>
+		<form (ngSubmit)="saveChanges()">
 			<div class="card-body" [pending]="!loaded" focus="name">
                 <app-alert-display [alerts]="alerts"></app-alert-display>
 				@if (testSuite.shared) {
@@ -33,7 +33,7 @@
 						<div class="row mb-3">
 							<label class="col-3 col-form-label text-end" for="description">Description:</label>
 							<div class="col-7">
-								<textarea id="description" name="description" [(ngModel)]="testSuite.description" class="form-control"></textarea>
+								<textarea ctrlEnterSubmit id="description" name="description" [(ngModel)]="testSuite.description" class="form-control"></textarea>
 							</div>
 							<div app-tooltip class="col-auto" tbTooltip="A description for the test suite presented to users when viewing a conformance statement with multiple test suites. This should be informative enough for users to understand the purpose of the test suite. Where extended information is needed consider complementing the description with the test suite's documentation."></div>
 						</div>
@@ -64,7 +64,7 @@
 			</div>
 			<div class="card-footer button-container">
 				<div class="btn-toolbar">
-					<button (click)="saveChanges()" type="submit" class="btn btn-secondary" [disable]="!loaded || downloadPending || deletePending || movePending || convertPending || saveDisabled()" [pending]="savePending">Save changes</button>
+					<button type="submit" class="btn btn-secondary" [disable]="!loaded || downloadPending || deletePending || movePending || convertPending || saveDisabled()" [pending]="savePending">Save changes</button>
 					<button (click)="download()" type="button" class="btn btn-secondary" [disable]="!loaded || savePending || deletePending || movePending || convertPending" [pending]="downloadPending">Download</button>
                     @if (testSuite.shared) {
                         <button (click)="convertToNonShared()" type="button" class="btn btn-secondary" [disable]="!loaded || savePending || downloadPending || deletePending || movePending" [pending]="convertPending">Convert to non-shared</button>

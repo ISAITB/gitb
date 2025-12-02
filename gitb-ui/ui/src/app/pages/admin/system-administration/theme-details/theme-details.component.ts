@@ -64,6 +64,20 @@ export class ThemeDetailsComponent extends BaseThemeFormComponent implements OnI
     return this.confirmationDialogService.confirm("Active theme change", "You are about the change the currently active theme. Are you sure you want to proceed?", "Change", "Cancel")
   }
 
+  saveDisabled() {
+    return this.copyPending || this.deletePending || this.savePending || (this.theme.custom && !this.textProvided(this.theme.key))
+  }
+
+  saveOrActivate() {
+    if (!this.saveDisabled()) {
+      if (this.theme.custom) {
+        this.save()
+      } else if (!this.theme.active) {
+        this.activate()
+      }
+    }
+  }
+
   save() {
     let proceedObservable: Observable<boolean>
     if (this.initiallyActive && !this.theme.active || !this.initiallyActive && this.theme.active) {

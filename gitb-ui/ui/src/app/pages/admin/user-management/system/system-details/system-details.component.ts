@@ -94,7 +94,7 @@ export class SystemDetailsComponent extends BaseComponent implements OnInit {
   }
 
   saveEnabled() {
-    return this.textProvided(this.system.sname) && this.textProvided(this.system.fname)
+    return !this.readonly && this.loaded && !this.deletePending && !this.savePending && this.textProvided(this.system.sname) && this.textProvided(this.system.fname)
   }
 
   update() {

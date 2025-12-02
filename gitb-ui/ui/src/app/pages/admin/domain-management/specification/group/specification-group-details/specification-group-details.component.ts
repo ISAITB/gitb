@@ -81,18 +81,20 @@ export class SpecificationGroupDetailsComponent extends BaseComponent implements
   }
 
 	saveDisabled() {
-    return !(this.textProvided(this.group?.sname) && this.textProvided(this.group?.fname))
+    return !this.loaded || this.savePending || this.deletePending || !(this.textProvided(this.group?.sname) && this.textProvided(this.group?.fname))
   }
 
   saveGroupChanges() {
-    this.savePending = true
-		this.specificationService.updateSpecificationGroup(this.groupId, this.group.sname!, this.group.fname!, this.group.description, this.group.reportMetadata)
-		.subscribe(() => {
-			this.popupService.success(this.dataService.labelSpecificationGroup()+' updated.')
-      this.dataService.breadcrumbUpdate({id: this.groupId, type: BreadcrumbType.specificationGroup, label: this.group.sname!})
-    }).add(() => {
-      this.savePending = false
-    })
+    if (!this.saveDisabled()) {
+      this.savePending = true
+      this.specificationService.updateSpecificationGroup(this.groupId, this.group.sname!, this.group.fname!, this.group.description, this.group.reportMetadata)
+        .subscribe(() => {
+          this.popupService.success(this.dataService.labelSpecificationGroup()+' updated.')
+          this.dataService.breadcrumbUpdate({id: this.groupId, type: BreadcrumbType.specificationGroup, label: this.group.sname!})
+        }).add(() => {
+        this.savePending = false
+      })
+    }
   }
 
   back() {

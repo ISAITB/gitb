@@ -88,38 +88,40 @@ export class CreateThemeComponent extends BaseThemeFormComponent implements OnIn
   }
 
   saveDisabled() {
-    return !this.textProvided(this.theme.key)
+    return this.savePending || !this.textProvided(this.theme.key)
   }
 
   save() {
-    let proceed: Observable<boolean>
-    if (this.theme.active) {
-      proceed = this.confirmationDialogService.confirm("Confirm active theme", "You are about to change the currently active theme. Are you sure?", "Change", "Cancel")
-    } else {
-      proceed = of(true)
-    }
-    proceed.subscribe((confirmed) => {
-      this.savePending = true
-      if (confirmed) {
-        this.processButtonColors(this.theme)
-        this.validation.clearErrors()
-        this.systemConfigurationService.createTheme(this.theme, this.referenceThemeId)
-        .subscribe((error) => {
-          if (this.isErrorDescription(error)) {
-            this.validation.applyError(error)
-          } else {
-            this.popupService.success("Theme created.")
-            if (this.theme.active) {
-              this.dataService.refreshCss()
-            }
-            this.back()
-          }
-        })
-        .add(() => {
-          this.savePending = false
-        })
+    if (!this.saveDisabled()) {
+      let proceed: Observable<boolean>
+      if (this.theme.active) {
+        proceed = this.confirmationDialogService.confirm("Confirm active theme", "You are about to change the currently active theme. Are you sure?", "Change", "Cancel")
+      } else {
+        proceed = of(true)
       }
-    })
+      proceed.subscribe((confirmed) => {
+        this.savePending = true
+        if (confirmed) {
+          this.processButtonColors(this.theme)
+          this.validation.clearErrors()
+          this.systemConfigurationService.createTheme(this.theme, this.referenceThemeId)
+            .subscribe((error) => {
+              if (this.isErrorDescription(error)) {
+                this.validation.applyError(error)
+              } else {
+                this.popupService.success("Theme created.")
+                if (this.theme.active) {
+                  this.dataService.refreshCss()
+                }
+                this.back()
+              }
+            })
+            .add(() => {
+              this.savePending = false
+            })
+        }
+      })
+    }
   }
 
   back() {

@@ -1,7 +1,7 @@
 <div class="modal-header">
     <div class="modal-title">{{title}}</div>
 </div>
-<form>
+<form (ngSubmit)="save()">
     <div class="modal-body" appFileDropTarget>
         <div class="row mb-3">
             <label class="col-3 col-form-label text-end" for="name">* Resource:</label>
@@ -17,7 +17,7 @@
         <div class="row">
             <label class="col-3 col-form-label text-end" for="description">Description:</label>
             <div class="col-7">
-                <textarea id="description" name="description" [(ngModel)]="resourceToUse.description" class="form-control"></textarea>
+                <textarea ctrlEnterSubmit id="description" name="description" [(ngModel)]="resourceToUse.description" class="form-control"></textarea>
             </div>
             <div app-tooltip class="col-auto" tbTooltip="A text describing the purpose of this resource."></div>
         </div>
@@ -31,7 +31,7 @@
         <div class="btn-toolbar">
             <button class="btn btn-secondary" type="button" (click)="cancel()" [disabled]="savePending || deletePending || downloadPending">Cancel</button>
             <button class="btn btn-secondary" type="button" (click)="download()" [disable]="savePending || deletePending || (file == undefined && resourceToUse.id == undefined)" [pending]="downloadPending">Download</button>
-            <button class="btn btn-secondary" type="submit" (click)="save()" [disable]="!saveAllowed() || deletePending || downloadPending" [pending]="savePending">Save</button>
+            <button class="btn btn-secondary" type="submit" [disable]="!saveAllowed()" [pending]="savePending">Save</button>
         </div>
     </div>
 </form>

@@ -3,7 +3,7 @@
         <div class="card-header">
             <div class="card-title">Test case details</div>
         </div>
-        <form>
+        <form (ngSubmit)="saveChanges()">
             <div class="card-body" [pending]="!loaded" focus="name">
                 <div class="row">
                     <div class="col-10 offset-1">
@@ -26,7 +26,7 @@
                         <div class="row mb-3">
                             <label class="col-3 col-form-label text-end" for="description">Description:</label>
                             <div class="col-7">
-                                <textarea id="description" name="description" [(ngModel)]="testCase.description"
+                                <textarea ctrlEnterSubmit id="description" name="description" [(ngModel)]="testCase.description"
                                           class="form-control"></textarea>
                             </div>
                             <div app-tooltip class="col-auto"
@@ -119,7 +119,7 @@
             </div>
             <div class="card-footer">
                 <div class="btn-toolbar">
-                    <button (click)="saveChanges()" type="submit" class="btn btn-secondary" [disable]="saveDisabled()" [pending]="pending">Save changes</button>
+                    <button type="submit" class="btn btn-secondary" [disable]="saveDisabled()" [pending]="pending">Save changes</button>
                     <button (click)="back()" type="button" class="btn btn-secondary">Back</button>
                 </div>
             </div>

@@ -75,17 +75,19 @@ export class CreateLandingPageComponent extends BaseComponent implements OnInit,
   }
 
   saveDisabled() {
-    return !this.textProvided(this.page.name) || !this.textProvided(this.page.content)
+    return this.savePending || !this.textProvided(this.page.name) || !this.textProvided(this.page.content)
   }
 
   createLandingPage() {
-    if (this.page.default) {
-      this.confirmationDialogService.confirmed("Confirm default", "You are about to change the default landing page. Are you sure?", "Change", "Cancel")
-      .subscribe(() => {
+    if (!this.saveDisabled()) {
+      if (this.page.default) {
+        this.confirmationDialogService.confirmed("Confirm default", "You are about to change the default landing page. Are you sure?", "Change", "Cancel")
+          .subscribe(() => {
+            this.doCreate()
+          })
+      } else {
         this.doCreate()
-      })
-    } else {
-      this.doCreate()
+      }
     }
   }
 

@@ -384,29 +384,31 @@ export class TriggerComponent extends BaseComponent implements OnInit {
   }
 
   save() {
-    this.validation.clearErrors()
-    this.savePending = true
-    let callResult: Observable<ErrorDescription|undefined>
-    if (this.update) {
-      callResult = this.triggerService.updateTrigger(this.triggerId!, this.trigger.name!, this.trigger.description, this.trigger.operation, this.trigger.active, this.trigger.url!, this.trigger.eventType!, this.trigger.serviceType!, this.communityId, this.dataItemsToSave(), this.fireExpressionsToSave())
-    } else {
-      callResult = this.triggerService.createTrigger(this.trigger.name!, this.trigger.description, this.trigger.operation, this.trigger.active, this.trigger.url!, this.trigger.eventType!, this.trigger.serviceType!, this.communityId, this.dataItemsToSave(), this.fireExpressionsToSave())
-    }
-    callResult.subscribe((data) => {
-      if (this.isErrorDescription(data)) {
-        this.validation.applyError(data)
+    if (!this.saveDisabled()) {
+      this.validation.clearErrors()
+      this.savePending = true
+      let callResult: Observable<ErrorDescription|undefined>
+      if (this.update) {
+        callResult = this.triggerService.updateTrigger(this.triggerId!, this.trigger.name!, this.trigger.description, this.trigger.operation, this.trigger.active, this.trigger.url!, this.trigger.eventType!, this.trigger.serviceType!, this.communityId, this.dataItemsToSave(), this.fireExpressionsToSave())
       } else {
-        if (this.update) {
-          this.popupService.success('Trigger updated.')
-          this.dataService.breadcrumbUpdate({id: this.triggerId, type: BreadcrumbType.trigger, label: this.trigger.name})
-        } else {
-          this.back()
-          this.popupService.success('Trigger created.')
-        }
+        callResult = this.triggerService.createTrigger(this.trigger.name!, this.trigger.description, this.trigger.operation, this.trigger.active, this.trigger.url!, this.trigger.eventType!, this.trigger.serviceType!, this.communityId, this.dataItemsToSave(), this.fireExpressionsToSave())
       }
-    }).add(() => {
-      this.savePending = false
-    })
+      callResult.subscribe((data) => {
+        if (this.isErrorDescription(data)) {
+          this.validation.applyError(data)
+        } else {
+          if (this.update) {
+            this.popupService.success('Trigger updated.')
+            this.dataService.breadcrumbUpdate({id: this.triggerId, type: BreadcrumbType.trigger, label: this.trigger.name})
+          } else {
+            this.back()
+            this.popupService.success('Trigger created.')
+          }
+        }
+      }).add(() => {
+        this.savePending = false
+      })
+    }
   }
 
   delete() {

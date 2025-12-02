@@ -1,7 +1,7 @@
 <div class="modal-header">
     <div class="modal-title">{{modalTitle}}</div>
 </div>
-<form>
+<form (ngSubmit)="updateParameter()">
 	<div class="modal-body">
         <app-parameter-form
             [nameLabel]="nameLabel"
@@ -18,7 +18,7 @@
         </div>
         <div class="btn-toolbar">
             <button type="button" class="btn btn-secondary" (click)="cancel()">Cancel</button>
-            <button type="submit" class="btn btn-secondary" (click)="updateParameter()" [disabled]="saveDisabled()">Save</button>
+            <button type="submit" class="btn btn-secondary" [disabled]="saveDisabled()">Save</button>
         </div>
     </div>
 </form>

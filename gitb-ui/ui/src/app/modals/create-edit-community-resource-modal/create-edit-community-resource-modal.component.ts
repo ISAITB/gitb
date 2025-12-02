@@ -70,7 +70,7 @@ export class CreateEditCommunityResourceModalComponent extends BaseComponent imp
   }
 
   saveAllowed() {
-    return this.textProvided(this.resourceToUse?.name)
+    return !this.savePending && !this.deletePending && !this.downloadPending && this.textProvided(this.resourceToUse?.name)
   }
 
   save() {

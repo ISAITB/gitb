@@ -17,7 +17,7 @@
 <div class="row mt-3">
     <label class="col-3 col-form-label text-end" for="parameterDescription">Description:</label>
     <div class="col-7">
-        <textarea id="parameterDescription" name="parameterDescription" [(ngModel)]="parameter.desc" class="form-control"></textarea>
+        <textarea ctrlEnterSubmit id="parameterDescription" name="parameterDescription" [(ngModel)]="parameter.desc" class="form-control"></textarea>
     </div>
     @if (hasKey) {
         <div app-tooltip class="col-auto" tbTooltip="This text will be included in a tooltip displayed for this property in data collection forms to explain its purpose."></div>

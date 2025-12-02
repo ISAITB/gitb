@@ -71,12 +71,14 @@ export class CreateEditTagComponent extends BaseComponent implements OnInit, Aft
   }
 
   save() {
-    if (this.isUpdate) {
-      this.updatedTag.emit(this.tagToUse! as TestCaseTag)
-    } else {
-      this.createdTag.emit(this.tagToUse! as TestCaseTag)
+    if (!this.saveDisabled()) {
+      if (this.isUpdate) {
+        this.updatedTag.emit(this.tagToUse! as TestCaseTag)
+      } else {
+        this.createdTag.emit(this.tagToUse! as TestCaseTag)
+      }
+      this.cancel();
     }
-    this.cancel();
   }
 
   cancel() {

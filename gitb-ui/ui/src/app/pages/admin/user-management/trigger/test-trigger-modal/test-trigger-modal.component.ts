@@ -22,6 +22,7 @@ import { TriggerService } from 'src/app/services/trigger.service';
 import { Subscription } from 'rxjs';
 import { Constants } from 'src/app/common/constants';
 import {BaseComponent} from '../../../../base-component.component';
+import {CodemirrorComponent} from '@ctrl/ngx-codemirror';
 
 @Component({
     selector: 'app-test-trigger-modal',
@@ -81,7 +82,7 @@ export class TestTriggerModalComponent extends BaseComponent implements OnInit {
   }
 
   callService() {
-    if (this.url) {
+    if (this.editStep && this.url) {
       this.actionPending = true
       this.callSubscription = this.triggerService.test(this.url, this.serviceType, this.request, this.communityId)
         .subscribe((data) => {
@@ -142,4 +143,9 @@ export class TestTriggerModalComponent extends BaseComponent implements OnInit {
     }
     this.modalRef.hide()
   }
+
+  requestEditorLoaded(editor: CodemirrorComponent) {
+    this.dataService.addControlSubmitBehaviourToCodeEditor(editor)
+  }
+
 }

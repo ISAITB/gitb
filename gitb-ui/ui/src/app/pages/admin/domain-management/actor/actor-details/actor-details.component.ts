@@ -142,14 +142,16 @@ export class ActorDetailsComponent extends BaseTabbedComponent implements OnInit
   }
 
   saveChanges() {
-    this.savePending = true
-    this.actorService.updateActor(this.actorId, this.actor.actorId!, this.actor.name!, this.actor.description, this.actor.reportMetadata, this.actor.default, this.actor.hidden, this.actor.displayOrder, this.domainId, this.specificationId, this.actor.badges!)
-    .subscribe(() => {
-      this.popupService.success(this.dataService.labelActor()+' updated.')
-      this.dataService.breadcrumbUpdate({id: this.actorId, type: BreadcrumbType.actor, label: this.actor.actorId!})
-    }).add(() => {
-      this.savePending = false
-    })
+    if (!this.saveDisabled()) {
+      this.savePending = true
+      this.actorService.updateActor(this.actorId, this.actor.actorId!, this.actor.name!, this.actor.description, this.actor.reportMetadata, this.actor.default, this.actor.hidden, this.actor.displayOrder, this.domainId, this.specificationId, this.actor.badges!)
+        .subscribe(() => {
+          this.popupService.success(this.dataService.labelActor()+' updated.')
+          this.dataService.breadcrumbUpdate({id: this.actorId, type: BreadcrumbType.actor, label: this.actor.actorId!})
+        }).add(() => {
+        this.savePending = false
+      })
+    }
   }
 
   back() {
@@ -158,6 +160,7 @@ export class ActorDetailsComponent extends BaseTabbedComponent implements OnInit
 
   saveDisabled() {
     return !(
+      !this.savePending &&
       this.loaded &&
       this.textProvided(this.actor?.actorId) &&
       this.textProvided(this.actor?.name) &&

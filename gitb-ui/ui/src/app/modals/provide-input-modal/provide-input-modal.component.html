@@ -1,7 +1,7 @@
 <div class="modal-header">
     <div class="modal-title" id="myModalLabel">{{inputTitle}}</div>
 </div>
-<form>
+<form (ngSubmit)="submit()">
 	<div class="modal-body provide-input-body" style="overflow-x: auto; overflow-y: hidden;" appFileDropTarget>
 		@for (interaction of interactions; let first = $first, index = $index; track index) {
 			<div>
@@ -42,11 +42,11 @@
 									}
 									@case ("CODE") {
 										<!-- Code editor -->
-										<ngx-codemirror #codeMirror (focusChange)="codeEditorFocus($event, 'input-'+index)" [name]="'input-'+index" [attr.id]="'input-'+index" [(ngModel)]="interaction.data" [options]="{lineNumbers:true, smartIndent: false, electricChars: false, mode: interaction.mimeType}" [ngClass]="{'focused': editorFocus['input-'+index]}"  [invalid]="validation.get('input_'+index)"></ngx-codemirror>
+										<ngx-codemirror #codeMirror (focusChange)="codeEditorFocus($event, 'input-'+index)" [name]="'input-'+index" [attr.id]="'input-'+index" [(ngModel)]="interaction.data" [options]="{lineNumbers:true, smartIndent: false, electricChars: false, mode: interaction.mimeType}" (codeMirrorLoaded)="editorInitialized($event)" [ngClass]="{'focused': editorFocus['input-'+index]}"  [invalid]="validation.get('input_'+index)"></ngx-codemirror>
 									}
 									@case ("MULTILINE_TEXT") {
 										<!-- Text area -->
-										<textarea [name]="'input-'+index" [attr.id]="'input-'+index" class="form-control" [attr.rows]="(interaction.size != undefined && interaction.size > 1)?interaction.size:null" [(ngModel)]="interaction.data" [invalid]="validation.get('input_'+index)"></textarea>
+										<textarea ctrlEnterSubmit [name]="'input-'+index" [attr.id]="'input-'+index" class="form-control" [attr.rows]="(interaction.size != undefined && interaction.size > 1)?interaction.size:null" [(ngModel)]="interaction.data" [invalid]="validation.get('input_'+index)"></textarea>
 									}
 									@case ("SECRET") {
 										<!-- Secret -->
@@ -81,7 +81,7 @@
 			<button type="button" (click)="minimise()" class="btn btn-secondary">Minimise</button>
 			@if (needsInput) {
 				<button type="button" (click)="reset()" class="btn btn-secondary">Reset</button>
-				<button type="submit" (click)="submit()" class="btn btn-secondary">Submit</button>
+				<button type="submit" class="btn btn-secondary">Submit</button>
 			} @else {
 				<button type="button" (click)="close()" class="btn btn-secondary">Close</button>
 			}

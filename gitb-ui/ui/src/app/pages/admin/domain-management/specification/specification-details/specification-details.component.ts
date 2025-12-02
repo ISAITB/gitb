@@ -391,18 +391,20 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
   }
 
 	saveSpecificationChanges() {
-    this.savePending = true
-		this.specificationService.updateSpecification(this.specificationId, this.specification.sname!, this.specification.fname!, this.specification.description, this.specification.reportMetadata, this.specification.hidden, this.specification.group, this.specification.badges!)
-		.subscribe(() => {
-			this.popupService.success(this.dataService.labelSpecification()+' updated.')
-      this.dataService.breadcrumbUpdate({id: this.specificationId, type: BreadcrumbType.specification, label: this.breadcrumbLabel()})
-    }).add(() => {
-      this.savePending = false
-    })
+    if (!this.saveDisabled()) {
+      this.savePending = true
+      this.specificationService.updateSpecification(this.specificationId, this.specification.sname!, this.specification.fname!, this.specification.description, this.specification.reportMetadata, this.specification.hidden, this.specification.group, this.specification.badges!)
+        .subscribe(() => {
+          this.popupService.success(this.dataService.labelSpecification()+' updated.')
+          this.dataService.breadcrumbUpdate({id: this.specificationId, type: BreadcrumbType.specification, label: this.breadcrumbLabel()})
+        }).add(() => {
+        this.savePending = false
+      })
+    }
   }
 
 	saveDisabled() {
-    return !(
+    return !this.loaded || this.deletePending || this.savePending || !(
       this.textProvided(this.specification?.sname) &&
       this.textProvided(this.specification?.fname) &&
       this.dataService.badgesValid(this.specification?.badges)

@@ -292,6 +292,7 @@ import { DataManagementComponent } from './pages/admin/data-management/data-mana
 import { StartupWizardModalComponent } from './modals/startup-wizard-modal/startup-wizard-modal.component';
 import { RadioCardComponent } from './components/radio-card/radio-card.component';
 import { UsageTipModalComponent } from './modals/usage-tip-modal/usage-tip-modal.component';
+import {SubmitOnControlEnterDirective} from './directives/submit-on-control-enter.directive';
 
 @NgModule({ declarations: [
         AppComponent,
@@ -496,26 +497,27 @@ import { UsageTipModalComponent } from './modals/usage-tip-modal/usage-tip-modal
         UsageTipModalComponent
     ],
     bootstrap: [AppComponent], imports: [
-    NgxColorPickerComponent,
-    ColorPickerDirective,
-    BrowserModule,
-    BrowserAnimationsModule,
-    EditorModule,
-    FormsModule,
-    AppRoutingModule,
-    DragDropModule,
-    SimpleNotificationsModule.forRoot(),
-    ModalModule.forRoot(),
-    TooltipModule.forRoot(),
-    AlertModule.forRoot(),
-    CollapseModule.forRoot(),
-    BsDatepickerModule.forRoot(),
-    CodemirrorModule,
-    BsDropdownModule.forRoot(),
-    PopoverModule.forRoot(),
-    TabsModule.forRoot(),
-    MarkdownModule.forRoot()
-  ], providers: [
+        NgxColorPickerComponent,
+        ColorPickerDirective,
+        BrowserModule,
+        BrowserAnimationsModule,
+        EditorModule,
+        FormsModule,
+        AppRoutingModule,
+        DragDropModule,
+        SimpleNotificationsModule.forRoot(),
+        ModalModule.forRoot(),
+        TooltipModule.forRoot(),
+        AlertModule.forRoot(),
+        CollapseModule.forRoot(),
+        BsDatepickerModule.forRoot(),
+        CodemirrorModule,
+        BsDropdownModule.forRoot(),
+        PopoverModule.forRoot(),
+        TabsModule.forRoot(),
+        MarkdownModule.forRoot(),
+        SubmitOnControlEnterDirective
+    ], providers: [
         CookieService,
         { provide: HUGERTE_SCRIPT_SRC, useValue: 'hugerte/hugerte.min.js' },
         provideHttpClient(withInterceptorsFromDi())

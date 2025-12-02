@@ -296,4 +296,8 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
     return false
   }
 
+  editorInitialized(editor: CodemirrorComponent) {
+    this.dataService.addControlSubmitBehaviourToCodeEditor(editor)
+  }
+
 }

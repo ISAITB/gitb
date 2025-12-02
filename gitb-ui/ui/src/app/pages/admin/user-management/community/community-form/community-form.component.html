@@ -107,7 +107,7 @@
                     </div>
                     <div class="mt-3 row">
                         <div class="offset-3 col-7">
-                            <textarea id="description" name="description" [(ngModel)]="community.activeDescription" class="form-control" [readonly]="community.sameDescriptionAsDomain" (blur)="setSameDescription()"></textarea>
+                            <textarea ctrlEnterSubmit id="description" name="description" [(ngModel)]="community.activeDescription" class="form-control" [readonly]="community.sameDescriptionAsDomain" (blur)="setSameDescription()"></textarea>
                         </div>
                          <div class="col-auto" app-tooltip tbTooltip="This description will be displayed in the self-registration screen to explain to prospective members the community's context and purpose."></div>
                     </div>

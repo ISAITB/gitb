@@ -10,7 +10,7 @@
         <div class="row mt-3">
             <label class="col-3 col-form-label text-end" for="specDescription">Description:</label>
             <div class="col-7">
-                <textarea id="specDescription" name="specDescription" [(ngModel)]="reference.specDescription" class="form-control"></textarea>
+                <textarea ctrlEnterSubmit id="specDescription" name="specDescription" [(ngModel)]="reference.specDescription" class="form-control"></textarea>
             </div>
             <div app-tooltip class="col-auto" tbTooltip="A description summarising briefly the referenced specification. This will be displayed as supporting text in all listings and reports."></div>
         </div>
@@ -20,7 +20,7 @@
                 <div class="input-group">
                     <input id="specLink" name="specLink" [(ngModel)]="reference.specLink" class="form-control" type="text">
                     <a [href]="reference.specLink" target="blank" class="btn btn-secondary" [class.disabled]="reference.specLink == undefined || reference.specLink.length == 0" role="button" containerClass="shortTooltip" container="body" tooltip="Visit" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
-                        <i class="fa-solid fa-up-right-from-square"></i>                        
+                        <i class="fa-solid fa-up-right-from-square"></i>
                     </a>
                 </div>
             </div>

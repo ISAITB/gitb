@@ -1,7 +1,7 @@
 <div class="modal-header">
     <div class="modal-title">{{title}}</div>
 </div>
-<form>
+<form (ngSubmit)="save()">
     <div class="modal-body" appFileDropTarget>
         <div class="row mb-3">
             <label class="col-3 col-form-label text-end" for="name">* Name:</label>
@@ -11,7 +11,7 @@
         <div class="row mb-3">
             <label class="col-3 col-form-label text-end" for="parameterDescription">Description:</label>
             <div class="col-7">
-                <textarea id="parameterDescription" name="parameterDescription" [(ngModel)]="domainParameter.description" class="form-control"></textarea>
+                <textarea ctrlEnterSubmit id="parameterDescription" name="parameterDescription" [(ngModel)]="domainParameter.description" class="form-control"></textarea>
             </div>
             <div app-tooltip class="col-auto" tbTooltip="A text describing the purpose of this parameter."></div>
         </div>
@@ -95,7 +95,7 @@
         }
         <div class="btn-toolbar">
             <button class="btn btn-secondary" type="button" (click)="cancel()" [disabled]="pending">Cancel</button>
-            <button class="btn btn-secondary" type="submit" (click)="save()" [disable]="!saveAllowed()" [pending]="savePending">Save</button>
+            <button class="btn btn-secondary" type="submit" [disable]="!saveAllowed()" [pending]="savePending">Save</button>
         </div>
     </div>
 </form>

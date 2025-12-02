@@ -87,7 +87,7 @@ export class CreateEditDomainParameterModalComponent extends BaseComponent imple
   }
 
   saveAllowed() {
-    return this.textProvided(this.domainParameter.name) && this.domainParameter.kind != undefined && (
+    return !this.pending && this.textProvided(this.domainParameter.name) && this.domainParameter.kind != undefined && (
       (this.domainParameter.kind == 'SIMPLE' && this.textProvided(this.domainParameter.value)) ||
       (this.domainParameter.kind == 'BINARY' && (this.formData.file != undefined || (this.domainParameter.id != undefined && this.initialFileName != undefined))) ||
       (this.domainParameter.kind == 'HIDDEN' && (!this.formData.updateValue || this.textProvided(this.formData.hiddenValue)))
@@ -95,8 +95,8 @@ export class CreateEditDomainParameterModalComponent extends BaseComponent imple
   }
 
   save() {
-    this.validation.clearErrors()
     if (this.saveAllowed()) {
+      this.validation.clearErrors()
       if (!Constants.VARIABLE_NAME_REGEX.test(this.domainParameter.name!)) {
         this.validation.invalid('name', 'A parameter name must begin with a character followed by zero or more characters, digits, or one of [\'.\', \'_\', \'-\'].')
       } else {

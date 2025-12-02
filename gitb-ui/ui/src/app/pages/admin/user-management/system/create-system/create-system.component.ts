@@ -80,7 +80,7 @@ export class CreateSystemComponent extends BaseComponent implements OnInit, Afte
   }
 
   saveEnabled() {
-    return this.textProvided(this.system.sname) && this.textProvided(this.system.fname)
+    return !this.savePending && this.loaded && this.textProvided(this.system.sname) && this.textProvided(this.system.fname)
   }
 
   create() {

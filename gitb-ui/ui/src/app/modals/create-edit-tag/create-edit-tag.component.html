@@ -1,7 +1,7 @@
 <div class="modal-header">
     <div class="modal-title">{{title}}</div>
 </div>
-<form>
+<form (ngSubmit)="save()">
     <div class="modal-body">
         <div class="row mb-3">
             <label class="col-3 col-form-label text-end" for="nameIdentifier">* Name:</label>
@@ -33,7 +33,7 @@
         <div class="row">
             <label class="col-3 col-form-label text-end" for="description">Description:</label>
             <div class="col-7">
-                <textarea id="description" name="description" [(ngModel)]="tagToUse.description" class="form-control"></textarea>
+                <textarea ctrlEnterSubmit id="description" name="description" [(ngModel)]="tagToUse.description" class="form-control"></textarea>
             </div>
             <div app-tooltip class="col-auto" tbTooltip="A text describing what this tag means. This will be displayed as a tooltip when hovering over the tag."></div>
         </div>
@@ -41,7 +41,7 @@
     <div class="modal-footer">
         <div class="btn-toolbar">
             <button class="btn btn-secondary" type="button" (click)="cancel()">Cancel</button>
-            <button class="btn btn-secondary" type="submit" (click)="save()" [disabled]="saveDisabled()">Save</button>
+            <button class="btn btn-secondary" type="submit" [disabled]="saveDisabled()">Save</button>
         </div>
     </div>
 </form>

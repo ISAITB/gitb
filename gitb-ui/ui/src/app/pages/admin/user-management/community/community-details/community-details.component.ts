@@ -313,7 +313,7 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
   }
 
   saveDisabled() {
-    return !(this.textProvided(this.community.sname) && this.textProvided(this.community.fname) &&
+    return !this.loaded || this.deletePending || this.savePending || !(this.textProvided(this.community.sname) && this.textProvided(this.community.fname) &&
       (!this.dataService.configuration.registrationEnabled ||
         (this.community.selfRegType == Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED ||
           (
@@ -345,33 +345,35 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
   }
 
   updateCommunity() {
-    this.validation.clearErrors()
-    const emailValid = !this.textProvided(this.community.email) || this.isValidEmail(this.community.email)
-    if (!emailValid) {
-      this.validation.invalid("supportEmail", "Please enter a valid support email.")
-    }
-    const notificationValid = !this.community.selfRegNotification || this.textProvided(this.community.email)
-    if (!notificationValid) {
-      this.validation.invalid("supportEmail", "A support email needs to be defined to support notifications.")
-    }
-    if (emailValid && notificationValid) {
-      let descriptionToUse: string|undefined
-      if (!this.community.sameDescriptionAsDomain) {
-        descriptionToUse = this.community.activeDescription
+    if (!this.saveDisabled()) {
+      this.validation.clearErrors()
+      const emailValid = !this.textProvided(this.community.email) || this.isValidEmail(this.community.email)
+      if (!emailValid) {
+        this.validation.invalid("supportEmail", "Please enter a valid support email.")
       }
-      if ((this.originalDomainId == undefined && this.community.domain?.id != undefined) || (this.originalDomainId != undefined && this.community.domain?.id != undefined && this.originalDomainId != this.community.domain?.id)) {
-        let confirmationMessage: string
-        if (this.originalDomainId == undefined) {
-          confirmationMessage = "Setting the "+this.dataService.labelDomainLower()+" will remove existing conformance statements linked to other "+this.dataService.labelDomainsLower()+". Are you sure you want to proceed?"
-        } else {
-          confirmationMessage = "Changing the "+this.dataService.labelDomainLower()+" will remove all existing conformance statements. Are you sure you want to proceed?"
+      const notificationValid = !this.community.selfRegNotification || this.textProvided(this.community.email)
+      if (!notificationValid) {
+        this.validation.invalid("supportEmail", "A support email needs to be defined to support notifications.")
+      }
+      if (emailValid && notificationValid) {
+        let descriptionToUse: string|undefined
+        if (!this.community.sameDescriptionAsDomain) {
+          descriptionToUse = this.community.activeDescription
         }
-        this.confirmationDialogService.confirmedDangerous("Confirm "+this.dataService.labelDomainLower()+" change", confirmationMessage, "Change", "Cancel")
-        .subscribe(() => {
+        if ((this.originalDomainId == undefined && this.community.domain?.id != undefined) || (this.originalDomainId != undefined && this.community.domain?.id != undefined && this.originalDomainId != this.community.domain?.id)) {
+          let confirmationMessage: string
+          if (this.originalDomainId == undefined) {
+            confirmationMessage = "Setting the "+this.dataService.labelDomainLower()+" will remove existing conformance statements linked to other "+this.dataService.labelDomainsLower()+". Are you sure you want to proceed?"
+          } else {
+            confirmationMessage = "Changing the "+this.dataService.labelDomainLower()+" will remove all existing conformance statements. Are you sure you want to proceed?"
+          }
+          this.confirmationDialogService.confirmedDangerous("Confirm "+this.dataService.labelDomainLower()+" change", confirmationMessage, "Change", "Cancel")
+            .subscribe(() => {
+              this.updateCommunityInternal(descriptionToUse)
+            })
+        } else {
           this.updateCommunityInternal(descriptionToUse)
-        })
-      } else {
-        this.updateCommunityInternal(descriptionToUse)
+        }
       }
     }
   }

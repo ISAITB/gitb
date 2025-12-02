@@ -81,17 +81,19 @@ export class CreateErrorTemplateComponent extends BaseComponent implements OnIni
   }
 
   saveDisabled() {
-    return !this.textProvided(this.template.name) || !this.textProvided(this.template.content)
+    return this.savePending || !this.textProvided(this.template.name) || !this.textProvided(this.template.content)
   }
 
   createErrorTemplate() {
-    if (this.template.default) {
-      this.confirmationDialogService.confirmed("Confirm default", "You are about to change the default error template. Are you sure?", "Change", "Cancel")
-      .subscribe(() => {
+    if (!this.saveDisabled()) {
+      if (this.template.default) {
+        this.confirmationDialogService.confirmed("Confirm default", "You are about to change the default error template. Are you sure?", "Change", "Cancel")
+          .subscribe(() => {
+            this.doCreate()
+          })
+      } else {
         this.doCreate()
-      })
-    } else {
-      this.doCreate()
+      }
     }
   }
 

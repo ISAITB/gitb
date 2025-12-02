@@ -7,7 +7,7 @@
         </div>
         <div class="row mt-3">
             <label class="col-3 col-form-label text-end" for="description">Description:</label>
-            <div class="col-7"><textarea id="description" name="description" [(ngModel)]="theme.description" class="form-control" [readonly]="readonly"></textarea></div>
+            <div class="col-7"><textarea ctrlEnterSubmit id="description" name="description" [(ngModel)]="theme.description" class="form-control" [readonly]="readonly"></textarea></div>
             <div app-tooltip class="col-auto" tbTooltip="A description to explain the purpose and concept of this theme."></div>
         </div>
         <div class="row mt-3">
@@ -28,7 +28,7 @@
                 <div class="col-10">
                     <div class="row gy-2 gx-3 align-items-center">
                         <div class="col-auto">
-                            <app-color-picker 
+                            <app-color-picker
                                 label="Header background"
                                 tooltipText="The background colour for the header displayed on the top of each page."
                                 [(ngModel)]="theme.headerBackgroundColor"
@@ -36,7 +36,7 @@
                             ></app-color-picker>
                         </div>
                         <div class="col-auto">
-                            <app-color-picker 
+                            <app-color-picker
                                 label="Header border"
                                 tooltipText="The colour of the border appearing at the bottom of the header."
                                 [(ngModel)]="theme.headerBorderColor"
@@ -180,7 +180,7 @@
                             <input type="text" class="form-control" readonly="readonly" [value]="faviconNameToShow">
                             <button type="button" class="btn btn-secondary" [pending]="faviconDownloadPending" [icon]="true" (click)="downloadFavicon()" containerClass="shortTooltip" container="body" tooltip="Download" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-download"></i></button>
                             <button type="button" class="btn btn-secondary" (click)="previewThemeResource(theme.faviconFile, theme.faviconPath, 'Favicon preview')" containerClass="shortTooltip" container="body" tooltip="Preview" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-magnifying-glass"></i></button>
-                        </div>                
+                        </div>
                     } @else {
                         <app-file-select [fileName]="faviconNameToShow" (onUpload)="selectFavicon($event)" [accepts]="acceptedFileTypes" [extraActions]="true" [validation]="validation.get('faviconFile')">
                             <button type="button" class="btn btn-secondary" [pending]="faviconDownloadPending" [icon]="true" (click)="downloadFavicon()" containerClass="shortTooltip" container="body" tooltip="Download" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-download"></i></button>

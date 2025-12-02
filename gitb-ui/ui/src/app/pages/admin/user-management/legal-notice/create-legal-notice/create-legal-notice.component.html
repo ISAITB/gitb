@@ -3,7 +3,7 @@
         <div class="card-header">
             <div class="card-title">Create legal notice</div>
         </div>
-        <form>
+        <form (ngSubmit)="createLegalNotice()">
             <div class="card-body">
                 <!-- legal notice form -->
                 <div class="row">
@@ -15,7 +15,7 @@
                         </div>
                         <div class="row mb-3">
                             <label class="col-3 col-form-label text-end" for="description">Description:</label>
-                            <div class="col-7"><textarea id="description" name="description" [(ngModel)]="notice.description" class="form-control"></textarea></div>
+                            <div class="col-7"><textarea ctrlEnterSubmit id="description" name="description" [(ngModel)]="notice.description" class="form-control"></textarea></div>
                             <div app-tooltip class="col-auto" tbTooltip="A description that will be visible only to administrators to help distinguish this legal notice and summarise its purpose."></div>
                         </div>
                         <div class="row mb-3 pt-1">
@@ -42,7 +42,7 @@
             </div>
             <div class="card-footer">
                 <div class="btn-toolbar">
-                    <button class="btn btn-secondary" type="submit" (click)="createLegalNotice()" [disable]="saveDisabled()" [pending]="savePending">Save</button>
+                    <button class="btn btn-secondary" type="submit" [disable]="saveDisabled()" [pending]="savePending">Save</button>
                     <button class="btn btn-secondary" type="button" (click)="preview()" [disabled]="!textProvided(notice.content)">Preview</button>
                     <button class="btn btn-secondary" type="button" (click)="cancelCreateLegalNotice()">Cancel</button>
                 </div>

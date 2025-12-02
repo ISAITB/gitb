@@ -3,7 +3,7 @@
         <div class="card-header">
             <div class="card-title">Create error template</div>
         </div>
-        <form>
+        <form (ngSubmit)="createErrorTemplate()">
             <div class="card-body">
                 <!-- error template form -->
                 <div class="row">
@@ -15,7 +15,7 @@
                         </div>
                         <div class="row mb-3">
                             <label class="col-3 col-form-label text-end" for="description">Description:</label>
-                            <div class="col-7"><textarea id="description" name="description" [(ngModel)]="template.description" class="form-control"></textarea></div>
+                            <div class="col-7"><textarea ctrlEnterSubmit id="description" name="description" [(ngModel)]="template.description" class="form-control"></textarea></div>
                             <div app-tooltip class="col-auto" tbTooltip="A description that will be visible only to administrators to help distinguish this error template and summarise its purpose."></div>
                         </div>
                         <div class="row mb-3 pt-1">
@@ -42,7 +42,7 @@
             </div>
             <div class="card-footer">
                 <div class="btn-toolbar">
-                    <button class="btn btn-secondary" type="submit" (click)="createErrorTemplate()" [disable]="saveDisabled()" [pending]="savePending">Save</button>
+                    <button class="btn btn-secondary" type="submit" [disable]="saveDisabled()" [pending]="savePending">Save</button>
                     <button class="btn btn-secondary" type="button" (click)="preview()" [disabled]="!textProvided(template.content)">Preview</button>
                     <button class="btn btn-secondary" type="button" (click)="cancelCreateErrorTemplate()">Cancel</button>
                 </div>

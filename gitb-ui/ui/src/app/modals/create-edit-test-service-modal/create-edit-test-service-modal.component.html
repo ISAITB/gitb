@@ -16,7 +16,7 @@
 <div class="modal-header">
     <div class="modal-title">{{title}}</div>
 </div>
-<form>
+<form (ngSubmit)="save()">
     <div class="modal-body">
         <div class="row mb-3">
             <label class="col-3 col-form-label text-end" for="name">* Test identifier:</label>
@@ -26,7 +26,7 @@
         <div class="row mb-3">
             <label class="col-3 col-form-label text-end" for="serviceDescription">Description:</label>
             <div class="col-7">
-                <textarea id="serviceDescription" name="serviceDescription" [(ngModel)]="testService.parameter!.description" class="form-control"></textarea>
+                <textarea ctrlEnterSubmit id="serviceDescription" name="serviceDescription" [(ngModel)]="testService.parameter!.description" class="form-control"></textarea>
             </div>
             <div app-tooltip class="col-auto" tbTooltip="A text describing the purpose of this test service."></div>
         </div>
@@ -179,8 +179,8 @@
         }
         <div class="btn-toolbar">
             <button class="btn btn-secondary" type="button" (click)="cancel()" [disabled]="pending">Cancel</button>
-            <button class="btn btn-secondary" type="submit" (click)="test()" [disable]="pending || !serviceSettingsOk()" [pending]="testPending">Test</button>
-            <button class="btn btn-secondary" type="submit" (click)="save()" [disable]="pending || !saveAllowed()" [pending]="savePending">Save</button>
+            <button class="btn btn-secondary" type="button" (click)="test()" [disable]="pending || !serviceSettingsOk()" [pending]="testPending">Test</button>
+            <button class="btn btn-secondary" type="submit" [disable]="pending || !saveAllowed()" [pending]="savePending">Save</button>
         </div>
     </div>
 </form>

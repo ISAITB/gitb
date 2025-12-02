@@ -52,6 +52,7 @@ import {ConformanceTestCaseGroup} from '../pages/organisation/conformance-statem
 import {MenuItemStatusChange} from '../types/menu-item-status-change';
 import {MenuItem} from '../types/menu-item.enum';
 import {MenuItemStatus} from '../types/menu-item-status.enum';
+import {CodemirrorComponent} from '@ctrl/ngx-codemirror';
 
 @Injectable({
   providedIn: 'root'
@@ -1905,6 +1906,23 @@ export class DataService {
         sessionStorage.removeItem(key)
       })
     }
+  }
+
+  addControlSubmitBehaviourToCodeEditor(editor: CodemirrorComponent) {
+    if (editor.codeMirror) {
+      editor.codeMirror.on('keydown', (cm: any, event: KeyboardEvent) => {
+        // Detect Ctrl + Enter
+        if (event.ctrlKey && event.key === 'Enter') {
+          event.preventDefault();
+          // Find nearest form and submit
+          const form = (cm.getWrapperElement() as HTMLElement).closest('form');
+          if (form) {
+            form.requestSubmit(); // triggers ngSubmit
+          }
+        }
+      });
+    }
+
   }
 
 }

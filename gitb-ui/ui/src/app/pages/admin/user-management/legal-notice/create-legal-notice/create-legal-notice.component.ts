@@ -74,17 +74,19 @@ export class CreateLegalNoticeComponent extends BaseComponent implements OnInit,
   }
 
   saveDisabled() {
-    return !this.textProvided(this.notice.name) || !this.textProvided(this.notice.content)
+    return this.savePending || !this.textProvided(this.notice.name) || !this.textProvided(this.notice.content)
   }
 
   createLegalNotice() {
-    if (this.notice.default) {
-      this.confirmationDialogService.confirmed("Confirm default", "You are about to change the default legal notice. Are you sure?", "Change", "Cancel")
-      .subscribe(() => {
+    if (!this.saveDisabled()) {
+      if (this.notice.default) {
+        this.confirmationDialogService.confirmed("Confirm default", "You are about to change the default legal notice. Are you sure?", "Change", "Cancel")
+          .subscribe(() => {
+            this.doCreate()
+          })
+      } else {
         this.doCreate()
-      })
-    } else {
-      this.doCreate()
+      }
     }
   }
 

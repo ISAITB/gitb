@@ -89,18 +89,20 @@ export class EndpointDetailsComponent extends BaseComponent implements OnInit {
   }
 
 	saveChanges() {
-    this.savePending = true
-		this.endpointService.updateEndPoint(this.endpointId, this.endpoint.name!, this.endpoint.description, this.actorId)
-    .subscribe(() => {
-      this.popupService.success(this.dataService.labelEndpoint()+' updated.')
-      this.dataService.breadcrumbUpdate({id: this.endpointId, type: BreadcrumbType.endpoint, label: this.endpoint.name!})
-    }).add(() => {
-      this.savePending = false
-    })
+    if (!this.saveDisabled()) {
+      this.savePending = true
+      this.endpointService.updateEndPoint(this.endpointId, this.endpoint.name!, this.endpoint.description, this.actorId)
+        .subscribe(() => {
+          this.popupService.success(this.dataService.labelEndpoint()+' updated.')
+          this.dataService.breadcrumbUpdate({id: this.endpointId, type: BreadcrumbType.endpoint, label: this.endpoint.name!})
+        }).add(() => {
+        this.savePending = false
+      })
+    }
   }
 
 	saveDisabled() {
-		return !this.textProvided(this.endpoint?.name)
+		return !this.loaded || this.deletePending || this.savePending || !this.textProvided(this.endpoint?.name)
   }
 
 	back() {

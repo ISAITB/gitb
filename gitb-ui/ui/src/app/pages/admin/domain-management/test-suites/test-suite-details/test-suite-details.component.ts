@@ -254,14 +254,16 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
   }
 
 	saveChanges() {
-    this.clearAlerts()
-    this.savePending = true
-		this.testSuiteService.updateTestSuiteMetadata(this.testSuite.id!, this.testSuite.sname!, this.testSuite.description, this.testSuite.documentation, this.testSuite.version!, this.testSuite.specReference, this.testSuite.specDescription, this.testSuite.specLink)
-    .subscribe(() => {
-      this.popupService.success('Test suite updated.')
-    }).add(() => {
-      this.savePending = false
-    })
+    if (!this.saveDisabled()) {
+      this.clearAlerts()
+      this.savePending = true
+      this.testSuiteService.updateTestSuiteMetadata(this.testSuite.id!, this.testSuite.sname!, this.testSuite.description, this.testSuite.documentation, this.testSuite.version!, this.testSuite.specReference, this.testSuite.specDescription, this.testSuite.specLink)
+        .subscribe(() => {
+          this.popupService.success('Test suite updated.')
+        }).add(() => {
+        this.savePending = false
+      })
+    }
   }
 
 	back() {
@@ -273,7 +275,7 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
   }
 
 	saveDisabled() {
-    return !this.textProvided(this.testSuite?.sname) || !this.textProvided(this.testSuite?.version)
+    return !this.loaded || this.savePending || !this.textProvided(this.testSuite?.sname) || !this.textProvided(this.testSuite?.version)
   }
 
 	onTestCaseSelect(testCaseId: number) {

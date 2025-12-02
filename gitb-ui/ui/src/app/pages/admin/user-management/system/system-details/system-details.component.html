@@ -3,7 +3,7 @@
         <div class="card-header">
             <div class="card-title">{{dataService.labelSystem()}} details</div>
         </div>
-        <form>
+        <form (ngSubmit)="update()">
             <div class="card-body" [pending]="!loaded" focus="sname">
                 <app-system-form
                     [system]="system"
@@ -17,7 +17,7 @@
             <div class="card-footer button-container">
                 <div class="btn-toolbar">
                     @if (!readonly) {
-                        <button class="btn btn-secondary" type="submit" (click)="update()" [disable]="!loaded || deletePending || !saveEnabled()" [pending]="savePending">Update</button>
+                        <button class="btn btn-secondary" type="submit" [disable]="!saveEnabled()" [pending]="savePending">Update</button>
                     }
                     <button class="btn btn-secondary" type="button" (click)="manageSystemTests()">Manage tests</button>
                     <button class="btn btn-secondary" type="button" (click)="cancel()">Back</button>

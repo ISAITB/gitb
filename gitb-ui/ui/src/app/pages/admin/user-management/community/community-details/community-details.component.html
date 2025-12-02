@@ -3,13 +3,13 @@
         <div class="card-header">
             <div class="card-title">Community details</div>
         </div>
-        <form>
+        <form (ngSubmit)="updateCommunity()">
             <div class="card-body" [pending]="!loaded" focus="sname">
                 <app-community-form [community]="community" [admin]="dataService.isSystemAdmin" [domains]="domains" [validation]="validation"></app-community-form>
             </div>
             <div class="card-footer button-container">
                 <div class="btn-toolbar">
-                    <button class="btn btn-secondary" type="submit" (click)="updateCommunity()" [disable]="!loaded || deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
+                    <button class="btn btn-secondary" type="submit" [disable]="saveDisabled()" [pending]="savePending">Save changes</button>
                     <button class="btn btn-secondary" type="button" (click)="updateReportSettings()" [disabled]="!loaded || savePending || deletePending">Manage report settings</button>
                     <button class="btn btn-secondary" type="button" (click)="updateParameters()" [disabled]="!loaded || savePending || deletePending">Manage configuration properties</button>
                     <button class="btn btn-secondary" type="button" (click)="editLabels()" [disabled]="!loaded || savePending || deletePending">Manage labels</button>

@@ -87,17 +87,19 @@ export class ErrorTemplateDetailsComponent extends BaseComponent implements OnIn
   }
 
   saveDisabled() {
-    return !this.loaded || !this.textProvided(this.template.name) || !this.textProvided(this.template.content)
+    return !this.loaded || this.savePending || !this.textProvided(this.template.name) || !this.textProvided(this.template.content)
   }
 
   updateErrorTemplate(copy: boolean) {
-    if (!this.isDefault && this.template.default) {
-      this.confirmationDialogService.confirmed("Confirm default", "You are about to change the default error template. Are you sure?", "Yes", "No")
-      .subscribe(() => {
+    if (!this.saveDisabled()) {
+      if (!this.isDefault && this.template.default) {
+        this.confirmationDialogService.confirmed("Confirm default", "You are about to change the default error template. Are you sure?", "Yes", "No")
+          .subscribe(() => {
+            this.doUpdate(copy)
+          })
+      } else {
         this.doUpdate(copy)
-      })
-    } else {
-      this.doUpdate(copy)
+      }
     }
   }
 
