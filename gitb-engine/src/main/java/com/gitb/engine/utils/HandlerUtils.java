@@ -24,15 +24,14 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.exceptions.GITBEngineInternalError;
-import com.gitb.types.BooleanType;
-import com.gitb.types.DataType;
-import com.gitb.types.MapType;
-import com.gitb.types.StringType;
+import com.gitb.tr.*;
+import com.gitb.types.*;
 import com.gitb.utils.TestSessionNamespaceContext;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonSyntaxException;
+import jakarta.xml.bind.JAXBElement;
 
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpression;
@@ -40,8 +39,11 @@ import javax.xml.xpath.XPathExpressionException;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
 
 public class HandlerUtils {
 
@@ -173,6 +175,80 @@ public class HandlerUtils {
             }
             scope.createVariable(timeoutFlag).setValue(new BooleanType(timeoutOccurred));
         }
+    }
+
+    public static void addReportItemMapToReport(DataType reportItems, TAR report, boolean setResult, Optional<ObjectFactory> objectFactory) {
+        if (report != null && reportItems instanceof MapType reportItemMap) {
+            DataType informationItemData = reportItemMap.getItem("info");
+            DataType warningItemData = reportItemMap.getItem("warning");
+            DataType errorItemData = reportItemMap.getItem("error");
+            ObjectFactory factoryToUse = objectFactory.orElseGet(ObjectFactory::new);
+            if (informationItemData != null || warningItemData != null || errorItemData != null) {
+                if (report.getReports() == null) {
+                    report.setReports(new TestAssertionGroupReportsType());
+                }
+            }
+            int errorCount = addReportItemsToReport(errorItemData, report, factoryToUse::createTestAssertionGroupReportsTypeError);
+            int warningCount = addReportItemsToReport(warningItemData, report, factoryToUse::createTestAssertionGroupReportsTypeWarning);
+            int infoCount = addReportItemsToReport(informationItemData, report, factoryToUse::createTestAssertionGroupReportsTypeInfo);
+            ValidationCounters counters = report.getCounters();
+            if (report.getCounters() == null) {
+                counters = new ValidationCounters();
+                report.setCounters(counters);
+            }
+            int totalErrorCount = errorCount + ((counters.getNrOfErrors() == null)?0:counters.getNrOfErrors().intValue());
+            int totalWarningCount = warningCount + ((counters.getNrOfWarnings() == null)?0:counters.getNrOfWarnings().intValue());
+            int totalInfoCount = infoCount + ((counters.getNrOfAssertions() == null)?0:counters.getNrOfAssertions().intValue());
+            counters.setNrOfErrors(BigInteger.valueOf(totalErrorCount));
+            counters.setNrOfWarnings(BigInteger.valueOf(totalWarningCount));
+            counters.setNrOfAssertions(BigInteger.valueOf(totalInfoCount));
+            if (setResult) {
+                // The result is fully based on the items in the report.
+                if (totalErrorCount > 0) {
+                    report.setResult(TestResultType.FAILURE);
+                } else if (totalWarningCount > 0) {
+                    report.setResult(TestResultType.WARNING);
+                } else {
+                    report.setResult(TestResultType.SUCCESS);
+                }
+            } else {
+                // The result is determined regardless of the report items, but we check the items and override the result to ensure consistency.
+                if (totalErrorCount > 0 && report.getResult() != TestResultType.FAILURE) {
+                    report.setResult(TestResultType.FAILURE);
+                } else if (totalWarningCount > 0 && report.getResult() != TestResultType.FAILURE && report.getResult() != TestResultType.WARNING) {
+                    report.setResult(TestResultType.WARNING);
+                } else if (report.getResult() == null) {
+                    report.setResult(TestResultType.SUCCESS);
+                }
+            }
+        }
+    }
+
+    private static int addReportItemsToReport(DataType itemList, TAR targetReport, Function<BAR, JAXBElement<TestAssertionReportType>> wrapper) {
+        int itemCount = 0;
+        if (itemList != null) {
+            ListType items = (ListType) itemList.convertTo(DataType.LIST_DATA_TYPE);
+            items.getElements().forEach(item -> targetReport.getReports().getInfoOrWarningOrError().add(reportItemFromDataType(item, wrapper)));
+            itemCount = items.getElements().size();
+        }
+        return itemCount;
+    }
+
+    private static JAXBElement<TestAssertionReportType> reportItemFromDataType(DataType itemData, Function<BAR, JAXBElement<TestAssertionReportType>> wrapper) {
+        var item = new BAR();
+        if (itemData instanceof MapType mapData) {
+            item.setDescription(mapData.getItemOptional("description").map(v -> (String) v.convertTo(DataType.STRING_DATA_TYPE).getValue()).orElse(null));
+            item.setLocation(mapData.getItemOptional("location").map(v -> (String) v.convertTo(DataType.STRING_DATA_TYPE).getValue()).orElse(null));
+            item.setAssertionID(mapData.getItemOptional("assertionId").map(v -> (String) v.convertTo(DataType.STRING_DATA_TYPE).getValue()).orElse(null));
+            item.setTest(mapData.getItemOptional("test").map(v -> (String) v.convertTo(DataType.STRING_DATA_TYPE).getValue()).orElse(null));
+            item.setType(mapData.getItemOptional("type").map(v -> (String) v.convertTo(DataType.STRING_DATA_TYPE).getValue()).orElse(null));
+            item.setValue(mapData.getItemOptional("value").map(v -> (String) v.convertTo(DataType.STRING_DATA_TYPE).getValue()).orElse(null));
+        } else if (itemData != null) {
+            item.setDescription((String) itemData.convertTo(DataType.STRING_DATA_TYPE).getValue());
+        } else {
+            throw new IllegalArgumentException("Report item data was found to be null");
+        }
+        return wrapper.apply(item);
     }
 
 }

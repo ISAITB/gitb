@@ -20,6 +20,7 @@ import com.gitb.engine.CallbackManager;
 import com.gitb.engine.TestEngine;
 import com.gitb.engine.messaging.MessagingHandler;
 import com.gitb.engine.messaging.handlers.layer.AbstractNonWorkerMessagingHandler;
+import com.gitb.engine.utils.HandlerUtils;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.messaging.DeferredMessagingReport;
 import com.gitb.messaging.Message;
@@ -32,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import static com.gitb.utils.MessagingReportUtils.generateSuccessReport;
@@ -42,13 +44,15 @@ public class SimulatedMessagingHandler extends AbstractNonWorkerMessagingHandler
     private static final Logger LOG = LoggerFactory.getLogger(SimulatedMessagingHandler.class);
     private static final String INPUT_PARAMETERS = "parameters";
     private static final String INPUT_CONTENT_TYPES = "contentTypes";
+    private static final String INPUT_REPORT_ITEMS = "reportItems";
     private static final String INPUT_RESULT = "result";
     private static final String INPUT_DELAY = "delay";
 
     private MessagingReport createReport(String sessionId, Message message) {
         // Overall result
         var result = TestResultType.SUCCESS;
-        if (message.hasInput(INPUT_RESULT)) {
+        var hasResult = message.hasInput(INPUT_RESULT);
+        if (hasResult) {
             try {
                 result = TestResultType.valueOf(((String) message.getFragments().get(INPUT_RESULT).convertTo(DataType.STRING_DATA_TYPE).getValue()));
             } catch (IllegalArgumentException | NullPointerException e) {
@@ -67,6 +71,7 @@ public class SimulatedMessagingHandler extends AbstractNonWorkerMessagingHandler
         var report = generateSuccessReport(messageForReport);
         TestCaseUtils.applyContentTypes(message.getFragments().get(INPUT_CONTENT_TYPES), report.getReport().getContext());
         report.getReport().setResult(result);
+        HandlerUtils.addReportItemMapToReport(message.getFragments().get(INPUT_REPORT_ITEMS), report.getReport(), !hasResult, Optional.of(objectFactory));
         return report;
     }
 

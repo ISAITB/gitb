@@ -43,6 +43,10 @@ public class MapType extends ContainerType {
         return elements.get(key);
     }
 
+    public Optional<DataType> getItemOptional(String key){
+        return Optional.ofNullable(elements.get(key));
+    }
+
     public Map<String, DataType> getItems() {
         return elements;
     }

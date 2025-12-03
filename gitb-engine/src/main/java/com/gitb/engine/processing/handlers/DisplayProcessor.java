@@ -20,6 +20,7 @@ import com.gitb.core.ConfigurationType;
 import com.gitb.core.Metadata;
 import com.gitb.core.UsageEnumeration;
 import com.gitb.engine.processing.ProcessingHandler;
+import com.gitb.engine.utils.HandlerUtils;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.processing.ProcessingData;
 import com.gitb.processing.ProcessingReport;
@@ -35,6 +36,7 @@ import org.slf4j.MarkerFactory;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 @ProcessingHandler(name="DisplayProcessor")
 public class DisplayProcessor extends AbstractProcessingHandler {
@@ -43,6 +45,7 @@ public class DisplayProcessor extends AbstractProcessingHandler {
     private static final String OPERATION_DISPLAY = "display";
     private static final String INPUT_PARAMETERS = "parameters";
     private static final String INPUT_CONTENT_TYPES = "contentTypes";
+    private static final String INPUT_REPORT_ITEMS = "reportItems";
     private static final String INPUT_RESULT = "result";
 
     @Override
@@ -57,7 +60,8 @@ public class DisplayProcessor extends AbstractProcessingHandler {
                 List.of(
                         createParameter(INPUT_RESULT, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, String.format("The result of the step. On of '%s', '%s' or '%s'. If not specified the default considered is '%s'.", TestResultType.SUCCESS, TestResultType.WARNING, TestResultType.WARNING, TestResultType.SUCCESS)),
                         createParameter(INPUT_PARAMETERS, "map", UsageEnumeration.O, ConfigurationType.SIMPLE, "The map of input parameters to display."),
-                        createParameter(INPUT_CONTENT_TYPES, "map", UsageEnumeration.O, ConfigurationType.SIMPLE, "The map of content types to apply for the display of matching input parameters.")
+                        createParameter(INPUT_CONTENT_TYPES, "map", UsageEnumeration.O, ConfigurationType.SIMPLE, "The map of content types to apply for the display of matching input parameters."),
+                        createParameter(INPUT_REPORT_ITEMS, "map", UsageEnumeration.O, ConfigurationType.SIMPLE, "The map of report items to display as a detailed validation report.")
                 ),
                 Collections.emptyList()
         ));
@@ -86,6 +90,7 @@ public class DisplayProcessor extends AbstractProcessingHandler {
             });
         }
         TestCaseUtils.applyContentTypes(input.getData().get(INPUT_CONTENT_TYPES), report.getContext());
+        HandlerUtils.addReportItemMapToReport(getInputForName(input, INPUT_REPORT_ITEMS, MapType.class), report, resultInput == null, Optional.of(objectFactory));
         return new ProcessingReport(report, new ProcessingData());
     }
 }
