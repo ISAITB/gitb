@@ -246,4 +246,12 @@
         <packageUrl regex="true">^pkg:maven/com\.googlecode\.owasp-java-html-sanitizer/owasp-java-html-sanitizer@.*$</packageUrl>
         <vulnerabilityName>CVE-2025-66021</vulnerabilityName>
     </suppress>    
+    <!-- Confirmed through https://github.com/apache/pekko/issues/2536 that pekko uses the safe parsing approach. So so urgent patch is needed.-->
+    <suppress>
+        <notes><![CDATA[
+        file name: lz4-java-1.8.0.jar
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.lz4/lz4-java@.*$</packageUrl>
+        <vulnerabilityName>CVE-2025-12183</vulnerabilityName>
+    </suppress>    
 </suppressions>
