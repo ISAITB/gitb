@@ -68,7 +68,7 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 	protected void start() throws Exception {
 		childScope = createChildScope();
 		TestCaseUtils.applyStopOnErrorSemantics(step, scriptlet.getSteps());
-		TestCaseUtils.initialiseStepStatusMaps(getStepSuccessMap(), getStepStatusMap(), scriptlet.getSteps(), childScope);
+		TestCaseUtils.initialiseStepStatusMaps(getStepSuccessMap(), getStepStatusMap(), getStepReportMap(), scriptlet.getSteps(), childScope);
 		ActorRef child = SequenceProcessorActor.create(getContext(), scriptlet.getSteps(), childScope, stepId, stepContext);
 
 		StartCommand command = new StartCommand(scope.getContext().getSessionId());

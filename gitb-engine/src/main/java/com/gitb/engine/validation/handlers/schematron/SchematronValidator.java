@@ -16,7 +16,6 @@
 package com.gitb.engine.validation.handlers.schematron;
 
 import com.gitb.core.Configuration;
-import com.gitb.engine.utils.ReportItemComparator;
 import com.gitb.engine.validation.ValidationHandler;
 import com.gitb.engine.validation.handlers.common.AbstractValidator;
 import com.gitb.engine.validation.handlers.xml.XmlValidator;
@@ -118,8 +117,8 @@ public class SchematronValidator extends AbstractValidator {
                 (showPaths != null && showPaths.getValue())
         );
         var report = handler.createReport();
-        if (sortBySeverity != null && sortBySeverity.getValue() && report.getReports() != null) {
-            report.getReports().getInfoOrWarningOrError().sort(new ReportItemComparator(ReportItemComparator.SortType.SEVERITY_THEN_LOCATION));
+        if (sortBySeverity != null && sortBySeverity.getValue()) {
+            sortReport(report, false);
         }
         return report;
     }

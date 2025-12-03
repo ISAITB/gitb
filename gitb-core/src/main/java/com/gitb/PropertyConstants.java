@@ -56,6 +56,11 @@ public class PropertyConstants {
     public static final String STEP_STATUS_MAP = "STEP_STATUS";
 
     /**
+     * The map containing the path identifiers for the TAR step reports.
+     */
+    public static final String STEP_REPORT_MAP = "com.gitb.STEP_REPORT";
+
+    /**
      * The scope variable holding the overall result of the test session.
      */
     public static final String TEST_SUCCESS = "TEST_SUCCESS";

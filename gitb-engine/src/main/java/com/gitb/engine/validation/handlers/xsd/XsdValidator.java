@@ -16,7 +16,6 @@
 package com.gitb.engine.validation.handlers.xsd;
 
 import com.gitb.core.Configuration;
-import com.gitb.engine.utils.ReportItemComparator;
 import com.gitb.engine.validation.ValidationHandler;
 import com.gitb.engine.validation.handlers.common.AbstractValidator;
 import com.gitb.exceptions.GITBEngineInternalError;
@@ -75,8 +74,8 @@ public class XsdValidator extends AbstractValidator {
             throw new GITBEngineInternalError("Unable to read input as XML document.", e);
         }
         var report = handler.createReport();
-        if (sortBySeverity != null && sortBySeverity.getValue() && report.getReports() != null) {
-            report.getReports().getInfoOrWarningOrError().sort(new ReportItemComparator(ReportItemComparator.SortType.SEVERITY_THEN_LOCATION));
+        if (sortBySeverity != null && sortBySeverity.getValue()) {
+            sortReport(report, false);
         }
         return report;
     }

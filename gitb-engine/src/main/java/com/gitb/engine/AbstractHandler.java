@@ -17,7 +17,9 @@ package com.gitb.engine;
 
 import com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.engine.utils.ReportItemComparator;
 import com.gitb.tr.ObjectFactory;
+import com.gitb.tr.TAR;
 import com.gitb.types.DataType;
 
 import java.util.Map;
@@ -32,6 +34,13 @@ public abstract class AbstractHandler {
 
     protected static <T extends DataType> T getAndConvert(Map<String, DataType> inputs, String inputName, String dataType, Class<T> dataTypeClass) {
         return MessagingHandlerUtils.getAndConvert(inputs, inputName, dataType, dataTypeClass);
+    }
+
+    protected void sortReport(TAR report, boolean byLocation) {
+        if (report != null && report.getReports() != null) {
+            ReportItemComparator.SortType sortType = byLocation?ReportItemComparator.SortType.LOCATION_THEN_SEVERITY:ReportItemComparator.SortType.SEVERITY_THEN_LOCATION;
+            report.getReports().getInfoOrWarningOrError().sort(new ReportItemComparator(sortType));
+        }
     }
 
 }

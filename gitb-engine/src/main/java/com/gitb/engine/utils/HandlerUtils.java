@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import com.gitb.core.AnyContent;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.exceptions.GITBEngineInternalError;
@@ -32,6 +33,10 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonSyntaxException;
 import jakarta.xml.bind.JAXBElement;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MarkerFactory;
 
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpression;
@@ -40,13 +45,14 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.math.BigInteger;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
+
+import static com.gitb.engine.utils.TestCaseUtils.getInputFor;
 
 public class HandlerUtils {
 
+    private static final Logger LOG = LoggerFactory.getLogger(HandlerUtils.class);
     public static final String NAMESPACE_MAP_INPUT = "_com.gitb.Namespaces";
     public static final String SESSION_INPUT = "_com.gitb.Session";
 
@@ -177,6 +183,70 @@ public class HandlerUtils {
         }
     }
 
+    public static void addReportStepMapToReport(DataType reportSteps, TAR report, boolean setResult, TestCaseScope scope, String session) {
+        if (report != null && reportSteps != null) {
+            // Converting to a list allows us to accept a simple string as well as a list of strings.
+            ListType reportStepList = (ListType) reportSteps.convertTo(DataType.LIST_DATA_TYPE);
+            List<JAXBElement<TestAssertionReportType>> errorList = new ArrayList<>();
+            List<JAXBElement<TestAssertionReportType>> warningList = new ArrayList<>();
+            List<JAXBElement<TestAssertionReportType>> infoList = new ArrayList<>();
+            reportStepList.getElements().forEach(stepIdType -> {
+                String stepIdValue = (String) stepIdType.convertTo(DataType.STRING_DATA_TYPE).getValue();
+                Arrays.stream(StringUtils.split(stepIdValue, ',')).map(String::trim).forEach((stepId) -> {
+                    // Each step ID value is also considered as potentially comma-separated.
+                    TAR referencedReport = TestCaseUtils.retrieveStoredStepReport(stepId, scope);
+                    if (referencedReport != null) {
+                        if (referencedReport.getContext() != null) {
+                            // Merge the context data.
+                            if (report.getContext() == null) {
+                                report.setContext(referencedReport.getContext());
+                            } else {
+                                if (referencedReport.getContext().getItem() != null) {
+                                    for (AnyContent item: referencedReport.getContext().getItem()) {
+                                        if (item.getName() != null) {
+                                            List<AnyContent> matchedInputs = getInputFor(report.getContext().getItem(), item.getName());
+                                            if (matchedInputs.isEmpty()) {
+                                                report.getContext().getItem().add(item);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if (referencedReport.getReports() != null) {
+                            // Process the report items.
+                            referencedReport.getReports().getInfoOrWarningOrError().forEach(item -> {
+                                if (item.getName().getLocalPart().equals("error")) {
+                                    errorList.add(item);
+                                } else if (item.getName().getLocalPart().equals("warning")) {
+                                    warningList.add(item);
+                                } else {
+                                    infoList.add(item);
+                                }
+                            });
+                        }
+                    } else {
+                        LOG.warn(MarkerFactory.getDetachedMarker(session), "No validation report found for step ID [{}]", stepId);
+                    }
+                });
+            });
+            int errorCount = errorList.size();
+            int warningCount = warningList.size();
+            int infoCount = infoList.size();
+            // Merge report items.
+            if (errorCount > 0 || warningCount > 0 || infoCount > 0) {
+                if (report.getReports() == null) {
+                    report.setReports(new TestAssertionGroupReportsType());
+                }
+                report.getReports().getInfoOrWarningOrError().addAll(errorList);
+                report.getReports().getInfoOrWarningOrError().addAll(warningList);
+                report.getReports().getInfoOrWarningOrError().addAll(infoList);
+            }
+            // Adapt counters.
+            setReportCounters(report, errorCount, warningCount, infoCount, setResult);
+        }
+    }
+
     public static void addReportItemMapToReport(DataType reportItems, TAR report, boolean setResult, Optional<ObjectFactory> objectFactory) {
         if (report != null && reportItems instanceof MapType reportItemMap) {
             DataType informationItemData = reportItemMap.getItem("info");
@@ -191,35 +261,39 @@ public class HandlerUtils {
             int errorCount = addReportItemsToReport(errorItemData, report, factoryToUse::createTestAssertionGroupReportsTypeError);
             int warningCount = addReportItemsToReport(warningItemData, report, factoryToUse::createTestAssertionGroupReportsTypeWarning);
             int infoCount = addReportItemsToReport(informationItemData, report, factoryToUse::createTestAssertionGroupReportsTypeInfo);
-            ValidationCounters counters = report.getCounters();
-            if (report.getCounters() == null) {
-                counters = new ValidationCounters();
-                report.setCounters(counters);
-            }
-            int totalErrorCount = errorCount + ((counters.getNrOfErrors() == null)?0:counters.getNrOfErrors().intValue());
-            int totalWarningCount = warningCount + ((counters.getNrOfWarnings() == null)?0:counters.getNrOfWarnings().intValue());
-            int totalInfoCount = infoCount + ((counters.getNrOfAssertions() == null)?0:counters.getNrOfAssertions().intValue());
-            counters.setNrOfErrors(BigInteger.valueOf(totalErrorCount));
-            counters.setNrOfWarnings(BigInteger.valueOf(totalWarningCount));
-            counters.setNrOfAssertions(BigInteger.valueOf(totalInfoCount));
-            if (setResult) {
-                // The result is fully based on the items in the report.
-                if (totalErrorCount > 0) {
-                    report.setResult(TestResultType.FAILURE);
-                } else if (totalWarningCount > 0) {
-                    report.setResult(TestResultType.WARNING);
-                } else {
-                    report.setResult(TestResultType.SUCCESS);
-                }
+            setReportCounters(report, errorCount, warningCount, infoCount, setResult);
+        }
+    }
+
+    private static void setReportCounters(TAR report, int errorCount, int warningCount, int infoCount, boolean setResult) {
+        ValidationCounters counters = report.getCounters();
+        if (report.getCounters() == null) {
+            counters = new ValidationCounters();
+            report.setCounters(counters);
+        }
+        int totalErrorCount = errorCount + ((counters.getNrOfErrors() == null)?0:counters.getNrOfErrors().intValue());
+        int totalWarningCount = warningCount + ((counters.getNrOfWarnings() == null)?0:counters.getNrOfWarnings().intValue());
+        int totalInfoCount = infoCount + ((counters.getNrOfAssertions() == null)?0:counters.getNrOfAssertions().intValue());
+        counters.setNrOfErrors(BigInteger.valueOf(totalErrorCount));
+        counters.setNrOfWarnings(BigInteger.valueOf(totalWarningCount));
+        counters.setNrOfAssertions(BigInteger.valueOf(totalInfoCount));
+        if (setResult) {
+            // The result is fully based on the items in the report.
+            if (totalErrorCount > 0) {
+                report.setResult(TestResultType.FAILURE);
+            } else if (totalWarningCount > 0) {
+                report.setResult(TestResultType.WARNING);
             } else {
-                // The result is determined regardless of the report items, but we check the items and override the result to ensure consistency.
-                if (totalErrorCount > 0 && report.getResult() != TestResultType.FAILURE) {
-                    report.setResult(TestResultType.FAILURE);
-                } else if (totalWarningCount > 0 && report.getResult() != TestResultType.FAILURE && report.getResult() != TestResultType.WARNING) {
-                    report.setResult(TestResultType.WARNING);
-                } else if (report.getResult() == null) {
-                    report.setResult(TestResultType.SUCCESS);
-                }
+                report.setResult(TestResultType.SUCCESS);
+            }
+        } else {
+            // The result is determined regardless of the report items, but we check the items and override the result to ensure consistency.
+            if (totalErrorCount > 0 && report.getResult() != TestResultType.FAILURE) {
+                report.setResult(TestResultType.FAILURE);
+            } else if (totalWarningCount > 0 && report.getResult() != TestResultType.FAILURE && report.getResult() != TestResultType.WARNING) {
+                report.setResult(TestResultType.WARNING);
+            } else if (report.getResult() == null) {
+                report.setResult(TestResultType.SUCCESS);
             }
         }
     }

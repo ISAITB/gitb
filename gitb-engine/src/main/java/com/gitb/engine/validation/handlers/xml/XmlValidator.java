@@ -17,7 +17,6 @@ package com.gitb.engine.validation.handlers.xml;
 
 import com.gitb.core.AnyContent;
 import com.gitb.core.Configuration;
-import com.gitb.engine.utils.ReportItemComparator;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.engine.validation.ValidationHandler;
 import com.gitb.engine.validation.handlers.common.AbstractValidator;
@@ -128,11 +127,7 @@ public class XmlValidator extends AbstractValidator {
             report.setName("XML validation");
             report.setContext(context);
             if (report.getReports() != null) {
-                var sortType = ReportItemComparator.SortType.LOCATION_THEN_SEVERITY;
-                if (sortBySeverity != null && sortBySeverity.getValue()) {
-                    sortType = ReportItemComparator.SortType.SEVERITY_THEN_LOCATION;
-                }
-                report.getReports().getInfoOrWarningOrError().sort(new ReportItemComparator(sortType));
+                sortReport(report, sortBySeverity == null || !sortBySeverity.getValue());
             }
         }
         return report;

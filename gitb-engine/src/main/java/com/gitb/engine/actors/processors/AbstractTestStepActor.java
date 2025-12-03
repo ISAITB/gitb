@@ -299,9 +299,13 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 		return ((MapType)(scope.getVariable(PropertyConstants.STEP_STATUS_MAP, true).getValue()));
 	}
 
-	protected void updateStepStatusMaps(StepStatus status) {
+    protected MapType getStepReportMap() {
+        return ((MapType)(scope.getVariable(PropertyConstants.STEP_REPORT_MAP, true).getValue()));
+    }
+
+	protected void updateStepStatusMaps(StepStatus status, TestStepReportType report) {
 		if (((TestConstruct)step).getId() != null) {
-			TestCaseUtils.updateStepStatusMaps(getStepSuccessMap(), getStepStatusMap(), (TestConstruct) step, scope, status);
+			TestCaseUtils.updateStepStatusMaps(getStepSuccessMap(), getStepStatusMap(), getStepReportMap(), (TestConstruct) step, scope, status, report);
 		}
 	}
 
@@ -315,7 +319,7 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 		boolean isEndStatus = status == StepStatus.COMPLETED || status == StepStatus.ERROR || status == StepStatus.SKIPPED || status == StepStatus.WARNING;
 
 		if (step instanceof TestConstruct) {
-			updateStepStatusMaps(status);
+			updateStepStatusMaps(status, report);
 		}
 
 		// Notify the parent step.

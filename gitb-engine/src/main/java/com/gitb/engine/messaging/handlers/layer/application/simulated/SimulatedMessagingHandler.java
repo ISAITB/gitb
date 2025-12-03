@@ -27,6 +27,7 @@ import com.gitb.messaging.Message;
 import com.gitb.messaging.MessagingReport;
 import com.gitb.tdl.MessagingStep;
 import com.gitb.tr.TestResultType;
+import com.gitb.types.BooleanType;
 import com.gitb.types.DataType;
 import com.gitb.types.MapType;
 import org.slf4j.Logger;
@@ -45,13 +46,16 @@ public class SimulatedMessagingHandler extends AbstractNonWorkerMessagingHandler
     private static final String INPUT_PARAMETERS = "parameters";
     private static final String INPUT_CONTENT_TYPES = "contentTypes";
     private static final String INPUT_REPORT_ITEMS = "reportItems";
+    private static final String INPUT_REPORT_STEPS = "reportSteps";
     private static final String INPUT_RESULT = "result";
     private static final String INPUT_DELAY = "delay";
+    private static final String INPUT_SORT_REPORT_BY_SEVERITY = "sortReportBySeverity";
 
     private MessagingReport createReport(String sessionId, Message message) {
         // Overall result
         var result = TestResultType.SUCCESS;
         var hasResult = message.hasInput(INPUT_RESULT);
+        boolean sortReportBySeverity = Optional.ofNullable(getAndConvert(message.getFragments(), INPUT_SORT_REPORT_BY_SEVERITY, DataType.BOOLEAN_DATA_TYPE, BooleanType.class)).map(BooleanType::getValue).orElse(false);
         if (hasResult) {
             try {
                 result = TestResultType.valueOf(((String) message.getFragments().get(INPUT_RESULT).convertTo(DataType.STRING_DATA_TYPE).getValue()));
@@ -71,7 +75,9 @@ public class SimulatedMessagingHandler extends AbstractNonWorkerMessagingHandler
         var report = generateSuccessReport(messageForReport);
         TestCaseUtils.applyContentTypes(message.getFragments().get(INPUT_CONTENT_TYPES), report.getReport().getContext());
         report.getReport().setResult(result);
+        HandlerUtils.addReportStepMapToReport(message.getFragments().get(INPUT_REPORT_STEPS), report.getReport(), !hasResult,  getScope(sessionId), sessionId);
         HandlerUtils.addReportItemMapToReport(message.getFragments().get(INPUT_REPORT_ITEMS), report.getReport(), !hasResult, Optional.of(objectFactory));
+        sortReport(report.getReport(), !sortReportBySeverity);
         return report;
     }
 

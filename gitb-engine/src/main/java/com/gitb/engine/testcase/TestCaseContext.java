@@ -265,9 +265,11 @@ public class TestCaseContext {
 	private void addStepStatus() {
 		var successMap = new StepStatusMapType();
 		var statusMap = new StepStatusMapType();
+        var reportMap = new StepStatusMapType();
 		scope.createVariable(STEP_SUCCESS_MAP).setValue(successMap);
 		scope.createVariable(STEP_STATUS_MAP).setValue(statusMap);
-		TestCaseUtils.initialiseStepStatusMaps(successMap, statusMap, testCase.getSteps(), scope);
+        scope.createVariable(STEP_REPORT_MAP).setValue(reportMap);
+		TestCaseUtils.initialiseStepStatusMaps(successMap, statusMap, reportMap, testCase.getSteps(), scope);
 	}
 
 	private void processVariables() {

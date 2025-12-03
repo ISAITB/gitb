@@ -26,9 +26,7 @@ import com.gitb.processing.ProcessingData;
 import com.gitb.processing.ProcessingReport;
 import com.gitb.ps.ProcessingModule;
 import com.gitb.tr.TestResultType;
-import com.gitb.types.DataType;
-import com.gitb.types.MapType;
-import com.gitb.types.StringType;
+import com.gitb.types.*;
 import com.gitb.utils.DataTypeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +44,9 @@ public class DisplayProcessor extends AbstractProcessingHandler {
     private static final String INPUT_PARAMETERS = "parameters";
     private static final String INPUT_CONTENT_TYPES = "contentTypes";
     private static final String INPUT_REPORT_ITEMS = "reportItems";
+    private static final String INPUT_REPORT_STEPS = "reportSteps";
     private static final String INPUT_RESULT = "result";
+    private static final String INPUT_SORT_REPORT_BY_SEVERITY = "sortReportBySeverity";
 
     @Override
     public ProcessingModule createProcessingModule() {
@@ -61,7 +61,9 @@ public class DisplayProcessor extends AbstractProcessingHandler {
                         createParameter(INPUT_RESULT, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, String.format("The result of the step. On of '%s', '%s' or '%s'. If not specified the default considered is '%s'.", TestResultType.SUCCESS, TestResultType.WARNING, TestResultType.WARNING, TestResultType.SUCCESS)),
                         createParameter(INPUT_PARAMETERS, "map", UsageEnumeration.O, ConfigurationType.SIMPLE, "The map of input parameters to display."),
                         createParameter(INPUT_CONTENT_TYPES, "map", UsageEnumeration.O, ConfigurationType.SIMPLE, "The map of content types to apply for the display of matching input parameters."),
-                        createParameter(INPUT_REPORT_ITEMS, "map", UsageEnumeration.O, ConfigurationType.SIMPLE, "The map of report items to display as a detailed validation report.")
+                        createParameter(INPUT_REPORT_ITEMS, "map", UsageEnumeration.O, ConfigurationType.SIMPLE, "The map of report items to display as a detailed validation report."),
+                        createParameter(INPUT_REPORT_STEPS, "list", UsageEnumeration.O, ConfigurationType.SIMPLE, "The list of step identifiers to from which to source the current step's detailed validation report."),
+                        createParameter(INPUT_SORT_REPORT_BY_SEVERITY, "boolean", UsageEnumeration.O, ConfigurationType.SIMPLE, "Whether report items should be sorted based on severity first and then location (as opposed to location first).")
                 ),
                 Collections.emptyList()
         ));
@@ -72,7 +74,9 @@ public class DisplayProcessor extends AbstractProcessingHandler {
     public ProcessingReport process(String session, String operation, ProcessingData input) {
         var result = TestResultType.SUCCESS;
         var resultInput = getInputForName(input, INPUT_RESULT, StringType.class);
-        if (resultInput != null) {
+        var hasResult = resultInput != null;
+        boolean sortReportBySeverity = Optional.ofNullable(getAndConvert(input.getData(), INPUT_SORT_REPORT_BY_SEVERITY, DataType.BOOLEAN_DATA_TYPE, BooleanType.class)).map(BooleanType::getValue).orElse(false);
+        if (hasResult) {
             try {
                 result = TestResultType.valueOf((String)(resultInput.convertTo(DataType.STRING_DATA_TYPE).getValue()));
             } catch (IllegalArgumentException | NullPointerException e) {
@@ -90,7 +94,9 @@ public class DisplayProcessor extends AbstractProcessingHandler {
             });
         }
         TestCaseUtils.applyContentTypes(input.getData().get(INPUT_CONTENT_TYPES), report.getContext());
-        HandlerUtils.addReportItemMapToReport(getInputForName(input, INPUT_REPORT_ITEMS, MapType.class), report, resultInput == null, Optional.of(objectFactory));
+        HandlerUtils.addReportStepMapToReport(getInputForName(input, INPUT_REPORT_STEPS, ListType.class), report, !hasResult,  getScope(session), session);
+        HandlerUtils.addReportItemMapToReport(getInputForName(input, INPUT_REPORT_ITEMS, MapType.class), report, !hasResult, Optional.of(objectFactory));
+        sortReport(report, !sortReportBySeverity);
         return new ProcessingReport(report, new ProcessingData());
     }
 }

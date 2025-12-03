@@ -219,7 +219,7 @@ public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStep
                     for (int i = completedStepIndex + 1; i < childStepSpecs.size(); i++) {
                         var pendingStep = childStepSpecs.get(i).getRight();
                         if (pendingStep instanceof TestConstruct && ((TestConstruct)pendingStep).getId() != null) {
-                            TestCaseUtils.updateStepStatusMaps(getStepSuccessMap(), getStepStatusMap(), (TestConstruct) pendingStep, scope, StepStatus.SKIPPED);
+                            TestCaseUtils.updateStepStatusMaps(getStepSuccessMap(), getStepStatusMap(), getStepReportMap(), (TestConstruct) pendingStep, scope, StepStatus.SKIPPED);
                             var pendingEvent = new TestStepStatusEvent(scope.getContext().getSessionId(), ((TestConstruct)pendingStep).getId(), StepStatus.SKIPPED, constructDefaultReport(TestResultType.UNDEFINED), self(), pendingStep, scope);
                             TestStepStatusEventBus.getInstance().publish(pendingEvent);
                         }
