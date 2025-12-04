@@ -36,22 +36,25 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-@ProcessingHandler(name="DisplayProcessor")
+import static com.gitb.engine.processing.handlers.DisplayProcessor.HANDLER_NAME;
+
+@ProcessingHandler(name=HANDLER_NAME)
 public class DisplayProcessor extends AbstractProcessingHandler {
 
+    public static final String HANDLER_NAME = "DisplayProcessor";
     private static final Logger LOG = LoggerFactory.getLogger(DisplayProcessor.class);
     private static final String OPERATION_DISPLAY = "display";
     private static final String INPUT_PARAMETERS = "parameters";
     private static final String INPUT_CONTENT_TYPES = "contentTypes";
     private static final String INPUT_REPORT_ITEMS = "reportItems";
-    private static final String INPUT_REPORT_STEPS = "reportSteps";
+    public static final String INPUT_REPORT_STEPS = "reportSteps";
     private static final String INPUT_RESULT = "result";
     private static final String INPUT_SORT_REPORT_BY_SEVERITY = "sortReportBySeverity";
 
     @Override
     public ProcessingModule createProcessingModule() {
         ProcessingModule module = new ProcessingModule();
-        module.setId("DisplayProcessor");
+        module.setId(HANDLER_NAME);
         module.setMetadata(new Metadata());
         module.getMetadata().setName(module.getId());
         module.getMetadata().setVersion("1.0");

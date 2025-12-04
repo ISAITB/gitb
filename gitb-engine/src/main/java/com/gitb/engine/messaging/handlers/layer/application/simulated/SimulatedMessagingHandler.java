@@ -39,14 +39,15 @@ import java.util.concurrent.TimeUnit;
 
 import static com.gitb.utils.MessagingReportUtils.generateSuccessReport;
 
-@MessagingHandler(name="SimulatedMessaging")
+@MessagingHandler(name= SimulatedMessagingHandler.HANDLER_NAME)
 public class SimulatedMessagingHandler extends AbstractNonWorkerMessagingHandler {
 
+    public static final String HANDLER_NAME = "SimulatedMessaging";
     private static final Logger LOG = LoggerFactory.getLogger(SimulatedMessagingHandler.class);
     private static final String INPUT_PARAMETERS = "parameters";
     private static final String INPUT_CONTENT_TYPES = "contentTypes";
     private static final String INPUT_REPORT_ITEMS = "reportItems";
-    private static final String INPUT_REPORT_STEPS = "reportSteps";
+    public static final String INPUT_REPORT_STEPS = "reportSteps";
     private static final String INPUT_RESULT = "result";
     private static final String INPUT_DELAY = "delay";
     private static final String INPUT_SORT_REPORT_BY_SEVERITY = "sortReportBySeverity";

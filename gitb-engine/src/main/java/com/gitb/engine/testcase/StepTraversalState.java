@@ -15,24 +15,18 @@
 
 package com.gitb.engine.testcase;
 
-import com.gitb.core.ActorConfiguration;
-import com.gitb.tbs.SUTConfiguration;
+import com.gitb.engine.expr.resolvers.VariableResolver;
+import com.gitb.tdl.CallStep;
+import com.gitb.tdl.Scriptlet;
 import com.gitb.tdl.TestCase;
+import org.apache.commons.lang3.tuple.Pair;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedList;
 
-public class StaticTestCaseContext extends TestCaseContext {
+public record StepTraversalState(String testSuiteContext, TestCaseContext context, VariableResolver resolver, LinkedList<Pair<CallStep, Scriptlet>> scriptletCallStack, TestCase testCase) {
 
-    public StaticTestCaseContext(TestCase testCase) {
-        super(testCase, testCase.getId(), "");
+    public StepTraversalState newForScriptlet(String testSuiteContext) {
+        return new StepTraversalState(testSuiteContext, context, this.resolver, this.scriptletCallStack, this.testCase);
     }
 
-    @Override
-    protected List<SUTConfiguration> configureDynamicActorProperties(TestCase testCase, List<ActorConfiguration> configurations, List<TransactionInfo> testCaseTransactions) {
-        /*
-         * We skip contacting remote services to define dynamic actor configurations. Instead, we simply return an empty list.
-         */
-        return new ArrayList<>();
-    }
 }

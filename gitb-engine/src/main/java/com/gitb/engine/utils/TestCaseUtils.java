@@ -256,19 +256,25 @@ public class TestCaseUtils {
 
     private static String writeStepReport(TestCaseScope scope, StepStatus status, TestStepReportType report) {
         String reportIdentifier = null;
-        if ((status == StepStatus.COMPLETED || status == StepStatus.ERROR || status == StepStatus.WARNING) && report instanceof TAR tarReport) {
-            reportIdentifier = UUID.randomUUID().toString();
-            try {
-                Path sessionReportFolder = scope.getContext().getDataFolder().resolve("reports");
-                Files.createDirectories(sessionReportFolder);
-                Path reportFile = sessionReportFolder.resolve(reportIdentifier);
-                Marshaller marshaller = REPORT_CONTEXT.createMarshaller();
-                try (var out = Files.newOutputStream(reportFile)) {
-                    marshaller.marshal(new JAXBElement<>(new QName("", "tar"), TAR.class, tarReport), out);
-                    out.flush();
+        if (scope.getContext().isRequiresPersistentReports()) {
+            /*
+             * We only record reports if doing so is required, to avoid unnecessary IO. This is determined
+             * by whether the test case includes test steps that refer to other steps' reports.
+             */
+            if ((status == StepStatus.COMPLETED || status == StepStatus.ERROR || status == StepStatus.WARNING) && report instanceof TAR tarReport) {
+                reportIdentifier = UUID.randomUUID().toString();
+                try {
+                    Path sessionReportFolder = scope.getContext().getDataFolder().resolve("reports");
+                    Files.createDirectories(sessionReportFolder);
+                    Path reportFile = sessionReportFolder.resolve(reportIdentifier);
+                    Marshaller marshaller = REPORT_CONTEXT.createMarshaller();
+                    try (var out = Files.newOutputStream(reportFile)) {
+                        marshaller.marshal(new JAXBElement<>(new QName("", "tar"), TAR.class, tarReport), out);
+                        out.flush();
+                    }
+                } catch (IOException | JAXBException e) {
+                    throw new IllegalStateException("Unable to store report for step", e);
                 }
-            } catch (IOException | JAXBException e) {
-                throw new IllegalStateException("Unable to store report for step", e);
             }
         }
         return reportIdentifier;
