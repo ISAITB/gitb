@@ -2,5 +2,9 @@
     "1111090": {
         "active": true,
         "notes": "SVGs are never handled with Angular template interpolation."
-    }
+    },
+    "1111181": {
+        "active": true,
+        "notes": "SVGs are never handled with Angular template interpolation."
+    }    
 }
