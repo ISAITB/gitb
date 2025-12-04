@@ -12,10 +12,18 @@
             <label class="col-3 col-form-label text-end" for="background">Background colour:</label>
             <div class="col-7 d-flex">
                 <input id="background" name="background" class="form-control colour-holder" readonly="readonly"
-                    [style.background]="tagToUse.background"
-                    [colorPicker]="tagToUse.background!"
-                    [cpOutputFormat]="'hex'"
-                    (colorPickerChange)="tagToUse.background = $event">
+                       [style.background]="tagToUse.background"
+                       [colorPicker]="tagToUse.background!"
+                       [cpOutputFormat]="'hex'"
+                       [cpOKButton]="true"
+                       [cpOKButtonText]="'Apply'"
+                       [cpOKButtonClass]="'btn btn-secondary'"
+                       [cpCancelButton]="true"
+                       [cpCancelButtonText]="'Cancel'"
+                       [cpCancelButtonClass]="'btn btn-secondary'"
+                       [cpSaveClickOutside]="false"
+                       [cpAlphaChannel]="'disabled'"
+                       (colorPickerChange)="tagToUse.background = $event">
                 <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="button" tbTooltip="The colour for the tag's background."></div>
             </div>
         </div>
@@ -23,10 +31,18 @@
             <label class="col-3 col-form-label text-end" for="foreground">Text colour:</label>
             <div class="col-7 d-flex">
                 <input id="foreground" name="foreground" class="form-control colour-holder" readonly="readonly"
-                    [style.background]="tagToUse.foreground"
-                    [colorPicker]="tagToUse.foreground!"
-                    [cpOutputFormat]="'hex'"
-                    (colorPickerChange)="tagToUse.foreground = $event">
+                       [style.background]="tagToUse.foreground"
+                       [colorPicker]="tagToUse.foreground!"
+                       [cpOutputFormat]="'hex'"
+                       [cpOKButton]="true"
+                       [cpOKButtonText]="'Apply'"
+                       [cpOKButtonClass]="'btn btn-secondary'"
+                       [cpCancelButton]="true"
+                       [cpCancelButtonText]="'Cancel'"
+                       [cpCancelButtonClass]="'btn btn-secondary'"
+                       [cpSaveClickOutside]="false"
+                       [cpAlphaChannel]="'disabled'"
+                       (colorPickerChange)="tagToUse.foreground = $event">
                 <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="button" tbTooltip="The colour for the tag's text."></div>
             </div>
         </div>

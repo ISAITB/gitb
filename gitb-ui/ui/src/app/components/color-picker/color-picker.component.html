@@ -23,6 +23,14 @@
             [style.background]="value"
             [colorPicker]="value!"
             [cpOutputFormat]="'hex'"
-            (colorPickerChange)="value = $event">    
+            [cpOKButton]="true"
+            [cpOKButtonText]="'Apply'"
+            [cpOKButtonClass]="'btn btn-secondary'"
+            [cpCancelButton]="true"
+            [cpCancelButtonText]="'Cancel'"
+            [cpCancelButtonClass]="'btn btn-secondary'"
+            [cpSaveClickOutside]="false"
+            [cpAlphaChannel]="'disabled'"
+            (colorPickerChange)="value = $event">
     }
 </div>
