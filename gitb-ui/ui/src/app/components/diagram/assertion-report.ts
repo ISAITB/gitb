@@ -30,4 +30,6 @@ export interface AssertionReport {
         column: number
     }
 
+    trackingId?: number
+
 }

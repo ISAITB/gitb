@@ -34,16 +34,24 @@ export class TagComponent implements OnInit {
   @Input() editable? = false
   @Input() icon? = false
   @Input() pill? = false
+  @Input() toggleEnabled?: boolean = false
+  @Input() toggledByDefault?: boolean = false
+  @Input() darkBorder? = false
 
   @Output() edit = new EventEmitter<number>()
   @Output() delete = new EventEmitter<number>()
+  @Output() toggle = new EventEmitter<boolean>()
 
   Constants = Constants
   setDefaultBorder!: boolean
+  toggled = false
 
   constructor() { }
 
   ngOnInit(): void {
+    if (this.toggleEnabled) {
+      this.toggled = this.toggledByDefault === true
+    }
     this.setDefaultBorder = this.background == undefined
       || this.background!.toLowerCase() == '#fff'
       || this.background!.toLowerCase() == '#ffffff'
@@ -56,4 +64,13 @@ export class TagComponent implements OnInit {
   deleteTag() {
     this.delete.emit(this.id)
   }
+
+  tagClicked(event: Event) {
+    if (this.toggleEnabled) {
+      event.stopPropagation()
+      this.toggled = !this.toggled
+      this.toggle.emit(this.toggled)
+    }
+  }
+
 }

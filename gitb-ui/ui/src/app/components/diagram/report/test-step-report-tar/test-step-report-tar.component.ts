@@ -35,6 +35,7 @@ export class TestStepReportTARComponent extends ReportSupport implements OnInit 
   @Input() report!: StepReport
   @Input() sessionId!: string
   hasContextItems = false
+  hasReportItems = false
 
   constructor(
     modalService: BsModalService,
@@ -49,6 +50,11 @@ export class TestStepReportTARComponent extends ReportSupport implements OnInit 
       this.setContextValues(this.report.context)
       if (this.report.context.value != undefined || (this.report.context.item != undefined && this.report.context.item.length > 0)) {
         this.hasContextItems = true
+      }
+    }
+    if (this.report.reports != null && this.report.reports.assertionReports != null && this.report.reports.assertionReports.length > 0) {
+      if (this.report.counters != null && (this.report.counters.nrOfErrors > 0 || this.report.counters.nrOfWarnings > 0 || this.report.counters.nrOfAssertions > 0)) {
+        this.hasReportItems = true
       }
     }
   }

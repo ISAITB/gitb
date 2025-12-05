@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
 
 /**
  * A Jackson wrapper for converting JAVA objects into JSON and vice versa
@@ -145,8 +146,10 @@ public class JacksonUtil {
             } else {
                 json.writeStringField("type", "SR");
             }
-            if(testStepReport.getDate() != null) {
-                json.writeObjectField("date", testStepReport.getDate());
+            if (testStepReport.getDate() != null) {
+                String dateString = testStepReport.getDate().toGregorianCalendar().toZonedDateTime()
+                        .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"));
+                json.writeObjectField("date", dateString);
             }
             if (testStepReport.getResult() != null) {
                 json.writeStringField("result", testStepReport.getResult().value());
