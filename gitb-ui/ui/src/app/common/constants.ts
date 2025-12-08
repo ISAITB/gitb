@@ -442,7 +442,9 @@ export class Constants {
   public static readonly USAGE_TIP = {
     TEST_BED_ADMIN_CREATE_CONFORMANCE_STATEMENT: 1,
     TEST_BED_ADMIN_CREATE_SYSTEM: 2,
-    TEST_BED_LANDING_PAGE: 3
+    TEST_BED_LANDING_PAGE: 3,
+    TEST_BED_ADMIN_COMMUNITIES: 4,
+    TEST_BED_ADMIN_DOMAINS: 5
   }
 
 	public static readonly USER_SSO_STATUS = {

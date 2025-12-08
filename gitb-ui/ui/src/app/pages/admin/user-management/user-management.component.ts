@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, OnInit, ViewChild} from '@angular/core';
 import { Constants } from 'src/app/common/constants';
 import { CommunityService } from 'src/app/services/community.service';
 import { DataService } from 'src/app/services/data.service';
@@ -23,6 +23,7 @@ import { TableColumnDefinition } from 'src/app/types/table-column-definition.typ
 import {TableApi} from '../../../components/table/table-api';
 import {PagingEvent} from '../../../components/paging-controls/paging-event';
 import {CommunityLimited} from '../../../types/community-limited';
+import {UsageTipService} from '../../../services/usage-tip.service';
 
 @Component({
     selector: 'app-user-management',
@@ -30,7 +31,7 @@ import {CommunityLimited} from '../../../types/community-limited';
     styles: [],
     standalone: false
 })
-export class UserManagementComponent implements OnInit {
+export class UserManagementComponent implements OnInit, AfterViewInit {
 
   @ViewChild("communityTable") communityTable?: TableApi
 
@@ -46,7 +47,8 @@ export class UserManagementComponent implements OnInit {
   constructor(
     private readonly dataService: DataService,
     private readonly communityService: CommunityService,
-    private readonly routingService: RoutingService
+    private readonly routingService: RoutingService,
+    private readonly usageTipService: UsageTipService
   ) { }
 
   ngOnInit(): void {
@@ -55,6 +57,12 @@ export class UserManagementComponent implements OnInit {
     }
     this.refreshCommunities()
     this.routingService.communitiesBreadcrumbs()
+  }
+
+  ngAfterViewInit(): void {
+    if (this.dataService.isSystemAdmin) {
+      this.usageTipService.showUsageTip(Constants.USAGE_TIP.TEST_BED_ADMIN_COMMUNITIES)
+    }
   }
 
   communitySelect(community: Community) {

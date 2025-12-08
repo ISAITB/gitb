@@ -11,6 +11,12 @@
             @case (Constants.USAGE_TIP.TEST_BED_LANDING_PAGE) {
                 <span>Test Bed landing page</span>
             }
+            @case (Constants.USAGE_TIP.TEST_BED_ADMIN_DOMAINS) {
+                <span>Domains</span>
+            }
+            @case (Constants.USAGE_TIP.TEST_BED_ADMIN_COMMUNITIES) {
+                <span>Communities</span>
+            }
         }
     </div>
 </div>
@@ -55,6 +61,28 @@
                 The landing page is the first screen to greet users when they log in. It can be defined at the level of
                 the <b>overall Test Bed instance</b> (in the system settings) or for a <b>specific community</b> (in the community settings).
                 In terms of content, it can include text but also images and links to resources defined as system or community resources.
+            </p>
+        }
+        @case (Constants.USAGE_TIP.TEST_BED_ADMIN_DOMAINS) {
+            <p>
+                The Test Bed uses <b>domains</b> to define and organise the <b>specifications</b> that users can test
+                against, as well as the test cases to execute when specifications are selected for conformance statements.
+            </p>
+            <p class="mb-0">
+                Within domains you can also manage <b>configuration properties</b> that apply globally or per-specification.
+                Note that configuration properties relevant to specific organisations and systems are managed within
+                communities.
+            </p>
+        }
+        @case (Constants.USAGE_TIP.TEST_BED_ADMIN_COMMUNITIES) {
+            <p>
+                The Test Bed uses <b>communities</b> for configuration related to <b>user management</b>. Communities
+                include as organisations the parties that will be testing, within which you define users and the systems
+                that will be tested.
+            </p>
+            <p class="mb-0">
+                Besides user management, communities are also used to define <b>configuration properties</b>, and to
+                manage settings such as self-registration options, report templates, and custom landing pages.
             </p>
         }
     }
