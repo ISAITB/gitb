@@ -41,7 +41,6 @@ import {PasswordComponent} from './pages/settings/password/password.component';
 import {SelfRegistrationComponent} from './components/self-registration/self-registration.component';
 import {TableComponent} from './components/table/table.component';
 import {TableRowComponent} from './components/table-row/table-row.component';
-import {SimpleNotificationsModule} from 'angular2-notifications';
 import {EditorModule, HUGERTE_SCRIPT_SRC} from '@hugerte/hugerte-angular';
 import {ContactSupportComponent} from './modals/contact-support/contact-support.component';
 import {EditorComponent} from './components/editor/editor.component';
@@ -287,12 +286,14 @@ import {TestCaseFilterComponent} from './components/test-case-filter/test-case-f
 import {NavigationControlsComponent} from './components/navigation-controls/navigation-controls.component';
 import {ConformanceStatementTableComponent} from './components/conformance-statement-table/conformance-statement-table.component';
 import {CreateEditTestServiceModalComponent} from './modals/create-edit-test-service-modal/create-edit-test-service-modal.component';
-import { StatementOptionsButtonComponent } from './components/statement-options-button/statement-options-button.component';
-import { DataManagementComponent } from './pages/admin/data-management/data-management.component';
-import { StartupWizardModalComponent } from './modals/startup-wizard-modal/startup-wizard-modal.component';
-import { RadioCardComponent } from './components/radio-card/radio-card.component';
-import { UsageTipModalComponent } from './modals/usage-tip-modal/usage-tip-modal.component';
+import {StatementOptionsButtonComponent} from './components/statement-options-button/statement-options-button.component';
+import {DataManagementComponent} from './pages/admin/data-management/data-management.component';
+import {StartupWizardModalComponent} from './modals/startup-wizard-modal/startup-wizard-modal.component';
+import {RadioCardComponent} from './components/radio-card/radio-card.component';
+import {UsageTipModalComponent} from './modals/usage-tip-modal/usage-tip-modal.component';
 import {SubmitOnControlEnterDirective} from './directives/submit-on-control-enter.directive';
+import {PopupNotificationContainerComponent} from './components/popup-notification-container/popup-notification-container.component';
+import {PopupNotificationComponent} from './components/popup-notification/popup-notification.component';
 
 @NgModule({ declarations: [
         AppComponent,
@@ -494,7 +495,9 @@ import {SubmitOnControlEnterDirective} from './directives/submit-on-control-ente
         DataManagementComponent,
         StartupWizardModalComponent,
         RadioCardComponent,
-        UsageTipModalComponent
+        UsageTipModalComponent,
+        PopupNotificationContainerComponent,
+        PopupNotificationComponent
     ],
     bootstrap: [AppComponent], imports: [
         NgxColorPickerComponent,
@@ -505,7 +508,6 @@ import {SubmitOnControlEnterDirective} from './directives/submit-on-control-ente
         FormsModule,
         AppRoutingModule,
         DragDropModule,
-        SimpleNotificationsModule.forRoot(),
         ModalModule.forRoot(),
         TooltipModule.forRoot(),
         AlertModule.forRoot(),

@@ -13,18 +13,9 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component} from '@angular/core';
-import {setTheme} from 'ngx-bootstrap/utils';
+export interface PopupNotificationApi {
 
-@Component({
-    selector: 'app-root',
-    templateUrl: './app.component.html',
-    standalone: false
-})
-export class AppComponent {
-
-  constructor() {
-    setTheme('bs5')
-  }
+  closeNotification: () => void;
 
 }
+

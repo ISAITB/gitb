@@ -13,18 +13,14 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component} from '@angular/core';
-import {setTheme} from 'ngx-bootstrap/utils';
+.notifications-container {
+    position: fixed;
+    right: 10px;
+    bottom: 10px;
+    width: 400px;
+    z-index: 9999;
 
-@Component({
-    selector: 'app-root',
-    templateUrl: './app.component.html',
-    standalone: false
-})
-export class AppComponent {
-
-  constructor() {
-    setTheme('bs5')
-  }
-
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 10px;
 }

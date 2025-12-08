@@ -1,0 +1,9 @@
+<div class="notifications-container">
+    @for (notification of notifications$ | async; track notification.id) {
+        <app-popup-notification
+            #popupNotification
+            [notification]="notification"
+            (close)="close(notification)">
+        </app-popup-notification>
+    }
+</div>

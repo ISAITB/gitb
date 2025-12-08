@@ -24,6 +24,7 @@ import {DataService} from './data.service';
 import {Utils} from '../common/utils';
 import {ROUTES} from '../common/global';
 import {RoutingService} from './routing.service';
+import {PopupService} from './popup.service';
 
 @Injectable({
   providedIn: 'root'
@@ -50,7 +51,8 @@ export class AuthProviderService {
       private readonly cookieService: CookieService,
       private readonly httpClient: HttpClient,
       private readonly dataService: DataService,
-      private readonly routingService: RoutingService
+      private readonly routingService: RoutingService,
+      private readonly popupService: PopupService
     ) {
     // Check if access token is set in cookies
     let accessTokenValue = cookieService.get(this.atKey)
@@ -121,6 +123,8 @@ export class AuthProviderService {
   }
 
   signalLogout(info: LogoutEventInfo) {
+    // Make sure any persistent open popups are closed
+    this.popupService.closeAll()
     this.onLogoutSource.next(info)
   }
 

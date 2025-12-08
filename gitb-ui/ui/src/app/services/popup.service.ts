@@ -13,62 +13,61 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Injectable } from '@angular/core';
-import { NotificationsService, NotificationType } from 'angular2-notifications';
+import {Injectable} from '@angular/core';
+import {BehaviorSubject, Subject} from 'rxjs';
+import {PopupNotification} from '../types/popup-notification';
 
 @Injectable({
   providedIn: 'root'
 })
 export class PopupService {
 
-  constructor(
-    private readonly notificationService: NotificationsService
-  ) { }
+  private notificationsSubject = new BehaviorSubject<PopupNotification[]>([]);
+  private closeNotificationsSubject = new Subject<void>();
+  notifications$ = this.notificationsSubject.asObservable();
+  closeNotifications$ = this.closeNotificationsSubject.asObservable();
+
+  constructor() { }
 
   success(message: string, persistent?: boolean) {
+    this.add(message, 'success', persistent)
+  }
+
+  warning(message: string, persistent?: boolean) {
+    this.add(message, 'warning', persistent)
+  }
+
+  error(message: string, persistent?: boolean) {
+    this.add(message, 'error', persistent)
+  }
+
+  info(message: string, persistent?: boolean) {
+    this.add(message, 'info', persistent)
+  }
+
+  private add(message: string, type: 'error'|'warning'|'success'|'info', persistent?: boolean) {
     if (message !== undefined) {
       if (!message.endsWith(".")) {
         message = message + "."
       }
-      if (persistent) {
-        this.notificationService.html(message, NotificationType.Success, { timeOut: 0, clickToClose: true }, 'success')
-      } else {
-        this.notificationService.html(message, NotificationType.Success, undefined, 'success')
+      const notification: PopupNotification = {
+        id: crypto.randomUUID(),
+        type: type,
+        message: message,
+        persistent: persistent === true
       }
+      const list = this.notificationsSubject.value;
+      this.notificationsSubject.next([...list, notification]);
     }
   }
 
-  warning(message: string, persistent?: boolean) {
-    if (message !== undefined) {
-      if (persistent) {
-        this.notificationService.html(message, NotificationType.Warn, { timeOut: 0, clickToClose: true }, 'warn')
-      } else {
-        this.notificationService.html(message, NotificationType.Warn, undefined, 'warn')
-      }
-    }
-  }
-
-  error(message: string, persistent?: boolean) {
-    if (message !== undefined) {
-      if (persistent) {
-        this.notificationService.html(message, NotificationType.Error, { timeOut: 0, clickToClose: true }, 'error')
-      } else {
-        this.notificationService.html(message, NotificationType.Error, undefined, 'error')
-      }
-    }
-  }
-
-  info(message: string, persistent?: boolean) {
-    if (message !== undefined) {
-      if (persistent) {
-        this.notificationService.html(message, NotificationType.Info, { timeOut: 0, clickToClose: true }, 'info')
-      } else {
-        this.notificationService.html(message, NotificationType.Info, undefined, 'info')
-      }
-    }
+  remove(id: string) {
+    this.notificationsSubject.next(
+      this.notificationsSubject.value.filter(n => n.id !== id)
+    );
   }
 
   closeAll() {
-    this.notificationService.remove()
+    this.closeNotificationsSubject.next()
   }
 }
