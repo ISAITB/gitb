@@ -97,6 +97,8 @@ export class LoginComponent extends BaseSelfRegistrationPageComponent implements
     } else {
       if (this.loginOption == Constants.LOGIN_OPTION.REGISTER || this.loginOption == Constants.LOGIN_OPTION.REGISTER_INTERNAL) {
         this.formType = LoginFormType.SelfRegister
+      } else if (this.loginOption == Constants.LOGIN_OPTION.DEMO) {
+        this.loginViaSelection(this.dataService.configuration.demosAccount)
       } else {
         this.formType = LoginFormType.Login
       }
