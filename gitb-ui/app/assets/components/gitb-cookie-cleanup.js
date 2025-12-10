@@ -22,12 +22,10 @@ function setupLoginOptionElement(elementId, parameter) {
     }
 }
 function option(value) {
-    if (sessionStorage) {
-        if (value) {
-            sessionStorage.setItem('com.itb.loginOption', value);
-        } else {
-            sessionStorage.setItem('com.itb.loginOption', 'none');
-        }
+    if (value) {
+        document.cookie = 'LOGIN_OPTION='+value+";Path=/;SameSite=Strict";
+    } else {
+        document.cookie = 'LOGIN_OPTION=none;Path=/;SameSite=Strict';
     }
     let contextPath = document.getElementById('ctx-div').textContent;
     window.location.href = contextPath+'app';
@@ -37,6 +35,7 @@ function eraseCookies() {
         sessionStorage.clear();
     }
     let cookiePath = document.getElementById('cp-div').textContent;
+    document.cookie = 'LOGIN_OPTION=;Path=/;SameSite=Strict;expires=Thu, 01 Jan 1970 00:00:01 GMT;';
     document.cookie = 'ITB_REQUESTED_URL=;expires=Thu, 01 Jan 1970 00:00:01 GMT;';
     document.cookie = 'tat=;expires=Thu, 01 Jan 1970 00:00:01 GMT;';
     document.cookie = 'tat=;path='+cookiePath+';expires=Thu, 01 Jan 1970 00:00:01 GMT;';

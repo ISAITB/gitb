@@ -17,6 +17,14 @@ package models
 
 object ActualUserInfo {
 
+  def forDemoUser(): ActualUserInfo = {
+    new ActualUserInfo(
+      Constants.DemoUserProfileIdentifier,
+      "demo@itb.ec.europa.eu",
+      "Demo User"
+    )
+  }
+
   def fromAttributes(uid: String, email: String, name: Option[String], firstName: Option[String], lastName: Option[String]): ActualUserInfo = {
     val nameToUse = if (firstName.isDefined && lastName.isDefined) {
       firstName.get + " " + lastName.get

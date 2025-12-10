@@ -21,7 +21,8 @@ import javax.inject.Inject
 class Filters @Inject() (
   cors: CorsFilter,
   error: ErrorFilter,
+  demoFilter: DemoFilter,
   securityFilter: SecurityFilter,
   auth: AuthenticationFilter,
   headerFilter: HeaderFilter
-) extends DefaultHttpFilters(securityFilter, auth, cors, error, headerFilter)
+) extends DefaultHttpFilters(demoFilter, securityFilter, auth, cors, error, headerFilter)

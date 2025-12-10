@@ -218,44 +218,50 @@ class SecurityModule extends AbstractModule {
     if (Configurations.AUTHENTICATION_SSO_ENABLED) {
       if (Configurations.AUTHENTICATION_SSO_TYPE == Constants.SsoTypeEcas) {
         new BaseProfileResolver(playSessionStore) {
-          override def extractUserInfo(profile: UserProfile): Option[ActualUserInfo] = {
-            Option(profile.getAttributes).map { userAttributes =>
-              ActualUserInfo.fromAttributes(
-                uid = profile.getId,
-                email = userAttributes.get(Constants.UserAttributeEmail).asInstanceOf[String],
-                name = None,
-                firstName = Option(userAttributes.get(Constants.UserAttributeFirstName).asInstanceOf[String]),
-                lastName = Option(userAttributes.get(Constants.UserAttributeLastName).asInstanceOf[String])
-              )
-            }
+          override def extractUserInfo(userProfile: UserProfile): Option[ActualUserInfo] = {
+            extractDemoOrActualUser(userProfile, profile => {
+              Option(profile.getAttributes).map { userAttributes =>
+                ActualUserInfo.fromAttributes(
+                  uid = profile.getId,
+                  email = userAttributes.get(Constants.UserAttributeEmail).asInstanceOf[String],
+                  name = None,
+                  firstName = Option(userAttributes.get(Constants.UserAttributeFirstName).asInstanceOf[String]),
+                  lastName = Option(userAttributes.get(Constants.UserAttributeLastName).asInstanceOf[String])
+                )
+              }
+            })
           }
         }
       } else if (Configurations.AUTHENTICATION_SSO_TYPE == Constants.SsoTypeOidc) {
         new BaseProfileResolver(playSessionStore) {
-          override def extractUserInfo(profile: UserProfile): Option[ActualUserInfo] = {
-            Option(profile.asInstanceOf[OidcProfile]).map { oidcProfile =>
-              ActualUserInfo.fromAttributes(
-                uid = oidcProfile.getId,
-                email = oidcProfile.getEmail,
-                name = Option(oidcProfile.getDisplayName),
-                firstName = Option(oidcProfile.getFirstName),
-                lastName = Option(oidcProfile.getFamilyName)
-              )
-            }
+          override def extractUserInfo(userProfile: UserProfile): Option[ActualUserInfo] = {
+            extractDemoOrActualUser(userProfile, profile => {
+              Option(profile.asInstanceOf[OidcProfile]).map { oidcProfile =>
+                ActualUserInfo.fromAttributes(
+                  uid = oidcProfile.getId,
+                  email = oidcProfile.getEmail,
+                  name = Option(oidcProfile.getDisplayName),
+                  firstName = Option(oidcProfile.getFirstName),
+                  lastName = Option(oidcProfile.getFamilyName)
+                )
+              }
+            })
           }
         }
       } else if (Configurations.AUTHENTICATION_SSO_TYPE == Constants.SsoTypeLdap) {
         new BaseProfileResolver(playSessionStore) {
-          override def extractUserInfo(profile: UserProfile): Option[ActualUserInfo] = {
-            Option(profile.asInstanceOf[LdapProfile]).map { ldapProfile =>
-              ActualUserInfo.fromAttributes(
-                uid = ldapProfile.getAttribute(Configurations.AUTHENTICATION_SSO_ATTRIBUTE_USER_ID, classOf[String]),
-                email = ldapProfile.getAttribute(Configurations.AUTHENTICATION_SSO_ATTRIBUTE_EMAIL, classOf[String]),
-                name = None,
-                firstName = Option(ldapProfile.getAttribute(Configurations.AUTHENTICATION_SSO_ATTRIBUTE_FIRST_NAME, classOf[String])),
-                lastName = Option(ldapProfile.getAttribute(Configurations.AUTHENTICATION_SSO_ATTRIBUTE_LAST_NAME, classOf[String]))
-              )
-            }
+          override def extractUserInfo(userProfile: UserProfile): Option[ActualUserInfo] = {
+            extractDemoOrActualUser(userProfile, profile => {
+              Option(profile.asInstanceOf[LdapProfile]).map { ldapProfile =>
+                ActualUserInfo.fromAttributes(
+                  uid = ldapProfile.getAttribute(Configurations.AUTHENTICATION_SSO_ATTRIBUTE_USER_ID, classOf[String]),
+                  email = ldapProfile.getAttribute(Configurations.AUTHENTICATION_SSO_ATTRIBUTE_EMAIL, classOf[String]),
+                  name = None,
+                  firstName = Option(ldapProfile.getAttribute(Configurations.AUTHENTICATION_SSO_ATTRIBUTE_FIRST_NAME, classOf[String])),
+                  lastName = Option(ldapProfile.getAttribute(Configurations.AUTHENTICATION_SSO_ATTRIBUTE_LAST_NAME, classOf[String]))
+                )
+              }
+            })
           }
         }
       } else {
@@ -268,6 +274,20 @@ class SecurityModule extends AbstractModule {
           None
         }
       }
+    }
+  }
+
+  private def extractDemoOrActualUser(profile: UserProfile, fn: UserProfile => Option[ActualUserInfo]): Option[ActualUserInfo]  = {
+    if (Configurations.DEMOS_ENABLED && profile.getId == Constants.DemoUserProfileIdentifier) {
+      /*
+       * When demos are enabled, and we are making a demo account logic, the Pac4J SecurityFilter is skipped.
+       * Nonetheless, the profile generation logic is called because we have initialised a profile resolver.
+       * Here, we skip the normal logic of extracting the actual user information to use from OIDC, CAS etc.
+       * but rather return a fixed demo user.
+       */
+      Some(ActualUserInfo.forDemoUser())
+    } else {
+      fn(profile)
     }
   }
 
@@ -301,6 +321,15 @@ class SecurityModule extends AbstractModule {
       excludedPathMatcher.excludePath("%s/sso/login".formatted(API_ROOT))
     }
     config.addMatcher("excludedPath", excludedPathMatcher)
+    config.addMatcher("noDemo", ctx => {
+      !ctx.webContext().getRequestCookies.stream().anyMatch(c => c.getName == "LOGIN_OPTION" && c.getValue == "demo")
+    })
+    // The "securedRequests" matcher is a composite and is configured in application.conf.
+    config.addMatcher("securedRequests", ctx => {
+      val pathAllowed = config.getMatchers.get("excludedPath").matches(ctx)
+      val demoAllowed = config.getMatchers.get("noDemo").matches(ctx)
+      pathAllowed && demoAllowed
+    })
     config
   }
 

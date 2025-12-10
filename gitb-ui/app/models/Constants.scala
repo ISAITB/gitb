@@ -90,6 +90,8 @@ object Constants {
   val SsoTypeOidc = "oidc"
   val SsoTypeLdap = "ldap"
 
+  val DemoUserProfileIdentifier = "eu.europa.ec.itb.DemoUser"
+
   // When ending in "-snapshot", this is considered a non-published release.
   val VersionNumber = "1.29.0-snapshot"
   val VersionNumberPostfixForResources = ""

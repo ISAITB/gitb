@@ -103,7 +103,8 @@ export class DataService {
   private static STORAGE_LOCATION = "com.itb.location"
   private static STORAGE_USER = "com.itb.user"
   private static STORAGE_USER_OPTIONAL = "com.itb.userOptional"
-  private static STORAGE_LOGIN_OPTION = "com.itb.loginOption"
+  private static COOKIE_LOGIN_OPTION = "LOGIN_OPTION"
+  private static COOKIE_REQUESTED_URL = "ITB_REQUESTED_URL"
 
   constructor(
     private readonly cookieService: CookieService
@@ -1692,17 +1693,15 @@ export class DataService {
 
   recordLoginOption(option: string) {
     this.loginOption = option
-    if (sessionStorage) {
-      sessionStorage.setItem(DataService.STORAGE_LOGIN_OPTION, option)
-    }
+    this.cookieService.set(DataService.COOKIE_LOGIN_OPTION, option)
   }
 
   retrieveLoginOption(): string|undefined {
     let optionToReturn: string|undefined
     if (this.loginOption) {
       optionToReturn = this.loginOption
-    } else if (sessionStorage) {
-      const option = sessionStorage.getItem(DataService.STORAGE_LOGIN_OPTION)
+    } else {
+      const option = this.cookieService.get(DataService.COOKIE_LOGIN_OPTION)
       if (option) {
         optionToReturn = option
       }
@@ -1712,16 +1711,14 @@ export class DataService {
 
   clearLoginOption() {
     this.loginOption = undefined
-    if (sessionStorage) {
-      sessionStorage.removeItem(DataService.STORAGE_LOGIN_OPTION)
-    }
+    this.cookieService.delete(DataService.COOKIE_LOGIN_OPTION, "/")
   }
 
   applyRequestedRoute(): boolean {
     let hasRequestedRoute = false
-    const requestedUrl = this.cookieService.get("ITB_REQUESTED_URL")
+    const requestedUrl = this.cookieService.get(DataService.COOKIE_REQUESTED_URL)
     if (requestedUrl && requestedUrl.length > 0) {
-      this.cookieService.delete("ITB_REQUESTED_URL", "/")
+      this.cookieService.delete(DataService.COOKIE_REQUESTED_URL, "/")
       let requestedPath: string|undefined
       if (requestedUrl.indexOf("://") != -1) {
         // This is a complete URL.

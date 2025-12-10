@@ -324,7 +324,10 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction,
         }
       }
       if (isFullLogout) {
-        playSessionStore.destroySession(new PlayWebContext(request))
+        val webContext = new PlayWebContext(request)
+        val profileManager = new ProfileManager(webContext, playSessionStore)
+        profileManager.removeProfiles()
+        playSessionStore.destroySession(webContext)
         ResponseConstructor.constructEmptyResponse.withNewSession
       } else {
         ResponseConstructor.constructEmptyResponse
