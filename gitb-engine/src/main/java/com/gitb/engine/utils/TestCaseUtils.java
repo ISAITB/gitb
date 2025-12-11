@@ -689,12 +689,21 @@ public class TestCaseUtils {
 
     public static TAR createReportForException(Throwable error) {
         TAR report = null;
-        if (error != null && error.getMessage() != null && !error.getMessage().isBlank()) {
+        String message = null;
+        Throwable currentError = error;
+        // Get the most precise, non-empty error message from the stack trace.
+        while (currentError != null) {
+            if (currentError.getMessage() != null && !currentError.getMessage().isEmpty()) {
+                message = currentError.getMessage();
+            }
+            currentError = currentError.getCause();
+        }
+        if (message != null) {
             report = createEmptyReport();
             report.setResult(TestResultType.FAILURE);
             report.setReports(new TestAssertionGroupReportsType());
             BAR item = new BAR();
-            item.setDescription(error.getMessage());
+            item.setDescription(message);
             report.getReports().getInfoOrWarningOrError().add(OBJECT_FACTORY_TR.createTestAssertionGroupReportsTypeError(item));
             report.setCounters(new ValidationCounters());
             report.getCounters().setNrOfErrors(BigInteger.ONE);
