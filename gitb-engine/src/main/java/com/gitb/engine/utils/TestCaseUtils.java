@@ -687,5 +687,22 @@ public class TestCaseUtils {
         }
     }
 
+    public static TAR createReportForException(Throwable error) {
+        TAR report = null;
+        if (error != null && error.getMessage() != null && !error.getMessage().isBlank()) {
+            report = createEmptyReport();
+            report.setResult(TestResultType.FAILURE);
+            report.setReports(new TestAssertionGroupReportsType());
+            BAR item = new BAR();
+            item.setDescription(error.getMessage());
+            report.getReports().getInfoOrWarningOrError().add(OBJECT_FACTORY_TR.createTestAssertionGroupReportsTypeError(item));
+            report.setCounters(new ValidationCounters());
+            report.getCounters().setNrOfErrors(BigInteger.ONE);
+            report.getCounters().setNrOfWarnings(BigInteger.ZERO);
+            report.getCounters().setNrOfAssertions(BigInteger.ZERO);
+        }
+        return report;
+    }
+
 }
 

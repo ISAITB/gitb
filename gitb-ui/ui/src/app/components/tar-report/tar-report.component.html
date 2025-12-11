@@ -20,13 +20,13 @@
         </div>
     </div>
     <div [collapse]="collapsed" [isAnimated]="true" (collapsed)="withSummaryBorder = false" (expands)="expanding()">
-        <div class="pt-2 ps-2 pe-2">
+        <div class="report-item-container">
             @if (reportsToShow.length > 0) {
                 @for (assertionReport of reportsToShow; track assertionReport.trackingId) {
                     <app-test-assertion-report (click)="selectedItem(assertionReport)" [assertionReport]="assertionReport"></app-test-assertion-report>
                 }
             } @else {
-                <div class="pending-container m-1 pb-2">
+                <div class="pending-container">
                     <div class="pending-message">No report items to display.</div>
                 </div>
             }

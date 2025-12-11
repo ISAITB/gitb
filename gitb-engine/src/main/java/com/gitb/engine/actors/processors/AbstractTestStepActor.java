@@ -37,11 +37,10 @@ import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.engine.utils.StepContext;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
-import com.gitb.tdl.Assign;
-import com.gitb.tdl.IfStep;
-import com.gitb.tdl.Log;
-import com.gitb.tdl.TestConstruct;
+import com.gitb.tdl.*;
+import com.gitb.tdl.Process;
 import com.gitb.tr.*;
+import com.gitb.tr.ObjectFactory;
 import com.gitb.types.MapType;
 import com.gitb.utils.XMLDateTimeUtils;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -61,6 +60,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
+
+import static com.gitb.engine.utils.TestCaseUtils.createReportForException;
 
 /**
  * Created by serbay on 9/11/14.
@@ -446,7 +447,11 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 			updateTestStepStatus(getContext(), new StatusEvent(StepStatus.SKIPPED, scope, self()), null, true, false);
 		} else {
 			// Unexpected error.
-			updateTestStepStatus(getContext(), new ErrorStatusEvent(failure, scope, self()), null, true, true);
+            TAR report = null;
+            if (step instanceof Verify || step instanceof MessagingStep || step instanceof Process) {
+                report = createReportForException(failure);
+            }
+			updateTestStepStatus(getContext(), new ErrorStatusEvent(failure, scope, self()), report, true, true);
 		}
 	}
 

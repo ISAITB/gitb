@@ -1,4 +1,4 @@
-<div class="report-container mb-2" [ngClass]="assertionReport.type" [class.clickable]="clickable">
+<div class="report-container" [ngClass]="assertionReport.type" [class.clickable]="clickable">
     <div class="report-content">
         <div class="report-description">
             <span class="report-icon"><i class="fa-solid" [ngClass]="{'fa-info-circle': assertionReport.type == types.INFO, 'fa-warning': assertionReport.type == types.WARNING, 'fa-times-circle': assertionReport.type == types.ERROR}"></i></span>{{description}}
