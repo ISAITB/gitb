@@ -148,7 +148,7 @@ public class JacksonUtil {
             }
             if (testStepReport.getDate() != null) {
                 String dateString = testStepReport.getDate().toGregorianCalendar().toZonedDateTime()
-                        .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"));
+                        .format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss"));
                 json.writeObjectField("date", dateString);
             }
             if (testStepReport.getResult() != null) {

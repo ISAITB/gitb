@@ -1,7 +1,6 @@
 <div class="root-container" (click)="tagClicked($event)" [class.with-toggle]="toggleEnabled">
     <div class="tag-container"
         [class.pill]="pill"
-        [class.dark-border]="darkBorder"
         [tooltip]="tooltipText"
         [isDisabled]="tooltipText == undefined || tooltipText == ''"
         [ngClass]="styleClass == undefined ? '': styleClass"
