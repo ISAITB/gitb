@@ -352,6 +352,14 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
     return this.progressIcons[testCaseId]
   }
 
+  progressIconTooltip(testCaseId: number): string {
+    switch (this.testCaseStatus[testCaseId]) {
+      case Constants.TEST_CASE_STATUS.ERROR:  return 'Failure'
+      case Constants.TEST_CASE_STATUS.COMPLETED: return 'Success'
+      default: return ''
+    }
+  }
+
   private prepareNextTest(start: boolean) {
     let previousTestId: number|undefined
     if (this.currentTest == undefined) {
