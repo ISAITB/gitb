@@ -5,11 +5,13 @@
             <div class="panelTitle">{{header}}</div>
         </div>
         <div [collapse]="collapsed" [isAnimated]="true" (collapsed)="headerCollapsed = true" (expands)="panelExpanding()">
-            <div class="panelContent pb-3">
-                <app-custom-property-form 
-                    [tbProperties]="properties" 
+            <div class="panelContent ps-3 pe-3 pb-3">
+                <app-custom-property-form
+                    [tbProperties]="properties"
                     [tbReadonly]="readonly"
                     [tbPropertyType]="propertyType"
+                    [tbFormPadded]="false"
+                    [tbColInputLess]="1"
                     [tbOwner]="owner"
                     [tbShowFormHeader]="false"
                     [validation]="validation">
