@@ -5,11 +5,7 @@
 		</div>
 		<form (ngSubmit)="saveGroupChanges()">
 			<div class="card-body" [pending]="!loaded" focus="shortName">
-				<div class="row">
-					<div class="col-10 offset-1">
-                        <app-specification-group-form [group]="group"></app-specification-group-form>
-                    </div>
-				</div>
+                <app-specification-group-form [group]="group"></app-specification-group-form>
 			</div>
 			<div class="card-footer button-container">
 				<div class="btn-toolbar">

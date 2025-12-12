@@ -1,19 +1,19 @@
 @if (sso && !new) {
     <div class="row mb-3">
         <label class="col-3 col-form-label text-end" for="name">Name:</label>
-        <div class="col-6"><input id="name" [readonly]="true" name="name" [(ngModel)]="user.name" class="form-control" type="text"></div>
+        <div class="col-8 col-md-6"><input id="name" [readonly]="true" name="name" [(ngModel)]="user.name" class="form-control" type="text"></div>
         <div app-tooltip class="col-auto" tbTooltip="The name of the user retrieved from her account information."></div>
     </div>
 } @else if (!sso) {
     <div class="row mb-3">
-        <label class="col-4 col-form-label text-end" for="name">* Name:</label>
-        <div class="col-6"><input id="name" name="name" [(ngModel)]="user.name" class="form-control" type="text"></div>
+        <label class="col-3 col-form-label text-end" for="name">* Name:</label>
+        <div class="col-8 col-md-6"><input id="name" name="name" [(ngModel)]="user.name" class="form-control" type="text"></div>
         <div app-tooltip class="col-auto" tbTooltip="The name of the user. This is used for display purposes when listing users."></div>
     </div>
 }
 <div class="row mb-3">
-    <label [ngClass]="{'col-3': sso, 'col-4': !sso}" class="col-form-label text-end" for="email">@if (new) {<span>* </span>} {{sso?'Email:':'Username:'}}</label>
-    <div class="col-6"><input id="email" name="email" [(ngModel)]="user.email" class="form-control" type="text" [readonly]="!new" [invalid]="validation?.get('email')"></div>
+    <label class="col-3 col-form-label text-end" for="email">@if (new) {<span>* </span>} {{sso?'Email:':'Username:'}}</label>
+    <div class="col-8 col-md-6"><input id="email" name="email" [(ngModel)]="user.email" class="form-control" type="text" [readonly]="!new" [invalid]="validation?.get('email')"></div>
     @if (sso) {
         <div app-tooltip class="col-auto" tbTooltip="The email address linked to the user's account."></div>
     } @else {
@@ -23,14 +23,14 @@
 @if (!admin || !new) {
     @if (admin || roleReadonly) {
         <div class="row mb-3">
-            <label [ngClass]="{'col-3': sso, 'col-4': !sso}" class="col-form-label text-end" for="role">@if (new) {<span>* </span>}Role:</label>
-            <div class="col-6"><input id="role" name="role" [(ngModel)]="user.roleText" class="form-control" type="text" readonly="!new"></div>
+            <label class="col-3 col-form-label text-end" for="role">@if (new) {<span>* </span>}Role:</label>
+            <div class="col-8 col-md-6"><input id="role" name="role" [(ngModel)]="user.roleText" class="form-control" type="text" readonly="!new"></div>
             <div app-tooltip class="col-auto" tbTooltip="The user's assigned role."></div>
         </div>
     } @else {
         <div class="row mb-3">
-            <label [ngClass]="{'col-3': sso, 'col-4': !sso}" class="col-form-label text-end" for="role">* Role:</label>
-            <div class="col-6">
+            <label class="col-3 col-form-label text-end" for="role">* Role:</label>
+            <div class="col-8 col-md-6">
                 <select id="role" #role name="role" class="form-select" [(ngModel)]="user.role" [invalid]="validation?.get('role')">
                     @for (role of roles; track $index) {
                         <option [ngValue]="role.id">{{role.label}}</option>
@@ -43,23 +43,23 @@
 }
 @if (!new && !this.dataService.isVendorUser) {
     <div class="row mb-3">
-        <label [ngClass]="{'col-3': sso, 'col-4': !sso}" class="col-form-label text-end" for="status">Status:</label>
-        <div class="col-6"><input id="status" name="status" [(ngModel)]="user.ssoStatusText" class="form-control" type="text" [readonly]="true"></div>
+        <label class="col-3 col-form-label text-end" for="status">Status:</label>
+        <div class="col-8 col-md-6"><input id="status" name="status" [(ngModel)]="user.ssoStatusText" class="form-control" type="text" [readonly]="true"></div>
         <div app-tooltip class="col-auto" tbTooltip="The activation status of the user's account."></div>
     </div>
 }
 @if (!admin && !new && showOrganisation) {
     <div class="row mb-3">
-        <label [ngClass]="{'col-3': sso, 'col-4': !sso}" class="col-form-label text-end" for="organization">@if (new) {<span>* </span>}{{dataService.labelOrganisation()}}:</label>
-        <div class="col-6"><input id="organization" name="organization" [value]="user.organization?.fname" class="form-control" type="text" [readonly]="true"></div>
+        <label class="col-3 col-form-label text-end" for="organization">@if (new) {<span>* </span>}{{dataService.labelOrganisation()}}:</label>
+        <div class="col-8 col-md-6"><input id="organization" name="organization" [value]="user.organization?.fname" class="form-control" type="text" [readonly]="true"></div>
         <div app-tooltip class="col-auto" [tbTooltip]="'The '+dataService.labelOrganisationLower()+' this user is a member of.'"></div>
     </div>
 }
 @if (showChangePassword) {
     @if (!new && !sso) {
         <div class="row mb-3 pt-1">
-            <label class="col-4 col-form-label text-end pt-0" for="changePassword">Set one-time password?</label>
-            <div class="col-6">
+            <label class="col-3 col-form-label text-end pt-0" for="changePassword">Set one-time password?</label>
+            <div class="col-8 col-md-6">
                 <div class="form-check">
                     <input class="form-check-input" id="changePassword" name="changePassword" [(ngModel)]="changePassword" type="checkbox" (change)="setPasswordClicked()">
                 </div>
@@ -69,8 +69,8 @@
     @if (!sso) {
         <div [collapse]="!new && !changePassword" [isAnimated]="true" (expanded)="passwordExpanded()" (collapsed)="passwordCollapsed()">
             <div class="row mb-3">
-              <label class="col-4 col-form-label text-end" for="password">* One-time password:</label>
-              <div class="col-6">
+              <label class="col-3 col-form-label text-end" for="password">* One-time password:</label>
+              <div class="col-8 col-md-6">
                 <app-secret-input inputId="password" inputName="password" name="passwordSecret" [(ngModel)]="user.password" [focusChange]="passwordFocus"></app-secret-input>
               </div>
               <div app-tooltip class="col-auto" tbTooltip="This password can only be used once at first login and will then need to be changed."></div>

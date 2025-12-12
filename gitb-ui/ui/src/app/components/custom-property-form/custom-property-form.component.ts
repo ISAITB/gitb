@@ -33,12 +33,8 @@ import { ValidationState } from 'src/app/types/validation-state';
 export class CustomPropertyFormComponent implements OnInit {
 
   @Input() tbProperties?:CustomProperty[]
-  @Input() tbColLabel = 3
-  @Input() tbColOffset = 1
-  @Input() tbColInputLess = 0
   @Input() tbReadonly = false
   @Input() tbForceEditable = false
-  @Input() tbFormPadded = true
   @Input() tbShowFormHeader = true
   @Input() tbShowRequiredAsterisks = true
   @Input() tbAdmin?: boolean
@@ -55,7 +51,6 @@ export class CustomPropertyFormComponent implements OnInit {
   Constants = Constants
   isAdmin = false
   isReadonly = true
-  innerDivStyle = ''
   private hasPrerequisites = false
   private propertyMap: Record<string, CustomProperty> = {}
   resetMap: Record<number, EventEmitter<void>> = {}
@@ -89,9 +84,6 @@ export class CustomPropertyFormComponent implements OnInit {
       } else {
         this.isReadonly = this.tbReadonly || this.dataService.isVendorUser
       }
-    }
-    if (this.tbFormPadded) {
-      this.innerDivStyle = 'col-'+(11-this.tbColOffset)+' offset-'+this.tbColOffset
     }
     if (this.tbProperties) {
       for (let prop of this.tbProperties) {

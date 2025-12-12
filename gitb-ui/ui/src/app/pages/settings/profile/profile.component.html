@@ -6,32 +6,28 @@
         <form #profileForm="ngForm">
             <div class="card-body">
                 <div class="row">
-                    <div class="col-10 offset-1">
-                        <div class="row">
-                            <label class="col-2 col-form-label text-end" for="name">@if (!dataService.configuration.ssoEnabled) {<span>* </span>}Name:</label>
-                            <div class="col-7">
-                                @if (dataService.configuration.ssoEnabled) {
-                                    <p class="form-control-plaintext">{{data.name}}</p>
-                                } @else {
-                                    <input id="name" name="name" type="text" class="form-control" [(ngModel)]="data.name" [invalid]="validation.get('name')">
-                                }
-                            </div>
-                            @if (!dataService.configuration.ssoEnabled) {
-                                <div app-tooltip class="col-auto" tbTooltip="Your full name. This is used only when listing the members of your {{dataService.labelOrganisationLower()}}."></div>
-                            }
-                        </div>
-                        <div class="row mt-3">
-                            <legend class="col-2 col-form-label text-end">{{dataService.configuration.ssoEnabled?'Email:':'Username:'}}</legend>
-                            <div class="col-7">
-                                <p class="form-control-plaintext">{{data.email}}</p>
-                            </div>
-                        </div>
-                        <div class="row mt-3">
-                            <legend class="col-2 col-form-label text-end">Role:</legend>
-                            <div class="col-7">
-                                <p class="form-control-plaintext">{{data.role}}</p>
-                            </div>
-                        </div>
+                    <label class="col-3 col-form-label text-end" for="name">@if (!dataService.configuration.ssoEnabled) {<span>* </span>}Name:</label>
+                    <div class="col-8 col-md-6">
+                        @if (dataService.configuration.ssoEnabled) {
+                            <p class="form-control-plaintext">{{data.name}}</p>
+                        } @else {
+                            <input id="name" name="name" type="text" class="form-control" [(ngModel)]="data.name" [invalid]="validation.get('name')">
+                        }
+                    </div>
+                    @if (!dataService.configuration.ssoEnabled) {
+                        <div app-tooltip class="col-auto" tbTooltip="Your full name. This is used only when listing the members of your {{dataService.labelOrganisationLower()}}."></div>
+                    }
+                </div>
+                <div class="row mt-3">
+                    <legend class="col-3 col-form-label text-end">{{dataService.configuration.ssoEnabled?'Email:':'Username:'}}</legend>
+                    <div class="col-8 col-md-6">
+                        <p class="form-control-plaintext">{{data.email}}</p>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <legend class="col-3 col-form-label text-end">Role:</legend>
+                    <div class="col-8 col-md-6">
+                        <p class="form-control-plaintext">{{data.role}}</p>
                     </div>
                 </div>
                 @if (!dataService.configuration.ssoEnabled) {

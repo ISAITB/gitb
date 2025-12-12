@@ -52,13 +52,13 @@
             <div [collapse]="!reportSettings!.customPdfs">
                 <div class="row mt-3">
                     <label class="col-3 col-form-label text-end" for="customPdfServiceOverview">* Service address:</label>
-                    <div class="col-7">
+                    <div class="col-8 col-md-6">
                         <input #serviceField type="text" id="customPdfServiceOverview" name="customPdfServiceOverview" [(ngModel)]="reportSettings!.customPdfService" class="form-control"/>
                     </div>
                     <div app-tooltip class="col-auto" tbTooltip="The full address of the service that will be called to generate PDF reports. When generating a report, this service will receive a POST call with the XML conformance overview report as its payload, and is expected to respond with the produced PDF report."></div>
                 </div>
                 <div class="row mt-3 pt-0">
-                    <div class="col-7 offset-3">
+                    <div class="col-8 offset-3">
                         <div class="form-check form-check-inline">
                             <input class="form-check-input" type="checkbox" id="signCertificateOverview" name="signCertificateOverview" [(ngModel)]="reportSettings!.signPdfs">
                             <label class="form-check-label" for="signCertificateOverview">Add signature to report
@@ -76,7 +76,7 @@
                 <div [collapse]="!reportSettings!.customPdfsWithCustomXml" [isAnimated]="true">
                     <div class="row mt-3">
                         <legend class="col-3 col-form-label text-end">* Stylesheet:</legend>
-                        <div class="col-7">
+                        <div class="col-8 col-md-6">
                             <app-file-select [fileName]="stylesheetNameToShow" [reset]="resetStylesheet" (onUpload)="selectStylesheet($event)" placeholder="Drop or browse for stylesheet file ..." [accepts]="acceptedStylesheetTypes" [extraActions]="reportSettings!.stylesheetExists">
                                 @if (reportSettings!.stylesheetExists) {
                                     <button type="button" class="btn btn-secondary" (click)="viewStylesheet(reportType)" containerClass="shortTooltip" tooltip="View" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" container="body"><i class="fa-solid fa-magnifying-glass"></i></button>
@@ -90,7 +90,7 @@
             <div [collapse]="reportSettings!.customPdfs">
                 <div class="row mt-3">
                     <label class="col-3 col-form-label text-end">Title:</label>
-                    <div class="col-7">
+                    <div class="col-8 col-md-6">
                         <div class="row row-cols-auto align-items-center">
                             <div class="col-auto">
                                 <div class="form-check mb-0">
@@ -156,7 +156,7 @@
                     <app-form-section sectionTitle="Message configuration" [marginBefore]="true">
                         <div class="row mt-3">
                             <label class="col-3 col-form-label text-end" for="messageLevel">Report level:</label>
-                            <div class="col-3">
+                            <div class="col-4 col-md-3">
                                 @if ((settings.enableAllLevel && !(settings.enableDomainLevel || settings.enableGroupLevel || settings.enableSpecificationLevel)) ||
                                     (settings.enableDomainLevel && !(settings.enableAllLevel || settings.enableGroupLevel || settings.enableSpecificationLevel)) ||
                                     (settings.enableGroupLevel && !(settings.enableAllLevel || settings.enableDomainLevel || settings.enableSpecificationLevel)) ||
@@ -191,7 +191,7 @@
                                 }
                             </div>
                             @if (messageLevel != "all" && (settings.enableDomainLevel || settings.enableGroupLevel || settings.enableSpecificationLevel)) {
-                                <div class="col-4">
+                                <div class="col-4 col-md-3">
                                     @if ((messageLevel == "domain" && allDomains && allDomains.length > 0) ||
                                     (messageLevel == "group" && allGroups && allGroups.length > 0) ||
                                     (messageLevel == "specification" && allSpecifications && allSpecifications.length > 0)) {
@@ -209,7 +209,7 @@
                             @if (communityDomainId == undefined && domains) {
                                 <div class="row mt-3">
                                     <label class="col-3 col-form-label text-end" for="domainMessage">{{dataService.labelDomain()}}:</label>
-                                    <div class="col-7">
+                                    <div class="col-8 col-md-6">
                                         @if (domains.length > 1) {
                                             <app-multi-select-filter name="selectedDomain" [(ngModel)]="selectedDomain" [config]="domainSelectionConfig" (apply)="domainChanged()"></app-multi-select-filter>
                                         } @else if (domains.length == 1) {
@@ -221,7 +221,7 @@
                             @if (selectedDomain != undefined && groups && (messageLevel == "group" || (messageLevel == "specification" && groups.length > 0)) && groups) {
                                 <div class="row mt-3">
                                     <label class="col-3 col-form-label text-end" for="groupMessage">{{dataService.labelSpecificationGroup()}}:</label>
-                                    <div class="col-7">
+                                    <div class="col-8 col-md-6">
                                         @if (groups.length > 1 || (messageLevel == "specification" && groups.length == 1 && specsPerDomain.has(selectedDomain.id))) {
                                             <app-multi-select-filter name="selectedGroup" [(ngModel)]="selectedGroup" [config]="groupSelectionConfig" (apply)="groupChanged()"></app-multi-select-filter>
                                         } @else if (groups.length == 1) {
@@ -237,7 +237,7 @@
                                     } @else {
                                         <label class="col-3 col-form-label text-end" for="specMessage">{{dataService.labelSpecificationInGroup()}}:</label>
                                     }
-                                    <div class="col-7">
+                                    <div class="col-8 col-md-6">
                                         @if (specifications.length > 1) {
                                             <app-multi-select-filter name="selectedSpecification" [(ngModel)]="selectedSpecification" [config]="specificationSelectionConfig" (apply)="specificationChanged()"></app-multi-select-filter>
                                         } @else if (specifications.length == 1) {
@@ -247,11 +247,11 @@
                                 </div>
                             }
                         }
-                        <div class="row mt-3">
-                            <div class="col-auto pe-0">
+                        <div class="row mt-3 gap-1">
+                            <div class="col-auto">
                                 <app-placeholder-selector [placeholders]="placeholders" [domainParameters]="true" [domainChanged]="domainChangedEmitter" [organisationParameters]="true" [systemParameters]="true" [resources]="true" [systemResources]="dataService.isSystemAdmin" [community]="communityId" [domainId]="selectedDomain?.id"></app-placeholder-selector>
                             </div>
-                            <div class="col-auto ps-0">
+                            <div class="col-auto">
                                 <button class="btn btn-secondary" type="button" (click)="clearCurrentMessage()" [disabled]="!textProvided(currentMessageContent)">Remove message</button>
                             </div>
                         </div>

@@ -14,13 +14,11 @@
             </div>
             <div class="card-footer button-container">
                 <div class="btn-toolbar">
-                    <button class="btn btn-secondary" type="submit" [disable]="saveDisabled()" [pending]="savePending">
-                        @if (theme.custom) {
-                            Save
-                        } @else if (!theme.active) {
-                            Activate
-                        }
-                    </button>
+                    @if (theme.custom) {
+                        <button class="btn btn-secondary" type="submit" [disable]="saveDisabled()" [pending]="savePending">Save</button>
+                    } @else if (!theme.active) {
+                        <button class="btn btn-secondary" type="submit" [disable]="saveDisabled()" [pending]="savePending">Activate</button>
+                    }
                     <button class="btn btn-secondary" type="button" (click)="copy()" [disable]="copyPending || deletePending || savePending" [pending]="copyPending">Copy</button>
                     <button class="btn btn-secondary" type="button" (click)="back()">Back</button>
                 </div>

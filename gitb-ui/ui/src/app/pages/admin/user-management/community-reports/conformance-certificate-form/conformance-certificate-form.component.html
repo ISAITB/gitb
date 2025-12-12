@@ -20,13 +20,13 @@
         <div [collapse]="!reportSettings!.customPdfs">
             <div class="row mt-3">
                 <label class="col-3 col-form-label text-end" for="customPdfService">* Service address:</label>
-                <div class="col-7">
+                <div class="col-8 col-md-6">
                     <input #serviceField type="text" id="customPdfService" name="customPdfService" [(ngModel)]="reportSettings!.customPdfService" class="form-control"/>
                 </div>
                 <div app-tooltip class="col-auto" tbTooltip="The full address of the service that will be called to generate PDF reports. When generating a report, this service will receive a POST call with the XML conformance statement report as its payload, and is expected to respond with the produced PDF report."></div>
             </div>
             <div class="row mt-3 pt-0">
-                <div class="col-7 offset-3">
+                <div class="col-8 offset-3">
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" type="checkbox" id="signCertificate" name="signCertificate" [(ngModel)]="reportSettings!.signPdfs">
                         <label class="form-check-label" for="signCertificate">Add signature to report
@@ -44,7 +44,7 @@
             <div [collapse]="!reportSettings!.customPdfsWithCustomXml" [isAnimated]="true">
                 <div class="row mt-3">
                     <legend class="col-3 col-form-label text-end">* Stylesheet:</legend>
-                    <div class="col-7">
+                    <div class="col-8 col-md-6">
                         <app-file-select [fileName]="stylesheetNameToShow" [reset]="resetStylesheet" (onUpload)="selectStylesheet($event)" placeholder="Drop or browse for stylesheet file ..." [accepts]="acceptedStylesheetTypes" [extraActions]="reportSettings!.stylesheetExists">
                             @if (reportSettings!.stylesheetExists) {
                                 <button type="button" class="btn btn-secondary" (click)="viewStylesheet(reportType)" containerClass="shortTooltip" tooltip="View" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" container="body"><i class="fa-solid fa-magnifying-glass"></i></button>
@@ -58,7 +58,7 @@
         <div [collapse]="reportSettings!.customPdfs">
             <div class="row mt-3">
                 <label class="col-3 col-form-label text-end">Title:</label>
-                <div class="col-7">
+                <div class="col-8 col-md-6">
                     <div class="row row-cols-auto align-items-center">
                         <div class="col-auto">
                             <div class="form-check mb-0">
@@ -75,7 +75,7 @@
             </div>
             <div class="row mt-3 pt-1">
                 <legend class="col-3 col-form-label text-end pt-0">Included sections:</legend>
-                <div class="col-8">
+                <div class="col-9">
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" type="checkbox" id="includeDetails" name="includeDetails" [(ngModel)]="settings.includeDetails">
                         <label class="form-check-label" for="includeDetails">Details

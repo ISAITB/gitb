@@ -1,12 +1,9 @@
 @if (hasVisibleProperties()) {
     <div [class.mt-3]="tbTopMargin">
-        <app-custom-property-form 
+        <app-custom-property-form
             [tbExpandable]="true"
-            [tbCollapsed]="!tbPropertyData.edit" 
-            [tbProperties]="tbPropertyData.properties" 
-            [tbColOffset]="tbColOffset" 
-            [tbColLabel]="tbColLabel" 
-            [tbColInputLess]="tbColInputLess"
+            [tbCollapsed]="!tbPropertyData.edit"
+            [tbProperties]="tbPropertyData.properties"
             [tbReadonly]="tbReadonly"
             [tbPropertyType]="tbPropertyType"
             [tbOwner]="tbOwner"

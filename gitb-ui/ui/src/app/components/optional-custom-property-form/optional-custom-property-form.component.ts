@@ -25,9 +25,7 @@ import { OptionalCustomPropertyFormData } from './optional-custom-property-form-
 export class OptionalCustomPropertyFormComponent implements OnInit {
 
   @Input() tbPropertyData!: OptionalCustomPropertyFormData
-  @Input() tbColLabel = 3
   @Input() tbColOffset = 1
-  @Input() tbColInputLess = 0
   @Input() tbReadonly = false
   @Input() tbPropertyType!: 'organisation'|'system'|'statement'
   @Input() tbOwner?: number
