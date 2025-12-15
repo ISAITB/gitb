@@ -23,6 +23,7 @@ import com.gitb.engine.expr.PossibleDomainIdentifier;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.processing.ProcessingContext;
 import com.gitb.engine.processing.handlers.XPathProcessor;
+import com.gitb.engine.processing.handlers.ZipProcessor;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.engine.utils.HandlerUtils;
 import com.gitb.engine.utils.StepContext;
@@ -39,6 +40,7 @@ import com.gitb.tr.TestResultType;
 import com.gitb.tr.TestStepReportType;
 import com.gitb.types.DataType;
 import com.gitb.types.MapType;
+import com.gitb.types.StringType;
 import com.gitb.utils.DataTypeUtils;
 import com.gitb.utils.ErrorUtils;
 import org.apache.pekko.actor.ActorRef;
@@ -131,6 +133,8 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
             ProcessingData input = getData(handler, operation);
             if (handler instanceof XPathProcessor) {
                 input.addInput(HandlerUtils.NAMESPACE_MAP_INPUT, MapType.fromMap(scope.getNamespaceDefinitions()));
+            } else if (handler instanceof ZipProcessor) {
+                input.addInput(HandlerUtils.SESSION_INPUT, new StringType(scope.getContext().getSessionId()));
             }
             ProcessingReport report = handler.process(context.getSession(), step.getId(), operation, input);
             Promise<TestStepReportType> taskPromise = Futures.promise();
