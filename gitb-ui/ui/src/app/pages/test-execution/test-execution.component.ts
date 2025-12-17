@@ -451,7 +451,8 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
         initialState: {
           configurations: this.simulatedConfigs,
           actorInfo: this.actorInfoOfTests[this.currentTest!.id].actor
-        }
+        },
+        class: 'modal-lg'
       })
       if (modalRef.onHidden) {
         modalRef.onHidden.subscribe(() => {

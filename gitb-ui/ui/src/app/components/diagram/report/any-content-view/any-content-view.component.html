@@ -7,15 +7,21 @@
          [class.alert-success]="level === 'SUCCESS'"
          [class.alert-warning]="level === 'WARNING'"
          [class.alert-danger]="level === 'ERROR'"
-         [class.hovering]="hoveringTitle && withItems">
+         [class.hovering]="hoveringTitle && withItems && !this.root">
         @if (withName || withValue) {
             <div class="any-content-view-container">
                 <div class="any-content-view-texts" (click)="containerClicked();$event.stopPropagation()">
                     @if (withName) {
                         <div class="content-name" [class.with-items]="withItems" [class.break-texts]="breakNameText"
                              (mouseover)="hoverUpdate(true)" (mouseout)="hoverUpdate(false)">
-                            <app-collapsing-icon [hidden]="!withItems" [isCollapsed]="collapsed"></app-collapsing-icon>
-                            {{ name }}
+                            @if (!this.root) {
+                                <app-collapsing-icon [hidden]="!withItems" [isCollapsed]="collapsed"></app-collapsing-icon>
+                            }
+                            @if (name) {
+                                {{ name }}
+                            } @else {
+                                <div class="not-inline-help-text">Expand to view</div>
+                            }
                         </div>
                     }
                     @if (withValue) {
@@ -24,9 +30,7 @@
                                  [class.break-texts]="breakValueText">{{ value }}
                             </div>
                         } @else if (!withName) {
-                            <div class="content-value not-inline-help-text" [class.with-name]="withName"
-                                 [class.break-texts]="breakValueText">Download or view in editor
-                            </div>
+                            <div class="content-value not-inline-help-text">Download or view in editor</div>
                         }
                     }
                 </div>

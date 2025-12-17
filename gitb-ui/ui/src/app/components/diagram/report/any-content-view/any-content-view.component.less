@@ -27,12 +27,17 @@
     & > .content-name {
         padding-top: 3px;
         font-weight: bold;
+        display: flex;
         &.with-items {
             padding-top: 8px;
             padding-bottom: 8px;
         }
         &.break-texts {
             word-break: break-all;
+        }
+        .not-inline-help-text {
+            font-weight: normal;
+            opacity: 0.5;
         }
     }
     & > .content-value {
