@@ -562,7 +562,11 @@
                         border-left: 0;
                         border-top-right-radius: @border-radius;
                         border-bottom-right-radius: @border-radius;
-
+                        &.reply {
+                            border-top: 3px dashed @line-color;
+                            border-right: 3px dashed @line-color;
+                            border-bottom: 3px dashed @line-color;
+                        }
                         &::after {
                             right: auto;
                             left: 0;
