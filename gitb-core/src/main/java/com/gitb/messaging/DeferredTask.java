@@ -13,10 +13,20 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-package com.gitb.messaging.callback;
+package com.gitb.messaging;
 
-public enum CallbackType {
+import java.util.function.Function;
 
-    REMOTE, HTTP, SOAP, DOMIBUS
+public record DeferredTask<T>(T state, Function<T, Result<T>> executionHandler, Function<T, MessagingReport> expiryHandler, Long nextExecutionDelay) {
+
+    public DeferredTask<T> withNewDelay(Long newExecutionDelay) {
+        return new DeferredTask<>(state, executionHandler, expiryHandler, newExecutionDelay);
+    }
+
+    public DeferredTask<T> withNewState(T newState, Long newExecutionDelay) {
+        return new DeferredTask<>(newState, executionHandler, expiryHandler, newExecutionDelay);
+    }
+
+    public record Result<T>(MessagingReport report, Long nextExecutionDelay, T nextState) {}
 
 }

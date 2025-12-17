@@ -13,10 +13,20 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-package com.gitb.messaging.callback;
+package com.gitb.engine.messaging.handlers.layer.application.domibus;
 
-public enum CallbackType {
+public enum AuthType {
 
-    REMOTE, HTTP, SOAP, DOMIBUS
+    BASIC,
+    DIGEST;
 
+    public static AuthType forValue(String value) {
+        if ("basic".equals(value)) {
+            return BASIC;
+        } else if ("digest".equals(value)) {
+            return DIGEST;
+        } else {
+            throw new IllegalArgumentException("Unsupported authorisation type ["+value+"]. Supported values are 'basic' and 'digest'.");
+        }
+    }
 }

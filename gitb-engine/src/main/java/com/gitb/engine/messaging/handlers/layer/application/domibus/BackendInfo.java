@@ -13,10 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-package com.gitb.messaging.callback;
+package com.gitb.engine.messaging.handlers.layer.application.domibus;
 
-public enum CallbackType {
-
-    REMOTE, HTTP, SOAP, DOMIBUS
-
+public record BackendInfo(String address, String username, String password, AuthType authenticationType) {
 }

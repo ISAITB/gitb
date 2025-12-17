@@ -13,10 +13,36 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-package com.gitb.messaging.callback;
+package com.gitb.engine.messaging.handlers.layer.application.domibus;
 
-public enum CallbackType {
+public class Payload {
 
-    REMOTE, HTTP, SOAP, DOMIBUS
+    private String id;
+    private String contentType;
+    private byte[] value;
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getContentType() {
+        return contentType;
+    }
+
+    public void setContentType(String contentType) {
+        this.contentType = contentType;
+    }
+
+    public byte[] getValue() {
+        return value;
+    }
+
+    public void setValue(byte[] value) {
+        this.value = value;
+    }
 
 }

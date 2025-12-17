@@ -30,10 +30,7 @@ import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.engine.utils.StepContext;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
-import com.gitb.messaging.DeferredMessagingReport;
-import com.gitb.messaging.IMessagingHandler;
-import com.gitb.messaging.Message;
-import com.gitb.messaging.MessagingReport;
+import com.gitb.messaging.*;
 import com.gitb.messaging.callback.SessionCallbackData;
 import com.gitb.tdl.ErrorLevel;
 import com.gitb.tr.TAR;
@@ -169,6 +166,8 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 								((MapType) scope.getVariable(PropertyConstants.SYSTEM_MAP).getValue()).getItem(PropertyConstants.SYSTEM_MAP_API_KEY).toString(),
 								deferredReport.getCallbackData())
 						);
+						// Handle the report's deferred task (if any).
+						scheduleDeferredTask(deferredReport.getDeferredTask());
 					}
 					return null;
 				} else {
@@ -221,11 +220,53 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 					}
 					promise.trySuccess(handleMessagingResult(getMessagingReportForTimeout(flagName, errorIfTimeout)));
 				}
+			} else if (message instanceof DeferredTask<?> deferredTask) {
+				handleDeferredTask(deferredTask);
 			} else {
 				super.onReceive(message);
 			}
 		} catch (Exception e) {
 			error(e);
+		}
+	}
+
+	private void scheduleDeferredTask(DeferredTask<?> deferredTask) {
+		if (deferredTask != null) {
+			getContext().system().scheduler().scheduleOnce(
+					scala.concurrent.duration.Duration.apply(deferredTask.nextExecutionDelay(), TimeUnit.MILLISECONDS), () -> {
+						if (!self().isTerminated()) {
+							self().tell(deferredTask, self());
+						}
+					},
+					getContext().dispatcher()
+			);
+		}
+	}
+
+
+	private <T> void handleDeferredTask(DeferredTask<T> deferredTask) {
+		if (deferredTask != null && promise != null && !promise.isCompleted()) {
+			try {
+				var result = deferredTask.executionHandler().apply(deferredTask.state());
+				if (result.report() != null) {
+					// Task completed - the report will be delivered as a callback via the CallbackManager.
+					logger.debug(addMarker(), "Task completed");
+				} else if (result.nextExecutionDelay() != null) {
+					if (result.nextState() == null) {
+						// Schedule new task execution with the same state (e.g. a retry).
+						scheduleDeferredTask(deferredTask.withNewDelay(result.nextExecutionDelay()));
+					} else {
+						// Schedule new task with new state.
+						scheduleDeferredTask(deferredTask.withNewState(result.nextState(), result.nextExecutionDelay()));
+					}
+				} else {
+					// Task expired.
+					promise.trySuccess(handleMessagingResult(deferredTask.expiryHandler().apply(deferredTask.state())));
+				}
+			} catch (Exception e) {
+				// Unexpected error.
+				promise.tryFailure(e);
+			}
 		}
 	}
 

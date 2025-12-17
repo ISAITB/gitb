@@ -13,10 +13,21 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-package com.gitb.messaging.callback;
+package com.gitb.engine.messaging.handlers.layer.application.domibus;
 
-public enum CallbackType {
+public enum ReceiveType {
 
-    REMOTE, HTTP, SOAP, DOMIBUS
+    MESSAGE,
+    ACKNOWLEDGEMENT;
+
+    public static ReceiveType forValue(String value) {
+        if ("message".equals(value)) {
+            return MESSAGE;
+        } else if ("acknowledgement".equals(value)) {
+            return ACKNOWLEDGEMENT;
+        } else {
+            throw new IllegalArgumentException("Unsupported receive type ["+value+"]. Supported values are 'message' and 'acknowledgement'.");
+        }
+    }
 
 }
