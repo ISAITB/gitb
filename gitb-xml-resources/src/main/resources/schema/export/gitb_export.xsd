@@ -158,6 +158,7 @@
         <xsd:attribute name="allowOrganisationTokenManagement" type="xsd:boolean" default="false"/>
         <xsd:attribute name="forceOrganisationTokenInput" type="xsd:boolean" default="false"/>
         <xsd:attribute name="joinExisting" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="joinAsAdmin" type="xsd:boolean" default="true"/>
     </xsd:complexType>
     <xsd:simpleType name="ConformanceOverviewCertificateMessageType">
         <xsd:restriction base="xsd:string">

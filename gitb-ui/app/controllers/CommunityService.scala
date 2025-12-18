@@ -157,6 +157,7 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
       var selfRegForceOrganisationTokenInput: Boolean = false
       var selfRegDefaultOrganisation: Option[Long] = None
       var selfRegJoinExisting: Boolean = false
+      var selfRegJoinJoinAsAdmin: Boolean = true
       if (Configurations.REGISTRATION_ENABLED) {
         selfRegType = ParameterExtractor.requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_TYPE).toShort
         if (!ParameterExtractor.validCommunitySelfRegType(selfRegType)) {
@@ -191,13 +192,14 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
             selfRegRestriction = requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_RESTRICTION).toShort
           }
           selfRegJoinExisting = requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_JOIN_EXISTING).toBoolean
+          selfRegJoinJoinAsAdmin = requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_JOIN_AS_ADMIN).toBoolean
         }
       }
       val domainId: Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.DOMAIN_ID)
       communityManager.updateCommunity(
         communityId, shortName, fullName, email, selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification,
         interactionNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties, selfRegAllowOrganisationTokens,
-        selfRegAllowOrganisationTokenManagement, selfRegForceOrganisationTokenInput, selfRegJoinExisting,
+        selfRegAllowOrganisationTokenManagement, selfRegForceOrganisationTokenInput, selfRegJoinExisting, selfRegJoinJoinAsAdmin,
         allowCertificateDownload, allowStatementManagement, allowSystemManagement,
         allowPostTestOrganisationUpdate, allowPostTestSystemUpdate, allowPostTestStatementUpdate, allowAutomationApi, allowCommunityView, allowUserManagement,
         domainId, selfRegDefaultOrganisation

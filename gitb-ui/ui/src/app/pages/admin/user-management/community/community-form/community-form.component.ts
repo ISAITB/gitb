@@ -106,9 +106,12 @@ export class CommunityFormComponent extends BaseComponent implements OnInit {
       singleSelectionPersistent: true,
       singleSelectionClearable: true,
       showAsFormControl: true,
-      filterLabel: "",
+      filterLabel: `Select ${this.dataService.labelOrganisationLower()}...`,
       replaceSelectedItems: new EventEmitter(),
       loader: () => this.organisationService.getOrganisationsByCommunity(this.community.id!)
+    }
+    if (this.community.selfRegJoinAsAdmin == undefined) {
+      this.community.selfRegJoinAsAdmin = true
     }
     if (this.community.selfRegDefaultOrganisation) {
       setTimeout(() => {

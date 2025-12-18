@@ -33,6 +33,7 @@ export interface Community extends CommunityLimited {
   selfRegAllowOrganisationTokenManagement?: boolean;
   selfRegForceOrganisationTokenInput?: boolean;
   selfRegJoinExisting?: boolean;
+  selfRegJoinAsAdmin?: boolean;
   email?: string;
   domain?: Domain;
   domainId?: number;

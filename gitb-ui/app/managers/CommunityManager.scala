@@ -367,7 +367,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
           SelfRegistrationType.NotSupported.id.toShort, None, None, selfRegNotification = false,
           interactionNotification = input.interactionNotifications.getOrElse(false), input.description, SelfRegistrationRestriction.NoRestriction.id.toShort,
           selfRegForceTemplateSelection = false, selfRegForceRequiredProperties = false, selfRegAllowOrganisationTokens = false, selfRegAllowOrganisationTokenManagement = false,
-          selfRegForceOrganisationTokenInput = false, selfRegJoinExisting = false,
+          selfRegForceOrganisationTokenInput = false, selfRegJoinExisting = false, selfRegJoinAsAdmin = true,
           allowCertificateDownload = false, allowStatementManagement = true, allowSystemManagement = true, allowPostTestOrganisationUpdates = true,
           allowPostTestSystemUpdates = true, allowPostTestStatementUpdates = true,
           allowAutomationApi = true, allowCommunityView = false, allowUserManagement = true, apiKeyToUse, None, domainId
@@ -487,7 +487,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
                                                 selfRegType: Short, selfRegToken: Option[String], selfRegTokenHelpText: Option[String], selfRegNotification: Boolean, interactionNotification: Boolean,
                                                 description: Option[String], selfRegRestriction: Short, selfRegForceTemplateSelection: Boolean, selfRegForceRequiredProperties: Boolean,
                                                 selfRegAllowOrganisationTokens: Boolean, selfRegAllowOrganisationTokenManagement: Boolean, selfRegForceOrganisationTokenInput: Boolean,
-                                                selfRegJoinExisting: Boolean, allowCertificateDownload: Boolean, allowStatementManagement: Boolean, allowSystemManagement: Boolean,
+                                                selfRegJoinExisting: Boolean, selfRegJoinAsAdmin: Boolean, allowCertificateDownload: Boolean, allowStatementManagement: Boolean, allowSystemManagement: Boolean,
                                                 allowPostTestOrganisationUpdates: Boolean, allowPostTestSystemUpdates: Boolean, allowPostTestStatementUpdates: Boolean, allowAutomationApi: Option[Boolean], allowCommunityView: Boolean, allowUserManagement: Boolean,
                                                 apiKey: Option[String], domainId: Option[Long], checkApiKeyUniqueness: Boolean, onSuccess: mutable.ListBuffer[() => _]) = {
     for {
@@ -530,11 +530,12 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
             .map(c => (
               c.selfRegType, c.selfRegToken, c.selfRegTokenHelpText, c.selfRegNotification,
               c.selfRegRestriction, c.selfRegForceTemplateSelection, c.selfRegForceRequiredProperties,
-              c.selfRegAllowOrganisationTokens, c.selfRegAllowOrganisationTokenManagement, c.selfRegForceOrganisationTokenInput, c.selfRegJoinExisting
+              c.selfRegAllowOrganisationTokens, c.selfRegAllowOrganisationTokenManagement, c.selfRegForceOrganisationTokenInput, c.selfRegJoinExisting, c.selfRegJoinAsAdmin,
             ))
             .update(selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification,
               selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties,
-              selfRegAllowOrganisationTokens, selfRegAllowOrganisationTokens && selfRegAllowOrganisationTokenManagement, selfRegAllowOrganisationTokens && selfRegForceOrganisationTokenInput, selfRegJoinExisting
+              selfRegAllowOrganisationTokens, selfRegAllowOrganisationTokens && selfRegAllowOrganisationTokenManagement, selfRegAllowOrganisationTokens && selfRegForceOrganisationTokenInput,
+              selfRegJoinExisting, selfRegJoinAsAdmin
             )
         } else {
           DBIO.successful(())
@@ -638,7 +639,8 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
           updateRequest.interactionNotifications.getOrElse(community.interactionNotification),
           updateRequest.description.getOrElse(community.description),
           community.selfRegRestriction, community.selfRegForceTemplateSelection, community.selfRegForceRequiredProperties,
-          community.selfRegAllowOrganisationTokens, community.selfRegAllowOrganisationTokenManagement, community.selfRegForceOrganisationTokenInput, community.selfRegJoinExisting,
+          community.selfRegAllowOrganisationTokens, community.selfRegAllowOrganisationTokenManagement, community.selfRegForceOrganisationTokenInput,
+          community.selfRegJoinExisting, community.selfRegJoinAsAdmin,
           community.allowCertificateDownload, community.allowStatementManagement, community.allowSystemManagement,
           community.allowPostTestOrganisationUpdates, community.allowPostTestSystemUpdates, community.allowPostTestStatementUpdates,
           Some(community.allowAutomationApi), community.allowCommunityView, community.allowUserManagement, None, domainIdToUse, checkApiKeyUniqueness = false, onSuccess
@@ -656,7 +658,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
                       selfRegNotification: Boolean, interactionNotification: Boolean, description: Option[String], selfRegRestriction: Short,
                       selfRegForceTemplateSelection: Boolean, selfRegForceRequiredProperties: Boolean,
                       selfRegAllowOrganisationTokens: Boolean, selfRegAllowOrganisationTokenManagement: Boolean,
-                      selfRegForceOrganisationTokenInput: Boolean, selfRegJoinExisting: Boolean,
+                      selfRegForceOrganisationTokenInput: Boolean, selfRegJoinExisting: Boolean, selfRegJoinAsAdmin: Boolean,
                       allowCertificateDownload: Boolean, allowStatementManagement: Boolean, allowSystemManagement: Boolean,
                       allowPostTestOrganisationUpdates: Boolean, allowPostTestSystemUpdates: Boolean,
                       allowPostTestStatementUpdates: Boolean, allowAutomationApi: Option[Boolean], allowCommunityView: Boolean, allowUserManagement: Boolean,
@@ -670,7 +672,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
           updateCommunityInternal(
             community.get, shortName, fullName, supportEmail, selfRegType, selfRegToken, selfRegTokenHelpText,
             selfRegNotification, interactionNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties,
-            selfRegAllowOrganisationTokens, selfRegAllowOrganisationTokenManagement, selfRegForceOrganisationTokenInput, selfRegJoinExisting,
+            selfRegAllowOrganisationTokens, selfRegAllowOrganisationTokenManagement, selfRegForceOrganisationTokenInput, selfRegJoinExisting, selfRegJoinAsAdmin,
             allowCertificateDownload, allowStatementManagement, allowSystemManagement,
             allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, allowAutomationApi, allowCommunityView, allowUserManagement, None,
             domainId, checkApiKeyUniqueness = false, onSuccess

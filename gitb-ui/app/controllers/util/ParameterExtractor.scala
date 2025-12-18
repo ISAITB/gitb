@@ -398,6 +398,7 @@ object ParameterExtractor {
     var selfRegAllowOrganisationTokenManagement: Boolean = false
     var selfRegForceOrganisationTokenInput: Boolean = false
     var selfRegJoinExisting: Boolean = false
+    var selfRegJoinAsAdmin: Boolean = true
     if (Configurations.REGISTRATION_ENABLED) {
       selfRegType = requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_TYPE).toShort
       if (!validCommunitySelfRegType(selfRegType)) {
@@ -431,6 +432,7 @@ object ParameterExtractor {
           selfRegRestriction = ParameterExtractor.requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_RESTRICTION).toShort
         }
         selfRegJoinExisting = requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_JOIN_EXISTING).toBoolean
+        selfRegJoinAsAdmin = requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_JOIN_AS_ADMIN).toBoolean
       }
     } else {
       selfRegType = SelfRegistrationType.NotSupported.id.toShort
@@ -439,7 +441,8 @@ object ParameterExtractor {
     val domainId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.DOMAIN_ID)
     Communities(
       0L, sname, fname, email, selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification, interactionNotification, description,
-      selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties, selfRegAllowOrganisationTokens, selfRegAllowOrganisationTokenManagement, selfRegForceOrganisationTokenInput, selfRegJoinExisting,
+      selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties, selfRegAllowOrganisationTokens, selfRegAllowOrganisationTokenManagement,
+      selfRegForceOrganisationTokenInput, selfRegJoinExisting, selfRegJoinAsAdmin,
       allowCertificateDownload, allowStatementManagement, allowSystemManagement,
       allowPostTestOrganisationUpdate, allowPostTestSystemUpdate, allowPostTestStatementUpdate, allowAutomationApi, allowCommunityView, allowUserManagement,
       CryptoUtil.generateApiKey(), None, domainId

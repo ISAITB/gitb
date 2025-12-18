@@ -2394,7 +2394,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                     selfRegistrationMethodToModel(data.getSelfRegistrationSettings.getMethod), Option(data.getSelfRegistrationSettings.getToken), Option(data.getSelfRegistrationSettings.getTokenHelpText),
                     data.getSelfRegistrationSettings.isNotifications, data.isInteractionNotification, Option(data.getDescription), selfRegistrationRestrictionToModel(data.getSelfRegistrationSettings.getRestriction),
                     data.getSelfRegistrationSettings.isForceTemplateSelection, data.getSelfRegistrationSettings.isForceRequiredProperties, data.getSelfRegistrationSettings.isAllowOrganisationTokens, data.getSelfRegistrationSettings.isAllowOrganisationTokenManagement,
-                    data.getSelfRegistrationSettings.isForceOrganisationTokenInput, data.getSelfRegistrationSettings.isJoinExisting,
+                    data.getSelfRegistrationSettings.isForceOrganisationTokenInput, data.getSelfRegistrationSettings.isJoinExisting, data.getSelfRegistrationSettings.isJoinAsAdmin,
                     data.isAllowCertificateDownload, data.isAllowStatementManagement, data.isAllowSystemManagement,
                     data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates, data.isAllowAutomationApi, data.isAllowCommunityView, data.isAllowUserManagement,
                     apiKey, None, domainId
@@ -2407,7 +2407,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                     selfRegistrationMethodToModel(data.getSelfRegistrationSettings.getMethod), Option(data.getSelfRegistrationSettings.getToken), Option(data.getSelfRegistrationSettings.getTokenHelpText), data.getSelfRegistrationSettings.isNotifications,
                     data.isInteractionNotification, Option(data.getDescription), selfRegistrationRestrictionToModel(data.getSelfRegistrationSettings.getRestriction),
                     data.getSelfRegistrationSettings.isForceTemplateSelection, data.getSelfRegistrationSettings.isForceRequiredProperties, data.getSelfRegistrationSettings.isAllowOrganisationTokens, data.getSelfRegistrationSettings.isAllowOrganisationTokenManagement,
-                    data.getSelfRegistrationSettings.isForceOrganisationTokenInput, data.getSelfRegistrationSettings.isJoinExisting,
+                    data.getSelfRegistrationSettings.isForceOrganisationTokenInput, data.getSelfRegistrationSettings.isJoinExisting, data.getSelfRegistrationSettings.isJoinAsAdmin,
                     data.isAllowCertificateDownload, data.isAllowStatementManagement, data.isAllowSystemManagement,
                     data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates, Some(data.isAllowAutomationApi), data.isAllowCommunityView, data.isAllowUserManagement, Some(apiKey),
                     domainId, checkApiKeyUniqueness = true, ctx.onSuccessCalls

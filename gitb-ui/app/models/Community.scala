@@ -33,6 +33,7 @@ case class Communities(
                         selfRegAllowOrganisationTokenManagement: Boolean,
                         selfRegForceOrganisationTokenInput: Boolean,
                         selfRegJoinExisting: Boolean,
+                        selfRegJoinAsAdmin: Boolean,
                         allowCertificateDownload: Boolean,
                         allowStatementManagement: Boolean,
                         allowSystemManagement: Boolean,
@@ -70,6 +71,7 @@ class Community(
                  _selfRegAllowOrganisationTokenManagement: Boolean,
                  _selfRegForceOrganisationTokenInput: Boolean,
                  _selfRegJoinExisting: Boolean,
+                 _selfRegJoinAsAdmin: Boolean,
                  _allowCertificateDownload: Boolean,
                  _allowStatementManagement: Boolean,
                  _allowSystemManagement: Boolean,
@@ -99,6 +101,7 @@ class Community(
   var selfRegAllowOrganisationTokenManagement:Boolean = _selfRegAllowOrganisationTokenManagement
   var selfRegForceOrganisationTokenInput:Boolean = _selfRegForceOrganisationTokenInput
   var selfRegJoinExisting:Boolean = _selfRegJoinExisting
+  var selfRegJoinAsAdmin:Boolean = _selfRegJoinAsAdmin
   var allowCertificateDownload: Boolean = _allowCertificateDownload
   var allowStatementManagement: Boolean = _allowStatementManagement
   var allowSystemManagement: Boolean = _allowSystemManagement
@@ -131,6 +134,7 @@ class Community(
       _case.selfRegAllowOrganisationTokenManagement,
       _case.selfRegForceOrganisationTokenInput,
       _case.selfRegJoinExisting,
+      _case.selfRegJoinAsAdmin,
       _case.allowCertificateDownload,
       _case.allowStatementManagement,
       _case.allowSystemManagement,
@@ -168,6 +172,7 @@ class Community(
       selfRegAllowOrganisationTokenManagement,
       selfRegForceOrganisationTokenInput,
       selfRegJoinExisting,
+      selfRegJoinAsAdmin,
       allowCertificateDownload,
       allowStatementManagement,
       allowSystemManagement,

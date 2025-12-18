@@ -169,6 +169,7 @@ object ParameterNames {
   val COMMUNITY_SELFREG_FORCE_ORGANISATION_TOKEN_INPUT = "community_selfreg_force_org_token_input"
   val COMMUNITY_SELFREG_DEFAULT_ORGANISATION = "community_selfreg_default_organisation"
   val COMMUNITY_SELFREG_JOIN_EXISTING = "community_selfreg_join_existing"
+  val COMMUNITY_SELFREG_JOIN_AS_ADMIN = "community_selfreg_join_as_admin"
   val COMMUNITY_INTERACTION_NOTIFICATION = "interaction_notification"
   val SELFREG_TOKEN = "selfreg_token"
   val ALLOW_CERTIFICATE_DOWNLOAD = "allow_certificate_download"

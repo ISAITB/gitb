@@ -846,6 +846,7 @@ object JsonUtil {
       json = json.+("selfRegForceRequiredProperties" -> JsBoolean(community.selfRegForceRequiredProperties))
       json = json.+("selfRegForceOrganisationTokenInput" -> JsBoolean(community.selfRegForceOrganisationTokenInput))
       json = json.+("selfRegJoinExisting" -> JsBoolean(community.selfRegJoinExisting))
+      json = json.+("selfRegJoinAsAdmin" -> JsBoolean(community.selfRegJoinAsAdmin))
       if (selfRegDefaultOrganisation.isDefined) {
         json = json.+("selfRegDefaultOrganisation" -> jsOrganization(selfRegDefaultOrganisation.get))
       }

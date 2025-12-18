@@ -1367,6 +1367,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
         communityData.getSelfRegistrationSettings.setAllowOrganisationTokenManagement(community.get.selfRegAllowOrganisationTokenManagement)
         communityData.getSelfRegistrationSettings.setForceOrganisationTokenInput(community.get.selfRegForceOrganisationTokenInput)
         communityData.getSelfRegistrationSettings.setJoinExisting(community.get.selfRegJoinExisting)
+        communityData.getSelfRegistrationSettings.setJoinAsAdmin(community.get.selfRegJoinAsAdmin)
         // Administrators.
         if (exportSettings.communityAdministrators) {
           val administrators = data.administrators.get

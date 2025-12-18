@@ -155,7 +155,8 @@ export class CommunityService {
   createCommunity(shortName: string, fullName: string, email: string|undefined,
     selfRegType: number, selfRegRestriction: number, selfRegToken: string|undefined, selfRegTokenHelpText: string|undefined, selfRegNotification: boolean|undefined,
     interactionNotification: boolean, description: string|undefined, selfRegForceTemplate: boolean|undefined, selfRegForceProperties: boolean|undefined,
-    selfRegAllowOrganisationTokens: boolean|undefined, selfRegAllowOrganisationTokenManagement: boolean|undefined, selfRegForceOrganisationTokenInput: boolean|undefined, selfRegJoinExisting: boolean|undefined,
+    selfRegAllowOrganisationTokens: boolean|undefined, selfRegAllowOrganisationTokenManagement: boolean|undefined, selfRegForceOrganisationTokenInput: boolean|undefined,
+    selfRegJoinExisting: boolean|undefined, selfRegJoinAsAdmin: boolean|undefined,
     allowCertificateDownload: boolean, allowStatementManagement: boolean, allowSystemManagement: boolean, allowPostTestOrganisationUpdate: boolean,
     allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, allowAutomationApi: boolean|undefined, allowCommunityView: boolean, allowUserManagement: boolean,
     domainId: number|undefined) {
@@ -181,6 +182,8 @@ export class CommunityService {
       if (selfRegAllowOrganisationTokens == undefined) selfRegAllowOrganisationTokens = false
       if (selfRegAllowOrganisationTokenManagement == undefined) selfRegAllowOrganisationTokenManagement = false
       if (selfRegForceOrganisationTokenInput == undefined) selfRegForceOrganisationTokenInput = false
+      if (selfRegJoinExisting == undefined) selfRegJoinExisting = false
+      if (selfRegJoinAsAdmin == undefined) selfRegJoinAsAdmin = true
       data.community_selfreg_type = selfRegType
       data.community_selfreg_token = selfRegToken
       data.community_selfreg_token_help_text = selfRegTokenHelpText
@@ -191,6 +194,7 @@ export class CommunityService {
       data.community_selfreg_allow_org_token_management = selfRegAllowOrganisationTokenManagement
       data.community_selfreg_force_org_token_input = selfRegForceOrganisationTokenInput
       data.community_selfreg_join_existing = selfRegJoinExisting
+      data.community_selfreg_join_as_admin = selfRegJoinAsAdmin
       if (this.dataService.configuration.ssoEnabled) {
         data.community_selfreg_restriction = selfRegRestriction
       }
@@ -211,7 +215,7 @@ export class CommunityService {
     selfRegType: number, selfRegRestriction: number, selfRegToken: string|undefined, selfRegTokenHelpText: string|undefined, selfRegNotification: boolean|undefined,
     interactionNotification: boolean, description: string|undefined, selfRegForceTemplate: boolean|undefined, selfRegForceProperties: boolean|undefined,
     selfRegAllowOrganisationTokens: boolean|undefined, selfRegAllowOrganisationTokenManagement: boolean|undefined, selfRegForceOrganisationTokenInput: boolean|undefined,
-    selfRegDefaultOrganisation: number|undefined, selfRegJoinExisting: boolean|undefined,
+    selfRegDefaultOrganisation: number|undefined, selfRegJoinExisting: boolean|undefined, selfRegJoinAsAdmin: boolean|undefined,
     allowCertificateDownload: boolean, allowStatementManagement: boolean, allowSystemManagement: boolean, allowPostTestOrganisationUpdate: boolean,
     allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, allowAutomationApi: boolean|undefined, allowCommunityView: boolean, allowUserManagement: boolean,
     domainId: number|undefined) {
@@ -237,6 +241,8 @@ export class CommunityService {
       if (selfRegAllowOrganisationTokens == undefined) selfRegAllowOrganisationTokens = false
       if (selfRegAllowOrganisationTokenManagement == undefined) selfRegAllowOrganisationTokenManagement = false
       if (selfRegForceOrganisationTokenInput == undefined) selfRegForceOrganisationTokenInput = false
+      if (selfRegJoinExisting == undefined) selfRegJoinExisting = false
+      if (selfRegJoinAsAdmin == undefined) selfRegJoinAsAdmin = true
       data.community_selfreg_type = selfRegType
       data.community_selfreg_token = selfRegToken
       data.community_selfreg_token_help_text = selfRegTokenHelpText
@@ -248,6 +254,7 @@ export class CommunityService {
       data.community_selfreg_force_org_token_input = selfRegForceOrganisationTokenInput
       data.community_selfreg_default_organisation = selfRegDefaultOrganisation
       data.community_selfreg_join_existing = selfRegJoinExisting
+      data.community_selfreg_join_as_admin = selfRegJoinAsAdmin
       if (this.dataService.configuration.ssoEnabled) {
         data.community_selfreg_restriction = selfRegRestriction
       }
