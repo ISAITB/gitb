@@ -16,6 +16,7 @@
 import {Domain} from './domain';
 import {TypedLabelConfig} from './typed-label-config.type';
 import {CommunityLimited} from './community-limited';
+import {Organisation} from './organisation.type';
 
 export interface Community extends CommunityLimited {
 
@@ -31,6 +32,7 @@ export interface Community extends CommunityLimited {
   selfRegAllowOrganisationTokens?: boolean;
   selfRegAllowOrganisationTokenManagement?: boolean;
   selfRegForceOrganisationTokenInput?: boolean;
+  selfRegJoinExisting?: boolean;
   email?: string;
   domain?: Domain;
   domainId?: number;
@@ -48,5 +50,7 @@ export interface Community extends CommunityLimited {
   sameDescriptionAsDomain: boolean;
   activeDescription?: string;
   labels?: TypedLabelConfig[];
+  selfRegDefaultOrganisationEnabled?: boolean;
+  selfRegDefaultOrganisation?: Organisation;
 
 }

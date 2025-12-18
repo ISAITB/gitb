@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit} from '@angular/core';
 import {Constants} from 'src/app/common/constants';
 import {BaseComponent} from 'src/app/pages/base-component.component';
 import {DataService} from 'src/app/services/data.service';
@@ -24,6 +24,10 @@ import {RoutingService} from 'src/app/services/routing.service';
 import {ValidationState} from 'src/app/types/validation-state';
 import {MultiSelectConfig} from '../../../../../components/multi-select-filter/multi-select-config';
 import {of} from 'rxjs';
+import {FilterUpdate} from '../../../../../components/test-filter/filter-update';
+import {LegalNotice} from '../../../../../types/legal-notice';
+import {Organisation} from '../../../../../types/organisation.type';
+import {OrganisationService} from '../../../../../services/organisation.service';
 
 @Component({
     selector: 'app-community-form',
@@ -49,6 +53,7 @@ export class CommunityFormComponent extends BaseComponent implements OnInit {
   selfRegOptionsVisible = false
   selfRegOptionsCollapsed = false
   userPermissionsCollapsed = false
+  selfRegDefaultOrganisationSelectionConfig!: MultiSelectConfig<Organisation>
 
   domainSelectionConfig: MultiSelectConfig<Domain> = {
     name: "domainChoice",
@@ -63,7 +68,8 @@ export class CommunityFormComponent extends BaseComponent implements OnInit {
 
   constructor(
     public readonly dataService: DataService,
-    private readonly routingService: RoutingService
+    private readonly routingService: RoutingService,
+    private readonly organisationService: OrganisationService
   ) { super() }
 
   ngOnInit(): void {
@@ -92,6 +98,22 @@ export class CommunityFormComponent extends BaseComponent implements OnInit {
       this.community.activeDescription = this.community.domain!.description
     } else {
       this.community.activeDescription = this.community.description
+    }
+    this.selfRegDefaultOrganisationSelectionConfig = {
+      name: "selfRegDefaultOrganisation",
+      textField: "fname",
+      singleSelection: true,
+      singleSelectionPersistent: true,
+      singleSelectionClearable: true,
+      showAsFormControl: true,
+      filterLabel: "",
+      replaceSelectedItems: new EventEmitter(),
+      loader: () => this.organisationService.getOrganisationsByCommunity(this.community.id!)
+    }
+    if (this.community.selfRegDefaultOrganisation) {
+      setTimeout(() => {
+        this.selfRegDefaultOrganisationSelectionConfig.replaceSelectedItems!.emit([this.community.selfRegDefaultOrganisation!])
+      })
     }
   }
 
@@ -144,6 +166,20 @@ export class CommunityFormComponent extends BaseComponent implements OnInit {
   viewDomain() {
     if (this.community.domain?.id != undefined) {
       this.routingService.toDomain(this.community.domain.id)
+    }
+  }
+
+  viewSelfRegDefaultOrganisation() {
+    if (this.community.id != undefined && this.community.selfRegDefaultOrganisation != undefined) {
+      this.routingService.toOrganisationDetails(this.community.id, this.community.selfRegDefaultOrganisation.id)
+    }
+  }
+
+  selfRegDefaultOrganisationSelected(event: FilterUpdate<Organisation>) {
+    if (event.values.active.length != 0) {
+      this.community.selfRegDefaultOrganisation = event.values.active[0]
+    } else {
+      this.community.selfRegDefaultOrganisation = undefined
     }
   }
 

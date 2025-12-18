@@ -155,7 +155,7 @@ export class CommunityService {
   createCommunity(shortName: string, fullName: string, email: string|undefined,
     selfRegType: number, selfRegRestriction: number, selfRegToken: string|undefined, selfRegTokenHelpText: string|undefined, selfRegNotification: boolean|undefined,
     interactionNotification: boolean, description: string|undefined, selfRegForceTemplate: boolean|undefined, selfRegForceProperties: boolean|undefined,
-    selfRegAllowOrganisationTokens: boolean|undefined, selfRegAllowOrganisationTokenManagement: boolean|undefined, selfRegForceOrganisationTokenInput: boolean|undefined,
+    selfRegAllowOrganisationTokens: boolean|undefined, selfRegAllowOrganisationTokenManagement: boolean|undefined, selfRegForceOrganisationTokenInput: boolean|undefined, selfRegJoinExisting: boolean|undefined,
     allowCertificateDownload: boolean, allowStatementManagement: boolean, allowSystemManagement: boolean, allowPostTestOrganisationUpdate: boolean,
     allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, allowAutomationApi: boolean|undefined, allowCommunityView: boolean, allowUserManagement: boolean,
     domainId: number|undefined) {
@@ -190,6 +190,7 @@ export class CommunityService {
       data.community_selfreg_allow_org_tokens = selfRegAllowOrganisationTokens
       data.community_selfreg_allow_org_token_management = selfRegAllowOrganisationTokenManagement
       data.community_selfreg_force_org_token_input = selfRegForceOrganisationTokenInput
+      data.community_selfreg_join_existing = selfRegJoinExisting
       if (this.dataService.configuration.ssoEnabled) {
         data.community_selfreg_restriction = selfRegRestriction
       }
@@ -210,6 +211,7 @@ export class CommunityService {
     selfRegType: number, selfRegRestriction: number, selfRegToken: string|undefined, selfRegTokenHelpText: string|undefined, selfRegNotification: boolean|undefined,
     interactionNotification: boolean, description: string|undefined, selfRegForceTemplate: boolean|undefined, selfRegForceProperties: boolean|undefined,
     selfRegAllowOrganisationTokens: boolean|undefined, selfRegAllowOrganisationTokenManagement: boolean|undefined, selfRegForceOrganisationTokenInput: boolean|undefined,
+    selfRegDefaultOrganisation: number|undefined, selfRegJoinExisting: boolean|undefined,
     allowCertificateDownload: boolean, allowStatementManagement: boolean, allowSystemManagement: boolean, allowPostTestOrganisationUpdate: boolean,
     allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, allowAutomationApi: boolean|undefined, allowCommunityView: boolean, allowUserManagement: boolean,
     domainId: number|undefined) {
@@ -244,6 +246,8 @@ export class CommunityService {
       data.community_selfreg_allow_org_tokens = selfRegAllowOrganisationTokens
       data.community_selfreg_allow_org_token_management = selfRegAllowOrganisationTokenManagement
       data.community_selfreg_force_org_token_input = selfRegForceOrganisationTokenInput
+      data.community_selfreg_default_organisation = selfRegDefaultOrganisation
+      data.community_selfreg_join_existing = selfRegJoinExisting
       if (this.dataService.configuration.ssoEnabled) {
         data.community_selfreg_restriction = selfRegRestriction
       }
@@ -267,10 +271,13 @@ export class CommunityService {
     })
   }
 
-  getCommunityById(communityId: number) {
+  getCommunityById(communityId: number, withSelfRegDefaultOrganisation: boolean) {
     return this.restService.get<Community>({
       path: ROUTES.controllers.CommunityService.getCommunityById(communityId).url,
-      authenticate: true
+      authenticate: true,
+      params: {
+        community_selfreg_default_organisation: withSelfRegDefaultOrganisation
+      }
     })
   }
 

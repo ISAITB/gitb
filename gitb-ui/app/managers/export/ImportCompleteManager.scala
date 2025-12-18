@@ -2393,7 +2393,8 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                     Option(data.getSupportEmail),
                     selfRegistrationMethodToModel(data.getSelfRegistrationSettings.getMethod), Option(data.getSelfRegistrationSettings.getToken), Option(data.getSelfRegistrationSettings.getTokenHelpText),
                     data.getSelfRegistrationSettings.isNotifications, data.isInteractionNotification, Option(data.getDescription), selfRegistrationRestrictionToModel(data.getSelfRegistrationSettings.getRestriction),
-                    data.getSelfRegistrationSettings.isForceTemplateSelection, data.getSelfRegistrationSettings.isForceRequiredProperties, data.getSelfRegistrationSettings.isAllowOrganisationTokens, data.getSelfRegistrationSettings.isAllowOrganisationTokenManagement, data.getSelfRegistrationSettings.isForceOrganisationTokenInput,
+                    data.getSelfRegistrationSettings.isForceTemplateSelection, data.getSelfRegistrationSettings.isForceRequiredProperties, data.getSelfRegistrationSettings.isAllowOrganisationTokens, data.getSelfRegistrationSettings.isAllowOrganisationTokenManagement,
+                    data.getSelfRegistrationSettings.isForceOrganisationTokenInput, data.getSelfRegistrationSettings.isJoinExisting,
                     data.isAllowCertificateDownload, data.isAllowStatementManagement, data.isAllowSystemManagement,
                     data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates, data.isAllowAutomationApi, data.isAllowCommunityView, data.isAllowUserManagement,
                     apiKey, None, domainId
@@ -2405,7 +2406,8 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                   communityManager.updateCommunityInternal(targetCommunity.get, data.getShortName, data.getFullName, Option(data.getSupportEmail),
                     selfRegistrationMethodToModel(data.getSelfRegistrationSettings.getMethod), Option(data.getSelfRegistrationSettings.getToken), Option(data.getSelfRegistrationSettings.getTokenHelpText), data.getSelfRegistrationSettings.isNotifications,
                     data.isInteractionNotification, Option(data.getDescription), selfRegistrationRestrictionToModel(data.getSelfRegistrationSettings.getRestriction),
-                    data.getSelfRegistrationSettings.isForceTemplateSelection, data.getSelfRegistrationSettings.isForceRequiredProperties, data.getSelfRegistrationSettings.isAllowOrganisationTokens, data.getSelfRegistrationSettings.isAllowOrganisationTokenManagement, data.getSelfRegistrationSettings.isForceOrganisationTokenInput,
+                    data.getSelfRegistrationSettings.isForceTemplateSelection, data.getSelfRegistrationSettings.isForceRequiredProperties, data.getSelfRegistrationSettings.isAllowOrganisationTokens, data.getSelfRegistrationSettings.isAllowOrganisationTokenManagement,
+                    data.getSelfRegistrationSettings.isForceOrganisationTokenInput, data.getSelfRegistrationSettings.isJoinExisting,
                     data.isAllowCertificateDownload, data.isAllowStatementManagement, data.isAllowSystemManagement,
                     data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates, Some(data.isAllowAutomationApi), data.isAllowCommunityView, data.isAllowUserManagement, Some(apiKey),
                     domainId, checkApiKeyUniqueness = true, ctx.onSuccessCalls
@@ -2837,7 +2839,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                               getProcessedDbId(data.getLandingPage, ImportItemType.LandingPage, ctx),
                               getProcessedDbId(data.getLegalNotice, ImportItemType.LegalNotice, ctx),
                               getProcessedDbId(data.getErrorTemplate, ImportItemType.ErrorTemplate, ctx),
-                              template = data.isTemplate, Option(data.getTemplateName), Option(data.getApiKey), Option(data.getSelfRegistrationToken), item.parentItem.get.targetKey.get.toLong
+                              template = data.isTemplate, Option(data.getTemplateName), Option(data.getApiKey), Option(data.getSelfRegistrationToken), data.isSelfRegDefault, item.parentItem.get.targetKey.get.toLong
                             ), None, None, None, copyOrganisationParameters = false, copySystemParameters = false, copyStatementParameters = false,
                             checkApiKeyUniqueness = true, setDefaultPropertyValues = false, ctx.onSuccessCalls
                           )
@@ -2853,7 +2855,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                           getProcessedDbId(data.getLandingPage, ImportItemType.LandingPage, ctx),
                           getProcessedDbId(data.getLegalNotice, ImportItemType.LegalNotice, ctx),
                           getProcessedDbId(data.getErrorTemplate, ImportItemType.ErrorTemplate, ctx),
-                          None, data.isTemplate, Option(data.getTemplateName), Some(Option(data.getApiKey)), Some(Option(data.getSelfRegistrationToken)), None, None,
+                          None, data.isTemplate, Option(data.getTemplateName), Some(Option(data.getApiKey)), Some(Option(data.getSelfRegistrationToken)), Some(data.isSelfRegDefault), None, None,
                           copyOrganisationParameters = false, copySystemParameters = false, copyStatementParameters = false,
                           checkApiKeyUniqueness = true, ctx.onSuccessCalls
                         )

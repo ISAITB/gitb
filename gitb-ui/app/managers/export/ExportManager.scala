@@ -1366,6 +1366,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
         communityData.getSelfRegistrationSettings.setAllowOrganisationTokens(community.get.selfRegAllowOrganisationTokens)
         communityData.getSelfRegistrationSettings.setAllowOrganisationTokenManagement(community.get.selfRegAllowOrganisationTokenManagement)
         communityData.getSelfRegistrationSettings.setForceOrganisationTokenInput(community.get.selfRegForceOrganisationTokenInput)
+        communityData.getSelfRegistrationSettings.setJoinExisting(community.get.selfRegJoinExisting)
         // Administrators.
         if (exportSettings.communityAdministrators) {
           val administrators = data.administrators.get
@@ -1747,6 +1748,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
               exportedOrganisation.setTemplateName(organisation.templateName.orNull)
               exportedOrganisation.setApiKey(organisation.apiKey.orNull)
               exportedOrganisation.setSelfRegistrationToken(organisation.selfRegToken.orNull)
+              exportedOrganisation.setSelfRegDefault(organisation.selfRegDefault)
               if (exportSettings.organisationUsers && !organisation.adminOrganization && data.organisationUserMap.get.contains(organisation.id)) {
                 exportedOrganisation.setUsers(new com.gitb.xml.export.Users)
                 data.organisationUserMap.get(organisation.id).foreach { user =>

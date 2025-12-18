@@ -161,7 +161,7 @@ export class CommunityPropertiesComponent implements OnInit {
   previewOrganisationParameters() {
     if (this.propertiesRequiredInRegistration == undefined) {
       this.previewOrganisationParametersPending = true
-      this.communityService.getCommunityById(this.communityId).subscribe((data) => {
+      this.communityService.getCommunityById(this.communityId, false).subscribe((data) => {
         this.propertiesRequiredInRegistration = data.selfRegForceRequiredProperties
         this.previewParameters(this.dataService.labelOrganisation()+" property form preview", this.organisationParameters, true, 'organisation')
       }).add(() => {

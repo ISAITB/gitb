@@ -944,7 +944,7 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 			)).result.head
 		).map { result =>
 			new System(result._1.id, result._1.shortname, result._1.fullname, result._1.description, None, result._1.apiKey, result._1.badgeKey,
-				Some(Organizations(result._2.id, result._2.shortname, result._2.fullname, OrganizationType.Vendor.id.toShort, adminOrganization = false, None, None, None, template = false, None, result._2.apiKey, None, result._3)),
+				Some(Organizations(result._2.id, result._2.shortname, result._2.fullname, OrganizationType.Vendor.id.toShort, adminOrganization = false, None, None, None, template = false, None, result._2.apiKey, None, selfRegDefault = false, result._3)),
 				None
 			)
 		}

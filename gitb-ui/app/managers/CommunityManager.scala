@@ -313,7 +313,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
       .result
       .head
     ).map { result =>
-      new Community(result._2, result._1)
+      new Community(result._2, result._1, None)
     }
   }
 
@@ -366,7 +366,8 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
         createCommunityInternal(Communities(0L, input.shortName, input.fullName, input.supportEmail,
           SelfRegistrationType.NotSupported.id.toShort, None, None, selfRegNotification = false,
           interactionNotification = input.interactionNotifications.getOrElse(false), input.description, SelfRegistrationRestriction.NoRestriction.id.toShort,
-          selfRegForceTemplateSelection = false, selfRegForceRequiredProperties = false, selfRegAllowOrganisationTokens = false, selfRegAllowOrganisationTokenManagement = false, selfRegForceOrganisationTokenInput = false,
+          selfRegForceTemplateSelection = false, selfRegForceRequiredProperties = false, selfRegAllowOrganisationTokens = false, selfRegAllowOrganisationTokenManagement = false,
+          selfRegForceOrganisationTokenInput = false, selfRegJoinExisting = false,
           allowCertificateDownload = false, allowStatementManagement = true, allowSystemManagement = true, allowPostTestOrganisationUpdates = true,
           allowPostTestSystemUpdates = true, allowPostTestStatementUpdates = true,
           allowAutomationApi = true, allowCommunityView = false, allowUserManagement = true, apiKeyToUse, None, domainId
@@ -392,7 +393,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
         PersistenceSchema.insertCommunity += communityToUse
       }
       adminOrganisationId <- {
-        organizationManager.createOrganizationInTrans(Organizations(0L, Constants.AdminOrganizationName, Constants.AdminOrganizationName, OrganizationType.Vendor.id.toShort, adminOrganization = true, None, None, None, template = false, None, None, None, communityId))
+        organizationManager.createOrganizationInTrans(Organizations(0L, Constants.AdminOrganizationName, Constants.AdminOrganizationName, OrganizationType.Vendor.id.toShort, adminOrganization = true, None, None, None, template = false, None, None, None, selfRegDefault = false, communityId))
       }
     } yield (communityId, adminOrganisationId)
   }
@@ -400,12 +401,23 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
   /**
     * Gets community with specified id
     */
-  def getCommunityById(communityId: Long): Future[Community] = {
+  def getCommunityById(communityId: Long, withDefaultOrganisation: Boolean): Future[Community] = {
     DB.run(
       for {
         c <- PersistenceSchema.communities.filter(_.id === communityId).result.head
         d <- PersistenceSchema.domains.filter(_.id === c.domain).result.headOption
-      } yield new Community(c, d)
+        o <- {
+          if (c.selfRegType != Enums.SelfRegistrationType.NotSupported.id && withDefaultOrganisation) {
+            PersistenceSchema.organizations
+              .filter(_.community === communityId)
+              .filter(_.selfRegDefault === true)
+              .result
+              .headOption
+          } else {
+            DBIO.successful(None)
+          }
+        }
+      } yield new Community(c, d, o)
     )
   }
 
@@ -475,7 +487,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
                                                 selfRegType: Short, selfRegToken: Option[String], selfRegTokenHelpText: Option[String], selfRegNotification: Boolean, interactionNotification: Boolean,
                                                 description: Option[String], selfRegRestriction: Short, selfRegForceTemplateSelection: Boolean, selfRegForceRequiredProperties: Boolean,
                                                 selfRegAllowOrganisationTokens: Boolean, selfRegAllowOrganisationTokenManagement: Boolean, selfRegForceOrganisationTokenInput: Boolean,
-                                                allowCertificateDownload: Boolean, allowStatementManagement: Boolean, allowSystemManagement: Boolean,
+                                                selfRegJoinExisting: Boolean, allowCertificateDownload: Boolean, allowStatementManagement: Boolean, allowSystemManagement: Boolean,
                                                 allowPostTestOrganisationUpdates: Boolean, allowPostTestSystemUpdates: Boolean, allowPostTestStatementUpdates: Boolean, allowAutomationApi: Option[Boolean], allowCommunityView: Boolean, allowUserManagement: Boolean,
                                                 apiKey: Option[String], domainId: Option[Long], checkApiKeyUniqueness: Boolean, onSuccess: mutable.ListBuffer[() => _]) = {
     for {
@@ -518,11 +530,11 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
             .map(c => (
               c.selfRegType, c.selfRegToken, c.selfRegTokenHelpText, c.selfRegNotification,
               c.selfRegRestriction, c.selfRegForceTemplateSelection, c.selfRegForceRequiredProperties,
-              c.selfRegAllowOrganisationTokens, c.selfRegAllowOrganisationTokenManagement, c.selfRegForceOrganisationTokenInput,
+              c.selfRegAllowOrganisationTokens, c.selfRegAllowOrganisationTokenManagement, c.selfRegForceOrganisationTokenInput, c.selfRegJoinExisting
             ))
             .update(selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification,
               selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties,
-              selfRegAllowOrganisationTokens, selfRegAllowOrganisationTokens && selfRegAllowOrganisationTokenManagement, selfRegAllowOrganisationTokens && selfRegForceOrganisationTokenInput,
+              selfRegAllowOrganisationTokens, selfRegAllowOrganisationTokens && selfRegAllowOrganisationTokenManagement, selfRegAllowOrganisationTokens && selfRegForceOrganisationTokenInput, selfRegJoinExisting
             )
         } else {
           DBIO.successful(())
@@ -626,7 +638,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
           updateRequest.interactionNotifications.getOrElse(community.interactionNotification),
           updateRequest.description.getOrElse(community.description),
           community.selfRegRestriction, community.selfRegForceTemplateSelection, community.selfRegForceRequiredProperties,
-          community.selfRegAllowOrganisationTokens, community.selfRegAllowOrganisationTokenManagement, community.selfRegForceOrganisationTokenInput,
+          community.selfRegAllowOrganisationTokens, community.selfRegAllowOrganisationTokenManagement, community.selfRegForceOrganisationTokenInput, community.selfRegJoinExisting,
           community.allowCertificateDownload, community.allowStatementManagement, community.allowSystemManagement,
           community.allowPostTestOrganisationUpdates, community.allowPostTestSystemUpdates, community.allowPostTestStatementUpdates,
           Some(community.allowAutomationApi), community.allowCommunityView, community.allowUserManagement, None, domainIdToUse, checkApiKeyUniqueness = false, onSuccess
@@ -643,11 +655,12 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
                       selfRegType: Short, selfRegToken: Option[String], selfRegTokenHelpText: Option[String],
                       selfRegNotification: Boolean, interactionNotification: Boolean, description: Option[String], selfRegRestriction: Short,
                       selfRegForceTemplateSelection: Boolean, selfRegForceRequiredProperties: Boolean,
-                      selfRegAllowOrganisationTokens: Boolean, selfRegAllowOrganisationTokenManagement: Boolean, selfRegForceOrganisationTokenInput: Boolean,
+                      selfRegAllowOrganisationTokens: Boolean, selfRegAllowOrganisationTokenManagement: Boolean,
+                      selfRegForceOrganisationTokenInput: Boolean, selfRegJoinExisting: Boolean,
                       allowCertificateDownload: Boolean, allowStatementManagement: Boolean, allowSystemManagement: Boolean,
                       allowPostTestOrganisationUpdates: Boolean, allowPostTestSystemUpdates: Boolean,
                       allowPostTestStatementUpdates: Boolean, allowAutomationApi: Option[Boolean], allowCommunityView: Boolean, allowUserManagement: Boolean,
-                      domainId: Option[Long]): Future[Unit] = {
+                      domainId: Option[Long], selfRegDefaultOrganisation: Option[Long]): Future[Unit] = {
 
     val onSuccess = ListBuffer[() => _]()
     val dbAction = for {
@@ -657,13 +670,32 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
           updateCommunityInternal(
             community.get, shortName, fullName, supportEmail, selfRegType, selfRegToken, selfRegTokenHelpText,
             selfRegNotification, interactionNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties,
-            selfRegAllowOrganisationTokens, selfRegAllowOrganisationTokenManagement, selfRegForceOrganisationTokenInput,
+            selfRegAllowOrganisationTokens, selfRegAllowOrganisationTokenManagement, selfRegForceOrganisationTokenInput, selfRegJoinExisting,
             allowCertificateDownload, allowStatementManagement, allowSystemManagement,
             allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, allowAutomationApi, allowCommunityView, allowUserManagement, None,
             domainId, checkApiKeyUniqueness = false, onSuccess
           )
         } else {
           throw new IllegalArgumentException("Community with ID '" + communityId + "' not found")
+        }
+      }
+      // Update the default self registration organisation. First remove the previous one (if defined).
+      _ <- PersistenceSchema.organizations
+        .filter(_.community === communityId)
+        .filter(_.selfRegDefault === true)
+        .map(_.selfRegDefault)
+        .update(false)
+      // If a default self registration is set then persist it.
+      _ <- {
+        if (selfRegDefaultOrganisation.isDefined) {
+          PersistenceSchema.organizations
+            .filter(_.community === communityId)
+            .filter(_.adminOrganization === false)
+            .filter(_.id === selfRegDefaultOrganisation.get)
+            .map(_.selfRegDefault)
+            .update(true)
+        } else {
+          DBIO.successful(())
         }
       }
     } yield ()

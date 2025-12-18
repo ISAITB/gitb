@@ -5,6 +5,11 @@
         </div>
         <form (ngSubmit)="updateCommunity()">
             <div class="card-body" [pending]="!loaded" focus="sname">
+                @if (selfRegistrationWarningActive) {
+                    <div class="alert alert-warning rounded">
+                        <span>The community's self-registration settings require that users join existing {{dataService.labelOrganisationsLower()}}. For self-registration to be possible you must either configure a default {{dataService.labelOrganisationLower()}}, or enable {{dataService.labelOrganisationLower()}} tokens (or both).</span>
+                    </div>
+                }
                 <app-community-form [community]="community" [admin]="dataService.isSystemAdmin" [domains]="domains" [validation]="validation"></app-community-form>
             </div>
             <div class="card-footer button-container">

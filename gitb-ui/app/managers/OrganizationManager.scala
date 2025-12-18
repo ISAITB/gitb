@@ -96,7 +96,7 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
           .map(_._1)
           .result
       ).map { results =>
-        results.map(x => Organizations(x.id, x.shortname, x.fullname, OrganizationType.Vendor.id.toShort, adminOrganization = false, None, None, None, template = false, None, x.apiKey, None, communityId)).toList
+        results.map(x => Organizations(x.id, x.shortname, x.fullname, OrganizationType.Vendor.id.toShort, adminOrganization = false, None, None, None, template = false, None, x.apiKey, None, selfRegDefault = false, communityId)).toList
       }
     } else {
       DB.run(
@@ -380,7 +380,7 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
       }
       createdOrganisationId <- createOrganizationInTrans(Organizations(0L, input.shortName, input.fullName,
         OrganizationType.Vendor.id.toShort, adminOrganization = false, None, None, None, template = false, None,
-        Some(apiKeyToUse), None, communityId
+        Some(apiKeyToUse), None, selfRegDefault = false, communityId
       ))
     } yield (communityId, apiKeyToUse, new OrganisationCreationDbInfo(createdOrganisationId, None))
     DB.run(action.transactionally).map { result =>
@@ -434,7 +434,7 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
     }
   }
 
-  def updateOrganizationInternal(orgId: Long, shortName: String, fullName: String, landingPageId: Option[Long], legalNoticeId: Option[Long], errorTemplateId: Option[Long], otherOrganisation: Option[Long], template: Boolean, templateName: Option[String], apiKey: Option[Option[String]], selfRegistrationToken: Option[Option[String]], propertyValues: Option[List[OrganisationParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copyOrganisationParameters: Boolean, copySystemParameters: Boolean, copyStatementParameters: Boolean, checkApiKeyUniqueness: Boolean, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Option[List[SystemCreationDbInfo]]] = {
+  def updateOrganizationInternal(orgId: Long, shortName: String, fullName: String, landingPageId: Option[Long], legalNoticeId: Option[Long], errorTemplateId: Option[Long], otherOrganisation: Option[Long], template: Boolean, templateName: Option[String], apiKey: Option[Option[String]], selfRegistrationToken: Option[Option[String]], selfRegistrationDefault: Option[Boolean], propertyValues: Option[List[OrganisationParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copyOrganisationParameters: Boolean, copySystemParameters: Boolean, copyStatementParameters: Boolean, checkApiKeyUniqueness: Boolean, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Option[List[SystemCreationDbInfo]]] = {
     for {
       org <- PersistenceSchema.organizations.filter(_.id === orgId).result.headOption
       _ <- {
@@ -466,13 +466,13 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
               _ <- {
                 val apiKeyToUse = if (replaceApiKey) Some(CryptoUtil.generateApiKey()) else apiKey.get
                 val selfRegTokenToUse = if (replaceSelfRegistrationToken) Some(CryptoUtil.generateApiKey()) else selfRegistrationToken.get
-                val q = for {o <- PersistenceSchema.organizations if o.id === orgId} yield (o.shortname, o.fullname, o.landingPage, o.legalNotice, o.errorTemplate, o.template, o.templateName, o.apiKey, o.selfRegToken)
-                q.update(shortName, fullName, landingPageId, legalNoticeId, errorTemplateId, template, templateNameToSet, apiKeyToUse, selfRegTokenToUse)
+                val q = for {o <- PersistenceSchema.organizations if o.id === orgId} yield (o.shortname, o.fullname, o.landingPage, o.legalNotice, o.errorTemplate, o.template, o.templateName, o.apiKey, o.selfRegToken, o.selfRegDefault)
+                q.update(shortName, fullName, landingPageId, legalNoticeId, errorTemplateId, template, templateNameToSet, apiKeyToUse, selfRegTokenToUse, selfRegistrationDefault.getOrElse(org.get.selfRegDefault))
               }
             } yield ())
           } else {
-            val q = for {o <- PersistenceSchema.organizations if o.id === orgId} yield (o.shortname, o.fullname, o.landingPage, o.legalNotice, o.errorTemplate, o.template, o.templateName)
-            actions += q.update(shortName, fullName, landingPageId, legalNoticeId, errorTemplateId, template, templateNameToSet)
+            val q = for {o <- PersistenceSchema.organizations if o.id === orgId} yield (o.shortname, o.fullname, o.landingPage, o.legalNotice, o.errorTemplate, o.template, o.templateName, o.selfRegDefault)
+            actions += q.update(shortName, fullName, landingPageId, legalNoticeId, errorTemplateId, template, templateNameToSet, selfRegistrationDefault.getOrElse(org.get.selfRegDefault))
           }
           if (shortName.nonEmpty && !org.get.shortname.equals(shortName)) {
             actions += testResultManager.updateForUpdatedOrganisation(orgId, shortName)
@@ -529,7 +529,7 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
         updateRequest.shortName.getOrElse(organisation.shortname),
         updateRequest.fullName.getOrElse(organisation.fullname),
         organisation.landingPage, organisation.legalNotice, organisation.errorTemplate,
-        None, organisation.template, organisation.templateName, None, None, None, None,
+        None, organisation.template, organisation.templateName, None, None, None, None, None,
         copyOrganisationParameters = false, copySystemParameters = false, copyStatementParameters = false,
         checkApiKeyUniqueness = false, onSuccessCalls
       )
@@ -545,7 +545,7 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = for {
       communityId <- getCommunityIdByOrganisationId(orgId)
-      createdSystemInfo <- updateOrganizationInternal(orgId, shortName, fullName, landingPageId, legalNoticeId, errorTemplateId, otherOrganisation, template, templateName, None, None, propertyValues, propertyFiles, copyOrganisationParameters, copySystemParameters, copyStatementParameters, checkApiKeyUniqueness = false, onSuccessCalls)
+      createdSystemInfo <- updateOrganizationInternal(orgId, shortName, fullName, landingPageId, legalNoticeId, errorTemplateId, otherOrganisation, template, templateName, None, None, None, propertyValues, propertyFiles, copyOrganisationParameters, copySystemParameters, copyStatementParameters, checkApiKeyUniqueness = false, onSuccessCalls)
     } yield (communityId, createdSystemInfo)
     DB.run(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally).map { result =>
       triggerHelper.publishTriggerEvent(new OrganisationUpdatedEvent(result._1, orgId))

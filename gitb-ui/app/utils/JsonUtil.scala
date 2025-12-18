@@ -727,6 +727,7 @@ object JsonUtil {
       "community" -> organization.community,
       "adminOrganization" -> organization.adminOrganization,
       "selfRegistrationToken" -> (if(organization.selfRegToken.isDefined) organization.selfRegToken.get else JsNull),
+      "selfRegistrationDefault" -> organization.selfRegDefault
     )
     json
   }
@@ -818,7 +819,7 @@ object JsonUtil {
     )
   }
 
-  def jsCommunity(community:Communities, includeAdminInfo: Boolean):JsObject = {
+  def jsCommunity(community:Communities, includeAdminInfo: Boolean, selfRegDefaultOrganisation: Option[Organizations] = None):JsObject = {
     var json = Json.obj(
       "id"    -> community.id,
       "sname" -> community.shortname,
@@ -844,6 +845,10 @@ object JsonUtil {
       json = json.+("selfRegForceTemplateSelection" -> JsBoolean(community.selfRegForceTemplateSelection))
       json = json.+("selfRegForceRequiredProperties" -> JsBoolean(community.selfRegForceRequiredProperties))
       json = json.+("selfRegForceOrganisationTokenInput" -> JsBoolean(community.selfRegForceOrganisationTokenInput))
+      json = json.+("selfRegJoinExisting" -> JsBoolean(community.selfRegJoinExisting))
+      if (selfRegDefaultOrganisation.isDefined) {
+        json = json.+("selfRegDefaultOrganisation" -> jsOrganization(selfRegDefaultOrganisation.get))
+      }
       json = json.+("description" -> (if(community.description.isDefined) JsString(community.description.get) else JsNull))
       json = json.+("interactionNotification" -> JsBoolean(community.interactionNotification))
       if (Configurations.AUTOMATION_API_ENABLED) {
@@ -856,7 +861,7 @@ object JsonUtil {
   }
 
   def serializeCommunity(community:Community, labels: Option[List[CommunityLabels]], includeAdminInfo: Boolean):String = {
-    var jCommunity:JsObject = jsCommunity(community.toCaseObject, includeAdminInfo)
+    var jCommunity:JsObject = jsCommunity(community.toCaseObject, includeAdminInfo, community.defaultSelfRegOrganisation)
     if(community.domain.isDefined){
       jCommunity = jCommunity ++ Json.obj("domain" -> jsDomain(community.domain.get, withApiKeys = false))
     } else{

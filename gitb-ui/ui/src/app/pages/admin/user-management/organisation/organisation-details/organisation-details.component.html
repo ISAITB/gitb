@@ -5,6 +5,11 @@
         </div>
         <form>
             <div class="card-body" [pending]="!loaded" focus="sname">
+                @if (dataService.configuration.registrationEnabled && organisation.selfRegistrationDefault) {
+                    <div class="alert alert-info rounded">
+                        <span>This {{dataService.labelOrganisationLower()}} is configured as the default for self-registering users.</span>
+                    </div>
+                }
                 <app-organisation-form #form
                                        [organisation]="organisation"
                                        [communityId]="communityId"

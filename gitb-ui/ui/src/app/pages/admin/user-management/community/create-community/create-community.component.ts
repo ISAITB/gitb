@@ -103,13 +103,17 @@ export class CreateCommunityComponent extends BaseComponent implements OnInit {
         this.communityService.createCommunity(this.community.sname!, this.community.fname!, this.community.email,
           this.community.selfRegType!, this.community.selfRegRestriction!, this.community.selfRegToken, this.community.selfRegTokenHelpText, this.community.selfRegNotification,
           this.community.interactionNotification!, descriptionToUse, this.community.selfRegForceTemplateSelection, this.community.selfRegForceRequiredProperties,
-          this.community.selfRegAllowOrganisationTokens, this.community.selfRegAllowOrganisationTokenManagement, this.community.selfRegForceOrganisationTokenInput,
+          this.community.selfRegAllowOrganisationTokens, this.community.selfRegAllowOrganisationTokenManagement, this.community.selfRegForceOrganisationTokenInput, this.community.selfRegJoinExisting,
           this.community.allowCertificateDownload!, this.community.allowStatementManagement!, this.community.allowSystemManagement!, this.community.allowPostTestOrganisationUpdates!,
           this.community.allowPostTestSystemUpdates!, this.community.allowPostTestStatementUpdates!, this.community.allowAutomationApi, this.community.allowCommunityView!, this.community.allowUserManagement!,
           this.community.domain?.id)
           .subscribe(() => {
             this.cancelCreateCommunity()
-            this.popupService.success('Community created.')
+            if (this.dataService.configuration.registrationEnabled && this.community.selfRegType != Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED && this.community.selfRegJoinExisting && !this.community.selfRegAllowOrganisationTokens) {
+              this.popupService.warning('Community created with warnings.')
+            } else {
+              this.popupService.success('Community created.')
+            }
           }).add(() => {
           this.savePending = false
         })

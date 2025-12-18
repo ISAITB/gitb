@@ -185,7 +185,7 @@ export class OrganisationFormComponent implements OnInit {
       if (this.organisation.landingPage != undefined) {
         const item = this.landingPages.find(x => x.id == this.organisation.landingPage)
         if (item) {
-          this.landingPageSelectionConfig.replaceSelectedItems!.emit([item])
+          this.landingPageSelectionConfig.replaceSelectedItems!.emit([item]);
         }
       }
       if (this.organisation.legalNotice != undefined) {

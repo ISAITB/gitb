@@ -30,6 +30,7 @@ export interface Organisation extends EntityWithId {
     templateName?: string
     adminOrganization: boolean
     selfRegistrationToken?: string
+    selfRegistrationDefault: boolean
     community: number
 
     landingPages?: LandingPage

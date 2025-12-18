@@ -157,6 +157,7 @@
         <xsd:attribute name="allowOrganisationTokens" type="xsd:boolean" default="false"/>
         <xsd:attribute name="allowOrganisationTokenManagement" type="xsd:boolean" default="false"/>
         <xsd:attribute name="forceOrganisationTokenInput" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="joinExisting" type="xsd:boolean" default="false"/>
     </xsd:complexType>
     <xsd:simpleType name="ConformanceOverviewCertificateMessageType">
         <xsd:restriction base="xsd:string">
@@ -432,6 +433,7 @@
                 <xsd:attribute name="errorTemplate" type="xsd:IDREF"/>
                 <xsd:attribute name="template" type="xsd:boolean" default="false"/>
                 <xsd:attribute name="admin" type="xsd:boolean" default="false"/>
+                <xsd:attribute name="selfRegDefault" type="xsd:boolean" default="false"/>
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>

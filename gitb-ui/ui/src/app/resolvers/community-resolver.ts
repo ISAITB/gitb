@@ -29,7 +29,7 @@ export class CommunityResolver  {
 
     resolve(route: ActivatedRouteSnapshot, state: RouterStateSnapshot) {
         const communityId = Number(route.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
-        return this.communityService.getCommunityById(communityId)
+        return this.communityService.getCommunityById(communityId, true)
     }
 
 }

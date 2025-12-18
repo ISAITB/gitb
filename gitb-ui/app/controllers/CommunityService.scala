@@ -17,7 +17,7 @@ package controllers
 
 import config.Configurations
 import controllers.CommunityService.SelfRegistrationInfo
-import controllers.util.ParameterExtractor.requiredBodyParameter
+import controllers.util.ParameterExtractor.{optionalLongBodyParameter, requiredBodyParameter}
 import controllers.util.{AuthorizedAction, ParameterExtractor, ParameterNames, ResponseConstructor}
 import exceptions.ErrorCodes
 import managers.{AuthenticationManager, AuthorizationManager, CommunityManager, OrganizationManager}
@@ -115,7 +115,8 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
     */
   def getCommunityById(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewCommunityFull(request, communityId).flatMap { _ =>
-      communityManager.getCommunityById(communityId).map { community =>
+      val withDefaultOrganisation = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.COMMUNITY_SELFREG_DEFAULT_ORGANISATION).getOrElse(false)
+      communityManager.getCommunityById(communityId, withDefaultOrganisation).map { community =>
         val json: String = JsonUtil.serializeCommunity(community, None, includeAdminInfo = true)
         ResponseConstructor.constructJsonResponse(json)
       }
@@ -154,6 +155,8 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
       var selfRegAllowOrganisationTokens: Boolean = false
       var selfRegAllowOrganisationTokenManagement: Boolean = false
       var selfRegForceOrganisationTokenInput: Boolean = false
+      var selfRegDefaultOrganisation: Option[Long] = None
+      var selfRegJoinExisting: Boolean = false
       if (Configurations.REGISTRATION_ENABLED) {
         selfRegType = ParameterExtractor.requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_TYPE).toShort
         if (!ParameterExtractor.validCommunitySelfRegType(selfRegType)) {
@@ -176,6 +179,7 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
           selfRegForceTemplateSelection = requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_FORCE_TEMPLATE).toBoolean
           selfRegForceRequiredProperties = requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_FORCE_PROPERTIES).toBoolean
           selfRegAllowOrganisationTokens = requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_ALLOW_ORGANISATION_TOKENS).toBoolean
+          selfRegDefaultOrganisation = optionalLongBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_DEFAULT_ORGANISATION)
           if (selfRegAllowOrganisationTokens) {
             selfRegAllowOrganisationTokenManagement = requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_ALLOW_ORGANISATION_TOKEN_MANAGEMENT).toBoolean
             selfRegForceOrganisationTokenInput = requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_FORCE_ORGANISATION_TOKEN_INPUT).toBoolean
@@ -184,17 +188,19 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
             selfRegNotification = requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_NOTIFICATION).toBoolean
           }
           if (Configurations.AUTHENTICATION_SSO_ENABLED) {
-            selfRegRestriction = ParameterExtractor.requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_RESTRICTION).toShort
+            selfRegRestriction = requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_RESTRICTION).toShort
           }
+          selfRegJoinExisting = requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_JOIN_EXISTING).toBoolean
         }
       }
       val domainId: Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.DOMAIN_ID)
       communityManager.updateCommunity(
         communityId, shortName, fullName, email, selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification,
-        interactionNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties, selfRegAllowOrganisationTokens, selfRegAllowOrganisationTokenManagement, selfRegForceOrganisationTokenInput,
+        interactionNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties, selfRegAllowOrganisationTokens,
+        selfRegAllowOrganisationTokenManagement, selfRegForceOrganisationTokenInput, selfRegJoinExisting,
         allowCertificateDownload, allowStatementManagement, allowSystemManagement,
         allowPostTestOrganisationUpdate, allowPostTestSystemUpdate, allowPostTestStatementUpdate, allowAutomationApi, allowCommunityView, allowUserManagement,
-        domainId
+        domainId, selfRegDefaultOrganisation
       ).map { _ =>
         ResponseConstructor.constructEmptyResponse
       }

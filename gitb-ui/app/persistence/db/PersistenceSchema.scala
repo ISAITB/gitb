@@ -46,6 +46,7 @@ object PersistenceSchema {
     def selfRegAllowOrganisationTokens = column[Boolean]("selfreg_allow_org_tokens")
     def selfRegAllowOrganisationTokenManagement = column[Boolean]("selfreg_allow_org_token_management")
     def selfRegForceOrganisationTokenInput = column[Boolean]("selfreg_force_org_token_input")
+    def selfRegJoinExisting = column[Boolean]("selfreg_join_existing")
     def allowCertificateDownload = column[Boolean]("allow_certificate_download")
     def allowStatementManagement = column[Boolean]("allow_statement_management")
     def allowSystemManagement = column[Boolean]("allow_system_management")
@@ -58,7 +59,7 @@ object PersistenceSchema {
     def apiKey = column[String]("api_key")
     def latestStatusLabel = column[Option[String]]("latest_status_label")
     def domain = column[Option[Long]] ("domain")
-    def * = (id :: shortname :: fullname :: supportEmail :: selfRegType :: selfRegToken :: selfRegTokenHelpText :: selfRegNotification :: interactionNotification :: description :: selfRegRestriction :: selfRegForceTemplateSelection :: selfRegForceRequiredProperties :: selfRegAllowOrganisationTokens :: selfRegAllowOrganisationTokenManagement :: selfRegForceOrganisationTokenInput :: allowCertificateDownload :: allowStatementManagement :: allowSystemManagement :: allowPostTestOrganisationUpdates :: allowPostTestSystemUpdates :: allowPostTestStatementUpdates :: allowAutomationApi :: allowCommunityView :: allowUserManagement :: apiKey :: latestStatusLabel :: domain :: HNil).mapTo[Communities]
+    def * = (id :: shortname :: fullname :: supportEmail :: selfRegType :: selfRegToken :: selfRegTokenHelpText :: selfRegNotification :: interactionNotification :: description :: selfRegRestriction :: selfRegForceTemplateSelection :: selfRegForceRequiredProperties :: selfRegAllowOrganisationTokens :: selfRegAllowOrganisationTokenManagement :: selfRegForceOrganisationTokenInput :: selfRegJoinExisting :: allowCertificateDownload :: allowStatementManagement :: allowSystemManagement :: allowPostTestOrganisationUpdates :: allowPostTestSystemUpdates :: allowPostTestStatementUpdates :: allowAutomationApi :: allowCommunityView :: allowUserManagement :: apiKey :: latestStatusLabel :: domain :: HNil).mapTo[Communities]
   }
   val communities = TableQuery[CommunitiesTable]
   val insertCommunity = communities returning communities.map(_.id)
@@ -77,8 +78,9 @@ object PersistenceSchema {
     def apiKey = column[Option[String]]("api_key")
     def updateTime = column[Timestamp]("updated_on", O.SqlType("TIMESTAMP"))
     def selfRegToken = column[Option[String]]("selfreg_token")
+    def selfRegDefault = column[Boolean]("selfreg_default")
     def community = column[Long] ("community")
-    def * = (id, shortname, fullname, organizationType, adminOrganization, landingPage, legalNotice, errorTemplate, template, templateName, apiKey, selfRegToken, community) <> (Organizations.tupled, Organizations.unapply)
+    def * = (id, shortname, fullname, organizationType, adminOrganization, landingPage, legalNotice, errorTemplate, template, templateName, apiKey, selfRegToken, selfRegDefault, community) <> (Organizations.tupled, Organizations.unapply)
   }
   //get table name etc from organizations.baseTableRow
   val organizations = TableQuery[OrganizationsTable]

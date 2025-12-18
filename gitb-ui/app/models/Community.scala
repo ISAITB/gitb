@@ -32,6 +32,7 @@ case class Communities(
                         selfRegAllowOrganisationTokens: Boolean,
                         selfRegAllowOrganisationTokenManagement: Boolean,
                         selfRegForceOrganisationTokenInput: Boolean,
+                        selfRegJoinExisting: Boolean,
                         allowCertificateDownload: Boolean,
                         allowStatementManagement: Boolean,
                         allowSystemManagement: Boolean,
@@ -68,6 +69,7 @@ class Community(
                  _selfRegAllowOrganisationTokens: Boolean,
                  _selfRegAllowOrganisationTokenManagement: Boolean,
                  _selfRegForceOrganisationTokenInput: Boolean,
+                 _selfRegJoinExisting: Boolean,
                  _allowCertificateDownload: Boolean,
                  _allowStatementManagement: Boolean,
                  _allowSystemManagement: Boolean,
@@ -78,7 +80,8 @@ class Community(
                  _allowCommunityView: Boolean,
                  _allowUserManagement: Boolean,
                  _apiKey: String,
-                 _domain:Option[Domain]) {
+                 _domain:Option[Domain],
+                 _defaultSelfRegOrganisation: Option[Organizations]) {
   var id:Long = _id
   var shortname:String = _shortname
   var fullname:String = _fullname
@@ -95,6 +98,7 @@ class Community(
   var selfRegAllowOrganisationTokens:Boolean = _selfRegAllowOrganisationTokens
   var selfRegAllowOrganisationTokenManagement:Boolean = _selfRegAllowOrganisationTokenManagement
   var selfRegForceOrganisationTokenInput:Boolean = _selfRegForceOrganisationTokenInput
+  var selfRegJoinExisting:Boolean = _selfRegJoinExisting
   var allowCertificateDownload: Boolean = _allowCertificateDownload
   var allowStatementManagement: Boolean = _allowStatementManagement
   var allowSystemManagement: Boolean = _allowSystemManagement
@@ -106,8 +110,9 @@ class Community(
   var allowUserManagement: Boolean = _allowUserManagement
   var apiKey: String  = _apiKey
   var domain:Option[Domain] = _domain
+  var defaultSelfRegOrganisation:Option[Organizations] = _defaultSelfRegOrganisation
 
-  def this(_case:Communities, _domain:Option[Domain]) =
+  def this(_case:Communities, _domain:Option[Domain], _defaultSelfRegOrganisation: Option[Organizations]) =
     this(
       _case.id,
       _case.shortname,
@@ -125,6 +130,7 @@ class Community(
       _case.selfRegAllowOrganisationTokens,
       _case.selfRegAllowOrganisationTokenManagement,
       _case.selfRegForceOrganisationTokenInput,
+      _case.selfRegJoinExisting,
       _case.allowCertificateDownload,
       _case.allowStatementManagement,
       _case.allowSystemManagement,
@@ -135,7 +141,8 @@ class Community(
       _case.allowCommunityView,
       _case.allowUserManagement,
       _case.apiKey,
-      _domain
+      _domain,
+      _defaultSelfRegOrganisation
     )
 
   def toCaseObject:Communities = {
@@ -160,6 +167,7 @@ class Community(
       selfRegAllowOrganisationTokens,
       selfRegAllowOrganisationTokenManagement,
       selfRegForceOrganisationTokenInput,
+      selfRegJoinExisting,
       allowCertificateDownload,
       allowStatementManagement,
       allowSystemManagement,

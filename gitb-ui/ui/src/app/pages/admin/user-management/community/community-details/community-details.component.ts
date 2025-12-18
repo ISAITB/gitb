@@ -121,6 +121,7 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
   sortByCreationOrder = this.sortByCreationOrderNone
 
   organisationsRefreshing = false
+  selfRegistrationWarningActive = false
 
   resourceActions!: ResourceActions
   resourceEmitter = new EventEmitter<void>()
@@ -148,7 +149,11 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
 
   ngOnInit(): void {
     this.community = this.route.snapshot.data['community']
+    if (this.community.selfRegDefaultOrganisationEnabled == undefined) {
+      this.community.selfRegDefaultOrganisationEnabled = this.community.selfRegDefaultOrganisation != undefined
+    }
     this.communityId = this.community.id
+    this.resetSelfRegistrationWarning()
     if (Number(this.communityId) == Constants.DEFAULT_COMMUNITY_ID) {
       this.routingService.toSystemAdministration()
     }
@@ -196,6 +201,10 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
     } else if (tabIndex == Constants.TAB.COMMUNITY.RESOURCES) {
       this.showResources()
     }
+  }
+
+  private resetSelfRegistrationWarning() {
+    this.selfRegistrationWarningActive = this.dataService.configuration.registrationEnabled && this.community.selfRegType != Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED && this.community.selfRegJoinExisting == true && this.community.selfRegDefaultOrganisation == undefined && this.community.selfRegAllowOrganisationTokens != true
   }
 
   showOrganisations() {
@@ -318,7 +327,8 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
         (this.community.selfRegType == Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED ||
           (
             (this.community.selfRegType == Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING || this.textProvided(this.community.selfRegToken)) &&
-            (!this.dataService.configuration.emailEnabled || (!this.community.selfRegNotification || this.textProvided(this.community.email)))
+            (!this.dataService.configuration.emailEnabled || (!this.community.selfRegNotification || this.textProvided(this.community.email))) &&
+            (!this.community.selfRegDefaultOrganisationEnabled || this.community.selfRegDefaultOrganisation)
           )
         )
       ) &&
@@ -328,16 +338,25 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
 
   private updateCommunityInternal(descriptionToUse?: string) {
     this.savePending = true
+    let selfRegDefaultOrganisationId = this.community.selfRegDefaultOrganisation?.id
+    if (!this.community.selfRegDefaultOrganisationEnabled) {
+      selfRegDefaultOrganisationId = undefined
+    }
     this.communityService.updateCommunity(this.communityId, this.community.sname!, this.community.fname!, this.community.email,
       this.community.selfRegType!, this.community.selfRegRestriction!, this.community.selfRegToken, this.community.selfRegTokenHelpText, this.community.selfRegNotification,
       this.community.interactionNotification, descriptionToUse, this.community.selfRegForceTemplateSelection, this.community.selfRegForceRequiredProperties,
-      this.community.selfRegAllowOrganisationTokens, this.community.selfRegAllowOrganisationTokenManagement, this.community.selfRegForceOrganisationTokenInput,
+      this.community.selfRegAllowOrganisationTokens, this.community.selfRegAllowOrganisationTokenManagement, this.community.selfRegForceOrganisationTokenInput, selfRegDefaultOrganisationId, this.community.selfRegJoinExisting,
       this.community.allowCertificateDownload!, this.community.allowStatementManagement!, this.community.allowSystemManagement!, this.community.allowPostTestOrganisationUpdates!,
       this.community.allowPostTestSystemUpdates!, this.community.allowPostTestStatementUpdates!, this.community.allowAutomationApi, this.community.allowCommunityView, this.community.allowUserManagement,
       this.community.domain?.id)
     .subscribe(() => {
       this.originalDomainId = this.community.domain?.id
-      this.popupService.success('Community updated.')
+      this.resetSelfRegistrationWarning()
+      if (this.selfRegistrationWarningActive) {
+        this.popupService.warning('Community updated with warnings.')
+      } else {
+        this.popupService.success('Community updated.')
+      }
       this.dataService.breadcrumbUpdate({id: this.communityId, type: BreadcrumbType.community, label: this.community.sname!})
     }).add(() => {
       this.savePending = false
