@@ -26,7 +26,8 @@ class SelfRegOption(_communityId: Long,
                     _forceTemplateSelection: Boolean,
                     _forceRequiredProperties: Boolean,
                     _organisationTokensEnabled: Boolean,
-                    _forceOrganisationTokenInput: Boolean
+                    _joinExisting: Boolean,
+                    _hasDefaultOrganisation: Boolean
                    ) {
 
   var communityId: Long = _communityId
@@ -40,6 +41,7 @@ class SelfRegOption(_communityId: Long,
   var forceTemplateSelection: Boolean = _forceTemplateSelection
   var forceRequiredProperties: Boolean = _forceRequiredProperties
   var organisationTokensEnabled: Boolean = _organisationTokensEnabled
-  var forceOrganisationTokenInput: Boolean = _forceOrganisationTokenInput
+  var joinExisting: Boolean = _joinExisting
+  var hasDefaultOrganisation: Boolean = _hasDefaultOrganisation
 
 }

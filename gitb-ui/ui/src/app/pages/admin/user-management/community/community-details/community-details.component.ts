@@ -204,7 +204,7 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
   }
 
   private resetSelfRegistrationWarning() {
-    this.selfRegistrationWarningActive = this.dataService.configuration.registrationEnabled && this.community.selfRegType != Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED && this.community.selfRegJoinExisting == true && this.community.selfRegDefaultOrganisation == undefined && this.community.selfRegAllowOrganisationTokens != true
+    this.selfRegistrationWarningActive = this.dataService.configuration.registrationEnabled && this.community.selfRegType != Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED && this.community.selfRegJoinExisting == true && (this.community.selfRegDefaultOrganisationEnabled != true || this.community.selfRegDefaultOrganisation == undefined) && this.community.selfRegAllowOrganisationTokens != true
   }
 
   showOrganisations() {
@@ -341,6 +341,10 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
     let selfRegDefaultOrganisationId = this.community.selfRegDefaultOrganisation?.id
     if (!this.community.selfRegDefaultOrganisationEnabled) {
       selfRegDefaultOrganisationId = undefined
+    }
+    this.community.selfRegForceOrganisationTokenInput = this.community.selfRegJoinExisting && this.community.selfRegDefaultOrganisationEnabled != true && this.community.selfRegAllowOrganisationTokens == true
+    if (!this.community.selfRegInstructionsEnabled) {
+      this.community.selfRegTokenHelpText = undefined
     }
     this.communityService.updateCommunity(this.communityId, this.community.sname!, this.community.fname!, this.community.email,
       this.community.selfRegType!, this.community.selfRegRestriction!, this.community.selfRegToken, this.community.selfRegTokenHelpText, this.community.selfRegNotification,

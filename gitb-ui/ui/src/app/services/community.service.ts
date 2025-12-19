@@ -89,7 +89,7 @@ export class CommunityService {
     })
   }
 
-  selfRegister(communityId: number, token:string|undefined, newOrganisation: boolean, organisationToken:string|undefined, organisationShortName: string|undefined, organisationFullName: string|undefined, templateId: number|undefined, organisationProperties: CustomProperty[]|undefined, userName?: string, userEmail?: string, userPassword?: string) {
+  selfRegister(communityId: number, token:string|undefined, organisationChoice: 'new'|'token'|'default', organisationToken:string|undefined, organisationShortName: string|undefined, organisationFullName: string|undefined, templateId: number|undefined, organisationProperties: CustomProperty[]|undefined, userName?: string, userEmail?: string, userPassword?: string) {
     let data: any = {
       community_id: communityId
     }
@@ -98,15 +98,17 @@ export class CommunityService {
     if (userEmail != undefined) data.user_email = userEmail
     if (userPassword != undefined) data.password = userPassword
     let files: FileParam[]|undefined
-    if (newOrganisation) {
+    if (organisationChoice === 'new') {
       if (organisationShortName != undefined) data.vendor_sname = organisationShortName
       if (organisationFullName != undefined) data.vendor_fname = organisationFullName
       if (templateId != undefined) data.template_id = templateId
       const props = this.dataService.customPropertiesForPost(organisationProperties)
       data.properties = props.parameterJson
       files = props.files
-    } else {
+    } else if (organisationChoice === 'token') {
       if (organisationToken != undefined) data.vendor_token = organisationToken
+    } else {
+      data.community_selfreg_default_organisation = true
     }
     return this.restService.post<ErrorDescription|{id: number}|ActualUserInfo>({
       path: ROUTES.controllers.CommunityService.selfRegister().url,

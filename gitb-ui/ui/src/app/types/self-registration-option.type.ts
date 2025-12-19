@@ -28,6 +28,7 @@ export interface SelfRegistrationOption {
     organisationProperties?: CustomProperty[],
     selfRegTokenHelpText?: string
     organisationTokensEnabled: boolean
-    forceOrganisationTokenInput: boolean
+    joinExisting: boolean
+    hasDefaultOrganisation: boolean
 
 }

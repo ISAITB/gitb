@@ -48,9 +48,9 @@ export abstract class BaseSelfRegistrationPageComponent extends BaseComponent {
   }
 
   private organisationDataOk(selfRegData: SelfRegistrationModel) {
-    return (selfRegData.selfRegOption?.organisationTokensEnabled === false && this.newOrganisationDataOk(selfRegData)) ||
-           (selfRegData.selfRegOption?.organisationTokensEnabled === true && selfRegData.newOrganisation === true && this.newOrganisationDataOk(selfRegData)) ||
-           (selfRegData.selfRegOption?.organisationTokensEnabled === true && selfRegData.newOrganisation === false && this.textProvided(selfRegData.orgToken))
+    return (selfRegData.organisationChoice === 'new' && this.newOrganisationDataOk(selfRegData)) ||
+           (selfRegData.organisationChoice === 'token' && this.textProvided(selfRegData.orgToken)) ||
+           (selfRegData.organisationChoice === 'default')
   }
 
 }

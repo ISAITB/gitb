@@ -148,7 +148,7 @@ export class OrganisationFormComponent implements OnInit {
   }
 
   deleteSelfRegistrationToken() {
-      this.confirmationDialogService.confirmed("Confirm delete", "Are you sure you want to delete the self-registration token?", "Delete", "Cancel").subscribe(() => {
+      this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete the self-registration token?", "Delete", "Cancel").subscribe(() => {
         if (this.organisation.id) {
           this.selfRegistrationTokenDeletePending = true
           this.organisationService.deleteSelfRegistrationToken(this.organisation.id).subscribe(() => {

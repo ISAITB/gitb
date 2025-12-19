@@ -415,7 +415,6 @@ object ParameterExtractor {
         }
       } else {
         selfRegToken = None
-        selfRegTokenHelpText = None
       }
       if (selfRegType != SelfRegistrationType.NotSupported.id.toShort) {
         selfRegForceTemplateSelection = requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_FORCE_TEMPLATE).toBoolean

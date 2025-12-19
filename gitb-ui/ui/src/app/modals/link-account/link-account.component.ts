@@ -137,7 +137,7 @@ export class LinkAccountComponent extends BaseSelfRegistrationPageComponent impl
       if (this.selfRegData.template) {
         templateId = this.selfRegData.template.id
       }
-      this.communityService.selfRegister(this.selfRegData.selfRegOption!.communityId!, token, this.selfRegData.newOrganisation === true, this.selfRegData.orgToken, this.selfRegData.orgShortName!, this.selfRegData.orgFullName!, templateId, this.selfRegData.selfRegOption!.organisationProperties, undefined, undefined, undefined)
+      this.communityService.selfRegister(this.selfRegData.selfRegOption!.communityId!, token, this.selfRegData.organisationChoice!, this.selfRegData.orgToken, this.selfRegData.orgShortName!, this.selfRegData.orgFullName!, templateId, this.selfRegData.selfRegOption!.organisationProperties, undefined, undefined, undefined)
       .subscribe((data) => {
         if (this.isErrorDescription(data)) {
           this.validation.applyError(data)

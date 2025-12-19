@@ -78,24 +78,21 @@
     @if (selfRegEnabled) {
         @if (selfRegTokenEnabled && organisation.id != undefined && !organisation.adminOrganization) {
             <div class="row mt-3">
-                @if (organisation.selfRegistrationToken == undefined) {
-                    <legend class="col-3 col-form-label text-end">Self-registration token:</legend>
-                    <div class="col-auto">
-                        <button class="btn btn-secondary" (click)="updateSelfRegistrationToken()" [pending]="selfRegistrationTokenUpdatePending">Generate token</button>
-                    </div>
-                } @else {
-                    <label class="col-3 col-form-label text-end" for="apiKey">Self-registration token:</label>
-                    <div class="col-8 col-md-6">
-                        <app-api-key-text idName="apiKey" name="apiKey"
-                                          [key]="organisation.selfRegistrationToken"
-                                          [supportDelete]="selfRegTokenUpdatable"
-                                          [supportUpdate]="selfRegTokenUpdatable"
-                                          [updatePending]="selfRegistrationTokenUpdatePending"
-                                          [deletePending]="selfRegistrationTokenDeletePending"
-                                          (update)="updateSelfRegistrationToken()"
-                                          (delete)="deleteSelfRegistrationToken()"></app-api-key-text>
-                    </div>
-                }
+                <label class="col-3 col-form-label text-end" for="apiKey">Self-registration token:</label>
+                <div class="col-8 col-md-6">
+                    <app-api-key-text idName="apiKey" name="apiKey"
+                                      [key]="organisation.selfRegistrationToken"
+                                      [createLabel]="'Generate token'"
+                                      [supportCreate]="selfRegTokenUpdatable"
+                                      [supportDelete]="selfRegTokenUpdatable"
+                                      [supportUpdate]="selfRegTokenUpdatable"
+                                      [createPending]="selfRegistrationTokenUpdatePending"
+                                      [updatePending]="selfRegistrationTokenUpdatePending"
+                                      [deletePending]="selfRegistrationTokenDeletePending"
+                                      (create)="updateSelfRegistrationToken()"
+                                      (update)="updateSelfRegistrationToken()"
+                                      (delete)="deleteSelfRegistrationToken()"></app-api-key-text>
+                </div>
                 <div app-tooltip class="col-auto" [tbTooltip]="'A token that can be used by a user during self-registration to register in this '+dataService.labelOrganisationLower()+'.'"></div>
             </div>
         }

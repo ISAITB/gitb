@@ -32,7 +32,7 @@
 @if (emailEnabled) {
     <div class="mt-3 row pt-0">
         <div class="col-8 col-md-6 offset-3">
-            @if (selfRegEnabled && selfRegOptionsVisible) {
+            @if (selfRegEnabled && community.selfRegEnabled) {
                 <div class="form-check form-check-inline">
                     <input class="form-check-input" type="checkbox" id="selfRegNotification" name="selfRegNotification" [(ngModel)]="community.selfRegNotification">
                     <label class="form-check-label" for="selfRegNotification">Notify for self-registrations
@@ -60,39 +60,25 @@
 }
 @if (selfRegEnabled) {
     <div class="mt-3 row">
-        <label class="col-3 col-form-label text-end" for="selfRegType">* Self-registration method:</label>
+        <legend class="col-3 col-form-label text-end pt-0">Self-registration:</legend>
         <div class="col-8 col-md-6">
-            <select id="selfRegType" name="selfRegType" class="form-select" (ngModelChange)="selfRegTypeChanged($event)" [(ngModel)]="community.selfRegType">
-                @for (type of selfRegTypes; track $index) {
-                    <option [ngValue]="type.id">{{type.label}}</option>
-                }
-            </select>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="selfRegEnabled" name="selfRegEnabled" [(ngModel)]="community.selfRegEnabled" (change)="selfRegEnabledChanged()">
+                <label class="form-check-label" for="selfRegEnabled">Enabled
+                    <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Check this to allow users to self-register to this community. When self-registration is disabled, new members can only be added by an administrator."></div>
+                </label>
+            </div>
         </div>
-         <div class="col-auto" app-tooltip tbTooltip="This option determines whether users are allowed to self-register as new community members. Disabling self-registration means that new members can only be added by an administrator."></div>
     </div>
 }
 @if (selfRegEnabled) {
-    <div [collapse]="!selfRegOptionsVisible" [isAnimated]="true">
+    <div [collapse]="!community.selfRegEnabled" [isAnimated]="true">
         <app-form-section sectionTitle="Self-registration settings" [collapsed]="selfRegOptionsCollapsed" [marginBefore]="true">
-            @if (community.selfRegType == Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN) {
-                <div class="mt-3 row">
-                    <label class="col-3 col-form-label text-end" for="selfRegToken">* Self-registration token:</label>
-                    <div class="col-8 col-md-6"><input id="selfRegToken" name="selfRegToken" [(ngModel)]="community.selfRegToken" class="form-control" type="text"></div>
-                     <div class="col-auto" app-tooltip tbTooltip="This serves as a password for new users to provide during self-registration so that the community is not fully public. Ensure your community members are aware of this or that you provide a support email for relevant requests."></div>
-                </div>
-                <div class="mt-3 row">
-                    <label class="col-3 col-form-label text-end" for="selfRegTokenHelpText">Token help text:</label>
-                    <div class="col-8 col-md-6">
-                        <app-editor id="selfRegTokenHelpText" name="selfRegTokenHelpText" [(ngModel)]="community.selfRegTokenHelpText" type="line"></app-editor>
-                    </div>
-                     <div class="col-auto" app-tooltip tbTooltip="A short explanatory text to instruct users on how the token is to be retrieved (e.g. pointer to a link or email address). This is displayed in the self-registration form next to the token input."></div>
-                </div>
-            }
             <div class="mt-3 row">
                 <label class="col-3 col-form-label text-end pt-0" for="description">Community description:</label>
                 <div class="col-8 col-md-6">
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox" (change)="descriptionCheckChanged()" [disabled]="community.domainId == undefined" id="descriptionCheck" name="descriptionCheck" [(ngModel)]="community.sameDescriptionAsDomain">
+                        <input class="form-check-input" type="checkbox" (change)="descriptionCheckChanged()" [disabled]="community.domain?.id == undefined" id="descriptionCheck" name="descriptionCheck" [(ngModel)]="community.sameDescriptionAsDomain">
                         <label class="form-check-label" for="descriptionCheck">Same as {{dataService.labelDomainLower()}}</label>
                     </div>
                 </div>
@@ -101,24 +87,36 @@
                 <div class="offset-3 col-8 col-md-6">
                     <textarea ctrlEnterSubmit id="description" name="description" [(ngModel)]="community.activeDescription" class="form-control" [readonly]="community.sameDescriptionAsDomain" (blur)="setSameDescription()"></textarea>
                 </div>
-                 <div class="col-auto" app-tooltip tbTooltip="This description will be displayed in the self-registration screen to explain to prospective members the community's context and purpose."></div>
+                <div class="col-auto" app-tooltip tbTooltip="This description will be displayed in the self-registration screen to explain to prospective members the community's context and purpose."></div>
             </div>
             @if (ssoEnabled) {
                 <div class="mt-3 row">
-                    <label class="col-3 col-form-label text-end" for="selfRegRestriction">* Self-registration restrictions:</label>
-                    <div class="col-8 col-md-6">
-                        <select id="selfRegRestriction" name="selfRegRestriction" class="form-select" [(ngModel)]="community.selfRegRestriction">
-                            @for (type of selfRegRestrictions; track $index) {
-                                <option [ngValue]="type.id">{{type.label}}</option>
-                            }
-                        </select>
+                    <legend class="col-3 col-form-label text-end pt-0">* Restrictions:</legend>
+                    <div class="col-9">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="selfRegRestriction" [(ngModel)]="community.selfRegRestriction" id="selfRegRestriction_1" [value]="Constants.SELF_REGISTRATION_RESTRICTION.NO_RESTRICTION">
+                            <label class="form-check-label" for="selfRegRestriction_1">No restriction
+                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" [tbTooltip]="'There is no restriction applied on self-registrations. As a result, users can self-register multiple times.'"></div>
+                            </label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="selfRegRestriction" [(ngModel)]="community.selfRegRestriction" id="selfRegRestriction_2" [value]="Constants.SELF_REGISTRATION_RESTRICTION.USER_EMAIL">
+                            <label class="form-check-label" for="selfRegRestriction_2">One registration allowed per user
+                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" [tbTooltip]="'Each user can self-register only once. The restriction is applied based on the user\'s email address.'"></div>
+                            </label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="selfRegRestriction" [(ngModel)]="community.selfRegRestriction" id="selfRegRestriction_3" [value]="Constants.SELF_REGISTRATION_RESTRICTION.USER_EMAIL_DOMAIN">
+                            <label class="form-check-label" for="selfRegRestriction_3">One registration allowed per user email domain
+                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" [tbTooltip]="'Users with the same email domain can self-register only once. Use this to avoid multiple registrations from users in the same '+dataService.labelOrganisationLower()+'.'"></div>
+                            </label>
+                        </div>
                     </div>
-                     <div class="col-auto" app-tooltip tbTooltip="Use this option to restrict multiple registrations to the community. Restrictions are applied considering the email address of the user that is in the process of self-registering."></div>
                 </div>
             }
             <div class="mt-3 row">
-                <legend class="col-3 col-form-label text-end pt-0">Assigned user role:</legend>
-                <div class="col-8 col-md-6">
+                <legend class="col-3 col-form-label text-end pt-0">* Assigned user role:</legend>
+                <div class="col-9">
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" type="radio" name="selfRegRole" [(ngModel)]="community.selfRegJoinAsAdmin" id="selfRegRole_1" [value]="true">
                         <label class="form-check-label" for="selfRegRole_1">{{dataService.labelOrganisation()}} administrator
@@ -130,6 +128,47 @@
                         <label class="form-check-label" for="selfRegRole_2">{{dataService.labelOrganisation()}} user
                             <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" [tbTooltip]="'A restricted role that does not include '+dataService.labelOrganisationLower()+' management operations.'"></div>
                         </label>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-3 row">
+                <legend class="col-3 col-form-label text-end pt-0">Instructions:</legend>
+                <div class="col-8 col-md-6">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="selfRegInstructionsEnabled" name="selfRegInstructionsEnabled" [(ngModel)]="community.selfRegInstructionsEnabled">
+                        <label class="form-check-label" for="selfRegInstructionsEnabled">Enabled
+                            <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Enable short, explanatory instructions to provide information needed for the self-registration process. These could cover the steps to obtain community or {{dataService.labelOrganisationLower()}} tokens, or other information specific to the self-registration."></div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div [collapse]="!community.selfRegInstructionsEnabled" [isAnimated]="true">
+                <div class="mt-1 row">
+                    <div class="offset-3 col-8 col-md-6">
+                        <app-editor id="selfRegTokenHelpText" name="selfRegTokenHelpText" [(ngModel)]="community.selfRegTokenHelpText" type="line"></app-editor>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-3 row">
+                <legend class="col-3 col-form-label text-end pt-0">Community token:</legend>
+                <div class="col-8 col-md-6">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="selfRegTokenEnabled" name="selfRegTokenEnabled" [(ngModel)]="community.selfRegTokenEnabled" (change)="selfRegEnabledChanged()">
+                        <label class="form-check-label" for="selfRegTokenEnabled">Enabled
+                            <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Check this to require that users provide a community-specific token to complete their self-registration. This serves as a password for new users to provide during self-registration so that the community is not fully public."></div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div [collapse]="!community.selfRegTokenEnabled" [isAnimated]="true">
+                <div class="mt-1 row">
+                    <div class="offset-3 col-8 col-md-6">
+                        <app-api-key-text idName="selfRegToken" name="selfRegToken"
+                                          [key]="community.selfRegToken"
+                                          [supportEdit]="true"
+                                          [supportUpdate]="true"
+                                          (edit)="editedSelfRegistrationToken($event)"
+                                          (update)="updateSelfRegistrationToken()"></app-api-key-text>
                     </div>
                 </div>
             </div>
@@ -159,7 +198,7 @@
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="selfRegDefaultOrganisationEnabled" name="selfRegDefaultOrganisationEnabled" [(ngModel)]="community.selfRegDefaultOrganisationEnabled">
                             <label class="form-check-label" for="selfRegDefaultOrganisationEnabled">Enabled
-                                <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Check this to allow self-registering users to registered in a default {{dataService.labelOrganisationLower()}}."></div>
+                                <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Check this to allow self-registering users to register in a default {{dataService.labelOrganisationLower()}}."></div>
                             </label>
                         </div>
                     </div>
@@ -181,7 +220,7 @@
             }
             <div class="mt-3 row">
                 <legend class="col-3 col-form-label text-end pt-0">Require from users:</legend>
-                <div class="col-8 col-md-6">
+                <div class="col-9">
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" id="selfRegJoinExisting" name="selfRegJoinExisting" [(ngModel)]="community.selfRegJoinExisting">
                         <label class="form-check-label" for="selfRegJoinExisting">Join an existing {{dataService.labelOrganisationLower()}}
@@ -191,22 +230,14 @@
                     <div [collapse]="community.selfRegJoinExisting === true" [isAnimated]="true">
                         <div class="form-check pt-2">
                             <input class="form-check-input" type="checkbox" id="forceTemplateSelection" name="selfRegForceTemplateSelection" [(ngModel)]="community.selfRegForceTemplateSelection">
-                            <label class="form-check-label" for="forceTemplateSelection">Select one of the defined configuration templates
+                            <label class="form-check-label" for="forceTemplateSelection">When registering a new {{dataService.labelOrganisationLower()}}, select one of the defined configuration templates
                                 <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Check this to force users to select a configuration template when registering. This option applies only if configuration templates are defined."></div>
                             </label>
                         </div>
                         <div class="form-check pt-2">
                             <input class="form-check-input" type="checkbox" id="forceRequiredProperties" name="selfRegForceRequiredProperties" [(ngModel)]="community.selfRegForceRequiredProperties">
-                            <label class="form-check-label" for="forceRequiredProperties">Complete custom properties defined as required
+                            <label class="form-check-label" for="forceRequiredProperties">When registering a new {{dataService.labelOrganisationLower()}}, complete custom properties defined as required
                                 <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to force users to complete required custom '+dataService.labelOrganisationLower()+' properties on the self-registration screen. This option applies only if such properties are defined.'"></div>
-                            </label>
-                        </div>
-                    </div>
-                    <div [collapse]="community.selfRegJoinExisting !== true || community.selfRegAllowOrganisationTokens !== true" [isAnimated]="true">
-                        <div class="form-check pt-2">
-                            <input class="form-check-input" type="checkbox" id="selfRegForceOrganisationTokenInput" name="selfRegForceOrganisationTokenInput" [(ngModel)]="community.selfRegForceOrganisationTokenInput">
-                            <label class="form-check-label" for="selfRegForceOrganisationTokenInput">Provide a token to join a specific {{dataService.labelOrganisationLower()}}
-                                <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to force users to enter a valid '+dataService.labelOrganisationLower()+' token on the self-registration screen. Doing so ensures that self-registrations only happen for existing '+dataService.labelOrganisationsLower()+'.'"></div>
                             </label>
                         </div>
                     </div>
@@ -218,7 +249,7 @@
 <app-form-section sectionTitle="User permissions" [collapsed]="userPermissionsCollapsed" [marginBefore]="true">
     <div class="mt-3 row">
         <legend class="col-3 col-form-label text-end pt-0">{{dataService.labelOrganisation()}} users may:</legend>
-        <div class="col-8 col-md-6">
+        <div class="col-9">
             <div class="form-check pb-2">
                 <input class="form-check-input" type="checkbox" id="allowCertificateDownload" name="allowCertificateDownload" [(ngModel)]="community.allowCertificateDownload">
                 <label class="form-check-label" for="allowCertificateDownload">Download conformance certificates

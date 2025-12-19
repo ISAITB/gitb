@@ -83,7 +83,8 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
     }
   }
 
-  def selfRegister(organisation: Organizations, organisationAdmin: Users, templateId: Option[Long], actualUserInfo: Option[ActualUserInfo], customPropertyValues: Option[List[OrganisationParameterValues]], customPropertyFiles: Option[Map[Long, FileInfo]], requireMandatoryPropertyValues: Boolean): Future[Long] = {
+  def selfRegister(organisation: Organizations, organisationAdmin: Users, templateId: Option[Long], actualUserInfo: Option[ActualUserInfo],
+                   customPropertyValues: Option[List[OrganisationParameterValues]], customPropertyFiles: Option[Map[Long, FileInfo]], requireMandatoryPropertyValues: Boolean): Future[Long] = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction: DBIO[(Long, OrganisationCreationDbInfo)] = for {
       // Process organisation data
@@ -184,6 +185,12 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
         .filter(x => x._1.selfRegType === SelfRegistrationType.PublicListing.id.toShort || x._1.selfRegType === SelfRegistrationType.PublicListingWithToken.id.toShort)
         .sortBy(_._1.shortname.asc)
         .result
+      // Load the community IDs for which default organisations are enabled
+      communitiesWithDefaultOrganisations <- PersistenceSchema.organizations
+        .filter(_.selfRegDefault === true)
+        .map(_.community)
+        .result
+        .map(x => x.toSet)
       communityIds <- DBIO.successful(communities.map(_._1.id))
       // Load templates
       templates <- PersistenceSchema.organizations
@@ -243,24 +250,29 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
           }
           paramMap.view.mapValues(_.toList).toMap
         }
-    } yield (communities, templates, labels, orgParameters)
+    } yield (communities, templates, labels, orgParameters, communitiesWithDefaultOrganisations)
     DB.run(action).map { results =>
       val buffer = new ListBuffer[SelfRegOption]
       results._1.foreach { community =>
-        buffer += new SelfRegOption(
-          community._1.id,
-          community._1.shortname,
-          selfRegDescriptionToUse(community._1.description, community._2),
-          community._1.selfRegTokenHelpText,
-          community._1.selfRegType,
-          results._2.get(community._1.id), // Templates
-          results._3.getOrElse(community._1.id, List()), // Labels
-          results._4.getOrElse(community._1.id, List()), // Organisation parameters
-          community._1.selfRegForceTemplateSelection,
-          community._1.selfRegForceRequiredProperties,
-          community._1.selfRegAllowOrganisationTokens,
-          community._1.selfRegForceOrganisationTokenInput
-        )
+        val hasDefaultOrganisation = results._5.contains(community._1.id)
+        if (!community._1.selfRegJoinExisting || hasDefaultOrganisation || community._1.selfRegAllowOrganisationTokens) {
+          // In other cases we have a community forcing to join existing organisations but no way to do so (no default organisation and no organisation tokens)
+          buffer += new SelfRegOption(
+            community._1.id,
+            community._1.shortname,
+            selfRegDescriptionToUse(community._1.description, community._2),
+            community._1.selfRegTokenHelpText,
+            community._1.selfRegType,
+            results._2.get(community._1.id), // Templates
+            results._3.getOrElse(community._1.id, List()), // Labels
+            results._4.getOrElse(community._1.id, List()), // Organisation parameters
+            community._1.selfRegForceTemplateSelection,
+            community._1.selfRegForceRequiredProperties,
+            community._1.selfRegAllowOrganisationTokens,
+            community._1.selfRegJoinExisting,
+            hasDefaultOrganisation // Whether a default organisation is defined
+          )
+        }
       }
       buffer.toList
     }

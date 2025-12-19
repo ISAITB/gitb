@@ -2540,7 +2540,8 @@ object JsonUtil {
         "forceTemplateSelection" -> option.forceTemplateSelection,
         "forceRequiredProperties" -> option.forceRequiredProperties,
         "organisationTokensEnabled" -> option.organisationTokensEnabled,
-        "forceOrganisationTokenInput" -> option.forceOrganisationTokenInput
+        "joinExisting" -> option.joinExisting,
+        "hasDefaultOrganisation" -> option.hasDefaultOrganisation
     )
     json
   }

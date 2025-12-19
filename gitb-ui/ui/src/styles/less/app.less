@@ -956,5 +956,12 @@ span.mini-tab, div.mini-tab {
 // HugeRTE override styles - END
 .itb-body form .row {
     // Disable row wrapping in forms so that tooltips stay on the same line with the input field.
-    flex-wrap: nowrap;
+    &:has(input:is([type="text"], [type="password"]), select, textarea) {
+        flex-wrap: nowrap;
+    }
+}
+.no-margin-on-last-p {
+    p:last-child {
+        margin-bottom: 0 !important;
+    }
 }

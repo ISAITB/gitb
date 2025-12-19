@@ -22,7 +22,7 @@ import controllers.util.{AuthorizedAction, ParameterExtractor, ParameterNames, R
 import exceptions.ErrorCodes
 import managers.{AuthenticationManager, AuthorizationManager, CommunityManager, OrganizationManager}
 import models.Enums.{SelfRegistrationRestriction, SelfRegistrationType}
-import models.{ActualUserInfo, Communities, Organizations, Users}
+import models.{ActualUserInfo, Communities, Enums, Organizations, Users}
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.StringUtils
 import org.slf4j.{Logger, LoggerFactory}
@@ -174,7 +174,6 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
           }
         } else {
           selfRegToken = None
-          selfRegTokenHelpText = None
         }
         if (selfRegType != SelfRegistrationType.NotSupported.id.toShort) {
           selfRegForceTemplateSelection = requiredBodyParameter(request, ParameterNames.COMMUNITY_SELFREG_FORCE_TEMPLATE).toBoolean
@@ -226,8 +225,9 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
       communityId <- Future.successful(ParameterExtractor.requiredBodyParameter(paramMap, ParameterNames.COMMUNITY_ID).toLong)
       selfRegToken <- Future.successful(ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.COMMUNITY_SELFREG_TOKEN))
       organisationToken <- Future.successful(ParameterExtractor.optionalBodyParameter(paramMap, ParameterNames.VENDOR_TOKEN))
+      joinDefaultOrganisation <- Future.successful(ParameterExtractor.optionalBooleanBodyParameter(paramMap, ParameterNames.COMMUNITY_SELFREG_DEFAULT_ORGANISATION).getOrElse(false))
       organisation <- {
-        if (organisationToken.isDefined) {
+        if (organisationToken.isDefined || joinDefaultOrganisation) {
           Future.successful(None)
         } else {
           Future.successful(Some(ParameterExtractor.extractOrganizationInfo(paramMap)))
@@ -267,46 +267,42 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
                   }
                 } else {
                   // Check the target organisation details
-                  if (organisationToken.isDefined) {
-                    if (community.get.selfRegAllowOrganisationTokens) {
-                      // Check to see that the provided organisation token is valid and retrieve the referenced organisation.
-                      organisationManager.getBySelfRegistrationToken(communityId, organisationToken.get).flatMap { targetOrganisation =>
-                        if (targetOrganisation.isEmpty) {
-                          Future.successful {
-                            info.withFailure(ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_SELFREG_DATA, "The provided token is incorrect.", Some("orgToken")), community.get)
-                          }
-                        } else {
-                          // Check to see that the user is not already registered.
-                          if (Configurations.AUTHENTICATION_SSO_ENABLED) {
-                            // Check to see that the user is not already linked to the organisation
-                            organisationManager.ssoUserExistsInOrganisation(info.actualUserInfo.get.email, targetOrganisation.get.id).map { exists =>
-                              if (exists) {
-                                info.withFailure(ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_SELFREG_DATA, "Your account is already registered.", Some("orgToken")), community.get)
-                              } else {
-                                info.withOrganisation(targetOrganisation.get, community.get)
-                              }
+                  if (community.get.selfRegJoinExisting && organisationToken.isEmpty && !joinDefaultOrganisation) {
+                    Future.successful {
+                      info.withFailure(ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_SELFREG_DATA, "You must join an existing organisation.", Some("community")), community.get)
+                    }
+                  } else {
+                    if (organisationToken.isDefined) {
+                      if (community.get.selfRegAllowOrganisationTokens) {
+                        // Check to see that the provided organisation token is valid and retrieve the referenced organisation.
+                        organisationManager.getBySelfRegistrationToken(communityId, organisationToken.get).flatMap { targetOrganisation =>
+                          if (targetOrganisation.isEmpty) {
+                            Future.successful {
+                              info.withFailure(ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_SELFREG_DATA, "The provided token is incorrect.", Some("orgToken")), community.get)
                             }
                           } else {
-                            // Check the user email (only if not SSO)
-                            authenticationManager.checkEmailAvailability(info.organisationAdmin.get.email, None, None, None).map { available =>
-                              if (!available) {
-                                info.withFailure(ResponseConstructor.constructErrorResponse(ErrorCodes.EMAIL_EXISTS, "The provided username is already defined.", Some("adminEmail")), community.get)
-                              } else {
-                                info.withOrganisation(targetOrganisation.get, community.get)
-                              }
+                            Future.successful {
+                              info.withOrganisation(targetOrganisation.get, community.get)
                             }
                           }
                         }
+                      } else {
+                        Future.successful {
+                          info.withFailure(ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_SELFREG_DATA, "Use of registration tokens is not allowed.", Some("orgToken")), community.get)
+                        }
                       }
-                    } else {
-                      Future.successful {
-                        info.withFailure(ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_SELFREG_DATA, "Use of registration tokens is not allowed.", Some("orgToken")), community.get)
-                      }
-                    }
-                  } else {
-                    if (community.get.selfRegForceOrganisationTokenInput) {
-                      Future.successful {
-                        info.withFailure(ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_SELFREG_DATA, "The registration token is required.", Some("orgToken")), community.get)
+                    } else if (joinDefaultOrganisation) {
+                      // Join the community default organisation
+                      organisationManager.getSelfRegistrationCommunityDefaultOrganisation(communityId).flatMap { defaultOrganisation =>
+                        if (defaultOrganisation.isEmpty) {
+                          Future.successful {
+                            info.withFailure(ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_SELFREG_DATA, "The community does not define a default organisation for self-registration.", Some("community")), community.get)
+                          }
+                        } else {
+                          Future.successful {
+                            info.withOrganisation(defaultOrganisation.get, community.get)
+                          }
+                        }
                       }
                     } else {
                       if (organisation.isEmpty) {
@@ -344,13 +340,8 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
                               }
                             }
                           } else {
-                            // Check the user email (only if not SSO)
-                            authenticationManager.checkEmailAvailability(info.organisationAdmin.get.email, None, None, None).map { available =>
-                              if (!available) {
-                                info.withFailure(ResponseConstructor.constructErrorResponse(ErrorCodes.EMAIL_EXISTS, "The provided username is already defined.", Some("adminEmail")), community.get)
-                              } else {
-                                info.withOrganisation(organisation.get, community.get)
-                              }
+                            Future.successful {
+                              info.withOrganisation(organisation.get, community.get)
                             }
                           }
                         }
@@ -360,6 +351,43 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
                 }
               } else {
                 Future.successful(info)
+              }
+            }
+          }
+        } else {
+          Future.successful(info)
+        }
+      }
+      // Check to see that the user account can be created.
+      info <- {
+        if (info.failure.isEmpty) {
+          if (Configurations.AUTHENTICATION_SSO_ENABLED) {
+            if (info.organisation.get.id == 0L) {
+              // We can always link an SSO user account with a newly created organisation.
+              Future.successful(info)
+            } else {
+              // Link to existing organisation.
+              organisationManager.ssoUserExistsInOrganisation(info.actualUserInfo.get.email, info.organisation.get.id).map { exists =>
+                if (exists) {
+                  var errorTip = "community"
+                  var message = "Your account is already registered in the community's default organisation."
+                  if (organisationToken.isDefined) {
+                    errorTip = "orgToken"
+                    message = "Your account is already registered in this organisation."
+                  }
+                  info.withFailure(ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_SELFREG_DATA, message, Some(errorTip)), info.community.get)
+                } else {
+                  info
+                }
+              }
+            }
+          } else {
+            // Check that the username is available.
+            authenticationManager.checkEmailAvailability(info.organisationAdmin.get.email, None, None, None).map { available =>
+              if (!available) {
+                info.withFailure(ResponseConstructor.constructErrorResponse(ErrorCodes.EMAIL_EXISTS, "The provided username is already defined.", Some("adminEmail")), info.community.get)
+              } else {
+                info
               }
             }
           }
@@ -378,7 +406,11 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
               ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")
             }
           } else {
-            communityManager.selfRegister(info.organisation.get, info.organisationAdmin.get, templateId, info.actualUserInfo, customPropertyValues, Some(customPropertyFiles), info.community.get.selfRegForceRequiredProperties).flatMap { userId =>
+            var userAccount = info.organisationAdmin.get
+            if (!info.community.get.selfRegJoinAsAdmin) {
+              userAccount = userAccount.copy(role = Enums.UserRole.VendorUser.id.toShort)
+            }
+            communityManager.selfRegister(info.organisation.get, userAccount, templateId, info.actualUserInfo, customPropertyValues, Some(customPropertyFiles), info.community.get.selfRegForceRequiredProperties).flatMap { userId =>
               // Self registration successful - notify support email if configured to do so.
               if (Configurations.EMAIL_ENABLED && info.community.get.selfRegNotification) {
                 notifyForSelfRegistration(info.community.get, info.organisation.get)

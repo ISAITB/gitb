@@ -100,6 +100,10 @@ export class CreateCommunityComponent extends BaseComponent implements OnInit {
           descriptionToUse = this.community.activeDescription
         }
         this.savePending = true
+        this.community.selfRegForceOrganisationTokenInput = this.community.selfRegJoinExisting && this.community.selfRegDefaultOrganisationEnabled != true && this.community.selfRegAllowOrganisationTokens == true
+        if (!this.community.selfRegInstructionsEnabled) {
+          this.community.selfRegTokenHelpText = undefined
+        }
         this.communityService.createCommunity(this.community.sname!, this.community.fname!, this.community.email,
           this.community.selfRegType!, this.community.selfRegRestriction!, this.community.selfRegToken, this.community.selfRegTokenHelpText, this.community.selfRegNotification,
           this.community.interactionNotification!, descriptionToUse, this.community.selfRegForceTemplateSelection, this.community.selfRegForceRequiredProperties,

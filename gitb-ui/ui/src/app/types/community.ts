@@ -53,5 +53,8 @@ export interface Community extends CommunityLimited {
   labels?: TypedLabelConfig[];
   selfRegDefaultOrganisationEnabled?: boolean;
   selfRegDefaultOrganisation?: Organisation;
+  selfRegEnabled?: boolean;
+  selfRegTokenEnabled?: boolean;
+  selfRegInstructionsEnabled?: boolean;
 
 }

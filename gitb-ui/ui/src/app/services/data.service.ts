@@ -1919,7 +1919,20 @@ export class DataService {
         }
       });
     }
+  }
 
+  generateApiKeyValue() {
+    const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const bytes = crypto.getRandomValues(new Uint8Array(32));
+    const next = () => chars[bytes[i++] % 36];
+    let i = 0;
+    return (
+      Array.from({ length: 8 }, next).join('') + 'X' +
+      Array.from({ length: 4 }, next).join('') + 'X' +
+      Array.from({ length: 4 }, next).join('') + 'X' +
+      Array.from({ length: 4 }, next).join('') + 'X' +
+      Array.from({ length: 12 }, next).join('')
+    );
   }
 
 }

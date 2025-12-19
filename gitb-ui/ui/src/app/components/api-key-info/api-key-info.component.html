@@ -10,18 +10,17 @@
             <div class="api-cell">{{dataService.labelOrganisation()}}</div>
             <div class="api-cell"><input type="text" name="organisationName" [(ngModel)]="organisationName" readonly="readonly" class="form-control"/></div>
             <div class="api-cell">
-                @if (apiInfo.organisation != undefined) {
-                    <app-api-key-text idName="organisation" name="organisation"
-                                      [key]="apiInfo.organisation"
-                                      [supportUpdate]="canUpdate"
-                                      [supportDelete]="canUpdate"
-                                      [updatePending]="organisationUpdatePending"
-                                      [deletePending]="organisationDeletePending"
-                                      (delete)="deleteOrganisationKey()"
-                                      (update)="updateOrganisationKey()"></app-api-key-text>
-                } @else if (canUpdate) {
-                    <button class="btn btn-secondary" (click)="newOrganisationKey()" [pending]="organisationUpdatePending">Generate API key</button>
-                }
+                <app-api-key-text idName="organisation" name="organisation"
+                                  [key]="apiInfo.organisation"
+                                  [supportCreate]="canUpdate"
+                                  [supportUpdate]="canUpdate"
+                                  [supportDelete]="canUpdate"
+                                  [createPending]="organisationUpdatePending"
+                                  [updatePending]="organisationUpdatePending"
+                                  [deletePending]="organisationDeletePending"
+                                  (create)="newOrganisationKey()"
+                                  (delete)="deleteOrganisationKey()"
+                                  (update)="updateOrganisationKey()"></app-api-key-text>
             </div>
             @if (conformanceSnapshots != undefined && conformanceSnapshots.length > 0) {
                 <div class="api-cell">Conformance snapshot</div>
@@ -44,16 +43,15 @@
                     }
                 </div>
                 <div class="api-cell" [class.disable-events]="snapshotKeysLoading">
-                    @if (selectedSystem.key != undefined) {
-                        <app-api-key-text idName="system" name="system"
-                                          [key]="selectedSystem.key"
-                                          [supportUpdate]="canUpdate"
-                                          [supportDelete]="false"
-                                          [updatePending]="systemUpdatePending[selectedSystem.id]"
-                                          (update)="updateSystemKey(selectedSystem!.id)"></app-api-key-text>
-                    } @else if (canUpdate && selectedSnapshot == undefined) {
-                        <button class="btn btn-secondary" (click)="newSystemKey(selectedSystem!.id)" [pending]="systemUpdatePending[selectedSystem.id]">Generate API key</button>
-                    }
+                    <app-api-key-text idName="system" name="system"
+                                      [key]="selectedSystem.key"
+                                      [supportCreate]="canUpdate && selectedSnapshot == undefined"
+                                      [supportUpdate]="canUpdate"
+                                      [supportDelete]="false"
+                                      [createPending]="systemUpdatePending[selectedSystem.id]"
+                                      [updatePending]="systemUpdatePending[selectedSystem.id]"
+                                      (create)="newSystemKey(selectedSystem!.id)"
+                                      (update)="updateSystemKey(selectedSystem!.id)"></app-api-key-text>
                 </div>
                 @if (apiInfo.specifications.length > 0) {
                     <div class="api-cell" [class.disable-events]="snapshotKeysLoading">{{dataService.labelSpecification()}}</div>

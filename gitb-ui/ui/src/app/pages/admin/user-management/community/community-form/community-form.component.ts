@@ -19,15 +19,14 @@ import {BaseComponent} from 'src/app/pages/base-component.component';
 import {DataService} from 'src/app/services/data.service';
 import {Community} from 'src/app/types/community';
 import {Domain} from 'src/app/types/domain';
-import {IdLabel} from 'src/app/types/id-label';
 import {RoutingService} from 'src/app/services/routing.service';
 import {ValidationState} from 'src/app/types/validation-state';
 import {MultiSelectConfig} from '../../../../../components/multi-select-filter/multi-select-config';
 import {of} from 'rxjs';
 import {FilterUpdate} from '../../../../../components/test-filter/filter-update';
-import {LegalNotice} from '../../../../../types/legal-notice';
 import {Organisation} from '../../../../../types/organisation.type';
 import {OrganisationService} from '../../../../../services/organisation.service';
+import {ConfirmationDialogService} from '../../../../../services/confirmation-dialog.service';
 
 @Component({
     selector: 'app-community-form',
@@ -44,13 +43,6 @@ export class CommunityFormComponent extends BaseComponent implements OnInit {
   selfRegEnabled = false
   ssoEnabled = false
   emailEnabled = false
-  selfRegTypes: IdLabel[] = [
-    {id: Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED, label: 'Not supported'},
-    {id: Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING, label: 'Select from public communities'},
-    {id: Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN, label: 'Select from public communities and provide token'}
-  ]
-  selfRegRestrictions: IdLabel[] = []
-  selfRegOptionsVisible = false
   selfRegOptionsCollapsed = false
   userPermissionsCollapsed = false
   selfRegDefaultOrganisationSelectionConfig!: MultiSelectConfig<Organisation>
@@ -69,7 +61,8 @@ export class CommunityFormComponent extends BaseComponent implements OnInit {
   constructor(
     public readonly dataService: DataService,
     private readonly routingService: RoutingService,
-    private readonly organisationService: OrganisationService
+    private readonly organisationService: OrganisationService,
+    private readonly confirmationDialogService: ConfirmationDialogService
   ) { super() }
 
   ngOnInit(): void {
@@ -85,14 +78,12 @@ export class CommunityFormComponent extends BaseComponent implements OnInit {
     this.selfRegEnabled = this.dataService.configuration.registrationEnabled
     this.ssoEnabled = this.dataService.configuration.ssoEnabled
     this.emailEnabled = this.dataService.configuration.emailEnabled
-    if (this.ssoEnabled) {
-      this.selfRegRestrictions = [
-        {id: Constants.SELF_REGISTRATION_RESTRICTION.NO_RESTRICTION, label: 'No restrictions'},
-        {id: Constants.SELF_REGISTRATION_RESTRICTION.USER_EMAIL, label: 'One registration allowed per user'},
-        {id: Constants.SELF_REGISTRATION_RESTRICTION.USER_EMAIL_DOMAIN, label: 'One registration allowed per user email domain'}
-      ]
+    this.community.selfRegEnabled = this.community.selfRegType != Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED
+    this.community.selfRegTokenEnabled = this.community.selfRegType == Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN
+    if (this.community.selfRegToken == undefined) {
+      this.community.selfRegToken = this.dataService.generateApiKeyValue()
     }
-    this.selfRegOptionsVisible = this.community.selfRegType != Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED
+    this.community.selfRegInstructionsEnabled = this.community.selfRegTokenHelpText != undefined && this.community.selfRegTokenHelpText.length > 0
     this.community.sameDescriptionAsDomain = this.community.domain != undefined && !(this.textProvided(this.community.description))
     if (this.community.sameDescriptionAsDomain) {
       this.community.activeDescription = this.community.domain!.description
@@ -120,28 +111,38 @@ export class CommunityFormComponent extends BaseComponent implements OnInit {
     }
   }
 
+  selfRegEnabledChanged() {
+    if (this.community.selfRegEnabled) {
+      if (this.community.selfRegTokenEnabled) {
+        this.community.selfRegType = Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN
+      } else {
+        this.community.selfRegType = Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING
+      }
+    } else {
+      this.community.selfRegType = Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED
+    }
+  }
+
   selfRegTypeChanged(newValue: number) {
     if (newValue != this.community.selfRegType) {
       if (this.community.selfRegType == Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED) {
         // From not supported to supported
-        this.selfRegOptionsVisible = true
+        this.community.selfRegEnabled = true
         this.selfRegOptionsCollapsed = false
       } else if (newValue == Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED) {
         // From supported to not supported
-        this.selfRegOptionsVisible = false
+        this.community.selfRegEnabled = false
         this.selfRegOptionsCollapsed = false
       } else {
         // One supported type to another
         this.selfRegOptionsCollapsed = false
       }
-      if (this.selfRegOptionsVisible && !this.selfRegOptionsCollapsed && (newValue == Constants.SELF_REGISTRATION_TYPE.TOKEN || newValue == Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN)) {
-        this.dataService.focus('selfRegToken', 200)
-      }
+      this.community.selfRegTokenEnabled = this.community.selfRegEnabled && (newValue == Constants.SELF_REGISTRATION_TYPE.TOKEN || newValue == Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN)
     }
   }
 
   domainChanged() {
-    if (this.community.domainId != undefined) {
+    if (this.community.domain?.id != undefined) {
       if (this.community.sameDescriptionAsDomain) {
         this.community.activeDescription = this.community.domain?.description
       }
@@ -184,6 +185,16 @@ export class CommunityFormComponent extends BaseComponent implements OnInit {
     } else {
       this.community.selfRegDefaultOrganisation = undefined
     }
+  }
+
+  updateSelfRegistrationToken() {
+    this.confirmationDialogService.confirmed("Confirm update", "Are you sure you want to update the community self-registration token?", "Update", "Cancel").subscribe(() => {
+      this.community.selfRegToken = this.dataService.generateApiKeyValue()
+    })
+  }
+
+  editedSelfRegistrationToken(token: string) {
+    this.community.selfRegToken = token
   }
 
 }

@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {Component, ElementRef, EventEmitter, HostListener, Input, Output, TemplateRef, ViewChild} from '@angular/core';
 import {Constants} from 'src/app/common/constants';
 import {DataService} from 'src/app/services/data.service';
 import {PopupService} from 'src/app/services/popup.service';
@@ -25,21 +25,30 @@ import {PopupService} from 'src/app/services/popup.service';
 })
 export class ApiKeyTextComponent {
 
-  @Input() key!: string
+  @Input() key?: string
   @Input() idName!: string
   @Input() name!: string
   @Input() label?: string
   @Input() inputWidth?: string
+  @Input() createLabel = "Generate API key"
+  @Input() supportEdit = false
+  @Input() supportCreate = false
   @Input() supportUpdate = false
   @Input() supportDelete = false
   @Input() supportCopy = true
+  @Input() createPending = false
   @Input() updatePending = false
   @Input() deletePending = false
 
-  @Output() update = new EventEmitter<string>()
-  @Output() delete = new EventEmitter<string>()
+  @Output() create = new EventEmitter<string|undefined>()
+  @Output() update = new EventEmitter<string|undefined>()
+  @Output() delete = new EventEmitter<string|undefined>()
+  @Output() edit = new EventEmitter<string>()
 
+  @ViewChild("tempKeyField") tempKeyField?: ElementRef;
   Constants = Constants
+  keyTemp: string|undefined
+  editing = false
 
   constructor(
     private readonly dataService: DataService,
@@ -51,12 +60,50 @@ export class ApiKeyTextComponent {
     })
   }
 
+  doCreate() {
+    this.create.emit(this.key)
+  }
+
   doDelete() {
     this.delete.emit(this.key)
   }
 
   doUpdate() {
     this.update.emit(this.key)
+  }
+
+  editStart() {
+    this.keyTemp = this.key
+    this.editing = true
+    setTimeout(() => {
+      this.tempKeyField?.nativeElement.focus()
+    })
+  }
+
+  editConfirm() {
+    this.key = this.keyTemp
+    this.editing = false
+    this.edit.emit(this.key!)
+  }
+
+  editCancel() {
+    this.editing = false
+  }
+
+  @HostListener('keydown.escape', ['$event'])
+  onEscape(event: KeyboardEvent) {
+    if (this.editing) {
+      event.preventDefault();
+      this.editCancel();
+    }
+  }
+
+  @HostListener('keydown.enter', ['$event'])
+  onEnter(event: KeyboardEvent) {
+    if (this.editing) {
+      event.preventDefault();
+      this.editConfirm();
+    }
   }
 
 }

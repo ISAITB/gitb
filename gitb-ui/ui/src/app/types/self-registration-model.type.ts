@@ -27,6 +27,6 @@ export interface SelfRegistrationModel {
     adminName?: string,
     adminEmail?: string,
     adminPassword?: string,
-    newOrganisation?: boolean
+    organisationChoice?: 'new'|'token'|'default'
 
 }

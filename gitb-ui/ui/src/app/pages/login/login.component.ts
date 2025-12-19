@@ -349,7 +349,7 @@ export class LoginComponent extends BaseSelfRegistrationPageComponent implements
       if (this.selfRegData.template) {
         templateId = this.selfRegData.template.id
       }
-      this.communityService.selfRegister(this.selfRegData.selfRegOption!.communityId!, token, this.selfRegData.newOrganisation === true, this.selfRegData.orgToken, this.selfRegData.orgShortName!, this.selfRegData.orgFullName!, templateId, this.selfRegData.selfRegOption!.organisationProperties, this.selfRegData.adminName!, this.selfRegData.adminEmail!, this.selfRegData.adminPassword!)
+      this.communityService.selfRegister(this.selfRegData.selfRegOption!.communityId!, token, this.selfRegData.organisationChoice!, this.selfRegData.orgToken, this.selfRegData.orgShortName!, this.selfRegData.orgFullName!, templateId, this.selfRegData.selfRegOption!.organisationProperties, this.selfRegData.adminName!, this.selfRegData.adminEmail!, this.selfRegData.adminPassword!)
       .subscribe((data) => {
         if (this.isErrorDescription(data)) {
           this.validation.applyError(data)

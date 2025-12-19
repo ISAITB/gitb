@@ -931,4 +931,14 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
       )
     }
   }
+
+  def getSelfRegistrationCommunityDefaultOrganisation(communityId: Long): Future[Option[Organizations]] = {
+    DB.run {
+      PersistenceSchema.organizations
+        .filter(_.community === communityId)
+        .filter(_.selfRegDefault === true)
+        .result
+        .headOption
+    }
+  }
 }

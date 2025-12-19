@@ -57,6 +57,7 @@ export class SelfRegistrationComponent extends BaseComponent implements OnInit, 
   private dataReady = false
   organisationFormCollapsed = true
   organisationFormAnimated = false
+  optionCount: number = 0
 
   constructor(
     public readonly dataService: DataService,
@@ -104,19 +105,27 @@ export class SelfRegistrationComponent extends BaseComponent implements OnInit, 
   }
 
   communitySelected(option: SelfRegistrationOption) {
+    this.optionCount = 0
+    this.validation?.clearErrors()
+    if (!option.joinExisting) {
+      this.optionCount += 1
+      this.model.organisationChoice = 'new'
+    }
+    if (option.organisationTokensEnabled) {
+      this.optionCount += 1
+      this.model.organisationChoice = 'token'
+    }
+    if (option.hasDefaultOrganisation) {
+      this.optionCount += 1
+      this.model.organisationChoice = 'default'
+    }
+    if (this.optionCount > 1) {
+      this.model.organisationChoice = undefined
+    }
     this.model!.selfRegOption = option
     this.organisationFormAnimated = false
-    if (option.organisationTokensEnabled) {
-      if (option.forceOrganisationTokenInput) {
-        this.model!.newOrganisation = false
-      } else {
-        this.model!.newOrganisation = undefined
-      }
-    } else {
-      this.model!.newOrganisation = true
-    }
     setTimeout(() => {
-      this.organisationFormCollapsed = this.model!.newOrganisation === undefined
+      this.organisationFormCollapsed = this.model.organisationChoice == undefined
         setTimeout(() => {
           this.organisationFormAnimated = true
         })
@@ -126,7 +135,7 @@ export class SelfRegistrationComponent extends BaseComponent implements OnInit, 
 
   registrationTypeChanged() {
     setTimeout(() => {
-      this.organisationFormCollapsed = false
+      this.organisationFormCollapsed = this.model.organisationChoice == undefined || this.model.organisationChoice == 'default'
     })
   }
 
@@ -134,9 +143,9 @@ export class SelfRegistrationComponent extends BaseComponent implements OnInit, 
     if (this.model?.selfRegOption !== undefined) {
       if (this.model.selfRegOption.selfRegType == Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN) {
         this.dataService.focus('token', 200)
-      } else if (this.model.newOrganisation === true) {
+      } else if (!this.model.selfRegOption.joinExisting) {
         this.dataService.focus('orgShortName', 200)
-      } else if (this.model.newOrganisation === false) {
+      } else if (this.model.selfRegOption.joinExisting && this.optionCount == 1 && this.model.selfRegOption.organisationTokensEnabled) {
         this.dataService.focus('orgToken', 200)
       }
     }
