@@ -1794,11 +1794,29 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
   }
 
   def canCreateUserInOwnOrganisation(request: RequestWithAttributes[_]): Future[Boolean] = {
-    canUpdateOwnOrganisation(request, ignoreExistingTests = true)
+    val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
+      if (isTestBedAdmin(userInfo) || isCommunityAdmin(userInfo)) {
+        Future.successful(true)
+      } else if (isOrganisationAdmin(userInfo)) {
+        canUpdateOwnOrganisationUsers(userInfo)
+      } else {
+        Future.successful(false)
+      }
+    }
+    check.map(setAuthResult(request, _, "User cannot create users"))
   }
 
   def canViewOwnOrganisationUsers(request: RequestWithAttributes[_]): Future[Boolean] = {
-    checkIsAuthenticated(request)
+    val check = getUser(getRequestUserId(request)).flatMap { userInfo =>
+      if (isTestBedAdmin(userInfo) || isCommunityAdmin(userInfo)) {
+        Future.successful(true)
+      } else if (isOrganisationAdmin(userInfo)) {
+        canUpdateOwnOrganisationUsers(userInfo)
+      } else {
+        Future.successful(false)
+      }
+    }
+    check.map(setAuthResult(request, _, "User cannot view the organisation users"))
   }
 
   def canUpdateOwnOrganisationAndLandingPage(request: RequestWithAttributes[_], landingPageId: Option[Long]): Future[Boolean] = {
