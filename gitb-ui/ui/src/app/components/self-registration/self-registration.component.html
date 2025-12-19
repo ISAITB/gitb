@@ -76,7 +76,7 @@
                                     }
                                     @if (model.selfRegOption.hasDefaultOrganisation) {
                                         <div class="form-check form-check-inline">
-                                            <input class="form-check-input" type="radio" [(ngModel)]="model.organisationChoice" name="organisationChoice" id="type_default" [value]="'default'" (change)="registrationTypeChanged()" [class.is-invalid]="registrationTypeInvalidFeedback">
+                                            <input class="form-check-input" type="radio" [(ngModel)]="model.organisationChoice" name="organisationChoice" id="type_default" [value]="'default'" (change)="registrationTypeChanged()">
                                             <label class="form-check-label" for="type_default">Default {{ dataService.labelOrganisationLower() }}
                                                 <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" [tbTooltip]="`Register in the community default ${dataService.labelOrganisationLower()}.`"></div>
                                             </label>
