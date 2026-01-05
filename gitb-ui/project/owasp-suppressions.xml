@@ -261,5 +261,13 @@
     ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.lz4/lz4-java@.*$</packageUrl>
         <vulnerabilityName>CVE-2025-66566</vulnerabilityName>
-    </suppress>    
+    </suppress>
+    <!-- The OWASP Java HTML Sanitizer does not permit noscript tags nor does it use allowTextIn for the style tags. -->
+    <suppress>
+        <notes><![CDATA[
+    file name: java10-shim-20240325.1.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.googlecode\.owasp-java-html-sanitizer/.*$</packageUrl>
+        <cve>CVE-2025-66021</cve>
+    </suppress>
 </suppressions>
