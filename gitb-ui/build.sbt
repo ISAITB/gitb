@@ -1,17 +1,17 @@
 import sbtlicensereport.license.{LicenseCategory, LicenseInfo}
 
 scalaVersion := "2.13.16"
-val pekkoVersion = "1.2.1"
-val jacksonVersion = "2.20.0"
+val pekkoVersion = "1.4.0"
+val jacksonVersion = "2.20.1"
 val jacksonAnnotationsVersion = "2.20"
-val cxfVersion = "4.1.3"
+val cxfVersion = "4.1.4"
 val gitbCommonsVersion = "1.29.0-SNAPSHOT"
 val gitbTypesVersion = "1.29.0-SNAPSHOT"
-val bouncyCastleVersion = "1.82"
-val commonsTextVersion = "1.14.0"
-val mySqlConnectorVersion = "9.4.0"
-val pac4jVersion = "6.2.2"
-val nettyVersion = "4.1.128.Final"
+val bouncyCastleVersion = "1.83"
+val commonsTextVersion = "1.15.0"
+val mySqlConnectorVersion = "9.5.0"
+val pac4jVersion = "6.3.1"
+val nettyVersion = "4.1.130.Final"
 
 name := """GITB"""
 version := "1.0-SNAPSHOT"
@@ -56,7 +56,7 @@ libraryDependencies ++= Seq(
   "io.netty" % "netty-transport-native-epoll" % nettyVersion,
   "io.netty" % "netty-transport-native-kqueue" % nettyVersion,
   // - END.
-  "org.apache.commons" % "commons-lang3" % "3.19.0",
+  "org.apache.commons" % "commons-lang3" % "3.20.0",
   "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion,
@@ -72,7 +72,7 @@ libraryDependencies ++= Seq(
   "org.apache.tika" % "tika-core" % "3.2.3",
   "org.webjars" % "jquery" % "3.7.1",
   "org.webjars" % "bootstrap" % "5.3.8",
-  "org.webjars" % "swagger-ui" % "5.28.1",
+  "org.webjars" % "swagger-ui" % "5.31.0",
   "com.sun.mail" % "jakarta.mail" % "2.0.2",
   "jakarta.activation" % "jakarta.activation-api" % "2.1.4",
   "jakarta.xml.ws" % "jakarta.xml.ws-api" % "4.0.2",
@@ -83,14 +83,14 @@ libraryDependencies ++= Seq(
   "com.sun.xml.messaging.saaj" % "saaj-impl" % "3.0.4", // Needed for SOAP exchanges
   "org.bouncycastle" % "bcmail-jdk18on" % bouncyCastleVersion,
   "org.bouncycastle" % "bcpkix-jdk18on" % bouncyCastleVersion,
-  "org.apache.pdfbox" % "pdfbox" % "3.0.5",
+  "org.apache.pdfbox" % "pdfbox" % "3.0.6",
   "org.jasypt" % "jasypt" % "1.9.3",
   "org.apache.httpcomponents" % "httpclient" % "4.5.14",
   "org.flywaydb" %% "flyway-play" % "9.1.0",
-  "org.flywaydb" % "flyway-mysql" % "11.13.2",
+  "org.flywaydb" % "flyway-mysql" % "11.20.0",
   "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20240325.1",
   "net.lingala.zip4j" % "zip4j" % "2.11.5",
-  "com.nimbusds" % "nimbus-jose-jwt" % "10.5",
+  "com.nimbusds" % "nimbus-jose-jwt" % "10.6",
   "org.apache.commons" % "commons-text" % commonsTextVersion
 )
 
