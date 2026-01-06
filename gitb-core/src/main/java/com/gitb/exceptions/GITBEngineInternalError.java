@@ -37,7 +37,7 @@ public class GITBEngineInternalError extends GITBEngineRuntimeException{
 
     public GITBEngineInternalError(Throwable cause) {
         super(cause);
-        errorInfo = ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "");
+        errorInfo = ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, cause.getMessage());
     }
 
     public GITBEngineInternalError(String message, Throwable cause) {

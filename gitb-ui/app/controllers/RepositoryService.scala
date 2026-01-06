@@ -31,7 +31,7 @@ import models.Enums.{OverviewLevelType, ReportType}
 import models._
 import org.apache.commons.codec.net.URLCodec
 import org.apache.commons.io.FileUtils
-import org.apache.commons.lang3.{StringUtils, Strings}
+import org.apache.commons.lang3.StringUtils
 import org.slf4j.LoggerFactory
 import play.api.mvc._
 import utils._
@@ -97,27 +97,12 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
         if (testSuite.isEmpty) {
           NotFound("Resource not found")
         } else {
-          var filePathToLookup = codec.decode(filePath)
-          if (filePathToLookup.startsWith("/")) {
-            filePathToLookup = filePathToLookup.substring(1)
-          }
-          var filePathToAlsoCheck: Option[String] = null
-          if (!filePathToLookup.startsWith(testSuite.get.identifier)) {
-            filePathToLookup = testSuite.get.filename + "/" + filePathToLookup
-            filePathToAlsoCheck = None
-          } else {
-            filePathToAlsoCheck = Some(testSuite.get.filename + "/" + filePathToLookup)
-            filePathToLookup = Strings.CS.replaceOnce(filePathToLookup, testSuite.get.identifier, testSuite.get.filename)
-          }
-          // Ensure that the requested resource is within the test suite folder (to avoid path traversal)
-          val testSuiteFolder = repositoryUtils.getTestSuitesResource(testSuite.get.domain, testSuite.get.filename, None)
-          val file = repositoryUtils.getTestSuitesResource(testSuite.get.domain, filePathToLookup, filePathToAlsoCheck)
-          logger.debug("Reading test resource ["+codec.decode(filePath)+"] definition from the file ["+file+"]")
-          if (file.exists() && file.toPath.normalize().startsWith(testSuiteFolder.toPath.normalize())) {
-            Ok.sendFile(file, inline = true)
-          } else {
-            NotFound("Resource not found")
-          }
+          repositoryUtils.lookupTestSuiteResource(testSuite.get.domain, testSuite.get, codec.decode(filePath)).map { path =>
+            if (logger.isDebugEnabled) {
+              logger.debug("Reading test resource [{}] definition from the file [{}]", codec.decode(filePath), path)
+            }
+            Ok.sendFile(path.toFile, inline = true)
+          }.getOrElse(NotFound("Resource not found"))
         }
       }
     }
@@ -1073,13 +1058,12 @@ class RepositoryService @Inject() (authorizedAction: AuthorizedAction,
         if (tc.isDefined) {
           val testCaseId = testId.toLong
           testCaseManager.getDomainOfTestCase(testCaseId).map { domainId =>
-            val file = repositoryUtils.getTestSuitesResource(domainId, tc.get.path, None)
-            logger.debug("Reading test case ["+testId+"] definition from the file ["+file+"]")
-            if (file.exists()) {
-              Ok.sendFile(file, inline = true)
-            } else {
-              NotFound
-            }
+            repositoryUtils.lookupTestCaseDefinition(domainId, tc.get.path).map { path =>
+              if (logger.isDebugEnabled) {
+                logger.debug("Reading test case [{}] definition from the file [{}]", testId, path)
+              }
+              Ok.sendFile(path.toFile, inline = true)
+            }.getOrElse(NotFound)
           }
         } else {
           Future.successful(NotFound)

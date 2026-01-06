@@ -34,7 +34,7 @@ import models.automation._
 import models.snapshot.ConformanceSnapshot
 import models.theme.Theme
 import org.apache.commons.codec.binary.Base64
-import org.apache.commons.lang3.StringUtils
+import org.apache.commons.lang3.{StringUtils, Strings}
 import play.api.libs.json.{JsObject, Json, _}
 
 import java.util
@@ -3715,9 +3715,13 @@ object JsonUtil {
       case _: String => errorCode.asInstanceOf[String]
       case _ => ""
     }
+    var errorDescToUse = errorDesc
+    if (!StringUtils.isBlank(errorDescToUse)) {
+      errorDescToUse = Strings.CI.appendIfMissing(errorDescToUse, ".")
+    }
     var obj = Json.obj(
       "error_code" -> code,
-      "error_description" -> errorDesc
+      "error_description" -> errorDescToUse
     )
     if (errorIdentifier.isDefined) {
       obj = obj.+("error_id" -> JsString(errorIdentifier.get))

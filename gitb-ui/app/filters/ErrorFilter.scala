@@ -16,11 +16,12 @@
 package filters
 
 import java.util.concurrent.TimeoutException
-
 import org.apache.pekko.stream.Materializer
 import com.gitb.tbs.Error
 import controllers.util.ResponseConstructor
 import exceptions._
+import org.apache.commons.lang3.StringUtils
+
 import javax.inject.Inject
 import play.api.mvc._
 
@@ -34,7 +35,12 @@ class ErrorFilter @Inject() (implicit ec: ExecutionContext, implicit val mat: Ma
     next(requestHeader) recover  {
 
       case e:Error =>
-        ResponseConstructor.constructServerError(e.getFaultInfo.getErrorCode.value(), e.getFaultInfo.getDescription, None)
+        val errorDescription = if (StringUtils.isBlank(e.getFaultInfo.getDescription)) {
+          "An unexpected test engine error occurred."
+        } else {
+          e.getFaultInfo.getDescription
+        }
+        ResponseConstructor.constructServerError(e.getFaultInfo.getErrorCode.value(), errorDescription, None)
 
       case e:InvalidRequestException =>
         ResponseConstructor.constructBadRequestResponse(e.error, e.msg)

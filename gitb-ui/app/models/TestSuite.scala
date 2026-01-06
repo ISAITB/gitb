@@ -44,24 +44,15 @@ case class TestSuites(
 ) {
 
 	def withId(id: Long): TestSuites = {
-		TestSuites(id, this.shortname, this.fullname, this.version, this.authors, this.originalDate, this.modificationDate,
-			this.description, this.keywords, this.filename, this.hasDocumentation, this.documentation, this.identifier, this.hidden, this.shared, this.domain, this.definitionPath,
-			this.specReference, this.specDescription, this.specLink
-		)
+		copy(id = id)
 	}
 
 	def withFileName(filename: String): TestSuites = {
-		TestSuites(this.id, this.shortname, this.fullname, this.version, this.authors, this.originalDate, this.modificationDate,
-			this.description, this.keywords, filename, this.hasDocumentation, this.documentation, this.identifier, this.hidden, this.shared, this.domain, this.definitionPath,
-			this.specReference, this.specDescription, this.specLink
-		)
+		copy(filename = filename)
 	}
 
 	def withDefinitionPath(definitionPath: Option[String]): TestSuites = {
-		TestSuites(this.id, this.shortname, this.fullname, this.version, this.authors, this.originalDate, this.modificationDate,
-			this.description, this.keywords, this.filename, this.hasDocumentation, this.documentation, this.identifier, this.hidden, this.shared, this.domain, definitionPath,
-			this.specReference, this.specDescription, this.specLink
-		)
+		copy(definitionPath = definitionPath)
 	}
 }
 
