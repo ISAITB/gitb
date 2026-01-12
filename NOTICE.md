@@ -439,15 +439,15 @@ Library licences are organised in three sections:
 
 | License type                    | Name                              | Installed version | Link  |
 | :------------------------------ | :-------------------------------- | :---------------- | :---- |
-| MIT                             | @angular/animations               | 20.3.15           | n/a   |
+| MIT                             | @angular/animations               | 20.3.16           | n/a   |
 | MIT                             | @angular/cdk                      | 20.2.14           | n/a   |
-| MIT                             | @angular/common                   | 20.3.15           | n/a   |
-| MIT                             | @angular/compiler                 | 20.3.15           | n/a   |
-| MIT                             | @angular/core                     | 20.3.15           | n/a   |
-| MIT                             | @angular/forms                    | 20.3.15           | n/a   |
-| MIT                             | @angular/platform-browser         | 20.3.15           | n/a   |
-| MIT                             | @angular/platform-browser-dynamic | 20.3.15           | n/a   |
-| MIT                             | @angular/router                   | 20.3.15           | n/a   |
+| MIT                             | @angular/common                   | 20.3.16           | n/a   |
+| MIT                             | @angular/compiler                 | 20.3.16           | n/a   |
+| MIT                             | @angular/core                     | 20.3.16           | n/a   |
+| MIT                             | @angular/forms                    | 20.3.16           | n/a   |
+| MIT                             | @angular/platform-browser         | 20.3.16           | n/a   |
+| MIT                             | @angular/platform-browser-dynamic | 20.3.16           | n/a   |
+| MIT                             | @angular/router                   | 20.3.16           | n/a   |
 | MIT                             | @ctrl/ngx-codemirror              | 7.0.0             | n/a   |
 | (CC-BY-4.0 AND OFL-1.1 AND MIT) | @fortawesome/fontawesome-free     | 6.7.2             | n/a   |
 | MIT                             | @hugerte/hugerte-angular          | 1.0.2             | n/a   |
