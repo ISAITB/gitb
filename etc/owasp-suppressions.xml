@@ -189,4 +189,12 @@
         <packageUrl regex="true">^pkg:maven/org\.eclipse\.angus/.*@.*$</packageUrl>
         <cve>CVE-2025-7962</cve>
     </suppress>
+    <suppress>
+        <!-- This CVE affects an active log4j implementation. In our case only the API is used (we use logback). -->
+        <notes><![CDATA[
+   file name: log4j-api-2.24.3.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.logging\.log4j/log4j-api@.*$</packageUrl>
+        <cve>CVE-2025-68161</cve>
+    </suppress>
 </suppressions>
