@@ -89,7 +89,7 @@
                                                         </div>
                                                     </div>
                                                 } @else if (formType === LoginFormType.ChangePassword) {
-                                                    <div class="row" app-change-password-form [model]="passwordChangeData" [autoFocus]="true" [validation]="validation"></div>
+                                                    <app-change-password-form [model]="passwordChangeData" [autoFocus]="true" [validation]="validation"></app-change-password-form>
                                                     <div class="row">
                                                         <div class="col-10 offset-1">
                                                             <div class="alert alert-info rounded mb-0">
