@@ -594,7 +594,7 @@ export class TestFilterComponent implements OnInit {
     this.loadingOrganisationProperties = false
     this.loadingSystemProperties = false
     this.resetFilters()
-    if (skipReload == true) {
+    if (skipReload !== true) {
       this.applyFilters()
     }
   }
