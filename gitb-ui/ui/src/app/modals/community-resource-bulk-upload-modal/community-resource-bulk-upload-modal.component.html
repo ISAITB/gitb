@@ -35,8 +35,8 @@
     </div>
     <div class="modal-footer">
         <div class="btn-toolbar">
-            <button class="btn btn-secondary" type="button" (click)="cancel()" [disabled]="uploadPending">Cancel</button>
-            <button class="btn btn-secondary" type="submit" (click)="upload()" [disable]="!uploadEnabled()" [pending]="uploadPending">Upload</button>
+            <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.CANCEL" type="button" (click)="cancel()" [disable]="uploadPending">Cancel</button>
+            <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.UPLOAD" type="submit" (click)="upload()" [disable]="!uploadEnabled()" [pending]="uploadPending">Upload</button>
         </div>
     </div>
 </form>

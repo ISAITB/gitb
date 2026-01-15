@@ -90,6 +90,7 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
       singleSelection: true,
       singleSelectionPersistent: true,
       filterLabel: 'Select ' + this.dataService.labelSystemLower()+ '...',
+      filterLabelIcon: Constants.BUTTON_ICON.SYSTEM,
       noItemsMessage: 'No ' + this.dataService.labelSystemsLower() + ' available.',
       searchPlaceholder: 'Search ' + this.dataService.labelSystemsLower() + "...",
       replaceSelectedItems: new EventEmitter(),

@@ -17,6 +17,7 @@ import { Component, Input, OnInit } from '@angular/core';
 import { BsModalRef } from 'ngx-bootstrap/modal';
 import { DataService } from 'src/app/services/data.service';
 import { CustomProperty } from 'src/app/types/custom-property.type';
+import {Constants} from '../../common/constants';
 
 @Component({
     selector: 'app-preview-parameters-modal',
@@ -74,4 +75,6 @@ export class PreviewParametersModalComponent implements OnInit {
 	close() {
     this.modalRef.hide()
   }
+
+  protected readonly Constants = Constants;
 }

@@ -111,4 +111,5 @@ export class DomainManagementComponent implements OnInit, AfterViewInit {
     this.domainTable?.getPagingControls()?.updateStatus(page, count)
   }
 
+  protected readonly Constants = Constants;
 }

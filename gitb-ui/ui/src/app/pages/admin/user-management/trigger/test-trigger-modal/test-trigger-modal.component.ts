@@ -148,4 +148,5 @@ export class TestTriggerModalComponent extends BaseComponent implements OnInit {
     this.dataService.addControlSubmitBehaviourToCodeEditor(editor)
   }
 
+  protected readonly Constants = Constants;
 }

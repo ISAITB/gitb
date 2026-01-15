@@ -113,7 +113,7 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
       })
     } catch (e) {
       this.openPending = false
-      this.confirmationDialogService.confirmed('Unable to open editor', 'It is not possible to display this content as text in an editor, only download it as a file.', 'Download', 'Cancel')
+      this.confirmationDialogService.confirmed('Unable to open editor', 'It is not possible to display this content as text in an editor, only download it as a file.', 'Download', 'Cancel', Constants.BUTTON_ICON.DOWNLOAD)
       .subscribe(() => {
         this.download()
       })

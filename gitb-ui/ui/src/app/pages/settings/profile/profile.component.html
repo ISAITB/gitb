@@ -43,13 +43,13 @@
             <div class="card-footer">
                 <div class="btn-toolbar">
                     @if (!dataService.configuration.ssoEnabled) {
-                        <button type="submit" class="btn btn-secondary" [disable]="saveDisabled()" (click)="updateProfile()" [pending]="spinner">Save changes</button>
+                        <button type="submit" [labelIcon]="Constants.BUTTON_ICON.SAVE" class="btn btn-secondary" [disable]="saveDisabled()" (click)="updateProfile()" [pending]="spinner">Save changes</button>
                     } @else {
-                        <button type="button" class="btn btn-secondary" (click)="disconnect()">Remove role from your account</button>
-                        <button type="button" class="btn btn-secondary" (click)="linkOtherRole()">Link another role to your account</button>
+                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.UNLINK_ACCOUNT" class="btn btn-secondary" (click)="disconnect()">Remove role from your account</button>
+                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.LINK_ACCOUNT" class="btn btn-secondary" (click)="linkOtherRole()">Link another role to your account</button>
                     }
                     @if (dataService.configuration.registrationEnabled) {
-                        <button type="button" class="btn btn-secondary" (click)="register()">Register another {{dataService.labelOrganisationLower()}}</button>
+                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="register()">Register another {{dataService.labelOrganisationLower()}}</button>
                     }
                 </div>
             </div>

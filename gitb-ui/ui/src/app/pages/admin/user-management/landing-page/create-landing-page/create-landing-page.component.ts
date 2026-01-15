@@ -81,7 +81,7 @@ export class CreateLandingPageComponent extends BaseComponent implements OnInit,
   createLandingPage() {
     if (!this.saveDisabled()) {
       if (this.page.default) {
-        this.confirmationDialogService.confirmed("Confirm default", "You are about to change the default landing page. Are you sure?", "Change", "Cancel")
+        this.confirmationDialogService.confirmed("Confirm default", "You are about to change the default landing page. Are you sure?", "Change", "Cancel", Constants.BUTTON_ICON.SAVE)
           .subscribe(() => {
             this.doCreate()
           })

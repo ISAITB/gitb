@@ -21,6 +21,7 @@ import { ConformanceService } from 'src/app/services/conformance.service';
 import { Observable, of } from 'rxjs';
 import { BsModalRef } from 'ngx-bootstrap/modal';
 import { DataService } from 'src/app/services/data.service';
+import {Constants} from '../../common/constants';
 
 @Component({
     selector: 'app-preview-badge-modal',
@@ -79,4 +80,5 @@ export class PreviewBadgeModalComponent implements OnInit {
     }
   }
 
+  protected readonly Constants = Constants;
 }

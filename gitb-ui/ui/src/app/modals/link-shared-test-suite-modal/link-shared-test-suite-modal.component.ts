@@ -26,6 +26,7 @@ import { BaseComponent } from 'src/app/pages/base-component.component';
 import { of } from 'rxjs';
 import { MultiSelectConfig } from 'src/app/components/multi-select-filter/multi-select-config';
 import { FilterUpdate } from 'src/app/components/test-filter/filter-update';
+import {Constants} from '../../common/constants';
 
 @Component({
     selector: 'app-link-shared-test-suite-modal',
@@ -210,4 +211,5 @@ export class LinkSharedTestSuiteModalComponent extends BaseComponent implements 
     this.modalInstance.hide()
   }
 
+  protected readonly Constants = Constants;
 }

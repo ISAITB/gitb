@@ -349,6 +349,7 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
           replaceItems: new EventEmitter(),
           replaceSelectedItems: new EventEmitter(),
           filterLabel: 'Select community...',
+          filterLabelIcon: Constants.BUTTON_ICON.COMMUNITY,
           noItemsMessage: 'No communities available.',
           searchPlaceholder: 'Search community...',
           loader: () => of(this.communities)
@@ -361,6 +362,7 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
           replaceItems: new EventEmitter(),
           replaceSelectedItems: new EventEmitter(),
           filterLabel: 'Select organisation...',
+          filterLabelIcon: Constants.BUTTON_ICON.ORGANISATION,
           noItemsMessage: 'No organisations available.',
           searchPlaceholder: 'Search organisation...',
           loader: () => of(this.organisations)
@@ -373,6 +375,7 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
           replaceItems: new EventEmitter(),
           replaceSelectedItems: new EventEmitter(),
           filterLabel: 'Select user...',
+          filterLabelIcon: Constants.BUTTON_ICON.USER,
           noItemsMessage: 'No valid users available.',
           searchPlaceholder: 'Search users...',
           loader: () => of(this.users)
@@ -735,7 +738,7 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
 
   saveAccountRetentionPeriod() {
     if (this.accountRetentionPeriodEnabled && this.accountRetentionPeriodValue != undefined) {
-      this.confirmationDialogService.confirmedDangerous("Delete inactive accounts", "Inactive user accounts based on the configured retention period will be immediately deleted. Are you sure you want to proceed?", "Enable retention period and delete accounts", "Cancel")
+      this.confirmationDialogService.confirmedDangerous("Delete inactive accounts", "Inactive user accounts based on the configured retention period will be immediately deleted. Are you sure you want to proceed?", "Enable retention period and delete accounts", "Cancel", Constants.BUTTON_ICON.DELETE)
       .subscribe(() => {
         this.accountRetentionPeriodStatus.pending = true
         this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.ACCOUNT_RETENTION_PERIOD, this.accountRetentionPeriodValue!.toString())
@@ -857,7 +860,7 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
   }
 
   updateRestApiAdminKey() {
-    this.confirmationDialogService.confirmed("Confirm update", "Are you sure you want to update the value for the administration API key?", "Update", "Cancel")
+    this.confirmationDialogService.confirmed("Confirm update", "Are you sure you want to update the value for the administration API key?", "Update", "Cancel", Constants.BUTTON_ICON.RESET)
     .subscribe(() => {
       this.updateRestApiAdminKeyPending = true
       this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.REST_API_ADMIN_KEY)
@@ -929,7 +932,7 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
   }
 
   resetWelcomePage() {
-    this.confirmationDialogService.confirmedDangerous("Confirm reset", "Are you sure you want to reset the welcome page content to its default?", "Reset", "Cancel")
+    this.confirmationDialogService.confirmedDangerous("Confirm reset", "Are you sure you want to reset the welcome page content to its default?", "Reset", "Cancel", Constants.BUTTON_ICON.RESET)
     .subscribe(() => {
       this.welcomePageResetPending = true
       this.systemConfigurationService.updateConfigurationValues([ { name: Constants.SYSTEM_CONFIG.WELCOME_MESSAGE }, { name: Constants.SYSTEM_CONFIG.WELCOME_TITLE } ])
@@ -1151,4 +1154,5 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
     }
   }
 
+  protected readonly Constants = Constants;
 }

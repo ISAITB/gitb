@@ -130,9 +130,9 @@
             </div>
         </div>
         <div class="btn-toolbar mt-3">
-            <button class="btn btn-secondary" type="submit" (click)="update()" [disable]="exportPending || !previewEnabled()" [pending]="updatePending">Update</button>
-            <button class="btn btn-secondary" type="button" (click)="preview()" [disable]="updatePending || !previewEnabled()" [pending]="exportPending">Generate preview</button>
-            <button class="btn btn-secondary" (click)="manageKeystore()" [pending]="manageKeystorePending">Manage signature settings</button>
+            <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.SAVE" type="submit" (click)="update()" [disable]="exportPending || !previewEnabled()" [pending]="updatePending">Update</button>
+            <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.PREVIEW" type="button" (click)="preview()" [disable]="updatePending || !previewEnabled()" [pending]="exportPending">Generate preview</button>
+            <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.SIGNATURE" (click)="manageKeystore()" [pending]="manageKeystorePending">Manage signature settings</button>
         </div>
     </form>
 }

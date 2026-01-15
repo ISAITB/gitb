@@ -9,7 +9,7 @@
         <div class="title-action">
           <div>
             @if (showExpandAll()) {
-              <button type="button" (click)="expandItem(tbImportItem); $event.stopPropagation();" class="btn btn-secondary btn-sm">Expand all</button>
+              <button type="button" [labelIcon]="Constants.BUTTON_ICON.EXPAND" (click)="expandItem(tbImportItem); $event.stopPropagation();" class="btn btn-secondary btn-sm">Expand all</button>
             }
           </div>
           <div>

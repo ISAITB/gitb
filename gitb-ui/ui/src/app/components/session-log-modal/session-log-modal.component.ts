@@ -21,6 +21,7 @@ import {PopupService} from 'src/app/services/popup.service';
 import {BaseCodeEditorModalComponent} from '../base-code-editor-modal/base-code-editor-modal.component';
 import {LineInfo} from './line-info';
 import {LogLevel} from '../../types/log-level';
+import {Constants} from '../../common/constants';
 
 @Component({
     selector: 'app-session-log-modal',
@@ -39,13 +40,13 @@ export class SessionLogModalComponent extends BaseCodeEditorModalComponent imple
   minimumLogLevel = LogLevel.DEBUG
   content = ''
   contentLines: LineInfo[] = []
-  tail = false
+  tail = true
 
   LogLevel = LogLevel
-  levelFilterLabelDebug = 'Show all messages'
-  levelFilterLabelInfo = 'Show at least info messages'
-  levelFilterLabelWarn = 'Show at least warnings'
-  levelFilterLabelError = 'Show errors'
+  levelFilterLabelDebug = 'All messages'
+  levelFilterLabelInfo = 'At least info messages'
+  levelFilterLabelWarn = 'At least warnings'
+  levelFilterLabelError = 'Errors'
   levelFilterLabel = this.levelFilterLabelDebug
 
   tailLabelYes = 'Scroll to latest'
@@ -151,23 +152,12 @@ export class SessionLogModalComponent extends BaseCodeEditorModalComponent imple
     else return 'error'
   }
 
-  applyMinimumLogLevel(level: LogLevel) {
-    if (this.minimumLogLevel != level) {
-      this.minimumLogLevel = level
-      if (level == LogLevel.DEBUG) {
-        this.levelFilterLabel = this.levelFilterLabelDebug
-      } else if (level == LogLevel.INFO) {
-        this.levelFilterLabel = this.levelFilterLabelInfo
-      } else if (level == LogLevel.WARN) {
-        this.levelFilterLabel = this.levelFilterLabelWarn
-      } else if (level == LogLevel.ERROR) {
-        this.levelFilterLabel = this.levelFilterLabelError
-      }
-      this.updateContent()
-      setTimeout(() => {
-        this.applyLineStyles()
-      })
-    }
+  applyMinimumLogLevel() {
+    this.updateContent()
+    setTimeout(() => {
+      this.applyLineStyles()
+    })
   }
 
+  protected readonly Constants = Constants;
 }

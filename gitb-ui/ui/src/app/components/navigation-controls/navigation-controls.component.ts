@@ -192,4 +192,5 @@ export class NavigationControlsComponent implements OnInit {
     }
   }
 
+  protected readonly Constants = Constants;
 }

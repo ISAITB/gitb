@@ -68,8 +68,8 @@
     </div>
     <div class="modal-footer">
         <div class="btn-toolbar">
-            <button class="btn btn-secondary" type="button" (click)="cancel()">Close</button>
-            <button class="btn btn-secondary" type="submit" (click)="send()" [disable]="sendDisabled()"[pending]="sendPending">Send feedback</button>
+            <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.CANCEL" type="button" (click)="cancel()">Close</button>
+            <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.SEND" type="submit" (click)="send()" [disable]="sendDisabled()" [pending]="sendPending">Send</button>
         </div>
     </div>
 </form>

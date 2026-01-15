@@ -152,7 +152,7 @@ export class CreateEditTestServiceModalComponent extends BaseComponent implement
         if (this.isErrorDescription(data)) {
           this.validation.applyError(data)
         } else if (this.isMatchingParameterId(data)) {
-          this.confirmationDialogService.confirmed("Matching parameter found", "A parameter was found with a name matching the provided identifier. Do you want to replace it with this test service?", "Replace", "Cancel")
+          this.confirmationDialogService.confirmed("Matching parameter found", "A parameter was found with a name matching the provided identifier. Do you want to replace it with this test service?", "Replace", "Cancel", Constants.BUTTON_ICON.REPLACE)
             .subscribe(() => {
               this.doCreate(serviceData, true)
             })
@@ -173,7 +173,7 @@ export class CreateEditTestServiceModalComponent extends BaseComponent implement
         if (this.isErrorDescription(data)) {
           this.validation.applyError(data)
         } else if (this.isMatchingParameterId(data)) {
-          this.confirmationDialogService.confirmed("Matching parameter found", "An existing parameter was found with the same name. Do you want to replace it with this test service?", "Replace", "Cancel")
+          this.confirmationDialogService.confirmed("Matching parameter found", "An existing parameter was found with the same name. Do you want to replace it with this test service?", "Replace", "Cancel", Constants.BUTTON_ICON.REPLACE)
             .subscribe(() => {
               this.doUpdate(serviceData, true)
             })
@@ -229,7 +229,7 @@ export class CreateEditTestServiceModalComponent extends BaseComponent implement
   }
 
   delete() {
-    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this test service?", "Delete", "Cancel")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this test service?", "Delete", "Cancel", Constants.BUTTON_ICON.DELETE)
       .subscribe(() => {
         this.pending = true
         this.deletePending = true

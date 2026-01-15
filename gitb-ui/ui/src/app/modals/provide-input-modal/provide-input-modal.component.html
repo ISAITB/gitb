@@ -78,12 +78,12 @@
 	</div>
 	<div class="modal-footer">
 		<div class="btn-toolbar">
-			<button type="button" (click)="minimise()" class="btn btn-secondary">Minimise</button>
+			<button type="button" [labelIcon]="Constants.BUTTON_ICON.MINIMIZE" (click)="minimise()" class="btn btn-secondary">Minimise</button>
 			@if (needsInput) {
-				<button type="button" (click)="reset()" class="btn btn-secondary">Reset</button>
-				<button type="submit" class="btn btn-secondary">Submit</button>
+				<button type="button" [labelIcon]="Constants.BUTTON_ICON.RESET" (click)="reset()" class="btn btn-secondary">Reset</button>
+				<button type="submit" [labelIcon]="Constants.BUTTON_ICON.SEND" class="btn btn-secondary">Submit</button>
 			} @else {
-				<button type="button" (click)="close()" class="btn btn-secondary">Close</button>
+				<button type="button" [labelIcon]="Constants.BUTTON_ICON.CANCEL" (click)="close()" class="btn btn-secondary">Close</button>
 			}
 		</div>
 	</div>

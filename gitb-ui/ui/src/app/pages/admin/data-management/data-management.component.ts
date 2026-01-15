@@ -15,6 +15,7 @@
 
 import {Component, OnInit} from '@angular/core';
 import {RoutingService} from '../../../services/routing.service';
+import {Constants} from '../../../common/constants';
 
 @Component({
   selector: 'app-data-management',
@@ -46,4 +47,5 @@ export class DataManagementComponent implements OnInit {
     }
   }
 
+  protected readonly Constants = Constants;
 }

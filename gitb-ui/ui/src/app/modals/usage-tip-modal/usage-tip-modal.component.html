@@ -1,5 +1,4 @@
 <div class="modal-header">
-    <span class="me-3"><i class="fa-solid fa-lightbulb fa-2x"></i></span>
     <div class="modal-title">
         @switch (tip) {
             @case (Constants.USAGE_TIP.TEST_BED_ADMIN_CREATE_CONFORMANCE_STATEMENT) {
@@ -19,6 +18,7 @@
             }
         }
     </div>
+    <span class="ms-auto"><i class="fa-solid fa-lightbulb fa-2x"></i></span>
 </div>
 <div class="modal-body">
     @switch (tip) {
@@ -111,16 +111,16 @@
     <div class="btn-toolbar">
         @switch (tip) {
             @case (Constants.USAGE_TIP.TEST_BED_ADMIN_CREATE_CONFORMANCE_STATEMENT) {
-                <button class="btn btn-secondary" [pending]="goToCommunityManagementPending" type="button" (click)="toCommunityManagement()">Go to community management</button>
+                <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.GO" [pending]="goToCommunityManagementPending" type="button" (click)="toCommunityManagement()">Go to community management</button>
             }
             @case (Constants.USAGE_TIP.TEST_BED_ADMIN_CREATE_SYSTEM) {
-                <button class="btn btn-secondary" [pending]="goToCommunityManagementPending" type="button" (click)="toCommunityManagement()">Go to community management</button>
+                <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.GO" [pending]="goToCommunityManagementPending" type="button" (click)="toCommunityManagement()">Go to community management</button>
             }
             @case (Constants.USAGE_TIP.TEST_BED_LANDING_PAGE) {
-                <button class="btn btn-secondary" [pending]="goToSystemAdministrationPending" type="button" (click)="toSystemAdministration()">Go to system administration</button>
-                <button class="btn btn-secondary" [pending]="goToCommunityManagementPending" type="button" (click)="toCommunityManagement()">Go to community management</button>
+                <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.GO" [pending]="goToSystemAdministrationPending" type="button" (click)="toSystemAdministration()">Go to system administration</button>
+                <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.GO" [pending]="goToCommunityManagementPending" type="button" (click)="toCommunityManagement()">Go to community management</button>
             }
         }
-        <button class="btn btn-secondary" [pending]="closePending" type="button" (click)="close()">Close</button>
+        <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.CANCEL" [pending]="closePending" type="button" (click)="close()">Close</button>
     </div>
 </div>

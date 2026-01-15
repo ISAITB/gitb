@@ -22,6 +22,7 @@ import { saveAs } from 'file-saver'
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 import { PopupService } from 'src/app/services/popup.service';
+import {Constants} from '../../common/constants';
 
 @Component({
     selector: 'app-community-keystore-modal',
@@ -110,7 +111,7 @@ export class CommunityKeystoreModalComponent extends BaseComponent implements On
 
   deleteKeystore() {
     this.clearAlerts()
-    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete the keystore?", "Delete", "Cancel").subscribe(() => {
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete the keystore?", "Delete", "Cancel", Constants.BUTTON_ICON.DELETE).subscribe(() => {
       this.deletePending = true
       this.conformanceService.deleteCommunityKeystore(this.communityId).subscribe(() => {
         this.modalInstance.hide()

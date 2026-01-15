@@ -123,7 +123,7 @@ export class ConformanceSnapshotsModalComponent extends BaseComponent implements
   }
 
   deleteSnapshot(snapshot: ConformanceSnapshot) {
-    this.confirmationDialogService.confirmedDangerous("Delete snapshot", "Are you sure you want to delete this conformance snapshot?", "Delete", "Cancel")
+    this.confirmationDialogService.confirmedDangerous("Delete snapshot", "Are you sure you want to delete this conformance snapshot?", "Delete", "Cancel", Constants.BUTTON_ICON.DELETE)
     .subscribe(() => {
       snapshot.deletePending = true
       this.conformanceService.deleteConformanceSnapshot(snapshot.id)

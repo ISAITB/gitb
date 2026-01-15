@@ -106,6 +106,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
         name: 'availableCommunities',
         textField: 'fname',
         filterLabel: 'Select community',
+        filterLabelIcon: Constants.BUTTON_ICON.COMMUNITY,
         singleSelection: true,
         singleSelectionPersistent: true,
       }
@@ -114,6 +115,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
       name: 'availableOrganisations',
       textField: 'fname',
       filterLabel: `Select ${this.dataService.labelOrganisationLower()}`,
+      filterLabelIcon: Constants.BUTTON_ICON.ORGANISATION,
       singleSelection: true,
       singleSelectionPersistent: true,
     }
@@ -121,6 +123,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
       name: 'availableSystems',
       textField: 'fname',
       filterLabel: `Select ${this.dataService.labelSystemLower()}`,
+      filterLabelIcon: Constants.BUTTON_ICON.SYSTEM,
       singleSelection: true,
       singleSelectionPersistent: true,
     }

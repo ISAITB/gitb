@@ -1,6 +1,6 @@
 @if ((key == undefined || key.length == 0) && !editing) {
     @if (supportCreate) {
-        <button class="btn btn-secondary" (click)="doCreate()" [pending]="createPending">{{createLabel}}</button>
+        <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.NEW" (click)="doCreate()" [pending]="createPending">{{createLabel}}</button>
     }
 } @else {
     <div class="input-group">

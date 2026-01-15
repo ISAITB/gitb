@@ -87,7 +87,7 @@ export class CreateErrorTemplateComponent extends BaseComponent implements OnIni
   createErrorTemplate() {
     if (!this.saveDisabled()) {
       if (this.template.default) {
-        this.confirmationDialogService.confirmed("Confirm default", "You are about to change the default error template. Are you sure?", "Change", "Cancel")
+        this.confirmationDialogService.confirmed("Confirm default", "You are about to change the default error template. Are you sure?", "Change", "Cancel", Constants.BUTTON_ICON.SAVE)
           .subscribe(() => {
             this.doCreate()
           })

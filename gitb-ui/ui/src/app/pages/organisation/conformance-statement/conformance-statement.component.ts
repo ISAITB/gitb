@@ -59,6 +59,7 @@ import {FilterUpdate} from '../../../components/test-filter/filter-update';
 import {TestSuiteDisplayComponentApi} from '../../../components/test-suite-display/test-suite-display-component-api';
 import {DisplayState} from '../../../types/display-state';
 import {StatementTestCaseSearchCriteria} from './statement-test-case-search-criteria';
+import {MultiSelectConfig} from '../../../components/multi-select-filter/multi-select-config';
 
 @Component({
     selector: 'app-conformance-statement',
@@ -109,13 +110,14 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   navigationConfig?: NavigationControlsConfig
   protected readonly PagingPlacement = PagingPlacement;
 
-  testSuiteSelectionConfig = {
+  testSuiteSelectionConfig: MultiSelectConfig<TestSuiteMinimalInfo> = {
     name: "testSuiteChoice",
     singleSelection: true,
     singleSelectionClearable: true,
     singleSelectionPersistent: false,
     textField: "sname",
     filterLabel: "Show test suite...",
+    filterLabelIcon: Constants.BUTTON_ICON.FILTER,
     loader: () => this.loadStatementTestSuites()
   }
 
@@ -721,7 +723,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   }
 
   deleteConformanceStatement() {
-    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this conformance statement?", "Delete", "Cancel")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this conformance statement?", "Delete", "Cancel", Constants.BUTTON_ICON.DELETE)
     .subscribe(() => {
       this.deletePending = true
       this.systemService.deleteConformanceStatement(this.systemId, [this.actorId])

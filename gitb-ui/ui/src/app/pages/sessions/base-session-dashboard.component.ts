@@ -44,6 +44,8 @@ import {PagingEvent} from '../../components/paging-controls/paging-event';
 })
 export abstract class BaseSessionDashboardComponent implements OnInit, AfterViewInit {
 
+  protected readonly Constants = Constants;
+
   showActiveSessions = false
   showSessionNavigationControls = false
   showDeleteControls = false
@@ -341,7 +343,7 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
   }
 
   stopAll() {
-    this.confirmationDialogService.confirmedDangerous('Confirm termination', 'Are you certain you want to terminate all active sessions?', 'Terminate', 'Cancel').subscribe(() => {
+    this.confirmationDialogService.confirmedDangerous('Confirm termination', 'Are you certain you want to terminate all active sessions?', 'Terminate', 'Cancel', Constants.BUTTON_ICON.DELETE).subscribe(() => {
       this.stopAllPending = true
       this.stopAllOperation().subscribe(() => {
         this.applyFilters()
@@ -541,7 +543,7 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
   }
 
   deleteObsolete() {
-    this.confirmationDialogService.confirmedDangerous('Confirm delete', 'Are you sure you want to delete all obsolete test results?', 'Delete', 'Cancel').subscribe(() => {
+    this.confirmationDialogService.confirmedDangerous('Confirm delete', 'Are you sure you want to delete all obsolete test results?', 'Delete', 'Cancel', Constants.BUTTON_ICON.DELETE).subscribe(() => {
       this.deletePending = true
       this.deleteObsoleteOperation().subscribe(() => {
         this.getCompletedTests(this.currentCompletedPagingInfo())
@@ -600,7 +602,7 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
     } else {
       msg = 'Are you sure you want to delete the selected test results?'
     }
-    this.confirmationDialogService.confirmedDangerous('Confirm delete', msg, 'Delete', 'Cancel')
+    this.confirmationDialogService.confirmedDangerous('Confirm delete', msg, 'Delete', 'Cancel', Constants.BUTTON_ICON.DELETE)
       .subscribe(() => {
         this.deleteSessionsPending = true
         this.conformanceService.deleteTestResults(testsToDelete)
@@ -662,7 +664,7 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
   }
 
   stopSession(session: TestResultForDisplay) {
-    this.confirmationDialogService.confirmedDangerous('Confirm termination', 'Are you certain you want to terminate this session?', 'Terminate', 'Cancel').subscribe(() => {
+    this.confirmationDialogService.confirmedDangerous('Confirm termination', 'Are you certain you want to terminate this session?', 'Terminate', 'Cancel', Constants.BUTTON_ICON.DELETE).subscribe(() => {
       session.deletePending = true
       this.testService.stop(session.session).subscribe(() => {
         this.applyFilters()

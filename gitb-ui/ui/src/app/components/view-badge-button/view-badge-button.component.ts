@@ -17,6 +17,7 @@ import {Component, Input} from '@angular/core';
 import {BsModalService} from 'ngx-bootstrap/modal';
 import {ConformanceService} from 'src/app/services/conformance.service';
 import {PreviewBadgeModalComponent} from '../../modals/preview-badge-modal/preview-badge-modal.component';
+import {Constants} from '../../common/constants';
 
 @Component({
     selector: 'app-view-badge-button',
@@ -56,4 +57,5 @@ export class ViewBadgeButtonComponent {
     })
   }
 
+  protected readonly Constants = Constants;
 }

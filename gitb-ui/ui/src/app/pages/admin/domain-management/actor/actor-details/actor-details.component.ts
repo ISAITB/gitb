@@ -128,7 +128,7 @@ export class ActorDetailsComponent extends BaseTabbedComponent implements OnInit
   }
 
   delete() {
-    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this "+this.dataService.labelActorLower()+"?", "Delete", "Cancel")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this "+this.dataService.labelActorLower()+"?", "Delete", "Cancel", Constants.BUTTON_ICON.DELETE)
     .subscribe(() => {
       this.deletePending = true
       this.actorService.deleteActor(this.actorId)

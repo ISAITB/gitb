@@ -413,7 +413,7 @@ export class TriggerComponent extends BaseComponent implements OnInit {
 
   delete() {
     this.validation.clearErrors()
-    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this trigger?", "Delete", "Cancel")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this trigger?", "Delete", "Cancel", Constants.BUTTON_ICON.DELETE)
     .subscribe(() => {
       this.deletePending = true
       this.triggerService.deleteTrigger(this.triggerId!)

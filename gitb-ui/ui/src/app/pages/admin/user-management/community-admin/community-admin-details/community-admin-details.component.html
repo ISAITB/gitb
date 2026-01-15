@@ -23,12 +23,12 @@
             <div class="card-footer button-container">
                 <div class="btn-toolbar">
                     @if (!dataService.configuration.ssoEnabled) {
-                        <button class="btn btn-secondary" type="submit" (click)="updateAdmin()" [disable]="!loaded || deletePending || saveDisabled()" [pending]="savePending">Update</button>
+                        <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.SAVE" type="submit" (click)="updateAdmin()" [disable]="!loaded || deletePending || saveDisabled()" [pending]="savePending">Update</button>
                     }
-                    <button class="btn btn-secondary" type="button" (click)="cancelDetailAdmin()">Back</button>
+                    <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.BACK" type="button" (click)="cancelDetailAdmin()">Back</button>
                 </div>
                 <div class="btn-toolbar btn-toolbar-delete">
-                    <button class="btn btn-outline-danger" type="button" (click)="deleteAdmin()" [disable]="!loaded || savePending || disableDeleteButton" [pending]="deletePending">Delete</button>
+                    <button class="btn btn-outline-danger" [labelIcon]="Constants.BUTTON_ICON.DELETE" type="button" (click)="deleteAdmin()" [disable]="!loaded || savePending || disableDeleteButton" [pending]="deletePending">Delete</button>
                 </div>
             </div>
         </form>

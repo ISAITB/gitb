@@ -1,9 +1,9 @@
 <div class="tabControls">
     <div class="btn-toolbar">
-        <button type="button" class="btn btn-secondary" [disable]="orderParametersDisabled" [pending]="orderPending" (click)="orderParameters()">Save parameter order</button>
+        <button type="button" [labelIcon]="Constants.BUTTON_ICON.SAVE" class="btn btn-secondary" [disable]="orderParametersDisabled" [pending]="orderPending" (click)="orderParameters()">Save parameter order</button>
         @if (manageEndpoints) {
             <div class="btn-group create-group" dropdown>
-                <button type="button" class="btn btn-secondary" (click)="addParameter()">Create parameter</button>
+                <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="addParameter()">Create parameter</button>
                 <button id="button-create" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
                     <span class="caret"></span>
                     <span class="sr-only visually-hidden">Create parameter</span>
@@ -11,9 +11,9 @@
                 <ul id="dropdown-create" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-create">
                     <li role="menuitem"><a class="dropdown-item" href (click)="addEndpoint();$event.preventDefault();">Create {{dataService.labelEndpointLower()}}</a></li>
                 </ul>
-            </div>                                                                                
+            </div>
         } @else {
-            <button type="button" class="btn btn-secondary" (click)="addParameter()">Create parameter</button>
+            <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="addParameter()">Create parameter</button>
         }
     </div>
 </div>
@@ -42,7 +42,7 @@
                 </tr>
             }
             @for (parameter of parameters; track parameter.id) {
-                <tr class="table-row-directive selectable drag-table-row" 
+                <tr class="table-row-directive selectable drag-table-row"
                     cdkDrag
                     (cdkDragStarted)="draggingParameter = true"
                     (cdkDragEnded)="draggingParameter = false"

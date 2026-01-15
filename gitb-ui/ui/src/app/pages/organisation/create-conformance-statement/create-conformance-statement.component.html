@@ -28,10 +28,11 @@
                             <app-text-filter name="statementFilter" [width]="300" [placeholder]="'Search statements...'" [(ngModel)]="searchCriteria.filterText" (apply)="loadStatements()"></app-text-filter>
                             <app-checkbox-option-panel
                                 label="Show statements..."
+                                [labelIcon]="Constants.BUTTON_ICON.FILTER"
                                 [options]="statusOptions"
                                 (updated)="filterByStatus($event)"></app-checkbox-option-panel>
                             <div class="btn-group select-group" dropdown [isDisabled]="!hasVisibleItems">
-                                <button type="button" [disabled]="!hasVisibleItems" class="btn btn-secondary" (click)="selectAllStatements()">Select current statements</button>
+                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.SELECT" [disable]="!hasVisibleItems" class="btn btn-secondary" (click)="selectAllStatements()">Select current statements</button>
                                 <button id="button-select" type="button" [disabled]="!hasVisibleItems" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
                                     <span class="caret"></span>
                                     <span class="sr-only visually-hidden">Select all statements</span>
@@ -42,7 +43,7 @@
                                 </ul>
                             </div>
                             <div class="btn-group collapse-group" dropdown [isDisabled]="!hasVisibleItems">
-                                <button type="button" [disabled]="!hasVisibleItems" class="btn btn-secondary" (click)="toggleCollapse(true)">Collapse statements</button>
+                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.COLLAPSE" [disable]="!hasVisibleItems" class="btn btn-secondary" (click)="toggleCollapse(true)">Collapse statements</button>
                                 <button id="button-collapse" type="button" [disabled]="!hasVisibleItems" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
                                     <span class="caret"></span>
                                     <span class="sr-only visually-hidden">Collapse statements</span>
@@ -82,8 +83,8 @@
         </div>
         <div class="card-footer">
             <div class="btn-toolbar">
-                <button type="button" class="btn btn-secondary" (click)="create()" [disable]="createDisabled" [pending]="createPending">Confirm</button>
-                <button type="button" class="btn btn-secondary" (click)="cancel()" [disabled]="createPending">Cancel</button>
+                <button type="button" [labelIcon]="Constants.BUTTON_ICON.CONFIRM" class="btn btn-secondary" (click)="create()" [disable]="createDisabled" [pending]="createPending">Confirm</button>
+                <button type="button" [labelIcon]="Constants.BUTTON_ICON.CANCEL" class="btn btn-secondary" (click)="cancel()" [disable]="createPending">Cancel</button>
             </div>
         </div>
     </div>

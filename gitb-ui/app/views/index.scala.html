@@ -43,7 +43,7 @@
 								<div style="padding-top:20px">
 									<div style="display:flex; align-items:center;">
 										<div>
-											<button id="loginOption" type="button" class="btn btn-primary" style="padding:20px">Click to log in</button>
+											<button id="loginOption" type="button" class="btn btn-primary" style="padding:20px"><span class="mini-tab"><i class="fa-solid fa-arrow-right-to-bracket"></i></span>Click to log in</button>
 										</div>
 										<div class="ms-4">
 											@if(config.ssoEnabled) {
@@ -132,7 +132,7 @@
 						</div>
 						<div class="modal-footer">
 							<div class="btn-toolbar">
-								<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+								<button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><span class="mini-tab"><i class="fa-solid fa-xmark"></i></span>Close</button>
 							</div>
 						</div>
 					</div>
@@ -185,8 +185,15 @@
 							</div>
 							<div class="modal-footer">
 								<div class="btn-toolbar">
-									<button id="buttonNoImport" type="button" class="btn btn-secondary">Close</button>
-									<button id="buttonImport" type="submit" class="btn btn-secondary"><span id="initDataSpinner" class="tab"><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span>Import archive</button>
+									<button id="buttonNoImport" type="button" class="btn btn-secondary">
+										<span class="mini-tab"><i class="fa-solid fa-xmark"></i></span>
+										Close
+									</button>
+									<button id="buttonImport" type="submit" class="btn btn-secondary">
+										<span id="initDataSpinner" class="mini-tab"><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span>
+										<span id="initDataIcon" class="mini-tab hidden"><i class="fa-solid fa-file-import"></i></span>
+										Import archive
+									</button>
 								</div>
 							</div>
 						</form>

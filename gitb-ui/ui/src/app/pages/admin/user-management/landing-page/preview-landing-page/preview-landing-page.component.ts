@@ -15,6 +15,7 @@
 
 import { Component, Input, OnInit } from '@angular/core';
 import { BsModalRef } from 'ngx-bootstrap/modal';
+import {Constants} from '../../../../../common/constants';
 
 @Component({
     selector: 'app-preview-landing-page',
@@ -37,4 +38,5 @@ export class PreviewLandingPageComponent implements OnInit {
     this.modalRef.hide()
   }
 
+  protected readonly Constants = Constants;
 }

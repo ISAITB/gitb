@@ -16,6 +16,7 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { sortBy } from 'lodash';
 import { TestCaseTag } from 'src/app/types/test-case-tag';
+import {Constants} from '../../common/constants';
 
 @Component({
     selector: 'app-tags-display',
@@ -51,4 +52,6 @@ export class TagsDisplayComponent implements OnInit {
   createTag() {
     this.create.emit()
   }
+
+  protected readonly Constants = Constants;
 }

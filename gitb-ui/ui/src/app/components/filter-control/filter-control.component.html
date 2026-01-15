@@ -1,6 +1,6 @@
 @if (showRefresh || showClear) {
     <div class="btn-group" dropdown>
-        <button type="button" class="btn btn-secondary" (click)="doToggle()"><app-collapsing-icon [isCollapsed]="!visible"></app-collapsing-icon>Search</button>
+        <button type="button" [labelIcon]="Constants.BUTTON_ICON.FILTER" class="btn btn-secondary" (click)="doToggle()">Search</button>
         <button id="button-filters" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
             <span class="caret"></span>
             <span class="sr-only visually-hidden">Search</span>

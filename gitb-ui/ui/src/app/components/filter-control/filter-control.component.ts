@@ -15,6 +15,7 @@
 
 import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {FilterControlApi} from './filter-control-api';
+import {Constants} from '../../common/constants';
 
 @Component({
   selector: 'app-filter-control',
@@ -48,4 +49,5 @@ export class FilterControlComponent implements FilterControlApi {
     this.toggle.emit(this.visible);
   }
 
+  protected readonly Constants = Constants;
 }

@@ -7,13 +7,13 @@
       </div>
       <div class="title-action">
         @if (showExpandAll) {
-          <button type="button" (click)="expandAll(); $event.stopPropagation();" class="btn btn-secondary btn-sm">Expand all</button>
+          <button type="button" [labelIcon]="Constants.BUTTON_ICON.EXPAND" (click)="expandAll(); $event.stopPropagation();" class="btn btn-secondary btn-sm">Expand all</button>
         }
         @if (showSkipAll) {
-          <button type="button" (click)="skipAll(); $event.stopPropagation();" class="btn btn-secondary btn-sm">Skip all</button>
+          <button type="button" [labelIcon]="Constants.BUTTON_ICON.SKIP" (click)="skipAll(); $event.stopPropagation();" class="btn btn-secondary btn-sm">Skip all</button>
         }
         @if (showProceedAll) {
-          <button type="button" (click)="proceedAll(); $event.stopPropagation();" class="btn btn-secondary btn-sm">Process all</button>
+          <button type="button" [labelIcon]="Constants.BUTTON_ICON.PROCESS" (click)="proceedAll(); $event.stopPropagation();" class="btn btn-secondary btn-sm">Process all</button>
         }
       </div>
       <div class="title-icon"><i class="fa" [ngClass]="{'fa-chevron-circle-down': group.open, 'fa-chevron-circle-right': !group.open}"></i></div>

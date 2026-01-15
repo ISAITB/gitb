@@ -38,9 +38,9 @@
             </div>
             <div class="card-footer">
                 <div class="btn-toolbar">
-                    <button class="btn btn-secondary" type="submit" [disable]="saveDisabled()" [pending]="savePending">Save</button>
-                    <button class="btn btn-secondary" type="button" (click)="preview()" [disabled]="!textProvided(page.content)">Preview</button>
-                    <button class="btn btn-secondary" type="button" (click)="cancelCreateLandingPage()">Cancel</button>
+                    <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.SAVE" type="submit" [disable]="saveDisabled()" [pending]="savePending">Save</button>
+                    <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.PREVIEW" type="button" (click)="preview()" [disable]="!textProvided(page.content)">Preview</button>
+                    <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.CANCEL" type="button" (click)="cancelCreateLandingPage()">Cancel</button>
                 </div>
             </div>
         </form>

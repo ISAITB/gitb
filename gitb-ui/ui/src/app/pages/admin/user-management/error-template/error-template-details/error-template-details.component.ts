@@ -93,7 +93,7 @@ export class ErrorTemplateDetailsComponent extends BaseComponent implements OnIn
   updateErrorTemplate(copy: boolean) {
     if (!this.saveDisabled()) {
       if (!this.isDefault && this.template.default) {
-        this.confirmationDialogService.confirmed("Confirm default", "You are about to change the default error template. Are you sure?", "Yes", "No")
+        this.confirmationDialogService.confirmed("Confirm default", "You are about to change the default error template. Are you sure?", "Yes", "No", Constants.BUTTON_ICON.SAVE)
           .subscribe(() => {
             this.doUpdate(copy)
           })
@@ -137,7 +137,7 @@ export class ErrorTemplateDetailsComponent extends BaseComponent implements OnIn
   }
 
   deleteErrorTemplate() {
-    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this error template?", "Delete", "Cancel")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this error template?", "Delete", "Cancel", Constants.BUTTON_ICON.DELETE)
     .subscribe(() => {
       this.deletePending = true
       this.validation.clearErrors()

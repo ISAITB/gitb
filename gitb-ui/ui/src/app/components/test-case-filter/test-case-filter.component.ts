@@ -108,4 +108,5 @@ export class TestCaseFilterComponent implements TestCaseFilterApi, OnInit {
     })
   }
 
+  protected readonly Constants = Constants;
 }

@@ -20,6 +20,7 @@ import { BaseParameterModalComponent } from '../base-parameter-modal.component';
 import { DataService } from 'src/app/services/data.service';
 import { BsModalRef } from 'ngx-bootstrap/modal';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
+import {Constants} from '../../../common/constants';
 
 @Component({
     selector: 'app-parameter-details-modal',
@@ -62,7 +63,7 @@ export class ParameterDetailsModalComponent extends BaseParameterModalComponent 
   }
 
   deleteParameter() {
-    this.confirmationDialogService.confirmedDangerous("Confirm delete", this.confirmMessage, "Delete", "Cancel")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", this.confirmMessage, "Delete", "Cancel", Constants.BUTTON_ICON.DELETE)
     .subscribe(() => {
       this.validation.clearErrors()
       this.deleted.emit(this.parameter as Parameter)

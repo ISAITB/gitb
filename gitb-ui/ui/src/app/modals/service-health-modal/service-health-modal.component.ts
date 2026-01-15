@@ -21,6 +21,7 @@ import {BaseComponent} from '../../pages/base-component.component';
 import {MarkdownService} from 'ngx-markdown';
 import {marked} from 'marked';
 import Parser = marked.Parser;
+import {Constants} from '../../common/constants';
 
 @Component({
   selector: 'app-service-health-modal',
@@ -76,4 +77,5 @@ export class ServiceHealthModalComponent extends BaseComponent implements OnInit
     })
   }
 
+  protected readonly Constants = Constants;
 }

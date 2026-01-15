@@ -40,8 +40,8 @@
     </div>
     <div class="modal-footer">
         <div class="btn-toolbar">
-            <button class="btn btn-secondary" type="button" (click)="cancel()">Cancel</button>
-            <button class="btn btn-secondary" type="submit" (click)="disconnect()" [pending]="disconnectPending">Proceed</button>
+            <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.CANCEL" type="button" (click)="cancel()">Cancel</button>
+            <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.UNLINK_ACCOUNT" type="submit" (click)="disconnect()" [pending]="disconnectPending">Proceed</button>
         </div>
     </div>
 </form>

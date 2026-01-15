@@ -23,8 +23,8 @@
             </div>
             <div class="card-footer">
                 <div class="btn-toolbar">
-                    <button class="btn btn-secondary" type="submit" (click)="createUser()" [disable]="saveDisabled()" [pending]="savePending">Save</button>
-                    <button class="btn btn-secondary" type="button" (click)="cancelCreateUser()">Cancel</button>
+                    <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.SAVE" type="submit" (click)="createUser()" [disable]="saveDisabled()" [pending]="savePending">Save</button>
+                    <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.CANCEL" type="button" (click)="cancelCreateUser()">Cancel</button>
                 </div>
             </div>
         </form>

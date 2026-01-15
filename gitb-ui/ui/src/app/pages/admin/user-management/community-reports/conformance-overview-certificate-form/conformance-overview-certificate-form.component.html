@@ -252,7 +252,7 @@
                                 <app-placeholder-selector [placeholders]="placeholders" [domainParameters]="true" [domainChanged]="domainChangedEmitter" [organisationParameters]="true" [systemParameters]="true" [resources]="true" [systemResources]="dataService.isSystemAdmin" [community]="communityId" [domainId]="selectedDomain?.id"></app-placeholder-selector>
                             </div>
                             <div class="col-auto">
-                                <button class="btn btn-secondary" type="button" (click)="clearCurrentMessage()" [disabled]="!textProvided(currentMessageContent)">Remove message</button>
+                                <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.DELETE" type="button" (click)="clearCurrentMessage()" [disable]="!textProvided(currentMessageContent)">Remove message</button>
                             </div>
                         </div>
                         <div class="row mt-3">
@@ -265,26 +265,26 @@
             </div>
         </div>
         <div class="btn-toolbar mt-3">
-            <button class="btn btn-secondary" type="submit" (click)="update()" [disable]="exportPending || !previewEnabled()" [pending]="updatePending">Update</button>
+            <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.SAVE"  type="submit" (click)="update()" [disable]="exportPending || !previewEnabled()" [pending]="updatePending">Update</button>
             @if ((settings.enableAllLevel && !(settings.enableDomainLevel || settings.enableGroupLevel || settings.enableSpecificationLevel)) ||
                 (settings.enableDomainLevel && !(settings.enableAllLevel || settings.enableGroupLevel || settings.enableSpecificationLevel)) ||
                 (settings.enableGroupLevel && !(settings.enableAllLevel || settings.enableDomainLevel || settings.enableSpecificationLevel)) ||
                 (settings.enableSpecificationLevel && !(settings.enableAllLevel || settings.enableDomainLevel || settings.enableGroupLevel)) ||
                 (!settings.enableAllLevel && !settings.enableDomainLevel && !settings.enableGroupLevel && !settings.enableSpecificationLevel)) {
                 @if (settings.enableAllLevel) {
-                    <button class="btn btn-secondary" type="button" (click)="preview('all')" [disable]="exportPending || !previewEnabled()" [pending]="exportPending">Generate preview</button>
+                    <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.PREVIEW" type="button" (click)="preview('all')" [disable]="exportPending || !previewEnabled()" [pending]="exportPending">Generate preview</button>
                 } @else if (settings.enableDomainLevel) {
-                    <button class="btn btn-secondary" type="button" (click)="preview('domain')" [disable]="exportPending || !previewEnabled()" [pending]="exportPending">Generate preview</button>
+                    <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.PREVIEW" type="button" (click)="preview('domain')" [disable]="exportPending || !previewEnabled()" [pending]="exportPending">Generate preview</button>
                 } @else if (settings.enableGroupLevel) {
-                    <button class="btn btn-secondary" type="button" (click)="preview('group')" [disable]="exportPending || !previewEnabled()" [pending]="exportPending">Generate preview</button>
+                    <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.PREVIEW" type="button" (click)="preview('group')" [disable]="exportPending || !previewEnabled()" [pending]="exportPending">Generate preview</button>
                 } @else if (settings.enableSpecificationLevel) {
-                    <button class="btn btn-secondary" type="button" (click)="preview('specification')" [disable]="exportPending || !previewEnabled()" [pending]="exportPending">Generate preview</button>
+                    <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.PREVIEW" type="button" (click)="preview('specification')" [disable]="exportPending || !previewEnabled()" [pending]="exportPending">Generate preview</button>
                 } @else {
-                    <button class="btn btn-secondary" type="button" disabled="disabled">Generate preview</button>
+                    <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.PREVIEW" type="button" [disable]="true">Generate preview</button>
                 }
             } @else {
                 <div class="btn-group" dropdown [isDisabled]="updatePending">
-                    <button id="button-preview" dropdownToggle type="button" [disable]="updatePending || !previewEnabled()" [pending]="exportPending" aria-controls="dropdown-preview" class="btn btn-secondary dropdown-toggle"><span class="me-2">Generate preview</span></button>
+                    <button id="button-preview" [labelIcon]="Constants.BUTTON_ICON.PREVIEW" dropdownToggle type="button" [disable]="updatePending || !previewEnabled()" [pending]="exportPending" aria-controls="dropdown-preview" class="btn btn-secondary dropdown-toggle"><span class="me-2">Generate preview</span></button>
                     <ul id="dropdown-preview" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-preview">
                         @if (settings.enableAllLevel) {
                             <li role="menuitem"><a class="dropdown-item" href (click)="preview('all');$event.preventDefault();">Aggregate level</a></li>
@@ -301,7 +301,7 @@
                     </ul>
                 </div>
             }
-            <button class="btn btn-secondary" (click)="manageKeystore()" [pending]="manageKeystorePending">Manage signature settings</button>
+            <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.SIGNATURE"  (click)="manageKeystore()" [pending]="manageKeystorePending">Manage signature settings</button>
         </div>
     </form>
 }

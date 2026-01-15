@@ -14,8 +14,8 @@
     </div>
     <div class="modal-footer">
         <div class="btn-toolbar">
-            <button class="btn btn-secondary" type="button" (click)="cancel()">Cancel</button>
-            <button class="btn btn-secondary" type="submit" [disabled]="saveDisabled()">Save</button>
+            <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.CANCEL" type="button" (click)="cancel()">Cancel</button>
+            <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.SAVE" type="submit" [disable]="saveDisabled()">Save</button>
         </div>
     </div>
 </form>

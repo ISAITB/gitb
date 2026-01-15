@@ -22,6 +22,7 @@ import {CommunityResource} from 'src/app/types/community-resource';
 import {FileData} from 'src/app/types/file-data.type';
 import {saveAs} from 'file-saver';
 import {ResourceActions} from '../../components/resource-management-tab/resource-actions';
+import {Constants} from '../../common/constants';
 
 @Component({
     selector: 'app-create-edit-community-resource-modal',
@@ -119,7 +120,7 @@ export class CreateEditCommunityResourceModalComponent extends BaseComponent imp
 
   delete() {
     if (this.resourceToUse.id != undefined) {
-      this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this resource?", "Delete", "Cancel").subscribe(() => {
+      this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this resource?", "Delete", "Cancel", Constants.BUTTON_ICON.DELETE).subscribe(() => {
         this.deletePending = true
         this.actions.deleteResource(this.resourceToUse.id!).subscribe(() => {
           this.resourceUpdated.emit(true)
@@ -135,4 +136,6 @@ export class CreateEditCommunityResourceModalComponent extends BaseComponent imp
   cancel() {
     this.modalInstance.hide()
   }
+
+  protected readonly Constants = Constants;
 }

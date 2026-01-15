@@ -3,7 +3,7 @@
         <div class="searchControls btn-toolbar">
             <app-text-filter name="resourceFilter" [width]="300" [placeholder]="'Search resources...'" [(ngModel)]="resourceFilter" (apply)="applyResourceFilter()"></app-text-filter>
             <div class="btn-group" dropdown [isDisabled]="downloadAllResourcesPending || selectingForDeleteResources">
-                <button type="button" class="btn btn-secondary" (click)="uploadResource()" [disabled]="downloadAllResourcesPending || selectingForDeleteResources">Upload resource</button>
+                <button type="button" [labelIcon]="Constants.BUTTON_ICON.UPLOAD" class="btn btn-secondary" (click)="uploadResource()" [disable]="downloadAllResourcesPending || selectingForDeleteResources">Upload resource</button>
                 <button id="button-upload-resource" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split" aria-controls="dropdown-upload-resource" [disabled]="downloadAllResourcesPending || selectingForDeleteResources">
                     <span class="caret"></span>
                     <span class="sr-only visually-hidden"></span>
@@ -12,12 +12,12 @@
                     <li role="menuitem"><a class="dropdown-item" href (click)="uploadResourceBulk(); $event.preventDefault()">Bulk upload</a></li>
                 </ul>
             </div>
-            <button type="button" class="btn btn-secondary" (click)="downloadAllResources()" [disable]="resources.length == 0 || selectingForDeleteResources" [pending]="downloadAllResourcesPending">Download all</button>
+            <button type="button" [labelIcon]="Constants.BUTTON_ICON.DOWNLOAD" class="btn btn-secondary" (click)="downloadAllResources()" [disable]="resources.length == 0 || selectingForDeleteResources" [pending]="downloadAllResourcesPending">Download all</button>
             @if (!selectingForDeleteResources) {
-                <button type="button" class="btn btn-secondary" (click)="selectDeleteResources()" [disabled]="resources.length == 0 || downloadAllResourcesPending">Delete resources...</button>
+                <button type="button" [labelIcon]="Constants.BUTTON_ICON.DELETE" class="btn btn-secondary" (click)="selectDeleteResources()" [disable]="resources.length == 0 || downloadAllResourcesPending">Delete resources...</button>
             } @else {
-                <button type="button" class="btn btn-secondary" (click)="cancelDeleteResources()" [disabled]="deleteResourcesPending">Cancel</button>
-                <button type="button" class="btn btn-outline-danger" (click)="confirmDeleteResources()" [disable]="!resourcesChecked()" [pending]="deleteResourcesPending">Confirm</button>
+                <button type="button" [labelIcon]="Constants.BUTTON_ICON.CANCEL" class="btn btn-secondary" (click)="cancelDeleteResources()" [disable]="deleteResourcesPending">Cancel</button>
+                <button type="button" [labelIcon]="Constants.BUTTON_ICON.CONFIRM" class="btn btn-outline-danger" (click)="confirmDeleteResources()" [disable]="!resourcesChecked()" [pending]="deleteResourcesPending">Confirm</button>
             }
         </div>
     </div>

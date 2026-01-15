@@ -154,6 +154,7 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
       textField: 'name',
       singleSelection: true,
       filterLabel: 'Register from parameter',
+      filterLabelIcon: Constants.BUTTON_ICON.NEW,
       noItemsMessage: 'No candidate parameters available.',
       searchPlaceholder: 'Search parameter...',
       clearItems: new EventEmitter(),
@@ -320,7 +321,7 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
   }
 
 	deleteDomain() {
-		this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this "+this.dataService.labelDomainLower()+"?", "Delete", "Cancel")
+		this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this "+this.dataService.labelDomainLower()+"?", "Delete", "Cancel", Constants.BUTTON_ICON.DELETE)
     .subscribe(() => {
       this.deletePending = true
       this.conformanceService.deleteDomain(this.domainId)

@@ -391,7 +391,7 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
           } else {
             confirmationMessage = "Changing the "+this.dataService.labelDomainLower()+" will remove all existing conformance statements. Are you sure you want to proceed?"
           }
-          this.confirmationDialogService.confirmedDangerous("Confirm "+this.dataService.labelDomainLower()+" change", confirmationMessage, "Change", "Cancel")
+          this.confirmationDialogService.confirmedDangerous("Confirm "+this.dataService.labelDomainLower()+" change", confirmationMessage, "Change", "Cancel", Constants.BUTTON_ICON.SAVE)
             .subscribe(() => {
               this.updateCommunityInternal(descriptionToUse)
             })
@@ -403,7 +403,7 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
   }
 
   deleteCommunity() {
-    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this community?", "Delete", "Cancel")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this community?", "Delete", "Cancel", Constants.BUTTON_ICON.DELETE)
     .subscribe(() => {
       this.deletePending = true
       this.communityService.deleteCommunity(this.communityId)
@@ -567,4 +567,5 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
     }
   }
 
+  protected readonly Constants = Constants;
 }

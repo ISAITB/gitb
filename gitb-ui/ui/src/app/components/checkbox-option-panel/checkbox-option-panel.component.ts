@@ -53,6 +53,7 @@ export class CheckboxOptionPanelComponent implements OnInit, OnDestroy, CheckBox
   @Input() pending = false
   @Input() placement: 'left'|'bottom' = 'bottom'
   @Input() referenceItem?: any
+  @Input() labelIcon?: string
   @Output() updated = new EventEmitter<CheckboxOptionState>()
   @Output() opening = new EventEmitter<void>()
   @Output() opened = new EventEmitter<void>()

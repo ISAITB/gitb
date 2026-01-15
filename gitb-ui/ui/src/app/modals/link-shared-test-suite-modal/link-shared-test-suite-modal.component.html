@@ -47,9 +47,9 @@
 </div>
 <div class="modal-footer">
 	<div class="btn-toolbar">
-		<button type="button" class="btn btn-secondary" (click)="close()" [disabled]="actionPending">{{step == 'results'?'Close':'Cancel'}}</button>
+		<button type="button" [labelIcon]="Constants.BUTTON_ICON.CANCEL" class="btn btn-secondary" (click)="close()" [disable]="actionPending">{{step == 'results'?'Close':'Cancel'}}</button>
 		@if (step != 'results') {
-			<button type="button" class="btn btn-secondary" (click)="proceed()" [disable]="proceedDisabled()" [pending]="actionPending">Proceed</button>
+			<button type="button" [labelIcon]="Constants.BUTTON_ICON.NEXT" class="btn btn-secondary" (click)="proceed()" [disable]="proceedDisabled()" [pending]="actionPending">Proceed</button>
 		}
 	</div>
 </div>

@@ -49,9 +49,9 @@
 </div>
 <div class="modal-footer">
     <div class="btn-toolbar">
-        <button type="button" class="btn btn-secondary" (click)="close()">Close</button>
+        <button type="button" [labelIcon]="Constants.BUTTON_ICON.CANCEL" class="btn btn-secondary" (click)="close()">Close</button>
         @if (somethingIsVisible) {
-            <button type="button" class="btn btn-secondary" (click)="view()">View missing configuration</button>
+            <button type="button" [labelIcon]="Constants.BUTTON_ICON.GO" class="btn btn-secondary" (click)="view()">View missing configuration</button>
         }
     </div>
 </div>

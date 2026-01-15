@@ -5,7 +5,7 @@
             <div class="btn-toolbar">
                 <app-text-filter name="domainFilter" [width]="300" [placeholder]="'Search '+dataService.labelDomainsLower()+'...'" [(ngModel)]="domainFilter" (apply)="applyFilter()"></app-text-filter>
         		@if (dataService.isSystemAdmin) {
-					<button type="button" class="btn btn-secondary" (click)="create()">Create {{dataService.labelDomainLower()}}</button>
+					<button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="create()">Create {{dataService.labelDomainLower()}}</button>
 	    		}
             </div>
         </div>

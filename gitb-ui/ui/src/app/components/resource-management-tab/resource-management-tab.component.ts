@@ -170,7 +170,7 @@ export class ResourceManagementTabComponent implements AfterViewInit {
     } else {
       msg = 'Are you sure you want to delete the selected resources?'
     }
-    this.confirmationDialogService.confirmedDangerous("Confirm delete", msg, "Delete", "Cancel").subscribe(() => {
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", msg, "Delete", "Cancel", Constants.BUTTON_ICON.DELETE).subscribe(() => {
       this.deleteResourcesPending = true
       this.resourcesRefreshing = true
       this.actions.deleteResources(resourceIds).subscribe(() => {
@@ -230,7 +230,7 @@ export class ResourceManagementTabComponent implements AfterViewInit {
   }
 
   deleteResource(resource: CommunityResource) {
-    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this resource?", "Delete", "Cancel").subscribe(() => {
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this resource?", "Delete", "Cancel", Constants.BUTTON_ICON.DELETE).subscribe(() => {
       resource.deletePending = true
       this.actions.deleteResource(resource.id).subscribe(() => {
         this.popupService.success("Resource deleted.")
@@ -249,4 +249,5 @@ export class ResourceManagementTabComponent implements AfterViewInit {
     this.queryResources({ targetPage: 1, targetPageSize: this.resourcesTable?.pagingControls?.getCurrentStatus().pageSize!})
   }
 
+  protected readonly Constants = Constants;
 }

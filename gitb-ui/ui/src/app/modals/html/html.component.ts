@@ -15,6 +15,7 @@
 
 import { Component, OnInit } from '@angular/core';
 import { BsModalRef } from 'ngx-bootstrap/modal'
+import {Constants} from '../../common/constants';
 
 @Component({
     selector: 'app-html',
@@ -42,4 +43,5 @@ export class HtmlComponent implements OnInit {
     this.modalRef.hide()
   }
 
+  protected readonly Constants = Constants;
 }

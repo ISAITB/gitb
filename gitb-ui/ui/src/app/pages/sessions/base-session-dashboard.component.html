@@ -18,10 +18,10 @@
                             }
                         </div>
                     }
-                    <button type="button" class="btn btn-secondary" (click)="stopAll();$event.stopPropagation()" [pending]="stopAllPending" [disable]="activeTests.length == 0 || exportActivePending">Terminate all</button>
-                    <button type="button" class="btn btn-secondary" (click)="exportActiveSessionsToCsv();$event.stopPropagation()" [pending]="exportActivePending" [disable]="activeTests.length == 0 || stopAllPending">Export CSV</button>
+                    <button type="button" [labelIcon]="Constants.BUTTON_ICON.DELETE" class="btn btn-secondary" (click)="stopAll();$event.stopPropagation()" [pending]="stopAllPending" [disable]="activeTests.length == 0 || exportActivePending">Terminate all</button>
+                    <button type="button" [labelIcon]="Constants.BUTTON_ICON.EXPORT" class="btn btn-secondary" (click)="exportActiveSessionsToCsv();$event.stopPropagation()" [pending]="exportActivePending" [disable]="activeTests.length == 0 || stopAllPending">Export CSV</button>
                     @if (showCollapseAllActive()) {
-                        <button type="button" class="btn btn-secondary" (click)="onCollapseAllActive();$event.stopPropagation()">Collapse all</button>
+                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.COLLAPSE"  class="btn btn-secondary" (click)="onCollapseAllActive();$event.stopPropagation()">Collapse all</button>
                     }
                 </div>
             </div>
@@ -55,18 +55,18 @@
             <div class="btn-toolbar" [class.disable-events]="filterState.updatePending">
                 @if (showDeleteControls) {
                     @if (!selectingForDelete) {
-                        <button type="button" class="btn btn-secondary" (click)="selectDeleteSessions();$event.stopPropagation()" [disable]="completedTests.length == 0 || deletePending" [pending]="deleteSessionsPending">Delete sessions...</button>
+                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.DELETE" class="btn btn-secondary" (click)="selectDeleteSessions();$event.stopPropagation()" [disable]="completedTests.length == 0 || deletePending" [pending]="deleteSessionsPending">Delete sessions...</button>
                     } @else {
-                        <button type="button" class="btn btn-outline-danger" (click)="confirmDeleteSessions();$event.stopPropagation()" [disable]="!testsChecked()" [pending]="deleteSessionsPending">Confirm</button>
-                        <button type="button" class="btn btn-secondary" (click)="cancelDeleteSessions();$event.stopPropagation()" [disabled]="deleteSessionsPending">Cancel</button>
+                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.CONFIRM" class="btn btn-outline-danger" (click)="confirmDeleteSessions();$event.stopPropagation()" [disable]="!testsChecked()" [pending]="deleteSessionsPending">Confirm</button>
+                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.CANCEL" class="btn btn-secondary" (click)="cancelDeleteSessions();$event.stopPropagation()" [disable]="deleteSessionsPending">Cancel</button>
                     }
                 }
                 @if (showDeleteObsoleteControl) {
-                    <button type="button" class="btn btn-secondary" (click)="deleteObsolete();$event.stopPropagation()" [disable]="selectingForDelete || deleteSessionsPending" [pending]="deletePending">Delete obsolete sessions</button>
+                    <button type="button" [labelIcon]="Constants.BUTTON_ICON.DELETE" class="btn btn-secondary" (click)="deleteObsolete();$event.stopPropagation()" [disable]="selectingForDelete || deleteSessionsPending" [pending]="deletePending">Delete obsolete sessions</button>
                 }
-                <button type="button" class="btn btn-secondary" (click)="exportCompletedSessionsToCsv();$event.stopPropagation()" [disable]="completedTests.length == 0 || selectingForDelete || deleteSessionsPending" [pending]="exportCompletedPending">Export CSV</button>
+                <button type="button" [labelIcon]="Constants.BUTTON_ICON.EXPORT" class="btn btn-secondary" (click)="exportCompletedSessionsToCsv();$event.stopPropagation()" [disable]="completedTests.length == 0 || selectingForDelete || deleteSessionsPending" [pending]="exportCompletedPending">Export CSV</button>
                 @if (showCollapseAll()) {
-                    <button type="button" class="btn btn-secondary" (click)="onCollapseAll();$event.stopPropagation()">Collapse all</button>
+                    <button type="button" [labelIcon]="Constants.BUTTON_ICON.COLLAPSE" class="btn btn-secondary" (click)="onCollapseAll();$event.stopPropagation()">Collapse all</button>
                 }
             </div>
         </div>

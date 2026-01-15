@@ -15,6 +15,7 @@
 
 import {Component} from '@angular/core';
 import {BaseSessionDashboardComponent} from '../../sessions/base-session-dashboard.component';
+import {Constants} from '../../../common/constants';
 
 @Component({
     selector: 'app-session-dashboard',

@@ -105,4 +105,6 @@ export class UserManagementComponent implements OnInit, AfterViewInit {
   private updatePagination(page: number, count: number) {
     this.communityTable?.getPagingControls()?.updateStatus(page, count)
   }
+
+  protected readonly Constants = Constants;
 }

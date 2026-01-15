@@ -51,8 +51,8 @@
 					<div class="row form-group">
 						<div class="offset-1 col-10">
 							<div class="btn-toolbar">
-								<button (click)="previewDocumentation()" type="button" class="btn btn-secondary" [disabled]="this.testSuite.documentation == undefined || this.testSuite.documentation.length == 0">Preview documentation</button>
-								<button (click)="copyDocumentation()" type="button" class="btn btn-secondary" [disabled]="this.testSuite.documentation == undefined || this.testSuite.documentation.length == 0">Copy to clipboard</button>
+								<button (click)="previewDocumentation()" [labelIcon]="Constants.BUTTON_ICON.PREVIEW" type="button" class="btn btn-secondary" [disable]="this.testSuite.documentation == undefined || this.testSuite.documentation.length == 0">Preview documentation</button>
+								<button (click)="copyDocumentation()" [labelIcon]="Constants.BUTTON_ICON.COPY" type="button" class="btn btn-secondary" [disable]="this.testSuite.documentation == undefined || this.testSuite.documentation.length == 0">Copy to clipboard</button>
 							</div>
 						</div>
 					</div>
@@ -60,18 +60,18 @@
 			</div>
 			<div class="card-footer button-container">
 				<div class="btn-toolbar">
-					<button type="submit" class="btn btn-secondary" [disable]="!loaded || downloadPending || deletePending || movePending || convertPending || saveDisabled()" [pending]="savePending">Save changes</button>
-					<button (click)="download()" type="button" class="btn btn-secondary" [disable]="!loaded || savePending || deletePending || movePending || convertPending" [pending]="downloadPending">Download</button>
+					<button type="submit" [labelIcon]="Constants.BUTTON_ICON.SAVE" class="btn btn-secondary" [disable]="!loaded || downloadPending || deletePending || movePending || convertPending || saveDisabled()" [pending]="savePending">Save changes</button>
+					<button (click)="download()" [labelIcon]="Constants.BUTTON_ICON.DOWNLOAD" type="button" class="btn btn-secondary" [disable]="!loaded || savePending || deletePending || movePending || convertPending" [pending]="downloadPending">Download</button>
                     @if (testSuite.shared) {
-                        <button (click)="convertToNonShared()" type="button" class="btn btn-secondary" [disable]="!loaded || savePending || downloadPending || deletePending || movePending" [pending]="convertPending">Convert to non-shared</button>
+                        <button (click)="convertToNonShared()" [labelIcon]="Constants.BUTTON_ICON.REPLACE" type="button" class="btn btn-secondary" [disable]="!loaded || savePending || downloadPending || deletePending || movePending" [pending]="convertPending">Convert to non-shared</button>
                     } @else {
                         <app-multi-select-filter [config]="moveSelectionConfig" (apply)="moveSelectionChanged($event)" [pending]="movePending" [disable]="!loaded || savePending || deletePending || downloadPending || convertPending"></app-multi-select-filter>
-                        <button (click)="convertToShared()" type="button" class="btn btn-secondary" [disable]="!loaded || savePending || downloadPending || deletePending || movePending" [pending]="convertPending">Convert to shared</button>
+                        <button (click)="convertToShared()" [labelIcon]="Constants.BUTTON_ICON.REPLACE" type="button" class="btn btn-secondary" [disable]="!loaded || savePending || downloadPending || deletePending || movePending" [pending]="convertPending">Convert to shared</button>
                     }
-					<button (click)="back()" type="button" class="btn btn-secondary">Back</button>
+					<button (click)="back()" [labelIcon]="Constants.BUTTON_ICON.BACK" type="button" class="btn btn-secondary">Back</button>
 				</div>
 				<div class="btn-toolbar btn-toolbar-delete">
-					<button (click)="delete()" type="button" class="btn btn-outline-danger" [disable]="!loaded || savePending || downloadPending || movePending || convertPending" [pending]="deletePending">Delete</button>
+					<button (click)="delete()" type="button" [labelIcon]="Constants.BUTTON_ICON.DELETE" class="btn btn-outline-danger" [disable]="!loaded || savePending || downloadPending || movePending || convertPending" [pending]="deletePending">Delete</button>
 				</div>
 			</div>
 		</form>
@@ -123,12 +123,12 @@
 					<div class="tabPanel">
 						<div class="tabControls">
 							<div class="btn-toolbar">
-								<button type="button" class="btn btn-secondary" (click)="linkSpecifications()" [disable]="unlinkedSpecifications.length == 0 || selectingForUnlink" [pending]="linkPending">Link to specifications</button>
+								<button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="linkSpecifications()" [disable]="unlinkedSpecifications.length == 0 || selectingForUnlink" [pending]="linkPending">Link to specifications</button>
 								@if (!selectingForUnlink) {
-									<button type="button" class="btn btn-secondary" (click)="selectUnlinkSpecifications()" [disable]="linkedSpecifications.length == 0" [pending]="unlinkPending">Unlink from specifications...</button>
+									<button type="button" [labelIcon]="Constants.BUTTON_ICON.REMOVE" class="btn btn-secondary" (click)="selectUnlinkSpecifications()" [disable]="linkedSpecifications.length == 0" [pending]="unlinkPending">Unlink from specifications...</button>
 								} @else {
-									<button type="button" class="btn btn-secondary" (click)="confirmUnlinkSpecifications()" [disable]="!specificationsChecked()" [pending]="unlinkPending">Confirm</button>
-									<button type="button" class="btn btn-secondary" (click)="cancelUnlinkSpecifications()" [disabled]="unlinkPending">Cancel</button>
+									<button type="button" [labelIcon]="Constants.BUTTON_ICON.CONFIRM" class="btn btn-secondary" (click)="confirmUnlinkSpecifications()" [disable]="!specificationsChecked()" [pending]="unlinkPending">Confirm</button>
+									<button type="button" [labelIcon]="Constants.BUTTON_ICON.CANCEL" class="btn btn-secondary" (click)="cancelUnlinkSpecifications()" [disable]="unlinkPending">Cancel</button>
 								}
 							</div>
 						</div>

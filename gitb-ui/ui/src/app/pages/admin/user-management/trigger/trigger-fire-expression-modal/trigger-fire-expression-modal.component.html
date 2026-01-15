@@ -47,7 +47,7 @@
                 <div class="offset-3 col-7">
                     <div class="input-group" [class.has-validation]="testedExpression">
                         <input id="testValue" placeholder="Value to test" name="testValue" [(ngModel)]="testValue" class="form-control" [class.is-invalid]="testedExpression && !testedExpressionMatches" [class.is-valid]="testedExpression && testedExpressionMatches">
-                        <button type="button" class="btn btn-secondary" [disabled]="!textProvided(testValue)" (click)="testSampleValue()">Test</button>
+                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.TEST" class="btn btn-secondary" [disable]="!textProvided(testValue)" (click)="testSampleValue()">Test</button>
                         @if (testedExpression) {
                             <div [class.valid-feedback]="testedExpressionMatches" [class.invalid-feedback]="!testedExpressionMatches">
                                 {{ testedExpressionMatches?'The provided value matches the condition.':'The provided value does not match the condition.' }}
@@ -60,8 +60,8 @@
     </div>
     <div class="modal-footer">
         <div class="btn-toolbar">
-            <button class="btn btn-secondary" type="button" (click)="cancel()">Cancel</button>
-            <button class="btn btn-secondary" type="submit" (click)="save()" [disabled]="saveDisabled()">Save</button>
+            <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.CANCEL" type="button" (click)="cancel()">Cancel</button>
+            <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.SAVE" type="submit" (click)="save()" [disable]="saveDisabled()">Save</button>
         </div>
     </div>
 </form>

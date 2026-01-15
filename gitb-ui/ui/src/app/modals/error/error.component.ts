@@ -64,4 +64,5 @@ export class ErrorComponent implements OnInit {
     this.modalRef.hide()
   }
 
+  protected readonly Constants = Constants;
 }

@@ -9,11 +9,11 @@
 			</div>
 			<div class="card-footer button-container">
 				<div class="btn-toolbar">
-					<button type="submit" class="btn btn-secondary" [disable]="saveDisabled()" [pending]="savePending">Save changes</button>
-					<button (click)="back()" type="button" class="btn btn-secondary">Back</button>
+					<button type="submit" [labelIcon]="Constants.BUTTON_ICON.SAVE" class="btn btn-secondary" [disable]="saveDisabled()" [pending]="savePending">Save changes</button>
+					<button (click)="back()" [labelIcon]="Constants.BUTTON_ICON.BACK" type="button" class="btn btn-secondary">Back</button>
 				</div>
 				<div class="btn-toolbar btn-toolbar-delete">
-					<button (click)="deleteSpecification()" type="button" class="btn btn-outline-danger" [pending]="deletePending" [disable]="!loaded || savePending">Delete</button>
+					<button (click)="deleteSpecification()" [labelIcon]="Constants.BUTTON_ICON.DELETE" type="button" class="btn btn-outline-danger" [pending]="deletePending" [disable]="!loaded || savePending">Delete</button>
 				</div>
 			</div>
 		</form>
@@ -26,7 +26,7 @@
 					<div class="tabControls">
 						<div class="btn-toolbar">
                             <app-text-filter name="testSuiteFilter" [width]="300" [placeholder]="'Search test suites...'" [(ngModel)]="testSuiteFilter" (apply)="applyFilter()"></app-text-filter>
-							<button class="btn btn-secondary" (click)="uploadTestSuite()" [disabled]="linkPending || unlinkPending">Upload test suite</button>
+							<button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.NEW" (click)="uploadTestSuite()" [disable]="linkPending || unlinkPending">Upload test suite</button>
                             <app-multi-select-filter [config]="linkSharedSelectionConfig" (apply)="linkTestSuite($event)" [pending]="linkPending" [disable]="unlinkPending"></app-multi-select-filter>
                             <app-multi-select-filter [config]="unlinkSharedSelectionConfig" (apply)="unlinkTestSuite($event)" [pending]="unlinkPending" [disable]="sharedTestSuites.length == 0 || linkPending"></app-multi-select-filter>
 						</div>
@@ -52,7 +52,7 @@
 				<div class="tabPanel">
 					<div class="tabControls">
                         <div class="btn-toolbar">
-                            <button class="btn btn-secondary" type="button" (click)="createActor()">Create {{dataService.labelActorLower()}}</button>
+                            <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.NEW" type="button" (click)="createActor()">Create {{dataService.labelActorLower()}}</button>
                         </div>
 					</div>
 					<div class="card">

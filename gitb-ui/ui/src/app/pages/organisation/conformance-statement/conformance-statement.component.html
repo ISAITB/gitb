@@ -76,7 +76,7 @@
 			<div class="card-footer button-container">
 				<div class="btn-toolbar">
 					<div class="btn-group export-group" dropdown [isDisabled]="exportPending">
-						<button type="button" [disable]="exportPending" [pending]="exportPending" class="btn btn-secondary" (click)="onExportConformanceStatement('pdf')">Download report</button>
+						<button type="button" [labelIcon]="Constants.BUTTON_ICON.REPORT" [disable]="exportPending" [pending]="exportPending" class="btn btn-secondary" (click)="onExportConformanceStatement('pdf')">Download report</button>
 						<button id="button-export" type="button" [disabled]="exportPending" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
 							<span class="caret"></span>
 							<span class="sr-only visually-hidden">Download report</span>
@@ -96,13 +96,13 @@
                         <app-navigation-controls [config]="navigationConfig"></app-navigation-controls>
                     }
                     @if (snapshotId == undefined) {
-                        <button type="button" class="btn btn-secondary" (click)="refresh()" [pending]="refreshPending">Refresh</button>
+                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.RESET" class="btn btn-secondary" (click)="refresh()" [pending]="refreshPending">Refresh</button>
                     }
-					<button type="button" class="btn btn-secondary" (click)="back()">Back</button>
+					<button type="button" [labelIcon]="Constants.BUTTON_ICON.BACK" class="btn btn-secondary" (click)="back()">Back</button>
 				</div>
 				@if (canDelete()) {
 					<div class="btn-toolbar btn-toolbar-delete">
-						<button type="button" class="btn btn-outline-danger" (click)="deleteConformanceStatement()" [pending]="deletePending">Delete statement</button>
+						<button type="button" [labelIcon]="Constants.BUTTON_ICON.DELETE" class="btn btn-outline-danger" (click)="deleteConformanceStatement()" [pending]="deletePending">Delete statement</button>
 					</div>
 				}
 			</div>
@@ -126,7 +126,12 @@
                         <div class="testSettings">
                             <div class="btn-toolbar align-items-start">
                                 <div class="btn-group" dropdown placement="bottom right">
-                                    <button id="button-executionType" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-executionType"><span class="me-2">{{executionModeButton}}</span></button>
+                                    <button id="button-executionType" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-executionType">
+                                        <span class="mini-tab">
+                                            <i [class]="Constants.BUTTON_ICON.EXECUTION_OPTIONS"></i>
+                                        </span>
+                                        <span class="me-2">{{executionModeButton}}</span>
+                                    </button>
                                     <ul id="dropdown-executionType" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-executionType">
                                         <li role="menuitem"><a class="dropdown-item" href (click)="executionMode = executionModeInteractive; executionModeButton = executionModeLabelInteractive; $event.preventDefault()">{{executionModeLabelInteractive}}</a></li>
                                         <li class="divider dropdown-divider"></li>
@@ -135,7 +140,9 @@
                                     </ul>
                                 </div>
                                 @if (displayedTestSuites.length > 1) {
-                                    <button class="btn btn-primary" (click)="onMultipleTestSelect(); $event.stopPropagation();" [pending]="statementExecutionPending" [icon]="true" containerClass="shortTooltip" container="body" tooltip="Run all" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-play"></i></button>
+                                    <button class="btn btn-primary" (click)="onMultipleTestSelect(); $event.stopPropagation();" [pending]="statementExecutionPending" [icon]="true" containerClass="shortTooltip" container="body" tooltip="Run all" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
+                                        <span><i class="fa-solid fa-play"></i></span>
+                                    </button>
                                 }
                             </div>
                         </div>
@@ -182,7 +189,7 @@
                                 @if (canEditOrganisationConfiguration || canEditSystemConfiguration || canEditStatementConfiguration) {
                                     <div class="tabControls">
                                         <div class="btn-toolbar">
-                                            <button type="submit" class="btn btn-secondary" (click)="updateConfiguration()" [disable]="updateConfigurationPending || updateConfigurationDisabled()" [pending]="updateConfigurationPending">Update configuration</button>
+                                            <button type="submit" [labelIcon]="Constants.BUTTON_ICON.SAVE" class="btn btn-secondary" (click)="updateConfiguration()" [disable]="updateConfigurationPending || updateConfigurationDisabled()" [pending]="updateConfigurationPending">Update configuration</button>
                                         </div>
                                     </div>
                                 }

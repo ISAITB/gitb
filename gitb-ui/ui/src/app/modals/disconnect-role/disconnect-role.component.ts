@@ -41,12 +41,16 @@ export class DisconnectRoleComponent extends BaseComponent {
 
   disconnect() {
     let message: string|undefined
+    let dangerous = false
+    let sameStyles = true
     if (this.choice == Constants.DISCONNECT_ROLE_OPTION.CURRENT_PARTIAL) {
       message = "This action will also end your current session. Are you sure you want to proceed?"
     } else {
+      dangerous = true
+      sameStyles = false
       message = "This action will end your current session and cannot be undone. Are you sure you want to proceed?"
     }
-    this.confirmationDialogService.confirmedDangerous("Confirmation", message, "End session", "Cancel")
+    this.confirmationDialogService.confirmed("Confirmation", message, "End session", "Cancel", Constants.BUTTON_ICON.DISCONNECT, Constants.BUTTON_ICON.CANCEL, sameStyles, dangerous)
     .subscribe(() => {
       this.disconnectPending = true
       this.authService.disconnectFunctionalAccount(this.choice).subscribe(() => {

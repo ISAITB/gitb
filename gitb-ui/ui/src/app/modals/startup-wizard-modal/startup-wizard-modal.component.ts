@@ -20,6 +20,7 @@ import {StartupWizardOptions} from '../../types/startup-wizard-options';
 import {DataService} from '../../services/data.service';
 import {SystemConfigurationService} from '../../services/system-configuration.service';
 import {PopupService} from '../../services/popup.service';
+import {Constants} from '../../common/constants';
 
 @Component({
   selector: 'app-startup-wizard-modal',
@@ -88,4 +89,5 @@ export class StartupWizardModalComponent {
     }
   }
 
+  protected readonly Constants = Constants;
 }

@@ -19,6 +19,7 @@ import { SUTConfiguration } from 'src/app/types/sutconfiguration';
 import { AnyContent } from 'src/app/components/diagram/any-content';
 import { ActorInfo } from '../diagram/actor-info';
 import { BsModalRef } from 'ngx-bootstrap/modal';
+import {Constants} from '../../common/constants';
 
 @Component({
     selector: 'app-simulated-configuration-display-modal',
@@ -86,4 +87,5 @@ export class SimulatedConfigurationDisplayModalComponent implements OnInit {
     this.modalRef.hide()
   }
 
+  protected readonly Constants = Constants;
 }

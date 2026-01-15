@@ -15,16 +15,16 @@
             <div class="card-footer button-container">
                 <div class="btn-toolbar">
                     @if (theme.custom) {
-                        <button class="btn btn-secondary" type="submit" [disable]="saveDisabled()" [pending]="savePending">Save</button>
+                        <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.SAVE" type="submit" [disable]="saveDisabled()" [pending]="savePending">Save</button>
                     } @else if (!theme.active) {
-                        <button class="btn btn-secondary" type="submit" [disable]="saveDisabled()" [pending]="savePending">Activate</button>
+                        <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.ACTIVATE" type="submit" [disable]="saveDisabled()" [pending]="savePending">Activate</button>
                     }
-                    <button class="btn btn-secondary" type="button" (click)="copy()" [disable]="copyPending || deletePending || savePending" [pending]="copyPending">Copy</button>
-                    <button class="btn btn-secondary" type="button" (click)="back()">Back</button>
+                    <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.COPY" type="button" (click)="copy()" [disable]="copyPending || deletePending || savePending" [pending]="copyPending">Copy</button>
+                    <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.BACK" type="button" (click)="back()">Back</button>
                 </div>
                 @if (theme.custom) {
                     <div class="btn-toolbar btn-toolbar-delete">
-                        <button class="btn btn-outline-danger" type="button" (click)="delete()" [disable]="copyPending || deletePending || savePending" [pending]="deletePending">Delete</button>
+                        <button class="btn btn-outline-danger" [labelIcon]="Constants.BUTTON_ICON.DELETE" type="button" (click)="delete()" [disable]="copyPending || deletePending || savePending" [pending]="deletePending">Delete</button>
                     </div>
                 }
             </div>

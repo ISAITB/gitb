@@ -169,7 +169,7 @@ export class UserDetailsComponent extends BaseComponent implements OnInit {
   deleteUser() {
     this.clearAlerts()
     this.validation.clearErrors()
-    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this user?", "Delete", "Cancel")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this user?", "Delete", "Cancel", Constants.BUTTON_ICON.DELETE)
     .subscribe(() => {
       this.deletePending = true
       this.userService.deleteVendorUser(this.userId)

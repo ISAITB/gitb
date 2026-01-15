@@ -119,6 +119,7 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
       textField: "sname",
       singleSelection: true,
       filterLabel: 'Move to ' + this.dataService.labelSpecificationLower(),
+      filterLabelIcon: Constants.BUTTON_ICON.MOVE,
       noItemsMessage: 'No target ' + this.dataService.labelSpecificationsLower() + ' available.',
       searchPlaceholder: 'Search ' + this.dataService.labelSpecificationsLower() + '...',
       loader: () => this.loadAvailableSpecificationsForMove()
@@ -240,7 +241,7 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
     } else {
       message = "Are you sure you want to delete this test suite?"
     }
-		this.confirmationDialogService.confirmedDangerous("Confirm delete", message, "Delete", "Cancel")
+		this.confirmationDialogService.confirmedDangerous("Confirm delete", message, "Delete", "Cancel", Constants.BUTTON_ICON.DELETE)
 		.subscribe(() => {
       this.deletePending = true
       this.testSuiteService.undeployTestSuite(this.testSuite.id!)

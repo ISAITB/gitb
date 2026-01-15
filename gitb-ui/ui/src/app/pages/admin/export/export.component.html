@@ -87,8 +87,8 @@
                                             <th>Specific</th>
                                             <th class="last-column">
                                                 <div class="btn-toolbar d-flex justify-content-end">
-                                                    <button class="btn btn-secondary btn-sm" type="button" (click)="allIncludes()" [disabled]="disableAllIncludes()">All</button>
-                                                    <button class="btn btn-secondary btn-sm" type="button" (click)="clearIncludes()" [disabled]="disableClearIncludes()">None</button>
+                                                    <button class="btn btn-secondary btn-sm" [labelIcon]="Constants.BUTTON_ICON.ALL" type="button" (click)="allIncludes()" [disable]="disableAllIncludes()">All</button>
+                                                    <button class="btn btn-secondary btn-sm" [labelIcon]="Constants.BUTTON_ICON.NONE" type="button" (click)="clearIncludes()" [disable]="disableClearIncludes()">None</button>
                                                 </div>
                                             </th>
                                         </tr>
@@ -379,7 +379,7 @@
             </div>
         </div>
         <div class="card-footer">
-            <button class="btn btn-secondary" type="submit" (click)="export()" [disable]="exportDisabled()" [pending]="pending">Proceed</button>
+            <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.NEXT" type="submit" (click)="export()" [disable]="exportDisabled()" [pending]="pending">Proceed</button>
         </div>
     </form>
 </div>

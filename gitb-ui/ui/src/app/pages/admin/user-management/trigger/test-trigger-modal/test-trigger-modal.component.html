@@ -30,15 +30,18 @@
     </div>
     <div class="modal-footer">
         <div class="btn-toolbar">
-            <button type="button" class="btn btn-secondary" (click)="close()">{{actionPending?'Cancel':'Close'}}</button>
-            <button type="button" class="btn btn-secondary" (click)="copyToClipboard()" [disabled]="actionPending">Copy to clipboard</button>
+            <button type="button" class="btn btn-secondary" (click)="close()">
+                <span class="mini-tab"><i [class]="Constants.BUTTON_ICON.CANCEL"></i></span>
+                {{actionPending?'Cancel':'Close'}}
+            </button>
+            <button type="button" [labelIcon]="Constants.BUTTON_ICON.CLIPBOARD" class="btn btn-secondary" (click)="copyToClipboard()" [disable]="actionPending">Copy to clipboard</button>
             @if (editStep) {
-                <button type="submit" class="btn btn-secondary" [disable]="!textProvided(url)" [pending]="actionPending">Call service</button>
+                <button type="submit" [labelIcon]="Constants.BUTTON_ICON.TEST_SERVICE" class="btn btn-secondary" [disable]="!textProvided(url)" [pending]="actionPending">Call service</button>
                 @if (request != initialRequest) {
-                    <button type="button" class="btn btn-secondary" (click)="reset()" [disabled]="actionPending">Reset sample payload</button>
+                    <button type="button" [labelIcon]="Constants.BUTTON_ICON.RESET" class="btn btn-secondary" (click)="reset()" [disable]="actionPending">Reset sample payload</button>
                 }
             } @else {
-                <button type="button" class="btn btn-secondary" (click)="back()">Back</button>
+                <button type="button" [labelIcon]="Constants.BUTTON_ICON.BACK" class="btn btn-secondary" (click)="back()">Back</button>
             }
         </div>
     </div>

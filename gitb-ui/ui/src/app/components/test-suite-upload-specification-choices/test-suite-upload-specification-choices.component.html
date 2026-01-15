@@ -8,13 +8,12 @@
                         <div class="ts-upload-result-spec-controls">
                             <div class="btn-toolbar">
                                 @if (!choice.skipUpdate) {
-                                    <button class="btn btn-secondary btn-sm" type="button" (click)="applyChoiceToAll(choice)">Apply to all</button>
-                                }
-                                @if (!choice.skipUpdate && !sharedTestSuite) {
-                                    <button class="btn btn-secondary btn-sm" type="button" (click)="skipUpdate(choice)">Skip</button>
-                                }
-                                @if (choice.skipUpdate && !sharedTestSuite) {
-                                    <button class="btn btn-secondary btn-sm" type="button" (click)="processUpdate(choice)">Process</button>
+                                    <button [labelIcon]="Constants.BUTTON_ICON.COPY" class="btn btn-secondary btn-sm" type="button" (click)="applyChoiceToAll(choice)">Apply to all</button>
+                                    @if (!sharedTestSuite) {
+                                        <button [labelIcon]="Constants.BUTTON_ICON.SKIP" class="btn btn-secondary btn-sm" type="button" (click)="skipUpdate(choice)">Skip</button>
+                                    }
+                                } @else if (!sharedTestSuite) {
+                                    <button [labelIcon]="Constants.BUTTON_ICON.CONFIRM" class="btn btn-secondary btn-sm" type="button" (click)="processUpdate(choice)">Process</button>
                                 }
                             </div>
                         </div>
@@ -28,7 +27,9 @@
                             <div class="alert alert-info rounded internal-warning">The {{dataService.labelSpecificationLower()}} contains a different test suite with the same identifier. Linking will be skipped.</div>
                         }
                     } @else {
-                        <div class="row py-3">
+                        <div class="row"
+                             [class.pt-3]="(!sharedTestSuite && (choice.testCasesInArchiveAndDB.length > 0 || choice.testCasesInArchive.length > 0 || choice.testCasesInDB.length > 0))"
+                             [class.py-3]="!(!sharedTestSuite && (choice.testCasesInArchiveAndDB.length > 0 || choice.testCasesInArchive.length > 0 || choice.testCasesInDB.length > 0))">
                             <legend class="col-3 col-form-label text-end py-0">* {{dataService.labelSpecification()}} data:</legend>
                             <div class="col-9">
                                 @if (sharedTestSuite) {
@@ -73,7 +74,7 @@
                                     [testCases]="choice.testCasesInArchiveAndDB"
                                     [showUpdateDefinition]="!sharedTestSuite"
                                     [showResetTestHistory]="true"
-                                ></app-test-case-update-list>						
+                                ></app-test-case-update-list>
                             }
                             @if (choice.testCasesInArchive.length > 0) {
                                 <!-- Test cases to add -->

@@ -32,8 +32,8 @@
                                     <app-editor id="welcomePageMessage" name="welcomePageMessage" [(ngModel)]="welcomePageMessage" type="normal" [height]="200"></app-editor>
                                 </div>
                                 <div class="btn-toolbar mt-3">
-                                    <button type="submit" class="btn btn-secondary" [disable]="welcomePageResetPending || !textProvided(welcomePageMessage) || !textProvided(welcomePageTitle)" [pending]="welcomePageStatus.pending" (click)="saveWelcomePage()">Save</button>
-                                    <button type="button" class="btn btn-secondary" [disable]="welcomePageStatus.fromDefault || welcomePageStatus.fromEnv || welcomePageStatus.pending" [pending]="welcomePageResetPending" (click)="resetWelcomePage()">Reset to default</button>
+                                    <button type="submit" [labelIcon]="Constants.BUTTON_ICON.SAVE" class="btn btn-secondary" [disable]="welcomePageResetPending || !textProvided(welcomePageMessage) || !textProvided(welcomePageTitle)" [pending]="welcomePageStatus.pending" (click)="saveWelcomePage()">Save</button>
+                                    <button type="button" [labelIcon]="Constants.BUTTON_ICON.RESET" class="btn btn-secondary" [disable]="welcomePageStatus.fromDefault || welcomePageStatus.fromEnv || welcomePageStatus.pending" [pending]="welcomePageResetPending" (click)="resetWelcomePage()">Reset to default</button>
                                 </div>
                             </form>
                         </app-configuration-entry>
@@ -91,7 +91,7 @@
                                         </div>
                                     }
                                     <div class="col-auto">
-                                        <button type="submit" class="btn btn-secondary" [disable]="demoAccountEnabled && demoAccount == undefined" [pending]="demoAccountStatus.pending" (click)="saveDemoAccount()">Save</button>
+                                        <button type="submit" [labelIcon]="Constants.BUTTON_ICON.SAVE" class="btn btn-secondary" [disable]="demoAccountEnabled && demoAccount == undefined" [pending]="demoAccountStatus.pending" (click)="saveDemoAccount()">Save</button>
                                     </div>
                                 </div>
                             </form>
@@ -211,7 +211,7 @@
                                                 <div class="offset-3 col-8 col-md-5 minimum-width-text">
                                                     <div class="input-group">
                                                         <input id="emailTestToAddress" placeholder="Recipient address" name="emailTestToAddress" [(ngModel)]="emailTestToAddress" class="form-control">
-                                                        <button type="button" class="btn btn-secondary" [disable]="!textProvided(emailTestToAddress) || emailTestPending" [pending]="emailTestPending" (click)="testEmailSettings()">Send</button>
+                                                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.SEND" class="btn btn-secondary" [disable]="!textProvided(emailTestToAddress) || emailTestPending" [pending]="emailTestPending" (click)="testEmailSettings()">Send</button>
                                                     </div>
                                                 </div>
                                             </div>
@@ -284,8 +284,8 @@
                             <div class="row mt-3">
                                 <div class="col-auto">
                                     <div class="btn-toolbar">
-                                        <button type="submit" class="btn btn-secondary" [disable]="emailSettingsStatus.pending || !emailSettingsOk()" [pending]="emailSettingsStatus.pending" (click)="saveEmailSettings()">Save</button>
-                                        <button type="button" class="btn btn-secondary" [disable]="emailSettingsStatus.fromDefault || emailSettingsStatus.fromEnv || emailSettingsStatus.pending" [pending]="emailResetPending" (click)="resetEmailSettings()">Reset to default</button>
+                                        <button type="submit" [labelIcon]="Constants.BUTTON_ICON.SAVE" class="btn btn-secondary" [disable]="emailSettingsStatus.pending || !emailSettingsOk()" [pending]="emailSettingsStatus.pending" (click)="saveEmailSettings()">Save</button>
+                                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.RESET" class="btn btn-secondary" [disable]="emailSettingsStatus.fromDefault || emailSettingsStatus.fromEnv || emailSettingsStatus.pending" [pending]="emailResetPending" (click)="resetEmailSettings()">Reset to default</button>
                                     </div>
                                 </div>
                             </div>
@@ -315,7 +315,7 @@
                                         </div>
                                     </div>
                                     <div class="col-auto">
-                                        <button type="submit" class="btn btn-secondary" [disable]="accountRetentionPeriodEnabled && accountRetentionPeriodValue == undefined" [pending]="accountRetentionPeriodStatus.pending" (click)="saveAccountRetentionPeriod()">Save</button>
+                                        <button type="submit" [labelIcon]="Constants.BUTTON_ICON.SAVE" class="btn btn-secondary" [disable]="accountRetentionPeriodEnabled && accountRetentionPeriodValue == undefined" [pending]="accountRetentionPeriodStatus.pending" (click)="saveAccountRetentionPeriod()">Save</button>
                                     </div>
                                 </div>
                             </form>
@@ -346,7 +346,7 @@
                                             (update)="updateRestApiAdminKey()"></app-api-key-text>
                                     </div>
                                     <div class="col-auto">
-                                        <button type="submit" class="btn btn-secondary" [pending]="restApiStatus.pending" (click)="saveRestApi()">Save</button>
+                                        <button type="submit" [labelIcon]="Constants.BUTTON_ICON.SAVE" class="btn btn-secondary" [pending]="restApiStatus.pending" (click)="saveRestApi()">Save</button>
                                     </div>
                                 </div>
                             </form>
@@ -368,7 +368,7 @@
                                         </div>
                                     </div>
                                     <div class="col-auto">
-                                        <button type="submit" class="btn btn-secondary" [pending]="selfRegistrationStatus.pending" (click)="saveSelfRegistration()">Save</button>
+                                        <button type="submit" [labelIcon]="Constants.BUTTON_ICON.SAVE" class="btn btn-secondary" [pending]="selfRegistrationStatus.pending" (click)="saveSelfRegistration()">Save</button>
                                     </div>
                                 </div>
                             </form>
@@ -390,7 +390,7 @@
                                         </div>
                                     </div>
                                     <div class="col-auto">
-                                        <button type="submit" class="btn btn-secondary" [pending]="startupWizardStatus.pending" (click)="saveStartupWizardConfig()">Save</button>
+                                        <button type="submit" [labelIcon]="Constants.BUTTON_ICON.SAVE" class="btn btn-secondary" [pending]="startupWizardStatus.pending" (click)="saveStartupWizardConfig()">Save</button>
                                     </div>
                                 </div>
                             </form>
@@ -429,8 +429,8 @@
                                 <div class="row mt-3">
                                     <div class="col-auto">
                                         <div class="btn-toolbar">
-                                            <button type="submit" class="btn btn-secondary" [disable]="softwareVersionCheckStatus.pending || !softwareVersionCheckSettingsOk()" [pending]="softwareVersionCheckStatus.pending" (click)="saveSoftwareVersionCheckSettings()">Save</button>
-                                            <button type="button" class="btn btn-secondary" [disable]="softwareVersionCheckStatus.fromDefault || softwareVersionCheckStatus.fromEnv || softwareVersionCheckStatus.pending" [pending]="softwareVersionCheckResetPending" (click)="resetSoftwareVersionCheckSettings()">Reset to default</button>
+                                            <button type="submit" [labelIcon]="Constants.BUTTON_ICON.SAVE" class="btn btn-secondary" [disable]="softwareVersionCheckStatus.pending || !softwareVersionCheckSettingsOk()" [pending]="softwareVersionCheckStatus.pending" (click)="saveSoftwareVersionCheckSettings()">Save</button>
+                                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.RESET" class="btn btn-secondary" [disable]="softwareVersionCheckStatus.fromDefault || softwareVersionCheckStatus.fromEnv || softwareVersionCheckStatus.pending" [pending]="softwareVersionCheckResetPending" (click)="resetSoftwareVersionCheckSettings()">Reset to default</button>
                                         </div>
                                     </div>
                                 </div>
@@ -460,7 +460,7 @@
                                         </div>
                                     </div>
                                     <div class="col-auto">
-                                        <button type="submit" class="btn btn-secondary" [disable]="ttlEnabled && ttlValue == undefined" [pending]="ttlStatus.pending" (click)="saveTTL()">Save</button>
+                                        <button type="submit" [labelIcon]="Constants.BUTTON_ICON.SAVE" class="btn btn-secondary" [disable]="ttlEnabled && ttlValue == undefined" [pending]="ttlStatus.pending" (click)="saveTTL()">Save</button>
                                     </div>
                                 </div>
                             </form>
@@ -482,7 +482,7 @@
                                         </div>
                                     </div>
                                     <div class="col-auto">
-                                        <button type="submit" class="btn btn-secondary" [pending]="usageTipsStatus.pending" (click)="saveUsageTipsConfig()">Save</button>
+                                        <button type="submit" [labelIcon]="Constants.BUTTON_ICON.SAVE" class="btn btn-secondary" [pending]="usageTipsStatus.pending" (click)="saveUsageTipsConfig()">Save</button>
                                     </div>
                                 </div>
                             </form>
@@ -500,7 +500,7 @@
                 <div class="tabPanel">
                     <div class="tabControls">
                         <div class="btn-toolbar">
-                            <button type="button" class="btn btn-secondary" (click)="createAdmin()">Create system administrator</button>
+                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createAdmin()">Create system administrator</button>
                         </div>
                     </div>
                     <div class="card">
@@ -521,7 +521,7 @@
                 <div class="tabPanel">
                     <div class="tabControls">
                         <div class="btn-toolbar">
-                            <button type="button" class="btn btn-secondary" (click)="createLandingPage()">Create landing page</button>
+                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createLandingPage()">Create landing page</button>
                         </div>
                     </div>
                     <div class="card">
@@ -542,7 +542,7 @@
                 <div class="tabPanel">
                     <div class="tabControls">
                         <div class="btn-toolbar">
-                            <button type="button" class="btn btn-secondary" (click)="createLegalNotice()">Create legal notice</button>
+                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createLegalNotice()">Create legal notice</button>
                         </div>
                     </div>
                     <div class="card">
@@ -563,7 +563,7 @@
                 <div class="tabPanel">
                     <div class="tabControls">
                         <div class="btn-toolbar">
-                            <button type="button" class="btn btn-secondary" (click)="createErrorTemplate()">Create error template</button>
+                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createErrorTemplate()">Create error template</button>
                         </div>
                     </div>
                     <div class="card">
@@ -584,7 +584,7 @@
                 <div class="tabPanel">
                     <div class="tabControls">
                         <div class="btn-toolbar">
-                            <button type="button" class="btn btn-secondary" (click)="createTheme()">Create theme</button>
+                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createTheme()">Create theme</button>
                         </div>
                     </div>
                     <div class="card">

@@ -23,6 +23,7 @@ import {UserInteraction} from 'src/app/types/user-interaction';
 import {UserInteractionInput} from 'src/app/types/user-interaction-input';
 import {ValidationState} from '../../types/validation-state';
 import {ValueLabel} from '../../types/value-label';
+import {Constants} from '../../common/constants';
 
 @Component({
     selector: 'app-provide-input-modal',
@@ -308,4 +309,5 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
     }
   }
 
+  protected readonly Constants = Constants;
 }

@@ -15,6 +15,7 @@
 
 import {Component, Input} from '@angular/core';
 import {TestSuiteUploadTestCaseChoice} from 'src/app/modals/test-suite-upload-modal/test-suite-upload-test-case-choice';
+import {Constants} from '../../common/constants';
 
 @Component({
     selector: 'app-test-case-update-list',
@@ -70,4 +71,5 @@ export class TestCaseUpdateListComponent {
     return true
   }
 
+  protected readonly Constants = Constants;
 }

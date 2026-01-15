@@ -116,7 +116,7 @@ export class SystemDetailsComponent extends BaseComponent implements OnInit {
   }
 
   delete() {
-    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this "+ this.dataService.labelSystemLower() + "?", "Delete", "Cancel")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this "+ this.dataService.labelSystemLower() + "?", "Delete", "Cancel", Constants.BUTTON_ICON.DELETE)
     .subscribe(() => {
       this.deletePending = true
       this.systemService.deleteSystem(this.system.id!, this.organisationId)

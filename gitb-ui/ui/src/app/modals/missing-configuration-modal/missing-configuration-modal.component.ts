@@ -21,6 +21,7 @@ import { SystemParameter } from 'src/app/types/system-parameter';
 import { MissingConfigurationAction } from './missing-configuration-action';
 import { DataService } from 'src/app/services/data.service';
 import { EndpointParameter } from 'src/app/types/endpoint-parameter';
+import {Constants} from '../../common/constants';
 
 @Component({
     selector: 'app-missing-configuration-modal',
@@ -82,4 +83,5 @@ export class MissingConfigurationModalComponent implements OnInit {
     this.modalRef.hide()
   }
 
+  protected readonly Constants = Constants;
 }

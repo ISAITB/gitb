@@ -24,7 +24,8 @@ $(document).ready(function() {
         event.preventDefault()
         if (!$("#buttonImport").prop("disabled")) {
             $("#initFormAlerts").html("")
-            $("#initDataSpinner").show()
+            $("#initDataIcon").addClass("hidden")
+            $("#initDataSpinner").removeClass("hidden")
             const dataToSend = new FormData()
             dataToSend.append("file", $("#fileInputControl")[0].files[0])
             dataToSend.append("password", getPasswordField().val())
@@ -41,7 +42,8 @@ $(document).ready(function() {
                 success: function (e) {
                     importFinished = true
                     $("#initFormAlerts").html("<div class='alert alert-success fade show alert-dismissible' role='alert'><span>Archive successfully imported. Close this dialog to proceed.</span><button type='button' class='btn-close' data-bs-dismiss='alert' aria-label='Close'></button></div>")
-                    $("#initDataSpinner").hide()
+                    $("#initDataIcon").removeClass("hidden")
+                    $("#initDataSpinner").addClass("hidden")
                     $("#buttonNoImport").prop("disabled", false)
                 },
                 error: function (e) {
@@ -50,7 +52,8 @@ $(document).ready(function() {
                         message = e.responseJSON.error_description
                     }
                     $("#initFormAlerts").html("<div class='alert alert-danger fade show alert-dismissible' role='alert'><span>"+message+"</span><button type='button' class='btn-close' data-bs-dismiss='alert' aria-label='Close'></button></div>")
-                    $("#initDataSpinner").hide()
+                    $("#initDataIcon").removeClass("hidden")
+                    $("#initDataSpinner").addClass("hidden")
                     $("#buttonImport").prop("disabled", false)
                     $("#buttonNoImport").prop("disabled", false)
                 }
@@ -115,7 +118,8 @@ $(document).ready(function() {
     document.getElementById('sandboxModal').addEventListener('show.bs.modal', event => {
         importFinished = false
         $("[data-toggle='tooltip']").tooltip()
-        $("#initDataSpinner").hide()
+        $("#initDataIcon").removeClass("hidden")
+        $("#initDataSpinner").addClass("hidden")
         $("#encryptionPasswordVisible").hide()
         $("#fileInputControl").val("")
         $("#fileInputText").val("")

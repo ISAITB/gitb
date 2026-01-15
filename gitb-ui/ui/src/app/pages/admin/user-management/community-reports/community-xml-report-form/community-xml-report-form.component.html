@@ -68,10 +68,10 @@
             </div>
         </div>
         <div class="btn-toolbar mt-3">
-            <button class="btn btn-secondary" type="submit" (click)="update()" [disable]="previewPending || !updateEnabled()" [pending]="updatePending">Update</button>
+            <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.SAVE" type="submit" (click)="update()" [disable]="previewPending || !updateEnabled()" [pending]="updatePending">Update</button>
             @if (config.previewOptions.length > 0) {
                 <div class="btn-group" dropdown [isDisabled]="updatePending || !updateEnabled()">
-                    <button id="button-preview" dropdownToggle type="button" [disable]="updatePending || !updateEnabled()" [pending]="previewPending" aria-controls="dropdown-preview" class="btn btn-secondary dropdown-toggle"><span class="me-2">Generate preview</span></button>
+                    <button id="button-preview" [labelIcon]="Constants.BUTTON_ICON.PREVIEW" dropdownToggle type="button" [disable]="updatePending || !updateEnabled()" [pending]="previewPending" aria-controls="dropdown-preview" class="btn btn-secondary dropdown-toggle"><span class="me-2">Generate preview</span></button>
                     <ul id="dropdown-preview" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-preview">
                         @for (optionGroup of config.previewOptions; track $index) {
                             @for (option of optionGroup; track $index) {
@@ -84,7 +84,7 @@
                     </ul>
                 </div>
             }
-            <button class="btn btn-secondary" (click)="manageKeystore()" [pending]="manageKeystorePending">Manage signature settings</button>
+            <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.SIGNATURE" (click)="manageKeystore()" [pending]="manageKeystorePending">Manage signature settings</button>
         </div>
     </form>
 }

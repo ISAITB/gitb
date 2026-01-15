@@ -30,8 +30,12 @@
           </div>
         }
         <div class="property-controls">
-          <button class="btn btn-secondary" (click)="apply()" containerClass="shortTooltip" tooltip="Apply" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" container="body"><i class="fa-solid fa-check"></i></button>
-          <button class="btn btn-secondary" (click)="cancel()" containerClass="shortTooltip" tooltip="Cancel" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" container="body"><i class="fa-solid fa-times"></i></button>
+          <button class="btn btn-secondary" (click)="apply()" containerClass="shortTooltip" tooltip="Apply" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" container="body">
+              <span><i class="fa-solid fa-check"></i></span>
+          </button>
+          <button class="btn btn-secondary" (click)="cancel()" containerClass="shortTooltip" tooltip="Cancel" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" container="body">
+              <span><i class="fa-solid fa-times"></i></span>
+          </button>
         </div>
       </div>
     }

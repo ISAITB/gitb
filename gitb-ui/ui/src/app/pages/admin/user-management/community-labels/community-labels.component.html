@@ -52,8 +52,8 @@
             </div>
             <div class="card-footer">
                 <div class="btn-toolbar">
-                    <button class="btn btn-secondary" type="submit" (click)="save()" [disable]="!loaded || saveDisabled()" [pending]="busy">Save</button>
-                    <button class="btn btn-secondary" type="button" (click)="cancel()">Back</button>
+                    <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.SAVE" type="submit" (click)="save()" [disable]="!loaded || saveDisabled()" [pending]="busy">Save</button>
+                    <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.BACK" type="button" (click)="cancel()">Back</button>
                 </div>
             </div>
         </form>

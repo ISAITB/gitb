@@ -18,6 +18,7 @@ import {BsModalRef} from 'ngx-bootstrap/modal';
 import {PopupService} from 'src/app/services/popup.service';
 import {FileData} from 'src/app/types/file-data.type';
 import {ResourceActions} from '../../components/resource-management-tab/resource-actions';
+import {Constants} from '../../common/constants';
 
 @Component({
     selector: 'app-community-resource-bulk-upload-modal',
@@ -74,4 +75,5 @@ export class CommunityResourceBulkUploadModalComponent implements OnInit {
     this.modalInstance.hide()
   }
 
+  protected readonly Constants = Constants;
 }

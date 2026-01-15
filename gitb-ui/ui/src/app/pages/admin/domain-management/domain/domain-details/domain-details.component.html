@@ -11,14 +11,14 @@
             </div>
             <div class="card-footer button-container">
                 <div class="btn-toolbar">
-                    <button type="submit" class="btn btn-secondary" [disable]="!loaded || deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
+                    <button type="submit" [labelIcon]="Constants.BUTTON_ICON.SAVE"  class="btn btn-secondary" [disable]="!loaded || deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
                     @if (dataService.isSystemAdmin || (dataService.isCommunityAdmin && !dataService.community!.domainId)) {
-                        <button type="button" (click)="back()" class="btn btn-secondary">Back</button>
+                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.BACK" (click)="back()" class="btn btn-secondary">Back</button>
                     }
                 </div>
                 @if (dataService.isSystemAdmin) {
                     <div class="btn-toolbar btn-toolbar-delete">
-                        <button type="button" (click)="deleteDomain()" class="btn btn-outline-danger" [disable]="!loaded || savePending" [pending]="deletePending">Delete</button>
+                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.DELETE"  (click)="deleteDomain()" class="btn btn-outline-danger" [disable]="!loaded || savePending" [pending]="deletePending">Delete</button>
                     </div>
                 }
             </div>
@@ -34,10 +34,10 @@
                             @if (!managingSpecificationOrder) {
                                 <app-text-filter name="specificationFilter" [width]="300" [placeholder]="'Search '+dataService.labelSpecificationsLower()+'...'" [(ngModel)]="specificationFilter" (apply)="applySpecificationFilter()"></app-text-filter>
                                 @if (specifications.length > 0) {
-                                    <button type="button" class="btn btn-secondary" (click)="uploadTestSuite()">Upload test suite</button>
+                                    <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="uploadTestSuite()">Upload test suite</button>
                                 }
                                 <div class="btn-group" dropdown>
-                                    <button type="button" class="btn btn-secondary" (click)="createSpecification()">Create {{dataService.labelSpecificationLower()}}</button>
+                                    <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createSpecification()">Create {{dataService.labelSpecificationLower()}}</button>
                                     <button id="button-create-spec" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
                                         <span class="caret"></span>
                                         <span class="sr-only visually-hidden">Create {{dataService.labelSpecificationLower()}}</span>
@@ -49,7 +49,7 @@
                             }
                             @if (specificationGroups.length > 0 && managingSpecificationOrder) {
                                 <div class="btn-group" dropdown>
-                                    <button id="button-option-visibility" (click)="$event.stopPropagation()" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-option-visibility"><span class="me-2">View {{dataService.labelSpecificationInGroupsLower()}}</span></button>
+                                    <button id="button-option-visibility" [labelIcon]="Constants.BUTTON_ICON.FILTER" (click)="$event.stopPropagation()" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-option-visibility"><span class="me-2">View {{dataService.labelSpecificationInGroupsLower()}}</span></button>
                                     <ul id="dropdown-option-visibility" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-option-visibility">
                                         <li role="menuitem"><a class="dropdown-item" href (click)="toggleSpecificationGroupCollapse(false);$event.preventDefault();">Show {{dataService.labelSpecificationInGroupsLower()}}</a></li>
                                         <li role="menuitem"><a class="dropdown-item" href (click)="toggleSpecificationGroupCollapse(true);$event.preventDefault();">Hide {{dataService.labelSpecificationInGroupsLower()}}</a></li>
@@ -59,9 +59,9 @@
                             @if (hasMultipleSpecifications) {
                                 <div class="btn-group" dropdown>
                                     @if (managingSpecificationOrder) {
-                                        <button [pending]="saveOrderPending" type="button" class="btn btn-secondary" (click)="saveOrdering()">Save {{dataService.labelSpecificationLower()}} order</button>
+                                        <button [pending]="saveOrderPending" [labelIcon]="Constants.BUTTON_ICON.SAVE" type="button" class="btn btn-secondary" (click)="saveOrdering()">Save {{dataService.labelSpecificationLower()}} order</button>
                                     } @else {
-                                        <button type="button" class="btn btn-secondary" (click)="manageOrdering()">Manage {{dataService.labelSpecificationLower()}} order</button>
+                                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.SORT" class="btn btn-secondary" (click)="manageOrdering()">Manage {{dataService.labelSpecificationLower()}} order</button>
                                     }
                                     <button id="button-order" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
                                         <span class="caret"></span>
@@ -72,7 +72,7 @@
                                     </ul>
                                 </div>
                                 @if (managingSpecificationOrder) {
-                                    <button type="button" class="btn btn-secondary" (click)="cancelManageOrdering()">Cancel</button>
+                                    <button type="button" [labelIcon]="Constants.BUTTON_ICON.CANCEL" class="btn btn-secondary" (click)="cancelManageOrdering()">Cancel</button>
                                 }
                             }
                         </div>
@@ -121,7 +121,7 @@
                     <div class="tabControls">
                         <div class="btn-toolbar">
                             <app-text-filter name="sharedTestSuiteFilter" [width]="300" [placeholder]="'Search test suites...'" [(ngModel)]="sharedTestSuiteFilter" (apply)="applySharedTestSuiteFilter()"></app-text-filter>
-                            <button type="button" class="btn btn-secondary" (click)="uploadSharedTestSuite()">Upload shared test suite</button>
+                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="uploadSharedTestSuite()">Upload shared test suite</button>
                         </div>
                     </div>
                     <div class="card">
@@ -145,7 +145,7 @@
                 <div class="tabPanel">
                     <div class="tabControls">
                         <div class="btn-toolbar">
-                            <button type="button" class="btn btn-secondary" (click)="createDomainParameter()">Create parameter</button>
+                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createDomainParameter()">Create parameter</button>
                         </div>
                     </div>
                     <div class="card table-container rounded">
@@ -206,7 +206,7 @@
                 <div class="tabPanel">
                     <div class="tabControls">
                         <div class="btn-toolbar">
-                            <button type="button" class="btn btn-secondary" (click)="createTestService()">Register service</button>
+                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createTestService()">Register service</button>
                             <app-multi-select-filter [config]="convertParameterSelectionConfig" (apply)="convertParameterToTestService($event)" [pending]="convertPending"></app-multi-select-filter>
                         </div>
                     </div>

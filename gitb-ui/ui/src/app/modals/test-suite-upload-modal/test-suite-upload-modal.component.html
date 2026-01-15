@@ -39,12 +39,12 @@
 						<div class="alert alert-info rounded mb-0">
 							@if (hasValidationErrors || hasValidationWarnings) {
 								@if (hasValidationErrors) {
-									<span>The provided test suite completed validation with errors.</span>		
+									<span>The provided test suite completed validation with errors.</span>
 								} @else {
-									<span>The provided test suite completed validation with warnings.</span> 
+									<span>The provided test suite completed validation with warnings.</span>
 								}
 							} @else {
-								<span>The provided test suite was successfully validated.</span>		
+								<span>The provided test suite was successfully validated.</span>
 							}
 						</div>
 					</div>
@@ -108,7 +108,7 @@
 										[testCases]="testCasesInArchiveAndDB"
 										[showUpdateDefinition]="true"
 										[showResetTestHistory]="true"
-									></app-test-case-update-list>						
+									></app-test-case-update-list>
 								}
 								@if (testCasesInArchive.length > 0) {
 									<!-- Test cases to add -->
@@ -162,9 +162,9 @@
 </div>
 <div class="modal-footer">
 	<div class="btn-toolbar">
-		<button type="button" class="btn btn-secondary" (click)="close()" [disabled]="actionPending">{{step == 'results'?'Close':'Cancel'}}</button>
+		<button type="button" [labelIcon]="Constants.BUTTON_ICON.CANCEL" class="btn btn-secondary" (click)="close()" [disable]="actionPending">{{step == 'results'?'Close':'Cancel'}}</button>
 		@if (proceedVisible()) {
-			<button type="button" class="btn btn-secondary" (click)="proceed()" [disable]="proceedDisabled()" [pending]="actionProceedPending">Proceed</button>
+			<button type="button" [labelIcon]="Constants.BUTTON_ICON.NEXT" class="btn btn-secondary" (click)="proceed()" [disable]="proceedDisabled()" [pending]="actionProceedPending">Proceed</button>
 		}
 	</div>
 </div>

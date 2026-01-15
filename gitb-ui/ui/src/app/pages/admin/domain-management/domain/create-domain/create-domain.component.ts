@@ -20,6 +20,7 @@ import {DataService} from 'src/app/services/data.service';
 import {PopupService} from 'src/app/services/popup.service';
 import {RoutingService} from 'src/app/services/routing.service';
 import {Domain} from 'src/app/types/domain';
+import {Constants} from '../../../../../common/constants';
 
 @Component({
     selector: 'app-create-domain',
@@ -64,4 +65,5 @@ export class CreateDomainComponent extends BaseComponent implements AfterViewIni
     this.routingService.toDomains()
   }
 
+  protected readonly Constants = Constants;
 }

@@ -25,6 +25,7 @@ import { ConformanceService } from 'src/app/services/conformance.service';
 import { PreviewOption } from './preview-option';
 import { PreviewConfig } from './preview-config';
 import { ErrorService } from 'src/app/services/error.service';
+import {Constants} from '../../../../../common/constants';
 
 @Component({
     template: '',
@@ -99,7 +100,7 @@ export abstract class CommunityXmlReportFormComponent extends BaseReportSettings
       let updateObservable: Observable<boolean>
       if (this.reportSettings.stylesheetExists && !this.useStylesheet) {
         // Delete stylesheet
-        updateObservable = this.confirmationDialogService.confirmDangerous("Confirm stylesheet deletion", "Are you sure you want to delete the configured stylesheet?", "Delete", "Cancel")
+        updateObservable = this.confirmationDialogService.confirmDangerous("Confirm stylesheet deletion", "Are you sure you want to delete the configured stylesheet?", "Delete", "Cancel", Constants.BUTTON_ICON.DELETE)
       } else {
         updateObservable = of(true)
       }

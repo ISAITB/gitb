@@ -37,7 +37,7 @@
                                         @if (dataService.actualUser != undefined) {
                                             <div class="row mt-3">
                                                 <div class="col-auto">
-                                                    <button type="button" class="btn btn-secondary" (click)="createAccount()" [pending]="createPending">
+                                                    <button type="button" [labelIcon]="Constants.BUTTON_ICON.LINK_ACCOUNT" class="btn btn-secondary" (click)="createAccount()" [pending]="createPending">
                                                         @if (dataService.actualUser.accounts.length > 0) {
                                                             <span>Link another role to your account</span>
                                                         } @else {
@@ -89,7 +89,9 @@
                                                         </div>
                                                     </div>
                                                 } @else if (formType === LoginFormType.ChangePassword) {
-                                                    <app-change-password-form [model]="passwordChangeData" [autoFocus]="true" [validation]="validation"></app-change-password-form>
+                                                    <app-change-password-form [model]="passwordChangeData"
+                                                                              [autoFocus]="true"
+                                                                              [validation]="validation"></app-change-password-form>
                                                     <div class="row">
                                                         <div class="col-10 offset-1">
                                                             <div class="alert alert-info rounded mb-0">
@@ -117,13 +119,13 @@
                                             <div class="card-footer">
                                                 <div class="btn-toolbar">
                                                     @if (formType === LoginFormType.Login) {
-                                                        <button type="submit" (click)="login()" class="btn btn-secondary" [disable]="loginDisabled()" [pending]="spinner">Log in</button>
+                                                        <button type="submit" [labelIcon]="Constants.BUTTON_ICON.LOGIN" (click)="login()" class="btn btn-secondary" [disable]="loginDisabled()" [pending]="spinner">Log in</button>
                                                     } @else if (formType === LoginFormType.ChangePassword) {
-                                                        <button type="submit" (click)="replacePassword()" class="btn btn-secondary" [disable]="replaceDisabled()" [pending]="spinner">Save</button>
+                                                        <button type="submit" [labelIcon]="Constants.BUTTON_ICON.SAVE" (click)="replacePassword()" class="btn btn-secondary" [disable]="replaceDisabled()" [pending]="spinner">Save</button>
                                                     } @else if (formType === LoginFormType.SelfRegister) {
-                                                        <button type="submit" (click)="register()" class="btn btn-secondary" [disable]="registerDisabled()" [pending]="spinner">Register</button>
+                                                        <button type="submit" [labelIcon]="Constants.BUTTON_ICON.SAVE" (click)="register()" class="btn btn-secondary" [disable]="registerDisabled()" [pending]="spinner">Register</button>
                                                     }
-                                                    <button (click)="cancelLogin()" type="button" class="btn btn-secondary">Cancel</button>
+                                                    <button (click)="cancelLogin()" [labelIcon]="Constants.BUTTON_ICON.CANCEL" type="button" class="btn btn-secondary">Cancel</button>
                                                 </div>
                                             </div>
                                         </div>

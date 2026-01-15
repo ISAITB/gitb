@@ -13,8 +13,9 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter} from '@angular/core';
+import {Component, EventEmitter, OnInit} from '@angular/core';
 import {BsModalRef} from 'ngx-bootstrap/modal';
+import {Constants} from '../../common/constants';
 
 @Component({
     selector: 'app-confirmation',
@@ -22,19 +23,30 @@ import {BsModalRef} from 'ngx-bootstrap/modal';
     styles: [],
     standalone: false
 })
-export class ConfirmationComponent {
+export class ConfirmationComponent implements OnInit {
 
   public result = new EventEmitter<boolean>()
 
   headerText = ''
   bodyText = ''
   actionButtonText = ''
+  actionButtonIcon?: string
   closeButtonText = ''
+  closeButtonIcon?: string
   sameStyles = true
   oneButton = false
   actionClass = 'btn btn-secondary'
 
   constructor(public readonly modalRef: BsModalRef) { }
+
+  ngOnInit(): void {
+    if (this.actionButtonIcon == undefined) {
+      this.actionButtonIcon = Constants.BUTTON_ICON.CONFIRM
+    }
+    if (this.closeButtonIcon == undefined) {
+      this.closeButtonIcon = Constants.BUTTON_ICON.CANCEL
+    }
+  }
 
   ok() {
     this.result.emit(true)

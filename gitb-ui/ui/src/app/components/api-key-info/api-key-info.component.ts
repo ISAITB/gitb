@@ -194,7 +194,7 @@ export class ApiKeyInfoComponent implements OnInit {
   }
 
   updateOrganisationKey(): void {
-    this.confirmationDialogService.confirmed("Confirm update", "Are you sure you want to update the value for this API key?", "Update", "Cancel")
+    this.confirmationDialogService.confirmed("Confirm update", "Are you sure you want to update the value for this API key?", "Update", "Cancel", Constants.BUTTON_ICON.RESET)
     .subscribe(() => {
       this.newOrganisationKey()
     })
@@ -212,14 +212,14 @@ export class ApiKeyInfoComponent implements OnInit {
   }
 
   updateSystemKey(systemId: number): void {
-    this.confirmationDialogService.confirmed("Confirm update", "Are you sure you want to update the value for this API key?", "Update", "Cancel")
+    this.confirmationDialogService.confirmed("Confirm update", "Are you sure you want to update the value for this API key?", "Update", "Cancel", Constants.BUTTON_ICON.RESET)
     .subscribe(() => {
       this.newSystemKey(systemId)
     })
   }
 
   deleteOrganisationKey(): void {
-    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this API key?", "Delete", "Cancel")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this API key?", "Delete", "Cancel", Constants.BUTTON_ICON.DELETE)
     .subscribe(() => {
       this.organisationDeletePending = true
       this.organisationService.deleteOrganisationApiKey(this.organisationId)

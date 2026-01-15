@@ -16,7 +16,6 @@
 import {Component, EventEmitter, Input, OnInit} from '@angular/core';
 import {forkJoin, mergeMap, Observable, of, share} from 'rxjs';
 import {CommunityService} from 'src/app/services/community.service';
-import {ConformanceService} from 'src/app/services/conformance.service';
 import {DataService} from 'src/app/services/data.service';
 import {PopupService} from 'src/app/services/popup.service';
 import {CommunityResource} from 'src/app/types/community-resource';
@@ -59,7 +58,6 @@ export class PlaceholderSelectorComponent implements OnInit {
     private readonly dataService: DataService,
     private readonly popupService: PopupService,
     private readonly domainParameterService: DomainParameterService,
-    private readonly conformanceService: ConformanceService,
     private readonly communityService: CommunityService,
     private readonly communityResourceService: CommunityResourceService
   ) { }
@@ -124,6 +122,7 @@ export class PlaceholderSelectorComponent implements OnInit {
           name: 'resources',
           textField: 'name',
           filterLabel: 'Copy resource reference',
+          filterLabelIcon: Constants.BUTTON_ICON.RESOURCE,
           singleSelection: true,
           loader: () => {
             return this.communityResourceService.getCommunityResources(communityIdToUse!)
@@ -137,6 +136,7 @@ export class PlaceholderSelectorComponent implements OnInit {
         name: 'systemResources',
         textField: 'name',
         filterLabel: 'Copy system-wide resource reference',
+        filterLabelIcon: Constants.BUTTON_ICON.RESOURCE,
         singleSelection: true,
         loader: () => {
           return this.communityResourceService.getSystemResources()
@@ -215,4 +215,5 @@ export class PlaceholderSelectorComponent implements OnInit {
     }
   }
 
+  protected readonly Constants = Constants;
 }

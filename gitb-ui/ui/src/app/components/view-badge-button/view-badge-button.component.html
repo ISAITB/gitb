@@ -1,5 +1,5 @@
 <div class="btn-group" dropdown>
-    <button type="button" [pending]="copyBadgePending" class="btn btn-secondary" (click)="copyBadgeURL()">Copy badge URL</button>
+    <button type="button" [labelIcon]="Constants.BUTTON_ICON.COPY_LINK" [pending]="copyBadgePending" class="btn btn-secondary" (click)="copyBadgeURL()">Copy badge URL</button>
     <button id="button-badge" type="button" [disabled]="copyBadgePending" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
         <span class="caret"></span>
         <span class="sr-only visually-hidden">Copy badge URL</span>

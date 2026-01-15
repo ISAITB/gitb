@@ -2,7 +2,7 @@
     <div class="rootContainer">
         @for (tag of tags; track $index; let last = $last) {
             <div class="tagContainer" [class.withMargin]="!last || (last && editable)">
-                <app-tag 
+                <app-tag
                     [id]="tag.id"
                     [label]="tag.name"
                     [tooltipText]="tag.description"
@@ -17,7 +17,7 @@
         }
         @if (editable) {
             <div class="create-tag-container">
-                <button (click)="createTag()" type="button" class="btn btn-secondary">Add</button>
+                <button (click)="createTag()" [labelIcon]="Constants.BUTTON_ICON.NEW" type="button" class="btn btn-secondary">Add</button>
                 <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="button" tbTooltip="Tags used to visually distinguish and highlight test cases."></div>
             </div>
         }

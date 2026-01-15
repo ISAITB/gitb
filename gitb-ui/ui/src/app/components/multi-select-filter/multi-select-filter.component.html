@@ -4,7 +4,14 @@
             @if (pending) {
                 <app-pending-block></app-pending-block>
             }
-            <div class="button-label-text" [style.max-width]="config.maxWidth?(config.maxWidth+'px'):null">{{filterLabel}}</div>
+            <div class="button-label-text" [style.max-width]="config.maxWidth?(config.maxWidth+'px'):null">
+                @if (config.filterLabelIcon != undefined) {
+                    <span class="mini-tab">
+                        <i [class]="config.filterLabelIcon"></i>
+                    </span>
+                }
+                {{filterLabel}}
+            </div>
         </div>
     </button>
     @if (formVisible) {
@@ -55,11 +62,11 @@
             @if (!config.singleSelection) {
                 <div class="formButtons btn-toolbar">
                     @if (selectedItems.length > 0 || visibleAvailableItems.length > 0) {
-                        <button type="button" class="btn btn-secondary" (click)="applyItems()">Apply</button>
+                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.CONFIRM" class="btn btn-secondary" (click)="applyItems()">Apply</button>
                     }
-                    <button type="button" class="btn btn-secondary" (click)="close()">Close</button>
+                    <button type="button" [labelIcon]="Constants.BUTTON_ICON.CANCEL" class="btn btn-secondary" (click)="close()">Close</button>
                     @if (hasCheckedSelectedItem) {
-                        <button type="button" class="btn btn-secondary" (click)="clearSelectedItems(); $event.stopPropagation()">Clear selected items</button>
+                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.NONE" class="btn btn-secondary" (click)="clearSelectedItems(); $event.stopPropagation()">Clear selected items</button>
                     }
                 </div>
             }

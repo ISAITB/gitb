@@ -111,6 +111,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
       textField: 'identifier',
       singleSelection: true,
       filterLabel: 'Link shared test suite',
+      filterLabelIcon: Constants.BUTTON_ICON.NEW,
       noItemsMessage: 'No shared test suites available to link.',
       searchPlaceholder: 'Search test suite...',
       clearItems: new EventEmitter(),
@@ -121,6 +122,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
       textField: 'identifier',
       singleSelection: true,
       filterLabel: 'Unlink shared test suite',
+      filterLabelIcon: Constants.BUTTON_ICON.REMOVE,
       searchPlaceholder: 'Search test suite...',
       clearItems: new EventEmitter(),
       loader: () => this.loadLinkedSharedTestSuites()
@@ -377,7 +379,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
   }
 
 	deleteSpecification() {
-		this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this "+this.dataService.labelSpecificationLower()+"?", "Delete", "Cancel")
+		this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this "+this.dataService.labelSpecificationLower()+"?", "Delete", "Cancel", Constants.BUTTON_ICON.DELETE)
 		.subscribe(() => {
       this.deletePending = true
       this.specificationService.deleteSpecification(this.specificationId)

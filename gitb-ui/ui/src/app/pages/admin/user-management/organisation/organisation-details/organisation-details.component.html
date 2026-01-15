@@ -27,16 +27,16 @@
                 <div class="card-footer button-container">
                     <div class="btn-toolbar">
                         @if (!readonly) {
-                            <button class="btn btn-secondary" type="submit" (click)="updateOrganisation()" [disable]="!loaded || deletePending || saveDisabled()" [pending]="savePending">Update</button>
+                            <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.SAVE" type="submit" (click)="updateOrganisation()" [disable]="!loaded || deletePending || saveDisabled()" [pending]="savePending">Update</button>
                         }
-                        <button class="btn btn-secondary" type="button" (click)="manageOrganisationTests()">Manage tests</button>
+                        <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.MANAGE_TESTS" type="button" (click)="manageOrganisationTests()">Manage tests</button>
                         @if (showAdminInfo) {
-                            <button class="btn btn-secondary" type="button" (click)="cancelDetailOrganisation()">Back</button>
+                            <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.BACK" type="button" (click)="cancelDetailOrganisation()">Back</button>
                         }
                     </div>
                     @if (showAdminInfo) {
                         <div class="btn-toolbar btn-toolbar-delete">
-                            <button class="btn btn-outline-danger" type="button" (click)="deleteOrganisation()" [disable]="!loaded || savePending" [pending]="deletePending">Delete</button>
+                            <button class="btn btn-outline-danger" [labelIcon]="Constants.BUTTON_ICON.DELETE" type="button" (click)="deleteOrganisation()" [disable]="!loaded || savePending" [pending]="deletePending">Delete</button>
                         </div>
                     }
                 </div>
@@ -51,7 +51,7 @@
                     @if (showCreateSystem) {
                         <div class="tabControls">
                             <div class="btn-toolbar">
-                                <button type="button" class="btn btn-secondary" (click)="createSystem()">Create {{dataService.labelSystemLower()}}</button>
+                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createSystem()">Create {{dataService.labelSystemLower()}}</button>
                             </div>
                         </div>
                     }
@@ -74,7 +74,7 @@
                         @if (showCreateUser) {
                             <div class="tabControls">
                                 <div class="btn-toolbar">
-                                    <button type="button" class="btn btn-secondary" (click)="createUser()">Create user</button>
+                                    <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createUser()">Create user</button>
                                 </div>
                             </div>
                         }

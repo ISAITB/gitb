@@ -24,6 +24,7 @@ import {ServiceHealthCardComponentApi} from '../../components/service-health-car
 import {DataService} from '../../services/data.service';
 import {MenuItem} from '../../types/menu-item.enum';
 import {MenuItemStatus} from '../../types/menu-item-status.enum';
+import {Constants} from '../../common/constants';
 
 @Component({
   selector: 'app-service-health-dashboard',
@@ -154,4 +155,5 @@ export class ServiceHealthDashboardComponent implements OnInit, AfterViewInit {
 
   }
 
+  protected readonly Constants = Constants;
 }

@@ -188,7 +188,7 @@ export class CommunityFormComponent extends BaseComponent implements OnInit {
   }
 
   updateSelfRegistrationToken() {
-    this.confirmationDialogService.confirmed("Confirm update", "Are you sure you want to update the community self-registration token?", "Update", "Cancel").subscribe(() => {
+    this.confirmationDialogService.confirmed("Confirm update", "Are you sure you want to update the community self-registration token?", "Update", "Cancel", Constants.BUTTON_ICON.RESET).subscribe(() => {
       this.community.selfRegToken = this.dataService.generateApiKeyValue()
     })
   }

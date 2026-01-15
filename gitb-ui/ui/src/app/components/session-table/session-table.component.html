@@ -81,11 +81,12 @@
                                 <div class="sessionControls">
                                     <div class="btn-toolbar">
                                         @if (supportRefresh) {
-                                            <button type="button" class="btn btn-secondary" (click)="refresh(row)" [pending]="sessionBeingRefreshed?.session == row.session" [disable]="row.endTime != undefined">Refresh</button>
+                                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.RESET" class="btn btn-secondary" (click)="refresh(row)" [pending]="sessionBeingRefreshed?.session == row.session" [disable]="row.endTime != undefined">Refresh</button>
                                         }
                                         <!-- View log button - we need the switches because the [pending] directive doesn't allow it to update dynamically. -->
                                         @if (supportRefresh) {
                                             <button type="button" [disabled]="sessionBeingRefreshed?.session == row.session || row.diagramState?.logs == undefined" class="btn btn-secondary position-relative" (click)="showTestSessionLog(row)">
+                                                <span class="mini-tab"><i [class]="Constants.BUTTON_ICON.VIEW_LOG"></i></span>
                                                 View log
                                                 <span
                                                     [class.badgeLogErrors]="row.hasUnreadErrorLogs"
@@ -96,14 +97,14 @@
                                                 </span>
                                             </button>
                                         } @else {
-                                            <button type="button" [disable]="!row.diagramLoaded" class="btn btn-secondary position-relative" (click)="showTestSessionLog(row)" [pending]="viewLogPending[row.session]">View log</button>
+                                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.VIEW_LOG" [disable]="!row.diagramLoaded" class="btn btn-secondary position-relative" (click)="showTestSessionLog(row)" [pending]="viewLogPending[row.session]">View log</button>
                                         }
                                         @if (supportRefresh && row.diagramState?.interactions != undefined && row.diagramState.interactions.length > 0) {
                                             @if (row.diagramState.interactions.length == 1) {
-                                                <button type="button" [disabled]="sessionBeingRefreshed?.session == row.session" class="btn btn-secondary" (click)="displayPendingInteraction(row)">View pending interaction</button>
+                                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.VIEW_INTERACTIONS" [disable]="sessionBeingRefreshed?.session == row.session" class="btn btn-secondary" (click)="displayPendingInteraction(row)">View pending interaction</button>
                                             } @else {
                                                 <div class="btn-group" dropdown>
-                                                    <button id="button-interactions" dropdownToggle class="btn btn-secondary dropdown-toggle" type="button" aria-controls="dropdown-interactions"><span class="me-2">View pending interaction</span></button>
+                                                    <button id="button-interactions" [labelIcon]="Constants.BUTTON_ICON.VIEW_INTERACTIONS" dropdownToggle class="btn btn-secondary dropdown-toggle" type="button" aria-controls="dropdown-interactions"><span class="me-2">View pending interaction</span></button>
                                                     <ul id="dropdown-interactions" *dropdownMenu class="dropdown-menu" aria-labelledby="button-interactions">
                                                         @for (interaction of row.diagramState.interactions; let index = $index; track interaction) {
                                                             <li>
@@ -118,7 +119,7 @@
                                             <!-- Copy link -->
                                             @if (copyForOtherRoleOption) {
                                                 <div class="btn-group" dropdown placement="bottom right">
-                                                    <button type="button" class="btn btn-secondary" (click)="copyLink(row)">Copy link</button>
+                                                    <button type="button" [labelIcon]="Constants.BUTTON_ICON.COPY_LINK" class="btn btn-secondary" (click)="copyLink(row)">Copy link</button>
                                                     <button id="button-link" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
                                                     <ul id="dropdown-link" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-link">
                                                         <li role="menuitem"><a class="dropdown-item" href (click)="copyLink(row, true);$event.preventDefault();">
@@ -131,7 +132,7 @@
                                                     </ul>
                                                 </div>
                                             } @else {
-                                                <button type="button" class="btn btn-secondary" (click)="copyLink(row)">Copy link</button>
+                                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.COPY_LINK" class="btn btn-secondary" (click)="copyLink(row)">Copy link</button>
                                             }
                                             <!-- View -->
                                             <app-navigation-controls [config]="toNavigationConfig(row)"></app-navigation-controls>

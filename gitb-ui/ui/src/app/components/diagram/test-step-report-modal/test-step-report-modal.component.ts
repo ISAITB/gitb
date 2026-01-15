@@ -19,6 +19,7 @@ import {ReportService} from 'src/app/services/report.service';
 import {StepReport} from '../report/step-report';
 import {StepData} from '../step-data';
 import {saveAs} from 'file-saver';
+import {Constants} from '../../../common/constants';
 
 @Component({
     selector: 'app-test-step-report-modal',
@@ -69,4 +70,5 @@ export class TestStepReportModalComponent {
     this.modalRef.hide()
   }
 
+  protected readonly Constants = Constants;
 }

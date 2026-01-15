@@ -24,6 +24,7 @@ import {PopupService} from 'src/app/services/popup.service';
 import {MultiSelectConfig} from '../../../../../components/multi-select-filter/multi-select-config';
 import {map, Observable, of} from 'rxjs';
 import {FilterUpdate} from '../../../../../components/test-filter/filter-update';
+import {Constants} from '../../../../../common/constants';
 
 @Component({
     selector: 'app-system-form',
@@ -106,7 +107,7 @@ export class SystemFormComponent implements OnInit {
   }
 
   updateApiKey(): void {
-    this.confirmationDialogService.confirmed("Confirm update", "Are you sure you want to update the API key value?", "Update", "Cancel")
+    this.confirmationDialogService.confirmed("Confirm update", "Are you sure you want to update the API key value?", "Update", "Cancel", Constants.BUTTON_ICON.RESET)
     .subscribe(() => {
       this.apiKeyUpdatePending = true
       this.systemService.updateSystemApiKey(this.system.id!)

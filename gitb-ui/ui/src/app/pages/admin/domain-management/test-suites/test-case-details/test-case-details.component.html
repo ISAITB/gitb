@@ -90,6 +90,7 @@
                                 <div class="btn-group" dropdown
                                      [isDisabled]="previewPending || this.testCase.documentation == undefined || this.testCase.documentation.length == 0">
                                     <button type="button"
+                                            [labelIcon]="Constants.BUTTON_ICON.PREVIEW"
                                             [disable]="this.testCase.documentation == undefined || this.testCase.documentation.length == 0"
                                             [pending]="previewPending" id="button-preview" class="btn btn-secondary"
                                             (click)="previewDocumentationPopup()">Preview documentation
@@ -106,8 +107,7 @@
                                         <li role="menuitem"><a class="dropdown-item" href (click)="previewDocumentationPdf();$event.preventDefault();">Preview documentation in PDF report</a></li>
                                     </ul>
                                 </div>
-                                <button (click)="copyDocumentation()" type="button" class="btn btn-secondary" [disabled]="this.testCase.documentation == undefined || this.testCase.documentation.length == 0">Copy to clipboard
-                                </button>
+                                <button (click)="copyDocumentation()" [labelIcon]="Constants.BUTTON_ICON.COPY" type="button" class="btn btn-secondary" [disable]="this.testCase.documentation == undefined || this.testCase.documentation.length == 0">Copy to clipboard</button>
                             </div>
                         </div>
                     </div>
@@ -115,8 +115,8 @@
             </div>
             <div class="card-footer">
                 <div class="btn-toolbar">
-                    <button type="submit" class="btn btn-secondary" [disable]="saveDisabled()" [pending]="pending">Save changes</button>
-                    <button (click)="back()" type="button" class="btn btn-secondary">Back</button>
+                    <button type="submit" [labelIcon]="Constants.BUTTON_ICON.SAVE" class="btn btn-secondary" [disable]="saveDisabled()" [pending]="pending">Save changes</button>
+                    <button (click)="back()" [labelIcon]="Constants.BUTTON_ICON.BACK" type="button" class="btn btn-secondary">Back</button>
                 </div>
             </div>
         </form>

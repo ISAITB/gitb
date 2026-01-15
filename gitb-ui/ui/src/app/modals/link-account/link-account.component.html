@@ -77,8 +77,8 @@
 	</div>
 	<div class="modal-footer">
 		<div class="btn-toolbar">
-			<button class="btn btn-secondary" type="button" (click)="cancel()">Cancel</button>
-			<button class="btn btn-secondary" type="submit" (click)="create()" [disable]="!createEnabled()" [pending]="createPending">Complete</button>
+			<button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.CANCEL" type="button" (click)="cancel()">Cancel</button>
+			<button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.LINK_ACCOUNT" type="submit" (click)="create()" [disable]="!createEnabled()" [pending]="createPending">Complete</button>
 		</div>
 	</div>
 </form>

@@ -250,7 +250,7 @@ export class ErrorService {
   showInvalidSessionNotification(): Observable<boolean> {
     if (!this.errorCurrentlyDisplayed) {
       this.errorCurrentlyDisplayed = true
-      return this.confirmationDialogService.notified("Invalid session", "Your current session is invalid. You will now return to the login screen to reconnect.", "Close").pipe(
+      return this.confirmationDialogService.notified("Invalid session", "Your current session is invalid. You will now return to the login screen to reconnect.", "Close", Constants.BUTTON_ICON.CANCEL).pipe(
         mergeMap(() => {
           this.errorCurrentlyDisplayed = false
           return of(true)
@@ -264,7 +264,7 @@ export class ErrorService {
   showUnauthorisedAccessError(): Observable<boolean> {
     if (!this.errorCurrentlyDisplayed) {
       this.errorCurrentlyDisplayed = true
-      return this.confirmationDialogService.notified("Access forbidden", "You don't have access to view this information. Close this popup to return to the home page.", "Close").pipe(
+      return this.confirmationDialogService.notified("Access forbidden", "You don't have access to view this information. Close this popup to return to the home page.", "Close", Constants.BUTTON_ICON.CANCEL).pipe(
         mergeMap(() => {
           this.errorCurrentlyDisplayed = false
           return of(true)

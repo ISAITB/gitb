@@ -19,6 +19,7 @@ import {BsModalRef} from 'ngx-bootstrap/modal';
 import {DataService} from '../../../../../services/data.service';
 import {BaseComponent} from '../../../../base-component.component';
 import {ValidationState} from '../../../../../types/validation-state';
+import {Constants} from '../../../../../common/constants';
 
 @Component({
     selector: 'app-trigger-fire-expression-modal',
@@ -95,4 +96,5 @@ export class TriggerFireExpressionModalComponent extends BaseComponent implement
     }
   }
 
+  protected readonly Constants = Constants;
 }

@@ -9,11 +9,11 @@
 			</div>
 			<div class="card-footer button-container">
 				<div class="btn-toolbar">
-					<button type="submit" class="btn btn-secondary" [disable]="saveDisabled()" [pending]="savePending">Save changes</button>
-					<button (click)="back()" type="button" class="btn btn-secondary">Back</button>
+					<button type="submit" [labelIcon]="Constants.BUTTON_ICON.SAVE" class="btn btn-secondary" [disable]="saveDisabled()" [pending]="savePending">Save changes</button>
+					<button (click)="back()" [labelIcon]="Constants.BUTTON_ICON.BACK" type="button" class="btn btn-secondary">Back</button>
 				</div>
 				<div class="btn-toolbar btn-toolbar-delete">
-					<button (click)="delete()" type="button" class="btn btn-outline-danger" [pending]="deletePending" [disable]="!loaded">Delete</button>
+					<button (click)="delete()" [labelIcon]="Constants.BUTTON_ICON.DELETE" type="button" class="btn btn-outline-danger" [pending]="deletePending" [disable]="!loaded">Delete</button>
 				</div>
 			</div>
 		</form>
@@ -42,7 +42,7 @@
 						} @else {
 							<div class="tabControls">
                                 <div class="btn-toolbar">
-                                    <button type="button" class="btn btn-secondary" (click)="createEndpoint()">Create {{dataService.labelEndpointLower()}}</button>
+                                    <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createEndpoint()">Create {{dataService.labelEndpointLower()}}</button>
                                 </div>
 							</div>
 							<div class="card">

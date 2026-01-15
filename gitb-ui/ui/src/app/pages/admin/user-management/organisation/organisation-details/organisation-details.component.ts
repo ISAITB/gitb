@@ -262,7 +262,7 @@ export class OrganisationDetailsComponent extends BaseTabbedComponent implements
   }
 
   deleteOrganisation() {
-    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this "+this.dataService.labelOrganisationLower()+"?", "Delete", "Cancel")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this "+this.dataService.labelOrganisationLower()+"?", "Delete", "Cancel", Constants.BUTTON_ICON.DELETE)
     .subscribe(() => {
       this.deletePending = true
       this.organisationService.deleteOrganisation(this.orgId)
@@ -297,7 +297,7 @@ export class OrganisationDetailsComponent extends BaseTabbedComponent implements
 
   updateOrganisation() {
     if (this.organisation.otherOrganisations != undefined) {
-      this.confirmationDialogService.confirmedDangerous("Confirm test setup copy", "Copying the test setup from another "+this.dataService.labelOrganisationLower()+" will remove current "+this.dataService.labelSystemsLower()+", conformance statements and test results. Are you sure you want to proceed?", "Copy", "Cancel")
+      this.confirmationDialogService.confirmedDangerous("Confirm test setup copy", "Copying the test setup from another "+this.dataService.labelOrganisationLower()+" will remove current "+this.dataService.labelSystemsLower()+", conformance statements and test results. Are you sure you want to proceed?", "Copy", "Cancel", Constants.BUTTON_ICON.COPY)
       .subscribe(() => {
         this.doUpdate()
       })

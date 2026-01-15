@@ -61,7 +61,7 @@ export class ThemeDetailsComponent extends BaseThemeFormComponent implements OnI
   }
 
   private confirmActiveChange() {
-    return this.confirmationDialogService.confirm("Active theme change", "You are about the change the currently active theme. Are you sure you want to proceed?", "Change", "Cancel")
+    return this.confirmationDialogService.confirm("Active theme change", "You are about the change the currently active theme. Are you sure you want to proceed?", "Change", "Cancel", Constants.BUTTON_ICON.SAVE)
   }
 
   saveDisabled() {
@@ -133,7 +133,7 @@ export class ThemeDetailsComponent extends BaseThemeFormComponent implements OnI
     } else {
       message = "Are you sure you want to delete this theme?"
     }
-    this.confirmationDialogService.confirmedDangerous("Confirm delete", message, "Delete", "Cancel")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", message, "Delete", "Cancel", Constants.BUTTON_ICON.DELETE)
     .subscribe(() => {
       this.deletePending = true
       this.systemConfigurationService.deleteTheme(this.themeId)

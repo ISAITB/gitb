@@ -4,28 +4,31 @@
             <div class="card-title">Test execution</div>
             <div class="sessionButtonDiv">
                 <div class="backDiv">
-                    <button type="button" class="btn btn-secondary" (click)="back()">Go to conformance statement</button>
+                    <button type="button" [labelIcon]="Constants.BUTTON_ICON.BACK" class="btn btn-secondary" (click)="back()">Go to conformance statement</button>
                 </div>
                 @if (testsToExecute.length > 0) {
                     @if (testsToExecute.length > 1) {
                         <div class="optionsDiv btn-toolbar">
-                            <app-checkbox-option-panel label="Options" [options]="testOptions" (updated)="testOptionsUpdated($event)"></app-checkbox-option-panel>
+                            <app-checkbox-option-panel label="Options"
+                                                       [labelIcon]="Constants.BUTTON_ICON.CONFIGURATION_PROPERTIES"
+                                                       [options]="testOptions"
+                                                       (updated)="testOptionsUpdated($event)"></app-checkbox-option-panel>
                         </div>
                     }
                     <div class="btn-toolbar actionButtonDiv">
                         @if (testsToExecute.length > 1) {
                             <div class="btn-group" dropdown [isDisabled]="!firstTestStarted || reload">
-                                <button id="button-stop" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-stop"><span class="me-2">Stop</span></button>
+                                <button id="button-stop" [labelIcon]="Constants.BUTTON_ICON.STOP" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-stop"><span class="me-2">Stop</span></button>
                                 <ul id="dropdown-stopType" *dropdownMenu class="dropdown-menu dropdown-menu" role="menu" aria-labelledby="button-stop">
                                     <li role="menuitem" [class.disabled]="!started || stopped"><a class="dropdown-item" href (click)="stop(session!); $event.preventDefault()">Stop current test</a></li>
                                     <li role="menuitem"><a class="dropdown-item" href (click)="stopAll(); $event.preventDefault()">Stop all tests</a></li>
                                 </ul>
                             </div>
                         } @else if (testsToExecute.length == 1) {
-                            <button type="button" class="btn btn-secondary" [disabled]="!firstTestStarted || stopped || reload" (click)="stop(session!)">Stop</button>
+                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.STOP" class="btn btn-secondary" [disable]="!firstTestStarted || stopped || reload" (click)="stop(session!)">Stop</button>
                         }
-                        <button type="button" class="btn btn-secondary" [disabled]="!firstTestStarted" (click)="reinitialise()">Reset</button>
-                        <button type="button" class="btn btn-primary" [disabled]="!nextWaitingToStart" (click)="start(session!)">Start</button>
+                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.RESET" class="btn btn-secondary" [disable]="!firstTestStarted" (click)="reinitialise()">Reset</button>
+                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.PLAY" class="btn btn-primary" [disable]="!nextWaitingToStart" (click)="start(session!)">Start</button>
                     </div>
                 }
             </div>
@@ -71,10 +74,10 @@
                                     <div class="session-table-operations btn-toolbar">
                                         @if (interactionStepsOfTests[testCase.id] != undefined && interactionStepsOfTests[testCase.id].length > 0) {
                                             @if (interactionStepsOfTests[testCase.id].length == 1) {
-                                                <button type="button" class="btn btn-secondary" (click)="displayPendingInteraction()">View pending interaction</button>
+                                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.VIEW_INTERACTIONS" class="btn btn-secondary" (click)="displayPendingInteraction()">View pending interaction</button>
                                             } @else {
                                                 <div class="btn-group" dropdown>
-                                                    <button id="button-interactions" dropdownToggle class="btn btn-secondary dropdown-toggle" type="button" aria-controls="dropdown-interactions"><span class="me-2">View pending interaction</span></button>
+                                                    <button id="button-interactions" [labelIcon]="Constants.BUTTON_ICON.VIEW_INTERACTIONS" dropdownToggle class="btn btn-secondary dropdown-toggle" type="button" aria-controls="dropdown-interactions"><span class="me-2">View pending interaction</span></button>
                                                     <ul id="dropdown-interactions" *dropdownMenu class="dropdown-menu" aria-labelledby="button-interactions">
                                                         @for (interaction of interactionStepsOfTests[testCase.id]; track interaction.stepId; let index = $index) {
                                                             <li>
@@ -86,7 +89,7 @@
                                             }
                                         }
                                         <div class="btn-group export-group" dropdown [isDisabled]="!exportEnabled(testCase) || exportPdfPending[testCase.id] || exportXmlPending[testCase.id]">
-                                            <button type="button" [disable]="!exportEnabled(testCase) || exportPdfPending[testCase.id] || exportXmlPending[testCase.id]" [pending]="exportPdfPending[testCase.id] || exportXmlPending[testCase.id]" class="btn btn-secondary" (click)="exportPdf(testCase)">Download report</button>
+                                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.REPORT" [disable]="!exportEnabled(testCase) || exportPdfPending[testCase.id] || exportXmlPending[testCase.id]" [pending]="exportPdfPending[testCase.id] || exportXmlPending[testCase.id]" class="btn btn-secondary" (click)="exportPdf(testCase)">Download report</button>
                                             <button id="button-export" type="button" [disabled]="!exportEnabled(testCase) || exportPdfPending[testCase.id] || exportXmlPending[testCase.id]" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
                                                 <span class="caret"></span>
                                                 <span class="sr-only visually-hidden">Download report</span>
@@ -96,7 +99,7 @@
                                             </ul>
                                         </div>
                                         <div class="viewLogButton">
-                                            <button type="button" class="btn btn-secondary position-relative" (click)="viewLog(testCase)">
+                                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.VIEW_LOG" class="btn btn-secondary position-relative" (click)="viewLog(testCase)">
                                                 View log
                                                 <span
                                                     [class.badgeLogErrors]="unreadLogErrors[testCase.id]"

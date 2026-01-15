@@ -17,6 +17,7 @@ import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { filter, find } from 'lodash';
 import { SpecificationChoice } from 'src/app/modals/test-suite-upload-modal/specification-choice';
 import { DataService } from 'src/app/services/data.service';
+import {Constants} from '../../common/constants';
 
 @Component({
     selector: 'app-test-suite-upload-specification-choices',
@@ -91,4 +92,5 @@ export class TestSuiteUploadSpecificationChoicesComponent implements OnInit {
     this.pendingChoices.emit(this.hasChoicesToComplete)
   }
 
+  protected readonly Constants = Constants;
 }

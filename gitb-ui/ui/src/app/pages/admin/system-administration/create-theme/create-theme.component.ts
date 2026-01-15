@@ -95,13 +95,13 @@ export class CreateThemeComponent extends BaseThemeFormComponent implements OnIn
     if (!this.saveDisabled()) {
       let proceed: Observable<boolean>
       if (this.theme.active) {
-        proceed = this.confirmationDialogService.confirm("Confirm active theme", "You are about to change the currently active theme. Are you sure?", "Change", "Cancel")
+        proceed = this.confirmationDialogService.confirm("Confirm active theme", "You are about to change the currently active theme. Are you sure?", "Change", "Cancel", Constants.BUTTON_ICON.SAVE)
       } else {
         proceed = of(true)
       }
       proceed.subscribe((confirmed) => {
-        this.savePending = true
         if (confirmed) {
+          this.savePending = true
           this.processButtonColors(this.theme)
           this.validation.clearErrors()
           this.systemConfigurationService.createTheme(this.theme, this.referenceThemeId)

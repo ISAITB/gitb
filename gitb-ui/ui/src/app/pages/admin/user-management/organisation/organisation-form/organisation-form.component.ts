@@ -129,7 +129,7 @@ export class OrganisationFormComponent implements OnInit {
     let proceed$: Observable<any>
     let isUpdate = true
     if (this.organisation.selfRegistrationToken != undefined) {
-      proceed$ = this.confirmationDialogService.confirmed("Confirm update", "Are you sure you want to update the self-registration token?", "Update", "Cancel")
+      proceed$ = this.confirmationDialogService.confirmed("Confirm update", "Are you sure you want to update the self-registration token?", "Update", "Cancel", Constants.BUTTON_ICON.RESET)
     } else {
       isUpdate = false
       proceed$ = of(true)
@@ -148,7 +148,7 @@ export class OrganisationFormComponent implements OnInit {
   }
 
   deleteSelfRegistrationToken() {
-      this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete the self-registration token?", "Delete", "Cancel").subscribe(() => {
+      this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete the self-registration token?", "Delete", "Cancel", Constants.BUTTON_ICON.DELETE).subscribe(() => {
         if (this.organisation.id) {
           this.selfRegistrationTokenDeletePending = true
           this.organisationService.deleteSelfRegistrationToken(this.organisation.id).subscribe(() => {

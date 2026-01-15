@@ -22,6 +22,7 @@ import { PopupService } from 'src/app/services/popup.service';
 import { FileData } from 'src/app/types/file-data.type';
 import { FeedbackType } from './feedback-type.type';
 import { ValidationState } from 'src/app/types/validation-state';
+import {Constants} from '../../common/constants';
 
 @Component({
     selector: 'app-contact-support',
@@ -163,4 +164,5 @@ export class ContactSupportComponent extends BaseComponent implements OnInit, Af
     return this.maximumAttachments > 0
   }
 
+  protected readonly Constants = Constants;
 }

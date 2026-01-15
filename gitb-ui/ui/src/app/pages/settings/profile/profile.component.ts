@@ -85,7 +85,7 @@ export class ProfileComponent extends BaseComponent implements OnInit, AfterView
   }
 
 	linkOtherRole() {
-    this.confirmationDialogService.confirmed("Confirmation", "Before linking another role to your account your current session will be closed. Are you sure you want to proceed?", "Disconnect", "Cancel")
+    this.confirmationDialogService.confirmed("Confirmation", "Before linking another role to your account your current session will be closed. Are you sure you want to proceed?", "Disconnect", "Cancel", Constants.BUTTON_ICON.DISCONNECT)
       .subscribe(() => {
         this.dataService.recordLoginOption(Constants.LOGIN_OPTION.LINK_ACCOUNT_INTERNAL)
         this.dataService.removeLocationData()
@@ -94,7 +94,7 @@ export class ProfileComponent extends BaseComponent implements OnInit, AfterView
   }
 
 	register() {
-		this.confirmationDialogService.confirmed("Confirmation", "Before registering another "+this.dataService.labelOrganisationLower()+" your current session will be closed. Are you sure you want to proceed?", "Disconnect", "Cancel")
+		this.confirmationDialogService.confirmed("Confirmation", "Before registering another "+this.dataService.labelOrganisationLower()+" your current session will be closed. Are you sure you want to proceed?", "Disconnect", "Cancel", Constants.BUTTON_ICON.DISCONNECT)
 		.subscribe(() => {
       this.dataService.recordLoginOption(Constants.LOGIN_OPTION.REGISTER_INTERNAL)
       this.dataService.removeLocationData()
