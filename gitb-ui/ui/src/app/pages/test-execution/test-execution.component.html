@@ -35,7 +35,7 @@
         </div>
         @if (testCaseLoadStatus.status == Constants.STATUS.FINISHED) {
             @for (testCase of testsToExecute; track testCase.id) {
-                <div class="test-case-container" [class.no-display]="!testCaseVisible[testCase.id]" [class.expandable]="isTestCaseClickable(testCase)">
+                <div class="test-case-container" [class.last-visible]="lastVisibleTestId === testCase.id" [class.no-display]="!testCaseVisible[testCase.id]" [class.expandable]="isTestCaseClickable(testCase)">
                     <div class="test-case-header" (click)="viewTestCase(testCase)">
                         @if (isTestCaseClickable(testCase)) {
                             <app-collapsing-icon [isCollapsed]="!testCaseExpanded[testCase.id]"></app-collapsing-icon>

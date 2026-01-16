@@ -63,6 +63,7 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
   updateTick = 20
 
   testsToExecute: ConformanceTestCase[] = []
+  lastVisibleTestId?: number
   actorId!: number
   systemId!: number
   communityId?: number
@@ -1257,8 +1258,10 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
   }
 
   updateTestCaseVisibility() {
+    this.lastVisibleTestId = undefined
     for (let test of this.testsToExecute) {
       if (this.isVisible(test)) {
+        this.lastVisibleTestId = test.id
         this.testCaseVisible[test.id] = true
       } else {
         this.testCaseVisible[test.id] = false
