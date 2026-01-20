@@ -63,13 +63,13 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
     { field: 'sname', title: 'Name' },
     { field: 'description', title: 'Description' },
     { field: 'version', title: 'Version' },
-    { field: 'shared', title: 'Shared' }
+    { field: 'shared', title: 'Shared', headerClass: 'th-min centered', cellClass: 'td-min centered' }
   ]
   actorTableColumns: TableColumnDefinition[] = [
     { field: 'actorId', title: 'ID' },
     { field: 'name', title: 'Name' },
     { field: 'description', title: 'Description' },
-    { field: 'default', title: 'Default' },
+    { field: 'default', title: 'Default', headerClass: 'th-min centered', cellClass: 'td-min centered' },
     { field: 'hidden', title: '', atEnd: true, isHiddenFlag: true, headerClass: 'th-min-centered' }
   ]
   savePending = false

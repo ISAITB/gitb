@@ -196,7 +196,7 @@ export class OrganisationDetailsComponent extends BaseTabbedComponent implements
     }
     this.userColumns.push({ field: 'roleText', title: 'Role' })
     if (this.showUserStatus()) {
-      this.userColumns.push({ field: 'ssoStatusText', title: 'Status', cellClass: 'td-nowrap' })
+      this.userColumns.push({ field: 'ssoStatusText', title: 'Status', headerClass: 'th-min centered', cellClass: 'td-min centered' })
     }
     this.propertyData.owner = this.organisation.id
     this.apiInfoVisible = this.isApiInfoVisible()
