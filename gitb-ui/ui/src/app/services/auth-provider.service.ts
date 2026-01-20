@@ -78,7 +78,7 @@ export class AuthProviderService {
     // Handle logout event
     this.onLogout$.subscribe((info) => {
 			if (!this.logoutOngoing && (info.full || this.isAuthenticated())) {
-        const clearAllSessionInfo = info.full && (info.fromExpiry == undefined || !info.fromExpiry)
+        const clearAllSessionInfo = info.full
         this.logoutOngoing = true
         let logout$ = this.httpClient.post(
           this.dataService.completePath(ROUTES.controllers.AuthenticationService.logout().url),

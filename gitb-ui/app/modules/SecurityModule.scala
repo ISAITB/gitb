@@ -313,6 +313,7 @@ class SecurityModule extends AbstractModule {
       .excludeBranch("%s/repository/resource".formatted(API_ROOT))
       .excludeBranch("%s/rest".formatted(API_ROOT))
       .excludePath("%s/healthcheck".formatted(API_ROOT))
+      .excludePath("%s/oauth/logout".formatted(API_ROOT))
       .excludeBranch("%sbadge".formatted(WEB_CONTEXT_ROOT_WITH_SLASH))
       .excludeBranch("%ssystemResources".formatted(WEB_CONTEXT_ROOT_WITH_SLASH))
     if (Configurations.AUTHENTICATION_SSO_ENABLED && Configurations.AUTHENTICATION_SSO_TYPE == Constants.SsoTypeLdap) {
