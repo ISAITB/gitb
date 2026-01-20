@@ -118,12 +118,14 @@ export class CheckboxOptionPanelComponent implements OnInit, OnDestroy, CheckBox
       obs$ = of(true)
     }
     obs$.subscribe(() => {
-      this.open = !this.open
-      if (this.open) {
-        this.opened.emit()
-        this.openPanel()
-      } else {
-        this.close()
+      if (this.options != undefined && this.options.length > 0 && this.options[0].length > 0) {
+        this.open = !this.open
+        if (this.open) {
+          this.opened.emit()
+          this.openPanel()
+        } else {
+          this.close()
+        }
       }
     }).add(() => {
       this.pending = false
