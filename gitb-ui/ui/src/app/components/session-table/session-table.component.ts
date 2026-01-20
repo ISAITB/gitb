@@ -85,7 +85,9 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
 
   ngOnInit(): void {
     for (let column of this.columns) {
-      column.headerClass = 'tb-'+column.title.toLowerCase().replace(' ', '-')
+      if (column.headerClass == undefined) {
+        column.headerClass = 'tb-'+column.title.toLowerCase().replace(' ', '-')
+      }
       if (column.sortable) {
         column.headerClass = column.headerClass + ' sortable'
       }

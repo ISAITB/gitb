@@ -92,9 +92,17 @@ export class TableRowComponent implements OnInit, TableRowApi {
         isHiddenFlag: column.isHiddenFlag,
         class: ''
       }
+      if (column.cellClass != undefined) {
+        columnDataItem.class = column.cellClass
+      }
       if (this.classes) {
-        columnDataItem.class = this.classes[column.field]
-      } else {
+        if (columnDataItem.class == undefined) {
+          columnDataItem.class = this.classes[column.field]
+        } else {
+          columnDataItem.class += ' ' + this.classes[column.field]
+        }
+      }
+      if (columnDataItem.class == undefined) {
         columnDataItem.class = 'tb-'+column.title.toLowerCase().replace(' ', '-')
       }
       if (column.atEnd) {

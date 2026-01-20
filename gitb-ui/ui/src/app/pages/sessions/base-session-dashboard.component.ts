@@ -164,9 +164,9 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
       { field: 'specification', title: this.dataService.labelSpecification(), sortable: true },
       { field: 'actor', title: this.dataService.labelActor(), sortable: true },
       { field: 'testCase', title: 'Test case', sortable: true },
-      { field: 'startTime', title: 'Start time', sortable: true, order: 'asc' },
       { field: 'organization', title: this.dataService.labelOrganisation(), sortable: true },
-      { field: 'system', title: this.dataService.labelSystem(), sortable: true }
+      { field: 'system', title: this.dataService.labelSystem(), sortable: true },
+      { field: 'startTime', title: 'Start time', sortable: true, order: 'asc', tag: true, tagIcon: 'fa-solid fa-clock', headerClass: 'th-min centered', cellClass: 'td-min centered' }
     ]
   }
 
@@ -175,11 +175,11 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
       { field: 'specification', title: this.dataService.labelSpecification(), sortable: true },
       { field: 'actor', title: this.dataService.labelActor(), sortable: true },
       { field: 'testCase', title: 'Test case', sortable: true },
-      { field: 'startTime', title: 'Start time', sortable: true },
-      { field: 'endTime', title: 'End time', sortable: true, order: 'desc' },
       { field: 'organization', title: this.dataService.labelOrganisation(), sortable: true },
       { field: 'system', title: this.dataService.labelSystem(), sortable: true },
-      { field: 'result', title: 'Result', sortable: true, iconFn: this.dataService.iconForTestResult, iconTooltipFn: this.dataService.tooltipForTestResult }
+      { field: 'startTime', title: 'Start time', sortable: true, tag: true, tagIcon: 'fa-solid fa-clock', headerClass: 'th-min centered', cellClass: 'td-min centered' },
+      { field: 'endTime', title: 'End time', sortable: true, order: 'desc', tag: true, tagIcon: 'fa-solid fa-clock', headerClass: 'th-min centered', cellClass: 'td-min centered' },
+      { field: 'result', title: 'Result', sortable: true, iconFn: this.dataService.iconForTestResult, iconTooltipFn: this.dataService.tooltipForTestResult, headerClass: 'th-min centered', cellClass: 'td-min centered' }
     ]
   }
 

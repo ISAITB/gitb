@@ -21,7 +21,7 @@
             }
             <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.SPECIFICATION)">{{dataService.labelSpecification()}}<app-sort-indicator [columnType]="Constants.FILTER_TYPE.SPECIFICATION" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></th>
             <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.ACTOR)">{{dataService.labelActor()}}<app-sort-indicator [columnType]="Constants.FILTER_TYPE.ACTOR" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></th>
-            <th class="th-min">Last update</th>
+            <th class="th-min-centered">Last update</th>
             <th class="th-min-centered">Test results</th>
             <th class="th-min-centered">Status</th>
             @if (showExportControls) {
@@ -53,9 +53,9 @@
                         }
                         <td>{{statement.specName}}</td>
                         <td>{{statement.actorName}}</td>
-                        <td class="td-min">
+                        <td class="td-min-centered">
                             @if (statement.updateTime) {
-                                <app-tag label="fa-solid fa-clock" [icon]="true" tooltipText="Last update time" [value]="statement.updateTime"></app-tag>
+                                <app-tag label="fa-solid fa-clock" [icon]="true" [value]="statement.updateTime"></app-tag>
                             }
                         </td>
                         <td class="td-min-centered"><app-test-status-icons [counters]="statement.counters!" [asLine]="true"></app-test-status-icons></td>

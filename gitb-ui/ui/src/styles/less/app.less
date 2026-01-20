@@ -242,11 +242,14 @@ table.table-directive {
 	text-align: center;
 	white-space: nowrap;
 }
-.td-min {
+td.td-min {
 	width: 1px;
 	padding-top: 8px;
 	padding-bottom: 8px;
 	white-space: nowrap;
+    &.centered {
+        text-align: center;
+    }
 	&.padding-right-large {
 		padding-right: 40px;
 	}
@@ -254,16 +257,14 @@ table.table-directive {
 .td-nowrap {
 	white-space: nowrap;
 }
-.th-min {
+th.th-min {
 	width: 1px;
 	white-space: nowrap;
+    &.centered {
+        text-align: center;
+    }
 	&.padding-right-large {
 		padding-right: 40px;
-	}
-}
-#system-tests-table, #dashboard-table, #conformanceDashboardPageTable {
-	td.tb-result {
-		.td-min-centered
 	}
 }
 

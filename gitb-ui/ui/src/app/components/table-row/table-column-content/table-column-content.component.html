@@ -1,11 +1,11 @@
 @if (column.iconFn) {
-    <div [class]="column.cellClass">
+    <span [class]="column.cellClass">
         @if (column.iconTooltipFn != undefined) {
             <i [ngClass]="column.iconFn!(item.data)" containerClass="shortTooltip" [tooltip]="column.iconTooltipFn!(item.data)"></i>
         } @else {
             <i [ngClass]="column.iconFn!(item.data)"></i>
         }
-    </div>
+    </span>
 } @else {
     <div [class]="column.cellClass">
         @if (item.boolean) {
@@ -18,6 +18,8 @@
                     <i class="fa" [ngClass]="{'fa-check': item.data, 'fa-times': !item.data}"></i>
                 }
             </div>
+        } @else if (item.data != undefined && column.tag === true) {
+            <app-tag [label]="column.tagIcon" [icon]="true" [tooltipText]="column.tagTooltip" [value]="item.data"></app-tag>
         } @else {
             <div>
                 {{item.data}}

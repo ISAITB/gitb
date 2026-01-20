@@ -25,5 +25,8 @@ export interface TableColumnDefinition {
     order?: 'asc'|'desc'|null
     atEnd?: boolean
     isHiddenFlag?: boolean
+    tag?: boolean
+    tagIcon?: string
+    tagTooltip?: string
 
 }
