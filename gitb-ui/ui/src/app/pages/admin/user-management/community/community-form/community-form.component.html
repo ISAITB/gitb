@@ -181,7 +181,7 @@
                             <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Check this to allow self-registering users to enter a token for direct registration in a specific {{dataService.labelOrganisationLower()}}."></div>
                         </label>
                     </div>
-                    <div [collapse]="community.selfRegAllowOrganisationTokens === false" [isAnimated]="true">
+                    <div [collapse]="community.selfRegAllowOrganisationTokens !== true" [isAnimated]="true">
                         <div class="form-check pt-2">
                             <input class="form-check-input" type="checkbox" id="selfRegAllowOrganisationTokenManagement" name="selfRegAllowOrganisationTokenManagement" [(ngModel)]="community.selfRegAllowOrganisationTokenManagement">
                             <label class="form-check-label" for="selfRegAllowOrganisationTokenManagement">Allow self-management of {{dataService.labelOrganisationLower()}} tokens
