@@ -8,15 +8,21 @@
                 @if (requiredPropertiesAreHidden) {
                     <!-- Something is not visible -->
                     <div class="alert alert-info rounded">
-                        <p>Required information is needed before tests can be launched. Please review this below.</p>
-                        <span><b>Note: </b></span><span>Certain additional configuration must be completed by an administrator before starting tests.</span>
+                        <div class="alert-section">Required information is needed before tests can be launched. Please review this below.</div>
+                        <div class="alert-section">
+                            <span class="alert-label">Note</span>
+                            Certain additional configuration must be completed by an administrator before starting tests.
+                        </div>
                     </div>
                 } @else {
                     <!-- Everything is visible -->
                     @if (requiredPropertiesIncludeEditable && requiredPropertiesIncludeNonEditable) {
                         <div class="alert alert-info rounded">
-                            <p>Required information is needed before tests can be launched. Please review this below.</p>
-                            <span><b>Note: </b></span><span>Certain configuration must be completed by an administrator before starting tests.</span>
+                            <div class="alert-section">Required information is needed before tests can be launched. Please review this below.</div>
+                            <div class="alert-section">
+                                <span class="alert-label">Note</span>
+                                Certain configuration must be completed by an administrator before starting tests.
+                            </div>
                         </div>
                     } @else if (!requiredPropertiesIncludeEditable && requiredPropertiesIncludeNonEditable) {
                         <div class="alert alert-info rounded">

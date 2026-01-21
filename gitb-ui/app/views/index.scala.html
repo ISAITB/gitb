@@ -66,17 +66,25 @@
 									</div>
 								</div>
 								<div class="alert alert-info rounded padded mt-3 mb-0">
-									@if(config.ssoEnabled && config.ssoType == models.Constants.SsoTypeEcas) {
-									<p class="mb-2">To connect to the Test Bed you need to first authenticate using your EU Login account. If you are new to EU Login follow <a href="@config.euLoginUseGuideLink" target="blank">this tutorial</a> to get started.</p>
-									}
-									<p class="mb-0"><b>Privacy note:</b> By connecting you consent to the use of cookies to manage your session.
-										@if(config.hasDefaultLegalNotice) {
-										<span>Please refer to our <a href="#" data-bs-toggle="modal" data-bs-target="#legalModal">legal notice</a> for more information.</span>
+									@if(config.ssoEnabled) {
+										@if(config.ssoType == models.Constants.SsoTypeEcas) {
+											<div class="alert-section">
+												To connect to the Test Bed you need to first authenticate using your EU Login account. If you are new to EU Login follow <a href="@config.euLoginUseGuideLink" target="blank">this tutorial</a> to get started.
+											</div>
 										}
-									</p>
-									@if(config.ssoEnabled && config.inMigrationPeriod) {
-									<p class="mt-2 mb-0"><b>Migration note:</b> If you have been using a functional account to log in click <a id="migrateOption" href="#">here</a> to migrate it. Step-by-step instructions are available in <a href="@config.euLoginMigrationGuideLink" target="blank">this guide</a>.</p>
+										@if(config.inMigrationPeriod) {
+											<div class="alert-section">
+												If you have been using a functional account to log in click <a id="migrateOption" href="#">here</a> to migrate it. Step-by-step instructions are available in <a href="@config.euLoginMigrationGuideLink" target="blank">this guide</a>.
+											</div>
+										}
 									}
+									<div class="alert-section">
+										<span class="alert-label">Privacy note</span>
+										<span>By connecting you consent to the use of cookies to manage your session.</span>
+										@if(config.hasDefaultLegalNotice) {
+											<span>Please refer to our <a href="#" data-bs-toggle="modal" data-bs-target="#legalModal">legal notice</a> for more information.</span>
+										}
+									</div>
 								</div>
 							</div>
 						</div>

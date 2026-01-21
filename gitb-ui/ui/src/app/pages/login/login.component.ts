@@ -43,6 +43,7 @@ import {LoginFormType} from './login-form-type';
 @Component({
     selector: 'app-login',
     templateUrl: './login.component.html',
+    styleUrls: ['./login.component.less'],
     standalone: false
 })
 export class LoginComponent extends BaseSelfRegistrationPageComponent implements OnInit, AfterViewInit, OnDestroy {
@@ -61,7 +62,6 @@ export class LoginComponent extends BaseSelfRegistrationPageComponent implements
   private loginState?: LoginEventInfo
   protected readonly LoginFormType = LoginFormType;
 
-  weakPassword = false
   passwordChangeData: PasswordChangeData = {}
   loginInProgress = false
   validation = new ValidationState()
@@ -256,7 +256,9 @@ export class LoginComponent extends BaseSelfRegistrationPageComponent implements
           // One-time password
           this.formType = LoginFormType.ChangePassword
         }
-        this.weakPassword = result.body.weakPassword != undefined && result.body.weakPassword
+        if (result.body.weakPassword != undefined && result.body.weakPassword) {
+          this.validation.invalid('new', this.getPasswordComplexityAlertMessage())
+        }
       } else if (this.isLoginOk(result.body)) {
         this.completeLogin(result)
       } else if (this.isAccountSelection(result.body)) {
@@ -395,11 +397,7 @@ export class LoginComponent extends BaseSelfRegistrationPageComponent implements
   }
 
   private getPasswordComplexityAlertMessage() {
-    if (this.weakPassword) {
-      return 'Password does not match required complexity rules.'
-    } else {
-      return 'Password does not match required complexity rules. It must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one digit and one symbol.'
-    }
+    return 'Password does not match required complexity rules. It must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one digit and one symbol.'
   }
 
   replacePassword() {

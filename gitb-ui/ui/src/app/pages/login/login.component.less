@@ -13,24 +13,10 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input} from '@angular/core';
-import {PasswordChangeData} from './password-change-data.type';
-import {ValidationState} from 'src/app/types/validation-state';
-
-@Component({
-    selector: 'app-change-password-form',
-    templateUrl: './change-password-form.component.html',
-    standalone: false
-})
-export class ChangePasswordFormComponent {
-
-  @Input() model!: PasswordChangeData
-  @Input() autoFocus = false
-  @Input() validation!: ValidationState
-  @Input() padded = true
-  @Input() fieldClass = 'col-8 col-md-6'
-  @Input() focusChange?: EventEmitter<boolean>
-
-  constructor() { }
-
+.small-form {
+    .card {
+        max-width: 800px;
+        width: 100%;
+        justify-self: center;
+    }
 }

@@ -11,14 +11,16 @@
         <div>
             <div [ngClass]="{'link-account-separator': sso, 'mb-0': !sso}">
                 <div class="alert alert-info rounded">
-                    <p class="mb-0">Select the community you want to register for and provide any requested information. Please contact an administrator if your community is not listed.</p>
-                    <p class="mb-0 mt-2">
+                    <div class="alert-section">Select the community you want to register for and provide any requested information. Please contact an administrator if your community is not listed.</div>
+                    <div class="alert-section">
                     @if (sso) {
-                        <span><b>Privacy note:</b> By registering you grant your consent to link your name, email and user ID to your new account.</span>
+                        <span class="alert-label">Privacy note</span>
+                        <span>By registering you grant your consent to link your name, email and user ID to your new account.</span>
                     } @else {
-                        <span><b>Privacy note:</b> By registering you grant your consent to link the provided information to your new account.</span>
+                        <span class="alert-label">Privacy note</span>
+                        <span>By registering you grant your consent to link the provided information to your new account.</span>
                     }
-                    </p>
+                    </div>
                 </div>
             </div>
             <app-form-section sectionTitle="Community">

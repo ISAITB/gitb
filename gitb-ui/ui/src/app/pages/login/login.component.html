@@ -58,7 +58,7 @@
                     @if (!isAuthenticated()) {
                         <div class="container">
                             <div class="row">
-                                <div class="offset-1 col-10">
+                                <div class="col-12" [class.small-form]="formType === LoginFormType.Login || formType === LoginFormType.ChangePassword">
                                     <form>
                                         <div class="card mb-0">
                                             <div class="card-header">
@@ -82,29 +82,23 @@
                                                         <div class="col-auto" app-tooltip tbTooltip="The secret password used to authenticate your account. This was either selected by you or provided by an administrator as a one-time password."></div>
                                                     </div>
                                                     <div class="row">
-                                                        <div class="col-10 offset-1">
+                                                        <div class="col-12">
                                                             <div class="alert alert-info rounded mb-0">
-                                                                <span><b>Privacy note:</b> By clicking 'Log in' you consent to the use of cookies to manage your session. Please refer to the legal notice (link available in the screen's footer) for more information.</span>
+                                                                <span class="alert-label">Privacy note</span>
+                                                                <span>By logging in you consent to the use of cookies to manage your session.</span>
                                                             </div>
                                                         </div>
                                                     </div>
                                                 } @else if (formType === LoginFormType.ChangePassword) {
                                                     <app-change-password-form [model]="passwordChangeData"
                                                                               [autoFocus]="true"
-                                                                              [validation]="validation"></app-change-password-form>
+                                                                              [validation]="validation"
+                                                                              [fieldClass]="'col-7'"
+                                                    ></app-change-password-form>
                                                     <div class="row">
-                                                        <div class="col-10 offset-1">
+                                                        <div class="col-12">
                                                             <div class="alert alert-info rounded mb-0">
                                                                 <span>The password you used is a one-time password that needs to be changed upon your first login.</span>
-                                                                @if (weakPassword) {
-                                                                    <div>
-                                                                        <span>The password you used is not complex enough and needs to be replaced. Your password must:</span>
-                                                                        <ul class="mb-0">
-                                                                            <li>Contain at least one uppercase letter, one lowercase letter, one digit and one symbol.</li>
-                                                                            <li>Be at least eight characters long.</li>
-                                                                        </ul>
-                                                                    </div>
-                                                                }
                                                             </div>
                                                         </div>
                                                     </div>

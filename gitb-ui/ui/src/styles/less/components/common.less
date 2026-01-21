@@ -544,6 +544,26 @@ div.table-container {
 	border: 1px solid @gray-dark-1 !important;
 	display: flex;
 	.form-check {
-		margin-bottom: 0px;
+		margin-bottom: 0;
 	}
+}
+.alert {
+    &.alert-info {
+        .alert-label {
+            background-color: @blue-info-border;
+        }
+    }
+    .alert-label {
+        font-weight: bold;
+        border-radius: 0.25rem;
+        padding: 0.15rem 0.5rem;
+        margin-right: 0.25rem;
+        font-size: small;
+    }
+    .alert-section:first-child {
+        margin-top: 0;
+    }
+    .alert-section {
+        margin-top: 0.5rem;
+    }
 }
