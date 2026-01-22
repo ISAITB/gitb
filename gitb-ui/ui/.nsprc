@@ -22,5 +22,13 @@
     "1112158": {
         "active": true,
         "notes": "SVGs are never handled with Angular template interpolation."
+    },
+    "1112455": {
+        "active": true,
+        "notes": "The lodash functions in question are not used and lodash is removed from the development branch."
+    },
+    "1112453": {
+        "active": true,
+        "notes": "The lodash functions in question are not used and lodash is removed from the development branch."
     }
 }
