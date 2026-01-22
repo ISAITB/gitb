@@ -13,20 +13,19 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { BsModalService } from "ngx-bootstrap/modal"
-import { filter, map } from 'lodash'
-import { CodeEditorModalComponent } from "../../code-editor-modal/code-editor-modal.component"
-import { AssertionReport } from "../assertion-report"
-import { Indicator } from "../../code-editor-modal/indicator"
-import { ReportService } from "src/app/services/report.service"
-import { AnyContent } from "../any-content"
-import { mergeMap, Observable, of, map as rxMap, share } from "rxjs"
-import { HtmlService } from "src/app/services/html.service"
-import { DataService } from "src/app/services/data.service"
-import { FileReference } from "src/app/types/file-reference"
-import { ValueType } from "src/app/types/value-type"
-import { ValueWithMetadata } from "src/app/types/value-with-metadata"
-import { BaseComponent } from "src/app/pages/base-component.component"
+import {BsModalService} from 'ngx-bootstrap/modal';
+import {CodeEditorModalComponent} from '../../code-editor-modal/code-editor-modal.component';
+import {AssertionReport} from '../assertion-report';
+import {Indicator} from '../../code-editor-modal/indicator';
+import {ReportService} from 'src/app/services/report.service';
+import {AnyContent} from '../any-content';
+import {map as rxMap, mergeMap, Observable, of, share} from 'rxjs';
+import {HtmlService} from 'src/app/services/html.service';
+import {DataService} from 'src/app/services/data.service';
+import {FileReference} from 'src/app/types/file-reference';
+import {ValueType} from 'src/app/types/value-type';
+import {ValueWithMetadata} from 'src/app/types/value-with-metadata';
+import {BaseComponent} from 'src/app/pages/base-component.component';
 
 export abstract class ReportSupport extends BaseComponent{
 
@@ -137,11 +136,11 @@ export abstract class ReportSupport extends BaseComponent{
         if (name == undefined || assertionReports == undefined) {
             return []
         }
-        let relatedAssertionReports = filter(assertionReports, (assertionReport) => {
+        let relatedAssertionReports = assertionReports.filter((assertionReport) => {
             let location = assertionReport.extractedLocation
             return name != undefined && location != undefined && location.name.toLowerCase() == name.toLowerCase()
         })
-        let indicators: Indicator[] = map(relatedAssertionReports, (assertionReport) => {
+        let indicators: Indicator[] = relatedAssertionReports.map((assertionReport) => {
             let location = assertionReport.extractedLocation
             const indicator: Indicator = {
                 location: location!,

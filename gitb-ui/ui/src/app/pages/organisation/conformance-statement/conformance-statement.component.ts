@@ -16,7 +16,6 @@
 import {Component, ElementRef, EventEmitter, NgZone, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {saveAs} from 'file-saver';
-import {map} from 'lodash';
 import {BsModalService} from 'ngx-bootstrap/modal';
 import {finalize, forkJoin, mergeMap, Observable, of, tap} from 'rxjs';
 import {Constants} from 'src/app/common/constants';
@@ -585,7 +584,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   }
 
   private executeHeadless(testCases: ConformanceTestCase[]) {
-    const testCaseIds = map(testCases, (test) => { return test.id } )
+    const testCaseIds = testCases.map((test) => test.id)
     this.testService.startHeadlessTestSessions(testCaseIds, this.specId!, this.systemId, this.actorId, this.executionMode == this.executionModeSequential)
     .subscribe(() => {
       if (testCaseIds.length == 1) {

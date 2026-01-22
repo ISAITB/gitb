@@ -18,7 +18,6 @@ import {DataService} from 'src/app/services/data.service';
 import {ItemMap} from './item-map';
 import {MultiSelectConfig} from './multi-select-config';
 import {EntityWithId} from '../../types/entity-with-id';
-import {filter, find} from 'lodash';
 import {FilterValues} from '../test-filter/filter-values';
 import {FilterUpdate} from '../test-filter/filter-update';
 import {map, Observable, of, share, Subscription} from 'rxjs';
@@ -213,11 +212,11 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
           const previouslySelectedItem = this.selectedSelectedItems[id].item
           if (this.itemsWithSameValue[id]) {
             // Other similarly valued items exist.
-            let otherApplicableItemWithSameTextValue = find(this.itemsWithSameValue[id], (entry) => { return entry.applicable })
+            let otherApplicableItemWithSameTextValue = this.itemsWithSameValue[id].find((entry) => { return entry.applicable })
             if (otherApplicableItemWithSameTextValue != undefined) {
               const newSelectedItemId = otherApplicableItemWithSameTextValue.item.id
               // A previously hidden similarly valued item still applies - replace the visible one with it.
-              const otherHiddenItems = filter(this.itemsWithSameValue[id], (entry) => { return entry.item.id != newSelectedItemId })
+              const otherHiddenItems = this.itemsWithSameValue[id].filter((entry) => { return entry.item.id != newSelectedItemId })
               // Add the previously selected item as a hidden, non-applicable one and the remaining ones.
               this.itemsWithSameValue[newSelectedItemId] = [{applicable: false, item: previouslySelectedItem}].concat(otherHiddenItems)
               this.selectedSelectedItems[newSelectedItemId] = { selected: true, item: otherApplicableItemWithSameTextValue.item }
@@ -549,7 +548,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
     if (this.selectedSelectedItems[id]) {
       return true
     } else if (this.itemsWithSameValue[id]) {
-      return find(this.itemsWithSameValue[id], (entry) => {
+      return this.itemsWithSameValue[id].find((entry) => {
         return entry.applicable && entry.item.id == id
       }) != undefined
     }
@@ -559,7 +558,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
   private findItemWithSameTextValue(items: T[], item: T) {
     let itemWithSameTextValue: T|undefined
     if (items != undefined) {
-      itemWithSameTextValue = find(items, (existingItem) => {
+      itemWithSameTextValue = items.find((existingItem) => {
         return existingItem[this.config.textField] == item[this.config.textField]
       })
     }
@@ -623,7 +622,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
       this.visibleAvailableItems = this.availableItems
     } else {
       const textForSearch = this.textValue.trim().toLowerCase()
-      this.visibleAvailableItems = filter(this.availableItems, (item) => { return (<string>item[this.config.textField]).toLowerCase().indexOf(textForSearch) >= 0 })
+      this.visibleAvailableItems = this.availableItems.filter((item) => { return (<string>item[this.config.textField]).toLowerCase().indexOf(textForSearch) >= 0 })
     }
   }
 
@@ -680,7 +679,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
   private getHiddenItemsForItem(item: T, applicable: boolean): T[] {
     let items: T[] = []
     if (this.itemsWithSameValue[item.id]) {
-      items = filter(this.itemsWithSameValue[item.id], (otherItem) => { return otherItem.applicable == applicable }).map((otherItem) => otherItem.item)
+      items = this.itemsWithSameValue[item.id].filter((otherItem) => { return otherItem.applicable == applicable }).map((otherItem) => otherItem.item)
     }
     if (items == undefined) {
       items = []

@@ -18,7 +18,6 @@ import {ActivatedRoute} from '@angular/router';
 import {Constants} from 'src/app/common/constants';
 import {DataService} from 'src/app/services/data.service';
 import {SystemService} from 'src/app/services/system.service';
-import {find} from 'lodash';
 import {RoutingService} from 'src/app/services/routing.service';
 import {System} from 'src/app/types/system';
 import {ConformanceStatementItem} from 'src/app/types/conformance-statement-item';
@@ -114,7 +113,7 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
         this.latestSnapshotButtonLabel = Constants.LATEST_CONFORMANCE_STATUS_LABEL
       }
       if (snapshotId != undefined) {
-        const referencedSnapshot = find(this.conformanceSnapshots, (snapshot) => snapshot.id == snapshotId)
+        const referencedSnapshot = this.conformanceSnapshots.find((snapshot) => snapshot.id == snapshotId)
         if (referencedSnapshot) {
           this.activeConformanceSnapshot = referencedSnapshot
           this.snapshotButtonLabel = this.activeConformanceSnapshot.label
@@ -141,9 +140,7 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
         systemToSelect = systems[0]
       } else if (this.route.snapshot.queryParamMap.has(Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID)) {
         const systemId = Number(this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID))
-        systemToSelect = find(this.systems, (sys) => {
-          return sys.id == systemId
-        })
+        systemToSelect = this.systems.find((sys) => sys.id == systemId)
       }
       if (systemToSelect) {
         this.systemSelectionConfig.replaceSelectedItems!.emit([systemToSelect])

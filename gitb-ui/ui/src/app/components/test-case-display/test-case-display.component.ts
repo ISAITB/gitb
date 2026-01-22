@@ -19,7 +19,6 @@ import {Constants} from 'src/app/common/constants';
 import {ConformanceTestCase} from 'src/app/pages/organisation/conformance-statement/conformance-test-case';
 import {ReportService} from 'src/app/services/report.service';
 import {saveAs} from 'file-saver';
-import {sortBy} from 'lodash';
 import {ConformanceService} from 'src/app/services/conformance.service';
 import {HtmlService} from 'src/app/services/html.service';
 import {SpecificationReferenceInfo} from 'src/app/types/specification-reference-info';
@@ -32,6 +31,7 @@ import {TestResultStatusDisplayComponentApi} from '../test-result-status-display
 import {CheckBoxOptionPanelComponentApi} from '../checkbox-option-panel/check-box-option-panel-component-api';
 import {CheckboxOption} from '../checkbox-option-panel/checkbox-option';
 import {CheckboxOptionState} from '../checkbox-option-panel/checkbox-option-state';
+import {TestCaseTag} from '../../types/test-case-tag';
 
 @Component({
     selector: 'app-test-case-display',
@@ -97,7 +97,7 @@ export class TestCaseDisplayComponent extends BaseComponent implements TestCaseD
 
   getParsedTags(testCase: ConformanceTestCase) {
     if (testCase.tags != undefined && testCase.parsedTags == undefined) {
-      testCase.parsedTags = sortBy(JSON.parse(testCase.tags), ['name'])
+      testCase.parsedTags = (<TestCaseTag[]>JSON.parse(testCase.tags)).sort((a, b) => a.name.localeCompare(b.name))
     }
     return testCase.parsedTags
   }

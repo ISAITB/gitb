@@ -29,7 +29,6 @@ import {LegalNoticeService} from 'src/app/services/legal-notice.service';
 import {ErrorTemplateService} from 'src/app/services/error-template.service';
 import {PopupService} from 'src/app/services/popup.service';
 import {SystemConfigurationService} from 'src/app/services/system-configuration.service';
-import {find} from 'lodash';
 import {Community} from 'src/app/types/community';
 import {CommunityService} from 'src/app/services/community.service';
 import {OrganisationService} from 'src/app/services/organisation.service';
@@ -253,7 +252,7 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
     .pipe(
       mergeMap((data) => {
         // Account retention period.
-        const accountRetentionPeriodConfig = find(data, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.ACCOUNT_RETENTION_PERIOD)
+        const accountRetentionPeriodConfig = data.find((configItem) => configItem.name == Constants.SYSTEM_CONFIG.ACCOUNT_RETENTION_PERIOD)
         if (accountRetentionPeriodConfig && accountRetentionPeriodConfig.parameter != undefined) {
           this.accountRetentionPeriodEnabled = true
           this.accountRetentionPeriodValue = Number(accountRetentionPeriodConfig.parameter)
@@ -265,7 +264,7 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
         this.accountRetentionPeriodStatus.fromEnv = accountRetentionPeriodConfig != undefined && accountRetentionPeriodConfig.environment
         this.accountRetentionPeriodStatus.fromDefault = accountRetentionPeriodConfig != undefined && accountRetentionPeriodConfig.default
         // TTL.
-        const ttlConfig = find(data, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.SESSION_ALIVE_TIME)
+        const ttlConfig = data.find((configItem) => configItem.name == Constants.SYSTEM_CONFIG.SESSION_ALIVE_TIME)
         if (ttlConfig && ttlConfig.parameter != undefined) {
           this.ttlEnabled = true
           this.ttlValue = Number(ttlConfig.parameter)
@@ -277,29 +276,29 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
         this.ttlStatus.fromEnv = ttlConfig != undefined && ttlConfig.environment
         this.ttlStatus.fromDefault = ttlConfig != undefined && ttlConfig.default
         // Software version status check.
-        const softwareVersionCheckConfig = find(data, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.SOFTWARE_VERSION_CHECK)
+        const softwareVersionCheckConfig = data.find((configItem) => configItem.name == Constants.SYSTEM_CONFIG.SOFTWARE_VERSION_CHECK)
         this.initialiseSoftwareVersionCheckSettings(softwareVersionCheckConfig)
         // REST API.
-        const restApiConfig = find(data, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.REST_API_ENABLED)
+        const restApiConfig = data.find((configItem) => configItem.name == Constants.SYSTEM_CONFIG.REST_API_ENABLED)
         this.restApiEnabled = restApiConfig != undefined && restApiConfig.parameter != undefined && restApiConfig.parameter.toLowerCase() == 'true'
         this.restApiStatus.enabled = this.restApiEnabled
         this.restApiStatus.fromEnv = restApiConfig != undefined && restApiConfig.environment
         this.restApiStatus.fromDefault = restApiConfig != undefined && restApiConfig.default
-        this.restApiAdminKey = find(data, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.REST_API_ADMIN_KEY)!.parameter!
+        this.restApiAdminKey = data.find((configItem) => configItem.name == Constants.SYSTEM_CONFIG.REST_API_ADMIN_KEY)!.parameter!
         // Self registration.
-        const selfRegistrationConfig = find(data, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.SELF_REGISTRATION_ENABLED)
+        const selfRegistrationConfig = data.find((configItem) => configItem.name == Constants.SYSTEM_CONFIG.SELF_REGISTRATION_ENABLED)
         this.selfRegistrationEnabled = selfRegistrationConfig != undefined && selfRegistrationConfig.parameter != undefined && selfRegistrationConfig.parameter.toLowerCase() == 'true'
         this.selfRegistrationStatus.enabled = this.selfRegistrationEnabled
         this.selfRegistrationStatus.fromEnv = selfRegistrationConfig != undefined && selfRegistrationConfig.environment
         this.selfRegistrationStatus.fromDefault = selfRegistrationConfig != undefined && selfRegistrationConfig.default
         // Startup wizard.
-        const startupWizardConfig = find(data, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.STARTUP_WIZARD)
+        const startupWizardConfig = data.find((configItem) => configItem.name == Constants.SYSTEM_CONFIG.STARTUP_WIZARD)
         this.startupWizardEnabled = startupWizardConfig != undefined && startupWizardConfig.parameter != undefined && startupWizardConfig.parameter.toLowerCase() == 'true'
         this.startupWizardStatus.enabled = this.startupWizardEnabled
         this.startupWizardStatus.fromEnv = startupWizardConfig != undefined && startupWizardConfig.environment
         this.startupWizardStatus.fromDefault = startupWizardConfig != undefined && startupWizardConfig.default
         // Usage tips.
-        const usageTipsConfig = find(data, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.USAGE_TIPS)
+        const usageTipsConfig = data.find((configItem) => configItem.name == Constants.SYSTEM_CONFIG.USAGE_TIPS)
         if (usageTipsConfig && usageTipsConfig.parameter) {
           this.usageTipsValue = JSON.parse(usageTipsConfig.parameter)
         } else {
@@ -309,11 +308,11 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
         this.usageTipsStatus.fromEnv = usageTipsConfig != undefined && usageTipsConfig.environment
         this.usageTipsStatus.fromDefault = usageTipsConfig != undefined && usageTipsConfig.default
         // Welcome page message.
-        const welcomeMessageConfig = find(data, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.WELCOME_MESSAGE)
+        const welcomeMessageConfig = data.find((configItem) => configItem.name == Constants.SYSTEM_CONFIG.WELCOME_MESSAGE)
         if (welcomeMessageConfig && welcomeMessageConfig.parameter) {
           this.welcomePageMessage = welcomeMessageConfig.parameter
         }
-        const welcomeTitleConfig = find(data, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.WELCOME_TITLE)
+        const welcomeTitleConfig = data.find((configItem) => configItem.name == Constants.SYSTEM_CONFIG.WELCOME_TITLE)
         if (welcomeTitleConfig && welcomeTitleConfig.parameter) {
           this.welcomePageTitle = welcomeTitleConfig.parameter
         }
@@ -321,7 +320,7 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
         this.welcomePageStatus.fromDefault = welcomeMessageConfig != undefined && welcomeMessageConfig.default && welcomeTitleConfig != undefined && welcomeTitleConfig.default
         this.welcomePageStatus.enabled = !this.welcomePageStatus.fromDefault
         // Email settings.
-        const emailSettingsConfig = find(data, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.EMAIL_SETTINGS)
+        const emailSettingsConfig = data.find((configItem) => configItem.name == Constants.SYSTEM_CONFIG.EMAIL_SETTINGS)
         this.initialiseEmailSettings(emailSettingsConfig)
         this.emailSslProtocolsSelectConfig = {
           name: 'emailSslProtocols',
@@ -380,7 +379,7 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
           searchPlaceholder: 'Search users...',
           loader: () => of(this.users)
         }
-        const demoAccountConfig = find(data, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.DEMO_ACCOUNT)
+        const demoAccountConfig = data.find((configItem) => configItem.name == Constants.SYSTEM_CONFIG.DEMO_ACCOUNT)
         if (demoAccountConfig) {
           this.demoAccountEnabled = demoAccountConfig.parameter != undefined
           this.demoAccountStatus.enabled = this.demoAccountEnabled
@@ -479,7 +478,7 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
 
   applyDemoCommunity() {
     if (this.selectedOrganisation && this.communities && this.communities.length > 0) {
-      this.selectedCommunity = find(this.communities, (community) => community.id == this.selectedOrganisation?.community)
+      this.selectedCommunity = this.communities.find((community) => community.id == this.selectedOrganisation?.community)
       this.loadCommunityOrganisations().subscribe(() => {
         this.communitySelectConfig.eventsDisabled = true
         this.organisationSelectConfig.eventsDisabled = true
@@ -691,7 +690,7 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
   }
 
   createTheme() {
-    const activeTheme = find(this.themes, (theme) => theme.active)
+    const activeTheme = this.themes.find((theme) => theme.active)
     if (activeTheme) {
       this.routingService.toCreateTheme(activeTheme.id)
     }
@@ -938,11 +937,11 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
       this.systemConfigurationService.updateConfigurationValues([ { name: Constants.SYSTEM_CONFIG.WELCOME_MESSAGE }, { name: Constants.SYSTEM_CONFIG.WELCOME_TITLE } ])
       .subscribe((appliedValues) => {
         if (appliedValues) {
-          const message = find(appliedValues, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.WELCOME_MESSAGE)
+          const message = appliedValues.find((configItem) => configItem.name == Constants.SYSTEM_CONFIG.WELCOME_MESSAGE)
           if (message != undefined) {
             this.welcomePageMessage = message.parameter
           }
-          const title = find(appliedValues, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.WELCOME_TITLE)
+          const title = appliedValues.find((configItem) => configItem.name == Constants.SYSTEM_CONFIG.WELCOME_TITLE)
           if (title != undefined) {
             this.welcomePageTitle = title.parameter
           }

@@ -15,7 +15,6 @@
 
 import {Component, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
 import {TableColumnDefinition} from 'src/app/types/table-column-definition.type';
-import {isBoolean} from 'lodash';
 import {TableColumnData} from 'src/app/types/table-column-data.type';
 import {Constants} from 'src/app/common/constants';
 import {Observable, of} from 'rxjs';
@@ -88,7 +87,7 @@ export class TableRowComponent implements OnInit, TableRowApi {
     for (let column of this.columns) {
       let columnDataItem: TableColumnData = {
         data: this.data[column.field],
-        boolean: isBoolean(this.data[column.field]),
+        boolean: typeof this.data[column.field] === 'boolean',
         isHiddenFlag: column.isHiddenFlag,
         class: ''
       }

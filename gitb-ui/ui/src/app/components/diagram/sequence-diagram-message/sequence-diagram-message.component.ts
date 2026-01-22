@@ -17,7 +17,6 @@ import {Component, Input, OnDestroy, OnInit} from '@angular/core';
 import {Constants} from 'src/app/common/constants';
 import {ActorInfo} from '../actor-info';
 import {StepData} from '../step-data';
-import {flatten, map, max} from 'lodash';
 import {ReportService} from 'src/app/services/report.service';
 import {BsModalService} from 'ngx-bootstrap/modal';
 import {TestStepReportModalComponent} from '../test-step-report-modal/test-step-report-modal.component';
@@ -122,25 +121,25 @@ export class SequenceDiagramMessageComponent implements OnInit, OnDestroy {
 
   calculateDepth(message: StepData): number {
     if (message.type == 'loop') {
-      let childDepths = map(message.steps, this.calculateDepth.bind(this))
-      return (max(childDepths)!) + 1
+      let childDepths = message.steps.map((step) => this.calculateDepth(step))
+      return (Math.max(...childDepths)!) + 1
     } else if (message.type == 'group') {
-      let childDepths = map(message.steps, this.calculateDepth.bind(this))
-      return (max(childDepths)!) + 1
+      let childDepths = message.steps.map((step) => this.calculateDepth(step))
+      return (Math.max(...childDepths)!) + 1
     } else if (message.type == 'decision') {
       let childDepths: number[]
       if (message.else != undefined) {
-        childDepths = map((message.then!.concat(message.else)), this.calculateDepth.bind(this))
+        childDepths = message.then!.concat(message.else).map((step) => this.calculateDepth(step))
       } else {
-        childDepths = map(message.then, this.calculateDepth.bind(this))
+        childDepths = message.then!.map((step) => this.calculateDepth(step))
       }
-      return (max(childDepths)!) + 1
+      return (Math.max(...childDepths)!) + 1
     } else if (message.type == 'flow') {
-      let childDepths = map((flatten(message.threads)), this.calculateDepth.bind(this))
-      return (max(childDepths)!) + 1
+      let childDepths = ((message.threads == undefined)?[]:message.threads.flat()).map((step) => this.calculateDepth(step))
+      return (Math.max(...childDepths)!) + 1
     } else if (message.type == 'interact') {
-      let childDepths = map(message.interactions, this.calculateDepth.bind(this))
-      return (max(childDepths)!) + 1
+      let childDepths = message.interactions!.map((step) => this.calculateDepth(step))
+      return (Math.max(...childDepths)!) + 1
     } else if (message.type == 'instruction' || message.type == 'request') {
       return 1
     } else {

@@ -13,16 +13,15 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input, OnDestroy, OnInit } from '@angular/core';
-import { RoutingService } from 'src/app/services/routing.service';
-import { BreadcrumbItem } from './breadcrumb-item';
-import { DataService } from 'src/app/services/data.service';
-import { find } from 'lodash';
-import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
-import { BreadcrumbService } from 'src/app/services/breadcrumb.service';
-import { BreadcrumbLabelRequest } from 'src/app/types/breadcrumb-label-request';
-import { Subscription } from 'rxjs';
-import { Constants } from 'src/app/common/constants';
+import {Component, Input, OnDestroy, OnInit} from '@angular/core';
+import {RoutingService} from 'src/app/services/routing.service';
+import {BreadcrumbItem} from './breadcrumb-item';
+import {DataService} from 'src/app/services/data.service';
+import {BreadcrumbType} from 'src/app/types/breadcrumb-type';
+import {BreadcrumbService} from 'src/app/services/breadcrumb.service';
+import {BreadcrumbLabelRequest} from 'src/app/types/breadcrumb-label-request';
+import {Subscription} from 'rxjs';
+import {Constants} from 'src/app/common/constants';
 
 @Component({
     selector: 'app-breadcrumb',
@@ -71,7 +70,7 @@ export class BreadcrumbComponent implements OnInit, OnDestroy {
   }
 
   private updateBreadcrumbLabel(crumbs: BreadcrumbItem[], id: number|string, type: BreadcrumbType, label: string) {
-    const locatedCrumb = find(crumbs, (crumb) => crumb.type == type && crumb.typeId == id)
+    const locatedCrumb = crumbs.find((crumb) => crumb.type == type && crumb.typeId == id)
     if (locatedCrumb) {
       locatedCrumb.label = label
     }
@@ -87,7 +86,7 @@ export class BreadcrumbComponent implements OnInit, OnDestroy {
       if (newCrumb.label == undefined && newCrumb.typeId != undefined) {
         if (this.breadcrumbs) {
           const previousCrumbs = this.breadcrumbs
-          const locatedCrumb = find(previousCrumbs, (crumb) => crumb.type == newCrumb.type && crumb.typeId == newCrumb.typeId)
+          const locatedCrumb = previousCrumbs.find((crumb) => crumb.type == newCrumb.type && crumb.typeId == newCrumb.typeId)
           if (locatedCrumb) {
             newCrumb.label = locatedCrumb.label
           } else {
@@ -122,43 +121,43 @@ export class BreadcrumbComponent implements OnInit, OnDestroy {
       this.breadcrumbService.getBreadcrumbLabels(request)
       .subscribe((data) => {
         if (data.domain) {
-          const crumb = find(crumbsToLookup, (crumb) => crumb.type == BreadcrumbType.domain || crumb.type == BreadcrumbType.myDomain)
+          const crumb = crumbsToLookup.find((crumb) => crumb.type == BreadcrumbType.domain || crumb.type == BreadcrumbType.myDomain)
           if (crumb) {
             crumb.label = data.domain
           }
         }
         if (data.specificationGroup) {
-          const crumb = find(crumbsToLookup, (crumb) => crumb.type == BreadcrumbType.specificationGroup)
+          const crumb = crumbsToLookup.find((crumb) => crumb.type == BreadcrumbType.specificationGroup)
           if (crumb) {
             crumb.label = data.specificationGroup
           }
         }
         if (data.specification) {
-          const crumb = find(crumbsToLookup, (crumb) => crumb.type == BreadcrumbType.specification)
+          const crumb = crumbsToLookup.find((crumb) => crumb.type == BreadcrumbType.specification)
           if (crumb) {
             crumb.label = data.specification
           }
         }
         if (data.actor) {
-          const crumb = find(crumbsToLookup, (crumb) => crumb.type == BreadcrumbType.actor)
+          const crumb = crumbsToLookup.find((crumb) => crumb.type == BreadcrumbType.actor)
           if (crumb) {
             crumb.label = data.actor
           }
         }
         if (data.community) {
-          const crumb = find(crumbsToLookup, (crumb) => crumb.type == BreadcrumbType.community || crumb.type == BreadcrumbType.myCommunity)
+          const crumb = crumbsToLookup.find((crumb) => crumb.type == BreadcrumbType.community || crumb.type == BreadcrumbType.myCommunity)
           if (crumb) {
             crumb.label = data.community
           }
         }
         if (data.organisation) {
-          const crumb = find(crumbsToLookup, (crumb) => crumb.type == BreadcrumbType.organisation || crumb.type == BreadcrumbType.ownOrganisation)
+          const crumb = crumbsToLookup.find((crumb) => crumb.type == BreadcrumbType.organisation || crumb.type == BreadcrumbType.ownOrganisation)
           if (crumb) {
             crumb.label = data.organisation
           }
         }
         if (data.system) {
-          const crumb = find(crumbsToLookup, (crumb) => crumb.type == BreadcrumbType.system || crumb.type == BreadcrumbType.ownSystem)
+          const crumb = crumbsToLookup.find((crumb) => crumb.type == BreadcrumbType.system || crumb.type == BreadcrumbType.ownSystem)
           if (crumb) {
             crumb.label = data.system
           }

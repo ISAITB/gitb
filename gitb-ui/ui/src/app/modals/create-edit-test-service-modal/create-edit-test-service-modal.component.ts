@@ -22,7 +22,6 @@ import {DomainParameterService} from '../../services/domain-parameter.service';
 import {PopupService} from '../../services/popup.service';
 import {Constants} from '../../common/constants';
 import {ValidationState} from '../../types/validation-state';
-import {cloneDeep} from 'lodash';
 import {Id} from '../../types/id';
 import {DataService} from '../../services/data.service';
 import {ServiceCallResultHandlerService} from '../../services/service-call-result-handler.service';
@@ -76,7 +75,7 @@ export class CreateEditTestServiceModalComponent extends BaseComponent implement
   }
 
   ngOnInit(): void {
-    this.testService = cloneDeep(this.testService)
+    this.testService = structuredClone(this.testService)
     if (this.testService.service == undefined) {
       this.testService.service = {
         id: 0,
@@ -189,7 +188,7 @@ export class CreateEditTestServiceModalComponent extends BaseComponent implement
   }
 
   private prepareServiceDataForSubmission() {
-    const serviceData = cloneDeep(this.testService) as TestServiceWithParameter
+    const serviceData = structuredClone(this.testService) as TestServiceWithParameter
     if (this.hasBasicAuthentication) {
       if (!this.updateBasicAuthPassword) {
         serviceData.service.authBasicPassword = undefined

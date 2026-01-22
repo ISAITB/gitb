@@ -28,7 +28,6 @@ import {IdLabel} from 'src/app/types/id-label';
 import {OrganisationParameter} from 'src/app/types/organisation-parameter';
 import {SystemParameter} from 'src/app/types/system-parameter';
 import {Trigger} from 'src/app/types/trigger';
-import {remove} from 'lodash';
 import {forkJoin, Observable, of} from 'rxjs';
 import {DomainParameter} from 'src/app/types/domain-parameter';
 import {map, share} from 'rxjs/operators';
@@ -46,6 +45,7 @@ import {TriggerFireExpression} from '../../../../types/trigger-fire-expression';
 import {TriggerFireExpressionModalComponent} from './trigger-fire-expression-modal/trigger-fire-expression-modal.component';
 import {DomainParameterService} from '../../../../services/domain-parameter.service';
 import {ServiceCallResultHandlerService} from '../../../../services/service-call-result-handler.service';
+import {Utils} from '../../../../common/utils';
 
 @Component({
     selector: 'app-trigger',
@@ -166,7 +166,7 @@ export class TriggerComponent extends BaseComponent implements OnInit {
           this.organisationParameterMap[parameter.id] = parameter
         }
         if (this.organisationParameters.length == 0) {
-          remove(this.dataTypes, (current) => current.id == Constants.TRIGGER_DATA_TYPE.ORGANISATION_PARAMETER)
+          Utils.removeFromArray(this.dataTypes, (current) => current.id == Constants.TRIGGER_DATA_TYPE.ORGANISATION_PARAMETER)
         }
       }),
       share()
@@ -179,7 +179,7 @@ export class TriggerComponent extends BaseComponent implements OnInit {
           this.systemParameterMap[parameter.id] = parameter
         }
         if (this.systemParameters.length == 0) {
-          remove(this.dataTypes, (current) => current.id == Constants.TRIGGER_DATA_TYPE.SYSTEM_PARAMETER)
+          Utils.removeFromArray(this.dataTypes, (current) => current.id == Constants.TRIGGER_DATA_TYPE.SYSTEM_PARAMETER)
         }
       }),
       share()
@@ -192,7 +192,7 @@ export class TriggerComponent extends BaseComponent implements OnInit {
           this.statementParameterMap[parameter.id] = parameter
         }
         if (this.statementParameters.length == 0) {
-          remove(this.dataTypes, (current) => current.id == Constants.TRIGGER_DATA_TYPE.STATEMENT_PARAMETER)
+          Utils.removeFromArray(this.dataTypes, (current) => current.id == Constants.TRIGGER_DATA_TYPE.STATEMENT_PARAMETER)
         }
       }),
       share()
@@ -213,7 +213,7 @@ export class TriggerComponent extends BaseComponent implements OnInit {
             this.domainParameterMap[parameter.id] = parameter
           }
           if (this.domainParameters.length == 0) {
-            remove(this.dataTypes, (current) => current.id == Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER)
+            Utils.removeFromArray(this.dataTypes, (current) => current.id == Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER)
           }
         }),
         share()

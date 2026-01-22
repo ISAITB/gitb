@@ -16,11 +16,11 @@
 import {Component, Input, OnInit} from '@angular/core';
 import {ActorInfo} from '../actor-info';
 import {StepData} from '../step-data';
-import {filter, flatten, minBy, reduce, uniq} from 'lodash';
 import {ActorRole} from '../../../types/actor-role';
 import {Constants} from 'src/app/common/constants';
 import {DiagramEvents} from '../diagram-events';
 import {TestCaseDefinitionActors} from '../../../types/test-case-definition-actors';
+import {Utils} from '../../../common/utils';
 
 @Component({
     selector: 'app-sequence-diagram',
@@ -100,16 +100,16 @@ export class SequenceDiagramComponent implements OnInit {
     ])
   }
 
-  stepFilter(this: SequenceDiagramComponent, step: StepData): boolean {
+  private stepFilter(step: StepData): boolean {
     return step.type == 'msg' ||
       step.type == 'verify' ||
       step.type == 'process' ||
       step.type == 'interact' ||
       step.type == 'exit' ||
-      (step.type == 'group' && (filter(step.steps, this.stepFilter.bind(this))).length > 0) ||
-      (step.type == 'loop' && (filter(step.steps, this.stepFilter.bind(this))).length > 0) ||
-      (step.type == 'decision' && (filter(step.then, this.stepFilter.bind(this))).length + (filter(step.else, this.stepFilter.bind(this))).length > 0) ||
-      (step.type == 'flow' && (filter(step.threads, ((thread) => (filter(thread, this.stepFilter.bind(this))).length > 0))).length > 0)
+      (step.type == 'group' && (step.steps.filter((s) => this.stepFilter(s)).length > 0)) ||
+      (step.type == 'loop' && (step.steps.filter((s) => this.stepFilter(s)).length > 0)) ||
+      (step.type == 'decision' && (((step.then == undefined)?0:step.then.filter((s) => this.stepFilter(s)).length) + ((step.else == undefined)?0:step.else.filter((s) => this.stepFilter(s)).length)) > 0) ||
+      (step.type == 'flow' && (((step.threads == undefined)?0:step.threads.filter(((thread) => thread.filter((s) => this.stepFilter(s)).length > 0)).length) > 0))
   }
 
   processStep(step: StepData, actorInfo: ActorInfo[], currentLevel: number) {
@@ -187,10 +187,10 @@ export class SequenceDiagramComponent implements OnInit {
     return false
   }
 
-  extractSteps(s: StepData[]|undefined, actorInfo: ActorInfo[], currentLevel: number) {
+  extractSteps(stepsToProcess: StepData[]|undefined, actorInfo: ActorInfo[], currentLevel: number) {
     let results: StepData[] = []
-    if (s != undefined) {
-      let steps = filter(s, this.stepFilter.bind(this))
+    if (stepsToProcess != undefined) {
+      let steps = stepsToProcess.filter((step) => this.stepFilter(step))
       for (let step of steps) {
         results = results.concat(this.processStep(step, actorInfo, currentLevel + 1))
       }
@@ -304,12 +304,12 @@ export class SequenceDiagramComponent implements OnInit {
             instructionActors = [Constants.TEST_ENGINE_ACTOR_ID, Constants.TESTER_ACTOR_ID]
             requestActors = [Constants.TESTER_ACTOR_ID, Constants.TEST_ENGINE_ACTOR_ID]
           }
-          return flatten(instructionActors.concat(requestActors))
+          return instructionActors.concat(requestActors).flat()
         } else {
           return []
         }
       })
-      return uniq(flatten(collection))
+      return Utils.uniqueValues(collection.flat())
     }
   }
 
@@ -392,11 +392,15 @@ export class SequenceDiagramComponent implements OnInit {
   }
 
   private leftMostStep(steps: StepData[]) {
-    return minBy(steps, this.leftMostStepActorIndex.bind(this))
+    if (steps.length == 0) {
+      return undefined
+    } else {
+      return steps.reduce((min, item) => (this.leftMostStepActorIndex(item) < this.leftMostStepActorIndex(min))?item:min)
+    }
   }
 
   private rightMostStep(steps: StepData[]) {
-    return reduce(steps, (best: StepData|null, step: StepData): StepData => {
+    return steps.reduce((best: StepData|null, step: StepData): StepData => {
       if (!best) return step;
       const bestIndex = this.rightMostStepActorIndex(best)
       const currentIndex = this.rightMostStepActorIndex(step)
@@ -436,7 +440,7 @@ export class SequenceDiagramComponent implements OnInit {
 
   setFlowStepChildIndexes(message: StepData) {
     message.threads?.forEach(thread => this.setStepIndexes(thread))
-    const childSteps = flatten(message.threads)
+    const childSteps = (message.threads == undefined)?[]:message.threads.flat()
     let firstChild = this.leftMostStep(childSteps)
     let lastChild = this.rightMostStep(childSteps)
     this.setMessageSpan(message, firstChild!, lastChild!)

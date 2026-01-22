@@ -30,7 +30,6 @@ import {saveAs} from 'file-saver';
 import {Specification} from 'src/app/types/specification';
 import {BsModalService} from 'ngx-bootstrap/modal';
 import {LinkSharedTestSuiteModalComponent} from 'src/app/modals/link-shared-test-suite-modal/link-shared-test-suite-modal.component';
-import {filter, find} from 'lodash';
 import {finalize, forkJoin, Observable, tap} from 'rxjs';
 import {ConformanceTestCase} from '../../../../organisation/conformance-statement/conformance-test-case';
 import {ConformanceTestCaseGroup} from '../../../../organisation/conformance-statement/conformance-test-case-group';
@@ -315,13 +314,11 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
   }
 
   checkedSpecifications() {
-    return filter(this.linkedSpecifications, (spec) => {
-      return spec.checked != undefined && spec.checked
-    })
+    return this.linkedSpecifications.filter((spec) => spec.checked != undefined && spec.checked)
   }
 
   specificationsChecked() {
-    return find(this.linkedSpecifications, (spec) => spec.checked != undefined && spec.checked) != undefined
+    return this.linkedSpecifications.find((spec) => spec.checked != undefined && spec.checked) != undefined
   }
 
   selectUnlinkSpecifications() {

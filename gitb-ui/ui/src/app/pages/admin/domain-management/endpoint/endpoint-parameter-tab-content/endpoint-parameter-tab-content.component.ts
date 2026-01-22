@@ -13,22 +13,21 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { ParameterData } from '../endpoint-details/parameter-data';
-import { ParameterReference } from 'src/app/types/parameter-reference';
-import { CdkDragDrop } from '@angular/cdk/drag-drop';
-import { Parameter } from 'src/app/types/parameter';
-import { ParameterPresetValue } from 'src/app/types/parameter-preset-value';
-import { find } from 'lodash';
-import { EndpointParameter } from 'src/app/types/endpoint-parameter';
-import { ParameterDetailsModalComponent } from 'src/app/components/parameters/parameter-details-modal/parameter-details-modal.component';
-import { BsModalService } from 'ngx-bootstrap/modal';
-import { ParameterService } from 'src/app/services/parameter.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { Constants } from 'src/app/common/constants';
-import { CreateParameterModalComponent } from 'src/app/components/parameters/create-parameter-modal/create-parameter-modal.component';
-import { ConformanceService } from 'src/app/services/conformance.service';
-import { DataService } from 'src/app/services/data.service';
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {ParameterData} from '../endpoint-details/parameter-data';
+import {ParameterReference} from 'src/app/types/parameter-reference';
+import {CdkDragDrop} from '@angular/cdk/drag-drop';
+import {Parameter} from 'src/app/types/parameter';
+import {ParameterPresetValue} from 'src/app/types/parameter-preset-value';
+import {EndpointParameter} from 'src/app/types/endpoint-parameter';
+import {ParameterDetailsModalComponent} from 'src/app/components/parameters/parameter-details-modal/parameter-details-modal.component';
+import {BsModalService} from 'ngx-bootstrap/modal';
+import {ParameterService} from 'src/app/services/parameter.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {Constants} from 'src/app/common/constants';
+import {CreateParameterModalComponent} from 'src/app/components/parameters/create-parameter-modal/create-parameter-modal.component';
+import {ConformanceService} from 'src/app/services/conformance.service';
+import {DataService} from 'src/app/services/data.service';
 
 @Component({
     selector: 'app-endpoint-parameter-tab-content',
@@ -188,9 +187,7 @@ export class EndpointParameterTabContentComponent implements OnInit {
 		if (parameter.kind == 'SIMPLE' && parameter.hasPresetValues) {
 			const checkedValues: ParameterPresetValue[] = []
 			for (let value of parameter.presetValues!) {
-				const existingValue = find(checkedValues, (v) => {
-          return v.value == value.value
-        })
+				const existingValue = checkedValues.find((v) => v.value == value.value)
 				if (existingValue == undefined) {
 					checkedValues.push({value: value.value, label: value.label})
         }

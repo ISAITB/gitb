@@ -13,13 +13,12 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter, OnInit, Output } from '@angular/core';
-import { Parameter } from 'src/app/types/parameter';
-import { cloneDeep } from 'lodash';
-import { BaseParameterModalComponent } from '../base-parameter-modal.component';
-import { DataService } from 'src/app/services/data.service';
-import { BsModalRef } from 'ngx-bootstrap/modal';
-import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
+import {Component, EventEmitter, OnInit, Output} from '@angular/core';
+import {Parameter} from 'src/app/types/parameter';
+import {BaseParameterModalComponent} from '../base-parameter-modal.component';
+import {DataService} from 'src/app/services/data.service';
+import {BsModalRef} from 'ngx-bootstrap/modal';
+import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
 import {Constants} from '../../../common/constants';
 
 @Component({
@@ -43,7 +42,7 @@ export class ParameterDetailsModalComponent extends BaseParameterModalComponent 
   ) { super(dataService, modalInstance) }
 
   ngOnInit(): void {
-    this.parameter = cloneDeep(this.parameter)
+    this.parameter = structuredClone(this.parameter)
     if (this.options.confirmMessage != undefined) this.confirmMessage = this.options.confirmMessage
 		this.parameter.hasPresetValues = this.parameter.allowedValues != undefined
 		if (this.parameter.hasPresetValues) {

@@ -13,26 +13,25 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { BsModalService } from 'ngx-bootstrap/modal';
-import { Constants } from 'src/app/common/constants';
-import { CreateParameterModalComponent } from 'src/app/components/parameters/create-parameter-modal/create-parameter-modal.component';
-import { CommunityService } from 'src/app/services/community.service';
-import { DataService } from 'src/app/services/data.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { CustomProperty } from 'src/app/types/custom-property.type';
-import { OrganisationParameter } from 'src/app/types/organisation-parameter';
-import { Parameter } from 'src/app/types/parameter';
-import { ParameterPresetValue } from 'src/app/types/parameter-preset-value';
-import { ParameterReference } from 'src/app/types/parameter-reference';
-import { SystemParameter } from 'src/app/types/system-parameter';
-import { find } from 'lodash'
-import { ParameterDetailsModalComponent } from 'src/app/components/parameters/parameter-details-modal/parameter-details-modal.component';
-import { ActionMethods } from './action-methods';
-import { PreviewParametersModalComponent } from 'src/app/modals/preview-parameters-modal/preview-parameters-modal.component';
-import { RoutingService } from 'src/app/services/routing.service';
-import { CdkDragDrop } from '@angular/cdk/drag-drop';
+import {Component, OnInit} from '@angular/core';
+import {ActivatedRoute} from '@angular/router';
+import {BsModalService} from 'ngx-bootstrap/modal';
+import {Constants} from 'src/app/common/constants';
+import {CreateParameterModalComponent} from 'src/app/components/parameters/create-parameter-modal/create-parameter-modal.component';
+import {CommunityService} from 'src/app/services/community.service';
+import {DataService} from 'src/app/services/data.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {CustomProperty} from 'src/app/types/custom-property.type';
+import {OrganisationParameter} from 'src/app/types/organisation-parameter';
+import {Parameter} from 'src/app/types/parameter';
+import {ParameterPresetValue} from 'src/app/types/parameter-preset-value';
+import {ParameterReference} from 'src/app/types/parameter-reference';
+import {SystemParameter} from 'src/app/types/system-parameter';
+import {ParameterDetailsModalComponent} from 'src/app/components/parameters/parameter-details-modal/parameter-details-modal.component';
+import {ActionMethods} from './action-methods';
+import {PreviewParametersModalComponent} from 'src/app/modals/preview-parameters-modal/preview-parameters-modal.component';
+import {RoutingService} from 'src/app/services/routing.service';
+import {CdkDragDrop} from '@angular/cdk/drag-drop';
 
 @Component({
     selector: 'app-community-properties',
@@ -238,7 +237,7 @@ export class CommunityPropertiesComponent implements OnInit {
       const checkedValues: ParameterPresetValue[] = []
       if (parameter.presetValues != undefined) {
         for (let value of parameter.presetValues) {
-          const existingValue = find(checkedValues, (v) => v.value == value.value)
+          const existingValue = checkedValues.find((v) => v.value == value.value)
           if (existingValue == undefined) {
             checkedValues.push({value: value.value, label: value.label})
           }

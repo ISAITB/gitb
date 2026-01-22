@@ -27,7 +27,6 @@ import {Domain} from 'src/app/types/domain';
 import {SpecificationService} from 'src/app/services/specification.service';
 import {SpecificationGroup} from 'src/app/types/specification-group';
 import {Specification} from 'src/app/types/specification';
-import {filter, find} from 'lodash';
 import {ConformanceOverviewMessage} from '../conformance-overview-message';
 import {ReportService} from 'src/app/services/report.service';
 import {HttpResponse} from '@angular/common/http';
@@ -386,10 +385,10 @@ export class ConformanceOverviewCertificateFormComponent extends BaseCertificate
         this.selectedGroup = undefined
         this.selectedSpecification = undefined
       } else if (this.messageLevel == "group") {
-        this.domains = filter(this.allDomains, (domain) => this.groupsPerDomain.has(domain.id))
+        this.domains = this.allDomains?.filter((domain) => this.groupsPerDomain.has(domain.id))
         this.selectedSpecification = undefined
       } else if (this.messageLevel == "specification") {
-        this.domains = filter(this.allDomains, (domain) => this.groupsPerDomain.has(domain.id) || this.specsPerDomain.has(domain.id))
+        this.domains = this.allDomains?.filter((domain) => this.groupsPerDomain.has(domain.id) || this.specsPerDomain.has(domain.id))
       } else {
         this.domains = []
         this.selectedDomain = undefined
@@ -404,7 +403,7 @@ export class ConformanceOverviewCertificateFormComponent extends BaseCertificate
   toggleSpecificMessageSetting() {
     if (this.specificMessageSetting && this.domains && this.domains.length > 0) {
       if (this.selectedDomain != undefined) {
-        this.selectedDomain = find(this.domains, (domain) => domain.id == this.selectedDomain!.id)
+        this.selectedDomain = this.domains.find((domain) => domain.id == this.selectedDomain!.id)
       }
       if (this.selectedDomain == undefined) {
         this.selectedDomain = this.domains[0]
@@ -421,22 +420,26 @@ export class ConformanceOverviewCertificateFormComponent extends BaseCertificate
         // The selected domain has groups.
         if (this.messageLevel == "group") {
           this.groups = this.groupsPerDomain.get(this.selectedDomain.id)
-          if (this.selectedGroup != undefined) {
-            this.selectedGroup = find(this.groups, (group) => group.id == this.selectedGroup!.id)
-          }
-          if (this.selectedGroup == undefined && this.groups!.length > 0) {
-            this.selectedGroup = this.groups![0]
+          if (this.groups != undefined) {
+            if (this.selectedGroup != undefined) {
+              this.selectedGroup = this.groups.find((group) => group.id == this.selectedGroup!.id)
+            }
+            if (this.selectedGroup == undefined && this.groups.length > 0) {
+              this.selectedGroup = this.groups[0]
+            }
           }
         } else if (this.messageLevel == "specification") {
-          this.groups = filter(this.groupsPerDomain.get(this.selectedDomain.id), (group) => this.specsPerGroup.has(group.id))
-          if (this.selectedGroup != undefined) {
-            this.selectedGroup = find(this.groups, (group) => group.id == this.selectedGroup!.id)
-          }
-          if (this.selectedGroup == undefined) {
-            if (this.specsPerDomain.has(this.selectedDomain.id)) {
-              this.selectedGroup = (this.noGroupEntry as SpecificationGroup)
-            } else if (this.groups.length > 0) {
+          this.groups = this.groupsPerDomain.get(this.selectedDomain.id)?.filter((group) => this.specsPerGroup.has(group.id))
+          if (this.groups != undefined) {
+            if (this.selectedGroup != undefined) {
+              this.selectedGroup = this.groups.find((group) => group.id == this.selectedGroup!.id)
+            }
+            if (this.selectedGroup == undefined) {
+              if (this.specsPerDomain.has(this.selectedDomain.id)) {
+                this.selectedGroup = (this.noGroupEntry as SpecificationGroup)
+              } else if (this.groups.length > 0) {
                 this.selectedGroup = this.groups[0]
+              }
             }
           }
         }

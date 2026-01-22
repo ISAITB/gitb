@@ -13,9 +13,8 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { sortBy } from 'lodash';
-import { TestCaseTag } from 'src/app/types/test-case-tag';
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {TestCaseTag} from 'src/app/types/test-case-tag';
 import {Constants} from '../../common/constants';
 
 @Component({
@@ -37,7 +36,7 @@ export class TagsDisplayComponent implements OnInit {
 
   ngOnInit(): void {
     if (this.tags) {
-      this.tags = sortBy(this.tags, ['name'])
+      this.tags.sort((a, b) => a.name.localeCompare(b.name));
     }
   }
 

@@ -15,7 +15,6 @@
 
 import {Component, EventEmitter, OnInit, ViewChild} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
-import {filter, find} from 'lodash';
 import {BsModalService} from 'ngx-bootstrap/modal';
 import {finalize, forkJoin, map, mergeMap, Observable, of, share, Subject, tap} from 'rxjs';
 import {Constants} from 'src/app/common/constants';
@@ -169,7 +168,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
   private breadcrumbLabel() {
     let label = ''
     if (this.specification.group != undefined) {
-      label += find(this.specification.groups, (group) => group.id == this.specification.group)?.sname + " - "
+      label += this.specification.groups?.find((group) => group.id == this.specification.group)?.sname + " - "
     }
     label += this.specification.sname!
     return label
@@ -294,10 +293,8 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
       map((results) => {
         const sharedTestSuitesInDomain = results[0]
         const sharedTestSuitesInSpecification = results[1].shared
-        return filter(sharedTestSuitesInDomain, (testSuite) => {
-          const foundTestSuite = find(sharedTestSuitesInSpecification, (linkedTestSuite) => {
-            return linkedTestSuite.id == testSuite.id
-          })
+        return sharedTestSuitesInDomain.filter((testSuite) => {
+          const foundTestSuite = sharedTestSuitesInSpecification.find((linkedTestSuite) => linkedTestSuite.id == testSuite.id)
           return foundTestSuite == undefined
         })
       })

@@ -16,7 +16,6 @@
 import {Component, OnInit} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {map, mergeMap, Observable, share} from 'rxjs';
-import {find, remove, sortBy} from 'lodash';
 import {DiagramEvents} from 'src/app/components/diagram/diagram-events';
 import {StepData} from 'src/app/components/diagram/step-data';
 import {BaseComponent} from 'src/app/pages/base-component.component';
@@ -35,6 +34,7 @@ import {BsModalService} from 'ngx-bootstrap/modal';
 import {CreateEditTagComponent} from 'src/app/modals/create-edit-tag/create-edit-tag.component';
 import {TestCaseTag} from 'src/app/types/test-case-tag';
 import {TestCaseDefinitionActors} from '../../../../../types/test-case-definition-actors';
+import {Utils} from '../../../../../common/utils';
 
 @Component({
     selector: 'app-test-case-details',
@@ -89,7 +89,7 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit {
     .subscribe((data) => {
 			this.testCase = data
       if (data.tags) {
-        this.testCase.parsedTags = sortBy(JSON.parse(data.tags), ['name'])
+        this.testCase.parsedTags = (<TestCaseTag[]>JSON.parse(data.tags)).sort((a, b) => a.name.localeCompare(b.name))
         for (let tag of this.testCase.parsedTags!) {
           tag.id = this.tagCounter++
         }
@@ -195,20 +195,20 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit {
       }
       createdTag.id = this.tagCounter++
       this.testCase.parsedTags.push(createdTag)
-      this.testCase.parsedTags = sortBy(this.testCase.parsedTags, ['name'])
+      this.testCase.parsedTags.sort((a, b) => a.name.localeCompare(b.name))
     })
     modal.content!.updatedTag.subscribe((updatedTag) => {
       if (this.testCase.parsedTags) {
-        remove(this.testCase.parsedTags, (tag) => tag.id == updatedTag.id)
+        Utils.removeFromArray(this.testCase.parsedTags, (tag) => tag.id == updatedTag.id)
         this.testCase.parsedTags.push(updatedTag)
-        this.testCase.parsedTags = sortBy(this.testCase.parsedTags, ['name'])
+        this.testCase.parsedTags.sort((a, b) => a.name.localeCompare(b.name))
       }
     })
   }
 
   tagEdited(tagId: number) {
     if (this.testCase.parsedTags) {
-      const selectedTag = find(this.testCase.parsedTags, (tag) => tag.id == tagId)
+      const selectedTag = this.testCase.parsedTags.find((tag) => tag.id == tagId)
       if (selectedTag) {
         this.openTagModal(selectedTag)
       }
@@ -217,7 +217,7 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit {
 
   tagDeleted(tagId: number) {
     if (this.testCase.parsedTags) {
-      remove(this.testCase.parsedTags, (tag) => tag.id == tagId)
+      Utils.removeFromArray(this.testCase.parsedTags, (tag) => tag.id == tagId)
     }
   }
 

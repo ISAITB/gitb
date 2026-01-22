@@ -29,7 +29,6 @@ import {DiagramLoaderService} from '../../components/diagram/test-session-presen
 import {RoutingService} from '../../services/routing.service';
 import {TestResultSearchCriteria} from '../../types/test-result-search-criteria';
 import {mergeMap, Observable, of, share} from 'rxjs';
-import {map} from 'lodash';
 import {TestResultReport} from '../../types/test-result-report';
 import {TestResultForExport} from '../admin/session-dashboard/test-result-for-export';
 import {saveAs} from 'file-saver';
@@ -254,9 +253,7 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
     this.activeExpandedCounter.count = 0
     this.setFilterRefreshState()
     this.loadActiveTests(pagingInfo.targetPage, pagingInfo.targetPageSize, params).subscribe((data) => {
-      this.activeTests = map(data.data, (testResult) => {
-        return this.newTestResultForDisplay(testResult, false)
-      })
+      this.activeTests = data.data.map((testResult) => this.newTestResultForDisplay(testResult, false))
       this.activeSessionsTable!.pagingControls!.updateStatus(pagingInfo.targetPage, data.count)
     }).add(() => {
       this.interactionLoadPending = false
@@ -279,9 +276,7 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
     this.setFilterRefreshState()
     this.loadCompletedTests(pagingInfo.targetPage, pagingInfo.targetPageSize, params)
     .subscribe((data) => {
-      this.completedTests = map(data.data, (testResult) => {
-        return this.newTestResultForDisplay(testResult, true)
-      })
+      this.completedTests = data.data.map((testResult) => this.newTestResultForDisplay(testResult, true))
       this.completedSessionsTable!.pagingControls!.updateStatus(pagingInfo.targetPage, data.count)
     }).add(() => {
       this.refreshCompletedPending = false
@@ -427,7 +422,7 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
     this.loadCompletedTests(1, 100000000, params, true).subscribe((data) => {
       const fields = this.getExportFieldInfoForCompletedTests()
       this.addExtraExportData(data, fields)
-      const tests = map(data.data, (testResult) => {
+      const tests = data.data.map((testResult) => {
         const resultForExport = this.newTestResult(testResult, true)
         this.mapExtraDataToResult(resultForExport, testResult, data)
         return resultForExport
@@ -482,7 +477,7 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
     this.loadActiveTests(1, 100000000, params, true).subscribe((data) => {
       const fields = this.getExportFieldInfoForActiveTests()
       this.addExtraExportData(data, fields)
-      const tests = map(data.data, (testResult) => {
+      const tests = data.data.map((testResult) => {
         const resultForExport = this.newTestResult(testResult, true)
         this.mapExtraDataToResult(resultForExport, testResult, data)
         return resultForExport

@@ -41,7 +41,6 @@ import {TestService} from 'src/app/services/test.service';
 import {TestResultReport} from 'src/app/types/test-result-report';
 import {LogLevel} from 'src/app/types/log-level';
 import {TestInteractionData} from 'src/app/types/test-interaction-data';
-import {filter, find, update} from 'lodash';
 import {PopupService} from 'src/app/services/popup.service';
 import {PagingControlsApi} from '../paging-controls/paging-controls-api';
 import {NavigationControlsConfig} from '../navigation-controls/navigation-controls-config';
@@ -220,7 +219,7 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
   }
 
   private extractApplicableInteractions(interactions: TestInteractionData[]) {
-    return filter(interactions, (interaction) => !interaction.admin || this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin)
+    return interactions.filter((interaction) => !interaction.admin || this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin)
   }
 
   private refreshTestSession(testReport: TestResultReport|undefined) {
@@ -242,7 +241,7 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
         if (stepId == undefined) {
           interactionData = row.diagramState.interactions[0]
         } else {
-          interactionData = find(row.diagramState.interactions, (interaction) => interaction.stepId == stepId)
+          interactionData = row.diagramState.interactions.find((interaction) => interaction.stepId == stepId)
         }
         if (interactionData) {
           const modalRef = this.modalService.show(ProvideInputModalComponent, {
@@ -300,105 +299,6 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
     }
   }
 
-  toSystem(row: TestResultForDisplay) {
-    if (row.organizationId! == this.dataService.vendor!.id) {
-      // This is the user's own organisation
-      this.routingService.toOwnSystemDetails(row.systemId!)
-    } else {
-      this.routingService.toSystemDetails(row.communityId!, row.organizationId!, row.systemId!)
-    }
-  }
-
-  toStatement(row: TestResultForDisplay) {
-    if (row.organizationId! == this.dataService.vendor?.id) {
-      this.routingService.toOwnConformanceStatement(row.organizationId!, row.systemId!, row.actorId!)
-    } else {
-      this.routingService.toConformanceStatement(row.organizationId!, row.systemId!, row.actorId!, row.communityId!)
-    }
-  }
-
-  toOrganisation(row: TestResultForDisplay) {
-    if (row.organizationId! == this.dataService.vendor!.id) {
-      // This is the user's own organisation
-      this.routingService.toOwnOrganisationDetails()
-    } else {
-      // Another organisation
-      this.routingService.toOrganisationDetails(row.communityId!, row.organizationId!)
-    }
-  }
-
-  toCommunity(row: TestResultForDisplay) {
-    this.routingService.toCommunity(row.communityId!)
-  }
-
-  toDomain(row: TestResultForDisplay) {
-    this.routingService.toDomain(row.domainId!)
-  }
-
-  toSpecification(row: TestResultForDisplay) {
-    this.routingService.toSpecification(row.domainId!, row.specificationId!)
-  }
-
-  toActor(row: TestResultForDisplay) {
-    this.routingService.toActor(row.domainId!, row.specificationId!, row.actorId!)
-  }
-
-  toTestSuite(row: TestResultForDisplay) {
-    this.routingService.toTestSuite(row.domainId!, row.specificationId!, row.testSuiteId!)
-  }
-
-  toTestCase(row: TestResultForDisplay) {
-    this.routingService.toTestCase(row.domainId!, row.specificationId!, row.testSuiteId!, row.testCaseId!)
-  }
-
-  showToCommunity(row: TestResultForDisplay) {
-    return row.communityId != undefined && (this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin)
-  }
-
-  showToOrganisation(row: TestResultForDisplay) {
-    return row.organizationId != undefined
-  }
-
-  showToSystem(row: TestResultForDisplay) {
-    return this.showToOrganisation(row) && row.systemId != undefined
-  }
-
-  showToDomain(row: TestResultForDisplay) {
-    return row.domainId != undefined && (
-      this.dataService.isSystemAdmin || (
-        this.dataService.isCommunityAdmin && this.dataService.community?.domain != undefined
-      )
-    )
-  }
-
-  showToSpecification(row: TestResultForDisplay) {
-    return this.showToDomain(row) && row.specificationId != undefined
-  }
-
-  showToActor(row: TestResultForDisplay) {
-    return this.showToSpecification(row) && row.actorId != undefined
-  }
-
-  showToTestSuite(row: TestResultForDisplay) {
-    return this.showToSpecification(row) && row.testSuiteId != undefined
-  }
-
-  showToTestCase(row: TestResultForDisplay) {
-    return this.showToTestSuite(row) && row.testCaseId != undefined
-  }
-
-  showToStatement(row: TestResultForDisplay) {
-    return row.organizationId != undefined && row.systemId != undefined && row.communityId != undefined && row.actorId != undefined && row.specificationId != undefined
-  }
-
-  showPartyNavigation(row: TestResultForDisplay) {
-    return this.showToCommunity(row) || this.showToOrganisation(row) || this.showToSystem(row)
-  }
-
-  showSpecificationNavigation(row: TestResultForDisplay) {
-    return this.showToDomain(row) || this.showToSpecification(row) || this.showToActor(row)
-  }
-
   refresh(row: TestResultForDisplay) {
     if (this.supportRefresh) {
       this.sessionBeingRefreshed = row
@@ -444,5 +344,4 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
     }
   }
 
-  protected readonly update = update;
 }

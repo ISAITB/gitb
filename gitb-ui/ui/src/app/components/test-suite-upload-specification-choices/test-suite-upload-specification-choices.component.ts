@@ -13,10 +13,9 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { filter, find } from 'lodash';
-import { SpecificationChoice } from 'src/app/modals/test-suite-upload-modal/specification-choice';
-import { DataService } from 'src/app/services/data.service';
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {SpecificationChoice} from 'src/app/modals/test-suite-upload-modal/specification-choice';
+import {DataService} from 'src/app/services/data.service';
 import {Constants} from '../../common/constants';
 
 @Component({
@@ -31,12 +30,10 @@ export class TestSuiteUploadSpecificationChoicesComponent implements OnInit {
   @Input() sharedTestSuite = false
   @Output() pendingChoices = new EventEmitter<boolean>()
 
-  choiceMap: {[key: number]: SpecificationChoice} = {}
   hasChoices = false
   hasChoicesToComplete = false
   hasMultipleChoices = false
   hasMultipleChoicesWithOptions = false
-  totalCount = 0
   skipCount = 0
 
   constructor(
@@ -45,15 +42,15 @@ export class TestSuiteUploadSpecificationChoicesComponent implements OnInit {
 
   ngOnInit(): void {
     if (!this.sharedTestSuite) {
-      this.skipCount = filter(this.choices, (choice) => choice.sharedTestSuite).length
+      this.skipCount = this.choices.filter((choice) => choice.sharedTestSuite).length
     }
     this.hasChoicesToComplete = this.choices.length > this.skipCount
     this.hasChoices = this.choices.length > 0
     this.hasMultipleChoices = this.choices.length > 1
     if (this.sharedTestSuite) {
-      this.hasMultipleChoicesWithOptions = filter(this.choices, (choice) => !choice.testSuiteExists).length > 1
+      this.hasMultipleChoicesWithOptions = this.choices.filter((choice) => !choice.testSuiteExists).length > 1
     } else {
-      this.hasMultipleChoicesWithOptions = filter(this.choices, (choice) => !choice.sharedTestSuite).length > 1
+      this.hasMultipleChoicesWithOptions = this.choices.filter((choice) => !choice.sharedTestSuite).length > 1
     }
     this.pendingChoices.emit(this.hasChoicesToComplete)
   }
@@ -65,7 +62,7 @@ export class TestSuiteUploadSpecificationChoicesComponent implements OnInit {
         if (reference.testSuiteExists && choice.testSuiteExists) {
           choice.updateTestSuite = reference.updateTestSuite
           for (let referenceTestCase of reference.testCasesInArchiveAndDB) {
-            const matchingTestCase = find(choice.testCasesInArchiveAndDB, (testCase) => {
+            const matchingTestCase = choice.testCasesInArchiveAndDB.find((testCase) => {
               return testCase.identifier == referenceTestCase.identifier
             })
             if (matchingTestCase) {

@@ -13,29 +13,28 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { BsModalRef } from 'ngx-bootstrap/modal';
-import { Observable, of } from 'rxjs';
-import { Constants } from 'src/app/common/constants';
-import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
-import { ConformanceService } from 'src/app/services/conformance.service';
-import { DataService } from 'src/app/services/data.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { FileData } from 'src/app/types/file-data.type';
-import { Specification } from 'src/app/types/specification';
-import { PendingTestSuiteUploadChoice } from './pending-test-suite-upload-choice';
-import { SpecificationChoice } from './specification-choice';
-import { SpecificationResult } from './specification-result';
-import { TestSuiteUploadResult } from './test-suite-upload-result';
-import { TestSuiteUploadTestCaseChoice } from './test-suite-upload-test-case-choice';
-import { ValidationReport } from './validation-report';
-import { find } from 'lodash';
-import { PendingTestSuiteUploadChoiceTestCase } from './pending-test-suite-upload-choice-test-case';
-import { ValidationReportItem } from './validation-report-item';
-import { AssertionReport } from 'src/app/components/diagram/assertion-report';
-import { BaseComponent } from 'src/app/pages/base-component.component';
-import { MultiSelectConfig } from 'src/app/components/multi-select-filter/multi-select-config';
-import { FilterUpdate } from 'src/app/components/test-filter/filter-update';
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {BsModalRef} from 'ngx-bootstrap/modal';
+import {Observable, of} from 'rxjs';
+import {Constants} from 'src/app/common/constants';
+import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
+import {ConformanceService} from 'src/app/services/conformance.service';
+import {DataService} from 'src/app/services/data.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {FileData} from 'src/app/types/file-data.type';
+import {Specification} from 'src/app/types/specification';
+import {PendingTestSuiteUploadChoice} from './pending-test-suite-upload-choice';
+import {SpecificationChoice} from './specification-choice';
+import {SpecificationResult} from './specification-result';
+import {TestSuiteUploadResult} from './test-suite-upload-result';
+import {TestSuiteUploadTestCaseChoice} from './test-suite-upload-test-case-choice';
+import {ValidationReport} from './validation-report';
+import {PendingTestSuiteUploadChoiceTestCase} from './pending-test-suite-upload-choice-test-case';
+import {ValidationReportItem} from './validation-report-item';
+import {AssertionReport} from 'src/app/components/diagram/assertion-report';
+import {BaseComponent} from 'src/app/pages/base-component.component';
+import {MultiSelectConfig} from 'src/app/components/multi-select-filter/multi-select-config';
+import {FilterUpdate} from 'src/app/components/test-filter/filter-update';
 
 @Component({
     selector: 'app-test-suite-upload-modal',
@@ -66,7 +65,6 @@ export class TestSuiteUploadModalComponent extends BaseComponent implements OnIn
   results?: SpecificationResult[]
   specificationChoices?: SpecificationChoice[]
   specificationChoiceMap: {[key: number]: SpecificationChoice} = {}
-  reportItemsCollapsed = false
   specificationsCollapsed = true
   hasChoicesToComplete = false
   hasMultipleChoices = false
@@ -130,18 +128,6 @@ export class TestSuiteUploadModalComponent extends BaseComponent implements OnIn
   showValidationReport() {
     this.step = 'validation'
     this.report = this.uploadResult?.validationReport
-  }
-
-  actionLabel(itemAction: string) {
-    if (itemAction == 'update') {
-      return '(updated)'
-    } else if (itemAction == 'add') {
-      return '(added)'
-    } else if (itemAction == 'unchanged') {
-      return '(unchanged)'
-    } else {
-      return '(deleted)'
-    }
   }
 
   showUploadResults() {
@@ -221,7 +207,7 @@ export class TestSuiteUploadModalComponent extends BaseComponent implements OnIn
           const testCasesInArchiveAndDB: TestSuiteUploadTestCaseChoice[] = []
           const testCasesInArchive: TestSuiteUploadTestCaseChoice[] = []
           const testCasesInDB: TestSuiteUploadTestCaseChoice[] = []
-          const matchingSpecification = find(this.uploadResult!.testCases, (resultingSpec) => {
+          const matchingSpecification = this.uploadResult?.testCases?.find((resultingSpec) => {
             return resultingSpec.specification == spec.id
           })
           if (matchingSpecification) {

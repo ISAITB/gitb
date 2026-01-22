@@ -13,18 +13,17 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { filter } from 'lodash';
-import { BsModalRef } from 'ngx-bootstrap/modal';
-import { Observable } from 'rxjs';
-import { Constants } from 'src/app/common/constants';
-import { BaseComponent } from 'src/app/pages/base-component.component';
-import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
-import { ConformanceService } from 'src/app/services/conformance.service';
-import { DataService } from 'src/app/services/data.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { ConformanceSnapshot } from 'src/app/types/conformance-snapshot';
-import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {BsModalRef} from 'ngx-bootstrap/modal';
+import {Observable} from 'rxjs';
+import {Constants} from 'src/app/common/constants';
+import {BaseComponent} from 'src/app/pages/base-component.component';
+import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
+import {ConformanceService} from 'src/app/services/conformance.service';
+import {DataService} from 'src/app/services/data.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {ConformanceSnapshot} from 'src/app/types/conformance-snapshot';
+import {TableColumnDefinition} from 'src/app/types/table-column-definition.type';
 
 @Component({
     selector: 'app-conformance-snapshots-modal',
@@ -199,9 +198,13 @@ export class ConformanceSnapshotsModalComponent extends BaseComponent implements
       this.visibleSnapshots = this.snapshots
     } else {
       const filterToApply = this.snapshotFilter.toLowerCase()
-      this.visibleSnapshots = filter(this.snapshots, (snapshot) => {
-        return snapshot.label.toLowerCase().includes(filterToApply) || (!snapshot.hidden && snapshot.publicLabel != undefined && snapshot.publicLabel.toLowerCase().includes(filterToApply))
-      })
+      if (this.snapshots) {
+        this.visibleSnapshots = this.snapshots.filter((snapshot) => {
+          return snapshot.label.toLowerCase().includes(filterToApply) || (!snapshot.hidden && snapshot.publicLabel != undefined && snapshot.publicLabel.toLowerCase().includes(filterToApply))
+        })
+      } else {
+        this.visibleSnapshots = undefined
+      }
     }
   }
 

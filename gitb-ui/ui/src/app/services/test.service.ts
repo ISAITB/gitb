@@ -14,7 +14,6 @@
  */
 
 import {Injectable} from '@angular/core';
-import {find} from 'lodash';
 import {map, mergeMap, Observable, of, share} from 'rxjs';
 import {ROUTES} from '../common/global';
 import {Actor} from '../types/actor';
@@ -197,7 +196,7 @@ export class TestService {
         for (let testCaseActor of testCase.actors.actor) {
           if (testCaseActor.name == undefined || testCaseActor.displayOrder == undefined) {
             // Lookup name and display order from domain data.
-            const relevantDomainActor = find(domainActors, (actorDef) => actorDef.actorId == testCaseActor.id)
+            const relevantDomainActor = domainActors.find((actorDef) => actorDef.actorId == testCaseActor.id)
             if (relevantDomainActor != undefined) {
               if (testCaseActor.name == undefined) {
                 testCaseActor.name = relevantDomainActor.name

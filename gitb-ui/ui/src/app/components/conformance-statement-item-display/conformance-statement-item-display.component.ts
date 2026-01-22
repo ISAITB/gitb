@@ -14,7 +14,6 @@
  */
 
 import {Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
-import {filter} from 'lodash';
 import {ConformanceStatementItem} from 'src/app/types/conformance-statement-item';
 import {ConformanceStatementResult} from 'src/app/types/conformance-statement-result';
 import {Counters} from '../test-status-icons/counters';
@@ -102,7 +101,7 @@ export class ConformanceStatementItemDisplayComponent extends BaseComponent impl
     this.hasChildren = this.item.items != undefined && this.item.items.length > 0
     this.allChildrenHidden = false
     if (this.hasChildren) {
-      const hiddenChildren = filter(this.item.items, (item) => {
+      const hiddenChildren = this.item.items!.filter((item) => {
         return item.hidden == true
       })
       this.allChildrenHidden = this.item.items!.length == hiddenChildren.length

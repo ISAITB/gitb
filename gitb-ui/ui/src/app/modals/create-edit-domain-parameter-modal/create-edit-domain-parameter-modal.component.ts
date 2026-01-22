@@ -19,7 +19,6 @@ import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.se
 import {DataService} from 'src/app/services/data.service';
 import {PopupService} from 'src/app/services/popup.service';
 import {DomainParameter} from 'src/app/types/domain-parameter';
-import {cloneDeep} from 'lodash';
 import {BaseComponent} from 'src/app/pages/base-component.component';
 import {FileData} from 'src/app/types/file-data.type';
 import {ParameterFormData} from './parameter-form-data';
@@ -65,7 +64,7 @@ export class CreateEditDomainParameterModalComponent extends BaseComponent imple
   }
 
   ngOnInit(): void {
-		this.domainParameter = cloneDeep(this.domainParameter)
+		this.domainParameter = structuredClone(this.domainParameter)
 		if (this.domainParameter.id == undefined) {
 			this.domainParameter.inTests = true
     }

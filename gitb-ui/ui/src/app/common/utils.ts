@@ -57,4 +57,19 @@ export class Utils {
         }
     }
 
+    public static uniqueValues<T>(array: T[]): T[] {
+      return [...new Set(array)]
+    }
+
+    public static removeFromArray<T>(array: T[], predicate: (item: T, index: number, array: T[]) => boolean): T[] {
+      const removed: T[] = [];
+      for (let i = array.length - 1; i >= 0; i--) {
+        if (predicate(array[i], i, array)) {
+          removed.unshift(array[i]);
+          array.splice(i, 1);
+        }
+      }
+      return removed;
+    }
+
 }

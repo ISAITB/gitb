@@ -31,7 +31,6 @@ import {SystemService} from 'src/app/services/system.service';
 import {ConformanceStatementItem} from 'src/app/types/conformance-statement-item';
 import {ExportReportEvent} from 'src/app/types/export-report-event';
 import {ReportSupportService} from 'src/app/services/report-support.service';
-import {find} from 'lodash';
 import {MultiSelectConfig} from 'src/app/components/multi-select-filter/multi-select-config';
 import {FilterUpdate} from 'src/app/components/test-filter/filter-update';
 import {
@@ -337,7 +336,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
           organisationToApply = data[0]
           this.selectedOrganisationId = organisationToApply.id
         } else if (data.length > 1 && this.selectedOrganisationId != undefined) {
-          organisationToApply = find(data, (org) => org.id == this.selectedOrganisationId)
+          organisationToApply = data.find((org) => org.id == this.selectedOrganisationId)
           if (organisationToApply == undefined) {
             this.selectedOrganisationId = undefined
           }
@@ -375,7 +374,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
           systemToApply = data[0]
           this.selectedSystemId = systemToApply.id
         } else if (data.length > 1 && this.selectedSystemId != undefined) {
-          systemToApply = find(data, (sys) => sys.id == this.selectedSystemId)
+          systemToApply = data.find((sys) => sys.id == this.selectedSystemId)
           if (systemToApply == undefined) {
             this.selectedSystemId = undefined
           }

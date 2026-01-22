@@ -16,7 +16,6 @@
 import {Component, EventEmitter, OnDestroy, OnInit} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {saveAs} from 'file-saver';
-import {cloneDeep, filter, find, map as lmap, remove} from 'lodash';
 import {BsModalRef, BsModalService} from 'ngx-bootstrap/modal';
 import {Observable, of, Subscription, throwError, timer} from 'rxjs';
 import {catchError, map, mergeMap, share} from 'rxjs/operators';
@@ -51,6 +50,7 @@ import {WebSocketMessage} from 'src/app/types/web-socket-message';
 import {ConformanceTestCase} from '../organisation/conformance-statement/conformance-test-case';
 import {BaseComponent} from '../base-component.component';
 import {TestCaseDefinitionActors} from '../../types/test-case-definition-actors';
+import {Utils} from '../../common/utils';
 
 @Component({
     selector: 'app-test-execution',
@@ -163,7 +163,7 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
   }
 
   private setupTests(tests: ConformanceTestCase[]) {
-    this.testsToExecute = filter(tests, (tc) => !tc.disabled) // Sanity check
+    this.testsToExecute = tests.filter((tc) => !tc.disabled) // Sanity check
     this.documentationExists = this.testCasesHaveDocumentation()
     if (this.documentationExists) {
       this.columnCount = 5
@@ -571,7 +571,7 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
     if (this.interactionStepsOfTests[this.currentTest!.id] == undefined) {
       this.interactionStepsOfTests[this.currentTest!.id] = []
     }
-    if (!find(this.interactionStepsOfTests[this.currentTest!.id], (interaction) => interaction.stepId == stepId)) {
+    if (!this.interactionStepsOfTests[this.currentTest!.id].find((interaction) => interaction.stepId == stepId)) {
       this.interactionStepsOfTests[this.currentTest!.id].push({
         stepId: stepId,
         interactions: interactions,
@@ -583,7 +583,7 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
   }
 
   private removeInteraction(stepId: string) {
-    remove(this.interactionStepsOfTests[this.currentTest!.id], (step) => step.stepId == stepId)
+    Utils.removeFromArray(this.interactionStepsOfTests[this.currentTest!.id], (step) => step.stepId == stepId)
   }
 
   private markInteractionAsIgnored(stepId: string) {
@@ -614,7 +614,7 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
           interaction = testInteractions[0]
         }
       } else {
-        interaction = find(testInteractions, (step) => step.stepId == stepId)
+        interaction = testInteractions.find((step) => step.stepId == stepId)
       }
       if (interaction) {
         this.interact(interaction.interactions, interaction.inputTitle, interaction.stepId, interaction.admin, interaction.desc)
@@ -851,7 +851,7 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
         current = step
         while (current != undefined && current.id != stepId) {
           if (current.type == 'loop' && status == Constants.TEST_STATUS.PROCESSING) {
-            const copySteps = cloneDeep(current.steps)
+            const copySteps = structuredClone(current.steps)
             this.clearStatusesAndReports(copySteps)
             const index = Number(stepId.substring(((stepId.indexOf('[', current.id.length))+1), (stepId.indexOf(']', current.id.length))))
             const oldId = (current.id + '[1]')
@@ -1204,10 +1204,8 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
       this.dataService.clearTestsToExecute()
       if (this.firstTestStarted && !this.allStopped) {
         this.closeWebSocket()
-        const pendingTests = filter(this.testsToExecute, (test) => {
-          return this.testCaseStatus[test.id] == Constants.TEST_CASE_STATUS.READY || this.testCaseStatus[test.id] == Constants.TEST_CASE_STATUS.PENDING || this.testCaseStatus[test.id] == Constants.TEST_CASE_STATUS.CONFIGURING
-        })
-        const pendingTestIds = lmap(pendingTests, (test) => { return test.id } )
+        const pendingTests = this.testsToExecute.filter((test) => this.testCaseStatus[test.id] == Constants.TEST_CASE_STATUS.READY || this.testCaseStatus[test.id] == Constants.TEST_CASE_STATUS.PENDING || this.testCaseStatus[test.id] == Constants.TEST_CASE_STATUS.CONFIGURING)
+        const pendingTestIds = pendingTests.map((test) => test.id)
         if (pendingTestIds.length > 0) {
           this.testService.startHeadlessTestSessions(pendingTestIds, this.specificationId!, this.systemId, this.actorId, false).subscribe(() => {})
           this.popupService.success('Continuing test execution in background.')
