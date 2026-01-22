@@ -58,7 +58,7 @@ public class TestCaseConverter {
     private final LinkedList<Boolean> scriptletStepHiddenAttributeStack = new LinkedList<>();
     private final com.gitb.tdl.TestCase testCase;
     private final ScriptletCache scriptletCache;
-    private final StaticExpressionHandler expressionHandler;
+    private final LinkedList<StaticExpressionHandler> expressionHandlerStack = new LinkedList<>();
     private final TestCaseContext testCaseContext;
     private Set<String> actorIds = null;
 
@@ -70,7 +70,11 @@ public class TestCaseConverter {
         this.testCase = testCase;
         this.scriptletCache = Objects.requireNonNullElseGet(scriptletCache, ScriptletCache::new);
         testCaseContext = createTestCaseContext(testCase, configs);
-        expressionHandler = new StaticExpressionHandler(testCaseContext.getScope());
+        expressionHandlerStack.addLast(new StaticExpressionHandler(testCaseContext.getScope()));
+    }
+
+    private StaticExpressionHandler getExpressionHandler() {
+        return expressionHandlerStack.peekLast();
     }
 
     private TestCaseContext createTestCaseContext(com.gitb.tdl.TestCase testCase, List<ActorConfiguration> configs) {
@@ -188,16 +192,16 @@ public class TestCaseConverter {
     }
 
     private String fixedOrVariableValueAsString(String originalValue) {
-        return TestCaseUtils.fixedOrVariableValue(originalValue, String.class, scriptletStepStack, expressionHandler);
+        return TestCaseUtils.fixedOrVariableValue(originalValue, String.class, scriptletStepStack, getExpressionHandler());
     }
 
     private Boolean fixedOrVariableValueAsBoolean(String originalValue, boolean defaultIfMissing) {
-        var result = TestCaseUtils.fixedOrVariableValue(originalValue, Boolean.class, scriptletStepStack, expressionHandler);
+        var result = TestCaseUtils.fixedOrVariableValue(originalValue, Boolean.class, scriptletStepStack, getExpressionHandler());
         return Objects.requireNonNullElse(result, defaultIfMissing);
     }
 
     private String fixedOrVariableValueForActor(String originalValue) {
-        var value = TestCaseUtils.fixedOrVariableValue(originalValue, String.class, scriptletStepStack, expressionHandler);
+        var value = TestCaseUtils.fixedOrVariableValue(originalValue, String.class, scriptletStepStack, getExpressionHandler());
         if (actorIds == null) {
             actorIds = new HashSet<>();
             if (testCase.getActors() != null) {
@@ -402,16 +406,28 @@ public class TestCaseConverter {
             scriptletCallStack.push(callKey);
         }
         Scriptlet scriptlet = scriptletCache.getScriptlet(testSuiteContext, callStep.getPath(), testCase, true).scriptlet();
-        scriptletStepStack.addLast(Pair.of(callStep, scriptlet));
-        scriptletStepHiddenAttributeStack.addLast(hiddenValueToUse(callStep.getHidden(), false));
+        addScripletScope(scriptlet, callStep);
         Sequence sequence = convertSequence(testCaseId, id, scriptlet.getSteps());
+        removeScriptletScope();
         if (callStep.getFrom() != null) {
             testSuiteContexts.pop();
         }
+        return sequence;
+    }
+
+    private void removeScriptletScope() {
+        getExpressionHandler().close();
+        expressionHandlerStack.removeLast();
         scriptletCallStack.pop();
         scriptletStepHiddenAttributeStack.removeLast();
         scriptletStepStack.removeLast();
-        return sequence;
+    }
+
+    private void addScripletScope(Scriptlet scriptlet, CallStep callStep) {
+        scriptletStepStack.addLast(Pair.of(callStep, scriptlet));
+        scriptletStepHiddenAttributeStack.addLast(hiddenValueToUse(callStep.getHidden(), false));
+        // Create an expression handler for the created scope.
+        expressionHandlerStack.addLast(getExpressionHandler().newForScriptlet(scriptlet, callStep));
     }
 
     private boolean hiddenValueToUse(String hiddenExpression, boolean defaultIfMissing) {

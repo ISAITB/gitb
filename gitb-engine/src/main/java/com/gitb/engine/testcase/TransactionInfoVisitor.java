@@ -89,7 +89,7 @@ public class TransactionInfoVisitor implements StepTraversalVisitor {
         String handlerValue;
         String handlerDomainIdentifier;
         if (VariableResolver.isVariableReference(handler)) {
-            PossibleDomainIdentifier handlerInfo = state.resolver().resolveAsPossibleDomainIdentifier(handler);
+            PossibleDomainIdentifier handlerInfo = state.getExpressionHandler().getVariableResolver().resolveAsPossibleDomainIdentifier(handler);
             handlerValue = handlerInfo.value();
             handlerDomainIdentifier = handlerInfo.domainIdentifier();
         } else {
@@ -97,14 +97,14 @@ public class TransactionInfoVisitor implements StepTraversalVisitor {
             handlerDomainIdentifier = null;
         }
         return new TransactionInfo(
-                TestCaseUtils.fixedOrVariableValue(ActorUtils.extractActorId(from), String.class, state.scriptletCallStack(), state.context().getStaticExpressionHandler(state.resolver())),
-                TestCaseUtils.fixedOrVariableValue(ActorUtils.extractEndpointName(from), String.class, state.scriptletCallStack(), state.context().getStaticExpressionHandler(state.resolver())),
-                TestCaseUtils.fixedOrVariableValue(ActorUtils.extractActorId(to), String.class, state.scriptletCallStack(), state.context().getStaticExpressionHandler(state.resolver())),
-                TestCaseUtils.fixedOrVariableValue(ActorUtils.extractEndpointName(to), String.class, state.scriptletCallStack(), state.context().getStaticExpressionHandler(state.resolver())),
+                TestCaseUtils.fixedOrVariableValue(ActorUtils.extractActorId(from), String.class, state.scriptletCallStack(), state.getExpressionHandler()),
+                TestCaseUtils.fixedOrVariableValue(ActorUtils.extractEndpointName(from), String.class, state.scriptletCallStack(), state.getExpressionHandler()),
+                TestCaseUtils.fixedOrVariableValue(ActorUtils.extractActorId(to), String.class, state.scriptletCallStack(), state.getExpressionHandler()),
+                TestCaseUtils.fixedOrVariableValue(ActorUtils.extractEndpointName(to), String.class, state.scriptletCallStack(), state.getExpressionHandler()),
                 handlerValue,
                 handlerDomainIdentifier,
                 handlerTimeout,
-                TestCaseUtils.getStepProperties(properties, state.resolver())
+                TestCaseUtils.getStepProperties(properties, state.getExpressionHandler().getVariableResolver())
         );
     }
 

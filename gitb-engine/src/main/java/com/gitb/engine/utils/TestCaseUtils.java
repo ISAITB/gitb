@@ -386,66 +386,15 @@ public class TestCaseUtils {
             }
             if (!scriptletStepStack.isEmpty() && VariableResolver.isVariableReference(originalValue)) {
                 // The description may be set dynamically from the call inputs.
-                return TestCaseUtils.getConstantCallInput(
-                        VariableResolver.extractVariableNameFromExpression(originalValue).getLeft(),
-                        variableClass,
-                        dataType, scriptletStepStack, expressionHandler
-                ).orElseGet(nonVariableValueFn);
+                DataType value = expressionHandler.getVariableResolver().resolveVariable(originalValue);
+                if (value != null) {
+                    return variableClass.cast(value.convertTo(dataType).getValue());
+                }
             }
             return nonVariableValueFn.get();
         } else {
             return null;
         }
-    }
-
-    private static <T> Optional<T> getConstantCallInput(String inputName, Class<T> constantClass, String constantDataType, LinkedList<Pair<CallStep, Scriptlet>> scriptletStepStack, StaticExpressionHandler expressionHandler) {
-        var originalInputName = inputName;
-        DataType dataToUse = null;
-        var iterator = scriptletStepStack.descendingIterator();
-        String lastVariableExpression = null;
-        while (iterator.hasNext()) {
-            var callData = iterator.next();
-            var inputToLookFor = inputName;
-            var matchedInput = callData.getLeft().getInput().stream().filter(input -> inputToLookFor.equals(input.getName())).findFirst();
-            if (matchedInput.isPresent()) {
-                // We found a matching input.
-                lastVariableExpression = null;
-                var inputValueExpression = matchedInput.get().getValue();
-                if (VariableResolver.isVariableReference(inputValueExpression)) {
-                    // The input's value is itself a variable reference.
-                    lastVariableExpression = inputValueExpression;
-                    inputName = VariableResolver.extractVariableNameFromExpression(inputValueExpression).getLeft();
-                    continue;
-                } else {
-                    dataToUse = expressionHandler.processExpression(matchedInput.get(), constantDataType);
-                }
-            }
-            break;
-        }
-        if (dataToUse == null && !scriptletStepStack.isEmpty()) {
-            // No input found. Look also at variable default values.
-            var scriptlet = scriptletStepStack.getLast().getRight();
-            if (scriptlet.getParams() != null) {
-                var matchedVariableValue = scriptlet.getParams().getVar().stream().filter(variable -> originalInputName.equals(variable.getName()) && !variable.getValue().isEmpty()).findFirst();
-                if (matchedVariableValue.isPresent()) {
-                    // The parameter defines a default value.
-                    dataToUse = DataTypeFactory.getInstance().create(matchedVariableValue.get());
-                }
-            }
-        }
-        if (dataToUse == null && lastVariableExpression != null) {
-            // Still no value found. We stopped processing previously with a variable expression.
-            var variableValue = expressionHandler.getVariableResolver().resolveVariable(lastVariableExpression, true);
-            // If not resolved return the expression itself.
-            dataToUse = variableValue.orElse(new StringType(lastVariableExpression));
-        }
-        if (dataToUse != null) {
-            var valueToUse = dataToUse.convertTo(constantDataType).getValue();
-            if (valueToUse != null && constantClass.equals(valueToUse.getClass())) {
-                return Optional.of(constantClass.cast(valueToUse));
-            }
-        }
-        return Optional.empty();
     }
 
     public static TAR mergeReports(List<TAR> reports) {

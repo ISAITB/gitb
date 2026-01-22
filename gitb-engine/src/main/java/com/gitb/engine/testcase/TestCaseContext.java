@@ -18,7 +18,6 @@ package com.gitb.engine.testcase;
 import com.gitb.core.*;
 import com.gitb.core.LogLevel;
 import com.gitb.engine.*;
-import com.gitb.engine.expr.PossibleDomainIdentifier;
 import com.gitb.engine.expr.StaticExpressionHandler;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.messaging.MessagingContext;
@@ -44,7 +43,6 @@ import com.gitb.utils.ErrorUtils;
 import com.gitb.utils.map.Tuple;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
@@ -310,7 +308,9 @@ public class TestCaseContext {
         // Traverse test case stes to determine information for the test execution,
         var transactionInfoVisitor = new TransactionInfoVisitor();
         var persistentReportVisitor = new PersistentReportVisitor();
-        traverseSteps(testCase.getSteps(), new StepTraversalState(null, this, new VariableResolver(scope, true), new LinkedList<>(), testCase), List.of(transactionInfoVisitor, persistentReportVisitor));
+		var expressionHandlerStack = new LinkedList<StaticExpressionHandler>();
+		expressionHandlerStack.addLast(new StaticExpressionHandler(scope));
+        traverseSteps(testCase.getSteps(), new StepTraversalState(null, this, new LinkedList<>(), expressionHandlerStack, testCase), List.of(transactionInfoVisitor, persistentReportVisitor));
         requiresPersistentReports = persistentReportVisitor.isPersistentReportsNeeded();
         List<SUTConfiguration> sutConfigurations = configureDynamicActorProperties(testCase, configurations, transactionInfoVisitor.getTransactions());
 		bindActorConfigurationsToScope();
@@ -545,36 +545,6 @@ public class TestCaseContext {
 		return new ArrayList<>(groups.values());
 	}
 
-	protected StaticExpressionHandler getStaticExpressionHandler(VariableResolver resolver) {
-		if (staticExpressionHandler == null) {
-			staticExpressionHandler = new StaticExpressionHandler(scope, resolver);
-		}
-		return staticExpressionHandler;
-	}
-
-	private TransactionInfo buildTransactionInfo(String from, String to, String handler, String handlerTimeout, List<Configuration> properties, VariableResolver resolver, LinkedList<Pair<CallStep, Scriptlet>> scriptletCallStack) {
-        String handlerValue;
-        String handlerDomainIdentifier;
-        if (VariableResolver.isVariableReference(handler)) {
-            PossibleDomainIdentifier handlerInfo = resolver.resolveAsPossibleDomainIdentifier(handler);
-            handlerValue = handlerInfo.value();
-            handlerDomainIdentifier = handlerInfo.domainIdentifier();
-        } else {
-            handlerValue = handler;
-            handlerDomainIdentifier = null;
-        }
-		return new TransactionInfo(
-				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractActorId(from), String.class, scriptletCallStack, getStaticExpressionHandler(resolver)),
-				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractEndpointName(from), String.class, scriptletCallStack, getStaticExpressionHandler(resolver)),
-				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractActorId(to), String.class, scriptletCallStack, getStaticExpressionHandler(resolver)),
-				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractEndpointName(to), String.class, scriptletCallStack, getStaticExpressionHandler(resolver)),
-                handlerValue,
-                handlerDomainIdentifier,
-				handlerTimeout,
-				TestCaseUtils.getStepProperties(properties, resolver)
-		);
-	}
-
     /**
      * Run through all test case steps and call the defined visitors for each step.
      *
@@ -607,9 +577,9 @@ public class TestCaseContext {
                         testSuiteContextToUse = state.testSuiteContext();
                     }
                     Scriptlet scriptlet = getScriptlet(testSuiteContextToUse, callStep.getPath(), true).scriptlet();
-                    state.scriptletCallStack().addLast(Pair.of(callStep, scriptlet));
-                    traverseSteps(scriptlet.getSteps(), state.newForScriptlet(testSuiteContextToUse), visitors);
-                    state.scriptletCallStack().removeLast();
+					state.scriptletStart(scriptlet, callStep);
+                    traverseSteps(scriptlet.getSteps(), state, visitors);
+					state.scriptletEnd();
                 }
             });
         }

@@ -15,18 +15,30 @@
 
 package com.gitb.engine.testcase;
 
-import com.gitb.engine.expr.resolvers.VariableResolver;
+import com.gitb.engine.expr.StaticExpressionHandler;
 import com.gitb.tdl.CallStep;
 import com.gitb.tdl.Scriptlet;
 import com.gitb.tdl.TestCase;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.LinkedList;
+import java.util.Objects;
 
-public record StepTraversalState(String testSuiteContext, TestCaseContext context, VariableResolver resolver, LinkedList<Pair<CallStep, Scriptlet>> scriptletCallStack, TestCase testCase) {
+public record StepTraversalState(String testSuiteContext, TestCaseContext context, LinkedList<Pair<CallStep, Scriptlet>> scriptletCallStack, LinkedList<StaticExpressionHandler> expressionHandlerStack, TestCase testCase) {
 
-    public StepTraversalState newForScriptlet(String testSuiteContext) {
-        return new StepTraversalState(testSuiteContext, context, this.resolver, this.scriptletCallStack, this.testCase);
+    public StaticExpressionHandler getExpressionHandler() {
+        return Objects.requireNonNull(expressionHandlerStack.peekLast(), "No available expression handler");
+    }
+
+    public void scriptletStart(Scriptlet scriptlet, CallStep callStep) {
+        scriptletCallStack.addLast(Pair.of(callStep, scriptlet));
+        expressionHandlerStack.addLast(getExpressionHandler().newForScriptlet(scriptlet, callStep));
+    }
+
+    public void scriptletEnd() {
+        getExpressionHandler().close();
+        expressionHandlerStack.removeLast();
+        scriptletCallStack.removeLast();
     }
 
 }

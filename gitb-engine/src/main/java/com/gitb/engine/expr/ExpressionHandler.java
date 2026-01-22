@@ -36,7 +36,7 @@ import javax.xml.xpath.XPathExpressionException;
  */
 public class ExpressionHandler {
 
-    private final TestCaseScope scope;
+    protected final TestCaseScope scope;
     private final VariableResolver variableResolver;
     private final TestSessionNamespaceContext namespaceContext;
 

@@ -108,6 +108,10 @@ public class TestCaseScope {
 		return createChildScope(this.scopeId, this.scopeImports, this.scopeNamespaces, this.testSuiteContext, false);
 	}
 
+	public void removeChildScope(TestCaseScope scopeToRemove) {
+		children.removeIf((child) -> child == scopeToRemove);
+	}
+
 	public TestCaseScope createChildScope(String scopeId, Imports imports, Namespaces namespaces, String testSuiteContext, boolean isolated) {
 		if (testSuiteContext == null && this.testSuiteContext != null) {
 			testSuiteContext = this.testSuiteContext;
