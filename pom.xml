@@ -66,7 +66,7 @@
         <version.xmlUnit>2.10.3</version.xmlUnit>
         <version.jerseyClient>1.19.4</version.jerseyClient>
         <version.freeMarker>2.3.34</version.freeMarker>
-        <version.openhtmltopdf>1.1.36</version.openhtmltopdf>
+        <version.openhtmltopdf>1.1.37</version.openhtmltopdf>
         <version.org.jsoup>1.15.4</version.org.jsoup>
         <version.jena>5.2.0</version.jena>
         <version.topbraid>1.4.4</version.topbraid>
