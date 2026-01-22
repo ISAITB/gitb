@@ -53,10 +53,10 @@ import {TestCaseDefinitionActors} from '../../types/test-case-definition-actors'
 import {Utils} from '../../common/utils';
 
 @Component({
-    selector: 'app-test-execution',
-    templateUrl: './test-execution.component.html',
-    styleUrls: ['./test-execution.component.less'],
-    standalone: false
+  selector: 'app-test-execution',
+  templateUrl: './test-execution.component.html',
+  styleUrls: ['./test-execution.component.less'],
+  standalone: false
 })
 export class TestExecutionComponent extends BaseComponent implements OnInit, OnDestroy {
 
@@ -583,7 +583,9 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
   }
 
   private removeInteraction(stepId: string) {
-    Utils.removeFromArray(this.interactionStepsOfTests[this.currentTest!.id], (step) => step.stepId == stepId)
+    if (this.interactionStepsOfTests[this.currentTest!.id] != undefined) {
+      Utils.removeFromArray(this.interactionStepsOfTests[this.currentTest!.id], (step) => step.stepId == stepId)
+    }
   }
 
   private markInteractionAsIgnored(stepId: string) {
@@ -682,8 +684,8 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
           // stepId is 0 for the preliminary step
           let msg = ''
           if (report?.reports?.assertionReports != undefined &&
-                report.reports.assertionReports.length > 0 &&
-                report.reports.assertionReports[0].value?.description != undefined) {
+            report.reports.assertionReports.length > 0 &&
+            report.reports.assertionReports[0].value?.description != undefined) {
             msg = report.reports.assertionReports[0].value.description
           }
           this.errorService.showSimpleErrorMessage('Preliminary step error', msg)
@@ -859,9 +861,9 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
             this.setIds(copySteps, oldId, newId)
             if (current.sequences == undefined || current.sequences[index - 1] == undefined) {
               const sequence: StepData = {
-                  id: newId,
-                  type: current.type,
-                  steps: copySteps
+                id: newId,
+                type: current.type,
+                steps: copySteps
               }
               if (current.sequences == undefined) {
                 current.sequences = [sequence]
@@ -881,11 +883,11 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
       if (current != undefined) {
         if (current.id == stepId && current.status != status) {
           if ((status == Constants.TEST_STATUS.COMPLETED) ||
-          (status == Constants.TEST_STATUS.ERROR) ||
-          (status == Constants.TEST_STATUS.WARNING) ||
-          (status == Constants.TEST_STATUS.SKIPPED && (current.status != Constants.TEST_STATUS.COMPLETED && current.status != Constants.TEST_STATUS.ERROR && current.status != Constants.TEST_STATUS.WARNING)) ||
-          (status == Constants.TEST_STATUS.WAITING && (this.started && current.status != Constants.TEST_STATUS.SKIPPED && current.status != Constants.TEST_STATUS.COMPLETED && current.status != Constants.TEST_STATUS.ERROR && current.status != Constants.TEST_STATUS.WARNING)) ||
-          (status == Constants.TEST_STATUS.PROCESSING && (this.started && current.status != Constants.TEST_STATUS.WAITING && current.status != Constants.TEST_STATUS.SKIPPED && current.status != Constants.TEST_STATUS.COMPLETED && current.status != Constants.TEST_STATUS.ERROR && current.status != Constants.TEST_STATUS.WARNING))) {
+            (status == Constants.TEST_STATUS.ERROR) ||
+            (status == Constants.TEST_STATUS.WARNING) ||
+            (status == Constants.TEST_STATUS.SKIPPED && (current.status != Constants.TEST_STATUS.COMPLETED && current.status != Constants.TEST_STATUS.ERROR && current.status != Constants.TEST_STATUS.WARNING)) ||
+            (status == Constants.TEST_STATUS.WAITING && (this.started && current.status != Constants.TEST_STATUS.SKIPPED && current.status != Constants.TEST_STATUS.COMPLETED && current.status != Constants.TEST_STATUS.ERROR && current.status != Constants.TEST_STATUS.WARNING)) ||
+            (status == Constants.TEST_STATUS.PROCESSING && (this.started && current.status != Constants.TEST_STATUS.WAITING && current.status != Constants.TEST_STATUS.SKIPPED && current.status != Constants.TEST_STATUS.COMPLETED && current.status != Constants.TEST_STATUS.ERROR && current.status != Constants.TEST_STATUS.WARNING))) {
             current.status = status
             current.report = report
             // If skipped, marked all children as skipped.
@@ -1100,9 +1102,9 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
     this.nextWaitingToStart = false
     this.firstTestStarted = true
     this.reportService.createTestReport(session, this.systemId, this.actorId, this.currentTest!.id)
-    .subscribe(() => {
-      this.testService.start(session).subscribe(() => {})
-    })
+      .subscribe(() => {
+        this.testService.start(session).subscribe(() => {})
+      })
   }
 
   stop(session: string, force?: boolean) {
@@ -1157,15 +1159,15 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
   isTestCaseClickable(testCase: ConformanceTestCase) {
     return this.testsToExecute.length > 1 &&
       (this.testCaseStatus[testCase.id] == Constants.TEST_CASE_STATUS.COMPLETED ||
-       this.testCaseStatus[testCase.id] == Constants.TEST_CASE_STATUS.ERROR ||
-       this.testCaseStatus[testCase.id] == Constants.TEST_CASE_STATUS.STOPPED)
+        this.testCaseStatus[testCase.id] == Constants.TEST_CASE_STATUS.ERROR ||
+        this.testCaseStatus[testCase.id] == Constants.TEST_CASE_STATUS.STOPPED)
   }
 
   showTestCaseDocumentation(testCaseId: number) {
     this.conformanceService.getTestCaseDocumentation(testCaseId)
-    .subscribe((data) => {
-      this.htmlService.showHtml("Test case documentation", data)
-    })
+      .subscribe((data) => {
+        this.htmlService.showHtml("Test case documentation", data)
+      })
   }
 
   viewLog(test: ConformanceTestCase) {
@@ -1204,8 +1206,10 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
       this.dataService.clearTestsToExecute()
       if (this.firstTestStarted && !this.allStopped) {
         this.closeWebSocket()
-        const pendingTests = this.testsToExecute.filter((test) => this.testCaseStatus[test.id] == Constants.TEST_CASE_STATUS.READY || this.testCaseStatus[test.id] == Constants.TEST_CASE_STATUS.PENDING || this.testCaseStatus[test.id] == Constants.TEST_CASE_STATUS.CONFIGURING)
-        const pendingTestIds = pendingTests.map((test) => test.id)
+        const pendingTests = this.testsToExecute.filter((test) => {
+          return this.testCaseStatus[test.id] == Constants.TEST_CASE_STATUS.READY || this.testCaseStatus[test.id] == Constants.TEST_CASE_STATUS.PENDING || this.testCaseStatus[test.id] == Constants.TEST_CASE_STATUS.CONFIGURING
+        })
+        const pendingTestIds = pendingTests.map((test) => { return test.id } )
         if (pendingTestIds.length > 0) {
           this.testService.startHeadlessTestSessions(pendingTestIds, this.specificationId!, this.systemId, this.actorId, false).subscribe(() => {})
           this.popupService.success('Continuing test execution in background.')
@@ -1277,7 +1281,7 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
   exportPdf(testCase: ConformanceTestCase) {
     this.exportPdfPending[testCase.id] = true
     this.onExportTestCase(testCase, 'application/pdf', 'test_case_report.pdf')
-    .subscribe(() => {}).add(() => {
+      .subscribe(() => {}).add(() => {
       this.exportPdfPending[testCase.id] = false
     })
   }
