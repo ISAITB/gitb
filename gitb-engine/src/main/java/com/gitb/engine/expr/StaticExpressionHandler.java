@@ -21,8 +21,11 @@ import com.gitb.tdl.CallStep;
 import com.gitb.tdl.Scriptlet;
 import com.gitb.types.DataType;
 import com.gitb.types.DataTypeFactory;
+import com.gitb.types.StringType;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashMap;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
@@ -59,11 +62,16 @@ public class StaticExpressionHandler extends ExpressionHandler {
             });
             // For parameters with corresponding inputs, replace the values based on the input values.
             callStep.getInput().forEach((input) -> {
+                /*
+                 * Only process the inputs that are named, don't involve template processing and don't have source definitions.
+                 */
                 if (input.getName() != null && parameters.containsKey(input.getName())) {
-                    DataType value = processExpression(input);
-                    if (value != null) {
-                        parameters.put(input.getName(), () -> value);
+                    DataType value = null;
+                    if (input.getValue() != null && !input.isAsTemplate() && input.getSource() == null) {
+                        value = processExpression(input);
                     }
+                    DataType valueToUse = value;
+                    parameters.put(input.getName(), () -> Objects.requireNonNullElseGet(valueToUse, () -> new StringType(StringUtils.defaultString(input.getValue()))));
                 }
             });
             // Add the parameters with resolved values to the scope.
