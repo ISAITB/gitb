@@ -293,7 +293,7 @@ import {UsageTipModalComponent} from './modals/usage-tip-modal/usage-tip-modal.c
 import {SubmitOnControlEnterDirective} from './directives/submit-on-control-enter.directive';
 import {PopupNotificationContainerComponent} from './components/popup-notification-container/popup-notification-container.component';
 import {PopupNotificationComponent} from './components/popup-notification/popup-notification.component';
-import {NgbAlertModule, NgbTooltipModule} from '@ng-bootstrap/ng-bootstrap';
+import {NgbAlertModule, NgbPopoverModule, NgbTooltipModule} from '@ng-bootstrap/ng-bootstrap';
 
 @NgModule({ declarations: [
         AppComponent,
@@ -515,7 +515,7 @@ import {NgbAlertModule, NgbTooltipModule} from '@ng-bootstrap/ng-bootstrap';
         NgbTooltipModule,
         CodemirrorModule,
         BsDropdownModule.forRoot(),
-        PopoverModule.forRoot(),
+        NgbPopoverModule,
         TabsModule.forRoot(),
         MarkdownModule.forRoot(),
         SubmitOnControlEnterDirective

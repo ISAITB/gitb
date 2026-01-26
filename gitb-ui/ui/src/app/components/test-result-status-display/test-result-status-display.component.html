@@ -1,6 +1,6 @@
-<div (click)="clicked($event);tooltip.close()" class="rootDiv" [class.ignored]="ignored" tooltipClass="shortTooltip" #tooltip="ngbTooltip" [ngbTooltip]="tooltipText">
+<div (click)="clicked($event);tooltip.close()" [class.ignored]="ignored" tooltipClass="shortTooltip" #tooltip="ngbTooltip" [ngbTooltip]="tooltipText">
     @if ((result == Constants.TEST_CASE_RESULT.SUCCESS || result == Constants.TEST_CASE_RESULT.FAILURE || result == Constants.TEST_CASE_RESULT.UNDEFINED) && message != undefined) {
-        <span class="pointer" [popover]="message!" triggers="" [isOpen]="isOpen" (onHidden)="closed()" [outsideClick]="true" placement="left" [containerClass]="popoverClass"><i [ngClass]="iconToShow"></i></span>
+        <span class="pointer" #popover="ngbPopover" [ngbPopover]="message!" triggers="manual" (hidden)="closed()" container="body" placement="left" [popoverClass]="popoverClass"><i [ngClass]="iconToShow"></i></span>
     } @else {
         <span><i [ngClass]="iconToShow"></i></span>
     }
