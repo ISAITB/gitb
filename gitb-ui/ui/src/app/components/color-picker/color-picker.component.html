@@ -10,9 +10,10 @@
             type="text"
             class="form-control colour-holder-readonly"
             readonly="readonly"
-            [tooltip]="value"
-            containerClass="shortTooltip"
-            [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"
+            [ngbTooltip]="value"
+            tooltipClass="shortTooltip"
+            [openDelay]="Constants.TOOLTIP_DELAY"
+            [triggers]="'mouseover:mouseout'"
             [style.background]="value"
             (click)="copyColor()">
     } @else {

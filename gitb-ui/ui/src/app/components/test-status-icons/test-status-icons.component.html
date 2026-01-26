@@ -1,12 +1,12 @@
 <div class="rootContainer" (click)="$event.stopPropagation()">
     <div class="statusRootContainer" #containerRoot>
-        <div class="statusContainerGroup" [tooltip]="completed + ' passed, '+failed+' failed, '+other+' incomplete required '+tooltipRequiredTestDescription+' ('+(completed+failed+other)+' in total)'" [placement]="tooltipOnLeft?'left':'top'" container="body">
+        <div class="statusContainerGroup" [ngbTooltip]="completed + ' passed, '+failed+' failed, '+other+' incomplete required '+tooltipRequiredTestDescription+' ('+(completed+failed+other)+' in total)'" [placement]="tooltipOnLeft?'left':'top'" container="body">
             <div class="statusContainer"><div class="statusCount">{{ completed }}</div><div class="statusIcon"><span><i [class]="successIcon"></i></span></div></div>
             <div class="statusContainer"><div class="statusCount">{{ failed }}</div><div class="statusIcon"><span><i [class]="failedIcon"></i></span></div></div>
             <div class="statusContainer"><div class="statusCount">{{ other }}</div><div class="statusIcon"><span><i [class]="otherIcon"></i></span></div></div>
         </div>
         @if (hasIgnored) {
-            <div class="expand-icon" (click)="expanded = true" tooltip="Expand" containerClass="shortTooltip"><span><i class="fa-solid fa-plus-circle"></i></span></div>
+            <div class="expand-icon" (click)="expanded = true" ngbTooltip="Expand" tooltipClass="shortTooltip"><span><i class="fa-solid fa-plus-circle"></i></span></div>
         }
     </div>
     @if (expanded) {
@@ -15,7 +15,7 @@
                 <div class="status-containers">
                     <div class="status-container">
                         <div class="status-title">Required</div>
-                        <div class="statusRootContainer" [tooltip]="completed + ' passed, '+failed+' failed, '+other+' incomplete required '+tooltipRequiredTestDescription+' ('+(completed+failed+other)+' in total)'" [placement]="tooltipOnLeft?'left':'top'" container="body">
+                        <div class="statusRootContainer" [ngbTooltip]="completed + ' passed, '+failed+' failed, '+other+' incomplete required '+tooltipRequiredTestDescription+' ('+(completed+failed+other)+' in total)'" [placement]="tooltipOnLeft?'left':'top'" container="body">
                             <div class="statusContainer"><div class="statusCount">{{ completed }}</div><div class="statusIcon"><span><i [class]="successIcon"></i></span></div></div>
                             <div class="statusContainer"><div class="statusCount">{{ failed }}</div><div class="statusIcon"><span><i [class]="failedIcon"></i></span></div></div>
                             <div class="statusContainer"><div class="statusCount">{{ other }}</div><div class="statusIcon"><span><i [class]="otherIcon"></i></span></div></div>
@@ -23,14 +23,14 @@
                     </div>
                     <div class="status-container optional">
                         <div class="status-title optional">Ignored</div>
-                        <div class="statusRootContainer" [tooltip]="completedIgnored + ' passed, '+failedIgnored+' failed, '+otherIgnored+' incomplete ignored test cases ('+(completedIgnored+failedIgnored+otherIgnored)+' in total)'" [placement]="tooltipOnLeft?'left':'top'" container="body">
+                        <div class="statusRootContainer" [ngbTooltip]="completedIgnored + ' passed, '+failedIgnored+' failed, '+otherIgnored+' incomplete ignored test cases ('+(completedIgnored+failedIgnored+otherIgnored)+' in total)'" [placement]="tooltipOnLeft?'left':'top'" container="body">
                             <div class="statusContainer"><div class="statusCount">{{ completedIgnored }}</div><div class="statusIcon"><span><i [class]="successIcon"></i></span></div></div>
                             <div class="statusContainer"><div class="statusCount">{{ failedIgnored }}</div><div class="statusIcon"><span><i [class]="failedIcon"></i></span></div></div>
                             <div class="statusContainer"><div class="statusCount">{{ otherIgnored }}</div><div class="statusIcon"><span><i [class]="otherIcon"></i></span></div></div>
                         </div>
                     </div>
                 </div>
-                <div class="close-container" (click)="expanded = false" tooltip="Close" containerClass="shortTooltip"><span><i class="fa-solid fa-times"></i></span></div>
+                <div class="close-container" (click)="expanded = false" ngbTooltip="Close" tooltipClass="shortTooltip"><span><i class="fa-solid fa-times"></i></span></div>
             </div>
         </div>
     }

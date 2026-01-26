@@ -183,7 +183,7 @@
                                                 @if (hasTestServices) {
                                                     <td class="td-min-centered">
                                                     @if (parameter.isTestService) {
-                                                        <div class="ms-4 me-2" tooltip="Corresponds to a registered test service" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" container="body"><i class="fa-solid fa-gears standalone-icon"></i></div>
+                                                        <div class="ms-4 me-2" ngbTooltip="Corresponds to a registered test service" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" container="body"><i class="fa-solid fa-gears standalone-icon"></i></div>
                                                     }
                                                     </td>
                                                 }

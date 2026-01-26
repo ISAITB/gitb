@@ -12,7 +12,7 @@
         </div>
         <div class="menu-item-text">{{label}}</div>
     } @else {
-        <div class="menu-item" (click)="popup.hide()" [tooltip]="label" [isDisabled]="expanded" container="body" placement="right" [delay]="500" #popup="bs-tooltip" containerClass="menuItemTooltip">
+        <div class="menu-item" (click)="popup.close()" [ngbTooltip]="label" [disableTooltip]="expanded" container="body" placement="right" [openDelay]="500" #popup="ngbTooltip" tooltipClass="menuItemTooltip">
             @if (customTemplate) {
                 <ng-container [ngTemplateOutlet]="customTemplate"></ng-container>
             } @else {

@@ -10,7 +10,7 @@
     }
     <input type="text" autocomplete="off" class="form-control" [invalid]="validation" [class.clickable]="!disableUpload" [value]="(fileName != undefined)?fileName:''" [attr.placeholder]="placeholder" (click)="onButtonClick()" readonly="readonly"/>
     @if (!disableUpload) {
-      <button class="btn btn-secondary" type="button" (click)="onButtonClick()" containerClass="shortTooltip" container="body" tooltip="Open" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-regular fa-folder-open"></i></button>
+      <button class="btn btn-secondary" type="button" (click)="onButtonClick()" tooltipClass="shortTooltip" container="body" ngbTooltip="Open" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-regular fa-folder-open"></i></button>
     }
     @if (extraActions) {
       <ng-content></ng-content>

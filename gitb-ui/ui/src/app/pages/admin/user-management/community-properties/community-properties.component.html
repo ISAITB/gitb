@@ -68,7 +68,7 @@
                                             }
                                             <td class="drag-handle" (click)="$event.stopPropagation();">
                                                 @if (organisationParameters.length > 1) {
-                                                    <button cdkDragHandle #pop="bs-tooltip" (mousedown)="pop.hide()" class="btn btn-secondary" type="button" containerClass="shortTooltip" container="body" tooltip="Reorder" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrows-up-down"></i></span></button>
+                                                    <button cdkDragHandle #pop="ngbTooltip" (mousedown)="pop.close()" class="btn btn-secondary" type="button" tooltipClass="shortTooltip" container="body" ngbTooltip="Reorder" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrows-up-down"></i></span></button>
                                                 }
                                             </td>
                                         </tr>
@@ -134,7 +134,7 @@
                                             <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.hidden, 'fa-times': !parameter.hidden}"></i></span></div></td>
                                             <td class="drag-handle" (click)="$event.stopPropagation();">
                                                 @if (systemParameters.length > 1) {
-                                                    <button cdkDragHandle #pop="bs-tooltip" (mousedown)="pop.hide()" class="btn btn-secondary" type="button" containerClass="shortTooltip" container="body" tooltip="Reorder" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrows-up-down"></i></span></button>
+                                                    <button cdkDragHandle #pop="ngbTooltip" (mousedown)="pop.close()" class="btn btn-secondary" type="button" tooltipClass="shortTooltip" container="body" ngbTooltip="Reorder" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrows-up-down"></i></span></button>
                                                 }
                                             </td>
                                         </tr>

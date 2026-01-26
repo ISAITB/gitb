@@ -325,7 +325,7 @@
                                 <div class="col-8 col-sm-7 col-md-5 offset-3">
                                     <div class="input-group">
                                         <input type="text" name="extraDomainKey" class="form-control" placeholder="API key" [(ngModel)]="extraDomainKey">
-                                        <button class="btn btn-secondary" [disabled]="!textProvided(extraDomainKey)" type="button" (click)="addExtraDomainKey()" containerClass="shortTooltip" container="body" tooltip="Add" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
+                                        <button class="btn btn-secondary" [disabled]="!textProvided(extraDomainKey)" type="button" (click)="addExtraDomainKey()" tooltipClass="shortTooltip" container="body" ngbTooltip="Add" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
                                             <i class="fa-solid fa-plus"></i>
                                         </button>
                                     </div>
@@ -367,7 +367,7 @@
                                 <div class="col-8 col-sm-7 col-md-5 offset-3">
                                     <div class="input-group">
                                         <input type="text" name="extraCommunityKey" class="form-control" placeholder="API key" [(ngModel)]="extraCommunityKey">
-                                        <button class="btn btn-secondary" [disabled]="!textProvided(extraCommunityKey)" type="button" (click)="addExtraCommunityKey()" containerClass="shortTooltip" container="body" tooltip="Add" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
+                                        <button class="btn btn-secondary" [disabled]="!textProvided(extraCommunityKey)" type="button" (click)="addExtraCommunityKey()" tooltipClass="shortTooltip" container="body" ngbTooltip="Add" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
                                             <i class="fa-solid fa-plus"></i>
                                         </button>
                                     </div>

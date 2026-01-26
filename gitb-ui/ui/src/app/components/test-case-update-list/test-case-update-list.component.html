@@ -2,7 +2,7 @@
     <div class="testcase-table-title expandable" (click)="show = !show">
         <div class="testcase-table-title-label"><app-collapsing-icon [isCollapsed]="!show"></app-collapsing-icon>{{title}}
             @if (titleTooltip) {
-                <span class="inline-tooltip" boundariesElement="window" [tooltip]="titleTooltip"><i class="fa-solid fa-question-circle"></i></span>
+                <span class="inline-tooltip" container="body" [ngbTooltip]="titleTooltip"><i class="fa-solid fa-question-circle"></i></span>
             }
         </div>
         @if (showUpdateDefinition || showResetTestHistory) {

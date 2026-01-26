@@ -12,15 +12,15 @@
                         <div class="testSuiteControls">
                             <div class="btn-toolbar">
                                 @if (testSuite.hasDocumentation && showViewDocumentation) {
-                                    <button type="button" class="btn btn-secondary" (click)="showTestSuiteDocumentation(testSuite); $event.stopPropagation();" [icon]="true" [pending]="viewDocumentationPending[testSuite.id]" containerClass="shortTooltip" container="body"  tooltip="Documentation" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-info-circle"></i></button>
+                                    <button type="button" class="btn btn-secondary" (click)="showTestSuiteDocumentation(testSuite); $event.stopPropagation();" [icon]="true" [pending]="viewDocumentationPending[testSuite.id]" tooltipClass="shortTooltip" container="body"  ngbTooltip="Documentation" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-info-circle"></i></button>
                                 }
                                 @if (showExecute && testSuite.testCases.length > 1) {
-                                    <button class="btn btn-primary" (click)="onTestSuiteSelect(testSuite); $event.stopPropagation();" [pending]="testSuite.executionPending" [icon]="true" containerClass="shortTooltip" container="body" tooltip="Run all" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-play"></i></button>
+                                    <button class="btn btn-primary" (click)="onTestSuiteSelect(testSuite); $event.stopPropagation();" [pending]="testSuite.executionPending" [icon]="true" tooltipClass="shortTooltip" container="body" ngbTooltip="Run all" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-play"></i></button>
                                 }
                             </div>
                         </div>
                     }
-                    <div class="testSuiteResult"><i containerClass="shortTooltip" [tooltip]="dataService.tooltipForTestResult(testSuite.result)" [ngClass]="dataService.iconForTestResult(testSuite.result)"></i></div>
+                    <div class="testSuiteResult"><i tooltipClass="shortTooltip" [ngbTooltip]="dataService.tooltipForTestResult(testSuite.result)" [ngClass]="dataService.iconForTestResult(testSuite.result)"></i></div>
                 </div>
             </div>
             <div [collapse]="!testSuite.expanded" [isAnimated]="animated">

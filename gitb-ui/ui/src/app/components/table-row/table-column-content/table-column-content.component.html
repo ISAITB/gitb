@@ -1,7 +1,7 @@
 @if (column.iconFn) {
     <span [class]="column.cellClass">
         @if (column.iconTooltipFn != undefined) {
-            <i [ngClass]="column.iconFn!(item.data)" containerClass="shortTooltip" [tooltip]="column.iconTooltipFn!(item.data)"></i>
+            <i [ngClass]="column.iconFn!(item.data)" tooltipClass="shortTooltip" [ngbTooltip]="column.iconTooltipFn!(item.data)"></i>
         } @else {
             <i [ngClass]="column.iconFn!(item.data)"></i>
         }

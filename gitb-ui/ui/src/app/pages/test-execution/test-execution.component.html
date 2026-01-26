@@ -44,9 +44,9 @@
                         <div class="test-case-description">{{testCase.description}}</div>
                         <div class="test-case-controls">
                             @if (testCase.hasDocumentation) {
-                                <button type="button" class="btn btn-secondary" (click)="showTestCaseDocumentation(testCase.id); $event.stopPropagation()" containerClass="shortTooltip" tooltip="Documentation" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-info-circle"></i></button>
+                                <button type="button" class="btn btn-secondary" (click)="showTestCaseDocumentation(testCase.id); $event.stopPropagation()" tooltipClass="shortTooltip" ngbTooltip="Documentation" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-info-circle"></i></button>
                             }
-                            <div class="progress-icon"><i class="fa-solid testsuite-progress-icon" [ngClass]="progressIcon(testCase.id)" containerClass="shortTooltip" [tooltip]="progressIconTooltip(testCase.id)"></i></div>
+                            <div class="progress-icon"><i class="fa-solid testsuite-progress-icon" [ngClass]="progressIcon(testCase.id)" tooltipClass="shortTooltip" [ngbTooltip]="progressIconTooltip(testCase.id)"></i></div>
                         </div>
                     </div>
                     <div [collapse]="!testCaseExpanded[testCase.id]" [isAnimated]="true">

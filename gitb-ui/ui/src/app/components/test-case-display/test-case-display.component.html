@@ -10,7 +10,7 @@
             @if (testCase.group != undefined) {
                 <div class="groupMarker">
                     @if (testCase.groupFirst && showResults) {
-                        <div class="groupMarkerIconContainer" [tooltip]="groupTooltip(testCase.resultToShow)" placement="right">
+                        <div class="groupMarkerIconContainer" [ngbTooltip]="groupTooltip(testCase.resultToShow)" placement="right">
                             <span class="groupMarkerIcon">
                                 <i [class.fa-solid]="testCase.resultToShow != undefined"
                                    [class.fa-regular]="testCase.resultToShow == undefined"
@@ -68,13 +68,13 @@
                                                                (opening)="optionsOpening(testCase)"></app-checkbox-option-panel>
                                 }
                                 @if (testCase.hasDocumentation && showViewDocumentation) {
-                                    <button type="button" class="btn btn-secondary" (click)="showTestCaseDocumentation(testCase)" [icon]="true" [pending]="viewDocumentationPending[testCase.id]" containerClass="shortTooltip" container="body"  tooltip="Documentation" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-info-circle"></i></button>
+                                    <button type="button" class="btn btn-secondary" (click)="showTestCaseDocumentation(testCase)" [icon]="true" [pending]="viewDocumentationPending[testCase.id]" tooltipClass="shortTooltip" container="body"  ngbTooltip="Documentation" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-info-circle"></i></button>
                                 }
                                 @if (showEdit) {
-                                    <button type="button" class="btn btn-secondary" (click)="editTestcase(testCase)" containerClass="shortTooltip" container="body"  tooltip="Edit" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-pencil"></i></button>
+                                    <button type="button" class="btn btn-secondary" (click)="editTestcase(testCase)" tooltipClass="shortTooltip" container="body"  ngbTooltip="Edit" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-pencil"></i></button>
                                 }
                                 @if (showExecute) {
-                                    <button class="btn btn-primary" (click)="onTestSelect(testCase)" [pending]="testCase.executionPending" [icon]="true" containerClass="shortTooltip" container="body" tooltip="Run" [disabled]="testCase.disabled" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-play"></i></button>
+                                    <button class="btn btn-primary" (click)="onTestSelect(testCase)" [pending]="testCase.executionPending" [icon]="true" tooltipClass="shortTooltip" container="body" ngbTooltip="Run" [disabled]="testCase.disabled" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-play"></i></button>
                                 }
                             </div>
                         }

@@ -4,7 +4,7 @@
             <div class="property-id">{{appliedName}}</div>
             <div class="property-value">{{appliedValueLabel}}</div>
             <div class="property-controls">
-                <div (click)="clear()" containerClass="shortTooltip" tooltip="Remove" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-times"></i></div>
+                <div (click)="clear()" tooltipClass="shortTooltip" ngbTooltip="Remove" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-times"></i></div>
             </div>
         </div>
     } @else {
@@ -30,10 +30,10 @@
           </div>
         }
         <div class="property-controls">
-          <button class="btn btn-secondary" (click)="apply()" containerClass="shortTooltip" tooltip="Apply" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" container="body">
+          <button class="btn btn-secondary" (click)="apply()" tooltipClass="shortTooltip" ngbTooltip="Apply" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" container="body">
               <span><i class="fa-solid fa-check"></i></span>
           </button>
-          <button class="btn btn-secondary" (click)="cancel()" containerClass="shortTooltip" tooltip="Cancel" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" container="body">
+          <button class="btn btn-secondary" (click)="cancel()" tooltipClass="shortTooltip" ngbTooltip="Cancel" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" container="body">
               <span><i class="fa-solid fa-times"></i></span>
           </button>
         </div>

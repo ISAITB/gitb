@@ -72,7 +72,7 @@
                             </div>
                         }
                         @if (status) {
-                            <div class="item-status"><i containerClass="shortTooltip" [tooltip]="dataService.tooltipForTestResult(status)" [ngClass]="dataService.iconForTestResult(status)"></i></div>
+                            <div class="item-status"><i tooltipClass="shortTooltip" [ngbTooltip]="dataService.tooltipForTestResult(status)" [ngClass]="dataService.iconForTestResult(status)"></i></div>
                         }
                         @if (withOptions && conformanceIds) {
                             <div class="options-button">

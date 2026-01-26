@@ -159,10 +159,10 @@
                                     >
                                         <td class="drag-preview"><input [attr.id]="'presetValue-'+index" [name]="'presetValue-'+index" class="form-control" type="text" [(ngModel)]="presetValue.value"/></td>
                                         <td><input class="form-control" type="text" [name]="'presetValueLabel-'+index" [(ngModel)]="presetValue.label"/></td>
-                                        <td><button class="btn btn-secondary" type="button" (click)="removePresetValue(index)" containerClass="shortTooltip" tooltip="Delete" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-trash"></i></button></td>
+                                        <td><button class="btn btn-secondary" type="button" (click)="removePresetValue(index)" tooltipClass="shortTooltip" ngbTooltip="Delete" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-trash"></i></button></td>
                                         @if (parameter.presetValues!.length > 1) {
                                             <td class="drag-handle">
-                                                <button cdkDragHandle #pop="bs-tooltip" (mousedown)="pop.hide()" class="btn btn-secondary" type="button" containerClass="shortTooltip" container="body" tooltip="Reorder" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrows-up-down"></i></span></button>
+                                                <button cdkDragHandle #pop="ngbTooltip" (mousedown)="pop.close()" class="btn btn-secondary" type="button" tooltipClass="shortTooltip" container="body" ngbTooltip="Reorder" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrows-up-down"></i></span></button>
                                             </td>
                                         }
                                     </tr>
@@ -173,7 +173,7 @@
                 }
             </div>
             <div class="col-8 offset-3">
-                <button class="btn btn-secondary" type="button" (click)="addPresetValue()" containerClass="shortTooltip" tooltip="Add" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-plus"></i></button>
+                <button class="btn btn-secondary" type="button" (click)="addPresetValue()" tooltipClass="shortTooltip" ngbTooltip="Add" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-plus"></i></button>
             </div>
         </div>
     </div>

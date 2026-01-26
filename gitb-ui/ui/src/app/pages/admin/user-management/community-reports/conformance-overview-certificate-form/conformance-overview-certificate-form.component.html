@@ -79,7 +79,7 @@
                         <div class="col-8 col-md-6">
                             <app-file-select [fileName]="stylesheetNameToShow" [reset]="resetStylesheet" (onUpload)="selectStylesheet($event)" placeholder="Drop or browse for stylesheet file ..." [accepts]="acceptedStylesheetTypes" [extraActions]="reportSettings!.stylesheetExists">
                                 @if (reportSettings!.stylesheetExists) {
-                                    <button type="button" class="btn btn-secondary" (click)="viewStylesheet(reportType)" containerClass="shortTooltip" tooltip="View" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" container="body"><i class="fa-solid fa-magnifying-glass"></i></button>
+                                    <button type="button" class="btn btn-secondary" (click)="viewStylesheet(reportType)" tooltipClass="shortTooltip" ngbTooltip="View" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" container="body"><i class="fa-solid fa-magnifying-glass"></i></button>
                                 }
                             </app-file-select>
                         </div>

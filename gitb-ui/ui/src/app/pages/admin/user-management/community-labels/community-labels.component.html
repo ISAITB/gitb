@@ -11,11 +11,11 @@
                 <table id="labelTable" class="table mb-0">
                     <thead>
                         <tr>
-                            <th><span>Concept</span><span class="spaced-left" [tooltip]="'The Test Bed concept to describe with a custom label.'" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span></th>
-                            <th><span>Override?</span><span class="spaced-left" [tooltip]="'Whether or not to override the default label.'" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span></th>
-                            <th><span>Singular form</span><span class="spaced-left" [tooltip]="'The label when referring to a single element.'" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span></th>
-                            <th><span>Plural form</span><span class="spaced-left" [tooltip]="'The label when referring to a multiple elements.'" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span></th>
-                            <th><span>Fixed casing?</span><span class="spaced-left" [tooltip]="'Whether or not the label\'s casing should never be adapted.'" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span></th>
+                            <th><span>Concept</span><span class="spaced-left" [ngbTooltip]="'The Test Bed concept to describe with a custom label.'" [tooltipClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span></th>
+                            <th><span>Override?</span><span class="spaced-left" [ngbTooltip]="'Whether or not to override the default label.'" [tooltipClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span></th>
+                            <th><span>Singular form</span><span class="spaced-left" [ngbTooltip]="'The label when referring to a single element.'" [tooltipClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span></th>
+                            <th><span>Plural form</span><span class="spaced-left" [ngbTooltip]="'The label when referring to a multiple elements.'" [tooltipClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span></th>
+                            <th><span>Fixed casing?</span><span class="spaced-left" [ngbTooltip]="'Whether or not the label\'s casing should never be adapted.'" [tooltipClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -25,7 +25,7 @@
                                     <td>
                                         <div>
                                             <span>{{labelTypeLabel(label.labelType)}}</span>
-                                            <span class="spaced-left" [tooltip]="labelTypeDescription[label.labelType]"><i class="fa-solid fa-question-circle"></i></span>
+                                            <span class="spaced-left" [ngbTooltip]="labelTypeDescription[label.labelType]"><i class="fa-solid fa-question-circle"></i></span>
                                         </div>
                                     </td>
                                     <td>
@@ -36,8 +36,8 @@
                                         <td><div><input type="text" [name]="'pluralForm'+index" [(ngModel)]="label.pluralForm" class="form-control"/></div></td>
                                         <td><input type="checkbox" class="form-check-input" [name]="'fixedCase'+index" [(ngModel)]="label.fixedCase"/></td>
                                     } @else {
-                                        <td><div><input type="text" [value]="Constants.LABEL_DEFAULT[label.labelType].singularForm" class="form-control" readonly="true"/></div></td>
-                                        <td><div><input type="text" [value]="Constants.LABEL_DEFAULT[label.labelType].pluralForm" class="form-control" readonly="true"/></div></td>
+                                        <td><div><input type="text" [value]="Constants.LABEL_DEFAULT[label.labelType].singularForm" class="form-control" readonly="readonly"/></div></td>
+                                        <td><div><input type="text" [value]="Constants.LABEL_DEFAULT[label.labelType].pluralForm" class="form-control" readonly="readonly"/></div></td>
                                         <td><input type="checkbox" class="form-check-input" [checked]="Constants.LABEL_DEFAULT[label.labelType].fixedCase" [disabled]="true"/></td>
                                     }
                                 </tr>

@@ -59,7 +59,7 @@
                             }
                         </td>
                         <td class="td-min-centered"><app-test-status-icons [counters]="statement.counters!" [asLine]="true"></app-test-status-icons></td>
-                        <td class="td-min-centered"><span><i containerClass="shortTooltip" [tooltip]="dataService.tooltipForTestResult(statement.overallStatus)" [ngClass]="dataService.iconForTestResult(statement.overallStatus)"></i></span></td>
+                        <td class="td-min-centered"><span><i tooltipClass="shortTooltip" [ngbTooltip]="dataService.tooltipForTestResult(statement.overallStatus)" [ngClass]="dataService.iconForTestResult(statement.overallStatus)"></i></span></td>
                         @if (showExportControls) {
                             <td class="td-min-centered">
                                 <app-statement-options-button [item]="statement"

@@ -140,7 +140,7 @@
                                     </ul>
                                 </div>
                                 @if (displayedTestSuites.length > 1) {
-                                    <button class="btn btn-primary" (click)="onMultipleTestSelect(); $event.stopPropagation();" [pending]="statementExecutionPending" [icon]="true" containerClass="shortTooltip" container="body" tooltip="Run all" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
+                                    <button class="btn btn-primary" (click)="onMultipleTestSelect(); $event.stopPropagation();" [pending]="statementExecutionPending" [icon]="true" tooltipClass="shortTooltip" container="body" ngbTooltip="Run all" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
                                         <span><i class="fa-solid fa-play"></i></span>
                                     </button>
                                 }

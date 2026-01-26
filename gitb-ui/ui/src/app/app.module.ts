@@ -26,7 +26,6 @@ import {LoginComponent} from './pages/login/login.component';
 import {IndexComponent} from './pages/index/index.component';
 import {HtmlComponent} from './modals/html/html.component';
 import {ModalModule} from 'ngx-bootstrap/modal';
-import {TooltipModule} from 'ngx-bootstrap/tooltip';
 import {AlertModule} from 'ngx-bootstrap/alert';
 import {CollapseModule} from 'ngx-bootstrap/collapse';
 import {BsDatepickerModule} from 'ngx-bootstrap/datepicker';
@@ -294,6 +293,7 @@ import {UsageTipModalComponent} from './modals/usage-tip-modal/usage-tip-modal.c
 import {SubmitOnControlEnterDirective} from './directives/submit-on-control-enter.directive';
 import {PopupNotificationContainerComponent} from './components/popup-notification-container/popup-notification-container.component';
 import {PopupNotificationComponent} from './components/popup-notification/popup-notification.component';
+import {NgbTooltipModule} from '@ng-bootstrap/ng-bootstrap';
 
 @NgModule({ declarations: [
         AppComponent,
@@ -509,10 +509,10 @@ import {PopupNotificationComponent} from './components/popup-notification/popup-
         AppRoutingModule,
         DragDropModule,
         ModalModule.forRoot(),
-        TooltipModule.forRoot(),
         AlertModule.forRoot(),
         CollapseModule.forRoot(),
         BsDatepickerModule.forRoot(),
+        NgbTooltipModule,
         CodemirrorModule,
         BsDropdownModule.forRoot(),
         PopoverModule.forRoot(),
