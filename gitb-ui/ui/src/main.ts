@@ -1,3 +1,5 @@
+/// <reference types="@angular/localize" />
+
 /*
  * Copyright (C) 2026 European Union
  *
