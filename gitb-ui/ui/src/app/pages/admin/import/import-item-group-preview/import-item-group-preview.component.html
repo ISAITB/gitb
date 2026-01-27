@@ -1,5 +1,5 @@
 <div class="import-item-group">
-    <div (click)="toggleGroup(group); $event.stopPropagation();" class="import-item-group-label title-holder" [ngClass]="{'open': !collapsed}">
+    <div (click)="toggleGroup(group); $event.stopPropagation();" class="import-item-group-label title-holder" [class.open]="!collapsed">
       <div class="title-text highlight" [class.skip]="skipped">{{group.typeLabel}}
         @if (showCount) {
           <span class="ms-1">({{group.items.length}})</span>
@@ -18,7 +18,7 @@
       </div>
       <div class="title-icon"><i class="fa" [ngClass]="{'fa-chevron-circle-down': group.open, 'fa-chevron-circle-right': !group.open}"></i></div>
     </div>
-    <div [collapse]="!group.open" [isAnimated]="true" (collapsed)="childrenCollapsed()" (expands)="childrenExpanding()">
+    <div [ngbCollapse]="!group.open" [animation]="true" (hidden)="collapsed = true" (shown)="collapsed = false">
         <div class="import-item-group-items">
           @for (groupItem of group.items; track $index) {
             <div app-import-item-preview class="import-item-group-item" [tbImportItem]="groupItem" [importType]="importType" (processStatusChange)="childProcessStatusUpdated()"></div>

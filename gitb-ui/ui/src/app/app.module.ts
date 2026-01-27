@@ -26,8 +26,6 @@ import {LoginComponent} from './pages/login/login.component';
 import {IndexComponent} from './pages/index/index.component';
 import {HtmlComponent} from './modals/html/html.component';
 import {ModalModule} from 'ngx-bootstrap/modal';
-import {AlertModule} from 'ngx-bootstrap/alert';
-import {CollapseModule} from 'ngx-bootstrap/collapse';
 import {BsDatepickerModule} from 'ngx-bootstrap/datepicker';
 import {ConfirmationComponent} from './modals/confirmation/confirmation.component';
 import {FormsModule} from '@angular/forms';
@@ -78,7 +76,6 @@ import {ScrollToTopComponent} from './components/scroll-to-top/scroll-to-top.com
 import {ConformanceDashboardComponent} from './pages/admin/conformance-dashboard/conformance-dashboard.component';
 import {ConformanceCertificateModalComponent} from './modals/conformance-certificate-modal/conformance-certificate-modal.component';
 import {TestResultStatusDisplayComponent} from './components/test-result-status-display/test-result-status-display.component';
-import {PopoverModule} from 'ngx-bootstrap/popover';
 import {DomainManagementComponent} from './pages/admin/domain-management/domain-management.component';
 import {CreateDomainComponent} from './pages/admin/domain-management/domain/create-domain/create-domain.component';
 import {DomainDetailsComponent} from './pages/admin/domain-management/domain/domain-details/domain-details.component';
@@ -293,7 +290,7 @@ import {UsageTipModalComponent} from './modals/usage-tip-modal/usage-tip-modal.c
 import {SubmitOnControlEnterDirective} from './directives/submit-on-control-enter.directive';
 import {PopupNotificationContainerComponent} from './components/popup-notification-container/popup-notification-container.component';
 import {PopupNotificationComponent} from './components/popup-notification/popup-notification.component';
-import {NgbAlertModule, NgbPopoverModule, NgbTooltipModule} from '@ng-bootstrap/ng-bootstrap';
+import {NgbAlertModule, NgbCollapseModule, NgbPopoverModule, NgbTooltipModule} from '@ng-bootstrap/ng-bootstrap';
 
 @NgModule({ declarations: [
         AppComponent,
@@ -510,7 +507,7 @@ import {NgbAlertModule, NgbPopoverModule, NgbTooltipModule} from '@ng-bootstrap/
         DragDropModule,
         ModalModule.forRoot(),
         NgbAlertModule,
-        CollapseModule.forRoot(),
+        NgbCollapseModule,
         BsDatepickerModule.forRoot(),
         NgbTooltipModule,
         CodemirrorModule,

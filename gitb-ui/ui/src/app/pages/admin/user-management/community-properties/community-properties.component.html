@@ -8,7 +8,7 @@
                 <span>The following custom properties will be presented to your community members for completion and, if configured, will also be made available as test session variables. Required properties must be provided before executing test sessions.</span>
             </div>
             <div class="card">
-                <div class="card-header clickable" (click)="organisationPropertiesCollapsed = !organisationPropertiesCollapsed" [class.collapsed]="organisationPropertiesCollapseFinished">
+                <div class="card-header clickable" (click)="organisationPropertiesCollapsed = !organisationPropertiesCollapsed; toggleOrganisationPropertiesCollapsed(false)" [class.collapsed]="organisationPropertiesCollapseFinished">
                     <div class="table-title"><app-collapsing-icon [isCollapsed]="organisationPropertiesCollapsed"></app-collapsing-icon>{{dataService.labelOrganisation()}} level properties</div>
                     <div class="btn-toolbar">
                         <button type="button" [labelIcon]="Constants.BUTTON_ICON.PREVIEW" class="btn btn-secondary" [pending]="previewOrganisationParametersPending" (click)="previewOrganisationParameters();$event.stopPropagation()">Preview</button>
@@ -16,7 +16,7 @@
                         <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="addOrganisationParameter();$event.stopPropagation()">Create property</button>
                     </div>
                 </div>
-                <div [collapse]="organisationPropertiesCollapsed" [isAnimated]="true" (collapsed)="toggleOrganisationPropertiesCollapsed(true)" (expands)="toggleOrganisationPropertiesCollapsed(false)">
+                <div [ngbCollapse]="organisationPropertiesCollapsed" [animation]="true" (hidden)="toggleOrganisationPropertiesCollapsed(true)">
                     <div class="table-container rounded">
                         <table class="table table-directive thick">
                             <thead>
@@ -80,7 +80,7 @@
                 </div>
             </div>
             <div class="card mb-0">
-                <div class="card-header clickable" (click)="systemPropertiesCollapsed = !systemPropertiesCollapsed" [class.collapsed]="systemPropertiesCollapseFinished">
+                <div class="card-header clickable" (click)="systemPropertiesCollapsed = !systemPropertiesCollapsed; toggleSystemPropertiesCollapsed(false)" [class.collapsed]="systemPropertiesCollapseFinished">
                     <div class="table-title"><app-collapsing-icon [isCollapsed]="systemPropertiesCollapsed"></app-collapsing-icon>{{dataService.labelSystem()}} level properties</div>
                     <div class="btn-toolbar">
                         <button type="button" [labelIcon]="Constants.BUTTON_ICON.PREVIEW" class="btn btn-secondary" (click)="previewSystemParameters();$event.stopPropagation()">Preview</button>
@@ -88,7 +88,7 @@
                         <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="addSystemParameter();$event.stopPropagation()">Create property</button>
                     </div>
                 </div>
-                <div [collapse]="systemPropertiesCollapsed" [isAnimated]="true" (collapsed)="toggleSystemPropertiesCollapsed(true)" (expands)="toggleSystemPropertiesCollapsed(false)">
+                <div [ngbCollapse]="systemPropertiesCollapsed" [animation]="true" (hidden)="toggleSystemPropertiesCollapsed(true)">
                     <div class="table-container rounded">
                         <table class="table table-directive thick">
                             <thead>

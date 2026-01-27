@@ -30,7 +30,7 @@
         }
       </div>
       @if (tbImportItem.groups != undefined && tbImportItem.groups.length > 0) {
-        <div [collapse]="!tbImportItem.open" [isAnimated]="true" (collapsed)="childrenCollapsed()" (expands)="childrenExpanding()">
+        <div [ngbCollapse]="!tbImportItem.open" [animation]="true" (hidden)="collapsed = true" (shown)="collapsed = false">
           <ng-container *ngTemplateOutlet="itemGroupTemplate"></ng-container>
         </div>
       }

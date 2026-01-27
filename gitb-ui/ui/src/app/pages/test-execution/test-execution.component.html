@@ -49,7 +49,7 @@
                             <div class="progress-icon"><i class="fa-solid testsuite-progress-icon" [ngClass]="progressIcon(testCase.id)" tooltipClass="shortTooltip" [ngbTooltip]="progressIconTooltip(testCase.id)"></i></div>
                         </div>
                     </div>
-                    <div [collapse]="!testCaseExpanded[testCase.id]" [isAnimated]="true">
+                    <div class="test-case-session-container" [ngbCollapse]="!testCaseExpanded[testCase.id]" [animation]="true">
                         <div class="test-case-session">
                             <div class="session-execution-info">
                                 <div class="session-table-title">

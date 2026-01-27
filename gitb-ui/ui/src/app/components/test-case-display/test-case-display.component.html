@@ -92,7 +92,7 @@
                     </div>
                 </div>
                 @if (hasDescription[testCase.id]) {
-                    <div [collapse]="!descriptionVisible[testCase.id]" [isAnimated]="animated" class="testCaseDescriptionContainer">
+                    <div [ngbCollapse]="!descriptionVisible[testCase.id]" [animation]="animated" class="testCaseDescriptionContainer">
                         <div class="testCaseDescription">{{testCase.description}}</div>
                         <app-specification-reference-display [reference]="testCase"></app-specification-reference-display>
                     </div>

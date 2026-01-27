@@ -2,7 +2,7 @@
     <app-test-filter [filterState]="filterState" [communityId]="communityId" [organisationId]="organisationId" [initialSessionId]="sessionIdToShow" (onApply)="filterControlApplied()"></app-test-filter>
     @if (showActiveSessions) {
         <div class="card">
-            <div class="card-header clickable" (click)="activeSessionsCollapsed = !activeSessionsCollapsed" [class.collapsed]="activeSessionsCollapsedFinished">
+            <div class="card-header clickable" (click)="activeSessionsHeaderClicked()" [class.collapsed]="activeSessionsCollapsedFinished">
                 <div class="card-title">
                     <app-collapsing-icon [isCollapsed]="activeSessionsCollapsed"></app-collapsing-icon>Active test sessions
                 </div>
@@ -25,7 +25,7 @@
                     }
                 </div>
             </div>
-            <div [collapse]="activeSessionsCollapsed" [isAnimated]="true" (collapsed)="toggleActiveSessionsCollapsedFinished(true)" (expands)="toggleActiveSessionsCollapsedFinished(false)">
+            <div [ngbCollapse]="activeSessionsCollapsed" [animation]="true" (hidden)="toggleActiveSessionsCollapsedFinished(true)">
                 <div #activeSessions app-session-table
                      [sessionTableId]="'active-tests'"
                      [expandedCounter]="activeExpandedCounter"
@@ -50,7 +50,7 @@
     }
     <!-- completed sessions -->
     <div class="card mb-0">
-        <div class="card-header clickable" (click)="completedSessionsCollapsed = !completedSessionsCollapsed" [class.collapsed]="completedSessionsCollapsedFinished">
+        <div class="card-header clickable" (click)="completedSessionsHeaderClicked()" [class.collapsed]="completedSessionsCollapsedFinished">
             <div class="card-title"><app-collapsing-icon [isCollapsed]="completedSessionsCollapsed"></app-collapsing-icon>Completed test sessions</div>
             <div class="btn-toolbar" [class.disable-events]="filterState.updatePending">
                 @if (showDeleteControls) {
@@ -70,7 +70,7 @@
                 }
             </div>
         </div>
-        <div [collapse]="completedSessionsCollapsed" [isAnimated]="true" (collapsed)="toggleCompletedSessionsCollapsedFinished(true)" (expands)="toggleCompletedSessionsCollapsedFinished(false)">
+        <div [ngbCollapse]="completedSessionsCollapsed" [animation]="true" (hidden)="toggleCompletedSessionsCollapsedFinished(true)">
             <div #completedSessions app-session-table
                  [sessionTableId]="'completed-tests'"
                  [expandedCounter]="completedExpandedCounter"

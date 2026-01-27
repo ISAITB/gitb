@@ -50,6 +50,7 @@ export class ImportItemGroupPreviewComponent implements OnInit {
 
   ngOnInit(): void {
     this.group = this.tbImportItemGroup
+    this.collapsed = !this.group.open
     this.calculateFlags()
   }
 
@@ -57,6 +58,7 @@ export class ImportItemGroupPreviewComponent implements OnInit {
     if (group.open) {
       this.closeGroup(group)
     } else {
+      this.collapsed = false
       group.open = true
     }
   }
@@ -66,18 +68,6 @@ export class ImportItemGroupPreviewComponent implements OnInit {
     for (let item of group.items) {
       this.closeItem(item)
     }
-  }
-
-  childrenCollapsed() {
-    setTimeout(() => {
-      this.collapsed = true
-    }, 1)
-  }
-
-  childrenExpanding() {
-    setTimeout(() => {
-      this.collapsed = false
-    }, 1)
   }
 
   closeItem(item: ImportItemState) {
@@ -137,6 +127,7 @@ export class ImportItemGroupPreviewComponent implements OnInit {
 
   expandAll() {
     this.group.open = true
+    this.collapsed = false
     for (let item of this.group.items) {
       this.expandItem(item)
     }

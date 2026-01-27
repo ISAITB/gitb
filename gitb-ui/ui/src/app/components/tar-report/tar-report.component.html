@@ -1,5 +1,5 @@
 <div class="root-container">
-    <div class="summary" (click)="collapsed = !collapsed" [class.hide-border]="!withSummaryBorder">
+    <div class="summary" (click)="collapsed = !collapsed; expanding()" [class.hide-border]="!withSummaryBorder">
         <div class="summary-title"><app-collapsing-icon [isCollapsed]="collapsed"></app-collapsing-icon>Details</div>
         <div class="summary-labels">
             @if (errors > 0) {
@@ -19,7 +19,7 @@
             }
         </div>
     </div>
-    <div [collapse]="collapsed" [isAnimated]="true" (collapsed)="withSummaryBorder = false" (expands)="expanding()">
+    <div [ngbCollapse]="collapsed" [animation]="true" (hidden)="withSummaryBorder = false">
         <div class="report-item-container">
             @if (reportsToShow.length > 0) {
                 @for (assertionReport of reportsToShow; track assertionReport.trackingId) {

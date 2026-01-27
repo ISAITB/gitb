@@ -134,7 +134,7 @@
 							<div class="section-choice-title expandable" (click)="specificationsCollapsed = !specificationsCollapsed">
 								<app-collapsing-icon [isCollapsed]="specificationsCollapsed"></app-collapsing-icon>Linked {{dataService.labelSpecificationsLower()}} ({{specificationChoices.length}})
 							</div>
-							<div [collapse]="specificationsCollapsed" [isAnimated]="true">
+							<div [ngbCollapse]="specificationsCollapsed" [animation]="true">
 								<div class="section-choice-actions">
 									<app-test-suite-upload-specification-choices
 										[choices]="specificationChoices"

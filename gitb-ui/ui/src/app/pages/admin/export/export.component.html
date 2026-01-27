@@ -1,7 +1,9 @@
 <div class="card mb-0 border-top-0">
     <form>
-        <div [collapse]="collapsed" [isAnimated]="animated">
-            <div class="ms-3 me-3 mt-2 pt-2 border-top bg-transparent"></div>
+        <div [ngbCollapse]="collapsed" [animation]="animated">
+            <div class="px-3 pt-2">
+                <div class="pt-2 border-top bg-transparent"></div>
+            </div>
             <div class="card-body pt-0" [pending]="!loaded">
                 @if (showDomainOption) {
                     <div class="row pt-2">
@@ -36,9 +38,9 @@
                         </div>
                     </div>
                 }
-                <div [collapse]="formCollapsed" [isAnimated]="true">
+                <div [ngbCollapse]="formCollapsed" [animation]="true">
                     @if (exportType == 'domain') {
-                        <div class="row" [class.mt-3]="showDomainOption">
+                        <div class="row" [class.pt-3]="showDomainOption">
                             <label class="col-3 col-form-label text-end" for="domain">* {{dataService.labelDomain()}}:</label>
                             <div class="col-8 col-sm-6">
                                 @if (dataService.isSystemAdmin || (dataService.isCommunityAdmin && dataService.community?.domainId == undefined)) {
@@ -307,10 +309,10 @@
                                 </div>
                             </div>
                         </div>
-                        <div [collapse]="!addExtraDomainsForDeletion" [isAnimated]="true">
+                        <div [ngbCollapse]="!addExtraDomainsForDeletion" [animation]="true">
                             @if (extraDomainsForDeletion.length > 0) {
                                 @for (key of extraDomainsForDeletion; track key) {
-                                    <div class="row mt-3 pt-0">
+                                    <div class="row pt-3">
                                         <div class="col-8 col-sm-7 col-md-5 offset-3">
                                             <app-api-key-text [idName]="'domain_key_'+$index" [name]="'domain_key_'+$index"
                                                               [key]="key"
@@ -321,7 +323,7 @@
                                     </div>
                                 }
                             }
-                            <div class="row mt-3 pt-0">
+                            <div class="row pt-3">
                                 <div class="col-8 col-sm-7 col-md-5 offset-3">
                                     <div class="input-group">
                                         <input type="text" name="extraDomainKey" class="form-control" placeholder="API key" [(ngModel)]="extraDomainKey">
@@ -349,10 +351,10 @@
                                 </div>
                             </div>
                         </div>
-                        <div [collapse]="!addExtraCommunitiesForDeletion" [isAnimated]="true">
+                        <div [ngbCollapse]="!addExtraCommunitiesForDeletion" [animation]="true">
                             @if (extraCommunitiesForDeletion.length > 0) {
                                 @for (key of extraCommunitiesForDeletion; track key) {
-                                    <div class="row mt-3 pt-0">
+                                    <div class="row pt-3">
                                         <div class="col-8 col-sm-7 col-md-5 offset-3">
                                             <app-api-key-text [idName]="'community_key_'+$index" [name]="'community_key_'+$index"
                                                               [key]="key"
@@ -363,7 +365,7 @@
                                     </div>
                                 }
                             }
-                            <div class="row mt-3 pt-0">
+                            <div class="row pt-3">
                                 <div class="col-8 col-sm-7 col-md-5 offset-3">
                                     <div class="input-group">
                                         <input type="text" name="extraCommunityKey" class="form-control" placeholder="API key" [(ngModel)]="extraCommunityKey">

@@ -394,11 +394,8 @@ div.import-item-group {
 		border: 1px solid @item-color-border;
 		align-items: center;
 		&.open {
-			border-top-left-radius: @border-radius;
-			border-top-right-radius: @border-radius;
-			border-bottom-left-radius: 0px;
-			border-bottom-right-radius: 0px;
-			border-top: 1px solid @item-color-border;
+            border-radius: @border-radius @border-radius 0 0;
+            border-top: 1px solid @item-color-border;
 			border-left: 1px solid @item-color-border;
 			border-right: 1px solid @item-color-border;
 		}
@@ -408,11 +405,8 @@ div.import-item-group {
 		}
 	}
 	div.import-item-group-items {
-		padding-left: 10px;
-		padding-right: 10px;
-		padding-bottom: 10px;
-		padding-top: 5px;
-		border-bottom-left-radius: 5px;
+        padding: 5px 10px 10px;
+        border-bottom-left-radius: 5px;
 		border-bottom-right-radius: 5px;
 		border-bottom: 1px solid @item-color-border;
 		border-left: 1px solid @item-color-border;

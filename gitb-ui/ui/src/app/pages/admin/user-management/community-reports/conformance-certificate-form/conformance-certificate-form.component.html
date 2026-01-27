@@ -17,8 +17,8 @@
                 </div>
             </div>
         </div>
-        <div [collapse]="!reportSettings!.customPdfs">
-            <div class="row mt-3">
+        <div [ngbCollapse]="!reportSettings!.customPdfs">
+            <div class="row pt-3">
                 <label class="col-3 col-form-label text-end" for="customPdfService">* Service address:</label>
                 <div class="col-8 col-md-6">
                     <input #serviceField type="text" id="customPdfService" name="customPdfService" [(ngModel)]="reportSettings!.customPdfService" class="form-control"/>
@@ -41,8 +41,8 @@
                     </div>
                 </div>
             </div>
-            <div [collapse]="!reportSettings!.customPdfsWithCustomXml" [isAnimated]="true">
-                <div class="row mt-3">
+            <div [ngbCollapse]="!reportSettings!.customPdfsWithCustomXml" [animation]="true">
+                <div class="row pt-3">
                     <legend class="col-3 col-form-label text-end">* Stylesheet:</legend>
                     <div class="col-8 col-md-6">
                         <app-file-select [fileName]="stylesheetNameToShow" [reset]="resetStylesheet" (onUpload)="selectStylesheet($event)" placeholder="Drop or browse for stylesheet file ..." [accepts]="acceptedStylesheetTypes" [extraActions]="reportSettings!.stylesheetExists">
@@ -55,8 +55,8 @@
                 </div>
             </div>
         </div>
-        <div [collapse]="reportSettings!.customPdfs">
-            <div class="row mt-3">
+        <div [ngbCollapse]="reportSettings!.customPdfs">
+            <div class="row pt-3">
                 <label class="col-3 col-form-label text-end">Title:</label>
                 <div class="col-8 col-md-6">
                     <div class="row row-cols-auto align-items-center">
@@ -114,9 +114,9 @@
                     </div>
                 </div>
             </div>
-            <div [collapse]="!settings.includeMessage" [isAnimated]="true">
+            <div [ngbCollapse]="!settings.includeMessage" [animation]="true">
                 <app-form-section sectionTitle="Message configuration" [marginBefore]="true">
-                    <div class="row mt-3">
+                    <div class="row pt-3">
                         <div class="col-12">
                             <div>
                                 <app-placeholder-selector [placeholders]="placeholders" [domainParameters]="true" [domainChanged]="domainChangedEmitter" [organisationParameters]="true" [systemParameters]="true" [resources]="true" [systemResources]="dataService.isSystemAdmin" [community]="communityId" [domainId]="domainId"></app-placeholder-selector>

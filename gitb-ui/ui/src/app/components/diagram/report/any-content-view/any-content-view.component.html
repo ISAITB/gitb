@@ -1,73 +1,74 @@
 @if (context != undefined) {
-    <div class="any-content-view"
-         [class.no-margin]="noMargin"
-         [class.no-border]="noBorder"
-         [class.alert]="level != undefined && level !== 'NONE'"
-         [class.alert-info]="level === 'INFO'"
-         [class.alert-success]="level === 'SUCCESS'"
-         [class.alert-warning]="level === 'WARNING'"
-         [class.alert-danger]="level === 'ERROR'"
-         [class.hovering]="hoveringTitle && withItems && !this.root">
-        @if (withName || withValue) {
-            <div class="any-content-view-container">
-                <div class="any-content-view-texts" (click)="containerClicked();$event.stopPropagation()">
-                    @if (withName) {
-                        <div class="content-name" [class.with-items]="withItems" [class.break-texts]="breakNameText"
-                             (mouseover)="hoverUpdate(true)" (mouseout)="hoverUpdate(false)">
-                            @if (!this.root) {
-                                <app-collapsing-icon [hidden]="!withItems" [isCollapsed]="collapsed"></app-collapsing-icon>
-                            }
-                            @if (name) {
-                                {{ name }}
-                            } @else {
-                                <div class="not-inline-help-text">Expand to view</div>
-                            }
-                        </div>
-                    }
-                    @if (withValue) {
-                        @if (showValueInline) {
-                            <div class="content-value" [class.with-name]="withName"
-                                 [class.break-texts]="breakValueText">{{ value }}
+    <div class="any-content-view-root" [class.root]="root">
+        <div class="any-content-view"
+             [class.no-border]="noBorder"
+             [class.alert]="level != undefined && level !== 'NONE'"
+             [class.alert-info]="level === 'INFO'"
+             [class.alert-success]="level === 'SUCCESS'"
+             [class.alert-warning]="level === 'WARNING'"
+             [class.alert-danger]="level === 'ERROR'"
+             [class.hovering]="hoveringTitle && withItems && !this.root">
+            @if (withName || withValue) {
+                <div class="any-content-view-container">
+                    <div class="any-content-view-texts" (click)="containerClicked();$event.stopPropagation()">
+                        @if (withName) {
+                            <div class="content-name" [class.with-items]="withItems" [class.break-texts]="breakNameText"
+                                 (mouseover)="hoverUpdate(true)" (mouseout)="hoverUpdate(false)">
+                                @if (!this.root) {
+                                    <app-collapsing-icon [hidden]="!withItems" [isCollapsed]="collapsed"></app-collapsing-icon>
+                                }
+                                @if (name) {
+                                    {{ name }}
+                                } @else {
+                                    <div class="not-inline-help-text">Expand to view</div>
+                                }
                             </div>
-                        } @else if (!withName) {
-                            <div class="content-value not-inline-help-text">Download or view in editor</div>
                         }
-                    }
-                </div>
-                @if (withValue && showControls) {
-                    <div class="any-content-view-controls">
-                        <div class="btn-toolbar">
+                        @if (withValue) {
                             @if (showValueInline) {
-                                <button class="btn btn-secondary" type="button" (click)="copy()"
-                                        tooltipClass="shortTooltip" container="body" ngbTooltip="Copy"
-                                        [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i
-                                    class="fa-solid fa-clipboard" aria-hidden="true"></i></button>
-                            } @else {
-                                <button class="btn btn-secondary" type="button" (click)="download()"
-                                        [class.pending]="downloadPending" [pending]="downloadPending" [icon]="true"
-                                        tooltipClass="shortTooltip" container="body" ngbTooltip="Download"
-                                        [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i
-                                    class="fa-solid fa-download" aria-hidden="true"></i></button>
-                                <button class="btn btn-secondary" type="button" (click)="open()"
-                                        [class.pending]="openPending" [pending]="openPending" [icon]="true"
-                                        tooltipClass="shortTooltip" container="body" ngbTooltip="View"
-                                        [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i
-                                    class="fa-solid fa-search" aria-hidden="true"></i></button>
+                                <div class="content-value" [class.with-name]="withName"
+                                     [class.break-texts]="breakValueText">{{ value }}
+                                </div>
+                            } @else if (!withName) {
+                                <div class="content-value not-inline-help-text">Download or view in editor</div>
                             }
-                        </div>
+                        }
                     </div>
-                }
-            </div>
-        }
-        @if (withItems) {
-            <div [collapse]="collapsed" [isAnimated]="true">
-                <div class="content-items" [class.with-name]="withName">
-                    @for (item of context!.item!; track $index) {
-                        <app-any-content-view [context]="item" [report]="report" [sessionId]="sessionId"
-                                              [root]="false" [showControls]="showControls" [level]="level"></app-any-content-view>
+                    @if (withValue && showControls) {
+                        <div class="any-content-view-controls">
+                            <div class="btn-toolbar">
+                                @if (showValueInline) {
+                                    <button class="btn btn-secondary" type="button" (click)="copy()"
+                                            tooltipClass="shortTooltip" container="body" ngbTooltip="Copy"
+                                            [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i
+                                        class="fa-solid fa-clipboard" aria-hidden="true"></i></button>
+                                } @else {
+                                    <button class="btn btn-secondary" type="button" (click)="download()"
+                                            [class.pending]="downloadPending" [pending]="downloadPending" [icon]="true"
+                                            tooltipClass="shortTooltip" container="body" ngbTooltip="Download"
+                                            [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i
+                                        class="fa-solid fa-download" aria-hidden="true"></i></button>
+                                    <button class="btn btn-secondary" type="button" (click)="open()"
+                                            [class.pending]="openPending" [pending]="openPending" [icon]="true"
+                                            tooltipClass="shortTooltip" container="body" ngbTooltip="View"
+                                            [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i
+                                        class="fa-solid fa-search" aria-hidden="true"></i></button>
+                                }
+                            </div>
+                        </div>
                     }
                 </div>
-            </div>
-        }
+            }
+            @if (withItems) {
+                <div [ngbCollapse]="collapsed" [animation]="true">
+                    <div class="content-items">
+                        @for (item of context!.item!; track $index) {
+                            <app-any-content-view [context]="item" [report]="report" [sessionId]="sessionId"
+                                                  [root]="false" [showControls]="showControls" [level]="level"></app-any-content-view>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
     </div>
 }

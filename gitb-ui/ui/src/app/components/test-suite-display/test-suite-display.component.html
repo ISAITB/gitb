@@ -23,7 +23,7 @@
                     <div class="testSuiteResult"><i tooltipClass="shortTooltip" [ngbTooltip]="dataService.tooltipForTestResult(testSuite.result)" [ngClass]="dataService.iconForTestResult(testSuite.result)"></i></div>
                 </div>
             </div>
-            <div [collapse]="!testSuite.expanded" [isAnimated]="animated">
+            <div [ngbCollapse]="!testSuite.expanded" [animation]="animated">
                 <div class="collapsibleTestCaseDiv">
                     <app-test-case-display #testCaseDisplayComponent
                         [testCases]="testSuite.testCases"

@@ -91,6 +91,7 @@ export class ImportItemPreviewComponent implements OnInit {
         this.closeItem(this.tbImportItem)
       } else {
         this.tbImportItem.open = true
+        this.collapsed = false
       }
     }
   }
@@ -105,18 +106,6 @@ export class ImportItemPreviewComponent implements OnInit {
         }
       }
     }
-  }
-
-  childrenCollapsed() {
-    setTimeout(() => {
-      this.collapsed = true
-    }, 1)
-  }
-
-  childrenExpanding() {
-    setTimeout(() => {
-      this.collapsed = false
-    }, 1)
   }
 
   applyProcessOption(item: ImportItemState, newOption: number, force: boolean) {

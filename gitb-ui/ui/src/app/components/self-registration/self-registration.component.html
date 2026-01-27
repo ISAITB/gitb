@@ -24,9 +24,9 @@
                 </div>
             </div>
             <app-form-section sectionTitle="Community">
-                <div>
+                <div class="pt-3">
                     <div #communityTable table-directive
-                        class="self-reg-option-table mt-3"
+                        class="self-reg-option-table"
                         [rowStyle]="optionRowStyle"
                         [columns]="communityColumns"
                         [data]="selfRegOptions"
@@ -34,15 +34,17 @@
                         (onSelect)="communitySelected($event)"
                         [invalid]="validation?.get('community')"></div>
                 </div>
-                <div [collapse]="!model.selfRegOption?.communityId" [isAnimated]="true">
+                <div [ngbCollapse]="!model.selfRegOption?.communityId" [animation]="true">
                     @if (model.selfRegOption?.selfRegTokenHelpText) {
-                        <div class="alert alert-info rounded mt-3 mb-0">
-                            <div class="no-margin-on-last-p" [innerHtml]="model.selfRegOption?.selfRegTokenHelpText! | sanitizeHtml"></div>
+                        <div class="pt-3">
+                            <div class="alert alert-info rounded mb-0">
+                                <div class="no-margin-on-last-p" [innerHtml]="model.selfRegOption?.selfRegTokenHelpText! | sanitizeHtml"></div>
+                            </div>
                         </div>
                     }
                     @if (model.selfRegOption?.selfRegType == Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN) {
                         <div>
-                            <div class="row mt-3">
+                            <div class="row pt-3">
                                 <label class="col-3 col-form-label text-end" for="token">* Community token:</label>
                                 <div class="col-7">
                                     <input id="token" [(ngModel)]="model.selfRegToken" class="form-control" type="text" [invalid]="validation?.get('token')"/>
@@ -57,39 +59,41 @@
                 @if (!(optionCount == 1 && model.organisationChoice === 'default')) {
                     <app-form-section [sectionTitle]="dataService.labelOrganisation() + ' details'" [marginBefore]="true" [marginAfter]="!sso" titleTooltip="This information defines the member of the selected community through which will you be testing for conformance.">
                         @if (optionCount > 1) {
-                            <div class="row mt-3 pt-1">
-                                <legend class="col-3 col-form-label text-end pt-0">* Registration:</legend>
-                                <div class="col-9">
-                                    @if (!model.selfRegOption.joinExisting) {
-                                        <div class="form-check form-check-inline">
-                                            <input class="form-check-input" type="radio" [(ngModel)]="model.organisationChoice" name="organisationChoice" id="type_new" [value]="'new'" (change)="registrationTypeChanged()">
-                                            <label class="form-check-label" for="type_new">New {{ dataService.labelOrganisationLower() }}
-                                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" [tbTooltip]="`Register a new ${dataService.labelOrganisationLower()}.`"></div>
-                                            </label>
-                                        </div>
-                                    }
-                                    @if (model.selfRegOption.organisationTokensEnabled) {
-                                        <div class="form-check form-check-inline">
-                                            <input class="form-check-input" type="radio" [(ngModel)]="model.organisationChoice" name="organisationChoice" id="type_token" [value]="'token'" (change)="registrationTypeChanged()">
-                                            <label class="form-check-label" for="type_token">Existing {{ dataService.labelOrganisationLower() }}
-                                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" [tbTooltip]="`Register in an existing ${dataService.labelOrganisationLower()} by providing a token.`"></div>
-                                            </label>
-                                        </div>
-                                    }
-                                    @if (model.selfRegOption.hasDefaultOrganisation) {
-                                        <div class="form-check form-check-inline">
-                                            <input class="form-check-input" type="radio" [(ngModel)]="model.organisationChoice" name="organisationChoice" id="type_default" [value]="'default'" (change)="registrationTypeChanged()">
-                                            <label class="form-check-label" for="type_default">Default {{ dataService.labelOrganisationLower() }}
-                                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" [tbTooltip]="`Register in the community default ${dataService.labelOrganisationLower()}.`"></div>
-                                            </label>
-                                        </div>
-                                    }
+                            <div class="pt-3">
+                                <div class="row pt-1">
+                                    <legend class="col-3 col-form-label text-end pt-0">* Registration:</legend>
+                                    <div class="col-9">
+                                        @if (!model.selfRegOption.joinExisting) {
+                                            <div class="form-check form-check-inline">
+                                                <input class="form-check-input" type="radio" [(ngModel)]="model.organisationChoice" name="organisationChoice" id="type_new" [value]="'new'" (change)="registrationTypeChanged()">
+                                                <label class="form-check-label" for="type_new">New {{ dataService.labelOrganisationLower() }}
+                                                    <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" [tbTooltip]="`Register a new ${dataService.labelOrganisationLower()}.`"></div>
+                                                </label>
+                                            </div>
+                                        }
+                                        @if (model.selfRegOption.organisationTokensEnabled) {
+                                            <div class="form-check form-check-inline">
+                                                <input class="form-check-input" type="radio" [(ngModel)]="model.organisationChoice" name="organisationChoice" id="type_token" [value]="'token'" (change)="registrationTypeChanged()">
+                                                <label class="form-check-label" for="type_token">Existing {{ dataService.labelOrganisationLower() }}
+                                                    <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" [tbTooltip]="`Register in an existing ${dataService.labelOrganisationLower()} by providing a token.`"></div>
+                                                </label>
+                                            </div>
+                                        }
+                                        @if (model.selfRegOption.hasDefaultOrganisation) {
+                                            <div class="form-check form-check-inline">
+                                                <input class="form-check-input" type="radio" [(ngModel)]="model.organisationChoice" name="organisationChoice" id="type_default" [value]="'default'" (change)="registrationTypeChanged()">
+                                                <label class="form-check-label" for="type_default">Default {{ dataService.labelOrganisationLower() }}
+                                                    <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" [tbTooltip]="`Register in the community default ${dataService.labelOrganisationLower()}.`"></div>
+                                                </label>
+                                            </div>
+                                        }
+                                    </div>
                                 </div>
                             </div>
                         }
-                        <div [collapse]="organisationFormCollapsed" [isAnimated]="organisationFormAnimated">
+                        <div [ngbCollapse]="organisationFormCollapsed" [animation]="organisationFormAnimated">
                             @if (model.organisationChoice === 'token') {
-                                <div class="row mt-3">
+                                <div class="row pt-3">
                                     <label class="col-3 col-form-label text-end" for="orgToken">* {{dataService.labelOrganisation()}} token:</label>
                                     <div class="col-7">
                                         <input id="orgToken" [(ngModel)]="model.orgToken" class="form-control" type="text" [invalid]="validation?.get('orgToken')">
@@ -97,7 +101,7 @@
                                     <div app-tooltip class="col-auto" tbTooltip="The token used to directly register in a specific, existing {{dataService.labelOrganisationLower()}}. You need to request this from the community or {{dataService.labelOrganisationLower()}} administrator."></div>
                                 </div>
                             } @else if (model.organisationChoice === 'new') {
-                                <div class="row mt-3">
+                                <div class="row pt-3">
                                     <label class="col-3 col-form-label text-end" for="orgShortName">* Short name:</label>
                                     <div class="col-7">
                                         <input id="orgShortName" name="orgShortName" [(ngModel)]="model.orgShortName" class="form-control" type="text"/>
@@ -149,7 +153,7 @@
                 }
                 @if (!sso) {
                     <app-form-section [marginAfter]="false" sectionTitle="Account details" [titleTooltip]="'This is the information for the account to be created for you to access your ' + dataService.labelOrganisationLower() + '.'">
-                        <div class="row my-3">
+                        <div class="row py-3">
                             <label class="col-3 col-form-label text-end" for="adminName">* Name:</label>
                             <div class="col-7">
                                 <input id="adminName" name="adminName" [(ngModel)]="model.adminName" class="form-control" type="text"/>

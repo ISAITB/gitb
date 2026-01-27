@@ -42,8 +42,8 @@
                 </div>
             </div>
         </div>
-        <div [collapse]="!testExpression" [isAnimated]="true">
-            <div class="row mt-3 gx-3">
+        <div [ngbCollapse]="!testExpression" [animation]="true">
+            <div class="row pt-3 gx-3">
                 <div class="offset-3 col-7">
                     <div class="input-group" [class.has-validation]="testedExpression">
                         <input id="testValue" placeholder="Value to test" name="testValue" [(ngModel)]="testValue" class="form-control" [class.is-invalid]="testedExpression && !testedExpressionMatches" [class.is-valid]="testedExpression && testedExpressionMatches">

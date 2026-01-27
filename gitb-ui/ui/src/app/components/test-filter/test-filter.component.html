@@ -9,7 +9,7 @@
         </div>
     </div>
   }
-  <div [collapse]="!showFiltering || !initialised" [isAnimated]="true" (collapsed)="toggleFilterCollapsedFinished(true)" (expands)="toggleFilterCollapsedFinished(false)">
+  <div [ngbCollapse]="!showFiltering || !initialised" [animation]="true" (hidden)="toggleFilterCollapsedFinished(true)">
     <div class="table-responsive session-filter">
       @if (filterDefined(Constants.FILTER_TYPE.DOMAIN) || filterDefined(Constants.FILTER_TYPE.SPECIFICATION) || filterDefined(Constants.FILTER_TYPE.ACTOR) || filterDefined(Constants.FILTER_TYPE.TEST_SUITE) || filterDefined(Constants.FILTER_TYPE.TEST_CASE) || filterDefined(Constants.FILTER_TYPE.COMMUNITY) || filterDefined(Constants.FILTER_TYPE.ORGANISATION) || filterDefined(Constants.FILTER_TYPE.SYSTEM)) {
         <div class="filterRow">

@@ -90,29 +90,31 @@
                 }
             </div>
             @if (item.items && item.items.length > 0) {
-                <div class="item-content-container item-content" [collapse]="item.collapsed!" [isAnimated]="expandable && animated" (expanded)="expanded()" (collapses)="collapses()">
-                    <app-conformance-statement-items-display
-                        #itemsComponent
-                        [items]="item.items"
-                        [wrapDescriptions]="wrapDescriptions"
-                        [expandable]="expandable"
-                        [filtering]="filtering"
-                        [shade]="!shade"
-                        [animated]="animated"
-                        [withCheck]="withCheck"
-                        [withExport]="withExport"
-                        [withResults]="withResults"
-                        [withOptions]="withOptions"
-                        [communityId]="communityId"
-                        [organisationId]="organisationId"
-                        [systemId]="systemId"
-                        [domainId]="domainId"
-                        [snapshotId]="snapshotId"
-                        [parentItem]="item"
-                        (selectionChanged)="childSelectionChanged($event)"
-                        (export)="onExport($event)"
-                        (selected)="childSelected($event)"
-                    ></app-conformance-statement-items-display>
+                <div [ngbCollapse]="item.collapsed!" [animation]="expandable && animated" (shown)="expanded()" (hidden)="collapses()">
+                    <div class="item-content-container item-content">
+                        <app-conformance-statement-items-display
+                            #itemsComponent
+                            [items]="item.items"
+                            [wrapDescriptions]="wrapDescriptions"
+                            [expandable]="expandable"
+                            [filtering]="filtering"
+                            [shade]="!shade"
+                            [animated]="animated"
+                            [withCheck]="withCheck"
+                            [withExport]="withExport"
+                            [withResults]="withResults"
+                            [withOptions]="withOptions"
+                            [communityId]="communityId"
+                            [organisationId]="organisationId"
+                            [systemId]="systemId"
+                            [domainId]="domainId"
+                            [snapshotId]="snapshotId"
+                            [parentItem]="item"
+                            (selectionChanged)="childSelectionChanged($event)"
+                            (export)="onExport($event)"
+                            (selected)="childSelected($event)"
+                        ></app-conformance-statement-items-display>
+                    </div>
                 </div>
             }
         </div>

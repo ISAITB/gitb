@@ -56,30 +56,32 @@
         </div>
     </div>
     @if (spec.group) {
-        <div class="option-container-collapsible" [collapse]="spec.collapsed == true" [isAnimated]="true">
-            <div class="option-container" cdkDropList cdkDropListLockAxis="y" (cdkDropListDropped)="dropSpecification($event)">
-                @if (spec.options == undefined || spec.options.length == 0) {
-                    <div class="no-options">
-                        No {{dataService.labelSpecificationInGroupsLower()}} found.
-                    </div>
-                } @else {
-                    @for (option of spec.options; track option.id; ) {
-                        <app-domain-specification-display #childComponent
-                            [spec]="option"
-                            [first]="$first"
-                            [last]="$last"
-                            [groups]="groups"
-                            [dragOngoing]="dragOngoing"
-                            [dragEnabled]="dragEnabled"
-                            (removeSpec)="propagateRemove($event)"
-                            (moveSpec)="propagateMove($event)"
-                            (copySpec)="propagateCopy($event)"
-                            (dragging)="propagateDrag($event)"
-                            (click)="propagateSelect(option)"
-                            (controlSelected)="propagateControlSelected($event)"
-                        ></app-domain-specification-display>
+        <div class="w-100" [ngbCollapse]="spec.collapsed == true" [animation]="true">
+            <div class="option-container-collapsible">
+                <div class="option-container" cdkDropList cdkDropListLockAxis="y" (cdkDropListDropped)="dropSpecification($event)">
+                    @if (spec.options == undefined || spec.options.length == 0) {
+                        <div class="no-options">
+                            No {{dataService.labelSpecificationInGroupsLower()}} found.
+                        </div>
+                    } @else {
+                        @for (option of spec.options; track option.id; ) {
+                            <app-domain-specification-display #childComponent
+                                                              [spec]="option"
+                                                              [first]="$first"
+                                                              [last]="$last"
+                                                              [groups]="groups"
+                                                              [dragOngoing]="dragOngoing"
+                                                              [dragEnabled]="dragEnabled"
+                                                              (removeSpec)="propagateRemove($event)"
+                                                              (moveSpec)="propagateMove($event)"
+                                                              (copySpec)="propagateCopy($event)"
+                                                              (dragging)="propagateDrag($event)"
+                                                              (click)="propagateSelect(option)"
+                                                              (controlSelected)="propagateControlSelected($event)"
+                            ></app-domain-specification-display>
+                        }
                     }
-                }
+                </div>
             </div>
         </div>
     }

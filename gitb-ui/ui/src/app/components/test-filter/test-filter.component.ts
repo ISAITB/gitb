@@ -601,6 +601,9 @@ export class TestFilterComponent implements OnInit {
 
   clickedHeader() {
     this.showFiltering = !this.showFiltering
+    if (this.showFiltering) {
+      this.toggleFilterCollapsedFinished(false)
+    }
     if (!this.initialised) {
       this.resetCustomProperties().subscribe(() => {
         this.initialised = true

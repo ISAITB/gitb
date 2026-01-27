@@ -337,6 +337,9 @@ export class ConformanceOverviewCertificateFormComponent extends BaseCertificate
       const newValue = this.settings != undefined && (this.settings.enableAllLevel! || this.settings.enableDomainLevel! || this.settings.enableGroupLevel! || this.settings.enableSpecificationLevel!)
       this.messageBlockAnimated = newValue == this.anyLevelEnabled
       this.anyLevelEnabled = newValue
+      if (this.anyLevelEnabled) {
+        this.messageBlockAnimated = false
+      }
       this.levelAnimated = true
     }, 1)
   }

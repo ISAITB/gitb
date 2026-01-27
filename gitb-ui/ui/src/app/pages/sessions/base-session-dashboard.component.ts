@@ -711,4 +711,18 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
     return !this.dataService.isVendorUser
   }
 
+  activeSessionsHeaderClicked() {
+    this.activeSessionsCollapsed = !this.activeSessionsCollapsed
+    if (!this.activeSessionsCollapsed) {
+      this.toggleActiveSessionsCollapsedFinished(false)
+    }
+  }
+
+  completedSessionsHeaderClicked() {
+    this.completedSessionsCollapsed = !this.completedSessionsCollapsed
+    if (!this.completedSessionsCollapsed) {
+      this.toggleCompletedSessionsCollapsedFinished(false)
+    }
+  }
+
 }

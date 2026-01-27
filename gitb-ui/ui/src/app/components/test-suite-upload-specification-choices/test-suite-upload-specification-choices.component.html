@@ -19,7 +19,7 @@
                         </div>
                     }
                 </div>
-                <div [collapse]="choice.skipUpdate" [isAnimated]="true" class="ts-upload-result-actions col-12">
+                <div [ngbCollapse]="choice.skipUpdate" [animation]="true" class="ts-upload-result-actions col-12">
                     @if ((!sharedTestSuite && choice.sharedTestSuite) || (sharedTestSuite && !choice.sharedTestSuite)) {
                         @if (!sharedTestSuite && choice.sharedTestSuite) {
                             <div class="alert alert-info rounded internal-warning">The {{dataService.labelSpecificationLower()}} contains a shared test suite with the same identifier. Upload will be skipped.</div>

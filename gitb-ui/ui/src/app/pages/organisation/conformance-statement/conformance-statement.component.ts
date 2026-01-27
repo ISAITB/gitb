@@ -825,4 +825,11 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
     })
   }
 
+  headerClicked() {
+    this.collapsedDetails = !this.collapsedDetails
+    if (!this.collapsedDetails) {
+      this.toggleOverviewCollapse(false)
+    }
+  }
+
 }

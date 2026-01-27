@@ -121,18 +121,20 @@
         <div app-tooltip class="col-auto" tbTooltip="Define another simple property as a prerequisite. To do so select another property and define the value that is must have. If the prerequisite property's value does not match the provided value, then the current property is hidden and never considered as required."></div>
     </div>
 }
-<div [collapse]="parameter.kind != 'SIMPLE'" [isAnimated]="true">
-    <div class="row mt-3 pt-1">
-        <label class="col-3 col-form-label text-end pt-0" for="hasPresetValues">Preset values:</label>
-        <div class="col-8">
-            <div class="form-check">
-                <input class="form-check-input" id="hasPresetValues" name="hasPresetValues" type="checkbox" [(ngModel)]="parameter.hasPresetValues">
-                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" tbTooltip="Check this to define a set of allowed values for this property. The configured values will be displayed in the defined order as a single-selection dropdown list."></div>
+<div [ngbCollapse]="parameter.kind != 'SIMPLE'" [animation]="true">
+    <div class="pt-3">
+        <div class="row pt-1">
+            <label class="col-3 col-form-label text-end pt-0" for="hasPresetValues">Preset values:</label>
+            <div class="col-8">
+                <div class="form-check">
+                    <input class="form-check-input" id="hasPresetValues" name="hasPresetValues" type="checkbox" [(ngModel)]="parameter.hasPresetValues">
+                    <div app-tooltip class="col-auto d-inline-flex" [inline]="true" tbTooltip="Check this to define a set of allowed values for this property. The configured values will be displayed in the defined order as a single-selection dropdown list."></div>
+                </div>
             </div>
         </div>
     </div>
-    <div [collapse]="!parameter.hasPresetValues" [isAnimated]="true">
-        <div class="row mt-3">
+    <div [ngbCollapse]="!parameter.hasPresetValues" [animation]="true">
+        <div class="row pt-3">
             <div class="col-8 offset-3">
                 @if (parameter.presetValues!.length > 0) {
                     <div class="form-table table-container rounded">
@@ -172,6 +174,8 @@
                     </div>
                 }
             </div>
+        </div>
+        <div class="row">
             <div class="col-8 offset-3">
                 <button class="btn btn-secondary" type="button" (click)="addPresetValue()" tooltipClass="shortTooltip" ngbTooltip="Add" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-plus"></i></button>
             </div>

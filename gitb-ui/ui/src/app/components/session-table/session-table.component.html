@@ -76,7 +76,7 @@
                     [expandableRowProperty]="'expanded'"></tr>
                 <tr class="expandable-table-row-expanded">
                     <td [attr.colspan]="columnCount" class="expandable-table-expandable-cell">
-                        <div [collapse]="!row.expanded" [isAnimated]="true" (collapsed)="updateSessionWidthsWrapper()" (expanded)="updateSessionWidthsWrapper()">
+                        <div [ngbCollapse]="!row.expanded" [animation]="true" (hidden)="updateSessionWidthsWrapper()" (shown)="updateSessionWidthsWrapper()">
                             <div class="collapsing-div">
                                 <div class="sessionControls">
                                     <div class="btn-toolbar">
@@ -141,9 +141,9 @@
                                 </div>
                                 <div #sessionContainer class="test-case-session">
                                     <div class="session-execution-info">
-                                        <div class="session-table-title clickable" (click)="diagramCollapsed[row.session] = !diagramCollapsed[row.session]" [class.collapsed]="diagramCollapsedFinished[row.session]">
+                                        <div class="session-table-title">
                                             <div class="session-table-title-part">
-                                                <div class="session-table-title-label"><app-collapsing-icon [isCollapsed]="diagramCollapsed[row.session]"></app-collapsing-icon>Test suite</div>
+                                                <div class="session-table-title-label">Test suite</div>
                                                 <div class="session-table-title-value">{{row.testSuite}}</div>
                                             </div>
                                             <div class="session-table-title-part">
@@ -156,14 +156,14 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div [collapse]="diagramCollapsed[row.session]" [isAnimated]="true" (collapsed)="toggleDiagramCollapsedFinished(row.session, true)" (expands)="toggleDiagramCollapsedFinished(row.session, false)" (expanded)="updateSessionWidthsWrapper()">
+                                    <div [ngbCollapse]="diagramCollapsed[row.session]" [animation]="true" (hidden)="toggleDiagramCollapsedFinished(row.session, true)" (shown)="toggleDiagramCollapsedFinished(row.session, false)">
                                         <div class="session-execution-diagram" [class.disable-events]="sessionBeingRefreshed?.session == row.session" style="overflow-x: auto; overflow-y: hidden;">
                                             @if (!row.hideLoadingIcon) {
                                                 <div class="p-3">
                                                     <app-pending-block></app-pending-block>
                                                 </div>
                                             }
-                                            <div [collapse]="!row.diagramExpanded" [isAnimated]="true" (collapsed)="updateSessionWidthsWrapper()" (expanded)="updateSessionWidthsWrapper()">
+                                            <div [ngbCollapse]="!row.diagramExpanded" [animation]="true" (hidden)="updateSessionWidthsWrapper()" (shown)="updateSessionWidthsWrapper()">
                                                 @if (row.expanded || row.diagramLoaded) {
                                                     <div>
                                                         <app-test-session-presentation

@@ -83,8 +83,8 @@
                         }
                     </div>
                     @if (fireExpressions.length > 0) {
-                        <div [collapse]="!testFireCondition" [isAnimated]="true">
-                            <div class="row mt-3">
+                        <div [ngbCollapse]="!testFireCondition" [animation]="true">
+                            <div class="row pt-3">
                                 <div class="offset-3 col-8 col-md-6 test-fire-condition-container">
                                     <div class="input-group" [class.has-validation]="testedFireCondition">
                                         <div class="btn-group" dropdown placement="bottom right">
@@ -118,20 +118,22 @@
                     </div>
                 </div>
                 <app-form-section sectionTitle="Web service details" titleTooltip="When the trigger's event occurs a call will be made to the web service configured below. This service is expected to implement the GITB processing service API. For information on how to implement this service check the Test Bed's user guide (link in the screen's footer)." [marginBefore]="true">
-                    <div class="row mt-3 pt-2">
-                        <legend class="col-3 col-form-label text-end pt-0">* Service type:</legend>
-                        <div class="col-8 col-md-6">
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="serviceType" [(ngModel)]="trigger.serviceType" id="service_type_1" [value]="Constants.TRIGGER_SERVICE_TYPE.GITB">
-                                <label class="form-check-label" for="service_type_1">GITB processing service
-                                    <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="A SOAP service endpoint that realises the GITB processing service API."></div>
-                                </label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="serviceType" [(ngModel)]="trigger.serviceType" id="service_type_2" [value]="Constants.TRIGGER_SERVICE_TYPE.JSON">
-                                <label class="form-check-label" for="service_type_2">JSON HTTP Service
-                                    <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="A HTTP service listening for POST operations. The payloads sent to and (optionally) received from the service will be JSON."></div>
-                                </label>
+                    <div class="pt-3">
+                        <div class="row pt-2">
+                            <legend class="col-3 col-form-label text-end pt-0">* Service type:</legend>
+                            <div class="col-8 col-md-6">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="serviceType" [(ngModel)]="trigger.serviceType" id="service_type_1" [value]="Constants.TRIGGER_SERVICE_TYPE.GITB">
+                                    <label class="form-check-label" for="service_type_1">GITB processing service
+                                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="A SOAP service endpoint that realises the GITB processing service API."></div>
+                                    </label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="serviceType" [(ngModel)]="trigger.serviceType" id="service_type_2" [value]="Constants.TRIGGER_SERVICE_TYPE.JSON">
+                                    <label class="form-check-label" for="service_type_2">JSON HTTP Service
+                                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="A HTTP service listening for POST operations. The payloads sent to and (optionally) received from the service will be JSON."></div>
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -212,7 +214,7 @@
                                     <label class="form-check-label" for="domainParameterData">{{dataTypeMap[triggerData.domainParameter.dataType]}}</label>
                                 </div>
                             </div>
-                            <div class="offset-3 col-8 col-md-6" [collapse]="!triggerData.domainParameter.selected" [isAnimated]="true">
+                            <div class="offset-3 col-8 col-md-6" [ngbCollapse]="!triggerData.domainParameter.selected" [animation]="true">
                                 <div class="trigger-data-properties-container table-container rounded">
                                     <table class="table">
                                         <thead>
@@ -242,7 +244,7 @@
                                     <label class="form-check-label" for="organisationParameterData">{{dataTypeMap[triggerData.organisationParameter.dataType]}}</label>
                                 </div>
                             </div>
-                            <div class="offset-3 col-8 col-md-6" [collapse]="!triggerData.organisationParameter.selected" [isAnimated]="true">
+                            <div class="offset-3 col-8 col-md-6" [ngbCollapse]="!triggerData.organisationParameter.selected" [animation]="true">
                                 <div class="trigger-data-properties-container table-container rounded">
                                     <table class="table">
                                         <thead>
@@ -274,7 +276,7 @@
                                     <label class="form-check-label" for="sysParameterData">{{dataTypeMap[triggerData.systemParameter.dataType]}}</label>
                                 </div>
                             </div>
-                            <div class="offset-3 col-8 col-md-6" [collapse]="!triggerData.systemParameter.selected" [isAnimated]="true">
+                            <div class="offset-3 col-8 col-md-6" [ngbCollapse]="!triggerData.systemParameter.selected" [animation]="true">
                                 <div class="trigger-data-properties-container table-container">
                                     <table class="table">
                                         <thead>
@@ -306,7 +308,7 @@
                                     <label class="form-check-label" for="stmtParameterData">{{dataTypeMap[triggerData.statementParameter.dataType]}}</label>
                                 </div>
                             </div>
-                            <div class="offset-3 col-8 col-md-6" [collapse]="!triggerData.statementParameter.selected" [isAnimated]="true">
+                            <div class="offset-3 col-8 col-md-6" [ngbCollapse]="!triggerData.statementParameter.selected" [animation]="true">
                                 <div class="trigger-data-properties-container table-container rounded">
                                     <table class="table">
                                         <thead>
@@ -335,7 +337,7 @@
                 </app-form-section>
                 @if (update) {
                     <app-form-section sectionTitle="Trigger status" titleTooltip="The presented result is the trigger's latest outcome from calling the configured web service. In case of failure you can also view the incremental error messages that were reported when the service call was attempted."  [marginBefore]="true">
-                        <div class="mt-3 row">
+                        <div class="pt-3 row">
                             <label class="col-3 col-form-label text-end" for="url">Latest result:</label>
                             <div class="col-2">
                                 <p class="rounded status-display alert mb-0" [ngClass]="{'alert-info': trigger.status == statusTextUnknown.id,'alert-success': trigger.status == statusTextOk.id,'alert-danger': trigger.status == statusTextError.id}">

@@ -3,7 +3,7 @@
         <app-collapsing-icon [isCollapsed]="collapsed"></app-collapsing-icon>{{title}}
     </div>
     @if (parameters && parameters.length > 0) {
-        <div [collapse]="collapsed" [isAnimated]="true">
+        <div [ngbCollapse]="collapsed" [animation]="true">
             <div class="property-list-container" [class.hovering]="hovering">
                 @for (parameter of parameters; track parameter.id) {
                     <div class="property">

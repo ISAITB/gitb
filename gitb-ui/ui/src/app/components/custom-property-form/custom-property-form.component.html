@@ -15,10 +15,10 @@
             </div>
         </div>
     }
-    <div [collapse]="tbCollapsed!" [isAnimated]="true">
+    <div [ngbCollapse]="tbCollapsed!" [animation]="true">
         @for (property of tbProperties; track $index) {
             @if ((isAdmin || (!property.hidden && (!tbSelfRegistration || property.inSelfRegistration))) && property.prerequisiteOk) {
-                <div class="row mt-3">
+                <div class="row pt-3">
                     <label class="col-3 col-form-label text-end" [attr.for]="'prop-'+property.id">
                         @if (property.use == 'R' && tbShowRequiredAsterisks) {
                             <span>* </span>

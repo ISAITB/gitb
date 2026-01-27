@@ -33,8 +33,8 @@
                     </div>
                 }
             </div>
-            <div [collapse]="snapshotToEdit.hidden === true || snapshotToEdit.sameLabel === true" [isAnimated]="true">
-                <div class="row mt-3">
+            <div [ngbCollapse]="snapshotToEdit.hidden === true || snapshotToEdit.sameLabel === true" [animation]="true">
+                <div class="row pt-3">
                     <label class="col-3 col-form-label text-end" for="publicLabel">Public label:</label>
                     <div class="col-8">
                         <input id="publicLabel" name="publicLabel" [(ngModel)]="snapshotToEdit.publicLabel" class="form-control" type="text">

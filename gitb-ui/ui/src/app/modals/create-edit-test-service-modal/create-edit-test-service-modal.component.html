@@ -16,7 +16,7 @@
             <div app-tooltip class="col-auto" tbTooltip="A text describing the purpose of this test service."></div>
         </div>
         <app-form-section sectionTitle="Service endpoint" [collapsed]="endpointSectionCollapsed" [marginBefore]="true">
-            <div class="row mt-3">
+            <div class="row pt-3">
                 <label class="col-3 col-form-label text-end" for="value">* Endpoint address:</label>
                 <div class="col-7"><input id="value" name="value" [(ngModel)]="testService.parameter!.value" class="form-control" type="text" [invalid]="validation.get('value')"></div>
                 <div app-tooltip class="col-auto" tbTooltip="The endpoint address at which the service can be reached."></div>
@@ -61,8 +61,8 @@
                     </div>
                 </div>
             </div>
-            <div [collapse]="!hasBasicAuthentication" [isAnimated]="true">
-                <div class="row mt-3">
+            <div [ngbCollapse]="!hasBasicAuthentication" [animation]="true">
+                <div class="row pt-3">
                     <label class="col-3 col-form-label text-end" for="basicAuthUsername">* Basic username:</label>
                     <div class="col-7"><input id="basicAuthUsername" name="basicAuthUsername" [(ngModel)]="testService.service!.authBasicUsername" class="form-control" type="text"></div>
                     <div app-tooltip class="col-auto" tbTooltip="The username to use for basic HTTP authentication."></div>
@@ -93,8 +93,8 @@
                     <div app-tooltip class="col-auto" tbTooltip="The password to use for basic HTTP authentication."></div>
                 </div>
             </div>
-            <div [collapse]="!hasTokenAuthentication" [isAnimated]="true">
-                <div class="row mt-3">
+            <div [ngbCollapse]="!hasTokenAuthentication" [animation]="true">
+                <div class="row pt-3">
                     <label class="col-3 col-form-label text-end" for="tokenAuthUsername">* Token username:</label>
                     <div class="col-7"><input id="tokenAuthUsername" name="tokenAuthUsername" [(ngModel)]="testService.service!.authTokenUsername" class="form-control" type="text"></div>
                     <div app-tooltip class="col-auto" tbTooltip="The username to use for UsernameToken-based authentication."></div>
@@ -144,7 +144,7 @@
             </div>
         </app-form-section>
         <app-form-section sectionTitle="Additional information" [collapsed]="additionalInfoSectionCollapsed" [marginBefore]="true">
-            <div class="row mt-3">
+            <div class="row pt-3">
                 <label class="col-3 col-form-label text-end" for="reference">Reference identifier:</label>
                 <div class="col-7"><input id="reference" name="reference" [(ngModel)]="testService.service!.identifier" class="form-control" type="text"></div>
                 <div app-tooltip class="col-auto" tbTooltip="An optional reference code for the test service that can be used to refer to it from outside the Test Bed."></div>

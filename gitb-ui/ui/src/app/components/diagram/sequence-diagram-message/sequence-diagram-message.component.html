@@ -84,7 +84,7 @@
                 </span>
             </div>
         }
-        <div class="message-body" [collapse]="!expanded" [isAnimated]="false">
+        <div class="message-body" [ngbCollapse]="!expanded" [animation]="false">
             @if (message.type == 'group') {
                 <div class="child-steps group" [ngClass]="classForReverseOffset">
                     @for (subMessage of message.steps; track subMessage.id) {

@@ -61,17 +61,19 @@
             </div>
             <div app-tooltip class="col-auto" [tbTooltip]="'Select another '+dataService.labelSystemLower()+' to serve as a template for this one. The configuration from the selected '+dataService.labelSystemLower()+' will be copied to the current one.'"></div>
         </div>
-        <div [collapse]="!system.otherSystems" [isAnimated]="true">
-            <div class="row mt-3 pt-1">
-                <legend class="col-3 col-form-label text-end pt-0">Copy also:</legend>
-                <div class="col-8 col-md-6">
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="checkbox" id="copySystemParameters" name="copySystemParameters" (change)="copyChanged()" [(ngModel)]="system.copySystemParameters">
-                        <label class="form-check-label" for="copySystemParameters">{{dataService.labelSystem()}} properties</label>
-                    </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="checkbox" id="copyStatementParameters" name="copyStatementParameters" (change)="copyChanged()" [(ngModel)]="system.copyStatementParameters">
-                        <label class="form-check-label" for="copyStatementParameters">Conformance statement configurations</label>
+        <div [ngbCollapse]="!system.otherSystems" [animation]="true">
+            <div class="pt-1">
+                <div class="row pt-3">
+                    <legend class="col-3 col-form-label text-end pt-0">Copy also:</legend>
+                    <div class="col-8 col-md-6">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="copySystemParameters" name="copySystemParameters" (change)="copyChanged()" [(ngModel)]="system.copySystemParameters">
+                            <label class="form-check-label" for="copySystemParameters">{{dataService.labelSystem()}} properties</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="copyStatementParameters" name="copyStatementParameters" (change)="copyChanged()" [(ngModel)]="system.copyStatementParameters">
+                            <label class="form-check-label" for="copyStatementParameters">Conformance statement configurations</label>
+                        </div>
                     </div>
                 </div>
             </div>

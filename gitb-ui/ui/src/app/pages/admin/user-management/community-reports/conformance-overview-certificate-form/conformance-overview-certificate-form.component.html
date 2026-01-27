@@ -31,7 +31,7 @@
                 </div>
             </div>
         </div>
-        <div [collapse]="!anyLevelEnabled" [isAnimated]="levelAnimated" (expands)="messageBlockAnimated = false" (expanded)="levelBlockExpanded()">
+        <div [ngbCollapse]="!anyLevelEnabled" [animation]="levelAnimated" (shown)="levelBlockExpanded()">
             <div class="row mt-3 pt-1">
                 <legend class="col-3 col-form-label text-end pt-0">* Report configuration:</legend>
                 <div class="col-8">
@@ -49,8 +49,8 @@
                     </div>
                 </div>
             </div>
-            <div [collapse]="!reportSettings!.customPdfs">
-                <div class="row mt-3">
+            <div [ngbCollapse]="!reportSettings!.customPdfs">
+                <div class="row pt-3">
                     <label class="col-3 col-form-label text-end" for="customPdfServiceOverview">* Service address:</label>
                     <div class="col-8 col-md-6">
                         <input #serviceField type="text" id="customPdfServiceOverview" name="customPdfServiceOverview" [(ngModel)]="reportSettings!.customPdfService" class="form-control"/>
@@ -73,8 +73,8 @@
                         </div>
                     </div>
                 </div>
-                <div [collapse]="!reportSettings!.customPdfsWithCustomXml" [isAnimated]="true">
-                    <div class="row mt-3">
+                <div [ngbCollapse]="!reportSettings!.customPdfsWithCustomXml" [animation]="true">
+                    <div class="row pt-3">
                         <legend class="col-3 col-form-label text-end">* Stylesheet:</legend>
                         <div class="col-8 col-md-6">
                             <app-file-select [fileName]="stylesheetNameToShow" [reset]="resetStylesheet" (onUpload)="selectStylesheet($event)" placeholder="Drop or browse for stylesheet file ..." [accepts]="acceptedStylesheetTypes" [extraActions]="reportSettings!.stylesheetExists">
@@ -87,8 +87,8 @@
                     </div>
                 </div>
             </div>
-            <div [collapse]="reportSettings!.customPdfs">
-                <div class="row mt-3">
+            <div [ngbCollapse]="reportSettings!.customPdfs">
+                <div class="row pt-3">
                     <label class="col-3 col-form-label text-end">Title:</label>
                     <div class="col-8 col-md-6">
                         <div class="row row-cols-auto align-items-center">
@@ -152,9 +152,9 @@
                         </div>
                     </div>
                 </div>
-                <div [collapse]="!settings.includeMessage || (!settings.enableAllLevel && !settings.enableDomainLevel && !settings.enableGroupLevel && !settings.enableSpecificationLevel)" [isAnimated]="messageBlockAnimated">
+                <div [ngbCollapse]="!settings.includeMessage || (!settings.enableAllLevel && !settings.enableDomainLevel && !settings.enableGroupLevel && !settings.enableSpecificationLevel)" [animation]="messageBlockAnimated">
                     <app-form-section sectionTitle="Message configuration" [marginBefore]="true">
-                        <div class="row mt-3">
+                        <div class="row pt-3">
                             <label class="col-3 col-form-label text-end" for="messageLevel">Report level:</label>
                             <div class="col-4 col-md-3">
                                 @if ((settings.enableAllLevel && !(settings.enableDomainLevel || settings.enableGroupLevel || settings.enableSpecificationLevel)) ||

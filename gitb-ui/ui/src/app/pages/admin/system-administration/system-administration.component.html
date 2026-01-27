@@ -3,7 +3,7 @@
         <div class="card-header clickable" (click)="configsCollapsed = !configsCollapsed; configsCollapsedFinished = false" [class.collapsed]="configsCollapsedFinished">
             <div class="card-title"><app-collapsing-icon [isCollapsed]="configsCollapsed"></app-collapsing-icon>System configuration</div>
         </div>
-        <div [collapse]="configsCollapsed" [isAnimated]="true" (collapsed)="configsCollapsedFinished = true">
+        <div [ngbCollapse]="configsCollapsed" [animation]="true" (hidden)="configsCollapsedFinished = true">
             <div class="configsContainer">
                 @if (configValuesPending) {
                     <div class="pending-container my-3">
@@ -113,172 +113,174 @@
                                     </div>
                                 </div>
                             </div>
-                            <div [collapse]="!emailSettings.enabled" [isAnimated]="true">
-                                <div class="emailFormContainer mt-3">
-                                    <app-form-section sectionTitle="Basic settings">
-                                        <div class="row mt-3">
-                                            <label class="col-3 col-form-label text-end" for="smtpHost">* SMTP server:</label>
-                                            <div class="col-6 col-md-4 minimum-width-text gx-3"><input type="text" class="form-control" placeholder="Host" id="smtpHost" name="smtpHost" [(ngModel)]="emailSettings.host"></div>
-                                            <div class="col-1 minimum-width-number gx-3"><input type="number" class="form-control" placeholder="Port" id="emailPort" name="emailPort" [(ngModel)]="emailSettings.port"></div>
-                                            <div class="col-auto" app-tooltip tbTooltip="The host and port of the SMTP server used to send emails."></div>
-                                        </div>
-                                        <div class="row mt-3">
-                                            <div class="offset-3 col-auto">
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" id="emailSslEnabled" name="emailSslEnabled" [(ngModel)]="emailSettings.sslEnabled">
-                                                    <label class="form-check-label" for="emailSslEnabled">Enable SSL?
-                                                        <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Whether an SSL channel should be used to connect to the SMTP server."></div>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                            <div class="col-auto">
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" id="emailStartTlsEnabled" name="emailStartTlsEnabled" [(ngModel)]="emailSettings.startTlsEnabled">
-                                                    <label class="form-check-label" for="emailStartTlsEnabled">Enable StartTLS?
-                                                        <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="StartTLS is a backwards compatibility flag allowing you to connect to a SMTP server over a plain text channel and then upgrade automatically to an encrypted one."></div>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div [collapse]="!emailSettings.sslEnabled" [isAnimated]="true">
+                            <div [ngbCollapse]="!emailSettings.enabled" [animation]="true">
+                                <div class="pt-3">
+                                    <div class="emailFormContainer">
+                                        <app-form-section sectionTitle="Basic settings">
                                             <div class="row mt-3">
-                                                <label class="col-3 col-form-label text-end" for="emailSslProtocols">SSL protocols:</label>
-                                                <div class="col-8 col-md-5 minimum-width-text">
-                                                    <app-multi-select-filter [config]="emailSslProtocolsSelectConfig" (apply)="selectEmailSslProtocols($event)"></app-multi-select-filter>
-                                                </div>
-                                                <div class="col-auto" app-tooltip tbTooltip="Specify one or more SSL protocols to signal as acceptable for creating the SSL channel. You may need to adapt these if you experience SSL handshake rejections from the SMTP server."></div>
-                                            </div>
-                                        </div>
-                                        <div class="row mt-3">
-                                            <div class="offset-3 col-auto">
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" id="emailAuthEnabled" name="emailAuthEnabled" [(ngModel)]="emailSettings.authenticate">
-                                                    <label class="form-check-label" for="emailAuthEnabled">Authenticate?
-                                                        <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Check this if the SMTP server requires authentication."></div>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div [collapse]="!emailSettings.authenticate" [isAnimated]="true">
-                                            <div class="row mt-3">
-                                                <label class="col-3 col-form-label text-end" for="emailUsername">* Username:</label>
-                                                <div class="col-8 col-md-5 minimum-width-text"><input id="emailUsername" name="emailUsername" [(ngModel)]="emailSettings.username" class="form-control" type="text"></div>
-                                                <div class="col-auto" app-tooltip tbTooltip="The username used to authenticate to the SMTP server."></div>
-                                            </div>
-                                            <div class="row mt-3 align-items-center">
-                                                <legend class="col-3 col-form-label text-end">* Password:</legend>
-                                                <div class="col-8 col-md-5 minimum-width-text">
-                                                    @if (emailSettings.password == undefined) {
-                                                        <app-secret-input inputId="emailPassword" inputName="emailPassword" name="emailPasswordSecret" [(ngModel)]="emailSettings.newPassword"></app-secret-input>
-                                                    } @else {
-                                                        <div class="row row-cols-auto align-items-center gx-3">
-                                                            <div class="col-auto">
-                                                                <div class="form-check">
-                                                                    <input class="form-check-input" type="checkbox" id="updatePasswordCheck" name="updatePasswordCheck" [(ngModel)]="emailSettings.updatePassword">
-                                                                    <label class="form-check-label" for="updatePasswordCheck">Update</label>
-                                                                </div>
-                                                            </div>
-                                                            <div class="col-auto flex-grow-1">
-                                                                @if (emailSettings.updatePassword) {
-                                                                    <app-secret-input inputId="updatePassword" inputName="updatePassword" name="updatePasswordSecret" [(ngModel)]="emailSettings.newPassword"></app-secret-input>
-                                                                }
-                                                            </div>
-                                                        </div>
-                                                    }
-                                                </div>
-                                                @if (emailSettings.password == undefined || emailSettings.updatePassword) {
-                                                    <div class="col-auto" app-tooltip tbTooltip="The password used to authenticate to the SMTP server."></div>
-                                                }
-                                            </div>
-                                        </div>
-                                        <div class="row mt-3">
-                                            <label class="col-3 col-form-label text-end" for="emailFrom">* Test Bed email address:</label>
-                                            <div class="col-8 col-md-5 minimum-width-text"><input id="emailFrom" name="emailFrom" [(ngModel)]="emailSettings.from" class="form-control" type="text"></div>
-                                            <div class="col-auto" app-tooltip tbTooltip="The email address to use as the sender for outgoing emails. You may also use the format 'NAME &lt;EMAIL&gt;' to include a user-friendly name."></div>
-                                        </div>
-                                        <div class="row mt-3">
-                                            <div class="offset-3 col-8 col-md-5 minimum-width-text">
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" id="emailTestActive" name="emailTestActive" [(ngModel)]="emailTestActive">
-                                                    <label class="form-check-label" for="emailTestActive">Send test email?
-                                                        <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Test your current configuration by sending a test email to a target email address."></div>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div [collapse]="!emailTestActive" [isAnimated]="true">
-                                            <div class="row mt-3 gx-3">
-                                                <div class="offset-3 col-8 col-md-5 minimum-width-text">
-                                                    <div class="input-group">
-                                                        <input id="emailTestToAddress" placeholder="Recipient address" name="emailTestToAddress" [(ngModel)]="emailTestToAddress" class="form-control">
-                                                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.SEND" class="btn btn-secondary" [disable]="!textProvided(emailTestToAddress) || emailTestPending" [pending]="emailTestPending" (click)="testEmailSettings()">Send</button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </app-form-section>
-                                    <app-form-section sectionTitle="Contact form settings" [marginBefore]="true">
-                                        <div class="mt-3 row">
-                                            <label class="col-3 col-form-label text-end pt-0" for="contactFormEnabled">Enable contact form:</label>
-                                            <div class="col-7">
-                                                <div class="form-check">
-                                                    <input class="form-check-input" id="contactFormEnabled" name="contactFormEnabled" [(ngModel)]="emailSettings.contactFormEnabled" type="checkbox">
-                                                    <div app-tooltip class="col-auto d-inline-flex" tbTooltip="Check this to enable the 'Contact support' feature." [inline]="true"></div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div [collapse]="!emailSettings.contactFormEnabled" [isAnimated]="true">
-                                            <div class="row mt-3">
-                                                <label class="col-3 col-form-label text-end" for="emailDefaultSupportMailbox">* Default support mailbox:</label>
-                                                <div class="col-8 col-md-5 minimum-width-text"><input id="emailDefaultSupportMailbox" name="emailDefaultSupportMailbox" [(ngModel)]="emailSettings.defaultSupportMailbox" class="form-control" type="text"></div>
-                                                <div class="col-auto" app-tooltip tbTooltip="The default mailbox to receive support requests."></div>
+                                                <label class="col-3 col-form-label text-end" for="smtpHost">* SMTP server:</label>
+                                                <div class="col-6 col-md-4 minimum-width-text gx-3"><input type="text" class="form-control" placeholder="Host" id="smtpHost" name="smtpHost" [(ngModel)]="emailSettings.host"></div>
+                                                <div class="col-1 minimum-width-number gx-3"><input type="number" class="form-control" placeholder="Port" id="emailPort" name="emailPort" [(ngModel)]="emailSettings.port"></div>
+                                                <div class="col-auto" app-tooltip tbTooltip="The host and port of the SMTP server used to send emails."></div>
                                             </div>
                                             <div class="row mt-3">
                                                 <div class="offset-3 col-auto">
                                                     <div class="form-check">
-                                                        <input class="form-check-input" type="checkbox" id="copyDefaultMailbox" name="copyDefaultMailbox" [(ngModel)]="emailSettings.contactFormCopyDefaultMailbox">
-                                                        <label class="form-check-label" for="copyDefaultMailbox">Add in CC when community-specific mailbox is defined?
-                                                            <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Support requests made by authenticated users belonging to user communities with defined support mailboxes, may also include the default Test Bed support mailbox in CC."></div>
+                                                        <input class="form-check-input" type="checkbox" id="emailSslEnabled" name="emailSslEnabled" [(ngModel)]="emailSettings.sslEnabled">
+                                                        <label class="form-check-label" for="emailSslEnabled">Enable SSL?
+                                                            <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Whether an SSL channel should be used to connect to the SMTP server."></div>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-auto">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" id="emailStartTlsEnabled" name="emailStartTlsEnabled" [(ngModel)]="emailSettings.startTlsEnabled">
+                                                        <label class="form-check-label" for="emailStartTlsEnabled">Enable StartTLS?
+                                                            <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="StartTLS is a backwards compatibility flag allowing you to connect to a SMTP server over a plain text channel and then upgrade automatically to an encrypted one."></div>
                                                         </label>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div class="row mt-3">
-                                                <label class="col-3 col-form-label text-end" for="emailMaxAttachmentCount">* Maximum attachments:</label>
-                                                <div class="col-1 minimum-width-number"><input min="0" id="emailMaxAttachmentCount" name="emailMaxAttachmentCount" [(ngModel)]="emailSettings.maxAttachmentCount" class="form-control" type="number"></div>
-                                                <div class="col-auto" app-tooltip tbTooltip="The maximum number of attachments allowed when sending a support request."></div>
+                                            <div [ngbCollapse]="!emailSettings.sslEnabled" [animation]="true">
+                                                <div class="row pt-3">
+                                                    <label class="col-3 col-form-label text-end" for="emailSslProtocols">SSL protocols:</label>
+                                                    <div class="col-8 col-md-5 minimum-width-text">
+                                                        <app-multi-select-filter [config]="emailSslProtocolsSelectConfig" (apply)="selectEmailSslProtocols($event)"></app-multi-select-filter>
+                                                    </div>
+                                                    <div class="col-auto" app-tooltip tbTooltip="Specify one or more SSL protocols to signal as acceptable for creating the SSL channel. You may need to adapt these if you experience SSL handshake rejections from the SMTP server."></div>
+                                                </div>
                                             </div>
                                             <div class="row mt-3">
-                                                <label class="col-3 col-form-label text-end" for="emailMaxAttachmentSize">* Maximum attachment size:</label>
-                                                <div class="col-2 minimum-width-number-grouped">
-                                                    <div class="input-group">
-                                                        <input min="1" id="emailMaxAttachmentSize" name="emailMaxAttachmentSize" [(ngModel)]="emailSettings.maxAttachmentSize" class="form-control" type="number">
-                                                        <div class="input-group-text">MBs</div>
+                                                <div class="offset-3 col-auto">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" id="emailAuthEnabled" name="emailAuthEnabled" [(ngModel)]="emailSettings.authenticate">
+                                                        <label class="form-check-label" for="emailAuthEnabled">Authenticate?
+                                                            <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Check this if the SMTP server requires authentication."></div>
+                                                        </label>
                                                     </div>
                                                 </div>
-                                                <div class="col-auto" app-tooltip tbTooltip="The maximum allowed combined size (in megabytes) of all support request attachments."></div>
+                                            </div>
+                                            <div [ngbCollapse]="!emailSettings.authenticate" [animation]="true">
+                                                <div class="row pt-3">
+                                                    <label class="col-3 col-form-label text-end" for="emailUsername">* Username:</label>
+                                                    <div class="col-8 col-md-5 minimum-width-text"><input id="emailUsername" name="emailUsername" [(ngModel)]="emailSettings.username" class="form-control" type="text"></div>
+                                                    <div class="col-auto" app-tooltip tbTooltip="The username used to authenticate to the SMTP server."></div>
+                                                </div>
+                                                <div class="row mt-3 align-items-center">
+                                                    <legend class="col-3 col-form-label text-end">* Password:</legend>
+                                                    <div class="col-8 col-md-5 minimum-width-text">
+                                                        @if (emailSettings.password == undefined) {
+                                                            <app-secret-input inputId="emailPassword" inputName="emailPassword" name="emailPasswordSecret" [(ngModel)]="emailSettings.newPassword"></app-secret-input>
+                                                        } @else {
+                                                            <div class="row row-cols-auto align-items-center gx-3">
+                                                                <div class="col-auto">
+                                                                    <div class="form-check">
+                                                                        <input class="form-check-input" type="checkbox" id="updatePasswordCheck" name="updatePasswordCheck" [(ngModel)]="emailSettings.updatePassword">
+                                                                        <label class="form-check-label" for="updatePasswordCheck">Update</label>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-auto flex-grow-1">
+                                                                    @if (emailSettings.updatePassword) {
+                                                                        <app-secret-input inputId="updatePassword" inputName="updatePassword" name="updatePasswordSecret" [(ngModel)]="emailSettings.newPassword"></app-secret-input>
+                                                                    }
+                                                                </div>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                    @if (emailSettings.password == undefined || emailSettings.updatePassword) {
+                                                        <div class="col-auto" app-tooltip tbTooltip="The password used to authenticate to the SMTP server."></div>
+                                                    }
+                                                </div>
                                             </div>
                                             <div class="row mt-3">
-                                                <label class="col-3 col-form-label text-end" for="emailAllowedAttachmentTypes">Allowed attachment types:</label>
-                                                <div class="col-8 col-md-5 minimum-width-text">
-                                                    <app-multi-select-filter [config]="emailAttachmentTypeSelectConfig" (apply)="selectEmailAttachmentTypes($event)"></app-multi-select-filter>
-                                                </div>
-                                                <div class="col-auto" app-tooltip tbTooltip="The attachment types that are allowed to be included in support requests."></div>
+                                                <label class="col-3 col-form-label text-end" for="emailFrom">* Test Bed email address:</label>
+                                                <div class="col-8 col-md-5 minimum-width-text"><input id="emailFrom" name="emailFrom" [(ngModel)]="emailSettings.from" class="form-control" type="text"></div>
+                                                <div class="col-auto" app-tooltip tbTooltip="The email address to use as the sender for outgoing emails. You may also use the format 'NAME &lt;EMAIL&gt;' to include a user-friendly name."></div>
                                             </div>
-                                        </div>
-                                    </app-form-section>
-                                    <app-form-section sectionTitle="Notification settings" [marginBefore]="true">
-                                        <div class="row mt-3">
-                                            <label class="col-3 col-form-label text-end" for="testInteractionReminder">* Test interaction reminders:</label>
-                                            <div class="col-2">
-                                                <div class="input-group minimum-width-text">
-                                                    <input min="1" id="testInteractionReminder" name="testInteractionReminder" [(ngModel)]="emailSettings.testInteractionReminder" class="form-control" type="number">
-                                                    <div class="input-group-text">minutes</div>
+                                            <div class="row mt-3">
+                                                <div class="offset-3 col-8 col-md-5 minimum-width-text">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" id="emailTestActive" name="emailTestActive" [(ngModel)]="emailTestActive">
+                                                        <label class="form-check-label" for="emailTestActive">Send test email?
+                                                            <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Test your current configuration by sending a test email to a target email address."></div>
+                                                        </label>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div class="col-auto" app-tooltip tbTooltip="The frequency (in minutes) between notifications for active test sessions that are pending administrator interactions. Note that notifications are only sent for new pending interactions registered since the last notification check."></div>
-                                        </div>
-                                    </app-form-section>
+                                            <div [ngbCollapse]="!emailTestActive" [animation]="true">
+                                                <div class="row pt-3 gx-3">
+                                                    <div class="offset-3 col-8 col-md-5 minimum-width-text">
+                                                        <div class="input-group">
+                                                            <input id="emailTestToAddress" placeholder="Recipient address" name="emailTestToAddress" [(ngModel)]="emailTestToAddress" class="form-control">
+                                                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.SEND" class="btn btn-secondary" [disable]="!textProvided(emailTestToAddress) || emailTestPending" [pending]="emailTestPending" (click)="testEmailSettings()">Send</button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </app-form-section>
+                                        <app-form-section sectionTitle="Contact form settings" [marginBefore]="true">
+                                            <div class="pt-3 row">
+                                                <label class="col-3 col-form-label text-end pt-0" for="contactFormEnabled">Enable contact form:</label>
+                                                <div class="col-7">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" id="contactFormEnabled" name="contactFormEnabled" [(ngModel)]="emailSettings.contactFormEnabled" type="checkbox">
+                                                        <div app-tooltip class="col-auto d-inline-flex" tbTooltip="Check this to enable the 'Contact support' feature." [inline]="true"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div [ngbCollapse]="!emailSettings.contactFormEnabled" [animation]="true">
+                                                <div class="row pt-3">
+                                                    <label class="col-3 col-form-label text-end" for="emailDefaultSupportMailbox">* Default support mailbox:</label>
+                                                    <div class="col-8 col-md-5 minimum-width-text"><input id="emailDefaultSupportMailbox" name="emailDefaultSupportMailbox" [(ngModel)]="emailSettings.defaultSupportMailbox" class="form-control" type="text"></div>
+                                                    <div class="col-auto" app-tooltip tbTooltip="The default mailbox to receive support requests."></div>
+                                                </div>
+                                                <div class="row mt-3">
+                                                    <div class="offset-3 col-auto">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" id="copyDefaultMailbox" name="copyDefaultMailbox" [(ngModel)]="emailSettings.contactFormCopyDefaultMailbox">
+                                                            <label class="form-check-label" for="copyDefaultMailbox">Add in CC when community-specific mailbox is defined?
+                                                                <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Support requests made by authenticated users belonging to user communities with defined support mailboxes, may also include the default Test Bed support mailbox in CC."></div>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="row mt-3">
+                                                    <label class="col-3 col-form-label text-end" for="emailMaxAttachmentCount">* Maximum attachments:</label>
+                                                    <div class="col-1 minimum-width-number"><input min="0" id="emailMaxAttachmentCount" name="emailMaxAttachmentCount" [(ngModel)]="emailSettings.maxAttachmentCount" class="form-control" type="number"></div>
+                                                    <div class="col-auto" app-tooltip tbTooltip="The maximum number of attachments allowed when sending a support request."></div>
+                                                </div>
+                                                <div class="row mt-3">
+                                                    <label class="col-3 col-form-label text-end" for="emailMaxAttachmentSize">* Maximum attachment size:</label>
+                                                    <div class="col-2 minimum-width-number-grouped">
+                                                        <div class="input-group">
+                                                            <input min="1" id="emailMaxAttachmentSize" name="emailMaxAttachmentSize" [(ngModel)]="emailSettings.maxAttachmentSize" class="form-control" type="number">
+                                                            <div class="input-group-text">MBs</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-auto" app-tooltip tbTooltip="The maximum allowed combined size (in megabytes) of all support request attachments."></div>
+                                                </div>
+                                                <div class="row mt-3">
+                                                    <label class="col-3 col-form-label text-end" for="emailAllowedAttachmentTypes">Allowed attachment types:</label>
+                                                    <div class="col-8 col-md-5 minimum-width-text">
+                                                        <app-multi-select-filter [config]="emailAttachmentTypeSelectConfig" (apply)="selectEmailAttachmentTypes($event)"></app-multi-select-filter>
+                                                    </div>
+                                                    <div class="col-auto" app-tooltip tbTooltip="The attachment types that are allowed to be included in support requests."></div>
+                                                </div>
+                                            </div>
+                                        </app-form-section>
+                                        <app-form-section sectionTitle="Notification settings" [marginBefore]="true">
+                                            <div class="row pt-3">
+                                                <label class="col-3 col-form-label text-end" for="testInteractionReminder">* Test interaction reminders:</label>
+                                                <div class="col-2">
+                                                    <div class="input-group minimum-width-text">
+                                                        <input min="1" id="testInteractionReminder" name="testInteractionReminder" [(ngModel)]="emailSettings.testInteractionReminder" class="form-control" type="number">
+                                                        <div class="input-group-text">minutes</div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-auto" app-tooltip tbTooltip="The frequency (in minutes) between notifications for active test sessions that are pending administrator interactions. Note that notifications are only sent for new pending interactions registered since the last notification check."></div>
+                                            </div>
+                                        </app-form-section>
+                                    </div>
                                 </div>
                             </div>
                             <div class="row mt-3">
@@ -412,17 +414,19 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div [collapse]="!softwareVersionCheckSettings.enabled" [isAnimated]="true">
-                                    <div class="softwareVersionFormContainer mt-3">
-                                        <div class="row">
-                                            <label class="col-3 col-form-label text-end" for="softwareCheckJws">* Status check URL:</label>
-                                            <div class="col-8 col-md-5 minimum-width-text"><input id="softwareCheckJws" name="softwareCheckJws" [(ngModel)]="softwareVersionCheckSettings.jws" class="form-control" type="text" [invalid]="softwareVersionCheckValidation.get('softwareCheckJws')"></div>
-                                            <div class="col-auto" app-tooltip tbTooltip="URL from which to retrieve the Test Bed's software version status. The retrieved resource is expected to be a JSON Web Signature (JWS) with JSON serialisation, signed by a key defined in the expected JSON Web Key Set (JWKS)."></div>
-                                        </div>
-                                        <div class="row mt-3">
-                                            <label class="col-3 col-form-label text-end" for="softwareCheckJwks">* Signature key URL:</label>
-                                            <div class="col-8 col-md-5 minimum-width-text"><input id="softwareCheckJwks" name="softwareCheckJwks" [(ngModel)]="softwareVersionCheckSettings.jwks" class="form-control" type="text" [invalid]="softwareVersionCheckValidation.get('softwareCheckJwks')"></div>
-                                            <div class="col-auto" app-tooltip tbTooltip="URL from which to retrieve the JSON Web Key Set (JWKS) that includes the key used to sign the software version status JWS content."></div>
+                                <div [ngbCollapse]="!softwareVersionCheckSettings.enabled" [animation]="true">
+                                    <div class="pt-3">
+                                        <div class="softwareVersionFormContainer">
+                                            <div class="row">
+                                                <label class="col-3 col-form-label text-end" for="softwareCheckJws">* Status check URL:</label>
+                                                <div class="col-8 col-md-5 minimum-width-text"><input id="softwareCheckJws" name="softwareCheckJws" [(ngModel)]="softwareVersionCheckSettings.jws" class="form-control" type="text" [invalid]="softwareVersionCheckValidation.get('softwareCheckJws')"></div>
+                                                <div class="col-auto" app-tooltip tbTooltip="URL from which to retrieve the Test Bed's software version status. The retrieved resource is expected to be a JSON Web Signature (JWS) with JSON serialisation, signed by a key defined in the expected JSON Web Key Set (JWKS)."></div>
+                                            </div>
+                                            <div class="row mt-3">
+                                                <label class="col-3 col-form-label text-end" for="softwareCheckJwks">* Signature key URL:</label>
+                                                <div class="col-8 col-md-5 minimum-width-text"><input id="softwareCheckJwks" name="softwareCheckJwks" [(ngModel)]="softwareVersionCheckSettings.jwks" class="form-control" type="text" [invalid]="softwareVersionCheckValidation.get('softwareCheckJwks')"></div>
+                                                <div class="col-auto" app-tooltip tbTooltip="URL from which to retrieve the JSON Web Key Set (JWKS) that includes the key used to sign the software version status JWS content."></div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

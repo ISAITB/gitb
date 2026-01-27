@@ -72,9 +72,9 @@
     </div>
 }
 @if (selfRegEnabled) {
-    <div [collapse]="!community.selfRegEnabled" [isAnimated]="true">
+    <div [ngbCollapse]="!community.selfRegEnabled" [animation]="true">
         <app-form-section sectionTitle="Self-registration settings" [collapsed]="selfRegOptionsCollapsed" [marginBefore]="true">
-            <div class="mt-3 row">
+            <div class="pt-3 row">
                 <label class="col-3 col-form-label text-end pt-0" for="description">Community description:</label>
                 <div class="col-8 col-md-6">
                     <div class="form-check">
@@ -142,8 +142,8 @@
                     </div>
                 </div>
             </div>
-            <div [collapse]="!community.selfRegInstructionsEnabled" [isAnimated]="true">
-                <div class="mt-1 row">
+            <div [ngbCollapse]="!community.selfRegInstructionsEnabled" [animation]="true">
+                <div class="pt-1 row">
                     <div class="offset-3 col-8 col-md-6">
                         <app-editor id="selfRegTokenHelpText" name="selfRegTokenHelpText" [(ngModel)]="community.selfRegTokenHelpText" type="line"></app-editor>
                     </div>
@@ -160,8 +160,8 @@
                     </div>
                 </div>
             </div>
-            <div [collapse]="!community.selfRegTokenEnabled" [isAnimated]="true">
-                <div class="mt-1 row">
+            <div [ngbCollapse]="!community.selfRegTokenEnabled" [animation]="true">
+                <div class="pt-1 row">
                     <div class="offset-3 col-8 col-md-6">
                         <app-api-key-text idName="selfRegToken" name="selfRegToken"
                                           [key]="community.selfRegToken"
@@ -181,7 +181,7 @@
                             <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Check this to allow self-registering users to enter a token for direct registration in a specific {{dataService.labelOrganisationLower()}}."></div>
                         </label>
                     </div>
-                    <div [collapse]="community.selfRegAllowOrganisationTokens !== true" [isAnimated]="true">
+                    <div [ngbCollapse]="community.selfRegAllowOrganisationTokens !== true" [animation]="true">
                         <div class="form-check pt-2">
                             <input class="form-check-input" type="checkbox" id="selfRegAllowOrganisationTokenManagement" name="selfRegAllowOrganisationTokenManagement" [(ngModel)]="community.selfRegAllowOrganisationTokenManagement">
                             <label class="form-check-label" for="selfRegAllowOrganisationTokenManagement">Allow self-management of {{dataService.labelOrganisationLower()}} tokens
@@ -203,8 +203,8 @@
                         </div>
                     </div>
                 </div>
-                <div [collapse]="community.selfRegDefaultOrganisationEnabled !== true" [isAnimated]="true">
-                    <div class="mt-1 row">
+                <div [ngbCollapse]="community.selfRegDefaultOrganisationEnabled !== true" [animation]="true">
+                    <div class="pt-1 row">
                         <div class="offset-3 col-8 col-md-6">
                             <div class="row gx-3">
                                 <div class="col-auto d-flex flex-grow-1">
@@ -227,7 +227,7 @@
                             <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to force users to join an existing '+dataService.labelOrganisationLower()+' (a specific one via provided token or the default one, depending on the enabled settings). With this option enabled you ensure that self-registration will never result in new '+dataService.labelOrganisationsLower()+' being created.'"></div>
                         </label>
                     </div>
-                    <div [collapse]="community.selfRegJoinExisting === true" [isAnimated]="true">
+                    <div [ngbCollapse]="community.selfRegJoinExisting === true" [animation]="true">
                         <div class="form-check pt-2">
                             <input class="form-check-input" type="checkbox" id="forceTemplateSelection" name="selfRegForceTemplateSelection" [(ngModel)]="community.selfRegForceTemplateSelection">
                             <label class="form-check-label" for="forceTemplateSelection">When registering a new {{dataService.labelOrganisationLower()}}, select one of the defined configuration templates
@@ -247,7 +247,7 @@
     </div>
 }
 <app-form-section sectionTitle="User permissions" [collapsed]="userPermissionsCollapsed" [marginBefore]="true">
-    <div class="mt-3 row">
+    <div class="pt-3 row">
         <legend class="col-3 col-form-label text-end pt-0">{{dataService.labelOrganisation()}} users may:</legend>
         <div class="col-9">
             <div class="form-check pb-2">
