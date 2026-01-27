@@ -17,12 +17,12 @@
                     }
                     <div class="btn-toolbar actionButtonDiv">
                         @if (testsToExecute.length > 1) {
-                            <div class="btn-group" dropdown [isDisabled]="!firstTestStarted || reload">
-                                <button id="button-stop" [labelIcon]="Constants.BUTTON_ICON.STOP" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-stop"><span class="me-2">Stop</span></button>
-                                <ul id="dropdown-stopType" *dropdownMenu class="dropdown-menu dropdown-menu" role="menu" aria-labelledby="button-stop">
-                                    <li role="menuitem" [class.disabled]="!started || stopped"><a class="dropdown-item" href (click)="stop(session!); $event.preventDefault()">Stop current test</a></li>
-                                    <li role="menuitem"><a class="dropdown-item" href (click)="stopAll(); $event.preventDefault()">Stop all tests</a></li>
-                                </ul>
+                            <div class="btn-group" ngbDropdown>
+                                <button id="button-stop" [labelIcon]="Constants.BUTTON_ICON.STOP" ngbDropdownToggle type="button" [disabled]="!firstTestStarted || reload" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-stop"><span class="me-2">Stop</span></button>
+                                <div id="dropdown-stopType" ngbDropdownMenu aria-labelledby="button-stop">
+                                    <button ngbDropdownItem type="button" [class.disabled]="!started || stopped" (click)="stop(session!)">Stop current test</button>
+                                    <button ngbDropdownItem type="button" (click)="stopAll()">Stop all tests</button>
+                                </div>
                             </div>
                         } @else if (testsToExecute.length == 1) {
                             <button type="button" [labelIcon]="Constants.BUTTON_ICON.STOP" class="btn btn-secondary" [disable]="!firstTestStarted || stopped || reload" (click)="stop(session!)">Stop</button>
@@ -76,27 +76,25 @@
                                             @if (interactionStepsOfTests[testCase.id].length == 1) {
                                                 <button type="button" [labelIcon]="Constants.BUTTON_ICON.VIEW_INTERACTIONS" class="btn btn-secondary" (click)="displayPendingInteraction()">View pending interaction</button>
                                             } @else {
-                                                <div class="btn-group" dropdown>
-                                                    <button id="button-interactions" [labelIcon]="Constants.BUTTON_ICON.VIEW_INTERACTIONS" dropdownToggle class="btn btn-secondary dropdown-toggle" type="button" aria-controls="dropdown-interactions"><span class="me-2">View pending interaction</span></button>
-                                                    <ul id="dropdown-interactions" *dropdownMenu class="dropdown-menu" aria-labelledby="button-interactions">
+                                                <div class="btn-group" ngbDropdown>
+                                                    <button id="button-interactions" [labelIcon]="Constants.BUTTON_ICON.VIEW_INTERACTIONS" ngbDropdownToggle class="btn btn-secondary dropdown-toggle" type="button" aria-controls="dropdown-interactions"><span class="me-2">View pending interaction</span></button>
+                                                    <div id="dropdown-interactions" ngbDropdownMenu aria-labelledby="button-interactions">
                                                         @for (interaction of interactionStepsOfTests[testCase.id]; track interaction.stepId; let index = $index) {
-                                                            <li>
-                                                                <a class="dropdown-item" href (click)="displayPendingInteraction(interaction.stepId);$event.preventDefault();">{{labelForPendingInteraction(interaction, index)}}</a>
-                                                            </li>
+                                                            <button ngbDropdownItem type="button" (click)="displayPendingInteraction(interaction.stepId)">{{labelForPendingInteraction(interaction, index)}}</button>
                                                         }
-                                                    </ul>
+                                                    </div>
                                                 </div>
                                             }
                                         }
-                                        <div class="btn-group export-group" dropdown [isDisabled]="!exportEnabled(testCase) || exportPdfPending[testCase.id] || exportXmlPending[testCase.id]">
+                                        <div class="btn-group export-group" ngbDropdown>
                                             <button type="button" [labelIcon]="Constants.BUTTON_ICON.REPORT" [disable]="!exportEnabled(testCase) || exportPdfPending[testCase.id] || exportXmlPending[testCase.id]" [pending]="exportPdfPending[testCase.id] || exportXmlPending[testCase.id]" class="btn btn-secondary" (click)="exportPdf(testCase)">Download report</button>
-                                            <button id="button-export" type="button" [disabled]="!exportEnabled(testCase) || exportPdfPending[testCase.id] || exportXmlPending[testCase.id]" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+                                            <button id="button-export" type="button" [disabled]="!exportEnabled(testCase) || exportPdfPending[testCase.id] || exportXmlPending[testCase.id]" ngbDropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
                                                 <span class="caret"></span>
                                                 <span class="sr-only visually-hidden">Download report</span>
                                             </button>
-                                            <ul id="dropdown-export" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-export">
-                                                <li role="menuitem"><a class="dropdown-item" href (click)="exportXml(testCase);$event.preventDefault();">Download report as XML</a></li>
-                                            </ul>
+                                            <div id="dropdown-export" ngbDropdownMenu aria-labelledby="button-export">
+                                                <button ngbDropdownItem type="button" (click)="exportXml(testCase)">Download report as XML</button>
+                                            </div>
                                         </div>
                                         <div class="viewLogButton">
                                             <button type="button" [labelIcon]="Constants.BUTTON_ICON.VIEW_LOG" class="btn btn-secondary position-relative" (click)="viewLog(testCase)">

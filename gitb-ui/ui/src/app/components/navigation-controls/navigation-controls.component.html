@@ -2,18 +2,18 @@
     @if (extraNavigationItems.length == 0) {
         <button type="button" [labelIcon]="Constants.BUTTON_ICON.GO" class="btn btn-secondary" (click)="mainNavigationItem.action!()">{{ mainNavigationItem.label }}</button>
     } @else {
-        <div class="btn-group" dropdown container="body" placement="bottom right">
+        <div class="btn-group" ngbDropdown container="body">
             <button type="button" [labelIcon]="Constants.BUTTON_ICON.GO" class="btn btn-secondary" (click)="mainNavigationItem.action!()">{{ mainNavigationItem.label }}</button>
-            <button id="button-view" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
-            <ul id="dropdown-view" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-system">
+            <button id="button-view" type="button" ngbDropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
+            <div id="dropdown-view" ngbDropdownMenu aria-labelledby="button-system">
                 @for (item of extraNavigationItems; track $index) {
                     @if (item.label == undefined) {
-                        <li class="divider dropdown-divider"></li>
+                        <div class="divider dropdown-divider"></div>
                     } @else {
-                        <li role="menuitem"><a class="dropdown-item" href (click)="item.action!();$event.preventDefault();">{{ item.label }}</a></li>
+                        <button ngbDropdownItem type="button" (click)="item.action!()">{{ item.label }}</button>
                     }
                 }
-            </ul>
+            </div>
         </div>
     }
 }

@@ -70,7 +70,6 @@ import {AnyContentViewComponent} from './components/diagram/report/any-content-v
 import {TestAssertionReportComponent} from './components/diagram/report/test-assertion-report/test-assertion-report.component';
 import {CodeEditorModalComponent} from './components/code-editor-modal/code-editor-modal.component';
 import {CodemirrorModule} from '@ctrl/ngx-codemirror';
-import {BsDropdownModule} from 'ngx-bootstrap/dropdown';
 import {PendingButtonDirective} from './directives/pending-button.directive';
 import {ScrollToTopComponent} from './components/scroll-to-top/scroll-to-top.component';
 import {ConformanceDashboardComponent} from './pages/admin/conformance-dashboard/conformance-dashboard.component';
@@ -290,7 +289,7 @@ import {UsageTipModalComponent} from './modals/usage-tip-modal/usage-tip-modal.c
 import {SubmitOnControlEnterDirective} from './directives/submit-on-control-enter.directive';
 import {PopupNotificationContainerComponent} from './components/popup-notification-container/popup-notification-container.component';
 import {PopupNotificationComponent} from './components/popup-notification/popup-notification.component';
-import {NgbAlertModule, NgbCollapseModule, NgbPopoverModule, NgbTooltipModule} from '@ng-bootstrap/ng-bootstrap';
+import {NgbAlertModule, NgbCollapseModule, NgbDropdownModule, NgbPopoverModule, NgbTooltipModule} from '@ng-bootstrap/ng-bootstrap';
 
 @NgModule({ declarations: [
         AppComponent,
@@ -511,7 +510,7 @@ import {NgbAlertModule, NgbCollapseModule, NgbPopoverModule, NgbTooltipModule} f
         BsDatepickerModule.forRoot(),
         NgbTooltipModule,
         CodemirrorModule,
-        BsDropdownModule.forRoot(),
+        NgbDropdownModule,
         NgbPopoverModule,
         TabsModule.forRoot(),
         MarkdownModule.forRoot(),

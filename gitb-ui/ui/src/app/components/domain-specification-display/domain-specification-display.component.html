@@ -29,25 +29,25 @@
                             <button id="button-remove-option" [disable]="isPending()" [pending]="spec.removePending" [icon]="true" class="btn btn-secondary drag-hide" (click)="removeFromGroup();$event.stopPropagation();" tooltipClass="shortTooltip" container="body" ngbTooltip="Ungroup" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrow-up-right-from-square"></i></span></button>
                         }
                         @if ((spec.groupId && groups.length > 1) || (!spec.groupId && groups.length > 0)) {
-                            <div class="btn-group drag-hide" #copyDropdown="bs-dropdown" dropdown [isDisabled]="isPending()" placement="bottom right" (onShown)="copyExpanded()">
-                                <button id="button-copy" #copyPop="ngbTooltip" (click)="copyPop.close();$event.stopPropagation()" [pending]="spec.copyPending" [icon]="true" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-copy" tooltipClass="shortTooltip" ngbTooltip="Copy" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-clone me-2"></i></span></button>
-                                <ul id="dropdown-copy" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-copy">
+                            <div class="btn-group drag-hide" #copyDropdown="ngbDropdown" ngbDropdown (openChange)="copyExpanded()">
+                                <button id="button-copy" #copyPop="ngbTooltip" (click)="copyPop.close(); $event.stopPropagation()" [disable]="isPending()" [pending]="spec.copyPending" [icon]="true" ngbDropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-copy" tooltipClass="shortTooltip" ngbTooltip="Copy" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-clone me-2"></i></span></button>
+                                <div id="dropdown-copy" ngbDropdownMenu aria-labelledby="button-copy">
                                     @for (group of groups; track group.id) {
                                         @if (group.id != spec.groupId) {
-                                            <li role="menuitem"><a class="dropdown-item" href (click)="copyToGroup(group.id);$event.preventDefault();$event.stopPropagation()">Copy to {{group.sname}}</a></li>
+                                            <button ngbDropdownItem type="button" (click)="copyToGroup(group.id); $event.stopPropagation()">Copy to {{group.sname}}</button>
                                         }
                                     }
-                                </ul>
+                                </div>
                             </div>
-                            <div class="btn-group drag-hide" #moveDropdown="bs-dropdown" dropdown [isDisabled]="isPending()" placement="bottom right" (onShown)="moveExpanded()">
-                                <button id="button-move" #movePop="ngbTooltip" (click)="movePop.close();$event.stopPropagation()" [pending]="spec.movePending" [icon]="true" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-move" tooltipClass="shortTooltip" ngbTooltip="Move" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrow-right me-2"></i></span></button>
-                                <ul id="dropdown-move" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-move">
+                            <div class="btn-group drag-hide" #moveDropdown="ngbDropdown" ngbDropdown (openChange)="moveExpanded()">
+                                <button id="button-move" #movePop="ngbTooltip" (click)="movePop.close(); $event.stopPropagation()" [disable]="isPending()" [pending]="spec.movePending" [icon]="true" ngbDropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-move" tooltipClass="shortTooltip" ngbTooltip="Move" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrow-right me-2"></i></span></button>
+                                <div id="dropdown-move" ngbDropdownMenu aria-labelledby="button-move">
                                     @for (group of groups; track group.id) {
                                         @if (group.id != spec.groupId) {
-                                            <li role="menuitem"><a class="dropdown-item" href (click)="moveToGroup(group.id);$event.preventDefault();$event.stopPropagation()">Move to {{group.sname}}</a></li>
+                                            <button ngbDropdownItem type="button" (click)="moveToGroup(group.id); $event.stopPropagation()">Move to {{group.sname}}</button>
                                         }
                                     }
-                                </ul>
+                                </div>
                             </div>
                         }
                     }

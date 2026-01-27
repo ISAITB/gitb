@@ -75,18 +75,18 @@
 			</div>
 			<div class="card-footer button-container">
 				<div class="btn-toolbar">
-					<div class="btn-group export-group" dropdown [isDisabled]="exportPending">
+					<div class="btn-group" ngbDropdown>
 						<button type="button" [labelIcon]="Constants.BUTTON_ICON.REPORT" [disable]="exportPending" [pending]="exportPending" class="btn btn-secondary" (click)="onExportConformanceStatement('pdf')">Download report</button>
-						<button id="button-export" type="button" [disabled]="exportPending" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+						<button id="button-export" type="button" [disabled]="exportPending" ngbDropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
 							<span class="caret"></span>
 							<span class="sr-only visually-hidden">Download report</span>
 						</button>
-						<ul id="dropdown-export" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-export">
-							<li role="menuitem"><a class="dropdown-item" href (click)="onExportConformanceStatement('xml');$event.preventDefault();">Download report as XML</a></li>
-							@if (allTestsSuccessful && (dataService.isSystemAdmin || dataService.isCommunityAdmin || dataService.community!.allowCertificateDownload)) {
-								<li role="menuitem"><a class="dropdown-item" href (click)="onExportConformanceCertificate();$event.preventDefault();">Download conformance certificate</a></li>
-							}
-						</ul>
+                        <div ngbDropdownMenu aria-labelledby="button-export">
+                            <button ngbDropdownItem type="button" (click)="onExportConformanceStatement('xml')">Download report as XML</button>
+                            @if (allTestsSuccessful && (dataService.isSystemAdmin || dataService.isCommunityAdmin || dataService.community!.allowCertificateDownload)) {
+                                <button ngbDropdownItem type="button" (click)="onExportConformanceCertificate()">Download conformance certificate</button>
+                            }
+                        </div>
 					</div>
 					@if (hasBadge) {
 						<app-view-badge-button [systemId]="systemId" [actorId]="actorId" [snapshotId]="snapshotId"></app-view-badge-button>
@@ -125,19 +125,19 @@
                     @if (!isReadonly) {
                         <div class="testSettings">
                             <div class="btn-toolbar align-items-start">
-                                <div class="btn-group" dropdown placement="bottom right">
-                                    <button id="button-executionType" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-executionType">
+                                <div class="btn-group" ngbDropdown placement="bottom-end">
+                                    <button id="button-executionType" ngbDropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-executionType">
                                         <span class="mini-tab">
                                             <i [class]="Constants.BUTTON_ICON.EXECUTION_OPTIONS"></i>
                                         </span>
                                         <span class="me-2">{{executionModeButton}}</span>
                                     </button>
-                                    <ul id="dropdown-executionType" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-executionType">
-                                        <li role="menuitem"><a class="dropdown-item" href (click)="executionMode = executionModeInteractive; executionModeButton = executionModeLabelInteractive; $event.preventDefault()">{{executionModeLabelInteractive}}</a></li>
-                                        <li class="divider dropdown-divider"></li>
-                                        <li role="menuitem"><a class="dropdown-item" href (click)="executionMode = executionModeParallel; executionModeButton = executionModeLabelParallel; $event.preventDefault()">{{executionModeLabelParallel}}</a></li>
-                                        <li role="menuitem"><a class="dropdown-item" href (click)="executionMode = executionModeSequential; executionModeButton = executionModeLabelSequential; $event.preventDefault()">{{executionModeLabelSequential}}</a></li>
-                                    </ul>
+                                    <div id="dropdown-executionType" ngbDropdownMenu aria-labelledby="button-executionType">
+                                        <button ngbDropdownItem type="button" (click)="executionMode = executionModeInteractive; executionModeButton = executionModeLabelInteractive">{{executionModeLabelInteractive}}</button>
+                                        <div class="divider dropdown-divider"></div>
+                                        <button ngbDropdownItem type="button" (click)="executionMode = executionModeParallel; executionModeButton = executionModeLabelParallel">{{executionModeLabelParallel}}</button>
+                                        <button ngbDropdownItem type="button" (click)="executionMode = executionModeSequential; executionModeButton = executionModeLabelSequential">{{executionModeLabelSequential}}</button>
+                                    </div>
                                 </div>
                                 @if (displayedTestSuites.length > 1) {
                                     <button class="btn btn-primary" (click)="onMultipleTestSelect(); $event.stopPropagation();" [pending]="statementExecutionPending" [icon]="true" tooltipClass="shortTooltip" container="body" ngbTooltip="Run all" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">

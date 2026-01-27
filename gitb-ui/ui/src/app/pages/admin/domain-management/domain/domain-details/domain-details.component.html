@@ -36,40 +36,40 @@
                                 @if (specifications.length > 0) {
                                     <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="uploadTestSuite()">Upload test suite</button>
                                 }
-                                <div class="btn-group" dropdown>
+                                <div class="btn-group" ngbDropdown>
                                     <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createSpecification()">Create {{dataService.labelSpecificationLower()}}</button>
-                                    <button id="button-create-spec" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+                                    <button id="button-create-spec" type="button" ngbDropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
                                         <span class="caret"></span>
                                         <span class="sr-only visually-hidden">Create {{dataService.labelSpecificationLower()}}</span>
                                     </button>
-                                    <ul id="dropdown-create-spec" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-create-spec">
-                                        <li role="menuitem"><a class="dropdown-item" href (click)="createSpecificationGroup();$event.preventDefault();">Create {{dataService.labelSpecificationGroupLower()}}</a></li>
-                                    </ul>
+                                    <div id="dropdown-create-spec" ngbDropdownMenu aria-labelledby="button-create-spec">
+                                        <button ngbDropdownItem type="button" (click)="createSpecificationGroup()">Create {{dataService.labelSpecificationGroupLower()}}</button>
+                                    </div>
                                 </div>
                             }
                             @if (specificationGroups.length > 0 && managingSpecificationOrder) {
-                                <div class="btn-group" dropdown>
-                                    <button id="button-option-visibility" [labelIcon]="Constants.BUTTON_ICON.FILTER" (click)="$event.stopPropagation()" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-option-visibility"><span class="me-2">View {{dataService.labelSpecificationInGroupsLower()}}</span></button>
-                                    <ul id="dropdown-option-visibility" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-option-visibility">
-                                        <li role="menuitem"><a class="dropdown-item" href (click)="toggleSpecificationGroupCollapse(false);$event.preventDefault();">Show {{dataService.labelSpecificationInGroupsLower()}}</a></li>
-                                        <li role="menuitem"><a class="dropdown-item" href (click)="toggleSpecificationGroupCollapse(true);$event.preventDefault();">Hide {{dataService.labelSpecificationInGroupsLower()}}</a></li>
-                                    </ul>
+                                <div class="btn-group" ngbDropdown>
+                                    <button id="button-option-visibility" [labelIcon]="Constants.BUTTON_ICON.FILTER" (click)="$event.stopPropagation()" ngbDropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-option-visibility"><span class="me-2">View {{dataService.labelSpecificationInGroupsLower()}}</span></button>
+                                    <div id="dropdown-option-visibility" ngbDropdownMenu aria-labelledby="button-option-visibility">
+                                        <button ngbDropdownItem type="button" (click)="toggleSpecificationGroupCollapse(false)">Show {{dataService.labelSpecificationInGroupsLower()}}</button>
+                                        <button ngbDropdownItem type="button" (click)="toggleSpecificationGroupCollapse(true)">Hide {{dataService.labelSpecificationInGroupsLower()}}</button>
+                                    </div>
                                 </div>
                             }
                             @if (hasMultipleSpecifications) {
-                                <div class="btn-group" dropdown>
+                                <div class="btn-group" ngbDropdown>
                                     @if (managingSpecificationOrder) {
                                         <button [pending]="saveOrderPending" [labelIcon]="Constants.BUTTON_ICON.SAVE" type="button" class="btn btn-secondary" (click)="saveOrdering()">Save {{dataService.labelSpecificationLower()}} order</button>
                                     } @else {
                                         <button type="button" [labelIcon]="Constants.BUTTON_ICON.SORT" class="btn btn-secondary" (click)="manageOrdering()">Manage {{dataService.labelSpecificationLower()}} order</button>
                                     }
-                                    <button id="button-order" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+                                    <button id="button-order" type="button" ngbDropdownToggle [disabled]="saveOrderPending" class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
                                         <span class="caret"></span>
                                         <span class="sr-only visually-hidden">Reset {{dataService.labelSpecificationLower()}} order</span>
                                     </button>
-                                    <ul id="dropdown-order" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-order">
-                                        <li role="menuitem"><a class="dropdown-item" href (click)="resetOrdering();$event.preventDefault();">Reset {{dataService.labelSpecificationLower()}} order</a></li>
-                                    </ul>
+                                    <div id="dropdown-order" ngbDropdownMenu aria-labelledby="button-order">
+                                        <button ngbDropdownItem type="button" (click)="resetOrdering()">Reset {{dataService.labelSpecificationLower()}} order</button>
+                                    </div>
                                 </div>
                                 @if (managingSpecificationOrder) {
                                     <button type="button" [labelIcon]="Constants.BUTTON_ICON.CANCEL" class="btn btn-secondary" (click)="cancelManageOrdering()">Cancel</button>

@@ -87,13 +87,13 @@
                             <div class="row pt-3">
                                 <div class="offset-3 col-8 col-md-6 test-fire-condition-container">
                                     <div class="input-group" [class.has-validation]="testedFireCondition">
-                                        <div class="btn-group" dropdown placement="bottom right">
-                                            <button id="button-testConditionType" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-testConditionType"><span class="me-2">{{dataService.triggerExpressionTypeLabel(this.testValueTypeForFireCondition!)}}</span></button>
-                                            <ul id="dropdown-testConditionType" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-testConditionType">
+                                        <div class="btn-group" ngbDropdown>
+                                            <button id="button-testConditionType" ngbDropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-testConditionType"><span class="me-2">{{dataService.triggerExpressionTypeLabel(this.testValueTypeForFireCondition!)}}</span></button>
+                                            <div id="dropdown-testConditionType" ngbDropdownMenu aria-labelledby="button-testConditionType">
                                                 @for (expressionType of fireExpressionTypes; track expressionType) {
-                                                    <li role="menuitem"><a class="dropdown-item" href (click)="selectTestExpressionType($index);$event.preventDefault()">{{dataService.triggerExpressionTypeLabel(expressionType)}}</a></li>
+                                                    <button ngbDropdownItem type="button" (click)="selectTestExpressionType($index)">{{dataService.triggerExpressionTypeLabel(expressionType)}}</button>
                                                 }
-                                            </ul>
+                                            </div>
                                         </div>
                                         <input id="testConditionValue" placeholder="Value to test" name="testConditionValue" [(ngModel)]="testValueForFireCondition" class="form-control" [class.is-invalid]="testedFireCondition && !testedFireConditionMatches" [class.is-valid]="testedFireCondition && testedFireConditionMatches">
                                         <button type="button" [labelIcon]="Constants.BUTTON_ICON.TEST"  class="btn btn-secondary" [disable]="!textProvided(testValueForFireCondition)" (click)="testFireConditionWithSampleValue()">Test</button>

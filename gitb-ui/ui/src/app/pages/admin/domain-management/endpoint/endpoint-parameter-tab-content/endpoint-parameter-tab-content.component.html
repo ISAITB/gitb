@@ -2,15 +2,15 @@
     <div class="btn-toolbar">
         <button type="button" [labelIcon]="Constants.BUTTON_ICON.SAVE" class="btn btn-secondary" [disable]="orderParametersDisabled" [pending]="orderPending" (click)="orderParameters()">Save parameter order</button>
         @if (manageEndpoints) {
-            <div class="btn-group create-group" dropdown>
+            <div class="btn-group create-group" ngbDropdown>
                 <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="addParameter()">Create parameter</button>
-                <button id="button-create" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+                <button id="button-create" type="button" ngbDropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
                     <span class="caret"></span>
                     <span class="sr-only visually-hidden">Create parameter</span>
                 </button>
-                <ul id="dropdown-create" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-create">
-                    <li role="menuitem"><a class="dropdown-item" href (click)="addEndpoint();$event.preventDefault();">Create {{dataService.labelEndpointLower()}}</a></li>
-                </ul>
+                <div id="dropdown-create" ngbDropdownItem aria-labelledby="button-create">
+                    <button ngbDropdownItem type="button" (click)="addEndpoint()">Create {{dataService.labelEndpointLower()}}</button>
+                </div>
             </div>
         } @else {
             <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="addParameter()">Create parameter</button>

@@ -39,17 +39,17 @@
                     <div class="tabControls">
                         <div class="searchControls btn-toolbar">
                             <app-text-filter name="organisationFilter" [width]="300" [placeholder]="'Search '+dataService.labelOrganisationsLower()+'...'" [(ngModel)]="organisationFilter" (apply)="applyOrganisationFilter()"></app-text-filter>
-                            <div class="btn-group" dropdown>
-                                <button id="button-order" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-result">
+                            <div class="btn-group" ngbDropdown>
+                                <button id="button-order" ngbDropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-result">
                                     <span class="mini-tab"><i [class]="Constants.BUTTON_ICON.SORT"></i></span>
                                     <span class="me-2">{{sortByCreationOrderLabel}}</span>
                                 </button>
-                                <ul id="dropdown-order" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-order">
-                                    <li role="menuitem"><a class="dropdown-item" href (click)="applyCreationOrderSort(sortByCreationOrderNone, sortByCreationOrderLabelNone); $event.preventDefault()">Do not apply</a></li>
-                                    <li class="divider dropdown-divider"></li>
-                                    <li role="menuitem"><a class="dropdown-item" href (click)="applyCreationOrderSort(sortByCreationOrderAsc, sortByCreationOrderLabelAsc); $event.preventDefault()">{{sortByCreationOrderLabelAsc}}</a></li>
-                                    <li role="menuitem"><a class="dropdown-item" href (click)="applyCreationOrderSort(sortByCreationOrderDesc, sortByCreationOrderLabelDesc); $event.preventDefault()">{{sortByCreationOrderLabelDesc}}</a></li>
-                                </ul>
+                                <div id="dropdown-order" ngbDropdownMenu aria-labelledby="button-order">
+                                    <button ngbDropdownItem type="button" (click)="applyCreationOrderSort(sortByCreationOrderNone, sortByCreationOrderLabelNone)">Do not apply</button>
+                                    <div class="divider dropdown-divider"></div>
+                                    <button ngbDropdownItem type="button" (click)="applyCreationOrderSort(sortByCreationOrderAsc, sortByCreationOrderLabelAsc)">{{sortByCreationOrderLabelAsc}}</button>
+                                    <button ngbDropdownItem type="button" (click)="applyCreationOrderSort(sortByCreationOrderDesc, sortByCreationOrderLabelDesc)">{{sortByCreationOrderLabelDesc}}</button>
+                                </div>
                             </div>
                             <button type="button" class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.NEW" (click)="createOrganisation()">Create {{dataService.labelOrganisationLower()}}</button>
                         </div>

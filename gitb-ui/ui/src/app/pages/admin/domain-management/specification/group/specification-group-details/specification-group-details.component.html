@@ -13,12 +13,12 @@
 					<button (click)="back()" [labelIcon]="Constants.BUTTON_ICON.BACK" type="button" class="btn btn-secondary">Back</button>
 				</div>
 				<div class="btn-toolbar btn-toolbar-delete">
-                    <div class="btn-group" dropdown [isDisabled]="!loaded || savePending" placement="bottom right">
-                        <button id="button-delete" [labelIcon]="Constants.BUTTON_ICON.DELETE" [disable]="!loaded || savePending" [pending]="deletePending" dropdownToggle type="button" class="btn btn-outline-danger dropdown-toggle" aria-controls="dropdown-delete"><span class="me-2">Delete</span></button>
-                        <ul id="dropdown-delete" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-result">
-                            <li role="menuitem"><a class="dropdown-item" href (click)="deleteGroup(false);$event.preventDefault()">Delete this {{dataService.labelSpecificationGroupLower()}} but keep its {{dataService.labelSpecificationInGroupsLower()}}</a></li>
-                            <li role="menuitem"><a class="dropdown-item" href (click)="deleteGroup(true);$event.preventDefault()">Delete this {{dataService.labelSpecificationGroupLower()}} and all its {{dataService.labelSpecificationInGroupsLower()}}</a></li>
-                        </ul>
+                    <div class="btn-group" ngbDropdown>
+                        <button id="button-delete" [labelIcon]="Constants.BUTTON_ICON.DELETE" [disable]="!loaded || savePending" [pending]="deletePending" ngbDropdownToggle type="button" class="btn btn-outline-danger dropdown-toggle" aria-controls="dropdown-delete"><span class="me-2">Delete</span></button>
+                        <div id="dropdown-delete" ngbDropdownMenu aria-labelledby="button-result">
+                            <button ngbDropdownItem type="button" (click)="deleteGroup(false)">Delete this {{dataService.labelSpecificationGroupLower()}} but keep its {{dataService.labelSpecificationInGroupsLower()}}</button>
+                            <button ngbDropdownItem type="button" (click)="deleteGroup(true)">Delete this {{dataService.labelSpecificationGroupLower()}} and all its {{dataService.labelSpecificationInGroupsLower()}}</button>
+                        </div>
                     </div>
 				</div>
 			</div>

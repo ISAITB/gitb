@@ -10,25 +10,25 @@
                 @if (show) {
                     <div class="btn-toolbar" (click)="$event.stopPropagation()">
                         @if (showUpdateDefinition && showResetTestHistory) {
-                            <div class="btn-group" dropdown [isDisabled]="hasAllTestCaseDataChoice(true) && hasAllTestCaseHistoryChoice(true)" placement="bottom right">
+                            <div class="btn-group" ngbDropdown>
                                 <button type="button" [labelIcon]="Constants.BUTTON_ICON.SELECT" class="btn btn-secondary btn-sm" (click)="toggleTestCaseChoices(true)" [disable]="hasAllTestCaseDataChoice(true) && hasAllTestCaseHistoryChoice(true)">
                                     Select all options
                                 </button>
-                                <button id="button-all" dropdownToggle type="button" class="btn btn-secondary btn-sm dropdown-toggle dropdown-toggle-split" aria-controls="dropdown-all"><span class="caret"></span></button>
-                                <ul id="dropdownType-all" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-all">
-                                    <li role="menuitem" [class.disabled]="hasAllTestCaseDataChoice(true)"><a class="dropdown-item" href (click)="toggleTestCaseDataChoice(true); $event.preventDefault()">Select all metadata update options</a></li>
-                                    <li role="menuitem" [class.disabled]="hasAllTestCaseHistoryChoice(true)"><a class="dropdown-item" href (click)="toggleTestCaseHistoryChoice(true); $event.preventDefault()">Select all history reset options</a></li>
-                                </ul>
+                                <button id="button-all" ngbDropdownToggle type="button" [disabled]="hasAllTestCaseDataChoice(true) && hasAllTestCaseHistoryChoice(true)" class="btn btn-secondary btn-sm dropdown-toggle dropdown-toggle-split" aria-controls="dropdown-all"><span class="caret"></span></button>
+                                <div id="dropdownType-all" ngbDropdownMenu aria-labelledby="button-all">
+                                    <button ngbDropdownItem type="button" [class.disabled]="hasAllTestCaseDataChoice(true)" (click)="toggleTestCaseDataChoice(true)">Select all metadata update options</button>
+                                    <button ngbDropdownItem type="button" [class.disabled]="hasAllTestCaseHistoryChoice(true)" (click)="toggleTestCaseHistoryChoice(true)">Select all history reset options</button>
+                                </div>
                             </div>
-                            <div class="btn-group" dropdown [isDisabled]="hasAllTestCaseDataChoice(false) && hasAllTestCaseHistoryChoice(false)" placement="bottom right">
+                            <div class="btn-group" ngbDropdown>
                                 <button type="button" [labelIcon]="Constants.BUTTON_ICON.NONE" class="btn btn-secondary btn-sm" (click)="toggleTestCaseChoices(false)" [disable]="hasAllTestCaseDataChoice(false) && hasAllTestCaseHistoryChoice(false)">
                                     Clear all options
                                 </button>
-                                <button id="button-none" dropdownToggle type="button" class="btn btn-secondary btn-sm dropdown-toggle dropdown-toggle-split" aria-controls="dropdown-all"><span class="caret"></span></button>
-                                <ul id="dropdownType-none" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-none">
-                                    <li role="menuitem" [class.disabled]="hasAllTestCaseDataChoice(false)"><a class="dropdown-item" href (click)="toggleTestCaseDataChoice(false); $event.preventDefault()">Clear all metadata update options</a></li>
-                                    <li role="menuitem" [class.disabled]="hasAllTestCaseHistoryChoice(false)"><a class="dropdown-item" href (click)="toggleTestCaseHistoryChoice(false); $event.preventDefault()">Clear all history reset options</a></li>
-                                </ul>
+                                <button id="button-none" ngbDropdownToggle type="button" [disabled]="hasAllTestCaseDataChoice(false) && hasAllTestCaseHistoryChoice(false)" class="btn btn-secondary btn-sm dropdown-toggle dropdown-toggle-split" aria-controls="dropdown-all"><span class="caret"></span></button>
+                                <div id="dropdownType-none" ngbDropdownMenu aria-labelledby="button-none">
+                                    <button ngbDropdownItem type="button" [class.disabled]="hasAllTestCaseDataChoice(false)" (click)="toggleTestCaseDataChoice(false)">Clear all metadata update options</button>
+                                    <button ngbDropdownItem type="button" [class.disabled]="hasAllTestCaseHistoryChoice(false)" (click)="toggleTestCaseHistoryChoice(false)">Clear all history reset options</button>
+                                </div>
                             </div>
                         } @else {
                             @if (showUpdateDefinition) {

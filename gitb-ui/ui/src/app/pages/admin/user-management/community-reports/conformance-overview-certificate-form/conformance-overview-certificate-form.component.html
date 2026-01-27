@@ -283,22 +283,22 @@
                     <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.PREVIEW" type="button" [disable]="true">Generate preview</button>
                 }
             } @else {
-                <div class="btn-group" dropdown [isDisabled]="updatePending">
-                    <button id="button-preview" [labelIcon]="Constants.BUTTON_ICON.PREVIEW" dropdownToggle type="button" [disable]="updatePending || !previewEnabled()" [pending]="exportPending" aria-controls="dropdown-preview" class="btn btn-secondary dropdown-toggle"><span class="me-2">Generate preview</span></button>
-                    <ul id="dropdown-preview" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-preview">
+                <div class="btn-group" ngbDropdown>
+                    <button id="button-preview" [labelIcon]="Constants.BUTTON_ICON.PREVIEW" ngbDropdownToggle type="button" [disable]="updatePending || !previewEnabled()" [pending]="exportPending" aria-controls="dropdown-preview" class="btn btn-secondary dropdown-toggle"><span class="me-2">Generate preview</span></button>
+                    <div id="dropdown-preview" ngbDropdownMenu aria-labelledby="button-preview">
                         @if (settings.enableAllLevel) {
-                            <li role="menuitem"><a class="dropdown-item" href (click)="preview('all');$event.preventDefault();">Aggregate level</a></li>
+                            <button ngbDropdownItem type="button" (click)="preview('all')">Aggregate level</button>
                         }
                         @if (settings.enableDomainLevel) {
-                            <li role="menuitem"><a class="dropdown-item" href (click)="preview('domain');$event.preventDefault();">{{dataService.labelDomain()}} level</a></li>
+                            <button ngbDropdownItem type="button" (click)="preview('domain')">{{dataService.labelDomain()}} level</button>
                         }
                         @if (settings.enableGroupLevel) {
-                            <li role="menuitem"><a class="dropdown-item" href (click)="preview('group');$event.preventDefault();">{{dataService.labelSpecificationGroup()}} level</a></li>
+                            <button ngbDropdownItem type="button" (click)="preview('group')">{{dataService.labelSpecificationGroup()}} level</button>
                         }
                         @if (settings.enableSpecificationLevel) {
-                            <li role="menuitem"><a class="dropdown-item" href (click)="preview('specification');$event.preventDefault();">{{dataService.labelSpecification()}} level</a></li>
+                            <button ngbDropdownItem type="button" (click)="preview('specification')">{{dataService.labelSpecification()}} level</button>
                         }
-                    </ul>
+                    </div>
                 </div>
             }
             <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.SIGNATURE"  (click)="manageKeystore()" [pending]="manageKeystorePending">Manage signature settings</button>

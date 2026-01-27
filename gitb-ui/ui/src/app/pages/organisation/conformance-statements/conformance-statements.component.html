@@ -10,18 +10,18 @@
                     }
                 }
                 @if (conformanceSnapshots != undefined && conformanceSnapshots.length > 0) {
-                    <div class="btn-group" dropdown placement="bottom right">
-                        <button id="button-snapshot" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-snapshot">
+                    <div class="btn-group" ngbDropdown>
+                        <button id="button-snapshot" ngbDropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-snapshot">
                             <span class="mini-tab"><i [class]="Constants.BUTTON_ICON.SNAPSHOT"></i></span>
                             <span class="me-2">{{snapshotButtonLabel}}</span>
                         </button>
-                        <ul id="dropdown-snapshot" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-snapshot">
-                            <li role="menuitem"><a class="dropdown-item" href (click)="snapshotSelected();$event.preventDefault()">{{latestSnapshotButtonLabel}}</a></li>
-                            <li class="divider dropdown-divider"></li>
+                        <div id="dropdown-snapshot" ngbDropdownMenu aria-labelledby="button-snapshot">
+                            <button ngbDropdownItem type="button" (click)="snapshotSelected()">{{latestSnapshotButtonLabel}}</button>
+                            <div class="divider dropdown-divider"></div>
                             @for (snapshot of conformanceSnapshots; track snapshot.id) {
-                                <li role="menuitem"><a class="dropdown-item" href (click)="snapshotSelected(snapshot);$event.preventDefault()">{{snapshot.label}}</a></li>
+                                <button ngbDropdownItem type="button" (click)="snapshotSelected(snapshot)">{{snapshot.label}}</button>
                             }
-                        </ul>
+                        </div>
                     </div>
                 }
                 @if (showCreate && !listView) {
@@ -76,15 +76,15 @@
                                             [options]="statusOptions"
                                             (updated)="filterByStatus($event)"></app-checkbox-option-panel>
                                     </div>
-                                    <div class="btn-group export-group" dropdown [isDisabled]="system == undefined || exportPending" placement="bottom right">
+                                    <div class="btn-group export-group" ngbDropdown>
                                         <button type="button" [labelIcon]="Constants.BUTTON_ICON.REPORT" [disable]="system == undefined || exportPending" [pending]="exportPending" class="btn btn-secondary" (click)="exportOverview('pdf')">Download report</button>
-                                        <button id="button-export" type="button" [disabled]="system == undefined || exportPending" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+                                        <button id="button-export" type="button" [disabled]="system == undefined || exportPending" ngbDropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
                                             <span class="caret"></span>
                                             <span class="sr-only visually-hidden">Download report</span>
                                         </button>
-                                        <ul id="dropdown-export" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-export">
-                                            <li role="menuitem"><a class="dropdown-item" href (click)="exportOverview('xml');$event.preventDefault()">Download report as XML</a></li>
-                                        </ul>
+                                        <div id="dropdown-export" ngbDropdownMenu aria-labelledby="button-export">
+                                            <button ngbDropdownItem type="button" (click)="exportOverview('xml')">Download report as XML</button>
+                                        </div>
                                     </div>
                                 </div>
                             }

@@ -103,33 +103,31 @@
                                             @if (row.diagramState.interactions.length == 1) {
                                                 <button type="button" [labelIcon]="Constants.BUTTON_ICON.VIEW_INTERACTIONS" [disable]="sessionBeingRefreshed?.session == row.session" class="btn btn-secondary" (click)="displayPendingInteraction(row)">View pending interaction</button>
                                             } @else {
-                                                <div class="btn-group" dropdown>
-                                                    <button id="button-interactions" [labelIcon]="Constants.BUTTON_ICON.VIEW_INTERACTIONS" dropdownToggle class="btn btn-secondary dropdown-toggle" type="button" aria-controls="dropdown-interactions"><span class="me-2">View pending interaction</span></button>
-                                                    <ul id="dropdown-interactions" *dropdownMenu class="dropdown-menu" aria-labelledby="button-interactions">
+                                                <div class="btn-group" ngbDropdown>
+                                                    <button id="button-interactions" [labelIcon]="Constants.BUTTON_ICON.VIEW_INTERACTIONS" ngbDropdownToggle class="btn btn-secondary dropdown-toggle" type="button" aria-controls="dropdown-interactions"><span class="me-2">View pending interaction</span></button>
+                                                    <div id="dropdown-interactions" ngbDropdownMenu aria-labelledby="button-interactions">
                                                         @for (interaction of row.diagramState.interactions; let index = $index; track interaction) {
-                                                            <li>
-                                                                <a class="dropdown-item" href (click)="displayPendingInteraction(row, interaction.stepId);$event.preventDefault();">{{labelForPendingInteraction(interaction, index)}}</a>
-                                                            </li>
+                                                            <button ngbDropdownItem type="button" (click)="displayPendingInteraction(row, interaction.stepId)">{{labelForPendingInteraction(interaction, index)}}</button>
                                                         }
-                                                    </ul>
+                                                    </div>
                                                 </div>
                                             }
                                         }
                                     @if (showNavigationControls) {
                                             <!-- Copy link -->
                                             @if (copyForOtherRoleOption) {
-                                                <div class="btn-group" dropdown placement="bottom right">
+                                                <div class="btn-group" ngbDropdown>
                                                     <button type="button" [labelIcon]="Constants.BUTTON_ICON.COPY_LINK" class="btn btn-secondary" (click)="copyLink(row)">Copy link</button>
-                                                    <button id="button-link" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
-                                                    <ul id="dropdown-link" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-link">
-                                                        <li role="menuitem"><a class="dropdown-item" href (click)="copyLink(row, true);$event.preventDefault();">
+                                                    <button id="button-link" type="button" ngbDropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
+                                                    <div id="dropdown-link" ngbDropdownMenu aria-labelledby="button-link">
+                                                        <button ngbDropdownItem type="button" (click)="copyLink(row, true)">
                                                             @if (dataService.isSystemAdmin || dataService.isCommunityAdmin) {
                                                                 Copy link for {{dataService.labelOrganisationLower()}}
                                                             } @else {
                                                                 Copy link for administrator
                                                             }
-                                                        </a></li>
-                                                    </ul>
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             } @else {
                                                 <button type="button" [labelIcon]="Constants.BUTTON_ICON.COPY_LINK" class="btn btn-secondary" (click)="copyLink(row)">Copy link</button>

@@ -20,8 +20,8 @@ import {DataService} from 'src/app/services/data.service';
 import {RoutingService} from 'src/app/services/routing.service';
 import {DomainSpecification} from 'src/app/types/domain-specification';
 import {SpecificationGroup} from 'src/app/types/specification-group';
-import {BsDropdownDirective} from 'ngx-bootstrap/dropdown';
 import {DomainSpecificationDisplayComponentApi} from './domain-specification-display-component-api';
+import {NgbDropdown} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-domain-specification-display',
@@ -43,8 +43,8 @@ export class DomainSpecificationDisplayComponent implements DomainSpecificationD
   @Output() copySpec = new EventEmitter<[number, number|undefined, number]>()
   @Output() dragging = new EventEmitter<boolean>()
   @Output() controlSelected = new EventEmitter<number>()
-  @ViewChild("moveDropdown") moveDropdown?: BsDropdownDirective
-  @ViewChild("copyDropdown") copyDropdown?: BsDropdownDirective
+  @ViewChild("moveDropdown") moveDropdown?: NgbDropdown
+  @ViewChild("copyDropdown") copyDropdown?: NgbDropdown
   @ViewChildren("childComponent") childComponents?: QueryList<DomainSpecificationDisplayComponentApi>
   Constants = Constants
 
@@ -64,8 +64,8 @@ export class DomainSpecificationDisplayComponent implements DomainSpecificationD
 
   otherControlSelected(selectedId: number) {
     if (selectedId != this.spec.id) {
-      this.copyDropdown?.hide()
-      this.moveDropdown?.hide()
+      this.copyDropdown?.close()
+      this.moveDropdown?.close()
     }
     this.childComponents?.forEach((component) => {
       component.otherControlSelected(selectedId)
@@ -73,7 +73,7 @@ export class DomainSpecificationDisplayComponent implements DomainSpecificationD
   }
 
   moveExpanded() {
-    this.copyDropdown?.hide()
+    this.copyDropdown?.close()
     this.controlSelected.emit(this.spec.id)
   }
 
@@ -85,7 +85,7 @@ export class DomainSpecificationDisplayComponent implements DomainSpecificationD
   }
 
   copyExpanded() {
-    this.moveDropdown?.hide()
+    this.moveDropdown?.close()
     this.controlSelected.emit(this.spec.id)
   }
 

@@ -87,25 +87,23 @@
                     <div class="row">
                         <div class="offset-1 col-10">
                             <div class="btn-toolbar">
-                                <div class="btn-group" dropdown
-                                     [isDisabled]="previewPending || this.testCase.documentation == undefined || this.testCase.documentation.length == 0">
+                                <div class="btn-group" ngbDropdown>
                                     <button type="button"
                                             [labelIcon]="Constants.BUTTON_ICON.PREVIEW"
-                                            [disable]="this.testCase.documentation == undefined || this.testCase.documentation.length == 0"
+                                            [disable]="previewPending || this.testCase.documentation == undefined || this.testCase.documentation.length == 0"
                                             [pending]="previewPending" id="button-preview" class="btn btn-secondary"
                                             (click)="previewDocumentationPopup()">Preview documentation
                                     </button>
                                     <button id="button-preview-pdf" type="button"
                                             [disabled]="previewPending || this.testCase.documentation == undefined || this.testCase.documentation.length == 0"
-                                            dropdownToggle
+                                            ngbDropdownToggle
                                             class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
                                         <span class="caret"></span>
                                         <span class="sr-only visually-hidden">Preview documentation in PDF report</span>
                                     </button>
-                                    <ul id="dropdown-preview-pdf" *dropdownMenu class="dropdown-menu" role="menu"
-                                        aria-labelledby="button-preview-pdf">
-                                        <li role="menuitem"><a class="dropdown-item" href (click)="previewDocumentationPdf();$event.preventDefault();">Preview documentation in PDF report</a></li>
-                                    </ul>
+                                    <div id="dropdown-preview-pdf" ngbDropdownMenu aria-labelledby="button-preview-pdf">
+                                        <button ngbDropdownItem type="button" (click)="previewDocumentationPdf()">Preview documentation in PDF report</button>
+                                    </div>
                                 </div>
                                 <button (click)="copyDocumentation()" [labelIcon]="Constants.BUTTON_ICON.COPY" type="button" class="btn btn-secondary" [disable]="this.testCase.documentation == undefined || this.testCase.documentation.length == 0">Copy to clipboard</button>
                             </div>
