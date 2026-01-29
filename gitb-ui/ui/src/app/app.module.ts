@@ -293,7 +293,7 @@ import {
   NgbAlertModule,
   NgbCollapseModule,
   NgbDatepickerModule,
-  NgbDropdownModule,
+  NgbDropdownModule, NgbNavModule,
   NgbPopoverModule,
   NgbTooltipModule
 } from '@ng-bootstrap/ng-bootstrap';
@@ -518,10 +518,10 @@ import {DateRangeComponent} from './components/date-range/date-range.component';
         NgbCollapseModule,
         NgbDatepickerModule,
         NgbTooltipModule,
-        CodemirrorModule,
         NgbDropdownModule,
         NgbPopoverModule,
-        TabsModule.forRoot(),
+        CodemirrorModule,
+        NgbNavModule,
         MarkdownModule.forRoot(),
         SubmitOnControlEnterDirective
     ], providers: [

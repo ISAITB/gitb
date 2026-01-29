@@ -19,54 +19,59 @@
 		</form>
 	</div>
 	<div>
-		<tabset #tabs>
-			<tab (selectTab)="showTab(Constants.TAB.SPECIFICATION.TEST_SUITES)" customClass="tabClass">
-                <ng-template tabHeading><app-tab-title icon="fa-solid fa-box-archive" text="Test suites"></app-tab-title></ng-template>
-				<div class="tabPanel">
-					<div class="tabControls">
-						<div class="btn-toolbar">
-                            <app-text-filter name="testSuiteFilter" [width]="300" [placeholder]="'Search test suites...'" [(ngModel)]="testSuiteFilter" (apply)="applyFilter()"></app-text-filter>
-							<button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.NEW" (click)="uploadTestSuite()" [disable]="linkPending || unlinkPending">Upload test suite</button>
-                            <app-multi-select-filter [config]="linkSharedSelectionConfig" (apply)="linkTestSuite($event)" [pending]="linkPending" [disable]="unlinkPending"></app-multi-select-filter>
-                            <app-multi-select-filter [config]="unlinkSharedSelectionConfig" (apply)="unlinkTestSuite($event)" [pending]="unlinkPending" [disable]="sharedTestSuites.length == 0 || linkPending"></app-multi-select-filter>
-						</div>
-					</div>
-					<app-alert-display [alerts]="alerts" [outerClass]="'inTab'"></app-alert-display>
-					<div class="card">
-						<div #testSuiteTable table-directive id="test-suites-table"
-							[columns]="testSuiteTableColumns"
-							[data]="testSuites"
-							noDataMessage="No test suites found"
-							[loadingStatus]="testSuiteStatus"
-							[allowSelect]="true"
-                            [contentRefreshing]="testSuitesRefreshing"
-                            [supportPaging]="true"
-                            (pageNavigation)="doTestSuitePaging($event)"
-							(onSelect)="onTestSuiteSelect($event)">
-						</div>
-					</div>
-				</div>
-			</tab>
-			<tab (selectTab)="showTab(Constants.TAB.SPECIFICATION.ACTORS)" customClass="tabClass">
-                <ng-template tabHeading><app-tab-title icon="fa-solid fa-circle-user" [text]="dataService.labelActors()"></app-tab-title></ng-template>
-				<div class="tabPanel">
-					<div class="tabControls">
-                        <div class="btn-toolbar">
-                            <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.NEW" type="button" (click)="createActor()">Create {{dataService.labelActorLower()}}</button>
+        <ul ngbNav #tabs="ngbNav" class="nav-tabs" [(activeId)]="tabIdToShow" (activeIdChange)="showTab()" [animation]="false">
+            <li [ngbNavItem]="Constants.TAB.SPECIFICATION.TEST_SUITES">
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-box-archive" text="Test suites"></app-tab-title></button>
+                <ng-template ngbNavContent>
+                    <div class="tabPanel">
+                        <div class="tabControls">
+                            <div class="btn-toolbar">
+                                <app-text-filter name="testSuiteFilter" [width]="300" [placeholder]="'Search test suites...'" [(ngModel)]="testSuiteFilter" (apply)="applyFilter()"></app-text-filter>
+                                <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.NEW" (click)="uploadTestSuite()" [disable]="linkPending || unlinkPending">Upload test suite</button>
+                                <app-multi-select-filter [config]="linkSharedSelectionConfig" (apply)="linkTestSuite($event)" [pending]="linkPending" [disable]="unlinkPending"></app-multi-select-filter>
+                                <app-multi-select-filter [config]="unlinkSharedSelectionConfig" (apply)="unlinkTestSuite($event)" [pending]="unlinkPending" [disable]="sharedTestSuites.length == 0 || linkPending"></app-multi-select-filter>
+                            </div>
                         </div>
-					</div>
-					<div class="card">
-						<div table-directive
-							[columns]="actorTableColumns"
-							[data]="actors"
-							[noDataMessage]="'No '+dataService.labelActorsLower()+' found'"
-							[loadingStatus]="actorStatus"
-							[allowSelect]="true"
-							(onSelect)="onActorSelect($event)">
-						</div>
-					</div>
-				</div>
-			</tab>
-		</tabset>
+                        <app-alert-display [alerts]="alerts" [outerClass]="'inTab'"></app-alert-display>
+                        <div class="card">
+                            <div #testSuiteTable table-directive id="test-suites-table"
+                                 [columns]="testSuiteTableColumns"
+                                 [data]="testSuites"
+                                 noDataMessage="No test suites found"
+                                 [loadingStatus]="testSuiteStatus"
+                                 [allowSelect]="true"
+                                 [contentRefreshing]="testSuitesRefreshing"
+                                 [supportPaging]="true"
+                                 (pageNavigation)="doTestSuitePaging($event)"
+                                 (onSelect)="onTestSuiteSelect($event)">
+                            </div>
+                        </div>
+                    </div>
+                </ng-template>
+            </li>
+            <li [ngbNavItem]="Constants.TAB.SPECIFICATION.ACTORS">
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-circle-user" [text]="dataService.labelActors()"></app-tab-title></button>
+                <ng-template ngbNavContent>
+                    <div class="tabPanel">
+                        <div class="tabControls">
+                            <div class="btn-toolbar">
+                                <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.NEW" type="button" (click)="createActor()">Create {{dataService.labelActorLower()}}</button>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div table-directive
+                                 [columns]="actorTableColumns"
+                                 [data]="actors"
+                                 [noDataMessage]="'No '+dataService.labelActorsLower()+' found'"
+                                 [loadingStatus]="actorStatus"
+                                 [allowSelect]="true"
+                                 (onSelect)="onActorSelect($event)">
+                            </div>
+                        </div>
+                    </div>
+                </ng-template>
+            </li>
+        </ul>
+        <div [ngbNavOutlet]="tabs"></div>
 	</div>
 </div>

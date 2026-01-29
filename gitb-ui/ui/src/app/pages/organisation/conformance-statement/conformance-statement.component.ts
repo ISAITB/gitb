@@ -431,7 +431,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   private showConfigurationTab() {
     this.loadConfigurations()
     if (this.tabs) {
-      this.tabs.tabs[1].active = true
+      this.tabIdToShow = Constants.TAB.CONFORMANCE_STATEMENT.CONFIGURATION
     }
   }
 

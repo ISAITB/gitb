@@ -405,6 +405,9 @@ export class Constants {
     ACTOR: {
       PARAMETERS: 0
     },
+    ENDPOINT: {
+      PARAMETERS: 0
+    },
     COMMUNITY: {
       ORGANISATIONS: 0,
       ADMINISTRATORS: 1,

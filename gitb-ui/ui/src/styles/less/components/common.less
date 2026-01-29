@@ -59,10 +59,47 @@ button.btn span.label-icon i {
     width: 0.85rem;
 }
 
+// TODO ADAPT
+.nav-item.tabClass {
+    .nav-link {
+        color: var(--itb-tab-link-color) !important;
+    }
+    &:not(.active) {
+        .nav-link {
+            border-radius: @border-radius @border-radius 0 0;
+            border-top: 1px solid @gray-dark-1;
+            border-left: 1px solid @gray-dark-1;
+            border-right: 1px solid @gray-dark-1;
+            &:hover {
+                background-color: @gray-light-1;
+            }
+        }
+    }
+}
 .nav-tabs > li.active > a {
-	background-color: @gray-light-1 !important;
-	color: var(--itb-tab-link-color) !important;
-	border-bottom-color: @gray-light-1 !important;
+    background-color: @gray-light-1 !important;
+    color: var(--itb-tab-link-color) !important;
+    border-bottom-color: @gray-light-1 !important;
+}
+
+.nav-item {
+    .nav-link.tabClass {
+        color: var(--itb-tab-link-color) !important;
+        &.active {
+            background-color: @gray-light-1 !important;
+            color: var(--itb-tab-link-color) !important;
+            border-bottom-color: @gray-light-1 !important;
+        }
+        &:not(.active) {
+            border-radius: @border-radius @border-radius 0 0;
+            border-top: 1px solid @gray-dark-1;
+            border-left: 1px solid @gray-dark-1;
+            border-right: 1px solid @gray-dark-1;
+            &:hover {
+                background-color: @gray-light-1;
+            }
+        }
+    }
 }
 
 .tabPanel {

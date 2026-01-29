@@ -497,117 +497,130 @@
         </div>
     </div>
     <div>
-        <tabset #tabs>
-            <tab (selectTab)="showTab(Constants.TAB.SYSTEM_ADMINISTRATION.ADMINISTRATORS)" customClass="tabClass">
-                <ng-template tabHeading><app-tab-title icon="fa-solid fa-user" text="Administrators"></app-tab-title></ng-template>
-                <!-- Administrators -->
-                <div class="tabPanel">
-                    <div class="tabControls">
-                        <div class="btn-toolbar">
-                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createAdmin()">Create system administrator</button>
+        <ul ngbNav #tabs="ngbNav" class="nav-tabs" [(activeId)]="tabIdToShow" (activeIdChange)="showTab()" [animation]="false">
+            <li [ngbNavItem]="Constants.TAB.SYSTEM_ADMINISTRATION.ADMINISTRATORS">
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-user" text="Administrators"></app-tab-title></button>
+                <ng-template ngbNavContent>
+                    <!-- Administrators -->
+                    <div class="tabPanel">
+                        <div class="tabControls">
+                            <div class="btn-toolbar">
+                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createAdmin()">Create system administrator</button>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div table-directive
+                                 [columns]="adminColumns"
+                                 [data]="admins"
+                                 noDataMessage="No administrators found"
+                                 [loadingStatus]="adminStatus"
+                                 [allowSelect]="true"
+                                 (onSelect)="adminSelect($event)">
+                            </div>
                         </div>
                     </div>
-                    <div class="card">
-                        <div table-directive
-                            [columns]="adminColumns"
-                            [data]="admins"
-                            noDataMessage="No administrators found"
-                            [loadingStatus]="adminStatus"
-                            [allowSelect]="true"
-                            (onSelect)="adminSelect($event)">
+                </ng-template>
+            </li>
+            <li [ngbNavItem]="Constants.TAB.SYSTEM_ADMINISTRATION.LANDING_PAGES">
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-house" text="Default landing pages"></app-tab-title></button>
+                <ng-template ngbNavContent>
+                    <!-- Landing pages -->
+                    <div class="tabPanel">
+                        <div class="tabControls">
+                            <div class="btn-toolbar">
+                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createLandingPage()">Create landing page</button>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div table-directive
+                                 [columns]="landingPagesColumns"
+                                 [data]="landingPages"
+                                 noDataMessage="No landing pages found"
+                                 [loadingStatus]="landingPageStatus"
+                                 [allowSelect]="true"
+                                 (onSelect)="landingPageSelect($event)">
+                            </div>
                         </div>
                     </div>
-                </div>
-            </tab>
-            <tab (selectTab)="showTab(Constants.TAB.SYSTEM_ADMINISTRATION.LANDING_PAGES)" customClass="tabClass">
-                <ng-template tabHeading><app-tab-title icon="fa-solid fa-house" text="Default landing pages"></app-tab-title></ng-template>
-                <!-- Landing pages -->
-                <div class="tabPanel">
-                    <div class="tabControls">
-                        <div class="btn-toolbar">
-                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createLandingPage()">Create landing page</button>
+                </ng-template>
+            </li>
+            <li [ngbNavItem]="Constants.TAB.SYSTEM_ADMINISTRATION.LEGAL_NOTICES">
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-scale-balanced" text="Default legal notices"></app-tab-title></button>
+                <ng-template ngbNavContent>
+                    <!-- Legal notices -->
+                    <div class="tabPanel">
+                        <div class="tabControls">
+                            <div class="btn-toolbar">
+                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createLegalNotice()">Create legal notice</button>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div table-directive
+                                 [columns]="legalNoticesColumns"
+                                 [data]="legalNotices"
+                                 noDataMessage="No legal notices found"
+                                 [loadingStatus]="legalNoticeStatus"
+                                 [allowSelect]="true"
+                                 (onSelect)="legalNoticeSelect($event)">
+                            </div>
                         </div>
                     </div>
-                    <div class="card">
-                        <div table-directive
-                            [columns]="landingPagesColumns"
-                            [data]="landingPages"
-                            noDataMessage="No landing pages found"
-                            [loadingStatus]="landingPageStatus"
-                            [allowSelect]="true"
-                            (onSelect)="landingPageSelect($event)">
+                </ng-template>
+            </li>
+            <li [ngbNavItem]="Constants.TAB.SYSTEM_ADMINISTRATION.ERROR_TEMPLATES">
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-bug" text="Default error templates"></app-tab-title></button>
+                <ng-template ngbNavContent>
+                    <!-- Error templates -->
+                    <div class="tabPanel">
+                        <div class="tabControls">
+                            <div class="btn-toolbar">
+                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createErrorTemplate()">Create error template</button>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div table-directive
+                                 [columns]="errorTemplatesColumns"
+                                 [data]="errorTemplates"
+                                 noDataMessage="No error templates found"
+                                 [loadingStatus]="errorTemplateStatus"
+                                 [allowSelect]="true"
+                                 (onSelect)="errorTemplateSelect($event)">
+                            </div>
                         </div>
                     </div>
-                </div>
-            </tab>
-            <tab (selectTab)="showTab(Constants.TAB.SYSTEM_ADMINISTRATION.LEGAL_NOTICES)" customClass="tabClass">
-                <ng-template tabHeading><app-tab-title icon="fa-solid fa-scale-balanced" text="Default legal notices"></app-tab-title></ng-template>
-                <!-- Legal notices -->
-                <div class="tabPanel">
-                    <div class="tabControls">
-                        <div class="btn-toolbar">
-                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createLegalNotice()">Create legal notice</button>
+                </ng-template>
+            </li>
+            <li [ngbNavItem]="Constants.TAB.SYSTEM_ADMINISTRATION.THEMES">
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-palette" text="Themes"></app-tab-title></button>
+                <ng-template ngbNavContent>
+                    <!-- Themes -->
+                    <div class="tabPanel">
+                        <div class="tabControls">
+                            <div class="btn-toolbar">
+                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createTheme()">Create theme</button>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div table-directive
+                                 [columns]="themeColumns"
+                                 [data]="themes"
+                                 noDataMessage="No themes found"
+                                 [loadingStatus]="themeStatus"
+                                 [allowSelect]="true"
+                                 (onSelect)="themeSelect($event)">
+                            </div>
                         </div>
                     </div>
-                    <div class="card">
-                        <div table-directive
-                            [columns]="legalNoticesColumns"
-                            [data]="legalNotices"
-                            noDataMessage="No legal notices found"
-                            [loadingStatus]="legalNoticeStatus"
-                            [allowSelect]="true"
-                            (onSelect)="legalNoticeSelect($event)">
-                        </div>
-                    </div>
-                </div>
-            </tab>
-            <tab (selectTab)="showTab(Constants.TAB.SYSTEM_ADMINISTRATION.ERROR_TEMPLATES)" customClass="tabClass">
-                <ng-template tabHeading><app-tab-title icon="fa-solid fa-bug" text="Default error templates"></app-tab-title></ng-template>
-                <!-- error templates -->
-                <div class="tabPanel">
-                    <div class="tabControls">
-                        <div class="btn-toolbar">
-                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createErrorTemplate()">Create error template</button>
-                        </div>
-                    </div>
-                    <div class="card">
-                        <div table-directive
-                            [columns]="errorTemplatesColumns"
-                            [data]="errorTemplates"
-                            noDataMessage="No error templates found"
-                            [loadingStatus]="errorTemplateStatus"
-                            [allowSelect]="true"
-                            (onSelect)="errorTemplateSelect($event)">
-                        </div>
-                    </div>
-                </div>
-            </tab>
-            <tab (selectTab)="showTab(Constants.TAB.SYSTEM_ADMINISTRATION.THEMES)" customClass="tabClass">
-                <ng-template tabHeading><app-tab-title icon="fa-solid fa-palette" text="Themes"></app-tab-title></ng-template>
-                <!-- Themes -->
-                <div class="tabPanel">
-                    <div class="tabControls">
-                        <div class="btn-toolbar">
-                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createTheme()">Create theme</button>
-                        </div>
-                    </div>
-                    <div class="card">
-                        <div table-directive
-                            [columns]="themeColumns"
-                            [data]="themes"
-                            noDataMessage="No themes found"
-                            [loadingStatus]="themeStatus"
-                            [allowSelect]="true"
-                            (onSelect)="themeSelect($event)">
-                        </div>
-                    </div>
-                </div>
-            </tab>
-            <tab (selectTab)="showTab(Constants.TAB.SYSTEM_ADMINISTRATION.RESOURCES)" customClass="tabClass">
-                <ng-template tabHeading><app-tab-title icon="fa-solid fa-image" text="Resources"></app-tab-title></ng-template>
-                <!-- System-wide resources -->
-                <app-resource-management-tab [actions]="resourceActions" [deferredActivation]="resourceEmitter"></app-resource-management-tab>
-            </tab>
-        </tabset>
+                </ng-template>
+            </li>
+            <li [ngbNavItem]="Constants.TAB.SYSTEM_ADMINISTRATION.RESOURCES">
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-image" text="Resources"></app-tab-title></button>
+                <ng-template ngbNavContent>
+                    <!-- System-wide resources -->
+                    <app-resource-management-tab [actions]="resourceActions" [deferredActivation]="resourceEmitter"></app-resource-management-tab>
+                </ng-template>
+            </li>
+        </ul>
+        <div [ngbNavOutlet]="tabs"></div>
     </div>
 </div>

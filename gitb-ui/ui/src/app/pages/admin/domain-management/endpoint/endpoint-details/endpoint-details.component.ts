@@ -14,9 +14,8 @@
  */
 
 import {Component, EventEmitter, OnInit} from '@angular/core';
-import {ActivatedRoute} from '@angular/router';
+import {ActivatedRoute, Router} from '@angular/router';
 import {Constants} from 'src/app/common/constants';
-import {BaseComponent} from 'src/app/pages/base-component.component';
 import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
 import {ConformanceService} from 'src/app/services/conformance.service';
 import {DataService} from 'src/app/services/data.service';
@@ -26,6 +25,7 @@ import {EndpointData} from './endpoint-data';
 import {EndpointParameter} from 'src/app/types/endpoint-parameter';
 import {RoutingService} from 'src/app/services/routing.service';
 import {BreadcrumbType} from 'src/app/types/breadcrumb-type';
+import {BaseTabbedComponent} from '../../../../base-tabbed-component';
 
 @Component({
     selector: 'app-endpoint-details',
@@ -33,7 +33,7 @@ import {BreadcrumbType} from 'src/app/types/breadcrumb-type';
     styles: [],
     standalone: false
 })
-export class EndpointDetailsComponent extends BaseComponent implements OnInit {
+export class EndpointDetailsComponent extends BaseTabbedComponent implements OnInit {
 
   endpointId!: number
   actorId!: number
@@ -52,8 +52,9 @@ export class EndpointDetailsComponent extends BaseComponent implements OnInit {
     private readonly routingService: RoutingService,
     public readonly dataService: DataService,
     private readonly popupService: PopupService,
-    private route: ActivatedRoute
-  ) { super() }
+    router: Router,
+    route: ActivatedRoute
+  ) { super(router, route) }
 
   ngOnInit(): void {
 		this.endpointId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ENDPOINT_ID))
@@ -61,6 +62,10 @@ export class EndpointDetailsComponent extends BaseComponent implements OnInit {
 		this.domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
 		this.specificationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID))
     this.loadEndpointData()
+  }
+
+  loadTab(tabIndex: number): void {
+    // Not needed - loaded by default.
   }
 
   private loadEndpointData() {

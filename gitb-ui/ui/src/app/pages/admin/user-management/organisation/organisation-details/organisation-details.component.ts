@@ -358,16 +358,4 @@ export class OrganisationDetailsComponent extends BaseTabbedComponent implements
     this.loadApiInfo.emit()
   }
 
-  protected tabIdToTabIndex(tabId: number): number {
-    if (tabId === Constants.TAB.ORGANISATION.API_KEYS) {
-      if (this.showUsersTab) {
-        return 2
-      } else {
-        return 1
-      }
-    } else {
-      return tabId
-    }
-  }
-
 }

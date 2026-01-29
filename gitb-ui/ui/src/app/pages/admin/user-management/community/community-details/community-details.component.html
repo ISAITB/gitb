@@ -31,164 +31,179 @@
         </form>
     </div>
     <div>
-        <tabset #tabs>
-            <tab (selectTab)="showTab(Constants.TAB.COMMUNITY.ORGANISATIONS)" customClass="tabClass">
-                <ng-template tabHeading><app-tab-title icon="fa-solid fa-building" [text]="dataService.labelOrganisations()"></app-tab-title></ng-template>
-                <!-- Organisations -->
-                <div class="tabPanel">
-                    <div class="tabControls">
-                        <div class="searchControls btn-toolbar">
-                            <app-text-filter name="organisationFilter" [width]="300" [placeholder]="'Search '+dataService.labelOrganisationsLower()+'...'" [(ngModel)]="organisationFilter" (apply)="applyOrganisationFilter()"></app-text-filter>
-                            <div class="btn-group" ngbDropdown>
-                                <button id="button-order" ngbDropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-result">
-                                    <span class="mini-tab"><i [class]="Constants.BUTTON_ICON.SORT"></i></span>
-                                    <span class="me-2">{{sortByCreationOrderLabel}}</span>
-                                </button>
-                                <div id="dropdown-order" ngbDropdownMenu aria-labelledby="button-order">
-                                    <button ngbDropdownItem type="button" (click)="applyCreationOrderSort(sortByCreationOrderNone, sortByCreationOrderLabelNone)">Do not apply</button>
-                                    <div class="divider dropdown-divider"></div>
-                                    <button ngbDropdownItem type="button" (click)="applyCreationOrderSort(sortByCreationOrderAsc, sortByCreationOrderLabelAsc)">{{sortByCreationOrderLabelAsc}}</button>
-                                    <button ngbDropdownItem type="button" (click)="applyCreationOrderSort(sortByCreationOrderDesc, sortByCreationOrderLabelDesc)">{{sortByCreationOrderLabelDesc}}</button>
+        <ul ngbNav #tabs="ngbNav" class="nav-tabs" [(activeId)]="tabIdToShow" (activeIdChange)="showTab()" [animation]="false">
+            <li [ngbNavItem]="Constants.TAB.COMMUNITY.ORGANISATIONS">
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-building" [text]="dataService.labelOrganisations()"></app-tab-title></button>
+                <ng-template ngbNavContent>
+                    <!-- Organisations -->
+                    <div class="tabPanel">
+                        <div class="tabControls">
+                            <div class="searchControls btn-toolbar">
+                                <app-text-filter name="organisationFilter" [width]="300" [placeholder]="'Search '+dataService.labelOrganisationsLower()+'...'" [(ngModel)]="organisationFilter" (apply)="applyOrganisationFilter()"></app-text-filter>
+                                <div class="btn-group" ngbDropdown>
+                                    <button id="button-order" ngbDropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-result">
+                                        <span class="mini-tab"><i [class]="Constants.BUTTON_ICON.SORT"></i></span>
+                                        <span class="me-2">{{sortByCreationOrderLabel}}</span>
+                                    </button>
+                                    <div id="dropdown-order" ngbDropdownMenu aria-labelledby="button-order">
+                                        <button ngbDropdownItem type="button" (click)="applyCreationOrderSort(sortByCreationOrderNone, sortByCreationOrderLabelNone)">Do not apply</button>
+                                        <div class="divider dropdown-divider"></div>
+                                        <button ngbDropdownItem type="button" (click)="applyCreationOrderSort(sortByCreationOrderAsc, sortByCreationOrderLabelAsc)">{{sortByCreationOrderLabelAsc}}</button>
+                                        <button ngbDropdownItem type="button" (click)="applyCreationOrderSort(sortByCreationOrderDesc, sortByCreationOrderLabelDesc)">{{sortByCreationOrderLabelDesc}}</button>
+                                    </div>
                                 </div>
+                                <button type="button" class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.NEW" (click)="createOrganisation()">Create {{dataService.labelOrganisationLower()}}</button>
                             </div>
-                            <button type="button" class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.NEW" (click)="createOrganisation()">Create {{dataService.labelOrganisationLower()}}</button>
+                        </div>
+                        <div class="card">
+                            <div #organisationTable table-directive
+                                 [columns]="organizationColumns"
+                                 [data]="organizations"
+                                 [noDataMessage]="'No '+dataService.labelOrganisationsLower()+' found'"
+                                 [loadingStatus]="organisationStatus"
+                                 [contentRefreshing]="organisationsRefreshing"
+                                 [allowSelect]="true"
+                                 (pageNavigation)="doOrganisationPaging($event)"
+                                 (onSort)="sortOrganisations($event)"
+                                 (onSelect)="organisationSelect($event)"
+                                 [supportPaging]="true">
+                            </div>
                         </div>
                     </div>
-                    <div class="card">
-                        <div #organisationTable table-directive
-                            [columns]="organizationColumns"
-                            [data]="organizations"
-                            [noDataMessage]="'No '+dataService.labelOrganisationsLower()+' found'"
-                            [loadingStatus]="organisationStatus"
-                            [contentRefreshing]="organisationsRefreshing"
-                            [allowSelect]="true"
-                            (pageNavigation)="doOrganisationPaging($event)"
-                            (onSort)="sortOrganisations($event)"
-                            (onSelect)="organisationSelect($event)"
-                            [supportPaging]="true">
+                </ng-template>
+            </li>
+            <li [ngbNavItem]="Constants.TAB.COMMUNITY.ADMINISTRATORS">
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-user" text="Administrators"></app-tab-title></button>
+                <ng-template ngbNavContent>
+                    <!-- Administrators -->
+                    <div class="tabPanel">
+                        <div class="tabControls">
+                            <div class="btn-toolbar">
+                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createAdmin()">Create community administrator</button>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div table-directive
+                                 [columns]="adminColumns"
+                                 [data]="admins"
+                                 noDataMessage="No administrators found"
+                                 [loadingStatus]="adminStatus"
+                                 [allowSelect]="true"
+                                 (onSelect)="adminSelect($event)">
+                            </div>
                         </div>
                     </div>
-                </div>
-            </tab>
-            <tab (selectTab)="showTab(Constants.TAB.COMMUNITY.ADMINISTRATORS)" customClass="tabClass">
-                <ng-template tabHeading><app-tab-title icon="fa-solid fa-user" text="Administrators"></app-tab-title></ng-template>
-                <!-- Administrators -->
-                <div class="tabPanel">
-                    <div class="tabControls">
-                        <div class="btn-toolbar">
-                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createAdmin()">Create community administrator</button>
+                </ng-template>
+            </li>
+            <li [ngbNavItem]="Constants.TAB.COMMUNITY.LANDING_PAGES">
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-house" text="Landing pages"></app-tab-title></button>
+                <ng-template ngbNavContent>
+                    <!-- Landing pages -->
+                    <div class="tabPanel">
+                        <div class="tabControls">
+                            <div class="btn-toolbar">
+                                @if (communityId != Constants.DEFAULT_COMMUNITY_ID) {
+                                    <button [labelIcon]="Constants.BUTTON_ICON.COPY" [disable]="testBedLandingPage == undefined" type="button" class="btn btn-secondary" (click)="createLandingPage(true)">Copy Test Bed landing page</button>
+                                }
+                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createLandingPage(false)">Create landing page</button>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div table-directive
+                                 [columns]="landingPagesColumns"
+                                 [data]="landingPages"
+                                 noDataMessage="No landing pages found"
+                                 [loadingStatus]="landingPageStatus"
+                                 [allowSelect]="true"
+                                 (onSelect)="landingPageSelect($event)">
+                            </div>
                         </div>
                     </div>
-                    <div class="card">
-                        <div table-directive
-                            [columns]="adminColumns"
-                            [data]="admins"
-                            noDataMessage="No administrators found"
-                            [loadingStatus]="adminStatus"
-                            [allowSelect]="true"
-                            (onSelect)="adminSelect($event)">
+                </ng-template>
+            </li>
+            <li [ngbNavItem]="Constants.TAB.COMMUNITY.LEGAL_NOTICES">
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-scale-balanced" text="Legal notices"></app-tab-title></button>
+                <ng-template ngbNavContent>
+                    <!-- Legal notices -->
+                    <div class="tabPanel">
+                        <div class="tabControls">
+                            <div class="btn-toolbar">
+                                @if (communityId != Constants.DEFAULT_COMMUNITY_ID) {
+                                    <button [labelIcon]="Constants.BUTTON_ICON.COPY" [disable]="testBedLegalNotice == undefined" type="button" class="btn btn-secondary" (click)="createLegalNotice(true)">Copy Test Bed legal notice</button>
+                                }
+                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createLegalNotice(false)">Create legal notice</button>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div table-directive
+                                 [columns]="legalNoticesColumns"
+                                 [data]="legalNotices"
+                                 noDataMessage="No legal notices found"
+                                 [loadingStatus]="legalNoticeStatus"
+                                 [allowSelect]="true"
+                                 (onSelect)="legalNoticeSelect($event)">
+                            </div>
                         </div>
                     </div>
-                </div>
-            </tab>
-            <tab (selectTab)="showTab(Constants.TAB.COMMUNITY.LANDING_PAGES)" customClass="tabClass">
-                <ng-template tabHeading><app-tab-title icon="fa-solid fa-house" text="Landing pages"></app-tab-title></ng-template>
-                <!-- Landing pages -->
-                <div class="tabPanel">
-                    <div class="tabControls">
-                        <div class="btn-toolbar">
-                            @if (communityId != Constants.DEFAULT_COMMUNITY_ID) {
-                                <button [labelIcon]="Constants.BUTTON_ICON.COPY" [disable]="testBedLandingPage == undefined" type="button" class="btn btn-secondary" (click)="createLandingPage(true)">Copy Test Bed landing page</button>
-                            }
-                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createLandingPage(false)">Create landing page</button>
+                </ng-template>
+            </li>
+            <li [ngbNavItem]="Constants.TAB.COMMUNITY.ERROR_TEMPLATES">
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-bug" text="Error templates"></app-tab-title></button>
+                <ng-template ngbNavContent>
+                    <!-- Error templates -->
+                    <div class="tabPanel">
+                        <div class="tabControls">
+                            <div class="btn-toolbar">
+                                @if (communityId != Constants.DEFAULT_COMMUNITY_ID) {
+                                    <button [labelIcon]="Constants.BUTTON_ICON.COPY" [disable]="testBedErrorTemplate == undefined" type="button" class="btn btn-secondary" (click)="createErrorTemplate(true)">Copy Test Bed error template</button>
+                                }
+                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createErrorTemplate(false)">Create error template</button>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div table-directive
+                                 [columns]="errorTemplatesColumns"
+                                 [data]="errorTemplates"
+                                 noDataMessage="No error templates found"
+                                 [loadingStatus]="errorTemplateStatus"
+                                 [allowSelect]="true"
+                                 (onSelect)="errorTemplateSelect($event)">
+                            </div>
                         </div>
                     </div>
-                    <div class="card">
-                        <div table-directive
-                            [columns]="landingPagesColumns"
-                            [data]="landingPages"
-                            noDataMessage="No landing pages found"
-                            [loadingStatus]="landingPageStatus"
-                            [allowSelect]="true"
-                            (onSelect)="landingPageSelect($event)">
+                </ng-template>
+            </li>
+            <li [ngbNavItem]="Constants.TAB.COMMUNITY.TRIGGERS">
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-bolt" text="Triggers"></app-tab-title></button>
+                <ng-template ngbNavContent>
+                    <!-- Triggers -->
+                    <div class="tabPanel">
+                        <div class="tabControls">
+                            <div class="btn-toolbar">
+                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createTrigger()">Create trigger</button>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div table-directive
+                                 [columns]="triggerColumns"
+                                 [data]="triggers"
+                                 noDataMessage="No triggers found"
+                                 [loadingStatus]="triggerStatus"
+                                 [allowSelect]="true"
+                                 (onSelect)="triggerSelect($event)">
+                            </div>
                         </div>
                     </div>
-                </div>
-            </tab>
-            <tab (selectTab)="showTab(Constants.TAB.COMMUNITY.LEGAL_NOTICES)" customClass="tabClass">
-                <ng-template tabHeading><app-tab-title icon="fa-solid fa-scale-balanced" text="Legal notices"></app-tab-title></ng-template>
-                <!-- Legal notices -->
-                <div class="tabPanel">
-                    <div class="tabControls">
-                        <div class="btn-toolbar">
-                            @if (communityId != Constants.DEFAULT_COMMUNITY_ID) {
-                                <button [labelIcon]="Constants.BUTTON_ICON.COPY" [disable]="testBedLegalNotice == undefined" type="button" class="btn btn-secondary" (click)="createLegalNotice(true)">Copy Test Bed legal notice</button>
-                            }
-                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createLegalNotice(false)">Create legal notice</button>
-                        </div>
-                    </div>
-                    <div class="card">
-                        <div table-directive
-                            [columns]="legalNoticesColumns"
-                            [data]="legalNotices"
-                            noDataMessage="No legal notices found"
-                            [loadingStatus]="legalNoticeStatus"
-                            [allowSelect]="true"
-                            (onSelect)="legalNoticeSelect($event)">
-                        </div>
-                    </div>
-                </div>
-            </tab>
-            <tab (selectTab)="showTab(Constants.TAB.COMMUNITY.ERROR_TEMPLATES)" customClass="tabClass">
-                <ng-template tabHeading><app-tab-title icon="fa-solid fa-bug" text="Error templates"></app-tab-title></ng-template>
-                <!-- error templates -->
-                <div class="tabPanel">
-                    <div class="tabControls">
-                        <div class="btn-toolbar">
-                            @if (communityId != Constants.DEFAULT_COMMUNITY_ID) {
-                                <button [labelIcon]="Constants.BUTTON_ICON.COPY" [disable]="testBedErrorTemplate == undefined" type="button" class="btn btn-secondary" (click)="createErrorTemplate(true)">Copy Test Bed error template</button>
-                            }
-                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createErrorTemplate(false)">Create error template</button>
-                        </div>
-                    </div>
-                    <div class="card">
-                        <div table-directive
-                            [columns]="errorTemplatesColumns"
-                            [data]="errorTemplates"
-                            noDataMessage="No error templates found"
-                            [loadingStatus]="errorTemplateStatus"
-                            [allowSelect]="true"
-                            (onSelect)="errorTemplateSelect($event)">
-                        </div>
-                    </div>
-                </div>
-            </tab>
-            <tab (selectTab)="showTab(Constants.TAB.COMMUNITY.TRIGGERS)" customClass="tabClass">
-                <ng-template tabHeading><app-tab-title icon="fa-solid fa-bolt" text="Triggers"></app-tab-title></ng-template>
-                <!-- Triggers -->
-                <div class="tabPanel">
-                    <div class="tabControls">
-                        <div class="btn-toolbar">
-                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createTrigger()">Create trigger</button>
-                        </div>
-                    </div>
-                    <div class="card">
-                        <div table-directive
-                            [columns]="triggerColumns"
-                            [data]="triggers"
-                            noDataMessage="No triggers found"
-                            [loadingStatus]="triggerStatus"
-                            [allowSelect]="true"
-                            (onSelect)="triggerSelect($event)">
-                        </div>
-                    </div>
-                </div>
-            </tab>
-            <tab (selectTab)="showTab(Constants.TAB.COMMUNITY.RESOURCES)" customClass="tabClass">
-                <ng-template tabHeading><app-tab-title icon="fa-solid fa-image" text="Resources"></app-tab-title></ng-template>
-                <!-- Community resources -->
-                <app-resource-management-tab [actions]="resourceActions" [deferredActivation]="resourceEmitter"></app-resource-management-tab>
-            </tab>
-        </tabset>
+                </ng-template>
+            </li>
+            <li [ngbNavItem]="Constants.TAB.COMMUNITY.RESOURCES">
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-image" text="Resources"></app-tab-title></button>
+                <ng-template ngbNavContent>
+                    <!-- Community resources -->
+                    <app-resource-management-tab [actions]="resourceActions" [deferredActivation]="resourceEmitter"></app-resource-management-tab>
+                </ng-template>
+            </li>
+        </ul>
+        <div [ngbNavOutlet]="tabs"></div>
     </div>
 </div>

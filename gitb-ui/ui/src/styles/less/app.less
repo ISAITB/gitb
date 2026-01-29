@@ -604,23 +604,6 @@ div.non-padded-alert div.alert {
     }
 }
 
-.nav-item.tabClass {
-	.nav-link {
-		color: var(--itb-tab-link-color) !important;
-	}
-	&:not(.active) {
-		.nav-link {
-			border-radius: @border-radius @border-radius 0 0;
-			border-top: 1px solid @gray-dark-1;
-			border-left: 1px solid @gray-dark-1;
-			border-right: 1px solid @gray-dark-1;
-			&:hover {
-				background-color: @gray-light-1;
-			}
-		}
-	}
-}
-
 .button-container {
 	display: flex;
 	&.card-header {
@@ -957,6 +940,7 @@ span.mini-tab, div.mini-tab {
         margin-bottom: 0 !important;
     }
 }
+// Bootstrap override styles - START
 .popover.result-message-popover {
     padding: 10px;
     max-width: 800px;
@@ -1037,3 +1021,4 @@ ngb-datepicker {
         font-weight: bold !important;
     }
 }
+// Bootstrap override styles - END

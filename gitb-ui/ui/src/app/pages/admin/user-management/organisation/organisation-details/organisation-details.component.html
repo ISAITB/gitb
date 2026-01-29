@@ -44,67 +44,74 @@
         </form>
     </div>
     <div>
-        <tabset #tabs>
-            <tab (selectTab)="showTab(Constants.TAB.ORGANISATION.SYSTEMS)" customClass="tabClass">
-                <ng-template tabHeading><app-tab-title icon="fa-solid fa-cube" [text]="dataService.labelSystems()"></app-tab-title></ng-template>
-                <div class="tabPanel">
-                    @if (showCreateSystem) {
-                        <div class="tabControls">
-                            <div class="btn-toolbar">
-                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createSystem()">Create {{dataService.labelSystemLower()}}</button>
-                            </div>
-                        </div>
-                    }
-                    <div class="card">
-                        <div table-directive
-                            [columns]="systemColumns"
-                            [data]="systems"
-                            [noDataMessage]="'No '+dataService.labelSystemsLower()+' found'"
-                            [loadingStatus]="systemsStatus"
-                            [allowSelect]="true"
-                            (onSelect)="systemSelect($event)">
-                        </div>
-                    </div>
-                </div>
-            </tab>
-            @if (showUsersTab) {
-                <tab (selectTab)="showTab(Constants.TAB.ORGANISATION.USERS)" customClass="tabClass">
-                    <ng-template tabHeading><app-tab-title icon="fa-solid fa-user" text="Users"></app-tab-title></ng-template>
+        <ul ngbNav #tabs="ngbNav" class="nav-tabs" [(activeId)]="tabIdToShow" (activeIdChange)="showTab()" [animation]="false">
+            <li [ngbNavItem]="Constants.TAB.ORGANISATION.SYSTEMS">
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-cube" [text]="dataService.labelSystems()"></app-tab-title></button>
+                <ng-template ngbNavContent>
                     <div class="tabPanel">
-                        @if (showCreateUser) {
+                        @if (showCreateSystem) {
                             <div class="tabControls">
                                 <div class="btn-toolbar">
-                                    <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createUser()">Create user</button>
+                                    <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createSystem()">Create {{dataService.labelSystemLower()}}</button>
                                 </div>
                             </div>
                         }
                         <div class="card">
                             <div table-directive
-                                [columns]="userColumns"
-                                [data]="users"
-                                [noDataMessage]="'No users found'"
-                                [loadingStatus]="usersStatus"
-                                [allowSelect]="showCreateUser"
-                                (onSelect)="userSelect($event)">
+                                 [columns]="systemColumns"
+                                 [data]="systems"
+                                 [noDataMessage]="'No '+dataService.labelSystemsLower()+' found'"
+                                 [loadingStatus]="systemsStatus"
+                                 [allowSelect]="true"
+                                 (onSelect)="systemSelect($event)">
                             </div>
                         </div>
                     </div>
-                </tab>
+                </ng-template>
+            </li>
+            @if (showUsersTab) {
+                <li [ngbNavItem]="Constants.TAB.ORGANISATION.USERS">
+                    <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-user" text="Users"></app-tab-title></button>
+                    <ng-template ngbNavContent>
+                        <div class="tabPanel">
+                            @if (showCreateUser) {
+                                <div class="tabControls">
+                                    <div class="btn-toolbar">
+                                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createUser()">Create user</button>
+                                    </div>
+                                </div>
+                            }
+                            <div class="card">
+                                <div table-directive
+                                     [columns]="userColumns"
+                                     [data]="users"
+                                     [noDataMessage]="'No users found'"
+                                     [loadingStatus]="usersStatus"
+                                     [allowSelect]="showCreateUser"
+                                     (onSelect)="userSelect($event)">
+                                </div>
+                            </div>
+                        </div>
+                    </ng-template>
+                </li>
             }
             @if (apiInfoVisible) {
-                <tab (selectTab)="showTab(Constants.TAB.ORGANISATION.API_KEYS)" customClass="tabClass">
-                    <ng-template tabHeading><app-tab-title icon="fa-solid fa-key" text="REST API keys"></app-tab-title></ng-template>
-                    <div class="tabPanel">
-                        <app-api-key-info
-                            [organisationId]="orgId"
-                            [organisationName]="organisation.fname"
-                            [adminOrganisation]="organisation.adminOrganization == true"
-                            [communityId]="communityId"
-                            [loadData]="loadApiInfo">
-                        </app-api-key-info>
-                    </div>
-                </tab>
+                <li [ngbNavItem]="Constants.TAB.ORGANISATION.API_KEYS">
+                    <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-key" text="REST API keys"></app-tab-title></button>
+                    <ng-template ngbNavContent>
+                        <div class="tabPanel">
+                            <app-api-key-info
+                                [organisationId]="orgId"
+                                [organisationName]="organisation.fname"
+                                [adminOrganisation]="organisation.adminOrganization == true"
+                                [communityId]="communityId"
+                                [loadData]="loadApiInfo">
+                            </app-api-key-info>
+                        </div>
+                    </ng-template>
+                </li>
             }
-        </tabset>
+        </ul>
+        <div [ngbNavOutlet]="tabs"></div>
     </div>
 </div>

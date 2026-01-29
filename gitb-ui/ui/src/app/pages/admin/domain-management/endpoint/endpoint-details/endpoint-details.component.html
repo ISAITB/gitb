@@ -19,16 +19,19 @@
 		</form>
 	</div>
 	<div>
-		<tabset #tabs>
-			<tab customClass="tabClass">
-                <ng-template tabHeading><app-tab-title icon="fa-solid fa-sliders" text="Parameters"></app-tab-title></ng-template>
-				<div class="tabPanel">
-					<app-endpoint-parameter-tab-content
-						[actorId]="actorId"
-						[endpointId]="endpointId"
-						[parametersLoaded]="parametersLoaded"></app-endpoint-parameter-tab-content>
-				</div>
-			</tab>
-		</tabset>
+        <ul ngbNav #tabs="ngbNav" class="nav-tabs" [(activeId)]="tabIdToShow" (activeIdChange)="showTab()" [animation]="false">
+            <li [ngbNavItem]="Constants.TAB.DOMAIN.SPECIFICATIONS">
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-sliders" text="Parameters"></app-tab-title></button>
+                <ng-template ngbNavContent>
+                    <div class="tabPanel">
+                        <app-endpoint-parameter-tab-content
+                            [actorId]="actorId"
+                            [endpointId]="endpointId"
+                            [parametersLoaded]="parametersLoaded"></app-endpoint-parameter-tab-content>
+                    </div>
+                </ng-template>
+            </li>
+        </ul>
+        <div [ngbNavOutlet]="tabs"></div>
 	</div>
 </div>

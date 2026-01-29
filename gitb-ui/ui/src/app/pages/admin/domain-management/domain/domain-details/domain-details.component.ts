@@ -415,7 +415,7 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
       })
       // Switch to the test services tab
       if (this.tabs) {
-        this.tabs.tabs[3].active = true
+        this.tabIdToShow = Constants.TAB.DOMAIN.TEST_SERVICES
       }
     } else {
       this.openParameterModal(domainParameter)

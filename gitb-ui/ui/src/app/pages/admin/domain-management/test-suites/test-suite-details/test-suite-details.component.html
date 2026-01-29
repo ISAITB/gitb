@@ -77,76 +77,81 @@
 		</form>
 	</div>
 	<div>
-		<tabset #tabs>
-			<tab (selectTab)="showTab(Constants.TAB.TEST_SUITE.TEST_CASES)" customClass="tabClass">
-                <ng-template tabHeading><app-tab-title icon="fa-solid fa-file-code" text="Test cases"></app-tab-title></ng-template>
-				<div class="tabPanel" [class.disable-events]="testCasesRefreshing">
-                    @if (dataStatus.status != Constants.STATUS.FINISHED) {
-                        <div class="message-div">
-                            <div class="pending-icon"><app-pending-block [pending]="true"></app-pending-block></div>
-                            <div class="pending-message">Loading test cases...</div>
-                        </div>
-                    } @else {
-                        <div class="tabControls">
-                            <div class="btn-toolbar">
-                                <app-text-filter name="testCaseFilter" [width]="250" [placeholder]="'Search test cases...'" [(ngModel)]="testCaseFilter" (apply)="applySearchFilter()"></app-text-filter>
-                            </div>
-                        </div>
-                        @if (testCasesToShow && testCasesToShow.length > 0) {
-                            <div class="testCaseDisplayContainer">
-                                <app-test-case-display #testCaseDisplayComponent
-                                    [testCases]="testCasesToShow"
-                                    [testCaseGroups]="testCaseGroupMap"
-                                    [hasOptional]="hasOptionalTestCases"
-                                    [hasDisabled]="hasDisabledTestCases"
-                                    [showExecute]="false"
-                                    [showExport]="false"
-                                    [showResults]="false"
-                                    [showViewDocumentation]="true"
-                                    [showEdit]="true"
-                                    [shaded]="false"
-                                    (edit)="onTestCaseSelect($event.id)"
-                                ></app-test-case-display>
+        <ul ngbNav #tabs="ngbNav" class="nav-tabs" [(activeId)]="tabIdToShow" (activeIdChange)="showTab()" [animation]="false">
+            <li [ngbNavItem]="Constants.TAB.TEST_SUITE.TEST_CASES">
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-file-code" text="Test cases"></app-tab-title></button>
+                <ng-template ngbNavContent>
+                    <div class="tabPanel" [class.disable-events]="testCasesRefreshing">
+                        @if (dataStatus.status != Constants.STATUS.FINISHED) {
+                            <div class="message-div">
+                                <div class="pending-icon"><app-pending-block [pending]="true"></app-pending-block></div>
+                                <div class="pending-message">Loading test cases...</div>
                             </div>
                         } @else {
-                            <div class="message-div">
-                                <span>No test cases found.</span>
+                            <div class="tabControls">
+                                <div class="btn-toolbar">
+                                    <app-text-filter name="testCaseFilter" [width]="250" [placeholder]="'Search test cases...'" [(ngModel)]="testCaseFilter" (apply)="applySearchFilter()"></app-text-filter>
+                                </div>
                             </div>
+                            @if (testCasesToShow && testCasesToShow.length > 0) {
+                                <div class="testCaseDisplayContainer">
+                                    <app-test-case-display #testCaseDisplayComponent
+                                                           [testCases]="testCasesToShow"
+                                                           [testCaseGroups]="testCaseGroupMap"
+                                                           [hasOptional]="hasOptionalTestCases"
+                                                           [hasDisabled]="hasDisabledTestCases"
+                                                           [showExecute]="false"
+                                                           [showExport]="false"
+                                                           [showResults]="false"
+                                                           [showViewDocumentation]="true"
+                                                           [showEdit]="true"
+                                                           [shaded]="false"
+                                                           (edit)="onTestCaseSelect($event.id)"
+                                    ></app-test-case-display>
+                                </div>
+                            } @else {
+                                <div class="message-div">
+                                    <span>No test cases found.</span>
+                                </div>
+                            }
                         }
-                    }
-                    <app-paging-controls #pagingControls [placement]="PagingPlacement.tab" (navigation)="testCasePageNavigation($event)"></app-paging-controls>
-				</div>
-			</tab>
-			@if (testSuite.shared) {
-				<tab (selectTab)="showTab(Constants.TAB.TEST_SUITE.SPECIFICATIONS)" customClass="tabClass">
-					<ng-template tabHeading><app-tab-title icon="fa-solid fa-list-check" text="Linked specifications"></app-tab-title></ng-template>
-					<div class="tabPanel">
-						<div class="tabControls">
-							<div class="btn-toolbar">
-								<button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="linkSpecifications()" [disable]="unlinkedSpecifications.length == 0 || selectingForUnlink" [pending]="linkPending">Link to specifications</button>
-								@if (!selectingForUnlink) {
-									<button type="button" [labelIcon]="Constants.BUTTON_ICON.REMOVE" class="btn btn-secondary" (click)="selectUnlinkSpecifications()" [disable]="linkedSpecifications.length == 0" [pending]="unlinkPending">Unlink from specifications...</button>
-								} @else {
-									<button type="button" [labelIcon]="Constants.BUTTON_ICON.CONFIRM" class="btn btn-secondary" (click)="confirmUnlinkSpecifications()" [disable]="!specificationsChecked()" [pending]="unlinkPending">Confirm</button>
-									<button type="button" [labelIcon]="Constants.BUTTON_ICON.CANCEL" class="btn btn-secondary" (click)="cancelUnlinkSpecifications()" [disable]="unlinkPending">Cancel</button>
-								}
-							</div>
-						</div>
-						<div class="card">
-							<div table-directive
-								[columns]="specificationTableColumns"
-								[data]="linkedSpecifications"
-								[noDataMessage]="'No '+dataService.labelSpecificationsLower()+' found being linked to this test suite'"
-								[loadingStatus]="specificationStatus"
-								[allowSelect]="!selectingForUnlink"
-								(onSelect)="onSpecificationSelect($event)"
-								[checkboxEnabled]="selectingForUnlink"
-								[clearSelection]="clearLinkedSpecificationsSelection">
-							</div>
-						</div>
-					</div>
-				</tab>
-			}
-		</tabset>
+                        <app-paging-controls #pagingControls [placement]="PagingPlacement.tab" (navigation)="testCasePageNavigation($event)"></app-paging-controls>
+                    </div>
+                </ng-template>
+            </li>
+            @if (testSuite.shared) {
+                <li [ngbNavItem]="Constants.TAB.TEST_SUITE.SPECIFICATIONS">
+                    <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-list-check" [text]="'Linked '+dataService.labelSpecificationsLower()"></app-tab-title></button>
+                    <ng-template ngbNavContent>
+                        <div class="tabPanel">
+                            <div class="tabControls">
+                                <div class="btn-toolbar">
+                                    <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="linkSpecifications()" [disable]="unlinkedSpecifications.length == 0 || selectingForUnlink" [pending]="linkPending">Link to {{dataService.labelSpecificationsLower()}}</button>
+                                    @if (!selectingForUnlink) {
+                                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.REMOVE" class="btn btn-secondary" (click)="selectUnlinkSpecifications()" [disable]="linkedSpecifications.length == 0" [pending]="unlinkPending">Unlink from {{dataService.labelSpecificationsLower()}}...</button>
+                                    } @else {
+                                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.CONFIRM" class="btn btn-secondary" (click)="confirmUnlinkSpecifications()" [disable]="!specificationsChecked()" [pending]="unlinkPending">Confirm</button>
+                                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.CANCEL" class="btn btn-secondary" (click)="cancelUnlinkSpecifications()" [disable]="unlinkPending">Cancel</button>
+                                    }
+                                </div>
+                            </div>
+                            <div class="card">
+                                <div table-directive
+                                     [columns]="specificationTableColumns"
+                                     [data]="linkedSpecifications"
+                                     [noDataMessage]="'No '+dataService.labelSpecificationsLower()+' found being linked to this test suite'"
+                                     [loadingStatus]="specificationStatus"
+                                     [allowSelect]="!selectingForUnlink"
+                                     (onSelect)="onSpecificationSelect($event)"
+                                     [checkboxEnabled]="selectingForUnlink"
+                                     [clearSelection]="clearLinkedSpecificationsSelection">
+                                </div>
+                            </div>
+                        </div>
+                    </ng-template>
+                </li>
+            }
+        </ul>
+        <div [ngbNavOutlet]="tabs"></div>
 	</div>
 </div>
