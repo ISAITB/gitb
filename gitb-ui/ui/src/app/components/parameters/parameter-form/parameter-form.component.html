@@ -1,6 +1,6 @@
 <div class="row">
     <label class="col-3 col-form-label text-end" for="parameterName">* {{nameLabel}}:</label>
-    <div class="col-7"><input id="parameterName" name="parameterName" [(ngModel)]="parameter.name" class="form-control" type="text" [invalid]="validation.get('name')"></div>
+    <div class="col-7"><input ngbAutofocus id="parameterName" name="parameterName" [(ngModel)]="parameter.name" class="form-control" type="text" [invalid]="validation.get('name')"></div>
     @if (hasKey) {
         <div app-tooltip class="col-auto" tbTooltip="This will be displayed as a label for the property in data collection forms."></div>
     } @else {

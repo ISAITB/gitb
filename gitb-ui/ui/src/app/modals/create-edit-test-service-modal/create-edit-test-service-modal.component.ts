@@ -13,10 +13,9 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, Input, OnInit, ViewChild} from '@angular/core';
 import {BaseComponent} from '../../pages/base-component.component';
 import {TestServiceWithParameter} from '../../types/test-service-with-parameter';
-import {BsModalRef} from 'ngx-bootstrap/modal';
 import {ConfirmationDialogService} from '../../services/confirmation-dialog.service';
 import {DomainParameterService} from '../../services/domain-parameter.service';
 import {PopupService} from '../../services/popup.service';
@@ -25,6 +24,7 @@ import {ValidationState} from '../../types/validation-state';
 import {Id} from '../../types/id';
 import {DataService} from '../../services/data.service';
 import {ServiceCallResultHandlerService} from '../../services/service-call-result-handler.service';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
   selector: 'app-create-edit-test-service-modal',
@@ -36,7 +36,6 @@ export class CreateEditTestServiceModalComponent extends BaseComponent implement
   @Input() testService!: Partial<TestServiceWithParameter>
   @Input() domainId!: number
   @Input() updateMatching = false
-  public servicesUpdated = new EventEmitter<boolean>()
 
   @ViewChild("nameField") nameField?: ElementRef;
   title!: string
@@ -58,7 +57,7 @@ export class CreateEditTestServiceModalComponent extends BaseComponent implement
   tokenAuthPasswordMask!: string
 
   constructor(
-    private readonly modalInstance: BsModalRef,
+    private readonly modalInstance: NgbActiveModal,
     private readonly confirmationDialogService: ConfirmationDialogService,
     private readonly domainParameterService: DomainParameterService,
     private readonly popupService: PopupService,
@@ -156,8 +155,7 @@ export class CreateEditTestServiceModalComponent extends BaseComponent implement
               this.doCreate(serviceData, true)
             })
         } else {
-          this.servicesUpdated.emit(true)
-          this.modalInstance.hide()
+          this.modalInstance.close()
           this.popupService.success('Test service registered.')
         }
       }).add(() => {
@@ -177,8 +175,7 @@ export class CreateEditTestServiceModalComponent extends BaseComponent implement
               this.doUpdate(serviceData, true)
             })
         } else {
-          this.servicesUpdated.emit(true)
-          this.modalInstance.hide()
+          this.modalInstance.close()
           this.popupService.success('Test service updated.')
         }
       }).add(() => {
@@ -234,8 +231,7 @@ export class CreateEditTestServiceModalComponent extends BaseComponent implement
         this.deletePending = true
         this.domainParameterService.deleteTestService(this.domainId, this.testService.service?.id!)
           .subscribe(() => {
-            this.servicesUpdated.emit(true)
-            this.modalInstance.hide()
+            this.modalInstance.close()
             this.popupService.success('Test service deleted.')
           }).add(() => {
           this.pending = false
@@ -245,8 +241,7 @@ export class CreateEditTestServiceModalComponent extends BaseComponent implement
   }
 
   cancel() {
-    this.servicesUpdated.emit(false)
-    this.modalInstance.hide()
+    this.modalInstance.dismiss()
   }
 
   private isMatchingParameterId(obj: Id|any): obj is Id {

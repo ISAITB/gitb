@@ -13,19 +13,19 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, ElementRef, ViewChild } from '@angular/core';
-import { BaseReportSettingsFormComponent } from '../base-report-settings-form.component';
-import { ReportService } from 'src/app/services/report.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { BsModalService } from 'ngx-bootstrap/modal';
-import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
-import { Observable, map, of, share } from 'rxjs';
-import { CodeEditorModalComponent } from 'src/app/components/code-editor-modal/code-editor-modal.component';
-import { ConformanceService } from 'src/app/services/conformance.service';
-import { PreviewOption } from './preview-option';
-import { PreviewConfig } from './preview-config';
-import { ErrorService } from 'src/app/services/error.service';
+import {Component, ElementRef, ViewChild} from '@angular/core';
+import {BaseReportSettingsFormComponent} from '../base-report-settings-form.component';
+import {ReportService} from 'src/app/services/report.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
+import {map, Observable, of, share} from 'rxjs';
+import {CodeEditorModalComponent} from 'src/app/components/code-editor-modal/code-editor-modal.component';
+import {ConformanceService} from 'src/app/services/conformance.service';
+import {PreviewOption} from './preview-option';
+import {PreviewConfig} from './preview-config';
+import {ErrorService} from 'src/app/services/error.service';
 import {Constants} from '../../../../../common/constants';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     template: '',
@@ -40,7 +40,6 @@ export abstract class CommunityXmlReportFormComponent extends BaseReportSettings
   idValueSign!: string
   idValueStylesheet!: string
   idValueCustomPdf!: string
-  idValueCustomPdfSignature!: string
   idValueCustomPdfWithCustomXml!: string
 
   useStylesheet = false
@@ -53,7 +52,7 @@ export abstract class CommunityXmlReportFormComponent extends BaseReportSettings
     conformanceService: ConformanceService,
     reportService: ReportService,
     private readonly popupService: PopupService,
-    modalService: BsModalService,
+    modalService: NgbModal,
     private readonly confirmationDialogService: ConfirmationDialogService,
     errorService: ErrorService
   ) { super(conformanceService, modalService, reportService, errorService) }
@@ -129,24 +128,21 @@ export abstract class CommunityXmlReportFormComponent extends BaseReportSettings
       this.previewPending = true
       this.reportService.exportDemoReportXml(this.communityId, this.config.reportType, this.useStylesheet, this.uploadedStylesheet, option.data)
       .subscribe((data) => {
-        this.modalService.show(CodeEditorModalComponent, {
-          class: 'modal-lg',
-          initialState: {
-            documentName: this.config.previewTitleXml,
-            editorOptions: {
-              value: data,
-              readOnly: true,
-              lineNumbers: true,
-              smartIndent: false,
-              electricChars: false,
-              mode: 'application/xml',
-              download: {
-                fileName: this.config.previewFileNameXml,
-                mimeType: 'application/xml'
-              }
-            }
+        const modal = this.modalService.open(CodeEditorModalComponent, { size: 'lg' })
+        const modalInstance = modal.componentInstance as CodeEditorModalComponent
+        modalInstance.documentName = this.config.previewTitleXml
+        modalInstance.editorOptions = {
+          value: data,
+          readOnly: true,
+          lineNumbers: true,
+          smartIndent: false,
+          electricChars: false,
+          mode: 'application/xml',
+          download: {
+            fileName: this.config.previewFileNameXml,
+            mimeType: 'application/xml'
           }
-        })
+        }
       }).add(() => {
         this.previewPending = false
       })

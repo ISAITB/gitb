@@ -15,13 +15,13 @@
 
 import {Component, EventEmitter, Input, OnInit} from '@angular/core';
 import * as CodeMirror from 'codemirror';
-import {BsModalRef} from 'ngx-bootstrap/modal';
 import {DataService} from 'src/app/services/data.service';
 import {PopupService} from 'src/app/services/popup.service';
 import {BaseCodeEditorModalComponent} from '../base-code-editor-modal/base-code-editor-modal.component';
 import {LineInfo} from './line-info';
 import {LogLevel} from '../../types/log-level';
 import {Constants} from '../../common/constants';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-session-log-modal',
@@ -41,20 +41,10 @@ export class SessionLogModalComponent extends BaseCodeEditorModalComponent imple
   content = ''
   contentLines: LineInfo[] = []
   tail = true
-
   LogLevel = LogLevel
-  levelFilterLabelDebug = 'All messages'
-  levelFilterLabelInfo = 'At least info messages'
-  levelFilterLabelWarn = 'At least warnings'
-  levelFilterLabelError = 'Errors'
-  levelFilterLabel = this.levelFilterLabelDebug
-
-  tailLabelYes = 'Scroll to latest'
-  tailLabelNo = 'Do not scroll to latest'
-  tailLabel = this.tailLabelNo
 
   constructor(
-    modalRef: BsModalRef,
+    modalRef: NgbActiveModal,
     dataService: DataService,
     popupService: PopupService
   ) { super(modalRef, dataService, popupService) }

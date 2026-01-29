@@ -13,8 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {BsModalRef} from 'ngx-bootstrap/modal';
+import {Component, Input, OnInit} from '@angular/core';
 import {BaseComponent} from 'src/app/pages/base-component.component';
 import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
 import {PopupService} from 'src/app/services/popup.service';
@@ -23,6 +22,7 @@ import {FileData} from 'src/app/types/file-data.type';
 import {saveAs} from 'file-saver';
 import {ResourceActions} from '../../components/resource-management-tab/resource-actions';
 import {Constants} from '../../common/constants';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-create-edit-community-resource-modal',
@@ -34,7 +34,6 @@ export class CreateEditCommunityResourceModalComponent extends BaseComponent imp
 
   @Input() resource?: CommunityResource
   @Input() actions!: ResourceActions
-  @Output() resourceUpdated = new EventEmitter<boolean>()
 
   resourceToUse!: Partial<CommunityResource>
   title!: string
@@ -44,7 +43,7 @@ export class CreateEditCommunityResourceModalComponent extends BaseComponent imp
   file?: FileData
 
   constructor(
-    private readonly modalInstance: BsModalRef,
+    private readonly modalInstance: NgbActiveModal,
     private readonly popupService: PopupService,
     private readonly confirmationDialogService: ConfirmationDialogService
   ) {
@@ -81,8 +80,7 @@ export class CreateEditCommunityResourceModalComponent extends BaseComponent imp
         // Create.
         this.actions.createResource(this.resourceToUse.name!, this.resourceToUse.description, this.file!)
         .subscribe(() => {
-          this.resourceUpdated.emit(true)
-          this.modalInstance.hide()
+          this.modalInstance.close(true)
           this.popupService.success("Resource added.")
         }).add(() => {
           this.savePending = false
@@ -91,8 +89,7 @@ export class CreateEditCommunityResourceModalComponent extends BaseComponent imp
         // Update.
         this.actions.updateResource(this.resourceToUse.id!, this.resourceToUse.name!, this.resourceToUse.description, this.file)
         .subscribe(() => {
-          this.resourceUpdated.emit(true)
-          this.modalInstance.hide()
+          this.modalInstance.close(true)
           this.popupService.success("Resource updated.")
         }).add(() => {
           this.savePending = false
@@ -123,8 +120,7 @@ export class CreateEditCommunityResourceModalComponent extends BaseComponent imp
       this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this resource?", "Delete", "Cancel", Constants.BUTTON_ICON.DELETE).subscribe(() => {
         this.deletePending = true
         this.actions.deleteResource(this.resourceToUse.id!).subscribe(() => {
-          this.resourceUpdated.emit(true)
-          this.modalInstance.hide()
+          this.modalInstance.close(true)
           this.popupService.success("Resource deleted.")
         }).add(() => {
           this.deletePending = false
@@ -134,7 +130,7 @@ export class CreateEditCommunityResourceModalComponent extends BaseComponent imp
   }
 
   cancel() {
-    this.modalInstance.hide()
+    this.modalInstance.dismiss()
   }
 
   protected readonly Constants = Constants;

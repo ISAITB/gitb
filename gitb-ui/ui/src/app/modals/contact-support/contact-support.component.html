@@ -6,7 +6,7 @@
         <div class="row mb-3">
             <label class="col-3 col-form-label text-end">* Contact email:</label>
             <div class="col-7">
-                <input id="contact" name="contact" [(ngModel)]="contactAddress" class="form-control" type="text" [invalid]="validation.get('email')">
+                <input ngbAutofocus id="contact" name="contact" [(ngModel)]="contactAddress" class="form-control" type="text" [invalid]="validation.get('email')">
             </div>
             <div app-tooltip class="col-auto" tbTooltip="Specify the email at which you would like to receive feedback regarding your request."></div>
         </div>

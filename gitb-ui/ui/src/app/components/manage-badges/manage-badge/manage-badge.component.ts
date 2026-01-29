@@ -13,14 +13,14 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input, OnInit } from '@angular/core';
-import { BadgeInfo } from '../badge-info';
-import { FileData } from 'src/app/types/file-data.type';
-import { Constants } from 'src/app/common/constants';
-import { BsModalService } from 'ngx-bootstrap/modal';
-import { PreviewBadgeModalComponent } from 'src/app/modals/preview-badge-modal/preview-badge-modal.component';
-import { PreviewByFile } from 'src/app/modals/preview-badge-modal/preview-by-file';
-import { PreviewForStatus } from 'src/app/modals/preview-badge-modal/preview-for-status';
+import {Component, Input, OnInit} from '@angular/core';
+import {BadgeInfo} from '../badge-info';
+import {FileData} from 'src/app/types/file-data.type';
+import {Constants} from 'src/app/common/constants';
+import {PreviewBadgeModalComponent} from 'src/app/modals/preview-badge-modal/preview-badge-modal.component';
+import {PreviewByFile} from 'src/app/modals/preview-badge-modal/preview-by-file';
+import {PreviewForStatus} from 'src/app/modals/preview-badge-modal/preview-for-status';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-manage-badge',
@@ -36,11 +36,10 @@ export class ManageBadgeComponent implements OnInit {
   @Input() forReport? = false
 
   acceptedFileTypes: string[] = ['image/png', 'image/jpeg', 'image/gif', 'image/svg+xml' ]
-  pathForBadge?: string
   Constants = Constants
 
   constructor(
-    private readonly modalService: BsModalService
+    private readonly modalService: NgbModal
   ) { }
 
   ngOnInit(): void {
@@ -62,12 +61,10 @@ export class ManageBadgeComponent implements OnInit {
         status: this.badgeType
       }
     }
-    this.modalService.show(PreviewBadgeModalComponent, {
-      initialState: {
-        config: config,
-        forReport: this.forReport
-      }
-    })
+    const modal = this.modalService.open(PreviewBadgeModalComponent, { size: "m" })
+    const modalInstance = modal.componentInstance as PreviewBadgeModalComponent
+    modalInstance.config = config
+    modalInstance.forReport = this.forReport
   }
 
   removeBadge() {

@@ -13,13 +13,13 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter } from '@angular/core';
-import { BsModalRef } from 'ngx-bootstrap/modal';
-import { Constants } from 'src/app/common/constants';
-import { BaseComponent } from 'src/app/pages/base-component.component';
-import { AuthService } from 'src/app/services/auth.service';
-import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
-import { DataService } from 'src/app/services/data.service';
+import {Component} from '@angular/core';
+import {Constants} from 'src/app/common/constants';
+import {BaseComponent} from 'src/app/pages/base-component.component';
+import {AuthService} from 'src/app/services/auth.service';
+import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
+import {DataService} from 'src/app/services/data.service';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-disconnect-role',
@@ -30,13 +30,12 @@ export class DisconnectRoleComponent extends BaseComponent {
 
   disconnectPending = false
   choice = Constants.DISCONNECT_ROLE_OPTION.CURRENT_PARTIAL
-  public result = new EventEmitter<number|undefined>()
 
   constructor(
     public readonly dataService: DataService,
     private readonly confirmationDialogService: ConfirmationDialogService,
     private readonly authService: AuthService,
-    public readonly modalRef: BsModalRef
+    public readonly modalRef: NgbActiveModal
   ) { super() }
 
   disconnect() {
@@ -54,8 +53,7 @@ export class DisconnectRoleComponent extends BaseComponent {
     .subscribe(() => {
       this.disconnectPending = true
       this.authService.disconnectFunctionalAccount(this.choice).subscribe(() => {
-        this.modalRef.hide()
-        this.result.emit(this.choice)
+        this.modalRef.close(this.choice)
       }).add(() => {
         this.disconnectPending = false
       })
@@ -63,8 +61,7 @@ export class DisconnectRoleComponent extends BaseComponent {
   }
 
   cancel() {
-    this.modalRef.hide()
-    this.result.emit()
+    this.modalRef.dismiss()
   }
 
 }

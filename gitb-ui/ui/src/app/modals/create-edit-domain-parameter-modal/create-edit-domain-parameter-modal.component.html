@@ -5,7 +5,7 @@
     <div class="modal-body" appFileDropTarget>
         <div class="row mb-3">
             <label class="col-3 col-form-label text-end" for="name">* Name:</label>
-            <div class="col-7"><input id="name" name="name" [(ngModel)]="domainParameter.name" class="form-control" type="text" [invalid]="validation.get('name')"></div>
+            <div class="col-7"><input ngbAutofocus id="name" name="name" [(ngModel)]="domainParameter.name" class="form-control" type="text" [invalid]="validation.get('name')"></div>
             <div app-tooltip class="col-auto" tbTooltip="An identifier for the parameter used to refer to it from within test cases."></div>
         </div>
         <div class="row mb-3">

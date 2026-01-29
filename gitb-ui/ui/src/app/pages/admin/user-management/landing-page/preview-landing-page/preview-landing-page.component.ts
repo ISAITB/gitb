@@ -13,29 +13,25 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input, OnInit } from '@angular/core';
-import { BsModalRef } from 'ngx-bootstrap/modal';
+import {Component, Input} from '@angular/core';
 import {Constants} from '../../../../../common/constants';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-preview-landing-page',
     templateUrl: './preview-landing-page.component.html',
     standalone: false
 })
-export class PreviewLandingPageComponent implements OnInit {
+export class PreviewLandingPageComponent {
 
   @Input() previewContent!: string
 
   constructor(
-    private readonly modalRef: BsModalRef
+    private readonly modalRef: NgbActiveModal
   ) { }
 
-  ngOnInit(): void {
-    this.modalRef.setClass('landingPagePreview')
-  }
-
   closePreview() {
-    this.modalRef.hide()
+    this.modalRef.dismiss()
   }
 
   protected readonly Constants = Constants;

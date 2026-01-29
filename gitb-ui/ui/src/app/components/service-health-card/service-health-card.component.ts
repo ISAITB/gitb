@@ -18,8 +18,8 @@ import {HealthCardInfo} from '../../types/health-card-info';
 import {HealthStatus} from '../../types/health-status';
 import {ServiceHealthCardComponentApi} from './service-health-card-component-api';
 import {map, Subject} from 'rxjs';
-import {BsModalService} from 'ngx-bootstrap/modal';
 import {ServiceHealthModalComponent} from '../../modals/service-health-modal/service-health-modal.component';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
   selector: 'app-service-health-card',
@@ -34,18 +34,16 @@ export class ServiceHealthCardComponent implements ServiceHealthCardComponentApi
 
   hovering = false
 
-  constructor(private readonly modalService: BsModalService) {
+  constructor(private readonly modalService: NgbModal) {
   }
 
   showDetails() {
     if (this.info.info != undefined) {
-      const modal = this.modalService.show(ServiceHealthModalComponent, {
-        class: 'modal-lg',
-        initialState: {
-          serviceInfo: this.info
-        }
-      })
-      modal.content?.updated.subscribe(() => {
+      const modal = this.modalService.open(ServiceHealthModalComponent, { size: 'lg' });
+      const modalInstance = modal.componentInstance as ServiceHealthModalComponent;
+      modalInstance.serviceInfo = this.info
+      modalInstance.updated = new EventEmitter<void>();
+      modalInstance.updated.subscribe(() => {
         this.updated.emit()
       })
     }

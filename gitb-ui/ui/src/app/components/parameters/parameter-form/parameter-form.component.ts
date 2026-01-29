@@ -13,13 +13,13 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { CdkDragDrop } from '@angular/cdk/drag-drop';
-import { AfterViewInit, Component, Input, OnInit } from '@angular/core';
-import { Constants } from 'src/app/common/constants';
-import { DataService } from 'src/app/services/data.service';
-import { Parameter } from 'src/app/types/parameter';
-import { ParameterReference } from 'src/app/types/parameter-reference';
-import { ValidationState } from 'src/app/types/validation-state';
+import {CdkDragDrop} from '@angular/cdk/drag-drop';
+import {Component, Input, OnInit} from '@angular/core';
+import {Constants} from 'src/app/common/constants';
+import {DataService} from 'src/app/services/data.service';
+import {Parameter} from 'src/app/types/parameter';
+import {ParameterReference} from 'src/app/types/parameter-reference';
+import {ValidationState} from 'src/app/types/validation-state';
 
 @Component({
     selector: 'app-parameter-form',
@@ -27,7 +27,7 @@ import { ValidationState } from 'src/app/types/validation-state';
     styles: [],
     standalone: false
 })
-export class ParameterFormComponent implements OnInit, AfterViewInit {
+export class ParameterFormComponent implements OnInit {
 
   @Input() nameLabel!: string
   @Input() parameter!: Partial<Parameter>
@@ -46,10 +46,6 @@ export class ParameterFormComponent implements OnInit, AfterViewInit {
   constructor(
     public readonly dataService: DataService
   ) { }
-
-  ngAfterViewInit(): void {
-    this.dataService.focus('parameterName')
-  }
 
   ngOnInit(): void {
 		for (let v of this.existingValues) {

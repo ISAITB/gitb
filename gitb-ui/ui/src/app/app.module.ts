@@ -25,8 +25,6 @@ import {AppComponent} from './app.component';
 import {LoginComponent} from './pages/login/login.component';
 import {IndexComponent} from './pages/index/index.component';
 import {HtmlComponent} from './modals/html/html.component';
-import {ModalModule} from 'ngx-bootstrap/modal';
-import {BsDatepickerModule} from 'ngx-bootstrap/datepicker';
 import {ConfirmationComponent} from './modals/confirmation/confirmation.component';
 import {FormsModule} from '@angular/forms';
 import {TooltipComponent} from './components/tooltip/tooltip.component';
@@ -149,7 +147,6 @@ import {TestExecutionComponent} from './pages/test-execution/test-execution.comp
 import {ParameterDisplayComponent} from './components/parameter-display/parameter-display.component';
 import {ProvideInputModalComponent} from './modals/provide-input-modal/provide-input-modal.component';
 import {SecretInputComponent} from './components/secret-input/secret-input.component';
-import {TabsModule} from 'ngx-bootstrap/tabs';
 import {TextFilterComponent} from './components/text-filter/text-filter.component';
 import {CopyEnabledTextComponent} from './components/copy-enabled-text/copy-enabled-text.component';
 import {SanitizeHtmlPipe} from './pipes/sanitize-html.pipe';
@@ -293,7 +290,9 @@ import {
   NgbAlertModule,
   NgbCollapseModule,
   NgbDatepickerModule,
-  NgbDropdownModule, NgbNavModule,
+  NgbDropdownModule,
+  NgbModalModule,
+  NgbNavModule,
   NgbPopoverModule,
   NgbTooltipModule
 } from '@ng-bootstrap/ng-bootstrap';
@@ -513,15 +512,15 @@ import {DateRangeComponent} from './components/date-range/date-range.component';
         FormsModule,
         AppRoutingModule,
         DragDropModule,
-        ModalModule.forRoot(),
+        NgbModalModule,
         NgbAlertModule,
         NgbCollapseModule,
         NgbDatepickerModule,
         NgbTooltipModule,
         NgbDropdownModule,
         NgbPopoverModule,
-        CodemirrorModule,
         NgbNavModule,
+        CodemirrorModule,
         MarkdownModule.forRoot(),
         SubmitOnControlEnterDirective
     ], providers: [

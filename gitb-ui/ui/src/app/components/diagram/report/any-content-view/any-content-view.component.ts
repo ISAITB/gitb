@@ -13,19 +13,19 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input, OnInit } from '@angular/core';
-import { BsModalService } from 'ngx-bootstrap/modal';
-import { Constants } from 'src/app/common/constants';
-import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
-import { DataService } from 'src/app/services/data.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { ReportService } from 'src/app/services/report.service';
-import { TestService } from 'src/app/services/test.service';
-import { AnyContent } from '../../any-content';
-import { ReportSupport } from '../report-support';
-import { StepReport } from '../step-report';
-import { saveAs } from 'file-saver'
-import { HtmlService } from 'src/app/services/html.service';
+import {Component, Input, OnInit} from '@angular/core';
+import {Constants} from 'src/app/common/constants';
+import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
+import {DataService} from 'src/app/services/data.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {ReportService} from 'src/app/services/report.service';
+import {TestService} from 'src/app/services/test.service';
+import {AnyContent} from '../../any-content';
+import {ReportSupport} from '../report-support';
+import {StepReport} from '../step-report';
+import {saveAs} from 'file-saver';
+import {HtmlService} from 'src/app/services/html.service';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-any-content-view',
@@ -67,7 +67,7 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
     private readonly testService: TestService,
     reportService: ReportService,
     dataService: DataService,
-    modalService: BsModalService,
+    modalService: NgbModal,
     private readonly popupService: PopupService,
     private readonly confirmationDialogService: ConfirmationDialogService,
     htmlService: HtmlService

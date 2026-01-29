@@ -14,12 +14,12 @@
  */
 
 import {Component, Input} from '@angular/core';
-import {BsModalRef} from 'ngx-bootstrap/modal';
 import {Constants} from '../../common/constants';
 import {RoutingService} from '../../services/routing.service';
 import {finalize, mergeMap, Observable, of} from 'rxjs';
 import {PopupService} from '../../services/popup.service';
 import {UsageTipService} from '../../services/usage-tip.service';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
   selector: 'app-usage-tip-modal',
@@ -38,7 +38,7 @@ export class UsageTipModalComponent {
   protected readonly Constants = Constants;
 
   constructor(
-    private readonly modal: BsModalRef,
+    private readonly modal: NgbActiveModal,
     private readonly routingService: RoutingService,
     private readonly popupService: PopupService,
     private readonly usageTipService: UsageTipService
@@ -55,7 +55,7 @@ export class UsageTipModalComponent {
       }
       close$ = close$.pipe(
         mergeMap(() => {
-          this.modal.hide()
+          this.modal.dismiss()
           if (this.disableUsageTips) {
             this.popupService.success("Usage tips disabled.")
           }
@@ -66,7 +66,7 @@ export class UsageTipModalComponent {
         })
       )
     } else {
-      this.modal.hide()
+      this.modal.dismiss()
       close$ = of(true)
     }
     return close$

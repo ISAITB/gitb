@@ -13,9 +13,9 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, OnInit } from '@angular/core';
-import { BsModalRef } from 'ngx-bootstrap/modal'
+import {Component} from '@angular/core';
 import {Constants} from '../../common/constants';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-html',
@@ -23,24 +23,17 @@ import {Constants} from '../../common/constants';
     styles: [],
     standalone: false
 })
-export class HtmlComponent implements OnInit {
+export class HtmlComponent {
 
   headerText?: string
   html: string = ''
-  customClass?: string
 
   constructor(
-    public readonly modalRef: BsModalRef
+    public readonly modalRef: NgbActiveModal
   ) { }
 
-  ngOnInit(): void {
-    if (this.customClass) {
-      this.modalRef.setClass(this.customClass)
-    }
-  }
-
   close() {
-    this.modalRef.hide()
+    this.modalRef.dismiss()
   }
 
   protected readonly Constants = Constants;

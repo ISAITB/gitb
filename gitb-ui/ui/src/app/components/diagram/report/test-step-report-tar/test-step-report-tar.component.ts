@@ -13,16 +13,16 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input, OnInit } from '@angular/core';
-import { BsModalService } from 'ngx-bootstrap/modal';
-import { Constants } from 'src/app/common/constants';
-import { ReportService } from 'src/app/services/report.service';
-import { AnyContent } from '../../any-content';
-import { AssertionReport } from '../../assertion-report';
-import { ReportSupport } from '../report-support';
-import { StepReport } from '../step-report';
-import { HtmlService } from 'src/app/services/html.service';
-import { DataService } from 'src/app/services/data.service';
+import {Component, Input, OnInit} from '@angular/core';
+import {Constants} from 'src/app/common/constants';
+import {ReportService} from 'src/app/services/report.service';
+import {AnyContent} from '../../any-content';
+import {AssertionReport} from '../../assertion-report';
+import {ReportSupport} from '../report-support';
+import {StepReport} from '../step-report';
+import {HtmlService} from 'src/app/services/html.service';
+import {DataService} from 'src/app/services/data.service';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: '[app-test-step-report-tar]',
@@ -38,7 +38,7 @@ export class TestStepReportTARComponent extends ReportSupport implements OnInit 
   hasReportItems = false
 
   constructor(
-    modalService: BsModalService,
+    modalService: NgbModal,
     reportService: ReportService,
     htmlService: HtmlService,
     dataService: DataService

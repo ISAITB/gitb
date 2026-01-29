@@ -20,7 +20,6 @@ import {HtmlService} from '../../services/html.service';
 import {LegalNoticeService} from '../../services/legal-notice.service';
 import {Observable, Subscription} from 'rxjs';
 import {AuthProviderService} from '../../services/auth-provider.service';
-import {BsModalService} from 'ngx-bootstrap/modal';
 import {ContactSupportComponent} from 'src/app/modals/contact-support/contact-support.component';
 import {RoutingService} from 'src/app/services/routing.service';
 import {MenuItem} from 'src/app/types/menu-item.enum';
@@ -28,6 +27,7 @@ import {PopupService} from 'src/app/services/popup.service';
 import {HealthCheckService} from '../../services/health-check.service';
 import {HealthStatus} from '../../types/health-status';
 import {MenuItemStatus} from '../../types/menu-item-status.enum';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-index',
@@ -55,7 +55,7 @@ export class IndexComponent implements OnInit, OnDestroy {
     private readonly htmlService: HtmlService,
     private readonly legalNoticeService: LegalNoticeService,
     private readonly authProviderService: AuthProviderService,
-    private readonly modalService: BsModalService,
+    private readonly modalService: NgbModal,
     public readonly routingService: RoutingService,
     private readonly popupService: PopupService,
     private readonly healthCheckService: HealthCheckService
@@ -148,9 +148,7 @@ export class IndexComponent implements OnInit, OnDestroy {
   }
 
   contactUs() {
-    this.modalService.show(ContactSupportComponent, {
-      class: 'modal-lg'
-    })
+    this.modalService.open(ContactSupportComponent, { size: 'lg' })
   }
 
   showProvideFeedback(): boolean {

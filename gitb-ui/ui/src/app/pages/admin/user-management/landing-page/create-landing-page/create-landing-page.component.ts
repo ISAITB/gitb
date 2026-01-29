@@ -23,9 +23,9 @@ import {PopupService} from 'src/app/services/popup.service';
 import {RoutingService} from 'src/app/services/routing.service';
 import {LandingPage} from 'src/app/types/landing-page';
 import {Constants} from 'src/app/common/constants';
-import {BsModalService} from 'ngx-bootstrap/modal';
 import {PreviewLandingPageComponent} from '../preview-landing-page/preview-landing-page.component';
 import {ValidationState} from 'src/app/types/validation-state';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-create-landing-page',
@@ -51,7 +51,7 @@ export class CreateLandingPageComponent extends BaseComponent implements OnInit,
     private readonly confirmationDialogService: ConfirmationDialogService,
     private readonly popupService: PopupService,
     public readonly dataService: DataService,
-    private readonly modalService: BsModalService
+    private readonly modalService: NgbModal
   ) { super() }
 
   ngAfterViewInit(): void {
@@ -125,11 +125,9 @@ export class CreateLandingPageComponent extends BaseComponent implements OnInit,
   }
 
   preview() {
-    this.modalService.show(PreviewLandingPageComponent, {
-      initialState: {
-        previewContent: this.page.content!
-      }
-    })
+    const modal = this.modalService.open(PreviewLandingPageComponent, { modalDialogClass: 'landingPagePreview' })
+    const modalInstance = modal.componentInstance as PreviewLandingPageComponent
+    modalInstance.previewContent = this.page.content!
   }
 
 }

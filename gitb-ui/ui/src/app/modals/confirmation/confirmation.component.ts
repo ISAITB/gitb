@@ -13,9 +13,9 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, OnInit} from '@angular/core';
-import {BsModalRef} from 'ngx-bootstrap/modal';
+import {Component, Input, OnInit} from '@angular/core';
 import {Constants} from '../../common/constants';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-confirmation',
@@ -25,19 +25,17 @@ import {Constants} from '../../common/constants';
 })
 export class ConfirmationComponent implements OnInit {
 
-  public result = new EventEmitter<boolean>()
+  @Input() headerText = ''
+  @Input() bodyText = ''
+  @Input() actionButtonText = ''
+  @Input() actionButtonIcon?: string
+  @Input() closeButtonText = ''
+  @Input() closeButtonIcon?: string
+  @Input() sameStyles? = true
+  @Input() oneButton = false
+  @Input() actionClass = 'btn btn-secondary'
 
-  headerText = ''
-  bodyText = ''
-  actionButtonText = ''
-  actionButtonIcon?: string
-  closeButtonText = ''
-  closeButtonIcon?: string
-  sameStyles = true
-  oneButton = false
-  actionClass = 'btn btn-secondary'
-
-  constructor(public readonly modalRef: BsModalRef) { }
+  constructor(public readonly modalRef: NgbActiveModal) { }
 
   ngOnInit(): void {
     if (this.actionButtonIcon == undefined) {
@@ -49,13 +47,11 @@ export class ConfirmationComponent implements OnInit {
   }
 
   ok() {
-    this.result.emit(true)
-    this.modalRef.hide()
+    this.modalRef.close(true)
   }
 
   cancel() {
-    this.result.emit(false)
-    this.modalRef.hide()
+    this.modalRef.close(false)
   }
 
   cancelClass(): string {

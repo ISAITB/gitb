@@ -39,7 +39,6 @@ import {forkJoin, map, mergeMap, Observable, of, share, tap} from 'rxjs';
 import {Theme} from 'src/app/types/theme';
 import {EmailSettings} from 'src/app/types/email-settings';
 import {CodeEditorModalComponent} from 'src/app/components/code-editor-modal/code-editor-modal.component';
-import {BsModalService} from 'ngx-bootstrap/modal';
 import {SystemConfiguration} from 'src/app/types/system-configuration';
 import {ResourceActions} from '../../../components/resource-management-tab/resource-actions';
 import {FileData} from '../../../types/file-data.type';
@@ -53,6 +52,7 @@ import {BaseTabbedComponent} from '../../base-tabbed-component';
 import {SoftwareVersionCheckSettings} from '../../../types/software-version-check-settings';
 import {ValidationState} from '../../../types/validation-state';
 import {UsageTipsConfiguration} from '../../../types/usage-tips-configuration';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-system-administration',
@@ -209,7 +209,7 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
     private readonly communityResourceService: CommunityResourceService,
     private readonly organisationService: OrganisationService,
     private readonly confirmationDialogService: ConfirmationDialogService,
-    private readonly modalService: BsModalService
+    private readonly modalService: NgbModal
   ) {
     super(router, route)
   }
@@ -1100,22 +1100,19 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
           this.popupService.success("Test email sent successfully.")
         } else {
           let content = this.dataService.errorArrayToString(result.messages)
-          this.modalService.show(CodeEditorModalComponent, {
-            class: 'modal-lg',
-            initialState: {
-              documentName: 'Error message(s)',
-              editorOptions: {
-                value: content,
-                readOnly: true,
-                copy: true,
-                lineNumbers: false,
-                smartIndent: false,
-                electricChars: false,
-                styleClass: 'editor-short',
-                mode: 'text/plain'
-              }
-            }
-          })
+          const modal = this.modalService.open(CodeEditorModalComponent, { size: 'lg' })
+          const modalInstance = modal.componentInstance as CodeEditorModalComponent
+          modalInstance.documentName = 'Error message(s)'
+          modalInstance.editorOptions = {
+            value: content,
+            readOnly: true,
+            copy: true,
+            lineNumbers: false,
+            smartIndent: false,
+            electricChars: false,
+            styleClass: 'editor-short',
+            mode: 'text/plain'
+          }
         }
       }).add(() => {
         this.emailTestPending = false

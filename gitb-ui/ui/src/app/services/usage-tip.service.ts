@@ -16,10 +16,10 @@
 import {Injectable} from '@angular/core';
 import {DataService} from './data.service';
 import {UsageTipModalComponent} from '../modals/usage-tip-modal/usage-tip-modal.component';
-import {BsModalService} from 'ngx-bootstrap/modal';
 import {UsageTipsConfiguration} from '../types/usage-tips-configuration';
 import {Constants} from '../common/constants';
 import {SystemConfigurationService} from './system-configuration.service';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Injectable({
   providedIn: 'root'
@@ -28,19 +28,15 @@ export class UsageTipService {
 
   constructor(
     private readonly dataService: DataService,
-    private readonly modalService: BsModalService,
+    private readonly modalService: NgbModal,
     private readonly systemConfigurationService: SystemConfigurationService
   ) {}
 
   showUsageTip(tip: number) {
     if (this.dataService.configuration.usageTipsEnabled && !this.dataService.configuration.usageTipsDisabledForScreens.includes(tip)) {
-      this.modalService.show(UsageTipModalComponent, {
-        class: 'modal-lg',
-        initialState: {
-          tip: tip
-        },
-        backdrop: 'static'
-      })
+      const modal = this.modalService.open(UsageTipModalComponent, { size: 'lg', backdrop: 'static' });
+      const modalInstance = modal.componentInstance as UsageTipModalComponent
+      modalInstance.tip = tip
     }
   }
 

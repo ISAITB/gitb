@@ -28,7 +28,6 @@ import {TestCase} from 'src/app/types/test-case';
 import {TestSuiteWithTestCases} from 'src/app/types/test-suite-with-test-cases';
 import {saveAs} from 'file-saver';
 import {Specification} from 'src/app/types/specification';
-import {BsModalService} from 'ngx-bootstrap/modal';
 import {LinkSharedTestSuiteModalComponent} from 'src/app/modals/link-shared-test-suite-modal/link-shared-test-suite-modal.component';
 import {finalize, forkJoin, Observable, tap} from 'rxjs';
 import {ConformanceTestCase} from '../../../../organisation/conformance-statement/conformance-test-case';
@@ -41,6 +40,7 @@ import {PagingPlacement} from '../../../../../components/paging-controls/paging-
 import {PagingEvent} from '../../../../../components/paging-controls/paging-event';
 import {share} from 'rxjs/operators';
 import {PagingControlsApi} from '../../../../../components/paging-controls/paging-controls-api';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-test-suite-details',
@@ -96,7 +96,7 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
     private readonly htmlService: HtmlService,
     private readonly conformanceService: ConformanceService,
     private readonly confirmationDialogService: ConfirmationDialogService,
-    private readonly modalService: BsModalService,
+    private readonly modalService: NgbModal,
     route: ActivatedRoute,
     router: Router
   ) { super(router, route) }
@@ -293,20 +293,15 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
   linkSpecifications() {
     this.clearAlerts()
     this.linkPending = true
-    const modalRef = this.modalService.show(LinkSharedTestSuiteModalComponent, {
-      class: 'modal-lg',
-      keyboard: false,
-      backdrop: 'static',
-      initialState: {
-        testSuiteId: this.testSuite.id,
-        domainId: this.domainId,
-        availableSpecifications: this.unlinkedSpecifications
-      }
-    })
-    modalRef.onHidden!.subscribe(() => {
+    const modalRef = this.modalService.open(LinkSharedTestSuiteModalComponent, { size: 'lg', keyboard: false, backdrop: 'static' })
+    const modalInstance = modalRef.componentInstance as LinkSharedTestSuiteModalComponent
+    modalInstance.testSuiteId = this.testSuite.id!
+    modalInstance.domainId = this.domainId
+    modalInstance.availableSpecifications = this.unlinkedSpecifications
+    modalRef.hidden.subscribe(() => {
       this.linkPending = false
     })
-    modalRef.content!.completed.subscribe((refreshNeeded: boolean) => {
+    modalInstance.completed.subscribe((refreshNeeded: boolean) => {
       if (refreshNeeded) {
         this.loadLinkedSpecifications(true)
       }

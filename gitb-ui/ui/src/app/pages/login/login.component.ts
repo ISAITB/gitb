@@ -15,7 +15,6 @@
 
 import {HttpClient, HttpResponse} from '@angular/common/http';
 import {AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild} from '@angular/core';
-import {BsModalService} from 'ngx-bootstrap/modal';
 import {forkJoin, Observable, of, throwError} from 'rxjs';
 import {catchError} from 'rxjs/operators';
 import {Constants} from 'src/app/common/constants';
@@ -39,6 +38,7 @@ import {ValidationState} from 'src/app/types/validation-state';
 import {BaseSelfRegistrationPageComponent} from '../../components/self-registration/base-self-registration-page.component';
 import {ActualUserInfo} from '../../types/actual-user-info';
 import {LoginFormType} from './login-form-type';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-login',
@@ -74,7 +74,7 @@ export class LoginComponent extends BaseSelfRegistrationPageComponent implements
     private readonly authService: AuthService,
     private readonly errorService: ErrorService,
     private readonly popupService: PopupService,
-    private readonly modalService: BsModalService
+    private readonly modalService: NgbModal
   ) {
     super(dataService)
   }
@@ -178,15 +178,12 @@ export class LoginComponent extends BaseSelfRegistrationPageComponent implements
       this.authService.getUserUnlinkedFunctionalAccounts(),
       selfRegistrationOptionObservable
     ]).subscribe((data) => {
-      const modalRef = this.modalService.show(LinkAccountComponent, {
-        class: 'modal-xl',
-        initialState: {
-          linkedAccounts: data[0],
-          createOption: loginOption,
-          selfRegOptions: data[1]
-        }
-      })
-      modalRef.onHide!.subscribe(() => {
+      const modalRef = this.modalService.open(LinkAccountComponent, { size: 'xl' })
+      const modalInstance = modalRef.componentInstance as LinkAccountComponent
+      modalInstance.linkedAccounts = data[0]
+      modalInstance.createOption = loginOption
+      modalInstance.selfRegOptions = data[1]
+      modalRef.hidden.subscribe(() => {
         this.createPending = false
       })
       if (this.dataService.configuration.ssoEnabled && (

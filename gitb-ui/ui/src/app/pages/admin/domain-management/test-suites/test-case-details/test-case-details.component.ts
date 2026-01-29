@@ -30,11 +30,11 @@ import {TestService} from 'src/app/services/test.service';
 import {TestCase} from 'src/app/types/test-case';
 import {saveAs} from 'file-saver';
 import {Constants} from 'src/app/common/constants';
-import {BsModalService} from 'ngx-bootstrap/modal';
 import {CreateEditTagComponent} from 'src/app/modals/create-edit-tag/create-edit-tag.component';
 import {TestCaseTag} from 'src/app/types/test-case-tag';
 import {TestCaseDefinitionActors} from '../../../../../types/test-case-definition-actors';
 import {Utils} from '../../../../../common/utils';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-test-case-details',
@@ -69,7 +69,7 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit {
     private readonly conformanceService: ConformanceService,
     private readonly testService: TestService,
     private readonly reportService: ReportService,
-    private readonly modalService: BsModalService
+    private readonly modalService: NgbModal
   ) { super() }
 
   ngOnInit(): void {
@@ -183,25 +183,25 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit {
   }
 
   private openTagModal(tag?: TestCaseTag) {
-    const modal = this.modalService.show(CreateEditTagComponent, {
-      class: 'modal-lg',
-      initialState: {
-        tag: tag
-      }
-    })
-    modal.content!.createdTag.subscribe((createdTag) => {
-      if (this.testCase.parsedTags == undefined) {
-        this.testCase.parsedTags = []
-      }
-      createdTag.id = this.tagCounter++
-      this.testCase.parsedTags.push(createdTag)
-      this.testCase.parsedTags.sort((a, b) => a.name.localeCompare(b.name))
-    })
-    modal.content!.updatedTag.subscribe((updatedTag) => {
-      if (this.testCase.parsedTags) {
-        Utils.removeFromArray(this.testCase.parsedTags, (tag) => tag.id == updatedTag.id)
-        this.testCase.parsedTags.push(updatedTag)
+    const modal = this.modalService.open(CreateEditTagComponent, { size: 'lg' })
+    const modalInstance = modal.componentInstance as CreateEditTagComponent
+    modalInstance.tag = tag
+    modal.closed.subscribe((processedTag: TestCaseTag) => {
+      if (processedTag.id == undefined) {
+        // Create
+        if (this.testCase.parsedTags == undefined) {
+          this.testCase.parsedTags = []
+        }
+        processedTag.id = this.tagCounter++
+        this.testCase.parsedTags.push(processedTag)
         this.testCase.parsedTags.sort((a, b) => a.name.localeCompare(b.name))
+      } else {
+        // Update
+        if (this.testCase.parsedTags) {
+          Utils.removeFromArray(this.testCase.parsedTags, (tag) => tag.id == processedTag.id)
+          this.testCase.parsedTags.push(processedTag)
+          this.testCase.parsedTags.sort((a, b) => a.name.localeCompare(b.name))
+        }
       }
     })
   }

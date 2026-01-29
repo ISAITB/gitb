@@ -13,10 +13,11 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { EventEmitter, Injectable } from '@angular/core';
-import { BsModalService } from 'ngx-bootstrap/modal'
-import { Observable, ReplaySubject } from 'rxjs';
-import { ConfirmationComponent } from '../modals/confirmation/confirmation.component'
+import {EventEmitter, Injectable} from '@angular/core';
+import {Observable, ReplaySubject} from 'rxjs';
+import {ConfirmationComponent} from '../modals/confirmation/confirmation.component';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
+import {fromPromise} from 'rxjs/internal/observable/innerFrom';
 
 @Injectable({
   providedIn: 'root'
@@ -24,21 +25,17 @@ import { ConfirmationComponent } from '../modals/confirmation/confirmation.compo
 export class ConfirmationDialogService {
 
 
-  constructor(private readonly modalService: BsModalService) { }
+  constructor(private readonly modalService: NgbModal) { }
 
-  notify(headerText: string, bodyText: string, buttonText: string, buttonIcon?: string) {
-    const modal = this.modalService.show(ConfirmationComponent, {
-      initialState: {
-        headerText: headerText,
-        bodyText: bodyText,
-        actionButtonText: buttonText,
-        actionButtonIcon: buttonIcon,
-        oneButton: true
-      },
-      backdrop: 'static',
-      keyboard: false
-    })
-    return modal.content!.result
+  notify(headerText: string, bodyText: string, buttonText: string, buttonIcon?: string): Observable<void> {
+    const modal = this.modalService.open(ConfirmationComponent, {backdrop: 'static', keyboard: false});
+    const modalInstance = modal.componentInstance as ConfirmationComponent
+    modalInstance.headerText = headerText
+    modalInstance.bodyText = bodyText
+    modalInstance.actionButtonText = buttonText
+    modalInstance.actionButtonIcon = buttonIcon
+    modalInstance.oneButton = true
+    return fromPromise(modal.result)
   }
 
   notified(headerText: string, bodyText: string, buttonText: string, buttonIcon?: string): Observable<void> {
@@ -55,20 +52,28 @@ export class ConfirmationDialogService {
   }
 
   confirm(headerText: string, bodyText: string, actionButtonText: string, closeButtonText: string, actionButtonIcon?: string, closeButtonIcon?: string, sameStyles?: boolean, dangerous?: boolean): EventEmitter<boolean> {
-    const modal = this.modalService.show(ConfirmationComponent, {
-      initialState: {
-        headerText: headerText,
-        bodyText: bodyText,
-        actionButtonText: actionButtonText,
-        closeButtonText: closeButtonText,
-        actionButtonIcon: actionButtonIcon,
-        closeButtonIcon: closeButtonIcon,
-        sameStyles: sameStyles,
-        oneButton: false,
-        actionClass: dangerous?'btn btn-danger':'btn btn-secondary'
-      }
-    })
-    return modal.content!.result
+    const emitter = new EventEmitter<boolean>()
+    const modal = this.modalService.open(ConfirmationComponent)
+    const modalInstance = modal.componentInstance as ConfirmationComponent
+    modalInstance.headerText = headerText
+    modalInstance.bodyText = bodyText
+    modalInstance.actionButtonText = actionButtonText
+    modalInstance.closeButtonText = closeButtonText
+    modalInstance.actionButtonIcon = actionButtonIcon
+    modalInstance.closeButtonIcon = closeButtonIcon
+    modalInstance.sameStyles = sameStyles
+    modalInstance.oneButton = false
+    modalInstance.actionClass = dangerous?'btn btn-danger':'btn btn-secondary'
+    modal.result.then((result: boolean) => {
+        emitter.emit(result)
+        emitter.complete?.()
+      })
+      .catch(() => {
+        // dismiss → either ignore or emit a cancel
+        emitter.emit(false);
+        emitter.complete?.();
+      });
+    return emitter
   }
 
   confirmedDangerous(headerText: string, bodyText: string, actionButtonText: string, closeButtonText: string, actionButtonIcon?: string, closeButtonIcon?: string): Observable<void> {

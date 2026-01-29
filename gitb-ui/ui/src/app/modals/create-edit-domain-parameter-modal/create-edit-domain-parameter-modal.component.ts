@@ -13,8 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, EventEmitter, Input, OnInit} from '@angular/core';
-import {BsModalRef} from 'ngx-bootstrap/modal';
+import {Component, Input, OnInit} from '@angular/core';
 import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
 import {DataService} from 'src/app/services/data.service';
 import {PopupService} from 'src/app/services/popup.service';
@@ -26,6 +25,7 @@ import {saveAs} from 'file-saver';
 import {Constants} from 'src/app/common/constants';
 import {ValidationState} from 'src/app/types/validation-state';
 import {DomainParameterService} from '../../services/domain-parameter.service';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-create-edit-domain-parameter-modal',
@@ -33,11 +33,10 @@ import {DomainParameterService} from '../../services/domain-parameter.service';
     styles: [],
     standalone: false
 })
-export class CreateEditDomainParameterModalComponent extends BaseComponent implements OnInit, AfterViewInit {
+export class CreateEditDomainParameterModalComponent extends BaseComponent implements OnInit {
 
   @Input() domainParameter!: Partial<DomainParameter>
   @Input() domainId!: number
-  public parametersUpdated = new EventEmitter<boolean>()
 
   pending = false
   savePending = false
@@ -54,14 +53,10 @@ export class CreateEditDomainParameterModalComponent extends BaseComponent imple
   constructor(
     private readonly dataService: DataService,
     private readonly popupService: PopupService,
-    private readonly modalInstance: BsModalRef,
+    private readonly modalInstance: NgbActiveModal,
     private readonly domainParameterService: DomainParameterService,
     private readonly confirmationDialogService: ConfirmationDialogService
   ) { super() }
-
-  ngAfterViewInit(): void {
-    this.dataService.focus('name')
-  }
 
   ngOnInit(): void {
 		this.domainParameter = structuredClone(this.domainParameter)
@@ -116,8 +111,7 @@ export class CreateEditDomainParameterModalComponent extends BaseComponent imple
             if (this.isErrorDescription(data)) {
               this.validation.applyError(data)
             } else {
-              this.parametersUpdated.emit(true)
-              this.modalInstance.hide()
+              this.modalInstance.close()
               this.popupService.success('Parameter updated.')
             }
           }).add(() => {
@@ -139,8 +133,7 @@ export class CreateEditDomainParameterModalComponent extends BaseComponent imple
             if (this.isErrorDescription(data)) {
               this.validation.applyError(data)
             } else {
-              this.parametersUpdated.emit(true)
-              this.modalInstance.hide()
+              this.modalInstance.close()
               this.popupService.success('Parameter created.')
             }
           }).add(() => {
@@ -159,8 +152,7 @@ export class CreateEditDomainParameterModalComponent extends BaseComponent imple
       this.deletePending = true
       this.domainParameterService.deleteDomainParameter(this.domainParameter.id!, this.domainId)
       .subscribe(() => {
-        this.parametersUpdated.emit(true)
-        this.modalInstance.hide()
+        this.modalInstance.close()
         this.popupService.success('Parameter deleted.')
       }).add(() => {
         this.pending = false
@@ -170,8 +162,7 @@ export class CreateEditDomainParameterModalComponent extends BaseComponent imple
   }
 
   cancel() {
-    this.parametersUpdated.emit(false)
-    this.modalInstance.hide()
+    this.modalInstance.dismiss()
   }
 
   onFileSelect(file: FileData) {

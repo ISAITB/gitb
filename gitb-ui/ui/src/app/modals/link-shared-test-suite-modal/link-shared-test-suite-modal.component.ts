@@ -13,20 +13,20 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { BsModalRef } from 'ngx-bootstrap/modal';
-import { ConformanceService } from 'src/app/services/conformance.service';
-import { DataService } from 'src/app/services/data.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { Specification } from 'src/app/types/specification';
-import { PendingTestSuiteUploadChoice } from '../test-suite-upload-modal/pending-test-suite-upload-choice';
-import { SpecificationChoice } from '../test-suite-upload-modal/specification-choice';
-import { TestSuiteUploadResult } from '../test-suite-upload-modal/test-suite-upload-result';
-import { BaseComponent } from 'src/app/pages/base-component.component';
-import { of } from 'rxjs';
-import { MultiSelectConfig } from 'src/app/components/multi-select-filter/multi-select-config';
-import { FilterUpdate } from 'src/app/components/test-filter/filter-update';
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {ConformanceService} from 'src/app/services/conformance.service';
+import {DataService} from 'src/app/services/data.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {Specification} from 'src/app/types/specification';
+import {PendingTestSuiteUploadChoice} from '../test-suite-upload-modal/pending-test-suite-upload-choice';
+import {SpecificationChoice} from '../test-suite-upload-modal/specification-choice';
+import {TestSuiteUploadResult} from '../test-suite-upload-modal/test-suite-upload-result';
+import {BaseComponent} from 'src/app/pages/base-component.component';
+import {of} from 'rxjs';
+import {MultiSelectConfig} from 'src/app/components/multi-select-filter/multi-select-config';
+import {FilterUpdate} from 'src/app/components/test-filter/filter-update';
 import {Constants} from '../../common/constants';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-link-shared-test-suite-modal',
@@ -54,7 +54,7 @@ export class LinkSharedTestSuiteModalComponent extends BaseComponent implements 
 
   constructor(
     public readonly dataService: DataService,
-    private readonly modalInstance: BsModalRef,
+    private readonly modalInstance: NgbActiveModal,
     private readonly conformanceService: ConformanceService,
     private readonly popupService: PopupService
   ) { super() }
@@ -208,7 +208,7 @@ export class LinkSharedTestSuiteModalComponent extends BaseComponent implements 
 
   close(refreshNeeded?: boolean) {
     this.completed.emit(refreshNeeded)
-    this.modalInstance.hide()
+    this.modalInstance.dismiss()
   }
 
   protected readonly Constants = Constants;

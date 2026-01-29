@@ -14,7 +14,6 @@
  */
 
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {BsModalRef} from 'ngx-bootstrap/modal';
 import {Observable} from 'rxjs';
 import {Constants} from 'src/app/common/constants';
 import {BaseComponent} from 'src/app/pages/base-component.component';
@@ -24,6 +23,7 @@ import {DataService} from 'src/app/services/data.service';
 import {PopupService} from 'src/app/services/popup.service';
 import {ConformanceSnapshot} from 'src/app/types/conformance-snapshot';
 import {TableColumnDefinition} from 'src/app/types/table-column-definition.type';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-conformance-snapshots-modal',
@@ -53,7 +53,7 @@ export class ConformanceSnapshotsModalComponent extends BaseComponent implements
   refreshSnapshots = new EventEmitter<void>()
 
   constructor(
-    private readonly modalInstance: BsModalRef,
+    private readonly modalInstance: NgbActiveModal,
     private readonly conformanceService: ConformanceService,
     private readonly popupService: PopupService,
     private readonly confirmationDialogService: ConfirmationDialogService,
@@ -190,7 +190,7 @@ export class ConformanceSnapshotsModalComponent extends BaseComponent implements
   }
 
   close() {
-    this.modalInstance.hide()
+    this.modalInstance.dismiss()
   }
 
   applySnapshotFilter() {

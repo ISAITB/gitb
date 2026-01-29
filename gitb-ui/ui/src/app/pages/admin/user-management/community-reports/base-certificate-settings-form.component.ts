@@ -13,18 +13,18 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, ElementRef, ViewChild } from '@angular/core';
-import { BaseReportSettingsFormComponent } from './base-report-settings-form.component';
-import { ConformanceService } from 'src/app/services/conformance.service';
-import { BsModalService } from 'ngx-bootstrap/modal';
-import { CertificateSettings } from 'src/app/types/certificate-settings';
-import { PlaceholderInfo } from 'src/app/components/placeholder-selector/placeholder-info';
-import { Observable, forkJoin, mergeMap, of } from 'rxjs';
-import { PopupService } from 'src/app/services/popup.service';
-import { ReportService } from 'src/app/services/report.service';
-import { Constants } from 'src/app/common/constants';
-import { HttpResponse } from '@angular/common/http';
-import { ErrorService } from 'src/app/services/error.service';
+import {Component, ElementRef, ViewChild} from '@angular/core';
+import {BaseReportSettingsFormComponent} from './base-report-settings-form.component';
+import {ConformanceService} from 'src/app/services/conformance.service';
+import {CertificateSettings} from 'src/app/types/certificate-settings';
+import {PlaceholderInfo} from 'src/app/components/placeholder-selector/placeholder-info';
+import {forkJoin, mergeMap, Observable, of} from 'rxjs';
+import {PopupService} from 'src/app/services/popup.service';
+import {ReportService} from 'src/app/services/report.service';
+import {Constants} from 'src/app/common/constants';
+import {HttpResponse} from '@angular/common/http';
+import {ErrorService} from 'src/app/services/error.service';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     template: '',
@@ -35,7 +35,6 @@ export abstract class BaseCertificateSettingsFormComponent<T extends Certificate
   @ViewChild("titleField") titleField?: ElementRef;
 
   settings: Partial<T>|undefined
-  useCustomService = false
   placeholders: PlaceholderInfo[] = []
   updatePending = false
   exportPending = false
@@ -43,7 +42,7 @@ export abstract class BaseCertificateSettingsFormComponent<T extends Certificate
 
   constructor(
     conformanceService: ConformanceService,
-    modalService: BsModalService,
+    modalService: NgbModal,
     private readonly popupService: PopupService,
     reportService: ReportService,
     errorService: ErrorService

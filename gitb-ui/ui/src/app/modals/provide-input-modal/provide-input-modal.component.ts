@@ -13,9 +13,8 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
+import {AfterViewInit, Component, EventEmitter, Input, OnInit, QueryList, ViewChildren} from '@angular/core';
 import {CodemirrorComponent} from '@ctrl/ngx-codemirror';
-import {BsModalRef} from 'ngx-bootstrap/modal';
 import {AnyContent} from 'src/app/components/diagram/any-content';
 import {DataService} from 'src/app/services/data.service';
 import {FileData} from 'src/app/types/file-data.type';
@@ -24,6 +23,7 @@ import {UserInteractionInput} from 'src/app/types/user-interaction-input';
 import {ValidationState} from '../../types/validation-state';
 import {ValueLabel} from '../../types/value-label';
 import {Constants} from '../../common/constants';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-provide-input-modal',
@@ -34,9 +34,8 @@ import {Constants} from '../../common/constants';
 export class ProvideInputModalComponent implements OnInit, AfterViewInit {
 
   @Input() interactions!: UserInteraction[]
-  @Input() inputTitle = 'User interaction'
+  @Input() inputTitle? = 'User interaction'
   @Input() sessionId!: string
-  @Output() result = new EventEmitter<UserInteractionInput[]|undefined>()
   @ViewChildren(CodemirrorComponent) codeMirrors?: QueryList<CodemirrorComponent>
   needsInput = false
   firstCodeIndex:number|undefined
@@ -45,7 +44,7 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
   validation = new ValidationState()
 
   constructor(
-    private readonly modalRef: BsModalRef,
+    private readonly modalRef: NgbActiveModal,
     public readonly dataService: DataService
   ) { }
 
@@ -228,13 +227,11 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
   }
 
   minimise() {
-    this.result.emit(undefined)
-    this.modalRef.hide()
+    this.modalRef.dismiss()
   }
 
   close() {
-    this.result.emit([])
-    this.modalRef.hide()
+    this.modalRef.close([])
   }
 
   submit() {
@@ -279,8 +276,7 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
       index += 1
     }
     if (inputsValid) {
-      this.result.emit(inputs)
-      this.modalRef.hide()
+      this.modalRef.close(inputs)
     }
   }
 

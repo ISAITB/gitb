@@ -13,18 +13,18 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { AfterViewInit, Component, OnInit } from '@angular/core';
-import { BsModalService } from 'ngx-bootstrap/modal';
-import { Constants } from 'src/app/common/constants';
-import { DisconnectRoleComponent } from 'src/app/modals/disconnect-role/disconnect-role.component';
-import { AccountService } from 'src/app/services/account.service';
-import { AuthProviderService } from 'src/app/services/auth-provider.service';
-import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
-import { DataService } from 'src/app/services/data.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { BaseComponent } from '../../base-component.component';
-import { RoutingService } from 'src/app/services/routing.service';
-import { ValidationState } from 'src/app/types/validation-state';
+import {AfterViewInit, Component, OnInit} from '@angular/core';
+import {Constants} from 'src/app/common/constants';
+import {DisconnectRoleComponent} from 'src/app/modals/disconnect-role/disconnect-role.component';
+import {AccountService} from 'src/app/services/account.service';
+import {AuthProviderService} from 'src/app/services/auth-provider.service';
+import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
+import {DataService} from 'src/app/services/data.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {BaseComponent} from '../../base-component.component';
+import {RoutingService} from 'src/app/services/routing.service';
+import {ValidationState} from 'src/app/types/validation-state';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-profile',
@@ -45,7 +45,7 @@ export class ProfileComponent extends BaseComponent implements OnInit, AfterView
     private readonly authProviderService: AuthProviderService,
     private readonly accountService: AccountService,
     private readonly popupService: PopupService,
-    private readonly modalService: BsModalService,
+    private readonly modalService: NgbModal,
     private readonly routingService: RoutingService
   ) {
     super()
@@ -65,10 +65,8 @@ export class ProfileComponent extends BaseComponent implements OnInit, AfterView
   }
 
 	disconnect() {
-    const modalRef = this.modalService.show(DisconnectRoleComponent, {
-      class: 'modal-lg'
-    })
-    modalRef.content!.result.subscribe((choice?: number) => {
+    const modalRef = this.modalService.open(DisconnectRoleComponent, { size: 'lg' })
+    modalRef.closed.subscribe((choice?: number) => {
       if (choice != undefined) {
         this.dataService.recordLoginOption(Constants.LOGIN_OPTION.FORCE_CHOICE)
         this.dataService.removeLocationData()

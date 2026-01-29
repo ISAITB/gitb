@@ -13,13 +13,13 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
+import {Component, Input, OnInit} from '@angular/core';
 import {TriggerFireExpression} from '../../../../../types/trigger-fire-expression';
-import {BsModalRef} from 'ngx-bootstrap/modal';
 import {DataService} from '../../../../../services/data.service';
 import {BaseComponent} from '../../../../base-component.component';
 import {ValidationState} from '../../../../../types/validation-state';
 import {Constants} from '../../../../../common/constants';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-trigger-fire-expression-modal',
@@ -27,12 +27,10 @@ import {Constants} from '../../../../../common/constants';
     styleUrl: './trigger-fire-expression-modal.component.less',
     standalone: false
 })
-export class TriggerFireExpressionModalComponent extends BaseComponent implements OnInit, AfterViewInit {
+export class TriggerFireExpressionModalComponent extends BaseComponent implements OnInit {
 
   @Input() fireExpression!: TriggerFireExpression;
   @Input() expressionTypes!: number[]
-  @Output() savedFireExpression = new EventEmitter<TriggerFireExpression>()
-  @ViewChild("expressionContent") expressionField?: ElementRef
 
   title!: string
   fireExpressionToEdit!: TriggerFireExpression;
@@ -43,17 +41,9 @@ export class TriggerFireExpressionModalComponent extends BaseComponent implement
   validation = new ValidationState()
 
   constructor(
-    private readonly modalInstance: BsModalRef,
+    private readonly modalInstance: NgbActiveModal,
     public readonly dataService: DataService
   ) { super() }
-
-  ngAfterViewInit(): void {
-    setTimeout(() => {
-      if (this.expressionField) {
-        this.expressionField.nativeElement.focus()
-      }
-    }, 1)
-  }
 
   ngOnInit(): void {
     this.fireExpressionToEdit = {
@@ -65,13 +55,12 @@ export class TriggerFireExpressionModalComponent extends BaseComponent implement
   }
 
   cancel() {
-    this.modalInstance.hide()
+    this.modalInstance.dismiss()
   }
 
   save() {
     if (this.validateExpression()) {
-      this.savedFireExpression.emit(this.fireExpressionToEdit)
-      this.modalInstance.hide()
+      this.modalInstance.close(this.fireExpressionToEdit)
     }
   }
 

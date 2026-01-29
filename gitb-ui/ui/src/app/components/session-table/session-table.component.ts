@@ -26,11 +26,9 @@ import {
   ViewChild,
   ViewChildren
 } from '@angular/core';
-import {BsModalService} from 'ngx-bootstrap/modal';
 import {Constants} from 'src/app/common/constants';
 import {DataService} from 'src/app/services/data.service';
 import {ReportService} from 'src/app/services/report.service';
-import {RoutingService} from 'src/app/services/routing.service';
 import {TestResultForDisplay} from 'src/app/types/test-result-for-display';
 import {BaseTableComponent} from '../base-table/base-table.component';
 import {SessionData} from '../diagram/test-session-presentation/session-data';
@@ -44,6 +42,8 @@ import {TestInteractionData} from 'src/app/types/test-interaction-data';
 import {PopupService} from 'src/app/services/popup.service';
 import {PagingControlsApi} from '../paging-controls/paging-controls-api';
 import {NavigationControlsConfig} from '../navigation-controls/navigation-controls-config';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
+import {UserInteractionInput} from '../../types/user-interaction-input';
 
 @Component({
     selector: '[app-session-table]',
@@ -74,8 +74,7 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
 
   constructor(
     private readonly reportService: ReportService,
-    private readonly modalService: BsModalService,
-    private readonly routingService: RoutingService,
+    private readonly modalService: NgbModal,
     private readonly testService: TestService,
     public readonly dataService: DataService,
     private readonly popupService: PopupService,
@@ -244,20 +243,17 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
           interactionData = row.diagramState.interactions.find((interaction) => interaction.stepId == stepId)
         }
         if (interactionData) {
-          const modalRef = this.modalService.show(ProvideInputModalComponent, {
-            class: 'modal-lg',
-            initialState: {
-              interactions: interactionData.interactions,
-              inputTitle: interactionData.inputTitle,
-              sessionId: row.session
-            }
-          })
-          modalRef.content!.result.subscribe((result) => {
+          const modalRef = this.modalService.open(ProvideInputModalComponent, { size: 'lg' })
+          const modalInstance = modalRef.componentInstance as ProvideInputModalComponent
+          modalInstance.interactions = interactionData.interactions
+          modalInstance.inputTitle = interactionData.inputTitle!
+          modalInstance.sessionId = row.session
+          modalRef.closed.subscribe((result: UserInteractionInput[]) => {
             if (result != undefined) {
               this.testService.provideInput(row.session, interactionData!.stepId, result, interactionData!.admin)
-              .subscribe(() => {
-                this.refresh(row)
-              })
+                .subscribe(() => {
+                  this.refresh(row)
+                })
             }
           })
         }
@@ -289,12 +285,9 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
         )
       }
       logsObservable.subscribe((logs) => {
-        this.modalService.show(SessionLogModalComponent, {
-          class: 'modal-lg',
-          initialState: {
-            messages: logs
-          }
-        })
+        const modal = this.modalService.open(SessionLogModalComponent, { size: 'lg' })
+        const modalInstance = modal.componentInstance as SessionLogModalComponent
+        modalInstance.messages = logs
       })
     }
   }

@@ -15,7 +15,6 @@
 
 import {Component, EventEmitter, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
-import {BsModalService} from 'ngx-bootstrap/modal';
 import {Constants} from 'src/app/common/constants';
 import {
   CreateEditDomainParameterModalComponent
@@ -55,6 +54,7 @@ import {PagingPlacement} from '../../../../../components/paging-controls/paging-
 import {
   DomainSpecificationDisplayComponentApi
 } from '../../../../../components/domain-specification-display/domain-specification-display-component-api';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-domain-details',
@@ -121,7 +121,7 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
     private readonly domainParameterService: DomainParameterService,
     private readonly conformanceService: ConformanceService,
     private readonly confirmationDialogService: ConfirmationDialogService,
-    private readonly modalService: BsModalService,
+    private readonly modalService: NgbModal,
     private readonly popupService: PopupService,
     private readonly routingService: RoutingService,
     route: ActivatedRoute,
@@ -372,35 +372,25 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
   }
 
 	openParameterModal(domainParameter: Partial<DomainParameter>) {
-    const modalRef = this.modalService.show(CreateEditDomainParameterModalComponent, {
-      class: 'modal-lg',
-      initialState: {
-        domainParameter: domainParameter,
-        domainId: this.domain.id
-      }
-    })
-    modalRef.content!.parametersUpdated.subscribe((updated: boolean) => {
-      if (updated) {
-        this.loadDomainParameters(true)
-      }
+    const modalRef = this.modalService.open(CreateEditDomainParameterModalComponent, { size: 'lg'})
+    const modalInstance = modalRef.componentInstance as CreateEditDomainParameterModalComponent
+    modalInstance.domainParameter = domainParameter
+    modalInstance.domainId = this.domain.id!
+    modalRef.closed.subscribe(() => {
+      this.loadDomainParameters(true)
     })
   }
 
   openTestServiceModal(testService: Partial<TestServiceWithParameter>, updateMatching: boolean) {
-    const modalRef = this.modalService.show(CreateEditTestServiceModalComponent, {
-      class: 'modal-lg',
-      initialState: {
-        testService: testService,
-        domainId: this.domain.id,
-        updateMatching: updateMatching
-      }
-    })
-    modalRef.content!.servicesUpdated.subscribe((updated: boolean) => {
-      if (updated) {
-        this.loadTestServices(true)
-        // Ensure that the next time we navigate to the domain parameters tab it is also updated
-        this.parameterStatus.status = Constants.STATUS.NONE
-      }
+    const modalRef = this.modalService.open(CreateEditTestServiceModalComponent, { size: 'lg' })
+    const modalInstance = modalRef.componentInstance as CreateEditTestServiceModalComponent
+    modalInstance.testService = testService
+    modalInstance.domainId = this.domain.id!
+    modalInstance.updateMatching = updateMatching
+    modalRef.closed.subscribe(() => {
+      this.loadTestServices(true)
+      // Ensure that the next time we navigate to the domain parameters tab it is also updated
+      this.parameterStatus.status = Constants.STATUS.NONE
     })
   }
 
@@ -435,35 +425,24 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
   }
 
 	uploadTestSuite() {
-    this.modalService.show(TestSuiteUploadModalComponent, {
-      class: 'modal-lg',
-      backdrop: 'static',
-      keyboard: false,
-      initialState: {
-        availableSpecifications: this.specifications,
-        testSuitesVisible: false,
-        domainId: this.domainId
-      }
-    })
+    const modal = this.modalService.open(TestSuiteUploadModalComponent, { size: 'lg', backdrop: 'static', keyboard: false })
+    const modalInstance = modal.componentInstance as TestSuiteUploadModalComponent
+    modalInstance.availableSpecifications = this.specifications
+    modalInstance.testSuitesVisible = false
+    modalInstance.domainId = this.domainId
   }
 
   uploadSharedTestSuite() {
-    const modal = this.modalService.show(TestSuiteUploadModalComponent, {
-      class: 'modal-lg',
-      backdrop: 'static',
-      keyboard: false,
-      initialState: {
-        availableSpecifications: this.specifications,
-        sharedTestSuite: true,
-        domainId: this.domainId
-      }
-    })
-    modal.content!.completed.subscribe((testSuitesUpdated: boolean) => {
+    const modal = this.modalService.open(TestSuiteUploadModalComponent, { size: 'lg', backdrop: 'static', keyboard: false })
+    const modalInstance = modal.componentInstance as TestSuiteUploadModalComponent
+    modalInstance.availableSpecifications = this.specifications
+    modalInstance.sharedTestSuite = true
+    modalInstance.domainId = this.domainId
+    modal.closed.subscribe((testSuitesUpdated?: boolean) => {
       if (testSuitesUpdated) {
         this.loadSharedTestSuites(true)
       }
     })
-
   }
 
 	createSpecification() {

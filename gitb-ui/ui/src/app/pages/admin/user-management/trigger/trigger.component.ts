@@ -15,7 +15,6 @@
 
 import {Component, EventEmitter, OnInit} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
-import {BsModalService} from 'ngx-bootstrap/modal';
 import {Constants} from 'src/app/common/constants';
 import {BaseComponent} from 'src/app/pages/base-component.component';
 import {CommunityService} from 'src/app/services/community.service';
@@ -46,6 +45,7 @@ import {TriggerFireExpressionModalComponent} from './trigger-fire-expression-mod
 import {DomainParameterService} from '../../../../services/domain-parameter.service';
 import {ServiceCallResultHandlerService} from '../../../../services/service-call-result-handler.service';
 import {Utils} from '../../../../common/utils';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-trigger',
@@ -109,7 +109,7 @@ export class TriggerComponent extends BaseComponent implements OnInit {
   constructor(
     private readonly routingService: RoutingService,
     private readonly route: ActivatedRoute,
-    private readonly modalService: BsModalService,
+    private readonly modalService: NgbModal,
     private readonly triggerService: TriggerService,
     private readonly domainParameterService: DomainParameterService,
     private readonly conformanceService: ConformanceService,
@@ -444,15 +444,12 @@ export class TriggerComponent extends BaseComponent implements OnInit {
     this.previewPending = true
     this.triggerService.preview(this.trigger.operation, this.trigger.serviceType!, this.dataItemsToSave(), this.communityId)
     .subscribe((result) => {
-      this.modalService.show(TestTriggerModalComponent, {
-        class: 'modal-lg',
-        initialState: {
-          request: result.message,
-          communityId: this.communityId,
-          url: this.trigger.url,
-          serviceType: this.trigger.serviceType!
-        }
-      })
+      const modal = this.modalService.open(TestTriggerModalComponent, { size: 'lg' })
+      const modalInstance = modal.componentInstance as TestTriggerModalComponent
+      modalInstance.request = result.message
+      modalInstance.communityId = this.communityId
+      modalInstance.url = this.trigger.url
+      modalInstance.serviceType = this.trigger.serviceType!
     }).add(() => {
       this.previewPending = false
     })
@@ -461,7 +458,7 @@ export class TriggerComponent extends BaseComponent implements OnInit {
   clearStatus() {
     this.clearStatusPending = true
     this.triggerService.clearStatus(this.trigger.id!)
-    .subscribe((result) => {
+    .subscribe(() => {
       this.trigger.latestResultOk = undefined
       this.applyStatusValues(this.statusTextUnknown)
       this.popupService.success('Trigger status cleared.')
@@ -530,14 +527,11 @@ export class TriggerComponent extends BaseComponent implements OnInit {
   }
 
   private showFireExpressionForm(fireExpression: TriggerFireExpression, existingIndex?: number) {
-    const modal = this.modalService.show(TriggerFireExpressionModalComponent, {
-      class: 'modal-lg',
-      initialState: {
-        fireExpression: fireExpression,
-        expressionTypes: this.fireExpressionTypes
-      }
-    })
-    modal.content?.savedFireExpression.subscribe((expression) => {
+    const modal = this.modalService.open(TriggerFireExpressionModalComponent, { size: 'lg' })
+    const modalInstance = modal.componentInstance as TriggerFireExpressionModalComponent
+    modalInstance.fireExpression = fireExpression
+    modalInstance.expressionTypes = this.fireExpressionTypes
+    modal.closed.subscribe((expression: TriggerFireExpression) => {
       if (existingIndex != undefined) {
         // Update
         this.fireExpressions[existingIndex] = expression

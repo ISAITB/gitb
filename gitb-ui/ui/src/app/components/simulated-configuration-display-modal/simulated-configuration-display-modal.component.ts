@@ -13,13 +13,13 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input, OnInit } from '@angular/core';
-import { DataService } from 'src/app/services/data.service';
-import { SUTConfiguration } from 'src/app/types/sutconfiguration';
-import { AnyContent } from 'src/app/components/diagram/any-content';
-import { ActorInfo } from '../diagram/actor-info';
-import { BsModalRef } from 'ngx-bootstrap/modal';
+import {Component, Input, OnInit} from '@angular/core';
+import {DataService} from 'src/app/services/data.service';
+import {SUTConfiguration} from 'src/app/types/sutconfiguration';
+import {AnyContent} from 'src/app/components/diagram/any-content';
+import {ActorInfo} from '../diagram/actor-info';
 import {Constants} from '../../common/constants';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-simulated-configuration-display-modal',
@@ -36,7 +36,7 @@ export class SimulatedConfigurationDisplayModalComponent implements OnInit {
 
   constructor(
     private readonly dataService: DataService,
-    private readonly modalRef: BsModalRef
+    private readonly modalRef: NgbActiveModal
   ) { }
 
   ngOnInit(): void {
@@ -84,7 +84,7 @@ export class SimulatedConfigurationDisplayModalComponent implements OnInit {
   }
 
   close() {
-    this.modalRef.hide()
+    this.modalRef.dismiss()
   }
 
   protected readonly Constants = Constants;

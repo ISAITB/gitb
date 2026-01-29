@@ -14,9 +14,8 @@
  */
 
 import {Component, EventEmitter, OnDestroy, OnInit} from '@angular/core';
-import {ActivatedRoute, Router} from '@angular/router';
+import {ActivatedRoute} from '@angular/router';
 import {saveAs} from 'file-saver';
-import {BsModalRef, BsModalService} from 'ngx-bootstrap/modal';
 import {Observable, of, Subscription, throwError, timer} from 'rxjs';
 import {catchError, map, mergeMap, share} from 'rxjs/operators';
 import {WebSocketSubject} from 'rxjs/webSocket';
@@ -51,6 +50,8 @@ import {ConformanceTestCase} from '../organisation/conformance-statement/conform
 import {BaseComponent} from '../base-component.component';
 import {TestCaseDefinitionActors} from '../../types/test-case-definition-actors';
 import {Utils} from '../../common/utils';
+import {NgbModal, NgbModalRef} from '@ng-bootstrap/ng-bootstrap';
+import {UserInteractionInput} from '../../types/user-interaction-input';
 
 @Component({
   selector: 'app-test-execution',
@@ -116,7 +117,7 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
   testEvents: {[key: number]: DiagramEvents} = {}
   columnCount = 4
   currentInteractionStepId?: string
-  currentInteractionModal?: BsModalRef<ProvideInputModalComponent>
+  currentInteractionModal?: NgbModalRef
   testCaseFinishing = false
 
   private ws?: WebSocketSubject<any>
@@ -139,8 +140,7 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
 
   constructor(
     private readonly route: ActivatedRoute,
-    private readonly router: Router,
-    private readonly modalService: BsModalService,
+    private readonly modalService: NgbModal,
     private readonly testService: TestService,
     private readonly conformanceService: ConformanceService,
     private readonly reportService: ReportService,
@@ -448,19 +448,14 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
       this.currentSimulatedConfigs = this.simulatedConfigs
     }
     if (this.simulatedConfigs && this.simulatedConfigs.length > 0 && configsDiffer) {
-      const modalRef = this.modalService.show(SimulatedConfigurationDisplayModalComponent, {
-        initialState: {
-          configurations: this.simulatedConfigs,
-          actorInfo: this.actorInfoOfTests[this.currentTest!.id].actor
-        },
-        class: 'modal-lg'
+      const modalRef = this.modalService.open(SimulatedConfigurationDisplayModalComponent, { size: 'lg' })
+      const modalInstance = modalRef.componentInstance as SimulatedConfigurationDisplayModalComponent
+      modalInstance.configurations = this.simulatedConfigs
+      modalInstance.actorInfo = this.actorInfoOfTests[this.currentTest!.id].actor
+      modalRef.hidden.subscribe(() => {
+        this.nextWaitingToStart = true
+        this.runPreliminaryStep(false)
       })
-      if (modalRef.onHidden) {
-        modalRef.onHidden.subscribe(() => {
-          this.nextWaitingToStart = true
-          this.runPreliminaryStep(false)
-        })
-      }
     } else {
       this.runPreliminaryStep(true)
     }
@@ -955,21 +950,15 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
   private interact(interactions: UserInteraction[], inputTitle: string|undefined, stepId: string, admin: boolean|undefined, desc: string|undefined) {
     if (!admin || this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin) {
       this.currentInteractionStepId = stepId
-      this.currentInteractionModal = this.modalService.show(ProvideInputModalComponent, {
-        class: 'modal-lg',
-        initialState: {
-          interactions: interactions,
-          inputTitle: inputTitle,
-          sessionId: this.session!
-        }
+      this.currentInteractionModal = this.modalService.open(ProvideInputModalComponent, { size: 'lg'})
+      const modalInstance = this.currentInteractionModal.componentInstance as ProvideInputModalComponent
+      modalInstance.interactions = interactions
+      modalInstance.inputTitle = inputTitle
+      modalInstance.sessionId = this.session!
+      this.currentInteractionModal.dismissed.subscribe(() => {
+        this.recordInteraction(stepId, interactions, inputTitle, admin, desc)
       })
-      this.currentInteractionModal.onHide?.subscribe((dismissReason) => {
-        // Make sure that we treat ESC or backdrop click as a "minimise" click.
-        if (dismissReason == "backdrop-click" || dismissReason == "esc") {
-          this.recordInteraction(stepId, interactions, inputTitle, admin, desc)
-        }
-      })
-      this.currentInteractionModal.content!.result.subscribe((result) => {
+      this.currentInteractionModal.closed.subscribe((result: UserInteractionInput[]|undefined) => {
         this.currentInteractionStepId = undefined
         this.currentInteractionModal = undefined
         if (result == undefined) {
@@ -1040,7 +1029,7 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
 
   private testCaseFinalised() {
     if (this.currentInteractionModal != undefined) {
-      this.currentInteractionModal.hide()
+      this.currentInteractionModal.dismiss('test-finished')
     }
     this.currentInteractionModal = undefined
     this.currentInteractionStepId = undefined
@@ -1175,14 +1164,11 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
     this.unreadLogMessages[test.id] = false
     this.unreadLogErrors[test.id] = false
     this.unreadLogWarnings[test.id] = false
-    const modalRef = this.modalService.show(SessionLogModalComponent, {
-      class: 'modal-lg',
-      initialState: {
-        messages: this.logMessages[test.id].slice(), // Use slice to make a copy of the log messages.
-        messageEmitter: this.logMessageEventEmitters[test.id]
-      }
-    })
-    modalRef.onHide?.subscribe(() => {
+    const modalRef = this.modalService.open(SessionLogModalComponent, { size: 'lg'})
+    const modalInstance = modalRef.componentInstance as SessionLogModalComponent
+    modalInstance.messages = this.logMessages[test.id].slice() // Use slice to make a copy of the log messages.
+    modalInstance.messageEmitter = this.logMessageEventEmitters[test.id]
+    modalRef.hidden.subscribe(() => {
       this.testCaseWithOpenLogView = undefined
     })
   }

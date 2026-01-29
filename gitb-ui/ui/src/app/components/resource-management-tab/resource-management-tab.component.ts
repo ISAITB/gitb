@@ -20,7 +20,6 @@ import {CommunityResource} from '../../types/community-resource';
 import {
   CommunityResourceBulkUploadModalComponent
 } from '../../modals/community-resource-bulk-upload-modal/community-resource-bulk-upload-modal.component';
-import {BsModalService} from 'ngx-bootstrap/modal';
 import {
   CreateEditCommunityResourceModalComponent
 } from '../../modals/create-edit-community-resource-modal/create-edit-community-resource-modal.component';
@@ -31,6 +30,7 @@ import {TableColumnDefinition} from '../../types/table-column-definition.type';
 import {DataService} from '../../services/data.service';
 import {TableComponent} from '../table/table.component';
 import {PagingEvent} from '../paging-controls/paging-event';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
   selector: 'app-resource-management-tab',
@@ -60,7 +60,7 @@ export class ResourceManagementTabComponent implements AfterViewInit {
   ]
 
   constructor(
-    private readonly modalService: BsModalService,
+    private readonly modalService: NgbModal,
     private readonly confirmationDialogService: ConfirmationDialogService,
     private readonly popupService: PopupService,
     private readonly dataService: DataService
@@ -109,13 +109,10 @@ export class ResourceManagementTabComponent implements AfterViewInit {
   }
 
   uploadResourceBulk() {
-    const modal = this.modalService.show(CommunityResourceBulkUploadModalComponent, {
-      class: 'modal-lg',
-      initialState: {
-        actions: this.actions
-      }
-    })
-    modal.content!.resourcesUpdated.subscribe((updateMade) => {
+    const modal = this.modalService.open(CommunityResourceBulkUploadModalComponent, { modalDialogClass: "modal-lg" })
+    const modalInstance = modal.componentInstance as CommunityResourceBulkUploadModalComponent
+    modalInstance.actions = this.actions
+    modal.result.then((updateMade: boolean) => {
       if (updateMade) {
         this.refreshResources()
       }
@@ -123,19 +120,16 @@ export class ResourceManagementTabComponent implements AfterViewInit {
   }
 
   private openResourceModal(resourceToEdit?: CommunityResource) {
-    const modal = this.modalService.show(CreateEditCommunityResourceModalComponent, {
-      class: 'modal-lg',
-      initialState: {
-        actions: this.actions,
-        resource: resourceToEdit
-      }
-    })
-    modal.content!.resourceUpdated.subscribe((updateMade) => {
+    const modal = this.modalService.open(CreateEditCommunityResourceModalComponent, { modalDialogClass: "modal-lg" })
+    const modalInstance = modal.componentInstance as CreateEditCommunityResourceModalComponent
+    modalInstance.actions = this.actions
+    modalInstance.resource = resourceToEdit
+    modal.closed.subscribe((updateMade: boolean) => {
       if (updateMade) {
         this.refreshResources()
       }
     })
-    modal.onHide!.subscribe(() => {
+    modal.hidden.subscribe(() => {
       this.clearResourceSelections.emit()
     })
   }

@@ -13,11 +13,11 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input, OnInit } from '@angular/core';
-import { BsModalRef } from 'ngx-bootstrap/modal';
-import { DataService } from 'src/app/services/data.service';
-import { CustomProperty } from 'src/app/types/custom-property.type';
+import {Component, Input, OnInit} from '@angular/core';
+import {DataService} from 'src/app/services/data.service';
+import {CustomProperty} from 'src/app/types/custom-property.type';
 import {Constants} from '../../common/constants';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-preview-parameters-modal',
@@ -37,7 +37,7 @@ export class PreviewParametersModalComponent implements OnInit {
 
   constructor(
     public readonly dataService: DataService,
-    private readonly modalRef: BsModalRef
+    private readonly modalRef: NgbActiveModal
   ) { }
 
   ngOnInit(): void {
@@ -73,7 +73,7 @@ export class PreviewParametersModalComponent implements OnInit {
   }
 
 	close() {
-    this.modalRef.hide()
+    this.modalRef.dismiss()
   }
 
   protected readonly Constants = Constants;

@@ -14,12 +14,12 @@
  */
 
 import {Component, Input} from '@angular/core';
-import {BsModalRef} from 'ngx-bootstrap/modal';
 import {ReportService} from 'src/app/services/report.service';
 import {StepReport} from '../report/step-report';
 import {StepData} from '../step-data';
 import {saveAs} from 'file-saver';
 import {Constants} from '../../../common/constants';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-test-step-report-modal',
@@ -37,7 +37,7 @@ export class TestStepReportModalComponent {
   exportXmlPending = false
 
   constructor(
-    private readonly modalRef: BsModalRef,
+    private readonly modalRef: NgbActiveModal,
     private readonly reportService: ReportService
   ) { }
 
@@ -67,7 +67,7 @@ export class TestStepReportModalComponent {
   }
 
   close() {
-    this.modalRef.hide()
+    this.modalRef.dismiss()
   }
 
   protected readonly Constants = Constants;

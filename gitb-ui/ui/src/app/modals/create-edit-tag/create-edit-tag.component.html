@@ -5,7 +5,7 @@
     <div class="modal-body">
         <div class="row mb-3">
             <label class="col-3 col-form-label text-end" for="nameIdentifier">* Name:</label>
-            <div class="col-7"><input id="nameIdentifier" name="name" [(ngModel)]="tagToUse.name" class="form-control" type="text"></div>
+            <div class="col-7"><input ngbAutofocus id="nameIdentifier" name="name" [(ngModel)]="tagToUse.name" class="form-control" type="text"></div>
             <div app-tooltip class="col-auto" tbTooltip="The text to display within the tag."></div>
         </div>
         <div class="row mb-3">

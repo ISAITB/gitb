@@ -19,9 +19,9 @@ import {ParameterReference} from 'src/app/types/parameter-reference';
 import {ParameterModalOptions} from './parameter-modal-options';
 import {Parameter} from 'src/app/types/parameter';
 import {Constants} from 'src/app/common/constants';
-import {BsModalRef} from 'ngx-bootstrap/modal';
 import {Component, Input} from '@angular/core';
 import {ValidationState} from 'src/app/types/validation-state';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     template: '',
@@ -43,7 +43,7 @@ export abstract class BaseParameterModalComponent extends BaseComponent {
 
   constructor(
     private readonly dataService: DataService,
-    protected readonly modalInstance: BsModalRef
+    protected readonly modalInstance: NgbActiveModal
   ) { super() }
 
   protected onInit(options: ParameterModalOptions) {
@@ -117,7 +117,7 @@ export abstract class BaseParameterModalComponent extends BaseComponent {
   }
 
   cancel() {
-    this.modalInstance.hide()
+    this.modalInstance.dismiss()
   }
 
   validate() {

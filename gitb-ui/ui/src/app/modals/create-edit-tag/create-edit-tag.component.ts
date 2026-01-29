@@ -13,35 +13,29 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { AfterViewInit, Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { BsModalRef } from 'ngx-bootstrap/modal';
-import { BaseComponent } from 'src/app/pages/base-component.component';
-import { DataService } from 'src/app/services/data.service';
-import { TestCaseTag } from 'src/app/types/test-case-tag';
+import {Component, Input, OnInit} from '@angular/core';
+import {BaseComponent} from 'src/app/pages/base-component.component';
+import {DataService} from 'src/app/services/data.service';
+import {TestCaseTag} from 'src/app/types/test-case-tag';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-create-edit-tag',
     templateUrl: './create-edit-tag.component.html',
     standalone: false
 })
-export class CreateEditTagComponent extends BaseComponent implements OnInit, AfterViewInit {
+export class CreateEditTagComponent extends BaseComponent implements OnInit {
 
   @Input() tag?: Partial<TestCaseTag>
-  @Input() tagToUse!: Partial<TestCaseTag>
-  @Output() createdTag = new EventEmitter<TestCaseTag>()
-  @Output() updatedTag = new EventEmitter<TestCaseTag>()
 
+  tagToUse!: Partial<TestCaseTag>
   isUpdate!: boolean
   title!: string
 
   constructor(
-    private readonly modalInstance: BsModalRef,
+    private readonly modalInstance: NgbActiveModal,
     private readonly dataService: DataService
   ) { super() }
-
-  ngAfterViewInit(): void {
-    this.dataService.focus('nameIdentifier', 200)
-  }
 
   ngOnInit(): void {
     this.isUpdate = this.tag != undefined
@@ -72,16 +66,11 @@ export class CreateEditTagComponent extends BaseComponent implements OnInit, Aft
 
   save() {
     if (!this.saveDisabled()) {
-      if (this.isUpdate) {
-        this.updatedTag.emit(this.tagToUse! as TestCaseTag)
-      } else {
-        this.createdTag.emit(this.tagToUse! as TestCaseTag)
-      }
-      this.cancel();
+      this.modalInstance.close(this.tagToUse! as TestCaseTag)
     }
   }
 
   cancel() {
-    this.modalInstance.hide()
+    this.modalInstance.dismiss()
   }
 }

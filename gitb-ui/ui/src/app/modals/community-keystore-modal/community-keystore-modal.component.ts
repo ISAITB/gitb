@@ -13,16 +13,16 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input, OnInit } from '@angular/core';
-import { BsModalRef } from 'ngx-bootstrap/modal';
-import { BaseComponent } from 'src/app/pages/base-component.component';
-import { CommunityKeystore } from 'src/app/types/community-keystore';
-import { FileData } from 'src/app/types/file-data.type';
-import { saveAs } from 'file-saver'
-import { ConformanceService } from 'src/app/services/conformance.service';
-import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
-import { PopupService } from 'src/app/services/popup.service';
+import {Component, Input, OnInit} from '@angular/core';
+import {BaseComponent} from 'src/app/pages/base-component.component';
+import {CommunityKeystore} from 'src/app/types/community-keystore';
+import {FileData} from 'src/app/types/file-data.type';
+import {saveAs} from 'file-saver';
+import {ConformanceService} from 'src/app/services/conformance.service';
+import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
+import {PopupService} from 'src/app/services/popup.service';
 import {Constants} from '../../common/constants';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-community-keystore-modal',
@@ -45,7 +45,7 @@ export class CommunityKeystoreModalComponent extends BaseComponent implements On
   updatePasswords = false
 
   constructor(
-    private readonly modalInstance: BsModalRef,
+    private readonly modalInstance: NgbActiveModal,
     private readonly confirmationDialogService: ConfirmationDialogService,
     private readonly conformanceService: ConformanceService,
     private readonly popupService: PopupService
@@ -114,7 +114,7 @@ export class CommunityKeystoreModalComponent extends BaseComponent implements On
     this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete the keystore?", "Delete", "Cancel", Constants.BUTTON_ICON.DELETE).subscribe(() => {
       this.deletePending = true
       this.conformanceService.deleteCommunityKeystore(this.communityId).subscribe(() => {
-        this.modalInstance.hide()
+        this.modalInstance.dismiss()
         this.popupService.success("Keystore deleted.")
       }).add(() => {
         this.deletePending = true
@@ -143,7 +143,7 @@ export class CommunityKeystoreModalComponent extends BaseComponent implements On
     this.clearAlerts()
     this.savePending = true
     this.conformanceService.saveCommunityKeystore(this.communityId, this.settings).subscribe(() => {
-      this.modalInstance.hide()
+      this.modalInstance.dismiss()
       this.popupService.success("Keystore updated.")
     }).add(() => {
       this.savePending = false
@@ -151,7 +151,7 @@ export class CommunityKeystoreModalComponent extends BaseComponent implements On
   }
 
   close() {
-    this.modalInstance.hide()
+    this.modalInstance.dismiss()
   }
 
 }

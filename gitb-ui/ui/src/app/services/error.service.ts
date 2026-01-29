@@ -13,23 +13,23 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Injectable } from '@angular/core';
-import { mergeMap, Observable, of, Subscriber, throwError } from 'rxjs';
-import { ErrorDataArrayBuffer } from '../types/error-data-array-buffer.type';
-import { ErrorData } from '../types/error-data.type';
-import { ConfirmationDialogService } from './confirmation-dialog.service';
-import { BsModalService } from 'ngx-bootstrap/modal'
-import { Constants } from '../common/constants';
-import { ErrorComponent } from '../modals/error/error.component';
-import { BaseRestService } from './base-rest.service';
-import { ROUTES } from '../common/global';
-import { HttpErrorResponse } from '@angular/common/http';
-import { Organisation } from '../types/organisation.type';
-import { ErrorTemplate } from '../types/error-template';
-import { ErrorDescription } from '../types/error-description';
-import { DataService } from './data.service';
-import { CodeEditorModalComponent } from '../components/code-editor-modal/code-editor-modal.component';
+import {Injectable} from '@angular/core';
+import {mergeMap, Observable, of, Subscriber, throwError} from 'rxjs';
+import {ErrorDataArrayBuffer} from '../types/error-data-array-buffer.type';
+import {ErrorData} from '../types/error-data.type';
+import {ConfirmationDialogService} from './confirmation-dialog.service';
+import {Constants} from '../common/constants';
+import {ErrorComponent} from '../modals/error/error.component';
+import {BaseRestService} from './base-rest.service';
+import {ROUTES} from '../common/global';
+import {HttpErrorResponse} from '@angular/common/http';
+import {Organisation} from '../types/organisation.type';
+import {ErrorTemplate} from '../types/error-template';
+import {ErrorDescription} from '../types/error-description';
+import {DataService} from './data.service';
+import {CodeEditorModalComponent} from '../components/code-editor-modal/code-editor-modal.component';
 import {Alert} from '../types/alert.type';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Injectable({
   providedIn: 'root'
@@ -40,7 +40,7 @@ export class ErrorService {
 
   constructor(
     private readonly confirmationDialogService: ConfirmationDialogService,
-    private readonly modalService: BsModalService,
+    private readonly modalService: NgbModal,
     private readonly baseRestService: BaseRestService,
     private readonly dataService: DataService
   ) { }
@@ -63,7 +63,7 @@ export class ErrorService {
   }
 
   showErrorMessage(error: string|ErrorData|ErrorDataArrayBuffer): void {
-    this.showErrorMessageWithRetry(error, false).subscribe(() => {})
+    this.showErrorMessageInternal(error).subscribe(() => {})
   }
 
   private fromHttpErrorResponse(error: HttpErrorResponse) {
@@ -74,7 +74,7 @@ export class ErrorService {
     return message
   }
 
-  showErrorMessageWithRetry(error: undefined|string|ErrorData|ErrorDataArrayBuffer|HttpErrorResponse, withRetry: boolean): Observable<boolean> {
+  private showErrorMessageInternal(error: undefined|string|ErrorData|ErrorDataArrayBuffer|HttpErrorResponse): Observable<boolean> {
     return new Observable<boolean>((observer) => {
       if (this.errorCurrentlyDisplayed) {
         observer.next(true)
@@ -139,23 +139,23 @@ export class ErrorService {
             this.getVendorProfile().subscribe((vendor) => {
               if (vendor.errorTemplates) {
                 errorObj.template = vendor.errorTemplates.content
-                this.openModal(errorObj, withRetry, observer)
+                this.openModal(errorObj, observer)
               } else {
                 let communityId = vendor.community
                 this.getCommunityDefaultErrorTemplate(communityId).subscribe((data) => {
                   if (data.exists == true) {
                     errorObj.template = data.content
                   }
-                  this.openModal(errorObj, withRetry, observer)
+                  this.openModal(errorObj, observer)
                 })
               }
             })
           } else {
-            this.openModal(errorObj, withRetry, observer)
+            this.openModal(errorObj, observer)
           }
         } else {
           // Expected errors (e.g. validation errors) that have clear error messages
-          this.openModal(errorObj, withRetry, observer)
+          this.openModal(errorObj, observer)
         }
       }
     })
@@ -178,7 +178,7 @@ export class ErrorService {
     })
   }
 
-  private openModal(error: ErrorData, withRetry: boolean, observer: Subscriber<boolean>) {
+  private openModal(error: ErrorData, observer: Subscriber<boolean>) {
     console.error('Error caught: ' + JSON.stringify(error))
     if (!this.errorCurrentlyDisplayed) {
       this.errorCurrentlyDisplayed = true
@@ -191,27 +191,12 @@ export class ErrorService {
           error.template = '<span>'+Constants.PLACEHOLDER__ERROR_DESCRIPTION+'</span>'
         }
       }
-      const modal = this.modalService.show(ErrorComponent, {
-        initialState: {
-          error: error,
-          withRetry: withRetry
-        }
-      })
-      modal.content!.result.subscribe((closed: boolean) => {
-        if (closed) {
-          // Closed
-          observer.next(true)
-          observer.complete()
-        } else {
-          // Dismissed
-          if (withRetry) {
-            // Do not retry
-            observer.next(false)
-          } else {
-            observer.next(true)
-          }
-          observer.complete()
-        }
+      const modal = this.modalService.open(ErrorComponent)
+      const modalInstance = modal.componentInstance as ErrorComponent
+      modalInstance.error = error
+      modal.hidden.subscribe(() => {
+        observer.next(true)
+        observer.complete()
         this.errorCurrentlyDisplayed = false
       })
     }
@@ -228,23 +213,20 @@ export class ErrorService {
     if (titleToUse == undefined) {
       titleToUse = 'Error message(s)'
     }
-    this.modalService.show(CodeEditorModalComponent, {
-      class: 'modal-lg',
-      initialState: {
-        alert: alert,
-        documentName: titleToUse,
-        editorOptions: {
-          value: content,
-          readOnly: true,
-          copy: true,
-          lineNumbers: false,
-          smartIndent: false,
-          electricChars: false,
-          styleClass: 'editor-short',
-          mode: contentType
-        }
-      }
-    })
+    const modal = this.modalService.open(CodeEditorModalComponent, { size: 'lg' })
+    const modalInstance = modal.componentInstance as CodeEditorModalComponent
+    modalInstance.alert = alert
+    modalInstance.documentName = titleToUse
+    modalInstance.editorOptions = {
+      value: content,
+      readOnly: true,
+      copy: true,
+      lineNumbers: false,
+      smartIndent: false,
+      electricChars: false,
+      styleClass: 'editor-short',
+      mode: contentType
+    }
   }
 
   showInvalidSessionNotification(): Observable<boolean> {

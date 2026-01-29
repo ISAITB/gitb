@@ -13,15 +13,15 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component } from '@angular/core';
-import { CommunityXmlReportFormComponent } from '../community-xml-report-form/community-xml-report-form.component';
-import { ReportService } from 'src/app/services/report.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { BsModalService } from 'ngx-bootstrap/modal';
-import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
-import { ConformanceService } from 'src/app/services/conformance.service';
-import { PreviewConfig } from '../community-xml-report-form/preview-config';
-import { ErrorService } from 'src/app/services/error.service';
+import {Component} from '@angular/core';
+import {CommunityXmlReportFormComponent} from '../community-xml-report-form/community-xml-report-form.component';
+import {ReportService} from 'src/app/services/report.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
+import {ConformanceService} from 'src/app/services/conformance.service';
+import {PreviewConfig} from '../community-xml-report-form/preview-config';
+import {ErrorService} from 'src/app/services/error.service';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-test-case-report-form',
@@ -34,7 +34,7 @@ export class TestCaseReportFormComponent extends CommunityXmlReportFormComponent
     conformanceService: ConformanceService,
     reportService: ReportService,
     popupService: PopupService,
-    modalService: BsModalService,
+    modalService: NgbModal,
     confirmationDialogService: ConfirmationDialogService,
     errorService: ErrorService
   ) { super(conformanceService, reportService, popupService, modalService, confirmationDialogService, errorService) }

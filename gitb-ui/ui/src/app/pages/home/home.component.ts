@@ -14,14 +14,13 @@
  */
 
 import {AfterViewInit, Component, OnInit} from '@angular/core';
-import { mergeMap, Observable, of } from 'rxjs';
-import { AccountService } from 'src/app/services/account.service';
-import { DataService } from 'src/app/services/data.service';
-import {BsModalService} from 'ngx-bootstrap/modal';
-import {ServiceHealthModalComponent} from '../../modals/service-health-modal/service-health-modal.component';
+import {mergeMap, Observable, of} from 'rxjs';
+import {AccountService} from 'src/app/services/account.service';
+import {DataService} from 'src/app/services/data.service';
 import {StartupWizardModalComponent} from '../../modals/startup-wizard-modal/startup-wizard-modal.component';
 import {UsageTipService} from '../../services/usage-tip.service';
 import {Constants} from '../../common/constants';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-home',
@@ -37,7 +36,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
   constructor(
     private readonly accountService: AccountService,
     public readonly dataService: DataService,
-    private readonly modalService: BsModalService,
+    private readonly modalService: NgbModal,
     private readonly usageTipService: UsageTipService
   ) { }
 
@@ -68,11 +67,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
   ngAfterViewInit() {
     if (this.dataService.isSystemAdmin && this.dataService.configuration.startupWizardEnabled) {
       this.startupWizardActive = true
-      this.modalService.show(StartupWizardModalComponent, {
-        class: 'modal-lg',
-        keyboard: false,
-        backdrop: 'static'
-      })
+      this.modalService.open(StartupWizardModalComponent, { size: 'lg', keyboard: false, backdrop: 'static' })
     }
     this.viewInitialized = true
     this.showMessageForMissingLandingPage()

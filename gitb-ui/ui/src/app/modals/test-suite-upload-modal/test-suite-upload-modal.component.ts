@@ -13,8 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {BsModalRef} from 'ngx-bootstrap/modal';
+import {Component, EventEmitter, Input, OnInit} from '@angular/core';
 import {Observable, of} from 'rxjs';
 import {Constants} from 'src/app/common/constants';
 import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
@@ -35,6 +34,7 @@ import {AssertionReport} from 'src/app/components/diagram/assertion-report';
 import {BaseComponent} from 'src/app/pages/base-component.component';
 import {MultiSelectConfig} from 'src/app/components/multi-select-filter/multi-select-config';
 import {FilterUpdate} from 'src/app/components/test-filter/filter-update';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-test-suite-upload-modal',
@@ -48,7 +48,6 @@ export class TestSuiteUploadModalComponent extends BaseComponent implements OnIn
   @Input() sharedTestSuite = false
   @Input() domainId!: number
   @Input() availableSpecifications: Specification[] = []
-  @Output() completed = new EventEmitter<boolean>()
 
   specifications: Specification[] = []
   actionPending = false
@@ -78,7 +77,7 @@ export class TestSuiteUploadModalComponent extends BaseComponent implements OnIn
 
   constructor(
     public readonly dataService: DataService,
-    private readonly modalInstance: BsModalRef,
+    private readonly modalInstance: NgbActiveModal,
     private readonly confirmationDialogService: ConfirmationDialogService,
     private readonly conformanceService: ConformanceService,
     private readonly popupService: PopupService
@@ -438,8 +437,7 @@ export class TestSuiteUploadModalComponent extends BaseComponent implements OnIn
     if (!finalStep && this.resolutionNeeded() && this.uploadResult?.pendingFolderId != undefined) {
       this.conformanceService.resolvePendingTestSuite(this.uploadResult.pendingFolderId, 'cancel', this.domainId, this.specificationIds()).subscribe(() => {})
     }
-    this.completed.emit(refreshNeeded)
-    this.modalInstance.hide()
+    this.modalInstance.close(refreshNeeded)
   }
 
   selectArchive(file: FileData) {

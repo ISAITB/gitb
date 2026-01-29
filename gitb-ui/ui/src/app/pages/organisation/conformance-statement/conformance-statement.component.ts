@@ -16,7 +16,6 @@
 import {Component, ElementRef, EventEmitter, NgZone, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {saveAs} from 'file-saver';
-import {BsModalService} from 'ngx-bootstrap/modal';
 import {finalize, forkJoin, mergeMap, Observable, of, tap} from 'rxjs';
 import {Constants} from 'src/app/common/constants';
 import {Counters} from 'src/app/components/test-status-icons/counters';
@@ -59,6 +58,7 @@ import {TestSuiteDisplayComponentApi} from '../../../components/test-suite-displ
 import {DisplayState} from '../../../types/display-state';
 import {StatementTestCaseSearchCriteria} from './statement-test-case-search-criteria';
 import {MultiSelectConfig} from '../../../components/multi-select-filter/multi-select-config';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-conformance-statement',
@@ -178,7 +178,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
     route: ActivatedRoute,
     router: Router,
     private readonly conformanceService: ConformanceService,
-    private readonly modalService: BsModalService,
+    private readonly modalService: NgbModal,
     private readonly systemService: SystemService,
     private readonly confirmationDialogService: ConfirmationDialogService,
     private readonly reportService: ReportService,
@@ -531,24 +531,21 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
         }
         if (!configurationValid || !systemConfigurationValid || !organisationConfigurationValid) {
           // Missing configuration.
-          const modalRef = this.modalService.show(MissingConfigurationModalComponent, {
-            class: 'modal-lg',
-            initialState: {
-              organisationProperties: organisationProperties,
-              organisationConfigurationValid: organisationConfigurationValid,
-              systemProperties: systemProperties,
-              systemConfigurationValid: systemConfigurationValid,
-              statementProperties: statementProperties,
-              configurationValid: configurationValid
-            }
-          })
-          modalRef.content!.action.subscribe((action: MissingConfigurationAction) => {
+          const modalRef = this.modalService.open(MissingConfigurationModalComponent, { size: 'lg' })
+          const modalInstance = modalRef.componentInstance as MissingConfigurationModalComponent
+          modalInstance.organisationProperties = organisationProperties
+          modalInstance.organisationConfigurationValid = organisationConfigurationValid
+          modalInstance.systemProperties = systemProperties
+          modalInstance.systemConfigurationValid = systemConfigurationValid
+          modalInstance.statementProperties = statementProperties
+          modalInstance.configurationValid = configurationValid
+          modalRef.closed.subscribe((action: MissingConfigurationAction) => {
             this.organisationPropertiesCollapsed = !action.viewOrganisationProperties
             this.systemPropertiesCollapsed = !action.viewSystemProperties
             this.statementPropertiesCollapsed = !action.viewStatementProperties
             this.showConfigurationTab()
           })
-          return modalRef.onHidden!.pipe(
+          return modalRef.hidden.pipe(
             mergeMap(() => {
               return of(false)
             })

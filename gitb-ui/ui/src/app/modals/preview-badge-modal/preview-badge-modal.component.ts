@@ -13,15 +13,15 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input, OnInit } from '@angular/core';
-import { PreviewByIds } from './preview-by-ids';
-import { PreviewByFile } from './preview-by-file';
-import { PreviewForStatus } from './preview-for-status';
-import { ConformanceService } from 'src/app/services/conformance.service';
-import { Observable, of } from 'rxjs';
-import { BsModalRef } from 'ngx-bootstrap/modal';
-import { DataService } from 'src/app/services/data.service';
+import {Component, Input, OnInit} from '@angular/core';
+import {PreviewByIds} from './preview-by-ids';
+import {PreviewByFile} from './preview-by-file';
+import {PreviewForStatus} from './preview-for-status';
+import {ConformanceService} from 'src/app/services/conformance.service';
+import {Observable, of} from 'rxjs';
+import {DataService} from 'src/app/services/data.service';
 import {Constants} from '../../common/constants';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-preview-badge-modal',
@@ -39,19 +39,18 @@ export class PreviewBadgeModalComponent implements OnInit {
 
   constructor(
     private readonly conformanceService: ConformanceService,
-    private readonly modalRef: BsModalRef,
+    private readonly modalRef: NgbActiveModal,
     private readonly dataService: DataService
   ) { }
 
   ngOnInit(): void {
     this.headerText = "Badge preview"
-    this.modalRef.setClass("modal-m")
     this.getBadgeBlob().subscribe((data) => {
       if (data) {
         const reader = new FileReader();
         reader.onload = () => {
           const pathForBadge = reader.result as string
-          this.html = "<div class='badgePreviewContainer'><img class='badgePreview' src='"+pathForBadge+"'></div>"
+          this.html = "<div class='badgePreviewContainer'><img alt='badge' class='badgePreview' src='"+pathForBadge+"'></div>"
         }
         reader.readAsDataURL(data)
       }
@@ -59,7 +58,7 @@ export class PreviewBadgeModalComponent implements OnInit {
   }
 
   close() {
-    this.modalRef.hide()
+    this.modalRef.dismiss()
   }
 
   private isPreviewForStatus(config: PreviewByIds|PreviewForStatus|PreviewByFile): config is PreviewForStatus {

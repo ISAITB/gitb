@@ -13,16 +13,16 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input, OnInit } from '@angular/core';
-import { BsModalRef } from 'ngx-bootstrap/modal';
-import { DataService } from 'src/app/services/data.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { EditorOptions } from 'src/app/components/code-editor-modal/code-editor-options';
-import { TriggerService } from 'src/app/services/trigger.service';
-import { Subscription } from 'rxjs';
-import { Constants } from 'src/app/common/constants';
+import {Component, Input, OnInit} from '@angular/core';
+import {DataService} from 'src/app/services/data.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {EditorOptions} from 'src/app/components/code-editor-modal/code-editor-options';
+import {TriggerService} from 'src/app/services/trigger.service';
+import {Subscription} from 'rxjs';
+import {Constants} from 'src/app/common/constants';
 import {BaseComponent} from '../../../../base-component.component';
 import {CodemirrorComponent} from '@ctrl/ngx-codemirror';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-test-trigger-modal',
@@ -47,7 +47,7 @@ export class TestTriggerModalComponent extends BaseComponent implements OnInit {
   response?: string
 
   constructor(
-    private readonly modalRef: BsModalRef,
+    private readonly modalRef: NgbActiveModal,
     public readonly dataService: DataService,
     private readonly popupService: PopupService,
     private readonly triggerService: TriggerService
@@ -141,7 +141,7 @@ export class TestTriggerModalComponent extends BaseComponent implements OnInit {
     if (this.callSubscription) {
       this.callSubscription.unsubscribe()
     }
-    this.modalRef.hide()
+    this.modalRef.dismiss()
   }
 
   requestEditorLoaded(editor: CodemirrorComponent) {

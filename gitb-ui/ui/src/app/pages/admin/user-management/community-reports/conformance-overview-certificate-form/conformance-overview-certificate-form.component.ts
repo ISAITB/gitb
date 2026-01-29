@@ -20,7 +20,6 @@ import {forkJoin, map, Observable, of, share} from 'rxjs';
 import {PlaceholderInfo} from 'src/app/components/placeholder-selector/placeholder-info';
 import {Constants} from 'src/app/common/constants';
 import {ConformanceService} from 'src/app/services/conformance.service';
-import {BsModalService} from 'ngx-bootstrap/modal';
 import {PopupService} from 'src/app/services/popup.service';
 import {DataService} from 'src/app/services/data.service';
 import {Domain} from 'src/app/types/domain';
@@ -32,6 +31,7 @@ import {ReportService} from 'src/app/services/report.service';
 import {HttpResponse} from '@angular/common/http';
 import {ErrorService} from 'src/app/services/error.service';
 import {MultiSelectConfig} from '../../../../../components/multi-select-filter/multi-select-config';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-conformance-overview-certificate-form',
@@ -113,7 +113,7 @@ export class ConformanceOverviewCertificateFormComponent extends BaseCertificate
   constructor(
     reportService: ReportService,
     conformanceService: ConformanceService,
-    modalService: BsModalService,
+    modalService: NgbModal,
     popupService: PopupService,
     public readonly dataService: DataService,
     private readonly specificationService: SpecificationService,

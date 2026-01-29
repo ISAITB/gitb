@@ -14,7 +14,6 @@
  */
 
 import {Component, NgZone, OnInit, ViewChild} from '@angular/core';
-import {BsModalService} from 'ngx-bootstrap/modal';
 import {Observable, of} from 'rxjs';
 import {Constants} from 'src/app/common/constants';
 import {ConformanceService} from 'src/app/services/conformance.service';
@@ -41,6 +40,7 @@ import {CheckboxOptionState} from '../../../components/checkbox-option-panel/che
 import {ConformanceResultFullWithTestSuites} from '../../../types/conformance-result-full-with-test-suites';
 import {ActivatedRoute} from '@angular/router';
 import {MultiSelectFilterComponentApi} from '../../../components/multi-select-filter/multi-select-filter-component-api';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-conformance-dashboard',
@@ -72,7 +72,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     dataService: DataService,
     zone: NgZone,
     conformanceService: ConformanceService,
-    private readonly modalService: BsModalService,
+    private readonly modalService: NgbModal,
     private readonly routingService: RoutingService,
     private readonly communityService: CommunityService,
     private readonly organisationService: OrganisationService,
@@ -191,14 +191,11 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
 
   manageConformanceSnapshots() {
     if (this.selectedCommunityId != undefined) {
-      const modalRef = this.modalService.show(ConformanceSnapshotsModalComponent, {
-        class: 'modal-lg',
-        initialState: {
-          communityId: this.selectedCommunityId!,
-          currentlySelectedSnapshot: this.snapshotIdToUse()
-        }
-      })
-      modalRef.content!.select.subscribe((selectedSnapshot) => {
+      const modalRef = this.modalService.open(ConformanceSnapshotsModalComponent, { size: 'lg'})
+      const modalInstance = modalRef.componentInstance as ConformanceSnapshotsModalComponent
+      modalInstance.communityId = this.selectedCommunityId!
+      modalInstance.currentlySelectedSnapshot = this.snapshotIdToUse()
+      modalInstance.select.subscribe((selectedSnapshot) => {
         if (selectedSnapshot) {
           this.snapshotButtonLabel = selectedSnapshot.label
           if (this.activeConformanceSnapshot == undefined || this.activeConformanceSnapshot.id != selectedSnapshot.id) {

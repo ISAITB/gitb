@@ -13,15 +13,15 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, Input, OnInit, ViewChild } from '@angular/core';
-import { BsModalRef } from 'ngx-bootstrap/modal';
-import { EditorOptions } from './code-editor-options';
-import { CodemirrorComponent } from '@ctrl/ngx-codemirror';
-import { Indicator } from './indicator';
-import { DataService } from 'src/app/services/data.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { BaseCodeEditorModalComponent } from '../base-code-editor-modal/base-code-editor-modal.component';
+import {Component, Input, OnInit, ViewChild} from '@angular/core';
+import {EditorOptions} from './code-editor-options';
+import {CodemirrorComponent} from '@ctrl/ngx-codemirror';
+import {Indicator} from './indicator';
+import {DataService} from 'src/app/services/data.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {BaseCodeEditorModalComponent} from '../base-code-editor-modal/base-code-editor-modal.component';
 import {Alert} from '../../types/alert.type';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-code-editor-modal',
@@ -45,7 +45,7 @@ export class CodeEditorModalComponent extends BaseCodeEditorModalComponent imple
   styleClass = 'editor-normal'
 
   constructor(
-    modalRef: BsModalRef,
+    modalRef: NgbActiveModal,
     dataService: DataService,
     popupService: PopupService
   ) { super(modalRef, dataService, popupService) }

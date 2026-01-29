@@ -15,7 +15,6 @@
 
 import {Component, EventEmitter, OnInit, ViewChild} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
-import {BsModalService} from 'ngx-bootstrap/modal';
 import {finalize, forkJoin, map, mergeMap, Observable, of, share, Subject, tap} from 'rxjs';
 import {Constants} from 'src/app/common/constants';
 import {LinkSharedTestSuiteModalComponent} from 'src/app/modals/link-shared-test-suite-modal/link-shared-test-suite-modal.component';
@@ -37,6 +36,7 @@ import {FilterUpdate} from '../../../../../components/test-filter/filter-update'
 import {MultiSelectConfig} from '../../../../../components/multi-select-filter/multi-select-config';
 import {PagingEvent} from '../../../../../components/paging-controls/paging-event';
 import {TableApi} from '../../../../../components/table/table-api';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-specification-details',
@@ -91,7 +91,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
     route: ActivatedRoute,
     router: Router,
     private readonly popupService: PopupService,
-    private readonly modalService: BsModalService
+    private readonly modalService: NgbModal
   ) { super(router, route) }
 
   loadTab(tabIndex: number): void {
@@ -260,17 +260,12 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
   }
 
 	uploadTestSuite() {
-    const modal = this.modalService.show(TestSuiteUploadModalComponent, {
-      class: 'modal-lg',
-      keyboard: false,
-      backdrop: 'static',
-      initialState: {
-				availableSpecifications: [this.specification as Specification],
-				testSuitesVisible: true,
-        domainId: this.domainId
-      }
-    })
-    modal.content!.completed.subscribe((testSuitesUpdated: boolean) => {
+    const modal = this.modalService.open(TestSuiteUploadModalComponent, { size: 'lg', backdrop: 'static', keyboard: false })
+    const modalInstance = modal.componentInstance as TestSuiteUploadModalComponent
+    modalInstance.availableSpecifications = [this.specification as Specification]
+    modalInstance.testSuitesVisible = true
+    modalInstance.domainId = this.domainId
+    modal.closed.subscribe((testSuitesUpdated?: boolean) => {
       if (testSuitesUpdated) {
         this.loadTestSuites(true)
         this.loadActors(true)
@@ -308,19 +303,14 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
     this.conformanceService.linkSharedTestSuite(testSuite.id, [this.specificationId]).pipe(
       mergeMap((result) => {
         if (result.needsConfirmation) {
-          const modalRef = this.modalService.show(LinkSharedTestSuiteModalComponent, {
-            class: 'modal-lg',
-            keyboard: false,
-            backdrop: 'static',
-            initialState: {
-              testSuiteId: testSuite.id,
-              domainId: this.domainId,
-              step: 'confirm',
-              uploadResult: result,
-              availableSpecifications: [this.specification as Specification]
-            }
-          })
-          return modalRef.content!.completed
+          const modalRef = this.modalService.open(LinkSharedTestSuiteModalComponent, { size: 'lg', keyboard: false, backdrop: 'static' })
+          const modalInstance = modalRef.componentInstance as LinkSharedTestSuiteModalComponent
+          modalInstance.testSuiteId = testSuite.id
+          modalInstance.domainId = this.domainId
+          modalInstance.step = 'confirm'
+          modalInstance.uploadResult = result
+          modalInstance.availableSpecifications = [this.specification as Specification]
+          return modalInstance.completed
         } else if (result.success) {
           this.popupService.success('Test suite linked to '+this.dataService.labelSpecificationLower()+'.')
           this.linkPending = false

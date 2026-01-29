@@ -21,10 +21,10 @@ import {DataService} from '../../services/data.service';
 import {CheckboxOptionState} from '../checkbox-option-panel/checkbox-option-state';
 import {PreviewBadgeModalComponent} from '../../modals/preview-badge-modal/preview-badge-modal.component';
 import {ConformanceIds} from '../../types/conformance-ids';
-import {BsModalService} from 'ngx-bootstrap/modal';
 import {RoutingService} from '../../services/routing.service';
 import {StatementOptionsButtonApi} from './statement-options-button-api';
 import {CheckBoxOptionPanelComponentApi} from '../checkbox-option-panel/check-box-option-panel-component-api';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
   selector: 'app-statement-options-button',
@@ -59,7 +59,7 @@ export class StatementOptionsButtonComponent<T extends ConformanceIds> implement
   constructor(
     private readonly conformanceService: ConformanceService,
     private readonly dataService: DataService,
-    private readonly modalService: BsModalService,
+    private readonly modalService: NgbModal,
     private readonly routingService: RoutingService
   ) {}
 
@@ -157,15 +157,13 @@ export class StatementOptionsButtonComponent<T extends ConformanceIds> implement
         this.pending = false
       })
     } else if (event[StatementOptionsButtonComponent.PREVIEW_BADGE]) {
-      this.modalService.show(PreviewBadgeModalComponent, {
-        initialState: {
-          config: {
-            systemId: this.item.systemId,
-            actorId: this.item.actorId,
-            snapshotId: this.snapshotId
-          }
-        }
-      })
+      const modal = this.modalService.open(PreviewBadgeModalComponent)
+      const modalInstance = modal.componentInstance as PreviewBadgeModalComponent
+      modalInstance.config = {
+        systemId: this.item.systemId,
+        actorId: this.item.actorId,
+        snapshotId: this.snapshotId
+      }
     }
   }
 

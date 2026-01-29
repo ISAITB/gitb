@@ -14,7 +14,6 @@
  */
 
 import {Component, ElementRef, EventEmitter, Input, OnInit, ViewChild} from '@angular/core';
-import {BsModalRef} from 'ngx-bootstrap/modal';
 import {Constants} from 'src/app/common/constants';
 import {DataService} from 'src/app/services/data.service';
 import {ReportService} from 'src/app/services/report.service';
@@ -22,6 +21,7 @@ import {ConformanceCertificateSettings} from 'src/app/types/conformance-certific
 import {saveAs} from 'file-saver';
 import {Observable} from 'rxjs';
 import {ConformanceService} from 'src/app/services/conformance.service';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
   selector: 'app-conformance-certificate-modal',
@@ -56,7 +56,7 @@ export class ConformanceCertificateModalComponent implements OnInit {
 
   constructor(
     private readonly dataService: DataService,
-    private readonly modalInstance: BsModalRef,
+    private readonly modalInstance: NgbActiveModal,
     private readonly reportService: ReportService,
     private readonly conformanceService: ConformanceService
   ) { }
@@ -66,7 +66,9 @@ export class ConformanceCertificateModalComponent implements OnInit {
   }
 
   expandModal(): void {
-    this.modalInstance.setClass("conformanceCertificatePreview")
+    this.modalInstance.update({
+      modalDialogClass: 'conformanceCertificatePreview',
+    })
     this.maximised = true
     if (this.editorContainerRef) {
       const editorBottom = this.editorContainerRef.nativeElement.getBoundingClientRect().bottom
@@ -173,7 +175,7 @@ export class ConformanceCertificateModalComponent implements OnInit {
     exportObservable.subscribe((data) => {
       const blobData = new Blob([data], {type: contentType})
       saveAs(blobData, fileName)
-      this.modalInstance.hide()
+      this.modalInstance.dismiss()
     }).add(() => {
       this.exportPending = false
     })
@@ -181,7 +183,7 @@ export class ConformanceCertificateModalComponent implements OnInit {
   }
 
   cancel() {
-    this.modalInstance.hide()
+    this.modalInstance.dismiss()
   }
 
 }

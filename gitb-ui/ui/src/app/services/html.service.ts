@@ -13,9 +13,9 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Injectable } from '@angular/core';
-import { BsModalService } from 'ngx-bootstrap/modal'
-import { HtmlComponent } from '../modals/html/html.component'
+import {Injectable} from '@angular/core';
+import {HtmlComponent} from '../modals/html/html.component';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Injectable({
   providedIn: 'root'
@@ -23,22 +23,17 @@ import { HtmlComponent } from '../modals/html/html.component'
 export class HtmlService {
 
   constructor(
-    private readonly modalService: BsModalService
+    private readonly modalService: NgbModal
   ) { }
 
-  showHtml(headerText: string|undefined, html: string, size?: string, customClass?: string):void {
-    if (size == undefined) {
-      size = 'modal-lg'
+  showHtml(headerText: string|undefined, html: string, customClass?: string):void {
+    if (customClass == undefined) {
+      customClass = 'modal-lg'
     }
-    const initialState = {
-      headerText: headerText,
-      html: html,
-      customClass: customClass
-    }
-    this.modalService.show(HtmlComponent, {
-      initialState,
-      class: size,
-    })
+    const modal = this.modalService.open(HtmlComponent, { modalDialogClass: customClass })
+    const modalInstance = modal.componentInstance as HtmlComponent
+    modalInstance.headerText = headerText
+    modalInstance.html = html
   }
 
 }

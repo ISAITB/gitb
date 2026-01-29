@@ -13,13 +13,13 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, OnInit, Output} from '@angular/core';
+import {Component, OnInit} from '@angular/core';
 import {Parameter} from 'src/app/types/parameter';
 import {BaseParameterModalComponent} from '../base-parameter-modal.component';
 import {DataService} from 'src/app/services/data.service';
-import {BsModalRef} from 'ngx-bootstrap/modal';
 import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
 import {Constants} from '../../../common/constants';
+import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-parameter-details-modal',
@@ -29,15 +29,12 @@ import {Constants} from '../../../common/constants';
 })
 export class ParameterDetailsModalComponent extends BaseParameterModalComponent implements OnInit {
 
-  @Output() updated = new EventEmitter<Parameter>()
-  @Output() deleted = new EventEmitter<Parameter>()
-
   confirmMessage = 'Are you sure you want to delete this parameter?'
   modalTitle: string = 'Parameter details'
 
   constructor(
     dataService: DataService,
-    modalInstance: BsModalRef,
+    modalInstance: NgbActiveModal,
     private readonly confirmationDialogService: ConfirmationDialogService
   ) { super(dataService, modalInstance) }
 
@@ -56,8 +53,7 @@ export class ParameterDetailsModalComponent extends BaseParameterModalComponent 
 
   updateParameter() {
     if (this.validate()) {
-      this.updated.emit(this.parameter as Parameter)
-      this.modalInstance.hide()
+      this.modalInstance.close(this.parameter as Parameter)
     }
   }
 
@@ -65,8 +61,7 @@ export class ParameterDetailsModalComponent extends BaseParameterModalComponent 
     this.confirmationDialogService.confirmedDangerous("Confirm delete", this.confirmMessage, "Delete", "Cancel", Constants.BUTTON_ICON.DELETE)
     .subscribe(() => {
       this.validation.clearErrors()
-      this.deleted.emit(this.parameter as Parameter)
-      this.modalInstance.hide()
+      this.modalInstance.close()
     })
   }
 

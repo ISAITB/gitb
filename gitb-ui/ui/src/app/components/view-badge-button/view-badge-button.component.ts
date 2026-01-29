@@ -14,10 +14,10 @@
  */
 
 import {Component, Input} from '@angular/core';
-import {BsModalService} from 'ngx-bootstrap/modal';
 import {ConformanceService} from 'src/app/services/conformance.service';
 import {PreviewBadgeModalComponent} from '../../modals/preview-badge-modal/preview-badge-modal.component';
 import {Constants} from '../../common/constants';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-view-badge-button',
@@ -35,7 +35,7 @@ export class ViewBadgeButtonComponent {
 
   constructor(
     private readonly conformanceService: ConformanceService,
-    private readonly modalService: BsModalService
+    private readonly modalService: NgbModal
   ) { }
 
   copyBadgeURL() {
@@ -46,15 +46,13 @@ export class ViewBadgeButtonComponent {
   }
 
   previewBadge() {
-    this.modalService.show(PreviewBadgeModalComponent, {
-      initialState: {
-        config: {
-          systemId: this.systemId,
-          actorId: this.actorId,
-          snapshotId: this.snapshotId
-        }
-      }
-    })
+    const modal = this.modalService.open(PreviewBadgeModalComponent)
+    const modalInstance = modal.componentInstance as PreviewBadgeModalComponent
+    modalInstance.config =  {
+      systemId: this.systemId,
+      actorId: this.actorId,
+      snapshotId: this.snapshotId
+    }
   }
 
   protected readonly Constants = Constants;

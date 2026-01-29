@@ -13,19 +13,19 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Component, EventEmitter } from '@angular/core';
-import { Constants } from 'src/app/common/constants';
-import { PlaceholderInfo } from 'src/app/components/placeholder-selector/placeholder-info';
-import { ConformanceService } from 'src/app/services/conformance.service';
-import { DataService } from 'src/app/services/data.service';
-import { PopupService } from 'src/app/services/popup.service';
-import { ConformanceCertificateSettings } from 'src/app/types/conformance-certificate-settings';
-import { Observable, map, of, share } from 'rxjs';
-import { BsModalService } from 'ngx-bootstrap/modal';
-import { BaseCertificateSettingsFormComponent } from '../base-certificate-settings-form.component';
-import { ReportService } from 'src/app/services/report.service';
-import { HttpResponse } from '@angular/common/http';
-import { ErrorService } from 'src/app/services/error.service';
+import {Component, EventEmitter} from '@angular/core';
+import {Constants} from 'src/app/common/constants';
+import {PlaceholderInfo} from 'src/app/components/placeholder-selector/placeholder-info';
+import {ConformanceService} from 'src/app/services/conformance.service';
+import {DataService} from 'src/app/services/data.service';
+import {PopupService} from 'src/app/services/popup.service';
+import {ConformanceCertificateSettings} from 'src/app/types/conformance-certificate-settings';
+import {map, Observable, of, share} from 'rxjs';
+import {BaseCertificateSettingsFormComponent} from '../base-certificate-settings-form.component';
+import {ReportService} from 'src/app/services/report.service';
+import {HttpResponse} from '@angular/common/http';
+import {ErrorService} from 'src/app/services/error.service';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-conformance-certificate-form',
@@ -43,7 +43,7 @@ export class ConformanceCertificateFormComponent extends BaseCertificateSettings
   constructor(
     reportService: ReportService,
     conformanceService: ConformanceService,
-    modalService: BsModalService,
+    modalService: NgbModal,
     popupService: PopupService,
     public readonly dataService: DataService,
     errorService: ErrorService

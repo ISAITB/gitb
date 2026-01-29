@@ -18,12 +18,12 @@ import {Constants} from 'src/app/common/constants';
 import {ActorInfo} from '../actor-info';
 import {StepData} from '../step-data';
 import {ReportService} from 'src/app/services/report.service';
-import {BsModalService} from 'ngx-bootstrap/modal';
 import {TestStepReportModalComponent} from '../test-step-report-modal/test-step-report-modal.component';
 import {HtmlService} from 'src/app/services/html.service';
 import {DiagramEvents} from '../diagram-events';
 import {Subscription} from 'rxjs';
 import {StepReport} from '../report/step-report';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-sequence-diagram-message',
@@ -50,7 +50,7 @@ export class SequenceDiagramMessageComponent implements OnInit, OnDestroy {
 
   constructor(
     private readonly reportService: ReportService,
-    private readonly modalService: BsModalService,
+    private readonly modalService: NgbModal,
     private readonly htmlService: HtmlService
   ) { }
 
@@ -172,14 +172,11 @@ export class SequenceDiagramMessageComponent implements OnInit, OnDestroy {
   }
 
   showTestStepReportModal(report: StepReport) {
-    this.modalService.show(TestStepReportModalComponent, {
-      class: 'modal-lg',
-      initialState: {
-        step: this.message,
-        report: report,
-        sessionId: this.message.report!.tcInstanceId
-      }
-    })
+    const modal = this.modalService.open(TestStepReportModalComponent, { modalDialogClass: 'modal-lg' })
+    const modalInstance = modal.componentInstance as TestStepReportModalComponent
+    modalInstance.step = this.message
+    modalInstance.report = report
+    modalInstance.sessionId = this.message.report!.tcInstanceId!
   }
 
   showStepDocumentation(documentation: string) {
