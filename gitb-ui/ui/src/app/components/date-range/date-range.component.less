@@ -1,0 +1,85 @@
+/*
+ * Copyright (C) 2026 European Union
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
+ * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
+ *
+ * You may obtain a copy of the Licence at:
+ *
+ * https://interoperable-europe.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the Licence is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the Licence for
+ * the specific language governing permissions and limitations under the Licence.
+ */
+
+@import '../../../styles/less/_common.less';
+
+@media (max-width: 500px) {
+    .selection-panel {
+        .selection-preset-options {
+            grid-template-columns: repeat(2, 1fr) !important;
+        }
+        .selection-custom-options-dates {
+            grid-template-columns: repeat(1, 1fr) !important;
+        }
+    }
+}
+@media (max-width: 320px) {
+    .selection-panel {
+        .selection-preset-options {
+            grid-template-columns: repeat(1, 1fr) !important;
+        }
+        .selection-custom-options-dates {
+            grid-template-columns: repeat(1, 1fr) !important;
+        }
+    }
+}
+
+.selection-panel {
+    position: absolute;
+    background: @white;
+    z-index: 100;
+    border-radius: @border-radius;
+    border: var(--bs-border-width) solid var(--bs-border-color-translucent);
+    box-shadow: 2px 2px 5px 0 rgba(0,0,0,0.50);
+    width: 90vw;
+    max-width: 460px;
+    min-width: 240px;
+    .input-group-text {
+        min-width: 64px;
+        justify-content: center;
+    }
+    .selection-preset-options {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.5rem;
+        .btn-group {
+            .dropdown-toggle::after {
+                position: absolute;
+                top: 15px;
+                right: 10px;
+            }
+        }
+    }
+    .selection-custom-options-dates {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+    }
+    .selection-panel-section {
+        padding: 16px;
+        border-bottom: 1px solid @gray-light-2;
+        &:last-child {
+            margin-bottom: 0;
+            border-bottom-width: 0;
+        }
+    }
+    .selection-panel-close {
+        position: absolute;
+        top: 3px;
+        right: 8px;
+        padding: 2px 4px;
+        cursor: pointer;
+    }
+}

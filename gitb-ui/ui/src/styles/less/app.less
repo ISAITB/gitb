@@ -813,7 +813,7 @@ span.mini-tab, div.mini-tab {
 		display: none;
 	}
 }
-.page, .modal-header, .modal-body, .modal-footer {
+.page, .modal-header, .modal-body, .modal-footer, .itb-style-root {
 	.btn-primary {
 		color: var(--itb-btn-primary-label-color);
 		background-color: var(--itb-btn-primary-color);
@@ -1011,5 +1011,29 @@ span.mini-tab, div.mini-tab {
             background-color: @blue-info-background;
             color: @blue-info-content;
         }
+    }
+}
+ngb-datepicker {
+    .ngb-dp-arrow {
+        .btn-link {
+            color: var(--itb-btn-primary-active-color) !important;
+        }
+    }
+    .ngb-dp-week {
+        .ngb-dp-day {
+            .bg-primary {
+                color: var(--itb-btn-primary-label-color) !important;
+                background-color: var(--itb-btn-primary-color) !important;
+                border: var(--bs-btn-border-width) solid var(--itb-btn-primary-color) !important;
+            }
+            &.disabled {
+                text-decoration: line-through;
+            }
+        }
+    }
+    .ngb-dp-weekday {
+        color: var(--itb-btn-primary-active-color) !important;
+        font-style: normal !important;
+        font-weight: bold !important;
     }
 }

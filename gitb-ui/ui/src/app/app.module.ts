@@ -289,7 +289,15 @@ import {UsageTipModalComponent} from './modals/usage-tip-modal/usage-tip-modal.c
 import {SubmitOnControlEnterDirective} from './directives/submit-on-control-enter.directive';
 import {PopupNotificationContainerComponent} from './components/popup-notification-container/popup-notification-container.component';
 import {PopupNotificationComponent} from './components/popup-notification/popup-notification.component';
-import {NgbAlertModule, NgbCollapseModule, NgbDropdownModule, NgbPopoverModule, NgbTooltipModule} from '@ng-bootstrap/ng-bootstrap';
+import {
+  NgbAlertModule,
+  NgbCollapseModule,
+  NgbDatepickerModule,
+  NgbDropdownModule,
+  NgbPopoverModule,
+  NgbTooltipModule
+} from '@ng-bootstrap/ng-bootstrap';
+import {DateRangeComponent} from './components/date-range/date-range.component';
 
 @NgModule({ declarations: [
         AppComponent,
@@ -493,7 +501,8 @@ import {NgbAlertModule, NgbCollapseModule, NgbDropdownModule, NgbPopoverModule, 
         RadioCardComponent,
         UsageTipModalComponent,
         PopupNotificationContainerComponent,
-        PopupNotificationComponent
+        PopupNotificationComponent,
+        DateRangeComponent
     ],
     bootstrap: [AppComponent], imports: [
         NgxColorPickerComponent,
@@ -507,7 +516,7 @@ import {NgbAlertModule, NgbCollapseModule, NgbDropdownModule, NgbPopoverModule, 
         ModalModule.forRoot(),
         NgbAlertModule,
         NgbCollapseModule,
-        BsDatepickerModule.forRoot(),
+        NgbDatepickerModule,
         NgbTooltipModule,
         CodemirrorModule,
         NgbDropdownModule,

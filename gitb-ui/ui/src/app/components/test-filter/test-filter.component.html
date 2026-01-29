@@ -101,10 +101,7 @@
             <div class="filterCell timeFilter">
               <div class="filterName"><span>{{names[Constants.FILTER_TYPE.START_TIME]}}</span></div>
               <div class="filterValue">
-                <div class="input-group">
-                  <input class="form-control pointer" bsDaterangepicker [(ngModel)]="startDateModel" [bsConfig]="datePickerSettings" (bsValueChange)="applyTimeFiltering()" readonly="readonly">
-                  <button class="btn btn-secondary" type="button" (click)="clearStartRange()" [disabled]="startDateModel == undefined" tooltipClass="shortTooltip" container="body" ngbTooltip="Clear" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-times" [ngClass]="{'faded': startDateModel == undefined}"></i></button>
-                </div>
+                  <app-date-range [(ngModel)]="startDateModel" (ngModelChange)="applyTimeFiltering()"></app-date-range>
               </div>
             </div>
           }
@@ -112,10 +109,7 @@
             <div class="filterCell timeFilter">
               <div class="filterName"><span>{{names[Constants.FILTER_TYPE.END_TIME]}}</span></div>
               <div class="filterValue">
-                <div class="input-group">
-                  <input class="form-control pointer" bsDaterangepicker [(ngModel)]="endDateModel" [bsConfig]="datePickerSettings" (bsValueChange)="applyTimeFiltering()" readonly="readonly">
-                  <button class="btn btn-secondary" type="button" (click)="clearEndRange()" [disabled]="endDateModel == undefined" tooltipClass="shortTooltip" container="body" ngbTooltip="Clear" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-times" [ngClass]="{'faded': endDateModel == undefined}"></i></button>
-                </div>
+                  <app-date-range [(ngModel)]="endDateModel" (ngModelChange)="applyTimeFiltering()"></app-date-range>
               </div>
             </div>
           }

@@ -19,7 +19,6 @@ import {DataService} from 'src/app/services/data.service';
 import {FilterState} from 'src/app/types/filter-state';
 import {forkJoin, Observable, of} from 'rxjs';
 import {mergeMap} from 'rxjs/operators';
-import {BsDatepickerConfig} from 'ngx-bootstrap/datepicker';
 import {formatDate} from '@angular/common';
 import {Domain} from 'src/app/types/domain';
 import {Specification} from 'src/app/types/specification';
@@ -47,6 +46,7 @@ import {FilterValues} from './filter-values';
 import {FilterUpdate} from './filter-update';
 import {EntityWithId} from 'src/app/types/entity-with-id';
 import {Utils} from '../../common/utils';
+import {DateRange} from '../date-range/date-range';
 
 @Component({
     selector: 'app-test-filter',
@@ -91,14 +91,9 @@ export class TestFilterComponent implements OnInit {
   availableOrganisationProperties: OrganisationParameter[] = []
   availableSystemProperties: SystemParameter[] = []
   filterDropdownSettings: {[key: string]: MultiSelectConfig<EntityWithId>} = {}
-  datePickerSettings: Partial<BsDatepickerConfig> = {
-    adaptivePosition: true,
-    rangeInputFormat: 'DD-MM-YYYY',
-    containerClass: 'theme-default'
-  }
 
-  startDateModel?: Date[]
-  endDateModel?: Date[]
+  startDateModel?: DateRange
+  endDateModel?: DateRange
   addingOrganisationProperty = false
   addingSystemProperty = false
   loadingOrganisationProperties = false
@@ -477,18 +472,6 @@ export class TestFilterComponent implements OnInit {
     return values
   }
 
-  private toDateStart(date: Date): Date {
-    const newDate = new Date(date.getTime())
-    newDate.setHours(0, 0, 0, 0)
-    return newDate
-  }
-
-  private toDateEnd(date: Date) {
-    const newDate = new Date(date.getTime())
-    newDate.setHours(23, 59, 59, 999)
-    return newDate
-  }
-
   currentFilters() {
     const filters: { [key: string]: any } = {}
     filters[Constants.FILTER_TYPE.DOMAIN] = this.filterValue(Constants.FILTER_TYPE.DOMAIN)
@@ -510,18 +493,26 @@ export class TestFilterComponent implements OnInit {
     }
     if (this.filterDefined(Constants.FILTER_TYPE.START_TIME)) {
       if (this.startDateModel !== undefined) {
-        filters.startTimeBegin = this.toDateStart(this.startDateModel[0])
-        filters.startTimeBeginStr = formatDate(filters.startTimeBegin, 'dd-MM-YYYY HH:mm:ss', 'en')
-        filters.startTimeEnd = this.toDateEnd(this.startDateModel[1])
-        filters.startTimeEndStr = formatDate(filters.startTimeEnd, 'dd-MM-YYYY HH:mm:ss', 'en')
+        if (this.startDateModel.start !== undefined) {
+          filters.startTimeBegin = this.startDateModel.start
+          filters.startTimeBeginStr = formatDate(filters.startTimeBegin, 'dd-MM-yyyy HH:mm:ss', 'en')
+        }
+        if (this.startDateModel.end !== undefined) {
+          filters.startTimeEnd = this.startDateModel.end
+          filters.startTimeEndStr = formatDate(filters.startTimeEnd, 'dd-MM-yyyy HH:mm:ss', 'en')
+        }
       }
     }
     if (this.filterDefined(Constants.FILTER_TYPE.END_TIME)) {
       if (this.endDateModel !== undefined) {
-        filters.endTimeBegin = this.toDateStart(this.endDateModel[0])
-        filters.endTimeBeginStr = formatDate(filters.endTimeBegin, 'dd-MM-YYYY HH:mm:ss', 'en')
-        filters.endTimeEnd = this.toDateEnd(this.endDateModel[1])
-        filters.endTimeEndStr = formatDate(filters.endTimeEnd, 'dd-MM-YYYY HH:mm:ss', 'en')
+        if (this.endDateModel.start !== undefined) {
+          filters.endTimeBegin = this.endDateModel.start
+          filters.endTimeBeginStr = formatDate(filters.endTimeBegin, 'dd-MM-yyyy HH:mm:ss', 'en')
+        }
+        if (this.endDateModel.end !== undefined) {
+          filters.endTimeEnd = this.endDateModel.end
+          filters.endTimeEndStr = formatDate(filters.endTimeEnd, 'dd-MM-yyyy HH:mm:ss', 'en')
+        }
       }
     }
     if (this.filterDefined(Constants.FILTER_TYPE.SESSION)) {
@@ -769,14 +760,6 @@ export class TestFilterComponent implements OnInit {
         })
       )
     }
-  }
-
-  clearStartRange() {
-    this.startDateModel = undefined
-  }
-
-  clearEndRange() {
-    this.endDateModel = undefined
   }
 
   toggleFilterCollapsedFinished(value: boolean) {

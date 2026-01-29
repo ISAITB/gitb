@@ -94,6 +94,7 @@ export class Constants {
     TEST: 'fa-solid fa-circle-check',
     TEST_SERVICE: 'fa-solid fa-play',
     TEXT: 'fa-solid fa-align-center',
+    TODAY: 'fa-solid fa-calendar-day',
     USER: 'fa-solid fa-user',
     VIEW: 'fa-solid fa-magnifying-glass',
     VIEW_INTERACTIONS: 'fa-solid fa-user',

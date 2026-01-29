@@ -586,7 +586,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 									testCasePaths.update(testCase.getId, targetFolderPath.getParent.toUri.relativize(newFile.toUri).getPath)
 								} else if (isTestSuitePath(zipEntry)) {
 									logger.debug("File [{}] is a test suite file", newFile)
-									val path = Strings.CS.removeStart(targetFolderPath.getParent.toUri.relativize(newFile.toUri).getPath, targetFolderPath.getFileName+"/")
+									val path = Strings.CS.removeStart(targetFolderPath.getParent.toUri.relativize(newFile.toUri).getPath, targetFolderPath.getFileName.toString+"/")
 									testSuitePath = Some(path)
 								}
 								Files.copy(zipEntry, newFile)
