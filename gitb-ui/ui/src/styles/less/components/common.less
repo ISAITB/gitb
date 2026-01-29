@@ -59,29 +59,6 @@ button.btn span.label-icon i {
     width: 0.85rem;
 }
 
-// TODO ADAPT
-.nav-item.tabClass {
-    .nav-link {
-        color: var(--itb-tab-link-color) !important;
-    }
-    &:not(.active) {
-        .nav-link {
-            border-radius: @border-radius @border-radius 0 0;
-            border-top: 1px solid @gray-dark-1;
-            border-left: 1px solid @gray-dark-1;
-            border-right: 1px solid @gray-dark-1;
-            &:hover {
-                background-color: @gray-light-1;
-            }
-        }
-    }
-}
-.nav-tabs > li.active > a {
-    background-color: @gray-light-1 !important;
-    color: var(--itb-tab-link-color) !important;
-    border-bottom-color: @gray-light-1 !important;
-}
-
 .nav-item {
     .nav-link.tabClass {
         color: var(--itb-tab-link-color) !important;
@@ -114,7 +91,7 @@ button.btn span.label-icon i {
 		margin-bottom: 10px;
 	}
 	div.card:last-child {
-		margin-bottom: 0px;
+		margin-bottom: 0;
 	}
 }
 
@@ -159,8 +136,8 @@ tr.test-result-obsolete {
 }
 
 .system-container-div {
-	padding-right: 0px;
-	padding-left: 0px;
+	padding-right: 0;
+	padding-left: 0;
 }
 
 .panel-heading-tests {
@@ -249,7 +226,7 @@ tr.test-result-obsolete {
 	&.expandable {
 		cursor: pointer;
 		display: flex;
-		border-radius: @border-radius @border-radius 0px 0px;
+		border-radius: @border-radius @border-radius 0 0;
 		&:hover {
 			background-color: @white-hover;
 		}
@@ -277,7 +254,7 @@ label.inline-checkbox {
 	margin-top: 7px;
 	cursor: pointer;
 	input {
-		margin: 0px;
+		margin: 0;
 	}
 	input[type="checkbox"] {
 		margin-right: 8px;
@@ -374,7 +351,7 @@ div.import-item {
 				}
 			}
 			&.open {
-				border-bottom-right-radius: 0px;
+				border-bottom-right-radius: 0;
 			}
 		}
 	}
@@ -462,7 +439,7 @@ div.import-item-root {
 			margin-bottom: 10px;
 		}
 		& > div.import-item-group {
-			padding-bottom: 0px;
+			padding-bottom: 0;
 			border-radius: @border-radius;
 		}
 	}
@@ -473,7 +450,7 @@ div.import-item-root {
 	border-radius: @border-radius;
 	margin-bottom: 10px;
 	table.table {
-		margin-bottom: 0px;
+		margin-bottom: 0;
 		tbody tr:last-child td {
 			border-bottom-style: hidden;
 		}
@@ -508,7 +485,7 @@ table.table {
 	&.filter-table {
 		width: 100%;
 		max-width: 100%;
-		margin-bottom: 0px;
+		margin-bottom: 0;
 		th {
 			&.time-filter {
 				max-width: 250px;
