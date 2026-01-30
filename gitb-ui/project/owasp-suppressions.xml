@@ -277,5 +277,13 @@
    ]]></notes>
         <packageUrl regex="true">^pkg:maven/ch\.qos\.logback/logback-core@.*$</packageUrl>
         <vulnerabilityName>CVE-2026-1225</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <!-- Low severity CVE that relates to the MySQL server, not the JDBC driver. -->
+       <notes><![CDATA[
+   file name: mysql-connector-j-9.4.0.jar
+   ]]></notes>
+       <sha1>8f6c66269048fbd2316b7b45d75898ebee44986f</sha1>
+        <cve>CVE-2026-21964</cve>
     </suppress>    
 </suppressions>
