@@ -9,7 +9,7 @@ val gitbCommonsVersion = "1.29.0-SNAPSHOT"
 val gitbTypesVersion = "1.29.0-SNAPSHOT"
 val bouncyCastleVersion = "1.83"
 val commonsTextVersion = "1.15.0"
-val mySqlConnectorVersion = "9.5.0"
+val mySqlConnectorVersion = "9.6.0"
 val pac4jVersion = "6.3.1"
 val nettyVersion = "4.1.130.Final"
 
