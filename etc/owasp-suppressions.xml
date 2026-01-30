@@ -205,4 +205,12 @@
         <packageUrl regex="true">^pkg:maven/com\.networknt/json-schema-validator@.*$</packageUrl>
         <cve>CVE-2025-15104</cve>
     </suppress>
+    <suppress>
+        <!-- Not applicable. -->
+        <notes><![CDATA[
+   file name: logback-core-1.5.18.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/ch\.qos\.logback/logback-core@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-1225</vulnerabilityName>
+    </suppress>
 </suppressions>
