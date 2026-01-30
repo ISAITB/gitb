@@ -15,8 +15,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { enableProdMode } from '@angular/core';
-import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
+import {enableProdMode, importProvidersFrom, provideZoneChangeDetection} from '@angular/core';
 
 import { AppModule } from './app/app.module';
 import { environment } from './environments/environment';
@@ -26,10 +25,16 @@ import 'codemirror/mode/xquery/xquery'
 import 'codemirror/mode/http/http'
 import 'codemirror/mode/htmlmixed/htmlmixed'
 import 'codemirror/mode/htmlembedded/htmlembedded'
+import {AppComponent} from './app/app.component';
+import {bootstrapApplication} from '@angular/platform-browser';
 
 if (environment.production) {
   enableProdMode();
 }
 
-platformBrowserDynamic().bootstrapModule(AppModule)
-  .catch(err => console.error(err));
+bootstrapApplication(AppComponent, {
+  providers: [
+    provideZoneChangeDetection(),
+    importProvidersFrom(AppModule)
+  ]
+}).catch(err => console.error(err));

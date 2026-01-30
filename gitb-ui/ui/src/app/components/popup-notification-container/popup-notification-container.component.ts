@@ -18,12 +18,18 @@ import {PopupService} from '../../services/popup.service';
 import {Observable, Subscription} from 'rxjs';
 import {PopupNotification} from '../../types/popup-notification';
 import {PopupNotificationApi} from '../popup-notification/popup-notification-api';
+import {PopupNotificationComponent} from '../popup-notification/popup-notification.component';
+import {AsyncPipe} from '@angular/common';
 
 @Component({
   selector: 'app-popup-popup-notification-container',
-  standalone: false,
+  standalone: true,
   templateUrl: './popup-notification-container.component.html',
   styleUrl: './popup-notification-container.component.less',
+  imports: [
+    PopupNotificationComponent,
+    AsyncPipe
+  ]
 })
 export class PopupNotificationContainerComponent implements OnInit, OnDestroy {
 

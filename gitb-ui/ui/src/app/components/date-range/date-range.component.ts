@@ -340,7 +340,7 @@ export class DateRangeComponent implements ControlValueAccessor {
     }
   }
 
-  @HostListener('document:keydown.escape', ['$event'])
+  @HostListener('document:keydown.escape')
   escapeRegistered() {
     // Listening on keydown to avoid closing on escape with an open datepicker.
     if (this.open && !this.customBegin?.isOpen() && !this.customEnd?.isOpen()) {

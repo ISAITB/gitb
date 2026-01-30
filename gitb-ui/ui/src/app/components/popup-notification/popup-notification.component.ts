@@ -16,10 +16,12 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {PopupNotification} from '../../types/popup-notification';
 import {PopupNotificationApi} from './popup-notification-api';
+import {NgClass} from '@angular/common';
 
 @Component({
   selector: 'app-popup-notification',
-  standalone: false,
+  standalone: true,
+  imports: [NgClass],
   templateUrl: './popup-notification.component.html',
   styleUrl: './popup-notification.component.less',
 })

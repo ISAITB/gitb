@@ -14,11 +14,19 @@
  */
 
 import {Component} from '@angular/core';
+import {PopupNotificationContainerComponent} from './components/popup-notification-container/popup-notification-container.component';
+import {ScrollToTopComponent} from './components/scroll-to-top/scroll-to-top.component';
+import {RouterOutlet} from '@angular/router';
 
 @Component({
-    selector: 'app-root',
-    templateUrl: './app.component.html',
-    standalone: false
+  selector: 'app-root',
+  standalone: true,
+  imports: [
+    PopupNotificationContainerComponent,
+    ScrollToTopComponent,
+    RouterOutlet
+  ],
+  templateUrl: './app.component.html'
 })
 export class AppComponent {
 

@@ -17,16 +17,15 @@ import { Component, HostListener } from '@angular/core';
 
 @Component({
     selector: 'app-scroll-to-top',
-    template: '<a class="scroll-to-top" [ngClass]="{\'visible\': visible}" href id="scrollToTop" (click)="doClick();$event.preventDefault()"><i class="fa-solid fa-chevron-up"></i></a>',
-    standalone: false
+    template: '<a class="scroll-to-top" [class.visible]="visible" href id="scrollToTop" (click)="doClick();$event.preventDefault()"><i class="fa-solid fa-chevron-up"></i></a>',
+    standalone: true
 })
 export class ScrollToTopComponent {
 
-  scrollListener: any
   timeout?: any
   visible = false
 
-  @HostListener('window:scroll') onScroll(e: Event): void {
+  @HostListener('window:scroll') onScroll(): void {
     clearTimeout(this.timeout)
     this.timeout = setTimeout(() => {
       if (document.documentElement.scrollTop > 150) {

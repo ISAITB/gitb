@@ -1,5 +1,4 @@
 <div class="modal-header">
-    <div tabindex="-1" class="modal-focus-anchor" ngbAutofocus></div>
 	<div class="modal-title">{{isNameVisible?documentName:"Data"}}</div>
 </div>
 <div class="modal-body">
@@ -9,6 +8,7 @@
 	</div>
 </div>
 <div class="modal-footer">
+    <div tabindex="-1" class="modal-focus-anchor" ngbAutofocus></div>
 	<div class="btn-toolbar">
 		<button type="button" [labelIcon]="Constants.BUTTON_ICON.CANCEL" class="btn btn-secondary" (click)="close()">Close</button>
 		@if (isCopyVisible) {

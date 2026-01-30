@@ -91,7 +91,7 @@ export class ApiKeyTextComponent {
   }
 
   @HostListener('keydown.escape', ['$event'])
-  onEscape(event: KeyboardEvent) {
+  onEscape(event: Event) {
     if (this.editing) {
       event.preventDefault();
       this.editCancel();
@@ -99,7 +99,7 @@ export class ApiKeyTextComponent {
   }
 
   @HostListener('keydown.enter', ['$event'])
-  onEnter(event: KeyboardEvent) {
+  onEnter(event: Event) {
     if (this.editing) {
       event.preventDefault();
       this.editConfirm();

@@ -58,7 +58,7 @@ export class TextFilterComponent implements ControlValueAccessor {
   }
 
   @HostListener('document:keyup.escape', ['$event'])
-  escapeRegistered(event: KeyboardEvent) {
+  escapeRegistered(event: Event) {
     if (!this.readonly) {
       this.clear()
       this.readonly = true

@@ -14,14 +14,12 @@
  */
 
 import {BrowserModule} from '@angular/platform-browser';
-import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {NgModule} from '@angular/core';
 import {provideHttpClient, withInterceptorsFromDi} from '@angular/common/http';
 import {MarkdownModule} from 'ngx-markdown';
 import {CookieService} from 'ngx-cookie-service';
 import {ColorPickerComponent as NgxColorPickerComponent, ColorPickerDirective} from 'ngx-color-picker';
 import {AppRoutingModule} from './app-routing.module';
-import {AppComponent} from './app.component';
 import {LoginComponent} from './pages/login/login.component';
 import {IndexComponent} from './pages/index/index.component';
 import {HtmlComponent} from './modals/html/html.component';
@@ -69,7 +67,6 @@ import {TestAssertionReportComponent} from './components/diagram/report/test-ass
 import {CodeEditorModalComponent} from './components/code-editor-modal/code-editor-modal.component';
 import {CodemirrorModule} from '@ctrl/ngx-codemirror';
 import {PendingButtonDirective} from './directives/pending-button.directive';
-import {ScrollToTopComponent} from './components/scroll-to-top/scroll-to-top.component';
 import {ConformanceDashboardComponent} from './pages/admin/conformance-dashboard/conformance-dashboard.component';
 import {ConformanceCertificateModalComponent} from './modals/conformance-certificate-modal/conformance-certificate-modal.component';
 import {TestResultStatusDisplayComponent} from './components/test-result-status-display/test-result-status-display.component';
@@ -284,8 +281,6 @@ import {StartupWizardModalComponent} from './modals/startup-wizard-modal/startup
 import {RadioCardComponent} from './components/radio-card/radio-card.component';
 import {UsageTipModalComponent} from './modals/usage-tip-modal/usage-tip-modal.component';
 import {SubmitOnControlEnterDirective} from './directives/submit-on-control-enter.directive';
-import {PopupNotificationContainerComponent} from './components/popup-notification-container/popup-notification-container.component';
-import {PopupNotificationComponent} from './components/popup-notification/popup-notification.component';
 import {
   NgbAlertModule,
   NgbCollapseModule,
@@ -299,7 +294,6 @@ import {
 import {DateRangeComponent} from './components/date-range/date-range.component';
 
 @NgModule({ declarations: [
-        AppComponent,
         LoginComponent,
         IndexComponent,
         HtmlComponent,
@@ -343,7 +337,6 @@ import {DateRangeComponent} from './components/date-range/date-range.component';
         CodeEditorModalComponent,
         PendingButtonDirective,
         InvalidFormControlDirective,
-        ScrollToTopComponent,
         ConformanceDashboardComponent,
         ConformanceCertificateModalComponent,
         TestResultStatusDisplayComponent,
@@ -499,15 +492,12 @@ import {DateRangeComponent} from './components/date-range/date-range.component';
         StartupWizardModalComponent,
         RadioCardComponent,
         UsageTipModalComponent,
-        PopupNotificationContainerComponent,
-        PopupNotificationComponent,
         DateRangeComponent
     ],
-    bootstrap: [AppComponent], imports: [
+    imports: [
         NgxColorPickerComponent,
         ColorPickerDirective,
         BrowserModule,
-        BrowserAnimationsModule,
         EditorModule,
         FormsModule,
         AppRoutingModule,

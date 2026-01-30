@@ -188,7 +188,7 @@ export class CheckboxOptionPanelComponent implements OnInit, OnDestroy, CheckBox
     }
   }
 
-  @HostListener('document:keyup.escape', ['$event'])
+  @HostListener('document:keyup.escape')
   escapeRegistered() {
     if (this.open) {
       this.close()

@@ -45,7 +45,7 @@ export class TestResultRatioComponent extends TestStatusBase implements OnInit {
   }
 
   @HostListener('document:keyup.escape', ['$event'])
-  escapeRegistered(event: KeyboardEvent) {
+  escapeRegistered(event: Event) {
     if (this.expanded) {
       this.expanded = false
     }

@@ -250,14 +250,14 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
     if (this.clearItemsSubscription) this.clearItemsSubscription.unsubscribe()
   }
 
-  @HostListener('window:resize', ['$event'])
+  @HostListener('window:resize')
   onWindowResize() {
     if (this.formVisible) {
       this.calculateSizeAndPosition()
     }
   }
 
-  @HostListener('window:scroll', ['$event'])
+  @HostListener('window:scroll')
   onWindowScroll() {
     if (this.formVisible) {
       this.calculateSizeAndPosition()
@@ -265,7 +265,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
   }
 
   @HostListener('document:click', ['$event'])
-  clickRegistered(event: any) {
+  clickRegistered(event: Event) {
     if (!this.eRef.nativeElement.contains(event.target)) {
       this.close()
     }
