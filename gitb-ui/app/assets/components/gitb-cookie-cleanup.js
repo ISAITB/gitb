@@ -23,6 +23,9 @@ function setupLoginOptionElement(elementId, parameter) {
 }
 function option(value) {
     if (value) {
+        document.cookie = 'tat=;expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+        let cookiePath = document.getElementById('cp-div').textContent;
+        document.cookie = 'tat=;path='+cookiePath+';expires=Thu, 01 Jan 1970 00:00:01 GMT;';
         document.cookie = 'LOGIN_OPTION='+value+";Path=/;SameSite=Strict";
     } else {
         document.cookie = 'LOGIN_OPTION=none;Path=/;SameSite=Strict';
