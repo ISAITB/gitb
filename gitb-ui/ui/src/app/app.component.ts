@@ -14,7 +14,6 @@
  */
 
 import {Component} from '@angular/core';
-import {setTheme} from 'ngx-bootstrap/utils';
 
 @Component({
     selector: 'app-root',
@@ -22,9 +21,5 @@ import {setTheme} from 'ngx-bootstrap/utils';
     standalone: false
 })
 export class AppComponent {
-
-  constructor() {
-    setTheme('bs5')
-  }
 
 }
