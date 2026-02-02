@@ -1,6 +1,6 @@
 import sbtlicensereport.license.{LicenseCategory, LicenseInfo}
 
-scalaVersion := "2.13.16"
+scalaVersion := "2.13.18"
 val pekkoVersion = "1.4.0"
 val jacksonVersion = "2.20.1"
 val jacksonAnnotationsVersion = "2.20"
@@ -46,7 +46,7 @@ libraryDependencies ++= Seq(
   "org.apache.pekko" %% "pekko-slf4j" % pekkoVersion,
   "org.apache.pekko" %% "pekko-serialization-jackson" % pekkoVersion,
   "org.playframework" %% "play-slick" % "6.2.0",
-  "org.pac4j" %% "play-pac4j" % "13.0.1-PLAY3.0",
+  "org.pac4j" %% "play-pac4j" % "13.0.0-PLAY3.0",
   "org.pac4j" % "pac4j-cas" % pac4jVersion exclude("org.bouncycastle", "bcpkix-jdk15on"),
   "org.pac4j" % "pac4j-oidc" % pac4jVersion,
   "org.pac4j" % "pac4j-http" % pac4jVersion,
