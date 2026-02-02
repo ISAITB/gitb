@@ -89,7 +89,7 @@ libraryDependencies ++= Seq(
   "org.jasypt" % "jasypt" % "1.9.3",
   "org.apache.httpcomponents" % "httpclient" % "4.5.14",
   "org.flywaydb" %% "flyway-play" % "9.1.0",
-  "org.flywaydb" % "flyway-mysql" % "11.20.0",
+  "org.flywaydb" % "flyway-mysql" % "12.0.0",
   "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20260102.1",
   "net.lingala.zip4j" % "zip4j" % "2.11.5",
   "com.nimbusds" % "nimbus-jose-jwt" % "10.7",
