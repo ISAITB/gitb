@@ -285,5 +285,13 @@
    ]]></notes>
        <sha1>8f6c66269048fbd2316b7b45d75898ebee44986f</sha1>
         <cve>CVE-2026-21964</cve>
+    </suppress>
+    <suppress>
+        <!-- Non-applicable as email recipients are not controlled externally. In addition the patched Angus runtime is already used as a transitive dependency. -->
+        <notes><![CDATA[
+        file name: jakarta.mail-2.0.2.jar
+    ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.sun\.mail/jakarta\.mail@.*$</packageUrl>
+        <vulnerabilityName>CVE-2025-7962</vulnerabilityName>
     </suppress>    
 </suppressions>
