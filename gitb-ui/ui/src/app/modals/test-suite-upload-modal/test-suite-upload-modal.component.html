@@ -18,7 +18,9 @@
 						</div>
 						<div app-tooltip class="col-auto" [tbTooltip]="'The '+dataService.labelSpecificationLower()+' for which the test suite will be uploaded.'"></div>
 					</div>
-				}
+				} @else {
+                    <div tabindex="-1" class="modal-focus-anchor" ngbAutofocus></div>
+                }
 				<div class="row">
 					<label class="col-3 col-form-label text-end">* Test suite:</label>
 					<div class="col-8">
