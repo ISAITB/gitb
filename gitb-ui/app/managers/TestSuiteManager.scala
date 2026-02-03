@@ -1034,7 +1034,7 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 		} yield testSuite
 	}
 
-	def updateTestSuiteMetadata(testSuiteId: Long, name: String, description: Option[String], documentation: Option[String], version: String, specReference: Option[String], specDescription: Option[String], specLink: Option[String]): Future[Unit] = {
+	def updateTestSuiteMetadata(testSuiteId: Long, name: String, description: Option[String], documentation: Option[String], version: String, order: Short, specReference: Option[String], specDescription: Option[String], specLink: Option[String]): Future[Unit] = {
 		var hasDocumentationToSet = false
 		var documentationToSet: Option[String] = None
 		if (documentation.isDefined && !documentation.get.isBlank) {
@@ -1044,8 +1044,8 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 		val q1 = for {
 			_ <- PersistenceSchema.testSuites
 				.filter(_.id === testSuiteId)
-				.map(t => (t.shortname, t.fullname, t.description, t.documentation, t.hasDocumentation, t.version, t.specReference, t.specDescription, t.specLink))
-				.update(name, name, description, documentationToSet, hasDocumentationToSet, version, specReference, specDescription, specLink)
+				.map(t => (t.shortname, t.fullname, t.description, t.documentation, t.hasDocumentation, t.version, t.order, t.specReference, t.specDescription, t.specLink))
+				.update(name, name, description, documentationToSet, hasDocumentationToSet, version, order, specReference, specDescription, specLink)
 			_ <- testResultManager.updateForUpdatedTestSuite(testSuiteId, name)
 		} yield ()
 		DB.run(q1.transactionally)

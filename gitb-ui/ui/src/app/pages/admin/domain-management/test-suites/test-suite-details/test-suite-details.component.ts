@@ -257,7 +257,7 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
     if (!this.saveDisabled()) {
       this.clearAlerts()
       this.savePending = true
-      this.testSuiteService.updateTestSuiteMetadata(this.testSuite.id!, this.testSuite.sname!, this.testSuite.description, this.testSuite.documentation, this.testSuite.version!, this.testSuite.specReference, this.testSuite.specDescription, this.testSuite.specLink)
+      this.testSuiteService.updateTestSuiteMetadata(this.testSuite.id!, this.testSuite.sname!, this.testSuite.description, this.testSuite.documentation, this.testSuite.version!, this.testSuite.order!, this.testSuite.specReference, this.testSuite.specDescription, this.testSuite.specLink)
         .subscribe(() => {
           this.popupService.success('Test suite updated.')
         }).add(() => {

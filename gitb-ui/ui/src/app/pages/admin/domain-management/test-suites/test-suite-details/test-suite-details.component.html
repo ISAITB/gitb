@@ -35,6 +35,11 @@
                     </div>
                     <div app-tooltip class="col-auto" tbTooltip="A description for the test suite presented to users when viewing a conformance statement with multiple test suites. This should be informative enough for users to understand the purpose of the test suite. Where extended information is needed consider complementing the description with the test suite's documentation."></div>
                 </div>
+                <div class="row mb-3">
+                    <label class="col-3 col-form-label text-end" for="order">* Relative order:</label>
+                    <div class="col-1"><input id="order" name="order" [(ngModel)]="testSuite.order" class="form-control" type="number"></div>
+                    <div app-tooltip class="col-auto" [tbTooltip]="'A number used to determine the display and execution order of this test suite relative to others (default being zero). Test suites with the same order are sorted based on their name. Note that any numeric value can be provided for the order (negative, positive or zero), also without having to be sequential or unique compared to the order of other test suites.'"></div>
+                </div>
 				<app-specification-reference-form [reference]="testSuite"></app-specification-reference-form>
 				<app-form-section sectionTitle="Documentation" [collapsed]="true" [marginBefore]="true">
 					<div class="row py-3">

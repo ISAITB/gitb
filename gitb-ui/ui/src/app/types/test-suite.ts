@@ -24,5 +24,6 @@ export interface TestSuite extends TestSuiteMinimalInfo, SpecificationReferenceI
     documentation?: string
     specifications?: number[]
     shared: boolean
+    order: number
 
 }

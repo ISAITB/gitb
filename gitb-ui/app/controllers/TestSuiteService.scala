@@ -44,6 +44,7 @@ class TestSuiteService @Inject() (authorizedAction: AuthorizedAction,
 		authorizationManager.canEditTestSuite(request, testSuiteId).flatMap { _ =>
 			val name:String = ParameterExtractor.requiredBodyParameter(request, ParameterNames.NAME)
 			val version:String = ParameterExtractor.requiredBodyParameter(request, ParameterNames.VERSION)
+			val order:Short = ParameterExtractor.requiredBodyParameter(request, ParameterNames.ORDER).toShort
 			val description:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.DESCRIPTION)
 			val specReference = ParameterExtractor.optionalBodyParameter(request, ParameterNames.SPEC_REFERENCE)
 			val specDescription = ParameterExtractor.optionalBodyParameter(request, ParameterNames.SPEC_DESCRIPTION)
@@ -52,7 +53,7 @@ class TestSuiteService @Inject() (authorizedAction: AuthorizedAction,
 			if (documentation.isDefined) {
 				documentation = Some(HtmlUtil.sanitizeEditorContent(documentation.get))
 			}
-			testSuiteManager.updateTestSuiteMetadata(testSuiteId, name, description, documentation, version, specReference, specDescription, specLink).map { _ =>
+			testSuiteManager.updateTestSuiteMetadata(testSuiteId, name, description, documentation, version, order, specReference, specDescription, specLink).map { _ =>
 				ResponseConstructor.constructEmptyResponse
 			}
 		}

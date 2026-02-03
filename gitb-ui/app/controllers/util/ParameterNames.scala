@@ -77,6 +77,7 @@ object ParameterNames {
   val ACTIVE = "active"
   val EVENT = "event"
   val VERSION = "version"
+  val ORDER = "order"
   val OPTIONAL = "optional"
   val DISABLED = "disabled"
   val TAGS = "tags"

@@ -133,7 +133,7 @@ export class TestSuiteService {
 		})
 	}
 
-	updateTestSuiteMetadata(testSuiteId: number, name: string, description: string|undefined, documentation:string|undefined, version: string, specReference?: string, specDescription?: string, specLink?:string) {
+	updateTestSuiteMetadata(testSuiteId: number, name: string, description: string|undefined, documentation:string|undefined, version: string, order: number, specReference?: string, specDescription?: string, specLink?:string) {
 		return this.restService.post<void>({
 			path: ROUTES.controllers.TestSuiteService.updateTestSuiteMetadata(testSuiteId).url,
 			data: {
@@ -141,6 +141,7 @@ export class TestSuiteService {
 				description: description,
 				documentation: documentation,
 				version: version,
+        order: order,
 				specReference: specReference,
 				specDescription: specDescription,
 				specLink: specLink
