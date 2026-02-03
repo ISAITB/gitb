@@ -708,7 +708,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
       specificationId, specificationName, specificationName, Some(specificationName+" description"), Some(specificationName+" metadata"), 0,
       Some(groupId), Some(groupName), Some(groupName+" description"), Some(groupName+" metadata"),
       Some(groupName), Option(0), specificationName, specificationName,
-      Some(testSuiteIndex), Some("Sample test suite "+testSuiteIndex), Some("Description for Sample test suite "+testSuiteIndex), None, None, None, "1.0",
+      Some(testSuiteIndex), Some("Sample test suite "+testSuiteIndex), Some("Description for Sample test suite "+testSuiteIndex), None, None, None, "1.0", Some(0),
       Some(testCaseIndex), Some("Sample test case "+testCaseIndex), Some("Description for Sample test case "+testCaseIndex), Some(false), Some(false), None,  None, None, None, None, "1.0",
       None, None, None, None,
       "SUCCESS", Some("An output message for the test session"),
@@ -2316,7 +2316,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
         var completedTestsIgnored = 0
         var undefinedTestsIgnored = 0
         var index = 0
-        val testMap = new mutable.TreeMap[Long, (com.gitb.tr.TestSuiteOverview, Counters, mutable.LinkedHashMap[Long, (TestCaseGroup, Counters)])]
+        val testMap = new mutable.LinkedHashMap[Long, (com.gitb.tr.TestSuiteOverview, Counters, mutable.LinkedHashMap[Long, (TestCaseGroup, Counters)])]
         if (addTestCases) {
           report.getStatement.setTestDetails(new TestCaseDetails)
         }
@@ -2733,7 +2733,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
         var completedTestsIgnored = 0
         var undefinedTestsIgnored = 0
         var index = 1
-        val testMap = new mutable.TreeMap[Long, (com.gitb.reports.dto.TestSuiteOverview, Counters, mutable.LinkedHashMap[Long, (TestCaseGroup, Counters)])]
+        val testMap = new mutable.LinkedHashMap[Long, (com.gitb.reports.dto.TestSuiteOverview, Counters, mutable.LinkedHashMap[Long, (TestCaseGroup, Counters)])]
         conformanceInfo.foreach { info =>
           val result = TestResultStatus.withName(info.result)
           if (addTestCaseResults) {

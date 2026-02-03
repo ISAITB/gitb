@@ -651,6 +651,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
     exportedTestSuite.setShortName(testSuite.shortname)
     exportedTestSuite.setFullName(testSuite.fullname)
     exportedTestSuite.setVersion(testSuite.version)
+    exportedTestSuite.setOrder(testSuite.order)
     exportedTestSuite.setAuthors(testSuite.authors.orNull)
     exportedTestSuite.setKeywords(testSuite.keywords.orNull)
     exportedTestSuite.setDescription(testSuite.description.orNull)

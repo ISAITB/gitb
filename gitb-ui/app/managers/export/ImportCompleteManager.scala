@@ -591,7 +591,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
   }
 
   private def toModelTestSuite(data: com.gitb.xml.export.TestSuite, domainId: Long, testSuiteFileName: String, hasTestCases: Boolean, testSuiteDefinitionPath: Option[String], shared: Boolean): models.TestSuites = {
-    models.TestSuites(0L, data.getShortName, data.getFullName, data.getVersion, Option(data.getAuthors),
+    models.TestSuites(0L, data.getShortName, data.getFullName, data.getVersion, Option(data.getOrder).map(_.toShort).getOrElse(0), Option(data.getAuthors),
       Option(data.getOriginalDate), Option(data.getModificationDate), Option(data.getDescription), Option(data.getKeywords),
       testSuiteFileName, data.isHasDocumentation, Option(data.getDocumentation), data.getIdentifier, !hasTestCases, shared, domainId, testSuiteDefinitionPath,
       Option(data.getSpecReference), Option(data.getSpecDescription), Option(data.getSpecLink)

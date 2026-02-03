@@ -336,7 +336,7 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
           query = query.filter(_._2.identifier inSet request.testCase.toSet)
         }
         query
-          .sortBy(x => (x._1._2.id.asc, x._2.testSuiteOrder.asc))
+          .sortBy(x => (x._1._2.order.asc, x._1._2.shortname.asc, x._2.testSuiteOrder.asc))
           .map(x => (x._1._2.id, x._1._2.identifier, x._2.id, x._2.identifier)) // (TS ID, TS identifier, TC ID, TC identifier)
           .result
       }

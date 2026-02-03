@@ -21,6 +21,7 @@ case class ConformanceSnapshotTestSuite(
   fullname: String,
   description: Option[String],
   version: String,
+  order: Short,
   identifier: String,
   specReference: Option[String],
   specDescription: Option[String],

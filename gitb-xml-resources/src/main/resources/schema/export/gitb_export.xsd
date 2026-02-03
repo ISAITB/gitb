@@ -827,6 +827,7 @@
                     <xsd:element name="specLink" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="testCaseGroups" type="TestCaseGroups" minOccurs="0"/>
                     <xsd:element name="testCases" type="TestCases" minOccurs="0"/>
+                    <xsd:element name="order" type="xsd:short" minOccurs="0"/>
                 </xsd:sequence>
                 <xsd:attribute name="specification" type="xsd:IDREF"/>
                 <xsd:attribute name="actors" type="xsd:IDREFS"/>

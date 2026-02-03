@@ -25,6 +25,7 @@ case class TestSuites(
 	shortname: String,
 	fullname: String,
 	version: String,
+	order: Short,
 	authors: Option[String],
 	originalDate: Option[String],
 	modificationDate: Option[String],
@@ -61,6 +62,7 @@ class TestSuite(
 	               _shortname: String,
 	               _fullname: String,
 	               _version: String,
+							 	 _order: Short,
 	               _authors: Option[List[String]],
 	               _originalDate: Option[String],
 	               _modificationDate: Option[String],
@@ -88,6 +90,7 @@ class TestSuite(
 	var shortname: String = _shortname
 	var fullname: String = _fullname
 	var version: String = _version
+	var order: Short = _order
 	var authors: Option[List[String]] = _authors
 	var originalDate: Option[String] = _originalDate
 	var modificationDate: Option[String] = _modificationDate
@@ -112,7 +115,7 @@ class TestSuite(
 	var testCaseGroups: Option[List[TestCaseGroup]] = _testCaseGroups
 
 	def this(testSuite: TestSuites, actors: Option[List[Actor]], testCases: Option[List[TestCases]], testCaseGroups: Option[List[TestCaseGroup]]) = {
-		this(testSuite.id, testSuite.shortname, testSuite.fullname, testSuite.version,
+		this(testSuite.id, testSuite.shortname, testSuite.fullname, testSuite.version, testSuite.order,
 			if(testSuite.authors.isDefined) Some(testSuite.authors.get.split(",").toList) else None,
 			testSuite.originalDate,	testSuite.modificationDate, testSuite.description,
 			if(testSuite.keywords.isDefined) Some(testSuite.keywords.get.split(",").toList) else None,
@@ -131,7 +134,7 @@ class TestSuite(
 
 	def toCaseObject: TestSuites = {
 		TestSuites(
-			this.id, this.shortname, this.fullname, this.version,
+			this.id, this.shortname, this.fullname, this.version, this.order,
 			if(this.authors.isDefined) Some(this.authors.get.mkString(",")) else None,
 			this.originalDate, this.modificationDate, this.description,
 			if(this.keywords.isDefined) Some(this.keywords.get.mkString(",")) else None,

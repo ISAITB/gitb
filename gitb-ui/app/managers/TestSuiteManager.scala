@@ -47,14 +47,14 @@ object TestSuiteManager {
 	val TEST_SUITES_PATH = "test-suites"
 
 	private type TestSuiteDbTuple = (
-			Rep[Long], Rep[String], Rep[String], Rep[String],
+			Rep[Long], Rep[String], Rep[String], Rep[String], Rep[Short],
 			Rep[Option[String]], Rep[Option[String]], Rep[Option[String]], Rep[Option[String]],
 			Rep[Option[String]], Rep[Long], Rep[String], Rep[Boolean], Rep[Boolean], Rep[String], Rep[Option[String]],
 			Rep[Option[String]], Rep[Option[String]], Rep[Option[String]]
 		)
 
 	private type TestSuiteValueTuple = (
-		Long, String, String, String,
+		Long, String, String, String, Short,
 			Option[String], Option[String], Option[String], Option[String],
 			Option[String], Long, String, Boolean, Boolean, String, Option[String],
 			Option[String], Option[String], Option[String]
@@ -67,7 +67,7 @@ object TestSuiteManager {
     )
 
 	private def withoutDocumentation(dbTestSuite: PersistenceSchema.TestSuitesTable): TestSuiteDbTuple = {
-		(dbTestSuite.id, dbTestSuite.shortname, dbTestSuite.fullname, dbTestSuite.version,
+		(dbTestSuite.id, dbTestSuite.shortname, dbTestSuite.fullname, dbTestSuite.version, dbTestSuite.order,
 			dbTestSuite.authors, dbTestSuite.originalDate, dbTestSuite.modificationDate, dbTestSuite.description,
 			dbTestSuite.keywords, dbTestSuite.domain, dbTestSuite.filename, dbTestSuite.hasDocumentation, dbTestSuite.shared, dbTestSuite.identifier, dbTestSuite.definitionPath,
 			dbTestSuite.specReference, dbTestSuite.specDescription, dbTestSuite.specLink
@@ -75,7 +75,7 @@ object TestSuiteManager {
 	}
 
 	private def tupleToTestSuite(x: TestSuiteValueTuple): TestSuites = {
-		TestSuites(x._1, x._2, x._3, x._4, x._5, x._6, x._7, x._8, x._9, x._11, x._12, None, x._14, hidden = false, x._13, x._10, x._15, x._16, x._17, x._18)
+		TestSuites(x._1, x._2, x._3, x._4, x._5, x._6, x._7, x._8, x._9, x._10, x._12, x._13, None, x._15, hidden = false, x._14, x._11, x._16, x._17, x._18, x._19)
 	}
 
 	private case class TestCaseForTestSuite(id: Long, identifier: String, fullName: String)
@@ -180,7 +180,7 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
           table.identifier.toLowerCase.like(filterValueToUse) || table.shortname.toLowerCase.like(filterValueToUse) || table.description.getOrElse("").toLowerCase.like(filterValueToUse)
         })
         if (!forCount) {
-          baseQuery.sortBy(_.shortname.asc)
+          baseQuery.sortBy(x => (x.order.asc, x.shortname.asc))
             .map(TestSuiteManager.withoutDocumentation)
         } else {
           baseQuery
@@ -198,7 +198,7 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 		DB.run(PersistenceSchema.testSuites
 			.filter(_.domain === domain)
 			.filter(_.shared === true)
-			.sortBy(_.shortname.asc)
+			.sortBy(x => (x.order.asc, x.shortname.asc))
 			.map(TestSuiteManager.withoutDocumentation)
 			.result.map(_.toList)
 		).map { results =>
@@ -212,7 +212,7 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 				.join(PersistenceSchema.specificationHasTestSuites).on(_.id === _.testSuiteId)
 				.filter(_._2.specId === specification)
 				.filter(_._1.shared === true)
-				.sortBy(_._1.shortname.asc)
+				.sortBy(x => (x._1.order.asc, x._1.shortname.asc))
 				.map(x => TestSuiteManager.withoutDocumentation(x._1))
 				.result
 				.map(x => x.map(TestSuiteManager.tupleToTestSuite))
@@ -229,7 +229,7 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
           table._1.identifier.toLowerCase.like(filterValueToUse) || table._1.shortname.toLowerCase.like(filterValueToUse) || table._1.description.getOrElse("").toLowerCase.like(filterValueToUse)
         })
         if (!forCount) {
-          baseQuery.sortBy(_._1.shortname.asc)
+          baseQuery.sortBy(x => (x._1.order.asc, x._1.shortname.asc))
             .map(x => TestSuiteManager.withoutDocumentation(x._1))
         } else {
           baseQuery
@@ -252,7 +252,7 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 				PersistenceSchema.testSuites
 		}
 		DB.run(
-			q.sortBy(_.shortname.asc)
+			q.sortBy(x => (x.order.asc, x.shortname.asc))
 				.map(TestSuiteManager.withoutDocumentation)
 				.result
 				.map(_.toList)
@@ -341,7 +341,7 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 			testCases <- PersistenceSchema.testCases
 				.join(PersistenceSchema.testSuiteHasTestCases).on(_.id === _.testcase)
 				.filter(_._2.testsuite === testSuiteId)
-				.sortBy(_._1.shortname.asc)
+				.sortBy(x => (x._1.testSuiteOrder.asc, x._1.shortname.asc))
 				.map(x => TestCaseManager.withoutDocumentation(x._1))
 				.result.map(_.toList)
 			result <- {
@@ -1059,8 +1059,8 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 	private def updateTestSuiteInDb(testSuiteId: Long, newData: TestSuites): DBIO[_] = {
 		for {
 			_ <- {
-				val q1 = for {t <- PersistenceSchema.testSuites if t.id === testSuiteId} yield (t.identifier, t.shortname, t.fullname, t.version, t.authors, t.keywords, t.description, t.filename, t.hasDocumentation, t.documentation, t.hidden, t.specReference, t.specDescription, t.specLink)
-				q1.update(newData.identifier, newData.shortname, newData.fullname, newData.version, newData.authors, newData.keywords, newData.description, newData.filename, newData.hasDocumentation, newData.documentation, newData.hidden, newData.specReference, newData.specDescription, newData.specLink)
+				val q1 = for {t <- PersistenceSchema.testSuites if t.id === testSuiteId} yield (t.identifier, t.shortname, t.fullname, t.version, t.order, t.authors, t.keywords, t.description, t.filename, t.hasDocumentation, t.documentation, t.hidden, t.specReference, t.specDescription, t.specLink)
+				q1.update(newData.identifier, newData.shortname, newData.fullname, newData.version, newData.order, newData.authors, newData.keywords, newData.description, newData.filename, newData.hasDocumentation, newData.documentation, newData.hidden, newData.specReference, newData.specDescription, newData.specLink)
 			}
 			_ <- testResultManager.updateForUpdatedTestSuite(testSuiteId, newData.shortname)
 		} yield ()
@@ -1784,7 +1784,7 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 					.filterOpt(domainIds)((q, ids) => q._1._1.domain inSet ids)
 					.filterOpt(specIdsToUse)((q, ids) => q._1._2.specId inSet ids)
 					.filterOpt(specificationGroupIds)((q, ids) => q._2.group inSet ids)
-					.sortBy(_._1._1.shortname.asc)
+					.sortBy(x => (x._1._1.order.asc, x._1._1.shortname.asc))
 					.map(x => (TestSuiteManager.withoutDocumentation(x._1._1), x._1._2.specId))
 					.result
 				// Map the specification IDs

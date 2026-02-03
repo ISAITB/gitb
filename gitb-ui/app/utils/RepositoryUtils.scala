@@ -870,6 +870,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 	private def parseTestSuite(tdlTestSuiteInfo: TdlTestSuiteInfo, completeParse: Boolean, zipRoot: Path, specification: Option[Long], domain: Long): Future[TestSuites] = {
 		val tdlTestSuite = tdlTestSuiteInfo.testSuite
 		val identifier: String = tdlTestSuite.getId
+		val order: Short = Option(tdlTestSuite.getOrder).map(_.toShort).getOrElse(0)
 		val name: String = tdlTestSuite.getMetadata.getName
 		val version: String = tdlTestSuite.getMetadata.getVersion
 		val authors: String = tdlTestSuite.getMetadata.getAuthors
@@ -889,7 +890,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider)
 			}
 			testSuite <- {
 				Future.successful {
-					TestSuites(0L, name, name, Option(version).getOrElse(""), Option(authors), Option(originalDate), Option(modificationDate), Option(description), None,
+					TestSuites(0L, name, name, Option(version).getOrElse(""), order, Option(authors), Option(originalDate), Option(modificationDate), Option(description), None,
 						folderName, testSuiteDocumentation.isDefined, testSuiteDocumentation, identifier, tdlTestCaseEntries.isEmpty, shared = false, domain, None,
 						specificationInfo.flatMap(x => Option(x.getReference)),
 						specificationInfo.flatMap(x => Option(x.getDescription)),

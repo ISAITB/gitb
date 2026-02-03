@@ -366,6 +366,7 @@ object JsonUtil {
       "sname"             -> suite.shortname,
       "fname"             -> suite.fullname,
       "version"           -> suite.version,
+      "order"             -> suite.order,
       "specifications"    -> toJsArray(specificationIds),
       "authors"           -> (if(suite.authors.isDefined) suite.authors.get else JsNull),
       "description"       -> (if(suite.description.isDefined) suite.description.get else JsNull),
