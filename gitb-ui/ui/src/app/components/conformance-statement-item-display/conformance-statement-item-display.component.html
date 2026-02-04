@@ -43,7 +43,8 @@
                 }
                 @if (withExport && expandable && hasChildren && !allChildrenHidden) {
                     <div class="item-controls">
-                        <app-checkbox-option-panel label="Options"
+                        <app-checkbox-option-panel #optionButton
+                                                   label="Options"
                                                    icon="fa-solid fa-bars"
                                                    placement="left"
                                                    [options]="parentItemOptions"
@@ -65,10 +66,10 @@
                         }
                         @if (counters) {
                             <div class="item-counters">
-                                <app-test-status-icons [counters]="counters" [asLine]="true" [refresh]="refreshCounters"></app-test-status-icons>
+                                <app-test-status-icons #testStatusDisplay [counters]="counters" [asLine]="true"></app-test-status-icons>
                             </div>
                             <div class="item-ratios">
-                                <app-test-result-ratio [counters]="counters" [asLine]="true" [refresh]="refreshCounters"></app-test-result-ratio>
+                                <app-test-result-ratio #testStatusDisplayRatio [counters]="counters" [asLine]="true"></app-test-result-ratio>
                             </div>
                         }
                         @if (status) {
@@ -76,7 +77,8 @@
                         }
                         @if (withOptions && conformanceIds) {
                             <div class="options-button">
-                                <app-statement-options-button [item]="conformanceIds"
+                                <app-statement-options-button #ownOptionsButton
+                                                              [item]="conformanceIds"
                                                               [snapshotId]="snapshotId"
                                                               [communityId]="communityId"
                                                               [organisationId]="organisationId"

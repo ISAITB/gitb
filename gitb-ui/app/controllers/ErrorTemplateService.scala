@@ -44,6 +44,17 @@ class ErrorTemplateService @Inject() (authorizedAction: AuthorizedAction,
     }
   }
 
+  def searchErrorTemplatesByCommunity(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageErrorTemplates(request, communityId).flatMap { _=>
+      val page = ParameterExtractor.extractPageNumber(request)
+      val limit = ParameterExtractor.extractPageLimit(request)
+      errorTemplateManager.searchErrorTemplatesByCommunityWithoutContent(communityId, page, limit).map { result =>
+        val json: String = JsonUtil.jsSearchResult(result, JsonUtil.jsErrorTemplates).toString
+        ResponseConstructor.constructJsonResponse(json)
+      }
+    }
+  }
+
   /**
    * Creates new error template
    */

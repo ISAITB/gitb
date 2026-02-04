@@ -53,6 +53,14 @@ export class TestCaseFilterComponent implements TestCaseFilterApi, OnInit {
     this.updateOptions(options, keepCurrentState)
   }
 
+  documentEscape(): void {
+    this.optionPanel?.documentEscape()
+  }
+
+  documentClick(event: Event): void {
+    this.optionPanel?.documentClick(event)
+  }
+
   private updateOptions(options: TestCaseFilterOptions|undefined, keepCurrentState: boolean): void {
     let showSuccessfulDefault: boolean|undefined
     let showFailedDefault: boolean|undefined

@@ -125,4 +125,12 @@ export class TestSuiteDisplayComponent implements OnInit, TestSuiteDisplayCompon
   onTestSuiteSelect(testSuite: ConformanceTestSuite) {
     this.executeTestSuite.emit(testSuite)
   }
+
+  documentEscape(): void {
+    this.testCaseDisplayComponents?.forEach((item) => item.documentEscape())
+  }
+  documentClick(event: Event): void {
+    this.testCaseDisplayComponents?.forEach((item) => item.documentClick(event))
+  }
+
 }

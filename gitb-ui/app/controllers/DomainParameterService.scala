@@ -47,6 +47,18 @@ class DomainParameterService @Inject() (authorizedAction: AuthorizedAction,
     }
   }
 
+  def searchDomainParameters(domainId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageDomainParameters(request, domainId).flatMap { _ =>
+      val filter = ParameterExtractor.optionalQueryParameter(request, ParameterNames.FILTER)
+      val page = ParameterExtractor.extractPageNumber(request)
+      val limit = ParameterExtractor.extractPageLimit(request)
+      domainParameterManager.searchDomainParameters(domainId, filter, page, limit).map { result =>
+        val json: String = JsonUtil.jsSearchResult(result, JsonUtil.jsDomainParameters).toString
+        ResponseConstructor.constructJsonResponse(json)
+      }
+    }
+  }
+
   def getDomainParametersOfCommunity(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewDomainParametersForCommunity(request, communityId).flatMap { _ =>
       val loadValues = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.VALUES).getOrElse(false)
@@ -161,10 +173,13 @@ class DomainParameterService @Inject() (authorizedAction: AuthorizedAction,
     }
   }
 
-  def getTestServices(domainId: Long): Action[AnyContent] = authorizedAction.async { request =>
+  def searchTestServices(domainId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canManageTestServices(request, domainId).flatMap { _ =>
-      domainParameterManager.getTestServicesWithParameters(domainId).map { result =>
-        val json = JsonUtil.jsTestServicesWithParameters(result).toString()
+      val filter = ParameterExtractor.optionalQueryParameter(request, ParameterNames.FILTER)
+      val page = ParameterExtractor.extractPageNumber(request)
+      val limit = ParameterExtractor.extractPageLimit(request)
+      domainParameterManager.searchTestServicesWithParameters(domainId, filter, page, limit).map { result =>
+        val json: String = JsonUtil.jsSearchResult(result, JsonUtil.jsTestServicesWithParameters).toString
         ResponseConstructor.constructJsonResponse(json)
       }
     }

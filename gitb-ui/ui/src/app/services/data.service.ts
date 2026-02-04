@@ -81,8 +81,10 @@ export class DataService {
   public cookiePath?: string
   private locationData?: LocationData
   private loginOption?: string
-
+  public defaultPagingTableSize: number = Constants.TABLE_PAGE_SIZE
   public latestPageChange?: PageChange
+  private menuItemStatus = new Map<MenuItem, MenuItemStatus>()
+
   private onBannerChangeSource = new Subject<string>()
   public onBannerChange$ = this.onBannerChangeSource.asObservable()
   private onPageChangeSource = new Subject<PageChange>()
@@ -93,9 +95,10 @@ export class DataService {
   public onUserLoaded$ = this.onUserLoaded.asObservable()
   private onMenuItemStatusChangeSource = new ReplaySubject<MenuItemStatusChange>()
   public onMenuItemStatusChange$ = this.onMenuItemStatusChangeSource.asObservable()
-  private menuItemStatus = new Map<MenuItem, MenuItemStatus>()
-  private buttonPopupOpenSource = new Subject<any>()
-  public buttonPopupOpenSource$ = this.buttonPopupOpenSource.asObservable()
+  private onButtonPopupOpenSource = new Subject<any>()
+  public onButtonPopupOpen$ = this.onButtonPopupOpenSource.asObservable()
+  private onPageSizeChangeSource = new Subject<number>()
+  public onPageSizeChange$ = this.onPageSizeChangeSource.asObservable()
 
   triggerEventToDataTypeMap?: {[key: number]: { [key: number]: boolean } }
 
@@ -129,6 +132,7 @@ export class DataService {
     this.latestPageChange = undefined
     this.currentLandingPageContent = undefined
     this.cookiePath = undefined
+    this.defaultPagingTableSize = Constants.TABLE_PAGE_SIZE
     if (full) {
       this.clearAllDisplayStates()
       this.clearTestsToExecute()
@@ -196,6 +200,7 @@ export class DataService {
     this.isDomainUser = (user.role == Constants.USER_ROLE.DOMAIN_USER)
     this.isSystemAdmin = (user.role == Constants.USER_ROLE.SYSTEM_ADMIN)
     this.isCommunityAdmin = (user.role == Constants.USER_ROLE.COMMUNITY_ADMIN)
+    this.defaultPagingTableSize = user.defaultPagingSize??Constants.TABLE_PAGE_SIZE
     setTimeout(() => {
       this.showCommunityAdminMenu = this.isCommunityAdmin
       this.showSystemAdminMenu = this.isSystemAdmin
@@ -1887,7 +1892,7 @@ export class DataService {
   }
 
   signalButtonPopup(source: any) {
-    this.buttonPopupOpenSource.next(source)
+    this.onButtonPopupOpenSource.next(source)
   }
 
   clearAllDisplayStates() {
@@ -1933,6 +1938,11 @@ export class DataService {
       Array.from({ length: 4 }, next).join('') + 'X' +
       Array.from({ length: 12 }, next).join('')
     );
+  }
+
+  setDefaultPageSize(pageSize: number) {
+    this.defaultPagingTableSize = pageSize
+    this.onPageSizeChangeSource.next(pageSize)
   }
 
 }

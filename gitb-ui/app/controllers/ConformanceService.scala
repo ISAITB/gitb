@@ -15,6 +15,7 @@
 
 package controllers
 
+import com.gitb.tr.TestResultType
 import config.Configurations
 import controllers.ConformanceService.{KeystoreInfo, TestSuiteUploadInfo}
 import controllers.util._
@@ -41,7 +42,6 @@ import javax.inject.Inject
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Using
-import com.gitb.tr.TestResultType
 
 object ConformanceService {
 
@@ -378,6 +378,17 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
     authorizationManager.canManageSpecification(request, specId).flatMap { _ =>
       actorManager.getActorsWithSpecificationId(None, Some(List(specId))).map { actors =>
         val json = JsonUtil.jsActorsNonCase(actors).toString()
+        ResponseConstructor.constructJsonResponse(json)
+      }
+    }
+  }
+
+  def searchSpecActors(specId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageSpecification(request, specId).flatMap { _ =>
+      val page = ParameterExtractor.extractPageNumber(request)
+      val limit = ParameterExtractor.extractPageLimit(request)
+      actorManager.searchActorsWithSpecificationId(specId, page, limit).map { result =>
+        val json: String = JsonUtil.jsSearchResult(result, JsonUtil.jsActorsNonCase).toString
         ResponseConstructor.constructJsonResponse(json)
       }
     }

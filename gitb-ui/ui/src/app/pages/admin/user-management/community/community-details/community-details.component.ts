@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, EventEmitter, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, OnInit, ViewChild} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {Constants} from 'src/app/common/constants';
 import {CommunityService} from 'src/app/services/community.service';
@@ -46,6 +46,7 @@ import {CommunityResourceService} from '../../../../../services/community-resour
 import {PagingEvent} from '../../../../../components/paging-controls/paging-event';
 import {TableApi} from '../../../../../components/table/table-api';
 import {BaseTabbedComponent} from '../../../../base-tabbed-component';
+import {ResourceState} from '../../../../../components/resource-management-tab/resource-state';
 
 @Component({
     selector: 'app-community-details',
@@ -56,6 +57,11 @@ import {BaseTabbedComponent} from '../../../../base-tabbed-component';
 export class CommunityDetailsComponent extends BaseTabbedComponent implements OnInit, AfterViewInit {
 
   @ViewChild("organisationTable") organisationTable?: TableApi
+  @ViewChild("adminsTable") adminsTable?: TableApi
+  @ViewChild("landingPagesTable") landingPagesTable?: TableApi
+  @ViewChild("legalNoticesTable") legalNoticesTable?: TableApi
+  @ViewChild("errorTemplatesTable") errorTemplatesTable?: TableApi
+  @ViewChild("triggersTable") triggersTable?: TableApi
 
   community!: Community
   adminStatus = {status: Constants.STATUS.NONE}
@@ -77,24 +83,24 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
   landingPagesColumns: TableColumnDefinition[] = [
     { field: 'name', title: 'Name' },
     { field: 'description', title: 'Description' },
-    { field: 'default', title: 'Default' }
+    { field: 'default', title: 'Default', headerClass: 'th-min centered', cellClass: 'td-min centered' }
   ]
   legalNoticesColumns: TableColumnDefinition[] = [
     { field: 'name', title: 'Name' },
     { field: 'description', title: 'Description' },
-    { field: 'default', title: 'Default' }
+    { field: 'default', title: 'Default', headerClass: 'th-min centered', cellClass: 'td-min centered' }
   ]
   errorTemplatesColumns: TableColumnDefinition[] = [
     { field: 'name', title: 'Name' },
     { field: 'description', title: 'Description' },
-    { field: 'default', title: 'Default' }
+    { field: 'default', title: 'Default', headerClass: 'th-min centered', cellClass: 'td-min centered' }
   ]
   triggerColumns: TableColumnDefinition[] = [
     { field: 'name', title: 'Name' },
     { field: 'description', title: 'Description' },
     { field: 'eventTypeLabel', title: 'Event type' },
-    { field: 'active', title: 'Active' },
-    { field: 'statusText', title: 'Status', iconFn: this.dataService.iconForTestResult, iconTooltipFn: this.tooltipForTriggerResult }
+    { field: 'active', title: 'Active', headerClass: 'th-min centered', cellClass: 'td-min centered' },
+    { field: 'statusText', title: 'Status', iconFn: this.dataService.iconForTestResult, iconTooltipFn: this.tooltipForTriggerResult, headerClass: 'th-min centered', cellClass: 'td-min centered' }
   ]
   domains: Domain[] = []
   admins: User[] = []
@@ -103,9 +109,31 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
   legalNotices: LegalNotice[] = []
   errorTemplates: ErrorTemplate[] = []
   triggers: Trigger[] = []
-  testBedLegalNotice?: LegalNotice
+  adminsPage = 1
+  organizationsPage = 1
+  landingPagesPage = 1
+  legalNoticesPage = 1
+  errorTemplatesPage = 1
+  triggersPage = 1
+  adminsTotal = 0
+  organizationsTotal = 0
+  landingPagesTotal = 0
+  legalNoticesTotal = 0
+  errorTemplatesTotal = 0
+  triggersTotal = 0
+  resourceState: ResourceState = {
+    resources: [],
+    total: 0,
+    page: 1,
+    status: Constants.STATUS.NONE
+  }
+
   testBedLandingPage?: LandingPage
+  testBedLegalNotice?: LegalNotice
   testBedErrorTemplate?: ErrorTemplate
+  testBedLandingPageLoaded = false
+  testBedLegalNoticeLoaded = false
+  testBedErrorTemplateLoaded = false
 
   organisationFilter?: string
   organisationSortOrder = 'asc'
@@ -121,10 +149,14 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
   sortByCreationOrder = this.sortByCreationOrderNone
 
   organisationsRefreshing = false
+  adminsRefreshing = false
+  landingPagesRefreshing = false
+  legalNoticesRefreshing = false
+  errorTemplatesRefreshing = false
+  triggersRefreshing = false
   selfRegistrationWarningActive = false
 
   resourceActions!: ResourceActions
-  resourceEmitter = new EventEmitter<void>()
   validation = new ValidationState()
 
   constructor(
@@ -165,7 +197,7 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
     } else {
       this.adminColumns.push({ field: 'email', title: 'Username' })
     }
-    this.adminColumns.push({ field: 'ssoStatusText', title: 'Status', cellClass: 'td-nowrap' })
+    this.adminColumns.push({ field: 'ssoStatusText', title: 'Status', headerClass: 'th-min centered', cellClass: 'td-min centered' })
     if (this.dataService.configuration.registrationEnabled) {
       this.organizationColumns.push({ field: 'templateName', title: 'Set as template', sortable: true })
     }
@@ -210,6 +242,48 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
   showOrganisations() {
     if (this.organisationStatus.status == Constants.STATUS.NONE) {
       this.refreshOrganisations()
+    } else {
+      this.updateOrganisationPagination(this.organizationsPage, this.organizationsTotal)
+    }
+  }
+
+  showAdministrators() {
+    if (this.adminStatus.status == Constants.STATUS.NONE) {
+      this.queryAdministrators({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
+    } else {
+      this.updateAdminPagination(this.adminsPage, this.adminsTotal)
+    }
+  }
+
+  showLandingPages() {
+    if (this.landingPageStatus.status == Constants.STATUS.NONE) {
+      this.queryLandingPages({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
+    } else {
+      this.updateLandingPagesPagination(this.landingPagesPage, this.landingPagesTotal)
+    }
+  }
+
+  showLegalNotices() {
+    if (this.legalNoticeStatus.status == Constants.STATUS.NONE) {
+      this.queryLegalNotices({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
+    } else {
+      this.updateLegalNoticePagination(this.legalNoticesPage, this.legalNoticesTotal)
+    }
+  }
+
+  showErrorTemplates() {
+    if (this.errorTemplateStatus.status == Constants.STATUS.NONE) {
+      this.queryErrorTemplates({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
+    } else {
+      this.updateErrorTemplatePagination(this.errorTemplatesPage, this.errorTemplatesTotal)
+    }
+  }
+
+  showTriggers() {
+    if (this.triggerStatus.status == Constants.STATUS.NONE) {
+      this.queryTriggers({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
+    } else {
+      this.updateTriggerPagination(this.triggersPage, this.triggersTotal)
     }
   }
 
@@ -230,75 +304,104 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
     })
   }
 
-  showAdministrators() {
-    if (this.adminStatus.status == Constants.STATUS.NONE) {
+  private queryAdministrators(pagingInfo: PagingEvent) {
+    if (this.adminStatus.status == Constants.STATUS.FINISHED) {
+      this.adminsRefreshing = true
+    } else {
       this.adminStatus.status = Constants.STATUS.PENDING
-      this.userService.getCommunityAdministrators(this.communityId)
+    }
+    this.userService.getCommunityAdministrators(this.communityId, pagingInfo.targetPage, pagingInfo.targetPageSize)
       .subscribe((data) => {
-        for (let admin of data) {
+        this.admins = data.data
+        for (let admin of this.admins) {
           admin.ssoStatusText = this.dataService.userStatus(admin.ssoStatus)
         }
-        this.admins = data
+        this.updateAdminPagination(pagingInfo.targetPage, data.count!)
       }).add(() => {
-        this.adminStatus.status = Constants.STATUS.FINISHED
-      })
-    }
+      this.adminsRefreshing = false
+      this.adminStatus.status = Constants.STATUS.FINISHED
+    })
   }
 
-  showLandingPages() {
-    if (this.landingPageStatus.status == Constants.STATUS.NONE) {
+  private queryLandingPages(pagingInfo: PagingEvent) {
+    if (this.landingPageStatus.status == Constants.STATUS.FINISHED) {
+      this.landingPagesRefreshing = true
+    } else {
       this.landingPageStatus.status = Constants.STATUS.PENDING
+    }
+    if (!this.testBedLandingPageLoaded) {
+      this.testBedLandingPageLoaded = true
       this.landingPageService.getCommunityDefaultLandingPage(Constants.DEFAULT_COMMUNITY_ID)
-      .subscribe((data) => {
-        if (data.exists) this.testBedLandingPage = data
-      })
-      this.landingPageService.getLandingPagesByCommunity(this.communityId)
-      .subscribe((data) => {
-        this.landingPages = data
-      }).add(() => {
-        this.landingPageStatus.status = Constants.STATUS.FINISHED
-      })
+        .subscribe((data) => {
+          if (data.exists) this.testBedLandingPage = data
+        })
     }
+    this.landingPageService.searchLandingPagesByCommunity(this.communityId, pagingInfo.targetPage, pagingInfo.targetPageSize)
+      .subscribe((data) => {
+        this.landingPages = data.data
+        this.updateLandingPagesPagination(pagingInfo.targetPage, data.count!)
+      }).add(() => {
+      this.landingPagesRefreshing = false
+      this.landingPageStatus.status = Constants.STATUS.FINISHED
+    })
   }
 
-  showLegalNotices() {
-    if (this.legalNoticeStatus.status == Constants.STATUS.NONE) {
+  private queryLegalNotices(pagingInfo: PagingEvent) {
+    if (this.legalNoticeStatus.status == Constants.STATUS.FINISHED) {
+      this.legalNoticesRefreshing = true
+    } else {
       this.legalNoticeStatus.status = Constants.STATUS.PENDING
+    }
+    if (!this.testBedLegalNoticeLoaded) {
+      this.testBedLegalNoticeLoaded = true
       this.legalNoticeService.getTestBedDefaultLegalNotice()
-      .subscribe((data) => {
-        if (data.exists) this.testBedLegalNotice = data
-      })
-      this.legalNoticeService.getLegalNoticesByCommunity(this.communityId)
-      .subscribe((data) => {
-        this.legalNotices = data
-      }).add(() => {
-        this.legalNoticeStatus.status = Constants.STATUS.FINISHED
-      })
+        .subscribe((data) => {
+          if (data.exists) this.testBedLegalNotice = data
+        })
     }
+    this.legalNoticeService.searchLegalNoticesByCommunity(this.communityId, pagingInfo.targetPage, pagingInfo.targetPageSize)
+      .subscribe((data) => {
+        this.legalNotices = data.data
+        this.updateLegalNoticePagination(pagingInfo.targetPage, data.count!)
+      }).add(() => {
+      this.legalNoticesRefreshing = false
+      this.legalNoticeStatus.status = Constants.STATUS.FINISHED
+    })
   }
 
-  showErrorTemplates() {
-    if (this.errorTemplateStatus.status == Constants.STATUS.NONE) {
+  private queryErrorTemplates(pagingInfo: PagingEvent) {
+    if (this.errorTemplateStatus.status == Constants.STATUS.FINISHED) {
+      this.errorTemplatesRefreshing = true
+    } else {
       this.errorTemplateStatus.status = Constants.STATUS.PENDING
-      this.errorTemplateService.getCommunityDefaultErrorTemplate(Constants.DEFAULT_COMMUNITY_ID)
-      .subscribe((data) => {
-        if (data.exists) this.testBedErrorTemplate = data
-      })
-      this.errorTemplateService.getErrorTemplatesByCommunity(this.communityId)
-      .subscribe((data) => {
-        this.errorTemplates = data
-      }).add(() => {
-        this.errorTemplateStatus.status = Constants.STATUS.FINISHED
-      })
     }
+    if (!this.testBedErrorTemplateLoaded) {
+      this.testBedErrorTemplateLoaded = true
+      this.errorTemplateService.getCommunityDefaultErrorTemplate(Constants.DEFAULT_COMMUNITY_ID)
+        .subscribe((data) => {
+          if (data.exists) this.testBedErrorTemplate = data
+        })
+    }
+    this.errorTemplateService.searchErrorTemplatesByCommunity(this.communityId, pagingInfo.targetPage, pagingInfo.targetPageSize)
+      .subscribe((data) => {
+        this.errorTemplates = data.data
+        this.updateErrorTemplatePagination(pagingInfo.targetPage, data.count!)
+      }).add(() => {
+      this.errorTemplatesRefreshing = false
+      this.errorTemplateStatus.status = Constants.STATUS.FINISHED
+    })
   }
 
-  showTriggers() {
-    if (this.triggerStatus.status == Constants.STATUS.NONE) {
+  private queryTriggers(pagingInfo: PagingEvent) {
+    if (this.triggerStatus.status == Constants.STATUS.FINISHED) {
+      this.triggersRefreshing = true
+    } else {
       this.triggerStatus.status = Constants.STATUS.PENDING
-      this.triggerService.getTriggersByCommunity(this.communityId)
+    }
+    this.triggerService.getTriggersByCommunity(this.communityId, pagingInfo.targetPage, pagingInfo.targetPageSize)
       .subscribe((data) => {
-        for (let trigger of data) {
+        this.triggers = data.data
+        for (let trigger of this.triggers) {
           trigger.eventTypeLabel = this.dataService.triggerEventTypeLabel(trigger.eventType)
           if (trigger.latestResultOk != undefined) {
             if (trigger.latestResultOk) {
@@ -310,15 +413,15 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
             trigger.statusText = Constants.TEST_CASE_RESULT.UNDEFINED
           }
         }
-        this.triggers = data
+        this.updateTriggerPagination(pagingInfo.targetPage, data.count!)
       }).add(() => {
-        this.triggerStatus.status = Constants.STATUS.FINISHED
-      })
-    }
+      this.triggersRefreshing = false
+      this.triggerStatus.status = Constants.STATUS.FINISHED
+    })
   }
 
   showResources() {
-    this.resourceEmitter.emit()
+    // No action needed.
   }
 
   saveDisabled() {
@@ -482,14 +585,123 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
 
   doOrganisationPaging(event: PagingEvent) {
     this.queryOrganisations(event)
+    if (event.pageSizeChanged) {
+      this.adminStatus.status = Constants.STATUS.NONE
+      this.landingPageStatus.status = Constants.STATUS.NONE
+      this.legalNoticeStatus.status = Constants.STATUS.NONE
+      this.errorTemplateStatus.status = Constants.STATUS.NONE
+      this.triggerStatus.status = Constants.STATUS.NONE
+      this.resourceState.status = Constants.STATUS.NONE
+    }
+  }
+
+  doAdminPaging(event: PagingEvent) {
+    this.queryAdministrators(event)
+    if (event.pageSizeChanged) {
+      this.organisationStatus.status = Constants.STATUS.NONE
+      this.landingPageStatus.status = Constants.STATUS.NONE
+      this.legalNoticeStatus.status = Constants.STATUS.NONE
+      this.errorTemplateStatus.status = Constants.STATUS.NONE
+      this.triggerStatus.status = Constants.STATUS.NONE
+      this.resourceState.status = Constants.STATUS.NONE
+    }
+  }
+
+  doLandingPagePaging(event: PagingEvent) {
+    this.queryLandingPages(event)
+    if (event.pageSizeChanged) {
+      this.organisationStatus.status = Constants.STATUS.NONE
+      this.adminStatus.status = Constants.STATUS.NONE
+      this.legalNoticeStatus.status = Constants.STATUS.NONE
+      this.errorTemplateStatus.status = Constants.STATUS.NONE
+      this.triggerStatus.status = Constants.STATUS.NONE
+      this.resourceState.status = Constants.STATUS.NONE
+    }
+  }
+
+  doLegalNoticePaging(event: PagingEvent) {
+    this.queryLegalNotices(event)
+    if (event.pageSizeChanged) {
+      this.organisationStatus.status = Constants.STATUS.NONE
+      this.adminStatus.status = Constants.STATUS.NONE
+      this.landingPageStatus.status = Constants.STATUS.NONE
+      this.errorTemplateStatus.status = Constants.STATUS.NONE
+      this.triggerStatus.status = Constants.STATUS.NONE
+      this.resourceState.status = Constants.STATUS.NONE
+    }
+  }
+
+  doErrorTemplatePaging(event: PagingEvent) {
+    this.queryErrorTemplates(event)
+    if (event.pageSizeChanged) {
+      this.organisationStatus.status = Constants.STATUS.NONE
+      this.adminStatus.status = Constants.STATUS.NONE
+      this.landingPageStatus.status = Constants.STATUS.NONE
+      this.legalNoticeStatus.status = Constants.STATUS.NONE
+      this.triggerStatus.status = Constants.STATUS.NONE
+      this.resourceState.status = Constants.STATUS.NONE
+    }
+  }
+
+  doTriggerPaging(event: PagingEvent) {
+    this.queryTriggers(event)
+    if (event.pageSizeChanged) {
+      this.organisationStatus.status = Constants.STATUS.NONE
+      this.adminStatus.status = Constants.STATUS.NONE
+      this.landingPageStatus.status = Constants.STATUS.NONE
+      this.legalNoticeStatus.status = Constants.STATUS.NONE
+      this.errorTemplateStatus.status = Constants.STATUS.NONE
+      this.resourceState.status = Constants.STATUS.NONE
+    }
+  }
+
+  resourceTabPageSizeChange() {
+    this.organisationStatus.status = Constants.STATUS.NONE
+    this.adminStatus.status = Constants.STATUS.NONE
+    this.landingPageStatus.status = Constants.STATUS.NONE
+    this.legalNoticeStatus.status = Constants.STATUS.NONE
+    this.errorTemplateStatus.status = Constants.STATUS.NONE
+    this.triggerStatus.status = Constants.STATUS.NONE
   }
 
   refreshOrganisations() {
-    this.queryOrganisations({ targetPage: 1, targetPageSize: this.organisationTable?.getPagingControls()?.getCurrentStatus().pageSize! })
+    this.queryOrganisations({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
   }
 
   private updateOrganisationPagination(page: number, count: number) {
     this.organisationTable?.getPagingControls()?.updateStatus(page, count)
+    this.organizationsPage = page
+    this.organizationsTotal = count
+  }
+
+  private updateAdminPagination(page: number, count: number) {
+    this.adminsTable?.getPagingControls()?.updateStatus(page, count)
+    this.adminsPage = page
+    this.adminsTotal = count
+  }
+
+  private updateLandingPagesPagination(page: number, count: number) {
+    this.landingPagesTable?.getPagingControls()?.updateStatus(page, count)
+    this.landingPagesPage = page
+    this.landingPagesTotal = count
+  }
+
+  private updateLegalNoticePagination(page: number, count: number) {
+    this.legalNoticesTable?.getPagingControls()?.updateStatus(page, count)
+    this.legalNoticesPage = page
+    this.legalNoticesTotal = count
+  }
+
+  private updateErrorTemplatePagination(page: number, count: number) {
+    this.errorTemplatesTable?.getPagingControls()?.updateStatus(page, count)
+    this.errorTemplatesPage = page
+    this.errorTemplatesTotal = count
+  }
+
+  private updateTriggerPagination(page: number, count: number) {
+    this.triggersTable?.getPagingControls()?.updateStatus(page, count)
+    this.triggersPage = page
+    this.triggersTotal = count
   }
 
   sortOrganisations(column: TableColumnDefinition) {

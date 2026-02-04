@@ -233,16 +233,26 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     DB.run(dbAction.transactionally)
   }
 
-  def getVendorUsers(userId: Long): Future[List[Users]] = {
-    DB.run(for {
-      //1) Get organization id of the user first
-      orgId <- PersistenceSchema.users.filter(_.id === userId).map(_.organization).result.headOption
-      //2) Get all users of the organization
-      users <- PersistenceSchema.users.filter(_.organization === orgId)
-        .sortBy(x => (x.role.asc, x.name.asc))
-        .result
-        .map(_.toList)
-    } yield users)
+  def getVendorUsers(userId: Long, page: Long, limit: Long): Future[SearchResult[Users]] = {
+    DB.run {
+      for {
+        //1) Get organisation ID of the user first
+        orgId <- PersistenceSchema.users.filter(_.id === userId).map(_.organization).result.headOption
+        result <- {
+          val queryBuilder = (forCount: Boolean) => {
+            var baseQuery = PersistenceSchema.users.filter(_.organization === orgId)
+            if (!forCount) {
+              baseQuery = baseQuery.sortBy(x => (x.role.asc, x.name.asc))
+            }
+            baseQuery
+          }
+          for {
+            results <- queryBuilder(false).drop((page - 1) * limit).take(limit).result
+            resultCount <- queryBuilder(true).size.result
+          } yield SearchResult(results, resultCount)
+        }
+      } yield result
+    }
   }
 
   def isAdmin(userId: Long): Future[Boolean] = {

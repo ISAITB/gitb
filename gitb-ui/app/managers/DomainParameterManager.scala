@@ -190,6 +190,28 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
     DB.run(getDomainParametersByCommunityIdInternal(communityId, onlySimple, loadValues)).map(_.toList)
   }
 
+  def searchDomainParameters(domainId: Long, filter: Option[String], page: Long, limit: Long): Future[SearchResult[DomainParameter]] = {
+    val queryBuilder = (forCount: Boolean) => {
+      val baseQuery = PersistenceSchema.domainParameters
+        .filter(_.domain === domainId)
+        .filterOpt(filter)((table, filterValue) => {
+          val filterValueToUse = toLowercaseLikeParameter(filterValue)
+          table.name.toLowerCase.like(filterValueToUse) || table.desc.getOrElse("").toLowerCase.like(filterValueToUse)
+        })
+      if (!forCount) {
+        baseQuery.sortBy(_.name.asc)
+      } else {
+        baseQuery
+      }
+    }
+    DB.run {
+      for {
+        results <- queryBuilder(false).drop((page - 1) * limit).take(limit).result
+        resultCount <- queryBuilder(true).size.result
+      } yield SearchResult(results, resultCount)
+    }
+  }
+
   def getDomainParameters(domainId: Long, loadValues: Boolean, onlyForTests: Option[Boolean], onlySimple: Boolean): Future[List[DomainParameter]] = {
     val query = PersistenceSchema.domainParameters.filter(_.domain === domainId)
       .filterOpt(onlyForTests)((table, filterValue) => table.inTests === filterValue)
@@ -686,7 +708,7 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
     DB.run(getTestServicesInternal(domainId))
   }
 
-  def getTestServicesInternal(domainId: Long): DBIO[List[TestService]] = {
+  private def getTestServicesInternal(domainId: Long): DBIO[List[TestService]] = {
     PersistenceSchema.testServices
       .join(PersistenceSchema.domainParameters).on(_.parameter === _.id)
       .filter(_._2.domain === domainId)
@@ -695,17 +717,26 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
       .map(_.toList)
   }
 
-  def getTestServicesWithParameters(domainId: Long): Future[Seq[TestServiceWithParameter]] = {
-    DB.run {
-      PersistenceSchema.testServices
+  def searchTestServicesWithParameters(domainId: Long, filter: Option[String], page: Long, limit: Long): Future[SearchResult[TestServiceWithParameter]] = {
+    val queryBuilder = (forCount: Boolean) => {
+      val baseQuery = PersistenceSchema.testServices
         .join(PersistenceSchema.domainParameters).on(_.parameter === _.id)
         .filter(_._2.domain === domainId)
-        .result
-        .map { results =>
-          results.map { result =>
-            TestServiceWithParameter(result._1, result._2)
-          }
-        }
+        .filterOpt(filter)((table, filterValue) => {
+          val filterValueToUse = toLowercaseLikeParameter(filterValue)
+          table._2.name.toLowerCase.like(filterValueToUse) || table._2.desc.getOrElse("").toLowerCase.like(filterValueToUse)
+      })
+      if (!forCount) {
+        baseQuery.sortBy(_._2.name.asc)
+      } else {
+        baseQuery
+      }
+    }
+    DB.run {
+      for {
+        results <- queryBuilder(false).drop((page - 1) * limit).take(limit).result.map(_.map(result => TestServiceWithParameter(result._1, result._2)))
+        resultCount <- queryBuilder(true).size.result
+      } yield SearchResult(results, resultCount)
     }
   }
 

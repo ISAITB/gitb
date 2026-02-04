@@ -14,4 +14,8 @@
  */
 
 export interface TableRowApi {
+
+  documentEscape: () => void;
+  documentClick: (event: Event) => void;
+
 }

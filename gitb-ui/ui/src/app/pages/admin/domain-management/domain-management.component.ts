@@ -100,7 +100,7 @@ export class DomainManagementComponent implements OnInit, AfterViewInit {
   }
 
   refreshDomains() {
-    this.loadDomains({ targetPage: 1, targetPageSize: this.domainTable?.getPagingControls()?.getCurrentStatus().pageSize! })
+    this.loadDomains({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
   }
 
   doDomainPaging(event: PagingEvent) {

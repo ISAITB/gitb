@@ -18,6 +18,7 @@ import { ROUTES } from '../common/global';
 import { ErrorDescription } from '../types/error-description';
 import { ErrorTemplate } from '../types/error-template';
 import { RestService } from './rest.service';
+import {SearchResult} from '../types/search-result';
 
 @Injectable({
   providedIn: 'root'
@@ -40,6 +41,17 @@ export class ErrorTemplateService {
     return this.restService.get<ErrorTemplate[]>({
       path: ROUTES.controllers.ErrorTemplateService.getErrorTemplatesByCommunity(communityId).url,
       authenticate: true
+    })
+  }
+
+  searchErrorTemplatesByCommunity(communityId: number, page: number|undefined, limit: number|undefined) {
+    return this.restService.get<SearchResult<ErrorTemplate>>({
+      path: ROUTES.controllers.ErrorTemplateService.searchErrorTemplatesByCommunity(communityId).url,
+      authenticate: true,
+      params: {
+        page: page,
+        limit: limit
+      }
     })
   }
 

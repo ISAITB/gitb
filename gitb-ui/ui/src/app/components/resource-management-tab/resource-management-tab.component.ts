@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, EventEmitter, Input, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, EventEmitter, Input, Output, ViewChild} from '@angular/core';
 import {Constants} from '../../common/constants';
 import {ResourceActions} from './resource-actions';
 import {CommunityResource} from '../../types/community-resource';
@@ -31,6 +31,7 @@ import {DataService} from '../../services/data.service';
 import {TableComponent} from '../table/table.component';
 import {PagingEvent} from '../paging-controls/paging-event';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
+import {ResourceState} from './resource-state';
 
 @Component({
   selector: 'app-resource-management-tab',
@@ -40,18 +41,16 @@ import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 })
 export class ResourceManagementTabComponent implements AfterViewInit {
 
+  @Input() state!: ResourceState
   @Input() actions!: ResourceActions
-  @Input() deferredActivation?: EventEmitter<void>
+  @Output() pageSizeChanged = new EventEmitter<void>()
   @ViewChild("resourcesTable") resourcesTable?: TableComponent
 
   downloadAllResourcesPending = false
   deleteResourcesPending = false
   selectingForDeleteResources = false
   resourcesRefreshing = false
-  resourceFilter?: string
-  resourcesStatus = {status: Constants.STATUS.NONE}
   clearResourceSelections = new EventEmitter<void>()
-  resources: CommunityResource[] = []
 
   resourceColumns: TableColumnDefinition[] = [
     { field: 'name', title: 'Name' },
@@ -68,14 +67,10 @@ export class ResourceManagementTabComponent implements AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    if (this.deferredActivation) {
-      this.deferredActivation.subscribe(() => {
-        if (this.resourcesStatus.status == Constants.STATUS.NONE) {
-          this.refreshResources()
-        }
-      })
-    } else {
+    if (this.state.status == Constants.STATUS.NONE) {
       this.refreshResources()
+    } else {
+      this.updateResourcesPagination(this.state.page, this.state.total)
     }
   }
 
@@ -84,24 +79,26 @@ export class ResourceManagementTabComponent implements AfterViewInit {
   }
 
   queryResources(pagingInfo: PagingEvent) {
-    if (this.resourcesStatus.status == Constants.STATUS.FINISHED) {
+    if (this.state.status == Constants.STATUS.FINISHED) {
       this.resourcesRefreshing = true
     } else {
-      this.resourcesStatus.status = Constants.STATUS.PENDING
+      this.state.status = Constants.STATUS.PENDING
     }
     this.clearResourceSelections.emit()
-    this.actions.searchResources(this.resourceFilter, pagingInfo.targetPage, pagingInfo.targetPageSize)
+    this.actions.searchResources(this.state.filter, pagingInfo.targetPage, pagingInfo.targetPageSize)
       .subscribe((data) => {
-        this.resources = data.data
+        this.state.resources = data.data
         this.updateResourcesPagination(pagingInfo.targetPage, data.count!)
       }).add(() => {
       this.resourcesRefreshing = false
-      this.resourcesStatus.status = Constants.STATUS.FINISHED
+      this.state.status = Constants.STATUS.FINISHED
     })
   }
 
   private updateResourcesPagination(page: number, count: number) {
     this.resourcesTable?.pagingControls?.updateStatus(page, count)
+    this.state.page = page
+    this.state.total = count
   }
 
   uploadResource() {
@@ -135,9 +132,9 @@ export class ResourceManagementTabComponent implements AfterViewInit {
   }
 
   downloadAllResources() {
-    if (this.resources.length > 0) {
+    if (this.state.resources.length > 0) {
       this.downloadAllResourcesPending = true
-      this.actions.downloadResources(this.resourceFilter)
+      this.actions.downloadResources(this.state.filter)
         .subscribe((data) => {
           const blobData = new Blob([data], {type: 'application/zip'})
           saveAs(blobData, 'resources.zip')
@@ -153,7 +150,7 @@ export class ResourceManagementTabComponent implements AfterViewInit {
 
   confirmDeleteResources() {
     const resourceIds: number[] = []
-    for (let resource of this.resources) {
+    for (let resource of this.state.resources) {
       if (resource.checked != undefined && resource.checked) {
         resourceIds.push(resource.id)
       }
@@ -180,7 +177,7 @@ export class ResourceManagementTabComponent implements AfterViewInit {
   cancelDeleteResources() {
     this.clearResourceSelections.emit()
     this.selectingForDeleteResources = false
-    for (let resource of this.resources) {
+    for (let resource of this.state.resources) {
       if (resource.checked != undefined) {
         resource.checked = false
       }
@@ -188,7 +185,7 @@ export class ResourceManagementTabComponent implements AfterViewInit {
   }
 
   resourcesChecked() {
-    for (let resource of this.resources) {
+    for (let resource of this.state.resources) {
       if (resource.checked !== undefined && resource.checked) {
         return true
       }
@@ -237,10 +234,13 @@ export class ResourceManagementTabComponent implements AfterViewInit {
 
   doPageNavigation(event: PagingEvent) {
     this.queryResources(event)
+    if (event.pageSizeChanged) {
+      this.pageSizeChanged.emit()
+    }
   }
 
   refreshResources() {
-    this.queryResources({ targetPage: 1, targetPageSize: this.resourcesTable?.pagingControls?.getCurrentStatus().pageSize!})
+    this.queryResources({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize})
   }
 
   protected readonly Constants = Constants;

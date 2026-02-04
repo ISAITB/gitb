@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Counters} from '../components/test-status-icons/counters';
+import {Counters} from '../components/test-status-base/counters';
 import {ConformanceTestSuite} from '../pages/organisation/conformance-statement/conformance-test-suite';
 import {ConformanceIds} from './conformance-ids';
 

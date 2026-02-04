@@ -13,12 +13,13 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Injectable } from '@angular/core';
-import { Constants } from '../common/constants';
-import { ROUTES } from '../common/global';
-import { ErrorDescription } from '../types/error-description';
-import { User } from '../types/user.type';
-import { RestService } from './rest.service';
+import {Injectable} from '@angular/core';
+import {Constants} from '../common/constants';
+import {ROUTES} from '../common/global';
+import {ErrorDescription} from '../types/error-description';
+import {User} from '../types/user.type';
+import {RestService} from './rest.service';
+import {SearchResult} from '../types/search-result';
 
 @Injectable({
   providedIn: 'root'
@@ -27,51 +28,62 @@ export class UserService {
 
   constructor(
     private readonly restService: RestService
-  ) { }
-
-  getSystemAdministrators() {
-    return this.restService.get<User[]>({
-      path: ROUTES.controllers.UserService.getSystemAdministrators().url,
-      authenticate: true
-    })
+  ) {
   }
 
-  getCommunityAdministrators(communityId: number) {
-    return this.restService.get<User[]>({
+  getSystemAdministrators(page: number | undefined, limit: number | undefined) {
+    return this.restService.get<SearchResult<User>>({
+      path: ROUTES.controllers.UserService.getSystemAdministrators().url,
+      authenticate: true,
+      params: {
+        page: page,
+        limit: limit
+      }
+    });
+  }
+
+  getCommunityAdministrators(communityId: number, page: number | undefined, limit: number | undefined) {
+    return this.restService.get<SearchResult<User>>({
       path: ROUTES.controllers.UserService.getCommunityAdministrators().url,
       authenticate: true,
       params: {
-        community_id: communityId
+        community_id: communityId,
+        page: page,
+        limit: limit
       }
-    })
+    });
   }
 
-  getUsersByOrganisation(orgId: number) {
-    return this.restService.get<User[]>({
-      path: ROUTES.controllers.UserService.getUsersByOrganization(orgId).url,
-      authenticate: true
-    })
+  searchUsersByOrganisation(orgId: number, page: number | undefined, limit: number | undefined) {
+    return this.restService.get<SearchResult<User>>({
+      path: ROUTES.controllers.UserService.searchUsersByOrganization(orgId).url,
+      authenticate: true,
+      params: {
+        page: page,
+        limit: limit
+      }
+    });
   }
 
   getBasicUsersByOrganization(orgId: number) {
     return this.restService.get<User[]>({
       path: ROUTES.controllers.UserService.getBasicUsersByOrganization(orgId).url,
       authenticate: true
-    })
+    });
   }
 
   getOwnOrganisationUserById(userId: number) {
     return this.restService.get<User>({
       path: ROUTES.controllers.UserService.getOwnOrganisationUserById(userId).url,
       authenticate: true
-    })
+    });
   }
 
   getUserById(userId: number) {
-    return this.restService.get<User|undefined>({
+    return this.restService.get<User | undefined>({
       path: ROUTES.controllers.UserService.getUserById(userId).url,
       authenticate: true
-    })
+    });
   }
 
   updateSystemAdminProfile(userId: number, name: string, password?: string) {
@@ -82,7 +94,7 @@ export class UserService {
         user_name: name,
         password: password
       }
-    })
+    });
   }
 
   updateCommunityAdminProfile(userId: number, name: string, password?: string) {
@@ -93,27 +105,27 @@ export class UserService {
         user_name: name,
         password: password
       }
-    })
+    });
   }
 
-  updateUserProfile(userId: number, name: string|undefined, role: number, password: string|undefined) {
+  updateUserProfile(userId: number, name: string | undefined, role: number, password: string | undefined) {
     const data: any = {
       role_id: role
-    }
+    };
     if (name != undefined) {
-      data.user_name = name
+      data.user_name = name;
     }
     if (password != undefined) {
-      data.password = password
+      data.password = password;
     }
-    return this.restService.post<ErrorDescription|void>({
+    return this.restService.post<ErrorDescription | void>({
       path: ROUTES.controllers.UserService.updateUserProfile(userId).url,
       data: data,
       authenticate: true
-    })
+    });
   }
 
-  createSystemAdmin(userName: string|undefined, userEmail: string, userPassword: string|undefined) {
+  createSystemAdmin(userName: string | undefined, userEmail: string, userPassword: string | undefined) {
     return this.restService.post<void>({
       path: ROUTES.controllers.UserService.createSystemAdmin().url,
       data: {
@@ -123,10 +135,10 @@ export class UserService {
         community_id: Constants.DEFAULT_COMMUNITY_ID
       },
       authenticate: true
-    })
+    });
   }
 
-  createCommunityAdmin(userName: string|undefined, userEmail: string, userPassword: string|undefined, communityId: number) {
+  createCommunityAdmin(userName: string | undefined, userEmail: string, userPassword: string | undefined, communityId: number) {
     return this.restService.post<void>({
       path: ROUTES.controllers.UserService.createCommunityAdmin().url,
       data: {
@@ -136,10 +148,10 @@ export class UserService {
         community_id: communityId
       },
       authenticate: true
-    })
+    });
   }
 
-  createVendorUser(userName: string|undefined, userEmail: string, userPassword: string|undefined, orgId: number, roleId: number) {
+  createVendorUser(userName: string | undefined, userEmail: string, userPassword: string | undefined, orgId: number, roleId: number) {
     return this.restService.post<void>({
       path: ROUTES.controllers.UserService.createUser(orgId).url,
       data: {
@@ -149,20 +161,20 @@ export class UserService {
         role_id: roleId
       },
       authenticate: true
-    })
+    });
   }
 
   deleteAdmin(userId: number) {
-    return this.restService.delete<ErrorDescription|undefined>({
+    return this.restService.delete<ErrorDescription | undefined>({
       path: ROUTES.controllers.UserService.deleteAdmin(userId).url,
       authenticate: true
-    })
+    });
   }
 
   deleteVendorUser(userId: number) {
-    return this.restService.delete<ErrorDescription|undefined>({
+    return this.restService.delete<ErrorDescription | undefined>({
       path: ROUTES.controllers.UserService.deleteVendorUser(userId).url,
       authenticate: true
-    })
+    });
   }
 }

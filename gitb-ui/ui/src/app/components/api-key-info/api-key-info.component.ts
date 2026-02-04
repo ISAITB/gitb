@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit} from '@angular/core';
+import {AfterViewInit, Component, Input, OnInit} from '@angular/core';
 import {forkJoin, Observable, of} from 'rxjs';
 import {Constants} from 'src/app/common/constants';
 import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
@@ -25,13 +25,13 @@ import {SystemService} from 'src/app/services/system.service';
 import {ApiKeyActorInfo} from 'src/app/types/api-key-actor-info';
 
 import {ApiKeyInfo} from 'src/app/types/api-key-info';
-import {ApiKeySpecificationInfo} from 'src/app/types/api-key-specification-info';
 import {ApiKeySystemInfo} from 'src/app/types/api-key-system-info';
 import {ApiKeyTestCaseInfo} from 'src/app/types/api-key-test-case-info';
 import {ApiKeyTestSuiteInfo} from 'src/app/types/api-key-test-suite-info';
 import {ConformanceSnapshot} from 'src/app/types/conformance-snapshot';
 import {ConformanceSnapshotList} from 'src/app/types/conformance-snapshot-list';
 import {MultiSelectConfig} from '../multi-select-filter/multi-select-config';
+import {ApiKeyInfoState} from './api-key-info-state';
 
 @Component({
     selector: 'app-api-key-info',
@@ -39,27 +39,14 @@ import {MultiSelectConfig} from '../multi-select-filter/multi-select-config';
     styleUrls: ['./api-key-info.component.less'],
     standalone: false
 })
-export class ApiKeyInfoComponent implements OnInit {
+export class ApiKeyInfoComponent implements OnInit, AfterViewInit {
 
-  @Input() organisationName?: string
-  @Input() organisationId!: number
-  @Input() communityId!: number
-  @Input() adminOrganisation!: boolean
-  @Input() loadData?: EventEmitter<void>
+  @Input() state!: ApiKeyInfoState
 
-  apiInfo?: ApiKeyInfo
-  conformanceSnapshots?: ConformanceSnapshot[]
   latestSnapshotLabel = Constants.LATEST_CONFORMANCE_STATUS_LABEL
-  selectedSnapshot?: ConformanceSnapshot
-  selectedSpecification?: ApiKeySpecificationInfo
-  selectedActor?: ApiKeyActorInfo
-  selectedTestSuite?: ApiKeyTestSuiteInfo
-  selectedTestCase?: ApiKeyTestCaseInfo
-  selectedSystem?: ApiKeySystemInfo
   organisationUpdatePending = false
   organisationDeletePending = false
   systemUpdatePending: {[key: number]: boolean} = {}
-  dataStatus = {status: Constants.STATUS.NONE}
 
   snapshotKeysLoading = false
   canUpdate = false
@@ -90,7 +77,7 @@ export class ApiKeyInfoComponent implements OnInit {
       showAsFormControl: true,
       filterLabel: this.latestSnapshotLabel,
       textField: "label",
-      loader: () => of(this.conformanceSnapshots!)
+      loader: () => of(this.state.conformanceSnapshots!)
     }
     this.systemSelectionConfig = {
       name: "selectedSystem",
@@ -99,7 +86,7 @@ export class ApiKeyInfoComponent implements OnInit {
       showAsFormControl: true,
       filterLabel: `Select ${this.dataService.labelSystemLower()}...`,
       textField: "name",
-      loader: () => of(this.apiInfo?.systems!)
+      loader: () => of(this.state.apiInfo?.systems!)
     }
     this.specificationSelectionConfig = {
       name: "selectedSpecification",
@@ -108,7 +95,7 @@ export class ApiKeyInfoComponent implements OnInit {
       showAsFormControl: true,
       filterLabel: `Select ${this.dataService.labelSpecificationLower()}...`,
       textField: "name",
-      loader: () => of(this.apiInfo?.specifications!)
+      loader: () => of(this.state.apiInfo?.specifications!)
     }
     this.actorSelectionConfig = {
       name: "selectedActor",
@@ -117,7 +104,7 @@ export class ApiKeyInfoComponent implements OnInit {
       showAsFormControl: true,
       filterLabel: `Select ${this.dataService.labelActorLower()}...`,
       textField: "name",
-      loader: () => of(this.selectedSpecification!.actors)
+      loader: () => of(this.state.selectedSpecification!.actors)
     }
     this.testSuiteSelectionConfig = {
       name: "selectedTestSuite",
@@ -126,7 +113,7 @@ export class ApiKeyInfoComponent implements OnInit {
       showAsFormControl: true,
       filterLabel: `Select test suite...`,
       textField: "name",
-      loader: () => of(this.selectedSpecification!.testSuites)
+      loader: () => of(this.state.selectedSpecification!.testSuites)
     }
     this.testCaseSelectionConfig = {
       name: "selectedTestCase",
@@ -135,23 +122,26 @@ export class ApiKeyInfoComponent implements OnInit {
       showAsFormControl: true,
       filterLabel: `Select test case...`,
       textField: "name",
-      loader: () => of(this.selectedTestSuite!.testCases)
-    }
-    if (this.loadData == undefined) {
-      this.loadApiInfo()
-    } else {
-      this.loadData.subscribe(() => {
-        if (this.apiInfo == undefined) {
-          this.loadApiInfo()
-        }
-      })
+      loader: () => of(this.state.selectedTestSuite!.testCases)
     }
     this.canUpdate = this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || this.dataService.isVendorAdmin
   }
 
+  ngAfterViewInit(): void {
+    if (this.state.apiInfo == undefined) {
+      this.loadApiInfo()
+    } else {
+      this.snapshotSelectionConfig.eventsDisabled = true
+      setTimeout(() => {
+        // Events should fire after view rendering to avoid reloading when changing tabs.
+        this.snapshotSelectionConfig.eventsDisabled = false
+      })
+    }
+  }
+
   snapshotChanged(): void {
     this.snapshotKeysLoading = true
-    this.organisationService.getAutomationKeysForOrganisation(this.organisationId, this.selectedSnapshot?.id)
+    this.organisationService.getAutomationKeysForOrganisation(this.state.organisationId, this.state.selectedSnapshot?.id)
     .subscribe((data) => {
       this.apiInfoLoaded(data)
     }).add(() => {
@@ -160,33 +150,33 @@ export class ApiKeyInfoComponent implements OnInit {
   }
 
   specificationChanged():void {
-    this.selectedActor = undefined
-    this.selectedTestSuite = undefined
-    if (this.selectedSpecification) {
-      if (this.selectedSpecification.actors.length > 0) {
-        this.selectedActor = this.selectedSpecification.actors[0]
+    this.state.selectedActor = undefined
+    this.state.selectedTestSuite = undefined
+    if (this.state.selectedSpecification) {
+      if (this.state.selectedSpecification.actors.length > 0) {
+        this.state.selectedActor = this.state.selectedSpecification.actors[0]
       }
-      if (this.selectedSpecification.testSuites.length > 0) {
-        this.selectedTestSuite = this.selectedSpecification.testSuites[0]
+      if (this.state.selectedSpecification.testSuites.length > 0) {
+        this.state.selectedTestSuite = this.state.selectedSpecification.testSuites[0]
         this.testSuiteChanged()
       }
     }
   }
 
   testSuiteChanged():void {
-    this.selectedTestCase = undefined
-    if (this.selectedTestSuite) {
-      if (this.selectedTestSuite.testCases.length > 0) {
-        this.selectedTestCase = this.selectedTestSuite.testCases[0]
+    this.state.selectedTestCase = undefined
+    if (this.state.selectedTestSuite) {
+      if (this.state.selectedTestSuite.testCases.length > 0) {
+        this.state.selectedTestCase = this.state.selectedTestSuite.testCases[0]
       }
     }
   }
 
   newOrganisationKey(): void {
     this.organisationUpdatePending = true
-    this.organisationService.updateOrganisationApiKey(this.organisationId)
+    this.organisationService.updateOrganisationApiKey(this.state.organisationId)
     .subscribe((newApiKey) => {
-      this.apiInfo!.organisation = newApiKey
+      this.state.apiInfo!.organisation = newApiKey
       this.popupService.success(this.dataService.labelOrganisation()+" API key updated.")
     }).add(() => {
       this.organisationUpdatePending = false
@@ -204,7 +194,7 @@ export class ApiKeyInfoComponent implements OnInit {
     this.systemUpdatePending[systemId] = true
     this.systemService.updateSystemApiKey(systemId)
     .subscribe((newApiKey) => {
-      this.selectedSystem!.key = newApiKey
+      this.state.selectedSystem!.key = newApiKey
       this.popupService.success(this.dataService.labelSystem()+" API key updated.")
     }).add(() => {
       this.systemUpdatePending[systemId] = false
@@ -222,9 +212,9 @@ export class ApiKeyInfoComponent implements OnInit {
     this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this API key?", "Delete", "Cancel", Constants.BUTTON_ICON.DELETE)
     .subscribe(() => {
       this.organisationDeletePending = true
-      this.organisationService.deleteOrganisationApiKey(this.organisationId)
+      this.organisationService.deleteOrganisationApiKey(this.state.organisationId)
       .subscribe(() => {
-        this.apiInfo!.organisation = undefined
+        this.state.apiInfo!.organisation = undefined
         this.popupService.success(this.dataService.labelOrganisation()+" API key deleted.")
       }).add(() => {
         this.organisationDeletePending = false
@@ -233,22 +223,22 @@ export class ApiKeyInfoComponent implements OnInit {
   }
 
   loadApiInfo() {
-    if (this.dataStatus.status == Constants.STATUS.NONE) {
-      this.dataStatus.status = Constants.STATUS.PENDING
+    if (this.state.status == Constants.STATUS.NONE) {
+      this.state.status = Constants.STATUS.PENDING
       let snapshotsLoaded: Observable<ConformanceSnapshotList>
-      if (this.adminOrganisation) {
+      if (this.state.adminOrganisation) {
         // Administrator organisations don't get included in snapshots
         snapshotsLoaded = of({snapshots: []})
       } else {
-        snapshotsLoaded = this.conformanceService.getConformanceSnapshots(this.communityId, true)
+        snapshotsLoaded = this.conformanceService.getConformanceSnapshots(this.state.communityId, true)
       }
-      const apiKeysLoaded = this.organisationService.getAutomationKeysForOrganisation(this.organisationId)
+      const apiKeysLoaded = this.organisationService.getAutomationKeysForOrganisation(this.state.organisationId)
       forkJoin([snapshotsLoaded, apiKeysLoaded]).subscribe((results) => {
         // Snapshots
         if (results[0].snapshots == undefined) {
-          this.conformanceSnapshots = []
+          this.state.conformanceSnapshots = []
         } else {
-          this.conformanceSnapshots = results[0].snapshots
+          this.state.conformanceSnapshots = results[0].snapshots
         }
         if (results[0].latest) {
           this.latestSnapshotLabel = results[0].latest
@@ -256,24 +246,24 @@ export class ApiKeyInfoComponent implements OnInit {
         // API keys for latest status
         this.apiInfoLoaded(results[1])
       }).add(() => {
-        this.dataStatus.status = Constants.STATUS.FINISHED
+        this.state.status = Constants.STATUS.FINISHED
       })
     }
   }
 
   private apiInfoLoaded(apiKeyInfo: ApiKeyInfo) {
-    this.apiInfo = apiKeyInfo
-    this.selectedSystem = undefined
-    this.selectedSpecification = undefined
-    this.selectedActor = undefined
-    this.selectedTestSuite = undefined
-    this.selectedTestCase = undefined
-    if (this.apiInfo.specifications.length > 0) {
-      this.selectedSpecification = this.apiInfo.specifications[0]
+    this.state.apiInfo = apiKeyInfo
+    this.state.selectedSystem = undefined
+    this.state.selectedSpecification = undefined
+    this.state.selectedActor = undefined
+    this.state.selectedTestSuite = undefined
+    this.state.selectedTestCase = undefined
+    if (this.state.apiInfo.specifications.length > 0) {
+      this.state.selectedSpecification = this.state.apiInfo.specifications[0]
       this.specificationChanged()
     }
-    if (this.apiInfo.systems.length > 0) {
-      this.selectedSystem = this.apiInfo.systems[0]
+    if (this.state.apiInfo.systems.length > 0) {
+      this.state.selectedSystem = this.state.apiInfo.systems[0]
     }
   }
 

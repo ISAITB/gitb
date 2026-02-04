@@ -43,6 +43,17 @@ class LegalNoticeService @Inject() (authorizedAction: AuthorizedAction,
     }
   }
 
+  def searchLegalNoticesByCommunity(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageLegalNotices(request, communityId).flatMap { _=>
+      val page = ParameterExtractor.extractPageNumber(request)
+      val limit = ParameterExtractor.extractPageLimit(request)
+      legalNoticeManager.searchLegalNoticesByCommunityWithoutContent(communityId, page, limit).map { result =>
+        val json: String = JsonUtil.jsSearchResult(result, JsonUtil.jsLegalNotices).toString
+        ResponseConstructor.constructJsonResponse(json)
+      }
+    }
+  }
+
   /**
    * Creates new legal notice
    */

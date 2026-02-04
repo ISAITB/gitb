@@ -524,16 +524,18 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
   }
 
   private currentCompletedPagingInfo(reset?: boolean): PagingEvent {
-    return {
-      targetPage: (reset == true)?1:this.completedSessionsTable?.pagingControls?.getCurrentStatus().currentPage!,
-      targetPageSize: this.completedSessionsTable?.pagingControls?.getCurrentStatus().pageSize!
+    if (reset || this.completedSessionsTable?.pagingControls?.getCurrentStatus() == undefined) {
+      return { targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize }
+    } else {
+      return { targetPage: this.completedSessionsTable.pagingControls.getCurrentStatus().currentPage, targetPageSize: this.completedSessionsTable.pagingControls.getCurrentStatus().pageSize }
     }
   }
 
   private currentActivePagingInfo(reset?: boolean): PagingEvent {
-    return {
-      targetPage: (reset == true)?1:this.activeSessionsTable?.pagingControls?.getCurrentStatus().currentPage!,
-      targetPageSize: this.activeSessionsTable?.pagingControls?.getCurrentStatus().pageSize!
+    if (reset || this.activeSessionsTable?.pagingControls?.getCurrentStatus() == undefined) {
+      return { targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize }
+    } else {
+      return { targetPage: this.activeSessionsTable.pagingControls.getCurrentStatus().currentPage, targetPageSize: this.activeSessionsTable.pagingControls.getCurrentStatus().pageSize }
     }
   }
 

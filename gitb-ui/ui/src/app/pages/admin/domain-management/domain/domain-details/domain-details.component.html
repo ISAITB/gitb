@@ -33,7 +33,7 @@
                         <div class="tabControls">
                             <div class="btn-toolbar">
                                 @if (!managingSpecificationOrder) {
-                                    <app-text-filter name="specificationFilter" [width]="300" [placeholder]="'Search '+dataService.labelSpecificationsLower()+'...'" [(ngModel)]="specificationFilter" (apply)="applySpecificationFilter()"></app-text-filter>
+                                    <app-text-filter name="specificationFilter" [width]="300" [placeholder]="'Search '+dataService.labelSpecificationsLower()+'...'" [(ngModel)]="specificationFilter" (apply)="loadSpecifications()"></app-text-filter>
                                     @if (specifications.length > 0) {
                                         <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="uploadTestSuite()">Upload test suite</button>
                                     }
@@ -122,7 +122,7 @@
                     <div class="tabPanel">
                         <div class="tabControls">
                             <div class="btn-toolbar">
-                                <app-text-filter name="sharedTestSuiteFilter" [width]="300" [placeholder]="'Search test suites...'" [(ngModel)]="sharedTestSuiteFilter" (apply)="applySharedTestSuiteFilter()"></app-text-filter>
+                                <app-text-filter name="sharedTestSuiteFilter" [width]="300" [placeholder]="'Search test suites...'" [(ngModel)]="sharedTestSuiteFilter" (apply)="refreshSharedTestSuites()"></app-text-filter>
                                 <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="uploadSharedTestSuite()">Upload shared test suite</button>
                             </div>
                         </div>
@@ -148,6 +148,7 @@
                     <div class="tabPanel">
                         <div class="tabControls">
                             <div class="btn-toolbar">
+                                <app-text-filter name="parameterFilter" [width]="300" [placeholder]="'Search parameters...'" [(ngModel)]="parameterFilter" (apply)="loadDomainParameters(true)"></app-text-filter>
                                 <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createDomainParameter()">Create parameter</button>
                             </div>
                         </div>
@@ -164,7 +165,7 @@
                                     }
                                 </tr>
                                 </thead>
-                                <tbody>
+                                <tbody [class.disable-events]="parametersRefreshing">
                                     @if (parameterStatus.status == Constants.STATUS.FINISHED) {
                                         @if (domainParameters.length == 0) {
                                             <tr>
@@ -200,6 +201,7 @@
                                     }
                                 </tbody>
                             </table>
+                            <app-paging-controls #parameterPagingControls [refreshing]="parametersRefreshing" (navigation)="doParameterPaging($event)"></app-paging-controls>
                         </div>
                     </div>
                 </ng-template>
@@ -210,19 +212,23 @@
                     <div class="tabPanel">
                         <div class="tabControls">
                             <div class="btn-toolbar">
+                                <app-text-filter name="testServiceFilter" [width]="300" [placeholder]="'Search services...'" [(ngModel)]="testServiceFilter" (apply)="loadTestServices(true)"></app-text-filter>
                                 <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createTestService()">Register service</button>
                                 <app-multi-select-filter [config]="convertParameterSelectionConfig" (apply)="convertParameterToTestService($event)" [pending]="convertPending"></app-multi-select-filter>
                             </div>
                         </div>
                         <div class="card">
-                            <div table-directive
+                            <div #servicesTable table-directive
                                  [columns]="testServiceTableColumns"
                                  [data]="testServices"
                                  [noDataMessage]="'No services found'"
                                  [loadingStatus]="testServiceStatus"
+                                 [contentRefreshing]="servicesRefreshing"
+                                 (pageNavigation)="doServicePaging($event)"
                                  [allowSelect]="true"
                                  [persistentSelection]="false"
-                                 (onSelect)="onTestServiceSelect($event)">
+                                 (onSelect)="onTestServiceSelect($event)"
+                                 [supportPaging]="true">
                             </div>
                         </div>
                     </div>

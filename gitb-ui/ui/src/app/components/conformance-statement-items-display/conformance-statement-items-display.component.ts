@@ -95,4 +95,17 @@ export class ConformanceStatementItemsDisplayComponent implements OnInit, Confor
     }
   }
 
+  documentEscape(): void {
+    if (this.itemComponents) {
+      this.itemComponents.forEach(item => item.documentEscape())
+    }
+  }
+
+  documentClick(event: Event): void {
+    if (this.itemComponents) {
+      this.itemComponents.forEach(item => item.documentClick(event))
+    }
+  }
+
+
 }

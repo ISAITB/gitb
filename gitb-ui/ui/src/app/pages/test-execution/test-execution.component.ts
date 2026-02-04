@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, OnDestroy, OnInit} from '@angular/core';
+import {Component, EventEmitter, HostListener, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {saveAs} from 'file-saver';
 import {Observable, of, Subscription, throwError, timer} from 'rxjs';
@@ -52,6 +52,7 @@ import {TestCaseDefinitionActors} from '../../types/test-case-definition-actors'
 import {Utils} from '../../common/utils';
 import {NgbModal, NgbModalRef} from '@ng-bootstrap/ng-bootstrap';
 import {UserInteractionInput} from '../../types/user-interaction-input';
+import {CheckBoxOptionPanelComponentApi} from '../../components/checkbox-option-panel/check-box-option-panel-component-api';
 
 @Component({
   selector: 'app-test-execution',
@@ -137,6 +138,7 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
       {key: TestExecutionComponent.CONTINUE_AUTOMATICALLY, label: 'Continue automatically', default: true }
     ]
   ]
+  @ViewChild("testOptionsControl") testOptionsControl?: CheckBoxOptionPanelComponentApi
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -1290,6 +1292,16 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
       }),
       share()
     )
+  }
+
+  @HostListener('document:click', ['$event'])
+  clickRegistered(event: Event) {
+    this.testOptionsControl?.documentClick(event)
+  }
+
+  @HostListener('document:keyup.escape')
+  escapeRegistered() {
+    this.testOptionsControl?.documentEscape()
   }
 
 }

@@ -22,6 +22,7 @@ import { TriggerDataItem } from '../types/trigger-data-item';
 import { TriggerInfo } from '../types/trigger-info';
 import { RestService } from './rest.service';
 import {TriggerFireExpression} from '../types/trigger-fire-expression';
+import {SearchResult} from '../types/search-result';
 
 @Injectable({
   providedIn: 'root'
@@ -32,10 +33,14 @@ export class TriggerService {
     private readonly restService: RestService
   ) { }
 
-  getTriggersByCommunity(communityId: number) {
-    return this.restService.get<Trigger[]>({
+  getTriggersByCommunity(communityId: number, page: number|undefined, limit: number|undefined) {
+    return this.restService.get<SearchResult<Trigger>>({
       path: ROUTES.controllers.TriggerService.getTriggersByCommunity(communityId).url,
-      authenticate: true
+      authenticate: true,
+      params: {
+        page: page,
+        limit: limit
+      }
     })
   }
 

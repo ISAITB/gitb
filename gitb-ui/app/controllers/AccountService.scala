@@ -114,9 +114,11 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction,
    */
   def getVendorUsers(): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewOwnOrganisationUsers(request).flatMap { _ =>
-    val userId = ParameterExtractor.extractUserId(request)
-      accountManager.getVendorUsers(userId).map { list =>
-        val json:String = JsonUtil.jsUsers(list).toString
+      val userId = ParameterExtractor.extractUserId(request)
+      val page = ParameterExtractor.extractPageNumber(request)
+      val limit = ParameterExtractor.extractPageLimit(request)
+      accountManager.getVendorUsers(userId, page, limit).map { result =>
+        val json: String = JsonUtil.jsSearchResult(result, JsonUtil.jsUsers).toString
         ResponseConstructor.constructJsonResponse(json)
       }
     }

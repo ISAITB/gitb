@@ -52,7 +52,7 @@ import models.health.SoftwareVersionCheckSettings
 
 object JsonUtil {
 
-  def jsThemes(themes: List[Theme]): JsArray = {
+  def jsThemes(themes: Iterable[Theme]): JsArray = {
     var json = Json.arr()
     themes.foreach { theme =>
       json = json.append(jsTheme(theme))
@@ -665,7 +665,7 @@ object JsonUtil {
    * @param list List of Users to be convert
    * @return JsArray
    */
-  def jsUsers(list:List[Users]):JsArray = {
+  def jsUsers(list: Iterable[Users]):JsArray = {
     var json = Json.arr()
     list.foreach{ user =>
       json = json.append(jsUser(user))
@@ -772,11 +772,11 @@ object JsonUtil {
    * @param list List of Systems to be converted
    * @return JsArray
    */
-  def jsSystems(list:List[Systems]):JsArray = {
+  def jsSystems(list: Iterable[Systems]):JsArray = {
     jsSystems(list, None)
   }
 
-  def jsSystems(list:List[Systems], systemsWithTests: Option[Set[Long]]):JsArray = {
+  def jsSystems(list: Iterable[Systems], systemsWithTests: Option[Set[Long]]):JsArray = {
     var json = Json.arr()
     list.foreach{ system =>
       var systemJson = jsSystem(system)
@@ -1148,7 +1148,7 @@ object JsonUtil {
     json
   }
 
-  def jsActorsNonCase(list:List[Actor]):JsArray = {
+  def jsActorsNonCase(list: Iterable[Actor]):JsArray = {
     var json = Json.arr()
     list.foreach{ actor =>
       json = json.append(jsActor(actor))
@@ -2738,7 +2738,7 @@ object JsonUtil {
    * @param list List of LandingPages to be convert
    * @return JsArray
    */
-  def jsLandingPages(list: List[LandingPage]): JsArray = {
+  def jsLandingPages(list: Iterable[LandingPage]): JsArray = {
     var json = Json.arr()
     list.foreach { landingPage =>
       json = json.append(jsLandingPage(landingPage))
@@ -2762,7 +2762,7 @@ object JsonUtil {
     json
   }
 
-  def jsTriggers(list:List[Triggers]):JsArray = {
+  def jsTriggers(list: Iterable[Triggers]):JsArray = {
     var json = Json.arr()
     list.foreach{ trigger =>
       json = json.append(jsTrigger(trigger))
@@ -2819,7 +2819,7 @@ object JsonUtil {
    * @param list List of LegalNotices to be convert
    * @return JsArray
    */
-  def jsLegalNotices(list:List[LegalNotice]):JsArray = {
+  def jsLegalNotices(list: Iterable[LegalNotice]):JsArray = {
     var json = Json.arr()
     list.foreach{ ln =>
       json = json.append(jsLegalNotice(ln))
@@ -2833,7 +2833,7 @@ object JsonUtil {
     * @param list List of ErrorTemplates to be convert
     * @return JsArray
     */
-  def jsErrorTemplates(list:List[ErrorTemplate]):JsArray = {
+  def jsErrorTemplates(list: Iterable[ErrorTemplate]):JsArray = {
     var json = Json.arr()
     list.foreach{ et =>
       json = json.append(jsErrorTemplate(et))

@@ -538,8 +538,20 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
     DB.run(dbAction.transactionally)
   }
 
-  def getThemes(): Future[List[Theme]] = {
-    DB.run(PersistenceSchema.themes.sortBy(_.key.asc).result).map(_.toList)
+  def getThemes(page: Long, limit: Long): Future[SearchResult[Theme]] = {
+    val queryBuilder = (forCount: Boolean) => {
+      if (forCount) {
+        PersistenceSchema.themes
+      } else {
+        PersistenceSchema.themes.sortBy(_.key.asc)
+      }
+    }
+    DB.run(
+      for {
+        results <- queryBuilder(false).drop((page - 1) * limit).take(limit).result
+        resultCount <- queryBuilder(true).size.result
+      } yield SearchResult(results, resultCount)
+    )
   }
 
   def getTheme(themeId: Long): Future[Theme] = {

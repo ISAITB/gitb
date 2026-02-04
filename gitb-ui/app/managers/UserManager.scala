@@ -19,7 +19,6 @@ import config.Configurations
 import models.Enums.UserRole
 import models.Enums.UserRole._
 import models._
-import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import utils.CryptoUtil
@@ -38,32 +37,61 @@ class UserManager @Inject() (accountManager: AccountManager,
 
   import dbConfig.profile.api._
 
-  def logger = LoggerFactory.getLogger("UserManager")
-
-  def getSystemAdministrators(): Future[List[Users]] = {
-    getUsersByRole(UserRole.SystemAdmin)
+  def getSystemAdministrators(page: Long, limit: Long): Future[SearchResult[Users]] = {
+    val queryBuilder = (forCount: Boolean) => {
+      var baseQuery = PersistenceSchema.users.filter(_.role === UserRole.SystemAdmin.id.toShort)
+      if (!forCount) {
+        baseQuery = baseQuery.sortBy(_.name.asc)
+      }
+      baseQuery
+    }
+    DB.run(
+      for {
+        results <- queryBuilder(false).drop((page - 1) * limit).take(limit).result
+        resultCount <- queryBuilder(true).size.result
+      } yield SearchResult(results, resultCount)
+    )
   }
 
   /**
     * Gets all community administrators of the given community
     */
-  def getCommunityAdministrators(communityId:Long): Future[List[Users]] = {
-    DB.run(for {
-      organizations <- PersistenceSchema.organizations.filter(_.community === communityId).map(_.id).result.map(_.toList)
-      users <- PersistenceSchema.users.filter(_.organization inSet organizations).filter(_.role === UserRole.CommunityAdmin.id.toShort)
-        .sortBy(_.name.asc)
-        .result
-        .map(_.toList)
-    } yield users)
+  def getCommunityAdministrators(communityId:Long, page: Long, limit: Long): Future[SearchResult[Users]] = {
+    val queryBuilder = (forCount: Boolean) => {
+      var baseQuery = PersistenceSchema.users
+        .join(PersistenceSchema.organizations).on(_.organization === _.id)
+        .filter(_._2.community === communityId)
+        .map(_._1)
+      if (!forCount) {
+        baseQuery = baseQuery.sortBy(_.name.asc)
+      }
+      baseQuery
+    }
+    DB.run(
+      for {
+        results <- queryBuilder(false).drop((page - 1) * limit).take(limit).result
+        resultCount <- queryBuilder(true).size.result
+      } yield SearchResult(results, resultCount)
+    )
   }
 
-  /**
-   * Gets all users with specified role
-   */
-  def getUsersByRole(role: UserRole): Future[List[Users]] = {
-    DB.run(PersistenceSchema.users.filter(_.role === role.id.toShort)
-      .sortBy(_.name.asc)
-      .result.map(_.toList))
+  def searchUsersByOrganization(orgId: Long, page: Long, limit: Long, role: Option[UserRole] = None): Future[SearchResult[Users]] = {
+    val queryBuilder = (forCount: Boolean) => {
+      var baseQuery = PersistenceSchema.users
+        .filter(_.organization === orgId)
+        .filterOpt(role)((q, r) => q.role === r.id.toShort)
+        .filterIf(role.isEmpty)(_.role inSet Set(UserRole.VendorUser.id.toShort, UserRole.VendorAdmin.id.toShort))
+      if (!forCount) {
+        baseQuery = baseQuery.sortBy(x => (x.role.asc, x.name.asc))
+      }
+      baseQuery
+    }
+    DB.run(
+      for {
+        results <- queryBuilder(false).drop((page - 1) * limit).take(limit).result
+        resultCount <- queryBuilder(true).size.result
+      } yield SearchResult(results, resultCount)
+    )
   }
 
   /**

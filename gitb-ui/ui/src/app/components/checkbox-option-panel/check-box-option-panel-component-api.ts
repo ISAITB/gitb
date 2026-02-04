@@ -20,5 +20,7 @@ export interface CheckBoxOptionPanelComponentApi {
   close: () => void
   refresh: (options: CheckboxOption[][]) => void
   getReferenceItem: () => any
+  documentEscape: () => void;
+  documentClick: (event: Event) => void;
 
 }

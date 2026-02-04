@@ -46,6 +46,7 @@ import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 export class SpecificationDetailsComponent extends BaseTabbedComponent implements OnInit {
 
   @ViewChild("testSuiteTable") testSuiteTable?: TableApi
+  @ViewChild("actorTable") actorTable?: TableApi
 
   sharedTestSuiteId?: number
   specification: Partial<Specification> = {}
@@ -57,6 +58,10 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
   specificationId!: number
   actorStatus = {status: Constants.STATUS.NONE}
   testSuiteStatus = {status: Constants.STATUS.NONE}
+  actorPage = 1
+  testSuitePage = 1
+  actorTotal = 0
+  testSuiteTotal = 0
   testSuiteTableColumns: TableColumnDefinition[] = [
     { field: 'identifier', title: 'ID' },
     { field: 'sname', title: 'Name' },
@@ -77,6 +82,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
   unlinkPending = false
   loaded = false
   testSuitesRefreshing = false
+  actorsRefreshing = false
   testSuiteFilter?: string
 
   linkSharedSelectionConfig!: MultiSelectConfig<TestSuite>
@@ -176,21 +182,21 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
 
   loadActors(forceLoad?: boolean) {
     if (this.actorStatus.status == Constants.STATUS.NONE || forceLoad) {
-      this.actorStatus.status = Constants.STATUS.PENDING
-      this.actors = []
-      this.conformanceService.getActorsWithSpecificationId(this.specificationId)
-      .subscribe((data) => {
-        this.actors = data
-      }).add(() => {
-        this.actorStatus.status = Constants.STATUS.FINISHED
-      })
+      this.loadActorsInternal({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize }, forceLoad)
+    } else {
+      this.updateActorPaging(this.actorPage, this.actorTotal)
     }
   }
 
   loadTestSuites(forceLoad?: boolean) {
-    this.linkSharedSelectionConfig.clearItems?.emit()
-    this.unlinkSharedSelectionConfig.clearItems?.emit()
-    this.loadTestSuitesInternal(forceLoad).subscribe(() => {})
+    if (this.testSuiteStatus.status == Constants.STATUS.NONE || forceLoad) {
+      this.linkSharedSelectionConfig.clearItems?.emit()
+      this.unlinkSharedSelectionConfig.clearItems?.emit()
+      this.loadTestSuitesInternal(forceLoad).subscribe(() => {
+      })
+    } else {
+      this.updateTestSuitePaging(this.testSuitePage, this.testSuiteTotal)
+    }
   }
 
   loadTestSuitesInternal(forceLoad?: boolean): Observable<{all: TestSuite[], shared: TestSuite[]}> {
@@ -217,23 +223,57 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
     }
   }
 
+  private loadActorsInternal(pagingInfo: PagingEvent, forceLoad?: boolean) {
+    if (this.actorStatus.status == Constants.STATUS.FINISHED || forceLoad) {
+      this.actorsRefreshing = true
+    } else {
+      this.actorStatus.status = Constants.STATUS.PENDING
+    }
+    this.conformanceService.searchActorsWithSpecificationId(this.specificationId, pagingInfo.targetPage, pagingInfo.targetPageSize)
+      .subscribe((data) => {
+        this.actors = data.data
+        this.updateActorPaging(pagingInfo.targetPage, data.count)
+      }).add(() => {
+        this.actorsRefreshing = false
+        this.actorStatus.status = Constants.STATUS.FINISHED
+    })
+  }
+
+  private updateTestSuitePaging(page: number, count: number) {
+    this.testSuiteTable?.getPagingControls()?.updateStatus(page, count)
+    this.testSuitePage = page
+    this.testSuiteTotal = count
+  }
+
+  private updateActorPaging(page: number, count: number) {
+    this.actorTable?.getPagingControls()?.updateStatus(page, count)
+    this.actorPage = page
+    this.actorTotal = count
+  }
+
   applyFilter() {
     this.refreshTestSuites()
   }
 
   refreshTestSuites() {
-    return this.loadSpecificationTestSuites({ targetPage: 1, targetPageSize: this.testSuiteTable?.getPagingControls()?.getCurrentStatus().pageSize! })
+    return this.loadSpecificationTestSuites({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
   }
 
   doTestSuitePaging(event: PagingEvent) {
     this.loadSpecificationTestSuites(event)
+    if (event.pageSizeChanged) {
+      this.actorStatus.status = Constants.STATUS.NONE
+    }
   }
 
-  private updatePagination(page: number, count: number) {
-    this.testSuiteTable?.getPagingControls()?.updateStatus(page, count)
+  doActorPaging(event: PagingEvent) {
+    this.loadActorsInternal(event)
+    if (event.pageSizeChanged) {
+      this.testSuiteStatus.status = Constants.STATUS.NONE
+    }
   }
 
-  loadSpecificationTestSuites(pagingInfo: PagingEvent) {
+  private loadSpecificationTestSuites(pagingInfo: PagingEvent) {
     if (this.testSuiteStatus.status == Constants.STATUS.FINISHED) {
       this.testSuitesRefreshing = true
     } else {
@@ -243,7 +283,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
     this.conformanceService.getTestSuites(this.specificationId, this.testSuiteFilter, pagingInfo.targetPage, pagingInfo.targetPageSize).pipe(
       tap((data) => {
         this.testSuites = data.data
-        this.updatePagination(pagingInfo.targetPage, data.count!)
+        this.updateTestSuitePaging(pagingInfo.targetPage, data.count!)
       }),
       finalize(() => {
         this.testSuitesRefreshing = false

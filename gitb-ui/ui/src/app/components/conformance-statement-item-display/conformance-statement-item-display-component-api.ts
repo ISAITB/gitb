@@ -16,5 +16,7 @@
 export interface ConformanceStatementItemDisplayComponentApi {
 
   reset: () => void
+  documentEscape: () => void;
+  documentClick: (event: Event) => void;
 
 }

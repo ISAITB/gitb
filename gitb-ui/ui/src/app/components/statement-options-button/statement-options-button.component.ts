@@ -73,6 +73,14 @@ export class StatementOptionsButtonComponent<T extends ConformanceIds> implement
     }
   }
 
+  documentEscape(): void {
+    this.optionButton?.documentEscape()
+  }
+
+  documentClick(event: Event): void {
+    this.optionButton?.documentClick(event)
+  }
+
   loadAvailableOptionsFactory() {
     return this.loadAvailableOptions.bind(this)
   }

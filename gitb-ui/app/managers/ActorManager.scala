@@ -18,7 +18,7 @@ package managers
 import exceptions.{AutomationApiException, ErrorCodes}
 import models.Enums.TestResultStatus
 import models.automation.{CreateActorRequest, UpdateActorRequest}
-import models.{Actor, Actors, BadgeInfo, Badges}
+import models._
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import slick.dbio.DBIOAction
@@ -504,6 +504,26 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
         .result
     ).map { results =>
       results.map(x => new Actor(x._1, null, null, x._2)).toList
+    }
+  }
+
+  def searchActorsWithSpecificationId(specificationId: Long, page: Long, limit: Long): Future[SearchResult[Actor]] = {
+    val queryBuilder = (forCount: Boolean) => {
+      val baseQuery = PersistenceSchema.actors
+        .join(PersistenceSchema.specificationHasActors).on(_.id === _.actorId)
+        .filter(_._2.specId === specificationId)
+        .map(x => (x._1, x._2.specId))
+      if (!forCount) {
+        baseQuery.sortBy(_._1.actorId.asc)
+      } else {
+        baseQuery
+      }
+    }
+    DB.run {
+      for {
+        results <- queryBuilder(false).drop((page - 1) * limit).take(limit).result.map(_.map(x => new Actor(x._1, null, null, x._2)))
+        resultCount <- queryBuilder(true).size.result
+      } yield SearchResult(results, resultCount)
     }
   }
 

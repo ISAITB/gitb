@@ -20,7 +20,7 @@ import exceptions.ErrorCodes
 import managers.triggers.TriggerHelper
 import managers.{AuthorizationManager, TriggerManager}
 import models.Enums.TriggerServiceType
-import play.api.libs.json.{JsBoolean, JsString, Json}
+import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
 import utils.JsonUtil
 
@@ -36,8 +36,10 @@ class TriggerService @Inject()(authorizedAction: AuthorizedAction,
 
   def getTriggersByCommunity(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canManageTriggers(request, communityId).flatMap { _ =>
-      triggerManager.getTriggersByCommunity(communityId).map { list =>
-        val json: String = JsonUtil.jsTriggers(list).toString
+      val page = ParameterExtractor.extractPageNumber(request)
+      val limit = ParameterExtractor.extractPageLimit(request)
+      triggerManager.getTriggersByCommunity(communityId, page, limit).map { result =>
+        val json: String = JsonUtil.jsSearchResult(result, JsonUtil.jsTriggers).toString
         ResponseConstructor.constructJsonResponse(json)
       }
     }

@@ -24,6 +24,7 @@ import {HttpResponse} from '@angular/common/http';
 import {EmailSettings} from '../types/email-settings';
 import {ConfigurationValue} from '../types/configuration-value';
 import {StartupWizardOptions} from '../types/startup-wizard-options';
+import {SearchResult} from '../types/search-result';
 
 @Injectable({
   providedIn: 'root'
@@ -71,10 +72,14 @@ export class SystemConfigurationService {
     })
   }
 
-  getThemes() {
-    return this.restService.get<Theme[]>({
+  getThemes(page: number|undefined, limit: number|undefined) {
+    return this.restService.get<SearchResult<Theme>>({
       path: ROUTES.controllers.SystemConfigurationService.getThemes().url,
-      authenticate: true
+      authenticate: true,
+      params: {
+        page: page,
+        limit: limit
+      }
     })
   }
 

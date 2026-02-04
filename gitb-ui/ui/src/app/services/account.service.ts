@@ -25,6 +25,7 @@ import { ErrorDescription } from '../types/error-description';
 import { FileData } from '../types/file-data.type';
 import { CustomProperty } from '../types/custom-property.type';
 import { FileParam } from '../types/file-param.type';
+import {SearchResult} from '../types/search-result';
 
 @Injectable({
   providedIn: 'root'
@@ -68,10 +69,14 @@ export class AccountService {
     })
   }
 
-  getVendorUsers() {
-    return this.restService.get<User[]>({
+  getVendorUsers(page: number|undefined, limit: number|undefined) {
+    return this.restService.get<SearchResult<User>>({
       path: ROUTES.controllers.AccountService.getVendorUsers().url,
-      authenticate: true
+      authenticate: true,
+      params: {
+        page: page,
+        limit: limit
+      }
     })
   }
 

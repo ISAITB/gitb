@@ -628,10 +628,14 @@ export class ConformanceService {
     })
   }
 
-  getActorsWithSpecificationId(specId: number) {
-    return this.restService.get<Actor[]>({
-      path: ROUTES.controllers.ConformanceService.getSpecActors(specId).url,
-      authenticate: true
+  searchActorsWithSpecificationId(specId: number, page: number|undefined, limit: number|undefined) {
+    return this.restService.get<SearchResult<Actor>>({
+      path: ROUTES.controllers.ConformanceService.searchSpecActors(specId).url,
+      authenticate: true,
+      params: {
+        page: page,
+        limit: limit,
+      }
     })
   }
 

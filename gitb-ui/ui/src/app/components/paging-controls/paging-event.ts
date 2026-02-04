@@ -17,5 +17,6 @@ export interface PagingEvent {
 
   targetPage: number
   targetPageSize: number
+  pageSizeChanged?: boolean
 
 }

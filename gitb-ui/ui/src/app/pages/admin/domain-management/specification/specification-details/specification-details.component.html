@@ -59,12 +59,15 @@
                             </div>
                         </div>
                         <div class="card">
-                            <div table-directive
+                            <div #actorTable table-directive
                                  [columns]="actorTableColumns"
                                  [data]="actors"
                                  [noDataMessage]="'No '+dataService.labelActorsLower()+' found'"
                                  [loadingStatus]="actorStatus"
                                  [allowSelect]="true"
+                                 [contentRefreshing]="actorsRefreshing"
+                                 [supportPaging]="true"
+                                 (pageNavigation)="doActorPaging($event)"
                                  (onSelect)="onActorSelect($event)">
                             </div>
                         </div>

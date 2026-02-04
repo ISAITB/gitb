@@ -174,8 +174,11 @@ class SystemConfigurationService @Inject()(authorizedAction: AuthorizedAction,
 
   def getThemes: Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canManageThemes(request).flatMap { _ =>
-      systemConfigurationManager.getThemes().map { themes =>
-        ResponseConstructor.constructJsonResponse(JsonUtil.jsThemes(themes).toString)
+      val page = ParameterExtractor.extractPageNumber(request)
+      val limit = ParameterExtractor.extractPageLimit(request)
+      systemConfigurationManager.getThemes(page, limit).map { result =>
+        val json: String = JsonUtil.jsSearchResult(result, JsonUtil.jsThemes).toString
+        ResponseConstructor.constructJsonResponse(json)
       }
     }
   }

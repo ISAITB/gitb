@@ -114,15 +114,22 @@ class TriggerManager @Inject()(env: Environment,
     ).map(!_)
   }
 
-  def getTriggersByCommunity(communityId: Long): Future[List[Triggers]] = {
-    DB.run(PersistenceSchema.triggers
-      .filter(_.community === communityId)
-      .map(x => (x.id, x.name, x.description, x.url, x.eventType, x.serviceType, x.active, x.community, x.latestResultOk))
-      .sortBy(_._2.asc)
-      .result
-    ).map { result =>
-      result.map(x => Triggers(x._1, x._2, x._3, x._4, x._5, x._6, None, x._7, x._9, None, x._8)).toList
+  def getTriggersByCommunity(communityId: Long, page: Long, limit: Long): Future[SearchResult[Triggers]] = {
+    val queryBuilder = (forCount: Boolean) => {
+      var baseQuery = PersistenceSchema.triggers
+        .filter(_.community === communityId)
+        .map(x => (x.id, x.name, x.description, x.url, x.eventType, x.serviceType, x.active, x.community, x.latestResultOk))
+      if (!forCount) {
+        baseQuery = baseQuery.sortBy(_._2.asc)
+      }
+      baseQuery
     }
+    DB.run(
+      for {
+        results <- queryBuilder(false).drop((page - 1) * limit).take(limit).result.map(_.toList.map(x => Triggers(x._1, x._2, x._3, x._4, x._5, x._6, None, x._7, x._9, None, x._8)))
+        resultCount <- queryBuilder(true).size.result
+      } yield SearchResult(results, resultCount)
+    )
   }
 
   def createTrigger(trigger: Trigger): Future[Long] = {

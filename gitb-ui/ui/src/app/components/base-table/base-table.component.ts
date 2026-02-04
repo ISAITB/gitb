@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, Output, QueryList, ViewChildren} from '@angular/core';
+import {Component, EventEmitter, HostListener, Input, Output, QueryList, ViewChildren} from '@angular/core';
 import {BaseComponent} from 'src/app/pages/base-component.component';
 import {LoadingStatus} from 'src/app/types/loading-status.type';
 import {TableColumnDefinition} from 'src/app/types/table-column-definition.type';
@@ -124,4 +124,13 @@ export abstract class BaseTableComponent extends BaseComponent {
     this.pageNavigation.emit(event)
   }
 
+  @HostListener('document:click', ['$event'])
+  clickRegistered(event: Event) {
+    this.tableRowComponents?.forEach((component) => component.documentClick(event))
+  }
+
+  @HostListener('document:keyup.escape')
+  escapeRegistered() {
+    this.tableRowComponents?.forEach((component) => component.documentEscape())
+  }
 }

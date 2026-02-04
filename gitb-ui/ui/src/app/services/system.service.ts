@@ -20,6 +20,7 @@ import { System } from '../types/system';
 import { SystemParameter } from '../types/system-parameter';
 import { DataService } from './data.service';
 import { RestService } from './rest.service';
+import {SearchResult} from '../types/search-result';
 
 @Injectable({
   providedIn: 'root'
@@ -30,6 +31,18 @@ export class SystemService {
     private readonly restService: RestService,
     private readonly dataService: DataService
   ) { }
+
+  searchSystemsByOrganisation(orgId: number, page: number|undefined, limit: number|undefined) {
+    return this.restService.get<SearchResult<System>>({
+      path: ROUTES.controllers.SystemService.searchSystemsByOrganization().url,
+      authenticate: true,
+      params: {
+        organization_id: orgId,
+        page: page,
+        limit: limit
+      }
+    })
+  }
 
   getSystemsByOrganisation(orgId: number, snapshotId?: number, checkIfHasTests?: boolean) {
     let params: any = {

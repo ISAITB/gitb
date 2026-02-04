@@ -19,5 +19,7 @@ export interface TestCaseDisplayComponentApi {
 
   refresh: () => void
   closeOptions: (source: ConformanceTestCase) => void
+  documentEscape: () => void;
+  documentClick: (event: Event) => void;
 
 }

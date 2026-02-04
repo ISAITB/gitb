@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, OnInit} from '@angular/core';
+import {Component, EventEmitter, OnInit, ViewChild} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {Constants} from 'src/app/common/constants';
 import {UserService} from 'src/app/services/user.service';
@@ -53,6 +53,9 @@ import {SoftwareVersionCheckSettings} from '../../../types/software-version-chec
 import {ValidationState} from '../../../types/validation-state';
 import {UsageTipsConfiguration} from '../../../types/usage-tips-configuration';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
+import {PagingEvent} from '../../../components/paging-controls/paging-event';
+import {TableApi} from '../../../components/table/table-api';
+import {ResourceState} from '../../../components/resource-management-tab/resource-state';
 
 @Component({
     selector: 'app-system-administration',
@@ -61,6 +64,12 @@ import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
     standalone: false
 })
 export class SystemAdministrationComponent extends BaseTabbedComponent implements OnInit {
+
+  @ViewChild("adminsTable") adminsTable?: TableApi
+  @ViewChild("landingPagesTable") landingPagesTable?: TableApi
+  @ViewChild("legalNoticesTable") legalNoticesTable?: TableApi
+  @ViewChild("errorTemplatesTable") errorTemplatesTable?: TableApi
+  @ViewChild("themesTable") themesTable?: TableApi
 
   adminStatus = {status: Constants.STATUS.NONE}
   landingPageStatus = {status: Constants.STATUS.NONE}
@@ -72,22 +81,22 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
   landingPagesColumns: TableColumnDefinition[] = [
     { field: 'name', title: 'Name' },
     { field: 'description', title: 'Description' },
-    { field: 'default', title: 'Default' }
+    { field: 'default', title: 'Default', headerClass: 'th-min centered', cellClass: 'td-min centered' }
   ]
   legalNoticesColumns: TableColumnDefinition[] = [
     { field: 'name', title: 'Name' },
     { field: 'description', title: 'Description' },
-    { field: 'default', title: 'Default' }
+    { field: 'default', title: 'Default', headerClass: 'th-min centered', cellClass: 'td-min centered' }
   ]
   errorTemplatesColumns: TableColumnDefinition[] = [
     { field: 'name', title: 'Name' },
     { field: 'description', title: 'Description' },
-    { field: 'default', title: 'Default' }
+    { field: 'default', title: 'Default', headerClass: 'th-min centered', cellClass: 'td-min centered' }
   ]
   themeColumns: TableColumnDefinition[] = [
     { field: 'key', title: 'Key' },
     { field: 'description', title: 'Description' },
-    { field: 'active', title: 'Active' }
+    { field: 'active', title: 'Active', headerClass: 'th-min centered', cellClass: 'td-min centered' }
   ]
 
   admins: User[] = []
@@ -95,6 +104,27 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
   legalNotices: LegalNotice[] = []
   errorTemplates: ErrorTemplate[] = []
   themes: Theme[] = []
+  adminsRefreshing = false
+  landingPagesRefreshing = false
+  legalNoticesRefreshing = false
+  errorTemplatesRefreshing = false
+  themesRefreshing = false
+  adminsPage = 1
+  landingPagesPage = 1
+  legalNoticesPage = 1
+  errorTemplatesPage = 1
+  themesPage = 1
+  adminsTotal = 0
+  landingPagesTotal = 0
+  legalNoticesTotal = 0
+  errorTemplatesTotal = 0
+  themesTotal = 0
+  resourceState: ResourceState = {
+    resources: [],
+    total: 0,
+    page: 1,
+    status: Constants.STATUS.NONE
+  }
 
   configValuesPending = true
   configsCollapsed = false
@@ -192,7 +222,6 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
 
   // Resources
   resourceActions!: ResourceActions
-  resourceEmitter = new EventEmitter<void>()
 
   constructor(
     route: ActivatedRoute,
@@ -237,7 +266,7 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
     } else {
       this.adminColumns.push({ field: 'email', title: 'Username' })
     }
-    this.adminColumns.push({ field: 'ssoStatusText', title: 'Status', cellClass: 'td-nowrap' })
+    this.adminColumns.push({ field: 'ssoStatusText', title: 'Status', headerClass: 'th-min centered', cellClass: 'td-min centered' })
     this.resourceActions = this.createResourceActions()
     this.loadCommunitiesPending = true
     const communityObs = this.communityService.getUserCommunities()
@@ -592,17 +621,218 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
 
   showAdministrators() {
     if (this.adminStatus.status == Constants.STATUS.NONE) {
+      this.queryAdministrators({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
+    } else {
+      this.updateAdminPagination(this.adminsPage, this.adminsTotal)
+    }
+  }
+
+  showLandingPages() {
+    if (this.landingPageStatus.status == Constants.STATUS.NONE) {
+      this.queryLandingPages({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
+    } else {
+      this.updateLandingPagesPagination(this.landingPagesPage, this.landingPagesTotal)
+    }
+  }
+
+  showLegalNotices() {
+    if (this.legalNoticeStatus.status == Constants.STATUS.NONE) {
+      this.queryLegalNotices({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
+    } else {
+      this.updateLegalNoticePagination(this.legalNoticesPage, this.legalNoticesTotal)
+    }
+  }
+
+  showErrorTemplates() {
+    if (this.errorTemplateStatus.status == Constants.STATUS.NONE) {
+      this.queryErrorTemplates({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
+    } else {
+      this.updateErrorTemplatePagination(this.errorTemplatesPage, this.errorTemplatesTotal)
+    }
+  }
+
+  showThemes() {
+    if (this.themeStatus.status == Constants.STATUS.NONE) {
+      this.queryThemes({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
+    } else {
+      this.updateThemePagination(this.themesPage, this.themesTotal)
+    }
+  }
+
+  private queryAdministrators(pagingInfo: PagingEvent) {
+    if (this.adminStatus.status == Constants.STATUS.FINISHED) {
+      this.adminsRefreshing = true
+    } else {
       this.adminStatus.status = Constants.STATUS.PENDING
-      this.userService.getSystemAdministrators()
+    }
+    this.userService.getSystemAdministrators(pagingInfo.targetPage, pagingInfo.targetPageSize)
       .subscribe((data) => {
-        for (let admin of data) {
+        this.admins = data.data
+        for (let admin of this.admins) {
           admin.ssoStatusText = this.dataService.userStatus(admin.ssoStatus)
         }
-        this.admins = data
+        this.updateAdminPagination(pagingInfo.targetPage, data.count!)
       }).add(() => {
-        this.adminStatus.status = Constants.STATUS.FINISHED
-      })
+      this.adminsRefreshing = false
+      this.adminStatus.status = Constants.STATUS.FINISHED
+    })
+  }
+
+  private queryLandingPages(pagingInfo: PagingEvent) {
+    if (this.landingPageStatus.status == Constants.STATUS.FINISHED) {
+      this.landingPagesRefreshing = true
+    } else {
+      this.landingPageStatus.status = Constants.STATUS.PENDING
     }
+    this.landingPageService.searchLandingPagesByCommunity(Constants.DEFAULT_COMMUNITY_ID, pagingInfo.targetPage, pagingInfo.targetPageSize)
+      .subscribe((data) => {
+        this.landingPages = data.data
+        this.updateLandingPagesPagination(pagingInfo.targetPage, data.count!)
+      }).add(() => {
+      this.landingPagesRefreshing = false
+      this.landingPageStatus.status = Constants.STATUS.FINISHED
+    })
+  }
+
+  private queryLegalNotices(pagingInfo: PagingEvent) {
+    if (this.legalNoticeStatus.status == Constants.STATUS.FINISHED) {
+      this.legalNoticesRefreshing = true
+    } else {
+      this.legalNoticeStatus.status = Constants.STATUS.PENDING
+    }
+    this.legalNoticeService.searchLegalNoticesByCommunity(Constants.DEFAULT_COMMUNITY_ID, pagingInfo.targetPage, pagingInfo.targetPageSize)
+      .subscribe((data) => {
+        this.legalNotices = data.data
+        this.updateLegalNoticePagination(pagingInfo.targetPage, data.count!)
+      }).add(() => {
+      this.legalNoticesRefreshing = false
+      this.legalNoticeStatus.status = Constants.STATUS.FINISHED
+    })
+  }
+
+  private queryErrorTemplates(pagingInfo: PagingEvent) {
+    if (this.errorTemplateStatus.status == Constants.STATUS.FINISHED) {
+      this.errorTemplatesRefreshing = true
+    } else {
+      this.errorTemplateStatus.status = Constants.STATUS.PENDING
+    }
+    this.errorTemplateService.searchErrorTemplatesByCommunity(Constants.DEFAULT_COMMUNITY_ID, pagingInfo.targetPage, pagingInfo.targetPageSize)
+      .subscribe((data) => {
+        this.errorTemplates = data.data
+        this.updateErrorTemplatePagination(pagingInfo.targetPage, data.count!)
+      }).add(() => {
+      this.errorTemplatesRefreshing = false
+      this.errorTemplateStatus.status = Constants.STATUS.FINISHED
+    })
+  }
+
+  private queryThemes(pagingInfo: PagingEvent) {
+    if (this.themeStatus.status == Constants.STATUS.FINISHED) {
+      this.themesRefreshing = true
+    } else {
+      this.themeStatus.status = Constants.STATUS.PENDING
+    }
+    this.systemConfigurationService.getThemes(pagingInfo.targetPage, pagingInfo.targetPageSize)
+      .subscribe((data) => {
+        this.themes = data.data
+        this.updateThemePagination(pagingInfo.targetPage, data.count!)
+      }).add(() => {
+      this.themesRefreshing = false
+      this.themeStatus.status = Constants.STATUS.FINISHED
+    })
+  }
+
+
+  private updateAdminPagination(page: number, count: number) {
+    this.adminsTable?.getPagingControls()?.updateStatus(page, count)
+    this.adminsPage = page
+    this.adminsTotal = count
+  }
+
+  private updateLandingPagesPagination(page: number, count: number) {
+    this.landingPagesTable?.getPagingControls()?.updateStatus(page, count)
+    this.landingPagesPage = page
+    this.landingPagesTotal = count
+  }
+
+  private updateLegalNoticePagination(page: number, count: number) {
+    this.legalNoticesTable?.getPagingControls()?.updateStatus(page, count)
+    this.legalNoticesPage = page
+    this.legalNoticesTotal = count
+  }
+
+  private updateErrorTemplatePagination(page: number, count: number) {
+    this.errorTemplatesTable?.getPagingControls()?.updateStatus(page, count)
+    this.errorTemplatesPage = page
+    this.errorTemplatesTotal = count
+  }
+
+  private updateThemePagination(page: number, count: number) {
+    this.themesTable?.getPagingControls()?.updateStatus(page, count)
+    this.themesPage = page
+    this.themesTotal = count
+  }
+
+  doAdminPaging(event: PagingEvent) {
+    this.queryAdministrators(event)
+    if (event.pageSizeChanged) {
+      this.landingPageStatus.status = Constants.STATUS.NONE
+      this.legalNoticeStatus.status = Constants.STATUS.NONE
+      this.errorTemplateStatus.status = Constants.STATUS.NONE
+      this.themeStatus.status = Constants.STATUS.NONE
+      this.resourceState.status = Constants.STATUS.NONE
+    }
+  }
+
+  doLandingPagePaging(event: PagingEvent) {
+    this.queryLandingPages(event)
+    if (event.pageSizeChanged) {
+      this.adminStatus.status = Constants.STATUS.NONE
+      this.legalNoticeStatus.status = Constants.STATUS.NONE
+      this.errorTemplateStatus.status = Constants.STATUS.NONE
+      this.themeStatus.status = Constants.STATUS.NONE
+    }
+  }
+
+  doLegalNoticePaging(event: PagingEvent) {
+    this.queryLegalNotices(event)
+    if (event.pageSizeChanged) {
+      this.adminStatus.status = Constants.STATUS.NONE
+      this.landingPageStatus.status = Constants.STATUS.NONE
+      this.errorTemplateStatus.status = Constants.STATUS.NONE
+      this.themeStatus.status = Constants.STATUS.NONE
+      this.resourceState.status = Constants.STATUS.NONE
+    }
+  }
+
+  doErrorTemplatePaging(event: PagingEvent) {
+    this.queryErrorTemplates(event)
+    if (event.pageSizeChanged) {
+      this.adminStatus.status = Constants.STATUS.NONE
+      this.landingPageStatus.status = Constants.STATUS.NONE
+      this.legalNoticeStatus.status = Constants.STATUS.NONE
+      this.themeStatus.status = Constants.STATUS.NONE
+      this.resourceState.status = Constants.STATUS.NONE
+    }
+  }
+
+  doThemePaging(event: PagingEvent) {
+    this.queryThemes(event)
+    if (event.pageSizeChanged) {
+      this.adminStatus.status = Constants.STATUS.NONE
+      this.landingPageStatus.status = Constants.STATUS.NONE
+      this.legalNoticeStatus.status = Constants.STATUS.NONE
+      this.errorTemplateStatus.status = Constants.STATUS.NONE
+      this.resourceState.status = Constants.STATUS.NONE
+    }
+  }
+
+  resourceTabPageSizeChange() {
+    this.adminStatus.status = Constants.STATUS.NONE
+    this.landingPageStatus.status = Constants.STATUS.NONE
+    this.legalNoticeStatus.status = Constants.STATUS.NONE
+    this.errorTemplateStatus.status = Constants.STATUS.NONE
+    this.themeStatus.status = Constants.STATUS.NONE
   }
 
   createAdmin() {
@@ -613,56 +843,8 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
     this.routingService.toTestBedAdmin(admin.id!)
   }
 
-  showLandingPages() {
-    if (this.landingPageStatus.status == Constants.STATUS.NONE) {
-      this.landingPageStatus.status = Constants.STATUS.PENDING
-      this.landingPageService.getLandingPagesByCommunity(Constants.DEFAULT_COMMUNITY_ID)
-      .subscribe((data) => {
-        this.landingPages = data
-      }).add(() => {
-        this.landingPageStatus.status = Constants.STATUS.FINISHED
-      })
-    }
-  }
-
-  showLegalNotices() {
-    if (this.legalNoticeStatus.status == Constants.STATUS.NONE) {
-      this.legalNoticeStatus.status = Constants.STATUS.PENDING
-      this.legalNoticeService.getLegalNoticesByCommunity(Constants.DEFAULT_COMMUNITY_ID)
-      .subscribe((data) => {
-        this.legalNotices = data
-      }).add(() => {
-        this.legalNoticeStatus.status = Constants.STATUS.FINISHED
-      })
-    }
-  }
-
-  showErrorTemplates() {
-    if (this.errorTemplateStatus.status == Constants.STATUS.NONE) {
-      this.errorTemplateStatus.status = Constants.STATUS.PENDING
-      this.errorTemplateService.getErrorTemplatesByCommunity(Constants.DEFAULT_COMMUNITY_ID)
-      .subscribe((data) => {
-        this.errorTemplates = data
-      }).add(() => {
-        this.errorTemplateStatus.status = Constants.STATUS.FINISHED
-      })
-    }
-  }
-
-  showThemes() {
-    if (this.themeStatus.status == Constants.STATUS.NONE) {
-      this.themeStatus.status = Constants.STATUS.PENDING
-      this.systemConfigurationService.getThemes()
-      .subscribe((data) => {
-        this.themes = data
-      }).add(() => {
-        this.themeStatus.status = Constants.STATUS.FINISHED
-      })
-    }
-  }
-
   showResources() {
-    this.resourceEmitter.emit()
+    // No action needed.
   }
 
   createLandingPage() {

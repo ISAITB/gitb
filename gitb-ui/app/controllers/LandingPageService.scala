@@ -45,6 +45,17 @@ class LandingPageService @Inject() (authorizedAction: AuthorizedAction,
     }
   }
 
+  def searchLandingPagesByCommunity(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageLandingPages(request, communityId).flatMap { _=>
+      val page = ParameterExtractor.extractPageNumber(request)
+      val limit = ParameterExtractor.extractPageLimit(request)
+      landingPageManager.searchLandingPagesByCommunityWithoutContent(communityId, page, limit).map { result =>
+        val json: String = JsonUtil.jsSearchResult(result, JsonUtil.jsLandingPages).toString
+        ResponseConstructor.constructJsonResponse(json)
+      }
+    }
+  }
+
   /**
    * Creates new landing page
    */

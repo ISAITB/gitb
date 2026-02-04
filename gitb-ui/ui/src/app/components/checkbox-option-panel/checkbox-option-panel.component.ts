@@ -18,7 +18,6 @@ import {
   ElementRef,
   EmbeddedViewRef,
   EventEmitter,
-  HostListener,
   Input,
   OnDestroy,
   OnInit,
@@ -181,16 +180,14 @@ export class CheckboxOptionPanelComponent implements OnInit, OnDestroy, CheckBox
     }
   };
 
-  @HostListener('document:click', ['$event'])
-  clickRegistered(event: any) {
-    if (!this.eRef.nativeElement.contains(event.target) && this.open) {
+  documentEscape(): void {
+    if (this.open) {
       this.close()
     }
   }
 
-  @HostListener('document:keyup.escape')
-  escapeRegistered() {
-    if (this.open) {
+  documentClick(event: Event): void {
+    if (!this.eRef.nativeElement.contains(event.target) && this.open) {
       this.close()
     }
   }
@@ -198,7 +195,7 @@ export class CheckboxOptionPanelComponent implements OnInit, OnDestroy, CheckBox
   ngOnInit(): void {
     this.currentState = {}
     this.applyConfig()
-    this.popupSubscription = this.dataService.buttonPopupOpenSource$.subscribe((source => {
+    this.popupSubscription = this.dataService.onButtonPopupOpen$.subscribe((source => {
       if (source !== this && this.open) {
         this.close()
       }

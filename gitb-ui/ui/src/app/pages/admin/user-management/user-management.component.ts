@@ -95,7 +95,7 @@ export class UserManagementComponent implements OnInit, AfterViewInit {
   }
 
   refreshCommunities() {
-    this.loadCommunities({ targetPage: 1, targetPageSize: this.communityTable?.getPagingControls()?.getCurrentStatus().pageSize! })
+    this.loadCommunities({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
   }
 
   doCommunityPaging(event: PagingEvent) {

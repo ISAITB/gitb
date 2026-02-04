@@ -516,6 +516,22 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
     }
   }
 
+  def searchSystemsByOrganization(orgId: Long, page: Long, limit: Long): Future[SearchResult[Systems]] = {
+    val queryBuilder = (forCount: Boolean) => {
+      var baseQuery = PersistenceSchema.systems.filter(_.owner === orgId)
+      if (!forCount) {
+        baseQuery = baseQuery.sortBy(_.shortname.asc)
+      }
+      baseQuery
+    }
+    DB.run(
+      for {
+        results <- queryBuilder(false).drop((page - 1) * limit).take(limit).result
+        resultCount <- queryBuilder(true).size.result
+      } yield SearchResult(results, resultCount)
+    )
+  }
+
   def getSystemsByOrganization(orgId: Long, snapshotId: Option[Long]): Future[List[Systems]] = {
     if (snapshotId.isEmpty) {
       DB.run(getSystemsByOrganizationInternal(orgId))

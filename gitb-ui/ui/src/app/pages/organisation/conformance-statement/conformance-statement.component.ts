@@ -13,12 +13,12 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, ElementRef, EventEmitter, NgZone, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
+import {Component, ElementRef, HostListener, NgZone, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {saveAs} from 'file-saver';
 import {finalize, forkJoin, mergeMap, Observable, of, tap} from 'rxjs';
 import {Constants} from 'src/app/common/constants';
-import {Counters} from 'src/app/components/test-status-icons/counters';
+import {Counters} from 'src/app/components/test-status-base/counters';
 import {MissingConfigurationAction} from 'src/app/modals/missing-configuration-modal/missing-configuration-action';
 import {MissingConfigurationModalComponent} from 'src/app/modals/missing-configuration-modal/missing-configuration-modal.component';
 import {CommunityService} from 'src/app/services/community.service';
@@ -59,6 +59,7 @@ import {DisplayState} from '../../../types/display-state';
 import {StatementTestCaseSearchCriteria} from './statement-test-case-search-criteria';
 import {MultiSelectConfig} from '../../../components/multi-select-filter/multi-select-config';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
+import {TestStatusBaseApi} from '../../../components/test-status-base/test-status-base-api';
 
 @Component({
     selector: 'app-conformance-statement',
@@ -74,6 +75,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   @ViewChild('conformanceDetailPage') conformanceDetailPage?: ElementRef
   @ViewChild('statusInfoContainer') statusInfoContainer?: ElementRef
   @ViewChild('resultsContainer') resultsContainer?: ElementRef
+  @ViewChildren("testStatusDisplay") testStatusDisplay?: QueryList<TestStatusBaseApi>
 
   communityId?: number
   communityIdOfStatement!: number
@@ -107,6 +109,8 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   canEditSystemConfiguration = false
   canEditStatementConfiguration = false
   navigationConfig?: NavigationControlsConfig
+  testCasePage = 1
+  testCaseCount = 0
   protected readonly PagingPlacement = PagingPlacement;
 
   testSuiteSelectionConfig: MultiSelectConfig<TestSuiteMinimalInfo> = {
@@ -170,7 +174,6 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   resizeObserver!: ResizeObserver
   resultsWrapped = false
   refreshPending = false
-  refreshCounters = new EventEmitter<Counters>()
   statementExecutionPending = false
 
   constructor(
@@ -199,7 +202,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
 
   ngAfterViewInit(): void {
     super.ngAfterViewInit()
-    this.pagingControls?.updateStatus(1, this.unfilteredTestCaseCount)
+    this.updateTestCasePaging(1, this.unfilteredTestCaseCount)
     setTimeout(() => {
       this.updateTestCaseFilterOptions()
     })
@@ -239,10 +242,10 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
           }
           return this.loadConformanceTestsInternal({
             targetPage: (existingDisplayState.paging != undefined)?existingDisplayState.paging.currentPage:1,
-            targetPageSize: (existingDisplayState.paging != undefined)?existingDisplayState.paging.pageSize:Constants.TABLE_PAGE_SIZE
+            targetPageSize: (existingDisplayState.paging != undefined)?existingDisplayState.paging.pageSize:this.dataService.defaultPagingTableSize
           })
         } else {
-          this.pagingControls?.updateStatus(1, this.unfilteredTestCaseCount)
+          this.updateTestCasePaging(1, this.unfilteredTestCaseCount)
           return of(true)
         }
       }),
@@ -255,6 +258,12 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
 
   ngOnDestroy(): void {
     this.saveState()
+  }
+
+  private updateTestCasePaging(page: number, total: number) {
+    this.pagingControls?.updateStatus(page, total)
+    this.testCasePage = page
+    this.testCaseCount = total
   }
 
   private loadInitialData(): Observable<any> {
@@ -344,6 +353,8 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   loadTab(tabIndex: number) {
     if (tabIndex == Constants.TAB.CONFORMANCE_STATEMENT.CONFIGURATION) {
       this.showConfigurationTab()
+    } else {
+      this.updateTestCasePaging(this.testCasePage, this.testCaseCount)
     }
   }
 
@@ -352,7 +363,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   }
 
   private loadConformanceTests() {
-    return this.loadConformanceTestsInternal({ targetPage: 1, targetPageSize: Constants.TABLE_PAGE_SIZE })
+    return this.loadConformanceTestsInternal({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
   }
 
   private loadConformanceTestsInternal(pagingInfo: PagingEvent): Observable<any> {
@@ -365,9 +376,9 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
             component.refresh()
           })
           if (this.statusCounters) {
-            this.refreshCounters.emit(this.statusCounters)
+            this.testStatusDisplay?.forEach((component) => component.refresh(this.statusCounters!))
           }
-          this.pagingControls?.updateStatus(pagingInfo.targetPage, data.count)
+          this.updateTestCasePaging(pagingInfo.targetPage, data.count)
         })
       }),
       finalize(() => {
@@ -827,6 +838,20 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
     if (!this.collapsedDetails) {
       this.toggleOverviewCollapse(false)
     }
+  }
+
+  @HostListener('document:click', ['$event'])
+  clickRegistered(event: Event) {
+    this.testStatusDisplay?.forEach((component) => component.documentClick(event))
+    this.testCaseResultFilter?.documentClick(event)
+    this.testSuiteDisplayComponents?.forEach((item) => item.documentClick(event))
+  }
+
+  @HostListener('document:keyup.escape')
+  escapeRegistered() {
+    this.testStatusDisplay?.forEach((component) => component.documentEscape())
+    this.testCaseResultFilter?.documentEscape()
+    this.testSuiteDisplayComponents?.forEach((item) => item.documentEscape())
   }
 
 }

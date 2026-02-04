@@ -18,5 +18,7 @@ import {TestCaseFilterOptions} from './test-case-filter-options';
 export interface TestCaseFilterApi {
 
   refreshOptions: (options: TestCaseFilterOptions|undefined, keepCurrentState: boolean) => void
+  documentEscape: () => void;
+  documentClick: (event: Event) => void;
 
 }

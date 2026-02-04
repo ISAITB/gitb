@@ -509,13 +509,16 @@
                             </div>
                         </div>
                         <div class="card">
-                            <div table-directive
+                            <div #adminsTable table-directive
                                  [columns]="adminColumns"
                                  [data]="admins"
                                  noDataMessage="No administrators found"
                                  [loadingStatus]="adminStatus"
+                                 [contentRefreshing]="adminsRefreshing"
+                                 (pageNavigation)="doAdminPaging($event)"
                                  [allowSelect]="true"
-                                 (onSelect)="adminSelect($event)">
+                                 (onSelect)="adminSelect($event)"
+                                 [supportPaging]="true">
                             </div>
                         </div>
                     </div>
@@ -532,13 +535,16 @@
                             </div>
                         </div>
                         <div class="card">
-                            <div table-directive
+                            <div #landingPagesTable table-directive
                                  [columns]="landingPagesColumns"
                                  [data]="landingPages"
                                  noDataMessage="No landing pages found"
                                  [loadingStatus]="landingPageStatus"
+                                 [contentRefreshing]="landingPagesRefreshing"
+                                 (pageNavigation)="doLandingPagePaging($event)"
                                  [allowSelect]="true"
-                                 (onSelect)="landingPageSelect($event)">
+                                 (onSelect)="landingPageSelect($event)"
+                                 [supportPaging]="true">
                             </div>
                         </div>
                     </div>
@@ -555,13 +561,16 @@
                             </div>
                         </div>
                         <div class="card">
-                            <div table-directive
+                            <div #legalNoticesTable table-directive
                                  [columns]="legalNoticesColumns"
                                  [data]="legalNotices"
                                  noDataMessage="No legal notices found"
                                  [loadingStatus]="legalNoticeStatus"
+                                 [contentRefreshing]="legalNoticesRefreshing"
+                                 (pageNavigation)="doLegalNoticePaging($event)"
                                  [allowSelect]="true"
-                                 (onSelect)="legalNoticeSelect($event)">
+                                 (onSelect)="legalNoticeSelect($event)"
+                                 [supportPaging]="true">
                             </div>
                         </div>
                     </div>
@@ -578,13 +587,16 @@
                             </div>
                         </div>
                         <div class="card">
-                            <div table-directive
+                            <div #errorTemplatesTable table-directive
                                  [columns]="errorTemplatesColumns"
                                  [data]="errorTemplates"
                                  noDataMessage="No error templates found"
                                  [loadingStatus]="errorTemplateStatus"
+                                 [contentRefreshing]="errorTemplatesRefreshing"
+                                 (pageNavigation)="doErrorTemplatePaging($event)"
                                  [allowSelect]="true"
-                                 (onSelect)="errorTemplateSelect($event)">
+                                 (onSelect)="errorTemplateSelect($event)"
+                                 [supportPaging]="true">
                             </div>
                         </div>
                     </div>
@@ -601,13 +613,16 @@
                             </div>
                         </div>
                         <div class="card">
-                            <div table-directive
+                            <div #themesTable table-directive
                                  [columns]="themeColumns"
                                  [data]="themes"
                                  noDataMessage="No themes found"
                                  [loadingStatus]="themeStatus"
+                                 [contentRefreshing]="themesRefreshing"
+                                 (pageNavigation)="doThemePaging($event)"
                                  [allowSelect]="true"
-                                 (onSelect)="themeSelect($event)">
+                                 (onSelect)="themeSelect($event)"
+                                 [supportPaging]="true">
                             </div>
                         </div>
                     </div>
@@ -617,7 +632,11 @@
                 <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-image" text="Resources"></app-tab-title></button>
                 <ng-template ngbNavContent>
                     <!-- System-wide resources -->
-                    <app-resource-management-tab [actions]="resourceActions" [deferredActivation]="resourceEmitter"></app-resource-management-tab>
+                    <app-resource-management-tab
+                        [state]="resourceState"
+                        [actions]="resourceActions"
+                        (pageSizeChanged)="resourceTabPageSizeChange()"
+                    ></app-resource-management-tab>
                 </ng-template>
             </li>
         </ul>

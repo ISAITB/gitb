@@ -13,10 +13,10 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
 import {ConformanceStatementItem} from 'src/app/types/conformance-statement-item';
 import {ConformanceStatementResult} from 'src/app/types/conformance-statement-result';
-import {Counters} from '../test-status-icons/counters';
+import {Counters} from '../test-status-base/counters';
 import {DataService} from 'src/app/services/data.service';
 import {ExportReportEvent} from 'src/app/types/export-report-event';
 import {BaseComponent} from '../../pages/base-component.component';
@@ -28,6 +28,9 @@ import {CheckboxOptionState} from '../checkbox-option-panel/checkbox-option-stat
 import {CheckboxOption} from '../checkbox-option-panel/checkbox-option';
 import {Constants} from '../../common/constants';
 import {ConformanceIds} from '../../types/conformance-ids';
+import {TestStatusBaseApi} from '../test-status-base/test-status-base-api';
+import {CheckBoxOptionPanelComponentApi} from '../checkbox-option-panel/check-box-option-panel-component-api';
+import {StatementOptionsButtonApi} from '../statement-options-button/statement-options-button-api';
 
 @Component({
     selector: 'app-conformance-statement-item-display',
@@ -61,7 +64,11 @@ export class ConformanceStatementItemDisplayComponent extends BaseComponent impl
   @Output() export = new EventEmitter<ExportReportEvent>()
   @Output() selected = new EventEmitter<number>()
 
-  @ViewChildren('itemsComponent') itemsComponents?: QueryList<ConformanceStatementItemsDisplayComponentApi>
+  @ViewChild('itemsComponent') itemsComponents?: ConformanceStatementItemsDisplayComponentApi
+  @ViewChild("testStatusDisplay") testStatusDisplay?: TestStatusBaseApi
+  @ViewChild("testStatusDisplayRatio") testStatusDisplayRatio?: TestStatusBaseApi
+  @ViewChild("optionButton") optionButton?: CheckBoxOptionPanelComponentApi
+  @ViewChild("ownOptionsButton") ownOptionsButton?: StatementOptionsButtonApi<ConformanceIds>
 
   protected static EXPORT_XML_OVERVIEW = '0'
   protected static EXPORT_PDF_OVERVIEW = '1'
@@ -76,7 +83,6 @@ export class ConformanceStatementItemDisplayComponent extends BaseComponent impl
   status?: string
   updateTime?: string
   pending = false
-  refreshCounters = new EventEmitter<Counters>()
   actorId?: number
   specificationId?: number
   conformanceIds?: ConformanceIds
@@ -87,13 +93,28 @@ export class ConformanceStatementItemDisplayComponent extends BaseComponent impl
     public readonly dataService: DataService
   ) { super() }
 
+  documentEscape(): void {
+    this.itemsComponents?.documentEscape()
+    this.testStatusDisplay?.documentEscape()
+    this.testStatusDisplayRatio?.documentEscape()
+    this.optionButton?.documentEscape()
+    this.ownOptionsButton?.documentEscape()
+  }
+
+  documentClick(event: Event): void {
+    this.itemsComponents?.documentClick(event)
+    this.testStatusDisplay?.documentClick(event)
+    this.testStatusDisplayRatio?.documentClick(event)
+    this.optionButton?.documentClick(event)
+    this.ownOptionsButton?.documentClick(event)
+  }
+
   reset() {
     this.ngOnInit()
-    if (this.itemsComponents) {
-      this.itemsComponents.forEach(item => item.reset())
-    }
+    this.itemsComponents?.reset()
     if (this.counters) {
-      this.refreshCounters.emit(this.counters)
+      this.testStatusDisplay?.refresh(this.counters)
+      this.testStatusDisplayRatio?.refresh(this.counters)
     }
   }
 
@@ -162,7 +183,8 @@ export class ConformanceStatementItemDisplayComponent extends BaseComponent impl
       this.status = this.dataService.conformanceStatusForTests(this.results.completedToConsider, this.results.failedToConsider, this.results.undefinedToConsider)
       if (signalUpdate) {
         setTimeout(() => {
-          this.refreshCounters.emit(this.counters)
+          this.testStatusDisplay?.refresh(this.counters!)
+          this.testStatusDisplayRatio?.refresh(this.counters!)
         })
       }
     }

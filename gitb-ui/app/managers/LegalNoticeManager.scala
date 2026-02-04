@@ -45,6 +45,24 @@ class LegalNoticeManager @Inject() (dbConfigProvider: DatabaseConfigProvider)
     )
   }
 
+  def searchLegalNoticesByCommunityWithoutContent(communityId: Long, page: Long, limit: Long): Future[SearchResult[LegalNotice]] = {
+    val queryBuilder = (forCount: Boolean) => {
+      var baseQuery = PersistenceSchema.legalNotices
+        .filter(_.community === communityId)
+        .map(x => (x.id, x.name, x.description, x.default))
+      if (!forCount) {
+        baseQuery = baseQuery.sortBy(_._2.asc)
+      }
+      baseQuery
+    }
+    DB.run(
+      for {
+        results <- queryBuilder(false).drop((page - 1) * limit).take(limit).result.map(_.toList.map(x => new LegalNotice(x._1, x._2, x._3, None, x._4)))
+        resultCount <- queryBuilder(true).size.result
+      } yield SearchResult(results, resultCount)
+    )
+  }
+
   /**
    * Gets all legal notices for the specified community
    */

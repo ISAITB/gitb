@@ -9,7 +9,8 @@
                 @if (testsToExecute.length > 0) {
                     @if (testsToExecute.length > 1) {
                         <div class="optionsDiv btn-toolbar">
-                            <app-checkbox-option-panel label="Options"
+                            <app-checkbox-option-panel #testOptionsControl
+                                                       label="Options"
                                                        [labelIcon]="Constants.BUTTON_ICON.CONFIGURATION_PROPERTIES"
                                                        [options]="testOptions"
                                                        (updated)="testOptionsUpdated($event)"></app-checkbox-option-panel>

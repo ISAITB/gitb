@@ -13,11 +13,11 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {ConformanceIds} from '../../types/conformance-ids';
+import {Counters} from './counters';
 
-export interface StatementOptionsButtonApi<T extends ConformanceIds> {
+export interface TestStatusBaseApi {
 
-  close: (item?: T) => void;
+  refresh: (counters: Counters) => void;
   documentEscape: () => void;
   documentClick: (event: Event) => void;
 

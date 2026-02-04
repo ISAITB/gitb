@@ -13,10 +13,11 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, ElementRef, HostListener, Input, OnInit} from '@angular/core';
+import {Component, ElementRef, Input, OnInit} from '@angular/core';
 import {Constants} from 'src/app/common/constants';
 import {DataService} from 'src/app/services/data.service';
 import {TestStatusBase} from '../test-status-base/test-status-base';
+import {TestStatusBaseApi} from '../test-status-base/test-status-base-api';
 
 @Component({
     selector: 'app-test-status-icons',
@@ -24,7 +25,7 @@ import {TestStatusBase} from '../test-status-base/test-status-base';
     styleUrls: ['./test-status-icons.component.less'],
     standalone: false
 })
-export class TestStatusIconsComponent extends TestStatusBase implements OnInit {
+export class TestStatusIconsComponent extends TestStatusBase implements TestStatusBaseApi, OnInit  {
 
   @Input() centerAligned = true
   @Input() asLine? = false
@@ -33,12 +34,11 @@ export class TestStatusIconsComponent extends TestStatusBase implements OnInit {
   successIcon!: string
   failedIcon!: string
   otherIcon!: string
-  expanded = false
 
   constructor(
     private readonly dataService: DataService,
-    private readonly eRef: ElementRef
-  ) { super() }
+    eRef: ElementRef
+  ) { super(eRef) }
 
   ngOnInit(): void {
     super.ngOnInit();
@@ -49,20 +49,6 @@ export class TestStatusIconsComponent extends TestStatusBase implements OnInit {
     this.successIcon = this.dataService.iconForTestResult(Constants.TEST_CASE_RESULT.SUCCESS)
     this.failedIcon = this.dataService.iconForTestResult(Constants.TEST_CASE_RESULT.FAILURE)
     this.otherIcon = this.dataService.iconForTestResult(Constants.TEST_CASE_RESULT.UNDEFINED)
-  }
-
-  @HostListener('document:click', ['$event'])
-  clickRegistered(event: any) {
-    if (!this.eRef.nativeElement.contains(event.target) && this.expanded) {
-      this.expanded = false
-    }
-  }
-
-  @HostListener('document:keyup.escape', ['$event'])
-  escapeRegistered(event: Event) {
-    if (this.expanded) {
-      this.expanded = false
-    }
   }
 
 }

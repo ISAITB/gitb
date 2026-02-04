@@ -13,11 +13,13 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, ElementRef, EventEmitter, Input, NgZone, OnInit, Output, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, EventEmitter, Input, NgZone, OnDestroy, OnInit, Output, ViewChild} from '@angular/core';
 import {PagingStatus} from './paging-status';
 import {PagingEvent} from './paging-event';
 import {PagingPlacement} from './paging-placement';
 import {PagingControlsApi} from './paging-controls-api';
+import {DataService} from '../../services/data.service';
+import {Subscription} from 'rxjs';
 
 @Component({
   selector: 'app-paging-controls',
@@ -25,7 +27,7 @@ import {PagingControlsApi} from './paging-controls-api';
   templateUrl: './paging-controls.component.html',
   styleUrl: './paging-controls.component.less'
 })
-export class PagingControlsComponent implements OnInit, AfterViewInit, PagingControlsApi {
+export class PagingControlsComponent implements OnInit, OnDestroy, AfterViewInit, PagingControlsApi {
 
   @Input() refreshing = false
   @Input() placement: PagingPlacement = PagingPlacement.table
@@ -33,6 +35,8 @@ export class PagingControlsComponent implements OnInit, AfterViewInit, PagingCon
   @ViewChild("pagingContainer") pagingContainer?: ElementRef
   @ViewChild("lastButton") lastButton?: ElementRef
   @ViewChild("pageControlsContainer") pageControlsContainer?: ElementRef
+
+  supportedPageSizes: number[] = [10, 25, 50, 100]
 
   status!: PagingStatus
   summaryMessage?: string
@@ -42,13 +46,17 @@ export class PagingControlsComponent implements OnInit, AfterViewInit, PagingCon
   wrapWidth?: number
   numberFormat = new Intl.NumberFormat('en-GB')
   protected readonly PagingPlacement = PagingPlacement;
+  pageSizeChangeSubscription?: Subscription;
 
-  constructor(private readonly zone: NgZone) {
+  constructor(
+    private readonly zone: NgZone,
+    protected readonly dataService: DataService) {
   }
 
   ngOnInit(): void {
-    this.status = new PagingStatus();
+    this.status = new PagingStatus(this.dataService.defaultPagingTableSize);
     this.updateStatus()
+    this.pageSizeChangeSubscription = this.dataService.onPageSizeChange$.subscribe((newSize: number) => this.updatePageSize(newSize))
   }
 
   ngAfterViewInit(): void {
@@ -59,6 +67,12 @@ export class PagingControlsComponent implements OnInit, AfterViewInit, PagingCon
     })
     if (this.pagingContainer) {
       this.resizeObserver.observe(this.pagingContainer.nativeElement)
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (this.pageSizeChangeSubscription) {
+      this.pageSizeChangeSubscription.unsubscribe();
     }
   }
 
@@ -120,12 +134,24 @@ export class PagingControlsComponent implements OnInit, AfterViewInit, PagingCon
   }
 
   private updateSummaryMessage() {
-    let minItemsOnPage = ((this.status.currentPage - 1) * this.status.pageSize) + 1
-    let maxItemsOnPage = minItemsOnPage + this.status.pageSize - 1
-    if (maxItemsOnPage > this.status.totalCount) {
-      maxItemsOnPage = this.status.totalCount
+    if (this.status.totalCount > 0) {
+      let minItemsOnPage = ((this.status.currentPage - 1) * this.status.pageSize) + 1
+      let maxItemsOnPage = minItemsOnPage + this.status.pageSize - 1
+      if (maxItemsOnPage > this.status.totalCount) {
+        maxItemsOnPage = this.status.totalCount
+      }
+      if (this.status.totalCount < this.status.pageSize) {
+        if (this.status.totalCount == 1) {
+          this.summaryMessage = `1 item`
+        } else {
+          this.summaryMessage = `${this.status.totalCount} items`
+        }
+      } else {
+        this.summaryMessage = `${minItemsOnPage} to ${maxItemsOnPage} of ${this.numberFormat.format(this.status.totalCount)}`
+      }
+    } else {
+      this.summaryMessage = ""
     }
-    this.summaryMessage = `Showing ${minItemsOnPage} to ${maxItemsOnPage} of ${this.numberFormat.format(this.status.totalCount)}`
   }
 
   doFirstPage() {
@@ -181,4 +207,18 @@ export class PagingControlsComponent implements OnInit, AfterViewInit, PagingCon
     }
   }
 
+  setPageSize(pageSize: number) {
+    if (pageSize != this.dataService.defaultPagingTableSize) {
+      this.dataService.setDefaultPageSize(pageSize)
+    }
+  }
+
+  private updatePageSize(newSize: number) {
+    this.status.pageSize = newSize
+    this.navigation.emit({
+      targetPage: 1,
+      targetPageSize: this.status.pageSize,
+      pageSizeChanged: true
+    })
+  }
 }

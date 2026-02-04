@@ -57,13 +57,16 @@
                             </div>
                         }
                         <div class="card">
-                            <div table-directive
+                            <div #systemsTable table-directive
                                  [columns]="systemColumns"
                                  [data]="systems"
                                  [noDataMessage]="'No '+dataService.labelSystemsLower()+' found'"
                                  [loadingStatus]="systemsStatus"
+                                 [contentRefreshing]="systemsRefreshing"
+                                 (pageNavigation)="doSystemPaging($event)"
                                  [allowSelect]="true"
-                                 (onSelect)="systemSelect($event)">
+                                 (onSelect)="systemSelect($event)"
+                                 [supportPaging]="true">
                             </div>
                         </div>
                     </div>
@@ -82,31 +85,28 @@
                                 </div>
                             }
                             <div class="card">
-                                <div table-directive
+                                <div #usersTable table-directive
                                      [columns]="userColumns"
                                      [data]="users"
                                      [noDataMessage]="'No users found'"
                                      [loadingStatus]="usersStatus"
+                                     [contentRefreshing]="usersRefreshing"
+                                     (pageNavigation)="doUserPaging($event)"
                                      [allowSelect]="showCreateUser"
-                                     (onSelect)="userSelect($event)">
+                                     (onSelect)="userSelect($event)"
+                                     [supportPaging]="true">
                                 </div>
                             </div>
                         </div>
                     </ng-template>
                 </li>
             }
-            @if (apiInfoVisible) {
+            @if (apiInfoVisible && apiKeyState) {
                 <li [ngbNavItem]="Constants.TAB.ORGANISATION.API_KEYS">
                     <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-key" text="REST API keys"></app-tab-title></button>
                     <ng-template ngbNavContent>
                         <div class="tabPanel">
-                            <app-api-key-info
-                                [organisationId]="orgId"
-                                [organisationName]="organisation.fname"
-                                [adminOrganisation]="organisation.adminOrganization == true"
-                                [communityId]="communityId"
-                                [loadData]="loadApiInfo">
-                            </app-api-key-info>
+                            <app-api-key-info [state]="apiKeyState"></app-api-key-info>
                         </div>
                     </ng-template>
                 </li>

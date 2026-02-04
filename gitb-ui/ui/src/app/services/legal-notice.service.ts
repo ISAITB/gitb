@@ -18,6 +18,7 @@ import {RestService} from './rest.service';
 import {ROUTES} from '../common/global';
 import {LegalNotice} from '../types/legal-notice';
 import {ErrorDescription} from '../types/error-description';
+import {SearchResult} from '../types/search-result';
 
 @Injectable({
   providedIn: 'root'
@@ -46,6 +47,17 @@ export class LegalNoticeService {
     return this.restService.get<LegalNotice[]>({
       path: ROUTES.controllers.LegalNoticeService.getLegalNoticesByCommunity(communityId).url,
       authenticate: true
+    })
+  }
+
+  searchLegalNoticesByCommunity(communityId: number, page: number|undefined, limit: number|undefined) {
+    return this.restService.get<SearchResult<LegalNotice>>({
+      path: ROUTES.controllers.LegalNoticeService.searchLegalNoticesByCommunity(communityId).url,
+      authenticate: true,
+      params: {
+        page: page,
+        limit: limit
+      }
     })
   }
 

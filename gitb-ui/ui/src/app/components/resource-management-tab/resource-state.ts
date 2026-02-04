@@ -13,12 +13,14 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {ConformanceIds} from '../../types/conformance-ids';
+import {CommunityResource} from '../../types/community-resource';
+import {LoadingStatus} from '../../types/loading-status.type';
 
-export interface StatementOptionsButtonApi<T extends ConformanceIds> {
+export interface ResourceState extends LoadingStatus {
 
-  close: (item?: T) => void;
-  documentEscape: () => void;
-  documentClick: (event: Event) => void;
+  resources: CommunityResource[];
+  total: number;
+  page: number;
+  filter?: string;
 
 }

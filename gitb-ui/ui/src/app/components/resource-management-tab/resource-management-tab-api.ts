@@ -13,12 +13,8 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {ConformanceIds} from '../../types/conformance-ids';
+export interface ResourceManagementTabApi {
 
-export interface StatementOptionsButtonApi<T extends ConformanceIds> {
-
-  close: (item?: T) => void;
-  documentEscape: () => void;
-  documentClick: (event: Event) => void;
+  load: () => void
 
 }

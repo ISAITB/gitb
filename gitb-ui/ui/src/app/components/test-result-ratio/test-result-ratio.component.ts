@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, ElementRef, HostListener, Input, OnInit} from '@angular/core';
+import {Component, ElementRef, Input, OnInit} from '@angular/core';
 import {TestStatusBase} from '../test-status-base/test-status-base';
 
 @Component({
@@ -24,8 +24,6 @@ import {TestStatusBase} from '../test-status-base/test-status-base';
 })
 export class TestResultRatioComponent extends TestStatusBase implements OnInit {
 
-  constructor(private readonly eRef: ElementRef) { super() }
-
   @Input() alignRight = true
   @Input() asLine? = false
 
@@ -35,20 +33,9 @@ export class TestResultRatioComponent extends TestStatusBase implements OnInit {
   completedIgnoredPercentage = ''
   failedIgnoredPercentage = ''
   otherIgnoredPercentage = ''
-  expanded = false
 
-  @HostListener('document:click', ['$event'])
-  clickRegistered(event: any) {
-    if (!this.eRef.nativeElement.contains(event.target) && this.expanded) {
-      this.expanded = false
-    }
-  }
-
-  @HostListener('document:keyup.escape', ['$event'])
-  escapeRegistered(event: Event) {
-    if (this.expanded) {
-      this.expanded = false
-    }
+  constructor(eRef: ElementRef) {
+    super(eRef)
   }
 
   ngOnInit(): void {

@@ -205,6 +205,18 @@ class SystemService @Inject() (repositoryUtils: RepositoryUtils,
     }
   }
 
+  def searchSystemsByOrganization(): Action[AnyContent] = authorizedAction.async { request =>
+    val orgId = ParameterExtractor.requiredQueryParameter(request, ParameterNames.ORGANIZATION_ID).toLong
+    authorizationManager.canViewSystems(request, orgId).flatMap { _ =>
+      val page = ParameterExtractor.extractPageNumber(request)
+      val limit = ParameterExtractor.extractPageLimit(request)
+      systemManager.searchSystemsByOrganization(orgId, page, limit).map { result =>
+        val json: String = JsonUtil.jsSearchResult(result, JsonUtil.jsSystems).toString
+        ResponseConstructor.constructJsonResponse(json)
+      }
+    }
+  }
+
   def getSystems(): Action[AnyContent] = authorizedAction.async { request =>
     val systemIds = ParameterExtractor.extractLongIdsQueryParameter(request)
     authorizationManager.canViewSystemsById(request, systemIds).flatMap { _ =>

@@ -95,6 +95,14 @@ export class TestCaseDisplayComponent extends BaseComponent implements TestCaseD
     })
   }
 
+  documentEscape(): void {
+    this.optionButtons?.forEach((item) => item.documentEscape())
+  }
+
+  documentClick(event: Event): void {
+    this.optionButtons?.forEach((item) => item.documentClick(event))
+  }
+
   getParsedTags(testCase: ConformanceTestCase) {
     if (testCase.tags != undefined && testCase.parsedTags == undefined) {
       testCase.parsedTags = (<TestCaseTag[]>JSON.parse(testCase.tags)).sort((a, b) => a.name.localeCompare(b.name))

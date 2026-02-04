@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, OnInit, ViewChild} from '@angular/core';
+import {Component, OnInit, ViewChild} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {Constants} from 'src/app/common/constants';
 import {OptionalCustomPropertyFormData} from 'src/app/components/optional-custom-property-form/optional-custom-property-form-data.type';
@@ -40,6 +40,9 @@ import {LegalNoticeService} from 'src/app/services/legal-notice.service';
 import {ErrorTemplateService} from 'src/app/services/error-template.service';
 import {OrganisationFormComponent} from '../organisation-form/organisation-form.component';
 import {BaseTabbedComponent} from '../../../../base-tabbed-component';
+import {PagingEvent} from '../../../../../components/paging-controls/paging-event';
+import {TableApi} from '../../../../../components/table/table-api';
+import {ApiKeyInfoState} from '../../../../../components/api-key-info/api-key-info-state';
 
 @Component({
     selector: 'app-organisation-details',
@@ -47,6 +50,9 @@ import {BaseTabbedComponent} from '../../../../base-tabbed-component';
     standalone: false
 })
 export class OrganisationDetailsComponent extends BaseTabbedComponent implements OnInit {
+
+  @ViewChild("systemsTable") systemsTable?: TableApi
+  @ViewChild("usersTable") usersTable?: TableApi
 
   orgId!: number
   communityId!: number
@@ -58,6 +64,12 @@ export class OrganisationDetailsComponent extends BaseTabbedComponent implements
   }
   users: User[] = []
   systems: System[] = []
+  usersPage = 1
+  systemsPage = 1
+  usersTotal = 0
+  systemsTotal = 0
+  usersRefreshing = false
+  systemsRefreshing = false
   landingPages: LandingPage[] = []
   legalNotices: LegalNotice[] = []
   errorTemplates: ErrorTemplate[] = []
@@ -85,8 +97,7 @@ export class OrganisationDetailsComponent extends BaseTabbedComponent implements
   formDataLoaded = false
   formDataUpdated = false
   validation = new ValidationState()
-
-  loadApiInfo = new EventEmitter<void>()
+  apiKeyState?: ApiKeyInfoState
 
   constructor(
     private readonly confirmationDialogService: ConfirmationDialogService,
@@ -218,6 +229,13 @@ export class OrganisationDetailsComponent extends BaseTabbedComponent implements
       if (this.organisation.landingPage == null) this.organisation.landingPage = undefined
       if (this.organisation.errorTemplate == null) this.organisation.errorTemplate = undefined
       if (this.organisation.legalNotice == null) this.organisation.legalNotice = undefined
+      this.apiKeyState = {
+        organisationId: this.orgId,
+        organisationName: this.organisation.fname,
+        adminOrganisation: this.organisation.adminOrganization === true,
+        communityId: this.communityId,
+        status: Constants.STATUS.NONE
+    }
       this.breadcrumbInit()
       this.propertyData.properties = data[1]
       this.landingPages = data[2]
@@ -230,34 +248,85 @@ export class OrganisationDetailsComponent extends BaseTabbedComponent implements
     })
   }
 
-  protected getUsers() {
-    return this.userService.getUsersByOrganisation(this.orgId)
+  protected getUsers(pagingInfo: PagingEvent) {
+    return this.userService.searchUsersByOrganisation(this.orgId, pagingInfo.targetPage, pagingInfo.targetPageSize)
   }
 
   showUsers() {
     if (this.usersStatus.status == Constants.STATUS.NONE) {
-      this.usersStatus.status = Constants.STATUS.PENDING
-      this.getUsers().subscribe((data) => {
-        for (let user of data) {
-          user.ssoStatusText = this.dataService.userStatus(user.ssoStatus)
-          user.roleText = Constants.USER_ROLE_LABEL[user.role!]
-        }
-        this.users = data
-      }).add(() => {
-        this.usersStatus.status = Constants.STATUS.FINISHED
-      })
+      this.queryUsers({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
+    } else {
+      this.updateUsersPagination(this.usersPage, this.usersTotal)
     }
   }
 
   showSystems() {
     if (this.systemsStatus.status == Constants.STATUS.NONE) {
+      this.querySystems({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
+    } else {
+      this.updateSystemsPagination(this.systemsPage, this.systemsTotal)
+    }
+  }
+
+  queryUsers(pagingInfo: PagingEvent) {
+    if (this.usersStatus.status == Constants.STATUS.FINISHED) {
+      this.usersRefreshing = true
+    } else {
+      this.usersStatus.status = Constants.STATUS.PENDING
+    }
+    this.getUsers(pagingInfo).subscribe((data) => {
+      this.users = data.data
+      for (let user of this.users) {
+        user.ssoStatusText = this.dataService.userStatus(user.ssoStatus)
+        user.roleText = Constants.USER_ROLE_LABEL[user.role!]
+      }
+      this.updateUsersPagination(pagingInfo.targetPage, data.count!)
+    }).add(() => {
+      this.usersRefreshing = false
+      this.usersStatus.status = Constants.STATUS.FINISHED
+    })
+  }
+
+  querySystems(pagingInfo: PagingEvent) {
+    if (this.systemsStatus.status == Constants.STATUS.FINISHED) {
+      this.systemsRefreshing = true
+    } else {
       this.systemsStatus.status = Constants.STATUS.PENDING
-      this.systemService.getSystemsByOrganisation(this.orgId)
+    }
+    this.systemService.searchSystemsByOrganisation(this.orgId, pagingInfo.targetPage, pagingInfo.targetPageSize)
       .subscribe((data) => {
-        this.systems = data
-      }).add(() => {
+        this.systems = data.data
+        this.updateSystemsPagination(pagingInfo.targetPage, data.count!)
+      })
+      .add(() => {
+        this.systemsRefreshing = false
         this.systemsStatus.status = Constants.STATUS.FINISHED
       })
+  }
+
+  private updateUsersPagination(page: number, count: number) {
+    this.usersTable?.getPagingControls()?.updateStatus(page, count)
+    this.usersPage = page
+    this.usersTotal = count
+  }
+
+  private updateSystemsPagination(page: number, count: number) {
+    this.systemsTable?.getPagingControls()?.updateStatus(page, count)
+    this.systemsPage = page
+    this.systemsTotal = count
+  }
+
+  doUserPaging(event: PagingEvent) {
+    this.queryUsers(event)
+    if (event.pageSizeChanged) {
+      this.systemsStatus.status = Constants.STATUS.NONE
+    }
+  }
+
+  doSystemPaging(event: PagingEvent) {
+    this.querySystems(event)
+    if (event.pageSizeChanged) {
+      this.usersStatus.status = Constants.STATUS.NONE
     }
   }
 
@@ -355,7 +424,7 @@ export class OrganisationDetailsComponent extends BaseTabbedComponent implements
   }
 
   showApiInfo() {
-    this.loadApiInfo.emit()
+    // No action needed
   }
 
 }

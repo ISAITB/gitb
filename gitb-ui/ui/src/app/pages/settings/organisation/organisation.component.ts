@@ -29,6 +29,7 @@ import {CommunityService} from 'src/app/services/community.service';
 import {LandingPageService} from 'src/app/services/landing-page.service';
 import {LegalNoticeService} from 'src/app/services/legal-notice.service';
 import {ErrorTemplateService} from 'src/app/services/error-template.service';
+import {PagingEvent} from '../../../components/paging-controls/paging-event';
 
 @Component({
     selector: 'app-organisation',
@@ -100,16 +101,19 @@ export class OrganisationComponent extends OrganisationDetailsComponent implemen
     this.routingService.ownOrganisationBreadcrumbs()
   }
 
-  override getUsers() {
-    return this.accountService.getVendorUsers()
+  override getUsers(pagingInfo: PagingEvent) {
+    return this.accountService.getVendorUsers(pagingInfo.targetPage, pagingInfo.targetPageSize)
       .pipe(
         map((data) => {
-          return data.map((user) => {
-            if (user.id == this.dataService.user!.id) {
-              user.name = user.name + ' (You)'
-            }
-            return user
-          })
+          return {
+            data: data.data.map((user) => {
+              if (user.id == this.dataService.user!.id) {
+                user.name = user.name + ' (You)'
+              }
+              return user
+            }),
+            count: data.count
+          }
         })
       )
   }

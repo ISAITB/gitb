@@ -22,6 +22,7 @@ import {FileParam} from '../types/file-param.type';
 import {TestServiceWithParameter} from '../types/test-service-with-parameter';
 import {Id} from '../types/id';
 import {ServiceCallResult} from '../types/service-call-result';
+import {SearchResult} from '../types/search-result';
 
 @Injectable({
   providedIn: 'root'
@@ -31,6 +32,18 @@ export class DomainParameterService {
   constructor(
     private readonly restService: RestService
   ) { }
+
+  searchDomainParameters(domainId: number, filter: string|undefined, page: number|undefined, limit: number|undefined) {
+    return this.restService.get<SearchResult<DomainParameter>>({
+      path: ROUTES.controllers.DomainParameterService.searchDomainParameters(domainId).url,
+      authenticate: true,
+      params: {
+        filter: filter,
+        page: page,
+        limit: limit
+      }
+    })
+  }
 
   getDomainParameters(domainId: number, loadValues?: boolean, onlySimple?: boolean) {
     const params: any = {}
@@ -139,17 +152,15 @@ export class DomainParameterService {
     })
   }
 
-  getTestServices(domainId: number) {
-    return this.restService.get<TestServiceWithParameter[]>({
-      path: ROUTES.controllers.DomainParameterService.getTestServices(domainId).url,
-      authenticate: true
-    })
-  }
-
-  getTestService(domainId: number, serviceId: number) {
-    return this.restService.get<TestServiceWithParameter>({
-      path: ROUTES.controllers.DomainParameterService.getTestService(domainId, serviceId).url,
-      authenticate: true
+  searchTestServices(domainId: number, filter: string|undefined, page: number|undefined, limit: number|undefined) {
+    return this.restService.get<SearchResult<TestServiceWithParameter>>({
+      path: ROUTES.controllers.DomainParameterService.searchTestServices(domainId).url,
+      authenticate: true,
+      params: {
+        filter: filter,
+        page: page,
+        limit: limit
+      }
     })
   }
 

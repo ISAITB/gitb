@@ -27,6 +27,7 @@
                         <div class="btn-toolbar">
                             <app-text-filter name="statementFilter" [width]="300" [placeholder]="'Search statements...'" [(ngModel)]="searchCriteria.filterText" (apply)="loadStatements()"></app-text-filter>
                             <app-checkbox-option-panel
+                                #showStatementFilter
                                 label="Show statements..."
                                 [labelIcon]="Constants.BUTTON_ICON.FILTER"
                                 [options]="statusOptions"

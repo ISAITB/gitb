@@ -1,5 +1,19 @@
-<div #pagingContainer class="table-paging-controls" [class.hidden]="status.totalCount <= status.pageSize"  [ngClass]="{'in-card': placement == PagingPlacement.card, 'in-tab': placement == PagingPlacement.tab, 'in-table': placement == PagingPlacement.table}">
-    <div #pageControlsContainer class="paging-controls">
+<div #pagingContainer class="table-paging-controls" [class.hidden]="status.totalCount == 0" [ngClass]="{'in-card': placement == PagingPlacement.card, 'in-tab': placement == PagingPlacement.tab, 'in-table': placement == PagingPlacement.table}">
+    <div class="page-size">
+        <div class="btn-group" ngbDropdown dropdownClass="paging-size-dropdown" container="body">
+            <button id="button-paging-size-select" ngbDropdownToggle [disabled]="refreshing" type="button" class="btn btn-sm btn-secondary dropdown-toggle" aria-controls="dropdown-paging-size-select">
+                <span class="me-2">{{dataService.defaultPagingTableSize}} per page</span>
+            </button>
+            <div id="dropdown-paging-size-select" ngbDropdownMenu aria-labelledby="button-snapshot">
+                @for (supportedSize of supportedPageSizes; track $index) {
+                    <button ngbDropdownItem type="button" (click)="setPageSize(supportedSize)">
+                        <span class="me-2" [class.invisible]="dataService.defaultPagingTableSize != supportedSize"><i class="fa-solid fa-check fa-sm"></i></span>{{supportedSize}}
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+    <div #pageControlsContainer class="paging-controls" [class.hidden]="status.totalCount <= status.pageSize">
         <button type="button" class="btn btn-sm btn-secondary" [disabled]="status.previousDisabled || refreshing" (click)="doFirstPage()"><i class="fa-solid fa-chevron-left"></i><i class="fa-solid fa-chevron-left me-2"></i> First</button>
         <button type="button" class="btn btn-sm btn-secondary" [disabled]="status.previousDisabled || refreshing" (click)="doPrevPage()"><i class="fa-solid fa-chevron-left me-2"></i> Previous</button>
         @if (pageLinks.length > 0 && !controlsWrapped) {
@@ -18,5 +32,5 @@
         <button type="button" class="btn btn-sm btn-secondary" [disabled]="status.nextDisabled || refreshing" (click)="doNextPage()">Next <i class="fa-solid fa-chevron-right ms-2"></i></button>
         <button #lastButton type="button" class="btn btn-sm btn-secondary" [disabled]="status.nextDisabled || refreshing" (click)="doLastPage()">Last <i class="fa-solid fa-chevron-right ms-2"></i><i class="fa-solid fa-chevron-right"></i></button>
     </div>
-    <div class="summary">{{ this.summaryMessage }}</div>
+    <div class="summary" [class.ms-auto]="status.totalCount <= status.pageSize">{{ this.summaryMessage }}</div>
 </div>

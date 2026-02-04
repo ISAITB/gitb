@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, HostListener, NgZone, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {ConformanceService} from 'src/app/services/conformance.service';
 import {DataService} from 'src/app/services/data.service';
@@ -30,6 +30,7 @@ import {CheckboxOption} from '../../../components/checkbox-option-panel/checkbox
 import {CreateStatementSearchCriteria} from './create-statement-search-criteria';
 import {CheckboxOptionState} from '../../../components/checkbox-option-panel/checkbox-option-state';
 import {UsageTipService} from '../../../services/usage-tip.service';
+import {CheckBoxOptionPanelComponentApi} from '../../../components/checkbox-option-panel/check-box-option-panel-component-api';
 
 @Component({
     selector: 'app-create-conformance-statement',
@@ -71,6 +72,7 @@ export class CreateConformanceStatementComponent implements OnInit, AfterViewIni
   @ViewChild("controlContainer") controlContainer?: ElementRef
   @ViewChild("statusContainer") statusContainer?: ElementRef
   @ViewChild("conformanceItemPage") conformanceItemPage?: ElementRef
+  @ViewChild("showStatementFilter") showStatementFilter?: CheckBoxOptionPanelComponentApi
   resizeObserver!: ResizeObserver
 
   constructor(
@@ -130,7 +132,7 @@ export class CreateConformanceStatementComponent implements OnInit, AfterViewIni
   }
 
   loadStatements() {
-    return this.loadStatementsInternal({ targetPage: 1, targetPageSize: Constants.TABLE_PAGE_SIZE })
+    return this.loadStatementsInternal({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
   }
 
   doPagingNavigation(pagingInfo: PagingEvent) {
@@ -301,6 +303,16 @@ export class CreateConformanceStatementComponent implements OnInit, AfterViewIni
     if (this.controlContainer && this.statusContainer) {
       this.controlsWrapped = this.hasStatementsBeforeFiltering && this.controlContainer.nativeElement.getBoundingClientRect().top != this.statusContainer.nativeElement.getBoundingClientRect().top
     }
+  }
+
+  @HostListener('document:click', ['$event'])
+  clickRegistered(event: Event) {
+    this.showStatementFilter?.documentClick(event)
+  }
+
+  @HostListener('document:keyup.escape')
+  escapeRegistered() {
+    this.showStatementFilter?.documentEscape()
   }
 
 }

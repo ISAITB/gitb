@@ -27,5 +27,6 @@ export interface User {
     ssoStatusText?: string,
     organization?: Organisation,
     password?: string,
+    defaultPagingSize?: number
 
 }

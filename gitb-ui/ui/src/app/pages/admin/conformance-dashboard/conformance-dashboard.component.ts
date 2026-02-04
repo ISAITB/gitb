@@ -415,7 +415,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
 
   getConformanceStatementsForTreeView() {
     this.restoreState()
-    let pagingEvent: PagingEvent = { targetPage: 1, targetPageSize: Constants.TABLE_PAGE_SIZE }
+    let pagingEvent: PagingEvent = { targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize }
     if (this.initialPagingStatus != undefined) {
       pagingEvent = { targetPage: this.initialPagingStatus.currentPage, targetPageSize: this.initialPagingStatus.pageSize }
       this.initialPagingStatus = undefined

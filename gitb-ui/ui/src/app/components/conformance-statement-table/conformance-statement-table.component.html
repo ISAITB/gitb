@@ -58,11 +58,12 @@
                                 <app-tag label="fa-solid fa-clock" [icon]="true" [value]="statement.updateTime"></app-tag>
                             }
                         </td>
-                        <td class="td-min-centered"><app-test-status-icons [counters]="statement.counters!" [asLine]="true"></app-test-status-icons></td>
-                        <td class="td-min-centered"><span><i tooltipClass="shortTooltip" [ngbTooltip]="dataService.tooltipForTestResult(statement.overallStatus)" [ngClass]="dataService.iconForTestResult(statement.overallStatus)"></i></span></td>
+                        <td class="td-min-centered"><app-test-status-icons #testStatusDisplay [counters]="statement.counters!" [asLine]="true"></app-test-status-icons></td>
+                        <td class="td-min-centered"><div class="d-flex justify-content-center align-content-center"><i tooltipClass="shortTooltip" [ngbTooltip]="dataService.tooltipForTestResult(statement.overallStatus)" [ngClass]="dataService.iconForTestResult(statement.overallStatus)"></i></div></td>
                         @if (showExportControls) {
                             <td class="td-min-centered">
-                                <app-statement-options-button [item]="statement"
+                                <app-statement-options-button #optionButtons
+                                                              [item]="statement"
                                                               [snapshotId]="snapshotId"
                                                               [communityId]="communityId"
                                                               [organisationId]="organisationId"

@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, EventEmitter, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
+import {Component, EventEmitter, HostListener, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {Constants} from 'src/app/common/constants';
 import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
@@ -156,7 +156,7 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
   }
 
   private loadTestCases(): Observable<any> {
-    return this.loadTestCasesInternal({ targetPage: 1, targetPageSize: Constants.TABLE_PAGE_SIZE })
+    return this.loadTestCasesInternal({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize })
   }
 
   private loadTestCasesInternal(pagingInfo: PagingEvent): Observable<any> {
@@ -425,6 +425,16 @@ export class TestSuiteDetailsComponent extends BaseTabbedComponent implements On
 
   applySearchFilter() {
     this.loadTestCases()
+  }
+
+  @HostListener('document:click', ['$event'])
+  clickRegistered(event: Event) {
+    this.testCaseDisplayComponents?.forEach((item) => item.documentClick(event))
+  }
+
+  @HostListener('document:keyup.escape')
+  escapeRegistered() {
+    this.testCaseDisplayComponents?.forEach((item) => item.documentEscape())
   }
 
 }
