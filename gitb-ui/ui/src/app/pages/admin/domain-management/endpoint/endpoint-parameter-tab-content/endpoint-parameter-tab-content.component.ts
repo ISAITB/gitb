@@ -27,7 +27,7 @@ import {Constants} from 'src/app/common/constants';
 import {CreateParameterModalComponent} from 'src/app/components/parameters/create-parameter-modal/create-parameter-modal.component';
 import {ConformanceService} from 'src/app/services/conformance.service';
 import {DataService} from 'src/app/services/data.service';
-import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
+import {NgbModal, NgbTooltip} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-endpoint-parameter-tab-content',
@@ -210,4 +210,14 @@ export class EndpointParameterTabContentComponent implements OnInit {
     }
   }
 
+  protected mouseDownOnDragButton(pop: NgbTooltip) {
+    pop.close()
+    pop.disableTooltip = true
+  }
+
+  protected mouseOutOnDragButton(pop: NgbTooltip) {
+    setTimeout(() => {
+      pop.disableTooltip = false
+    }, 50)
+  }
 }

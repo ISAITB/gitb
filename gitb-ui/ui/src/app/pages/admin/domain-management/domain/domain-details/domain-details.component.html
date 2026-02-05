@@ -155,39 +155,45 @@
                         <div class="card table-container rounded">
                             <table class="table table-directive">
                                 <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Value</th>
-                                    <th>Description</th>
-                                    <th class="th-min-centered">In&nbsp;tests</th>
-                                    @if (hasTestServices) {
-                                        <th></th>
-                                    }
-                                </tr>
+                                    <tr>
+                                        <th><div class="cell-content">Name</div></th>
+                                        <th><div class="cell-content">Value</div></th>
+                                        <th><div class="cell-content">Description</div></th>
+                                        <th class="th-min centered"><div class="cell-content">In tests</div></th>
+                                        @if (hasTestServices) {
+                                            <th></th>
+                                        }
+                                    </tr>
                                 </thead>
                                 <tbody [class.disable-events]="parametersRefreshing">
                                     @if (parameterStatus.status == Constants.STATUS.FINISHED) {
                                         @if (domainParameters.length == 0) {
                                             <tr>
-                                                <td [attr.colspan]="domainParameterColumnCount" class="td-no-data"><span>No parameters found</span></td>
+                                                <td [attr.colspan]="domainParameterColumnCount" class="td-no-data">
+                                                    <div class="cell-content">
+                                                        <span>No parameters found</span>
+                                                    </div>
+                                                </td>
                                             </tr>
                                         } @else {
                                             @for (parameter of domainParameters; track parameter.id) {
                                                 <tr class="selectable" (click)="onDomainParameterSelect(parameter)">
-                                                    <td>{{parameter.name}}</td>
+                                                    <td><div class="cell-content">{{parameter.name}}</div></td>
                                                     @if (parameter.kind == 'BINARY') {
-                                                        <td><a href (click)="downloadParameter(parameter);$event.preventDefault();$event.stopPropagation()">{{parameter.valueToShow}}</a></td>
+                                                        <td><div class="cell-content"><a href (click)="downloadParameter(parameter);$event.preventDefault();$event.stopPropagation()">{{parameter.valueToShow}}</a></div></td>
                                                     } @else {
-                                                        <td>{{parameter.valueToShow}}</td>
+                                                        <td><div class="cell-content">{{parameter.valueToShow}}</div></td>
                                                     }
-                                                    <td>{{parameter.description}}</td>
-                                                    <td class="td-min-centered">
-                                                        <div><i class="fa-solid" [ngClass]="{'fa-check': parameter.inTests, 'fa-times': !parameter.inTests}"></i></div>
+                                                    <td><div class="cell-content">{{parameter.description}}</div></td>
+                                                    <td class="td-min centered">
+                                                        <div class="cell-content"><span class="d-flex"><i class="fa-solid" [ngClass]="{'fa-check': parameter.inTests, 'fa-times': !parameter.inTests}"></i></span></div>
                                                     </td>
                                                     @if (hasTestServices) {
-                                                        <td class="td-min-centered">
+                                                        <td class="td-min centered">
                                                             @if (parameter.isTestService) {
-                                                                <div class="ms-4 me-2" ngbTooltip="Corresponds to a registered test service" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" container="body"><i class="fa-solid fa-gears standalone-icon"></i></div>
+                                                                <div class="cell-content">
+                                                                    <div class="ms-4 me-2" ngbTooltip="Corresponds to a registered test service" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" container="body"><i class="fa-solid fa-gears standalone-icon"></i></div>
+                                                                </div>
                                                             }
                                                         </td>
                                                     }
@@ -196,7 +202,11 @@
                                         }
                                     } @else {
                                         <tr>
-                                            <td colspan="4" class="td-data-loading"><span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></td>
+                                            <td colspan="4" class="td-data-loading">
+                                                <div class="cell-content">
+                                                    <app-pending-block></app-pending-block>
+                                                </div>
+                                            </td>
                                         </tr>
                                     }
                                 </tbody>

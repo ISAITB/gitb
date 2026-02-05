@@ -46,15 +46,15 @@
         }
     </div>
     <div [ngbCollapse]="!show" [animation]="true" class="testcase-table-contents">
-        <table class="table">
+        <table class="table extra-padding">
             <thead>
                 <tr>
                     <th><div class="d-flex align-items-center">ID</div></th>
                     @if (showUpdateDefinition) {
-                        <th class="th-min-centered"><div class="d-flex align-items-center justify-content-center"><div>Update metadata?</div><div app-tooltip class="d-flex-inline" [inline]="true" boundariesElement="window" tbTooltip="The test cases for which metadata (names, descriptions and documentation) shall be updated based on the information within the provided archive."></div></div></th>
+                        <th class="th-min centered"><div class="d-flex align-items-center justify-content-center"><div>Update metadata?</div><div app-tooltip class="d-flex-inline" [inline]="true" boundariesElement="window" tbTooltip="The test cases for which metadata (names, descriptions and documentation) shall be updated based on the information within the provided archive."></div></div></th>
                     }
                     @if (showResetTestHistory) {
-                        <th class="th-min-centered"><div class="d-flex align-items-center justify-content-center"><div>Reset test history?</div><div app-tooltip class="d-flex-inline" [inline]="true" boundariesElement="window" tbTooltip="The test cases for which the conformance testing status shall be reset and existing results considered obsolete."></div></div></th>
+                        <th class="th-min centered"><div class="d-flex align-items-center justify-content-center"><div>Reset test history?</div><div app-tooltip class="d-flex-inline" [inline]="true" boundariesElement="window" tbTooltip="The test cases for which the conformance testing status shall be reset and existing results considered obsolete."></div></div></th>
                     }
                 </tr>
             </thead>

@@ -15,6 +15,7 @@
 
 import {Component, ElementRef, Input, OnInit} from '@angular/core';
 import {TestStatusBase} from '../test-status-base/test-status-base';
+import {Constants} from '../../common/constants';
 
 @Component({
     selector: 'app-test-result-ratio',
@@ -58,4 +59,5 @@ export class TestResultRatioComponent extends TestStatusBase implements OnInit {
     }
   }
 
+  protected readonly Constants = Constants;
 }

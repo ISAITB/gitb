@@ -28,6 +28,7 @@ export class CustomPropertyFilterComponent {
 
   @Input() propertyFilter!: CustomProperty
   @Input() properties: CustomProperty[] = []
+  @Input() embedded: boolean = false
 
   @Output() onApply = new EventEmitter<CustomProperty>()
   @Output() onClear = new EventEmitter<CustomProperty>()

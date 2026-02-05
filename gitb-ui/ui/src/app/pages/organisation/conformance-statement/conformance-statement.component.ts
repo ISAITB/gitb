@@ -60,6 +60,7 @@ import {StatementTestCaseSearchCriteria} from './statement-test-case-search-crit
 import {MultiSelectConfig} from '../../../components/multi-select-filter/multi-select-config';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 import {TestStatusBaseApi} from '../../../components/test-status-base/test-status-base-api';
+import {TestStatusBase} from '../../../components/test-status-base/test-status-base';
 
 @Component({
     selector: 'app-conformance-statement',
@@ -854,4 +855,11 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
     this.testSuiteDisplayComponents?.forEach((item) => item.documentEscape())
   }
 
+  testStatusOpened(source: TestStatusBase) {
+    this.testStatusDisplay?.forEach((component) => {
+      if (component !== source) {
+        component.close()
+      }
+    })
+  }
 }

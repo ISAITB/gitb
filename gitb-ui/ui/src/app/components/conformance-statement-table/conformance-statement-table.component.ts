@@ -29,6 +29,7 @@ import {FilterState} from '../../types/filter-state';
 import {TestResultSearchCriteria} from '../../types/test-result-search-criteria';
 import {TestStatusBaseApi} from '../test-status-base/test-status-base-api';
 import {StatementOptionsButtonApi} from '../statement-options-button/statement-options-button-api';
+import {TestStatusBase} from '../test-status-base/test-status-base';
 
 @Component({
   selector: 'app-conformance-statement-table',
@@ -336,4 +337,11 @@ export class ConformanceStatementTableComponent extends BaseComponent implements
     this.optionButtons?.forEach((component) => component.documentEscape())
   }
 
+  expandedStatusIcons(source: TestStatusBase) {
+    this.testStatusDisplay?.forEach((component) => {
+      if (component !== source) {
+        component.close()
+      }
+    })
+  }
 }

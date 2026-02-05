@@ -42,7 +42,7 @@ export class ConformanceSnapshotsModalComponent extends BaseComponent implements
   snapshotColumns: TableColumnDefinition[] = [
     { field: 'labelToDisplay', title: 'Label' },
     { field: 'snapshotTime', title: 'Snapshot time', headerClass: 'th-min padding-right-large', order:'desc' },
-    { field: 'hidden', title: '', atEnd: false, isHiddenFlag: true, headerClass: 'th-min-centered' }
+    { field: 'hidden', title: '', atEnd: false, isHiddenFlag: true, headerClass: 'th-min centered' }
   ]
   snapshotsStatus = {status: Constants.STATUS.NONE}
   snapshotToEdit?: Partial<ConformanceSnapshot>

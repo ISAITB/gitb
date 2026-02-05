@@ -31,7 +31,7 @@ import {ActionMethods} from './action-methods';
 import {PreviewParametersModalComponent} from 'src/app/modals/preview-parameters-modal/preview-parameters-modal.component';
 import {RoutingService} from 'src/app/services/routing.service';
 import {CdkDragDrop} from '@angular/cdk/drag-drop';
-import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
+import {NgbModal, NgbTooltip} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-community-properties',
@@ -321,4 +321,14 @@ export class CommunityPropertiesComponent implements OnInit {
     }, 1)
   }
 
+  mouseDownOnDragButton(pop: NgbTooltip) {
+    pop.close()
+    pop.disableTooltip = true
+  }
+
+  mouseOutOnDragButton(pop: NgbTooltip) {
+    setTimeout(() => {
+      pop.disableTooltip = false
+    }, 50)
+  }
 }

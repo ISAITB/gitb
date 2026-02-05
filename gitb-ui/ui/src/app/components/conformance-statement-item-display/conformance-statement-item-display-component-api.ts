@@ -13,10 +13,13 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
+import {TestStatusBaseApi} from '../test-status-base/test-status-base-api';
+
 export interface ConformanceStatementItemDisplayComponentApi {
 
   reset: () => void
   documentEscape: () => void;
   documentClick: (event: Event) => void;
+  manageTestStatusOpened: (source: TestStatusBaseApi) => void;
 
 }

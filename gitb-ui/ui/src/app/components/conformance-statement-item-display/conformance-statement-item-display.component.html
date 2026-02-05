@@ -22,6 +22,7 @@
                 (selectionChanged)="childSelectionChanged($event)"
                 (export)="onExport($event)"
                 (selected)="childSelected($event)"
+                (testStatusOpened)="manageAndPropagateTestStatusOpened($event)"
             ></app-conformance-statement-items-display>
         }
     } @else {
@@ -66,10 +67,10 @@
                         }
                         @if (counters) {
                             <div class="item-counters">
-                                <app-test-status-icons #testStatusDisplay [counters]="counters" [asLine]="true"></app-test-status-icons>
+                                <app-test-status-icons #testStatusDisplay (opened)="manageAndPropagateTestStatusOpened($event)" [counters]="counters" [asLine]="true"></app-test-status-icons>
                             </div>
                             <div class="item-ratios">
-                                <app-test-result-ratio #testStatusDisplayRatio [counters]="counters" [asLine]="true"></app-test-result-ratio>
+                                <app-test-result-ratio #testStatusDisplayRatio (opened)="manageAndPropagateTestStatusOpened($event)" [counters]="counters" [asLine]="true"></app-test-result-ratio>
                             </div>
                         }
                         @if (status) {
@@ -115,6 +116,7 @@
                             (selectionChanged)="childSelectionChanged($event)"
                             (export)="onExport($event)"
                             (selected)="childSelected($event)"
+                            (testStatusOpened)="manageAndPropagateTestStatusOpened($event)"
                         ></app-conformance-statement-items-display>
                     </div>
                 </div>

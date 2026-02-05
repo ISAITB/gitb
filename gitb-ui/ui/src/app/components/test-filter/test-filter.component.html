@@ -134,6 +134,7 @@
                     <app-custom-property-filter
                       [propertyFilter]="propFilter"
                       [properties]="availableOrganisationProperties"
+                      [embedded]="embedded"
                       (onApply)="applyOrganisationProperty()"
                       (onClear)="clearOrganisationProperty($event)"
                       (onCancel)="cancelOrganisationProperty()">
@@ -142,7 +143,7 @@
                 }
                 <div class="property-filters-control" [ngClass]="{'padded': organisationProperties && organisationProperties.length > 0}">
                   @if (!addingOrganisationProperty || loadingOrganisationProperties) {
-                    <button [disable]="applicableCommunityId == undefined" [pending]="loadingOrganisationProperties" class="btn btn-secondary" (click)="addOrganisationProperty()" [icon]="true">
+                    <button [disable]="applicableCommunityId == undefined" [pending]="loadingOrganisationProperties" class="btn btn-secondary" (click)="addOrganisationProperty()" [icon]="true" ngbTooltip="Add" tooltipClass="shortTooltip" container="body" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
                         <span><i [class]="Constants.BUTTON_ICON.NEW"></i></span>
                     </button>
                   }
@@ -163,6 +164,7 @@
                     <app-custom-property-filter
                       [propertyFilter]="propFilter"
                       [properties]="availableSystemProperties"
+                      [embedded]="embedded"
                       (onApply)="applySystemProperty()"
                       (onClear)="clearSystemProperty($event)"
                       (onCancel)="cancelSystemProperty()">
@@ -171,7 +173,7 @@
                 }
               <div class="property-filters-control" [ngClass]="{'padded': systemProperties && systemProperties.length > 0}">
                   @if (!addingSystemProperty || loadingSystemProperties) {
-                      <button [disable]="applicableCommunityId == undefined" [pending]="loadingSystemProperties" class="btn btn-secondary" (click)="addSystemProperty()" [icon]="true">
+                      <button [disable]="applicableCommunityId == undefined" [pending]="loadingSystemProperties" class="btn btn-secondary" (click)="addSystemProperty()" [icon]="true" ngbTooltip="Add" tooltipClass="shortTooltip" container="body" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
                           <span><i [class]="Constants.BUTTON_ICON.NEW"></i></span>
                       </button>
                   }

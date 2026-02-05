@@ -76,7 +76,7 @@
                         <div class="row mt-3">
                             <div class="offset-1 col-10">
                                 <div class="card table-container rounded mb-0">
-                                    <table class="table table-directive">
+                                    <table class="table table-directive extra-padding">
                                         <thead>
                                         <tr>
                                             <th class="first-column">
@@ -89,7 +89,7 @@
                                             <th>Specific</th>
                                             <th class="last-column">
                                                 <div class="btn-toolbar d-flex justify-content-end">
-                                                    <button class="btn btn-secondary btn-sm" [labelIcon]="Constants.BUTTON_ICON.ALL" type="button" (click)="allIncludes()" [disable]="disableAllIncludes()">All</button>
+                                                    <button class="btn btn-secondary btn-sm" [labelIcon]="Constants.BUTTON_ICON.SELECT" type="button" (click)="allIncludes()" [disable]="disableAllIncludes()">All</button>
                                                     <button class="btn btn-secondary btn-sm" [labelIcon]="Constants.BUTTON_ICON.NONE" type="button" (click)="clearIncludes()" [disable]="disableClearIncludes()">None</button>
                                                 </div>
                                             </th>

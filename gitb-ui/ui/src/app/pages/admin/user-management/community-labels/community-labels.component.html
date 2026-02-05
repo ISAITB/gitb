@@ -8,7 +8,7 @@
                 <div class="alert alert-info rounded">
                     <span>Override the default labels of Test Bed concepts to align them with your community. The labels you provide will be used in all screens, reports and exports.</span>
                 </div>
-                <table id="labelTable" class="table mb-0">
+                <table id="labelTable" class="table mb-0 extra-padding">
                     <thead>
                         <tr>
                             <th><span>Concept</span><span class="spaced-left" [ngbTooltip]="'The Test Bed concept to describe with a custom label.'" [tooltipClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span></th>
@@ -44,7 +44,11 @@
                             }
                         } @else {
                             <tr>
-                                <td colspan="5" class="td-data-loading"><span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></td>
+                                <td colspan="5" class="td-data-loading">
+                                    <div class="cell-content">
+                                        <app-pending-block></app-pending-block>
+                                    </div>
+                                </td>
                             </tr>
                         }
                     </tbody>

@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, ElementRef, Input, OnInit} from '@angular/core';
+import {Component, ElementRef, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {Counters} from './counters';
 import {TestStatusBaseApi} from './test-status-base-api';
 
@@ -24,6 +24,7 @@ import {TestStatusBaseApi} from './test-status-base-api';
 export abstract class TestStatusBase implements OnInit, TestStatusBaseApi {
 
   @Input() counters!: Counters
+  @Output() opened = new EventEmitter<TestStatusBase>()
 
   hasRequired = false
   hasIgnored = false
@@ -52,6 +53,10 @@ export abstract class TestStatusBase implements OnInit, TestStatusBaseApi {
     this.expanded = false
   }
 
+  close() {
+    this.expanded = false
+  }
+
   documentClick(event: Event): void {
     if (!this.eRef.nativeElement.contains(event.target) && this.expanded) {
       this.expanded = false
@@ -71,6 +76,11 @@ export abstract class TestStatusBase implements OnInit, TestStatusBaseApi {
     if ((this.completedIgnored + this.failedIgnored + this.otherIgnored) != (this.counters.completedOptional + this.counters.failedOptional + this.counters.otherOptional)) {
       this.tooltipRequiredTestDescription = 'test cases or groups'
     }
+  }
+
+  expand() {
+    this.expanded = true
+    this.opened.emit(this)
   }
 
 }

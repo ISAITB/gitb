@@ -38,6 +38,7 @@ export class StatementOptionsButtonComponent<T extends ConformanceIds> implement
   @Input() communityId?: number
   @Input() snapshotId?: number
   @Input() pending?: boolean
+  @Input() inTable? = false
   @Output() opening = new EventEmitter<T>()
   @Output() export = new EventEmitter<{ item: T, format: 'xml'|'pdf' }>()
 

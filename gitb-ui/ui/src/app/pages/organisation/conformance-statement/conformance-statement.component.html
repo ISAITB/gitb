@@ -57,10 +57,10 @@
 										Test results
 									</div>
 									<div class="status-counts">
-										<app-test-status-icons #testStatusDisplay [counters]="statusCounters" [centerAligned]="false"></app-test-status-icons>
+										<app-test-status-icons #testStatusDisplay (opened)="testStatusOpened($event)" [counters]="statusCounters" [centerAligned]="false"></app-test-status-icons>
 									</div>
 									<div class="status-ratios">
-										<app-test-result-ratio #testStatusDisplay [counters]="statusCounters" [asLine]="true"></app-test-result-ratio>
+										<app-test-result-ratio #testStatusDisplay (opened)="testStatusOpened($event)" [counters]="statusCounters" [asLine]="true"></app-test-result-ratio>
 									</div>
 								</div>
 							</div>

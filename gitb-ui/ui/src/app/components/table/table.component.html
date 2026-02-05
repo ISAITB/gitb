@@ -6,30 +6,36 @@
         <thead>
             <tr>
                 @if (expandableRowProperty != undefined) {
-                    <th class="th-min-centered"></th>
+                    <th class="th-min centered"></th>
                 }
                 @if (checkboxEnabled) {
-                    <th class="th-min-centered">
-                        <input type="checkbox" [(ngModel)]="allChecked" (change)="checkAll()">
+                    <th class="th-min centered">
+                        <div class="cell-content">
+                            <input type="checkbox" class="form-check-input" [(ngModel)]="allChecked" (change)="checkAll()">
+                        </div>
                     </th>
                 }
                 @for (column of columnsLeft; track $index) {
                     <th [ngClass]="classForColumn(column)" [class.sortable]="column.sortable" (click)="headerColumnClicked(column)">
-                        {{column.title}}
-                        @if (column.order != undefined) {
-                            <i [ngClass]="{'fa-caret-down': column.order == 'desc', 'fa-caret-up': column.order == 'asc'}" class="fa"></i>
-                        }
+                        <div class="cell-content">
+                            {{column.title}}
+                            @if (column.order != undefined) {
+                                <span class="ms-1"><i [ngClass]="{'fa-caret-down': column.order == 'desc', 'fa-caret-up': column.order == 'asc'}" class="fa"></i></span>
+                            }
+                        </div>
                     </th>
                 }
                 @if (actionVisible || operationsVisible || exportVisible) {
-                    <th class="th-min-centered"></th>
+                    <th class="th-min centered"></th>
                 }
                 @for (column of columnsRight; track $index) {
                     <th [ngClass]="classForColumn(column)" [class.sortable]="column.sortable" (click)="headerColumnClicked(column)">
-                        {{column.title}}
-                        @if (column.order != undefined) {
-                            <i [ngClass]="{'fa-caret-down': column.order == 'desc', 'fa-caret-up': column.order == 'asc'}" class="fa"></i>
-                        }
+                        <div class="cell-content">
+                            {{column.title}}
+                            @if (column.order != undefined) {
+                                <i [ngClass]="{'fa-caret-down': column.order == 'desc', 'fa-caret-up': column.order == 'asc'}" class="fa"></i>
+                            }
+                        </div>
                     </th>
                 }
             </tr>
@@ -38,11 +44,19 @@
             @if (loadingStatus) {
                 @if (loadingStatus.status != Constants.STATUS.FINISHED) {
                     <tr>
-                        <td [attr.colspan]="columnCount" class="td-data-loading"><app-pending-block></app-pending-block></td>
+                        <td [attr.colspan]="columnCount" class="td-data-loading">
+                            <div class="cell-content">
+                                <app-pending-block></app-pending-block>
+                            </div>
+                        </td>
                     </tr>
                 } @else if (!data || data.length == 0) {
                     <tr>
-                        <td [attr.colspan]="columnCount" class="td-no-data"><span>{{noDataMessage}}</span></td>
+                        <td [attr.colspan]="columnCount" class="td-no-data">
+                            <div class="cell-content">
+                                <span>{{noDataMessage}}</span>
+                            </div>
+                        </td>
                     </tr>
                 }
             }

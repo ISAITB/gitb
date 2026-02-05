@@ -63,6 +63,7 @@ export class ConformanceStatementItemDisplayComponent extends BaseComponent impl
   @Output() selectionChanged = new EventEmitter<ConformanceStatementItem>()
   @Output() export = new EventEmitter<ExportReportEvent>()
   @Output() selected = new EventEmitter<number>()
+  @Output() testStatusOpened = new EventEmitter<TestStatusBaseApi>()
 
   @ViewChild('itemsComponent') itemsComponents?: ConformanceStatementItemsDisplayComponentApi
   @ViewChild("testStatusDisplay") testStatusDisplay?: TestStatusBaseApi
@@ -277,4 +278,14 @@ export class ConformanceStatementItemDisplayComponent extends BaseComponent impl
     this.selected.emit(this.item.id)
   }
 
+  manageTestStatusOpened(source: TestStatusBaseApi) {
+    if (source !== this.testStatusDisplay) this.testStatusDisplay?.close()
+    if (source !== this.testStatusDisplayRatio) this.testStatusDisplayRatio?.close()
+    this.itemsComponents?.manageTestStatusOpened(source)
+  }
+
+  manageAndPropagateTestStatusOpened(source: TestStatusBaseApi) {
+    this.manageTestStatusOpened(source)
+    this.testStatusOpened.emit(source)
+  }
 }

@@ -111,7 +111,9 @@
                                                                                  [withExport]="true"
                                                                                  [withResults]="true"
                                                                                  (selectionChanged)="onStatementSelect($event)"
-                                                                                 (export)="onExportConformanceOverview($event)"></app-conformance-statement-items-display>
+                                                                                 (export)="onExportConformanceOverview($event)"
+                                                                                 (testStatusOpened)="manageTestStatusOpened($event)"
+                                        ></app-conformance-statement-items-display>
                                     </div>
                                 }
                             } @else {

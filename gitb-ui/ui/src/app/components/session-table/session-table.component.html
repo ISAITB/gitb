@@ -6,30 +6,36 @@
         <thead>
             <tr>
                 @if (checkboxEnabled) {
-                    <th class="th-min-centered"></th>
+                    <th class="th-min centered"></th>
                 }
-                <th class="th-min-centered"></th>
+                <th class="th-min centered"></th>
                 @for (column of columnsLeft; track column) {
                     <th [ngClass]="column.headerClass!" (click)="!column.sortable || headerColumnClicked(column)">
-                        {{column.title}}
-                        @if (column.order == 'desc') {
-                            <i class="fa-solid fa-caret-down"></i>
-                        } @else if (column.order == 'asc') {
-                            <i class="fa-solid fa-caret-up"></i>
-                        }
+                        <div class="cell-content">
+                            {{column.title}}
+                            <span class="ms-1">
+                                @if (column.order == 'desc') {
+                                    <i class="fa-solid fa-caret-down"></i>
+                                } @else if (column.order == 'asc') {
+                                    <i class="fa-solid fa-caret-up"></i>
+                                }
+                            </span>
+                        </div>
                     </th>
                 }
                 @if (actionVisible || exportVisible || operationsVisible) {
-                    <th class="th-min-centered"></th>
+                    <th class="th-min centered"></th>
                 }
                 @for (column of columnsRight; track column) {
                     <th [ngClass]="column.headerClass!" (click)="!column.sortable || headerColumnClicked(column)">
-                        {{column.title}}
-                        @if (column.order == 'desc') {
-                            <i class="fa-solid fa-caret-down"></i>
-                        } @else if (column.order == 'asc') {
-                            <i class="fa-solid fa-caret-up"></i>
-                        }
+                        <div class="cell-content">
+                            {{column.title}}
+                            @if (column.order == 'desc') {
+                                <i class="fa-solid fa-caret-down"></i>
+                            } @else if (column.order == 'asc') {
+                                <i class="fa-solid fa-caret-up"></i>
+                            }
+                        </div>
                     </th>
                 }
             </tr>
@@ -37,16 +43,24 @@
         <tbody>
             @if (loadingStatus && loadingStatus.status != Constants.STATUS.FINISHED) {
                 <tr>
-                    <td [attr.colspan]="columnCount" class="td-data-loading"><span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></td>
+                    <td [attr.colspan]="columnCount" class="td-data-loading">
+                        <div class="cell-content">
+                            <app-pending-block></app-pending-block>
+                        </div>
+                    </td>
                 </tr>
             } @else if (loadingStatus && loadingStatus.status == Constants.STATUS.FINISHED && (!data || data.length == 0)) {
                 <tr>
-                    <td [attr.colspan]="columnCount" class="td-no-data"><span>{{noDataMessage}}</span></td>
+                    <td [attr.colspan]="columnCount" class="td-no-data">
+                        <div class="cell-content">
+                            <span>{{noDataMessage}}</span>
+                        </div>
+                    </td>
                 </tr>
             }
             @for (row of data; let i = $index; track row.session) {
                 <tr table-row-directive #tableRowComponent
-                    class="table-row-directive expandable-table-row-collapsed session-table-row"
+                    class="table-row-directive expandable-table-row-collapsed"
                     [class.disable-events]="contentRefreshing"
                     [ngClass]="rowClass(row)"
                     (click)="onExpand(row)"
@@ -77,7 +91,7 @@
                 <tr class="expandable-table-row-expanded">
                     <td [attr.colspan]="columnCount" class="expandable-table-expandable-cell">
                         <div [ngbCollapse]="!row.expanded" [animation]="true" (hidden)="updateSessionWidthsWrapper()" (shown)="updateSessionWidthsWrapper()">
-                            <div class="collapsing-div">
+                            <div class="p-2">
                                 <div class="sessionControls">
                                     <div class="btn-toolbar">
                                         @if (supportRefresh) {

@@ -148,6 +148,7 @@
                                     [snapshotId]="activeConformanceSnapshot?.id"
                                     (selectionChanged)="onStatementSelect($event)"
                                     (export)="onExportConformanceItem($event)"
+                                    (testStatusOpened)="manageTestStatusOpened($event)"
                                 ></app-conformance-statement-items-display>
                             </div>
                         }

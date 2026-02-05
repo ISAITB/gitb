@@ -39,6 +39,7 @@ import {PagingPlacement} from '../paging-controls/paging-placement';
 import {DisplayState} from '../../types/display-state';
 import {PagingStatus} from '../paging-controls/paging-status';
 import {CheckBoxOptionPanelComponentApi} from '../checkbox-option-panel/check-box-option-panel-component-api';
+import {TestStatusBaseApi} from '../test-status-base/test-status-base-api';
 
 @Component({
     template: '',
@@ -258,6 +259,10 @@ export abstract class BaseConformanceItemDisplayComponent extends BaseComponent 
   documentClick(event: Event): void {
     this.showStatementFilter?.documentClick(event)
     this.conformanceItemTree?.documentClick(event)
+  }
+
+  manageTestStatusOpened(source: TestStatusBaseApi) {
+    this.conformanceItemTree?.manageTestStatusOpened(source)
   }
 
   protected abstract displayStateKey(): string

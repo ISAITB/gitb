@@ -18,27 +18,35 @@
     </div>
 </div>
 <div class="card table-container rounded">
-    <table class="table table-directive thick">
+    <table class="table table-directive">
         <thead>
             <tr>
-                <th>Label</th>
-                <th>Key</th>
-                <th>Type</th>
-                <th class="min-width">Required</th>
-                <th class="min-width">Editable</th>
-                <th class="min-width">In&nbsp;tests</th>
-                <th class="min-width">Hidden</th>
-                <th class="min-width"></th>
+                <th><div class="cell-content">Label</div></th>
+                <th><div class="cell-content">Key</div></th>
+                <th><div class="cell-content">Type</div></th>
+                <th class="th-min"><div class="cell-content">Required</div></th>
+                <th class="th-min"><div class="cell-content">Editable</div></th>
+                <th class="th-min"><div class="cell-content">In tests</div></th>
+                <th class="th-min"><div class="cell-content">Hidden</div></th>
+                <th class="th-min"></th>
             </tr>
         </thead>
         <tbody class="parametersTable" cdkDropList cdkDropListLockAxis="y" (cdkDropListDropped)="dropParameter($event)">
             @if (dataStatus.status != Constants.STATUS.FINISHED) {
                 <tr>
-                    <td colspan="8" class="td-data-loading"><span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></td>
+                    <td colspan="8" class="td-data-loading">
+                        <div class="cell-content">
+                            <app-pending-block></app-pending-block>
+                        </div>
+                    </td>
                 </tr>
             } @else if (dataStatus.status == Constants.STATUS.FINISHED && parameters.length == 0) {
                 <tr>
-                    <td colspan="8" class="td-no-data"><span>No parameters found</span></td>
+                    <td colspan="8" class="td-no-data">
+                        <div class="cell-content">
+                            <span>No parameters found</span>
+                        </div>
+                    </td>
                 </tr>
             }
             @for (parameter of parameters; track parameter.id) {
@@ -51,16 +59,18 @@
                     (click)="onParameterSelect(parameter)"
                     [class.selectable]="!draggingParameter"
                 >
-                    <td class="drag-preview"><div><span>{{parameter.name}}</span></div></td>
-                    <td><div><span>{{parameter.testKey}}</span></div></td>
-                    <td><div><span>{{parameter.kindLabel}}</span></div></td>
-                    <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.useLabel, 'fa-times': !parameter.useLabel}"></i></span></div></td>
-                    <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.adminOnlyLabel, 'fa-times': !parameter.adminOnlyLabel}"></i></span></div></td>
-                    <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.notForTestsLabel, 'fa-times': !parameter.notForTestsLabel}"></i></span></div></td>
-                    <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.hidden, 'fa-times': !parameter.hidden}"></i></span></div></td>
+                    <td class="drag-preview"><div class="cell-content">{{parameter.name}}</div></td>
+                    <td><div class="cell-content">{{parameter.testKey}}</div></td>
+                    <td><div class="cell-content">{{parameter.kindLabel}}</div></td>
+                    <td class="centered"><div class="cell-content"><span><i class="fa" [ngClass]="{'fa-check': parameter.useLabel, 'fa-times': !parameter.useLabel}"></i></span></div></td>
+                    <td class="centered"><div class="cell-content"><span><i class="fa" [ngClass]="{'fa-check': parameter.adminOnlyLabel, 'fa-times': !parameter.adminOnlyLabel}"></i></span></div></td>
+                    <td class="centered"><div class="cell-content"><span><i class="fa" [ngClass]="{'fa-check': parameter.notForTestsLabel, 'fa-times': !parameter.notForTestsLabel}"></i></span></div></td>
+                    <td class="centered"><div class="cell-content"><span><i class="fa" [ngClass]="{'fa-check': parameter.hidden, 'fa-times': !parameter.hidden}"></i></span></div></td>
                     <td class="drag-handle" (click)="$event.stopPropagation();">
                         @if (parameters.length > 1) {
-                            <button cdkDragHandle #pop="ngbTooltip" (mousedown)="pop.close()" class="btn btn-secondary" type="button" tooltipClass="shortTooltip" container="body" ngbTooltip="Reorder" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrows-up-down"></i></span></button>
+                            <div class="cell-content">
+                                <button cdkDragHandle #pop="ngbTooltip" (mousedown)="mouseDownOnDragButton(pop)" (mouseout)="mouseOutOnDragButton(pop)" class="btn btn-sm btn-secondary" type="button" tooltipClass="shortTooltip" container="body" ngbTooltip="Reorder" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrows-up-down"></i></span></button>
+                            </div>
                         }
                     </td>
                 </tr>

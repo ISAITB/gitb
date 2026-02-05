@@ -198,146 +198,140 @@ a.scroll-to-top.visible {
 	}
 }
 
-table.padded-table tbody tr {
-	td {
-		padding-top: 15px;
-		padding-bottom: 15px;
-	}
-	td.operation-cell {
-		padding: 8px;
-	}
-}
-
-table.table-directive {
-	div.btn-toolbar {
-		margin: 0;
-	}
-}
 .no-wrap {
 	white-space: nowrap;
 	display: block;
 }
-.td-min-right {
-	width: 1px;
-	padding-top: 8px;
-	padding-bottom: 8px;
-	vertical-align: middle;
-	text-align: right;
-}
-.td-min-centered {
-	width: 1px;
-	padding-top: 8px;
-	padding-bottom: 8px;
-	vertical-align: middle;
-	text-align: center;
-}
-.table .th-min-centered, .th-min-centered {
-	width: 1px;
-	vertical-align: middle;
-	text-align: center;
-	white-space: nowrap;
-}
-td.td-min {
-	width: 1px;
-	padding-top: 8px;
-	padding-bottom: 8px;
-	white-space: nowrap;
-    &.centered {
-        text-align: center;
+
+.table {
+    padding: 0;
+    margin: 0;
+    tr {
+        &.selectable {
+            &:hover, &:hover td {
+                cursor: pointer;
+                background-color: @gray-highlight !important;
+            }
+            &.selected td, &:hover td {
+                background-color: @gray-highlight !important;
+            }
+        }
+        th {
+            border-bottom: 2px solid @gray-dark-1;
+            &.sortable {
+                cursor: pointer;
+            }
+        }
+        td, th {
+            padding: 4px 8px;
+            &.centered {
+                vertical-align: middle;
+                text-align: center;
+                .cell-content {
+                    justify-content: center;
+                    justify-items: center;
+                }
+            }
+        }
     }
-	&.padding-right-large {
-		padding-right: 40px;
-	}
-}
-.td-nowrap {
-	white-space: nowrap;
-}
-th.th-min {
-	width: 1px;
-	white-space: nowrap;
-    &.centered {
-        text-align: center;
+    &.extra-padding {
+        td, th {
+            padding: 8px;
+        }
     }
-	&.padding-right-large {
-		padding-right: 40px;
-	}
-}
-
-#conformance-statements-table {
-	td.tb-status {
-		.td-min-centered
-	}
-}
-
-div.collapsing-div {
-	padding: 8px;
-}
-
-table.table tr th {
-	border-bottom: 2px solid @gray-dark-1;
-}
-
-table.expandable-table {
-	th {
-		background-color: @white;
-	}
-	td {
-		background-color: @gray-light-1;
-	}
-	.card {
-		margin-bottom: 0;
-		.card-header {
-			background-color: @white;
-			&.session-table-title.clickable:hover {
-				cursor: pointer;
-				background-color: @white-hover;
-			}
-		}
-		.card-footer {
-			background-color: @white;
-		}
-	}
-}
-
-table tbody tr.expandable-table-row-collapsed {
-	&:hover {
-		td {
-			background-color: @gray-highlight;
-		}
-		+ .expandable-table-row-expanded > td.expandable-table-expandable-cell {
-			background-color: @gray-highlight;
-		}
-	}
-	td {
-		border-top-width: 1px;
-		border-bottom-width: 0;
-		cursor: pointer;
-	}
-	td:last-child {
-		padding-top: 8px;
-		padding-bottom: 8px;
-	}
-}
-
-table tbody tr.expandable-table-row-expanded {
-	& > td {
-		border-top-width: 0;
-		border-bottom-width: 1px;
-		padding-top: 0;
-		padding-bottom: 0;
-		&.expandable-table-expandable-cell {
-			padding: 0;
-			> div {
-				.btn-toolbar {
-					margin: 0;
-					align-items: flex-start;
-				}
-			}
-		}
-	}
-	& > td {
-		border-top: 0 solid @gray-dark-1;
-	}
+    &.table-directive {
+        div.btn-toolbar {
+            margin: 0;
+        }
+    }
+    .th-min, .td-min {
+        width: 1px;
+        white-space: nowrap;
+        &.padding-right-large {
+            padding-right: 40px;
+        }
+    }
+    .td-no-data {
+        opacity: 0.5;
+        background: @white;
+        .cell-content {
+            justify-content: center;
+            justify-items: center;
+        }
+    }
+    .td-data-loading {
+        background: @white;
+    }
+    .cell-content {
+        min-height: 32px;
+        display: flex;
+        align-items: center;
+        align-content: center;
+        .btn-sm {
+            padding: 0;
+            width:28px;
+            height:28px;
+        }
+        .form-check-input {
+            margin-top: 0;
+        }
+    }
+    &.expandable-table {
+        th {
+            background-color: @white;
+        }
+        td {
+            background-color: @gray-light-1;
+        }
+        .card {
+            margin-bottom: 0;
+            .card-header {
+                background-color: @white;
+                &.session-table-title.clickable:hover {
+                    cursor: pointer;
+                    background-color: @white-hover;
+                }
+            }
+            .card-footer {
+                background-color: @white;
+            }
+        }
+        .expandable-table-row-collapsed {
+            &:hover {
+                td {
+                    background-color: @gray-highlight;
+                }
+                + .expandable-table-row-expanded > td.expandable-table-expandable-cell {
+                    background-color: @gray-highlight;
+                }
+            }
+            td {
+                border-top-width: 1px;
+                border-bottom-width: 0;
+                cursor: pointer;
+            }
+        }
+        .expandable-table-row-expanded {
+            & > td {
+                border-top-width: 0;
+                border-bottom-width: 1px;
+                padding-top: 0;
+                padding-bottom: 0;
+                &.expandable-table-expandable-cell {
+                    padding: 0;
+                    > div {
+                        .btn-toolbar {
+                            margin: 0;
+                            align-items: flex-start;
+                        }
+                    }
+                }
+            }
+            & > td {
+                border-top: 0 solid @gray-dark-1;
+            }
+        }
+    }
 }
 
 .self-reg-option-table {
@@ -631,7 +625,7 @@ div.non-padded-alert div.alert {
 }
 .btn {
 	min-width: 40px;
-	&.dropdown-toggle-split, &.dropdown-toggle {
+	&.dropdown-toggle-split, &.dropdown-toggle, &.btn-sm {
 		min-width: inherit;
 	}
 }
@@ -665,7 +659,7 @@ span.mini-tab, div.mini-tab {
 		padding: 0;
 	}
 }
-.col-centered{
+.col-centered {
     float: none;
     margin: 0 auto;
 }

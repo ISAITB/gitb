@@ -74,7 +74,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
     { field: 'name', title: 'Name' },
     { field: 'description', title: 'Description' },
     { field: 'default', title: 'Default', headerClass: 'th-min centered', cellClass: 'td-min centered' },
-    { field: 'hidden', title: '', atEnd: true, isHiddenFlag: true, headerClass: 'th-min-centered' }
+    { field: 'hidden', title: '', atEnd: true, isHiddenFlag: true, headerClass: 'th-min centered' }
   ]
   savePending = false
   deletePending = false

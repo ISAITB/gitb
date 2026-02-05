@@ -20,6 +20,7 @@ import {DataService} from 'src/app/services/data.service';
 import {Parameter} from 'src/app/types/parameter';
 import {ParameterReference} from 'src/app/types/parameter-reference';
 import {ValidationState} from 'src/app/types/validation-state';
+import {NgbTooltip} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-parameter-form',
@@ -76,4 +77,16 @@ export class ParameterFormComponent implements OnInit {
       this.parameter.presetValues.splice(event.currentIndex, 0, this.parameter.presetValues.splice(event.previousIndex, 1)[0]);
     }
   }
+
+  mouseDownOnDragButton(pop: NgbTooltip) {
+    pop.close()
+    pop.disableTooltip = true
+  }
+
+  mouseOutOnDragButton(pop: NgbTooltip) {
+    setTimeout(() => {
+      pop.disableTooltip = false
+    }, 50)
+  }
+
 }

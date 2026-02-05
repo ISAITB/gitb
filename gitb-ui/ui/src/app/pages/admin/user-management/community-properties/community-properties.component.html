@@ -18,31 +18,39 @@
                 </div>
                 <div [ngbCollapse]="organisationPropertiesCollapsed" [animation]="true" (hidden)="toggleOrganisationPropertiesCollapsed(true)">
                     <div class="table-container rounded">
-                        <table class="table table-directive thick">
+                        <table class="table table-directive">
                             <thead>
-                            <tr>
-                                <th>Label</th>
-                                <th>Key</th>
-                                <th>Type</th>
-                                <th class="min-width">Required</th>
-                                <th class="min-width">Editable</th>
-                                <th class="min-width">In&nbsp;tests</th>
-                                <th class="min-width">In&nbsp;exports</th>
-                                <th class="min-width">Hidden</th>
-                                @if (dataService.configuration.registrationEnabled) {
-                                    <th class="min-width">In&nbsp;registration</th>
-                                }
-                                <th class="min-width"></th>
-                            </tr>
+                                <tr>
+                                    <th><div class="cell-content">Label</div></th>
+                                    <th><div class="cell-content">Key</div></th>
+                                    <th><div class="cell-content">Type</div></th>
+                                    <th class="th-min"><div class="cell-content">Required</div></th>
+                                    <th class="th-min"><div class="cell-content">Editable</div></th>
+                                    <th class="th-min"><div class="cell-content">In tests</div></th>
+                                    <th class="th-min"><div class="cell-content">In exports</div></th>
+                                    <th class="th-min"><div class="cell-content">Hidden</div></th>
+                                    @if (dataService.configuration.registrationEnabled) {
+                                        <th class="th-min"><div class="cell-content">In registration</div></th>
+                                    }
+                                    <th class="th-min"></th>
+                                </tr>
                             </thead>
                             <tbody class="organisationParametersTable" cdkDropList cdkDropListLockAxis="y" (cdkDropListDropped)="dropOrganisationParameter($event)">
                                 @if (organisationParameterStatus.status != Constants.STATUS.FINISHED) {
                                     <tr>
-                                        <td colspan="10" class="td-data-loading"><span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></td>
+                                        <td colspan="10" class="td-data-loading">
+                                            <div class="cell-content">
+                                                <app-pending-block></app-pending-block>
+                                            </div>
+                                        </td>
                                     </tr>
                                 } @else if (organisationParameters.length == 0) {
                                     <tr>
-                                        <td colspan="10" class="td-no-data"><span>No properties found</span></td>
+                                        <td colspan="10" class="td-no-data">
+                                            <div class="cell-content">
+                                                <span>No properties found</span>
+                                            </div>
+                                        </td>
                                     </tr>
                                 } @else {
                                     @for (parameter of organisationParameters; track parameter.id) {
@@ -55,20 +63,22 @@
                                             (click)="onOrganisationParameterSelect(parameter)"
                                             [class.selectable]="!draggingOrganisationParameter && !draggingSystemParameter"
                                         >
-                                            <td class="drag-preview"><div><span>{{parameter.name}}</span></div></td>
-                                            <td><div><span>{{parameter.testKey}}</span></div></td>
-                                            <td><div><span>{{kindLabel(parameter)}}</span></div></td>
-                                            <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.use == 'R', 'fa-times': parameter.use != 'R'}"></i></span></div></td>
-                                            <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': !parameter.adminOnly, 'fa-times': parameter.adminOnly}"></i></span></div></td>
-                                            <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': !parameter.notForTests, 'fa-times': parameter.notForTests}"></i></span></div></td>
-                                            <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.inExports, 'fa-times': !parameter.inExports}"></i></span></div></td>
-                                            <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.hidden, 'fa-times': !parameter.hidden}"></i></span></div></td>
+                                            <td class="drag-preview"><div class="cell-content">{{parameter.name}}</div></td>
+                                            <td><div class="cell-content">{{parameter.testKey}}</div></td>
+                                            <td><div class="cell-content">{{kindLabel(parameter)}}</div></td>
+                                            <td class="centered"><div class="cell-content"><span><i class="fa" [ngClass]="{'fa-check': parameter.use == 'R', 'fa-times': parameter.use != 'R'}"></i></span></div></td>
+                                            <td class="centered"><div class="cell-content"><span><i class="fa" [ngClass]="{'fa-check': !parameter.adminOnly, 'fa-times': parameter.adminOnly}"></i></span></div></td>
+                                            <td class="centered"><div class="cell-content"><span><i class="fa" [ngClass]="{'fa-check': !parameter.notForTests, 'fa-times': parameter.notForTests}"></i></span></div></td>
+                                            <td class="centered"><div class="cell-content"><span><i class="fa" [ngClass]="{'fa-check': parameter.inExports, 'fa-times': !parameter.inExports}"></i></span></div></td>
+                                            <td class="centered"><div class="cell-content"><span><i class="fa" [ngClass]="{'fa-check': parameter.hidden, 'fa-times': !parameter.hidden}"></i></span></div></td>
                                             @if (dataService.configuration.registrationEnabled) {
-                                                <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.inSelfRegistration, 'fa-times': !parameter.inSelfRegistration}"></i></span></div></td>
+                                                <td class="centered"><div class="cell-content"><span><i class="fa" [ngClass]="{'fa-check': parameter.inSelfRegistration, 'fa-times': !parameter.inSelfRegistration}"></i></span></div></td>
                                             }
                                             <td class="drag-handle" (click)="$event.stopPropagation();">
                                                 @if (organisationParameters.length > 1) {
-                                                    <button cdkDragHandle #pop="ngbTooltip" (mousedown)="pop.close()" class="btn btn-secondary" type="button" tooltipClass="shortTooltip" container="body" ngbTooltip="Reorder" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrows-up-down"></i></span></button>
+                                                    <div class="cell-content">
+                                                        <button cdkDragHandle #pop="ngbTooltip" (mousedown)="mouseDownOnDragButton(pop)" (mouseout)="mouseOutOnDragButton(pop)" class="btn btn-sm btn-secondary" type="button" tooltipClass="shortTooltip" container="body" ngbTooltip="Reorder" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrows-up-down"></i></span></button>
+                                                    </div>
                                                 }
                                             </td>
                                         </tr>
@@ -90,28 +100,36 @@
                 </div>
                 <div [ngbCollapse]="systemPropertiesCollapsed" [animation]="true" (hidden)="toggleSystemPropertiesCollapsed(true)">
                     <div class="table-container rounded">
-                        <table class="table table-directive thick">
+                        <table class="table table-directive">
                             <thead>
-                            <tr>
-                                <th>Label</th>
-                                <th>Key</th>
-                                <th>Type</th>
-                                <th class="min-width">Required</th>
-                                <th class="min-width">Editable</th>
-                                <th class="min-width">In&nbsp;tests</th>
-                                <th class="min-width">In&nbsp;exports</th>
-                                <th class="min-width">Hidden</th>
-                                <th class="min-width"></th>
-                            </tr>
+                                <tr>
+                                    <th><div class="cell-content">Label</div></th>
+                                    <th><div class="cell-content">Key</div></th>
+                                    <th><div class="cell-content">Type</div></th>
+                                    <th class="th-min"><div class="cell-content">Required</div></th>
+                                    <th class="th-min"><div class="cell-content">Editable</div></th>
+                                    <th class="th-min"><div class="cell-content">In tests</div></th>
+                                    <th class="th-min"><div class="cell-content">In exports</div></th>
+                                    <th class="th-min"><div class="cell-content">Hidden</div></th>
+                                    <th class="th-min"></th>
+                                </tr>
                             </thead>
                             <tbody class="systemParametersTable" cdkDropList cdkDropListLockAxis="y" (cdkDropListDropped)="dropSystemParameter($event)">
                                 @if (systemParameterStatus.status != Constants.STATUS.FINISHED) {
                                     <tr>
-                                        <td colspan="10" class="td-data-loading"><span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></td>
+                                        <td colspan="10" class="td-data-loading">
+                                            <div class="cell-content">
+                                                <app-pending-block></app-pending-block>
+                                            </div>
+                                        </td>
                                     </tr>
                                 } @else if (systemParameters.length == 0) {
                                     <tr>
-                                        <td colspan="10" class="td-no-data"><span>No properties found</span></td>
+                                        <td colspan="10" class="td-no-data">
+                                            <div class="cell-content">
+                                                <span>No properties found</span>
+                                            </div>
+                                        </td>
                                     </tr>
                                 } @else {
                                     @for (parameter of systemParameters; track parameter.id) {
@@ -124,17 +142,19 @@
                                             (click)="onSystemParameterSelect(parameter)"
                                             [class.selectable]="!draggingSystemParameter && !draggingOrganisationParameter"
                                         >
-                                            <td class="drag-preview"><div><span>{{parameter.name}}</span></div></td>
-                                            <td><div><span>{{parameter.testKey}}</span></div></td>
-                                            <td><div><span>{{kindLabel(parameter)}}</span></div></td>
-                                            <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.use == 'R', 'fa-times': parameter.use != 'R'}"></i></span></div></td>
-                                            <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': !parameter.adminOnly, 'fa-times': parameter.adminOnly}"></i></span></div></td>
-                                            <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': !parameter.notForTests, 'fa-times': parameter.notForTests}"></i></span></div></td>
-                                            <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.inExports, 'fa-times': !parameter.inExports}"></i></span></div></td>
-                                            <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.hidden, 'fa-times': !parameter.hidden}"></i></span></div></td>
+                                            <td class="drag-preview"><div class="cell-content">{{parameter.name}}</div></td>
+                                            <td><div class="cell-content">{{parameter.testKey}}</div></td>
+                                            <td><div class="cell-content">{{kindLabel(parameter)}}</div></td>
+                                            <td class="centered"><div class="cell-content"><span><i class="fa" [ngClass]="{'fa-check': parameter.use == 'R', 'fa-times': parameter.use != 'R'}"></i></span></div></td>
+                                            <td class="centered"><div class="cell-content"><span><i class="fa" [ngClass]="{'fa-check': !parameter.adminOnly, 'fa-times': parameter.adminOnly}"></i></span></div></td>
+                                            <td class="centered"><div class="cell-content"><span><i class="fa" [ngClass]="{'fa-check': !parameter.notForTests, 'fa-times': parameter.notForTests}"></i></span></div></td>
+                                            <td class="centered"><div class="cell-content"><span><i class="fa" [ngClass]="{'fa-check': parameter.inExports, 'fa-times': !parameter.inExports}"></i></span></div></td>
+                                            <td class="centered"><div class="cell-content"><span><i class="fa" [ngClass]="{'fa-check': parameter.hidden, 'fa-times': !parameter.hidden}"></i></span></div></td>
                                             <td class="drag-handle" (click)="$event.stopPropagation();">
                                                 @if (systemParameters.length > 1) {
-                                                    <button cdkDragHandle #pop="ngbTooltip" (mousedown)="pop.close()" class="btn btn-secondary" type="button" tooltipClass="shortTooltip" container="body" ngbTooltip="Reorder" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrows-up-down"></i></span></button>
+                                                    <div class="cell-content">
+                                                        <button cdkDragHandle #pop="ngbTooltip" (mousedown)="mouseDownOnDragButton(pop)" (mouseout)="mouseOutOnDragButton(pop)" class="btn btn-sm btn-secondary" type="button" tooltipClass="shortTooltip" container="body" ngbTooltip="Reorder" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrows-up-down"></i></span></button>
+                                                    </div>
                                                 }
                                             </td>
                                         </tr>

@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, ElementRef, Input, OnInit} from '@angular/core';
+import {Component, ElementRef, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {Constants} from 'src/app/common/constants';
 import {DataService} from 'src/app/services/data.service';
 import {TestStatusBase} from '../test-status-base/test-status-base';
@@ -30,6 +30,7 @@ export class TestStatusIconsComponent extends TestStatusBase implements TestStat
   @Input() centerAligned = true
   @Input() asLine? = false
   @Input() tooltipOnLeft? = false
+  @Input() shaded = false
 
   successIcon!: string
   failedIcon!: string
@@ -51,4 +52,5 @@ export class TestStatusIconsComponent extends TestStatusBase implements TestStat
     this.otherIcon = this.dataService.iconForTestResult(Constants.TEST_CASE_RESULT.UNDEFINED)
   }
 
+  protected readonly Constants = Constants;
 }

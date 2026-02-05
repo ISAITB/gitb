@@ -18,6 +18,11 @@
 .rootContainer {
     position: relative;
     cursor: default;
+    &.shaded {
+        .statusRootContainer, .popup-panel {
+            background: @gray-light-1;
+        }
+    }
 }
 .statusRootContainer {
     display: flex;

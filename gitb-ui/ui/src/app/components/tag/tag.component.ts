@@ -36,6 +36,7 @@ export class TagComponent implements OnInit {
   @Input() pill? = false
   @Input() toggleEnabled?: boolean = false
   @Input() toggledByDefault?: boolean = false
+  @Input() inTable? = false
 
   @Output() edit = new EventEmitter<number>()
   @Output() delete = new EventEmitter<number>()

@@ -20,5 +20,6 @@ export interface TestStatusBaseApi {
   refresh: (counters: Counters) => void;
   documentEscape: () => void;
   documentClick: (event: Event) => void;
+  close: () => void;
 
 }
