@@ -13,10 +13,15 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-export interface MultiSelectFilterComponentApi<T> {
+import {EntityWithId} from '../../types/entity-with-id';
+
+export interface MultiSelectFilterComponentApi<T extends EntityWithId> {
 
   replaceItems: (items: T[]) => void
   replaceSelectedItems: (items: T[], skipApply?: boolean) => void
   clearItems: () => void
+  getSelectedItems: () => T[]
+  getSelectedItemIds: () => number[]
+  setSelectedItemIdsBeforeLoad: (ids: number[]) => void
 
 }

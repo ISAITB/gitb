@@ -1239,6 +1239,16 @@ export class DataService {
     return idSet
   }
 
+  asIdSetFromIds(ids: number[]|undefined): NumberSet {
+    const idSet: NumberSet = {}
+    if (ids) {
+      for (let id of ids) {
+        idSet[id] = true
+      }
+    }
+    return idSet
+  }
+
   prettifyJSON(content: string) {
     return JSON.stringify(JSON.parse(content), null, 3)
   }

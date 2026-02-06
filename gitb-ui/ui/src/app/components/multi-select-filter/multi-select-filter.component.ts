@@ -50,6 +50,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
   @ViewChild('filterControl') filterControlElement?: ElementRef
   @ViewChild('filterForm') filterFormElement?: ElementRef
 
+  selectedItemIds: number[] = []
   selectedItems: T[] = []
   availableItems: T[] = []
   visibleAvailableItems: T[] = []
@@ -140,6 +141,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
   clearItems(): void {
     this.selectedSelectedItems = {}
     this.selectedItems = []
+    this.selectedItemIds = []
     this.updateCheckFlag(false)
     this.updateLabel()
   }
@@ -149,6 +151,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
     this.updateCheckFlag(false)
     this.updateLabel()
     this.selectedItems = []
+    this.selectedItemIds = []
     this.availableItems = items
     this.visibleAvailableItems = this.availableItems
   }
@@ -239,6 +242,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
       }
     }
     this.selectedItems = this.sortItems(newItemsToSet)
+    this.selectedItemIds = this.selectedItems.map(item => item.id)
     this.updateCheckFlag()
     this.updateLabel()
     this.applyItems(true, skipApply)
@@ -395,15 +399,19 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
   }
 
   private updateLabel() {
-    if (this.selectedItems.length == 0) {
+    if (this.selectedItemIds.length == 0) {
       this.filterLabel = this.defaultFilterLabel
     } else {
       if (this.config.singleSelection == true) {
         if (this.config.singleSelectionPersistent == true) {
-          this.filterLabel = this.selectedItems[0][this.config.textField]
+          if (this.selectedItems.length > 0) {
+            this.filterLabel = this.selectedItems[0][this.config.textField]
+          } else {
+            this.filterLabel = ""
+          }
         }
       } else {
-        this.filterLabel = "("+this.selectedItems.length+")"
+        this.filterLabel = "("+this.selectedItemIds.length+")"
       }
     }
   }
@@ -588,10 +596,12 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
         this.loadPending = false
         const newSelectedAvailableItems: ItemMap<T> = {}
         const newAvailableItems: T[] = []
+        const existingSelectedItemIds = this.dataService.asIdSetFromIds(this.selectedItemIds)
         for (let item of items) {
           if (this.config.singleSelection == true) {
             newAvailableItems.push(item)
             newSelectedAvailableItems[item.id] = { selected: false, item: item }
+            newSelectedAvailableItems[item.id].selected = this.selectedItemIds.find((id) => id == item.id) != undefined
           } else {
             if (!this.isSelected(item.id)) {
               let matchingItem = this.findItemWithSameTextValue(newAvailableItems, item)
@@ -602,8 +612,13 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
                 if (matchingItem) {
                   this.recordItemWithSameTextValue(matchingItem, item)
                 } else {
-                  newAvailableItems.push(item)
-                  newSelectedAvailableItems[item.id] = { selected: false, item: item }
+                  if (existingSelectedItemIds[item.id]) {
+                    this.selectedItems.push(item)
+                    this.selectedSelectedItems[item.id] = { selected: true, item: item }
+                  } else {
+                    newAvailableItems.push(item)
+                    newSelectedAvailableItems[item.id] = { selected: false, item: item }
+                  }
                 }
               }
             }
@@ -635,6 +650,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
   selectAvailableItem(item: T) {
     if (this.config.singleSelection) {
       this.selectedItems = [item]
+      this.selectedItemIds = [item.id]
       const itemToReport: FilterValues<T> = { active: [], other: [] }
       itemToReport.active = this.getItemsToSignalForItem(item)
       this._value = item
@@ -717,6 +733,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
       selectedItemsToReport.other = selectedItemsToReport.other.concat(this.getHiddenItemsForItem(item, false))
     }
     this.selectedItems = this.sortItems(newSelectedItems)
+    this.selectedItemIds = this.selectedItems.map(item => item.id)
     this.updateCheckFlag()
     this.updateLabel()
     if (this.config.singleSelection) {
@@ -755,7 +772,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
 
   updateCheckFlag(forcedValue?: boolean) {
     if (forcedValue == undefined) {
-      this.hasCheckedSelectedItem = this.hasCheckedItems(this.selectedSelectedItems) || this.hasCheckedItems(this.selectedAvailableItems)
+      this.hasCheckedSelectedItem = this.hasCheckedItems(this.selectedSelectedItems) || this.hasCheckedItems(this.selectedAvailableItems) || this.selectedItemIds.length > 0
     } else {
       this.hasCheckedSelectedItem = forcedValue
     }
@@ -793,6 +810,20 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
+  }
+
+  getSelectedItems(): T[] {
+    return [...this.selectedItems];
+  }
+
+  getSelectedItemIds(): number[] {
+    return [...this.selectedItemIds];
+  }
+
+  setSelectedItemIdsBeforeLoad(ids: number[]) {
+    this.selectedItemIds = [...ids]
+    this.updateLabel()
+    this.updateCheckFlag(this.selectedItemIds.length > 0)
   }
 
   protected readonly Constants = Constants;

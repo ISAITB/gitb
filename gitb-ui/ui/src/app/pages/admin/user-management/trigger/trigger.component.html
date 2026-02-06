@@ -162,7 +162,7 @@
                     </div>
                     <div class="row mt-3 pt-1">
                         <legend class="col-3 col-form-label text-end pt-0">Input data:</legend>
-                        <div class="col-8 col-md-6 trigger-data-checks">
+                        <div class="col-8 col-md-6">
                             @if (triggerData.community.visible) {
                                 <div class="form-check form-check-inline">
                                     <input class="form-check-input" type="checkbox" id="communityData" name="communityData" [(ngModel)]="triggerData.community.selected">
@@ -206,130 +206,74 @@
                                 </div>
                             }
                         </div>
-                        <div app-tooltip class="col-auto" [withTopMargin]="false" tbTooltip="Optional data that will be provided as input to the service when it is called. The type of data available depends on the trigger's event type."></div>
+                        <div app-tooltip class="col-auto" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Optional data that will be provided as input to the service when it is called. The type of data available depends on the trigger's event type."></div>
+                    </div>
+                    <div class="parameter-check-rows">
                         @if (triggerData.domainParameter.visible) {
-                            <div class="offset-3 col-8 col-md-6 trigger-data-checks">
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="checkbox" id="domainParameterData" name="domainParameterData" [(ngModel)]="triggerData.domainParameter.selected">
-                                    <label class="form-check-label" for="domainParameterData">{{dataTypeMap[triggerData.domainParameter.dataType]}}</label>
+                            <div class="row parameter-check-row">
+                                <div class="offset-3 col-8 col-md-6">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" id="domainParameterData" name="domainParameterData" [(ngModel)]="triggerData.domainParameter.selected">
+                                        <label class="form-check-label" for="domainParameterData">{{dataTypeMap[triggerData.domainParameter.dataType]}}</label>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="offset-3 col-8 col-md-6" [ngbCollapse]="!triggerData.domainParameter.selected" [animation]="true">
-                                <div class="trigger-data-properties-container table-container rounded">
-                                    <table class="table extra-padding">
-                                        <thead>
-                                            <tr>
-                                                <th class="checkColumn"></th>
-                                                <th>Identifier</th>
-                                                <th>Type</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @for (parameter of domainParameters; track parameter.id; let index = $index) {
-                                                <tr (click)="parameter.selected = !parameter.selected">
-                                                    <td><input class="form-check-input" type="checkbox" [name]="'parameterData'+index" [(ngModel)]="parameter.selected" (click)="$event.stopPropagation()"></td>
-                                                    <td>{{parameter.name}}</td>
-                                                    <td>{{parameterType(parameter)}}</td>
-                                                </tr>
-                                            }
-                                        </tbody>
-                                    </table>
+                            <div [ngbCollapse]="!triggerData.domainParameter.selected" [animation]="loaded && viewInitialised">
+                                <div class="row py-2">
+                                    <div class="offset-3 col-8 col-md-6">
+                                        <app-multi-select-filter #domainParameterSelect [config]="domainParameterDataConfig!"></app-multi-select-filter>
+                                    </div>
                                 </div>
                             </div>
                         }
                         @if (triggerData.organisationParameter.visible) {
-                            <div class="offset-3 col-8 col-md-6 trigger-data-checks">
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="checkbox" id="organisationParameterData" name="organisationParameterData" [(ngModel)]="triggerData.organisationParameter.selected">
-                                    <label class="form-check-label" for="organisationParameterData">{{dataTypeMap[triggerData.organisationParameter.dataType]}}</label>
+                            <div class="row parameter-check-row">
+                                <div class="offset-3 col-8 col-md-6">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" id="organisationParameterData" name="organisationParameterData" [(ngModel)]="triggerData.organisationParameter.selected">
+                                        <label class="form-check-label" for="organisationParameterData">{{dataTypeMap[triggerData.organisationParameter.dataType]}}</label>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="offset-3 col-8 col-md-6" [ngbCollapse]="!triggerData.organisationParameter.selected" [animation]="true">
-                                <div class="trigger-data-properties-container table-container rounded">
-                                    <table class="table extra-padding">
-                                        <thead>
-                                            <tr>
-                                                <th class="checkColumn"></th>
-                                                <th>Name</th>
-                                                <th>Type</th>
-                                                <th>Identifier</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @for (parameter of organisationParameters; track parameter.id; let index = $index) {
-                                                <tr (click)="parameter.selected = !parameter.selected">
-                                                   <td><input class="form-check-input" type="checkbox" [name]="'orgParameter'+index" [(ngModel)]="parameter.selected" (click)="$event.stopPropagation()"></td>
-                                                   <td>{{parameter.name}}</td>
-                                                   <td>{{parameterType(parameter)}}</td>
-                                                   <td>{{parameter.testKey}}</td>
-                                                </tr>
-                                            }
-                                        </tbody>
-                                    </table>
+                            <div [ngbCollapse]="!triggerData.organisationParameter.selected" [animation]="loaded && viewInitialised">
+                                <div class="row py-2">
+                                    <div class="offset-3 col-8 col-md-6">
+                                        <app-multi-select-filter #organisationParameterSelect [config]="organisationParameterDataConfig!"></app-multi-select-filter>
+                                    </div>
                                 </div>
                             </div>
                         }
                         @if (triggerData.systemParameter.visible) {
-                            <div class="offset-3 col-8 col-md-6 trigger-data-checks">
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="checkbox" id="sysParameterData" name="sysParameterData" [(ngModel)]="triggerData.systemParameter.selected">
-                                    <label class="form-check-label" for="sysParameterData">{{dataTypeMap[triggerData.systemParameter.dataType]}}</label>
+                            <div class="row parameter-check-row">
+                                <div class="offset-3 col-8 col-md-6">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" id="sysParameterData" name="sysParameterData" [(ngModel)]="triggerData.systemParameter.selected">
+                                        <label class="form-check-label" for="sysParameterData">{{dataTypeMap[triggerData.systemParameter.dataType]}}</label>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="offset-3 col-8 col-md-6" [ngbCollapse]="!triggerData.systemParameter.selected" [animation]="true">
-                                <div class="trigger-data-properties-container table-container">
-                                    <table class="table extra-padding">
-                                        <thead>
-                                            <tr>
-                                                <th class="checkColumn"></th>
-                                                <th>Name</th>
-                                                <th>Type</th>
-                                                <th>Identifier</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @for (parameter of systemParameters; track parameter.id; let index = $index) {
-                                                <tr (click)="parameter.selected = !parameter.selected">
-                                                   <td><input class="form-check-input" type="checkbox" [name]="'sysParam'+index" [(ngModel)]="parameter.selected" (click)="$event.stopPropagation()"></td>
-                                                   <td>{{parameter.name}}</td>
-                                                   <td>{{parameterType(parameter)}}</td>
-                                                   <td>{{parameter.testKey}}</td>
-                                                </tr>
-                                            }
-                                        </tbody>
-                                    </table>
+                            <div [ngbCollapse]="!triggerData.systemParameter.selected" [animation]="loaded && viewInitialised">
+                                <div class="row py-2">
+                                    <div class="offset-3 col-8 col-md-6">
+                                        <app-multi-select-filter #systemParameterSelect [config]="systemParameterDataConfig!"></app-multi-select-filter>
+                                    </div>
                                 </div>
                             </div>
                         }
                         @if (triggerData.statementParameter.visible) {
-                            <div class="offset-3 col-8 col-md-6 trigger-data-checks">
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="checkbox" id="stmtParameterData" name="stmtParameterData" [(ngModel)]="triggerData.statementParameter.selected">
-                                    <label class="form-check-label" for="stmtParameterData">{{dataTypeMap[triggerData.statementParameter.dataType]}}</label>
+                            <div class="row parameter-check-row">
+                                <div class="offset-3 col-8 col-md-6">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" id="stmtParameterData" name="stmtParameterData" [(ngModel)]="triggerData.statementParameter.selected">
+                                        <label class="form-check-label" for="stmtParameterData">{{dataTypeMap[triggerData.statementParameter.dataType]}}</label>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="offset-3 col-8 col-md-6" [ngbCollapse]="!triggerData.statementParameter.selected" [animation]="true">
-                                <div class="trigger-data-properties-container table-container rounded">
-                                    <table class="table extra-padding">
-                                        <thead>
-                                            <tr>
-                                                <th class="checkColumn"></th>
-                                                <th>Name</th>
-                                                <th>Type</th>
-                                                <th>Identifier</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @for (parameter of statementParameters; track parameter.id; let index = $index) {
-                                                <tr (click)="parameter.selected = !parameter.selected">
-                                                   <td><input class="form-check-input" type="checkbox" [name]="'stmtParam'+index" [(ngModel)]="parameter.selected" (click)="$event.stopPropagation()"></td>
-                                                   <td>{{parameter.name}}</td>
-                                                   <td>{{parameterType(parameter)}}</td>
-                                                   <td>{{parameter.testKey}}</td>
-                                                </tr>
-                                            }
-                                        </tbody>
-                                    </table>
+                            <div [ngbCollapse]="!triggerData.statementParameter.selected" [animation]="loaded && viewInitialised">
+                                <div class="row py-2">
+                                    <div class="offset-3 col-8 col-md-6">
+                                        <app-multi-select-filter #statementParameterSelect [config]="statementParameterDataConfig!"></app-multi-select-filter>
+                                    </div>
                                 </div>
                             </div>
                         }

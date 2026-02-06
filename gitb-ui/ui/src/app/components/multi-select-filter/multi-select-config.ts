@@ -37,5 +37,6 @@ export interface MultiSelectConfig<T extends EntityWithId> {
   eventsDisabled?: boolean
   initialValues?: T[]
   maxWidth?: number
+  textDecorator?: (item: T) => string
 
 }
