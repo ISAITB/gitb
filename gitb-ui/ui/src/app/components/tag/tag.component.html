@@ -4,6 +4,7 @@
         [class.in-table]="inTable"
         [ngbTooltip]="tooltipText"
         [disableTooltip]="tooltipText == undefined || tooltipText == ''"
+        [openDelay]="Constants.TOOLTIP_DELAY"
         [ngClass]="styleClass == undefined ? '': styleClass"
         [style.background]="background ? background : null"
         [style.color]="foreground ? foreground : null"
