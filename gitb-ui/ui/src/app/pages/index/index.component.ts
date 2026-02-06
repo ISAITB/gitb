@@ -47,6 +47,7 @@ export class IndexComponent implements OnInit, OnDestroy {
   logoutSubscription?: Subscription
   logoutCompleteSubscription?: Subscription
   bannerSubscription?: Subscription
+  menuVisibilitySubscription?: Subscription
   userPassedLogin = false
 
   constructor(
@@ -63,6 +64,7 @@ export class IndexComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.logoutInProgress = false
+    this.menuExpanded = this.dataService.menuVisibility
     this.bannerSubscription = this.dataService.onBannerChange$.subscribe((newBanner) => {
       setTimeout(() => {
         this.pageTitle = newBanner
@@ -81,6 +83,11 @@ export class IndexComponent implements OnInit, OnDestroy {
     this.userLoadSubscription = this.dataService.onUserLoaded$.subscribe(() => {
       this.handlePostUserLoad()
     })
+    this.menuVisibilitySubscription = this.dataService.onMenuVisibilityChange$.subscribe((visible) => {
+      setTimeout(() => {
+        this.menuExpanded = visible
+      })
+    })
     if (sessionStorage) {
       window.addEventListener("beforeunload", () => {
         sessionStorage.setItem("menuItemStatusMap", JSON.stringify(Array.from(this.dataService.getMenuItemStatusMap())))
@@ -93,6 +100,7 @@ export class IndexComponent implements OnInit, OnDestroy {
     if (this.userLoadSubscription) this.userLoadSubscription.unsubscribe()
     if (this.logoutSubscription) this.logoutSubscription.unsubscribe()
     if (this.bannerSubscription) this.bannerSubscription.unsubscribe()
+    if (this.menuVisibilitySubscription) this.menuVisibilitySubscription.unsubscribe()
   }
 
   handlePostUserLoad(): void {
@@ -214,7 +222,7 @@ export class IndexComponent implements OnInit, OnDestroy {
   }
 
   toggleMenu() {
-    this.menuExpanded = !this.menuExpanded
+    this.dataService.setMenuVisibility(!this.menuExpanded)
   }
 
   copyExternalLink() {

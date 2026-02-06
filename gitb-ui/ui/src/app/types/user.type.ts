@@ -28,5 +28,6 @@ export interface User {
     organization?: Organisation,
     password?: string,
     defaultPagingSize?: number
+    menuVisibility?: boolean
 
 }
