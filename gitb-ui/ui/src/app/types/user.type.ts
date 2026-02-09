@@ -29,5 +29,6 @@ export interface User {
     password?: string,
     defaultPagingSize?: number
     menuVisibility?: boolean
+    conformanceStatementDetailVisibility?: boolean
 
 }

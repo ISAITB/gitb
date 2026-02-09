@@ -84,6 +84,7 @@ export class DataService {
   public defaultPagingTableSize: number = Constants.TABLE_PAGE_SIZE
   public latestPageChange?: PageChange
   public menuVisibility: boolean = false
+  public conformanceStatementDetailVisibility: boolean = false
   private menuItemStatus = new Map<MenuItem, MenuItemStatus>()
 
   private onBannerChangeSource = new Subject<string>()
@@ -102,6 +103,8 @@ export class DataService {
   public onPageSizeChange$ = this.onPageSizeChangeSource.asObservable()
   private menuVisibilityChangeSource = new Subject<boolean>()
   public onMenuVisibilityChange$ = this.menuVisibilityChangeSource.asObservable()
+  private conformanceStatementDetailVisibilityChangeSource = new Subject<boolean>()
+  public onConformanceStatementDetailVisibilityChange$ = this.conformanceStatementDetailVisibilityChangeSource.asObservable()
 
   triggerEventToDataTypeMap?: {[key: number]: { [key: number]: boolean } }
 
@@ -204,7 +207,8 @@ export class DataService {
     this.isSystemAdmin = (user.role == Constants.USER_ROLE.SYSTEM_ADMIN)
     this.isCommunityAdmin = (user.role == Constants.USER_ROLE.COMMUNITY_ADMIN)
     this.defaultPagingTableSize = user.defaultPagingSize??Constants.TABLE_PAGE_SIZE
-    this.menuVisibility = user.menuVisibility === true
+    this.menuVisibility = user.menuVisibility??false
+    this.conformanceStatementDetailVisibility = user.conformanceStatementDetailVisibility??true
     setTimeout(() => {
       this.showCommunityAdminMenu = this.isCommunityAdmin
       this.showSystemAdminMenu = this.isSystemAdmin
@@ -1962,6 +1966,11 @@ export class DataService {
   setMenuVisibility(visible: boolean) {
     this.menuVisibility = visible
     this.menuVisibilityChangeSource.next(visible)
+  }
+
+  setConformanceStatementDetailVisibility(visible: boolean) {
+    this.conformanceStatementDetailVisibility = visible
+    this.conformanceStatementDetailVisibilityChangeSource.next(visible)
   }
 
 }

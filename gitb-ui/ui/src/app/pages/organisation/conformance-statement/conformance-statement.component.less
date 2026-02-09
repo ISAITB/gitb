@@ -153,3 +153,24 @@
         align-self: center;
     }
 }
+.option-button {
+    display: flex;
+    .option-icon {
+        display: flex;
+        min-width: 22px;
+        margin-right: 8px;
+        justify-content: center;
+    }
+}
+.action-container {
+    padding-right: 20px;
+    margin-right: 20px;
+    border-right: 1px solid @gray-dark-1;
+    opacity: 0;
+    transition: opacity 100ms ease, transform 100ms ease;
+    pointer-events: none; /* prevents clicking when hidden */
+    &.action-container-visible {
+        opacity: 1;
+        pointer-events: auto;
+    }
+}

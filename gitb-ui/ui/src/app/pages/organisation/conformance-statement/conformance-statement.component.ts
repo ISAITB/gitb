@@ -16,7 +16,7 @@
 import {Component, ElementRef, HostListener, NgZone, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {saveAs} from 'file-saver';
-import {finalize, forkJoin, mergeMap, Observable, of, tap} from 'rxjs';
+import {finalize, forkJoin, mergeMap, Observable, of, Subscription, tap} from 'rxjs';
 import {Constants} from 'src/app/common/constants';
 import {Counters} from 'src/app/components/test-status-base/counters';
 import {MissingConfigurationAction} from 'src/app/modals/missing-configuration-modal/missing-configuration-action';
@@ -61,6 +61,7 @@ import {MultiSelectConfig} from '../../../components/multi-select-filter/multi-s
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 import {TestStatusBaseApi} from '../../../components/test-status-base/test-status-base-api';
 import {TestStatusBase} from '../../../components/test-status-base/test-status-base';
+import {PreviewBadgeModalComponent} from '../../../modals/preview-badge-modal/preview-badge-modal.component';
 
 @Component({
     selector: 'app-conformance-statement',
@@ -113,6 +114,9 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   testCasePage = 1
   testCaseCount = 0
   protected readonly PagingPlacement = PagingPlacement;
+  copyBadgePending = false
+  animatedDetails = false
+  clickableDetails = false
 
   testSuiteSelectionConfig: MultiSelectConfig<TestSuiteMinimalInfo> = {
     name: "testSuiteChoice",
@@ -177,6 +181,8 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   refreshPending = false
   statementExecutionPending = false
 
+  conformanceStatementDetailVisibilitySubscription?: Subscription
+
   constructor(
     public readonly dataService: DataService,
     route: ActivatedRoute,
@@ -233,6 +239,10 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
       const fromDashboard = sessionStorage.getItem(Constants.SESSION_DATA.FROM_DASHBOARD) === "true"
       if (!fromDashboard) sessionStorage.setItem(Constants.SESSION_DATA.FROM_DASHBOARD, "false")
     }
+    this.toggleOverviewVisibility(this.dataService.conformanceStatementDetailVisibility, true)
+    this.conformanceStatementDetailVisibilitySubscription = this.dataService.onConformanceStatementDetailVisibilityChange$.subscribe((visible) => {
+      this.toggleOverviewVisibility(visible)
+    })
     this.loadInitialData().pipe(
       mergeMap(() => {
         const existingDisplayState = this.getDisplayState<TestCaseSearchCriteria>(Constants.DISPLAY_STATE_KEY.CONFORMANCE_STATEMENT, true)
@@ -252,6 +262,8 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
       }),
       finalize(() => {
         this.updatingTests = false
+        this.animatedDetails = true
+        this.clickableDetails = true
         this.loadingTests.status = Constants.STATUS.FINISHED
       })
     ).subscribe(() => {})
@@ -259,6 +271,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
 
   ngOnDestroy(): void {
     this.saveState()
+    if (this.conformanceStatementDetailVisibilitySubscription) this.conformanceStatementDetailVisibilitySubscription.unsubscribe()
   }
 
   private updateTestCasePaging(page: number, total: number) {
@@ -775,6 +788,24 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
     }
   }
 
+  toggleOverviewVisibility(visible: boolean, immediate?: boolean) {
+    const toggle = () => {
+      this.collapsedDetails = !visible
+      if (immediate && this.collapsedDetails) {
+        this.collapsedDetailsFinished = true
+      } else if (!immediate && !this.collapsedDetails) {
+        this.toggleOverviewCollapse(false)
+      }
+    }
+    if (immediate) {
+      toggle()
+    } else {
+      setTimeout(() => {
+        toggle()
+      })
+    }
+  }
+
   toggleOverviewCollapse(value: boolean) {
     setTimeout(() => {
       this.collapsedDetailsFinished = value
@@ -835,9 +866,8 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   }
 
   headerClicked() {
-    this.collapsedDetails = !this.collapsedDetails
-    if (!this.collapsedDetails) {
-      this.toggleOverviewCollapse(false)
+    if (this.clickableDetails) {
+      this.dataService.setConformanceStatementDetailVisibility(this.collapsedDetails)
     }
   }
 
@@ -861,5 +891,61 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
         component.close()
       }
     })
+  }
+
+  copyBadgeURL() {
+    this.copyBadgePending = true
+    this.conformanceService.copyBadgeURL(this.systemId, this.actorId, this.snapshotId).subscribe(() => {
+      this.copyBadgePending = false
+    })
+  }
+
+  previewBadge() {
+    const modal = this.modalService.open(PreviewBadgeModalComponent)
+    const modalInstance = modal.componentInstance as PreviewBadgeModalComponent
+    modalInstance.config =  {
+      systemId: this.systemId,
+      actorId: this.actorId,
+      snapshotId: this.snapshotId
+    }
+  }
+
+  viewSystem() {
+    if (this.organisationId == this.dataService.vendor?.id) {
+      // This is the user's own organisation
+      this.routingService.toOwnSystemDetails(this.systemId!)
+    } else {
+      this.routingService.toSystemDetails(this.communityIdOfStatement!, this.organisationId!, this.systemId!)
+    }
+  }
+
+  viewOrganisation() {
+    if (this.organisationId == this.dataService.vendor?.id) {
+      // This is the user's own organisation
+      this.routingService.toOwnOrganisationDetails()
+    } else {
+      // Another organisation
+      this.routingService.toOrganisationDetails(this.communityIdOfStatement!, this.organisationId!)
+    }
+  }
+
+  viewCommunity() {
+    this.routingService.toCommunity(this.communityIdOfStatement!)
+  }
+
+  viewActor() {
+    this.routingService.toActor(this.domainId!, this.specId!, this.actorId!)
+  }
+
+  viewSpecification() {
+    this.routingService.toSpecification(this.domainId!, this.specId!)
+  }
+
+  viewDomain() {
+    this.routingService.toDomain(this.domainId!)
+  }
+
+  isNavigable(identifier: number|undefined): boolean {
+    return identifier != undefined && identifier > 0
   }
 }

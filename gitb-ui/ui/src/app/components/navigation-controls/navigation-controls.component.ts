@@ -104,7 +104,7 @@ export class NavigationControlsComponent implements OnInit {
   }
 
   private processConfig() {
-    this.domainNavigable = this.isNavigable(this.config.domainId) && (this.dataService.isSystemAdmin || (this.dataService.isCommunityAdmin && this.dataService.community?.domain == undefined))
+    this.domainNavigable = this.isNavigable(this.config.domainId) && (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin)
     this.specificationNavigable = this.isNavigable(this.config.domainId) && this.isNavigable(this.config.specificationId) && (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin)
     this.actorNavigable = this.specificationNavigable && this.isNavigable(this.config.actorId)
     this.testSuiteNavigable = this.specificationNavigable && this.isNavigable(this.config.testSuiteId)

@@ -209,7 +209,6 @@ import {ConformanceSnapshotsModalComponent} from './modals/conformance-snapshots
 import {ManageBadgesComponent} from './components/manage-badges/manage-badges.component';
 import {ManageBadgeComponent} from './components/manage-badges/manage-badge/manage-badge.component';
 import {PreviewBadgeModalComponent} from './modals/preview-badge-modal/preview-badge-modal.component';
-import {ViewBadgeButtonComponent} from './components/view-badge-button/view-badge-button.component';
 import {ResultLabelComponent} from './components/result-label/result-label.component';
 import {PreviewLandingPageComponent} from './pages/admin/user-management/landing-page/preview-landing-page/preview-landing-page.component';
 import {BreadcrumbComponent} from './components/breadcrumb/breadcrumb.component';
@@ -445,7 +444,6 @@ import {DateRangeComponent} from './components/date-range/date-range.component';
         ManageBadgeComponent,
         SanitizeHtmlPipe,
         PreviewBadgeModalComponent,
-        ViewBadgeButtonComponent,
         ResultLabelComponent,
         PreviewLandingPageComponent,
         BreadcrumbComponent,

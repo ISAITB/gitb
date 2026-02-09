@@ -41,7 +41,9 @@ export class Constants {
   }
 
   public static readonly BUTTON_ICON = {
+    ACTIONS: 'fa-solid fa-bars',
     ACTIVATE: 'fa-solid fa-circle-check',
+    ACTOR: 'fa-solid fa-circle-user',
     ALL: 'fa-solid fa-circle-check',
     BACK: 'fa-solid fa-arrow-left',
     CANCEL: 'fa-solid fa-xmark',
@@ -50,10 +52,12 @@ export class Constants {
     COMMUNITY: 'fa-solid fa-people-group',
     CONDITION: 'fa-solid fa-circle-question',
     CONFIGURATION_PROPERTIES: 'fa-solid fa-gear',
+    CONFORMANCE_CERTIFICATE: 'fa-solid fa-award',
     CONFIRM: 'fa-solid fa-check',
     COPY: 'fa-solid fa-copy',
     COPY_LINK: 'fa-solid fa-link',
     DELETE: 'fa-solid fa-trash',
+    DOMAIN: 'fa-solid fa-sitemap',
     DOWNLOAD: 'fa-solid fa-download',
     DISCONNECT: 'fa-solid fa-power-off',
     EXECUTION_OPTIONS: 'fa-solid fa-cog',
@@ -81,6 +85,7 @@ export class Constants {
     RESOURCE: 'fa-solid fa-image',
     REPLACE: 'fa-solid fa-arrow-right-arrow-left',
     REPORT: 'fa-solid fa-file-lines',
+    REPORT_PDF: 'fa-solid fa-file-pdf',
     SAVE: 'fa-solid fa-floppy-disk',
     SELECT: 'fa-regular fa-square-check',
     SEND: 'fa-solid fa-paper-plane',
@@ -88,6 +93,7 @@ export class Constants {
     SKIP: 'fa-solid fa-ban',
     SNAPSHOT: 'fa-solid fa-flag',
     SORT: 'fa-solid fa-sort',
+    SPECIFICATION: 'fa-solid fa-list-check',
     STOP: 'fa-solid fa-stop',
     SYSTEM: 'fa-solid fa-cube',
     TAIL: 'fa-solid fa-arrow-down-wide-short',
