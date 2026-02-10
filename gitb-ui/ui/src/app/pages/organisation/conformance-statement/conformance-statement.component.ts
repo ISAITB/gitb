@@ -117,6 +117,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   copyBadgePending = false
   animatedDetails = false
   clickableDetails = false
+  statementLabel: string = ''
 
   testSuiteSelectionConfig: MultiSelectConfig<TestSuiteMinimalInfo> = {
     name: "testSuiteChoice",
@@ -306,7 +307,8 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
         // Statement definition.
         this.prepareStatement(statementData.statement)
         this.statement = statementData.statement
-        this.routingService.conformanceStatementBreadcrumbs(this.organisationId, this.systemId, this.actorId, this.communityId, this.breadcrumbLabel(), this.organisationName, this.systemName, this.snapshotId, snapshotLabel)
+        this.statementLabel = this.breadcrumbLabel()
+        this.routingService.conformanceStatementBreadcrumbs(this.organisationId, this.systemId, this.actorId, this.communityId, this.statementLabel, this.organisationName, this.systemName, this.snapshotId, snapshotLabel)
         // IDs.
         this.domainId = this.findByType([this.statement]!, Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.DOMAIN)!.id
         this.specId = this.findByType([this.statement]!, Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION)!.id
@@ -438,7 +440,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
     return label
   }
 
-  private breadcrumbLabel(): string {
+  breadcrumbLabel(): string {
     let label = ''
     if (this.statement) {
       const domainItem = this.findByType([this.statement]!, Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.DOMAIN)

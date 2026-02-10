@@ -1,9 +1,21 @@
 <div #conformanceDetailPage id="conformanceDetailPage" class="page conformance">
 	<div class="card">
 		<div class="card-header clickable" (click)="headerClicked()" [class.collapsed]="collapsedDetailsFinished">
-            <div class="d-flex w-100">
-                <div class="card-title"><app-collapsing-icon [isCollapsed]="collapsedDetails"></app-collapsing-icon>Conformance statement details</div>
-                <div class="d-flex align-items-center ms-auto">
+            <div class="statement-header-container">
+                <div class="card-title">
+                    <app-collapsing-icon [isCollapsed]="collapsedDetails"></app-collapsing-icon>
+                    <div class="card-title-parts">
+                        <div class="card-title-expanded container-part" [class.container-hidden]="collapsedDetailsFinished" [class.container-visible]="!collapsedDetailsFinished">Conformance statement details</div>
+                        <div class="card-title-collapsed container-part" [class.container-hidden]="!collapsedDetailsFinished" [class.container-visible]="collapsedDetailsFinished">
+                            @if (statement) {
+                                {{ statementLabel }}
+                            } @else {
+                                <app-pending-block [pending]="true"></app-pending-block>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="card-title-controls">
                     <div class="btn-toolbar action-container" [class.action-container-visible]="collapsedDetails && collapsedDetailsFinished">
                         <button type="button" [labelIcon]="Constants.BUTTON_ICON.BACK" class="btn btn-secondary" (click)="back()">Back</button>
                         <div class="btn-group" ngbDropdown placement="bottom-end" (click)="$event.stopPropagation()">
@@ -157,22 +169,22 @@
 					</div>
 				}
 			</div>
-			<div class="card-footer button-container">
-				<div class="btn-toolbar">
-					<div class="btn-group" ngbDropdown>
-						<button type="button" [labelIcon]="Constants.BUTTON_ICON.REPORT" [disable]="exportPending" [pending]="exportPending" class="btn btn-secondary" (click)="onExportConformanceStatement('pdf')">Download report</button>
-						<button id="button-export" type="button" [disabled]="exportPending" ngbDropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
-							<span class="caret"></span>
-							<span class="sr-only visually-hidden">Download report</span>
-						</button>
+            <div class="card-footer button-container">
+                <div class="btn-toolbar">
+                    <div class="btn-group" ngbDropdown>
+                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.REPORT" [disable]="exportPending" [pending]="exportPending" class="btn btn-secondary" (click)="onExportConformanceStatement('pdf')">Download report</button>
+                        <button id="button-export" type="button" [disabled]="exportPending" ngbDropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+                            <span class="caret"></span>
+                            <span class="sr-only visually-hidden">Download report</span>
+                        </button>
                         <div ngbDropdownMenu aria-labelledby="button-export">
                             <button ngbDropdownItem type="button" (click)="onExportConformanceStatement('xml')">Download report as XML</button>
                             @if (allTestsSuccessful && (dataService.isSystemAdmin || dataService.isCommunityAdmin || dataService.community!.allowCertificateDownload)) {
                                 <button ngbDropdownItem type="button" (click)="onExportConformanceCertificate()">Download conformance certificate</button>
                             }
                         </div>
-					</div>
-					@if (hasBadge) {
+                    </div>
+                    @if (hasBadge) {
                         <div class="btn-group" ngbDropdown>
                             <button type="button" [labelIcon]="Constants.BUTTON_ICON.COPY_LINK" [pending]="copyBadgePending" class="btn btn-secondary" (click)="copyBadgeURL()">Copy badge URL</button>
                             <button id="button-badge" type="button" [disabled]="copyBadgePending" ngbDropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
@@ -183,7 +195,7 @@
                                 <button ngbDropdownItem type="button" (click)="previewBadge()">Preview badge</button>
                             </div>
                         </div>
-					}
+                    }
                     <!-- View -->
                     @if (navigationConfig) {
                         <app-navigation-controls [config]="navigationConfig"></app-navigation-controls>
@@ -191,14 +203,14 @@
                     @if (snapshotId == undefined) {
                         <button type="button" [labelIcon]="Constants.BUTTON_ICON.RESET" class="btn btn-secondary" (click)="refresh()" [pending]="refreshPending">Refresh</button>
                     }
-					<button type="button" [labelIcon]="Constants.BUTTON_ICON.BACK" class="btn btn-secondary" (click)="back()">Back</button>
-				</div>
-				@if (canDelete()) {
-					<div class="btn-toolbar btn-toolbar-delete">
-						<button type="button" [labelIcon]="Constants.BUTTON_ICON.DELETE" class="btn btn-outline-danger" (click)="deleteConformanceStatement()" [pending]="deletePending">Delete statement</button>
-					</div>
-				}
-			</div>
+                    <button type="button" [labelIcon]="Constants.BUTTON_ICON.BACK" class="btn btn-secondary" (click)="back()">Back</button>
+                </div>
+                @if (canDelete()) {
+                    <div class="btn-toolbar btn-toolbar-delete">
+                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.DELETE" class="btn btn-outline-danger" (click)="deleteConformanceStatement()" [pending]="deletePending">Delete statement</button>
+                    </div>
+                }
+            </div>
 		</div>
 	</div>
     <ul ngbNav #tabs="ngbNav" class="nav-tabs" [(activeId)]="tabIdToShow" (activeIdChange)="showTab()" [animation]="false">
