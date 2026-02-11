@@ -25,8 +25,9 @@ export class Constants {
   public static readonly DEFAULT_LOGO = '/assets/images/gitb.png'
 	public static readonly DEFAULT_COMMUNITY_ID = 0
 	public static readonly TOOLTIP_DELAY = 500
+  public static readonly SUPPORTED_PAGE_SIZES: number[] = [10, 25, 50, 100]
 
-	public static readonly TOKEN_COOKIE_EXPIRE = 2592000000 // 1 month in millis
+  public static readonly TOKEN_COOKIE_EXPIRE = 2592000000 // 1 month in millis
 	public static readonly ACCESS_TOKEN_COOKIE_KEY = 'tat'
 
 	public static readonly TEST_ENGINE_ACTOR_ID = 'com.gitb.TestEngine'

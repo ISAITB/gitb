@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {AfterViewInit, Component, OnInit} from '@angular/core';
+import {AfterViewInit, Component, OnDestroy, OnInit} from '@angular/core';
 import {Constants} from 'src/app/common/constants';
 import {DisconnectRoleComponent} from 'src/app/modals/disconnect-role/disconnect-role.component';
 import {AccountService} from 'src/app/services/account.service';
@@ -25,6 +25,8 @@ import {BaseComponent} from '../../base-component.component';
 import {RoutingService} from 'src/app/services/routing.service';
 import {ValidationState} from 'src/app/types/validation-state';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
+import {UserPreferences} from '../../../types/user-preferences';
+import {Subscription} from 'rxjs';
 
 @Component({
     selector: 'app-profile',
@@ -32,11 +34,23 @@ import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
     styles: [],
     standalone: false
 })
-export class ProfileComponent extends BaseComponent implements OnInit, AfterViewInit {
+export class ProfileComponent extends BaseComponent implements OnInit, AfterViewInit, OnDestroy {
 
   spinner = false
   edit = false
-  data:{name?: string, email?: string, role?: string} = {}
+  data: {
+    name?: string,
+    email?: string,
+    role?: string,
+    preferences: UserPreferences
+  } = {
+    preferences: {
+      menuCollapsed: !this.dataService.menuVisibility,
+      statementsCollapsed: !this.dataService.conformanceStatementDetailVisibility,
+      pageSize: this.dataService.defaultPagingTableSize
+    }
+  }
+  menuVisibilitySubscription?: Subscription
   validation = new ValidationState()
 
   constructor(
@@ -55,6 +69,11 @@ export class ProfileComponent extends BaseComponent implements OnInit, AfterView
     this.data.name = this.dataService.user!.name
     this.data!.email = this.dataService.user!.email
 		this.data!.role = Constants.USER_ROLE_LABEL[this.dataService.user!.role!]
+    this.menuVisibilitySubscription = this.dataService.onMenuVisibilityChange$.subscribe((visible) => {
+      setTimeout(() => {
+        this.data.preferences.menuCollapsed = !visible
+      })
+    })
     this.routingService.profileBreadcrumbs()
   }
 
@@ -62,6 +81,10 @@ export class ProfileComponent extends BaseComponent implements OnInit, AfterView
     if (!this.dataService.configuration.ssoEnabled) {
       this.dataService.focus('name')
     }
+  }
+
+  ngOnDestroy(): void {
+    if (this.menuVisibilitySubscription) this.menuVisibilitySubscription.unsubscribe()
   }
 
 	disconnect() {
@@ -105,10 +128,6 @@ export class ProfileComponent extends BaseComponent implements OnInit, AfterView
     this.data!.name = this.dataService.user!.name
   }
 
-	editProfile() {
-		this.edit = true
-  }
-
 	saveDisabled() {
     return this.spinner || !this.textProvided(this.data!.name)
   }
@@ -116,9 +135,20 @@ export class ProfileComponent extends BaseComponent implements OnInit, AfterView
 	updateProfile() {
 		if (this.checkForm()) {
 			this.spinner = true // Start spinner before calling service operation
-			this.accountService.updateUserProfile(this.data!.name!).subscribe((data) => {
-        this.dataService.user!.name = this.data!.name
-        this.popupService.success("Your name has been updated.")
+			this.accountService.updateUserProfile(this.data.name, this.data.preferences).subscribe((data) => {
+        if (this.dataService.configuration.ssoEnabled) {
+          this.dataService.user!.name = this.data!.name
+        }
+        if (this.data.preferences.menuCollapsed != !this.dataService.menuVisibility) {
+          this.dataService.setMenuVisibility(!this.data.preferences.menuCollapsed)
+        }
+        if (this.data.preferences.statementsCollapsed != !this.dataService.conformanceStatementDetailVisibility) {
+          this.dataService.setConformanceStatementDetailVisibility(!this.data.preferences.statementsCollapsed)
+        }
+        if (this.data.preferences.pageSize != this.dataService.defaultPagingTableSize) {
+          this.dataService.setDefaultPageSize(this.data.preferences.pageSize)
+        }
+        this.popupService.success("Your profile has been updated.")
       }).add(() => {
         this.spinner = false
         this.cancelEdit()
@@ -129,7 +159,7 @@ export class ProfileComponent extends BaseComponent implements OnInit, AfterView
 	checkForm() {
 		this.validation.clearErrors()
     let valid = true
-		if (!this.textProvided(this.data!.name)) {
+		if (this.dataService.configuration.ssoEnabled && !this.textProvided(this.data!.name)) {
       this.validation.invalid('name', 'Your name cannot be empty.')
 			this.data!.name = this.dataService.user!.name
       valid = false

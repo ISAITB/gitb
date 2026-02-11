@@ -983,4 +983,24 @@ object PersistenceSchema {
   val processedArchives = TableQuery[ProcessedArchivesTable]
   val insertProcessedArchive = processedArchives returning processedArchives.map(_.id)
 
+  class UserPreferencesTable(tag: Tag) extends Table[UserPreferences](tag, "UserPreferences") {
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def menuCollapsed = column[Boolean]("menu_collapsed")
+    def statementsCollapsed = column[Boolean]("statements_collapsed")
+    def pageSize = column[Short]("page_size")
+    def user = column[Long] ("user")
+    def * = (id :: menuCollapsed :: statementsCollapsed :: pageSize :: user :: HNil).mapTo[UserPreferences]
+  }
+  val userPreferences = TableQuery[UserPreferencesTable]
+
+  class UserPreferenceDefaultsTable(tag: Tag) extends Table[UserPreferenceDefaults](tag, "UserPreferenceDefaults") {
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def menuCollapsed = column[Boolean]("menu_collapsed")
+    def statementsCollapsed = column[Boolean]("statements_collapsed")
+    def pageSize = column[Short]("page_size")
+    def community = column[Long] ("community")
+    def * = (id :: menuCollapsed :: statementsCollapsed :: pageSize :: community :: HNil).mapTo[UserPreferenceDefaults]
+  }
+  val userPreferenceDefaults = TableQuery[UserPreferenceDefaultsTable]
+
 }

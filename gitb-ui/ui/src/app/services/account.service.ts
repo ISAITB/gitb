@@ -26,6 +26,7 @@ import { FileData } from '../types/file-data.type';
 import { CustomProperty } from '../types/custom-property.type';
 import { FileParam } from '../types/file-param.type';
 import {SearchResult} from '../types/search-result';
+import {UserPreferences} from '../types/user-preferences';
 
 @Injectable({
   providedIn: 'root'
@@ -35,7 +36,17 @@ export class AccountService {
   constructor(
     private readonly restService: RestService,
     private readonly dataService: DataService
-  ) { }
+  ) {
+    this.dataService.onMenuVisibilityChange$.subscribe((menuVisible) => {
+      this.updatePreferenceForMenuCollapsed(!menuVisible).subscribe(() => {})
+    })
+    this.dataService.onConformanceStatementDetailVisibilityChange$.subscribe((statementDetailsVisible) => {
+      this.updatePreferenceForStatementsCollapsed(!statementDetailsVisible).subscribe(() => {})
+    })
+    this.dataService.onPageSizeChange$.subscribe((pageSize) => {
+      this.updatePreferenceForPageSize(pageSize).subscribe(() => {})
+    })
+  }
 
   updateVendorProfile(vendorFname: string|undefined, vendorSname: string|undefined, processProperties: boolean, properties: CustomProperty[], landingPageId: number|undefined) {
     let data: any = {}
@@ -130,11 +141,47 @@ export class AccountService {
     })
   }
 
-  updateUserProfile(name: string) {
+  updateUserProfile(name: string|undefined, preferences: UserPreferences) {
+    const data: any = {
+      menu_collapsed: preferences.menuCollapsed,
+      statements_collapsed: preferences.statementsCollapsed,
+      page_size: preferences.pageSize
+    }
+    if (name != undefined) {
+      data.user_name = name
+    }
     return this.restService.post<void>({
       path: ROUTES.controllers.AccountService.updateUserProfile().url,
+      data: data,
+      authenticate: true
+    })
+  }
+
+  updatePreferenceForMenuCollapsed(value: boolean) {
+    return this.restService.post<void>({
+      path: ROUTES.controllers.AccountService.updatePreferenceForMenuCollapsed().url,
       data: {
-        user_name: name
+        value: value
+      },
+      authenticate: true
+    })
+  }
+
+  updatePreferenceForStatementsCollapsed(value: boolean) {
+    return this.restService.post<void>({
+      path: ROUTES.controllers.AccountService.updatePreferenceForStatementsCollapsed().url,
+      data: {
+        value: value
+      },
+      authenticate: true
+    })
+  }
+
+  updatePreferenceForPageSize(value: number) {
+    return this.restService.post<void>({
+      path: ROUTES.controllers.AccountService.updatePreferenceForPageSize().url,
+      data: {
+        value: value
       },
       authenticate: true
     })

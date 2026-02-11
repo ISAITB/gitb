@@ -115,7 +115,7 @@
                 </div>
             }
             <div class="mt-3 row">
-                <legend class="col-3 col-form-label text-end pt-0">* Assigned user role:</legend>
+                <legend class="col-3 col-form-label text-end pt-0">Assigned user role:</legend>
                 <div class="col-9">
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" type="radio" name="selfRegRole" [(ngModel)]="community.selfRegJoinAsAdmin" id="selfRegRole_1" [value]="true">
@@ -307,6 +307,36 @@
                 </div>
             }
         </div>
+    </div>
+</app-form-section>
+<app-form-section sectionTitle="Default user preferences" [collapsed]="userPreferencesCollapsed" [marginBefore]="true">
+    <div class="row pt-3">
+        <legend class="col-3 col-form-label text-end pt-0">Display preferences:</legend>
+        <div class="col-9">
+            <div class="form-check pb-2">
+                <input class="form-check-input" type="checkbox" id="menuCollapsed" name="menuCollapsed" [(ngModel)]="community.preferences!.menuCollapsed">
+                <label class="form-check-label" for="menuCollapsed">Collapsed menu
+                    <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="When checked, the left-side menu will be presented to users as collapsed by default."></div>
+                </label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="statementsCollapsed" name="statementsCollapsed" [(ngModel)]="community.preferences!.statementsCollapsed">
+                <label class="form-check-label" for="statementsCollapsed">Collapsed conformance statement details
+                    <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="When checked, conformance statements will be displayed to users by default with their details collapsed."></div>
+                </label>
+            </div>
+        </div>
+    </div>
+    <div class="row pt-3">
+        <label class="col-3 col-form-label text-end" for="pageSize">Items per page:</label>
+        <div class="col-auto">
+            <select name="pageSize" class="form-select" id="pageSize" [(ngModel)]="community.preferences!.pageSize">
+                @for (supportedSize of Constants.SUPPORTED_PAGE_SIZES; track $index) {
+                    <option [ngValue]="supportedSize">{{ supportedSize }}</option>
+                }
+            </select>
+        </div>
+        <div app-tooltip class="col-auto" tbTooltip="The number of items to display by default in each page, when items are presented in lists or tables."></div>
     </div>
 </app-form-section>
 @if (!admin) {

@@ -13,21 +13,14 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import { Organisation } from "./organisation.type";
-import {UserPreferences} from './user-preferences';
+package models
 
-export interface User {
+object UserPreferenceDefaults {
 
-  id?: number,
-  name?: string,
-  email?: string,
-  role?: number,
-  roleText?: string,
-  onetime?: boolean,
-  ssoStatus?: number,
-  ssoStatusText?: string,
-  password?: string,
-  organization?: Organisation,
-  preferences?: UserPreferences
+  def createDefault(communityId: Long): UserPreferenceDefaults = {
+    UserPreferenceDefaults(0L, menuCollapsed = true, statementsCollapsed = false, Constants.defaultLimit.toShort, communityId)
+  }
 
 }
+
+case class UserPreferenceDefaults(id: Long, menuCollapsed: Boolean, statementsCollapsed: Boolean, pageSize: Short, community: Long) extends UserPreferenceBase

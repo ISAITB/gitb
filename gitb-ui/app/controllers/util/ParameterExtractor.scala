@@ -22,7 +22,7 @@ import controllers.util.ParameterNames
 import models.automation.TestServiceSearchCriteria
 import models.statement.{AvailableStatementsSearchCriteria, ConformanceStatementSearchCriteria, ConformanceStatementTestSearchCriteria}
 import models.theme.{Theme, ThemeFiles}
-import models.{Actor, Badges, Communities, CommunityReportSettings, CommunityResources, Configs, Constants, Domain, DomainParameter, Endpoints, Enums, ErrorTemplates, FileInfo, LandingPages, LegalNotices, NamedFile, OrganisationParameterValues, Organizations, Parameters, SpecificationGroups, Specifications, SystemParameterValues, Systems, TestService, TestServiceWithParameter, Trigger, TriggerData, TriggerFireExpression, Triggers, Users}
+import models.{Actor, Badges, Communities, CommunityReportSettings, CommunityResources, Configs, Constants, Domain, DomainParameter, Endpoints, Enums, ErrorTemplates, FileInfo, LandingPages, LegalNotices, NamedFile, OrganisationParameterValues, Organizations, Parameters, SpecificationGroups, Specifications, SystemParameterValues, Systems, TestService, TestServiceWithParameter, Trigger, TriggerData, TriggerFireExpression, Triggers, UserPreferenceDefaults, UserPreferences, Users}
 import org.apache.commons.lang3.StringUtils
 import play.api.mvc._
 import utils.{ClamAVClient, CryptoUtil, HtmlUtil, JsonUtil, MimeUtil}
@@ -56,6 +56,26 @@ object ParameterExtractor {
       }
     }
     fileMap.iterator.toMap
+  }
+
+  def extractUserPreferences(request: Request[AnyContent]): UserPreferences = {
+    UserPreferences(
+      0L,
+      menuCollapsed = ParameterExtractor.optionalBooleanBodyParameter(request, ParameterNames.MENU_COLLAPSED).getOrElse(true),
+      statementsCollapsed = ParameterExtractor.optionalBooleanBodyParameter(request, ParameterNames.STATEMENTS_COLLAPSED).getOrElse(false),
+      pageSize = ParameterExtractor.optionalShortBodyParameter(request, ParameterNames.PAGE_SIZE).getOrElse(Constants.defaultLimit.toShort),
+      0L
+    )
+  }
+
+  def extractUserPreferenceDefaults(request: Request[AnyContent]): UserPreferenceDefaults = {
+    UserPreferenceDefaults(
+      0L,
+      menuCollapsed = ParameterExtractor.optionalBooleanBodyParameter(request, ParameterNames.MENU_COLLAPSED).getOrElse(true),
+      statementsCollapsed = ParameterExtractor.optionalBooleanBodyParameter(request, ParameterNames.STATEMENTS_COLLAPSED).getOrElse(false),
+      pageSize = ParameterExtractor.optionalShortBodyParameter(request, ParameterNames.PAGE_SIZE).getOrElse(Constants.defaultLimit.toShort),
+      0L
+    )
   }
 
   def extractConformanceStatementSearchCriteria(request: Request[AnyContent]): ConformanceStatementSearchCriteria = {

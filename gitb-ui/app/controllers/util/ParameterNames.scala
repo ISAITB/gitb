@@ -293,4 +293,10 @@ object ParameterNames {
   val AUTH_TOKEN_PASSWORD = "authTokenPassword"
   val AUTH_TOKEN_PASSWORD_TYPE = "authTokenPasswordType"
 
+  val MENU_COLLAPSED = "menu_collapsed"
+  val PAGE_SIZE = "page_size"
+  val STATEMENTS_COLLAPSED = "statements_collapsed"
+  val PREFERENCES = "preferences"
+  val FORCE_PREFERENCES = "force_preferences"
+
 }

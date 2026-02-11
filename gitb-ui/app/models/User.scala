@@ -17,13 +17,13 @@ package models
 
 case class Users (id:Long, name:String, email:String, password:String, onetimePassword:Boolean, role:Short, organization:Long, ssoUid: Option[String], ssoEmail: Option[String], ssoStatus: Short) {
 
-  def withOrganizationId(id:Long) = {
+  def withOrganizationId(id:Long): Users = {
     Users(this.id, this.name, this.email, this.password, this.onetimePassword, this.role, id, this.ssoUid, this.ssoEmail, this.ssoStatus)
   }
 }
 
 //no password field!
-class User (_id:Long, _name:String, _email:String, _role:Short, _onetimePassword:Boolean, _organization:Option[Organizations], _ssoUid: Option[String], _ssoEmail: Option[String], _ssoStatus: Short)
+class User (_id:Long, _name:String, _email:String, _role:Short, _onetimePassword:Boolean, _organization:Option[Organizations], _ssoUid: Option[String], _ssoEmail: Option[String], _ssoStatus: Short, _preferences: Option[UserPreferences])
 {
   var id:Long = _id
   var name:String = _name
@@ -34,12 +34,16 @@ class User (_id:Long, _name:String, _email:String, _role:Short, _onetimePassword
   var ssoUid:Option[String] = _ssoUid
   var ssoEmail:Option[String] = _ssoEmail
   var ssoStatus:Short = _ssoStatus
+  var preferences: Option[UserPreferences] = _preferences
 
   def this(_case:Users) =
-    this(_case.id, _case.name, _case.email, _case.role, _case.onetimePassword, None, _case.ssoUid, _case.ssoEmail, _case.ssoStatus)
+    this(_case.id, _case.name, _case.email, _case.role, _case.onetimePassword, None, _case.ssoUid, _case.ssoEmail, _case.ssoStatus, None)
 
   def this(_case:Users, _organization:Organizations) =
-    this(_case.id, _case.name, _case.email, _case.role, _case.onetimePassword, Some(_organization), _case.ssoUid, _case.ssoEmail, _case.ssoStatus)
+    this(_case.id, _case.name, _case.email, _case.role, _case.onetimePassword, Some(_organization), _case.ssoUid, _case.ssoEmail, _case.ssoStatus, None)
+
+  def this(_case:Users, _organization:Organizations, _preferences: UserPreferences) =
+    this(_case.id, _case.name, _case.email, _case.role, _case.onetimePassword, Some(_organization), _case.ssoUid, _case.ssoEmail, _case.ssoStatus, Some(_preferences))
 
   def toCaseObject:Users = {
     if(organization.isDefined){

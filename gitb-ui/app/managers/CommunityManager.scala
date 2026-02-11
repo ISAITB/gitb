@@ -47,6 +47,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
                                   conformanceManager: ConformanceManager,
                                   accountManager: AccountManager,
                                   domainParameterManager: DomainParameterManager,
+                                  userPreferenceManager: UserPreferenceManager,
                                   automationApiHelper: AutomationApiHelper,
                                   dbConfigProvider: DatabaseConfigProvider)
                                  (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
@@ -345,8 +346,8 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
   /**
     * Creates new community
     */
-  def createCommunity(community: Communities): Future[(Long, Long)] = {
-    DB.run(createCommunityInternal(community).transactionally)
+  def createCommunity(community: Communities, userPreferences: UserPreferenceDefaults): Future[(Long, Long)] = {
+    DB.run(createCommunityInternal(community, Some(userPreferences)).transactionally)
   }
 
   def createCommunityThroughAutomationApi(input: CreateCommunityRequest): Future[String] = {
@@ -383,17 +384,17 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
           allowCertificateDownload = false, allowStatementManagement = true, allowSystemManagement = true, allowPostTestOrganisationUpdates = true,
           allowPostTestSystemUpdates = true, allowPostTestStatementUpdates = true,
           allowAutomationApi = true, allowCommunityView = false, allowUserManagement = true, apiKeyToUse, None, domainId
-        ))
+        ), None)
       }
     } yield apiKeyToUse
     DB.run(action.transactionally)
   }
 
-  def createCommunityInternal(community: Communities): DBIO[(Long, Long)] = {
-    createCommunityInternal(community, checkApiKeyUniqueness = false)
+  def createCommunityInternal(community: Communities, userPreferences: Option[UserPreferenceDefaults]): DBIO[(Long, Long)] = {
+    createCommunityInternal(community, checkApiKeyUniqueness = false, userPreferences)
   }
 
-  def createCommunityInternal(community: Communities, checkApiKeyUniqueness: Boolean): DBIO[(Long, Long)] = {
+  def createCommunityInternal(community: Communities, checkApiKeyUniqueness: Boolean, userPreferences: Option[UserPreferenceDefaults]): DBIO[(Long, Long)] = {
     for {
       replaceApiKey <- if (checkApiKeyUniqueness) {
         PersistenceSchema.communities.filter(_.apiKey === community.apiKey).exists.result
@@ -407,13 +408,15 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
       adminOrganisationId <- {
         organizationManager.createOrganizationInTrans(Organizations(0L, Constants.AdminOrganizationName, Constants.AdminOrganizationName, OrganizationType.Vendor.id.toShort, adminOrganization = true, None, None, None, template = false, None, None, None, selfRegDefault = false, communityId))
       }
+      // Add default user preferences
+      _ <- PersistenceSchema.userPreferenceDefaults += userPreferences.map(_.copy(community = communityId)).getOrElse(UserPreferenceDefaults.createDefault(communityId))
     } yield (communityId, adminOrganisationId)
   }
 
   /**
     * Gets community with specified id
     */
-  def getCommunityById(communityId: Long, withDefaultOrganisation: Boolean): Future[Community] = {
+  def getCommunityById(communityId: Long, withDefaultOrganisation: Boolean, withDefaultUserPreferences: Boolean): Future[Community] = {
     DB.run(
       for {
         c <- PersistenceSchema.communities.filter(_.id === communityId).result.head
@@ -429,7 +432,17 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
             DBIO.successful(None)
           }
         }
-      } yield new Community(c, d, o)
+        p <- {
+          if (withDefaultUserPreferences) {
+            PersistenceSchema.userPreferenceDefaults
+              .filter(_.community === communityId)
+              .result
+              .headOption
+          } else {
+            DBIO.successful(None)
+          }
+        }
+      } yield new Community(c, d, o, p)
     )
   }
 
@@ -501,7 +514,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
                                                 selfRegAllowOrganisationTokens: Boolean, selfRegAllowOrganisationTokenManagement: Boolean, selfRegForceOrganisationTokenInput: Boolean,
                                                 selfRegJoinExisting: Boolean, selfRegJoinAsAdmin: Boolean, allowCertificateDownload: Boolean, allowStatementManagement: Boolean, allowSystemManagement: Boolean,
                                                 allowPostTestOrganisationUpdates: Boolean, allowPostTestSystemUpdates: Boolean, allowPostTestStatementUpdates: Boolean, allowAutomationApi: Option[Boolean], allowCommunityView: Boolean, allowUserManagement: Boolean,
-                                                apiKey: Option[String], domainId: Option[Long], checkApiKeyUniqueness: Boolean, onSuccess: mutable.ListBuffer[() => _]) = {
+                                                apiKey: Option[String], domainId: Option[Long], checkApiKeyUniqueness: Boolean, userPreferences: Option[UserPreferenceDefaults], overrideExistingUserPreferences: Boolean, onSuccess: mutable.ListBuffer[() => _]) = {
     for {
       // Update short name.
       _ <- {
@@ -534,6 +547,14 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
         .update(supportEmail, domainId, description, allowCertificateDownload, allowStatementManagement, allowSystemManagement,
           allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, allowCommunityView, allowUserManagement, interactionNotification
         )
+      // Update user preferences.
+      _ <- {
+        if (userPreferences.isDefined) {
+          userPreferenceManager.updateUserPreferenceDefaults(community.id, userPreferences.get, overrideExistingUserPreferences)
+        } else {
+          DBIO.successful(())
+        }
+      }
       // Update self-registration properties.
       _ <- {
         if (Configurations.REGISTRATION_ENABLED) {
@@ -655,7 +676,8 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
           community.selfRegJoinExisting, community.selfRegJoinAsAdmin,
           community.allowCertificateDownload, community.allowStatementManagement, community.allowSystemManagement,
           community.allowPostTestOrganisationUpdates, community.allowPostTestSystemUpdates, community.allowPostTestStatementUpdates,
-          Some(community.allowAutomationApi), community.allowCommunityView, community.allowUserManagement, None, domainIdToUse, checkApiKeyUniqueness = false, onSuccess
+          Some(community.allowAutomationApi), community.allowCommunityView, community.allowUserManagement, None, domainIdToUse,
+          checkApiKeyUniqueness = false, None, overrideExistingUserPreferences = false, onSuccess
         )
       }
     } yield ()
@@ -674,7 +696,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
                       allowCertificateDownload: Boolean, allowStatementManagement: Boolean, allowSystemManagement: Boolean,
                       allowPostTestOrganisationUpdates: Boolean, allowPostTestSystemUpdates: Boolean,
                       allowPostTestStatementUpdates: Boolean, allowAutomationApi: Option[Boolean], allowCommunityView: Boolean, allowUserManagement: Boolean,
-                      domainId: Option[Long], selfRegDefaultOrganisation: Option[Long]): Future[Unit] = {
+                      domainId: Option[Long], selfRegDefaultOrganisation: Option[Long], userPreferences: Option[UserPreferenceDefaults], overrideExistingUserPreferences: Boolean): Future[Unit] = {
 
     val onSuccess = ListBuffer[() => _]()
     val dbAction = for {
@@ -687,7 +709,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
             selfRegAllowOrganisationTokens, selfRegAllowOrganisationTokenManagement, selfRegForceOrganisationTokenInput, selfRegJoinExisting, selfRegJoinAsAdmin,
             allowCertificateDownload, allowStatementManagement, allowSystemManagement,
             allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, allowAutomationApi, allowCommunityView, allowUserManagement, None,
-            domainId, checkApiKeyUniqueness = false, onSuccess
+            domainId, checkApiKeyUniqueness = false, userPreferences, overrideExistingUserPreferences, onSuccess
           )
         } else {
           throw new IllegalArgumentException("Community with ID '" + communityId + "' not found")
@@ -751,6 +773,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
       _ <- deleteCommunityKeystoreInternal(communityId)
       _ <- deleteCommunityReportStylesheets(communityId, onSuccessCalls)
       _ <- PersistenceSchema.communityLabels.filter(_.community === communityId).delete
+      _ <- PersistenceSchema.userPreferenceDefaults.filter(_.community === communityId).delete
       _ <- PersistenceSchema.communities.filter(_.id === communityId).delete
     } yield ()
   }

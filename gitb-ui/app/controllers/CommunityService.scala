@@ -104,7 +104,8 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
   def createCommunity(): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canCreateCommunity(request).flatMap { _ =>
       val community = ParameterExtractor.extractCommunityInfo(request)
-      communityManager.createCommunity(community).map { _ =>
+      val userPreferences = ParameterExtractor.extractUserPreferenceDefaults(request)
+      communityManager.createCommunity(community, userPreferences).map { _ =>
         ResponseConstructor.constructEmptyResponse
       }
     }
@@ -116,7 +117,8 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
   def getCommunityById(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewCommunityFull(request, communityId).flatMap { _ =>
       val withDefaultOrganisation = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.COMMUNITY_SELFREG_DEFAULT_ORGANISATION).getOrElse(false)
-      communityManager.getCommunityById(communityId, withDefaultOrganisation).map { community =>
+      val withDefaultUserPreferences = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.PREFERENCES).getOrElse(false)
+      communityManager.getCommunityById(communityId, withDefaultOrganisation, withDefaultUserPreferences).map { community =>
         val json: String = JsonUtil.serializeCommunity(community, None, includeAdminInfo = true)
         ResponseConstructor.constructJsonResponse(json)
       }
@@ -195,13 +197,14 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
         }
       }
       val domainId: Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.DOMAIN_ID)
+      val forceUserPreferences = ParameterExtractor.optionalBooleanBodyParameter(request, ParameterNames.FORCE_PREFERENCES).getOrElse(false)
       communityManager.updateCommunity(
         communityId, shortName, fullName, email, selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification,
         interactionNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties, selfRegAllowOrganisationTokens,
         selfRegAllowOrganisationTokenManagement, selfRegForceOrganisationTokenInput, selfRegJoinExisting, selfRegJoinJoinAsAdmin,
         allowCertificateDownload, allowStatementManagement, allowSystemManagement,
         allowPostTestOrganisationUpdate, allowPostTestSystemUpdate, allowPostTestStatementUpdate, allowAutomationApi, allowCommunityView, allowUserManagement,
-        domainId, selfRegDefaultOrganisation
+        domainId, selfRegDefaultOrganisation, Some(ParameterExtractor.extractUserPreferenceDefaults(request)), forceUserPreferences
       ).map { _ =>
         ResponseConstructor.constructEmptyResponse
       }

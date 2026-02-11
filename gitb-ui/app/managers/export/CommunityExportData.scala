@@ -18,6 +18,8 @@ package managers.`export`
 import models._
 
 case class CommunityExportData(community: Option[Communities],
+                               userPreferences: UserPreferenceDefaults,
+                               userPreferenceMap: Option[Map[Long, UserPreferences]],
                                domainExportData: Option[DomainExportData],
                                administrators: Option[Seq[Users]],
                                statementCertificateSettings: Option[Option[ConformanceCertificate]],

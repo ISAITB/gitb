@@ -5,7 +5,7 @@
                 <span class="me-2">{{dataService.defaultPagingTableSize}} per page</span>
             </button>
             <div id="dropdown-paging-size-select" ngbDropdownMenu aria-labelledby="button-snapshot">
-                @for (supportedSize of supportedPageSizes; track $index) {
+                @for (supportedSize of Constants.SUPPORTED_PAGE_SIZES; track $index) {
                     <button ngbDropdownItem type="button" (click)="setPageSize(supportedSize)">
                         <span class="me-2" [class.invisible]="dataService.defaultPagingTableSize != supportedSize"><i class="fa-solid fa-check fa-sm"></i></span>{{supportedSize}}
                     </button>

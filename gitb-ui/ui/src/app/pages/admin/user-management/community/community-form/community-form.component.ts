@@ -45,6 +45,7 @@ export class CommunityFormComponent extends BaseComponent implements OnInit {
   emailEnabled = false
   selfRegOptionsCollapsed = false
   userPermissionsCollapsed = false
+  userPreferencesCollapsed = false
   selfRegDefaultOrganisationSelectionConfig!: MultiSelectConfig<Organisation>
 
   domainSelectionConfig: MultiSelectConfig<Domain> = {
@@ -74,6 +75,7 @@ export class CommunityFormComponent extends BaseComponent implements OnInit {
         this.selfRegOptionsCollapsed = true
       }
       this.userPermissionsCollapsed = true
+      this.userPreferencesCollapsed = true
     }
     this.selfRegEnabled = this.dataService.configuration.registrationEnabled
     this.ssoEnabled = this.dataService.configuration.ssoEnabled

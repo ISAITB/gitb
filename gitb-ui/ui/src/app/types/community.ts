@@ -17,6 +17,7 @@ import {Domain} from './domain';
 import {TypedLabelConfig} from './typed-label-config.type';
 import {CommunityLimited} from './community-limited';
 import {Organisation} from './organisation.type';
+import {UserPreferences} from './user-preferences';
 
 export interface Community extends CommunityLimited {
 
@@ -47,6 +48,7 @@ export interface Community extends CommunityLimited {
   allowCommunityView: boolean;
   allowUserManagement: boolean;
   apiKey?: string;
+  preferences?: UserPreferences
 
   sameDescriptionAsDomain: boolean;
   activeDescription?: string;

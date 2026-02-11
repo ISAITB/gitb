@@ -39,7 +39,7 @@ import {Trigger} from 'src/app/types/trigger';
 import {User} from 'src/app/types/user.type';
 import {BreadcrumbType} from 'src/app/types/breadcrumb-type';
 import {ValidationState} from 'src/app/types/validation-state';
-import {Observable, of} from 'rxjs';
+import {concatMap, EMPTY, Observable, of} from 'rxjs';
 import {ResourceActions} from '../../../../../components/resource-management-tab/resource-actions';
 import {FileData} from '../../../../../types/file-data.type';
 import {CommunityResourceService} from '../../../../../services/community-resource.service';
@@ -47,6 +47,7 @@ import {PagingEvent} from '../../../../../components/paging-controls/paging-even
 import {TableApi} from '../../../../../components/table/table-api';
 import {BaseTabbedComponent} from '../../../../base-tabbed-component';
 import {ResourceState} from '../../../../../components/resource-management-tab/resource-state';
+import {UserPreferences} from '../../../../../types/user-preferences';
 
 @Component({
     selector: 'app-community-details',
@@ -158,6 +159,7 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
 
   resourceActions!: ResourceActions
   validation = new ValidationState()
+  initialUserPreferences!: UserPreferences
 
   constructor(
     public readonly dataService: DataService,
@@ -202,6 +204,7 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
       this.organizationColumns.push({ field: 'templateName', title: 'Set as template', sortable: true })
     }
     this.resourceActions = this.createCommunityResourceActions()
+    this.initialUserPreferences = { ...this.community.preferences! }
     this.routingService.communityBreadcrumbs(this.communityId, this.community.sname)
     let domains$: Observable<Domain[]> = of([])
     if (this.dataService.isSystemAdmin) {
@@ -439,7 +442,7 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
     )
   }
 
-  private updateCommunityInternal(descriptionToUse?: string) {
+  private updateCommunityInternal(descriptionToUse: string|undefined, forceUserPreferenceUpdate: boolean) {
     this.savePending = true
     let selfRegDefaultOrganisationId = this.community.selfRegDefaultOrganisation?.id
     if (!this.community.selfRegDefaultOrganisationEnabled) {
@@ -456,10 +459,16 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
       this.community.selfRegJoinExisting, this.community.selfRegJoinAsAdmin,
       this.community.allowCertificateDownload!, this.community.allowStatementManagement!, this.community.allowSystemManagement!, this.community.allowPostTestOrganisationUpdates!,
       this.community.allowPostTestSystemUpdates!, this.community.allowPostTestStatementUpdates!, this.community.allowAutomationApi, this.community.allowCommunityView, this.community.allowUserManagement,
-      this.community.domain?.id)
+      this.community.domain?.id, this.community.preferences!, forceUserPreferenceUpdate)
     .subscribe(() => {
       this.originalDomainId = this.community.domain?.id
       this.resetSelfRegistrationWarning()
+      this.initialUserPreferences = { ...this.community.preferences! }
+      if (forceUserPreferenceUpdate && this.communityId == this.dataService.community?.id) {
+        this.dataService.setMenuVisibility(!this.community.preferences!.menuCollapsed)
+        this.dataService.setConformanceStatementDetailVisibility(!this.community.preferences!.statementsCollapsed)
+        this.dataService.setDefaultPageSize(this.community.preferences!.pageSize)
+      }
       if (this.selfRegistrationWarningActive) {
         this.popupService.warning('Community updated with warnings.')
       } else {
@@ -487,21 +496,34 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
         if (!this.community.sameDescriptionAsDomain) {
           descriptionToUse = this.community.activeDescription
         }
-        if ((this.originalDomainId == undefined && this.community.domain?.id != undefined) || (this.originalDomainId != undefined && this.community.domain?.id != undefined && this.originalDomainId != this.community.domain?.id)) {
-          let confirmationMessage: string
-          if (this.originalDomainId == undefined) {
-            confirmationMessage = "Setting the "+this.dataService.labelDomainLower()+" will remove existing conformance statements linked to other "+this.dataService.labelDomainsLower()+". Are you sure you want to proceed?"
-          } else {
-            confirmationMessage = "Changing the "+this.dataService.labelDomainLower()+" will remove all existing conformance statements. Are you sure you want to proceed?"
-          }
-          this.confirmationDialogService.confirmedDangerous("Confirm "+this.dataService.labelDomainLower()+" change", confirmationMessage, "Change", "Cancel", Constants.BUTTON_ICON.SAVE)
-            .subscribe(() => {
-              this.updateCommunityInternal(descriptionToUse)
-            })
-        } else {
-          this.updateCommunityInternal(descriptionToUse)
-        }
+        this.confirmDomainChangeIfNeeded().pipe(
+          concatMap(result => result ? this.confirmUserPreferenceUpdateIfNeeded() : EMPTY),
+        ).subscribe(forcePreferenceUpdate => {
+          this.updateCommunityInternal(descriptionToUse, forcePreferenceUpdate)
+        })
       }
+    }
+  }
+
+  private confirmDomainChangeIfNeeded(): Observable<boolean> {
+    if ((this.originalDomainId == undefined && this.community.domain?.id != undefined) || (this.originalDomainId != undefined && this.community.domain?.id != undefined && this.originalDomainId != this.community.domain?.id)) {
+      let confirmationMessage: string
+      if (this.originalDomainId == undefined) {
+        confirmationMessage = "Setting the "+this.dataService.labelDomainLower()+" will remove existing conformance statements linked to other "+this.dataService.labelDomainsLower()+". Are you sure you want to proceed?"
+      } else {
+        confirmationMessage = "Changing the "+this.dataService.labelDomainLower()+" will remove all existing conformance statements. Are you sure you want to proceed?"
+      }
+      return this.confirmationDialogService.confirmDangerous("Confirm "+this.dataService.labelDomainLower()+" change", confirmationMessage, "Change", "Cancel", Constants.BUTTON_ICON.SAVE).asObservable()
+    } else {
+      return of(true)
+    }
+  }
+
+  private confirmUserPreferenceUpdateIfNeeded(): Observable<boolean> {
+    if (this.userPreferencesChanged()) {
+      return this.confirmationDialogService.confirm("User preferences update", "You have changed the default user preferences. Besides applying for new users, should these also override existing users' preferences?", "Override existing preferences", "Apply only for new users", Constants.BUTTON_ICON.RESET, Constants.BUTTON_ICON.SAVE, false, true).asObservable()
+    } else {
+      return of(false)
     }
   }
 
@@ -777,6 +799,12 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
       },
       systemScope: false
     }
+  }
+
+  private userPreferencesChanged() {
+    return this.community.preferences?.menuCollapsed != this.initialUserPreferences.menuCollapsed ||
+      this.community.preferences?.statementsCollapsed != this.initialUserPreferences.statementsCollapsed ||
+      this.community.preferences?.pageSize != this.initialUserPreferences.pageSize
   }
 
   protected readonly Constants = Constants;

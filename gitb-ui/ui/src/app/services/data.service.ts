@@ -206,9 +206,9 @@ export class DataService {
     this.isDomainUser = (user.role == Constants.USER_ROLE.DOMAIN_USER)
     this.isSystemAdmin = (user.role == Constants.USER_ROLE.SYSTEM_ADMIN)
     this.isCommunityAdmin = (user.role == Constants.USER_ROLE.COMMUNITY_ADMIN)
-    this.defaultPagingTableSize = user.defaultPagingSize??Constants.TABLE_PAGE_SIZE
-    this.menuVisibility = user.menuVisibility??false
-    this.conformanceStatementDetailVisibility = user.conformanceStatementDetailVisibility??true
+    this.defaultPagingTableSize = user.preferences?.pageSize??Constants.TABLE_PAGE_SIZE
+    this.menuVisibility = user.preferences?.menuCollapsed === false // Collapsed by default
+    this.conformanceStatementDetailVisibility = user.preferences?.statementsCollapsed !== true // Not collapsed by default
     setTimeout(() => {
       this.showCommunityAdminMenu = this.isCommunityAdmin
       this.showSystemAdminMenu = this.isSystemAdmin
@@ -1959,18 +1959,24 @@ export class DataService {
   }
 
   setDefaultPageSize(pageSize: number) {
-    this.defaultPagingTableSize = pageSize
-    this.onPageSizeChangeSource.next(pageSize)
+    if (this.defaultPagingTableSize != pageSize) {
+      this.defaultPagingTableSize = pageSize
+      this.onPageSizeChangeSource.next(pageSize)
+    }
   }
 
   setMenuVisibility(visible: boolean) {
-    this.menuVisibility = visible
-    this.menuVisibilityChangeSource.next(visible)
+    if (this.menuVisibility != visible) {
+      this.menuVisibility = visible
+      this.menuVisibilityChangeSource.next(visible)
+    }
   }
 
   setConformanceStatementDetailVisibility(visible: boolean) {
-    this.conformanceStatementDetailVisibility = visible
-    this.conformanceStatementDetailVisibilityChangeSource.next(visible)
+    if (this.conformanceStatementDetailVisibility != visible) {
+      this.conformanceStatementDetailVisibility = visible
+      this.conformanceStatementDetailVisibilityChangeSource.next(visible)
+    }
   }
 
 }

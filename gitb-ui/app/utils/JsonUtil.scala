@@ -733,6 +733,14 @@ object JsonUtil {
     json
   }
 
+  def jsUserPreferences(preferences: UserPreferenceBase):JsObject = {
+    Json.obj(
+      "menuCollapsed"       -> preferences.menuCollapsed,
+      "statementsCollapsed" -> preferences.statementsCollapsed,
+      "pageSize"            -> preferences.pageSize
+    )
+  }
+
   /**
    * Converts a List of Organizations into Play!'s JSON notation
    * Does not support cross object conversion
@@ -864,10 +872,13 @@ object JsonUtil {
 
   def serializeCommunity(community:Community, labels: Option[List[CommunityLabels]], includeAdminInfo: Boolean):String = {
     var jCommunity:JsObject = jsCommunity(community.toCaseObject, includeAdminInfo, community.defaultSelfRegOrganisation)
-    if(community.domain.isDefined){
+    if (community.domain.isDefined){
       jCommunity = jCommunity ++ Json.obj("domain" -> jsDomain(community.domain.get, withApiKeys = false))
     } else{
       jCommunity = jCommunity ++ Json.obj("domain" -> JsNull)
+    }
+    if (community.defaultUserPreferences.isDefined && includeAdminInfo) {
+      jCommunity = jCommunity ++ Json.obj("preferences" -> jsUserPreferences(community.defaultUserPreferences.get))
     }
     if (labels.isDefined) {
       jCommunity = jCommunity ++ Json.obj("labels" -> jsCommunityLabels(labels.get))
@@ -2518,13 +2529,13 @@ object JsonUtil {
    * @return String
    */
   def serializeUser(user:User):String = {
-    //1) Serialize User
     var jUser:JsObject = jsUser(user.toCaseObject)
-    //2) If Organization exists, convert and append it to User
-    if(user.organization.isDefined){
+    if (user.organization.isDefined){
       jUser = jUser ++ Json.obj("organization" -> jsOrganization(user.organization.get))
     }
-    //3) Return JSON String
+    if (user.preferences.isDefined) {
+      jUser = jUser ++ Json.obj("preferences" -> jsUserPreferences(user.preferences.get))
+    }
     jUser.toString
   }
 

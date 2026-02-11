@@ -34,6 +34,7 @@ import {CustomProperty} from '../types/custom-property.type';
 import {FileParam} from '../types/file-param.type';
 import {SearchResult} from '../types/search-result';
 import {CommunityLimited} from '../types/community-limited';
+import {UserPreferences} from '../types/user-preferences';
 
 @Injectable({
   providedIn: 'root'
@@ -161,7 +162,7 @@ export class CommunityService {
     selfRegJoinExisting: boolean|undefined, selfRegJoinAsAdmin: boolean|undefined,
     allowCertificateDownload: boolean, allowStatementManagement: boolean, allowSystemManagement: boolean, allowPostTestOrganisationUpdate: boolean,
     allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, allowAutomationApi: boolean|undefined, allowCommunityView: boolean, allowUserManagement: boolean,
-    domainId: number|undefined) {
+    domainId: number|undefined, userPreferences: UserPreferences) {
     const data: any = {
       community_sname: shortName,
       community_fname: fullName,
@@ -175,7 +176,10 @@ export class CommunityService {
       allow_post_test_stm_update: allowPostTestStatementUpdate,
       allow_community_view: allowCommunityView,
       allow_user_management: allowUserManagement,
-      interaction_notification: interactionNotification
+      interaction_notification: interactionNotification,
+      menu_collapsed: userPreferences.menuCollapsed,
+      statements_collapsed: userPreferences.statementsCollapsed,
+      page_size: userPreferences.pageSize
     }
     if (this.dataService.configuration.registrationEnabled) {
       if (selfRegNotification == undefined) selfRegNotification = false
@@ -220,7 +224,7 @@ export class CommunityService {
     selfRegDefaultOrganisation: number|undefined, selfRegJoinExisting: boolean|undefined, selfRegJoinAsAdmin: boolean|undefined,
     allowCertificateDownload: boolean, allowStatementManagement: boolean, allowSystemManagement: boolean, allowPostTestOrganisationUpdate: boolean,
     allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, allowAutomationApi: boolean|undefined, allowCommunityView: boolean, allowUserManagement: boolean,
-    domainId: number|undefined) {
+    domainId: number|undefined, userPreferences: UserPreferences, forceUserPreferenceUpdate: boolean) {
     const data: any = {
       community_sname: shortName,
       community_fname: fullName,
@@ -234,7 +238,11 @@ export class CommunityService {
       allow_post_test_stm_update: allowPostTestStatementUpdate,
       allow_community_view: allowCommunityView,
       allow_user_management: allowUserManagement,
-      interaction_notification: interactionNotification
+      interaction_notification: interactionNotification,
+      menu_collapsed: userPreferences.menuCollapsed,
+      statements_collapsed: userPreferences.statementsCollapsed,
+      page_size: userPreferences.pageSize,
+      force_preferences: forceUserPreferenceUpdate
     }
     if (this.dataService.configuration.registrationEnabled) {
       if (selfRegNotification == undefined) selfRegNotification = false
@@ -280,12 +288,13 @@ export class CommunityService {
     })
   }
 
-  getCommunityById(communityId: number, withSelfRegDefaultOrganisation: boolean) {
+  getCommunityById(communityId: number, withSelfRegDefaultOrganisation: boolean, withDefaultUserPreferences: boolean) {
     return this.restService.get<Community>({
       path: ROUTES.controllers.CommunityService.getCommunityById(communityId).url,
       authenticate: true,
       params: {
-        community_selfreg_default_organisation: withSelfRegDefaultOrganisation
+        community_selfreg_default_organisation: withSelfRegDefaultOrganisation,
+        preferences: withDefaultUserPreferences
       }
     })
   }

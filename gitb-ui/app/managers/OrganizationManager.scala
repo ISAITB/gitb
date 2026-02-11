@@ -47,18 +47,11 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
                                      testResultManager: TestResultManager,
                                      triggerHelper: TriggerHelper,
                                      automationApiHelper: AutomationApiHelper,
+                                     userPreferenceManager: UserPreferenceManager,
                                      dbConfigProvider: DatabaseConfigProvider)
                                     (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
-
-  def checkOrganizationExistsInternal(orgId: Long): DBIO[Boolean] = {
-    PersistenceSchema.organizations
-      .filter(_.id =!= Constants.DefaultOrganizationId)
-      .filter(_.id === orgId)
-      .exists
-      .result
-  }
 
   /**
     * Gets all organizations
@@ -625,7 +618,11 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
     * Deletes all users with specified organization
     */
   private def deleteUserByOrganization(orgId: Long): DBIO[_] = {
-    PersistenceSchema.users.filter(_.organization === orgId).delete
+    for {
+      userIds <- PersistenceSchema.users.filter(_.organization === orgId).map(_.id).result
+      _ <- userPreferenceManager.deletePreferencesForUsers(userIds)
+      _ <- PersistenceSchema.users.filter(_.id inSet userIds).delete
+    } yield ()
   }
 
   def getOrganisationParameterValues(orgId: Long, onlySimple: Option[Boolean] = None, forExports: Option[Boolean] = None): Future[List[OrganisationParametersWithValue]] = {

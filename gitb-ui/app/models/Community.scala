@@ -83,7 +83,8 @@ class Community(
                  _allowUserManagement: Boolean,
                  _apiKey: String,
                  _domain:Option[Domain],
-                 _defaultSelfRegOrganisation: Option[Organizations]) {
+                 _defaultSelfRegOrganisation: Option[Organizations],
+                 _defaultUserPreferences: Option[UserPreferenceDefaults]) {
   var id:Long = _id
   var shortname:String = _shortname
   var fullname:String = _fullname
@@ -113,9 +114,10 @@ class Community(
   var allowUserManagement: Boolean = _allowUserManagement
   var apiKey: String  = _apiKey
   var domain:Option[Domain] = _domain
-  var defaultSelfRegOrganisation:Option[Organizations] = _defaultSelfRegOrganisation
+  var defaultSelfRegOrganisation: Option[Organizations] = _defaultSelfRegOrganisation
+  var defaultUserPreferences: Option[UserPreferenceDefaults] = _defaultUserPreferences
 
-  def this(_case:Communities, _domain:Option[Domain], _defaultSelfRegOrganisation: Option[Organizations]) =
+  def this(_case:Communities, _domain:Option[Domain], _defaultSelfRegOrganisation: Option[Organizations], _defaultUserPreferences: Option[UserPreferenceDefaults]) =
     this(
       _case.id,
       _case.shortname,
@@ -146,8 +148,12 @@ class Community(
       _case.allowUserManagement,
       _case.apiKey,
       _domain,
-      _defaultSelfRegOrganisation
+      _defaultSelfRegOrganisation,
+      _defaultUserPreferences
     )
+
+  def this(_case:Communities, _domain:Option[Domain], _defaultSelfRegOrganisation: Option[Organizations]) =
+    this(_case, _domain, _defaultSelfRegOrganisation, None)
 
   def toCaseObject:Communities = {
     val d = domain match {

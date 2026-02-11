@@ -20,6 +20,7 @@ import {PagingPlacement} from './paging-placement';
 import {PagingControlsApi} from './paging-controls-api';
 import {DataService} from '../../services/data.service';
 import {Subscription} from 'rxjs';
+import {Constants} from '../../common/constants';
 
 @Component({
   selector: 'app-paging-controls',
@@ -35,8 +36,6 @@ export class PagingControlsComponent implements OnInit, OnDestroy, AfterViewInit
   @ViewChild("pagingContainer") pagingContainer?: ElementRef
   @ViewChild("lastButton") lastButton?: ElementRef
   @ViewChild("pageControlsContainer") pageControlsContainer?: ElementRef
-
-  supportedPageSizes: number[] = [10, 25, 50, 100]
 
   status!: PagingStatus
   summaryMessage?: string
@@ -221,4 +220,6 @@ export class PagingControlsComponent implements OnInit, OnDestroy, AfterViewInit
       pageSizeChanged: true
     })
   }
+
+  protected readonly Constants = Constants;
 }

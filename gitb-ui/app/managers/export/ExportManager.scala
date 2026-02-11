@@ -28,6 +28,7 @@ import play.api.db.slick.DatabaseConfigProvider
 import utils.{JsonUtil, MimeUtil, RepositoryUtils}
 
 import java.io.File
+import java.math.BigInteger
 import java.nio.file.Files
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
@@ -48,6 +49,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
                                errorTemplateManager: ErrorTemplateManager,
                                specificationManager: SpecificationManager,
                                reportManager: ReportManager,
+                               userPreferenceManager: UserPreferenceManager,
                                dbConfigProvider: DatabaseConfigProvider)
                               (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
@@ -852,7 +854,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
             exportedSettings.setAdministrators(new SystemAdministrators)
             administrators.foreach { user =>
               val exportedAdmin = new SystemAdministrator
-              populateExportedUser(sequence.next(), user, exportedAdmin, exportSettings.encryptionKey)
+              populateExportedUser(sequence.next(), user, exportedAdmin, exportSettings.encryptionKey, None)
               exportedSettings.getAdministrators.getAdministrator.add(exportedAdmin)
             }
           }
@@ -939,18 +941,26 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
     exportedSetting
   }
 
-  private def populateExportedUser(idToUse: Int, user: models.Users, exportedUser: com.gitb.xml.export.User, encryptionKey: Option[String]): Unit = {
+  private def populateExportedUser(idToUse: Int, user: models.Users, exportedUser: com.gitb.xml.export.User, encryptionKey: Option[String], exportData: Option[CommunityExportData]): Unit = {
     exportedUser.setId(toId(idToUse))
     exportedUser.setName(user.name)
     exportedUser.setEmail(user.email)
     exportedUser.setPassword(encryptText(Some(user.password), encryptionKey))
     exportedUser.setOnetimePassword(user.onetimePassword)
+    if (exportData.exists(_.userPreferenceMap.exists(_.contains(user.id)))) {
+      val prefs = exportData.get.userPreferenceMap.get(user.id)
+      exportedUser.setPreferences(new com.gitb.xml.export.UserPreferences)
+      exportedUser.getPreferences.setMenuCollapsed(prefs.menuCollapsed)
+      exportedUser.getPreferences.setStatementsCollapsed(prefs.statementsCollapsed)
+      exportedUser.getPreferences.setPageSize(BigInteger.valueOf(prefs.pageSize))
+    }
   }
 
   private def loadCommunityExportData(communityId: Long, exportSettings: ExportSettings): Future[(CommunityExportData, ExportSettings)] = {
     require(communityId != Constants.DefaultCommunityId, "The default community cannot be exported")
     for {
       community <- communityManager.getById(communityId)
+      userPreferences <- userPreferenceManager.getDefaultUserPreferences(communityId)
       data <- {
         if (community.isEmpty) {
           logger.error("No community could be found for id ["+communityId+"]. Aborting export.")
@@ -1052,6 +1062,11 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
                                                   // System settings
                                                   loadIfApplicable(exportSettings.hasSystemSettings(),
                                                     () => loadSystemSettingsExportData(exportSettings)
+                                                  ).zip(
+                                                    // User preferences
+                                                    loadIfApplicable(exportSettings.communityAdministrators || (exportSettings.organisations && exportSettings.organisationUsers),
+                                                      () => userPreferenceManager.loadUserPreferencesMap(communityId)
+                                                    )
                                                   )
                                                 )
                                               )
@@ -1076,6 +1091,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
         ).map { results =>
           (CommunityExportData(
             community = community,
+            userPreferences = userPreferences,
             domainExportData = results._1,
             administrators = results._2._1,
             statementCertificateSettings = results._2._2._1,
@@ -1097,7 +1113,8 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
             systemParameterValueMap = results._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._1,
             systemStatementsMap = results._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._1,
             systemConfigurationsMap = results._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._1,
-            systemSettings = results._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2
+            systemSettings = results._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._1,
+            userPreferenceMap = results._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2._2,
           ), exportSettings)
         }
       }
@@ -1346,6 +1363,11 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
         communityData.setAllowCommunityView(community.get.allowCommunityView)
         communityData.setAllowUserManagement(community.get.allowUserManagement)
         communityData.setInteractionNotification(community.get.interactionNotification)
+        // User preference defaults.
+        communityData.setDefaultUserPreferences(new com.gitb.xml.export.UserPreferences)
+        communityData.getDefaultUserPreferences.setMenuCollapsed(data.userPreferences.menuCollapsed)
+        communityData.getDefaultUserPreferences.setStatementsCollapsed(data.userPreferences.statementsCollapsed)
+        communityData.getDefaultUserPreferences.setPageSize(BigInteger.valueOf(data.userPreferences.pageSize))
         // Self registration information.
         communityData.setSelfRegistrationSettings(new SelfRegistrationSettings)
         SelfRegistrationType.apply(community.get.selfRegType) match {
@@ -1376,7 +1398,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
             communityData.setAdministrators(new CommunityAdministrators)
             administrators.foreach { user =>
               val exportedAdmin = new CommunityAdministrator
-              populateExportedUser(idSequence.next(), user, exportedAdmin, exportSettings.encryptionKey)
+              populateExportedUser(idSequence.next(), user, exportedAdmin, exportSettings.encryptionKey, Some(data))
               communityData.getAdministrators.getAdministrator.add(exportedAdmin)
               exportedUserMap += (user.id -> exportedAdmin.getId)
             }
@@ -1755,7 +1777,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
                 exportedOrganisation.setUsers(new com.gitb.xml.export.Users)
                 data.organisationUserMap.get(organisation.id).foreach { user =>
                   val exportedUser = new OrganisationUser
-                  populateExportedUser(idSequence.next(), user, exportedUser, exportSettings.encryptionKey)
+                  populateExportedUser(idSequence.next(), user, exportedUser, exportSettings.encryptionKey, Some(data))
                   exportedUserMap += (user.id -> exportedUser.getId)
                   UserRole.apply(user.role) match {
                     case UserRole.VendorAdmin => exportedUser.setRole(OrganisationRoleType.ORGANISATION_ADMIN)

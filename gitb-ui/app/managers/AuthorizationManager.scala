@@ -1780,7 +1780,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
       if (authenticated) {
         val userId = getRequestUserId(request)
         Future.successful {
-          !Configurations.AUTHENTICATION_SSO_ENABLED && (!Configurations.DEMOS_ENABLED || userId != Configurations.DEMOS_ACCOUNT)
+          !Configurations.DEMOS_ENABLED || userId != Configurations.DEMOS_ACCOUNT
         }
       } else {
         Future.successful(false)

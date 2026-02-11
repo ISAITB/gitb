@@ -55,6 +55,7 @@
                     <xsd:element name="administrators" type="CommunityAdministrators" minOccurs="0"/>
                     <xsd:element name="reportStylesheets" type="CommunityReportStylesheets" minOccurs="0"/>
                     <xsd:element name="reportSettings" type="CommunityReportSettings" minOccurs="0"/>
+                    <xsd:element name="defaultUserPreferences" type="UserPreferences" minOccurs="0"/>
                 </xsd:sequence>
                 <xsd:attribute name="domain" type="xsd:IDREF"/>
                 <xsd:attribute name="allowCertificateDownload" type="xsd:boolean" default="false"/>
@@ -750,10 +751,18 @@
                     <xsd:element name="name" type="xsd:string"/>
                     <xsd:element name="email" type="xsd:string"/>
                     <xsd:element name="password" type="xsd:string"/>
+                    <xsd:element name="preferences" type="UserPreferences" minOccurs="0"/>
                 </xsd:sequence>
                 <xsd:attribute name="onetimePassword" type="xsd:boolean" default="false"/>
             </xsd:extension>
         </xsd:complexContent>
+    </xsd:complexType>
+    <xsd:complexType name="UserPreferences">
+        <xsd:sequence>
+            <xsd:element name="menuCollapsed" type="xsd:boolean" default="true"/>
+            <xsd:element name="statementsCollapsed" type="xsd:boolean" default="false"/>
+            <xsd:element name="pageSize" type="xsd:integer" default="10"/>
+        </xsd:sequence>
     </xsd:complexType>
     <xsd:simpleType name="OrganisationRoleType">
         <xsd:restriction base="xsd:string">

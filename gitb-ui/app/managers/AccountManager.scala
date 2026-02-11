@@ -32,7 +32,8 @@ import scala.concurrent.{ExecutionContext, Future}
 class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
                                landingPageManager: LandingPageManager,
                                legalNoticeManager: LegalNoticeManager,
-                               errorTemplateManager: ErrorTemplateManager)
+                               errorTemplateManager: ErrorTemplateManager,
+                               userPreferenceManager: UserPreferenceManager)
                               (implicit ec: ExecutionContext)extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
@@ -182,6 +183,19 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     )
   }
 
+  def getUserProfileWithPreferences(userId: Long): Future[User] = {
+    DB.run {
+      PersistenceSchema.users
+        .join(PersistenceSchema.organizations).on(_.organization === _.id)
+        .join(PersistenceSchema.userPreferences).on(_._1.id === _.user)
+        .filter(_._1._1.id === userId)
+        .result
+        .head
+    }.map { result =>
+      new User(result._1._1, result._1._2, result._2)
+    }
+  }
+
   def getUserProfile(userId: Long): Future[User] = {
     DB.run(
       PersistenceSchema.users
@@ -194,12 +208,20 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     }
   }
 
-  def updateUserProfile(userId: Long, name: Option[String], password: Option[String], oldPassword: Option[String]): Future[Unit] = {
+  def updateUserProfile(userId: Long, name: Option[String], password: Option[String], oldPassword: Option[String], preferences: Option[UserPreferences]): Future[Unit] = {
     val dbAction = for {
       // Update name.
       _ <- {
         if (name.isDefined) {
           PersistenceSchema.users.filter(_.id === userId).map(_.name).update(name.get)
+        } else {
+          DBIO.successful(())
+        }
+      }
+      // Preferences
+      _ <- {
+        if (preferences.isDefined) {
+          userPreferenceManager.updatePreferencesInternal(userId, preferences.get)
         } else {
           DBIO.successful(())
         }

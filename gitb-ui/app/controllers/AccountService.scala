@@ -40,6 +40,7 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction,
                                 accountManager: AccountManager,
                                 legalNoticeManager: LegalNoticeManager,
                                 organisationManager: OrganizationManager,
+                                userPreferenceManager: UserPreferenceManager,
                                 authorizationManager: AuthorizationManager)
                                (implicit ec: ExecutionContext) extends AbstractController(cc) {
 
@@ -148,7 +149,7 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction,
   def getUserProfile: Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewOwnProfile(request).flatMap { _ =>
       val userId = ParameterExtractor.extractUserId(request)
-      accountManager.getUserProfile(userId).map { user =>
+      accountManager.getUserProfileWithPreferences(userId).map { user =>
         val json:String = JsonUtil.serializeUser(user)
         ResponseConstructor.constructJsonResponse(json)
       }
@@ -161,20 +162,50 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction,
   def updateUserProfile(): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canUpdateOwnProfile(request).flatMap { _ =>
       val userId = ParameterExtractor.extractUserId(request)
-      val name:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.USER_NAME)
-      val passwd:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.PASSWORD)
-      val oldPasswd:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.OLD_PASSWORD)
-
+      val name = ParameterExtractor.optionalBodyParameter(request, ParameterNames.USER_NAME)
+      val passwd = ParameterExtractor.optionalBodyParameter(request, ParameterNames.PASSWORD)
+      val oldPasswd  = ParameterExtractor.optionalBodyParameter(request, ParameterNames.OLD_PASSWORD)
+      val preferences = ParameterExtractor.extractUserPreferences(request)
       if (passwd.isDefined && !CryptoUtil.isAcceptedPassword(passwd.get)) {
         Future.successful {
           ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_CREDENTIALS, "The provided password does not match minimum complexity requirements.", Some("new"))
         }
       } else {
-        accountManager.updateUserProfile(userId, name, passwd, oldPasswd).map { _ =>
+        accountManager.updateUserProfile(userId, name, passwd, oldPasswd, Some(preferences)).map { _ =>
           ResponseConstructor.constructEmptyResponse
         }.recover {
           case _: InvalidRequestException => ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_CREDENTIALS, "Incorrect password.", Some("current"))
         }
+      }
+    }
+  }
+
+  def updatePreferenceForMenuCollapsed(): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canUpdateOwnProfile(request).flatMap { _ =>
+      val userId = ParameterExtractor.extractUserId(request)
+      val setting = ParameterExtractor.requiredBodyParameter(request, ParameterNames.VALUE).toBoolean
+      userPreferenceManager.updatePreferenceForMenuCollapsed(userId, setting).map { _ =>
+        ResponseConstructor.constructEmptyResponse
+      }
+    }
+  }
+
+  def updatePreferenceForStatementsCollapsed(): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canUpdateOwnProfile(request).flatMap { _ =>
+      val userId = ParameterExtractor.extractUserId(request)
+      val setting = ParameterExtractor.requiredBodyParameter(request, ParameterNames.VALUE).toBoolean
+      userPreferenceManager.updatePreferenceForStatementsCollapsed(userId, setting).map { _ =>
+        ResponseConstructor.constructEmptyResponse
+      }
+    }
+  }
+
+  def updatePreferenceForPageSize(): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canUpdateOwnProfile(request).flatMap { _ =>
+      val userId = ParameterExtractor.extractUserId(request)
+      val setting = ParameterExtractor.requiredBodyParameter(request, ParameterNames.VALUE).toShort
+      userPreferenceManager.updatePreferenceForPageSize(userId, setting).map { _ =>
+        ResponseConstructor.constructEmptyResponse
       }
     }
   }
