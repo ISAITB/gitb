@@ -9,40 +9,42 @@
         <exec executable="cmd" dir="gitb-ui" failonerror="true" failifexecutionfails="true" osfamily="windows">
             <arg line="/c sbt licenseCheck"/>
         </exec>
-        <exec executable="sh" dir="gitb-ui" failonerror="true" failifexecutionfails="true" osfamily="unix">
-            <arg line="-c 'sbt licenseCheck'"/>
+        <exec executable="sbt" dir="gitb-ui" failonerror="true" failifexecutionfails="true" osfamily="unix">
+            <arg value="licenseCheck"/>
         </exec>
         <!-- Step 2: Create gitb-ui licence report -->
         <echo level="info">Generating gitb-ui licence report</echo>
         <exec executable="cmd" dir="gitb-ui" failonerror="true" failifexecutionfails="true" osfamily="windows">
             <arg line="/c sbt dumpLicenseReport"/>
         </exec>
-        <exec executable="sh" dir="gitb-ui" failonerror="true" failifexecutionfails="true" osfamily="unix">
-            <arg line="-c 'sbt dumpLicenseReport'"/>
+        <exec executable="sbt" dir="gitb-ui" failonerror="true" failifexecutionfails="true" osfamily="unix">
+            <arg value="licenseCheck"/>
         </exec>
         <!-- Step 3: Check gitb-ui frontend licences -->
         <echo level="info">Checking gitb-ui frontend licences</echo>
         <exec executable="cmd" dir="gitb-ui/ui" failonerror="true" failifexecutionfails="true" osfamily="windows">
             <arg line="/c npm run licence-check"/>
         </exec>
-        <exec executable="sh" dir="gitb-ui/ui" failonerror="true" failifexecutionfails="true" osfamily="unix">
-            <arg line="-c 'npm run licence-check-linux'"/>
+        <exec executable="npm" dir="gitb-ui/ui" failonerror="true" failifexecutionfails="true" osfamily="unix">
+            <arg value="run"/>
+            <arg value="licence-check-linux"/>
         </exec>
         <!-- Step 4: Create gitb-ui frontend licence report -->
         <echo level="info">Generating gitb-ui frontend licence report</echo>
         <exec executable="cmd" dir="gitb-ui/ui" failonerror="true" failifexecutionfails="true" osfamily="windows">
             <arg line="/c npm run licence-report-save"/>
         </exec>
-        <exec executable="sh" dir="gitb-ui/ui" failonerror="true" failifexecutionfails="true" osfamily="unix">
-            <arg line="-c 'npm run licence-report-save'"/>
+        <exec executable="npm" dir="gitb-ui/ui" failonerror="true" failifexecutionfails="true" osfamily="unix">
+            <arg value="run"/>
+            <arg value="licence-report-save"/>
         </exec>
         <!-- Step 5: Create gitb-srv licence report -->
         <echo level="info">Generating gitb-srv licence report</echo>
         <exec executable="cmd" failonerror="true" failifexecutionfails="true" osfamily="windows">
             <arg line="/c mvn license:aggregate-add-third-party"/>
         </exec>
-        <exec executable="sh" failonerror="true" failifexecutionfails="true" osfamily="unix">
-            <arg line="-c 'mvn license:aggregate-add-third-party'"/>
+        <exec executable="mvn" failonerror="true" failifexecutionfails="true" osfamily="unix">
+            <arg value="license:aggregate-add-third-party"/>
         </exec>
         <!-- Step 5: Aggregate reports -->
         <echo level="info">Aggregating licence reports</echo>
