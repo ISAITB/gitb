@@ -143,7 +143,7 @@ licenseOverrides := {
   case DepModuleInfo("eu.europa.ec.itb.xerces", "icu4j", "2.12.2-xsd11") => LicenseInfo(LicenseCategory.Proprietary, "ICU 1.8.1 and later", "")
   case DepModuleInfo("eu.europa.ec.itb.xerces", "org.eclipse.wst.xml.xpath2.processor_1.2.1", "2.12.2-xsd11") => LicenseInfo(LicenseCategory.EPL, LicenseCategory.EPL.name, "")
   case DepModuleInfo("eu.europa.ec.itb.xerces", "xercesImpl", "2.12.2-xsd11") => LicenseInfo(LicenseCategory.Apache, LicenseCategory.Apache.name, "")
-  case DepModuleInfo("xalan", "serializer", "2.7.2") => LicenseInfo(LicenseCategory.Apache, LicenseCategory.Apache.name, "")
+  case DepModuleInfo("xalan", "serializer", "2.7.3") => LicenseInfo(LicenseCategory.Apache, LicenseCategory.Apache.name, "")
   case DepModuleInfo("xml-apis", "xml-apis", "2.0.2") => LicenseInfo(LicenseCategory.Apache, LicenseCategory.Apache.name, "")
 }
 licenseDepExclusions := {
