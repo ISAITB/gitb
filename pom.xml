@@ -56,7 +56,7 @@
         -->
         <version.xercesBuild>2.12.2-xsd11</version.xercesBuild>
         <version.xmlResolver>1.2</version.xmlResolver>
-        <version.serializer>2.7.2</version.serializer>
+        <version.serializer>2.7.3</version.serializer>
         <version.xmlApis>2.0.2</version.xmlApis>
         <!-- Section END. -->
         <version.jaxbApi>4.0.4</version.jaxbApi>
