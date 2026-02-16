@@ -15,10 +15,13 @@
 
 package com.gitb.utils;
 
+import com.gitb.XmlSchemaVersion;
 import jakarta.xml.bind.*;
 import net.sf.saxon.jaxp.SaxonTransformerFactory;
+import org.apache.xerces.impl.Constants;
 import org.apache.xerces.jaxp.DocumentBuilderFactoryImpl;
 import org.apache.xerces.jaxp.SAXParserFactoryImpl;
+import org.apache.xerces.jaxp.validation.XMLSchema11Factory;
 import org.apache.xerces.jaxp.validation.XMLSchemaFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -168,6 +171,23 @@ public class XMLUtils {
      * @throws SAXException If the input is invalid (not thrown for regular errors if a custom errorHandler is provided).
      */
     public static void validateAgainstSchema(Source contentToValidate, Source schemaToValidateWith, ErrorHandler errorHandler, LSResourceResolver resourceResolver) throws XMLStreamException, SAXException {
+        validateAgainstSchema(contentToValidate, schemaToValidateWith, errorHandler, resourceResolver, XmlSchemaVersion.VERSION_1_0);
+    }
+
+    /**
+     * Validate XML content using an XML Schema securely.
+     * <p/>
+     * Findings will be reported through the provided error handler which is also returned by this method.
+     *
+     * @param contentToValidate The input to validate.
+     * @param schemaToValidateWith The schema to use.
+     * @param errorHandler The error handler to configure (optional).
+     * @param resourceResolver The resource resolver to configure (optional).
+     * @param schemaVersion The XML Schema version to use.
+     * @throws XMLStreamException If the input cannot be parsed as XML.
+     * @throws SAXException If the input is invalid (not thrown for regular errors if a custom errorHandler is provided).
+     */
+    public static void validateAgainstSchema(Source contentToValidate, Source schemaToValidateWith, ErrorHandler errorHandler, LSResourceResolver resourceResolver, XmlSchemaVersion schemaVersion) throws XMLStreamException, SAXException {
         /*
          * The security configuration for the Xerces parser involves:
          * - Setting the FEATURE_SECURE_PROCESSING to true.
@@ -175,12 +195,13 @@ public class XMLUtils {
          * Xerces does not directly support the JAXP 1.5 features to disable XXE (ACCESS_EXTERNAL_DTD, ACCESS_EXTERNAL_SCHEMA)
          * but we ensure secure processing by means of the secured underlying parser.
          */
-        XMLSchemaFactory factory = new XMLSchemaFactory();
+        SchemaFactory factory = schemaVersion == XmlSchemaVersion.VERSION_1_1?new XMLSchema11Factory():new XMLSchemaFactory();
         if (errorHandler != null) factory.setErrorHandler(errorHandler);
         if (resourceResolver != null) factory.setResourceResolver(resourceResolver);
         Schema schema;
         try {
             factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            factory.setFeature(Constants.XERCES_FEATURE_PREFIX + Constants.SCHEMA_FULL_CHECKING, true);
             schema = factory.newSchema(schemaToValidateWith);
         } catch (SAXException e) {
             throw new IllegalStateException("Unable to configure schema", e);

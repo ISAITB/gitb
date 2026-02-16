@@ -31,6 +31,8 @@ import com.gitb.types.*;
 
 import java.util.*;
 
+import static com.gitb.engine.validation.handlers.xsd.XsdValidator.SCHEMA_VERSION_ARGUMENT_NAME;
+
 @ValidationHandler(name="XmlValidator")
 public class XmlValidator extends AbstractValidator {
 
@@ -59,6 +61,7 @@ public class XmlValidator extends AbstractValidator {
         var sortBySeverity = getAndConvert(inputs, SORT_BY_SEVERITY_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class);
         var showTests = getAndConvert(inputs, SHOW_SCHEMATRON_TESTS_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class);
         var showPaths = getAndConvert(inputs, SchematronValidator.SHOW_PATHS_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class);
+        var schemaVersion = getAndConvert(inputs, SCHEMA_VERSION_ARGUMENT_NAME, DataType.STRING_DATA_TYPE, StringType.class);
         var testCaseId = new StringType(getTestCaseId(inputs));
         TAR xsdReport = null;
         List<TAR> schematronReports = new ArrayList<>();
@@ -70,6 +73,7 @@ public class XmlValidator extends AbstractValidator {
                     TEST_CASE_ID_INPUT, testCaseId
             ));
             putIfNotNull(map, XsdValidator.SHOW_SCHEMA_ARGUMENT_NAME, showArtefacts);
+            putIfNotNull(map, SCHEMA_VERSION_ARGUMENT_NAME, schemaVersion);
             xsdReport = (TAR)new XsdValidator().validate(configurations, map);
             allReports.add(xsdReport);
         }

@@ -1,0 +1,4 @@
+eu.europa.ec.itb.xerces--cupv10k-runtime--2.12.2-xsd11=CUP Parser Generator Copyright Notice, License, and Disclaimer
+eu.europa.ec.itb.xerces--icu4j--2.12.2-xsd11=ICU License - ICU 1.8.1 and later
+eu.europa.ec.itb.xerces--org.eclipse.wst.xml.xpath2.processor_1.2.1--2.12.2-xsd11=Eclipse Public License - v1.0
+eu.europa.ec.itb.xerces--xercesImpl--2.12.2-xsd11=Apache License, Version 2.0

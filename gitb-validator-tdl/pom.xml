@@ -44,10 +44,32 @@
             <groupId>org.apache.tika</groupId>
             <artifactId>tika-core</artifactId>
         </dependency>
+        <!-- Xerces dependencies - START -->
         <dependency>
-            <groupId>xerces</groupId>
-            <artifactId>xercesImpl</artifactId>
+            <groupId>eu.europa.ec.itb.xerces</groupId>
+            <artifactId>org.eclipse.wst.xml.xpath2.processor_1.2.1</artifactId>
         </dependency>
+        <dependency>
+            <groupId>eu.europa.ec.itb.xerces</groupId>
+            <artifactId>cupv10k-runtime</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>eu.europa.ec.itb.xerces</groupId>
+            <artifactId>icu4j</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>xml-resolver</groupId>
+            <artifactId>xml-resolver</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>xalan</groupId>
+            <artifactId>serializer</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>xml-apis</groupId>
+            <artifactId>xml-apis</artifactId>
+        </dependency>
+        <!-- Xerces dependencies - END -->
         <dependency>
             <groupId>net.sf.saxon</groupId>
             <artifactId>Saxon-HE</artifactId>

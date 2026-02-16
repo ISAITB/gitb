@@ -139,6 +139,12 @@ licenseOverrides := {
   case DepModuleInfo("org.hamcrest", "hamcrest-core", "1.3") => LicenseInfo(LicenseCategory.BSD, LicenseCategory.BSD.name, "")
   case DepModuleInfo("xml-resolver", "xml-resolver", "1.2") => LicenseInfo(LicenseCategory.Apache, LicenseCategory.Apache.name, "")
   case DepModuleInfo("com.google.code.findbugs", "findbugs-annotations", "3.0.1") => LicenseInfo(LicenseCategory.LGPL, LicenseCategory.LGPL.name, "")
+  case DepModuleInfo("eu.europa.ec.itb.xerces", "cupv10k-runtime", "2.12.2-xsd11") => LicenseInfo(LicenseCategory.Proprietary, "CUP Parser Generator Copyright Notice, License, and Disclaimer", "")
+  case DepModuleInfo("eu.europa.ec.itb.xerces", "icu4j", "2.12.2-xsd11") => LicenseInfo(LicenseCategory.Proprietary, "ICU 1.8.1 and later", "")
+  case DepModuleInfo("eu.europa.ec.itb.xerces", "org.eclipse.wst.xml.xpath2.processor_1.2.1", "2.12.2-xsd11") => LicenseInfo(LicenseCategory.EPL, LicenseCategory.EPL.name, "")
+  case DepModuleInfo("eu.europa.ec.itb.xerces", "xercesImpl", "2.12.2-xsd11") => LicenseInfo(LicenseCategory.Apache, LicenseCategory.Apache.name, "")
+  case DepModuleInfo("xalan", "serializer", "2.7.2") => LicenseInfo(LicenseCategory.Apache, LicenseCategory.Apache.name, "")
+  case DepModuleInfo("xml-apis", "xml-apis", "2.0.2") => LicenseInfo(LicenseCategory.Apache, LicenseCategory.Apache.name, "")
 }
 licenseDepExclusions := {
   case DepModuleInfo("com.gitb", _, _) => true
@@ -152,6 +158,8 @@ licenseDepExclusions := {
 licenseCheckExclusions := {
   case DepModuleInfo("com.mysql", "mysql-connector-j", mySqlConnectorVersion) => true
   case DepModuleInfo("wsdl4j", "wsdl4j", "1.6.3") => true
+  case DepModuleInfo("eu.europa.ec.itb.xerces", "cupv10k-runtime", "2.12.2-xsd11") => true
+  case DepModuleInfo("eu.europa.ec.itb.xerces", "icu4j", "2.12.2-xsd11") => true
 }
 licenseReportNotes := {
   case DepModuleInfo("com.mysql", "mysql-connector-j", mySqlConnectorVersion) => "The Universal FOSS Exception allows its usage as it is used unchanged."
