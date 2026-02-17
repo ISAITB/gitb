@@ -161,7 +161,7 @@ export class CommunityService {
     selfRegAllowOrganisationTokens: boolean|undefined, selfRegAllowOrganisationTokenManagement: boolean|undefined, selfRegForceOrganisationTokenInput: boolean|undefined,
     selfRegJoinExisting: boolean|undefined, selfRegJoinAsAdmin: boolean|undefined,
     allowCertificateDownload: boolean, allowStatementManagement: boolean, allowSystemManagement: boolean, allowPostTestOrganisationUpdate: boolean,
-    allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, allowAutomationApi: boolean|undefined, allowCommunityView: boolean, allowUserManagement: boolean,
+    allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, allowAutomationApi: boolean|undefined, allowCommunityView: boolean, allowUserManagement: boolean, allowXmlReports: boolean,
     domainId: number|undefined, userPreferences: UserPreferences) {
     const data: any = {
       community_sname: shortName,
@@ -176,6 +176,7 @@ export class CommunityService {
       allow_post_test_stm_update: allowPostTestStatementUpdate,
       allow_community_view: allowCommunityView,
       allow_user_management: allowUserManagement,
+      allow_xml_reports: allowXmlReports,
       interaction_notification: interactionNotification,
       menu_collapsed: userPreferences.menuCollapsed,
       statements_collapsed: userPreferences.statementsCollapsed,
@@ -223,7 +224,7 @@ export class CommunityService {
     selfRegAllowOrganisationTokens: boolean|undefined, selfRegAllowOrganisationTokenManagement: boolean|undefined, selfRegForceOrganisationTokenInput: boolean|undefined,
     selfRegDefaultOrganisation: number|undefined, selfRegJoinExisting: boolean|undefined, selfRegJoinAsAdmin: boolean|undefined,
     allowCertificateDownload: boolean, allowStatementManagement: boolean, allowSystemManagement: boolean, allowPostTestOrganisationUpdate: boolean,
-    allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, allowAutomationApi: boolean|undefined, allowCommunityView: boolean, allowUserManagement: boolean,
+    allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, allowAutomationApi: boolean|undefined, allowCommunityView: boolean, allowUserManagement: boolean, allowXmlReports: boolean,
     domainId: number|undefined, userPreferences: UserPreferences, forceUserPreferenceUpdate: boolean) {
     const data: any = {
       community_sname: shortName,
@@ -238,6 +239,7 @@ export class CommunityService {
       allow_post_test_stm_update: allowPostTestStatementUpdate,
       allow_community_view: allowCommunityView,
       allow_user_management: allowUserManagement,
+      allow_xml_reports: allowXmlReports,
       interaction_notification: interactionNotification,
       menu_collapsed: userPreferences.menuCollapsed,
       statements_collapsed: userPreferences.statementsCollapsed,

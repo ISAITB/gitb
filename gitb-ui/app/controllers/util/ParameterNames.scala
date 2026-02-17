@@ -182,6 +182,7 @@ object ParameterNames {
   val ALLOW_AUTOMATION_API = "allow_automation_api"
   val ALLOW_COMMUNITY_VIEW = "allow_community_view"
   val ALLOW_USER_MANAGEMENT = "allow_user_management"
+  val ALLOW_XML_REPORTS = "allow_xml_reports"
   //TestService parameters
   val ACTOR_ID   = "actor_id"
   val ACTOR_DEFAULT   = "default"

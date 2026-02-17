@@ -43,6 +43,7 @@ case class Communities(
                         allowAutomationApi : Boolean,
                         allowCommunityView : Boolean,
                         allowUserManagement: Boolean,
+                        allowXmlReports: Boolean,
                         apiKey: String,
                         latestStatusLabel: Option[String],
                         domain: Option[Long]) {
@@ -81,6 +82,7 @@ class Community(
                  _allowAutomationApi: Boolean,
                  _allowCommunityView: Boolean,
                  _allowUserManagement: Boolean,
+                 _allowXmlReports: Boolean,
                  _apiKey: String,
                  _domain:Option[Domain],
                  _defaultSelfRegOrganisation: Option[Organizations],
@@ -112,6 +114,7 @@ class Community(
   var allowAutomationApi: Boolean = _allowAutomationApi
   var allowCommunityView: Boolean = _allowCommunityView
   var allowUserManagement: Boolean = _allowUserManagement
+  var allowXmlReports: Boolean = _allowXmlReports
   var apiKey: String  = _apiKey
   var domain:Option[Domain] = _domain
   var defaultSelfRegOrganisation: Option[Organizations] = _defaultSelfRegOrganisation
@@ -146,6 +149,7 @@ class Community(
       _case.allowAutomationApi,
       _case.allowCommunityView,
       _case.allowUserManagement,
+      _case.allowXmlReports,
       _case.apiKey,
       _domain,
       _defaultSelfRegOrganisation,
@@ -188,6 +192,7 @@ class Community(
       allowAutomationApi,
       allowCommunityView,
       allowUserManagement,
+      allowXmlReports,
       apiKey,
       None,
       d

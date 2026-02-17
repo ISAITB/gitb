@@ -842,6 +842,7 @@ object JsonUtil {
       "allowAutomationApi" -> community.allowAutomationApi,
       "allowCommunityView" -> community.allowCommunityView,
       "allowUserManagement" -> community.allowUserManagement,
+      "allowXmlReports" -> community.allowXmlReports,
       "domainId" -> community.domain
     )
     if (includeAdminInfo) {

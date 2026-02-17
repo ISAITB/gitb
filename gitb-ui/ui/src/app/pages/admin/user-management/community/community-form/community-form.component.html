@@ -257,6 +257,12 @@
                 </label>
             </div>
             <div class="form-check pb-2">
+                <input class="form-check-input" type="checkbox" id="allowXmlReports" name="allowXmlReports" [(ngModel)]="community.allowXmlReports">
+                <label class="form-check-label" for="allowXmlReports">Download reports in XML format
+                    <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' users to download reports in XML format (besides PDF). Note that community administrators can always generate reports in both XML and PDF formats.'"></div>
+                </label>
+            </div>
+            <div class="form-check pb-2">
                 <input class="form-check-input" type="checkbox" id="allowUserManagement" name="allowUserManagement" [(ngModel)]="community.allowUserManagement">
                 <label class="form-check-label" for="allowUserManagement">Manage {{ dataService.labelOrganisationLower()}} users
                     <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' administrators to manage users within their own '+dataService.labelOrganisationLower()+'. Otherwise only community administrators may manage '+dataService.labelOrganisationLower()+' users.'"></div>

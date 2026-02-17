@@ -47,6 +47,7 @@ export interface Community extends CommunityLimited {
   allowAutomationApi?: boolean;
   allowCommunityView: boolean;
   allowUserManagement: boolean;
+  allowXmlReports: boolean;
   apiKey?: string;
   preferences?: UserPreferences
 

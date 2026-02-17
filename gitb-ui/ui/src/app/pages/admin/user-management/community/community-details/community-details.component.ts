@@ -458,7 +458,7 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
       this.community.selfRegAllowOrganisationTokens, this.community.selfRegAllowOrganisationTokenManagement, this.community.selfRegForceOrganisationTokenInput, selfRegDefaultOrganisationId,
       this.community.selfRegJoinExisting, this.community.selfRegJoinAsAdmin,
       this.community.allowCertificateDownload!, this.community.allowStatementManagement!, this.community.allowSystemManagement!, this.community.allowPostTestOrganisationUpdates!,
-      this.community.allowPostTestSystemUpdates!, this.community.allowPostTestStatementUpdates!, this.community.allowAutomationApi, this.community.allowCommunityView, this.community.allowUserManagement,
+      this.community.allowPostTestSystemUpdates!, this.community.allowPostTestStatementUpdates!, this.community.allowAutomationApi, this.community.allowCommunityView, this.community.allowUserManagement, this.community.allowXmlReports,
       this.community.domain?.id, this.community.preferences!, forceUserPreferenceUpdate)
     .subscribe(() => {
       this.originalDomainId = this.community.domain?.id

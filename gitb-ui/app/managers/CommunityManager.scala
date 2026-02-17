@@ -383,7 +383,8 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
           selfRegForceOrganisationTokenInput = false, selfRegJoinExisting = false, selfRegJoinAsAdmin = true,
           allowCertificateDownload = false, allowStatementManagement = true, allowSystemManagement = true, allowPostTestOrganisationUpdates = true,
           allowPostTestSystemUpdates = true, allowPostTestStatementUpdates = true,
-          allowAutomationApi = true, allowCommunityView = false, allowUserManagement = true, apiKeyToUse, None, domainId
+          allowAutomationApi = true, allowCommunityView = false, allowUserManagement = true, allowXmlReports = true,
+          apiKeyToUse, None, domainId
         ), None)
       }
     } yield apiKeyToUse
@@ -513,7 +514,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
                                                 description: Option[String], selfRegRestriction: Short, selfRegForceTemplateSelection: Boolean, selfRegForceRequiredProperties: Boolean,
                                                 selfRegAllowOrganisationTokens: Boolean, selfRegAllowOrganisationTokenManagement: Boolean, selfRegForceOrganisationTokenInput: Boolean,
                                                 selfRegJoinExisting: Boolean, selfRegJoinAsAdmin: Boolean, allowCertificateDownload: Boolean, allowStatementManagement: Boolean, allowSystemManagement: Boolean,
-                                                allowPostTestOrganisationUpdates: Boolean, allowPostTestSystemUpdates: Boolean, allowPostTestStatementUpdates: Boolean, allowAutomationApi: Option[Boolean], allowCommunityView: Boolean, allowUserManagement: Boolean,
+                                                allowPostTestOrganisationUpdates: Boolean, allowPostTestSystemUpdates: Boolean, allowPostTestStatementUpdates: Boolean, allowAutomationApi: Option[Boolean], allowCommunityView: Boolean, allowUserManagement: Boolean, allowXmlReports: Boolean,
                                                 apiKey: Option[String], domainId: Option[Long], checkApiKeyUniqueness: Boolean, userPreferences: Option[UserPreferenceDefaults], overrideExistingUserPreferences: Boolean, onSuccess: mutable.ListBuffer[() => _]) = {
     for {
       // Update short name.
@@ -542,10 +543,10 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
         .filter(_.id === community.id)
         .map(c => (
           c.supportEmail, c.domain, c.description, c.allowCertificateDownload, c.allowStatementManagement, c.allowSystemManagement,
-          c.allowPostTestOrganisationUpdates, c.allowPostTestSystemUpdates, c.allowPostTestStatementUpdates, c.allowCommunityView, c.allowUserManagement, c.interactionNotification
+          c.allowPostTestOrganisationUpdates, c.allowPostTestSystemUpdates, c.allowPostTestStatementUpdates, c.allowCommunityView, c.allowUserManagement, c.allowXmlReports, c.interactionNotification
         ))
         .update(supportEmail, domainId, description, allowCertificateDownload, allowStatementManagement, allowSystemManagement,
-          allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, allowCommunityView, allowUserManagement, interactionNotification
+          allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, allowCommunityView, allowUserManagement, allowXmlReports, interactionNotification
         )
       // Update user preferences.
       _ <- {
@@ -676,7 +677,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
           community.selfRegJoinExisting, community.selfRegJoinAsAdmin,
           community.allowCertificateDownload, community.allowStatementManagement, community.allowSystemManagement,
           community.allowPostTestOrganisationUpdates, community.allowPostTestSystemUpdates, community.allowPostTestStatementUpdates,
-          Some(community.allowAutomationApi), community.allowCommunityView, community.allowUserManagement, None, domainIdToUse,
+          Some(community.allowAutomationApi), community.allowCommunityView, community.allowUserManagement, community.allowXmlReports, None, domainIdToUse,
           checkApiKeyUniqueness = false, None, overrideExistingUserPreferences = false, onSuccess
         )
       }
@@ -695,7 +696,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
                       selfRegForceOrganisationTokenInput: Boolean, selfRegJoinExisting: Boolean, selfRegJoinAsAdmin: Boolean,
                       allowCertificateDownload: Boolean, allowStatementManagement: Boolean, allowSystemManagement: Boolean,
                       allowPostTestOrganisationUpdates: Boolean, allowPostTestSystemUpdates: Boolean,
-                      allowPostTestStatementUpdates: Boolean, allowAutomationApi: Option[Boolean], allowCommunityView: Boolean, allowUserManagement: Boolean,
+                      allowPostTestStatementUpdates: Boolean, allowAutomationApi: Option[Boolean], allowCommunityView: Boolean, allowUserManagement: Boolean, allowXmlReports: Boolean,
                       domainId: Option[Long], selfRegDefaultOrganisation: Option[Long], userPreferences: Option[UserPreferenceDefaults], overrideExistingUserPreferences: Boolean): Future[Unit] = {
 
     val onSuccess = ListBuffer[() => _]()
@@ -708,8 +709,8 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
             selfRegNotification, interactionNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties,
             selfRegAllowOrganisationTokens, selfRegAllowOrganisationTokenManagement, selfRegForceOrganisationTokenInput, selfRegJoinExisting, selfRegJoinAsAdmin,
             allowCertificateDownload, allowStatementManagement, allowSystemManagement,
-            allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, allowAutomationApi, allowCommunityView, allowUserManagement, None,
-            domainId, checkApiKeyUniqueness = false, userPreferences, overrideExistingUserPreferences, onSuccess
+            allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, allowAutomationApi, allowCommunityView, allowUserManagement, allowXmlReports,
+            None, domainId, checkApiKeyUniqueness = false, userPreferences, overrideExistingUserPreferences, onSuccess
           )
         } else {
           throw new IllegalArgumentException("Community with ID '" + communityId + "' not found")

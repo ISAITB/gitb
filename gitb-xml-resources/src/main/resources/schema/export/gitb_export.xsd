@@ -68,6 +68,7 @@
                 <xsd:attribute name="allowCommunityView" type="xsd:boolean" default="false"/>
                 <xsd:attribute name="allowUserManagement" type="xsd:boolean" default="true"/>
                 <xsd:attribute name="interactionNotification" type="xsd:boolean" default="false"/>
+                <xsd:attribute name="allowXmlReports" type="xsd:boolean" default="true"/>
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>
