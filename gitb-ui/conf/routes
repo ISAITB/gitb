@@ -171,7 +171,8 @@ POST    /api/domains/:domain_id/services                                  @contr
 DELETE  /api/domains/:domain_id/services/:service_id                      @controllers.DomainParameterService.deleteTestService(domain_id : Long, service_id : Long)
 POST    /api/domains/:domain_id/services/:service_id                      @controllers.DomainParameterService.updateTestService(domain_id : Long, service_id : Long)
 GET     /api/domains/:domain_id/parameterServiceCandidates                @controllers.DomainParameterService.getAvailableDomainParametersForTestServiceConversion(domain_id : Long)
-POST    /api/domains/:domain_id/testService                              @controllers.DomainParameterService.testTestService(domain_id : Long)
+POST    /api/domains/:domain_id/testService                               @controllers.DomainParameterService.testTestService(domain_id : Long)
+POST    /api/domains/:domain_id/testServiceById                           @controllers.HealthCheckService.testTestServiceById(domain_id : Long)
 
 GET     /api/testsuites/:test_suite_id                              @controllers.TestSuiteService.getTestSuiteWithTestCases(test_suite_id: Long)
 GET     /api/testsuites/:test_suite_id/testcases                    @controllers.TestSuiteService.getTestSuiteTestCasesWithPaging(test_suite_id: Long)
@@ -554,6 +555,8 @@ GET     /api/health/ws/ok                                        @controllers.He
 GET     /api/health/engine                                       @controllers.HealthCheckService.checkTestEngineCommunication()
 GET     /api/health/callbacks                                    @controllers.HealthCheckService.checkTestEngineCallbacks()
 GET     /api/health/software                                     @controllers.HealthCheckService.checkSoftwareVersion()
+GET     /api/health/testServices                                 @controllers.DomainParameterService.getTestServicesForHealthCheck()
+GET     /api/health/testServices/:communityId                    @controllers.DomainParameterService.getCommunityTestServicesForHealthCheck(communityId: Long)
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)

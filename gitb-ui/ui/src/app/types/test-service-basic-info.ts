@@ -13,26 +13,12 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-@import "../../../styles/less/_common.less";
+export interface TestServiceBasicInfo {
 
-.checks-container {
-    margin: 5px;
-    display: flex;
-    flex-wrap: wrap;
-    app-service-health-card {
-        margin: 5px;
-        flex: 1;
-        max-width: 300px;
-    }
-}
-.status-container {
-    margin: 10px 10px 0 10px;
-}
-.no-services-container {
-    padding: 10px;
-}
-.domain-filter {
-    margin-right: 30px;
-    padding-right: 30px;
-    border-right: 1px solid @gray-dark-1;
+  id: number;
+  serviceType: number;
+  serviceName: string;
+  domainId: number;
+  domainName: string;
+
 }

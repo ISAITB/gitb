@@ -22,10 +22,10 @@ import com.nimbusds.jose.{JWSObjectJSON, JWSVerifier}
 import config.Configurations
 import controllers.HealthCheckService.HealthCheckType.HealthCheckType
 import controllers.HealthCheckService._
-import controllers.util.{AuthorizedAction, ResponseConstructor}
-import managers.{AuthorizationManager, SystemConfigurationManager, TestbedBackendClient}
+import controllers.util.{AuthorizedAction, ParameterExtractor, ParameterNames, ResponseConstructor}
+import managers.{AuthorizationManager, DomainParameterManager, SystemConfigurationManager, TestbedBackendClient}
 import models.Enums.ServiceHealthStatusType.ServiceHealthStatusType
-import models.Enums.{ReleaseMessageSeverity, ServiceHealthStatusType}
+import models.Enums.{ReleaseMessageSeverity, ServiceHealthStatusType, TestServiceType}
 import models.health.ReleaseMessage
 import models.{Constants, EmailSettings, ServiceHealthInfo}
 import org.apache.commons.lang3.{StringUtils, Strings}
@@ -86,6 +86,7 @@ class HealthCheckService @Inject()(authorizedAction: AuthorizedAction,
                                    cc: ControllerComponents,
                                    authorizationManager: AuthorizationManager,
                                    systemConfigurationManager: SystemConfigurationManager,
+                                   domainParameterManager: DomainParameterManager,
                                    ws: WSClient,
                                    testbedClient: TestbedBackendClient)
                                   (implicit ec: ExecutionContext) extends AbstractController(cc) {
@@ -594,7 +595,7 @@ class HealthCheckService @Inject()(authorizedAction: AuthorizedAction,
     }
   }
 
-  private def errorsToString(errorLines: List[String]): String = {
+  private def errorsToString(errorLines: Iterable[String]): String = {
     val buffer = new StringBuilder()
     var lineNumber = -1
     errorLines.foreach { line =>
@@ -612,6 +613,58 @@ class HealthCheckService @Inject()(authorizedAction: AuthorizedAction,
     val stream = getClass.getClassLoader.getResourceAsStream(path)
     if (stream == null) throw new RuntimeException(s"Resource not found: $path")
     scala.io.Source.fromInputStream(stream).mkString
+  }
+
+  private def serviceTypeName(serviceType: Short): String = {
+    if (serviceType == TestServiceType.MessagingService.id) {
+      "messaging"
+    } else if (serviceType == TestServiceType.ProcessingService.id) {
+      "processing"
+    } else {
+      "validation"
+    }
+  }
+
+  private def possibleServiceSteps(serviceType: Short): String = {
+    if (serviceType == TestServiceType.MessagingService.id) {
+      "`send`, `receive`, `interact` and `btxn`"
+    } else if (serviceType == TestServiceType.ProcessingService.id) {
+      "`process` and `bptxn`"
+    } else {
+      "`verify`"
+    }
+  }
+
+  def testTestServiceById(domainId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageTestServices(request, domainId).flatMap { _ =>
+      val serviceId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.ID).toLong
+      domainParameterManager.testTestServiceById(serviceId, domainId).map { result =>
+        val healthInfo = if (result._1.success) {
+          ServiceHealthInfo(ServiceHealthStatusType.Ok,
+            "The custom test service is available.",
+            readClasspathResource("health/customTestService/ok.md").formatted(
+              serviceTypeName(result._2.service.serviceType),
+              result._2.parameter.name,
+              result._2.parameter.value.getOrElse("-"),
+              result._1.errorMessages.map(x => errorsToString(x)).getOrElse("-"),
+            )
+          )
+        } else {
+          ServiceHealthInfo(ServiceHealthStatusType.Error,
+            "The custom test service is unavailable.",
+            readClasspathResource("health/customTestService/error.md").formatted(
+              serviceTypeName(result._2.service.serviceType),
+              result._2.parameter.name,
+              result._1.errorMessages.map(x => errorsToString(x)).getOrElse("-"),
+              possibleServiceSteps(result._2.service.serviceType),
+              result._2.parameter.name,
+              result._2.parameter.value.getOrElse("-")
+            )
+          )
+        }
+        ResponseConstructor.constructJsonResponse(JsonUtil.jsServiceHealthInfo(healthInfo).toString)
+      }
+    }
   }
 
 }

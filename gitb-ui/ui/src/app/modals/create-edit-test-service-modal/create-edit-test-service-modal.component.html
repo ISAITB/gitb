@@ -15,7 +15,7 @@
             </div>
             <div app-tooltip class="col-auto" tbTooltip="A text describing the purpose of this test service."></div>
         </div>
-        <app-form-section sectionTitle="Service endpoint" [collapsed]="endpointSectionCollapsed" [marginBefore]="true">
+        <app-form-section sectionTitle="Service endpoint" [collapsed]="endpointSectionCollapsed">
             <div class="row pt-3">
                 <label class="col-3 col-form-label text-end" for="value">* Endpoint address:</label>
                 <div class="col-7"><input id="value" name="value" [(ngModel)]="testService.parameter!.value" class="form-control" type="text" [invalid]="validation.get('value')"></div>
@@ -139,6 +139,15 @@
                                 <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="The password used for a UsernameToken-based authentication will be sent in plaintext."></div>
                             </label>
                         </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-3 row">
+                <label class="col-3 col-form-label text-end pt-0" for="monitor">Monitor health:</label>
+                <div class="col-8 col-md-6">
+                    <div class="form-check">
+                        <input class="form-check-input" id="monitor" name="monitor" [(ngModel)]="testService.service!.monitor" type="checkbox">
+                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" tbTooltip="Include this test service in health checks in the service health dashboard."></div>
                     </div>
                 </div>
             </div>

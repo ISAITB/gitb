@@ -632,6 +632,7 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
         id: 0,
         serviceType: guessedServiceType,
         apiType: Constants.TEST_SERVICE_API_TYPE.SOAP,
+        monitor: true,
         parameter: parameter.id
       }
     }

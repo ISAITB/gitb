@@ -1,24 +1,72 @@
 <div class="page">
+    @if (dataService.isSystemAdmin) {
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    Core services
+                </div>
+                <div class="ms-auto">
+                    <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.TEST" type="button" (click)="checkAllCoreServices()" [pending]="checkAllPending">Check services</button>
+                </div>
+            </div>
+            @if (coreServiceOverview.status != HealthStatus.UNKNOWN) {
+                <div class="status-container">
+                    <div class="alert mb-0" [ngClass]="{'alert-success': coreServiceOverview.status === HealthStatus.OK, 'alert-danger': coreServiceOverview.status === HealthStatus.ERROR, 'alert-warning': coreServiceOverview.status === HealthStatus.WARNING, 'alert-info': coreServiceOverview.status === HealthStatus.INFO }">
+                        {{ coreServiceOverview.message }}
+                    </div>
+                </div>
+            }
+            <div class="checks-container">
+                @for (card of cards; track card.type) {
+                    <app-service-health-card #serviceCard [info]="card" (updated)="cardUpdated()"></app-service-health-card>
+                }
+            </div>
+        </div>
+    }
     <div class="card">
         <div class="card-header">
             <div class="card-title">
-                Core services
+                Custom test services
             </div>
-        </div>
-        @if (overviewMessage != undefined) {
-            <div class="status-container">
-                <div class="alert alert-info mb-0" [ngClass]="{'alert-success': overviewHealth === HealthStatus.OK, 'alert-danger': overviewHealth === HealthStatus.ERROR, 'alert-warning': overviewHealth === HealthStatus.WARNING, 'alert-info': overviewHealth === HealthStatus.INFO }">
-                    {{ overviewMessage }}
+            <div class="ms-auto d-flex">
+                @if (dataService.isSystemAdmin || (dataService.isCommunityAdmin && dataService.community?.domainId == undefined)) {
+                    <div class="domain-filter">
+                        <app-multi-select-filter #domainDropdown [config]="domainSelectConfig!" (apply)="domainChanged($event)"></app-multi-select-filter>
+                    </div>
+                }
+                <div>
+                    <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.TEST" type="button" (click)="checkAllTestServices()" [pending]="checkTestServicesPending" [disable]="testServiceCardData.length == 0 || checkTestServicesPending">Check services</button>
                 </div>
             </div>
-        }
-        <div class="checks-container">
-            @for (card of cards; track card.type) {
-                <app-service-health-card #serviceCard [info]="card" (updated)="cardUpdated()"></app-service-health-card>
+        </div>
+        @if (testServicesStatus.status == Constants.STATUS.PENDING) {
+            <div class="pending-container p-3">
+                <div class="pending-icon">
+                    <app-pending-block [pending]="true"></app-pending-block>
+                </div>
+                <div class="pending-message">Loading test services...</div>
+            </div>
+        } @else {
+            @if (testServiceCardData.length == 0) {
+                <div class="no-services-container">
+                    <div class="alert alert-info mb-0">
+                        No custom test services found.
+                    </div>
+                </div>
+            } @else {
+                @if (testServiceOverview.status != HealthStatus.UNKNOWN) {
+                    <div class="status-container">
+                        <div class="alert alert-info mb-0" [ngClass]="{'alert-success': testServiceOverview.status === HealthStatus.OK, 'alert-danger': testServiceOverview.status === HealthStatus.ERROR, 'alert-warning': testServiceOverview.status === HealthStatus.WARNING, 'alert-info': testServiceOverview.status === HealthStatus.INFO }">
+                            {{ testServiceOverview.message }}
+                        </div>
+                    </div>
+                }
+                <div class="checks-container">
+                    @for (card of testServiceCardData; track card.id) {
+                        <app-service-health-card #testServiceCard [info]="card" (updated)="testServiceCardUpdated()"></app-service-health-card>
+                    }
+                </div>
             }
-        </div>
-        <div class="card-footer button-container">
-            <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.TEST" type="button" (click)="checkAllServices()" [pending]="checkAllPending">Check all</button>
-        </div>
+        }
     </div>
 </div>

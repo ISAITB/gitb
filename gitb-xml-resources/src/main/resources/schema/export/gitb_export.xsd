@@ -561,6 +561,7 @@
                 </xsd:sequence>
                 <xsd:attribute name="serviceType" type="TestServiceType" use="required"/>
                 <xsd:attribute name="apiType" type="TestServiceApiType" use="required"/>
+                <xsd:attribute name="monitorHealth" type="xsd:boolean" default="true"/>
                 <xsd:attribute name="parameter" use="required" type="xsd:IDREF"/>
             </xsd:extension>
         </xsd:complexContent>

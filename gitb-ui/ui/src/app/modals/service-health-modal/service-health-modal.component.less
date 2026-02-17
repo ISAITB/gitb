@@ -15,16 +15,26 @@
 
 @import "../../../styles/less/_common.less";
 
+.modal-header {
+    display: flex;
+}
 .modal-title {
     display: flex;
-    flex: 1;
+    flex: 1 1 auto;
+    min-width: 0;
     align-items: center;
     .title {
-        flex: 1;
+        flex: 1 1 0;
+        min-width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
     }
     .icon {
         margin-top: -12px;
         margin-bottom: -12px;
+        margin-left: 10px;
+        flex: 0 0 auto;
     }
 }
 ::ng-deep markdown pre {

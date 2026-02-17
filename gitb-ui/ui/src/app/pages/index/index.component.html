@@ -63,10 +63,12 @@
                                     </div>
                                 </ng-template>
                             </app-menu-item>
-                            @if (dataService.showSystemAdminMenu) {
-                                <app-menu-item (click)="routingService.toSystemAdministration()"
-                                               [type]="MenuItem.systemAdministration" label="System administration"
-                                               icon="fa-solid fa-gear" [expanded]="dataService.menuVisibility"></app-menu-item>
+                            @if (dataService.showSystemAdminMenu || dataService.showCommunityAdminMenu) {
+                                @if (dataService.showSystemAdminMenu) {
+                                    <app-menu-item (click)="routingService.toSystemAdministration()"
+                                                   [type]="MenuItem.systemAdministration" label="System administration"
+                                                   icon="fa-solid fa-gear" [expanded]="dataService.menuVisibility"></app-menu-item>
+                                }
                                 <app-menu-item (click)="routingService.toServiceHealthDashboard()"
                                                [type]="MenuItem.serviceHealthDashboard" label="Service health"
                                                icon="fa-solid fa-heart-pulse" [expanded]="dataService.menuVisibility"></app-menu-item>

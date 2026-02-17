@@ -6,7 +6,7 @@
         <div [ngbCollapse]="configsCollapsed" [animation]="true" (hidden)="configsCollapsedFinished = true">
             <div class="configsContainer">
                 @if (configValuesPending) {
-                    <div class="pending-container my-3">
+                    <div class="pending-container mx-1 my-2">
                         <div class="pending-icon"><app-pending-block [pending]="true"></app-pending-block></div>
                         <div class="pending-message">Loading system configuration properties...</div>
                     </div>

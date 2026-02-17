@@ -290,4 +290,24 @@ class DomainParameterService @Inject() (authorizedAction: AuthorizedAction,
     }
   }
 
+  def getTestServicesForHealthCheck(): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canCheckCoreServiceHealth(request).flatMap { _ =>
+      val domainId = ParameterExtractor.optionalLongQueryParameter(request, ParameterNames.DOMAIN)
+      domainParameterManager.getTestServicesForHealthCheck(None, domainId).map { result =>
+        val json = JsonUtil.jsTestServicesBasicInfo(result).toString()
+        ResponseConstructor.constructJsonResponse(json)
+      }
+    }
+  }
+
+  def getCommunityTestServicesForHealthCheck(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageCommunity(request, communityId).flatMap { _ =>
+      val domainId = ParameterExtractor.optionalLongQueryParameter(request, ParameterNames.DOMAIN)
+      domainParameterManager.getTestServicesForHealthCheck(Some(communityId), domainId).map { result =>
+        val json = JsonUtil.jsTestServicesBasicInfo(result).toString()
+        ResponseConstructor.constructJsonResponse(json)
+      }
+    }
+  }
+
 }

@@ -81,6 +81,7 @@ export class CreateEditTestServiceModalComponent extends BaseComponent implement
         serviceType: Constants.TEST_SERVICE_TYPE.VALIDATION,
         apiType: Constants.TEST_SERVICE_API_TYPE.SOAP,
         parameter: 0,
+        monitor: true
       }
     }
     this.isUpdate = this.testService.service?.id != 0

@@ -298,5 +298,6 @@ object ParameterNames {
   val STATEMENTS_COLLAPSED = "statements_collapsed"
   val PREFERENCES = "preferences"
   val FORCE_PREFERENCES = "force_preferences"
+  val MONITOR = "monitor"
 
 }

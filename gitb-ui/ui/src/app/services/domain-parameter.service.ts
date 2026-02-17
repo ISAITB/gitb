@@ -187,7 +187,8 @@ export class DomainParameterService {
       authBasicPassword : data.service.authBasicPassword,
       authTokenPassword : data.service.authTokenPassword,
       authTokenUsername : data.service.authTokenUsername,
-      authTokenPasswordType : data.service.authTokenPasswordType
+      authTokenPasswordType : data.service.authTokenPasswordType,
+      monitor: data.service.monitor,
     }
     if (updateExistingParameter != undefined) {
       payload.update = updateExistingParameter

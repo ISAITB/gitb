@@ -17,6 +17,6 @@ package models
 
 case class TestService(id: Long, serviceType: Short, apiType: Short, identifier: Option[String], version: Option[String],
                        authBasicUsername: Option[String], authBasicPassword: Option[String], authTokenUsername: Option[String], authTokenPassword: Option[String], authTokenPasswordType: Option[Short],
-                       parameter: Long)
+                       monitorHealth: Boolean, parameter: Long)
 
 

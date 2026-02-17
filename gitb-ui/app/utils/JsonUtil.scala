@@ -931,7 +931,26 @@ object JsonUtil {
       // Passwords are never sent to the UI
       "authBasicUsername" -> service.authBasicUsername,
       "authTokenUsername" -> service.authTokenUsername,
-      "authTokenPasswordType" -> service.authTokenPasswordType
+      "authTokenPasswordType" -> service.authTokenPasswordType,
+      "monitor" -> service.monitorHealth
+    )
+  }
+
+  def jsTestServicesBasicInfo(list: Iterable[TestServiceBasicInfo]):JsArray = {
+    var json = Json.arr()
+    list.foreach{ service =>
+      json = json.append(jsTestServiceBasicInfo(service))
+    }
+    json
+  }
+
+  def jsTestServiceBasicInfo(service: TestServiceBasicInfo): JsObject = {
+    Json.obj(
+      "id" -> service.id,
+      "serviceType" -> service.serviceType,
+      "serviceName" -> service.serviceName,
+      "domainName" -> service.domainName,
+      "domainId" -> service.domainId
     )
   }
 

@@ -1078,6 +1078,7 @@ object ParameterExtractor {
       authTokenUsername = authTokenUsername,
       authTokenPassword = authTokenPassword,
       authTokenPasswordType = authTokenPasswordType,
+      monitorHealth = optionalBooleanBodyParameter(request, ParameterNames.MONITOR).getOrElse(true),
       parameter = parameter.id
     )
     TestServiceWithParameter(service, parameter)

@@ -116,7 +116,7 @@ const routes: Routes = [
       // Administration
       { path: 'admin', resolve: { profile: ProfileResolver }, canActivate: [AdminViewGuard], children: [
           // Session dashboard
-          { path: 'health', component: ServiceHealthDashboardComponent, canActivate: [SystemAdminViewGuard] },
+          { path: 'health', component: ServiceHealthDashboardComponent },
           // Session dashboard
           { path: 'sessions', component: SessionDashboardComponent },
           // Conformance dashboard

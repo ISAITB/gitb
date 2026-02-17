@@ -25,6 +25,7 @@ export interface TestService {
   authTokenUsername?: string
   authTokenPassword?: string
   authTokenPasswordType?: number
+  monitor: boolean
   parameter: number
 
 }

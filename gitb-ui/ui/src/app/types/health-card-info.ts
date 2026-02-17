@@ -19,9 +19,12 @@ import {HealthInfo} from './health-info';
 
 export interface HealthCardInfo {
 
+  id?: number
   type: HealthCardService
   title: string
-  info?: HealthInfo
+  subtitle?: string
+  icon?: string
+  info: HealthInfo
   checkFunction: () => Observable<HealthInfo>
 
 }

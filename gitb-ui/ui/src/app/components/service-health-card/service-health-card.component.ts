@@ -50,7 +50,9 @@ export class ServiceHealthCardComponent implements ServiceHealthCardComponentApi
   }
 
   checkStatus() {
-    this.info.info = undefined
+    if (this.info.info) {
+      this.info.info.status = HealthStatus.PENDING
+    }
     const finished$ = new Subject<void>();
     this.info.checkFunction().pipe(
       map((result) => {
@@ -63,7 +65,7 @@ export class ServiceHealthCardComponent implements ServiceHealthCardComponentApi
     }).add(() => {
       if (this.info.info == undefined) {
         this.info.info = {
-          status: HealthStatus.UNKNOWN,
+          status: HealthStatus.UNABLE,
           summary: "Unable to complete service healthcheck.",
           details: "An unexpected error occurred while trying to determine the service's health status."
         }
@@ -72,4 +74,5 @@ export class ServiceHealthCardComponent implements ServiceHealthCardComponentApi
     return finished$.asObservable()
   }
 
+  protected readonly HealthStatus = HealthStatus;
 }

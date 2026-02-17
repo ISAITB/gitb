@@ -18,7 +18,9 @@ export enum HealthStatus {
   OK = "ok",
   WARNING = "warning",
   ERROR = "error",
+  INFO = "info",
   UNKNOWN = "unknown",
-  INFO = "info"
+  UNABLE = "unable",
+  PENDING = "pending"
 
 }
