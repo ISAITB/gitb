@@ -55,6 +55,7 @@ import {
   DomainSpecificationDisplayComponentApi
 } from '../../../../../components/domain-specification-display/domain-specification-display-component-api';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
+import {UsageTipService} from '../../../../../services/usage-tip.service';
 
 @Component({
     selector: 'app-domain-details',
@@ -95,6 +96,7 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
   sharedTestSuiteTotal = 0
   parameterTotal = 0
   testServiceTotal = 0
+  shownTestServiceTip = false
   sharedTestSuiteTableColumns: TableColumnDefinition[] = [
     { field: 'identifier', title: 'ID' },
     { field: 'sname', title: 'Name' },
@@ -138,6 +140,7 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
     private readonly modalService: NgbModal,
     private readonly popupService: PopupService,
     private readonly routingService: RoutingService,
+    private readonly usageTipService: UsageTipService,
     route: ActivatedRoute,
     router: Router
   ) { super(router, route) }
@@ -214,6 +217,10 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
 
   loadTestServices(forceLoad?: boolean) {
     if (this.testServiceStatus.status == Constants.STATUS.NONE || forceLoad) {
+      if (!this.shownTestServiceTip) {
+        this.shownTestServiceTip = true
+        this.usageTipService.showUsageTip(Constants.USAGE_TIP.TEST_SERVICES)
+      }
       this.loadTestServicesInternal({ targetPage: 1, targetPageSize: this.dataService.defaultPagingTableSize }, forceLoad).subscribe(() => {})
     } else {
       this.updateTestServicePaging(this.testServicePage, this.testServiceTotal)

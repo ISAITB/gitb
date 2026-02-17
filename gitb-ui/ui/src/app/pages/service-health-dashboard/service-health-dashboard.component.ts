@@ -33,6 +33,7 @@ import {ConformanceService} from '../../services/conformance.service';
 import {MultiSelectConfig} from '../../components/multi-select-filter/multi-select-config';
 import {Domain} from '../../types/domain';
 import {FilterUpdate} from '../../components/test-filter/filter-update';
+import {UsageTipService} from '../../services/usage-tip.service';
 
 @Component({
   selector: 'app-service-health-dashboard',
@@ -62,7 +63,8 @@ export class ServiceHealthDashboardComponent implements OnInit, AfterViewInit {
     private readonly routingService: RoutingService,
     private readonly healthCheckService: HealthCheckService,
     private readonly conformanceService: ConformanceService,
-    protected readonly dataService: DataService
+    protected readonly dataService: DataService,
+    private readonly usageTipService: UsageTipService
   ) {
   }
 
@@ -139,6 +141,7 @@ export class ServiceHealthDashboardComponent implements OnInit, AfterViewInit {
   ngAfterViewInit(): void {
     if (this.dataService.isSystemAdmin) {
       this.checkAllCoreServices()
+      this.usageTipService.showUsageTip(Constants.USAGE_TIP.HEALTH_DASHBOARD)
     }
   }
 

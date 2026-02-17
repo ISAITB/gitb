@@ -1,5 +1,6 @@
 <div class="modal-header">
     <div tabindex="-1" class="modal-focus-anchor" ngbAutofocus></div>
+    <span class="me-3"><i class="fa-solid fa-lightbulb fa-2x"></i></span>
     <div class="modal-title">
         @switch (tip) {
             @case (Constants.USAGE_TIP.TEST_BED_ADMIN_CREATE_CONFORMANCE_STATEMENT) {
@@ -17,9 +18,14 @@
             @case (Constants.USAGE_TIP.TEST_BED_ADMIN_COMMUNITIES) {
                 <span>Communities</span>
             }
+            @case (Constants.USAGE_TIP.HEALTH_DASHBOARD) {
+                <span>Service health monitoring</span>
+            }
+            @case (Constants.USAGE_TIP.TEST_SERVICES) {
+                <span>Test services</span>
+            }
         }
     </div>
-    <span class="ms-auto"><i class="fa-solid fa-lightbulb fa-2x"></i></span>
 </div>
 <div class="modal-body">
     @switch (tip) {
@@ -84,6 +90,28 @@
             <p class="mb-0">
                 Besides user management, communities are also used to define <b>configuration properties</b>, and to
                 manage settings such as self-registration options, report templates, and custom landing pages.
+            </p>
+        }
+        @case (Constants.USAGE_TIP.HEALTH_DASHBOARD) {
+            <p>
+                The service health dashboard provides a <b>health overview</b> of all core services used by the Test Bed.
+                Here you may view and check the <b>core services</b> used, but also any <b>custom test services</b> defined
+                in domains and used to handle relevant test case steps.
+            </p>
+            <p class="mb-0">
+                Community administrators also have access to the health dashboard where they can view the health status
+                of their custom test services.
+            </p>
+        }
+        @case (Constants.USAGE_TIP.TEST_SERVICES) {
+            <p>
+                Test services are used to define the <b>custom extensions</b> you use in test cases to handle messaging, processing
+                and validation steps. They extend domain parameters to enable recording of additional information such
+                as authentication details, so that you don't need to declare these each time you use services within test cases.
+            </p>
+            <p class="mb-0">
+                Besides simplifying the configuration and use of extension services, you can also test their availability
+                from here, as well as from the <b>service health dashboard</b> to obtain an overview of all your services' status.
             </p>
         }
     }
