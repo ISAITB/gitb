@@ -127,10 +127,13 @@ export class TestCaseDisplayComponent extends BaseComponent implements TestCaseD
         ])
       }
       if (this.showExportTestCase(testCase)) {
-        options.push([
-          { key: TestCaseDisplayComponent.EXPORT_PDF, label: "Download report", default: true, iconClass: "fa-solid fa-file-pdf"},
-          { key: TestCaseDisplayComponent.EXPORT_XML, label: "Download report as XML", default: true, iconClass: "fa-solid fa-file-lines"}
-        ])
+        const reportOptions = [
+          { key: TestCaseDisplayComponent.EXPORT_PDF, label: "Download report", default: true, iconClass: Constants.BUTTON_ICON.REPORT_PDF}
+        ]
+        if (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || this.dataService.community?.allowXmlReports === true) {
+          reportOptions.push({ key: TestCaseDisplayComponent.EXPORT_XML, label: "Download report as XML", default: true, iconClass: Constants.BUTTON_ICON.REPORT_XML})
+        }
+        options.push(reportOptions)
       }
       return of(options)
     }
@@ -191,11 +194,13 @@ export class TestCaseDisplayComponent extends BaseComponent implements TestCaseD
   }
 
 	onExportTestCaseXml(testCase: ConformanceTestCase) {
-    this.exportXmlPending[testCase.id] = true
-    this.onExportTestCase(testCase, 'application/xml', 'test_case_report.xml')
-    .subscribe(() => {
-      this.exportXmlPending[testCase.id] = false
-    })
+    if (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || this.dataService.community?.allowXmlReports === true) {
+      this.exportXmlPending[testCase.id] = true
+      this.onExportTestCase(testCase, 'application/xml', 'test_case_report.xml')
+        .subscribe(() => {
+          this.exportXmlPending[testCase.id] = false
+        })
+    }
   }
 
 	onExportTestCasePdf(testCase: ConformanceTestCase) {

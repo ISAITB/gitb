@@ -1275,11 +1275,13 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
   }
 
   exportXml(testCase: ConformanceTestCase) {
-    this.exportXmlPending[testCase.id] = true
-    this.onExportTestCase(testCase, 'application/xml', 'test_case_report.xml')
-    .subscribe(() => {}).add(() => {
-      this.exportXmlPending[testCase.id] = false
-    })
+    if (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || this.dataService.community?.allowXmlReports === true) {
+      this.exportXmlPending[testCase.id] = true
+      this.onExportTestCase(testCase, 'application/xml', 'test_case_report.xml')
+        .subscribe(() => {}).add(() => {
+        this.exportXmlPending[testCase.id] = false
+      })
+    }
   }
 
 	private onExportTestCase(testCase: Partial<ConformanceTestCase>, contentType: string, fileName: string) {

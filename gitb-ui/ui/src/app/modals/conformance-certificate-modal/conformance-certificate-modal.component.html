@@ -105,7 +105,7 @@
     <div class="modal-footer">
         <div class="btn-toolbar">
             <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.CANCEL" type="button" (click)="cancel()">Cancel</button>
-            <button class="btn btn-secondary" [labelIcon]="Constants.BUTTON_ICON.REPORT" type="submit" (click)="generate()" [pending]="exportPending">Generate report</button>
+            <button class="btn btn-secondary" [labelIcon]="(format == 'pdf')?Constants.BUTTON_ICON.REPORT_PDF:Constants.BUTTON_ICON.REPORT_XML" type="submit" (click)="generate()" [pending]="exportPending">Generate report</button>
         </div>
     </div>
 </form>

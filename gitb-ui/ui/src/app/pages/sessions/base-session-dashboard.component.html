@@ -19,7 +19,7 @@
                         </div>
                     }
                     <button type="button" [labelIcon]="Constants.BUTTON_ICON.DELETE" class="btn btn-secondary" (click)="stopAll();$event.stopPropagation()" [pending]="stopAllPending" [disable]="activeTests.length == 0 || exportActivePending">Terminate all</button>
-                    <button type="button" [labelIcon]="Constants.BUTTON_ICON.EXPORT" class="btn btn-secondary" (click)="exportActiveSessionsToCsv();$event.stopPropagation()" [pending]="exportActivePending" [disable]="activeTests.length == 0 || stopAllPending">Export CSV</button>
+                    <button type="button" [labelIcon]="Constants.BUTTON_ICON.REPORT_CSV" class="btn btn-secondary" (click)="exportActiveSessionsToCsv();$event.stopPropagation()" [pending]="exportActivePending" [disable]="activeTests.length == 0 || stopAllPending">Export CSV</button>
                     @if (showCollapseAllActive()) {
                         <button type="button" [labelIcon]="Constants.BUTTON_ICON.COLLAPSE"  class="btn btn-secondary" (click)="onCollapseAllActive();$event.stopPropagation()">Collapse all</button>
                     }
@@ -64,7 +64,7 @@
                 @if (showDeleteObsoleteControl) {
                     <button type="button" [labelIcon]="Constants.BUTTON_ICON.DELETE" class="btn btn-secondary" (click)="deleteObsolete();$event.stopPropagation()" [disable]="selectingForDelete || deleteSessionsPending" [pending]="deletePending">Delete obsolete sessions</button>
                 }
-                <button type="button" [labelIcon]="Constants.BUTTON_ICON.EXPORT" class="btn btn-secondary" (click)="exportCompletedSessionsToCsv();$event.stopPropagation()" [disable]="completedTests.length == 0 || selectingForDelete || deleteSessionsPending" [pending]="exportCompletedPending">Export CSV</button>
+                <button type="button" [labelIcon]="Constants.BUTTON_ICON.REPORT_CSV" class="btn btn-secondary" (click)="exportCompletedSessionsToCsv();$event.stopPropagation()" [disable]="completedTests.length == 0 || selectingForDelete || deleteSessionsPending" [pending]="exportCompletedPending">Export CSV</button>
                 @if (showCollapseAll()) {
                     <button type="button" [labelIcon]="Constants.BUTTON_ICON.COLLAPSE" class="btn btn-secondary" (click)="onCollapseAll();$event.stopPropagation()">Collapse all</button>
                 }
@@ -80,13 +80,13 @@
                  [loadingStatus]="completedStatus"
 
                  [actionVisible]="true"
-                 [actionIcon]="'fa-solid fa-file-pdf'"
+                 [actionIcon]="Constants.BUTTON_ICON.REPORT_PDF"
                  (onAction)="onReportExportPdf($event)"
                  [actionVisibleForRow]="exportVisible"
                  [actionTooltip]="'Download report'"
 
-                 [exportVisible]="true"
-                 [exportIcon]="'fa-solid fa-file-lines'"
+                 [exportVisible]="dataService.isSystemAdmin || dataService.isCommunityAdmin || dataService.community?.allowXmlReports === true"
+                 [exportIcon]="Constants.BUTTON_ICON.REPORT_XML"
                  (onExport)="onReportExportXml($event)"
                  [exportVisibleForRow]="exportVisible"
                  [exportTooltip]="'Download report as XML'"

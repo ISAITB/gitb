@@ -25,6 +25,7 @@ import {RoutingService} from '../../services/routing.service';
 import {StatementOptionsButtonApi} from './statement-options-button-api';
 import {CheckBoxOptionPanelComponentApi} from '../checkbox-option-panel/check-box-option-panel-component-api';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
+import {Constants} from '../../common/constants';
 
 @Component({
   selector: 'app-statement-options-button',
@@ -102,39 +103,40 @@ export class StatementOptionsButtonComponent<T extends ConformanceIds> implement
     return showBadgeOptions$.pipe(
       map((showBadgeOptions) => {
         this.showBadgeOptions = showBadgeOptions
-        const optionState: CheckboxOption[][] = [
-          [
-            {key: StatementOptionsButtonComponent.EXPORT_PDF, label: 'Download report', default: true, iconClass: 'fa-solid fa-file-pdf'},
-            {key: StatementOptionsButtonComponent.EXPORT_XML, label: 'Download report as XML', default: true, iconClass: 'fa-solid fa-file-lines'}
-          ]
-        ]
+        const optionState: CheckboxOption[][] = []
+        const reportOptions: CheckboxOption[] = []
+        reportOptions.push({key: StatementOptionsButtonComponent.EXPORT_PDF, label: 'Download report', default: true, iconClass: Constants.BUTTON_ICON.REPORT_PDF});
+        if (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || this.dataService.community?.allowXmlReports === true) {
+          reportOptions.push({key: StatementOptionsButtonComponent.EXPORT_XML, label: 'Download report as XML', default: true, iconClass: Constants.BUTTON_ICON.REPORT_XML});
+        }
+        optionState.push(reportOptions)
         const viewOptions: CheckboxOption[] = []
         if (this.item.systemId != undefined && this.item.systemId >= 0) {
-          viewOptions.push({key: StatementOptionsButtonComponent.VIEW_SYSTEM, label: `View ${this.dataService.labelSystemLower()}`, default: true, iconClass: 'fa-solid fa-cube'})
+          viewOptions.push({key: StatementOptionsButtonComponent.VIEW_SYSTEM, label: `View ${this.dataService.labelSystemLower()}`, default: true, iconClass: Constants.BUTTON_ICON.GO})
         }
         if (this.organisationId != undefined && this.organisationId >= 0) {
-          viewOptions.push({key: StatementOptionsButtonComponent.VIEW_ORGANISATION, label: `View ${this.dataService.labelOrganisationLower()}`, default: true, iconClass: 'fa-solid fa-building'})
+          viewOptions.push({key: StatementOptionsButtonComponent.VIEW_ORGANISATION, label: `View ${this.dataService.labelOrganisationLower()}`, default: true, iconClass: Constants.BUTTON_ICON.GO})
         }
         if (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin) {
           if (this.communityId != undefined && this.communityId >= 0) {
-            viewOptions.push({key: StatementOptionsButtonComponent.VIEW_COMMUNITY, label: 'View community', default: true, iconClass: 'fa-solid fa-people-group'})
+            viewOptions.push({key: StatementOptionsButtonComponent.VIEW_COMMUNITY, label: 'View community', default: true, iconClass: Constants.BUTTON_ICON.GO})
           }
           if (this.item.actorId != undefined && this.item.actorId >= 0) {
-            viewOptions.push({key: StatementOptionsButtonComponent.VIEW_ACTOR, label: `View ${this.dataService.labelActorLower()}`, default: true, iconClass: 'fa-solid fa-circle-user'})
+            viewOptions.push({key: StatementOptionsButtonComponent.VIEW_ACTOR, label: `View ${this.dataService.labelActorLower()}`, default: true, iconClass: Constants.BUTTON_ICON.GO})
           }
           if (this.item.specificationId != undefined && this.item.specificationId >= 0) {
-            viewOptions.push({key: StatementOptionsButtonComponent.VIEW_SPECIFICATION, label: `View ${this.dataService.labelSpecificationLower()}`, default: true, iconClass: 'fa-solid fa-list-check'})
+            viewOptions.push({key: StatementOptionsButtonComponent.VIEW_SPECIFICATION, label: `View ${this.dataService.labelSpecificationLower()}`, default: true, iconClass: Constants.BUTTON_ICON.GO})
           }
           if (this.item.domainId != undefined && this.item.domainId >= 0 && (this.dataService.isSystemAdmin || (this.dataService.isCommunityAdmin && this.dataService.community?.domain != undefined))) {
-            viewOptions.push({key: StatementOptionsButtonComponent.VIEW_DOMAIN, label: `View ${this.dataService.labelDomainLower()}`, default: true, iconClass: 'fa-solid fa-sitemap'})
+            viewOptions.push({key: StatementOptionsButtonComponent.VIEW_DOMAIN, label: `View ${this.dataService.labelDomainLower()}`, default: true, iconClass: Constants.BUTTON_ICON.GO})
           }
           if (viewOptions.length > 0) {
             optionState.push(viewOptions)
           }
           if (showBadgeOptions) {
             optionState.push([
-              {key: StatementOptionsButtonComponent.COPY_BADGE_URL, label: 'Copy badge URL', default: true, iconClass: 'fa-solid fa-award'},
-              {key: StatementOptionsButtonComponent.PREVIEW_BADGE, label: 'Preview badge', default: true, iconClass: 'fa-solid fa-award'}
+              {key: StatementOptionsButtonComponent.COPY_BADGE_URL, label: 'Copy badge URL', default: true, iconClass: Constants.BUTTON_ICON.COPY_LINK},
+              {key: StatementOptionsButtonComponent.PREVIEW_BADGE, label: 'Preview badge', default: true, iconClass: Constants.BUTTON_ICON.PREVIEW}
             ])
           }
         }

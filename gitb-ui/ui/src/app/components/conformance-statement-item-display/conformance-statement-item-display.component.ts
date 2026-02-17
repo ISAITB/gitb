@@ -31,6 +31,7 @@ import {ConformanceIds} from '../../types/conformance-ids';
 import {TestStatusBaseApi} from '../test-status-base/test-status-base-api';
 import {CheckBoxOptionPanelComponentApi} from '../checkbox-option-panel/check-box-option-panel-component-api';
 import {StatementOptionsButtonApi} from '../statement-options-button/statement-options-button-api';
+import {NgbTooltip} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-conformance-statement-item-display',
@@ -152,10 +153,13 @@ export class ConformanceStatementItemDisplayComponent extends BaseComponent impl
       this.specificationId = this.parentItem?.id
     }
     if (this.hasChildren && !this.item.hidden && this.withExport) {
-      this.parentItemOptions = [[
-        {key: ConformanceStatementItemDisplayComponent.EXPORT_PDF_OVERVIEW, label: 'Download overview report', default: true, iconClass: 'fa-solid fa-file-pdf'},
-        {key: ConformanceStatementItemDisplayComponent.EXPORT_XML_OVERVIEW, label: 'Download overview report as XML', default: true, iconClass: 'fa-solid fa-file-lines'}
-      ]]
+      const reportOptions: CheckboxOption[] = [
+        {key: ConformanceStatementItemDisplayComponent.EXPORT_PDF_OVERVIEW, label: 'Download overview report', default: true, iconClass: Constants.BUTTON_ICON.REPORT_PDF}
+      ]
+      if (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || this.dataService.community?.allowXmlReports === true) {
+        reportOptions.push({key: ConformanceStatementItemDisplayComponent.EXPORT_XML_OVERVIEW, label: 'Download overview report as XML', default: true, iconClass: Constants.BUTTON_ICON.REPORT_XML})
+      }
+      this.parentItemOptions = [reportOptions]
     }
     if (this.withOptions) {
       this.conformanceIds = {
@@ -264,6 +268,17 @@ export class ConformanceStatementItemDisplayComponent extends BaseComponent impl
 
   onExport(event: ExportReportEvent) {
     this.export.emit(event)
+  }
+
+  exportPdfClicked(pop?: NgbTooltip) {
+    if (pop) {
+      pop.disableTooltip = true
+      pop.close()
+      setTimeout(() => {
+        pop.disableTooltip = false
+      }, this.Constants.TOOLTIP_DELAY + 50)
+    }
+    this.onExport({statementReport: false, item: this.item, format: 'pdf'})
   }
 
   handleOption(event: CheckboxOptionState) {

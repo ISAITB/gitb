@@ -6,7 +6,7 @@
                 @if (listView) {
                     <app-filter-control #filterControl (toggle)="toggleFilters()" (refresh)="refreshFilters()" (clear)="clearFilters()"></app-filter-control>
                     @if (showExport) {
-                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.EXPORT" class="btn btn-secondary" (click)="onExportConformanceStatementsAsCsv()" [pending]="exportPending">Export CSV</button>
+                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.REPORT_CSV" class="btn btn-secondary" (click)="onExportConformanceStatementsAsCsv()" [pending]="exportPending">Export CSV</button>
                     }
                 }
                 @if (conformanceSnapshots != undefined && conformanceSnapshots.length > 0) {
@@ -77,16 +77,22 @@
                                             [options]="statusOptions"
                                             (updated)="filterByStatus($event)"></app-checkbox-option-panel>
                                     </div>
-                                    <div class="btn-group export-group" ngbDropdown>
-                                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.REPORT" [disable]="system == undefined || exportPending" [pending]="exportPending" class="btn btn-secondary" (click)="exportOverview('pdf')">Download report</button>
-                                        <button id="button-export" type="button" [disabled]="system == undefined || exportPending" ngbDropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
-                                            <span class="caret"></span>
-                                            <span class="sr-only visually-hidden">Download report</span>
-                                        </button>
-                                        <div id="dropdown-export" ngbDropdownMenu aria-labelledby="button-export">
-                                            <button ngbDropdownItem type="button" (click)="exportOverview('xml')">Download report as XML</button>
+                                    @if (dataService.isSystemAdmin || dataService.isCommunityAdmin || dataService.community?.allowXmlReports === true) {
+                                        <div class="btn-group export-group" ngbDropdown>
+                                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.REPORT_PDF" [disable]="system == undefined || exportPending" [pending]="exportPending" class="btn btn-secondary" (click)="exportOverview('pdf')">Download report</button>
+                                            <button id="button-export" type="button" [disabled]="system == undefined || exportPending" ngbDropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+                                                <span class="caret"></span>
+                                                <span class="sr-only visually-hidden">Download report</span>
+                                            </button>
+                                            <div id="dropdown-export" ngbDropdownMenu aria-labelledby="button-export">
+                                                <button ngbDropdownItem type="button" (click)="exportOverview('xml')">Download report as XML</button>
+                                            </div>
                                         </div>
-                                    </div>
+                                    } @else {
+                                        <div>
+                                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.REPORT_PDF" [disable]="system == undefined || exportPending" [pending]="exportPending" class="btn btn-secondary" (click)="exportOverview('pdf')">Download report</button>
+                                        </div>
+                                    }
                                 </div>
                             }
                         </div>

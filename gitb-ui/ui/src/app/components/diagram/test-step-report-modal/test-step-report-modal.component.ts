@@ -20,6 +20,7 @@ import {StepData} from '../step-data';
 import {saveAs} from 'file-saver';
 import {Constants} from '../../../common/constants';
 import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
+import {DataService} from '../../../services/data.service';
 
 @Component({
     selector: 'app-test-step-report-modal',
@@ -38,7 +39,8 @@ export class TestStepReportModalComponent {
 
   constructor(
     private readonly modalRef: NgbActiveModal,
-    private readonly reportService: ReportService
+    private readonly reportService: ReportService,
+    protected readonly dataService: DataService
   ) { }
 
   exportPdf() {

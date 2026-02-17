@@ -395,7 +395,7 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
   }
 
   onReportExportXml(testResult: TestResultForDisplay) {
-    if (!testResult.obsolete) {
+    if (!testResult.obsolete && (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || this.dataService.community?.allowXmlReports === true)) {
       testResult.actionPending = true
       this.onReportExport(testResult, 'application/xml', 'report.xml')
         .subscribe(() => {}).add(() => {

@@ -25,11 +25,13 @@
                                     <div class="option-icon"><span><i [class]="Constants.BUTTON_ICON.REPORT_PDF"></i></span></div>
                                     <div class="option-label">Download report</div>
                                 </button>
-                                <button ngbDropdownItem class="option-button" type="button" (click)="onExportConformanceStatement('xml')">
-                                    <div class="option-icon"><span><i [class]="Constants.BUTTON_ICON.REPORT"></i></span></div>
-                                    <div class="option-label">Download report as XML</div>
-                                </button>
-                                @if (allTestsSuccessful && (dataService.isSystemAdmin || dataService.isCommunityAdmin || dataService.community!.allowCertificateDownload)) {
+                                @if (dataService.isSystemAdmin || dataService.isCommunityAdmin || dataService.community?.allowXmlReports === true) {
+                                    <button ngbDropdownItem class="option-button" type="button" (click)="onExportConformanceStatement('xml')">
+                                        <div class="option-icon"><span><i [class]="Constants.BUTTON_ICON.REPORT_XML"></i></span></div>
+                                        <div class="option-label">Download report as XML</div>
+                                    </button>
+                                }
+                                @if (dataService.isSystemAdmin || dataService.isCommunityAdmin || (allTestsSuccessful && dataService.community!.allowCertificateDownload)) {
                                     <button ngbDropdownItem class="option-button" type="button" (click)="onExportConformanceCertificate()">
                                         <div class="option-icon"><span><i [class]="Constants.BUTTON_ICON.CONFORMANCE_CERTIFICATE"></i></span></div>
                                         <div class="option-label">Download conformance certificate</div>
@@ -50,36 +52,36 @@
                                     <div class="divider dropdown-divider"></div>
                                     @if (isNavigable(systemId)) {
                                         <button ngbDropdownItem class="option-button" type="button" (click)="viewSystem()">
-                                            <div class="option-icon"><span><i [class]="Constants.BUTTON_ICON.SYSTEM"></i></span></div>
+                                            <div class="option-icon"><span><i [class]="Constants.BUTTON_ICON.GO"></i></span></div>
                                             <div class="option-label">View {{dataService.labelSystemLower()}}</div>
                                         </button>
                                     }
                                     @if (isNavigable(organisationId)) {
                                         <button ngbDropdownItem class="option-button" type="button" (click)="viewOrganisation()">
-                                            <div class="option-icon"><span><i [class]="Constants.BUTTON_ICON.ORGANISATION"></i></span></div>
+                                            <div class="option-icon"><span><i [class]="Constants.BUTTON_ICON.GO"></i></span></div>
                                             <div class="option-label">View {{dataService.labelOrganisationLower()}}</div>
                                         </button>
                                     }
                                     @if (dataService.isSystemAdmin || dataService.isCommunityAdmin) {
                                         <button ngbDropdownItem class="option-button" type="button" (click)="viewCommunity()">
-                                            <div class="option-icon"><span><i [class]="Constants.BUTTON_ICON.COMMUNITY"></i></span></div>
+                                            <div class="option-icon"><span><i [class]="Constants.BUTTON_ICON.GO"></i></span></div>
                                             <div class="option-label">View community</div>
                                         </button>
                                         @if (isNavigable(actorId)) {
                                             <button ngbDropdownItem class="option-button" type="button" (click)="viewActor()">
-                                                <div class="option-icon"><span><i [class]="Constants.BUTTON_ICON.ACTOR"></i></span></div>
+                                                <div class="option-icon"><span><i [class]="Constants.BUTTON_ICON.GO"></i></span></div>
                                                 <div class="option-label">View {{dataService.labelActorLower()}}</div>
                                             </button>
                                         }
                                         @if (isNavigable(specId)) {
                                             <button ngbDropdownItem class="option-button" type="button" (click)="viewSpecification()">
-                                                <div class="option-icon"><span><i [class]="Constants.BUTTON_ICON.SPECIFICATION"></i></span></div>
+                                                <div class="option-icon"><span><i [class]="Constants.BUTTON_ICON.GO"></i></span></div>
                                                 <div class="option-label">View {{dataService.labelSpecificationLower()}}</div>
                                             </button>
                                         }
                                         @if (isNavigable(domainId)) {
                                             <button ngbDropdownItem class="option-button" type="button" (click)="viewDomain()">
-                                                <div class="option-icon"><span><i [class]="Constants.BUTTON_ICON.DOMAIN"></i></span></div>
+                                                <div class="option-icon"><span><i [class]="Constants.BUTTON_ICON.GO"></i></span></div>
                                                 <div class="option-label">View {{dataService.labelDomainLower()}}</div>
                                             </button>
                                         }
@@ -171,19 +173,25 @@
 			</div>
             <div class="card-footer button-container">
                 <div class="btn-toolbar">
-                    <div class="btn-group" ngbDropdown>
-                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.REPORT" [disable]="exportPending" [pending]="exportPending" class="btn btn-secondary" (click)="onExportConformanceStatement('pdf')">Download report</button>
-                        <button id="button-export" type="button" [disabled]="exportPending" ngbDropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
-                            <span class="caret"></span>
-                            <span class="sr-only visually-hidden">Download report</span>
-                        </button>
-                        <div ngbDropdownMenu aria-labelledby="button-export">
-                            <button ngbDropdownItem type="button" (click)="onExportConformanceStatement('xml')">Download report as XML</button>
-                            @if (allTestsSuccessful && (dataService.isSystemAdmin || dataService.isCommunityAdmin || dataService.community!.allowCertificateDownload)) {
-                                <button ngbDropdownItem type="button" (click)="onExportConformanceCertificate()">Download conformance certificate</button>
-                            }
+                    @if (dataService.isSystemAdmin || dataService.isCommunityAdmin || dataService.community?.allowXmlReports === true || (allTestsSuccessful && dataService.community!.allowCertificateDownload)) {
+                        <div class="btn-group" ngbDropdown>
+                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.REPORT_PDF" [disable]="exportPending" [pending]="exportPending" class="btn btn-secondary" (click)="onExportConformanceStatement('pdf')">Download report</button>
+                            <button id="button-export" type="button" [disabled]="exportPending" ngbDropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+                                <span class="caret"></span>
+                                <span class="sr-only visually-hidden">Download report</span>
+                            </button>
+                            <div ngbDropdownMenu aria-labelledby="button-export">
+                                @if (dataService.isSystemAdmin || dataService.isCommunityAdmin || dataService.community?.allowXmlReports === true) {
+                                    <button ngbDropdownItem type="button" (click)="onExportConformanceStatement('xml')">Download report as XML</button>
+                                }
+                                @if (dataService.isSystemAdmin || dataService.isCommunityAdmin || (allTestsSuccessful && dataService.community!.allowCertificateDownload)) {
+                                    <button ngbDropdownItem type="button" (click)="onExportConformanceCertificate()">Download conformance certificate</button>
+                                }
+                            </div>
                         </div>
-                    </div>
+                    } @else {
+                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.REPORT_PDF" [disable]="exportPending" [pending]="exportPending" class="btn btn-secondary" (click)="onExportConformanceStatement('pdf')">Download report</button>
+                    }
                     @if (hasBadge) {
                         <div class="btn-group" ngbDropdown>
                             <button type="button" [labelIcon]="Constants.BUTTON_ICON.COPY_LINK" [pending]="copyBadgePending" class="btn btn-secondary" (click)="copyBadgeURL()">Copy badge URL</button>
