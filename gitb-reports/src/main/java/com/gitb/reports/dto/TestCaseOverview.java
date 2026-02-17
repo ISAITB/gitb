@@ -52,6 +52,7 @@ public class TestCaseOverview {
     private String specDescription;
     private String specLink;
     private String version;
+    private String sessionId;
     private Timestamp endTimeInternal;
     private boolean inGroup;
     private boolean firstInGroup;
@@ -357,6 +358,14 @@ public class TestCaseOverview {
             }
         }
         return partLevel;
+    }
+
+    public String getSessionId() {
+        return sessionId;
+    }
+
+    public void setSessionId(String sessionId) {
+        this.sessionId = sessionId;
     }
 
     public static class LogMessage {

@@ -82,7 +82,7 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper,
             case Some(Constants.MimeTypePDF) => (".report.pdf", (input: ReportGenerationInput) => {
               generateDetailedTestCaseReportPdf(input, labelSupplier.getOrElse(() => Future.successful(Map.empty[Short, CommunityLabels])).apply(), reportSpecSupplier.getOrElse(() => reportHelper.createReportSpecs()).apply())
             })
-            case _ => (".report.v2.xml", (input: ReportGenerationInput) => {
+            case _ => (".report.v3.xml", (input: ReportGenerationInput) => {
               generateDetailedTestCaseReportXml(input)
             })
           }
@@ -135,6 +135,7 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper,
               overview.getMessage.add(msg)
             }
           }
+          overview.setSessionId(testResult.sessionId)
           overview.setStartTime(XMLDateTimeUtils.getXMLGregorianCalendarDateTime(testResult.startTime))
           if (testResult.endTime.isDefined) {
             overview.setEndTime(XMLDateTimeUtils.getXMLGregorianCalendarDateTime(testResult.endTime.get))
@@ -199,6 +200,7 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper,
               overview.getOutputMessages.add(msg)
             }
           }
+          overview.setSessionId(testResult.sessionId)
           // Start time
           val start = testResult.startTime
           overview.setStartTime(sdf.format(new Date(start.getTime)))

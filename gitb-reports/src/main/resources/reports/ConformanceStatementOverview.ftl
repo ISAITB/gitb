@@ -99,6 +99,12 @@
                                                                 <td class="cell-value">${testCase.endTime}</td>
                                                             </#if>
                                                         </tr>
+                                                        <#if testCase.sessionId??>
+                                                            <tr>
+                                                                <td class="cell-label">Session ID:</td>
+                                                                <td class="cell-value"<#if testCase.endTime??> colspan="3"</#if>>${testCase.sessionId}</td>
+                                                            </tr>
+                                                        </#if>
                                                     </table>
                                                 </div>
                                             </div>

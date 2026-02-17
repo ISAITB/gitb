@@ -40,6 +40,7 @@ import java.nio.file.Path;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 public class ReportGeneratorTest {
 
@@ -127,6 +128,7 @@ public class ReportGeneratorTest {
 
     private TestCaseOverview getTestCaseOverview(String title, ReportSpecs specs, boolean optional, boolean disabled, List<TestCaseOverview.Tag> tags, String groupId, String result) throws DatatypeConfigurationException {
         TestCaseOverview data = new TestCaseOverview();
+        data.setSessionId(UUID.randomUUID().toString());
         // Labels
         data.setTitle(title);
         data.setTags(tags);
@@ -403,7 +405,7 @@ public class ReportGeneratorTest {
         data.setIncludeDetails(true);
         data.setIncludeMessage(true);
         data.setIncludeTestStatus(true);
-        data.setIncludeTestCases(false);
+        data.setIncludeTestCases(true);
         data.setIncludePageNumbers(false);
 
 //        data.setMessage("<strong>This is the result.</strong><img src=\"%s\"/>".formatted(Path.of("C:\\work\\gitb-repository\\files\\badges\\latest\\1\\SUCCESS.png").toUri()));

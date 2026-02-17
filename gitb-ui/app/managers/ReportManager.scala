@@ -315,6 +315,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
       // Result
       overview.setReportResult(source.getResult.value())
       overview.setOutputMessages(source.getMessage)
+      overview.setSessionId(UUID.randomUUID().toString)
       // Start time
       overview.setStartTime(sdf.format(source.getStartTime.toGregorianCalendar.getTime))
       // End time
@@ -347,6 +348,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     val report = new TestCaseOverviewReportType
     report.setResult(TestResultType.FAILURE)
     report.getMessage.add("Test session resulted in a failure.")
+    report.setSessionId(UUID.randomUUID().toString)
     report.setStartTime(XMLDateTimeUtils.getXMLGregorianCalendarDateTime)
     report.setEndTime(report.getStartTime)
     // Test case metadata
@@ -2367,6 +2369,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
             }
             // Times and steps
             if (isDemo) {
+              testCaseReport.setSessionId(UUID.randomUUID().toString)
               testCaseReport.setStartTime(XMLDateTimeUtils.getXMLGregorianCalendarDateTime())
               testCaseReport.setEndTime(testCaseReport.getStartTime)
               testCaseReport.setSteps(new TestCaseStepsType)
@@ -2376,6 +2379,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
             } else {
               if (info.sessionId.exists(session => testResultMap.exists(_.contains(session)))) {
                 val testResult = testResultMap.get(info.sessionId.get)
+                testCaseReport.setSessionId(testResult._1.sessionId)
                 testCaseReport.setStartTime(XMLDateTimeUtils.getXMLGregorianCalendarDateTime(testResult._1.startTime))
                 testCaseReport.setEndTime(testResult._1.endTime.map(XMLDateTimeUtils.getXMLGregorianCalendarDateTime(_)).orNull)
                 // Add test steps
@@ -2770,6 +2774,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
               testCaseOverview.setTestActor(info.actorFull)
               if (info.sessionId.exists(session => testResultMap.exists(_.contains(session)))) {
                 val testResult = testResultMap.get(info.sessionId.get)
+                testCaseOverview.setSessionId(info.sessionId.get)
                 testCaseOverview.setStartTime(sdf.format(new Date(testResult._1.startTime.getTime)))
                 if (testResult._1.endTime.isDefined) {
                   testCaseOverview.setEndTime(sdf.format(new Date(testResult._1.endTime.get.getTime)))
@@ -2790,6 +2795,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
                   }
                 }
               } else {
+                testCaseOverview.setSessionId("-")
                 testCaseOverview.setStartTime("-")
                 testCaseOverview.setEndTime("-")
                 testCaseOverview.setSteps(null)

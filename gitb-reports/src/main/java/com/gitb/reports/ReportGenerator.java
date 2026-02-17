@@ -490,6 +490,7 @@ public class ReportGenerator {
             }
             parameters.put("startTime", testCaseOverview.getStartTime());
             parameters.put("endTime", testCaseOverview.getEndTime());
+            parameters.put("sessionId", testCaseOverview.getSessionId());
             parameters.put("testName", testCaseOverview.getTestName());
             parameters.put("testDescription", testCaseOverview.getTestDescription());
             parameters.put("specReference", testCaseOverview.getSpecReference());
