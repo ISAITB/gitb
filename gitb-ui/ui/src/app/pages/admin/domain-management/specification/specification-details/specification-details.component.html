@@ -21,7 +21,7 @@
 	<div>
         <ul ngbNav #tabs="ngbNav" class="nav-tabs" [(activeId)]="tabIdToShow" (activeIdChange)="showTab()" [animation]="false">
             <li [ngbNavItem]="Constants.TAB.SPECIFICATION.TEST_SUITES">
-                <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-box-archive" text="Test suites"></app-tab-title></button>
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.TEST_SUITE" text="Test suites"></app-tab-title></button>
                 <ng-template ngbNavContent>
                     <div class="tabPanel">
                         <div class="tabControls">
@@ -50,7 +50,7 @@
                 </ng-template>
             </li>
             <li [ngbNavItem]="Constants.TAB.SPECIFICATION.ACTORS">
-                <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-circle-user" [text]="dataService.labelActors()"></app-tab-title></button>
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.ACTOR" [text]="dataService.labelActors()"></app-tab-title></button>
                 <ng-template ngbNavContent>
                     <div class="tabPanel">
                         <div class="tabControls">

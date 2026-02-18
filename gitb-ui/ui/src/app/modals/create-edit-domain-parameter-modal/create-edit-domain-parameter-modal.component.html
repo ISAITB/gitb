@@ -79,7 +79,7 @@
                 <div class="col-7">
                     <app-file-select [fileName]="getFileName()" (onUpload)="onFileSelect($event)" [extraActions]="true" [validation]="validation.get('file')">
                         @if (showFileName()) {
-                            <button type="button" class="btn btn-secondary" (click)="download()" tooltipClass="shortTooltip" ngbTooltip="Download" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" container="body"><i class="fa-solid fa-download"></i></button>
+                            <button type="button" class="btn btn-secondary" (click)="download()" tooltipClass="shortTooltip" ngbTooltip="Download" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" container="body"><i [class]="Constants.BUTTON_ICON.DELETE"></i></button>
                         }
                     </app-file-select>
                 </div>

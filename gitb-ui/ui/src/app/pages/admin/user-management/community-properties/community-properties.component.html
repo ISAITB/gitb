@@ -77,7 +77,7 @@
                                             <td class="drag-handle" (click)="$event.stopPropagation();">
                                                 @if (organisationParameters.length > 1) {
                                                     <div class="cell-content">
-                                                        <button cdkDragHandle #pop="ngbTooltip" (mousedown)="mouseDownOnDragButton(pop)" (mouseout)="mouseOutOnDragButton(pop)" class="btn btn-sm btn-secondary" type="button" tooltipClass="shortTooltip" container="body" ngbTooltip="Reorder" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrows-up-down"></i></span></button>
+                                                        <button cdkDragHandle #pop="ngbTooltip" (mousedown)="mouseDownOnDragButton(pop)" (mouseout)="mouseOutOnDragButton(pop)" class="btn btn-sm btn-secondary" type="button" tooltipClass="shortTooltip" container="body" ngbTooltip="Reorder" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i [class]="Constants.BUTTON_ICON.REORDER"></i></span></button>
                                                     </div>
                                                 }
                                             </td>
@@ -153,7 +153,7 @@
                                             <td class="drag-handle" (click)="$event.stopPropagation();">
                                                 @if (systemParameters.length > 1) {
                                                     <div class="cell-content">
-                                                        <button cdkDragHandle #pop="ngbTooltip" (mousedown)="mouseDownOnDragButton(pop)" (mouseout)="mouseOutOnDragButton(pop)" class="btn btn-sm btn-secondary" type="button" tooltipClass="shortTooltip" container="body" ngbTooltip="Reorder" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrows-up-down"></i></span></button>
+                                                        <button cdkDragHandle #pop="ngbTooltip" (mousedown)="mouseDownOnDragButton(pop)" (mouseout)="mouseOutOnDragButton(pop)" class="btn btn-sm btn-secondary" type="button" tooltipClass="shortTooltip" container="body" ngbTooltip="Reorder" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i [class]="Constants.BUTTON_ICON.REORDER"></i></span></button>
                                                     </div>
                                                 }
                                             </td>

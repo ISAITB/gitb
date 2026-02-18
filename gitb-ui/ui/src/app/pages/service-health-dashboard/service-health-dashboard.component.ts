@@ -177,9 +177,9 @@ export class ServiceHealthDashboardComponent implements OnInit, AfterViewInit {
 
   private serviceTypeCardIcon(serviceType: number): string {
     switch (serviceType) {
-      case Constants.TEST_SERVICE_TYPE.MESSAGING: return 'fa-solid fa-paper-plane';
-      case Constants.TEST_SERVICE_TYPE.VALIDATION: return 'fa-solid fa-award';
-      default: return 'fa-solid fa-gear';
+      case Constants.TEST_SERVICE_TYPE.MESSAGING: return Constants.BUTTON_ICON.MESSAGING_SERVICE;
+      case Constants.TEST_SERVICE_TYPE.VALIDATION: return Constants.BUTTON_ICON.VALIDATION_SERVICE;
+      default: return Constants.BUTTON_ICON.PROCESSING_SERVICE;
     }
   }
 

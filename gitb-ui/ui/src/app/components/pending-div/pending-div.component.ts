@@ -15,6 +15,7 @@
 
 import { AfterViewInit, Component, Input } from '@angular/core';
 import { DataService } from 'src/app/services/data.service';
+import {Constants} from '../../common/constants';
 
 @Component({
     selector: 'div[pending]',
@@ -50,4 +51,5 @@ export class PendingDivComponent implements AfterViewInit {
     }
   }
 
+    protected readonly Constants = Constants;
 }

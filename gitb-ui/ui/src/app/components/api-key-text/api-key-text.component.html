@@ -15,31 +15,31 @@
         @if (supportEdit) {
             @if (editing) {
                 <button class="btn btn-secondary" type="button" (click)="editConfirm()" [disabled]="key == undefined || key.length == 0" tooltipClass="shortTooltip" container="body" ngbTooltip="Confirm" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
-                    <i class="fa-solid fa-check" aria-hidden="true"></i>
+                    <i [class]="Constants.BUTTON_ICON.CONFIRM" aria-hidden="true"></i>
                 </button>
                 <button class="btn btn-secondary" type="button" (click)="editCancel()" tooltipClass="shortTooltip" container="body" ngbTooltip="Cancel" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
-                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                    <i [class]="Constants.BUTTON_ICON.CANCEL" aria-hidden="true"></i>
                 </button>
             } @else {
                 <button class="btn btn-secondary" type="button" (click)="editStart()" [disabled]="updatePending || deletePending" tooltipClass="shortTooltip" container="body" ngbTooltip="Edit" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
-                    <i class="fa-solid fa-pencil" aria-hidden="true"></i>
+                    <i [class]="Constants.BUTTON_ICON.EDIT" aria-hidden="true"></i>
                 </button>
             }
         }
         @if (!editing) {
             @if (supportUpdate) {
                 <button class="btn btn-secondary" type="button" (click)="doUpdate()" [disabled]="updatePending || deletePending" tooltipClass="shortTooltip" container="body" ngbTooltip="Reset" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
-                    <i class="fa-solid fa-refresh" aria-hidden="true"></i>
+                    <i [class]="Constants.BUTTON_ICON.RESET" aria-hidden="true"></i>
                 </button>
             }
             @if (supportDelete) {
                 <button class="btn btn-secondary" type="button" (click)="doDelete()" [disabled]="updatePending || deletePending" tooltipClass="shortTooltip" container="body" ngbTooltip="Delete" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
-                    <i class="fa-solid fa-trash" aria-hidden="true"></i>
+                    <i [class]="Constants.BUTTON_ICON.DELETE" aria-hidden="true"></i>
                 </button>
             }
             @if (supportCopy) {
                 <button class="btn btn-secondary" type="button" (click)="copy()" [disabled]="updatePending || deletePending" tooltipClass="shortTooltip" container="body" ngbTooltip="Copy" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
-                    <i class="fa-solid fa-clipboard" aria-hidden="true"></i>
+                    <i [class]="Constants.BUTTON_ICON.CLIPBOARD" aria-hidden="true"></i>
                 </button>
             }
         }

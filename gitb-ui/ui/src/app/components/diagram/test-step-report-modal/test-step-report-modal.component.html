@@ -2,7 +2,7 @@
     <div tabindex="-1" class="modal-focus-anchor" ngbAutofocus></div>
 	<div class="modal-title">Step report</div>
     <div class="ms-auto">
-        <app-tag label="fa-solid fa-clock" [icon]="true" [tooltipText]="'Step completion time'" [value]="report.date"></app-tag>
+        <app-tag [label]="Constants.BUTTON_ICON.TIME" [icon]="true" [tooltipText]="'Step completion time'" [value]="report.date"></app-tag>
     </div>
     <div class="ms-3">
         <app-result-label [status]="report.result!"></app-result-label>

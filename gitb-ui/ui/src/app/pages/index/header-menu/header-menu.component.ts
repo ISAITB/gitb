@@ -117,4 +117,5 @@ export class HeaderMenuComponent {
     }
   }
 
+  protected readonly Constants = Constants;
 }

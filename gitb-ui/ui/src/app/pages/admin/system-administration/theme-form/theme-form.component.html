@@ -168,13 +168,13 @@
             @if (readonly) {
                 <div class="input-group">
                     <input type="text" class="form-control" readonly="readonly" [value]="faviconNameToShow">
-                    <button type="button" class="btn btn-secondary" [pending]="faviconDownloadPending" [icon]="true" (click)="downloadFavicon()" tooltipClass="shortTooltip" container="body" ngbTooltip="Download" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-download"></i></button>
-                    <button type="button" class="btn btn-secondary" (click)="previewThemeResource(theme.faviconFile, theme.faviconPath, 'Favicon preview')" tooltipClass="shortTooltip" container="body" ngbTooltip="Preview" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-magnifying-glass"></i></button>
+                    <button type="button" class="btn btn-secondary" [pending]="faviconDownloadPending" [icon]="true" (click)="downloadFavicon()" tooltipClass="shortTooltip" container="body" ngbTooltip="Download" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i [class]="Constants.BUTTON_ICON.DOWNLOAD"></i></button>
+                    <button type="button" class="btn btn-secondary" (click)="previewThemeResource(theme.faviconFile, theme.faviconPath, 'Favicon preview')" tooltipClass="shortTooltip" container="body" ngbTooltip="Preview" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i [class]="Constants.BUTTON_ICON.PREVIEW"></i></button>
                 </div>
             } @else {
                 <app-file-select [fileName]="faviconNameToShow" (onUpload)="selectFavicon($event)" [accepts]="acceptedFileTypes" [extraActions]="true" [validation]="validation.get('faviconFile')">
-                    <button type="button" class="btn btn-secondary" [pending]="faviconDownloadPending" [icon]="true" (click)="downloadFavicon()" tooltipClass="shortTooltip" container="body" ngbTooltip="Download" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-download"></i></button>
-                    <button type="button" class="btn btn-secondary" (click)="previewThemeResource(theme.faviconFile, theme.faviconPath, 'Favicon preview')" tooltipClass="shortTooltip" container="body" ngbTooltip="Preview" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-magnifying-glass"></i></button>
+                    <button type="button" class="btn btn-secondary" [pending]="faviconDownloadPending" [icon]="true" (click)="downloadFavicon()" tooltipClass="shortTooltip" container="body" ngbTooltip="Download" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i [class]="Constants.BUTTON_ICON.DOWNLOAD"></i></button>
+                    <button type="button" class="btn btn-secondary" (click)="previewThemeResource(theme.faviconFile, theme.faviconPath, 'Favicon preview')" tooltipClass="shortTooltip" container="body" ngbTooltip="Preview" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i [class]="Constants.BUTTON_ICON.PREVIEW"></i></button>
                 </app-file-select>
             }
         </div>
@@ -186,13 +186,13 @@
             @if (readonly) {
                 <div class="input-group">
                     <input type="text" class="form-control" readonly="readonly" [value]="headerLogoNameToShow">
-                    <button type="button" class="btn btn-secondary" [pending]="headerDownloadPending" [icon]="true" (click)="downloadHeaderLogo()" tooltipClass="shortTooltip" container="body" ngbTooltip="Download" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-download"></i></button>
-                    <button type="button" class="btn btn-secondary" (click)="previewThemeResource(theme.headerLogoFile, theme.headerLogoPath, 'Header logo preview')" tooltipClass="shortTooltip" container="body" ngbTooltip="Preview" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-magnifying-glass"></i></button>
+                    <button type="button" class="btn btn-secondary" [pending]="headerDownloadPending" [icon]="true" (click)="downloadHeaderLogo()" tooltipClass="shortTooltip" container="body" ngbTooltip="Download" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i [class]="Constants.BUTTON_ICON.DOWNLOAD"></i></button>
+                    <button type="button" class="btn btn-secondary" (click)="previewThemeResource(theme.headerLogoFile, theme.headerLogoPath, 'Header logo preview')" tooltipClass="shortTooltip" container="body" ngbTooltip="Preview" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i [class]="Constants.BUTTON_ICON.PREVIEW"></i></button>
                 </div>
             } @else {
                 <app-file-select [fileName]="headerLogoNameToShow" (onUpload)="selectHeaderLogo($event)" [accepts]="acceptedFileTypes" [extraActions]="true" [validation]="validation.get('headerLogoFile')">
-                    <button type="button" class="btn btn-secondary" [pending]="headerDownloadPending" [icon]="true" (click)="downloadHeaderLogo()" tooltipClass="shortTooltip" container="body" ngbTooltip="Download" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-download"></i></button>
-                    <button type="button" class="btn btn-secondary" (click)="previewThemeResource(theme.headerLogoFile, theme.headerLogoPath, 'Header logo preview')" tooltipClass="shortTooltip" container="body" ngbTooltip="Preview" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-magnifying-glass"></i></button>
+                    <button type="button" class="btn btn-secondary" [pending]="headerDownloadPending" [icon]="true" (click)="downloadHeaderLogo()" tooltipClass="shortTooltip" container="body" ngbTooltip="Download" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i [class]="Constants.BUTTON_ICON.DOWNLOAD"></i></button>
+                    <button type="button" class="btn btn-secondary" (click)="previewThemeResource(theme.headerLogoFile, theme.headerLogoPath, 'Header logo preview')" tooltipClass="shortTooltip" container="body" ngbTooltip="Preview" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i [class]="Constants.BUTTON_ICON.PREVIEW"></i></button>
                 </app-file-select>
             }
         </div>
@@ -213,13 +213,13 @@
                 @if (readonly) {
                     <div class="input-group">
                         <input type="text" class="form-control" readonly="readonly" [value]="footerLogoNameToShow">
-                        <button type="button" class="btn btn-secondary" [pending]="footerDownloadPending" [icon]="true" (click)="downloadFooterLogo()" tooltipClass="shortTooltip" container="body" ngbTooltip="Download" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-download"></i></button>
-                        <button type="button" class="btn btn-secondary" (click)="previewThemeResource(theme.footerLogoFile, theme.footerLogoPath, 'Footer logo preview')" tooltipClass="shortTooltip" container="body" ngbTooltip="Preview" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-magnifying-glass"></i></button>
+                        <button type="button" class="btn btn-secondary" [pending]="footerDownloadPending" [icon]="true" (click)="downloadFooterLogo()" tooltipClass="shortTooltip" container="body" ngbTooltip="Download" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i [class]="Constants.BUTTON_ICON.DOWNLOAD"></i></button>
+                        <button type="button" class="btn btn-secondary" (click)="previewThemeResource(theme.footerLogoFile, theme.footerLogoPath, 'Footer logo preview')" tooltipClass="shortTooltip" container="body" ngbTooltip="Preview" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i [class]="Constants.BUTTON_ICON.PREVIEW"></i></button>
                     </div>
                 } @else {
                     <app-file-select [fileName]="footerLogoNameToShow" (onUpload)="selectFooterLogo($event)" [accepts]="acceptedFileTypes" [extraActions]="true" [validation]="validation.get('footerLogoFile')">
-                        <button type="button" class="btn btn-secondary" [pending]="footerDownloadPending" [icon]="true" (click)="downloadFooterLogo()" tooltipClass="shortTooltip" container="body" ngbTooltip="Download" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-download"></i></button>
-                        <button type="button" class="btn btn-secondary" (click)="previewThemeResource(theme.footerLogoFile, theme.footerLogoPath, 'Footer logo preview')" tooltipClass="shortTooltip" container="body" ngbTooltip="Preview" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-magnifying-glass"></i></button>
+                        <button type="button" class="btn btn-secondary" [pending]="footerDownloadPending" [icon]="true" (click)="downloadFooterLogo()" tooltipClass="shortTooltip" container="body" ngbTooltip="Download" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i [class]="Constants.BUTTON_ICON.DOWNLOAD"></i></button>
+                        <button type="button" class="btn btn-secondary" (click)="previewThemeResource(theme.footerLogoFile, theme.footerLogoPath, 'Footer logo preview')" tooltipClass="shortTooltip" container="body" ngbTooltip="Preview" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i [class]="Constants.BUTTON_ICON.PREVIEW"></i></button>
                     </app-file-select>
                 }
             </div>

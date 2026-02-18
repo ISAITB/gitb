@@ -36,7 +36,7 @@
                 }
                 <div class="col-7" [ngClass]="{'offset-3': !first}">
                     <app-file-select [fileName]="attachment.name" [extraActions]="true" [disableUpload]="true" [validation]="validation.get('file'+index)">
-                        <button type="button" class="btn btn-secondary" (click)="removeAttachment(index)" container="body" tooltipClass="shortTooltip" ngbTooltip="Remove" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-trash"></i></button>
+                        <button type="button" class="btn btn-secondary" (click)="removeAttachment(index)" container="body" tooltipClass="shortTooltip" ngbTooltip="Remove" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i [class]="Constants.BUTTON_ICON.DELETE"></i></button>
                     </app-file-select>
                 </div>
             </div>

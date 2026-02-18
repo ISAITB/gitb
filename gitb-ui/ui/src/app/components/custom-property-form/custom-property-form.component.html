@@ -9,7 +9,7 @@
                         }
                         Additional properties<span class="ms-2"
                                                    [ngbTooltip]="'Properties specific to the community. Required properties will need to be completed before executing tests.'"
-                                                   [tooltipClass]="'tooltipContainerBig'"><i class="fa-solid fa-question-circle"></i></span>
+                                                   [tooltipClass]="'tooltipContainerBig'"><i [class]="Constants.BUTTON_ICON.HELP"></i></span>
                     </div>
                 </div>
             </div>
@@ -32,8 +32,7 @@
                                     <p class="form-control-plaintext">{{ presetValueLabel(property) }}
                                         @if (property.desc) {
                                             <span [ngStyle]="{'margin-left':(property.value?'10px':'0px')}"
-                                                  [ngbTooltip]="property.desc" [tooltipClass]="'tooltipContainer'"><i
-                                                class="fa-solid fa-question-circle"></i></span>
+                                                  [ngbTooltip]="property.desc" [tooltipClass]="'tooltipContainer'"><i [class]="Constants.BUTTON_ICON.HELP"></i></span>
                                         }
                                     </p>
                                 } @else {
@@ -52,8 +51,7 @@
                                     <p class="form-control-plaintext">{{ property.value }}
                                         @if (property.desc) {
                                             <span [ngStyle]="{'margin-left':(property.value?'10px':'0px')}"
-                                                  [ngbTooltip]="property.desc" [tooltipClass]="'tooltipContainer'"><i
-                                                class="fa-solid fa-question-circle"></i></span>
+                                                  [ngbTooltip]="property.desc" [tooltipClass]="'tooltipContainer'"><i [class]="Constants.BUTTON_ICON.HELP"></i></span>
                                         }
                                     </p>
                                 } @else {
@@ -71,8 +69,7 @@
                                     {{ property.configured ? '*****' : '' }}
                                     @if (property.desc) {
                                         <span [class.ml-2]="property.configured" [ngbTooltip]="property.desc"
-                                              [tooltipClass]="'tooltipContainer'"><i
-                                            class="fa-solid fa-question-circle"></i></span>
+                                              [tooltipClass]="'tooltipContainer'"><i [class]="Constants.BUTTON_ICON.HELP"></i></span>
                                     }
                                 </div>
                             } @else {
@@ -119,8 +116,7 @@
                                         }
                                         @if (property.desc) {
                                             <span [ngStyle]="{'margin-left':(property.value?'10px':'0px')}"
-                                                  [ngbTooltip]="property.desc" [tooltipClass]="'tooltipContainer'"><i
-                                                class="fa-solid fa-question-circle"></i></span>
+                                                  [ngbTooltip]="property.desc" [tooltipClass]="'tooltipContainer'"><i [class]="Constants.BUTTON_ICON.HELP"></i></span>
                                         }
                                     </p>
                                 </div>
@@ -134,12 +130,11 @@
                                         <button type="button" class="btn btn-secondary"
                                                 (click)="downloadProperty(property)" tooltipClass="shortTooltip"
                                                 ngbTooltip="Download" [openDelay]="Constants.TOOLTIP_DELAY"
-                                                [triggers]="'mouseover:mouseout'" container="body"><i
-                                            class="fa-solid fa-download"></i></button>
+                                                [triggers]="'mouseover:mouseout'" container="body"><i [class]="Constants.BUTTON_ICON.DOWNLOAD"></i></button>
                                         <button type="button" class="btn btn-secondary" (click)="removeFile(property)"
                                                 tooltipClass="shortTooltip" ngbTooltip="Remove"
                                                 [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"
-                                                container="body"><i class="fa-solid fa-trash"></i></button>
+                                                container="body"><i [class]="Constants.BUTTON_ICON.DELETE"></i></button>
                                     }
                                 </app-file-select>
                             }

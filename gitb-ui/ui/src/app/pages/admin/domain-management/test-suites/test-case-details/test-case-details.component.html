@@ -105,7 +105,7 @@
                                         <button ngbDropdownItem type="button" (click)="previewDocumentationPdf()">Preview documentation in PDF report</button>
                                     </div>
                                 </div>
-                                <button (click)="copyDocumentation()" [labelIcon]="Constants.BUTTON_ICON.COPY" type="button" class="btn btn-secondary" [disable]="this.testCase.documentation == undefined || this.testCase.documentation.length == 0">Copy to clipboard</button>
+                                <button (click)="copyDocumentation()" [labelIcon]="Constants.BUTTON_ICON.CLIPBOARD" type="button" class="btn btn-secondary" [disable]="this.testCase.documentation == undefined || this.testCase.documentation.length == 0">Copy to clipboard</button>
                             </div>
                         </div>
                     </div>

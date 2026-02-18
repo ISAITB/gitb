@@ -21,7 +21,7 @@
 	<div>
         <ul ngbNav #tabs="ngbNav" class="nav-tabs" [(activeId)]="tabIdToShow" (activeIdChange)="showTab()" [animation]="false">
             <li [ngbNavItem]="Constants.TAB.ACTOR.PARAMETERS">
-                <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-gear" text="Configuration parameters"></app-tab-title></button>
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.CONFIGURATION_PROPERTIES" text="Configuration parameters"></app-tab-title></button>
                 <ng-template ngbNavContent>
                     <div class="tabPanel">
                         @if (parameterStatus.status != Constants.STATUS.FINISHED) {

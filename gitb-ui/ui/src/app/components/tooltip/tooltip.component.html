@@ -1,5 +1,5 @@
 <div [ngClass]="{'inline-tooltip': inline}" [class.withMargin]="withMargin">
     <div [ngClass]="{'topMargin': (!inline && withTopMargin), 'form-control-plaintext': (!inline || inlineType == 'button'), 'checkLabel': (inline && inlineType == 'checkLabel'), 'checkLabelText': (inline && inlineType == 'checkLabelText'), 'radio': (inline && inlineType == 'radio')}">
-        <span [ngbTooltip]="tbTooltip" [tooltipClass]="'tooltipContainer'" container="body"><i class="fa-solid fa-question-circle"></i></span>
+        <span [ngbTooltip]="tbTooltip" [tooltipClass]="'tooltipContainer'" container="body"><i [class]="Constants.BUTTON_ICON.HELP"></i></span>
     </div>
 </div>

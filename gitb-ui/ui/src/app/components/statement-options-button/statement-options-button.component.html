@@ -1,6 +1,6 @@
 <app-checkbox-option-panel #optionButton
                            label="Options"
-                           icon="fa-solid fa-bars"
+                           [icon]="Constants.BUTTON_ICON.ACTIONS"
                            placement="left"
                            [optionProvider]="loadAvailableOptionsFactory()"
                            [singleSelection]="true"

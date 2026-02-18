@@ -27,7 +27,7 @@
     <div>
         <ul ngbNav #tabs="ngbNav" class="nav-tabs" [(activeId)]="tabIdToShow" (activeIdChange)="showTab()" [animation]="false">
             <li [ngbNavItem]="Constants.TAB.DOMAIN.SPECIFICATIONS">
-                <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-list-check" [text]="dataService.labelSpecifications()"></app-tab-title></button>
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.SPECIFICATION" [text]="dataService.labelSpecifications()"></app-tab-title></button>
                 <ng-template ngbNavContent>
                     <div class="tabPanel">
                         <div class="tabControls">
@@ -117,7 +117,7 @@
                 </ng-template>
             </li>
             <li [ngbNavItem]="Constants.TAB.DOMAIN.TEST_SUITES">
-                <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-box-archive" text="Shared test suites"></app-tab-title></button>
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.TEST_SUITE" text="Shared test suites"></app-tab-title></button>
                 <ng-template ngbNavContent>
                     <div class="tabPanel">
                         <div class="tabControls">
@@ -143,7 +143,7 @@
                 </ng-template>
             </li>
             <li [ngbNavItem]="Constants.TAB.DOMAIN.PARAMETERS">
-                <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-sliders" text="Parameters"></app-tab-title></button>
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.CONFIGURATION_PROPERTIES" text="Parameters"></app-tab-title></button>
                 <ng-template ngbNavContent>
                     <div class="tabPanel">
                         <div class="tabControls">
@@ -217,7 +217,7 @@
                 </ng-template>
             </li>
             <li [ngbNavItem]="Constants.TAB.DOMAIN.TEST_SERVICES">
-                <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-gears" text="Test services"></app-tab-title></button>
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.CUSTOM_TEST_SERVICES" text="Test services"></app-tab-title></button>
                 <ng-template ngbNavContent>
                     <div class="tabPanel">
                         <div class="tabControls">

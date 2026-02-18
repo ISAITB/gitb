@@ -45,7 +45,7 @@
                         <div class="test-case-description">{{testCase.description}}</div>
                         <div class="test-case-controls">
                             @if (testCase.hasDocumentation) {
-                                <button type="button" class="btn btn-secondary" (click)="showTestCaseDocumentation(testCase.id); $event.stopPropagation()" tooltipClass="shortTooltip" ngbTooltip="Documentation" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-info-circle"></i></button>
+                                <button type="button" class="btn btn-secondary" (click)="showTestCaseDocumentation(testCase.id); $event.stopPropagation()" tooltipClass="shortTooltip" ngbTooltip="Documentation" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i [class]="Constants.BUTTON_ICON.DOCUMENTATION"></i></button>
                             }
                             <div class="progress-icon"><i class="fa-solid testsuite-progress-icon" [ngClass]="progressIcon(testCase.id)" tooltipClass="shortTooltip" [ngbTooltip]="progressIconTooltip(testCase.id)"></i></div>
                         </div>

@@ -90,9 +90,9 @@ export class ConfigurationEntryComponent implements OnInit {
 
   statusIcon() {
     if (this.status.enabled) {
-      return "fa-solid fa-circle-check"
+      return Constants.BUTTON_ICON.ENABLED
     } else {
-      return "fa-solid fa-ban"
+      return Constants.BUTTON_ICON.DISABLED
     }
   }
 

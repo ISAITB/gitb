@@ -2,7 +2,7 @@
     @if (value != undefined && value.length > 0) {
         <div class="value-container-inner">
             <div class="value"><span>{{value}}</span></div>
-            <div class="icon"><i class="fa-solid fa-clipboard" aria-hidden="true"></i></div>
+            <div class="icon"><i [class]="Constants.BUTTON_ICON.CLIPBOARD" aria-hidden="true"></i></div>
         </div>
     }
 </div>

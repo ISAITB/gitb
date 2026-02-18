@@ -46,7 +46,7 @@
     <div>
         <ul ngbNav #tabs="ngbNav" class="nav-tabs" [(activeId)]="tabIdToShow" (activeIdChange)="showTab()" [animation]="false">
             <li [ngbNavItem]="Constants.TAB.ORGANISATION.SYSTEMS">
-                <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-cube" [text]="dataService.labelSystems()"></app-tab-title></button>
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.SYSTEM" [text]="dataService.labelSystems()"></app-tab-title></button>
                 <ng-template ngbNavContent>
                     <div class="tabPanel">
                         @if (showCreateSystem) {
@@ -74,7 +74,7 @@
             </li>
             @if (showUsersTab) {
                 <li [ngbNavItem]="Constants.TAB.ORGANISATION.USERS">
-                    <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-user" text="Users"></app-tab-title></button>
+                    <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.USER" text="Users"></app-tab-title></button>
                     <ng-template ngbNavContent>
                         <div class="tabPanel">
                             @if (showCreateUser) {
@@ -103,7 +103,7 @@
             }
             @if (apiInfoVisible && apiKeyState) {
                 <li [ngbNavItem]="Constants.TAB.ORGANISATION.API_KEYS">
-                    <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-key" text="REST API keys"></app-tab-title></button>
+                    <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.API_KEY" text="REST API keys"></app-tab-title></button>
                     <ng-template ngbNavContent>
                         <div class="tabPanel">
                             <app-api-key-info [state]="apiKeyState"></app-api-key-info>

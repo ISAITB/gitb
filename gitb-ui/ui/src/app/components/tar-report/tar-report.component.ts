@@ -15,6 +15,7 @@
 
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { AssertionReport } from '../diagram/assertion-report';
+import {Constants} from '../../common/constants';
 
 @Component({
     selector: 'app-tar-report',
@@ -86,4 +87,5 @@ export class TarReportComponent implements OnInit {
     })
   }
 
+  protected readonly Constants = Constants;
 }

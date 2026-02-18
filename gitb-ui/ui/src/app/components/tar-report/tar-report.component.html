@@ -4,17 +4,17 @@
         <div class="summary-labels">
             @if (errors > 0) {
                 <div class="ms-2">
-                    <app-tag label="fa-solid fa-times-circle" [toggleEnabled]="true" [toggledByDefault]="true" (toggle)="errorsToggled($event)" [value]="errors + (errors == 1 ?' error':' errors')" [icon]="true" styleClass="summaryErrors"></app-tag>
+                    <app-tag [label]="Constants.BUTTON_ICON.SEVERITY_ERROR" [toggleEnabled]="true" [toggledByDefault]="true" (toggle)="errorsToggled($event)" [value]="errors + (errors == 1 ?' error':' errors')" [icon]="true" styleClass="summaryErrors"></app-tag>
                 </div>
             }
             @if (warnings > 0) {
                 <div class="ms-2">
-                    <app-tag label="fa-solid fa-warning" [toggleEnabled]="true" [toggledByDefault]="true" (toggle)="warningsToggled($event)" [value]="warnings + (warnings == 1 ?' warning':' warnings')" [icon]="true" styleClass="summaryWarnings"></app-tag>
+                    <app-tag [label]="Constants.BUTTON_ICON.SEVERITY_WARNING" [toggleEnabled]="true" [toggledByDefault]="true" (toggle)="warningsToggled($event)" [value]="warnings + (warnings == 1 ?' warning':' warnings')" [icon]="true" styleClass="summaryWarnings"></app-tag>
                 </div>
             }
             @if (messages > 0) {
                 <div class="ms-2">
-                    <app-tag label="fa-solid fa-info-circle" [toggleEnabled]="true" [toggledByDefault]="true" (toggle)="messagesToggled($event)" [value]="messages + (messages == 1 ?' message':' messages')" [icon]="true" styleClass="summaryMessages"></app-tag>
+                    <app-tag [label]="Constants.BUTTON_ICON.SEVERITY_INFO" [toggleEnabled]="true" [toggledByDefault]="true" (toggle)="messagesToggled($event)" [value]="messages + (messages == 1 ?' message':' messages')" [icon]="true" styleClass="summaryMessages"></app-tag>
                 </div>
             }
         </div>

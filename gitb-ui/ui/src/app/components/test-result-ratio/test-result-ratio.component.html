@@ -1,6 +1,6 @@
 <div class="root-container" (click)="$event.stopPropagation()">
     @if (hasIgnored) {
-        <div class="expand-icon" (click)="expand()" ngbTooltip="Expand" tooltipClass="shortTooltip" [openDelay]="Constants.TOOLTIP_DELAY"><span><i class="fa-solid fa-plus-circle"></i></span></div>
+        <div class="expand-icon" (click)="expand()" ngbTooltip="Expand" tooltipClass="shortTooltip" [openDelay]="Constants.TOOLTIP_DELAY"><span><i [class]="Constants.BUTTON_ICON.MORE"></i></span></div>
     }
     <div class="ratio-container">
         @if (hasRequired) {
@@ -56,7 +56,7 @@
                         </div>
                     }
                 </div>
-                <div class="close-container" (click)="close()"><span><i class="fa-solid fa-times"></i></span></div>
+                <div class="close-container" (click)="close()"><span><i [class]="Constants.BUTTON_ICON.CANCEL"></i></span></div>
             </div>
         </div>
     }

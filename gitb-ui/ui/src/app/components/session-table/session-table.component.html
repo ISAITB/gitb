@@ -15,9 +15,9 @@
                             {{column.title}}
                             <span class="ms-1">
                                 @if (column.order == 'desc') {
-                                    <i class="fa-solid fa-caret-down"></i>
+                                    <i [class]="Constants.BUTTON_ICON.SORT_DESCENDING"></i>
                                 } @else if (column.order == 'asc') {
-                                    <i class="fa-solid fa-caret-up"></i>
+                                    <i [class]="Constants.BUTTON_ICON.SORT_ASCENDING"></i>
                                 }
                             </span>
                         </div>
@@ -31,9 +31,9 @@
                         <div class="cell-content">
                             {{column.title}}
                             @if (column.order == 'desc') {
-                                <i class="fa-solid fa-caret-down"></i>
+                                <i [class]="Constants.BUTTON_ICON.SORT_DESCENDING"></i>
                             } @else if (column.order == 'asc') {
-                                <i class="fa-solid fa-caret-up"></i>
+                                <i [class]="Constants.BUTTON_ICON.SORT_ASCENDING"></i>
                             }
                         </div>
                     </th>

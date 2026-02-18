@@ -17,6 +17,7 @@ import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {PopupNotification} from '../../types/popup-notification';
 import {PopupNotificationApi} from './popup-notification-api';
 import {NgClass} from '@angular/common';
+import {Constants} from '../../common/constants';
 
 @Component({
   selector: 'app-popup-notification',
@@ -59,4 +60,6 @@ export class PopupNotificationComponent implements OnInit, PopupNotificationApi 
   mouseEntering() {
     this.hovering = true
   }
+
+  protected readonly Constants = Constants;
 }

@@ -28,6 +28,7 @@ import {HealthCheckService} from '../../services/health-check.service';
 import {HealthStatus} from '../../types/health-status';
 import {MenuItemStatus} from '../../types/menu-item-status.enum';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
+import {Constants} from '../../common/constants';
 
 @Component({
     selector: 'app-index',
@@ -232,4 +233,5 @@ export class IndexComponent implements OnInit, OnDestroy {
     }
   }
 
+  protected readonly Constants = Constants;
 }

@@ -145,7 +145,7 @@
                                                 Last update
                                             </div>
                                             <div>
-                                                <app-tag label="fa-solid fa-clock" [icon]="true" tooltipText="The last time a test session was executed for the statement." [value]="lastUpdate"></app-tag>
+                                                <app-tag [label]="Constants.BUTTON_ICON.TIME" [icon]="true" tooltipText="The last time a test session was executed for the statement." [value]="lastUpdate"></app-tag>
                                             </div>
                                         </div>
                                     }
@@ -223,7 +223,7 @@
 	</div>
     <ul ngbNav #tabs="ngbNav" class="nav-tabs" [(activeId)]="tabIdToShow" (activeIdChange)="showTab()" [animation]="false">
         <li [ngbNavItem]="Constants.TAB.CONFORMANCE_STATEMENT.TESTS">
-            <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-list-ul" text="Conformance tests"></app-tab-title></button>
+            <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.TEST_CASE" text="Conformance tests"></app-tab-title></button>
             <ng-template ngbNavContent>
                 <div class="tabPanel" [class.disable-events]="updatingTests">
                     <div class="tabControls">
@@ -255,7 +255,7 @@
                                     </div>
                                     @if (displayedTestSuites.length > 1) {
                                         <button class="btn btn-primary" (click)="onMultipleTestSelect(); $event.stopPropagation();" [pending]="statementExecutionPending" [icon]="true" tooltipClass="shortTooltip" container="body" ngbTooltip="Run all" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
-                                            <span><i class="fa-solid fa-play"></i></span>
+                                            <span><i [class]="Constants.BUTTON_ICON.EXECUTE"></i></span>
                                         </button>
                                     }
                                 </div>
@@ -290,7 +290,7 @@
         </li>
         @if (!isReadonly) {
             <li [ngbNavItem]="Constants.TAB.CONFORMANCE_STATEMENT.CONFIGURATION">
-                <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-sliders" text="Configuration properties"></app-tab-title></button>
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.CONFIGURATION_PROPERTIES" text="Configuration properties"></app-tab-title></button>
                 <ng-template ngbNavContent>
                     <div class="tabPanel">
                         @if (loadingConfiguration.status != Constants.STATUS.FINISHED) {

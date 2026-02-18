@@ -14,6 +14,7 @@
  */
 
 import {Component, Input} from '@angular/core';
+import {Constants} from '../../common/constants';
 
 @Component({
     selector: 'app-tooltip, [app-tooltip]',
@@ -32,4 +33,5 @@ export class TooltipComponent {
 
   constructor() { }
 
+  protected readonly Constants = Constants;
 }

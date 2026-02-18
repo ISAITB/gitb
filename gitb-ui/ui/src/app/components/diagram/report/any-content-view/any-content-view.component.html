@@ -41,18 +41,18 @@
                                     <button class="btn btn-secondary" type="button" (click)="copy()"
                                             tooltipClass="shortTooltip" container="body" ngbTooltip="Copy"
                                             [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i
-                                        class="fa-solid fa-clipboard" aria-hidden="true"></i></button>
+                                        [class]="Constants.BUTTON_ICON.CLIPBOARD" aria-hidden="true"></i></button>
                                 } @else {
                                     <button class="btn btn-secondary" type="button" (click)="download()"
                                             [class.pending]="downloadPending" [pending]="downloadPending" [icon]="true"
                                             tooltipClass="shortTooltip" container="body" ngbTooltip="Download"
                                             [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i
-                                        class="fa-solid fa-download" aria-hidden="true"></i></button>
+                                        [class]="Constants.BUTTON_ICON.DOWNLOAD" aria-hidden="true"></i></button>
                                     <button class="btn btn-secondary" type="button" (click)="open()"
                                             [class.pending]="openPending" [pending]="openPending" [icon]="true"
                                             tooltipClass="shortTooltip" container="body" ngbTooltip="View"
                                             [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i
-                                        class="fa-solid fa-search" aria-hidden="true"></i></button>
+                                        [class]="Constants.BUTTON_ICON.VIEW" aria-hidden="true"></i></button>
                                 }
                             </div>
                         </div>

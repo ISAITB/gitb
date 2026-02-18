@@ -499,7 +499,7 @@
     <div>
         <ul ngbNav #tabs="ngbNav" class="nav-tabs" [(activeId)]="tabIdToShow" (activeIdChange)="showTab()" [animation]="false">
             <li [ngbNavItem]="Constants.TAB.SYSTEM_ADMINISTRATION.ADMINISTRATORS">
-                <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-user" text="Administrators"></app-tab-title></button>
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.USER" text="Administrators"></app-tab-title></button>
                 <ng-template ngbNavContent>
                     <!-- Administrators -->
                     <div class="tabPanel">
@@ -525,7 +525,7 @@
                 </ng-template>
             </li>
             <li [ngbNavItem]="Constants.TAB.SYSTEM_ADMINISTRATION.LANDING_PAGES">
-                <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-house" text="Default landing pages"></app-tab-title></button>
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.LANDING_PAGE" text="Default landing pages"></app-tab-title></button>
                 <ng-template ngbNavContent>
                     <!-- Landing pages -->
                     <div class="tabPanel">
@@ -551,7 +551,7 @@
                 </ng-template>
             </li>
             <li [ngbNavItem]="Constants.TAB.SYSTEM_ADMINISTRATION.LEGAL_NOTICES">
-                <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-scale-balanced" text="Default legal notices"></app-tab-title></button>
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.LEGAL_NOTICE" text="Default legal notices"></app-tab-title></button>
                 <ng-template ngbNavContent>
                     <!-- Legal notices -->
                     <div class="tabPanel">
@@ -577,7 +577,7 @@
                 </ng-template>
             </li>
             <li [ngbNavItem]="Constants.TAB.SYSTEM_ADMINISTRATION.ERROR_TEMPLATES">
-                <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-bug" text="Default error templates"></app-tab-title></button>
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.ERROR_TEMPLATE" text="Default error templates"></app-tab-title></button>
                 <ng-template ngbNavContent>
                     <!-- Error templates -->
                     <div class="tabPanel">
@@ -603,7 +603,7 @@
                 </ng-template>
             </li>
             <li [ngbNavItem]="Constants.TAB.SYSTEM_ADMINISTRATION.THEMES">
-                <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-palette" text="Themes"></app-tab-title></button>
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.THEME" text="Themes"></app-tab-title></button>
                 <ng-template ngbNavContent>
                     <!-- Themes -->
                     <div class="tabPanel">
@@ -629,7 +629,7 @@
                 </ng-template>
             </li>
             <li [ngbNavItem]="Constants.TAB.SYSTEM_ADMINISTRATION.RESOURCES">
-                <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-image" text="Resources"></app-tab-title></button>
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.RESOURCE" text="Resources"></app-tab-title></button>
                 <ng-template ngbNavContent>
                     <!-- System-wide resources -->
                     <app-resource-management-tab

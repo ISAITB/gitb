@@ -35,22 +35,23 @@
                 @if (dataService.showNavigationControls) {
                     <div class="page-menu">
                         <app-menu-item (click)="routingService.toHome()" [type]="MenuItem.home" label="Home"
-                                       icon="fa-solid fa-house" [expanded]="dataService.menuVisibility"></app-menu-item>
+                                       [icon]="Constants.BUTTON_ICON.LANDING_PAGE" [expanded]="dataService.menuVisibility"></app-menu-item>
                         @if (dataService.showSystemAdminMenu || dataService.showCommunityAdminMenu) {
                             <app-menu-group label="Administration" [expanded]="dataService.menuVisibility"></app-menu-group>
                             <app-menu-item (click)="routingService.toConformanceDashboard()"
                                            [type]="MenuItem.conformanceDashboard" label="Conformance dashboard"
-                                           icon="fa-solid fa-gauge-simple-high"
+                                           [icon]="Constants.BUTTON_ICON.CONFORMANCE_DASHBOARD"
                                            [expanded]="dataService.menuVisibility"></app-menu-item>
                             <app-menu-item (click)="routingService.toSessionDashboard()"
                                            [type]="MenuItem.sessionDashboard" label="Session dashboard"
-                                           icon="fa-solid fa-rectangle-list" [expanded]="dataService.menuVisibility"></app-menu-item>
+                                           [icon]="Constants.BUTTON_ICON.SESSION_DASHBOARD" [expanded]="dataService.menuVisibility"></app-menu-item>
                             <app-menu-item (click)="toDomainManagement()" [type]="MenuItem.domainManagement"
-                                           [label]="dataService.labelDomain() +' management'" icon="fa-solid fa-sitemap"
+                                           [label]="dataService.labelDomain() +' management'"
+                                           [icon]="Constants.BUTTON_ICON.DOMAIN"
                                            [expanded]="dataService.menuVisibility"></app-menu-item>
                             <app-menu-item (click)="dataService.isSystemAdmin?routingService.toUserManagement():routingService.toCommunity(dataService.community!.id)"
                                            [type]="MenuItem.communityManagement" label="Community management"
-                                           icon="fa-solid fa-people-group" [expanded]="dataService.menuVisibility"></app-menu-item>
+                                           [icon]="Constants.BUTTON_ICON.COMMUNITY_MANAGEMENT" [expanded]="dataService.menuVisibility"></app-menu-item>
                             <app-menu-item (click)="routingService.toDataManagement()" [type]="MenuItem.dataManagement"
                                            label="Data management"
                                            [expanded]="dataService.menuVisibility">
@@ -67,32 +68,37 @@
                                 @if (dataService.showSystemAdminMenu) {
                                     <app-menu-item (click)="routingService.toSystemAdministration()"
                                                    [type]="MenuItem.systemAdministration" label="System administration"
-                                                   icon="fa-solid fa-gear" [expanded]="dataService.menuVisibility"></app-menu-item>
+                                                   [icon]="Constants.BUTTON_ICON.SYSTEM_ADMINISTRATION" [expanded]="dataService.menuVisibility"></app-menu-item>
                                 }
                                 <app-menu-item (click)="routingService.toServiceHealthDashboard()"
                                                [type]="MenuItem.serviceHealthDashboard" label="Service health"
-                                               icon="fa-solid fa-heart-pulse" [expanded]="dataService.menuVisibility"></app-menu-item>
+                                               [icon]="Constants.BUTTON_ICON.HEALTH_DASHBOARD" [expanded]="dataService.menuVisibility"></app-menu-item>
                             }
                         }
                         @if (dataService.showCommunityViewMenu) {
                             <app-menu-group label="My community" [expanded]="dataService.menuVisibility"></app-menu-group>
                             <app-menu-item (click)="routingService.toCommunitySessionDashboard()"
                                            [type]="MenuItem.communitySessionDashboard" label="Community test sessions"
-                                           icon="fa-solid fa-rectangle-list" [expanded]="dataService.menuVisibility"></app-menu-item>
+                                           [icon]="Constants.BUTTON_ICON.SESSION_DASHBOARD" [expanded]="dataService.menuVisibility"></app-menu-item>
                         }
                         <app-menu-group label="My tests" [expanded]="dataService.menuVisibility"></app-menu-group>
                         <app-menu-item (click)="routingService.toOwnConformanceStatements(dataService.vendor!.id)"
-                                       [type]="MenuItem.myConformanceStatements" label="My conformance statements"
-                                       icon="fa-solid fa-award" [expanded]="dataService.menuVisibility"></app-menu-item>
+                                       [type]="MenuItem.myConformanceStatements"
+                                       label="My conformance statements"
+                                       [icon]="Constants.BUTTON_ICON.CONFORMANCE_STATEMENT" [expanded]="dataService.menuVisibility"></app-menu-item>
                         <app-menu-item (click)="routingService.toTestHistory(dataService.vendor!.id)"
-                                       [type]="MenuItem.myTestSessions" label="My test sessions"
-                                       icon="fa-regular fa-rectangle-list" [expanded]="dataService.menuVisibility"></app-menu-item>
+                                       [type]="MenuItem.myTestSessions"
+                                       label="My test sessions"
+                                       [icon]="Constants.BUTTON_ICON.MY_SESSION_DASHBOARD" [expanded]="dataService.menuVisibility"></app-menu-item>
                         <app-menu-item (click)="routingService.toOwnOrganisationDetails()"
                                        [type]="MenuItem.myOrganisation"
-                                       [label]="'My '+dataService.labelOrganisationLower()" icon="fa-solid fa-building"
+                                       [label]="'My '+dataService.labelOrganisationLower()"
+                                       [icon]="Constants.BUTTON_ICON.ORGANISATION"
                                        [expanded]="dataService.menuVisibility"></app-menu-item>
                         <app-menu-group [expanded]="dataService.menuVisibility"></app-menu-group>
-                        <app-menu-item label="Link to current page" icon="fa-solid fa-link" (click)="copyExternalLink()"
+                        <app-menu-item label="Link to current page"
+                                       [icon]="Constants.BUTTON_ICON.COPY_LINK"
+                                       (click)="copyExternalLink()"
                                        [expanded]="dataService.menuVisibility"></app-menu-item>
                         <app-menu-item [label]="dataService.menuVisibility?'Collapse menu':'Expand menu'"
                                        [icon]="'fa-solid '+(dataService.menuVisibility?'fa-angles-left':'fa-angles-right')"

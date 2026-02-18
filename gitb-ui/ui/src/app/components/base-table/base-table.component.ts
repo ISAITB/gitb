@@ -19,6 +19,7 @@ import {LoadingStatus} from 'src/app/types/loading-status.type';
 import {TableColumnDefinition} from 'src/app/types/table-column-definition.type';
 import {PagingEvent} from '../paging-controls/paging-event';
 import {TableRowApi} from '../table-row/table-row-api';
+import {Constants} from '../../common/constants';
 
 @Component({
     template: '',
@@ -36,8 +37,8 @@ export abstract class BaseTableComponent extends BaseComponent {
 	@Input() actionVisibleForRow?: (row: any) => boolean
 	@Input() actionPendingProperty = 'actionPending'
 	@Input() actionIcon = ''
-  @Input() deleteIcon = 'fa-solid fa-trash'
-  @Input() exportIcon = 'fa-solid fa-file-pdf'
+  @Input() deleteIcon = Constants.BUTTON_ICON.DELETE
+  @Input() exportIcon = Constants.BUTTON_ICON.REPORT_PDF
 	@Input() operationsVisible = false
 	@Input() deleteVisibleForRow?: (row: any) => boolean
 	@Input() deletePendingProperty = 'deletePending'

@@ -1,6 +1,6 @@
 @if (dragActive) {
   <div class="drag-active form-control" [class.drop-active]="dropActive">
-    <span class="drop-icon"><i class="fa-solid fa-upload"></i></span>
+    <span class="drop-icon"><i [class]="Constants.BUTTON_ICON.UPLOAD"></i></span>
     <span>Drop file here</span>
   </div>
 } @else {

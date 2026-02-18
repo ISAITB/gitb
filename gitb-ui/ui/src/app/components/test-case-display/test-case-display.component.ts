@@ -123,7 +123,7 @@ export class TestCaseDisplayComponent extends BaseComponent implements TestCaseD
       const options: CheckboxOption[][] = []
       if (testCase.sessionId != undefined) {
         options.push([
-          { key: TestCaseDisplayComponent.VIEW_SESSION, label: "View test session", default: true, iconClass: "fa-solid fa-search"}
+          { key: TestCaseDisplayComponent.VIEW_SESSION, label: "View test session", default: true, iconClass: Constants.BUTTON_ICON.VIEW}
         ])
       }
       if (this.showExportTestCase(testCase)) {

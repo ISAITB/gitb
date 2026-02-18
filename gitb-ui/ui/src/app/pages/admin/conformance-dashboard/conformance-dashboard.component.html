@@ -15,7 +15,7 @@
                             <span class="mini-tab"><i [class]="Constants.BUTTON_ICON.SNAPSHOT"></i></span>
                             {{snapshotButtonLabel}}
                             @if (initialisingSnapshots) {
-                                <span class="ms-2"><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span>
+                                <span class="ms-2"><i [class]="Constants.BUTTON_ICON.PENDING"></i></span>
                             }
                         </div>
                     </button>

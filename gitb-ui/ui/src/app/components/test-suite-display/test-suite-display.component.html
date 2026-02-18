@@ -12,10 +12,10 @@
                         <div class="testSuiteControls">
                             <div class="btn-toolbar">
                                 @if (testSuite.hasDocumentation && showViewDocumentation) {
-                                    <button type="button" class="btn btn-secondary" (click)="showTestSuiteDocumentation(testSuite); $event.stopPropagation();" [icon]="true" [pending]="viewDocumentationPending[testSuite.id]" tooltipClass="shortTooltip" container="body"  ngbTooltip="Documentation" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-info-circle"></i></button>
+                                    <button type="button" class="btn btn-secondary" (click)="showTestSuiteDocumentation(testSuite); $event.stopPropagation();" [icon]="true" [pending]="viewDocumentationPending[testSuite.id]" tooltipClass="shortTooltip" container="body"  ngbTooltip="Documentation" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i [class]="Constants.BUTTON_ICON.DOCUMENTATION"></i></button>
                                 }
                                 @if (showExecute && testSuite.testCases.length > 1) {
-                                    <button class="btn btn-primary" (click)="onTestSuiteSelect(testSuite); $event.stopPropagation();" [pending]="testSuite.executionPending" [icon]="true" tooltipClass="shortTooltip" container="body" ngbTooltip="Run all" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-play"></i></button>
+                                    <button class="btn btn-primary" (click)="onTestSuiteSelect(testSuite); $event.stopPropagation();" [pending]="testSuite.executionPending" [icon]="true" tooltipClass="shortTooltip" container="body" ngbTooltip="Run all" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i [class]="Constants.BUTTON_ICON.EXECUTE"></i></button>
                                 }
                             </div>
                         </div>

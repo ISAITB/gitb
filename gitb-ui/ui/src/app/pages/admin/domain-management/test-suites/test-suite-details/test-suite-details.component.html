@@ -57,7 +57,7 @@
 						<div class="offset-1 col-10">
 							<div class="btn-toolbar">
 								<button (click)="previewDocumentation()" [labelIcon]="Constants.BUTTON_ICON.PREVIEW" type="button" class="btn btn-secondary" [disable]="this.testSuite.documentation == undefined || this.testSuite.documentation.length == 0">Preview documentation</button>
-								<button (click)="copyDocumentation()" [labelIcon]="Constants.BUTTON_ICON.COPY" type="button" class="btn btn-secondary" [disable]="this.testSuite.documentation == undefined || this.testSuite.documentation.length == 0">Copy to clipboard</button>
+								<button (click)="copyDocumentation()" [labelIcon]="Constants.BUTTON_ICON.CLIPBOARD" type="button" class="btn btn-secondary" [disable]="this.testSuite.documentation == undefined || this.testSuite.documentation.length == 0">Copy to clipboard</button>
 							</div>
 						</div>
 					</div>
@@ -84,7 +84,7 @@
 	<div>
         <ul ngbNav #tabs="ngbNav" class="nav-tabs" [(activeId)]="tabIdToShow" (activeIdChange)="showTab()" [animation]="false">
             <li [ngbNavItem]="Constants.TAB.TEST_SUITE.TEST_CASES">
-                <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-file-code" text="Test cases"></app-tab-title></button>
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.TEST_CASE" text="Test cases"></app-tab-title></button>
                 <ng-template ngbNavContent>
                     <div class="tabPanel" [class.disable-events]="testCasesRefreshing">
                         @if (dataStatus.status != Constants.STATUS.FINISHED) {
@@ -126,7 +126,7 @@
             </li>
             @if (testSuite.shared) {
                 <li [ngbNavItem]="Constants.TAB.TEST_SUITE.SPECIFICATIONS">
-                    <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-list-check" [text]="'Linked '+dataService.labelSpecificationsLower()"></app-tab-title></button>
+                    <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.SPECIFICATION" [text]="'Linked '+dataService.labelSpecificationsLower()"></app-tab-title></button>
                     <ng-template ngbNavContent>
                         <div class="tabPanel">
                             <div class="tabControls">

@@ -20,6 +20,7 @@ import {ServiceHealthCardComponentApi} from './service-health-card-component-api
 import {map, Subject} from 'rxjs';
 import {ServiceHealthModalComponent} from '../../modals/service-health-modal/service-health-modal.component';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
+import {Constants} from '../../common/constants';
 
 @Component({
   selector: 'app-service-health-card',
@@ -75,4 +76,5 @@ export class ServiceHealthCardComponent implements ServiceHealthCardComponentApi
   }
 
   protected readonly HealthStatus = HealthStatus;
+  protected readonly Constants = Constants;
 }

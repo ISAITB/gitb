@@ -19,7 +19,7 @@
             <div class="input-group">
                 <input id="specLink" name="specLink" [(ngModel)]="reference.specLink" class="form-control" type="text">
                 <a [href]="reference.specLink" target="blank" class="btn btn-secondary" [class.disabled]="reference.specLink == undefined || reference.specLink.length == 0" role="button" tooltipClass="shortTooltip" container="body" ngbTooltip="Visit" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
-                    <i class="fa-solid fa-up-right-from-square"></i>
+                    <i [class]="Constants.BUTTON_ICON.GO"></i>
                 </a>
             </div>
         </div>

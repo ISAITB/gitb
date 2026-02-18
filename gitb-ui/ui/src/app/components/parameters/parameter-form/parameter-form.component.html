@@ -161,11 +161,11 @@
                                     >
                                         <td class="drag-preview"><div class="cell-content"><input [attr.id]="'presetValue-'+index" [name]="'presetValue-'+index" class="form-control" type="text" [(ngModel)]="presetValue.value"/></div></td>
                                         <td><div class="cell-content"><input class="form-control" type="text" [name]="'presetValueLabel-'+index" [(ngModel)]="presetValue.label"/></div></td>
-                                        <td><div class="cell-content"><button class="btn btn-secondary" type="button" (click)="removePresetValue(index)" tooltipClass="shortTooltip" ngbTooltip="Delete" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-trash"></i></button></div></td>
+                                        <td><div class="cell-content"><button class="btn btn-secondary" type="button" (click)="removePresetValue(index)" tooltipClass="shortTooltip" ngbTooltip="Delete" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i [class]="Constants.BUTTON_ICON.DELETE"></i></button></div></td>
                                         @if (parameter.presetValues!.length > 1) {
                                             <td class="drag-handle">
                                                 <div class="cell-content">
-                                                    <button cdkDragHandle #pop="ngbTooltip" (mousedown)="mouseDownOnDragButton(pop)" (mouseout)="mouseOutOnDragButton(pop)" class="btn btn-secondary" type="button" tooltipClass="shortTooltip" container="body" ngbTooltip="Reorder" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrows-up-down"></i></span></button>
+                                                    <button cdkDragHandle #pop="ngbTooltip" (mousedown)="mouseDownOnDragButton(pop)" (mouseout)="mouseOutOnDragButton(pop)" class="btn btn-secondary" type="button" tooltipClass="shortTooltip" container="body" ngbTooltip="Reorder" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i [class]="Constants.BUTTON_ICON.REORDER"></i></span></button>
                                                 </div>
                                             </td>
                                         }
@@ -179,7 +179,7 @@
         </div>
         <div class="row">
             <div class="col-8 offset-3">
-                <button class="btn btn-secondary" type="button" (click)="addPresetValue()" tooltipClass="shortTooltip" ngbTooltip="Add" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-plus"></i></button>
+                <button class="btn btn-secondary" type="button" (click)="addPresetValue()" tooltipClass="shortTooltip" ngbTooltip="Add" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i [class]="Constants.BUTTON_ICON.NEW"></i></button>
             </div>
         </div>
     </div>

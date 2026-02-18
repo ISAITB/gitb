@@ -211,4 +211,5 @@ export class StatementOptionsButtonComponent<T extends ConformanceIds> implement
     this.routingService.toDomain(this.item.domainId)
   }
 
+  protected readonly Constants = Constants;
 }

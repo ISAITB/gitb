@@ -14,6 +14,7 @@
  */
 
 import { Component, Input } from '@angular/core';
+import {Constants} from '../../common/constants';
 
 @Component({
     selector: 'app-prescription-level',
@@ -28,4 +29,5 @@ export class PrescriptionLevelComponent {
 
   constructor() { }
 
+  protected readonly Constants = Constants;
 }

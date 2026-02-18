@@ -16,6 +16,7 @@
 import {Component, HostListener, Input} from '@angular/core';
 import {DataService} from 'src/app/services/data.service';
 import {PopupService} from 'src/app/services/popup.service';
+import {Constants} from '../../common/constants';
 
 @Component({
     selector: 'app-copy-enabled-text',
@@ -48,4 +49,6 @@ export class CopyEnabledTextComponent {
       this.popupService.success('Value copied to clipboard.')
     })
   }
+
+    protected readonly Constants = Constants;
 }

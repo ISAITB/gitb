@@ -1,7 +1,7 @@
 <div class="root-container">
     @if (userLoaded()) {
       <div class="header-profile-user" [class.expanded]="expanded" (mouseenter)="overHeader()" (mouseleave)="leftHeader()">
-        <span class="user-icon"><i class="fa-solid fa-user"></i></span><span class="header-user-name"> {{dataService.user?.name}}</span><span class="user-icon-expand"><i class="fa-solid" [ngClass]="{'fa-angle-right': !expanded, 'fa-angle-down': expanded}"></i></span>
+        <span class="user-icon"><i [class]="Constants.BUTTON_ICON.USER"></i></span><span class="header-user-name"> {{dataService.user?.name}}</span><span class="user-icon-expand"><i class="fa-solid" [ngClass]="{'fa-angle-right': !expanded, 'fa-angle-down': expanded}"></i></span>
       </div>
     }
     @if (expanded) {
@@ -17,15 +17,15 @@
                   @if (!logoutInProgress) {
                     <div class="header-popup-options">
                       @if (!dataService.isDemoAccount() && (dataService.configuration.ssoEnabled || !dataService.user?.onetime) && isAuthenticated()) {
-                        <div class="profile-option" (click)="toProfile()"><span class="icon"><i class="fa-solid fa-user-pen"></i></span><span>My profile</span></div>
+                        <div class="profile-option" (click)="toProfile()"><span class="icon"><i [class]="Constants.BUTTON_ICON.PROFILE"></i></span><span>My profile</span></div>
                       }
                       @if (!dataService.isDemoAccount() && dataService.configuration.ssoEnabled && isAuthenticated()) {
-                        <div class="profile-option" (click)="switchAccount()"><span class="icon"><i class="fa-solid fa-arrows-rotate"></i></span><span>Switch role</span></div>
+                        <div class="profile-option" (click)="switchAccount()"><span class="icon"><i [class]="Constants.BUTTON_ICON.REPLACE"></i></span><span>Switch role</span></div>
                       }
                       @if (!dataService.isDemoAccount() && !dataService.configuration.ssoEnabled) {
-                        <div class="profile-option" (click)="toChangePassword()"><span class="icon"><i class="fa-solid fa-key"></i></span><span>Change password</span></div>
+                        <div class="profile-option" (click)="toChangePassword()"><span class="icon"><i [class]="Constants.BUTTON_ICON.PASSWORD"></i></span><span>Change password</span></div>
                       }
-                      <div class="profile-option" (click)="logout()"><span class="icon"><i class="fa-solid fa-power-off"></i></span><span>Logout</span></div>
+                      <div class="profile-option" (click)="logout()"><span class="icon"><i [class]="Constants.BUTTON_ICON.LOGOUT"></i></span><span>Logout</span></div>
                     </div>
                   }
               </div>

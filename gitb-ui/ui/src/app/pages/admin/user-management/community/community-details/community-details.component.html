@@ -33,7 +33,7 @@
     <div>
         <ul ngbNav #tabs="ngbNav" class="nav-tabs" [(activeId)]="tabIdToShow" (activeIdChange)="showTab()" [animation]="false">
             <li [ngbNavItem]="Constants.TAB.COMMUNITY.ORGANISATIONS">
-                <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-building" [text]="dataService.labelOrganisations()"></app-tab-title></button>
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.ORGANISATION" [text]="dataService.labelOrganisations()"></app-tab-title></button>
                 <ng-template ngbNavContent>
                     <!-- Organisations -->
                     <div class="tabPanel">
@@ -73,7 +73,7 @@
                 </ng-template>
             </li>
             <li [ngbNavItem]="Constants.TAB.COMMUNITY.ADMINISTRATORS">
-                <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-user" text="Administrators"></app-tab-title></button>
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.USER" text="Administrators"></app-tab-title></button>
                 <ng-template ngbNavContent>
                     <!-- Administrators -->
                     <div class="tabPanel">
@@ -99,7 +99,7 @@
                 </ng-template>
             </li>
             <li [ngbNavItem]="Constants.TAB.COMMUNITY.LANDING_PAGES">
-                <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-house" text="Landing pages"></app-tab-title></button>
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.LANDING_PAGE" text="Landing pages"></app-tab-title></button>
                 <ng-template ngbNavContent>
                     <!-- Landing pages -->
                     <div class="tabPanel">
@@ -128,7 +128,7 @@
                 </ng-template>
             </li>
             <li [ngbNavItem]="Constants.TAB.COMMUNITY.LEGAL_NOTICES">
-                <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-scale-balanced" text="Legal notices"></app-tab-title></button>
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.LEGAL_NOTICE" text="Legal notices"></app-tab-title></button>
                 <ng-template ngbNavContent>
                     <!-- Legal notices -->
                     <div class="tabPanel">
@@ -157,7 +157,7 @@
                 </ng-template>
             </li>
             <li [ngbNavItem]="Constants.TAB.COMMUNITY.ERROR_TEMPLATES">
-                <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-bug" text="Error templates"></app-tab-title></button>
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.ERROR_TEMPLATE" text="Error templates"></app-tab-title></button>
                 <ng-template ngbNavContent>
                     <!-- Error templates -->
                     <div class="tabPanel">
@@ -186,7 +186,7 @@
                 </ng-template>
             </li>
             <li [ngbNavItem]="Constants.TAB.COMMUNITY.TRIGGERS">
-                <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-bolt" text="Triggers"></app-tab-title></button>
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.TRIGGER" text="Triggers"></app-tab-title></button>
                 <ng-template ngbNavContent>
                     <!-- Triggers -->
                     <div class="tabPanel">
@@ -212,7 +212,7 @@
                 </ng-template>
             </li>
             <li [ngbNavItem]="Constants.TAB.COMMUNITY.RESOURCES">
-                <button ngbNavLink class="nav-link tabClass"><app-tab-title icon="fa-solid fa-image" text="Resources"></app-tab-title></button>
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.RESOURCE" text="Resources"></app-tab-title></button>
                 <ng-template ngbNavContent>
                     <!-- Community resources -->
                     <app-resource-management-tab

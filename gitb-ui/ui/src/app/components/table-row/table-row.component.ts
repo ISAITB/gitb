@@ -45,8 +45,8 @@ export class TableRowComponent implements OnInit, TableRowApi {
   @Input() deleteVisibleForRow?: (row: any) => boolean
   @Input() deletePendingProperty = 'deletePending'
   @Input() actionIcon = ''
-  @Input() deleteIcon = 'fa-solid fa-trash'
-  @Input() exportIcon = 'fa-solid fa-file-pdf'
+  @Input() deleteIcon = Constants.BUTTON_ICON.DELETE
+  @Input() exportIcon = Constants.BUTTON_ICON.REPORT_PDF
   @Input() actionTooltip = ''
   @Input() deleteTooltip = 'Delete'
   @Input() exportTooltip = 'Export'

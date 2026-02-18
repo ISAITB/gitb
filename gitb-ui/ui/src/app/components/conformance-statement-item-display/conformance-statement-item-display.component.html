@@ -47,7 +47,7 @@
                         @if (dataService.isSystemAdmin || dataService.isCommunityAdmin || dataService.community?.allowXmlReports === true) {
                             <app-checkbox-option-panel #optionButton
                                                        label="Options"
-                                                       icon="fa-solid fa-bars"
+                                                       [icon]="Constants.BUTTON_ICON.ACTIONS"
                                                        placement="left"
                                                        [options]="parentItemOptions"
                                                        [singleSelection]="true"
@@ -67,7 +67,7 @@
                             </div>
                         }
                         @if (updateTime) {
-                            <app-tag label="fa-solid fa-clock" [icon]="true" tooltipText="Last update time" [value]="updateTime"></app-tag>
+                            <app-tag [label]="Constants.BUTTON_ICON.TIME" [icon]="true" tooltipText="Last update time" [value]="updateTime"></app-tag>
                         }
                         @if (counters) {
                             <div class="item-counters">

@@ -122,7 +122,7 @@ export class PlaceholderSelectorComponent implements OnInit {
           name: 'resources',
           textField: 'name',
           filterLabel: 'Copy resource reference',
-          filterLabelIcon: Constants.BUTTON_ICON.RESOURCE,
+          filterLabelIcon: Constants.BUTTON_ICON.CLIPBOARD,
           singleSelection: true,
           loader: () => {
             return this.communityResourceService.getCommunityResources(communityIdToUse!)
@@ -136,7 +136,7 @@ export class PlaceholderSelectorComponent implements OnInit {
         name: 'systemResources',
         textField: 'name',
         filterLabel: 'Copy system-wide resource reference',
-        filterLabelIcon: Constants.BUTTON_ICON.RESOURCE,
+        filterLabelIcon: Constants.BUTTON_ICON.CLIPBOARD,
         singleSelection: true,
         loader: () => {
           return this.communityResourceService.getSystemResources()

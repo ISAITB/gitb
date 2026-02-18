@@ -14,6 +14,7 @@
  */
 
 import { Component, Input } from '@angular/core';
+import {Constants} from '../../common/constants';
 
 @Component({
     selector: 'app-pending-block',
@@ -29,4 +30,5 @@ export class PendingBlockComponent {
 
   constructor() { }
 
+    protected readonly Constants = Constants;
 }

@@ -14,6 +14,7 @@
  */
 
 import { Component, Input, OnInit } from '@angular/core';
+import {Constants} from '../../common/constants';
 
 @Component({
     selector: 'app-form-section',
@@ -36,4 +37,5 @@ export class FormSectionComponent implements OnInit {
     }
   }
 
+  protected readonly Constants = Constants;
 }

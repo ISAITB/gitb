@@ -14,6 +14,7 @@
  */
 
 import {AfterViewInit, Directive, ElementRef, Input, Renderer2} from '@angular/core';
+import {Constants} from '../common/constants';
 
 @Directive({
     selector: 'button[pending], button[labelIcon]',
@@ -57,7 +58,7 @@ export class PendingButtonDirective implements AfterViewInit {
         this.labelIconSpan.innerHTML = `<i class="${this.labelIcon}"></i>`
       }
     }
-    this.pendingSpan.innerHTML = '<i class="fa-solid fa-spinner fa-spin-override"></i>'
+    this.pendingSpan.innerHTML = `<i class="${Constants.BUTTON_ICON.PENDING_SMALL}"></i>`
     if (this.labelIcon != undefined) {
       // Add icon label span.
       this.renderer.appendChild(this.elementRef.nativeElement, this.labelIconSpan)

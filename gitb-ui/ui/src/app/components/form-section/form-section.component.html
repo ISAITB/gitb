@@ -4,7 +4,7 @@
             <div class="form-separator expandable" (click)="collapsed = !collapsed">
                 <div class="section-title"><app-collapsing-icon [isCollapsed]="collapsed!"></app-collapsing-icon>{{sectionTitle}}
                     @if (titleTooltip != undefined) {
-                        <span class="ms-2" [ngbTooltip]="titleTooltip" tooltipClass="tooltipContainerBig"><i class="fa-solid fa-question-circle"></i></span>
+                        <span class="ms-2" [ngbTooltip]="titleTooltip" tooltipClass="tooltipContainerBig"><i [class]="Constants.BUTTON_ICON.HELP"></i></span>
                     }
                 </div>
             </div>
