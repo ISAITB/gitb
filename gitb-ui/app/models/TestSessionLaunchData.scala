@@ -30,5 +30,6 @@ case class TestSessionLaunchData(
                                   testServiceParameters: Option[List[TypedActorConfiguration]],
                                   testCaseToInputMap: Option[Map[Long, List[AnyContent]]],
                                   sessionIdsToAssign: Option[Map[Long, String]],
-                                  forceSequentialExecution: Boolean) {
+                                  forceSequentialExecution: Boolean,
+                                  executionDelay: Option[Long]) {
 }

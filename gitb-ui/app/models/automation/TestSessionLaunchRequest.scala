@@ -24,5 +24,6 @@ case class TestSessionLaunchRequest(
   inputMapping: List[InputMapping],
   forceSequentialExecution: Boolean,
   waitForCompletion: Boolean,
-  maximumWaitTime: Option[Long]
+  maximumWaitTime: Option[Long],
+  executionDelay: Option[Long]
 ) {}

@@ -68,7 +68,7 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
     PropertyConstants.ACTOR_CONFIG_SYSTEM, PropertyConstants.ACTOR_CONFIG_ORGANISATION, PropertyConstants.ACTOR_CONFIG_DOMAIN
   )
 
-  def startHeadlessTestSessions(testCaseIds: List[Long], systemId: Long, actorId: Long, testCaseToInputMap: Option[Map[Long, List[AnyContent]]], sessionIdsToAssign: Option[Map[Long, String]], forceSequentialExecution: Boolean): Future[Unit] = {
+  def startHeadlessTestSessions(testCaseIds: List[Long], systemId: Long, actorId: Long, testCaseToInputMap: Option[Map[Long, List[AnyContent]]], sessionIdsToAssign: Option[Map[Long, String]], forceSequentialExecution: Boolean, executionDelay: Option[Long]): Future[Unit] = {
     if (testCaseIds.nonEmpty) {
       // Load information common to all test sessions
       loadConformanceStatementParameters(systemId, actorId, onlySimple = false).zip(
@@ -89,7 +89,7 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
         val launchInfo = PrepareTestSessionsEvent(TestSessionLaunchData(
           organisationData._1.community, organisationData._1.id, systemId, actorId, testCaseIds,
           statementParameters, domainParameters, organisationData._2, systemParameters, testServiceParameters,
-          testCaseToInputMap, sessionIdsToAssign, forceSequentialExecution))
+          testCaseToInputMap, sessionIdsToAssign, forceSequentialExecution, executionDelay))
         getSessionManagerActor().tell(launchInfo, ActorRef.noSender)
       }
     } else {
@@ -457,7 +457,7 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
       }
     } yield (testCaseInputData._1, statementIds.systemId, statementIds.actorId, testCaseInputData._2, testCaseInputData._3, testCaseInputData._4)
     DB.run(q).flatMap { results =>
-      startHeadlessTestSessions(results._1, results._2, results._3, results._4, Some(results._6), request.forceSequentialExecution).flatMap { _ =>
+      startHeadlessTestSessions(results._1, results._2, results._3, results._4, Some(results._6), request.forceSequentialExecution, request.executionDelay).flatMap { _ =>
         if (request.waitForCompletion) {
           // Wait until the test sessions have completed.
           val sessionBuffer = new ListBuffer[TestSessionLaunchInfo]()

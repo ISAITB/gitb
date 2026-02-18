@@ -35,6 +35,15 @@ class SessionLaunchState {
   private val idToSessionMap = mutable.Map[Long, String]()
   private val sessionToIdMap = mutable.Map[String, Long]()
   private val testCaseDefinitionCache = mutable.Map[Long, TestCase]()
+  private var delayToApply: Long = 0L
+
+  def getNextDelayToApply(): Long = {
+    val nextDelayToApply = delayToApply
+    if (delayToApply == 0) {
+      delayToApply = data.flatMap(_.executionDelay).getOrElse(0L)
+    }
+    nextDelayToApply
+  }
 
   def setLaunchData(data: TestSessionLaunchData): SessionLaunchState = {
     this.data = Some(data)

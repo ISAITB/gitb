@@ -1291,7 +1291,8 @@ object JsonUtil {
     val forceSequential = (jsonConfig \ "forceSequentialExecution").asOpt[Boolean].getOrElse(false)
     val waitForCompletion = (jsonConfig \ "waitForCompletion").asOpt[Boolean].getOrElse(false)
     val maximumWaitTime = (jsonConfig \ "maximumWaitTime").asOpt[Long]
-    TestSessionLaunchRequest(organisationKey, system, actor, testSuites, testCases, inputMappings, forceSequential, waitForCompletion, maximumWaitTime)
+    val executionDelay = (jsonConfig \ "executionDelay").asOpt[Long].flatMap(x => if (x <= 0) None else Some(x))
+    TestSessionLaunchRequest(organisationKey, system, actor, testSuites, testCases, inputMappings, forceSequential, waitForCompletion, maximumWaitTime, executionDelay)
   }
 
   def parseJsTestSuiteDeployRequest(jsonConfig: JsValue, sharedTestSuite: Boolean): (TestSuiteDeployRequest, String) = {

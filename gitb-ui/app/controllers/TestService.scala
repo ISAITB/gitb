@@ -315,7 +315,7 @@ class TestService @Inject() (authorizedAction: AuthorizedAction,
     val forceSequentialExecution = ParameterExtractor.optionalBodyParameter(request, ParameterNames.SEQUENTIAL).getOrElse("false").toBoolean
     if (testCaseIds.isDefined && testCaseIds.get.nonEmpty) {
       authorizationManager.canExecuteTestCases(request, testCaseIds.get, specId, systemId, actorId).flatMap { _ =>
-        testExecutionManager.startHeadlessTestSessions(testCaseIds.get, systemId, actorId, None, None, forceSequentialExecution).map { _ =>
+        testExecutionManager.startHeadlessTestSessions(testCaseIds.get, systemId, actorId, None, None, forceSequentialExecution, None).map { _ =>
           ResponseConstructor.constructEmptyResponse
         }
       }
