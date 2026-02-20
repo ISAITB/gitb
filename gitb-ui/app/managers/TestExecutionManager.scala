@@ -675,6 +675,7 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
             for {
               _ <- PersistenceSchema.testResults.filter(_.testSessionId === sessionId).map(_.endTime).update(now)
               _ <- PersistenceSchema.conformanceResults.filter(_.testsession === sessionId).map(c => (c.result, c.updateTime)).update(testSession.get.result, now)
+              _ <- testResultManager.deleteTestInteractions(sessionId, None)
             } yield ()
           } else {
             DBIO.successful(())
