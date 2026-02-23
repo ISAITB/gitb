@@ -83,11 +83,14 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
   completedSessionsCollapsedFinished = false
   sessionRefreshCompleteEmitter = new EventEmitter<TestResultReport|undefined>()
   sessionIdToShow?: string
+  systemIdToShow?: number
+  testCaseIdToShow?: number
   activeSortOrder = "asc"
   activeSortColumn = "startTime"
   completedSortOrder = "desc"
   completedSortColumn = "endTime"
   copyForOtherRoleOption = false
+  expandFirstSession = false
 
   @ViewChild("completedSessions") completedSessionsTable?: SessionTableComponent
   @ViewChild("activeSessions") activeSessionsTable?: SessionTableComponent
@@ -114,6 +117,15 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
     if (sessionIdValue != undefined) {
       this.sessionIdToShow = sessionIdValue
     }
+    const testCaseIdValue = this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.TEST_CASE_ID)
+    if (testCaseIdValue != undefined) {
+      this.testCaseIdToShow = Number(testCaseIdValue)
+    }
+    const systemIdValue = this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID)
+    if (systemIdValue != undefined) {
+      this.systemIdToShow = Number(systemIdValue)
+    }
+    this.expandFirstSession = this.sessionIdToShow != undefined || (this.systemIdToShow != undefined && this.testCaseIdToShow != undefined)
     if (!this.dataService.isSystemAdmin) {
       this.communityId = this.dataService.community!.id
     }
@@ -214,8 +226,16 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
       searchCriteria.endTimeBeginStr = filterData.endTimeBeginStr
       searchCriteria.endTimeEndStr = filterData.endTimeEndStr
       searchCriteria.sessionId = filterData.sessionId
-    } else if (this.sessionIdToShow != undefined) {
-      searchCriteria.sessionId = this.sessionIdToShow
+    } else if (this.sessionIdToShow != undefined || this.systemIdToShow != undefined || this.testCaseIdToShow != undefined) {
+      if (this.sessionIdToShow != undefined) {
+        searchCriteria.sessionId = this.sessionIdToShow
+      }
+      if (this.systemIdToShow != undefined) {
+        searchCriteria.systemIds = [this.systemIdToShow]
+      }
+      if (this.testCaseIdToShow != undefined) {
+        searchCriteria.testCaseIds = [this.testCaseIdToShow]
+      }
     }
     searchCriteria.activeSortColumn = this.activeSortColumn
     searchCriteria.activeSortOrder = this.activeSortOrder
@@ -317,10 +337,13 @@ export abstract class BaseSessionDashboardComponent implements OnInit, AfterView
     const result: TestResultForDisplay = this.newTestResult(testResult, completed)
     result.testSuiteId = testResult.testSuite?.id
     result.testCaseId = testResult.test?.id
-    if (this.sessionIdToShow != undefined && this.sessionIdToShow == testResult.result.sessionId) {
+    if (this.expandFirstSession) {
       // We have been asked to open a session. Set it as expand and keep it once.
+      this.expandFirstSession = false
       result.expanded = true
       this.sessionIdToShow = undefined
+      this.testCaseIdToShow = undefined
+      this.systemIdToShow = undefined
     }
     return result
   }

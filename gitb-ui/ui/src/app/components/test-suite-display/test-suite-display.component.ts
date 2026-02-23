@@ -38,8 +38,8 @@ export class TestSuiteDisplayComponent implements OnInit, TestSuiteDisplayCompon
   @Input() shaded = false
   @Input() communityId?: number
 
-  @Output() viewTestSession = new EventEmitter<string>()
   @Output() viewTestCaseDocumentation = new EventEmitter<number>()
+  @Output() viewTestSessions = new EventEmitter<ConformanceTestCase>()
   @Output() executeTestCase = new EventEmitter<ConformanceTestCase>()
   @Output() executeTestSuite = new EventEmitter<ConformanceTestSuite>()
   @Output() toggleExpand = new EventEmitter<boolean>()
@@ -99,8 +99,8 @@ export class TestSuiteDisplayComponent implements OnInit, TestSuiteDisplayCompon
     this.toggleExpand.emit(testSuite.expanded)
   }
 
-  propagateViewTestSession(sessionId: string) {
-    this.viewTestSession.emit(sessionId)
+  propagateViewTestSessions(testCase: ConformanceTestCase) {
+    this.viewTestSessions.emit(testCase)
   }
 
   propagateExecuteTestSession(testCase: ConformanceTestCase) {

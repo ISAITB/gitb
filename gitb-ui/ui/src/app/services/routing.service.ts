@@ -128,9 +128,15 @@ export class RoutingService {
     return this.navigate(MenuItem.systemAdministration, ['admin', 'system', 'admin', adminId])
   }
 
-  toTestHistory(organisationId: number, sessionIdToShow?: string) {
-    if (sessionIdToShow != undefined) {
-      return this.navigate(MenuItem.myTestSessions, ['organisation', 'tests', organisationId], { queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.TEST_SESSION_ID, sessionIdToShow) })
+  toTestHistory(organisationId: number, sessionIdToShow?: string, systemToShow?: number, testCaseToShow?: number) {
+    if (sessionIdToShow != undefined || systemToShow != undefined || testCaseToShow != undefined) {
+      return this.navigate(MenuItem.myTestSessions, ['organisation', 'tests', organisationId], {
+        queryParams: this.createMultipleQueryParams([
+          { name: Constants.NAVIGATION_QUERY_PARAM.TEST_SESSION_ID, value: sessionIdToShow },
+          { name: Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID, value: systemToShow },
+          { name: Constants.NAVIGATION_QUERY_PARAM.TEST_CASE_ID, value: testCaseToShow }
+        ])
+      })
     } else {
       return this.navigate(MenuItem.myTestSessions, ['organisation', 'tests', organisationId])
     }
@@ -483,9 +489,15 @@ export class RoutingService {
     return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'organisation', organisationId, 'user', userId])
   }
 
-  toSessionDashboard(sessionIdToShow?: string) {
-    if (sessionIdToShow != undefined) {
-      return this.navigate(MenuItem.sessionDashboard, ['admin', 'sessions'], { queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.TEST_SESSION_ID, sessionIdToShow) })
+  toSessionDashboard(sessionIdToShow?: string, systemToShow?: number, testCaseToShow?: number) {
+    if (sessionIdToShow != undefined || systemToShow != undefined || testCaseToShow != undefined) {
+      return this.navigate(MenuItem.sessionDashboard, ['admin', 'sessions'], {
+        queryParams: this.createMultipleQueryParams([
+          { name: Constants.NAVIGATION_QUERY_PARAM.TEST_SESSION_ID, value: sessionIdToShow },
+          { name: Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID, value: systemToShow },
+          { name: Constants.NAVIGATION_QUERY_PARAM.TEST_CASE_ID, value: testCaseToShow }
+        ])
+      })
     } else {
       return this.navigate(MenuItem.sessionDashboard, ['admin', 'sessions'])
     }

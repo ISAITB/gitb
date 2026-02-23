@@ -62,6 +62,8 @@ export class TestFilterComponent implements OnInit {
   @Input() embedded = false
   @Input() commands?: EventEmitter<number>
   @Input() initialSessionId?: string
+  @Input() initialTestCaseId?: number
+  @Input() initialSystemId?: number
   @Input() snapshotId?: number
 
   @Input() loadDomainsFn?: () => Observable<Domain[]>
@@ -164,6 +166,14 @@ export class TestFilterComponent implements OnInit {
     }
     this.filterCollapsedFinished = !this.showFiltering || !this.initialised
     this.sessionId = this.initialSessionId
+    if (this.initialTestCaseId != undefined) {
+      const initialTestCase: TestCase = { id: this.initialTestCaseId, identifier: '', sname: '' } // This will be replaced on load
+      this.filterDropdownSettings[Constants.FILTER_TYPE.TEST_CASE].initialValues = [ initialTestCase ]
+    }
+    if (this.initialSystemId != undefined) {
+      const initialSystem: System = { id: this.initialSystemId, identifier: '', sname: '', fname: '', apiKey: '', owner: -1 } // This will be replaced on load
+      this.filterDropdownSettings[Constants.FILTER_TYPE.SYSTEM].initialValues = [ initialSystem ]
+    }
   }
 
   private handleCommand(command: number) {

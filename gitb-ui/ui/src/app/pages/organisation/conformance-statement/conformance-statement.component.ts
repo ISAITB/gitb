@@ -782,11 +782,11 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
     })
   }
 
-  toTestSession(sessionId: string) {
+  toTestCaseHistory(testCase: ConformanceTestCase) {
     if (this.organisationId == this.dataService.vendor?.id) {
-      this.routingService.toTestHistory(this.organisationId, sessionId)
+      this.routingService.toTestHistory(this.organisationId, undefined, this.systemId,  testCase.id)
     } else {
-      this.routingService.toSessionDashboard(sessionId)
+      this.routingService.toSessionDashboard(undefined, this.systemId, testCase.id)
     }
   }
 

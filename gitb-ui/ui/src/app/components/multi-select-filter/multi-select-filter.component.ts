@@ -552,12 +552,18 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
     return result
   }
 
-  private isSelected(id: number): boolean {
-    if (this.selectedSelectedItems[id]) {
+  private isSelected(item: T): boolean {
+    const selectedItem = this.selectedSelectedItems[item.id]
+    if (selectedItem) {
+      if (selectedItem.item[this.config.textField] === '') {
+        selectedItem.item = item
+        const itemIndex = this.selectedItems.findIndex(item => item.id === selectedItem.item.id)
+        this.selectedItems[itemIndex] = item
+      }
       return true
-    } else if (this.itemsWithSameValue[id]) {
-      return this.itemsWithSameValue[id].find((entry) => {
-        return entry.applicable && entry.item.id == id
+    } else if (this.itemsWithSameValue[item.id]) {
+      return this.itemsWithSameValue[item.id].find((entry) => {
+        return entry.applicable && entry.item.id == item.id
       }) != undefined
     }
     return false
@@ -603,7 +609,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
             newSelectedAvailableItems[item.id] = { selected: false, item: item }
             newSelectedAvailableItems[item.id].selected = this.selectedItemIds.find((id) => id == item.id) != undefined
           } else {
-            if (!this.isSelected(item.id)) {
+            if (!this.isSelected(item)) {
               let matchingItem = this.findItemWithSameTextValue(newAvailableItems, item)
               if (matchingItem) {
                 this.recordItemWithSameTextValue(matchingItem, item)

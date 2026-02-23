@@ -28,17 +28,19 @@
             @if (!config.singleSelection && selectedItems.length > 0) {
                 <div class="itemsContainer" tabIndex="-1">
                     @for (item of selectedItems; track item.id) {
-                        <div class="itemContainer" [class]="'selected-item-'+$index" [class.focused]="$index == focusedSelectedItemIndex" (click)="selectedItemClicked(item)">
-                            <div class="d-flex">
-                                <input class="form-check-input" type="checkbox" tabIndex="-1" [attr.id]="'item-'+$index" [attr.name]="'item-'+$index" [(ngModel)]="selectedSelectedItems[item.id].selected" (ngModelChange)="updateCheckFlag()" (focus)="selectedItemCheckFocused($event)">
-                                <label class="form-check-label disable-select mx-2" (click)="$event.stopPropagation()" [attr.for]="'item-'+$index">
-                                    {{ item[config.textField] }}
-                                    @if (config.textDecorator) {
-                                        <span class="item-text-decoration">{{ config.textDecorator(item) }}</span>
-                                    }
-                                </label>
+                        @if (item[config.textField] != '') {
+                            <div class="itemContainer" [class]="'selected-item-'+$index" [class.focused]="$index == focusedSelectedItemIndex" (click)="selectedItemClicked(item)">
+                                <div class="d-flex">
+                                    <input class="form-check-input" type="checkbox" tabIndex="-1" [attr.id]="'item-'+$index" [attr.name]="'item-'+$index" [(ngModel)]="selectedSelectedItems[item.id].selected" (ngModelChange)="updateCheckFlag()" (focus)="selectedItemCheckFocused($event)">
+                                    <label class="form-check-label disable-select mx-2" (click)="$event.stopPropagation()" [attr.for]="'item-'+$index">
+                                        {{ item[config.textField] }}
+                                        @if (config.textDecorator) {
+                                            <span class="item-text-decoration">{{ config.textDecorator(item) }}</span>
+                                        }
+                                    </label>
+                                </div>
                             </div>
-                        </div>
+                        }
                     }
                 </div>
             }

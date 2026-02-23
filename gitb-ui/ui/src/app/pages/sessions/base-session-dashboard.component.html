@@ -1,5 +1,11 @@
 <div class="page dashboard">
-    <app-test-filter [filterState]="filterState" [communityId]="communityId" [organisationId]="organisationId" [initialSessionId]="sessionIdToShow" (onApply)="filterControlApplied()"></app-test-filter>
+    <app-test-filter [filterState]="filterState"
+                     [communityId]="communityId"
+                     [organisationId]="organisationId"
+                     [initialSessionId]="sessionIdToShow"
+                     [initialTestCaseId]="testCaseIdToShow"
+                     [initialSystemId]="systemIdToShow"
+                     (onApply)="filterControlApplied()"></app-test-filter>
     @if (showActiveSessions) {
         <div class="card">
             <div class="card-header clickable" (click)="activeSessionsHeaderClicked()" [class.collapsed]="activeSessionsCollapsedFinished">

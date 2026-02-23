@@ -54,7 +54,7 @@ export class TestCaseDisplayComponent extends BaseComponent implements TestCaseD
   @Input() shaded = true
   @Input() communityId?: number
 
-  @Output() viewTestSession = new EventEmitter<string>()
+  @Output() viewTestSessions = new EventEmitter<ConformanceTestCase>()
   @Output() execute = new EventEmitter<ConformanceTestCase>()
   @Output() edit = new EventEmitter<ConformanceTestCase>()
   @Output() optionsOpened = new EventEmitter<ConformanceTestCase>()
@@ -64,7 +64,7 @@ export class TestCaseDisplayComponent extends BaseComponent implements TestCaseD
 
   protected static EXPORT_XML = '0'
   protected static EXPORT_PDF = '1'
-  protected static VIEW_SESSION = '2'
+  protected static VIEW_SESSIONS = '2'
 
   Constants = Constants
   exportXmlPending: {[key:number]: boolean } = {}
@@ -123,7 +123,7 @@ export class TestCaseDisplayComponent extends BaseComponent implements TestCaseD
       const options: CheckboxOption[][] = []
       if (testCase.sessionId != undefined) {
         options.push([
-          { key: TestCaseDisplayComponent.VIEW_SESSION, label: "View test session", default: true, iconClass: Constants.BUTTON_ICON.VIEW}
+          { key: TestCaseDisplayComponent.VIEW_SESSIONS, label: "View test sessions", default: true, iconClass: Constants.BUTTON_ICON.VIEW},
         ])
       }
       if (this.showExportTestCase(testCase)) {
@@ -144,8 +144,8 @@ export class TestCaseDisplayComponent extends BaseComponent implements TestCaseD
       this.onExportTestCasePdf(testCase)
     } else if (event[TestCaseDisplayComponent.EXPORT_XML]) {
       this.onExportTestCaseXml(testCase)
-    } else if (event[TestCaseDisplayComponent.VIEW_SESSION]) {
-      this.viewTestCase(testCase)
+    } else if (event[TestCaseDisplayComponent.VIEW_SESSIONS]) {
+      this.doViewTestSessions(testCase)
     }
   }
 
@@ -170,8 +170,8 @@ export class TestCaseDisplayComponent extends BaseComponent implements TestCaseD
     })
   }
 
-  viewTestCase(testCase: ConformanceTestCase) {
-    this.viewTestSession.emit(testCase.sessionId!)
+  doViewTestSessions(testCase: ConformanceTestCase) {
+    this.viewTestSessions.emit(testCase)
   }
 
   showTestCaseDocumentation(testCase: ConformanceTestCase) {
