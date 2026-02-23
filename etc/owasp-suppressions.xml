@@ -212,4 +212,12 @@
         <packageUrl regex="true">^pkg:maven/ch\.qos\.logback/logback-core@.*$</packageUrl>
         <vulnerabilityName>CVE-2026-1225</vulnerabilityName>
     </suppress>    
+    <suppress>
+        <!-- No OCSP responder is used. -->
+        <notes><![CDATA[
+        file name: tomcat-embed-core-10.1.50.jar
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/tomcat-embed-core@.*$</packageUrl>
+        <vulnerabilityName>CVE-2026-24734</vulnerabilityName>
+    </suppress>       
 </suppressions>
