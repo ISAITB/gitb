@@ -2669,6 +2669,16 @@ object JsonUtil {
     )
   }
 
+  def parseJsSessionTimeoutConfiguration(json: String): SessionTimeoutConfiguration = {
+    val jsonObject = Json.parse(json)
+    SessionTimeoutConfiguration(
+      enabled = (jsonObject \ "enabled").as[Boolean],
+      userPendingTimeout = (jsonObject \ "userPendingTimeout").as[Long],
+      adminPendingTimeout = (jsonObject \ "adminPendingTimeout").as[Long],
+      otherTimeout = (jsonObject \ "otherTimeout").as[Long]
+    )
+  }
+
   /**
    * Converts an Organization object into a JSON string with its complex objects
    * @param org Organization object to be converted

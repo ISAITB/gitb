@@ -46,6 +46,7 @@ object SystemConfigurationManager {
 
 @Singleton
 class SystemConfigurationManager @Inject() (testResultManager: TestResultManager,
+                                            testExecutionManager: TestExecutionManager,
                                             repositoryUtils: RepositoryUtils,
                                             dbConfigProvider: DatabaseConfigProvider)
                                            (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
@@ -334,7 +335,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
       exists <- PersistenceSchema.systemConfigurations.filter(_.name === name).exists.result
       _ <- {
         if (exists) {
-          if ((name == Constants.SoftwareVersionCheck || name == Constants.WelcomeMessage || name == Constants.WelcomeTitle || name == Constants.EmailSettings || name == Constants.AccountRetentionPeriod) && value.isEmpty) {
+          if ((name == Constants.SoftwareVersionCheck || name == Constants.WelcomeMessage || name == Constants.WelcomeTitle || name == Constants.EmailSettings || name == Constants.AccountRetentionPeriod || name == Constants.SessionAliveTime) && value.isEmpty) {
             PersistenceSchema.systemConfigurations.filter(_.name === name).delete
           } else {
             PersistenceSchema.systemConfigurations.filter(_.name === name).map(_.parameter).update(value)
@@ -913,6 +914,75 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
 
   def disableStartupWizard(): Future[Unit] = {
     DB.run(updateSystemParameterInternal(Constants.StartupWizard, Some("false"), applySetting = true).transactionally).map(_ => ())
+  }
+
+  def terminateIdleSessions(): Future[Unit] = {
+    for {
+      timeoutConfig <- {
+        getSystemConfiguration(Constants.SessionAliveTime).map { config =>
+          config.flatMap(_.parameter).map(x => JsonUtil.parseJsSessionTimeoutConfiguration(x))
+        }
+      }
+      sessionsToTerminate <- {
+        if (timeoutConfig.exists(_.enabled)) {
+          getIdleSessions(timeoutConfig.get).map(Some(_))
+        } else {
+          Future.successful(None)
+        }
+      }
+      _ <- {
+        if (sessionsToTerminate.isDefined) {
+          Future.sequence {
+            sessionsToTerminate.get.map { sessionId =>
+              testExecutionManager.endSession(sessionId).map { _ =>
+                logger.info("Terminated idle session [{}]", sessionId)
+              }.recover {
+                case e: Exception =>
+                  logger.warn("Failure while terminating idle session [%s]".formatted(sessionId), e)
+              }
+            }
+          }
+        } else {
+          Future.successful(())
+        }
+      }
+    } yield ()
+  }
+
+  private def getIdleSessions(config: SessionTimeoutConfiguration): Future[Iterable[String]] = {
+    DB.run {
+      for {
+        activeSessions <- PersistenceSchema.testResults
+          .filter(_.endTime.isEmpty)
+          .map(x => (x.testSessionId, x.startTime))
+          .result
+        pendingInteractions <- PersistenceSchema.testInteractions
+          .map(x => (x.testSessionId, x.admin))
+          .result
+          .map { results =>
+            results.map(x => x._1 -> x._2).toMap
+          }
+        idleSessions <- {
+          DBIO.successful {
+            activeSessions.filter(x => {
+              val difference = TimeUtil.getTimeDifferenceInSeconds(x._2)
+              if (pendingInteractions.contains(x._1)) {
+                if (pendingInteractions(x._1)) {
+                  // Pending admin interaction
+                  difference >= config.adminPendingTimeout
+                } else {
+                  // Pending user interaction
+                  difference >= config.userPendingTimeout
+                }
+              } else {
+                // Not pending interaction
+                difference >= config.otherTimeout
+              }
+            }).map(_._1)
+          }
+        }
+      } yield idleSessions
+    }
   }
 
 }

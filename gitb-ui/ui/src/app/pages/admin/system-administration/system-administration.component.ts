@@ -1,4 +1,4 @@
-/*
+ /*
  * Copyright (C) 2026 European Union
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
@@ -56,6 +56,7 @@ import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 import {PagingEvent} from '../../../components/paging-controls/paging-event';
 import {TableApi} from '../../../components/table/table-api';
 import {ResourceState} from '../../../components/resource-management-tab/resource-state';
+ import {SessionTimeoutConfiguration} from '../../../types/session-timeout-configuration';
 
 @Component({
     selector: 'app-system-administration',
@@ -146,9 +147,13 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
   softwareVersionCheckValidation = new ValidationState()
 
   // TTL
-  ttlStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
-  ttlEnabled = false
-  ttlValue?: number
+  sessionTimeoutStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
+  sessionTimeoutSettings: SessionTimeoutConfiguration = {
+    enabled: false,
+    adminPendingTimeout: 3600,
+    userPendingTimeout: 3600,
+    otherTimeout: 3600
+  }
 
   // Self-registration
   selfRegistrationStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
@@ -293,17 +298,13 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
         this.accountRetentionPeriodStatus.fromEnv = accountRetentionPeriodConfig != undefined && accountRetentionPeriodConfig.environment
         this.accountRetentionPeriodStatus.fromDefault = accountRetentionPeriodConfig != undefined && accountRetentionPeriodConfig.default
         // TTL.
-        const ttlConfig = data.find((configItem) => configItem.name == Constants.SYSTEM_CONFIG.SESSION_ALIVE_TIME)
-        if (ttlConfig && ttlConfig.parameter != undefined) {
-          this.ttlEnabled = true
-          this.ttlValue = Number(ttlConfig.parameter)
-        } else {
-          this.ttlEnabled = false
-          this.ttlValue = undefined
+        const sessionTimeoutConfig = data.find((configItem) => configItem.name == Constants.SYSTEM_CONFIG.SESSION_ALIVE_TIME)
+        if (sessionTimeoutConfig && sessionTimeoutConfig.parameter != undefined) {
+          this.sessionTimeoutSettings = JSON.parse(sessionTimeoutConfig.parameter)
         }
-        this.ttlStatus.enabled = this.ttlEnabled
-        this.ttlStatus.fromEnv = ttlConfig != undefined && ttlConfig.environment
-        this.ttlStatus.fromDefault = ttlConfig != undefined && ttlConfig.default
+        this.sessionTimeoutStatus.enabled = this.sessionTimeoutSettings.enabled
+        this.sessionTimeoutStatus.fromEnv = sessionTimeoutConfig?.environment === true
+        this.sessionTimeoutStatus.fromDefault = sessionTimeoutConfig?.default === true
         // Software version status check.
         const softwareVersionCheckConfig = data.find((configItem) => configItem.name == Constants.SYSTEM_CONFIG.SOFTWARE_VERSION_CHECK)
         this.initialiseSoftwareVersionCheckSettings(softwareVersionCheckConfig)
@@ -882,37 +883,31 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
     this.routingService.toTheme(theme.id)
   }
 
-  ttlCheckChanged() {
-    if (!this.ttlEnabled) {
-      this.ttlValue = undefined
-    }
-  }
-
   accountRetentionPeriodCheckChanged() {
     if (!this.accountRetentionPeriodEnabled) {
       this.accountRetentionPeriodValue = undefined
     }
   }
 
-  saveTTL() {
-    this.ttlStatus.pending = true
-    if (this.ttlEnabled && this.ttlValue != undefined) {
-      this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.SESSION_ALIVE_TIME, this.ttlValue.toString())
+  saveSessionTimeoutSettings() {
+    this.sessionTimeoutStatus.pending = true
+    if (this.sessionTimeoutSettings.enabled) {
+      this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.SESSION_ALIVE_TIME, JSON.stringify(this.sessionTimeoutSettings))
       .subscribe(() => {
-        this.ttlStatus.collapsed = true
-        this.ttlStatus.enabled = true
-        this.popupService.success('Updated maximum session time.')
+        this.sessionTimeoutStatus.collapsed = true
+        this.sessionTimeoutStatus.enabled = true
+        this.popupService.success('Updated session timeout settings.')
       }).add(() => {
-        this.ttlStatus.pending = false
+        this.sessionTimeoutStatus.pending = false
       })
     } else {
       this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.SESSION_ALIVE_TIME)
       .subscribe(() => {
-        this.ttlStatus.collapsed = true
-        this.ttlStatus.enabled = false
-        this.popupService.success('Disabled automatic session termination.')
+        this.sessionTimeoutStatus.collapsed = true
+        this.sessionTimeoutStatus.enabled = false
+        this.popupService.success('Disabled session timeout settings.')
       }).add(() => {
-        this.ttlStatus.pending = false
+        this.sessionTimeoutStatus.pending = false
       })
     }
   }
@@ -1137,6 +1132,10 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
         this.welcomePageResetPending = false
       })
     })
+  }
+
+  sessionTimeoutSettingsOk() {
+    return !this.sessionTimeoutSettings.enabled || (this.sessionTimeoutSettings.otherTimeout != undefined && this.sessionTimeoutSettings.adminPendingTimeout != undefined && this.sessionTimeoutSettings.userPendingTimeout != undefined && this.sessionTimeoutSettings.otherTimeout >= 0 && this.sessionTimeoutSettings.adminPendingTimeout >= 0 && this.sessionTimeoutSettings.userPendingTimeout >= 0)
   }
 
   softwareVersionCheckSettingsOk() {

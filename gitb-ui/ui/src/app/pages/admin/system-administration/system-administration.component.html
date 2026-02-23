@@ -271,8 +271,8 @@
                                         <app-form-section sectionTitle="Notification settings" [marginBefore]="true">
                                             <div class="row pt-3">
                                                 <label class="col-3 col-form-label text-end" for="testInteractionReminder">* Test interaction reminders:</label>
-                                                <div class="col-2">
-                                                    <div class="input-group minimum-width-text">
+                                                <div class="col-auto">
+                                                    <div class="input-group minimum-width-number-grouped">
                                                         <input min="1" id="testInteractionReminder" name="testInteractionReminder" [(ngModel)]="emailSettings.testInteractionReminder" class="form-control" type="number">
                                                         <div class="input-group-text">minutes</div>
                                                     </div>
@@ -444,27 +444,60 @@
                     <!-- Idle session timeout. -->
                     <div class="configContainer" >
                         <app-configuration-entry
-                            configTitle="Test session timeout"
+                            configTitle="Test session timeouts"
                             configDescription="Terminate test sessions exceeding a maximum duration."
-                            [(status)]="ttlStatus"
+                            [(status)]="sessionTimeoutStatus"
                         >
                             <form>
-                                <div class="row row-cols-auto align-items-center gx-3">
+                                <div class="row">
                                     <div class="col-auto">
                                         <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="ttlEnabled" name="ttlEnabled" (change)="ttlCheckChanged()" [(ngModel)]="ttlEnabled">
+                                            <input class="form-check-input" type="checkbox" id="ttlEnabled" name="ttlEnabled" [(ngModel)]="sessionTimeoutSettings.enabled">
                                             <label class="form-check-label" for="ttlEnabled">Enabled?</label>
                                         </div>
                                     </div>
-                                    <div class="col-auto">
-                                        <label class="sr-only" for="ttlValue">Seconds before terminating sessions:</label>
-                                        <div class="input-group">
-                                            <input type="number" min="1" class="form-control" id="ttlValue" name="ttlValue" placeholder="Timeout" [disabled]="!ttlEnabled" [(ngModel)]="ttlValue">
-                                            <div class="input-group-text">seconds</div>
+                                    <div [ngbCollapse]="!sessionTimeoutSettings.enabled" [animation]="true">
+                                        <div class="pt-3">
+                                            <div class="sessionTimeoutFormContainer">
+                                                <div class="row flex-nowrap">
+                                                    <label class="col-4 col-form-label text-end" for="sessionTimeoutAdminInput">* Sessions pending administrator input:</label>
+                                                    <div class="col-auto">
+                                                        <div class="input-group minimum-width-number-grouped">
+                                                            <input id="sessionTimeoutAdminInput" name="sessionTimeoutAdminInput" placeholder="Timeout" [(ngModel)]="sessionTimeoutSettings.adminPendingTimeout" class="form-control" type="number">
+                                                            <div class="input-group-text">seconds</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-auto" app-tooltip tbTooltip="The number of seconds after which to terminate a test session that is pending manual input from an administrator."></div>
+                                                </div>
+                                                <div class="row pt-3 flex-nowrap">
+                                                    <label class="col-4 col-form-label text-end" for="sessionTimeoutUserInput">* Sessions pending user input:</label>
+                                                    <div class="col-auto">
+                                                        <div class="input-group minimum-width-number-grouped">
+                                                            <input id="sessionTimeoutUserInput" name="sessionTimeoutUserInput" placeholder="Timeout" [(ngModel)]="sessionTimeoutSettings.userPendingTimeout" class="form-control" type="number">
+                                                            <div class="input-group-text">seconds</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-auto" app-tooltip tbTooltip="The number of seconds after which to terminate a test session that is pending manual input from a non-administrator user."></div>
+                                                </div>
+                                                <div class="row pt-3 flex-nowrap">
+                                                    <label class="col-4 col-form-label text-end" for="sessionTimeoutOther">* Other sessions:</label>
+                                                    <div class="col-auto">
+                                                        <div class="input-group minimum-width-number-grouped">
+                                                            <input id="sessionTimeoutOther" name="sessionTimeoutOther" placeholder="Timeout" [(ngModel)]="sessionTimeoutSettings.otherTimeout" class="form-control" type="number">
+                                                            <div class="input-group-text">seconds</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-auto" app-tooltip tbTooltip="The number of seconds after which to terminate a test session that is not pending manual input."></div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div class="col-auto">
-                                        <button type="submit" [labelIcon]="Constants.BUTTON_ICON.SAVE" class="btn btn-secondary" [disable]="ttlEnabled && ttlValue == undefined" [pending]="ttlStatus.pending" (click)="saveTTL()">Save</button>
+                                    <div class="row mt-3">
+                                        <div class="col-auto">
+                                            <div class="btn-toolbar">
+                                                <button type="submit" [labelIcon]="Constants.BUTTON_ICON.SAVE" class="btn btn-secondary" [disable]="sessionTimeoutStatus.pending || !sessionTimeoutSettingsOk()" [pending]="sessionTimeoutStatus.pending" (click)="saveSessionTimeoutSettings()">Save</button>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </form>
