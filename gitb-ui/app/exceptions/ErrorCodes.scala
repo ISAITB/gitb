@@ -56,6 +56,7 @@ object ErrorCodes {
 
   //General Errors
   val GATEWAY_TIMEOUT = 401
+  val PREPARING_FOR_SHUTDOWN = 402
 
   // Automation API errors
   val API_ORGANISATION_NOT_FOUND = 501

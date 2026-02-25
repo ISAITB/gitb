@@ -30,6 +30,7 @@ object Configurations {
 
   private var _IS_LOADED = false
   var STARTUP_FAILURE = false
+  var PREPARE_FOR_SHUTDOWN = false
 
   // Database parameters
   var DB_JDBC_URL:String = ""

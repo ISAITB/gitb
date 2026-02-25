@@ -19,7 +19,7 @@ import config.Configurations
 import controllers.util._
 import exceptions._
 import managers.{AccountManager, AuthenticationManager, AuthorizationManager, UserManager}
-import models.Enums
+import models.{Constants, Enums}
 import org.pac4j.core.context.session.SessionStore
 import org.pac4j.core.context.{CallContext, WebContext}
 import org.pac4j.core.credentials.UsernamePasswordCredentials
@@ -129,7 +129,7 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction,
   def selectFunctionalAccount: Action[AnyContent] = authorizedAction.async { request =>
     val userId = ParameterExtractor.requiredBodyParameter(request, ParameterNames.ID).toLong
     authorizationManager.canSelectFunctionalAccount(request, userId).map { _ =>
-      completeAccessTokenLogin(userId)
+      completeAccessTokenLogin(userId, request)
     }
   }
 
@@ -157,10 +157,11 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction,
     }
   }
 
-  private def completeAccessTokenLogin(userId: Long): Result = {
+  private def completeAccessTokenLogin(userId: Long, request: RequestWithAttributes[AnyContent]): Result = {
     val tokens = authManager.generateTokens(userId)
     disableDataBootstrap()
-    ResponseConstructor.constructOauthResponse(tokens, userId)
+    // Add the access token to the session cookie - this is the key recorded in Redis that allows session timeout enforcement and role resolution
+    ResponseConstructor.constructOauthResponse(tokens, userId).withSession(request.session + (Constants.AccessTokenKey -> tokens.accessToken))
   }
 
   def replaceOnetimePassword: Action[AnyContent] = authorizedAction.async { request =>
@@ -173,7 +174,7 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction,
           if (result.isEmpty) {
             ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_CREDENTIALS, "Incorrect password.", Some("current"))
           } else {
-            completeAccessTokenLogin(result.get)
+            completeAccessTokenLogin(result.get, request)
           }
         }
       } else {
@@ -223,7 +224,7 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction,
             Ok("{\"weakPassword\": true}").as(JSON)
           } else {
             // All ok.
-            completeAccessTokenLogin(result.get.id)
+            completeAccessTokenLogin(result.get.id, request)
           }
         } else {
           // No user with given credentials

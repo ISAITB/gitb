@@ -22,6 +22,8 @@ import {TestCaseDefinition} from '../types/test-case-definition';
 import {UserInteractionInput} from '../types/user-interaction-input';
 import {RestService} from './rest.service';
 import {TestCaseDefinitionActors} from '../types/test-case-definition-actors';
+import {ErrorDescription} from '../types/error-description';
+import {Value} from '../types/value';
 
 @Injectable({
   providedIn: 'root'
@@ -81,7 +83,7 @@ export class TestService {
     if (testCaseIds != undefined && testCaseIds.length > 0) {
         data.test_case_ids = testCaseIds.join(',')
     }
-    return this.restService.post<void>({
+    return this.restService.post<ErrorDescription|void>({
         path: ROUTES.controllers.TestService.startHeadlessTestSessions().url,
         authenticate: true,
         data: data
@@ -120,10 +122,9 @@ export class TestService {
   }
 
   initiate(testCase: number) {
-    return this.restService.post<string>({
+    return this.restService.post<Value|ErrorDescription>({
         path: ROUTES.controllers.TestService.initiate(testCase).url,
-        authenticate: true,
-        text: true
+        authenticate: true
     })
   }
 
@@ -147,7 +148,7 @@ export class TestService {
   }
 
   start(session: string) {
-    return this.restService.post<void>({
+    return this.restService.post<ErrorDescription|void>({
         path: ROUTES.controllers.TestService.start(session).url,
         authenticate: true
     })

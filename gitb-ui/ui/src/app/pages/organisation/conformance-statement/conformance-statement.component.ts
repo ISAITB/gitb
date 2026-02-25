@@ -610,11 +610,15 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   private executeHeadless(testCases: ConformanceTestCase[]) {
     const testCaseIds = testCases.map((test) => test.id)
     this.testService.startHeadlessTestSessions(testCaseIds, this.specId!, this.systemId, this.actorId, this.executionMode == this.executionModeSequential)
-    .subscribe(() => {
-      if (testCaseIds.length == 1) {
-        this.popupService.success('Started test session.')
+    .subscribe((result) => {
+      if (this.isShutdownPreparationError(result)) {
+        this.dataService.togglePrepareForShutdown(true)
       } else {
-        this.popupService.success('Started '+testCaseIds.length+' test sessions.')
+        if (testCaseIds.length == 1) {
+          this.popupService.success('Started test session.')
+        } else {
+          this.popupService.success('Started '+testCaseIds.length+' test sessions.')
+        }
       }
     })
   }

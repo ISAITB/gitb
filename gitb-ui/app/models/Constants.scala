@@ -67,8 +67,8 @@ object Constants {
   val DevelopmentMode = "development"
 
   val FilterDateFormat = "dd-MM-yyyy HH:mm:ss"
-  val AutomationHeader = "ITB_API_KEY"
   val AcceptHeader = "Accept"
+  val AccessTokenKey = "tat"
 
   val defaultPage = 1L
   val defaultLimit = 10L

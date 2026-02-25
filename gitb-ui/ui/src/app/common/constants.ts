@@ -22,10 +22,10 @@ export class Constants {
 	public static readonly THEME_FAVICON_LINK_ID = "themeFaviconLink"
 
   public static readonly TABLE_PAGE_SIZE = 10
-  public static readonly DEFAULT_LOGO = '/assets/images/gitb.png'
 	public static readonly DEFAULT_COMMUNITY_ID = 0
 	public static readonly TOOLTIP_DELAY = 500
   public static readonly SUPPORTED_PAGE_SIZES: number[] = [10, 25, 50, 100]
+  public static readonly PREPARE_FOR_SHUTDOWN_ERROR_CODE = "402"
 
   public static readonly TOKEN_COOKIE_EXPIRE = 2592000000 // 1 month in millis
 	public static readonly ACCESS_TOKEN_COOKIE_KEY = 'tat'
@@ -150,7 +150,8 @@ export class Constants {
     VIEW_INTERACTIONS: 'fa-solid fa-user',
     VIEW_LOG: 'fa-solid fa-file-lines',
     UNLINK_ACCOUNT: 'fa-solid fa-user-minus',
-    UPLOAD: 'fa-solid fa-upload'
+    UPLOAD: 'fa-solid fa-upload',
+    WAITING: 'fa-solid fa-hourglass'
   }
 
 	public static readonly EMBEDDING_METHOD = {

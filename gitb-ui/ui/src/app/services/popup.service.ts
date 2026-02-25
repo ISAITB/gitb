@@ -16,6 +16,7 @@
 import {Injectable} from '@angular/core';
 import {BehaviorSubject, Subject} from 'rxjs';
 import {PopupNotification} from '../types/popup-notification';
+import {CloseNotificationEvent} from '../types/close-notification-event';
 
 @Injectable({
   providedIn: 'root'
@@ -23,29 +24,31 @@ import {PopupNotification} from '../types/popup-notification';
 export class PopupService {
 
   private notificationsSubject = new BehaviorSubject<PopupNotification[]>([]);
-  private closeNotificationsSubject = new Subject<void>();
+  private closeNotificationsSubject = new Subject<CloseNotificationEvent>();
   notifications$ = this.notificationsSubject.asObservable();
   closeNotifications$ = this.closeNotificationsSubject.asObservable();
+  private closedNotificationsSubject = new Subject<string>();
+  closedNotifications$ = this.closedNotificationsSubject.asObservable();
 
   constructor() { }
 
-  success(message: string, persistent?: boolean) {
-    this.add(message, 'success', persistent)
+  success(message: string, persistent?: boolean): string|null {
+    return this.add(message, 'success', persistent)
   }
 
-  warning(message: string, persistent?: boolean) {
-    this.add(message, 'warning', persistent)
+  warning(message: string, persistent?: boolean): string|null {
+    return this.add(message, 'warning', persistent)
   }
 
-  error(message: string, persistent?: boolean) {
-    this.add(message, 'error', persistent)
+  error(message: string, persistent?: boolean): string|null {
+    return this.add(message, 'error', persistent)
   }
 
-  info(message: string, persistent?: boolean) {
-    this.add(message, 'info', persistent)
+  info(message: string, persistent?: boolean): string|null {
+    return this.add(message, 'info', persistent)
   }
 
-  private add(message: string, type: 'error'|'warning'|'success'|'info', persistent?: boolean) {
+  private add(message: string, type: 'error'|'warning'|'success'|'info', persistent?: boolean): string|null {
     if (message !== undefined) {
       if (!message.endsWith(".")) {
         message = message + "."
@@ -58,6 +61,9 @@ export class PopupService {
       }
       const list = this.notificationsSubject.value;
       this.notificationsSubject.next([...list, notification]);
+      return notification.id
+    } else {
+      return null
     }
   }
 
@@ -65,9 +71,18 @@ export class PopupService {
     this.notificationsSubject.next(
       this.notificationsSubject.value.filter(n => n.id !== id)
     );
+    this.closedNotificationsSubject.next(id)
   }
 
-  closeAll() {
-    this.closeNotificationsSubject.next()
+  close(notificationId: string): void {
+    this.closeNotificationsSubject.next({
+      id: notificationId
+    })
+  }
+
+  closeAll(skipIfPersistent?: boolean) {
+    this.closeNotificationsSubject.next({
+      skipIfPersistent: skipIfPersistent
+    })
   }
 }

@@ -210,4 +210,14 @@ export class SystemConfigurationService {
     })
   }
 
+  prepareForShutdown(enable: boolean) {
+    return this.restService.post<void>({
+      path: ROUTES.controllers.SystemConfigurationService.prepareForShutdown().url,
+      authenticate: true,
+      data: {
+        enable: enable,
+      }
+    })
+  }
+
 }

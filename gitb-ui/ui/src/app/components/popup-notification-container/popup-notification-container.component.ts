@@ -42,11 +42,13 @@ export class PopupNotificationContainerComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.notifications$ = this.popupService.notifications$
-    this.closeNotifications$ = this.popupService.closeNotifications$.subscribe(() => {
+    this.closeNotifications$ = this.popupService.closeNotifications$.subscribe((event) => {
       if (this.notifications) {
         this.notifications.forEach((notification) => {
           // Do it via the component so that the closing animations are correctly triggered
-          notification.closeNotification()
+          if ((event.id == undefined || event.id === notification.getId()) && (!event.skipIfPersistent || !notification.isPersistent())) {
+            notification.closeNotification()
+          }
         })
       }
     })

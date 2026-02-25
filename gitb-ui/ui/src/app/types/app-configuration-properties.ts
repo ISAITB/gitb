@@ -47,5 +47,6 @@ export interface AppConfigurationProperties {
   conformanceStatementReportMaxTestCases: number
   headerNameAuthenticationCookiePath: string
   welcomePageTitle: string
+  preparingForShutdown: boolean
 
 }

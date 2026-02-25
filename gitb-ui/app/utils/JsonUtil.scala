@@ -109,6 +109,10 @@ object JsonUtil {
     json
   }
 
+  def jsValue(value: String): JsObject = {
+    Json.obj("value" -> value)
+  }
+
   def jsTextArray(texts: Iterable[String]): JsObject = {
     var textArray = Json.arr()
     texts.foreach { text =>
@@ -2649,7 +2653,8 @@ object JsonUtil {
       "hasDefaultLegalNotice" -> hasDefaultLegalNotice,
       "conformanceStatementReportMaxTestCases" -> Configurations.CONFORMANCE_STATEMENT_REPORT_MAX_TEST_CASES,
       "headerNameAuthenticationCookiePath" -> Configurations.HEADER_NAME_AUTHENTICATION_COOKIE_PATH,
-      "welcomePageTitle" -> Configurations.WELCOME_TITLE
+      "welcomePageTitle" -> Configurations.WELCOME_TITLE,
+      "preparingForShutdown" -> Configurations.PREPARE_FOR_SHUTDOWN
     )
     json
   }

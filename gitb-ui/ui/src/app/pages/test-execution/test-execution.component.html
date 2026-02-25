@@ -6,7 +6,7 @@
                 <div class="backDiv">
                     <button type="button" [labelIcon]="Constants.BUTTON_ICON.BACK" class="btn btn-secondary" (click)="back()">Go to conformance statement</button>
                 </div>
-                @if (testsToExecute.length > 0) {
+                @if (testsToExecute.length > 0 && !dataService.configuration.preparingForShutdown) {
                     @if (testsToExecute.length > 1) {
                         <div class="optionsDiv btn-toolbar">
                             <app-checkbox-option-panel #testOptionsControl
@@ -63,15 +63,19 @@
                                     <div class="session-table-title-part">
                                         <div class="session-table-title-label">Session</div>
                                         <div class="session-table-title-value">
-                                            @if (testCase.sessionId != undefined) {
-                                                <app-copy-enabled-text [value]="testCase.sessionId"></app-copy-enabled-text>
+                                            @if (!dataService.configuration.preparingForShutdown) {
+                                                @if (testCase.sessionId != undefined) {
+                                                    <app-copy-enabled-text [value]="testCase.sessionId"></app-copy-enabled-text>
+                                                } @else {
+                                                    <app-pending-block></app-pending-block>
+                                                }
                                             } @else {
-                                                <app-pending-block></app-pending-block>
+                                                -
                                             }
                                         </div>
                                     </div>
                                 </div>
-                                @if (stepsOfTests[testCase.id] != undefined) {
+                                @if (stepsOfTests[testCase.id] != undefined && !dataService.configuration.preparingForShutdown) {
                                     <div class="session-table-operations btn-toolbar">
                                         @if (interactionStepsOfTests[testCase.id] != undefined && interactionStepsOfTests[testCase.id].length > 0) {
                                             @if (interactionStepsOfTests[testCase.id].length == 1) {

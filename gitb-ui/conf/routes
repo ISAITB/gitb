@@ -543,6 +543,7 @@ POST    /api/themes/:themeId/activate                            @controllers.Sy
 GET     /api/themes/resource/preview                             @controllers.SystemConfigurationService.previewThemeResource()
 POST    /api/system/configs/testEmail                            @controllers.SystemConfigurationService.testEmailSettings()
 POST    /api/system/configs/wizard                               @controllers.SystemConfigurationService.completeStartupWizard()
+POST    /api/system/shutdown                                     @controllers.SystemConfigurationService.prepareForShutdown()
 
 # Service health check API
 GET     /api/health/postLoginChecks                              @controllers.HealthCheckService.runPostLoginChecks()

@@ -105,6 +105,8 @@ export class DataService {
   public onMenuVisibilityChange$ = this.menuVisibilityChangeSource.asObservable()
   private conformanceStatementDetailVisibilityChangeSource = new Subject<boolean>()
   public onConformanceStatementDetailVisibilityChange$ = this.conformanceStatementDetailVisibilityChangeSource.asObservable()
+  private preparingForShutdownSource = new ReplaySubject<boolean>()
+  public onPreparingForShutdown$ = this.preparingForShutdownSource.asObservable()
 
   triggerEventToDataTypeMap?: {[key: number]: { [key: number]: boolean } }
 
@@ -180,7 +182,8 @@ export class DataService {
       hasDefaultLegalNotice: (this.configuration?.hasDefaultLegalNotice != undefined)?this.configuration!.hasDefaultLegalNotice:false,
       conformanceStatementReportMaxTestCases: (this.configuration?.conformanceStatementReportMaxTestCases != undefined)?this.configuration!.conformanceStatementReportMaxTestCases:100,
       headerNameAuthenticationCookiePath: (this.configuration?.headerNameAuthenticationCookiePath != undefined)?this.configuration!.headerNameAuthenticationCookiePath:"ITB-PATH",
-      welcomePageTitle: (this.configuration?.welcomePageTitle != undefined)?this.configuration!.welcomePageTitle:''
+      welcomePageTitle: (this.configuration?.welcomePageTitle != undefined)?this.configuration!.welcomePageTitle:'',
+      preparingForShutdown: this.configuration?.preparingForShutdown === true
     }
   }
 
@@ -1977,6 +1980,11 @@ export class DataService {
       this.conformanceStatementDetailVisibility = visible
       this.conformanceStatementDetailVisibilityChangeSource.next(visible)
     }
+  }
+
+  togglePrepareForShutdown(enable: boolean) {
+    this.configuration.preparingForShutdown = enable
+    this.preparingForShutdownSource.next(this.configuration.preparingForShutdown)
   }
 
 }

@@ -46,11 +46,19 @@ export class PopupNotificationComponent implements OnInit, PopupNotificationApi 
     }
   }
 
+  getId(): string {
+    return this.notification.id;
+  }
+
   closeNotification() {
     this.removing = true
     setTimeout(() => {
       this.close.emit(this.notification)
     }, 300)
+  }
+
+  isPersistent(): boolean {
+    return this.notification.persistent
   }
 
   mouseLeaving() {

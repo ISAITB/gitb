@@ -67,11 +67,11 @@ class AuthenticationFilter @Inject() (router: Router)
         next(requestHeader)
       } else {
         // Check Authorization headers
-        val authzHeader = requestHeader.headers.get(AUTHORIZATION)
-        if (authzHeader.isDefined) {
+        val authHeader = requestHeader.headers.get(AUTHORIZATION)
+        if (authHeader.isDefined) {
           try {
             // Parse access token info
-            val list = authzHeader.get.split(BEARER + " ")
+            val list = authHeader.get.split(BEARER + " ")
             if (list.length == 2){
               next(downstreamHeaderFromAccessToken(list(1), requestHeader))
             } else{
@@ -90,9 +90,9 @@ class AuthenticationFilter @Inject() (router: Router)
           }
         } else {
           if (isAuthenticatedHttpAccessAllowed(requestHeader)) {
-            val sessionCookie = requestHeader.cookies.get("tat")
-            if (sessionCookie.isDefined) {
-              next(downstreamHeaderFromAccessToken(sessionCookie.get.value, requestHeader))
+            val sessionIdentifier = requestHeader.session.get(Constants.AccessTokenKey)
+            if (sessionIdentifier.isDefined) {
+              next(downstreamHeaderFromAccessToken(sessionIdentifier.get, requestHeader))
             } else {
               Future.successful { Unauthorized }
             }

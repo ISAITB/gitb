@@ -227,6 +227,7 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
 
   // Resources
   resourceActions!: ResourceActions
+  prepareForShutdown = false
 
   constructor(
     route: ActivatedRoute,
@@ -265,6 +266,7 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
   }
 
   ngOnInit(): void {
+    this.prepareForShutdown = this.dataService.configuration.preparingForShutdown
     this.adminColumns.push({ field: 'name', title: 'Name' })
     if (this.dataService.configuration.ssoEnabled) {
       this.adminColumns.push({ field: 'email', title: 'Email' })
@@ -1329,6 +1331,17 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
       },
       systemScope: true
     }
+  }
+
+  togglePrepareForShutdown() {
+    const flagValue = this.prepareForShutdown
+    this.systemConfigurationService.prepareForShutdown(flagValue).subscribe(() => {
+      this.dataService.togglePrepareForShutdown(flagValue)
+      setTimeout(() => {
+        // Show with delay to allow the persistent warning notification to be shown or hidden.
+        this.popupService.success(`Shutdown preparation mode ${flagValue?'enabled':'disabled'}.`)
+      }, 500)
+    })
   }
 
   protected readonly Constants = Constants;

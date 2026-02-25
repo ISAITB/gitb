@@ -2436,10 +2436,14 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     ok
   }
 
-  private def setAuthResult(request: RequestWithAttributes[_], ok: Boolean, message: String): Boolean = {
+  def markRequestAsAuthorized(request: RequestWithAttributes[_]): Unit = {
     if (!request.authorised) {
       request.authorised = true
     }
+  }
+
+  private def setAuthResult(request: RequestWithAttributes[_], ok: Boolean, message: String): Boolean = {
+    markRequestAsAuthorized(request)
     checkAuthResult(ok, message)
   }
 

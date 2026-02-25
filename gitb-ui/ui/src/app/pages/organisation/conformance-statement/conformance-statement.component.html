@@ -253,7 +253,7 @@
                                             <button ngbDropdownItem type="button" (click)="executionMode = executionModeSequential; executionModeButton = executionModeLabelSequential">{{executionModeLabelSequential}}</button>
                                         </div>
                                     </div>
-                                    @if (displayedTestSuites.length > 1) {
+                                    @if (displayedTestSuites.length > 1 && !dataService.configuration.preparingForShutdown) {
                                         <button class="btn btn-primary" (click)="onMultipleTestSelect(); $event.stopPropagation();" [pending]="statementExecutionPending" [icon]="true" tooltipClass="shortTooltip" container="body" ngbTooltip="Run all" [openDelay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
                                             <span><i [class]="Constants.BUTTON_ICON.EXECUTE"></i></span>
                                         </button>
@@ -275,7 +275,7 @@
                     } @else {
                         <app-test-suite-display #testSuiteDisplayComponent
                                                 [testSuites]="displayedTestSuites"
-                                                [showExecute]="!isReadonly"
+                                                [showExecute]="!isReadonly && !dataService.configuration.preparingForShutdown"
                                                 [showExport]="true"
                                                 [communityId]="communityIdOfStatement"
                                                 (viewTestSessions)="toTestCaseHistory($event)"

@@ -47,7 +47,10 @@ export class IndexComponent implements OnInit, OnDestroy {
   logoutSubscription?: Subscription
   logoutCompleteSubscription?: Subscription
   bannerSubscription?: Subscription
+  preparingForShutdownSubscription?: Subscription
+  closedNotificationsSubscription?: Subscription
   userPassedLogin = false
+  prepareForShutdownNotificationId: string|null = null
 
   constructor(
     public readonly dataService: DataService,
@@ -81,6 +84,15 @@ export class IndexComponent implements OnInit, OnDestroy {
     this.userLoadSubscription = this.dataService.onUserLoaded$.subscribe(() => {
       this.handlePostUserLoad()
     })
+    this.preparingForShutdownSubscription = this.dataService.onPreparingForShutdown$.subscribe(() => {
+      this.handlePrepareForShutdown()
+    })
+    this.closedNotificationsSubscription = this.popupService.closedNotifications$.subscribe((notificationId) => {
+      if (notificationId != null && this.prepareForShutdownNotificationId != null && notificationId === this.prepareForShutdownNotificationId) {
+        // Needed so that if we trigger an error elsewhere that requires the notification to be displayed, we will not ignore it.
+        this.prepareForShutdownNotificationId = null
+      }
+    })
     if (sessionStorage) {
       window.addEventListener("beforeunload", () => {
         sessionStorage.setItem("menuItemStatusMap", JSON.stringify(Array.from(this.dataService.getMenuItemStatusMap())))
@@ -93,6 +105,8 @@ export class IndexComponent implements OnInit, OnDestroy {
     if (this.userLoadSubscription) this.userLoadSubscription.unsubscribe()
     if (this.logoutSubscription) this.logoutSubscription.unsubscribe()
     if (this.bannerSubscription) this.bannerSubscription.unsubscribe()
+    if (this.preparingForShutdownSubscription) this.preparingForShutdownSubscription.unsubscribe()
+    if (this.closedNotificationsSubscription) this.closedNotificationsSubscription.unsubscribe()
   }
 
   handlePostUserLoad(): void {
@@ -127,6 +141,20 @@ export class IndexComponent implements OnInit, OnDestroy {
               this.dataService.updateMenuItemStatus(MenuItem.serviceHealthDashboard, MenuItemStatus.None)
           }
         })
+      }
+    }
+    this.handlePrepareForShutdown()
+  }
+
+  handlePrepareForShutdown(): void {
+    if (this.dataService.configuration.preparingForShutdown) {
+      if (this.prepareForShutdownNotificationId == null) {
+        this.prepareForShutdownNotificationId = this.popupService.warning("The Test Bed is preparing to be shut down and will not accept new test sessions.", true)
+      }
+    } else {
+      if (this.prepareForShutdownNotificationId != null) {
+        this.popupService.close(this.prepareForShutdownNotificationId)
+        this.prepareForShutdownNotificationId = null
       }
     }
   }

@@ -13,11 +13,9 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-export interface PopupNotificationApi {
+export interface CloseNotificationEvent {
 
-  isPersistent(): boolean;
-  getId(): string;
-  closeNotification(): void;
+  id?: string;
+  skipIfPersistent?: boolean;
 
 }
-

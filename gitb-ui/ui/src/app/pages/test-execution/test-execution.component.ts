@@ -411,20 +411,25 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
     this.testPreparationStatus.status = Constants.STATUS.PENDING
     this.testService.initiate(testCase)
     .subscribe((data) => {
-      this.session = data
-      this.currentTest!.sessionId = this.session
-      // Create WebSocket
-      this.ws = this.webSocketService.connect(
-        { next: () => { this.onOpen() } },
-        { next: () => { this.onClose() } }
-      )
-      this.ws.subscribe({
-        next: (msg) => this.onMessage(msg),
-        error: (error) => this.onError(error),
-        complete: () => this.onClose()
-      })
-      // Send the configuration request. We will be notified via WS when ready.
-      this.testService.configure(this.specificationId!, this.session, this.systemId, this.actorId).subscribe(() => {})
+      if (this.isShutdownPreparationError(data)) {
+        this.dataService.togglePrepareForShutdown(true)
+        this.updateTestCaseStatus(testCase, Constants.TEST_CASE_STATUS.STOPPED)
+      } else {
+        this.session = data.value
+        this.currentTest!.sessionId = this.session
+        // Create WebSocket
+        this.ws = this.webSocketService.connect(
+          { next: () => { this.onOpen() } },
+          { next: () => { this.onClose() } }
+        )
+        this.ws.subscribe({
+          next: (msg) => this.onMessage(msg),
+          error: (error) => this.onError(error),
+          complete: () => this.onClose()
+        })
+        // Send the configuration request. We will be notified via WS when ready.
+        this.testService.configure(this.specificationId!, this.session, this.systemId, this.actorId).subscribe(() => {})
+      }
     })
   }
 
@@ -656,7 +661,7 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
       if (stepId == Constants.END_OF_TEST_STEP || stepId == Constants.END_OF_TEST_STEP_EXTERNAL) {
         if (stepId == Constants.END_OF_TEST_STEP_EXTERNAL && !this.stopped && !this.allStopped) {
           // Stopped by other user or API call.
-          this.popupService.closeAll()
+          this.popupService.closeAll(true)
           if (this.dataService.configuration.automationApiEnabled) {
             this.popupService.warning('The test session was terminated by another user or an external process.', true)
           } else {
@@ -1094,7 +1099,12 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
     this.firstTestStarted = true
     this.reportService.createTestReport(session, this.systemId, this.actorId, this.currentTest!.id)
       .subscribe(() => {
-        this.testService.start(session).subscribe(() => {})
+        this.testService.start(session).subscribe((result) => {
+          if (this.isShutdownPreparationError(result)) {
+            this.dataService.togglePrepareForShutdown(true)
+            this.updateTestCaseStatus(this.currentTest!.id, Constants.TEST_CASE_STATUS.STOPPED)
+          }
+        })
       })
   }
 
@@ -1127,7 +1137,7 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
     if (!this.allStopped) {
       this.stopAll()
     }
-    this.popupService.closeAll()
+    this.popupService.closeAll(true)
     if (this.heartbeat) {
       this.heartbeat.unsubscribe()
       this.heartbeat = undefined
@@ -1190,20 +1200,22 @@ export class TestExecutionComponent extends BaseComponent implements OnInit, OnD
   leavingTestExecutionPage() {
     if (!this.cleanupComplete) {
       this.cleanupComplete = true
-      this.popupService.closeAll()
+      this.popupService.closeAll(true)
       this.dataService.clearTestsToExecute()
       if (this.firstTestStarted && !this.allStopped) {
         this.closeWebSocket()
-        const pendingTests = this.testsToExecute.filter((test) => {
-          return this.testCaseStatus[test.id] == Constants.TEST_CASE_STATUS.READY || this.testCaseStatus[test.id] == Constants.TEST_CASE_STATUS.PENDING || this.testCaseStatus[test.id] == Constants.TEST_CASE_STATUS.CONFIGURING
-        })
-        const pendingTestIds = pendingTests.map((test) => { return test.id } )
-        if (pendingTestIds.length > 0) {
-          this.testService.startHeadlessTestSessions(pendingTestIds, this.specificationId!, this.systemId, this.actorId, false).subscribe(() => {})
-          this.popupService.success('Continuing test execution in background.')
-        } else {
-          if (this.testCaseStatus[this.currentTest!.id] == Constants.TEST_CASE_STATUS.PROCESSING) {
+        if (!this.dataService.configuration.preparingForShutdown) {
+          const pendingTests = this.testsToExecute.filter((test) => {
+            return this.testCaseStatus[test.id] == Constants.TEST_CASE_STATUS.READY || this.testCaseStatus[test.id] == Constants.TEST_CASE_STATUS.PENDING || this.testCaseStatus[test.id] == Constants.TEST_CASE_STATUS.CONFIGURING
+          })
+          const pendingTestIds = pendingTests.map((test) => { return test.id } )
+          if (pendingTestIds.length > 0) {
+            this.testService.startHeadlessTestSessions(pendingTestIds, this.specificationId!, this.systemId, this.actorId, false).subscribe(() => {})
             this.popupService.success('Continuing test execution in background.')
+          } else {
+            if (this.testCaseStatus[this.currentTest!.id] == Constants.TEST_CASE_STATUS.PROCESSING) {
+              this.popupService.success('Continuing test execution in background.')
+            }
           }
         }
       } else {

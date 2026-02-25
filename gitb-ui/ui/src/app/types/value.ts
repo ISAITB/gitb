@@ -13,11 +13,8 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-export interface PopupNotificationApi {
+export interface Value {
 
-  isPersistent(): boolean;
-  getId(): string;
-  closeNotification(): void;
+  value: string
 
 }
-

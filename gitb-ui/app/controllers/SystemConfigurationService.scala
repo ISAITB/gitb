@@ -15,6 +15,7 @@
 
 package controllers
 
+import config.Configurations
 import controllers.util._
 import exceptions.ErrorCodes
 import managers.{AuthorizationManager, StartupWizardManager, SystemConfigurationManager}
@@ -280,6 +281,14 @@ class SystemConfigurationService @Inject()(authorizedAction: AuthorizedAction,
       startupWizardManager.completeStartupWizard(samples, updates, api).map { _ =>
         ResponseConstructor.constructEmptyResponse
       }
+    }
+  }
+
+  def prepareForShutdown: Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageSystemSettings(request).map { _ =>
+      val enable = ParameterExtractor.optionalBooleanBodyParameter(request, ParameterNames.ENABLE).getOrElse(false)
+      Configurations.PREPARE_FOR_SHUTDOWN = enable
+      ResponseConstructor.constructEmptyResponse
     }
   }
 

@@ -15,6 +15,7 @@
 
 package controllers.rest
 
+import config.Configurations
 import controllers.util.{AuthorizedAction, ParameterExtractor, RequestWithAttributes, ResponseConstructor}
 import exceptions.{AutomationApiException, ErrorCodes}
 import managers.{AuthorizationManager, ReportManager, SystemManager, TestExecutionManager}
@@ -38,13 +39,20 @@ class TestAutomationService @Inject() (authorizedAction: AuthorizedAction,
                                       (implicit ec: ExecutionContext) extends BaseAutomationService(cc) {
 
   def start: Action[AnyContent] = authorizedAction.async { request =>
-    processAsJson(request, () => authorizationManager.canOrganisationUseAutomationApi(request), { body =>
-      val organisationKey = ParameterExtractor.extractApiKeyHeader(request).get
-      val input = JsonUtil.parseJsTestSessionLaunchRequest(body, organisationKey)
-      testExecutionManager.processAutomationLaunchRequest(input).map { result =>
-        ResponseConstructor.constructJsonResponse(JsonUtil.jsTestSessionLaunchInfo(result).toString())
+    if (Configurations.PREPARE_FOR_SHUTDOWN) {
+      Future.successful {
+        authorizationManager.markRequestAsAuthorized(request)
+        ResponseConstructor.constructErrorResponse(ErrorCodes.PREPARING_FOR_SHUTDOWN, "The Test Bed is preparing to be shut down and will not accept new test sessions.")
       }
-    })
+    } else {
+      processAsJson(request, () => authorizationManager.canOrganisationUseAutomationApi(request), { body =>
+        val organisationKey = ParameterExtractor.extractApiKeyHeader(request).get
+        val input = JsonUtil.parseJsTestSessionLaunchRequest(body, organisationKey)
+        testExecutionManager.processAutomationLaunchRequest(input).map { result =>
+          ResponseConstructor.constructJsonResponse(JsonUtil.jsTestSessionLaunchInfo(result).toString())
+        }
+      })
+    }
   }
 
   def stop: Action[AnyContent] = authorizedAction.async { request =>
