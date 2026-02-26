@@ -259,7 +259,9 @@ export class LoginComponent extends BaseSelfRegistrationPageComponent implements
       } else if (this.isLoginOk(result.body)) {
         this.completeLogin(result)
       } else if (this.isAccountSelection(result.body)) {
-        this.dataService.recordLoginOption(Constants.LOGIN_OPTION.FORCE_CHOICE)
+        if (!this.dataService.configuration.ssoEnabled || !this.dataService.configuration.ssoWithNativeLogin) {
+          this.dataService.recordLoginOption(Constants.LOGIN_OPTION.FORCE_CHOICE)
+        }
         this.dataService.setActualUser(result.body)
         this.handleSsoLoginOption()
       } else {

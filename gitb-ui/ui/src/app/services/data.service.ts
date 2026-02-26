@@ -1719,7 +1719,7 @@ export class DataService {
 
   recordLoginOption(option: string) {
     this.loginOption = option
-    this.cookieService.set(DataService.COOKIE_LOGIN_OPTION, option)
+    this.cookieService.set(DataService.COOKIE_LOGIN_OPTION, option, undefined, "/")
   }
 
   retrieveLoginOption(): string|undefined {

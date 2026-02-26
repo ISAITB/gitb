@@ -24,6 +24,7 @@ import {UserGuideService} from '../services/user-guide.service';
 import {CommunityService} from '../services/community.service';
 import {AuthService} from '../services/auth.service';
 import {Constants} from '../common/constants';
+import {AuthenticationStatus} from '../types/authentication-status';
 
 @Injectable({
   providedIn: 'root'
@@ -46,10 +47,11 @@ export class ProfileResolver {
   resolveData(state: RouterStateSnapshot): Observable<void> {
     return this.loadConfiguration().pipe(
       switchMap(() => {
-        if (this.authProviderService.isAuthenticated()) {
+        const authStatus = this.authProviderService.getAuthenticatedStatus()
+        if (authStatus === AuthenticationStatus.AuthenticatedWithAccessToken) {
           return this.loadAuthenticatedData();
         } else {
-          return this.loadUnauthenticatedData();
+          return this.loadUnauthenticatedData(authStatus);
         }
       }),
       map(() => void 0)
@@ -120,8 +122,8 @@ export class ProfileResolver {
     );
   }
 
-  private loadUnauthenticatedData(): Observable<any> {
-    if (!this.loadAccountsForSelection()) {
+  private loadUnauthenticatedData(authStatus: AuthenticationStatus): Observable<any> {
+    if (!this.loadAccountsForSelection(authStatus)) {
       return of(void 0);
     }
     return this.authService.getUserFunctionalAccounts().pipe(
@@ -129,11 +131,11 @@ export class ProfileResolver {
     );
   }
 
-  private loadAccountsForSelection(): boolean {
+  private loadAccountsForSelection(authStatus: AuthenticationStatus): boolean {
     let result = this.dataService.configuration.ssoEnabled && !this.dataService.actualUser;
     if (result && this.dataService.configuration.ssoWithNativeLogin) {
       const loginOption = this.dataService.retrieveLoginOption();
-      if (loginOption !== Constants.LOGIN_OPTION.REGISTER_INTERNAL && loginOption !== Constants.LOGIN_OPTION.LINK_ACCOUNT_INTERNAL && loginOption !== Constants.LOGIN_OPTION.FORCE_CHOICE) {
+      if (authStatus === AuthenticationStatus.NotAuthenticated || (loginOption !== Constants.LOGIN_OPTION.REGISTER_INTERNAL && loginOption !== Constants.LOGIN_OPTION.LINK_ACCOUNT_INTERNAL && loginOption !== Constants.LOGIN_OPTION.FORCE_CHOICE)) {
         // We need to present the login form.
         result = false;
       }

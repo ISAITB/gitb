@@ -307,7 +307,7 @@ class SecurityModule extends AbstractModule {
       .excludeBranch("%sbadge".formatted(WEB_CONTEXT_ROOT_WITH_SLASH))
       .excludeBranch("%ssystemResources".formatted(WEB_CONTEXT_ROOT_WITH_SLASH))
     if (Configurations.AUTHENTICATION_SSO_ENABLED && Configurations.AUTHENTICATION_SSO_TYPE == Constants.SsoTypeLdap) {
-      excludedPathMatcher.excludePath("%sapp".formatted(WEB_CONTEXT_ROOT_WITH_SLASH))
+      excludedPathMatcher.excludeBranch("%sapp".formatted(WEB_CONTEXT_ROOT_WITH_SLASH))
       excludedPathMatcher.excludePath("%s/app/configuration".formatted(API_ROOT))
       excludedPathMatcher.excludePath("%s/sso/login".formatted(API_ROOT))
     }

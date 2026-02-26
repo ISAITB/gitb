@@ -172,7 +172,13 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction,
           ResponseConstructor.constructOauthResponse(Token(token), userId)
         }
       }.getOrElse {
-        ResponseConstructor.constructEmptyResponse
+        val webContext = new PlayWebContext(request)
+        val profileManager = new ProfileManager(webContext, playSessionStore)
+        if (profileManager.isAuthenticated) {
+          ResponseConstructor.constructJsonResponse("{ \"profileExists\": true }")
+        } else {
+          ResponseConstructor.constructEmptyResponse
+        }
       }
     }
   }
@@ -341,18 +347,17 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction,
         val webContext = new PlayWebContext(request)
         val profileManager = new ProfileManager(webContext, playSessionStore)
         /*
-         * Besides removing the profiles we go over them here to ensure that upon full logout
-         * we will never have a cached profile being reused. This problem comes up when using OIDC
-         * where if the user logs out, and then we terminate the OIDC session, there is still a cached
-         * reference to a profile that is considered fresh. By manually expiring the profile in
+         * Besides removing the profiles we could go over them here to ensure that upon full logout
+         * we will never have a cached profile being reused. This is achieved by setting the expiration date
+         * explicitly on the profile.
+         *
+         * This problem comes up when using OIDC where if the user logs out, and then we terminate the OIDC session,
+         * there is still a cached reference to a profile that is considered fresh. By manually expiring the profile in
          * question we ensure that a logout action always triggers a profile re-check.
+         *
+         * This was not implemented in the end because it creates race conditions in profile updates resulting in 401
+         * errors due to token mismatches.
          */
-        profileManager.getProfiles.asScala.foreach {
-          case profile: OidcProfile =>
-            profile.setExpiration(new java.util.Date(0))  // set to epoch = definitely expired
-            profileManager.save(true, profile, false)     // re-save the poisoned profile
-          case _ => // No action needed for other profiles.
-        }
         profileManager.removeProfiles()
         playSessionStore.destroySession(webContext)
         ResponseConstructor.constructEmptyResponse.withNewSession

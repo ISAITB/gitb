@@ -20,6 +20,7 @@ import {AuthProviderService} from '../services/auth-provider.service';
 import {DataService} from '../services/data.service';
 import {RoutingService} from '../services/routing.service';
 import {ProfileResolver} from './profile-resolver';
+import {AuthenticationStatus} from '../types/authentication-status';
 
 @Injectable({
   providedIn: 'root'
@@ -35,10 +36,10 @@ export class RouteAuthenticationGuard  {
 
   canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
     return this.authProviderService.recoverAuthenticationStatus().pipe(
-      switchMap(authenticated => {
+      switchMap(authStatus => {
         if (state.url === '/login' || state.url === '/home') {
           this.dataService.applyRequestedRoute();
-          if (authenticated) {
+          if (authStatus === AuthenticationStatus.AuthenticatedWithAccessToken) {
             return this.goToStartForUser(state);
           } else if (state.url === '/login') {
             return of(true);
@@ -48,7 +49,7 @@ export class RouteAuthenticationGuard  {
         }
         // Any other route
         this.dataService.recordLocationDataOrRequestedRoute(state.url);
-        if (authenticated) {
+        if (authStatus == AuthenticationStatus.AuthenticatedWithAccessToken) {
           return of(true);
         }
         return from(this.routingService.toLogin());

@@ -25,6 +25,7 @@ import {RoutingService} from './routing.service';
 import {PopupService} from './popup.service';
 import {catchError, map} from 'rxjs/operators';
 import {LoginResultOk} from '../types/login-result-ok';
+import {AuthenticationStatus} from '../types/authentication-status';
 
 @Injectable({
   providedIn: 'root'
@@ -44,8 +45,8 @@ export class AuthProviderService {
   public onLogout$ = this.onLogoutSource.asObservable()
   public onLogoutComplete$ = this.onLogoutCompleteSource.asObservable()
 
-  private readonly authenticatedSubject = new BehaviorSubject<boolean>(false);
-  private recoverAuth$?: Observable<boolean>;
+  private readonly authenticatedSubject = new BehaviorSubject<AuthenticationStatus>(AuthenticationStatus.NotChecked);
+  private recoverAuth$?: Observable<AuthenticationStatus>;
 
   constructor(
       private readonly httpClient: HttpClient,
@@ -100,34 +101,41 @@ export class AuthProviderService {
     })
   }
 
-  recoverAuthenticationStatus(): Observable<boolean> {
-    if (this.authenticatedSubject.value) {
-      return of(true);
+  recoverAuthenticationStatus(): Observable<AuthenticationStatus> {
+    if (this.authenticatedSubject.value != AuthenticationStatus.NotChecked) {
+      return of(this.authenticatedSubject.value);
     }
     if (!this.recoverAuth$) {
       this.recoverAuth$ = this.recoverAuthenticationStatusFromSession().pipe(
-        tap(isOk => this.authenticatedSubject.next(isOk)),
+        tap(status => this.authenticatedSubject.next(status)),
         shareReplay({ bufferSize: 1, refCount: false })
       );
     }
     return this.recoverAuth$;
   }
 
-  private recoverAuthenticationStatusFromSession(): Observable<boolean> {
+  private recoverAuthenticationStatusFromSession(): Observable<AuthenticationStatus> {
     return this.httpClient.get(this.dataService.completePath(ROUTES.controllers.AuthenticationService.retrieveAccessToken().url), { headers: Utils.createHttpHeaders()}).pipe(
       map(result => {
         if (this.isLoginOk(result)) {
           this.authenticate(result.access_token);
-          return true;
+          return AuthenticationStatus.AuthenticatedWithAccessToken;
+        } else if (this.isProfileExists(result)) {
+          return AuthenticationStatus.Authenticated;
+        } else {
+          return AuthenticationStatus.NotAuthenticated;
         }
-        return false;
       }),
-      catchError(() => of(false))
+      catchError(() => of(AuthenticationStatus.NotAuthenticated))
     );
   }
 
   private isLoginOk(obj: LoginResultOk|any): obj is LoginResultOk {
     return obj != undefined && obj.access_token != undefined
+  }
+
+  private isProfileExists(obj: { profileExists: boolean }|any): obj is { profileExists: boolean }  {
+    return obj != undefined && obj.profileExists != undefined
   }
 
   signalLogin(info: LoginEventInfo) {
@@ -145,17 +153,22 @@ export class AuthProviderService {
   }
 
   private authenticate(accessToken: string, cookiePath?: string) {
-		this.authenticatedSubject.next(true)
+		this.authenticatedSubject.next(AuthenticationStatus.AuthenticatedWithAccessToken)
 		this.logoutSignalled = false
     this.accessToken = accessToken
   }
 
 	private deAuthenticate() {
-		this.authenticatedSubject.next(false)
+		this.authenticatedSubject.next(AuthenticationStatus.NotChecked)
+    this.recoverAuth$ = undefined
 		this.logoutOngoing = false
   }
 
 	isAuthenticated(): boolean {
+    return this.authenticatedSubject.value === AuthenticationStatus.AuthenticatedWithAccessToken
+  }
+
+  getAuthenticatedStatus(): AuthenticationStatus {
     return this.authenticatedSubject.value
   }
 
