@@ -297,8 +297,7 @@ export class LoginComponent extends BaseSelfRegistrationPageComponent implements
     this.loginState = {
       userId: userId!,
       tokens: result.body,
-      path: path,
-      remember: false
+      path: path
     }
     this.authProvider.signalLogin(this.loginState)
   }

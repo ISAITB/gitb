@@ -15,16 +15,16 @@
 
 import {Injectable} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
-import {ReplaySubject} from 'rxjs';
+import {BehaviorSubject, Observable, of, ReplaySubject, shareReplay, tap} from 'rxjs';
 import {LogoutEventInfo} from '../types/logout-event-info.type';
 import {LoginEventInfo} from '../types/login-event-info.type';
-import {Constants} from '../common/constants';
-import {CookieService} from 'ngx-cookie-service';
 import {DataService} from './data.service';
 import {Utils} from '../common/utils';
 import {ROUTES} from '../common/global';
 import {RoutingService} from './routing.service';
 import {PopupService} from './popup.service';
+import {catchError, map} from 'rxjs/operators';
+import {LoginResultOk} from '../types/login-result-ok';
 
 @Injectable({
   providedIn: 'root'
@@ -35,11 +35,8 @@ export class AuthProviderService {
   private afterLoginSource = new ReplaySubject<LoginEventInfo>()
   private onLogoutSource = new ReplaySubject<LogoutEventInfo>()
   private onLogoutCompleteSource = new ReplaySubject<void>()
-  private authenticated: boolean = false
   public logoutSignalled: boolean = false
   private logoutOngoing: boolean = false
-  private cookiePath?: string
-  private atKey = Constants.ACCESS_TOKEN_COOKIE_KEY
   public accessToken?: string
 
   public onLogin$ = this.onLoginSource.asObservable()
@@ -47,27 +44,19 @@ export class AuthProviderService {
   public onLogout$ = this.onLogoutSource.asObservable()
   public onLogoutComplete$ = this.onLogoutCompleteSource.asObservable()
 
+  private readonly authenticatedSubject = new BehaviorSubject<boolean>(false);
+  private recoverAuth$?: Observable<boolean>;
+
   constructor(
-      private readonly cookieService: CookieService,
       private readonly httpClient: HttpClient,
       private readonly dataService: DataService,
       private readonly routingService: RoutingService,
       private readonly popupService: PopupService
     ) {
-    // Check if access token is set in cookies
-    let accessTokenValue = cookieService.get(this.atKey)
-    if (accessTokenValue) {
-      this.authenticate(accessTokenValue)
-    }
     // Handle login event
     this.onLogin$.subscribe((info) => {
       this.dataService.cookiePath = info.path
       const accessToken = info.tokens.access_token
-      let expiryDate: Date|undefined
-			if (info.remember) {
-				expiryDate = new Date(Date.now() + Constants.TOKEN_COOKIE_EXPIRE)
-      }
-      this.dataService.setCookie(this.atKey, accessToken, expiryDate)
       this.authenticate(accessToken, info.path)
       this.signalAfterLogin(info)
     })
@@ -80,21 +69,14 @@ export class AuthProviderService {
 			if (!this.logoutOngoing && (info.full || this.isAuthenticated())) {
         const clearAllSessionInfo = info.full
         this.logoutOngoing = true
-        let logout$ = this.httpClient.post(
+        this.httpClient.post(
           this.dataService.completePath(ROUTES.controllers.AuthenticationService.logout().url),
           Utils.objectToFormRequest({full: clearAllSessionInfo}).toString(),
-          {
-            headers: Utils.createHttpHeaders(this.accessToken)
-          }
-        )
-        logout$.subscribe(() => {
+          { headers: Utils.createHttpHeaders(this.accessToken) }
+        ).subscribe(() => {
           console.debug('Successfully signalled logout')
         }).add(() => {
           this.dataService.destroy(clearAllSessionInfo)
-          this.cookieService.delete(this.atKey)
-					if (this.cookiePath) {
-            this.cookieService.delete(this.atKey, this.cookiePath)
-          }
 					if (!info || !info.keepLoginOption) {
             this.dataService.clearLoginOption()
           }
@@ -118,6 +100,36 @@ export class AuthProviderService {
     })
   }
 
+  recoverAuthenticationStatus(): Observable<boolean> {
+    if (this.authenticatedSubject.value) {
+      return of(true);
+    }
+    if (!this.recoverAuth$) {
+      this.recoverAuth$ = this.recoverAuthenticationStatusFromSession().pipe(
+        tap(isOk => this.authenticatedSubject.next(isOk)),
+        shareReplay({ bufferSize: 1, refCount: false })
+      );
+    }
+    return this.recoverAuth$;
+  }
+
+  private recoverAuthenticationStatusFromSession(): Observable<boolean> {
+    return this.httpClient.get(this.dataService.completePath(ROUTES.controllers.AuthenticationService.retrieveAccessToken().url), { headers: Utils.createHttpHeaders()}).pipe(
+      map(result => {
+        if (this.isLoginOk(result)) {
+          this.authenticate(result.access_token);
+          return true;
+        }
+        return false;
+      }),
+      catchError(() => of(false))
+    );
+  }
+
+  private isLoginOk(obj: LoginResultOk|any): obj is LoginResultOk {
+    return obj != undefined && obj.access_token != undefined
+  }
+
   signalLogin(info: LoginEventInfo) {
     this.onLoginSource.next(info)
   }
@@ -128,25 +140,23 @@ export class AuthProviderService {
     this.onLogoutSource.next(info)
   }
 
-  signalAfterLogin(info: LoginEventInfo) {
+  private signalAfterLogin(info: LoginEventInfo) {
     this.afterLoginSource.next(info)
   }
 
-  authenticate(accessToken: string, cookiePath?: string) {
-		this.authenticated = true
+  private authenticate(accessToken: string, cookiePath?: string) {
+		this.authenticatedSubject.next(true)
 		this.logoutSignalled = false
-    this.cookiePath = cookiePath
     this.accessToken = accessToken
   }
 
-	deAuthenticate() {
-		this.authenticated = false
+	private deAuthenticate() {
+		this.authenticatedSubject.next(false)
 		this.logoutOngoing = false
-    delete this.cookiePath
   }
 
 	isAuthenticated(): boolean {
-    return this.authenticated
+    return this.authenticatedSubject.value
   }
 
 }

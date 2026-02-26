@@ -2394,6 +2394,11 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     check.map(setAuthResult(request, _, "User is not authenticated"))
   }
 
+  def canRetrieveAccessToken(request: RequestWithAttributes[_]): Future[Boolean] = {
+    markRequestAsAuthorized(request)
+    Future.successful(true)
+  }
+
   private def isTestBedAdmin(userId: Long): Future[Boolean] = {
     accountManager.isSystemAdmin(userId)
   }

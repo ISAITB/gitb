@@ -15,7 +15,7 @@
 
 import {Injectable} from '@angular/core';
 import {ActivatedRouteSnapshot, RouterStateSnapshot, UrlTree} from '@angular/router';
-import {mergeMap, Observable, of} from 'rxjs';
+import {from, mergeMap, Observable, of, switchMap} from 'rxjs';
 import {AuthProviderService} from '../services/auth-provider.service';
 import {DataService} from '../services/data.service';
 import {RoutingService} from '../services/routing.service';
@@ -33,24 +33,27 @@ export class RouteAuthenticationGuard  {
     private readonly profileResolver: ProfileResolver
   ) {}
 
-  canActivate(
-    route: ActivatedRouteSnapshot,
-    state: RouterStateSnapshot): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
-      if (state.url === '/login') {
-        this.dataService.applyRequestedRoute()
-        if (this.authProviderService.isAuthenticated()) {
-          return this.goToStartForUser(state)
-        } else {
-          return true
+  canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
+    return this.authProviderService.recoverAuthenticationStatus().pipe(
+      switchMap(authenticated => {
+        if (state.url === '/login' || state.url === '/home') {
+          this.dataService.applyRequestedRoute();
+          if (authenticated) {
+            return this.goToStartForUser(state);
+          } else if (state.url === '/login') {
+            return of(true);
+          } else {
+            return from(this.routingService.toLogin());
+          }
         }
-      } else {
-        this.dataService.recordLocationDataOrRequestedRoute(state.url)
-        if (this.authProviderService.isAuthenticated()) {
-          return this.goToStartForUser(state)
-        } else {
-          return this.routingService.toLogin()
+        // Any other route
+        this.dataService.recordLocationDataOrRequestedRoute(state.url);
+        if (authenticated) {
+          return of(true);
         }
-      }
+        return from(this.routingService.toLogin());
+      })
+    )
   }
 
   private goToStartForUser(state: RouterStateSnapshot): Observable<boolean> {

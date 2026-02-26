@@ -61,18 +61,7 @@ class SecurityModule extends AbstractModule {
     Configurations.loadConfigurations()
 
     // Session store and idle/max session timeouts
-    val playCacheSessionStore = new CustomPlayEhCacheSessionStore(getProvider(classOf[SyncCacheApi]))
-    if (Configurations.AUTHENTICATION_SESSION_MAX_IDLE_TIME < 0) {
-      playCacheSessionStore.setTimeout(0) // Infinite.
-    } else {
-      playCacheSessionStore.setTimeout(Configurations.AUTHENTICATION_SESSION_MAX_IDLE_TIME)
-    }
-    if (Configurations.AUTHENTICATION_SESSION_MAX_TOTAL_TIME < 0) {
-      playCacheSessionStore.setMaxTimeout(0) // Infinite.
-    } else {
-      playCacheSessionStore.setMaxTimeout(Configurations.AUTHENTICATION_SESSION_MAX_TOTAL_TIME)
-    }
-    bind(classOf[SessionStore]).toInstance(playCacheSessionStore)
+    bind(classOf[SessionStore]).to(classOf[CustomPlayEhCacheSessionStore]).asEagerSingleton()
 
     // callback
     val callbackController = new CallbackController()
@@ -314,6 +303,7 @@ class SecurityModule extends AbstractModule {
       .excludeBranch("%s/rest".formatted(API_ROOT))
       .excludePath("%s/healthcheck".formatted(API_ROOT))
       .excludePath("%s/oauth/logout".formatted(API_ROOT))
+      .excludePath("%s/oauth/retrieveAccessToken".formatted(API_ROOT))
       .excludeBranch("%sbadge".formatted(WEB_CONTEXT_ROOT_WITH_SLASH))
       .excludeBranch("%ssystemResources".formatted(WEB_CONTEXT_ROOT_WITH_SLASH))
     if (Configurations.AUTHENTICATION_SSO_ENABLED && Configurations.AUTHENTICATION_SSO_TYPE == Constants.SsoTypeLdap) {

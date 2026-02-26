@@ -48,6 +48,11 @@ public class CustomPlayEhCacheStore<K, O> extends PlayEhCacheStore<K, O> {
     }
 
     @Override
+    public void remove(K key) {
+        getEhcache().remove(computeKey(key));
+    }
+
+    @Override
     public String toString() {
         return "CustomPlayEhCacheStore(cache=" + getCache() + ", idleTimeout=" + getTimeout() + ", maxTimeout=" + getMaxTimeout() + ", ehcache=getEhcache()";
     }

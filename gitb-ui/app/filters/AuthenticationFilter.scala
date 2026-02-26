@@ -43,8 +43,11 @@ class AuthenticationFilter @Inject() (router: Router)
   private def downstreamHeaderFromAccessToken(accessToken: String, originalRequest: RequestHeader): RequestHeader = {
     // Check if access token exists for any user
     val userId = TokenCache.checkAccessToken(accessToken)
+    if (userId.isEmpty) {
+      throw InvalidTokenException(ErrorCodes.INVALID_ACCESS_TOKEN, "Invalid access token")
+    }
     // A workaround of customizing request headers to add our userId data, so that controllers can process it
-    val customHeaders = originalRequest.headers.add((ParameterNames.USER_ID, "" + userId))
+    val customHeaders = originalRequest.headers.add((ParameterNames.USER_ID, "" + userId.get))
     val customRequestHeader = originalRequest.withHeaders(customHeaders)
     customRequestHeader
   }

@@ -15,7 +15,7 @@
 
 package authentication;
 
-import com.google.inject.Provider;
+import config.Configurations;
 import org.pac4j.play.store.PlayCacheSessionStore;
 import play.cache.SyncCacheApi;
 
@@ -34,14 +34,19 @@ public class CustomPlayEhCacheSessionStore extends PlayCacheSessionStore {
     public CustomPlayEhCacheSessionStore(SyncCacheApi cache) {
         this.store = new CustomPlayEhCacheStore<>(cache);
         setDefaultTimeout();
+        if (Configurations.AUTHENTICATION_SESSION_MAX_IDLE_TIME() < 0) {
+            setTimeout(0); // Infinite.
+        } else {
+            setTimeout(Configurations.AUTHENTICATION_SESSION_MAX_IDLE_TIME());
+        }
+        if (Configurations.AUTHENTICATION_SESSION_MAX_TOTAL_TIME() < 0) {
+            setMaxTimeout(0); // Infinite.
+        } else {
+            setMaxTimeout(Configurations.AUTHENTICATION_SESSION_MAX_TOTAL_TIME());
+        }
     }
 
-    public CustomPlayEhCacheSessionStore(Provider<SyncCacheApi> cacheProvider) {
-        this.store = new CustomPlayEhCacheStore<>(cacheProvider);
-        setDefaultTimeout();
-    }
-
-    public void setMaxTimeout(int maxTimeout) {
+    private void setMaxTimeout(int maxTimeout) {
         ((CustomPlayEhCacheStore<String, Map<String, Object>>)this.store).setMaxTimeout(maxTimeout);
     }
 
