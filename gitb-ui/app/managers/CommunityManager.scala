@@ -113,6 +113,8 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
       }
       // Save admin user account
       userId <- PersistenceSchema.insertUser += organisationAdmin.withOrganizationId(organisationInfo.organisationId)
+      // Initialise the user preferences.
+      _ <- userPreferenceManager.initialiseUserPreferences(organisation.community, userId)
       // Link current session user with created admin user account
       _ <-
         if (actualUserInfo.isDefined) {

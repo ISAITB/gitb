@@ -175,10 +175,17 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
   def registerUser(adminId: Long, user: Users): Future[Unit] = {
     DB.run(
       (for {
-        //1) Get organization id of the admin
-        orgId <- PersistenceSchema.users.filter(_.id === adminId).result.headOption
+        //1) Get organization ids of the admin
+        orgIds <- PersistenceSchema.users
+          .join(PersistenceSchema.organizations).on(_.organization === _.id)
+          .filter(_._1.id === adminId)
+          .map(x => (x._2.id, x._2.community))
+          .result
+          .head
         //2) Insert new user to Users table
-        _ <- PersistenceSchema.insertUser += user.withOrganizationId(orgId.get.organization)
+        userId <- PersistenceSchema.insertUser += user.withOrganizationId(orgIds._1)
+        //3) Initialise the user preferences.
+        _ <- userPreferenceManager.initialiseUserPreferences(orgIds._2, userId)
       } yield ()).transactionally
     )
   }
