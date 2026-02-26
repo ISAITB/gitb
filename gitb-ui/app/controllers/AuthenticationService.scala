@@ -19,11 +19,12 @@ import config.Configurations
 import controllers.util._
 import exceptions._
 import managers.{AccountManager, AuthenticationManager, AuthorizationManager, UserManager}
-import models.{Constants, Enums}
+import models.{Constants, Enums, Token}
 import org.pac4j.core.context.session.SessionStore
 import org.pac4j.core.context.{CallContext, WebContext}
 import org.pac4j.core.credentials.UsernamePasswordCredentials
 import org.pac4j.core.profile.ProfileManager
+import org.pac4j.oidc.profile.OidcProfile
 import org.pac4j.play.PlayWebContext
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.cache.TokenCache
@@ -32,7 +33,7 @@ import utils.{CryptoUtil, JsonUtil, RepositoryUtils}
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters.MapHasAsScala
+import scala.jdk.CollectionConverters.{CollectionHasAsScala, MapHasAsScala}
 import scala.jdk.OptionConverters._
 
 class AuthenticationService @Inject() (authorizedAction: AuthorizedAction,
@@ -162,6 +163,18 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction,
     disableDataBootstrap()
     // Add the access token to the session cookie - this is the key recorded in Redis that allows session timeout enforcement and role resolution
     ResponseConstructor.constructOauthResponse(tokens, userId).withSession(request.session + (Constants.AccessTokenKey -> tokens.accessToken))
+  }
+
+  def retrieveAccessToken: Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canRetrieveAccessToken(request).map { _ =>
+      request.session.get(Constants.AccessTokenKey).flatMap { token =>
+        TokenCache.checkAccessToken(token).map { userId =>
+          ResponseConstructor.constructOauthResponse(Token(token), userId)
+        }
+      }.getOrElse {
+        ResponseConstructor.constructEmptyResponse
+      }
+    }
   }
 
   def replaceOnetimePassword: Action[AnyContent] = authorizedAction.async { request =>
@@ -327,6 +340,19 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction,
       if (isFullLogout) {
         val webContext = new PlayWebContext(request)
         val profileManager = new ProfileManager(webContext, playSessionStore)
+        /*
+         * Besides removing the profiles we go over them here to ensure that upon full logout
+         * we will never have a cached profile being reused. This problem comes up when using OIDC
+         * where if the user logs out, and then we terminate the OIDC session, there is still a cached
+         * reference to a profile that is considered fresh. By manually expiring the profile in
+         * question we ensure that a logout action always triggers a profile re-check.
+         */
+        profileManager.getProfiles.asScala.foreach {
+          case profile: OidcProfile =>
+            profile.setExpiration(new java.util.Date(0))  // set to epoch = definitely expired
+            profileManager.save(true, profile, false)     // re-save the poisoned profile
+          case _ => // No action needed for other profiles.
+        }
         profileManager.removeProfiles()
         playSessionStore.destroySession(webContext)
         ResponseConstructor.constructEmptyResponse.withNewSession
