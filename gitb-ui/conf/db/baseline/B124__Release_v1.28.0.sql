@@ -1294,6 +1294,7 @@ CREATE TABLE `conformancesnapshotresults` (
   `output_message` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci,
   `update_time` timestamp NULL DEFAULT NULL,
   `snapshot_id` bigint NOT NULL,
+  `test_case_group_id` bigint DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `csr_idx_org` (`organization_id`),
   KEY `csr_idx_sut` (`sut_id`),
@@ -1494,8 +1495,8 @@ INSERT INTO `schema_version` VALUES
 (117,'117','XML report metadata', 'SQL', 'V117__XML_report_metadata.sql', -2009734919, 'gitb', CURRENT_TIMESTAMP(), 1, 1),
 (118,'118','Trigger fire expressions', 'SQL', 'V118__Trigger_fire_expressions.sql', -763600425, 'gitb', CURRENT_TIMESTAMP(), 1, 1),
 (119,'119','Test case groups', 'SQL', 'V119__Test_case_groups.sql', -319546087, 'gitb', CURRENT_TIMESTAMP(), 1, 1),
-(120,'120',"TPL storage as MEDIUMBLOB",'SQL','V120__TPL_storage_as_MEDIUMBLOB.sql',1107412605,'gitb',CURRENT_TIMESTAMP(), 1, 1),
-(121,'121',"Allow readonly community view for users",'SQL','V121__Allow_readonly_community_view_for_users.sql',-1480519436,'gitb',CURRENT_TIMESTAMP(), 1, 1),
+(120,'120','TPL storage as MEDIUMBLOB','SQL','V120__TPL_storage_as_MEDIUMBLOB.sql',1107412605,'gitb',CURRENT_TIMESTAMP(), 1, 1),
+(121,'121','Allow readonly community view for users','SQL','V121__Allow_readonly_community_view_for_users.sql',-1480519436,'gitb',CURRENT_TIMESTAMP(), 1, 1),
 (122,'122','Custom test services','SQL','V122__Custom_test_services.sql',-1980490275,'gitb',CURRENT_TIMESTAMP(),1,1),
 (123,'123','Startup configuration wizard','SQL','V123__Startup_configuration_wizard.sql',1390514133,'gitb',CURRENT_TIMESTAMP(),1,1),
 (124,'124','New community permissions and self registration settings','SQL','V124__New_community_permissions_and_self_registration_settings.sql',-143118259,'gitb',CURRENT_TIMESTAMP(),1,1);
