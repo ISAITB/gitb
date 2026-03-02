@@ -82,7 +82,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
   ) { super(dataService, zone, conformanceService) }
 
   ngOnInit(): void {
-    this.latestSnapshotButtonLabel = 'Latest conformance status'
+    this.latestSnapshotButtonLabel = Constants.LATEST_CONFORMANCE_STATUS_LABEL
     this.snapshotButtonLabel = this.latestSnapshotButtonLabel
 		if (this.dataService.isCommunityAdmin) {
 			this.communityId = this.dataService.community!.id
@@ -317,6 +317,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     }
     if (!fromSnapshotChange) {
       this.activeConformanceSnapshot = undefined
+      this.snapshotButtonLabel = this.latestSnapshotButtonLabel
     }
     let loadObservable: Observable<Organisation[]>
     if (this.selectedCommunityId == undefined) {
