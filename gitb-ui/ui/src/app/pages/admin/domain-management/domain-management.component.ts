@@ -41,7 +41,7 @@ export class DomainManagementComponent implements OnInit, AfterViewInit {
     { field: 'sname', title: 'Short name' },
     { field: 'fname', title: 'Full name' },
     { field: 'description', title: 'Description'},
-    { field: 'tags', title: '', tagData: true, headerClass: 'th-min' }
+    { field: 'tags', title: '', tagData: true, headerClass: 'th-min', cellClass: 'td-min centered' }
   ]
   domains: Domain[] = []
   domainFilter?: string

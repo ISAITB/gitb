@@ -39,7 +39,7 @@ export class UserManagementComponent implements OnInit, AfterViewInit {
   communityColumns: TableColumnDefinition[] = [
     { field: 'sname', title: 'Short name' },
     { field: 'fname', title: 'Full name' },
-    { field: 'tags', title: '', tagData: true, headerClass: 'th-min' }
+    { field: 'tags', title: '', tagData: true, headerClass: 'th-min', cellClass: 'td-min centered' }
   ]
   communities: CommunityLimited[] = []
   communityFilter?: string
