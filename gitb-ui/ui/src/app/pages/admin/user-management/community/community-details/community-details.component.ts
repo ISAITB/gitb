@@ -48,6 +48,7 @@ import {TableApi} from '../../../../../components/table/table-api';
 import {BaseTabbedComponent} from '../../../../base-tabbed-component';
 import {ResourceState} from '../../../../../components/resource-management-tab/resource-state';
 import {UserPreferences} from '../../../../../types/user-preferences';
+import {TagData} from '../../../../../types/tag-data';
 
 @Component({
     selector: 'app-community-details',
@@ -65,6 +66,7 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
   @ViewChild("triggersTable") triggersTable?: TableApi
 
   community!: Community
+  currentTags?: TagData[]
   adminStatus = {status: Constants.STATUS.NONE}
   organisationStatus = {status: Constants.STATUS.NONE}
   landingPageStatus = {status: Constants.STATUS.NONE}
@@ -190,6 +192,7 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
       // Needed so that changes are propagated to the header display.
       this.community.tags = []
     }
+    this.copyTags(this.community.tags)
     this.communityId = this.community.id
     this.resetSelfRegistrationWarning()
     if (Number(this.communityId) == Constants.DEFAULT_COMMUNITY_ID) {
@@ -474,6 +477,7 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
         this.dataService.setDefaultPageSize(this.community.preferences!.pageSize)
         this.dataService.setHomePageType(this.community.preferences!.homePageType)
       }
+      this.copyTags(this.community.tags)
       if (this.selfRegistrationWarningActive) {
         this.popupService.warning('Community updated with warnings.')
       } else {
@@ -483,6 +487,14 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
     }).add(() => {
       this.savePending = false
     })
+  }
+
+  private copyTags(source: TagData[]|undefined) {
+    if (source == undefined) {
+      this.currentTags = undefined
+    } else {
+      this.currentTags = [...source].map(t => ({...t}))
+    }
   }
 
   updateCommunity() {

@@ -56,6 +56,7 @@ import {
 } from '../../../../../components/domain-specification-display/domain-specification-display-component-api';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 import {UsageTipService} from '../../../../../services/usage-tip.service';
+import {TagData} from '../../../../../types/tag-data';
 
 @Component({
     selector: 'app-domain-details',
@@ -76,6 +77,7 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
   @ViewChildren("specificationDisplayComponent") specificationDisplayComponents?: QueryList<DomainSpecificationDisplayComponentApi>
 
   domain: Partial<Domain> = {}
+  currentTags?: TagData[]
   domainSpecifications: DomainSpecification[] = []
   specifications: Specification[] = []
   hasGroups = false
@@ -166,6 +168,7 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
         // Needed so that changes are propagated to the header display.
         this.domain.tags = []
       }
+      this.copyTags(this.domain.tags)
       this.routingService.domainBreadcrumbs(this.domainId, this.domain.sname!)
     }).add(() => {
       this.loaded = true
@@ -432,6 +435,7 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
     this.savePending = true
 		this.conformanceService.updateDomain(this.domainId, this.domain.sname!, this.domain.fname!, this.domain.description, this.domain.reportMetadata, this.dataService.serializeTags(this.domain.tags))
     .subscribe(() => {
+      this.copyTags(this.domain.tags)
       this.popupService.success(this.dataService.labelDomain()+' updated.')
       this.dataService.breadcrumbUpdate({id: this.domainId, type: BreadcrumbType.domain, label: this.domain.sname!})
     }).add(() => {
@@ -682,6 +686,14 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
     this.specificationDisplayComponents?.forEach((component) => {
       component.otherControlSelected(selectedId)
     })
+  }
+
+  private copyTags(source: TagData[]|undefined) {
+    if (source == undefined) {
+      this.currentTags = undefined
+    } else {
+      this.currentTags = [...source].map(t => ({...t}))
+    }
   }
 
 }

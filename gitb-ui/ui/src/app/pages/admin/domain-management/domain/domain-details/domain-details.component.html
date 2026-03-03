@@ -3,7 +3,7 @@
         <div class="card-header">
             <div class="card-title">{{dataService.labelDomain()}} details</div>
             <div class="ms-auto">
-                <app-tags-display #tagsDisplay [tags]="domain.tags"></app-tags-display>
+                <app-tags-display #tagsDisplay [tags]="currentTags"></app-tags-display>
             </div>
         </div>
         <form (ngSubmit)="saveDomainChanges()">
