@@ -2,6 +2,7 @@
     <div class="card mb-0">
         <div class="card-header">
             <div class="card-title">Legal notice details</div>
+            <div app-community-tag-indicator></div>
         </div>
         <form (ngSubmit)="updateLegalNotice(false)">
             <div class="card-body" [pending]="!loaded" focus="name">

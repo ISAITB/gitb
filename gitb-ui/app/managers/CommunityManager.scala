@@ -54,6 +54,12 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
 
   import dbConfig.profile.api._
 
+  def getCommunityTags(id: Long): Future[Option[String]] = {
+    DB.run {
+      PersistenceSchema.communities.filter(_.id === id).map(_.tags).result.headOption
+    }.map(_.flatten)
+  }
+
   def existsOrganisationWithSameUserEmail(communityId: Long, email: String): Future[Boolean] = {
     DB.run(PersistenceSchema.users
       .join(PersistenceSchema.organizations).on(_.organization === _.id)

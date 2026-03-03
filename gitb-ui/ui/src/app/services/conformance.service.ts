@@ -74,6 +74,13 @@ export class ConformanceService {
     private readonly popupService: PopupService
   ) { }
 
+  getDomainTags(domainId: number) {
+    return this.restService.get<TagData[]>({
+      path: ROUTES.controllers.ConformanceService.getDomainTags(domainId).url,
+      authenticate: true
+    })
+  }
+
   getDomain(domainId: number) {
     return this.restService.get<Domain>({
       path: ROUTES.controllers.ConformanceService.getDomain(domainId).url,

@@ -2246,6 +2246,10 @@ object JsonUtil {
     Json.parse(tagData).as[JsArray]
   }
 
+  def jsTags(tagData: Option[String]): JsArray = {
+    Json.parse(tagData.getOrElse("[]")).as[JsArray]
+  }
+
   /**
    * Converts a TestCase object into Play!'s JSON notation.
    * @param testCase TestCase object to be converted

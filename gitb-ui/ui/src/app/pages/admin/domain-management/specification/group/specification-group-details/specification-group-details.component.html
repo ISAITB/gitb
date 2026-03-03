@@ -2,6 +2,7 @@
 	<div class="card mb-0">
 		<div class="card-header">
 			<div class="card-title">{{dataService.labelSpecificationGroup()}} details</div>
+            <div app-domain-tag-indicator></div>
 		</div>
 		<form (ngSubmit)="saveGroupChanges()">
 			<div class="card-body" [pending]="!loaded" focus="shortName">

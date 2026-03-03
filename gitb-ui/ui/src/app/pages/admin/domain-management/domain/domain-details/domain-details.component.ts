@@ -694,6 +694,7 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
     } else {
       this.currentTags = [...source].map(t => ({...t}))
     }
+    this.dataService.cacheDomainTags(this.domainId, this.currentTags)
   }
 
 }

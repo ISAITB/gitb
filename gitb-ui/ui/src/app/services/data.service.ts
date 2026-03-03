@@ -2005,4 +2005,42 @@ export class DataService {
     return undefined;
   }
 
+  retrieveCachedDomainTags(id: number): TagData[]|undefined {
+    return this.retrieveCachedTags(id, Constants.SESSION_DATA.CACHED_TAGS_DOMAIN_ID, Constants.SESSION_DATA.CACHED_TAGS_DOMAIN_VALUE)
+  }
+
+  retrieveCachedCommunityTags(id: number): TagData[]|undefined {
+    return this.retrieveCachedTags(id, Constants.SESSION_DATA.CACHED_TAGS_COMMUNITY_ID, Constants.SESSION_DATA.CACHED_TAGS_COMMUNITY_VALUE)
+  }
+
+  cacheDomainTags(id: number, tags: TagData[]|undefined) {
+    return this.cacheTags(id, tags, Constants.SESSION_DATA.CACHED_TAGS_DOMAIN_ID, Constants.SESSION_DATA.CACHED_TAGS_DOMAIN_VALUE)
+  }
+
+  cacheCommunityTags(id: number, tags: TagData[]|undefined) {
+    return this.cacheTags(id, tags, Constants.SESSION_DATA.CACHED_TAGS_COMMUNITY_ID, Constants.SESSION_DATA.CACHED_TAGS_COMMUNITY_VALUE)
+  }
+
+  private retrieveCachedTags(id: number, idKey: string, valueKey: string): TagData[]|undefined {
+    let cachedTags: TagData[]|undefined
+    if (sessionStorage) {
+      const cachedIdEntry = sessionStorage.getItem(idKey)
+      if (cachedIdEntry != null && Number(cachedIdEntry) === id) {
+        // Cached tags found and match what we need
+        const cachedTagsEntry = sessionStorage.getItem(valueKey)
+        if (cachedTagsEntry) {
+          cachedTags = JSON.parse(cachedTagsEntry)
+        }
+      }
+    }
+    return cachedTags
+  }
+
+  private cacheTags(id: number, tags: TagData[]|undefined, idKey: string, valueKey: string) {
+    if (sessionStorage) {
+      sessionStorage.setItem(idKey, id.toString())
+      sessionStorage.setItem(valueKey, JSON.stringify((tags == undefined)?[]:tags))
+    }
+  }
+
 }

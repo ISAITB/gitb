@@ -35,6 +35,7 @@ import {FileParam} from '../types/file-param.type';
 import {SearchResult} from '../types/search-result';
 import {CommunityLimited} from '../types/community-limited';
 import {UserPreferences} from '../types/user-preferences';
+import {TagData} from '../types/tag-data';
 
 @Injectable({
   providedIn: 'root'
@@ -55,6 +56,13 @@ export class CommunityService {
       path: ROUTES.controllers.CommunityService.getCommunities().url,
       authenticate: true,
       params: params
+    })
+  }
+
+  getCommunityTags(communityId: number) {
+    return this.restService.get<TagData[]>({
+      path: ROUTES.controllers.CommunityService.getCommunityTags(communityId).url,
+      authenticate: true
     })
   }
 

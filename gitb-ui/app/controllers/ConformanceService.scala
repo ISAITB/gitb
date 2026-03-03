@@ -97,6 +97,14 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
     }
   }
 
+  def getDomainTags(domainId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageDomain(request, domainId).flatMap { _ =>
+      domainManager.getDomainTags(domainId).map { result =>
+        ResponseConstructor.constructJsonResponse(JsonUtil.jsTags(result).toString())
+      }
+    }
+  }
+
   /**
    * Gets the list of domains
    */

@@ -74,6 +74,14 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction,
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[CommunityService])
 
+  def getCommunityTags(communityId: Long): Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageCommunity(request, communityId).flatMap { _ =>
+      communityManager.getCommunityTags(communityId).map { result =>
+        ResponseConstructor.constructJsonResponse(JsonUtil.jsTags(result).toString())
+      }
+    }
+  }
+
   /**
     * Gets all communities with given ids or all if none specified
     */

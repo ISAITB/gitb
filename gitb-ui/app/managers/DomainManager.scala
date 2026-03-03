@@ -64,6 +64,12 @@ class DomainManager @Inject() (domainParameterManager: DomainParameterManager,
     )
   }
 
+  def getDomainTags(id: Long): Future[Option[String]] = {
+    DB.run {
+      PersistenceSchema.domains.filter(_.id === id).map(_.tags).result.headOption
+    }.map(_.flatten)
+  }
+
   def getDomains(ids: Option[List[Long]] = None, snapshotId: Option[Long] = None): Future[List[Domain]] = {
     val query = if (snapshotId.isDefined) {
       PersistenceSchema.conformanceSnapshotDomains

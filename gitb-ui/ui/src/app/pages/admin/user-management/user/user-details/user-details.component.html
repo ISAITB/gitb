@@ -2,6 +2,7 @@
     <div class="card mb-0">
         <div class="card-header">
             <div class="card-title">User details</div>
+            <div app-community-tag-indicator></div>
         </div>
         <form>
             <div class="card-body" [class.pb-0]="dataService.configuration.ssoEnabled" [pending]="!loaded" [focus]="focusField">

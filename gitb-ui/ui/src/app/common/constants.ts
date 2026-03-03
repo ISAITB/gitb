@@ -38,7 +38,11 @@ export class Constants {
 
 	public static readonly LATEST_CONFORMANCE_STATUS_LABEL = 'Latest conformance status'
   public static readonly SESSION_DATA = {
-    FROM_DASHBOARD: 'dashboard'
+    FROM_DASHBOARD: 'dashboard',
+    CACHED_TAGS_DOMAIN_ID: 'cachedTagsDomainId',
+    CACHED_TAGS_DOMAIN_VALUE: 'cachedTagsDomainValue',
+    CACHED_TAGS_COMMUNITY_ID: 'cachedTagsCommunityId',
+    CACHED_TAGS_COMMUNITY_VALUE: 'cachedTagsCommunityValue'
   }
 
   public static readonly BUTTON_ICON = {

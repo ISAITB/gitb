@@ -2,6 +2,7 @@
 	<div class="card">
 		<div class="card-header">
 			<div class="card-title">{{dataService.labelEndpoint()}} details</div>
+            <div app-domain-tag-indicator></div>
 		</div>
 		<form (ngSubmit)="saveChanges()">
 			<div class="card-body" [pending]="!loaded" focus="name">

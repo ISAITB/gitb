@@ -192,8 +192,8 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
       // Needed so that changes are propagated to the header display.
       this.community.tags = []
     }
-    this.copyTags(this.community.tags)
     this.communityId = this.community.id
+    this.copyTags(this.community.tags)
     this.resetSelfRegistrationWarning()
     if (Number(this.communityId) == Constants.DEFAULT_COMMUNITY_ID) {
       this.routingService.toSystemAdministration()
@@ -495,6 +495,7 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
     } else {
       this.currentTags = [...source].map(t => ({...t}))
     }
+    this.dataService.cacheCommunityTags(this.communityId, this.currentTags)
   }
 
   updateCommunity() {
