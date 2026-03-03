@@ -31,7 +31,7 @@ import {TestResultStatusDisplayComponentApi} from '../test-result-status-display
 import {CheckBoxOptionPanelComponentApi} from '../checkbox-option-panel/check-box-option-panel-component-api';
 import {CheckboxOption} from '../checkbox-option-panel/checkbox-option';
 import {CheckboxOptionState} from '../checkbox-option-panel/checkbox-option-state';
-import {TestCaseTag} from '../../types/test-case-tag';
+import {TagData} from '../../types/tag-data';
 
 @Component({
     selector: 'app-test-case-display',
@@ -105,9 +105,9 @@ export class TestCaseDisplayComponent extends BaseComponent implements TestCaseD
 
   getParsedTags(testCase: ConformanceTestCase) {
     if (testCase.tags != undefined && testCase.parsedTags == undefined) {
-      testCase.parsedTags = (<TestCaseTag[]>JSON.parse(testCase.tags)).sort((a, b) => a.name.localeCompare(b.name))
+      testCase.parsedTags = (<TagData[]>JSON.parse(testCase.tags)).sort((a, b) => a.name.localeCompare(b.name))
     }
-    return testCase.parsedTags
+    return testCase.parsedTags!
   }
 
   closeOptions(source: ConformanceTestCase) {

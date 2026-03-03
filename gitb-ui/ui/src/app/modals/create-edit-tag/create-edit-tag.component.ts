@@ -15,8 +15,7 @@
 
 import {Component, Input, OnInit} from '@angular/core';
 import {BaseComponent} from 'src/app/pages/base-component.component';
-import {DataService} from 'src/app/services/data.service';
-import {TestCaseTag} from 'src/app/types/test-case-tag';
+import {TagData} from 'src/app/types/tag-data';
 import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
@@ -26,15 +25,14 @@ import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 })
 export class CreateEditTagComponent extends BaseComponent implements OnInit {
 
-  @Input() tag?: Partial<TestCaseTag>
+  @Input() tag?: Partial<TagData>
 
-  tagToUse!: Partial<TestCaseTag>
+  tagToUse!: Partial<TagData>
   isUpdate!: boolean
   title!: string
 
   constructor(
-    private readonly modalInstance: NgbActiveModal,
-    private readonly dataService: DataService
+    private readonly modalInstance: NgbActiveModal
   ) { super() }
 
   ngOnInit(): void {
@@ -66,7 +64,7 @@ export class CreateEditTagComponent extends BaseComponent implements OnInit {
 
   save() {
     if (!this.saveDisabled()) {
-      this.modalInstance.close(this.tagToUse! as TestCaseTag)
+      this.modalInstance.close(this.tagToUse! as TagData)
     }
   }
 

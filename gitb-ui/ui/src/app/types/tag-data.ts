@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-export interface TestCaseTag {
+export interface TagData {
 
     name: string
     description?: string

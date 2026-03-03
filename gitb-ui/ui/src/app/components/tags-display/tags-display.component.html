@@ -15,10 +15,10 @@
                 ></app-tag>
             </div>
         }
-        @if (editable) {
+        @if (editable && tooltip) {
             <div class="create-tag-container">
                 <button (click)="createTag()" [labelIcon]="Constants.BUTTON_ICON.NEW" type="button" class="btn btn-secondary">Add</button>
-                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="button" tbTooltip="Tags used to visually distinguish and highlight test cases."></div>
+                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="button" [tbTooltip]="tooltip"></div>
             </div>
         }
     </div>

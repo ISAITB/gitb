@@ -13,31 +13,8 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {SpecificationReferenceInfo} from 'src/app/types/specification-reference-info';
-import {TagData} from 'src/app/types/tag-data';
-import {UserInteraction} from 'src/app/types/user-interaction';
+export interface TagsDisplayApi {
 
-export interface ConformanceTestCase extends SpecificationReferenceInfo {
-
-  id: number;
-  sname: string;
-  description?: string;
-  outputMessage?: string;
-  hasDocumentation: boolean;
-  result: string;
-  preliminary?: UserInteraction[];
-  sessionId?: string;
-  updateTime?: string;
-  optional?: boolean;
-  disabled?: boolean;
-  tags?: string;
-  group?: number;
-
-  parsedTags?: TagData[];
-  executionPending?: boolean;
-  resultToShow?: string;
-  groupTag?: TagData;
-  groupFirst?: boolean;
-  groupLast?: boolean;
+  serializeTags(): string|undefined;
 
 }

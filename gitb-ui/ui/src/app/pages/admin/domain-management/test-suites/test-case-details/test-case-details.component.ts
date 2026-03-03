@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ViewChild} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {map, mergeMap, Observable, share} from 'rxjs';
 import {DiagramEvents} from 'src/app/components/diagram/diagram-events';
@@ -30,11 +30,9 @@ import {TestService} from 'src/app/services/test.service';
 import {TestCase} from 'src/app/types/test-case';
 import {saveAs} from 'file-saver';
 import {Constants} from 'src/app/common/constants';
-import {CreateEditTagComponent} from 'src/app/modals/create-edit-tag/create-edit-tag.component';
-import {TestCaseTag} from 'src/app/types/test-case-tag';
+import {TagData} from 'src/app/types/tag-data';
 import {TestCaseDefinitionActors} from '../../../../../types/test-case-definition-actors';
-import {Utils} from '../../../../../common/utils';
-import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
+import {TagsDisplayApi} from '../../../../../components/tags-display/tags-display-api';
 
 @Component({
     selector: 'app-test-case-details',
@@ -43,6 +41,8 @@ import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
     standalone: false
 })
 export class TestCaseDetailsComponent extends BaseComponent implements OnInit {
+
+  @ViewChild("tagsDisplay") tagsDisplay?: TagsDisplayApi
 
   testCase: Partial<TestCase> = {}
   domainId!: number
@@ -56,7 +56,6 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit {
   actorInfo: {[key: string]: TestCaseDefinitionActors} = {}
   testEvents: {[key: number]: DiagramEvents} = {}
   previewPending = false
-  private tagCounter = 0
   communityId?: number
 
   constructor(
@@ -68,8 +67,7 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit {
     private readonly htmlService: HtmlService,
     private readonly conformanceService: ConformanceService,
     private readonly testService: TestService,
-    private readonly reportService: ReportService,
-    private readonly modalService: NgbModal
+    private readonly reportService: ReportService
   ) { super() }
 
   ngOnInit(): void {
@@ -89,10 +87,9 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit {
     .subscribe((data) => {
 			this.testCase = data
       if (data.tags) {
-        this.testCase.parsedTags = (<TestCaseTag[]>JSON.parse(data.tags)).sort((a, b) => a.name.localeCompare(b.name))
-        for (let tag of this.testCase.parsedTags!) {
-          tag.id = this.tagCounter++
-        }
+        this.testCase.parsedTags = <TagData[]>JSON.parse(data.tags)
+      } else {
+        this.testCase.parsedTags = []
       }
       if (this.specificationId) {
         this.routingService.testCaseBreadcrumbs(this.domainId, this.specificationId, this.testSuiteId, this.testCaseId, this.testCase.identifier!)
@@ -135,18 +132,10 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit {
     })
   }
 
-  private serialiseTags() {
-    if (this.testCase.parsedTags && this.testCase.parsedTags.length > 0) {
-      return JSON.stringify(this.testCase.parsedTags)
-    } else {
-      return undefined
-    }
-  }
-
 	saveChanges() {
     if (!this.saveDisabled()) {
       this.pending = true
-      this.testSuiteService.updateTestCaseMetadata(this.testCase.id!, this.testCase.sname!, this.testCase.description, this.testCase.documentation, this.testCase.optional, this.testCase.disabled, this.serialiseTags(), this.testCase.specReference, this.testCase.specDescription, this.testCase.specLink)
+      this.testSuiteService.updateTestCaseMetadata(this.testCase.id!, this.testCase.sname!, this.testCase.description, this.testCase.documentation, this.testCase.optional, this.testCase.disabled, this.tagsDisplay?.serializeTags(), this.testCase.specReference, this.testCase.specDescription, this.testCase.specLink)
         .subscribe(() => {
           this.popupService.success('Test case updated.')
         }).add(() => {
@@ -182,46 +171,4 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit {
     )
   }
 
-  private openTagModal(tag?: TestCaseTag) {
-    const modal = this.modalService.open(CreateEditTagComponent, { size: 'lg' })
-    const modalInstance = modal.componentInstance as CreateEditTagComponent
-    modalInstance.tag = tag
-    modal.closed.subscribe((processedTag: TestCaseTag) => {
-      if (processedTag.id == undefined) {
-        // Create
-        if (this.testCase.parsedTags == undefined) {
-          this.testCase.parsedTags = []
-        }
-        processedTag.id = this.tagCounter++
-        this.testCase.parsedTags.push(processedTag)
-        this.testCase.parsedTags.sort((a, b) => a.name.localeCompare(b.name))
-      } else {
-        // Update
-        if (this.testCase.parsedTags) {
-          Utils.removeFromArray(this.testCase.parsedTags, (tag) => tag.id == processedTag.id)
-          this.testCase.parsedTags.push(processedTag)
-          this.testCase.parsedTags.sort((a, b) => a.name.localeCompare(b.name))
-        }
-      }
-    })
-  }
-
-  tagEdited(tagId: number) {
-    if (this.testCase.parsedTags) {
-      const selectedTag = this.testCase.parsedTags.find((tag) => tag.id == tagId)
-      if (selectedTag) {
-        this.openTagModal(selectedTag)
-      }
-    }
-  }
-
-  tagDeleted(tagId: number) {
-    if (this.testCase.parsedTags) {
-      Utils.removeFromArray(this.testCase.parsedTags, (tag) => tag.id == tagId)
-    }
-  }
-
-  createTag() {
-    this.openTagModal()
-  }
 }

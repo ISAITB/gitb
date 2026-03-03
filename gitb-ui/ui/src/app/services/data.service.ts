@@ -47,7 +47,7 @@ import {ConformanceStatementItem} from '../types/conformance-statement-item';
 import {EndpointParameter} from '../types/endpoint-parameter';
 import {CookieOptions, CookieService} from 'ngx-cookie-service';
 import {LocationData} from '../types/location-data';
-import {TestCaseTag} from '../types/test-case-tag';
+import {TagData} from '../types/tag-data';
 import {ConformanceTestCaseGroup} from '../pages/organisation/conformance-statement/conformance-test-case-group';
 import {MenuItemStatusChange} from '../types/menu-item-status-change';
 import {MenuItem} from '../types/menu-item.enum';
@@ -1543,7 +1543,7 @@ export class DataService {
 
   private closeGroup(currentGroup: ConformanceTestCase[], groups: Map<number, ConformanceTestCaseGroup>|undefined) {
     if (currentGroup.length > 0) {
-      let groupTag: TestCaseTag|undefined
+      let groupTag: TagData|undefined
       if (currentGroup[0].group != undefined && groups) {
         const groupInfo = groups.get(currentGroup[0].group)!
         if (groupInfo.name) {

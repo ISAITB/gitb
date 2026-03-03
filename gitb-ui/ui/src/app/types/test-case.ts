@@ -15,7 +15,7 @@
 
 import {EntityWithId} from './entity-with-id';
 import {SpecificationReferenceInfo} from './specification-reference-info';
-import {TestCaseTag} from './test-case-tag';
+import {TagData} from './tag-data';
 
 export interface TestCase extends EntityWithId, SpecificationReferenceInfo {
 
@@ -27,7 +27,7 @@ export interface TestCase extends EntityWithId, SpecificationReferenceInfo {
   optional?: boolean
   disabled?: boolean
   tags?: string
-  parsedTags?: TestCaseTag[]
+  parsedTags?: TagData[]
   group?: number
 
 }
