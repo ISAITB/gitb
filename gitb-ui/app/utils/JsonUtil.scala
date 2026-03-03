@@ -741,7 +741,8 @@ object JsonUtil {
     Json.obj(
       "menuCollapsed"       -> preferences.menuCollapsed,
       "statementsCollapsed" -> preferences.statementsCollapsed,
-      "pageSize"            -> preferences.pageSize
+      "pageSize"            -> preferences.pageSize,
+      "homePageType"        -> preferences.homePageType
     )
   }
 

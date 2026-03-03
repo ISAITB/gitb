@@ -498,7 +498,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
   }
 
   private def toModelUserPreferenceDefaults(community: com.gitb.xml.export.Community, communityId: Long): Option[UserPreferenceDefaults] = {
-    Option(community.getDefaultUserPreferences).map(x => UserPreferenceDefaults(0L, x.isMenuCollapsed, x.isStatementsCollapsed, x.getPageSize.shortValue(), communityId))
+    Option(community.getDefaultUserPreferences).map(x => UserPreferenceDefaults(0L, x.isMenuCollapsed, x.isStatementsCollapsed, x.getPageSize.shortValue(), toModelHomePageType(x.getHomePageType), communityId))
   }
 
   private def toModelConformanceOverCertificateSettingsWithMessages(exportedSettings: com.gitb.xml.export.ConformanceOverviewCertificateSettings, communityId: Long, ctx: ImportContext): ConformanceOverviewCertificateWithMessages = {
@@ -858,8 +858,16 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
 
   private def toModelUserPreferences(data: com.gitb.xml.export.User): Option[models.UserPreferences] = {
     Option(data.getPreferences).map(x => {
-      models.UserPreferences(0L, x.isMenuCollapsed, x.isStatementsCollapsed, x.getPageSize.shortValue(), 0L)
+      models.UserPreferences(0L, x.isMenuCollapsed, x.isStatementsCollapsed, x.getPageSize.shortValue(), toModelHomePageType(x.getHomePageType), 0L)
     })
+  }
+
+  private def toModelHomePageType(data: com.gitb.xml.export.HomePageType): Short = {
+    val homePageType = data match {
+      case com.gitb.xml.export.HomePageType.CONFORMANCE_DASHBOARD => models.Enums.HomePageType.CONFORMANCE_DASHBOARD
+      case _ => models.Enums.HomePageType.LANDING_PAGE
+    }
+    homePageType.id.toShort
   }
 
   private def toModelUser(data: com.gitb.xml.export.User, userId: Option[Long], userRole: Short, organisationId: Long, importSettings: ImportSettings): models.Users = {

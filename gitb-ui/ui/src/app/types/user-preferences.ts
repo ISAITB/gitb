@@ -18,5 +18,6 @@ export interface UserPreferences {
   menuCollapsed: boolean;
   statementsCollapsed: boolean;
   pageSize: number;
+  homePageType: number;
 
 }

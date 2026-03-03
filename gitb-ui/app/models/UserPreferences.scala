@@ -15,16 +15,18 @@
 
 package models
 
+import models.Enums.HomePageType
+
 object UserPreferences {
 
   def createDefault(userId: Long): UserPreferences = {
-    UserPreferences(0L, menuCollapsed = true, statementsCollapsed = false, Constants.defaultLimit.toShort, userId)
+    UserPreferences(0L, menuCollapsed = true, statementsCollapsed = false, Constants.defaultLimit.toShort, HomePageType.LANDING_PAGE.id.toShort, userId)
   }
 
   def fromCommunityDefaults(userId: Long, defaults: UserPreferenceDefaults): UserPreferences = {
-    UserPreferences(0L, menuCollapsed = defaults.menuCollapsed, statementsCollapsed = defaults.statementsCollapsed, defaults.pageSize, userId)
+    UserPreferences(0L, menuCollapsed = defaults.menuCollapsed, statementsCollapsed = defaults.statementsCollapsed, defaults.pageSize, defaults.homePageType, userId)
   }
 
 }
 
-case class UserPreferences(id: Long, menuCollapsed: Boolean, statementsCollapsed: Boolean, pageSize: Short, user: Long) extends UserPreferenceBase
+case class UserPreferences(id: Long, menuCollapsed: Boolean, statementsCollapsed: Boolean, pageSize: Short, homePageType: Short, user: Long) extends UserPreferenceBase

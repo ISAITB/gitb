@@ -145,7 +145,8 @@ export class AccountService {
     const data: any = {
       menu_collapsed: preferences.menuCollapsed,
       statements_collapsed: preferences.statementsCollapsed,
-      page_size: preferences.pageSize
+      page_size: preferences.pageSize,
+      home_page_type: preferences.homePageType
     }
     if (name != undefined) {
       data.user_name = name

@@ -180,7 +180,8 @@ export class CommunityService {
       interaction_notification: interactionNotification,
       menu_collapsed: userPreferences.menuCollapsed,
       statements_collapsed: userPreferences.statementsCollapsed,
-      page_size: userPreferences.pageSize
+      page_size: userPreferences.pageSize,
+      home_page_type: userPreferences.homePageType
     }
     if (this.dataService.configuration.registrationEnabled) {
       if (selfRegNotification == undefined) selfRegNotification = false
@@ -244,6 +245,7 @@ export class CommunityService {
       menu_collapsed: userPreferences.menuCollapsed,
       statements_collapsed: userPreferences.statementsCollapsed,
       page_size: userPreferences.pageSize,
+      home_page_type: userPreferences.homePageType,
       force_preferences: forceUserPreferenceUpdate
     }
     if (this.dataService.configuration.registrationEnabled) {

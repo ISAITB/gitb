@@ -20,5 +20,6 @@ trait UserPreferenceBase {
   def menuCollapsed: Boolean
   def statementsCollapsed: Boolean
   def pageSize: Short
+  def homePageType: Short
 
 }

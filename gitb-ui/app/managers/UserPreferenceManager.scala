@@ -81,8 +81,8 @@ class UserPreferenceManager @Inject() (dbConfigProvider: DatabaseConfigProvider)
 
   def updatePreferencesInternal(userId: Long, preferences: UserPreferenceBase): DBIO[Unit] = {
     PersistenceSchema.userPreferences.filter(_.user === userId)
-      .map(x => (x.menuCollapsed, x.statementsCollapsed, x.pageSize))
-      .update((preferences.menuCollapsed, preferences.statementsCollapsed, preferences.pageSize))
+      .map(x => (x.menuCollapsed, x.statementsCollapsed, x.pageSize, x.homePageType))
+      .update((preferences.menuCollapsed, preferences.statementsCollapsed, preferences.pageSize, preferences.homePageType))
       .map(_ => ())
   }
 
@@ -105,8 +105,8 @@ class UserPreferenceManager @Inject() (dbConfigProvider: DatabaseConfigProvider)
     for {
       _ <- PersistenceSchema.userPreferenceDefaults
         .filter(_.community === communityId)
-        .map(x => (x.menuCollapsed, x.statementsCollapsed, x.pageSize))
-        .update((preferences.menuCollapsed, preferences.statementsCollapsed, preferences.pageSize))
+        .map(x => (x.menuCollapsed, x.statementsCollapsed, x.pageSize, x.homePageType))
+        .update((preferences.menuCollapsed, preferences.statementsCollapsed, preferences.pageSize, preferences.homePageType))
       _ <- {
         if (overrideExistingUserPreferences) {
           for {
@@ -120,8 +120,8 @@ class UserPreferenceManager @Inject() (dbConfigProvider: DatabaseConfigProvider)
             // Make the update.
             _ <- PersistenceSchema.userPreferences
               .filter(_.id inSet preferenceIds)
-              .map(x => (x.menuCollapsed, x.statementsCollapsed, x.pageSize))
-              .update((preferences.menuCollapsed, preferences.statementsCollapsed, preferences.pageSize))
+              .map(x => (x.menuCollapsed, x.statementsCollapsed, x.pageSize, x.homePageType))
+              .update((preferences.menuCollapsed, preferences.statementsCollapsed, preferences.pageSize, preferences.homePageType))
           } yield ()
         } else {
           DBIO.successful(())

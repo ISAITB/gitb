@@ -468,6 +468,7 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
         this.dataService.setMenuVisibility(!this.community.preferences!.menuCollapsed)
         this.dataService.setConformanceStatementDetailVisibility(!this.community.preferences!.statementsCollapsed)
         this.dataService.setDefaultPageSize(this.community.preferences!.pageSize)
+        this.dataService.setHomePageType(this.community.preferences!.homePageType)
       }
       if (this.selfRegistrationWarningActive) {
         this.popupService.warning('Community updated with warnings.')
@@ -804,7 +805,8 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
   private userPreferencesChanged() {
     return this.community.preferences?.menuCollapsed != this.initialUserPreferences.menuCollapsed ||
       this.community.preferences?.statementsCollapsed != this.initialUserPreferences.statementsCollapsed ||
-      this.community.preferences?.pageSize != this.initialUserPreferences.pageSize
+      this.community.preferences?.pageSize != this.initialUserPreferences.pageSize ||
+      this.community.preferences?.homePageType != this.initialUserPreferences.homePageType
   }
 
   protected readonly Constants = Constants;

@@ -57,6 +57,7 @@ export class UserGuideService {
   initialise() {
     this.paths['/'] = this.setPath('')
     this.paths['/home'] = this.setPath('index.html')
+    this.paths['/start'] = this.setPath('index.html')
     this.paths['/login'] = this.setPath('login/index.html')
     this.paths['/settings/profile'] = this.setPath('profile/index.html')
     this.paths['/settings/organisation'] = this.setPath('manageOrganisation/index.html', '', 'validateTestSetup/index.html#manage-your-organisation')

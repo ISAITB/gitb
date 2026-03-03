@@ -47,7 +47,8 @@ export class ProfileComponent extends BaseComponent implements OnInit, AfterView
     preferences: {
       menuCollapsed: !this.dataService.menuVisibility,
       statementsCollapsed: !this.dataService.conformanceStatementDetailVisibility,
-      pageSize: this.dataService.defaultPagingTableSize
+      pageSize: this.dataService.defaultPagingTableSize,
+      homePageType: this.dataService.homePageType
     }
   }
   menuVisibilitySubscription?: Subscription
@@ -147,6 +148,9 @@ export class ProfileComponent extends BaseComponent implements OnInit, AfterView
         }
         if (this.data.preferences.pageSize != this.dataService.defaultPagingTableSize) {
           this.dataService.setDefaultPageSize(this.data.preferences.pageSize)
+        }
+        if (this.data.preferences.homePageType != this.dataService.homePageType) {
+          this.dataService.setHomePageType(this.data.preferences.homePageType)
         }
         this.popupService.success("Your profile has been updated.")
       }).add(() => {

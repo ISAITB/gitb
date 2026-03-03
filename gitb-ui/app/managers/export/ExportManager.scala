@@ -954,6 +954,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
       exportedUser.getPreferences.setMenuCollapsed(prefs.menuCollapsed)
       exportedUser.getPreferences.setStatementsCollapsed(prefs.statementsCollapsed)
       exportedUser.getPreferences.setPageSize(BigInteger.valueOf(prefs.pageSize))
+      exportedUser.getPreferences.setHomePageType(toExportedHomePageType(prefs.homePageType))
     }
   }
 
@@ -1370,6 +1371,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
         communityData.getDefaultUserPreferences.setMenuCollapsed(data.userPreferences.menuCollapsed)
         communityData.getDefaultUserPreferences.setStatementsCollapsed(data.userPreferences.statementsCollapsed)
         communityData.getDefaultUserPreferences.setPageSize(BigInteger.valueOf(data.userPreferences.pageSize))
+        communityData.getDefaultUserPreferences.setHomePageType(toExportedHomePageType(data.userPreferences.homePageType))
         // Self registration information.
         communityData.setSelfRegistrationSettings(new SelfRegistrationSettings)
         SelfRegistrationType.apply(community.get.selfRegType) match {
@@ -1920,6 +1922,13 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
       case models.Enums.ReportType.ConformanceOverviewCertificate => com.gitb.xml.export.ReportType.CONFORMANCE_OVERVIEW_CERTIFICATE
       case models.Enums.ReportType.ConformanceStatementCertificate => com.gitb.xml.export.ReportType.CONFORMANCE_STATEMENT_CERTIFICATE
       case _ => throw new IllegalArgumentException("Unknown report type %s".formatted(reportType.id))
+    }
+  }
+
+  private def toExportedHomePageType(modelType: Short): com.gitb.xml.export.HomePageType = {
+    models.Enums.HomePageType.apply(modelType) match {
+      case models.Enums.HomePageType.CONFORMANCE_DASHBOARD => com.gitb.xml.export.HomePageType.CONFORMANCE_DASHBOARD
+      case _ => com.gitb.xml.export.HomePageType.LANDING_PAGE
     }
   }
 

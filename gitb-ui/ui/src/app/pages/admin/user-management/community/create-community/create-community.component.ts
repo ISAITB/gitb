@@ -50,7 +50,8 @@ export class CreateCommunityComponent extends BaseComponent implements OnInit {
     preferences: {
       menuCollapsed: true,
       statementsCollapsed: false,
-      pageSize: Constants.TABLE_PAGE_SIZE
+      pageSize: Constants.TABLE_PAGE_SIZE,
+      homePageType: Constants.HOME_PAGE_TYPE.LANDING_PAGE
     }
   }
   domains: Domain[] = []

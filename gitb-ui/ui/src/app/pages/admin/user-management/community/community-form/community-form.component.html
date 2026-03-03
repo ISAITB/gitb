@@ -334,6 +334,23 @@
         </div>
     </div>
     <div class="row pt-3">
+        <legend class="col-3 col-form-label text-end pt-0">Post-login page:</legend>
+        <div class="col-9">
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" [(ngModel)]="community.preferences!.homePageType" name="homePageType" id="homePageTypeLanding" [value]="Constants.HOME_PAGE_TYPE.LANDING_PAGE">
+                <label class="form-check-label" for="homePageTypeLanding">Community landing page
+                    <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" [tbTooltip]="`After logging in, users will be displayed the default landing page for the community, or the specific one for their ${dataService.labelOrganisationLower()} (if configured).`"></div>
+                </label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" [(ngModel)]="community.preferences!.homePageType" name="homePageType" id="homePageTypeConformance" [value]="Constants.HOME_PAGE_TYPE.CONFORMANCE_DASHBOARD">
+                <label class="form-check-label" for="homePageTypeConformance">Conformance statements
+                    <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" [tbTooltip]="`After logging in, users will be displayed the list of conformance statements. For community administrators this is the conformance dashboard, whereas for ${dataService.labelOrganisationLower()} users this is the 'My conformance statements' page.`"></div>
+                </label>
+            </div>
+        </div>
+    </div>
+    <div class="row pt-3">
         <label class="col-3 col-form-label text-end" for="pageSize">Items per page:</label>
         <div class="col-auto">
             <select name="pageSize" class="form-select" id="pageSize" [(ngModel)]="community.preferences!.pageSize">

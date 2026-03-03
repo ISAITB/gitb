@@ -258,4 +258,9 @@ object Enums {
     }
   }
 
+  object HomePageType extends Enumeration(1) {
+    type HomePageType = Value
+    val LANDING_PAGE, CONFORMANCE_DASHBOARD = Value
+  }
+
 }

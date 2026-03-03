@@ -58,12 +58,17 @@ object ParameterExtractor {
     fileMap.iterator.toMap
   }
 
+  private def extractHomePageType(request: Request[AnyContent]): Short = {
+    ParameterExtractor.optionalShortBodyParameter(request, ParameterNames.HOME_PAGE_TYPE).map(x => HomePageType.apply(x).id.toShort).getOrElse(HomePageType.LANDING_PAGE.id.toShort)
+  }
+
   def extractUserPreferences(request: Request[AnyContent]): UserPreferences = {
     UserPreferences(
       0L,
       menuCollapsed = ParameterExtractor.optionalBooleanBodyParameter(request, ParameterNames.MENU_COLLAPSED).getOrElse(true),
       statementsCollapsed = ParameterExtractor.optionalBooleanBodyParameter(request, ParameterNames.STATEMENTS_COLLAPSED).getOrElse(false),
       pageSize = ParameterExtractor.optionalShortBodyParameter(request, ParameterNames.PAGE_SIZE).getOrElse(Constants.defaultLimit.toShort),
+      homePageType = extractHomePageType(request),
       0L
     )
   }
@@ -74,6 +79,7 @@ object ParameterExtractor {
       menuCollapsed = ParameterExtractor.optionalBooleanBodyParameter(request, ParameterNames.MENU_COLLAPSED).getOrElse(true),
       statementsCollapsed = ParameterExtractor.optionalBooleanBodyParameter(request, ParameterNames.STATEMENTS_COLLAPSED).getOrElse(false),
       pageSize = ParameterExtractor.optionalShortBodyParameter(request, ParameterNames.PAGE_SIZE).getOrElse(Constants.defaultLimit.toShort),
+      homePageType = extractHomePageType(request),
       0L
     )
   }

@@ -14,7 +14,7 @@
  */
 
 import {Injectable} from '@angular/core';
-import {NavigationEnd, NavigationExtras, NavigationStart, Router} from '@angular/router';
+import {NavigationEnd, NavigationExtras, NavigationStart, Router, UrlTree} from '@angular/router';
 import {Constants} from '../common/constants';
 import {DataService} from './data.service';
 import {MenuItem} from '../types/menu-item.enum';
@@ -95,11 +95,11 @@ export class RoutingService {
     }
   }
 
-  toURL(url: string) {
+  toURL(url: string): Promise<boolean> {
     this.changePageForURL(url)
     return this.router.navigateByUrl(url).catch((error) => {
       console.error("Unable to restore view at: "+url, error.stack)
-      return this.toHome()
+      return this.toStartPage()
     })
   }
 
@@ -107,13 +107,26 @@ export class RoutingService {
     return this.navigate(MenuItem.home, ['home'])
   }
 
-  toStartPage(userId: number) {
-    const previousLocation = this.dataService.retrieveLocationData(userId)
-    if (previousLocation) {
-      return this.toURL(previousLocation)
-    } else {
-      return this.toHome()
+  toStartPage(userId?: number): Promise<boolean> {
+    if (userId != undefined) {
+      const previousLocation = this.dataService.retrieveLocationData(userId)
+      if (previousLocation) {
+        return this.toURL(previousLocation)
+      }
     }
+    return this.router.navigate(['start'])
+  }
+
+  resolveStartPage(): UrlTree {
+    if (this.dataService.homePageType === Constants.HOME_PAGE_TYPE.CONFORMANCE_DASHBOARD) {
+      if (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin) {
+        return this.router.createUrlTree(['admin', 'conformance'])
+      } else {
+        return this.router.createUrlTree(['organisation', 'conformance', this.dataService.vendor?.id!])
+      }
+    } else {
+      return this.router.createUrlTree(['home'])
+    }    
   }
 
   toLogin() {

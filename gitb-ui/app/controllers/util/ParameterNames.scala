@@ -297,6 +297,7 @@ object ParameterNames {
   val MENU_COLLAPSED = "menu_collapsed"
   val PAGE_SIZE = "page_size"
   val STATEMENTS_COLLAPSED = "statements_collapsed"
+  val HOME_PAGE_TYPE = "home_page_type"
   val PREFERENCES = "preferences"
   val FORCE_PREFERENCES = "force_preferences"
   val MONITOR = "monitor"

@@ -13,16 +13,21 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-package models
+import {CanActivateFn} from '@angular/router';
+import {RoutingService} from '../services/routing.service';
+import {inject} from '@angular/core';
+import {ProfileResolver} from './profile-resolver';
+import {map} from 'rxjs/operators';
 
-import models.Enums.HomePageType
+export const startRedirectResolver: CanActivateFn = (route, state) => {
 
-object UserPreferenceDefaults {
+  const profileResolver = inject(ProfileResolver);
+  const routingService = inject(RoutingService);
 
-  def createDefault(communityId: Long): UserPreferenceDefaults = {
-    UserPreferenceDefaults(0L, menuCollapsed = true, statementsCollapsed = false, Constants.defaultLimit.toShort, HomePageType.LANDING_PAGE.id.toShort, communityId)
-  }
+  return profileResolver.resolveData(state).pipe(
+    map(() => {
+      return routingService.resolveStartPage()
+    })
+  )
 
 }
-
-case class UserPreferenceDefaults(id: Long, menuCollapsed: Boolean, statementsCollapsed: Boolean, pageSize: Short, homePageType: Short, community: Long) extends UserPreferenceBase

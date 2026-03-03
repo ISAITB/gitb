@@ -764,8 +764,15 @@
             <xsd:element name="menuCollapsed" type="xsd:boolean" default="true"/>
             <xsd:element name="statementsCollapsed" type="xsd:boolean" default="false"/>
             <xsd:element name="pageSize" type="xsd:integer" default="10"/>
+            <xsd:element name="homePageType" type="HomePageType" default="LANDING_PAGE"/>
         </xsd:sequence>
     </xsd:complexType>
+    <xsd:simpleType name="HomePageType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="LANDING_PAGE"/>
+            <xsd:enumeration value="CONFORMANCE_DASHBOARD"/>
+        </xsd:restriction>
+    </xsd:simpleType>
     <xsd:simpleType name="OrganisationRoleType">
         <xsd:restriction base="xsd:string">
             <xsd:enumeration value="ORGANISATION_USER"/>

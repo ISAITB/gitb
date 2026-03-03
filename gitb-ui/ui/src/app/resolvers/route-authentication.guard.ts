@@ -72,7 +72,7 @@ export class RouteAuthenticationGuard  {
       mergeMap((userId) => {
         const location = this.dataService.retrieveLocationData(userId)
         if (location == undefined) {
-          return this.routingService.toHome()
+          return this.routingService.toStartPage()
         } else if (location == state.url) {
           return of(true)
         } else {

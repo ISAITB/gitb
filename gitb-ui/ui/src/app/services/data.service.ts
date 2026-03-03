@@ -85,6 +85,7 @@ export class DataService {
   public latestPageChange?: PageChange
   public menuVisibility: boolean = false
   public conformanceStatementDetailVisibility: boolean = false
+  public homePageType: number = Constants.HOME_PAGE_TYPE.LANDING_PAGE
   private menuItemStatus = new Map<MenuItem, MenuItemStatus>()
 
   private onBannerChangeSource = new Subject<string>()
@@ -212,6 +213,7 @@ export class DataService {
     this.defaultPagingTableSize = user.preferences?.pageSize??Constants.TABLE_PAGE_SIZE
     this.menuVisibility = user.preferences?.menuCollapsed === false // Collapsed by default
     this.conformanceStatementDetailVisibility = user.preferences?.statementsCollapsed !== true // Not collapsed by default
+    this.homePageType = user.preferences?.homePageType??Constants.HOME_PAGE_TYPE.LANDING_PAGE
     setTimeout(() => {
       this.showCommunityAdminMenu = this.isCommunityAdmin
       this.showSystemAdminMenu = this.isSystemAdmin
@@ -1973,6 +1975,10 @@ export class DataService {
       this.menuVisibility = visible
       this.menuVisibilityChangeSource.next(visible)
     }
+  }
+
+  setHomePageType(homePageType: number) {
+    this.homePageType = homePageType
   }
 
   setConformanceStatementDetailVisibility(visible: boolean) {

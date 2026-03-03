@@ -291,6 +291,7 @@ import {
   NgbTooltipModule
 } from '@ng-bootstrap/ng-bootstrap';
 import {DateRangeComponent} from './components/date-range/date-range.component';
+import { StartRedirectComponent } from './components/start-redirect/start-redirect.component';
 
 @NgModule({ declarations: [
         LoginComponent,
@@ -490,7 +491,8 @@ import {DateRangeComponent} from './components/date-range/date-range.component';
         StartupWizardModalComponent,
         RadioCardComponent,
         UsageTipModalComponent,
-        DateRangeComponent
+        DateRangeComponent,
+        StartRedirectComponent
     ],
     imports: [
         NgxColorPickerComponent,

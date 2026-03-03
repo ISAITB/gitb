@@ -622,6 +622,11 @@ export class Constants {
     TEXT: 2
   }
 
+  public static readonly HOME_PAGE_TYPE = {
+    LANDING_PAGE: 1,
+    CONFORMANCE_DASHBOARD: 2
+  }
+
 	public static readonly PASSWORD_REGEX = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[\!\@\#\&\(\)\[\{\}\]\:\;\'\"\,\?\/\\\*\~\$\^\+\=\<\>\_\-]).{8,}$/
 	public static readonly END_OF_TEST_STEP = "-1"
 	public static readonly END_OF_TEST_STEP_EXTERNAL = "-2"
