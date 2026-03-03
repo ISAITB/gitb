@@ -1993,4 +1993,16 @@ export class DataService {
     this.preparingForShutdownSource.next(this.configuration.preparingForShutdown)
   }
 
+  serializeTags(tags: TagData[]|undefined): string | undefined {
+    if (tags && tags.length > 0) {
+      const cleanTags = tags.map(tag => {
+        const copy = {...tag} as TagData;
+        delete copy.id;
+        return copy;
+      })
+      return JSON.stringify(cleanTags);
+    }
+    return undefined;
+  }
+
 }

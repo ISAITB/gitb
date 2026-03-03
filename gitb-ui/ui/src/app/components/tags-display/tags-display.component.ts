@@ -19,7 +19,6 @@ import {Constants} from '../../common/constants';
 import {CreateEditTagComponent} from '../../modals/create-edit-tag/create-edit-tag.component';
 import {Utils} from '../../common/utils';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
-import {TagsDisplayApi} from './tags-display-api';
 
 @Component({
     selector: 'app-tags-display',
@@ -27,11 +26,12 @@ import {TagsDisplayApi} from './tags-display-api';
     styleUrls: ['./tags-display.component.less'],
     standalone: false
 })
-export class TagsDisplayComponent implements OnInit, TagsDisplayApi {
+export class TagsDisplayComponent implements OnInit {
 
-  @Input() tags: TagData[] = []
+  @Input() tags?: TagData[] = []
   @Input() editable? = false
   @Input() tooltip?: string
+  @Input() max?: number
 
   private tagCounter = 0
 
@@ -40,39 +40,36 @@ export class TagsDisplayComponent implements OnInit, TagsDisplayApi {
   ) { }
 
   ngOnInit(): void {
+    if (this.tags == undefined) {
+      this.tags = []
+    }
     this.tags.sort((a, b) => a.name.localeCompare(b.name));
-    this.tags.forEach(tag => {
-      if (tag.id == undefined) {
-        tag.id = this.tagCounter++
-      }
-    });
+
   }
 
-  serializeTags(): string | undefined {
-    if (this.tags.length > 0) {
-      const cleanTags = this.tags.map(tag => {
-        const copy = {...tag} as TagData;
-        delete copy.id;
-        return copy;
-      })
-      return JSON.stringify(cleanTags);
+  private addIdsIfNeeded(): void {
+    if (this.tags != undefined && this.tags.length > 0 && this.tags[0].id == undefined) {
+      this.tags.forEach(tag => {
+        if (tag.id == undefined) {
+          tag.id = this.tagCounter++
+        }
+      });
     }
-    return undefined;
   }
 
   createTag() {
+    this.addIdsIfNeeded()
     this.openTagModal()
   }
 
-  tagEdited(id: number) {
-    const selectedTag = this.tags.find((tag) => tag.id == id)
-    if (selectedTag) {
-      this.openTagModal(selectedTag)
-    }
+  tagEdited(selectedTag: TagData) {
+    this.addIdsIfNeeded()
+    this.openTagModal(selectedTag)
   }
 
-  tagDeleted(id: number) {
-    Utils.removeFromArray(this.tags, (tag) => tag.id == id)
+  tagDeleted(deletedTag: TagData) {
+    this.addIdsIfNeeded();
+    Utils.removeFromArray(this.tags, (tag) => tag.id == deletedTag.id)
   }
 
   private openTagModal(tag?: TagData) {
@@ -80,6 +77,9 @@ export class TagsDisplayComponent implements OnInit, TagsDisplayApi {
     const modalInstance = modal.componentInstance as CreateEditTagComponent
     modalInstance.tag = tag
     modal.closed.subscribe((processedTag: TagData) => {
+      if (this.tags == undefined) {
+        this.tags = []
+      }
       if (processedTag.id == undefined) {
         // Create
         processedTag.id = this.tagCounter++

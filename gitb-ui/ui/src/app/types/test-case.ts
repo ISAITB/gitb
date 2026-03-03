@@ -26,8 +26,7 @@ export interface TestCase extends EntityWithId, SpecificationReferenceInfo {
   hasDocumentation?: boolean
   optional?: boolean
   disabled?: boolean
-  tags?: string
-  parsedTags?: TagData[]
+  tags?: TagData[]
   group?: number
 
 }

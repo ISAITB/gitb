@@ -2,6 +2,9 @@
     <div class="card">
         <div class="card-header">
             <div class="card-title">Community details</div>
+            <div class="ms-auto">
+                <app-tags-display #tagsDisplay [tags]="community.tags"></app-tags-display>
+            </div>
         </div>
         <form (ngSubmit)="updateCommunity()">
             <div class="card-body" [pending]="!loaded" focus="sname">

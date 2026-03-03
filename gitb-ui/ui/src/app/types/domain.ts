@@ -14,13 +14,15 @@
  */
 
 import { EntityWithId } from "./entity-with-id"
+import {TagData} from './tag-data';
 
 export interface Domain extends EntityWithId {
 
-    sname: string
-    fname: string
-    description?: string
-    reportMetadata?: string
-    apiKey?: string
+  sname: string
+  fname: string
+  description?: string
+  reportMetadata?: string
+  apiKey?: string
+  tags?: TagData[]
 
 }

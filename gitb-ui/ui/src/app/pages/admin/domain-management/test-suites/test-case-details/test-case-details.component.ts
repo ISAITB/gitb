@@ -13,7 +13,7 @@
  * the specific language governing permissions and limitations under the Licence.
  */
 
-import {Component, OnInit, ViewChild} from '@angular/core';
+import {Component, OnInit} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {map, mergeMap, Observable, share} from 'rxjs';
 import {DiagramEvents} from 'src/app/components/diagram/diagram-events';
@@ -30,9 +30,7 @@ import {TestService} from 'src/app/services/test.service';
 import {TestCase} from 'src/app/types/test-case';
 import {saveAs} from 'file-saver';
 import {Constants} from 'src/app/common/constants';
-import {TagData} from 'src/app/types/tag-data';
 import {TestCaseDefinitionActors} from '../../../../../types/test-case-definition-actors';
-import {TagsDisplayApi} from '../../../../../components/tags-display/tags-display-api';
 
 @Component({
     selector: 'app-test-case-details',
@@ -41,8 +39,6 @@ import {TagsDisplayApi} from '../../../../../components/tags-display/tags-displa
     standalone: false
 })
 export class TestCaseDetailsComponent extends BaseComponent implements OnInit {
-
-  @ViewChild("tagsDisplay") tagsDisplay?: TagsDisplayApi
 
   testCase: Partial<TestCase> = {}
   domainId!: number
@@ -86,11 +82,6 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit {
 		this.testSuiteService.getTestCase(this.testCaseId)
     .subscribe((data) => {
 			this.testCase = data
-      if (data.tags) {
-        this.testCase.parsedTags = <TagData[]>JSON.parse(data.tags)
-      } else {
-        this.testCase.parsedTags = []
-      }
       if (this.specificationId) {
         this.routingService.testCaseBreadcrumbs(this.domainId, this.specificationId, this.testSuiteId, this.testCaseId, this.testCase.identifier!)
       } else {
@@ -135,7 +126,7 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit {
 	saveChanges() {
     if (!this.saveDisabled()) {
       this.pending = true
-      this.testSuiteService.updateTestCaseMetadata(this.testCase.id!, this.testCase.sname!, this.testCase.description, this.testCase.documentation, this.testCase.optional, this.testCase.disabled, this.tagsDisplay?.serializeTags(), this.testCase.specReference, this.testCase.specDescription, this.testCase.specLink)
+      this.testSuiteService.updateTestCaseMetadata(this.testCase.id!, this.testCase.sname!, this.testCase.description, this.testCase.documentation, this.testCase.optional, this.testCase.disabled, this.dataService.serializeTags(this.testCase.tags), this.testCase.specReference, this.testCase.specDescription, this.testCase.specLink)
         .subscribe(() => {
           this.popupService.success('Test case updated.')
         }).add(() => {

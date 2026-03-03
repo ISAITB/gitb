@@ -825,12 +825,16 @@ object JsonUtil {
     json
   }
 
-  def jsCommunityLimited(community: CommunityLimited):JsObject = {
-    Json.obj(
+  def jsCommunityLimited(community: CommunityLimited): JsObject = {
+    var json = Json.obj(
       "id"    -> community.id,
       "sname" -> community.shortname,
       "fname" -> community.fullname
     )
+    if (community.tags.isDefined) {
+      json = json.+("tags" -> jsTags(community.tags.get))
+    }
+    json
   }
 
   def jsCommunity(community:Communities, includeAdminInfo: Boolean, selfRegDefaultOrganisation: Option[Organizations] = None):JsObject = {
@@ -870,6 +874,9 @@ object JsonUtil {
       if (Configurations.AUTOMATION_API_ENABLED) {
         json = json.+("apiKey" -> JsString(community.apiKey))
       }
+      if (community.tags.isDefined) {
+        json = json.+("tags" -> jsTags(community.tags.get))
+      }
     }
     json = json.+("selfRegAllowOrganisationTokens" -> JsBoolean(community.selfRegAllowOrganisationTokens))
     json = json.+("selfRegAllowOrganisationTokenManagement" -> JsBoolean(community.selfRegAllowOrganisationTokenManagement))
@@ -879,7 +886,7 @@ object JsonUtil {
   def serializeCommunity(community:Community, labels: Option[List[CommunityLabels]], includeAdminInfo: Boolean):String = {
     var jCommunity:JsObject = jsCommunity(community.toCaseObject, includeAdminInfo, community.defaultSelfRegOrganisation)
     if (community.domain.isDefined){
-      jCommunity = jCommunity ++ Json.obj("domain" -> jsDomain(community.domain.get, withApiKeys = false))
+      jCommunity = jCommunity ++ Json.obj("domain" -> jsDomain(community.domain.get, withApiKeys = false, withTags = false))
     } else{
       jCommunity = jCommunity ++ Json.obj("domain" -> JsNull)
     }
@@ -897,7 +904,7 @@ object JsonUtil {
    * @param domain Domain object to be converted
    * @return JsObject
    */
-  def jsDomain(domain:Domain, withApiKeys: Boolean):JsObject = {
+  def jsDomain(domain:Domain, withApiKeys: Boolean, withTags: Boolean):JsObject = {
     var json = Json.obj(
       "id" -> domain.id,
       "sname" -> domain.shortname,
@@ -907,6 +914,9 @@ object JsonUtil {
     )
     if (withApiKeys && Configurations.AUTOMATION_API_ENABLED) {
       json = json.+("apiKey" -> JsString(domain.apiKey))
+    }
+    if (withTags && domain.tags.isDefined) {
+      json = json.+("tags" -> jsTags(domain.tags.get))
     }
     json
   }
@@ -991,17 +1001,17 @@ object JsonUtil {
    * @param list List of Domains to be converted
    * @return JsArray
    */
-  def jsDomains(list: Iterable[Domain], withApiKeys: Boolean):JsArray = {
+  def jsDomains(list: Iterable[Domain], withApiKeys: Boolean, withTags: Boolean):JsArray = {
     var json = Json.arr()
     list.foreach{ domain =>
-      json = json.append(jsDomain(domain, withApiKeys))
+      json = json.append(jsDomain(domain, withApiKeys, withTags))
     }
     json
   }
 
   def jsCommunityDomains(domains: List[Domain], linkedDomain: Option[Long]): JsObject = {
     var json = Json.obj(
-      "domains" -> jsDomains(domains, withApiKeys = false)
+      "domains" -> jsDomains(domains, withApiKeys = false, withTags = false)
     )
     if (linkedDomain.isDefined) {
       json = json + ("linkedDomain" -> JsNumber(linkedDomain.get))
@@ -2223,13 +2233,17 @@ object JsonUtil {
       "group" -> (if(testCase.group.isDefined) testCase.group.get else JsNull)
     )
     if (withDocumentation && testCase.documentation.isDefined) json = json + ("documentation" -> JsString(testCase.documentation.get))
-    if (withTags && testCase.tags.isDefined) json = json + ("tags" -> JsString(testCase.tags.get))
+    if (withTags && testCase.tags.isDefined) json = json + ("tags" -> jsTags(testCase.tags.get))
     if (withSpecReference) {
       if (testCase.specReference.isDefined) json = json + ("specReference" -> JsString(testCase.specReference.get))
       if (testCase.specDescription.isDefined) json = json + ("specDescription" -> JsString(testCase.specDescription.get))
       if (testCase.specLink.isDefined) json = json + ("specLink" -> JsString(testCase.specLink.get))
     }
     json
+  }
+
+  def jsTags(tagData: String): JsArray = {
+    Json.parse(tagData).as[JsArray]
   }
 
   /**
@@ -3213,7 +3227,7 @@ object JsonUtil {
         "optional" -> testCase.optional,
         "disabled" -> testCase.disabled,
         "result" -> testCase.result.value(),
-        "tags" -> (if (testCase.tags.isDefined) testCase.tags.get else JsNull),
+        "tags" -> (if (testCase.tags.isDefined) jsTags(testCase.tags.get) else JsNull),
         "specReference" -> (if (testCase.specReference.isDefined) testCase.specReference.get else JsNull),
         "specDescription" -> (if (testCase.specDescription.isDefined) testCase.specDescription.get else JsNull),
         "specLink" -> (if (testCase.specLink.isDefined) testCase.specLink.get else JsNull),

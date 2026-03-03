@@ -162,7 +162,7 @@ export class CommunityService {
     selfRegJoinExisting: boolean|undefined, selfRegJoinAsAdmin: boolean|undefined,
     allowCertificateDownload: boolean, allowStatementManagement: boolean, allowSystemManagement: boolean, allowPostTestOrganisationUpdate: boolean,
     allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, allowAutomationApi: boolean|undefined, allowCommunityView: boolean, allowUserManagement: boolean, allowXmlReports: boolean,
-    domainId: number|undefined, userPreferences: UserPreferences) {
+    domainId: number|undefined, userPreferences: UserPreferences, tags: string|undefined) {
     const data: any = {
       community_sname: shortName,
       community_fname: fullName,
@@ -181,7 +181,8 @@ export class CommunityService {
       menu_collapsed: userPreferences.menuCollapsed,
       statements_collapsed: userPreferences.statementsCollapsed,
       page_size: userPreferences.pageSize,
-      home_page_type: userPreferences.homePageType
+      home_page_type: userPreferences.homePageType,
+      tags: tags
     }
     if (this.dataService.configuration.registrationEnabled) {
       if (selfRegNotification == undefined) selfRegNotification = false
@@ -226,7 +227,7 @@ export class CommunityService {
     selfRegDefaultOrganisation: number|undefined, selfRegJoinExisting: boolean|undefined, selfRegJoinAsAdmin: boolean|undefined,
     allowCertificateDownload: boolean, allowStatementManagement: boolean, allowSystemManagement: boolean, allowPostTestOrganisationUpdate: boolean,
     allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, allowAutomationApi: boolean|undefined, allowCommunityView: boolean, allowUserManagement: boolean, allowXmlReports: boolean,
-    domainId: number|undefined, userPreferences: UserPreferences, forceUserPreferenceUpdate: boolean) {
+    domainId: number|undefined, userPreferences: UserPreferences, forceUserPreferenceUpdate: boolean, tags: string|undefined) {
     const data: any = {
       community_sname: shortName,
       community_fname: fullName,
@@ -246,7 +247,8 @@ export class CommunityService {
       statements_collapsed: userPreferences.statementsCollapsed,
       page_size: userPreferences.pageSize,
       home_page_type: userPreferences.homePageType,
-      force_preferences: forceUserPreferenceUpdate
+      force_preferences: forceUserPreferenceUpdate,
+      tags: tags
     }
     if (this.dataService.configuration.registrationEnabled) {
       if (selfRegNotification == undefined) selfRegNotification = false

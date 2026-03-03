@@ -2,6 +2,9 @@
     <div class="card">
         <div class="card-header">
             <div class="card-title">{{dataService.labelDomain()}} details</div>
+            <div class="ms-auto">
+                <app-tags-display #tagsDisplay [tags]="domain.tags"></app-tags-display>
+            </div>
         </div>
         <form (ngSubmit)="saveDomainChanges()">
             <div class="card-body" [pending]="!loaded" focus="shortName">

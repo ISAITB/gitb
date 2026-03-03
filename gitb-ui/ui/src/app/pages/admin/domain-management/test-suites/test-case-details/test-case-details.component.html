@@ -52,20 +52,18 @@
                         </div>
                     </div>
                 </div>
-                @if (testCase.parsedTags) {
-                    <div class="row mb-3">
-                        <label class="col-3 col-form-label text-end">Tags:</label>
-                        <div class="col-8 col-md-6">
-                            <div class="tag-container">
-                                <app-tags-display #tagsDisplay
-                                                  [tags]="testCase.parsedTags"
-                                                  [editable]="true"
-                                                  tooltip="Tags used to visually distinguish and highlight test cases."
-                                ></app-tags-display>
-                            </div>
+                <div class="row mb-3">
+                    <label class="col-3 col-form-label text-end">Tags:</label>
+                    <div class="col-8 col-md-6">
+                        <div class="tag-container">
+                            <app-tags-display #tagsDisplay
+                                              [tags]="testCase.tags"
+                                              [editable]="true"
+                                              tooltip="Tags used to visually distinguish and highlight test cases."
+                            ></app-tags-display>
                         </div>
                     </div>
-                }
+                </div>
                 <app-specification-reference-form [reference]="testCase"></app-specification-reference-form>
                 <app-form-section sectionTitle="Documentation" [collapsed]="true" [marginBefore]="true">
                     <div class="row py-3">

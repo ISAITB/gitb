@@ -43,7 +43,6 @@ export class TagComponent implements OnInit {
   @Output() toggle = new EventEmitter<boolean>()
 
   Constants = Constants
-  setDefaultBorder!: boolean
   toggled = false
 
   constructor() { }
@@ -52,9 +51,10 @@ export class TagComponent implements OnInit {
     if (this.toggleEnabled) {
       this.toggled = this.toggledByDefault === true
     }
-    this.setDefaultBorder = this.background == undefined
-      || this.background!.toLowerCase() == '#fff'
-      || this.background!.toLowerCase() == '#ffffff'
+  }
+
+  isDefaultBorder(): boolean {
+    return this.background == undefined || this.background!.toLowerCase() == '#fff' || this.background!.toLowerCase() == '#ffffff'
   }
 
   editTag() {

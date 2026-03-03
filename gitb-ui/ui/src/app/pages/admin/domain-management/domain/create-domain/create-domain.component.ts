@@ -30,7 +30,9 @@ import {Constants} from '../../../../../common/constants';
 })
 export class CreateDomainComponent extends BaseComponent implements AfterViewInit {
 
-  domain: Partial<Domain> = {}
+  domain: Partial<Domain> = {
+    tags: []
+  }
   pending = false
 
   constructor(
@@ -51,7 +53,7 @@ export class CreateDomainComponent extends BaseComponent implements AfterViewIni
 	createDomain() {
 		if (!this.saveDisabled()) {
       this.pending = true
-			this.conformanceService.createDomain(this.domain.sname!, this.domain.fname!, this.domain.description, this.domain.reportMetadata)
+			this.conformanceService.createDomain(this.domain.sname!, this.domain.fname!, this.domain.description, this.domain.reportMetadata, this.dataService.serializeTags(this.domain.tags))
       .subscribe(() => {
         this.popupService.success(this.dataService.labelDomain()+' created.')
         this.routingService.toDomains()

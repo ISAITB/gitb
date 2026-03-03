@@ -18,6 +18,8 @@
             }
         } @else if (item.data != undefined && column.tag === true) {
             <app-tag [label]="column.tagIcon" [icon]="true" [tooltipText]="column.tagTooltip" [value]="item.data" [inTable]="true"></app-tag>
+        } @else if (item.data != undefined && column.tagData === true) {
+            <app-tags-display [tags]="item.data"></app-tags-display>
         } @else {
             {{item.data}}
         }

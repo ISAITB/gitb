@@ -1575,11 +1575,11 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
               domainManager.createDomainForImport(models.Domain(0L,
                 shortNameToUse,
                 fullNameToUse,
-                Option(data.getDescription), Option(data.getReportMetadata), apiKey))
+                Option(data.getDescription), Option(data.getReportMetadata), apiKey, Option(data.getTags)))
             },
             (data: com.gitb.xml.export.Domain, targetKey: String, _: ImportItem) => {
               val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
-              domainManager.updateDomainInternal(targetKey.toLong, data.getShortName, data.getFullName, Option(data.getDescription), Option(data.getReportMetadata), Some(apiKey))
+              domainManager.updateDomainInternal(targetKey.toLong, data.getShortName, data.getFullName, Option(data.getDescription), Option(data.getReportMetadata), Some(apiKey), Option(data.getTags))
             },
             (_: com.gitb.xml.export.Domain, targetKey: Any, _: ImportItem) => {
               // Record this in case we need to do a global cleanup.
@@ -2416,7 +2416,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                     data.getSelfRegistrationSettings.isForceOrganisationTokenInput, data.getSelfRegistrationSettings.isJoinExisting, data.getSelfRegistrationSettings.isJoinAsAdmin,
                     data.isAllowCertificateDownload, data.isAllowStatementManagement, data.isAllowSystemManagement,
                     data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates, data.isAllowAutomationApi, data.isAllowCommunityView, data.isAllowUserManagement, data.isAllowXmlReports,
-                    apiKey, None, domainId
+                    apiKey, None, Option(data.getTags), domainId
                   ), checkApiKeyUniqueness = true, toModelUserPreferenceDefaults(data, 0L))
                 },
                 (data: com.gitb.xml.export.Community, _: String, _: ImportItem) => {
@@ -2429,7 +2429,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                     data.getSelfRegistrationSettings.isForceOrganisationTokenInput, data.getSelfRegistrationSettings.isJoinExisting, data.getSelfRegistrationSettings.isJoinAsAdmin,
                     data.isAllowCertificateDownload, data.isAllowStatementManagement, data.isAllowSystemManagement,
                     data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates, Some(data.isAllowAutomationApi), data.isAllowCommunityView, data.isAllowUserManagement, data.isAllowXmlReports,
-                    Some(apiKey), domainId, checkApiKeyUniqueness = true, toModelUserPreferenceDefaults(data, targetCommunity.get.id), overrideExistingUserPreferences = false, ctx.onSuccessCalls
+                    Some(apiKey), domainId, checkApiKeyUniqueness = true, toModelUserPreferenceDefaults(data, targetCommunity.get.id), overrideExistingUserPreferences = false, Option(data.getTags), ctx.onSuccessCalls
                   )
                 },
                 None,

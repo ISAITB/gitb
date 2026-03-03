@@ -28,5 +28,6 @@ export interface TableColumnDefinition {
     tag?: boolean
     tagIcon?: string
     tagTooltip?: string
+    tagData?: boolean
 
 }

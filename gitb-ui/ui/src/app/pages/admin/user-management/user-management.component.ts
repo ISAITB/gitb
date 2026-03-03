@@ -38,7 +38,8 @@ export class UserManagementComponent implements OnInit, AfterViewInit {
   communityStatus = {status: Constants.STATUS.PENDING}
   communityColumns: TableColumnDefinition[] = [
     { field: 'sname', title: 'Short name' },
-    { field: 'fname', title: 'Full name' }
+    { field: 'fname', title: 'Full name' },
+    { field: 'tags', title: '', tagData: true, headerClass: 'th-min' }
   ]
   communities: CommunityLimited[] = []
   communityFilter?: string

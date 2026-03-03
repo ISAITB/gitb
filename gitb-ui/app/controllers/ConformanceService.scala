@@ -91,7 +91,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
   def getDomain(domainId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canManageDomain(request, domainId).flatMap { _ =>
       domainManager.getDomains(Some(List(domainId))).map { domains =>
-        val json = JsonUtil.jsDomain(domains.head, withApiKeys = true).toString()
+        val json = JsonUtil.jsDomain(domains.head, withApiKeys = true, withTags = true).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
     }
@@ -107,7 +107,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
       domainManager.getDomains(ids, snapshotId).map { domains =>
         val withApiKeys = ParameterExtractor.optionalBooleanQueryParameter(request, ParameterNames.KEYS)
           .getOrElse(ids.exists(_.nonEmpty))
-        val json = JsonUtil.jsDomains(domains, withApiKeys).toString()
+        val json = JsonUtil.jsDomains(domains, withApiKeys, withTags = false).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
     }
@@ -119,7 +119,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
       val page = ParameterExtractor.extractPageNumber(request)
       val limit = ParameterExtractor.extractPageLimit(request)
       domainManager.searchDomains(page, limit, filter).map { result =>
-        val json = JsonUtil.jsSearchResult(result, list => JsonUtil.jsDomains(list, withApiKeys = false)).toString()
+        val json = JsonUtil.jsSearchResult(result, list => JsonUtil.jsDomains(list, withApiKeys = false, withTags = true)).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
     }
@@ -128,7 +128,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
   def getDomainOfSpecification(specId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewDomainBySpecificationId(request, specId).flatMap { _ =>
       domainManager.getDomainOfSpecification(specId).map { domain =>
-        val json = JsonUtil.jsDomain(domain, withApiKeys = false).toString()
+        val json = JsonUtil.jsDomain(domain, withApiKeys = false, withTags = false).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
     }
@@ -137,7 +137,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
   def getDomainOfActor(actorId: Long): Action[AnyContent] = authorizedAction.async { request =>
     authorizationManager.canViewActor(request, actorId).flatMap { _ =>
       domainManager.getDomainOfActor(actorId).map { domain =>
-        val json = JsonUtil.jsDomain(domain, withApiKeys = false).toString()
+        val json = JsonUtil.jsDomain(domain, withApiKeys = false, withTags = false).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
     }
@@ -151,7 +151,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
     authorizationManager.canViewDomainByCommunityId(request, communityId).flatMap { _ =>
       domainManager.getCommunityDomain(communityId).map { domain =>
         if (domain.isDefined) {
-          val json = JsonUtil.jsDomain(domain.get, withApiKeys = false).toString()
+          val json = JsonUtil.jsDomain(domain.get, withApiKeys = false, withTags = false).toString()
           ResponseConstructor.constructJsonResponse(json)
         } else {
           ResponseConstructor.constructEmptyResponse
@@ -191,7 +191,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
       val page = ParameterExtractor.extractPageNumber(request)
       val limit = ParameterExtractor.extractPageLimit(request)
       domainManager.searchCommunityDomains(page, limit, filter, communityId).map { result =>
-        val json = JsonUtil.jsSearchResult(result, list => JsonUtil.jsDomains(list, withApiKeys = false)).toString()
+        val json = JsonUtil.jsSearchResult(result, list => JsonUtil.jsDomains(list, withApiKeys = false, withTags = true)).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
     }
@@ -449,11 +449,12 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
     authorizationManager.canUpdateDomain(request, domainId).flatMap { _ =>
       domainManager.checkDomainExists(domainId).flatMap { domainExists =>
         if (domainExists) {
-          val shortName:String = ParameterExtractor.requiredBodyParameter(request, ParameterNames.SHORT_NAME)
-          val fullName:String = ParameterExtractor.requiredBodyParameter(request, ParameterNames.FULL_NAME)
-          val description:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.DESC)
-          val reportMetadata:Option[String] = ParameterExtractor.optionalBodyParameter(request, ParameterNames.METADATA)
-          domainManager.updateDomain(domainId, shortName, fullName, description, reportMetadata).map { _ =>
+          val shortName = ParameterExtractor.requiredBodyParameter(request, ParameterNames.SHORT_NAME)
+          val fullName = ParameterExtractor.requiredBodyParameter(request, ParameterNames.FULL_NAME)
+          val description = ParameterExtractor.optionalBodyParameter(request, ParameterNames.DESC)
+          val reportMetadata = ParameterExtractor.optionalBodyParameter(request, ParameterNames.METADATA)
+          val tags = ParameterExtractor.optionalBodyParameter(request, ParameterNames.TAGS)
+          domainManager.updateDomain(domainId, shortName, fullName, description, reportMetadata, tags).map { _ =>
             ResponseConstructor.constructEmptyResponse
           }
         } else {

@@ -46,6 +46,7 @@ case class Communities(
                         allowXmlReports: Boolean,
                         apiKey: String,
                         latestStatusLabel: Option[String],
+                        tags: Option[String],
                         domain: Option[Long]) {
 
   def withApiKey(apiKey: String): Communities = {
@@ -86,7 +87,8 @@ class Community(
                  _apiKey: String,
                  _domain:Option[Domain],
                  _defaultSelfRegOrganisation: Option[Organizations],
-                 _defaultUserPreferences: Option[UserPreferenceDefaults]) {
+                 _defaultUserPreferences: Option[UserPreferenceDefaults],
+                 _tags: Option[String]) {
   var id:Long = _id
   var shortname:String = _shortname
   var fullname:String = _fullname
@@ -119,6 +121,7 @@ class Community(
   var domain:Option[Domain] = _domain
   var defaultSelfRegOrganisation: Option[Organizations] = _defaultSelfRegOrganisation
   var defaultUserPreferences: Option[UserPreferenceDefaults] = _defaultUserPreferences
+  var tags: Option[String] = _tags
 
   def this(_case:Communities, _domain:Option[Domain], _defaultSelfRegOrganisation: Option[Organizations], _defaultUserPreferences: Option[UserPreferenceDefaults]) =
     this(
@@ -153,7 +156,8 @@ class Community(
       _case.apiKey,
       _domain,
       _defaultSelfRegOrganisation,
-      _defaultUserPreferences
+      _defaultUserPreferences,
+      _case.tags
     )
 
   def this(_case:Communities, _domain:Option[Domain], _defaultSelfRegOrganisation: Option[Organizations]) =
@@ -195,6 +199,7 @@ class Community(
       allowXmlReports,
       apiKey,
       None,
+      tags,
       d
     )
   }

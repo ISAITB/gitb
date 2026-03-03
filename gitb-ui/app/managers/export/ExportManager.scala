@@ -427,6 +427,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
         exportedDomain.setDescription(domain.description.orNull)
         exportedDomain.setReportMetadata(domain.reportMetadata.orNull)
         exportedDomain.setApiKey(domain.apiKey)
+        exportedDomain.setTags(domain.tags.orNull)
         // Shared test suites.
         if (exportSettings.testSuites) {
           val testSuites = data.sharedTestSuites.get
@@ -1355,6 +1356,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
         communityData.setSupportEmail(community.get.supportEmail.orNull)
         communityData.setDescription(community.get.description.orNull)
         communityData.setApiKey(community.get.apiKey)
+        communityData.setTags(community.get.tags.orNull)
         communityData.setAllowCertificateDownload(community.get.allowCertificateDownload)
         communityData.setAllowStatementManagement(community.get.allowStatementManagement)
         communityData.setAllowSystemManagement(community.get.allowSystemManagement)

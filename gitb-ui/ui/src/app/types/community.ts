@@ -18,6 +18,7 @@ import {TypedLabelConfig} from './typed-label-config.type';
 import {CommunityLimited} from './community-limited';
 import {Organisation} from './organisation.type';
 import {UserPreferences} from './user-preferences';
+import {TagData} from './tag-data';
 
 export interface Community extends CommunityLimited {
 
@@ -50,6 +51,7 @@ export interface Community extends CommunityLimited {
   allowXmlReports: boolean;
   apiKey?: string;
   preferences?: UserPreferences
+  tags?: TagData[]
 
   sameDescriptionAsDomain: boolean;
   activeDescription?: string;

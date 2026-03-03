@@ -86,7 +86,7 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
           selfRegForceOrganisationTokenInput = false, selfRegJoinExisting = false, selfRegJoinAsAdmin = true,
           allowCertificateDownload = false, allowStatementManagement = false, allowSystemManagement = false,
           allowPostTestOrganisationUpdates = false, allowPostTestSystemUpdates = false, allowPostTestStatementUpdates = false,
-          allowAutomationApi = false, allowCommunityView = false, allowUserManagement = true, allowXmlReports = true, "", None,
+          allowAutomationApi = false, allowCommunityView = false, allowUserManagement = true, allowXmlReports = true, "", None, None,
           None)
       )).sorted
     }
@@ -124,7 +124,7 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
             selfRegAllowOrganisationTokenManagement = false, selfRegForceOrganisationTokenInput = false, selfRegJoinExisting = false, selfRegJoinAsAdmin = true,
             allowCertificateDownload = false, allowStatementManagement = false, allowSystemManagement = false,
             allowPostTestOrganisationUpdates = false, allowPostTestSystemUpdates = false, allowPostTestStatementUpdates = false,
-            allowAutomationApi = false, allowCommunityView = false, allowUserManagement = true, allowXmlReports = true, "", None,
+            allowAutomationApi = false, allowCommunityView = false, allowUserManagement = true, allowXmlReports = true, "", None, None,
             None))
         ).sorted
     }

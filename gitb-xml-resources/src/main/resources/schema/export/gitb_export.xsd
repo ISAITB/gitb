@@ -56,6 +56,7 @@
                     <xsd:element name="reportStylesheets" type="CommunityReportStylesheets" minOccurs="0"/>
                     <xsd:element name="reportSettings" type="CommunityReportSettings" minOccurs="0"/>
                     <xsd:element name="defaultUserPreferences" type="UserPreferences" minOccurs="0"/>
+                    <xsd:element name="tags" type="xsd:string" minOccurs="0"/>
                 </xsd:sequence>
                 <xsd:attribute name="domain" type="xsd:IDREF"/>
                 <xsd:attribute name="allowCertificateDownload" type="xsd:boolean" default="false"/>
@@ -520,6 +521,7 @@
                     <xsd:element name="sharedTestSuites" type="TestSuites" minOccurs="0"/>
                     <xsd:element name="specificationGroups" type="SpecificationGroups" minOccurs="0"/>
                     <xsd:element name="testServices" type="TestServices" minOccurs="0"/>
+                    <xsd:element name="tags" type="xsd:string" minOccurs="0"/>
                 </xsd:sequence>
             </xsd:extension>
         </xsd:complexContent>

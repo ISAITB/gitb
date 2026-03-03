@@ -26,6 +26,6 @@ case class CreateDomainRequest(
                                 apiKey: Option[String]) {
 
   def toDomain(): Domain = {
-    Domain(0, shortName, fullName, description, reportMetadata, apiKey.getOrElse(CryptoUtil.generateApiKey()))
+    Domain(0, shortName, fullName, description, reportMetadata, apiKey.getOrElse(CryptoUtil.generateApiKey()), None)
   }
 }

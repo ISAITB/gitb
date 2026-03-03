@@ -463,7 +463,7 @@ object ParameterExtractor {
     } else {
       selfRegType = SelfRegistrationType.NotSupported.id.toShort
     }
-
+    val tags = ParameterExtractor.optionalBodyParameter(request, ParameterNames.TAGS)
     val domainId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, ParameterNames.DOMAIN_ID)
     Communities(
       0L, sname, fname, email, selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification, interactionNotification, description,
@@ -471,7 +471,7 @@ object ParameterExtractor {
       selfRegForceOrganisationTokenInput, selfRegJoinExisting, selfRegJoinAsAdmin,
       allowCertificateDownload, allowStatementManagement, allowSystemManagement,
       allowPostTestOrganisationUpdate, allowPostTestSystemUpdate, allowPostTestStatementUpdate, allowAutomationApi, allowCommunityView, allowUserManagement, allowXmlReports,
-      CryptoUtil.generateApiKey(), None, domainId
+      CryptoUtil.generateApiKey(), None, tags, domainId
     )
   }
 
@@ -549,12 +549,15 @@ object ParameterExtractor {
     Systems(0L, sname, fname, descr, version, CryptoUtil.generateApiKey(), "", owner)
   }
 
-	def extractDomain(request:Request[AnyContent]):Domain = {
-		val sname = ParameterExtractor.requiredBodyParameter(request, ParameterNames.SHORT_NAME)
-		val fname = ParameterExtractor.requiredBodyParameter(request, ParameterNames.FULL_NAME)
-		val descr = ParameterExtractor.optionalBodyParameter(request, ParameterNames.DESC)
-    val reportMetadata = ParameterExtractor.optionalBodyParameter(request, ParameterNames.METADATA)
-		Domain(0L, sname, fname, descr, reportMetadata, CryptoUtil.generateApiKey())
+	def extractDomain(request:Request[AnyContent]): Domain = {
+		Domain(
+      id = 0L,
+      shortname = ParameterExtractor.requiredBodyParameter(request, ParameterNames.SHORT_NAME),
+      fullname = ParameterExtractor.requiredBodyParameter(request, ParameterNames.FULL_NAME),
+      description = ParameterExtractor.optionalBodyParameter(request, ParameterNames.DESC),
+      reportMetadata = ParameterExtractor.optionalBodyParameter(request, ParameterNames.METADATA),
+      tags = ParameterExtractor.optionalBodyParameter(request, ParameterNames.TAGS),
+      apiKey = CryptoUtil.generateApiKey())
 	}
 
 	def extractSpecification(paramMap:Option[Map[String, Seq[String]]]): Specifications = {

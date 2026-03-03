@@ -186,6 +186,10 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
     if (this.community.selfRegDefaultOrganisationEnabled == undefined) {
       this.community.selfRegDefaultOrganisationEnabled = this.community.selfRegDefaultOrganisation != undefined
     }
+    if (this.community.tags == undefined) {
+      // Needed so that changes are propagated to the header display.
+      this.community.tags = []
+    }
     this.communityId = this.community.id
     this.resetSelfRegistrationWarning()
     if (Number(this.communityId) == Constants.DEFAULT_COMMUNITY_ID) {
@@ -459,7 +463,7 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
       this.community.selfRegJoinExisting, this.community.selfRegJoinAsAdmin,
       this.community.allowCertificateDownload!, this.community.allowStatementManagement!, this.community.allowSystemManagement!, this.community.allowPostTestOrganisationUpdates!,
       this.community.allowPostTestSystemUpdates!, this.community.allowPostTestStatementUpdates!, this.community.allowAutomationApi, this.community.allowCommunityView, this.community.allowUserManagement, this.community.allowXmlReports,
-      this.community.domain?.id, this.community.preferences!, forceUserPreferenceUpdate)
+      this.community.domain?.id, this.community.preferences!, forceUserPreferenceUpdate, this.dataService.serializeTags(this.community!.tags))
     .subscribe(() => {
       this.originalDomainId = this.community.domain?.id
       this.resetSelfRegistrationWarning()
@@ -810,4 +814,5 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
   }
 
   protected readonly Constants = Constants;
+
 }

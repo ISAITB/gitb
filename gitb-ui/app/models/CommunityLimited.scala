@@ -15,5 +15,5 @@
 
 package models
 
-case class CommunityLimited(id: Long, shortname: String, fullname: String) {
+case class CommunityLimited(id: Long, shortname: String, fullname: String, tags: Option[String]) {
 }

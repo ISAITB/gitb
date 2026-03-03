@@ -103,13 +103,6 @@ export class TestCaseDisplayComponent extends BaseComponent implements TestCaseD
     this.optionButtons?.forEach((item) => item.documentClick(event))
   }
 
-  getParsedTags(testCase: ConformanceTestCase) {
-    if (testCase.tags != undefined && testCase.parsedTags == undefined) {
-      testCase.parsedTags = (<TagData[]>JSON.parse(testCase.tags)).sort((a, b) => a.name.localeCompare(b.name))
-    }
-    return testCase.parsedTags!
-  }
-
   closeOptions(source: ConformanceTestCase) {
     this.optionButtons?.forEach((optionButton) => {
       if (optionButton.getReferenceItem() !== source) {

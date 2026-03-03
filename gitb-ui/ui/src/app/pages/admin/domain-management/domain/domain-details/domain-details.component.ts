@@ -162,6 +162,10 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
     this.conformanceService.getDomain(this.domainId)
     .subscribe((data) => {
       this.domain = data
+      if (this.domain.tags == undefined) {
+        // Needed so that changes are propagated to the header display.
+        this.domain.tags = []
+      }
       this.routingService.domainBreadcrumbs(this.domainId, this.domain.sname!)
     }).add(() => {
       this.loaded = true
@@ -426,7 +430,7 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
 
 	saveDomainChanges() {
     this.savePending = true
-		this.conformanceService.updateDomain(this.domainId, this.domain.sname!, this.domain.fname!, this.domain.description, this.domain.reportMetadata)
+		this.conformanceService.updateDomain(this.domainId, this.domain.sname!, this.domain.fname!, this.domain.description, this.domain.reportMetadata, this.dataService.serializeTags(this.domain.tags))
     .subscribe(() => {
       this.popupService.success(this.dataService.labelDomain()+' updated.')
       this.dataService.breadcrumbUpdate({id: this.domainId, type: BreadcrumbType.domain, label: this.domain.sname!})

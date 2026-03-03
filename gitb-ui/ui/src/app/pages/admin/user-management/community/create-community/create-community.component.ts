@@ -52,7 +52,8 @@ export class CreateCommunityComponent extends BaseComponent implements OnInit {
       statementsCollapsed: false,
       pageSize: Constants.TABLE_PAGE_SIZE,
       homePageType: Constants.HOME_PAGE_TYPE.LANDING_PAGE
-    }
+    },
+    tags: []
   }
   domains: Domain[] = []
   savePending = false
@@ -118,7 +119,7 @@ export class CreateCommunityComponent extends BaseComponent implements OnInit {
           this.community.selfRegJoinExisting, this.community.selfRegJoinAsAdmin,
           this.community.allowCertificateDownload!, this.community.allowStatementManagement!, this.community.allowSystemManagement!, this.community.allowPostTestOrganisationUpdates!,
           this.community.allowPostTestSystemUpdates!, this.community.allowPostTestStatementUpdates!, this.community.allowAutomationApi, this.community.allowCommunityView!, this.community.allowUserManagement!, this.community.allowXmlReports!,
-          this.community.domain?.id, this.community.preferences!)
+          this.community.domain?.id, this.community.preferences!, this.dataService.serializeTags(this.community.tags))
           .subscribe(() => {
             this.cancelCreateCommunity()
             if (this.dataService.configuration.registrationEnabled && this.community.selfRegType != Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED && this.community.selfRegJoinExisting && !this.community.selfRegAllowOrganisationTokens) {

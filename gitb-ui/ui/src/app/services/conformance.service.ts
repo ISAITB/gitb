@@ -61,6 +61,7 @@ import {TestSuiteMinimalInfo} from '../types/test-suite-minimal-info';
 import {Observable, tap} from 'rxjs';
 import {share} from 'rxjs/operators';
 import {PopupService} from './popup.service';
+import {TagData} from '../types/tag-data';
 
 @Injectable({
   providedIn: 'root'
@@ -543,20 +544,21 @@ export class ConformanceService {
     })
   }
 
-  updateDomain(domainId: number, shortName: string, fullName: string, description?: string, reportMetadata?: string) {
+  updateDomain(domainId: number, shortName: string, fullName: string, description?: string, reportMetadata?: string, tags?: string) {
     return this.restService.post<void>({
       path: ROUTES.controllers.ConformanceService.updateDomain(domainId).url,
       data: {
         sname: shortName,
         fname: fullName,
         description: description,
-        metadata: reportMetadata
+        metadata: reportMetadata,
+        tags: tags
       },
       authenticate: true
     })
   }
 
-  createDomain(shortName: string, fullName: string, description?: string, reportMetadata?: string) {
+  createDomain(shortName: string, fullName: string, description?: string, reportMetadata?: string, tags?: string) {
     return this.restService.post<void>({
       path: ROUTES.controllers.ConformanceService.createDomain().url,
       authenticate: true,
@@ -564,7 +566,8 @@ export class ConformanceService {
         sname: shortName,
         fname: fullName,
         description: description,
-        metadata: reportMetadata
+        metadata: reportMetadata,
+        tags: tags
       }
     })
   }

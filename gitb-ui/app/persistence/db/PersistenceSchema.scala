@@ -60,8 +60,9 @@ object PersistenceSchema {
     def allowXmlReports = column[Boolean]("allow_xml_reports")
     def apiKey = column[String]("api_key")
     def latestStatusLabel = column[Option[String]]("latest_status_label")
+    def tags = column[Option[String]]("tags", O.SqlType("TEXT"))
     def domain = column[Option[Long]] ("domain")
-    def * = (id :: shortname :: fullname :: supportEmail :: selfRegType :: selfRegToken :: selfRegTokenHelpText :: selfRegNotification :: interactionNotification :: description :: selfRegRestriction :: selfRegForceTemplateSelection :: selfRegForceRequiredProperties :: selfRegAllowOrganisationTokens :: selfRegAllowOrganisationTokenManagement :: selfRegForceOrganisationTokenInput :: selfRegJoinExisting :: selfRegJoinAsAdmin :: allowCertificateDownload :: allowStatementManagement :: allowSystemManagement :: allowPostTestOrganisationUpdates :: allowPostTestSystemUpdates :: allowPostTestStatementUpdates :: allowAutomationApi :: allowCommunityView :: allowUserManagement :: allowXmlReports :: apiKey :: latestStatusLabel :: domain :: HNil).mapTo[Communities]
+    def * = (id :: shortname :: fullname :: supportEmail :: selfRegType :: selfRegToken :: selfRegTokenHelpText :: selfRegNotification :: interactionNotification :: description :: selfRegRestriction :: selfRegForceTemplateSelection :: selfRegForceRequiredProperties :: selfRegAllowOrganisationTokens :: selfRegAllowOrganisationTokenManagement :: selfRegForceOrganisationTokenInput :: selfRegJoinExisting :: selfRegJoinAsAdmin :: allowCertificateDownload :: allowStatementManagement :: allowSystemManagement :: allowPostTestOrganisationUpdates :: allowPostTestSystemUpdates :: allowPostTestStatementUpdates :: allowAutomationApi :: allowCommunityView :: allowUserManagement :: allowXmlReports :: apiKey :: latestStatusLabel :: tags :: domain :: HNil).mapTo[Communities]
   }
   val communities = TableQuery[CommunitiesTable]
   val insertCommunity = communities returning communities.map(_.id)
@@ -126,7 +127,8 @@ object PersistenceSchema {
   	def description = column[Option[String]]("description", O.SqlType("TEXT"))
     def reportMetadata = column[Option[String]]("report_metadata", O.SqlType("TEXT"))
     def apiKey = column[String]("api_key")
-    def * = (id, shortname, fullname, description, reportMetadata, apiKey) <> (Domain.tupled, Domain.unapply)
+    def tags = column[Option[String]]("tags", O.SqlType("TEXT"))
+    def * = (id, shortname, fullname, description, reportMetadata, apiKey, tags) <> (Domain.tupled, Domain.unapply)
   }
   val domains = TableQuery[DomainsTable]
 
