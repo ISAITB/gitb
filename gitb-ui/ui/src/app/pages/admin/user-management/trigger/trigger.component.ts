@@ -76,7 +76,7 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
   fireExpressions: TriggerFireExpression[] = []
   fireExpressionEmitters: EventEmitter<void>[] = []
   fireExpressionTypes: number[] = []
-  fireConditionsTooltip = 'A condition containing one or more clauses based on regular expressions. The trigger will only fire if the condition is satisfied.'
+  fireConditionsTooltip = 'A condition containing one or more clauses based on regular expressions. The webhook will only fire if the condition is satisfied.'
   testValueForFireCondition = ''
   testValueTypeForFireCondition?: number
   testFireCondition = false
@@ -388,11 +388,11 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
           this.validation.applyError(data)
         } else {
           if (this.update) {
-            this.popupService.success('Trigger updated.')
+            this.popupService.success('Webhook updated.')
             this.dataService.breadcrumbUpdate({id: this.triggerId, type: BreadcrumbType.trigger, label: this.trigger.name})
           } else {
             this.back()
-            this.popupService.success('Trigger created.')
+            this.popupService.success('Webhook created.')
           }
         }
       }).add(() => {
@@ -403,13 +403,13 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
 
   delete() {
     this.validation.clearErrors()
-    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this trigger?", "Delete", "Cancel", Constants.BUTTON_ICON.DELETE)
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this webhook?", "Delete", "Cancel", Constants.BUTTON_ICON.DELETE)
     .subscribe(() => {
       this.deletePending = true
       this.triggerService.deleteTrigger(this.triggerId!)
       .subscribe(() => {
         this.back()
-        this.popupService.success('Trigger deleted.')
+        this.popupService.success('Webhook deleted.')
       }).add(() => {
         this.deletePending = false
       })
@@ -451,7 +451,7 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
     .subscribe(() => {
       this.trigger.latestResultOk = undefined
       this.applyStatusValues(this.statusTextUnknown)
-      this.popupService.success('Trigger status cleared.')
+      this.popupService.success('Webhook status cleared.')
     }).add(() => {
       this.clearStatusPending = false
     })

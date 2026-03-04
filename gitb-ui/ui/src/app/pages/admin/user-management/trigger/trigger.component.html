@@ -1,7 +1,7 @@
 <div class="page users create">
     <div class="card mb-0">
         <div class="card-header">
-            <div class="card-title">{{ (update?'Update':'Create') + ' trigger' }}</div>
+            <div class="card-title">{{ (update?'Update':'Create') + ' webhook' }}</div>
             <div app-community-tag-indicator></div>
         </div>
         <form (ngSubmit)="save()">
@@ -10,12 +10,12 @@
                 <div class="row">
                     <label class="col-3 col-form-label text-end" for="name">* Name:</label>
                     <div class="col-8 col-md-6"><input id="name" name="name" [(ngModel)]="trigger.name" class="form-control" type="text" [invalid]="validation.get('name')"></div>
-                    <div app-tooltip class="col-auto" tbTooltip="The name of the trigger that will identify it and be displayed in selection lists."></div>
+                    <div app-tooltip class="col-auto" tbTooltip="The name of the webhook that will identify it and be displayed in selection lists."></div>
                 </div>
                 <div class="row mt-3">
                     <label class="col-3 col-form-label text-end" for="description">Description:</label>
                     <div class="col-8 col-md-6"><textarea ctrlEnterSubmit id="description" name="description" [(ngModel)]="trigger.description" class="form-control"></textarea></div>
-                    <div app-tooltip class="col-auto" tbTooltip="A description to help distinguish this trigger and summarise its purpose."></div>
+                    <div app-tooltip class="col-auto" tbTooltip="A description to help distinguish this webhook and summarise its purpose."></div>
                 </div>
                 <div class="row mt-3">
                     <label class="col-3 col-form-label text-end" for="event">* Event type:</label>
@@ -41,7 +41,7 @@
                             </optgroup>
                         </select>
                     </div>
-                    <div app-tooltip class="col-auto" tbTooltip="The event that will cause this trigger to fire."></div>
+                    <div app-tooltip class="col-auto" tbTooltip="The event that will cause this webhook to fire."></div>
                 </div>
                 @if (supportsFireCondition()) {
                     <div class="row mt-3">
@@ -100,7 +100,7 @@
                                         <button type="button" [labelIcon]="Constants.BUTTON_ICON.TEST"  class="btn btn-secondary" [disable]="!textProvided(testValueForFireCondition)" (click)="testFireConditionWithSampleValue()">Test</button>
                                         @if (testedFireCondition) {
                                             <div [class.valid-feedback]="testedFireConditionMatches" [class.invalid-feedback]="!testedFireConditionMatches">
-                                                {{ testedFireConditionMatches?'The condition is satisfied and the trigger will fire.':'The condition is not satisfied and the trigger will not fire.' }}
+                                                {{ testedFireConditionMatches?'The condition is satisfied and the webhook will fire.':'The condition is not satisfied and the webhook will not fire.' }}
                                             </div>
                                         }
                                     </div>
@@ -114,11 +114,11 @@
                     <div class="col-8 col-md-6">
                         <div class="form-check">
                             <input id="active" name="active" [(ngModel)]="trigger.active" type="checkbox" class="form-check-input">
-                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" tbTooltip="Check this to activate this trigger and have it fire when the defined event occurs. An inactive trigger is effectively disabled."></div>
+                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" tbTooltip="Check this to activate this webhook and have it fire when the defined event occurs. An inactive webhook is effectively disabled."></div>
                         </div>
                     </div>
                 </div>
-                <app-form-section sectionTitle="Web service details" titleTooltip="When the trigger's event occurs a call will be made to the web service configured below. This service is expected to implement the GITB processing service API. For information on how to implement this service check the Test Bed's user guide (link in the screen's footer)." [marginBefore]="true">
+                <app-form-section sectionTitle="Web service details" titleTooltip="When the webhook's event occurs a call will be made to the web service configured below. For information on how to implement this service check the Test Bed's user guide (link in the screen's footer)." [marginBefore]="true">
                     <div class="pt-3">
                         <div class="row pt-2">
                             <legend class="col-3 col-form-label text-end pt-0">* Service type:</legend>
@@ -147,18 +147,18 @@
                             </div>
                         </div>
                         @if (trigger.serviceType == Constants.TRIGGER_SERVICE_TYPE.GITB) {
-                            <div app-tooltip class="col-auto" tbTooltip="The URL of the web service that will be called when the trigger fires. This URL must be provided as the full address needed to resolve the processing service's WSDL. Note that the URL provided is the one the Test Bed will use internally for the call (i.e. it doesn't have to be publicly available)."></div>
+                            <div app-tooltip class="col-auto" tbTooltip="The URL of the web service that will be called when the webhook fires. This URL must be provided as the full address needed to resolve the processing service's WSDL. Note that the URL provided is the one the Test Bed will use internally for the call (i.e. it doesn't have to be publicly available)."></div>
                         } @else {
-                            <div app-tooltip class="col-auto" tbTooltip="The URL of the web service that will be called when the trigger fires. Note that the URL provided is the one the Test Bed will use internally for the call (i.e. it doesn't have to be publicly available)."></div>
+                            <div app-tooltip class="col-auto" tbTooltip="The URL of the web service that will be called when the webhook fires. Note that the URL provided is the one the Test Bed will use internally for the call (i.e. it doesn't have to be publicly available)."></div>
                         }
                     </div>
                     <div class="row mt-3">
                         <label class="col-3 col-form-label text-end" for="operation">Operation:</label>
                         <div class="col-8 col-md-6"><input id="operation" name="operation" [(ngModel)]="trigger.operation" class="form-control" type="text"></div>
                         @if (trigger.serviceType == Constants.TRIGGER_SERVICE_TYPE.GITB) {
-                            <div app-tooltip class="col-auto" tbTooltip="An optional operation identifier to pass to the service. As a GITB processing service may define multiple operations this identifier can be used to determine the one intended by this trigger."></div>
+                            <div app-tooltip class="col-auto" tbTooltip="An optional operation identifier to pass to the service. As a GITB processing service may define multiple operations this identifier can be used to determine the one intended by this webhook."></div>
                         } @else {
-                            <div app-tooltip class="col-auto" tbTooltip="An optional operation identifier to pass to the service. This could be used to identify the trigger's type in case the service is used in multiple scenarios."></div>
+                            <div app-tooltip class="col-auto" tbTooltip="An optional operation identifier to pass to the service. This could be used to identify the webhook's type in case the service is used in multiple scenarios."></div>
                         }
                     </div>
                     <div class="row mt-3 pt-1">
@@ -207,7 +207,7 @@
                                 </div>
                             }
                         </div>
-                        <div app-tooltip class="col-auto" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Optional data that will be provided as input to the service when it is called. The type of data available depends on the trigger's event type."></div>
+                        <div app-tooltip class="col-auto" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Optional data that will be provided as input to the service when it is called. The type of data available depends on the webhook's event type."></div>
                     </div>
                     <div class="parameter-check-rows">
                         @if (triggerData.domainParameter.visible) {
@@ -281,7 +281,7 @@
                     </div>
                 </app-form-section>
                 @if (update) {
-                    <app-form-section sectionTitle="Trigger status" titleTooltip="The presented result is the trigger's latest outcome from calling the configured web service. In case of failure you can also view the incremental error messages that were reported when the service call was attempted."  [marginBefore]="true">
+                    <app-form-section sectionTitle="Webhook status" titleTooltip="The presented result is the webhook's latest outcome from calling the configured web service. In case of failure you can also view the incremental error messages that were reported when the service call was attempted."  [marginBefore]="true">
                         <div class="pt-3 row">
                             <label class="col-3 col-form-label text-end" for="url">Latest result:</label>
                             <div class="col-2">

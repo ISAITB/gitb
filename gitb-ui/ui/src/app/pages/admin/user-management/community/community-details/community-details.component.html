@@ -189,20 +189,20 @@
                 </ng-template>
             </li>
             <li [ngbNavItem]="Constants.TAB.COMMUNITY.TRIGGERS">
-                <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.TRIGGER" text="Triggers"></app-tab-title></button>
+                <button ngbNavLink class="nav-link tabClass"><app-tab-title [icon]="Constants.BUTTON_ICON.TRIGGER" text="Webhooks"></app-tab-title></button>
                 <ng-template ngbNavContent>
                     <!-- Triggers -->
                     <div class="tabPanel">
                         <div class="tabControls">
                             <div class="btn-toolbar">
-                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createTrigger()">Create trigger</button>
+                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.NEW" class="btn btn-secondary" (click)="createTrigger()">Create webhook</button>
                             </div>
                         </div>
                         <div class="card">
                             <div #triggersTable table-directive
                                  [columns]="triggerColumns"
                                  [data]="triggers"
-                                 noDataMessage="No triggers found"
+                                 noDataMessage="No webhooks found"
                                  [loadingStatus]="triggerStatus"
                                  [contentRefreshing]="triggersRefreshing"
                                  (pageNavigation)="doTriggerPaging($event)"

@@ -55,7 +55,7 @@ class TriggerService @Inject()(authorizedAction: AuthorizedAction,
           }
         } else {
           Future.successful {
-            ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "A trigger with this name already exists.", Some("name"))
+            ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "A webhook with this name already exists.", Some("name"))
           }
         }
       }
@@ -81,7 +81,7 @@ class TriggerService @Inject()(authorizedAction: AuthorizedAction,
           }
         } else {
           Future.successful {
-            ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "A trigger with this name already exists.", Some("name"))
+            ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "A webhook with this name already exists.", Some("name"))
           }
         }
       }
