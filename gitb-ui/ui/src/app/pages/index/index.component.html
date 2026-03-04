@@ -16,8 +16,11 @@
             <section class="page-top">
                 <div class="container">
                     <div class="row">
-                        <div class="col-12">
+                        <div class="col-12 d-flex">
                             <div class="page-title">{{ pageTitle }}</div>
+                            @if (dataService.isSystemAdmin || dataService.isCommunityAdmin) {
+                                <div app-community-tag-indicator [displayForCommunityAdmin]="true" [lazy]="true"></div>
+                            }
                         </div>
                     </div>
                 </div>

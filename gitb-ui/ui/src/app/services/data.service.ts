@@ -94,9 +94,11 @@ export class DataService {
   public onPageChange$ = this.onPageChangeSource.asObservable()
   private onBreadcrumbChangeSource = new Subject<BreadcrumbChange>()
   public onBreadcrumbChange$ = this.onBreadcrumbChangeSource.asObservable()
-  private onUserLoaded = new ReplaySubject<void>()
+  private onUserLoaded = new ReplaySubject<void>(1)
   public onUserLoaded$ = this.onUserLoaded.asObservable()
-  private onMenuItemStatusChangeSource = new ReplaySubject<MenuItemStatusChange>()
+  private onCommunityLoaded = new ReplaySubject<void>(1)
+  public onCommunityLoaded$ = this.onCommunityLoaded.asObservable()
+  private onMenuItemStatusChangeSource = new ReplaySubject<MenuItemStatusChange>(1)
   public onMenuItemStatusChange$ = this.onMenuItemStatusChangeSource.asObservable()
   private onButtonPopupOpenSource = new Subject<any>()
   public onButtonPopupOpen$ = this.onButtonPopupOpenSource.asObservable()
@@ -106,7 +108,7 @@ export class DataService {
   public onMenuVisibilityChange$ = this.menuVisibilityChangeSource.asObservable()
   private conformanceStatementDetailVisibilityChangeSource = new Subject<boolean>()
   public onConformanceStatementDetailVisibilityChange$ = this.conformanceStatementDetailVisibilityChangeSource.asObservable()
-  private preparingForShutdownSource = new ReplaySubject<boolean>()
+  private preparingForShutdownSource = new ReplaySubject<boolean>(1)
   public onPreparingForShutdown$ = this.preparingForShutdownSource.asObservable()
 
   triggerEventToDataTypeMap?: {[key: number]: { [key: number]: boolean } }
@@ -294,7 +296,12 @@ export class DataService {
     }
     setTimeout(() => {
       this.showCommunityViewMenu = !this.isCommunityAdmin && !this.isSystemAdmin && community.allowCommunityView
+      this.signalCommunityUpdated()
     })
+  }
+
+  signalCommunityUpdated() {
+    this.onCommunityLoaded.next()
   }
 
   createLabels(customLabels?: TypedLabelConfig[]): {[key: number]: TypedLabelConfig} {

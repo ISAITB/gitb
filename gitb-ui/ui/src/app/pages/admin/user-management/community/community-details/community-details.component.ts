@@ -496,6 +496,7 @@ export class CommunityDetailsComponent extends BaseTabbedComponent implements On
       this.currentTags = [...source].map(t => ({...t}))
     }
     this.dataService.cacheCommunityTags(this.communityId, this.currentTags)
+    this.dataService.signalCommunityUpdated()
   }
 
   updateCommunity() {

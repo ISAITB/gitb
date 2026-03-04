@@ -32,10 +32,10 @@ import {AuthenticationStatus} from '../types/authentication-status';
 })
 export class AuthProviderService {
 
-  private onLoginSource = new ReplaySubject<LoginEventInfo>()
-  private afterLoginSource = new ReplaySubject<LoginEventInfo>()
-  private onLogoutSource = new ReplaySubject<LogoutEventInfo>()
-  private onLogoutCompleteSource = new ReplaySubject<void>()
+  private onLoginSource = new ReplaySubject<LoginEventInfo>(1)
+  private afterLoginSource = new ReplaySubject<LoginEventInfo>(1)
+  private onLogoutSource = new ReplaySubject<LogoutEventInfo>(1)
+  private onLogoutCompleteSource = new ReplaySubject<void>(1)
   public logoutSignalled: boolean = false
   private logoutOngoing: boolean = false
   public accessToken?: string
