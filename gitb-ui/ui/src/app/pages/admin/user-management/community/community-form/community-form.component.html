@@ -57,7 +57,7 @@
                 [tags]="community.tags"
                 [editable]="true"
                 [max]="1"
-                [tooltip]="`An optional tag to display for the community in lists, and on all screens used to manage its configuration. This is only displayed internally to Test Bed and community administrators.`"
+                [tooltip]="`An optional tag for the community, displayed to community administrators in the Test Bed's banner. For the Test Bed administrator this tag is displayed in lists, and on all screens used to manage its configuration. This is not visible to ${dataService.labelOrganisationLower()} users.`"
             ></app-tags-display>
         </div>
     </div>
