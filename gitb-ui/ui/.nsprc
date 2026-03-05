@@ -34,5 +34,13 @@
     "1113588": {
         "active": true,
         "notes": "Angular i18n is not used to load translations and in any case if translations were used they would be loaded by trusted sources."
+    },
+    "1113979": {
+        "active": true,
+        "notes": "Dompurify is defined as a dependency of mermaid, a dependency of mermaid which is in turn an optional dependency of ngx-markdown. Mermaid is never used but also there is never any processing or untrusted markdown."
+    },
+    "1113981": {
+        "active": true,
+        "notes": "Dompurify is defined as a dependency of mermaid, a dependency of mermaid which is in turn an optional dependency of ngx-markdown. Mermaid is never used but also there is never any processing or untrusted markdown."
     }
 }
