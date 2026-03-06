@@ -40,7 +40,7 @@
         <version.bouncycastle>1.83</version.bouncycastle>
         <version.helgerSchematron>9.0.1</version.helgerSchematron>
         <version.metaInfServices>1.9</version.metaInfServices>
-        <version.cxf>4.1.4</version.cxf>
+        <version.cxf>4.2.0</version.cxf>
         <version.httpComponents>4.5.14</version.httpComponents>
         <version.commonsCodec>1.20.0</version.commonsCodec>
         <version.reflections>0.10.2</version.reflections>
@@ -59,10 +59,10 @@
         <version.serializer>2.7.3</version.serializer>
         <version.xmlApis>2.0.2</version.xmlApis>
         <!-- Section END. -->
-        <version.jaxbApi>4.0.4</version.jaxbApi>
+        <version.jaxbApi>4.0.5</version.jaxbApi>
         <version.jaxbRuntime>4.0.6</version.jaxbRuntime>
         <version.saxon>12.8</version.saxon>
-        <version.jaxwsApi>4.0.2</version.jaxwsApi>
+        <version.jaxwsApi>4.0.3</version.jaxwsApi>
         <version.jwsApi>3.0.0</version.jwsApi>
         <version.activation>2.1.2</version.activation>
         <version.commonsConfiguration>2.13.0</version.commonsConfiguration>
@@ -83,7 +83,8 @@
         <version.topbraid>1.4.4</version.topbraid>
         <version.json-schema-validator>2.0.1</version.json-schema-validator>
         <version.jayway>2.9.0</version.jayway>
-        <version.jackson>2.20.1</version.jackson>
+        <version.jackson>2.21.1</version.jackson>
+        <version.jacksonAnnotations>2.21</version.jacksonAnnotations>
         <version.pdfbox>3.0.6</version.pdfbox>
         <!-- Properties used for filtering replacements -->
         <timestamp>${maven.build.timestamp}</timestamp>
@@ -589,6 +590,11 @@
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
                 <version>${version.jackson}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>${version.jacksonAnnotations}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.pdfbox</groupId>

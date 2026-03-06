@@ -2,15 +2,15 @@ import sbtlicensereport.license.{LicenseCategory, LicenseInfo}
 
 scalaVersion := "2.13.18"
 val pekkoVersion = "1.4.0"
-val jacksonVersion = "2.20.1"
-val jacksonAnnotationsVersion = "2.20"
-val cxfVersion = "4.1.4"
+val jacksonVersion = "2.21.1"
+val jacksonAnnotationsVersion = "2.21"
+val cxfVersion = "4.2.0"
 val gitbCommonsVersion = "1.29.0-SNAPSHOT"
 val gitbTypesVersion = "1.29.0-SNAPSHOT"
 val bouncyCastleVersion = "1.83"
 val commonsTextVersion = "1.15.0"
 val mySqlConnectorVersion = "9.6.0"
-val pac4jVersion = "6.3.1"
+val pac4jVersion = "6.3.3"
 val nettyVersion = "4.1.130.Final"
 
 name := """GITB"""
@@ -46,7 +46,7 @@ libraryDependencies ++= Seq(
   "org.apache.pekko" %% "pekko-slf4j" % pekkoVersion,
   "org.apache.pekko" %% "pekko-serialization-jackson" % pekkoVersion,
   "org.playframework" %% "play-slick" % "6.2.0",
-  "org.pac4j" %% "play-pac4j" % "13.0.0-PLAY3.0",
+  "org.pac4j" %% "play-pac4j" % "13.0.2-PLAY3.0",
   "org.pac4j" % "pac4j-cas" % pac4jVersion exclude("org.bouncycastle", "bcpkix-jdk15on"),
   "org.pac4j" % "pac4j-oidc" % pac4jVersion,
   "org.pac4j" % "pac4j-http" % pac4jVersion,
@@ -72,14 +72,14 @@ libraryDependencies ++= Seq(
   "org.apache.tika" % "tika-core" % "3.2.3",
   "org.webjars" % "jquery" % "3.7.1",
   "org.webjars" % "bootstrap" % "5.3.8",
-  "org.webjars" % "swagger-ui" % "5.31.0",
+  "org.webjars" % "swagger-ui" % "5.32.0",
   "jakarta.mail" % "jakarta.mail-api" % "2.1.5",
   "org.eclipse.angus" % "angus-mail" % "2.0.5",
   "org.eclipse.angus" % "angus-activation" % "2.0.3",
   "jakarta.activation" % "jakarta.activation-api" % "2.1.4",
-  "jakarta.xml.ws" % "jakarta.xml.ws-api" % "4.0.2",
+  "jakarta.xml.ws" % "jakarta.xml.ws-api" % "4.0.3",
   "jakarta.jws" % "jakarta.jws-api" % "3.0.0",
-  "jakarta.xml.bind" % "jakarta.xml.bind-api" % "4.0.4",
+  "jakarta.xml.bind" % "jakarta.xml.bind-api" % "4.0.5",
   "com.sun.xml.bind" % "jaxb-impl" % "4.0.6",
   "jakarta.xml.soap" % "jakarta.xml.soap-api" % "3.0.2",
   "com.sun.xml.messaging.saaj" % "saaj-impl" % "3.0.4", // Needed for SOAP exchanges
@@ -89,10 +89,10 @@ libraryDependencies ++= Seq(
   "org.jasypt" % "jasypt" % "1.9.3",
   "org.apache.httpcomponents" % "httpclient" % "4.5.14",
   "org.flywaydb" %% "flyway-play" % "9.1.0",
-  "org.flywaydb" % "flyway-mysql" % "12.0.0",
+  "org.flywaydb" % "flyway-mysql" % "12.0.3",
   "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20260102.1",
-  "net.lingala.zip4j" % "zip4j" % "2.11.5",
-  "com.nimbusds" % "nimbus-jose-jwt" % "10.7",
+  "net.lingala.zip4j" % "zip4j" % "2.11.6",
+  "com.nimbusds" % "nimbus-jose-jwt" % "10.8",
   "org.apache.commons" % "commons-text" % commonsTextVersion,
   "com.bucket4j" % "bucket4j_jdk17-core" % "8.16.1",
   "com.github.ben-manes.caffeine" % "caffeine" % "3.2.3"
