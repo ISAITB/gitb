@@ -25,6 +25,7 @@ import {EmailSettings} from '../types/email-settings';
 import {ConfigurationValue} from '../types/configuration-value';
 import {StartupWizardOptions} from '../types/startup-wizard-options';
 import {SearchResult} from '../types/search-result';
+import {RestApiEndpointDescription} from '../types/rest-api-endpoint-description';
 
 @Injectable({
   providedIn: 'root'
@@ -217,6 +218,13 @@ export class SystemConfigurationService {
       data: {
         enable: enable,
       }
+    })
+  }
+
+  getRestApiEndpointsFromDocumentation() {
+    return this.restService.get<RestApiEndpointDescription[]>({
+      path: ROUTES.controllers.SystemConfigurationService.getRestApiEndpointsFromDocumentation().url,
+      authenticate: true
     })
   }
 

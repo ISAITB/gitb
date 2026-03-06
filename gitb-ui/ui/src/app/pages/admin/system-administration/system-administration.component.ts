@@ -1,17 +1,17 @@
- /*
- * Copyright (C) 2026 European Union
- *
- * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
- * versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
- *
- * You may obtain a copy of the Licence at:
- *
- * https://interoperable-europe.ec.europa.eu/collection/eupl/eupl-text-eupl-12
- *
- * Unless required by applicable law or agreed to in writing, software distributed under the Licence is distributed on an
- * "AS IS" basis, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the Licence for
- * the specific language governing permissions and limitations under the Licence.
- */
+/*
+* Copyright (C) 2026 European Union
+*
+* Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
+* versions of the EUPL (the "Licence"); You may not use this work except in compliance with the Licence.
+*
+* You may obtain a copy of the Licence at:
+*
+* https://interoperable-europe.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+*
+* Unless required by applicable law or agreed to in writing, software distributed under the Licence is distributed on an
+* "AS IS" basis, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the Licence for
+* the specific language governing permissions and limitations under the Licence.
+*/
 
 import {Component, EventEmitter, OnInit, ViewChild} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
@@ -35,7 +35,7 @@ import {OrganisationService} from 'src/app/services/organisation.service';
 import {Organisation} from 'src/app/types/organisation.type';
 import {ConfirmationDialogService} from 'src/app/services/confirmation-dialog.service';
 import {ConfigStatus} from './config-status';
-import {forkJoin, map, mergeMap, Observable, of, share, tap} from 'rxjs';
+import {finalize, forkJoin, map, mergeMap, Observable, of, switchMap, tap} from 'rxjs';
 import {Theme} from 'src/app/types/theme';
 import {EmailSettings} from 'src/app/types/email-settings';
 import {CodeEditorModalComponent} from 'src/app/components/code-editor-modal/code-editor-modal.component';
@@ -56,7 +56,12 @@ import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 import {PagingEvent} from '../../../components/paging-controls/paging-event';
 import {TableApi} from '../../../components/table/table-api';
 import {ResourceState} from '../../../components/resource-management-tab/resource-state';
- import {SessionTimeoutConfiguration} from '../../../types/session-timeout-configuration';
+import {SessionTimeoutConfiguration} from '../../../types/session-timeout-configuration';
+import {RestApiRateLimits} from '../../../types/rest-api-rate-limits';
+import {RestApiEndpointDescription} from '../../../types/rest-api-endpoint-description';
+import {RestApiEndpointDescriptionWithId} from '../../../types/rest-api-endpoint-description-with-id';
+import {RestApiEndpointLimit} from '../../../types/rest-api-endpoint-limit';
+import {RestApiEndpointBasic} from '../../../types/rest-api-endpoint-basic';
 
 @Component({
     selector: 'app-system-administration',
@@ -166,19 +171,24 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
   // Usage tips
   usageTipsStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
   usageTipsValue: UsageTipsConfiguration = {
-    enabled: false,
+    enabled: true,
     disabledForScreens: []
   }
 
   // REST API
-  restApiStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
+  restApiStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false, deferredExpand: new EventEmitter<boolean>() }
+  restApiLimits?: RestApiRateLimits
+  restApiDataLoaded = false
   restApiEnabled = false
+  restApiEndpointLimitsEnabled = false
   restApiAdminKey!: string
   updateRestApiAdminKeyPending = false
 
   // Demo account
-  demoAccountStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
+  demoAccountStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false, deferredExpand: new EventEmitter<boolean>() }
+  demoAccountId?: number
   demoAccountEnabled = false
+  demoAccountDataLoaded = false
   communities: Community[] = []
   organisations: Organisation[] = []
   users: UserBasic[] = []
@@ -199,7 +209,8 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
   welcomePageTitle?: string
 
   // Email settings
-  emailSettingsStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
+  emailSettingsStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false, deferredExpand: new EventEmitter<boolean>() }
+  emailSettingsDataLoaded = false
   emailTestActive = false
   emailResetPending = false
   emailTestPending = false
@@ -224,6 +235,7 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
   ]
   emailSslProtocolsSelectConfig!: MultiSelectConfig<SslProtocol>
   emailAttachmentTypeSelectConfig!: MultiSelectConfig<MimeType>
+  restApiEndpointSelectConfig!: MultiSelectConfig<RestApiEndpointDescriptionWithId>
 
   // Resources
   resourceActions!: ResourceActions
@@ -275,181 +287,117 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
     }
     this.adminColumns.push({ field: 'ssoStatusText', title: 'Status', headerClass: 'th-min centered', cellClass: 'td-min centered' })
     this.resourceActions = this.createResourceActions()
-    this.loadCommunitiesPending = true
-    const communityObs = this.communityService.getUserCommunities()
-    .pipe(
-      map((data) => {
-        this.communities = data
-      }),
-      share()
-    )
     // Load system configuration values.
-    const configObs = this.systemConfigurationService.getConfigurationValues()
-    .pipe(
-      mergeMap((data) => {
-        // Account retention period.
-        const accountRetentionPeriodConfig = data.find((configItem) => configItem.name == Constants.SYSTEM_CONFIG.ACCOUNT_RETENTION_PERIOD)
-        if (accountRetentionPeriodConfig && accountRetentionPeriodConfig.parameter != undefined) {
-          this.accountRetentionPeriodEnabled = true
-          this.accountRetentionPeriodValue = Number(accountRetentionPeriodConfig.parameter)
-        } else {
-          this.accountRetentionPeriodEnabled = false
-          this.accountRetentionPeriodValue = undefined
+    this.systemConfigurationService.getConfigurationValues().subscribe((data) => {
+      let welcomeMessageConfig: SystemConfiguration|undefined
+      let welcomeTitleConfig: SystemConfiguration|undefined
+      data.forEach(configItem => {
+        switch (configItem.name) {
+          case Constants.SYSTEM_CONFIG.ACCOUNT_RETENTION_PERIOD:
+            // Account retention period.
+            if (configItem.parameter != undefined) {
+              this.accountRetentionPeriodEnabled = true
+              this.accountRetentionPeriodValue = Number(configItem.parameter)
+            }
+            this.accountRetentionPeriodStatus.enabled = this.accountRetentionPeriodEnabled
+            this.accountRetentionPeriodStatus.fromEnv = configItem.environment
+            this.accountRetentionPeriodStatus.fromDefault = configItem.default
+            break
+          case Constants.SYSTEM_CONFIG.SESSION_ALIVE_TIME:
+            // TTL.
+            if (configItem.parameter != undefined) {
+              this.sessionTimeoutSettings = JSON.parse(configItem.parameter)
+            }
+            this.sessionTimeoutStatus.enabled = this.sessionTimeoutSettings.enabled
+            this.sessionTimeoutStatus.fromEnv = configItem.environment
+            this.sessionTimeoutStatus.fromDefault = configItem.default
+            break
+          case Constants.SYSTEM_CONFIG.SOFTWARE_VERSION_CHECK:
+            // Software version status check.
+            this.initialiseSoftwareVersionCheckSettings(configItem)
+            break
+          case Constants.SYSTEM_CONFIG.REST_API_ENABLED:
+            // REST API.
+            this.restApiEnabled = configItem.parameter != undefined && configItem.parameter.toLowerCase() == 'true'
+            this.restApiStatus.enabled = this.restApiEnabled
+            this.restApiStatus.fromEnv = configItem.environment
+            this.restApiStatus.fromDefault = configItem.default
+            break
+          case Constants.SYSTEM_CONFIG.REST_API_ADMIN_KEY:
+            // REST API admin key.
+            this.restApiAdminKey = configItem.parameter!
+            break
+          case Constants.SYSTEM_CONFIG.SELF_REGISTRATION_ENABLED:
+            // Self registration.
+            this.selfRegistrationEnabled = configItem.parameter != undefined && configItem.parameter.toLowerCase() == 'true'
+            this.selfRegistrationStatus.enabled = this.selfRegistrationEnabled
+            this.selfRegistrationStatus.fromEnv = configItem.environment
+            this.selfRegistrationStatus.fromDefault = configItem.default
+            break
+          case Constants.SYSTEM_CONFIG.STARTUP_WIZARD:
+            // Startup wizard.
+            this.startupWizardEnabled = configItem.parameter != undefined && configItem.parameter.toLowerCase() == 'true'
+            this.startupWizardStatus.enabled = this.startupWizardEnabled
+            this.startupWizardStatus.fromEnv = configItem.environment
+            this.startupWizardStatus.fromDefault = configItem.default
+            break
+          case Constants.SYSTEM_CONFIG.USAGE_TIPS:
+            // Usage tips.
+            if (configItem.parameter) {
+              this.usageTipsValue = JSON.parse(configItem.parameter)
+            }
+            this.usageTipsStatus.enabled = this.usageTipsValue.enabled
+            this.usageTipsStatus.fromEnv = configItem.environment
+            this.usageTipsStatus.fromDefault = configItem.default
+            break
+          case Constants.SYSTEM_CONFIG.WELCOME_MESSAGE:
+            // Welcome page message.
+            if (configItem.parameter) {
+              this.welcomePageMessage = configItem.parameter
+              welcomeMessageConfig = configItem
+            }
+            this.welcomePageStatus.fromEnv = welcomeMessageConfig != undefined && welcomeMessageConfig.environment && welcomeTitleConfig != undefined && welcomeTitleConfig.environment
+            this.welcomePageStatus.fromDefault = welcomeMessageConfig != undefined && welcomeMessageConfig.default && welcomeTitleConfig != undefined && welcomeTitleConfig.default
+            this.welcomePageStatus.enabled = !this.welcomePageStatus.fromDefault
+            break
+          case Constants.SYSTEM_CONFIG.WELCOME_TITLE:
+            // Welcome page title
+            if (configItem.parameter) {
+              this.welcomePageTitle = configItem.parameter
+              welcomeTitleConfig = configItem
+            }
+            this.welcomePageStatus.fromEnv = welcomeMessageConfig != undefined && welcomeMessageConfig.environment && welcomeTitleConfig != undefined && welcomeTitleConfig.environment
+            this.welcomePageStatus.fromDefault = welcomeMessageConfig != undefined && welcomeMessageConfig.default && welcomeTitleConfig != undefined && welcomeTitleConfig.default
+            this.welcomePageStatus.enabled = !this.welcomePageStatus.fromDefault
+            break
+          case Constants.SYSTEM_CONFIG.EMAIL_SETTINGS:
+            // Email settings.
+            this.initialiseEmailSettings(configItem)
+            break
+          case Constants.SYSTEM_CONFIG.DEMO_ACCOUNT:
+            // Demo account
+            this.demoAccountEnabled = configItem.parameter != undefined
+            this.demoAccountStatus.enabled = this.demoAccountEnabled
+            this.demoAccountStatus.fromEnv = configItem.environment
+            this.demoAccountStatus.fromDefault = configItem.default
+            if (this.demoAccountStatus.enabled) {
+              this.demoAccountId = Number(configItem.parameter)
+            }
+            break
+          case Constants.SYSTEM_CONFIG.REST_API_RATE_LIMITS:
+            // REST API rate limits
+            if (configItem.parameter) {
+              this.restApiLimits = JSON.parse(configItem.parameter)
+              this.restApiEndpointLimitsEnabled = this.restApiLimits != undefined && this.restApiLimits.endpointLimits.length > 0
+            }
+            break
+          default:
+            console.warn(`Unknown system configuration [${configItem.name}]`)
         }
-        this.accountRetentionPeriodStatus.enabled = this.accountRetentionPeriodEnabled
-        this.accountRetentionPeriodStatus.fromEnv = accountRetentionPeriodConfig != undefined && accountRetentionPeriodConfig.environment
-        this.accountRetentionPeriodStatus.fromDefault = accountRetentionPeriodConfig != undefined && accountRetentionPeriodConfig.default
-        // TTL.
-        const sessionTimeoutConfig = data.find((configItem) => configItem.name == Constants.SYSTEM_CONFIG.SESSION_ALIVE_TIME)
-        if (sessionTimeoutConfig && sessionTimeoutConfig.parameter != undefined) {
-          this.sessionTimeoutSettings = JSON.parse(sessionTimeoutConfig.parameter)
-        }
-        this.sessionTimeoutStatus.enabled = this.sessionTimeoutSettings.enabled
-        this.sessionTimeoutStatus.fromEnv = sessionTimeoutConfig?.environment === true
-        this.sessionTimeoutStatus.fromDefault = sessionTimeoutConfig?.default === true
-        // Software version status check.
-        const softwareVersionCheckConfig = data.find((configItem) => configItem.name == Constants.SYSTEM_CONFIG.SOFTWARE_VERSION_CHECK)
-        this.initialiseSoftwareVersionCheckSettings(softwareVersionCheckConfig)
-        // REST API.
-        const restApiConfig = data.find((configItem) => configItem.name == Constants.SYSTEM_CONFIG.REST_API_ENABLED)
-        this.restApiEnabled = restApiConfig != undefined && restApiConfig.parameter != undefined && restApiConfig.parameter.toLowerCase() == 'true'
-        this.restApiStatus.enabled = this.restApiEnabled
-        this.restApiStatus.fromEnv = restApiConfig != undefined && restApiConfig.environment
-        this.restApiStatus.fromDefault = restApiConfig != undefined && restApiConfig.default
-        this.restApiAdminKey = data.find((configItem) => configItem.name == Constants.SYSTEM_CONFIG.REST_API_ADMIN_KEY)!.parameter!
-        // Self registration.
-        const selfRegistrationConfig = data.find((configItem) => configItem.name == Constants.SYSTEM_CONFIG.SELF_REGISTRATION_ENABLED)
-        this.selfRegistrationEnabled = selfRegistrationConfig != undefined && selfRegistrationConfig.parameter != undefined && selfRegistrationConfig.parameter.toLowerCase() == 'true'
-        this.selfRegistrationStatus.enabled = this.selfRegistrationEnabled
-        this.selfRegistrationStatus.fromEnv = selfRegistrationConfig != undefined && selfRegistrationConfig.environment
-        this.selfRegistrationStatus.fromDefault = selfRegistrationConfig != undefined && selfRegistrationConfig.default
-        // Startup wizard.
-        const startupWizardConfig = data.find((configItem) => configItem.name == Constants.SYSTEM_CONFIG.STARTUP_WIZARD)
-        this.startupWizardEnabled = startupWizardConfig != undefined && startupWizardConfig.parameter != undefined && startupWizardConfig.parameter.toLowerCase() == 'true'
-        this.startupWizardStatus.enabled = this.startupWizardEnabled
-        this.startupWizardStatus.fromEnv = startupWizardConfig != undefined && startupWizardConfig.environment
-        this.startupWizardStatus.fromDefault = startupWizardConfig != undefined && startupWizardConfig.default
-        // Usage tips.
-        const usageTipsConfig = data.find((configItem) => configItem.name == Constants.SYSTEM_CONFIG.USAGE_TIPS)
-        if (usageTipsConfig && usageTipsConfig.parameter) {
-          this.usageTipsValue = JSON.parse(usageTipsConfig.parameter)
-        } else {
-          this.usageTipsValue = { enabled: true, disabledForScreens: [] }
-        }
-        this.usageTipsStatus.enabled = this.usageTipsValue.enabled
-        this.usageTipsStatus.fromEnv = usageTipsConfig != undefined && usageTipsConfig.environment
-        this.usageTipsStatus.fromDefault = usageTipsConfig != undefined && usageTipsConfig.default
-        // Welcome page message.
-        const welcomeMessageConfig = data.find((configItem) => configItem.name == Constants.SYSTEM_CONFIG.WELCOME_MESSAGE)
-        if (welcomeMessageConfig && welcomeMessageConfig.parameter) {
-          this.welcomePageMessage = welcomeMessageConfig.parameter
-        }
-        const welcomeTitleConfig = data.find((configItem) => configItem.name == Constants.SYSTEM_CONFIG.WELCOME_TITLE)
-        if (welcomeTitleConfig && welcomeTitleConfig.parameter) {
-          this.welcomePageTitle = welcomeTitleConfig.parameter
-        }
-        this.welcomePageStatus.fromEnv = welcomeMessageConfig != undefined && welcomeMessageConfig.environment && welcomeTitleConfig != undefined && welcomeTitleConfig.environment
-        this.welcomePageStatus.fromDefault = welcomeMessageConfig != undefined && welcomeMessageConfig.default && welcomeTitleConfig != undefined && welcomeTitleConfig.default
-        this.welcomePageStatus.enabled = !this.welcomePageStatus.fromDefault
-        // Email settings.
-        const emailSettingsConfig = data.find((configItem) => configItem.name == Constants.SYSTEM_CONFIG.EMAIL_SETTINGS)
-        this.initialiseEmailSettings(emailSettingsConfig)
-        this.emailSslProtocolsSelectConfig = {
-          name: 'emailSslProtocols',
-          textField: 'label',
-          initialValues: this.parseSslProtocols(this.emailSettings.sslProtocols),
-          showAsFormControl: true,
-          filterLabel: 'Select protocols...',
-          loader: () => of(this.emailSslProtocols)
-        }
-        this.emailAttachmentTypeSelectConfig = {
-          name: 'emailAttachmentTypes',
-          textField: 'label',
-          initialValues: this.parseAttachmentTypes(this.emailSettings.allowedAttachmentTypes),
-          showAsFormControl: true,
-          filterLabel: 'Select attachment types...',
-          loader: () => of(this.emailAttachmentTypes)
-        }
-        // Demo account.
-        this.communitySelectConfig = {
-          name: 'demoCommunity',
-          textField: 'fname',
-          singleSelection: true,
-          singleSelectionPersistent: true,
-          clearItems: new EventEmitter(),
-          replaceItems: new EventEmitter(),
-          replaceSelectedItems: new EventEmitter(),
-          filterLabel: 'Select community...',
-          filterLabelIcon: Constants.BUTTON_ICON.COMMUNITY,
-          noItemsMessage: 'No communities available.',
-          searchPlaceholder: 'Search community...',
-          loader: () => of(this.communities)
-        }
-        this.organisationSelectConfig = {
-          name: 'demoOrganisation',
-          textField: 'fname',
-          singleSelection: true,
-          singleSelectionPersistent: true,
-          replaceItems: new EventEmitter(),
-          replaceSelectedItems: new EventEmitter(),
-          filterLabel: 'Select organisation...',
-          filterLabelIcon: Constants.BUTTON_ICON.ORGANISATION,
-          noItemsMessage: 'No organisations available.',
-          searchPlaceholder: 'Search organisation...',
-          loader: () => of(this.organisations)
-        }
-        this.userSelectConfig = {
-          name: 'demoUser',
-          textField: 'email',
-          singleSelection: true,
-          singleSelectionPersistent: true,
-          replaceItems: new EventEmitter(),
-          replaceSelectedItems: new EventEmitter(),
-          filterLabel: 'Select user...',
-          filterLabelIcon: Constants.BUTTON_ICON.USER,
-          noItemsMessage: 'No valid users available.',
-          searchPlaceholder: 'Search users...',
-          loader: () => of(this.users)
-        }
-        const demoAccountConfig = data.find((configItem) => configItem.name == Constants.SYSTEM_CONFIG.DEMO_ACCOUNT)
-        if (demoAccountConfig) {
-          this.demoAccountEnabled = demoAccountConfig.parameter != undefined
-          this.demoAccountStatus.enabled = this.demoAccountEnabled
-          this.demoAccountStatus.fromEnv = demoAccountConfig.environment
-          this.demoAccountStatus.fromDefault = demoAccountConfig.default
-          if (this.demoAccountStatus.enabled) {
-            return this.userService.getUserById(Number(demoAccountConfig.parameter))
-            .pipe(
-              map((user) => {
-                if (user) {
-                  this.demoAccount = {
-                    id: user.id!,
-                    email: user.email!,
-                  }
-                  this.selectedOrganisation = user.organization
-                } else {
-                  this.demoAccountEnabled = false
-                  this.demoAccountStatus.enabled = this.demoAccountEnabled
-                }
-              }),
-              share()
-            )
-          }
-        }
-        return of(1)
-      }),
-      share()
-    )
-    // Wait for everything to complete.
-    forkJoin([communityObs, configObs]).subscribe(() => {
-      if (this.demoAccount != undefined) {
-        this.applyDemoCommunity()
-      }
+      })
     }).add(() => {
-      this.loadCommunitiesPending = false
       this.configValuesPending = false
     })
-    // Setup tab triggers
     this.routingService.systemConfigurationBreadcrumbs()
   }
 
@@ -505,25 +453,6 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
       }
       this.emailSettings.newPassword = undefined
       this.emailSettings.updatePassword = this.emailSettings.password == undefined;
-    }
-  }
-
-  applyDemoCommunity() {
-    if (this.selectedOrganisation && this.communities && this.communities.length > 0) {
-      this.selectedCommunity = this.communities.find((community) => community.id == this.selectedOrganisation?.community)
-      this.loadCommunityOrganisations().subscribe(() => {
-        this.communitySelectConfig.eventsDisabled = true
-        this.organisationSelectConfig.eventsDisabled = true
-        this.userSelectConfig.eventsDisabled = true
-        setTimeout(() => {
-          this.communitySelectConfig.replaceSelectedItems?.emit([this.selectedCommunity!])
-          this.organisationSelectConfig.replaceSelectedItems?.emit([this.selectedOrganisation!])
-          this.userSelectConfig.replaceSelectedItems?.emit([this.demoAccount!])
-          this.communitySelectConfig.eventsDisabled = false
-          this.organisationSelectConfig.eventsDisabled = false
-          this.userSelectConfig.eventsDisabled = false
-        })
-      })
     }
   }
 
@@ -1013,28 +942,37 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
   }
 
   saveRestApi() {
-    this.restApiStatus.pending = true
-    if (this.restApiEnabled) {
-      this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.REST_API_ENABLED, "true")
-      .subscribe(() => {
+    if (this.saveRestApiEnabled()) {
+      this.restApiStatus.pending = true
+      this.systemConfigurationService.updateConfigurationValues([
+        { name: Constants.SYSTEM_CONFIG.REST_API_ENABLED, value: this.restApiEnabled.toString() },
+        { name: Constants.SYSTEM_CONFIG.REST_API_RATE_LIMITS, value: this.restApiLimitsToSave() },
+      ]).subscribe(() => {
         this.restApiStatus.collapsed = true
-        this.restApiStatus.enabled = true
-        this.dataService.configuration.automationApiEnabled = true
-        this.popupService.success('Enabled REST API.')
-      }).add(() => {
-        this.restApiStatus.pending = false
-      })
-    } else {
-      this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.REST_API_ENABLED, "false")
-      .subscribe(() => {
-        this.restApiStatus.collapsed = true
-        this.restApiStatus.enabled = false
-        this.dataService.configuration.automationApiEnabled = false
-        this.popupService.success('Disabled REST API.')
+        this.restApiStatus.enabled = this.restApiEnabled
+        this.dataService.configuration.automationApiEnabled = this.restApiEnabled
+        this.popupService.success('Updated REST API settings.')
       }).add(() => {
         this.restApiStatus.pending = false
       })
     }
+  }
+
+  private restApiLimitsToSave(): string|undefined {
+    if (this.restApiLimits) {
+      this.restApiLimits.endpointLimits.forEach((endpointLimit) => {
+        if (!Number.isInteger(endpointLimit.limit) || endpointLimit.limit < 0) {
+          endpointLimit.limit = this.restApiLimits!.defaultEndpointLimit
+        }
+      })
+      return JSON.stringify(this.restApiLimits)
+    } else {
+      return undefined
+    }
+  }
+
+  saveRestApiEnabled() {
+    return this.numberProvided(this.restApiLimits?.globalLimit, 0) && this.numberProvided(this.restApiLimits?.defaultEndpointLimit, 0)
   }
 
   updateRestApiAdminKey() {
@@ -1342,6 +1280,227 @@ export class SystemAdministrationComponent extends BaseTabbedComponent implement
         this.popupService.success(`Shutdown preparation mode ${flagValue?'enabled':'disabled'}.`)
       }, 500)
     })
+  }
+
+  expandingDemoAccount() {
+    if (this.demoAccountDataLoaded) {
+      this.demoAccountStatus.deferredExpand!.emit(true)
+    } else {
+      // Demo account.
+      this.communitySelectConfig = {
+        name: 'demoCommunity',
+        textField: 'fname',
+        singleSelection: true,
+        singleSelectionPersistent: true,
+        clearItems: new EventEmitter(),
+        replaceItems: new EventEmitter(),
+        replaceSelectedItems: new EventEmitter(),
+        filterLabel: 'Select community...',
+        filterLabelIcon: Constants.BUTTON_ICON.COMMUNITY,
+        noItemsMessage: 'No communities available.',
+        searchPlaceholder: 'Search community...',
+        loader: () => of(this.communities)
+      }
+      this.organisationSelectConfig = {
+        name: 'demoOrganisation',
+        textField: 'fname',
+        singleSelection: true,
+        singleSelectionPersistent: true,
+        replaceItems: new EventEmitter(),
+        replaceSelectedItems: new EventEmitter(),
+        filterLabel: 'Select organisation...',
+        filterLabelIcon: Constants.BUTTON_ICON.ORGANISATION,
+        noItemsMessage: 'No organisations available.',
+        searchPlaceholder: 'Search organisation...',
+        loader: () => of(this.organisations)
+      }
+      this.userSelectConfig = {
+        name: 'demoUser',
+        textField: 'email',
+        singleSelection: true,
+        singleSelectionPersistent: true,
+        replaceItems: new EventEmitter(),
+        replaceSelectedItems: new EventEmitter(),
+        filterLabel: 'Select user...',
+        filterLabelIcon: Constants.BUTTON_ICON.USER,
+        noItemsMessage: 'No valid users available.',
+        searchPlaceholder: 'Search users...',
+        loader: () => of(this.users)
+      }
+      let user$: Observable<User | undefined | null>
+      if (this.demoAccountStatus.enabled && this.demoAccountId != undefined) {
+        user$ = this.userService.getUserById(this.demoAccountId).pipe(
+          tap((user) => {
+            if (user) {
+              this.demoAccount = {
+                id: user.id!,
+                email: user.email!,
+              }
+              this.selectedOrganisation = user.organization
+            } else {
+              this.demoAccountEnabled = false
+              this.demoAccountStatus.enabled = this.demoAccountEnabled
+            }
+          })
+        )
+      } else {
+        user$ = of(null)
+      }
+      this.loadCommunitiesPending = true
+      forkJoin([user$, this.communityService.getUserCommunities()]).pipe(
+        switchMap(data => {
+          // User
+          if (data[0]) {
+            this.demoAccount = {
+              id: data[0].id!,
+              email: data[0].email!,
+            }
+            this.selectedOrganisation = data[0].organization
+          } else {
+            this.demoAccountEnabled = false
+            this.demoAccountStatus.enabled = this.demoAccountEnabled
+          }
+          // Communities
+          this.communities = data[1]
+          this.loadCommunitiesPending = false
+          // Apply
+          if (this.selectedOrganisation && this.communities && this.communities.length > 0) {
+            this.selectedCommunity = this.communities.find((community) => community.id == this.selectedOrganisation?.community)
+            return this.loadCommunityOrganisations().pipe(
+              tap(() => {
+                this.communitySelectConfig.eventsDisabled = true
+                this.organisationSelectConfig.eventsDisabled = true
+                this.userSelectConfig.eventsDisabled = true
+                setTimeout(() => {
+                  this.communitySelectConfig.replaceSelectedItems?.emit([this.selectedCommunity!])
+                  this.organisationSelectConfig.replaceSelectedItems?.emit([this.selectedOrganisation!])
+                  this.userSelectConfig.replaceSelectedItems?.emit([this.demoAccount!])
+                  this.communitySelectConfig.eventsDisabled = false
+                  this.organisationSelectConfig.eventsDisabled = false
+                  this.userSelectConfig.eventsDisabled = false
+                })
+              })
+            )
+          } else {
+            return of(void 1)
+          }
+        }),
+        finalize(() => {
+          this.demoAccountDataLoaded = true
+          this.demoAccountStatus.deferredExpand!.emit(true)
+        })
+      ).subscribe(() => {})
+    }
+  }
+
+  expandingEmailSettings() {
+    if (!this.emailSettingsDataLoaded) {
+      this.emailSslProtocolsSelectConfig = {
+        name: 'emailSslProtocols',
+        textField: 'label',
+        initialValues: this.parseSslProtocols(this.emailSettings.sslProtocols),
+        showAsFormControl: true,
+        filterLabel: 'Select protocols...',
+        loader: () => of(this.emailSslProtocols)
+      }
+      this.emailAttachmentTypeSelectConfig = {
+        name: 'emailAttachmentTypes',
+        textField: 'label',
+        initialValues: this.parseAttachmentTypes(this.emailSettings.allowedAttachmentTypes),
+        showAsFormControl: true,
+        filterLabel: 'Select attachment types...',
+        loader: () => of(this.emailAttachmentTypes)
+      }
+      this.emailSettingsDataLoaded = true
+    }
+    this.emailSettingsStatus.deferredExpand!.emit(true)
+  }
+
+  restApiEndpointDescriptionsMap?: Map<string, string|undefined>
+  restApiEndpoints?: RestApiEndpointDescriptionWithId[]
+
+  expandingRestApi() {
+    if (this.restApiDataLoaded) {
+      this.restApiStatus.deferredExpand!.emit(true)
+    } else {
+      this.restApiEndpointSelectConfig = {
+        name: 'restApiEndpoints',
+        textField: 'path',
+        textDecorator: (item) => item.method.toUpperCase(),
+        filterLabel: 'Add limit for specific endpoint...',
+        filterLabelIcon: Constants.BUTTON_ICON.NEW,
+        squashItemsWithSameText: false,
+        noItemsMessage: 'All endpoints have been configured',
+        replaceItems: new EventEmitter<RestApiEndpointDescriptionWithId[]>(),
+        replaceSelectedItems: new EventEmitter<RestApiEndpointDescriptionWithId[]>(),
+        searchPlaceholder: 'Search endpoints...',
+        enableSelectAll: true,
+        loader: () => this.getAvailableRestApiEndpoints()
+      }
+      this.systemConfigurationService.getRestApiEndpointsFromDocumentation().pipe(
+        tap(data => {
+          let counter = 1
+          this.restApiEndpoints = this.sortRestApiEndpoints(data.map(x => ({...x, id: counter++})))
+          this.restApiEndpointDescriptionsMap = new Map<string, string>()
+          this.restApiEndpoints.forEach(item => {
+            this.restApiEndpointDescriptionsMap!.set(this.restApiEndpointKey(item), item.description)
+          })
+        }),
+        finalize(() => {
+          this.restApiDataLoaded = true
+          this.restApiStatus.deferredExpand!.emit(true)
+        })
+      ).subscribe(() => {})
+    }
+  }
+
+  restApiEndpointDescription(item: RestApiEndpointBasic): string {
+    return this.restApiEndpointDescriptionsMap!.get(this.restApiEndpointKey(item))??''
+  }
+
+  private restApiEndpointKey(endpoint: RestApiEndpointBasic): string {
+    return `${endpoint.path}|${endpoint.method}`
+  }
+
+  private sortRestApiEndpoints<T extends RestApiEndpointBasic>(items: T[]) {
+    items.sort((a, b) => a.path.localeCompare(b.path) || a.method.localeCompare(b.method));
+    return items
+  }
+
+  private getAvailableRestApiEndpoints(): Observable<RestApiEndpointDescriptionWithId[]> {
+    const selectedEndpoints = new Set<string>()
+    this.restApiLimits!.endpointLimits.forEach(item => selectedEndpoints.add(this.restApiEndpointKey(item)))
+    return of(this.restApiEndpoints!.filter(item => !selectedEndpoints.has(this.restApiEndpointKey(item))))
+  }
+
+  removeRestApiEndpoint(item: RestApiEndpointLimit) {
+    const keyToRemove = this.restApiEndpointKey(item)
+    this.restApiLimits!.endpointLimits = this.restApiLimits!.endpointLimits.filter(item => this.restApiEndpointKey(item) != keyToRemove)
+  }
+
+  selectedRestApiEndpoint(event: FilterUpdate<RestApiEndpointDescriptionWithId>) {
+    setTimeout(() => {
+      const newEndpoints: RestApiEndpointLimit[] = []
+      event.values.active.forEach((value) => {
+        newEndpoints.push({
+          path: value.path,
+          method: value.method,
+          limit: this.restApiLimits!.defaultEndpointLimit
+        })
+      })
+      newEndpoints.push(...this.restApiLimits!.endpointLimits)
+      this.restApiLimits!.endpointLimits = this.sortRestApiEndpoints(newEndpoints)
+      this.restApiEndpointSelectConfig.eventsDisabled = true
+      this.restApiEndpointSelectConfig.replaceSelectedItems!.emit([])
+      this.restApiEndpointSelectConfig.eventsDisabled = false
+    })
+  }
+
+  removeAllRestApiEndpoints() {
+    this.restApiLimits!.endpointLimits = []
+    this.restApiEndpointSelectConfig.eventsDisabled = true
+    this.restApiEndpointSelectConfig.replaceSelectedItems!.emit([])
+    this.restApiEndpointSelectConfig.eventsDisabled = false
   }
 
   protected readonly Constants = Constants;

@@ -5,20 +5,24 @@
         @if (configDescription) {
             <div class="configDescription">{{configDescription}}</div>
         }
-        @if (status.enabled != undefined) {
-            <div [class.active]="status.enabled" class="configStatus">
-                <app-tag
-                    [label]="statusIcon()"
-                    [value]="statusText()"
-                    [foreground]="statusForeground()"
-                    [background]="statusBackground()"
-                    [icon]="true"
-                ></app-tag>
-            </div>
-        }
-        @if (pendingExpand) {
-            <div class="configPending ps-3">
-                <div class="pending-icon"><app-pending-block [pending]="true"></app-pending-block></div>
+        @if (pendingExpand || status.enabled != undefined) {
+            <div class="ms-auto d-flex align-items-center">
+                @if (pendingExpand) {
+                    <div class="configPending ps-3">
+                        <div class="pending-icon"><app-pending-block [pending]="true"></app-pending-block></div>
+                    </div>
+                }
+                @if (status.enabled != undefined) {
+                    <div [class.active]="status.enabled" class="configStatus">
+                        <app-tag
+                            [label]="statusIcon()"
+                            [value]="statusText()"
+                            [foreground]="statusForeground()"
+                            [background]="statusBackground()"
+                            [icon]="true"
+                        ></app-tag>
+                    </div>
+                }
             </div>
         }
     </div>

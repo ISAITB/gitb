@@ -3701,6 +3701,53 @@ object JsonUtil {
     )
   }
 
+  def jsRestApiLimits(settings: RestApiLimits, withDescriptions: Boolean): JsObject = {
+    Json.obj(
+      "enabled" -> JsBoolean(settings.enabled),
+      "enableBulkTestExecution" -> JsBoolean(settings.enableBulkTestExecution),
+      "globalLimit" -> JsNumber(settings.globalLimit),
+      "defaultEndpointLimit" -> JsNumber(settings.defaultEndpointLimit),
+      "endpointLimits" -> jsRestApiEndpointLimits(settings.endpointLimits, withDescriptions)
+    )
+  }
+
+  def jsRestApiEndpointLimits(settings: Iterable[RestApiEndpointLimit], withDescriptions: Boolean): JsArray = {
+    JsArray(settings.map(x => jsRestApiEndpointLimit(x, withDescriptions)).toSeq)
+  }
+
+  def jsRestApiEndpointLimit(setting: RestApiEndpointLimit, withDescriptions: Boolean): JsObject = {
+    var json = Json.obj(
+      "path" -> JsString(setting.path),
+      "method" -> JsString(setting.method),
+      "limit" -> JsNumber(setting.limit)
+    )
+    if (withDescriptions && setting.description.isDefined) {
+      json = json + ("description" -> JsString(setting.description.get))
+    }
+    json
+  }
+
+  def parseJsRestApiLimits(jsonString: String, withDescriptions: Boolean): RestApiLimits = {
+    val json = Json.parse(jsonString)
+    val defaults = RestApiLimits.defaultSettings()
+    RestApiLimits(
+      enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
+      enableBulkTestExecution = (json \ "enableBulkTestExecution").asOpt[Boolean].getOrElse(true),
+      globalLimit = (json \ "globalLimit").asOpt[Int].getOrElse(defaults.globalLimit),
+      defaultEndpointLimit = (json \ "defaultEndpointLimit").asOpt[Int].getOrElse(defaults.defaultEndpointLimit),
+      endpointLimits = (json \ "endpointLimits").asOpt[JsArray].map(_.value.map(x => parseJsRestApiEndpointLimit(x, withDescriptions))).map(_.toList).getOrElse(List.empty),
+    )
+  }
+
+  def parseJsRestApiEndpointLimit(json: JsValue, withDescriptions: Boolean): RestApiEndpointLimit = {
+    RestApiEndpointLimit(
+      path = (json \ "path").as[String],
+      method = (json \ "method").as[String],
+      limit = (json \ "limit").as[Int],
+      description = if (withDescriptions) (json \ "description").asOpt[String] else None
+    )
+  }
+
   def validatorForAnyContent(): Reads[AnyContent] = {
     (js: JsValue) => {
       val content = new AnyContent()
@@ -4002,7 +4049,6 @@ object JsonUtil {
 
   def jsTestSuiteMinimalInformations(values: Iterable[TestSuiteMinimalInformation]): JsArray = {
     JsArray(values.map(jsTestSuiteMinimalInformation(_)).toSeq)
-    
   }
 
   def jsTestSuiteMinimalInformation(value: TestSuiteMinimalInformation): JsObject = {

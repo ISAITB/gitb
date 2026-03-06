@@ -74,7 +74,20 @@
             @if (!config.singleSelection) {
                 <div class="formButtons btn-toolbar">
                     @if (selectedItems.length > 0 || visibleAvailableItems.length > 0) {
-                        <button type="button" [labelIcon]="Constants.BUTTON_ICON.CONFIRM" class="btn btn-secondary" (click)="applyItems()">Apply</button>
+                        @if (config.enableSelectAll) {
+                            <div class="btn-group" ngbDropdown>
+                                <button type="button" [labelIcon]="Constants.BUTTON_ICON.CONFIRM" class="btn btn-secondary" (click)="applyItems()">Apply</button>
+                                <button id="button-select-all" type="button" ngbDropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+                                    <span class="caret"></span>
+                                    <span class="sr-only visually-hidden">Apply</span>
+                                </button>
+                                <div id="dropdown-select-all" ngbDropdownMenu aria-labelledby="button-select-all">
+                                    <button ngbDropdownItem type="button" (click)="applyAllItems()">Apply all</button>
+                                </div>
+                            </div>
+                        } @else {
+                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.CONFIRM" class="btn btn-secondary" (click)="applyItems()">Apply</button>
+                        }
                     }
                     <button type="button" [labelIcon]="Constants.BUTTON_ICON.CANCEL" class="btn btn-secondary" (click)="close()">Close</button>
                     @if (hasCheckedSelectedItem) {

@@ -292,4 +292,11 @@ class SystemConfigurationService @Inject()(authorizedAction: AuthorizedAction,
     }
   }
 
+  def getRestApiEndpointsFromDocumentation: Action[AnyContent] = authorizedAction.async { request =>
+    authorizationManager.canManageSystemSettings(request).map { _ =>
+      val endpoints = systemConfigurationManager.getRestApiEndpointsFromDocumentation()
+      ResponseConstructor.constructJsonResponse(JsonUtil.jsRestApiEndpointLimits(endpoints, withDescriptions = true).toString)
+    }
+  }
+
 }

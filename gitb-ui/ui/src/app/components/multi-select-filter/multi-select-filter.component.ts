@@ -571,7 +571,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
 
   private findItemWithSameTextValue(items: T[], item: T) {
     let itemWithSameTextValue: T|undefined
-    if (items != undefined) {
+    if (items != undefined && (this.config.squashItemsWithSameText == undefined || this.config.squashItemsWithSameText)) {
       itemWithSameTextValue = items.find((existingItem) => {
         return existingItem[this.config.textField] == item[this.config.textField]
       })
@@ -707,6 +707,13 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
       items = []
     }
     return items
+  }
+
+  applyAllItems() {
+    this.visibleAvailableItems.forEach((item: T) => {
+      this.selectAvailableItem(item)
+    })
+    this.applyItems()
   }
 
   applyItems(skipRefresh?: boolean, skipApply?: boolean) {

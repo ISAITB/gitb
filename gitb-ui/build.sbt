@@ -93,7 +93,9 @@ libraryDependencies ++= Seq(
   "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20260102.1",
   "net.lingala.zip4j" % "zip4j" % "2.11.5",
   "com.nimbusds" % "nimbus-jose-jwt" % "10.7",
-  "org.apache.commons" % "commons-text" % commonsTextVersion
+  "org.apache.commons" % "commons-text" % commonsTextVersion,
+  "com.bucket4j" % "bucket4j_jdk17-core" % "8.16.1",
+  "com.github.ben-manes.caffeine" % "caffeine" % "3.2.3"
 )
 
 // Deactivate repeatable builds to speed up via parallelization

@@ -22,7 +22,8 @@ import jakarta.xml.ws.Endpoint
 import jaxws.TestbedService
 import managers._
 import managers.export.ImportCompleteManager
-import models.Constants
+import managers.ratelimit.RateLimitManager
+import models.{Constants, RestApiLimits}
 import models.Enums.UserRole
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.comparator.NameFileComparator
@@ -54,6 +55,7 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
                                repositoryUtils: RepositoryUtils,
                                environment: Environment,
                                userManager: UserManager,
+                               rateLimitManager: RateLimitManager,
                                config: Configuration)
                               (implicit ec: ExecutionContext) {
 
@@ -159,19 +161,28 @@ class PostStartHook @Inject() (authenticationManager: AuthenticationManager,
     // Load persisted configuration parameters.
     systemConfigurationManager.getEditableSystemConfigurationValues(onlyPersisted = true).flatMap { persistedConfigs =>
       // Check against environment settings.
-      val restApiEnabledConfig = persistedConfigs.find(config => config.config.name == Constants.RestApiEnabled).map(_.config)
       for {
         // REST API.
         _ <- {
+          val restApiEnabledConfig = persistedConfigs.find(config => config.config.name == Constants.RestApiEnabled).map(_.config)
           if (restApiEnabledConfig.nonEmpty && restApiEnabledConfig.get.parameter.nonEmpty) {
             Configurations.AUTOMATION_API_ENABLED = restApiEnabledConfig.get.parameter.get.toBoolean
           }
+          // Master API key.
           val restApiAdminKey = persistedConfigs.find(config => config.config.name == Constants.RestApiAdminKey).map(_.config)
           if (restApiAdminKey.flatMap(_.parameter).isEmpty) {
             val initialApiKeyValue = Configurations.AUTOMATION_API_MASTER_KEY.getOrElse(CryptoUtil.generateApiKey())
             systemConfigurationManager.updateSystemParameter(Constants.RestApiAdminKey, Some(initialApiKeyValue))
           } else {
             Future.successful(())
+          }
+        }
+        // Rate limits.
+        _ <- {
+          val restApiLimitsConfig = persistedConfigs.find(config => config.config.name == Constants.RestApiRateLimits).map(_.config)
+          val settingsToApply = restApiLimitsConfig.flatMap(_.parameter.map(JsonUtil.parseJsRestApiLimits(_, withDescriptions = false))).getOrElse(RestApiLimits.defaultSettings())
+          Future.successful {
+            rateLimitManager.reset(settingsToApply)
           }
         }
         // Self-registration.

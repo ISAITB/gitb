@@ -38,6 +38,12 @@ object ResponseConstructor extends Results{
     BadRequest(constructErrorMessage(errorCode, errorDesc, None)).as(JSON)
   }
 
+  def constructTooManyRequestsResponse(errorCode: Int, errorDesc: String, retryAfter: Long): Result = {
+    TooManyRequests(constructErrorMessage(errorCode, errorDesc, None))
+      .withHeaders(RETRY_AFTER -> retryAfter.toString)
+      .as(JSON)
+  }
+
   def constructNotFoundResponse(errorCode: Int, errorDesc: String):Result = {
     NotFound(constructErrorMessage(errorCode, errorDesc, None)).as(JSON)
   }

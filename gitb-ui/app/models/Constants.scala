@@ -28,6 +28,7 @@ object Constants {
   val SessionAliveTime = "session_alive_time"
   val RestApiEnabled = "rest_api_enabled"
   val RestApiAdminKey = "rest_api_admin_key"
+  val RestApiRateLimits = "rest_api_rate_limits"
   val SelfRegistrationEnabled = "self_registration_enabled"
   val MasterPassword = "master_password"
   val DemoAccount = "demo_account"
@@ -91,6 +92,8 @@ object Constants {
   val SsoTypeLdap = "ldap"
 
   val DemoUserProfileIdentifier = "eu.europa.ec.itb.DemoUser"
+
+  val HttpMethods: Set[String] = Set("get", "post", "put", "patch", "delete", "head", "options", "trace")
 
   // When ending in "-snapshot", this is considered a non-published release.
   val VersionNumber = "1.29.0-snapshot"

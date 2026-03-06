@@ -16,8 +16,10 @@
 package controllers.rest
 
 import config.Configurations
+import controllers.rest.BaseAutomationService.{EndpointSignature, PostEndpoint}
 import controllers.util.{AuthorizedAction, ParameterExtractor, RequestWithAttributes, ResponseConstructor}
 import exceptions.ErrorCodes
+import managers.ratelimit.RateLimitManager
 import managers.{AuthorizationManager, SpecificationManager, TestSuiteManager}
 import models.TestCaseDeploymentAction
 import models.automation.TestSuiteDeployRequest
@@ -40,8 +42,9 @@ class TestSuiteAutomationService @Inject() (authorizedAction: AuthorizedAction,
                                             authorizationManager: AuthorizationManager,
                                             repositoryUtils: RepositoryUtils,
                                             specificationManager: SpecificationManager,
+                                            rateLimitManager: RateLimitManager,
                                             testSuiteManager: TestSuiteManager)
-                                           (implicit ec: ExecutionContext) extends BaseAutomationService(cc) {
+                                           (implicit ec: ExecutionContext) extends BaseAutomationService(cc, rateLimitManager) {
 
   private def deployInternal(input: TestSuiteDeployRequest, testSuiteArchive: File, request: Request[AnyContent]): Future[Result] = {
     val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
@@ -77,93 +80,108 @@ class TestSuiteAutomationService @Inject() (authorizedAction: AuthorizedAction,
     }
   }
 
-  private def handleDeploy(request: RequestWithAttributes[AnyContent], sharedTestSuite: Boolean): Future[Result] = {
+  private def handleDeployMultipart(request: RequestWithAttributes[AnyContent], signature: EndpointSignature, sharedTestSuite: Boolean) = {
     (for {
       _ <- authorizationManager.canManageTestSuitesThroughAutomationApi(request)
+      rateResult <- checkRateLimit(request, signature)
       result <- {
-        if (request.body.asMultipartFormData.isDefined) {
-          // Multipart form request.
-          val params = Some(request.body.asMultipartFormData.get.dataParts)
-          val defaultReplaceTestHistory = ParameterExtractor.optionalBodyParameter(params, "replaceTestHistory").map(_.toBoolean)
-          val defaultUpdateSpecification = ParameterExtractor.optionalBodyParameter(params, "updateSpecification").map(_.toBoolean)
-          val showIdentifiers = ParameterExtractor.optionalBodyParameter(params, "showIdentifiers").forall(_.toBoolean)
-          val testCaseActions = mutable.HashMap[String, TestCaseDeploymentAction]()
-          // Set update specification flags.
-          ParameterExtractor.optionalArrayBodyParameter(params, "testCaseWithSpecificationUpdate").getOrElse(List.empty).foreach { identifier =>
-            if (StringUtils.isNotBlank(identifier)) {
-              testCaseActions.put(identifier, new TestCaseDeploymentAction(identifier, Some(true), defaultReplaceTestHistory))
+        rateResult match {
+          case Some(errorResponse) => Future.successful(errorResponse)
+          case None =>
+            val params = Some(request.body.asMultipartFormData.get.dataParts)
+            val defaultReplaceTestHistory = ParameterExtractor.optionalBodyParameter(params, "replaceTestHistory").map(_.toBoolean)
+            val defaultUpdateSpecification = ParameterExtractor.optionalBodyParameter(params, "updateSpecification").map(_.toBoolean)
+            val showIdentifiers = ParameterExtractor.optionalBodyParameter(params, "showIdentifiers").forall(_.toBoolean)
+            val testCaseActions = mutable.HashMap[String, TestCaseDeploymentAction]()
+            // Set update specification flags.
+            ParameterExtractor.optionalArrayBodyParameter(params, "testCaseWithSpecificationUpdate").getOrElse(List.empty).foreach { identifier =>
+              if (StringUtils.isNotBlank(identifier)) {
+                testCaseActions.put(identifier, new TestCaseDeploymentAction(identifier, Some(true), defaultReplaceTestHistory))
+              }
             }
-          }
-          ParameterExtractor.optionalArrayBodyParameter(params, "testCaseWithoutSpecificationUpdate").getOrElse(List.empty).foreach { identifier =>
-            if (StringUtils.isNotBlank(identifier)) {
-              val testCase = testCaseActions.getOrElseUpdate(identifier, new TestCaseDeploymentAction(identifier, Some(false), defaultReplaceTestHistory))
-              testCase.updateDefinition = Some(false)
+            ParameterExtractor.optionalArrayBodyParameter(params, "testCaseWithoutSpecificationUpdate").getOrElse(List.empty).foreach { identifier =>
+              if (StringUtils.isNotBlank(identifier)) {
+                val testCase = testCaseActions.getOrElseUpdate(identifier, new TestCaseDeploymentAction(identifier, Some(false), defaultReplaceTestHistory))
+                testCase.updateDefinition = Some(false)
+              }
             }
-          }
-          // Set replace test history flags.
-          ParameterExtractor.optionalArrayBodyParameter(params, "testCaseWithTestHistoryReplacement").getOrElse(List.empty).foreach { identifier =>
-            if (StringUtils.isNotBlank(identifier)) {
-              val testCase = testCaseActions.getOrElseUpdate(identifier, new TestCaseDeploymentAction(identifier, defaultUpdateSpecification, Some(true)))
-              testCase.resetTestHistory = Some(true)
+            // Set replace test history flags.
+            ParameterExtractor.optionalArrayBodyParameter(params, "testCaseWithTestHistoryReplacement").getOrElse(List.empty).foreach { identifier =>
+              if (StringUtils.isNotBlank(identifier)) {
+                val testCase = testCaseActions.getOrElseUpdate(identifier, new TestCaseDeploymentAction(identifier, defaultUpdateSpecification, Some(true)))
+                testCase.resetTestHistory = Some(true)
+              }
             }
-          }
-          ParameterExtractor.optionalArrayBodyParameter(params, "testCaseWithoutTestHistoryReplacement").getOrElse(List.empty).foreach { identifier =>
-            if (StringUtils.isNotBlank(identifier)) {
-              val testCase = testCaseActions.getOrElseUpdate(identifier, new TestCaseDeploymentAction(identifier, defaultUpdateSpecification, Some(false)))
-              testCase.resetTestHistory = Some(false)
+            ParameterExtractor.optionalArrayBodyParameter(params, "testCaseWithoutTestHistoryReplacement").getOrElse(List.empty).foreach { identifier =>
+              if (StringUtils.isNotBlank(identifier)) {
+                val testCase = testCaseActions.getOrElseUpdate(identifier, new TestCaseDeploymentAction(identifier, defaultUpdateSpecification, Some(false)))
+                testCase.resetTestHistory = Some(false)
+              }
             }
-          }
-          val specification = if (sharedTestSuite) {
-            None
-          } else {
-            Some(ParameterExtractor.requiredBodyParameter(params, "specification"))
-          }
-          val input = TestSuiteDeployRequest(
-            specification,
-            ParameterExtractor.optionalBodyParameter(params, "ignoreWarnings").getOrElse("false").toBoolean,
-            defaultReplaceTestHistory,
-            defaultUpdateSpecification,
-            testCaseActions,
-            sharedTestSuite,
-            showIdentifiers
-          )
-          val uploadedFile = request.body.asMultipartFormData.get.file("testSuite")
-          if (uploadedFile.isDefined) {
-            deployInternal(input, uploadedFile.get.ref, request)
-          } else {
-            Future.successful(ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "Test suite archive was not provided. Expected a file part named 'testSuite'."))
-          }
-        } else {
-          // JSON request.
-          processAsJson(request, () => Future.successful(true), { body =>
-            val input = JsonUtil.parseJsTestSuiteDeployRequest(body, sharedTestSuite)
-            val testSuiteFileName = "ts_" + RandomStringUtils.secure.next(10, false, true) + ".zip"
-            val testSuiteFile = Paths.get(
-              repositoryUtils.getTempFolder().getAbsolutePath,
-              RandomStringUtils.secure.next(10, false, true),
-              testSuiteFileName
+            val specification = if (sharedTestSuite) {
+              None
+            } else {
+              Some(ParameterExtractor.requiredBodyParameter(params, "specification"))
+            }
+            val input = TestSuiteDeployRequest(
+              specification,
+              ParameterExtractor.optionalBodyParameter(params, "ignoreWarnings").getOrElse("false").toBoolean,
+              defaultReplaceTestHistory,
+              defaultUpdateSpecification,
+              testCaseActions,
+              sharedTestSuite,
+              showIdentifiers
             )
-            testSuiteFile.toFile.getParentFile.mkdirs()
-            Files.write(testSuiteFile, Base64.getDecoder.decode(input._2))
-            deployInternal(input._1, testSuiteFile.toFile, request)
-          })
+            val uploadedFile = request.body.asMultipartFormData.get.file("testSuite")
+            if (uploadedFile.isDefined) {
+              deployInternal(input, uploadedFile.get.ref, request)
+            } else {
+              Future.successful(ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "Test suite archive was not provided. Expected a file part named 'testSuite'."))
+            }
         }
       }
-    } yield result).andThen { _ =>
-      if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
+    } yield result)
+      .recover {
+        handleException(_)
+      }
+      .andThen { _ =>
+        if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
+      }
+  }
+
+  private def handleDeployJson(request: RequestWithAttributes[AnyContent], signature: EndpointSignature, sharedTestSuite: Boolean) = {
+    processAsJson(request, signature, () => authorizationManager.canManageTestSuitesThroughAutomationApi(request), { body =>
+      val input = JsonUtil.parseJsTestSuiteDeployRequest(body, sharedTestSuite)
+      val testSuiteFileName = "ts_" + RandomStringUtils.secure.next(10, false, true) + ".zip"
+      val testSuiteFile = Paths.get(
+        repositoryUtils.getTempFolder().getAbsolutePath,
+        RandomStringUtils.secure.next(10, false, true),
+        testSuiteFileName
+      )
+      testSuiteFile.toFile.getParentFile.mkdirs()
+      Files.write(testSuiteFile, Base64.getDecoder.decode(input._2))
+      deployInternal(input._1, testSuiteFile.toFile, request)
+    })
+  }
+
+  private def handleDeploy(request: RequestWithAttributes[AnyContent], signature: EndpointSignature, sharedTestSuite: Boolean): Future[Result] = {
+    if (request.body.asMultipartFormData.isDefined) {
+      handleDeployMultipart(request, signature, sharedTestSuite)
+    } else {
+      handleDeployJson(request, signature, sharedTestSuite)
     }
   }
 
   def deploy: Action[AnyContent] = authorizedAction.async { request =>
-    handleDeploy(request, sharedTestSuite = false)
+    handleDeploy(request, PostEndpoint("/testsuite/deploy"), sharedTestSuite = false)
   }
 
   def deployShared: Action[AnyContent] = authorizedAction.async { request =>
-    handleDeploy(request, sharedTestSuite = true)
+    handleDeploy(request, PostEndpoint("/testsuite/deployShared"), sharedTestSuite = true)
   }
 
-  private def handleUndeploy(request: RequestWithAttributes[AnyContent], sharedTestSuite: Boolean): Future[Result] = {
-    processAsJson(request, () => authorizationManager.canManageTestSuitesThroughAutomationApi(request), { body =>
+  private def handleUndeploy(request: RequestWithAttributes[AnyContent], signature: EndpointSignature, sharedTestSuite: Boolean): Future[Result] = {
+    processAsJson(request, signature, () => authorizationManager.canManageTestSuitesThroughAutomationApi(request), { body =>
         val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
         val input = JsonUtil.parseJsTestSuiteUndeployRequest(body, sharedTestSuite)
         testSuiteManager.getTestSuiteInfoByApiKeys(communityKey, input.specification, input.testSuite).flatMap { testSuiteInfo =>
@@ -186,15 +204,15 @@ class TestSuiteAutomationService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def undeploy: Action[AnyContent] = authorizedAction.async { request =>
-    handleUndeploy(request, sharedTestSuite = false)
+    handleUndeploy(request, PostEndpoint("/testsuite/undeploy"), sharedTestSuite = false)
   }
 
   def undeployShared: Action[AnyContent] = authorizedAction.async { request =>
-    handleUndeploy(request, sharedTestSuite = true)
+    handleUndeploy(request, PostEndpoint("/testsuite/undeployShared"), sharedTestSuite = true)
   }
 
   def linkShared: Action[AnyContent] = authorizedAction.async { request =>
-    processAsJson(request, () => authorizationManager.canManageTestSuitesThroughAutomationApi(request), { body =>
+    processAsJson(request, PostEndpoint("/testsuite/linkShared"), () => authorizationManager.canManageTestSuitesThroughAutomationApi(request), { body =>
         val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
         val input = JsonUtil.parseJsTestSuiteLinkRequest(body)
         testSuiteManager.getTestSuiteInfoByApiKeys(communityKey, None, input.testSuite).flatMap { testSuiteInfo =>
@@ -215,7 +233,7 @@ class TestSuiteAutomationService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def unlinkShared: Action[AnyContent] = authorizedAction.async { request =>
-    processAsJson(request, () => authorizationManager.canManageTestSuitesThroughAutomationApi(request), { body =>
+    processAsJson(request, PostEndpoint("/testsuite/unlinkShared"), () => authorizationManager.canManageTestSuitesThroughAutomationApi(request), { body =>
         val communityKey = ParameterExtractor.extractApiKeyHeader(request).get
         val input = JsonUtil.parseJsTestSuiteUnlinkRequest(body)
         testSuiteManager.getTestSuiteInfoByApiKeys(communityKey, None, input.testSuite).flatMap { testSuiteInfo =>

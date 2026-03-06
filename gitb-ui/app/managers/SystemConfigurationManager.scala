@@ -17,6 +17,7 @@ package managers
 
 import config.Configurations
 import managers.SystemConfigurationManager.ThemeStatus
+import managers.ratelimit.RateLimitManager
 import models.Enums.UserRole
 import models._
 import models.health.SoftwareVersionCheckSettings
@@ -26,17 +27,19 @@ import org.apache.commons.lang3.{StringUtils, Strings}
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
+import play.api.libs.json.{JsObject, JsString, Json}
 import slick.collection.heterogeneous.HNil
 import utils._
 
 import java.io.File
+import java.nio.file.Files
 import java.sql.Timestamp
 import java.util.{Calendar, UUID}
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Using}
 
 object SystemConfigurationManager {
 
@@ -48,6 +51,7 @@ object SystemConfigurationManager {
 class SystemConfigurationManager @Inject() (testResultManager: TestResultManager,
                                             testExecutionManager: TestExecutionManager,
                                             repositoryUtils: RepositoryUtils,
+                                            rateLimitManager: RateLimitManager,
                                             dbConfigProvider: DatabaseConfigProvider)
                                            (implicit ec: ExecutionContext) extends BaseManager(dbConfigProvider) {
 
@@ -55,7 +59,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[SystemConfigurationManager])
   private final val editableSystemConfigurationTypes = Set(
-    Constants.SessionAliveTime, Constants.RestApiEnabled, Constants.RestApiAdminKey, Constants.SelfRegistrationEnabled,
+    Constants.SessionAliveTime, Constants.RestApiEnabled, Constants.RestApiAdminKey, Constants.RestApiRateLimits, Constants.SelfRegistrationEnabled,
     Constants.DemoAccount, Constants.WelcomeMessage, Constants.AccountRetentionPeriod,
     Constants.EmailSettings, Constants.SoftwareVersionCheck, Constants.WelcomeTitle, Constants.StartupWizard, Constants.UsageTips
   )
@@ -235,6 +239,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
         val welcomeTitleConfig = persistedConfigs.find(config => config.config.name == Constants.WelcomeTitle)
         val emailSettingsConfig = persistedConfigs.find(config => config.config.name == Constants.EmailSettings)
         val softwareVersionCheckConfig = persistedConfigs.find(config => config.config.name == Constants.SoftwareVersionCheck)
+        val rateLimitConfig = persistedConfigs.find(config => config.config.name == Constants.RestApiRateLimits)
         if (restApiEnabledConfig.isEmpty) {
           persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.RestApiEnabled, Some(Configurations.AUTOMATION_API_ENABLED.toString), None), defaultSetting = true, environmentSetting = sys.env.contains("AUTOMATION_API_ENABLED"))
         }
@@ -269,6 +274,9 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
         }
         if (softwareVersionCheckConfig.isEmpty) {
           persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.SoftwareVersionCheck, Some(JsonUtil.jsSoftwareVersionCheckSettings(SoftwareVersionCheckSettings.fromEnvironment()).toString()), None), defaultSetting = true, environmentSetting = sys.env.contains("SOFTWARE_VERSION_CHECK_ENABLED"))
+        }
+        if (rateLimitConfig.isEmpty) {
+          persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.RestApiRateLimits, Some(JsonUtil.jsRestApiLimits(RestApiLimits.defaultSettings(), withDescriptions = false).toString()), None), defaultSetting = true, environmentSetting = false)
         }
       }
       persistedConfigs
@@ -316,9 +324,13 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
 
   private [managers] def updateSystemParameterInternal(name: String, providedValue: Option[String] = None, applySetting: Boolean): DBIO[Option[SystemConfigurationsWithEnvironment]] = {
     // Do any pre-processing as needed.
-    var parsedEmailSettings: Option[EmailSettings] = None
+    var rateApiLimits: Option[RestApiLimits] = None
     val value = if (name == Constants.EmailSettings && providedValue.isDefined) {
       Some(JsonUtil.jsEmailSettings(processReceivedEmailSettings(providedValue.get), maskPassword = false).toString())
+    } else if (name == Constants.RestApiRateLimits && providedValue.isDefined) {
+      // Parse and serialize as we want to only record what we expect. Also the parsed object is used later to reset the live settings.
+      rateApiLimits = Some(JsonUtil.parseJsRestApiLimits(providedValue.get, withDescriptions = false))
+      Some(JsonUtil.jsRestApiLimits(rateApiLimits.get, withDescriptions = false).toString())
     } else if (name == Constants.RestApiAdminKey && providedValue.isEmpty) {
       Some(CryptoUtil.generateApiKey())
     } else if (name == Constants.UsageTips && providedValue.isDefined) {
@@ -356,6 +368,15 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
             Configurations.AUTOMATION_API_MASTER_KEY = value
             DBIO.successful(value.map(_ => {
               SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.RestApiAdminKey, value, None), defaultSetting = false, environmentSetting = false)
+            }))
+          case Constants.RestApiRateLimits =>
+            val settings = rateApiLimits match {
+              case Some(limits) => limits
+              case None => RestApiLimits.defaultSettings()
+            }
+            rateLimitManager.reset(settings)
+            DBIO.successful(value.map(_ => {
+              SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.RestApiRateLimits, value, None), defaultSetting = false, environmentSetting = false)
             }))
           case Constants.SelfRegistrationEnabled =>
             if (value.isDefined) {
@@ -413,10 +434,8 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
             }
           case Constants.EmailSettings =>
             if (value.isDefined) {
-              if (parsedEmailSettings.isEmpty) {
-                parsedEmailSettings = Some(JsonUtil.parseJsEmailSettings(value.get))
-              }
-              parsedEmailSettings.get.toEnvironment()
+              val emailSettings = JsonUtil.parseJsEmailSettings(value.get)
+              emailSettings.toEnvironment()
               testResultManager.schedulePendingTestInteractionNotifications()
               DBIO.successful(Some(
                 SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.EmailSettings, Some(JsonUtil.jsEmailSettings(EmailSettings.fromEnvironment()).toString()), None), defaultSetting = false, environmentSetting = false)
@@ -983,6 +1002,25 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
         }
       } yield idleSessions
     }
+  }
+
+  def getRestApiEndpointsFromDocumentation(): collection.Seq[RestApiEndpointLimit] = {
+    Using(Files.newInputStream(repositoryUtils.getRestApiDocsDocumentation().toPath)) { stream =>
+      val json = Json.parse(stream)
+      val paths = (json \ "paths").as[JsObject]
+      paths.fields.flatMap { pathItem =>
+        pathItem._2.as[JsObject].fields
+          .filter(x => Constants.HttpMethods.contains(x._1))
+          .map { methodItem =>
+            RestApiEndpointLimit(
+              path = pathItem._1,
+              method = methodItem._1,
+              limit = 0,
+              description = methodItem._2.as[JsObject].value.get("summary").map(_.as[JsString].value)
+            )
+          }
+      }
+    }.get
   }
 
 }
