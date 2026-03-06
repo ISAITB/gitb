@@ -490,4 +490,23 @@ public class XMLUtils {
         }
         return xmlFile;
     }
+
+    /**
+     * Parse the XML Schema version from the schema.
+     *
+     * @param schemaSource The schema to parse.
+     * @return The XML Schema version (defaults to 1.0 if not defined).
+     */
+    public static XmlSchemaVersion parseSchemaVersion(DOMSource schemaSource) {
+        Node root = schemaSource.getNode();
+        // If the node itself is the document, get its root element
+        if (root instanceof Document document) {
+            root = document.getDocumentElement();
+        }
+        if (root instanceof org.w3c.dom.Element element) {
+            String minVersion = element.getAttributeNS("http://www.w3.org/2007/XMLSchema-versioning","minVersion");
+            return "1.1".equals(minVersion) ? XmlSchemaVersion.VERSION_1_1 : XmlSchemaVersion.VERSION_1_0;
+        }
+        return XmlSchemaVersion.VERSION_1_0;
+    }
 }

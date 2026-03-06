@@ -58,20 +58,20 @@ public class XsdValidator extends AbstractValidator {
         SchemaType xsd = getAndConvert(inputs, XSD_ARGUMENT_NAME, DataType.SCHEMA_DATA_TYPE, SchemaType.class);
         BooleanType showSchema = getAndConvert(inputs, SHOW_SCHEMA_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class);
         BooleanType sortBySeverity = getAndConvert(inputs, SORT_BY_SEVERITY_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class);
-        XmlSchemaVersion schemaVersion = Optional.ofNullable(getAndConvert(inputs, SCHEMA_VERSION_ARGUMENT_NAME, DataType.STRING_DATA_TYPE, StringType.class))
-                .map(v -> XmlSchemaVersion.from(v.getValue()))
-                .orElse(XmlSchemaVersion.VERSION_1_0);
+        Optional<XmlSchemaVersion> schemaVersion = Optional.ofNullable(getAndConvert(inputs, SCHEMA_VERSION_ARGUMENT_NAME, DataType.STRING_DATA_TYPE, StringType.class))
+                .map(v -> XmlSchemaVersion.from(v.getValue()));
         // Create error handler.
         XsdReportHandler handler = new XsdReportHandler(contentToProcess, (showSchema == null || showSchema.getValue())?xsd:null);
         // Validate.
         try {
+            var schemaSource = new DOMSource((Node)xsd.getValue());
             XMLUtils.validateAgainstSchema(
                     // Use a StreamSource rather than a DomSource below to be able to get the line & column number of possible errors.
                     new StreamSource(new ByteArrayInputStream(contentToProcess.toString().getBytes())),
-                    new DOMSource((Node)xsd.getValue()),
+                    schemaSource,
                     handler,
                     new XSDResolver(xsd.getImportTestSuite(), getTestCaseId(inputs), xsd.getImportPath()),
-                    schemaVersion
+                    schemaVersion.orElseGet(() -> XMLUtils.parseSchemaVersion(schemaSource))
             );
         } catch (XMLStreamException | SAXException e) {
             // This case would only come up if the content cannot be parsed.
