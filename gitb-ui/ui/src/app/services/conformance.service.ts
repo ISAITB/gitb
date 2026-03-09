@@ -1213,13 +1213,11 @@ export class ConformanceService {
     })
   }
 
-  getConformanceStatement(system: number, actor: number, snapshotId?: number) {
-    let params: any = undefined
-    if (snapshotId != undefined) {
-      params = {
-        snapshot: snapshotId
-      }
-    }
+  getConformanceStatement(system: number, actor: number, snapshotId: number|undefined, page: number, limit: number) {
+    let params: any = {}
+    if (snapshotId != undefined) params.snapshot = snapshotId
+    if (page != undefined) params.page = page
+    if (limit != undefined) params.limit = limit
     return this.restService.get<ConformanceStatementWithResults>({
       path: ROUTES.controllers.ConformanceService.getConformanceStatement(system, actor).url,
       authenticate: true,

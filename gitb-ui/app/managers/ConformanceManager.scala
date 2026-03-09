@@ -551,10 +551,10 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 		}
 	}
 
-  def getConformanceStatusWithPagedTests(actorId: Long, sutId: Long, testSuiteId: Option[Long], snapshotId: Option[Long] = None): Future[Option[SearchResult[ConformanceStatus]]] = {
+  def getConformanceStatusWithPagedTests(actorId: Long, sutId: Long, testSuiteId: Option[Long], snapshotId: Option[Long], page: Long, limit: Long): Future[Option[SearchResult[ConformanceStatus]]] = {
     getConformanceStatus(actorId, sutId, testSuiteId, includeDisabled = false, snapshotId).map {
       case Some(status) =>
-        val pagingInfo = new PagingStatus(1, Constants.defaultLimit)
+        val pagingInfo = new PagingStatus(page, limit)
         status.testSuites = pageConformanceTestSuites(status.testSuites, pagingInfo)
         Some(SearchResult(
           List(status),

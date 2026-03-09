@@ -1585,7 +1585,9 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction,
       conformanceManager.getConformanceStatementsForSystem(systemId, Some(actorId), snapshotId, withDescriptions = true, withResults = false).flatMap { result =>
         val conformanceStatement = result.headOption
         if (conformanceStatement.isDefined) {
-          conformanceManager.getConformanceStatusWithPagedTests(actorId, systemId, None, snapshotId).flatMap { results =>
+          val page = ParameterExtractor.extractPageNumber(request)
+          val limit = ParameterExtractor.extractPageLimit(request)
+          conformanceManager.getConformanceStatusWithPagedTests(actorId, systemId, None, snapshotId, page, limit).flatMap { results =>
             if (results.isDefined) {
               val systemInfoTask = if (systemId >= 0) {
                 systemManager.getSystemProfile(systemId)

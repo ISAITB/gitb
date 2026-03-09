@@ -284,7 +284,7 @@ export class ConformanceStatementComponent extends BaseTabbedComponent implement
   private loadInitialData(): Observable<any> {
     // Load conformance statement and its results.
     this.loadingTests.status = Constants.STATUS.PENDING
-    const statementsLoaded = this.conformanceService.getConformanceStatement(this.systemId, this.actorId, this.snapshotId)
+    const statementsLoaded = this.conformanceService.getConformanceStatement(this.systemId, this.actorId, this.snapshotId, 1, this.dataService.defaultPagingTableSize)
     const snapshotLabelLoaded = this.retrieveSnapshotLabel(this.snapshotId, this.snapshotLabel)
     const obs$ = forkJoin([statementsLoaded, snapshotLabelLoaded]).pipe(
       tap((results) => {
