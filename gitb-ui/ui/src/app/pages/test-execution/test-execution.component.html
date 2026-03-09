@@ -106,8 +106,8 @@
                                             <button type="button" [labelIcon]="Constants.BUTTON_ICON.REPORT_PDF" [disable]="!exportEnabled(testCase) || exportPdfPending[testCase.id] || exportXmlPending[testCase.id]" [pending]="exportPdfPending[testCase.id] || exportXmlPending[testCase.id]" class="btn btn-secondary" (click)="exportPdf(testCase)">Download report</button>
                                         }
                                         <div class="viewLogButton">
-                                            <button type="button" [labelIcon]="Constants.BUTTON_ICON.VIEW_LOG" class="btn btn-secondary position-relative" (click)="viewLog(testCase)">
-                                                View log
+                                            <button type="button" class="btn btn-secondary position-relative" (click)="viewLog(testCase)">
+                                                <span class="mini-tab label-icon"><i [class]="Constants.BUTTON_ICON.VIEW_LOG"></i></span>View log
                                                 <span
                                                     [class.badgeLogErrors]="unreadLogErrors[testCase.id]"
                                                     [class.badgeLogWarnings]="unreadLogWarnings[testCase.id] && !unreadLogErrors[testCase.id]"
