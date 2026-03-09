@@ -517,6 +517,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                 } else {
                     acceptValues = Arrays.stream(StringUtils.split(request.getAccept(), ','))
                             .filter(this::validMimeType)
+                            .map(String::trim)
                             .collect(Collectors.joining(","));
                 }
                 if (acceptValues != null && !acceptValues.isEmpty()) {
@@ -623,7 +624,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
             List<DataType> items = (List<DataType>)referencedType.getValue();
             if (items != null && !items.isEmpty()) {
                 for (DataType item: items) {
-                    String itemAsString = item.convertTo(DataType.STRING_DATA_TYPE).toString();
+                    String itemAsString = item.convertTo(DataType.STRING_DATA_TYPE).toString().trim();
                     if (tokenValidator == null || tokenValidator.apply(itemAsString)) {
                         str.append(itemAsString);
                         str.append(',');
