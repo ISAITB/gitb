@@ -637,12 +637,14 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                 for (InstructionOrRequest instructionOrRequest : step.getInstructOrRequest()) {
                     if (instructionOrRequest instanceof com.gitb.tdl.Instruction instruction) {
                         // Process instruction.
-                        var instructionContent = new AnyContent();
-                        instructionContent.setName(fixedValueOrVariable(instruction.getDesc(), variableResolver, null));
-                        instructionContent.setMimeType(instruction.getMimeType());
-                        DataType computedValue = expressionHandler.processExpression(instruction, instruction.getType());
-                        DataTypeUtils.setContentValueWithDataType(instructionContent, computedValue);
-                        report.getContext().getItem().add(instructionContent);
+                        if (instruction.isReport()) {
+                            var instructionContent = new AnyContent();
+                            instructionContent.setName(fixedValueOrVariable(instruction.getDesc(), variableResolver, null));
+                            instructionContent.setMimeType(instruction.getMimeType());
+                            DataType computedValue = expressionHandler.processExpression(instruction, instruction.getType());
+                            DataTypeUtils.setContentValueWithDataType(instructionContent, computedValue);
+                            report.getContext().getItem().add(instructionContent);
+                        }
                     } else if (instructionOrRequest instanceof UserRequest request) {
                         // Process request.
                         processUserInput(request, index, event, variableResolver, dataTypeFactory, requiredInputIndexes, report, interactionResult);
