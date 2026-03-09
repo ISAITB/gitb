@@ -66,6 +66,7 @@ import org.apache.pekko.dispatch.OnSuccess;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
+import org.springframework.util.MimeType;
 import scala.concurrent.Future;
 import scala.concurrent.Promise;
 
@@ -73,6 +74,7 @@ import javax.xml.datatype.DatatypeConfigurationException;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -476,6 +478,16 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         return instruction;
     }
 
+    private boolean validMimeType(String value) {
+        try {
+            MimeType.valueOf(value);
+            return true;
+        } catch (Exception e) {
+            logger.warn(addMarker(), "Ignored invalid content type [{}]", value);
+            return false;
+        }
+    }
+
     /**
      * Process TDL InputRequest command and convert it to TBS InputRequest object
      *
@@ -495,8 +507,24 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         inputRequest.setInputType(request.getInputType());
         inputRequest.setMimeType(fixedValueOrVariable(request.getMimeType(), variableResolver, null));
         inputRequest.setRequired(TestCaseUtils.resolveBooleanFlag(request.getRequired(), false, () -> variableResolver));
-        // Handle text inputs.
-        if (request.getInputType() != InputRequestInputType.UPLOAD) {
+        if (request.getInputType() == InputRequestInputType.UPLOAD) {
+            // Handle uploads.
+            if (request.getAccept() != null) {
+                // Parse, calculate and validate accepted mime types.
+                String acceptValues;
+                if (VariableResolver.isVariableReference(request.getAccept())) {
+                    acceptValues = resolveTokenValues(variableResolver, request.getAccept(), this::validMimeType);
+                } else {
+                    acceptValues = Arrays.stream(StringUtils.split(request.getAccept(), ','))
+                            .filter(this::validMimeType)
+                            .collect(Collectors.joining(","));
+                }
+                if (acceptValues != null && !acceptValues.isEmpty()) {
+                    inputRequest.setAccept(acceptValues);
+                }
+            }
+        } else {
+            // Handle text inputs.
             // Select options.
             if (request.getOptions() != null) {
                 String options = request.getOptions();
@@ -583,6 +611,10 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
     }
 
     private String resolveTokenValues(VariableResolver variableResolver, String expression) {
+        return resolveTokenValues(variableResolver, expression, null);
+    }
+
+    private String resolveTokenValues(VariableResolver variableResolver, String expression, Function<String, Boolean> tokenValidator) {
         String tokenValues;
         DataType referencedType = variableResolver.resolveVariable(expression);
         if (DataType.isListType(referencedType.getType())) {
@@ -591,8 +623,11 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
             List<DataType> items = (List<DataType>)referencedType.getValue();
             if (items != null && !items.isEmpty()) {
                 for (DataType item: items) {
-                    str.append(item.convertTo(DataType.STRING_DATA_TYPE));
-                    str.append(',');
+                    String itemAsString = item.convertTo(DataType.STRING_DATA_TYPE).toString();
+                    if (tokenValidator == null || tokenValidator.apply(itemAsString)) {
+                        str.append(itemAsString);
+                        str.append(',');
+                    }
                 }
                 str.deleteCharAt(str.length()-1);
             }

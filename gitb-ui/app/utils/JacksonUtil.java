@@ -253,6 +253,9 @@ public class JacksonUtil {
                     if (inputRequest.getDefault() != null && !inputRequest.getDefault().isEmpty()) {
                         json.writeStringField("default", inputRequest.getDefault());
                     }
+                    if (inputRequest.getAccept() != null && !inputRequest.getAccept().isEmpty()) {
+                        json.writeStringField("accept", inputRequest.getAccept());
+                    }
                     json.writeEndObject();
                 } else if (ior instanceof com.gitb.tbs.Instruction instruction) {
                     json.writeStartObject();

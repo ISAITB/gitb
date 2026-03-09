@@ -43,6 +43,7 @@ export interface UserInteraction {
   showControls?: boolean;
   level?: 'ERROR' | 'WARNING' | 'INFO' | 'SUCCESS' | 'NONE';
   default?: string;
+  accept?: string;
 
   reset?: EventEmitter<void>;
 
