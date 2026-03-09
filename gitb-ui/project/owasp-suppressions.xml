@@ -278,4 +278,20 @@
         <packageUrl regex="true">^pkg:maven/ch\.qos\.logback/logback-core@.*$</packageUrl>
         <vulnerabilityName>CVE-2026-1225</vulnerabilityName>
     </suppress>
+    <suppress>
+        <!-- Relates to an XSS issue with DomPurify. This is not applicable for the GITB as there is no unsafe neing processed. -->
+        <notes><![CDATA[
+   file name: swagger-ui-5.32.0.jar: swagger-ui-bundle.js
+   ]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <cve>CVE-2025-15599</cve>
+    </suppress>
+    <suppress>
+        <!-- Relates to an XSS issue with DomPurify. This is not applicable for the GITB as there is no unsafe neing processed. -->
+        <notes><![CDATA[
+   file name: swagger-ui-5.32.0.jar: swagger-ui-bundle.js
+   ]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <cve>CVE-2026-0540</cve>
+    </suppress>
 </suppressions>
