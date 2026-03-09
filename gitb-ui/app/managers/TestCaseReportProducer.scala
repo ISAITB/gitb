@@ -19,6 +19,7 @@ import com.gitb.core.Metadata
 import com.gitb.reports.dto.TestCaseOverview
 import com.gitb.reports.{ReportGenerator, ReportSpecs}
 import com.gitb.tbs.TestStepStatus
+import com.gitb.tpl
 import com.gitb.tpl._
 import com.gitb.tr._
 import com.gitb.utils.{XMLDateTimeUtils, XMLUtils}
@@ -310,15 +311,28 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper,
     } yield reportPath
   }
 
+  private def getStepDescriptionForReport(testStep: TestStep): Option[String] = {
+    if (StringUtils.isBlank(testStep.getDesc)) {
+      testStep match {
+        case step: tpl.Sequence => Option(step.getTitle)
+        case step: FlowStep => Option(step.getTitle)
+        case step: DecisionStep => Option(step.getTitle)
+        case step: UserInteractionStep => Option(step.getTitle)
+        case _ => None
+      }
+    } else {
+      Some(testStep.getDesc)
+    }
+  }
+
   private def collectStepReports(testStep: TestStep, collectedSteps: ListBuffer[TitledTestStepReportType], folder: File): Unit = {
     val reportFile = new File(folder, testStep.getId + ".xml")
     if (reportFile.exists()) {
       val stepReport = new TitledTestStepReportType()
       val sequenceNumber = collectedSteps.size + 1
-      if (StringUtils.isBlank(testStep.getDesc)) {
-        stepReport.setTitle("Step " + sequenceNumber)
-      } else {
-        stepReport.setTitle("Step " + sequenceNumber + ": " + testStep.getDesc)
+      getStepDescriptionForReport(testStep) match {
+        case Some(stepDescription) => stepReport.setTitle("Step %s: %s".formatted(sequenceNumber, stepDescription))
+        case None => stepReport.setTitle("Step %s".formatted(sequenceNumber))
       }
       val bytes = Files.readAllBytes(Paths.get(reportFile.getAbsolutePath))
       val string = new String(bytes)
