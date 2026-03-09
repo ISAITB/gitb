@@ -307,6 +307,8 @@ public class ReportGenerator {
                         value = contextValueAsString(content.getValue());
                     }
                     item = new ContextItem(StringUtils.defaultString(content.getName()), truncateIfNeeded(value, specs));
+                } else {
+                    item = new ContextItem(StringUtils.defaultString(content.getName()), (String)null);
                 }
             } else {
                 var children = content.getItem().stream()

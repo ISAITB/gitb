@@ -127,15 +127,19 @@
 </#macro>
 <#macro printItem item>
     <div class="context-item border-normal">
-        <div class="context-item-key">${escape(item.key)}</div>
-        <#if item.value??>
-            <div class="context-item-value background-normal">${escape(item.value)}</div>
+        <#if !item.value?? && !item.items??>
+            <div>${escape(item.key)}</div>
         <#else>
-            <div class="context-items">
-                <#list item.items as child>
-                    <@printItem child />
-                </#list>
-            </div>
+            <div class="context-item-key">${escape(item.key)}</div>
+            <#if item.value??>
+                <div class="context-item-value background-normal">${escape(item.value)}</div>
+            <#else>
+                <div class="context-items">
+                    <#list item.items as child>
+                        <@printItem child />
+                    </#list>
+                </div>
+            </#if>
         </#if>
     </div>
 </#macro>

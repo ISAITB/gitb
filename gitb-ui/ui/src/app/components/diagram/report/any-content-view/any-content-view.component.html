@@ -12,7 +12,7 @@
                 <div class="any-content-view-container">
                     <div class="any-content-view-texts" (click)="containerClicked();$event.stopPropagation()">
                         @if (withName) {
-                            <div class="content-name" [class.with-items]="withItems" [class.break-texts]="breakNameText"
+                            <div [class.content-name]="withValue" [class.content-value]="!withValue" [class.with-items]="withItems" [class.break-texts]="breakNameText"
                                  (mouseover)="hoverUpdate(true)" (mouseout)="hoverUpdate(false)">
                                 @if (!this.root) {
                                     <app-collapsing-icon [hidden]="!withItems" [isCollapsed]="collapsed"></app-collapsing-icon>

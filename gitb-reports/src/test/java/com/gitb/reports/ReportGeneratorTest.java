@@ -495,6 +495,10 @@ public class ReportGeneratorTest {
                     \t</steps>
                     </data>""");
             tar.getContext().getItem().get(2).getItem().get(1).setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
+            tar.getContext().getItem().add(new AnyContent());
+            tar.getContext().getItem().get(3).setName("This is an item without a value");
+            tar.getContext().getItem().add(new AnyContent());
+            tar.getContext().getItem().get(4).setName("This is an item without a value this is an item without a value this is an item without a value this is an item without a value this is an item without a value this is an item without a value this is an item without a value this is an item without a value this is an item without a value this is an item without a value this is an item without a value");
         }
         return tar;
     }
